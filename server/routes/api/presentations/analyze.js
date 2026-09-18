@@ -39,6 +39,12 @@ const log = createLogger('analyze');
  * - suggestion: { index, total, suggestion }
  * - complete: { suggestionCount }
  * - error: { message }
+ *
+ * Cancelling is closing the stream. The stream's disconnect signal aborts
+ * the model call, and is checked before every comment is created: after the
+ * client leaves, no new suggestion is stored or broadcast. A comment whose
+ * write was already under way when the client left is kept and broadcast
+ * like any other, so live viewers see what storage holds.
  */
 export async function handlePresentationAnalyze(
   { storageScope, req, res, authedUser } = {},
@@ -65,6 +71,7 @@ export async function handlePresentationAnalyze(
 
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
+  const { signal } = stream;
 
   // Send initial connection confirmation
   sseWrite(res, { event: 'connected', data: { presentationId: id } });
@@ -84,6 +91,7 @@ export async function handlePresentationAnalyze(
 
     const result = await analyzePresentation(pres, {
       categories,
+      signal,
       onProgress: (progress) => {
         sseWrite(res, { event: 'progress', data: progress });
       },
@@ -111,6 +119,7 @@ export async function handlePresentationAnalyze(
 
     const createdComments = [];
     for (let i = 0; i < suggestions.length; i++) {
+      signal.throwIfAborted();
       const suggestion = suggestions[i];
       const commentData = suggestionToCommentData(suggestion, id, aiIdentity);
 
@@ -142,8 +151,12 @@ export async function handlePresentationAnalyze(
       },
     });
   } catch (error) {
-    log.error('[analyze] Error:', error);
-    sseError(res, error?.message || 'Analysis failed');
+    if (signal.aborted) {
+      log.info(`${id}: cancelled by the client`);
+    } else {
+      log.error('Error:', error);
+      sseError(res, error?.message || 'Analysis failed');
+    }
   }
 
   res.end();

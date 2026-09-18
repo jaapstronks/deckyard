@@ -39,6 +39,8 @@ export function createLlmProvider({
    * @param {Object} [params.responseFormat] - Response format (for JSON mode)
    * @param {Array} [params.messages] - Messages array
    * @param {number} [params.maxTokens] - Max tokens (provider-specific)
+   * @param {AbortSignal} [params.signal] - Cancels the request, including
+   *   reading the response body
    * @returns {Promise<string>} - Response content
    */
   return async function request(params = {}) {
@@ -49,6 +51,7 @@ export function createLlmProvider({
       method: 'POST',
       headers,
       body: JSON.stringify(body),
+      signal: params.signal,
     });
 
     const bodyText = await resp.text();

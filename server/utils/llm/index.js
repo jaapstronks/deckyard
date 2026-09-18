@@ -7,6 +7,16 @@ import { LlmError } from './error.js';
 
 export { LlmError } from './error.js';
 
+/**
+ * Request one chat completion from the configured vendor and return its text.
+ *
+ * `signal` reaches the provider's fetch, so aborting it cancels the model call
+ * (and the read of its response) instead of letting it run to completion.
+ *
+ * @param {Object} params
+ * @param {AbortSignal} [params.signal]
+ * @returns {Promise<string>}
+ */
 export async function requestChatCompletionContent({
   vendor,
   apiKey,
@@ -15,6 +25,7 @@ export async function requestChatCompletionContent({
   responseFormat = null,
   maxTokens = 4096,
   messages = [],
+  signal,
 } = {}) {
   if (vendor === 'openai') {
     return await requestOpenAiChatCompletionContent({
@@ -24,6 +35,7 @@ export async function requestChatCompletionContent({
       responseFormat,
       maxTokens,
       messages,
+      signal,
     });
   }
   if (vendor === 'claude') {
@@ -34,6 +46,7 @@ export async function requestChatCompletionContent({
       temperature,
       maxTokens,
       messages,
+      signal,
     });
   }
   if (vendor === 'mistral') {
@@ -44,6 +57,7 @@ export async function requestChatCompletionContent({
       responseFormat,
       maxTokens,
       messages,
+      signal,
     });
   }
   if (vendor === 'deepseek') {
@@ -54,6 +68,7 @@ export async function requestChatCompletionContent({
       responseFormat,
       maxTokens,
       messages,
+      signal,
     });
   }
   if (vendor === 'openai-compat') {
@@ -64,6 +79,7 @@ export async function requestChatCompletionContent({
       responseFormat,
       maxTokens,
       messages,
+      signal,
     });
   }
 

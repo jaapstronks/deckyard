@@ -2,9 +2,11 @@
  * Direct unit tests for openSseStream() — the one opener every SSE endpoint
  * goes through (#716). Pins the pieces the route-level tests only exercise
  * indirectly: the canonical header set with extraHeaders passthrough, the
- * heartbeat lifecycle, idempotent close, the guard opt-in/opt-out, and the
+ * heartbeat lifecycle, idempotent close, the guard opt-in/opt-out, the
  * onClose contract (fires once on client disconnect, never for a stream the
- * handler already closed itself — the MCP GET-replace race).
+ * handler already closed itself — the MCP GET-replace race), and the
+ * disconnect signal (B338), including over a real socket after the request
+ * body was read — the case a `req` listener never saw.
  *
  * Run with: node --test tests/sse-open-stream.test.js
  */
@@ -12,6 +14,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import http from 'node:http';
+import { once } from 'node:events';
 import { openSseStream } from '../server/utils/sse.js';
 import {
   sseConnectionCounts,
@@ -97,7 +101,7 @@ test('heartbeat comments tick on the interval and stop on close', (t) => {
   t.mock.timers.tick(1000);
   assert.equal(heartbeats(), 2);
 
-  req.emit('close');
+  res.emit('close');
   t.mock.timers.tick(5000);
   assert.equal(heartbeats(), 2, 'heartbeat cleared on close');
 });
@@ -123,8 +127,8 @@ test('onClose fires exactly once, also under a double close event', () => {
     },
   });
 
-  req.emit('close');
-  req.emit('close');
+  res.emit('close');
+  res.emit('close');
   assert.equal(closes, 1);
 });
 
@@ -150,7 +154,7 @@ test('close() is idempotent and suppresses a later onClose (replace race)', (t) 
 
   // … so the old socket's eventual disconnect must NOT run onClose: the
   // handler's references already point at the replacement stream.
-  req.emit('close');
+  res.emit('close');
   assert.equal(closes, 0);
 });
 
@@ -196,4 +200,58 @@ test('guard over cap: sends 429 before any stream headers, returns ok: false', (
   assert.equal(res.statusCode, 429);
   assert.equal(res.writableEnded, true, 'guard fully handled the response');
   assert.notEqual(res.headers['Content-Type'], 'text/event-stream');
+});
+
+test('signal aborts when the client leaves before the handler ended', () => {
+  const req = mockReq();
+  const res = mockRes();
+  const stream = openSseStream(req, res, { guard: false, heartbeatMs: 0 });
+  assert.equal(stream.signal.aborted, false);
+
+  res.emit('close');
+  assert.equal(stream.signal.aborted, true);
+});
+
+test('signal stays quiet when the handler finished the response itself', () => {
+  const req = mockReq();
+  const res = mockRes();
+  const stream = openSseStream(req, res, { guard: false, heartbeatMs: 0 });
+
+  res.end();
+  res.writableFinished = true;
+  res.emit('close');
+  assert.equal(stream.signal.aborted, false);
+});
+
+test('a real client disconnect aborts the signal after the body was read', async (t) => {
+  // The POST-stream shape (analyze, convert): read the JSON body first, then
+  // open the stream. By then `req` has emitted its one `close`, so only the
+  // response still hears the client leave.
+  let resolveSignal;
+  const signalSeen = new Promise((r) => {
+    resolveSignal = r;
+  });
+  const server = http.createServer(async (req, res) => {
+    for await (const _chunk of req);
+    const stream = openSseStream(req, res, { guard: false, heartbeatMs: 0 });
+    resolveSignal(stream.signal);
+    res.write('data: open\n\n');
+  });
+  server.listen(0);
+  await once(server, 'listening');
+  t.after(() => server.close());
+
+  const client = new AbortController();
+  const response = await fetch(`http://127.0.0.1:${server.address().port}`, {
+    method: 'POST',
+    body: '{}',
+    signal: client.signal,
+  });
+  const signal = await signalSeen;
+  assert.equal(signal.aborted, false);
+
+  client.abort();
+  await response.body?.cancel().catch(() => {});
+  if (!signal.aborted) await once(signal, 'abort');
+  assert.equal(signal.aborted, true);
 });
