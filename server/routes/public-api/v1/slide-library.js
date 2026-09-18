@@ -116,12 +116,19 @@ async function handleGet(ctx, itemId) {
     return true;
   }
 
-  const tags = await getTagsForSlideLibraryItem(storageScope, itemId, {
-    userEmail: apiKey.ownerEmail,
-  });
+  const tagged = await getTagsForSlideLibraryItem(
+    storageScope,
+    { id: itemId, shelf: 'organization' },
+    { userEmail: apiKey.ownerEmail },
+  );
+  // The item left the shelf between the two reads: it is gone, not tagless.
+  if (!tagged.ok) {
+    await apiError(ctx, 404, 'Library item not found');
+    return true;
+  }
 
   await apiSuccess(ctx, {
-    item: sanitizeLibraryItem(item, tags),
+    item: sanitizeLibraryItem(item, tagged.tags),
   });
   return true;
 }

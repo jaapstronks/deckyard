@@ -185,6 +185,15 @@ writer that bypasses the route still meets them.
   `favorite` is per user and open to everyone. Both list routes return
   `canEdit` on every item from that same predicate, so a client derives
   nothing; the personal list is always `canEdit: true`.
+- **Tags.** `GET|PUT /api/slide-library/<shelf>/<id>/tags` (body
+  `{ tags: [...] }`) select the item through the same WHERE before they touch
+  a tag (`getTagsForSlideLibraryItem` / `setTagsForSlideLibraryItem`, B340):
+  someone else's personal item and the wrong shelf are `404 not_found` for
+  reading and writing. On the organization shelf every member reads the tags,
+  and writing them is changing a shared item — the same admin-or-creator
+  guard, otherwise `403 forbidden`. Tags are not part of the edit key set: a
+  tags write takes no `If-Match` and does not raise the revision, because
+  tags classify the item rather than change what it shows.
 - **Revision.** Every item carries an integer `revision` (migration
   `082_slide_library_revision.js`, starting at 0). A PATCH with `name`,
   `description` or `content` needs `If-Match: <revision>` (read with
@@ -223,15 +232,16 @@ is fixed). Nothing is written until Save, which is one PATCH of
 `{ name, content }` with `If-Match`; a `409` or `403` is shown beside Save, and
 closing with changes asks first. Cancel, a refused save and closing leave no
 deck and no library row behind. The Edit button reads `canEdit`: without it the
-button stays, greyed out with the reason, the description is read-only, and
+button stays, greyed out with the reason, the description and tags are read-only, and
 **Duplicate to my library** creates a personal copy (type, theme, content and
 `i18n`) and opens the editor on it.
 
-**Implementation status (2026-09-18, B335, B336).** All of the above is
+**Implementation status (2026-09-18, B335, B336, B340).** All of the above is
 enforced and shipped. The editor edits the base language; a language switch
 inside it is not part of v1. `favorite` is accepted but not yet stored (B334):
 a favorite-only PATCH writes nothing and returns the item. Pinned by
 `tests/pg/slide-library-save-contract.pgtest.js` (ownership, guard, atomic
 revision, merge on real PostgreSQL), `tests/slide-library-save-route.test.js`
-(key set, 428, custom-HTML on create) and
-`tests/slide-library-merge-content.test.js`.
+(key set, 428, custom-HTML on create),
+`tests/pg/slide-library-tags-acl.pgtest.js` (tags ownership, shelf and guard
+through the real route) and `tests/slide-library-merge-content.test.js`.
