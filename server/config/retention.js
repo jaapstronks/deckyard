@@ -6,8 +6,8 @@
  *
  * A window is always a positive whole number of days. There is deliberately no
  * "0 means never" spelling: the trash hint promises deletion, and a value that
- * silently turns the promise off would put back the exact mismatch B330
- * removes. An operator who wants a longer safety net raises the number.
+ * silently turned the promise off would restore the mismatch. An operator who
+ * wants a longer safety net raises the number.
  */
 
 import { envInt } from './utils.js';

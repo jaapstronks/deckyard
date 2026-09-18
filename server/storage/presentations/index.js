@@ -357,38 +357,43 @@ export async function restorePresentation(storageScope, id) {
 }
 
 /**
- * Delete the database record of a trashed presentation. Everything keyed to it
- * rides the `ON DELETE CASCADE` foreign keys; what lives outside the database
- * (the deck's rasters) does not, which is why this is the *record* half of the
- * operation and not the operation itself. Callers want
- * `server/services/permanent-delete.js#permanentlyDeletePresentation`, the one
- * seam that ends a deck for good — the button and the retention sweep both go
- * through it, so they cannot drift apart.
+ * Delete the database record of a trashed presentation. Dependants ride the
+ * `ON DELETE CASCADE` foreign keys; the deck's rasters do not, which is why
+ * this is the *record* half only. Callers want
+ * `server/services/permanent-delete.js#permanentlyDeletePresentation`.
  *
- * Only a deck that is actually in the trash can be erased: permanent deletion
- * is the second step of trashing, never a shortcut past it, and the guard is
- * what makes a repeated sweep provably unable to touch a live deck.
+ * Only a deck that is in the trash can be erased. With `trashedBefore` the
+ * DELETE additionally requires `trashed_at <= trashedBefore`, so a deck
+ * restored and trashed again after a caller picked it keeps its fresh window.
  *
  * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
+ * @param {Object} [options]
+ * @param {string} [options.trashedBefore] - ISO timestamp; only delete a deck
+ *   trashed at or before it.
  * @returns {Promise<{ok: true}|{ok: false, reason: string}>}
  *   `not_found` when no deck with that id lives in this organization,
- *   `not_trashed` when it does but is not in the trash.
+ *   `not_trashed` when it does but is not in the trash, `not_due` when it is
+ *   trashed but after `trashedBefore`.
  */
-export async function deletePresentationRecord(storageScope, id) {
+export async function deletePresentationRecord(
+  storageScope,
+  id,
+  { trashedBefore } = {},
+) {
   try {
     const ctx = toStorageContext(storageScope, 'deletePresentationRecord');
-    return await deletePresentationRecordRow(id, ctx);
+    return await deletePresentationRecordRow(id, ctx, { trashedBefore });
   } finally {
     invalidatePresentationCache(id);
   }
 }
 
 /**
- * List the decks that have been in the trash since before `cutoffIso`, for the
- * retention sweep. Returns the organization alongside each id: the sweep reads
- * across organizations because retention is an instance-wide policy, but every
- * purge it then performs is scoped to the organization the deck came from.
+ * List the decks trashed at or before `cutoffIso`, for the retention sweep.
+ * Returns the organization alongside each id: the sweep reads across
+ * organizations because retention is instance configuration, but every purge
+ * it then performs is scoped to the organization the deck came from.
  *
  * @param {import('../scope.js').StorageScope} storageScope - A cross-organization scope.
  * @param {string} cutoffIso - ISO timestamp; decks trashed at or before it are due.
@@ -1225,37 +1230,44 @@ async function restorePresentationRow(id, ctx) {
 }
 
 /**
- * Delete the record of a trashed presentation. Separates "no such deck here"
- * from "that deck is not in the trash" so the caller can say which it was,
- * the way restore already does.
+ * Delete the record of a trashed presentation. Every condition the caller
+ * relies on lives in the DELETE itself, so no state read before it can go
+ * stale: the row goes only while it is still trashed and, when the caller
+ * names a `trashedBefore`, still trashed no later than that. The follow-up
+ * read runs on the failing path only, to name which condition refused.
  * @param {string} id - Presentation ID
  * @param {object} ctx - Storage context
+ * @param {Object} [options]
+ * @param {string} [options.trashedBefore] - ISO timestamp; only delete a deck
+ *   trashed at or before it.
  * @returns {Promise<{ok: true}|{ok: false, reason: string}>}
  */
-async function deletePresentationRecordRow(id, ctx) {
+async function deletePresentationRecordRow(id, ctx, { trashedBefore } = {}) {
   const db = getDb();
   const orgId = getOrgId(ctx);
 
-  const result = await db
+  let deletion = db
     .deleteFrom('presentations')
     .where('id', '=', id)
     .where('organization_id', '=', orgId)
-    .where('trashed_at', 'is not', null)
-    .executeTakeFirst();
+    .where('trashed_at', 'is not', null);
+  if (trashedBefore) {
+    deletion = deletion.where('trashed_at', '<=', trashedBefore);
+  }
 
+  const result = await deletion.executeTakeFirst();
   if (result.numDeletedRows > 0) return { ok: true };
 
-  // Nothing went: either the deck is not in this organization, or it is but is
-  // not trashed. One extra read tells the caller which, and costs nothing on
-  // the path that matters (a successful delete never reaches here).
   const existing = await db
     .selectFrom('presentations')
-    .select(['id'])
+    .select(['id', 'trashed_at'])
     .where('id', '=', id)
     .where('organization_id', '=', orgId)
     .executeTakeFirst();
 
-  return { ok: false, reason: existing ? 'not_trashed' : 'not_found' };
+  if (!existing) return { ok: false, reason: 'not_found' };
+  if (!existing.trashed_at) return { ok: false, reason: 'not_trashed' };
+  return { ok: false, reason: 'not_due' };
 }
 
 /**

@@ -11,14 +11,10 @@
  *  - activity_events   — organization feed, kept ACTIVITY_RETENTION_DAYS (180).
  *  - slide_locks       — expired collaboration locks, deleted every run.
  *
- * …and, since B330, the trash: decks trashed longer ago than
- * TRASH_RETENTION_DAYS (30) are purged for good. That is the one place it
- * happens. The trash hint has always promised deletion after the retention
- * window, and this is the sweep that keeps the promise — which is why it is a
- * scheduled job and not a side effect of opening the trash. A deck's fate must
- * not depend on whether anyone looked: two decks trashed the same afternoon
- * would otherwise die days apart, and the trash of a workspace nobody visits
- * would never empty at all.
+ * …and the trash: decks trashed longer ago than TRASH_RETENTION_DAYS (30) are
+ * purged for good, which is the promise the trash hint makes. It is a
+ * scheduled sweep rather than a side effect of opening the trash, so a deck's
+ * fate does not depend on whether anyone looked.
  */
 
 import { cleanupOldUsage } from '../storage/api-usage.js';
@@ -65,10 +61,16 @@ function cutoffIsoFor(days) {
  * button, one at a time and scoped to its own organization — a write may not
  * be cross-organization, and a bulk `DELETE` would skip the rasters.
  *
+ * One cutoff governs the whole sweep: it selects the candidates, and it is
+ * handed to every delete so the deadline is re-checked inside the `DELETE`
+ * itself. Between selecting a deck and reaching it, a user can restore it and
+ * throw it away again; that deck is trashed once more but no longer due, and
+ * the guard is what lets it keep its fresh window.
+ *
  * One deck's failure does not end the sweep: the next run picks it up again,
  * because the work is defined by the cutoff and not by a cursor. That is also
  * what makes a repeated run idempotent — a purged deck is simply no longer a
- * candidate, and the seam refuses anything that is not in the trash.
+ * candidate.
  *
  * @param {Object} options
  * @param {string} options.repoRoot - Repository root, for the thumbnail cache.
@@ -76,13 +78,14 @@ function cutoffIsoFor(days) {
  * @returns {Promise<{purged: number, failed: number}>}
  */
 async function purgeExpiredTrash({ repoRoot, retentionDays }) {
+  const cutoffIso = cutoffIsoFor(retentionDays);
   const due = await listTrashedPresentationsBefore(
     crossOrganizationScope(
       repoRoot,
       'trash retention sweep: the window is instance configuration, and every ' +
         'purge it performs is scoped to the organization the deck came from',
     ),
-    cutoffIsoFor(retentionDays),
+    cutoffIso,
   );
 
   let purged = 0;
@@ -94,11 +97,13 @@ async function purgeExpiredTrash({ repoRoot, retentionDays }) {
         repoRoot,
         storageScope: { repoRoot, organizationId: deck.organizationId },
         id: deck.id,
+        trashedBefore: cutoffIso,
       });
       if (result.ok) {
         purged += 1;
       } else {
-        // Restored or purged between the read and the write; not an error.
+        // Restored, re-trashed or purged between the read and the write; not
+        // an error, and the deck keeps its rasters.
         log.info(`Skipped ${deck.id}: ${result.reason}`);
       }
     } catch (err) {

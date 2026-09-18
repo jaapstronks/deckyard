@@ -1,16 +1,13 @@
 /**
- * The trash keeps its promise (B330).
+ * The trash keeps its promise: the retention sweep deletes what the trash page
+ * says it deletes, through the same seam as the "Delete permanently" button
+ * (`server/services/permanent-delete.js`). Asserting only "the row is gone"
+ * would pass while the sweep left every raster on disk, so the rasters are
+ * part of the contract here.
  *
- * The trash page has always said a deck is deleted after the retention window;
- * nothing deleted it. These tests pin the sweep that now does, and — more
- * importantly — pin that it is *the same* deletion the "Delete permanently"
- * button performs. That is the whole design: one seam
- * (`server/services/permanent-delete.js`), two callers. A test that only
- * checked "the row is gone" would pass while the sweep quietly left every
- * raster on disk, which is the divergence the seam exists to prevent.
- *
- * Covered: past the window, inside it, exactly on the boundary, restored before
- * the window, a repeated run, the organization scope, the rasters, and the
+ * Covered: past the window, inside it, exactly on the boundary (fixed clock),
+ * restored before the window, restore and re-trash between candidate selection
+ * and deletion, a repeated run, the organization scope, the rasters, and the
  * refusal to erase a deck that was never trashed.
  *
  * Run with: node --test tests/trash-retention-purge.test.js
@@ -70,6 +67,15 @@ test.after(async () => {
   if (repoRoot) await fs.rm(repoRoot, { recursive: true, force: true });
 });
 
+/**
+ * Write a deck's `trashed_at` straight into the table. The sweep reads that
+ * column, and a test can neither wait 30 days nor ask the API for a past one.
+ */
+function setTrashedAt(id, iso) {
+  const row = db.__tables.presentations.find((r) => r.id === id);
+  row.trashed_at = iso;
+}
+
 /** Create a deck, trash it, and backdate the trashing by `days`. */
 async function trashedDeck(title, days, { organizationId = ORG } = {}) {
   const scope = { ...testScope(), organizationId, repoRoot };
@@ -80,12 +86,7 @@ async function trashedDeck(title, days, { organizationId = ORG } = {}) {
   await deletePresentation(scope, created.id, {
     actorEmail: 'owner@example.com',
   });
-  if (days != null) {
-    // Backdate the trashing: the sweep reads `trashed_at`, and a test cannot
-    // wait 30 days for it.
-    const row = db.__tables.presentations.find((r) => r.id === created.id);
-    row.trashed_at = daysAgoIso(days);
-  }
+  if (days != null) setTrashedAt(created.id, daysAgoIso(days));
   return created.id;
 }
 
@@ -118,8 +119,18 @@ test('the sweep purges a deck past the window and leaves one inside it', async (
   assert.ok(await getPresentation(testScope(), fresh));
 });
 
-test('a deck trashed exactly on the boundary is due', async () => {
-  const boundary = await trashedDeck('On the boundary', 30);
+test('the cutoff is inclusive: on it the deck goes, a millisecond later it stays', async (t) => {
+  // A fixed clock, because "exactly on the boundary" is not a thing a test can
+  // assert against a moving `now`.
+  const now = Date.parse('2026-03-01T12:00:00.000Z');
+  t.mock.timers.enable({ apis: ['Date'], now });
+
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() - 30);
+  const onTheCutoff = await trashedDeck('On the cutoff', null);
+  const justAfter = await trashedDeck('Just after the cutoff', null);
+  setTrashedAt(onTheCutoff, cutoff.toISOString());
+  setTrashedAt(justAfter, new Date(cutoff.getTime() + 1).toISOString());
 
   const result = await runRetentionCleanup({
     repoRoot,
@@ -127,7 +138,12 @@ test('a deck trashed exactly on the boundary is due', async () => {
   });
 
   assert.equal(result.trashedDecks, 1);
-  assert.equal(await getPresentation(testScope(), boundary), null);
+  assert.equal(await getPresentation(testScope(), onTheCutoff), null);
+  assert.ok(await getPresentation(testScope(), justAfter));
+
+  // Take the survivor back out of the trash: the tests share one database, and
+  // its frozen January timestamp would be overdue for every sweep after this.
+  setTrashedAt(justAfter, null);
 });
 
 test('restoring before the window saves the deck for good', async () => {
@@ -212,4 +228,56 @@ test('the seam refuses a deck that is not in the trash', async () => {
 
   assert.deepEqual(result, { ok: false, reason: 'not_trashed' });
   assert.ok(await getPresentation(testScope(), live.id));
+});
+
+/**
+ * Run `mutate` once, just before the sweep's first presentation DELETE — the
+ * window between picking a candidate and erasing it, where a user's restore
+ * (and whatever follows it) lands in production.
+ */
+async function duringFirstDelete(mutate, run) {
+  const original = db.deleteFrom;
+  let fired = false;
+  db.deleteFrom = function (table) {
+    if (table === 'presentations' && !fired) {
+      fired = true;
+      mutate();
+    }
+    return original.call(this, table);
+  };
+  try {
+    return await run();
+  } finally {
+    db.deleteFrom = original;
+  }
+}
+
+test('a candidate restored and trashed again mid-sweep keeps its fresh window', async () => {
+  const id = await trashedDeck('Restored and trashed again', 45);
+  await writeThumb(id);
+
+  const result = await duringFirstDelete(
+    () => setTrashedAt(id, new Date().toISOString()),
+    () => runRetentionCleanup({ repoRoot, trashRetentionDays: 30 }),
+  );
+
+  // Trashed again, so still in the trash — but not for 30 days, and the deck
+  // that outlives the sweep must outlive it whole.
+  assert.equal(result.trashedDecks, 0);
+  assert.ok(await getPresentation(testScope(), id));
+  assert.equal((await thumbsFor(id)).length, 1);
+});
+
+test('a candidate restored mid-sweep is not deleted', async () => {
+  const id = await trashedDeck('Restored mid-sweep', 45);
+  await writeThumb(id);
+
+  const result = await duringFirstDelete(
+    () => setTrashedAt(id, null),
+    () => runRetentionCleanup({ repoRoot, trashRetentionDays: 30 }),
+  );
+
+  assert.equal(result.trashedDecks, 0);
+  assert.ok(await getPresentation(testScope(), id));
+  assert.equal((await thumbsFor(id)).length, 1);
 });
