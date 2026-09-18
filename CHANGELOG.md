@@ -4,6 +4,23 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.37.0](https://github.com/jaapstronks/deckyard/compare/v1.36.1...v1.37.0) (2026-09-18)
+
+
+### Added
+
+* **library:** edit a library slide with the full slide form ([#1179](https://github.com/jaapstronks/deckyard/issues/1179)) ([3084957](https://github.com/jaapstronks/deckyard/commit/308495777858eb2c52f30cd38be4c1fe206c5da0))
+
+
+### Fixed
+
+* **library:** store slide-library favorites per user ([#1182](https://github.com/jaapstronks/deckyard/issues/1182)) ([1dc8b87](https://github.com/jaapstronks/deckyard/commit/1dc8b87ece89e8c8eb8909d9174caa2a44abf060))
+
+
+### Security
+
+* **library:** tags routes follow the library save contract ([#1181](https://github.com/jaapstronks/deckyard/issues/1181)) ([bbb0e5a](https://github.com/jaapstronks/deckyard/commit/bbb0e5a41a74b309683ffb218a959224b06c3f99))
+
 ## [1.36.1](https://github.com/jaapstronks/deckyard/compare/v1.36.0...v1.36.1) (2026-09-18)
 
 
