@@ -8,6 +8,16 @@ import { t } from '../ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 
 /**
+ * The `If-Match` header for an edit of `item` (D170): the revision it was
+ * loaded at. A name, description or content PATCH without it is a 428.
+ * @param {{revision?: number}} item
+ * @returns {{'If-Match': string}}
+ */
+function ifMatch(item) {
+  return { 'If-Match': String(item?.revision ?? '') };
+}
+
+/**
  * Create API operations for the slide library
  * @param {object} options
  * @param {Function} options.api - API client function
@@ -130,11 +140,17 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
   const saveDescription = async (shelf, item, newDesc) => {
     const s = shelf === 'organization' ? 'organization' : 'personal';
     try {
-      await api(`/api/slide-library/${s}/${encodeURIComponent(item.id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ description: newDesc }),
-      });
+      const updated = await api(
+        `/api/slide-library/${s}/${encodeURIComponent(item.id)}`,
+        {
+          method: 'PATCH',
+          headers: ifMatch(item),
+          body: JSON.stringify({ description: newDesc }),
+        },
+      );
       item.description = newDesc;
+      // The write raised the revision; the next edit must match the new one.
+      item.revision = updated?.revision;
       return { ok: true };
     } catch (err) {
       console.error('Failed to save description:', err);
@@ -170,6 +186,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         `/api/slide-library/${s}/${encodeURIComponent(id)}`,
         {
           method: 'PATCH',
+          headers: ifMatch(item),
           body: JSON.stringify(patch),
         },
       );
