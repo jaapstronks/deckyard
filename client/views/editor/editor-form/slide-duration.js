@@ -4,7 +4,7 @@
  * (clamped 1–300s on blur) overrides this slide only.
  *
  * Pure builder: returns the wrapper element (or null when auto-advance is off
- * or in bulk-edit mode). It writes `slide.duration` directly and calls
+ * or on a surface without deck tools). It writes `slide.duration` directly and calls
  * `markDirty`/`requestSave`, but holds no render-loop state, so it lives beside
  * `editor-form.js`.
  */
@@ -12,12 +12,14 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../../shared/slide-timing.js';
 import { h } from '../../../lib/dom.js';
+import { surfaceCapabilities } from './surfaces.js';
 
 /**
  * @param {object} ctx
  * @param {object} ctx.pres
  * @param {object} ctx.slide
- * @param {boolean} ctx.contentOnly Bulk-edit mode renders no duration control.
+ * @param {string} ctx.surface The form surface (editor-form/surfaces.js); only
+ *   a surface with `deckTools` renders the duration control.
  * @param {() => void} [ctx.markDirty]
  * @param {() => void} [ctx.requestSave]
  * @returns {HTMLElement|null}
@@ -25,11 +27,13 @@ import { h } from '../../../lib/dom.js';
 export function buildSlideDurationControl({
   pres,
   slide,
-  contentOnly,
+  surface,
   markDirty,
   requestSave,
 }) {
-  const timingEnabled = !contentOnly && !!pres?.settings?.autoAdvance?.enabled;
+  const timingEnabled =
+    surfaceCapabilities(surface).deckTools &&
+    !!pres?.settings?.autoAdvance?.enabled;
   if (!timingEnabled) return null;
 
   const deckDefault =

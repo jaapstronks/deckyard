@@ -1,9 +1,9 @@
 /**
- * Inspector settings pane (editor-UI track, phase 3): the default (non
- * contentOnly) mode of createRerenderEditor renders ONLY settings/design
+ * Inspector settings pane (editor-UI track, phase 3): the default
+ * (`inspector`) surface of createRerenderEditor renders ONLY settings/design
  * fields per the coverage-audit keeps map, plus Background and Accessibility.
  * Content fields live on the slide (wysiwyg) and in the bulk modal
- * (contentOnly mode, covered by bulk-edit-content-only.test.js).
+ * (the `bulk` surface, covered by editor-form-surfaces.test.js).
  *
  * Run with: node --test tests/inspector-form.test.js
  */
@@ -48,7 +48,7 @@ function renderForm({
   type,
   content = null,
   slideTypes = SLIDE_TYPES,
-  contentOnly = false,
+  surface = 'inspector',
   selectedElement = null,
 }) {
   const editorMount = document.createElement('div');
@@ -81,7 +81,7 @@ function renderForm({
     rerenderSlideList: noop,
     rerenderPreview: noop,
     fieldRenderers: createFieldRenderers(deps),
-    contentOnly,
+    surface,
     getSelectedElement: () => selectedElement,
   }).rerender;
   rerender();
@@ -587,8 +587,8 @@ test('image-slide: image controls live in the element tab only; Slide tab == no-
   );
 });
 
-test('bulk modal (contentOnly) still renders the content fields the inspector dropped', () => {
-  const mount = renderForm({ type: 'content-slide', contentOnly: true });
+test('bulk modal (bulk surface) still renders the content fields the inspector dropped', () => {
+  const mount = renderForm({ type: 'content-slide', surface: 'bulk' });
   const labels = fieldLabels(mount);
   assert.ok(
     labels.some((l) => l.includes('title')),

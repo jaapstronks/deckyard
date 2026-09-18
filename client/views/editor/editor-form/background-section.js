@@ -14,8 +14,9 @@
  *    collapsed <details>, whose summary shows a thumbnail when a background is
  *    active — so a set background stays visible without costing the space.
  *
- * Inspector-only by construction: the bulk modal (`contentOnly`) renders content
- * fields and nothing here (the parity invariant, see editor-inspector.md).
+ * Rendered only on a surface whose row declares `background`
+ * (editor-form/surfaces.js): the inspector and the library editor, not the bulk
+ * modal (the parity invariant, see editor-inspector.md).
  */
 import { t } from '../../../lib/ui-i18n.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';

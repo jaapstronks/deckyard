@@ -35,6 +35,7 @@ import {
 } from './editor-form/ai-slide-notes.js';
 import { buildAiIteratePanel } from './editor-form/ai-iterate-panel.js';
 import { h } from '../../lib/dom.js';
+import { surfaceCapabilities } from './editor-form/surfaces.js';
 
 export function createRerenderEditor({
   editorMount,
@@ -64,16 +65,16 @@ export function createRerenderEditor({
   features,
   setInspectorCollapsed,
   // Mount points in the canvas header for the slide-scoped toolbar
-  // ({ leftEl, actionsEl }); absent in contentOnly mode and in tests.
+  // ({ leftEl, actionsEl }); absent on surfaces without a toolbar mount and
+  // in tests.
   slideToolbar,
   onOpenBulkEdit,
-  // Bulk-edit ("Edit all text") mode: render ONLY the per-type content fields
-  // into editorMount - no header/actions, no data-source bar, no duration, no
-  // AI panels, no Background/Accessibility sections, and inline-covered text
-  // fields render in place instead of tucked behind the collapsed Text
-  // section. Reuses the exact same field renderers, so the modal can never
-  // drift from what the form can edit (the phase-2 parity invariant).
-  contentOnly = false,
+  // Which surface this form renders on: a name from the declared table in
+  // editor-form/surfaces.js ('inspector' | 'bulk' | 'library'). Every part of
+  // the form that is not on every surface reads one capability from that row;
+  // nothing here branches on the name. All surfaces share the exact same
+  // field renderers, so no surface can drift from what the form can edit.
+  surface = 'inspector',
   // Selection-aware inspector: () => {kind:'image'|'card', idx} | null. When an
   // element is selected the inspector grows a [This element | Slide] tab bar.
   getSelectedElement,
@@ -81,6 +82,7 @@ export function createRerenderEditor({
   // Inspector-only: the bulk modal has no bottom panel and keeps its inline grid.
   onEditChartData,
 } = {}) {
+  const caps = surfaceCapabilities(surface);
   const {
     fieldText,
     fieldNumber,
@@ -136,7 +138,7 @@ export function createRerenderEditor({
     // Pane chrome (chrome re-org 2026-07-16). Everything scoped to the current
     // slide (type chip, "All text", lock, actions menu) renders into the slide
     // toolbar above the canvas instead.
-    if (!contentOnly) {
+    if (caps.headerActions) {
       // Collapse control. The "INSPECTOR" title it used to sit next to was
       // redundant beside the already-active Inspector pane tab, so the whole
       // 57px header row went (declutter 2026-07-26) — but the close button
@@ -157,11 +159,12 @@ export function createRerenderEditor({
         closeBtn.append(icon('x', { size: 16 }));
         closeSlot.append(closeBtn);
       }
+    }
 
+    if (caps.toolbar) {
       // Slide toolbar above the canvas: type chip + badges + "All text" on the
       // left; lock + slide-actions menu on the right. Rebuilt per slide.
       const tbLeft = slideToolbar?.leftEl || null;
-      const tbActions = slideToolbar?.actionsEl || null;
       if (tbLeft) {
         tbLeft.innerHTML = '';
         tbLeft.append(
@@ -234,7 +237,9 @@ export function createRerenderEditor({
           );
         }
       }
+    }
 
+    if (caps.headerActions) {
       const headerActionsResult = buildHeaderActions({
         slide,
         pres,
@@ -253,14 +258,15 @@ export function createRerenderEditor({
         isAuthor,
       });
       headerActionsDetach = headerActionsResult.detach;
+      const tbActions = slideToolbar?.actionsEl || null;
       if (tbActions) {
         tbActions.innerHTML = '';
         tbActions.append(headerActionsResult.el);
       }
-    } // end !contentOnly header
+    }
 
     // Data source indicator (shown for bindable slide types when live data is enabled)
-    if (!contentOnly) {
+    if (caps.deckTools) {
       const dsBar = buildDataSourceIndicator({
         slide,
         api,
@@ -275,7 +281,7 @@ export function createRerenderEditor({
     const durationWrap = buildSlideDurationControl({
       pres,
       slide,
-      contentOnly,
+      surface,
       markDirty,
       requestSave,
     });
@@ -319,7 +325,9 @@ export function createRerenderEditor({
     // and applies to this slide, its settings render into `elementForm` (the
     // "This element" tab) and the tab bar appears; the rest renders into `form`
     // (the "Slide" tab). With no selection there is no tab bar - just `form`.
-    const selectedElement = contentOnly ? null : getSelectedElement?.() || null;
+    const selectedElement = caps.elementTabs
+      ? getSelectedElement?.() || null
+      : null;
     const elementActive = elementAppliesToSlide(slide, selectedElement, {
       slideTypes: SLIDE_TYPES,
     });
@@ -336,13 +344,13 @@ export function createRerenderEditor({
     });
 
     // AI reasoning panel (shown for AI-generated slides)
-    if (!contentOnly) {
+    if (caps.deckTools) {
       const aiReasoning = buildAiReasoningPanel({ slide });
       if (aiReasoning) form.append(aiReasoning);
     }
 
     // AI warnings panel (shown when validation found issues)
-    if (!contentOnly) {
+    if (caps.deckTools) {
       const aiWarnings = buildAiWarningsPanel({ slide });
       if (aiWarnings) form.append(aiWarnings);
     }
@@ -350,9 +358,8 @@ export function createRerenderEditor({
     // AI Iterate panel (slide-level AI refinement). Built here, appended at
     // the very end of the form: the inspector is a settings pane first, and
     // the refine box is a tool, not a setting.
-    const aiIteratePanel = contentOnly
-      ? null
-      : buildAiIteratePanel({
+    const aiIteratePanel = caps.deckTools
+      ? buildAiIteratePanel({
           api,
           pres,
           slide,
@@ -360,7 +367,8 @@ export function createRerenderEditor({
           setSelectedSlideId,
           editorState,
           toast,
-        });
+        })
+      : null;
 
     // Accessibility fields (global) are tucked behind a toggle. a11yTitle/
     // a11ySummary are OVERRIDES, not the primary a11y mechanism: export/present
@@ -424,13 +432,12 @@ export function createRerenderEditor({
     const a11yBody = h('div', { class: 'editor-advanced-body' });
     a11yDetails.append(a11ySummary, a11yBody);
 
-    // Inspector mode (the default): the pane renders ONLY settings/design
-    // fields (the audit's "Inspector keeps"), plus Background and
-    // Accessibility. Content lives on the slide (wysiwyg) and - all of it,
-    // by construction - in the "Edit all text" bulk modal.
-    const inspectorKeeps = contentOnly
-      ? null
-      : getInspectorKeepKeys(slide.type, def);
+    // `fields: 'keeps'` (the inspector): the pane renders ONLY settings/design
+    // fields (the audit's "Inspector keeps"). Content lives on the slide
+    // (wysiwyg) and - all of it, by construction - on the `fields: 'all'`
+    // surfaces (the bulk modal, the library editor).
+    const inspectorKeeps =
+      caps.fields === 'keeps' ? getInspectorKeepKeys(slide.type, def) : null;
 
     // Migrate-on-edit: fold a legacy bgImage into the canonical slideBgImage
     // before the background controls read it, so the shared picker shows the
@@ -438,9 +445,8 @@ export function createRerenderEditor({
     // Type-agnostic on purpose: the pair is a content legacy any type could
     // declare, and a fork type that still does would otherwise render its own
     // picker next to the shared Background section. Idempotent, and a no-op on
-    // content without the pair; inspector mode only (the bulk modal never
-    // renders background controls).
-    if (!contentOnly) {
+    // content without the pair; only where background controls render.
+    if (caps.background) {
       ensureSlideBgImage(slide.content);
     }
 
@@ -475,10 +481,10 @@ export function createRerenderEditor({
       updateSelectedSlideListItem,
       onTranslateField,
       canEditCustomHtml,
-      // Inspector only: the csv-grid widget renders an "Edit data…" entry
-      // point into the bottom-panel Data tab; the bulk modal (contentOnly)
-      // has no bottom panel and keeps the inline grid.
-      onEditData: contentOnly ? null : onEditChartData,
+      // Deck tools only: the csv-grid widget renders an "Edit data…" entry
+      // point into the bottom-panel Data tab; a surface without that panel
+      // keeps the inline grid.
+      onEditData: caps.deckTools ? onEditChartData : null,
     });
 
     const isA11yFieldKey = (key) =>
@@ -514,8 +520,8 @@ export function createRerenderEditor({
         used.add(key);
         return;
       }
-      // Bulk-edit mode: a11y stays an inspector concern.
-      if (contentOnly && isA11yFieldKey(key)) {
+      // A surface without the Accessibility section renders a11y keys nowhere.
+      if (!caps.a11y && isA11yFieldKey(key)) {
         used.add(key);
         return;
       }
@@ -565,11 +571,9 @@ export function createRerenderEditor({
 
     // Background, split by how often you reach for it: the colour is a plain
     // field among the type's settings, the image (and everything that only
-    // matters once one is set) is a collapsed section. Inspector-only — the
-    // bulk modal renders content fields and nothing here.
-    const background = contentOnly
-      ? { colorGroup: null, imageSection: null }
-      : buildBackgroundControls({
+    // matters once one is set) is a collapsed section.
+    const background = caps.background
+      ? buildBackgroundControls({
           slide,
           pres,
           theme,
@@ -578,7 +582,8 @@ export function createRerenderEditor({
           fieldGrid,
           markDirty,
           scheduleUiRefresh,
-        });
+        })
+      : { colorGroup: null, imageSection: null };
 
     const formTypeCtx = {
       form,
@@ -617,8 +622,8 @@ export function createRerenderEditor({
       onEditChartData,
     };
 
-    if (contentOnly) {
-      // Bulk modal: the full per-type content form (parity by construction).
+    if (caps.fields === 'all') {
+      // The full per-type content form (parity by construction).
       renderSlideFormByType(formTypeCtx);
     } else {
       // Inspector: the shared image element card for any type declaring an
@@ -657,7 +662,7 @@ export function createRerenderEditor({
     if (background.imageSection) form.append(background.imageSection);
 
     // Append accessibility toggle if it has content
-    if (!contentOnly && a11yBody.childNodes?.length) form.append(a11yDetails);
+    if (caps.a11y && a11yBody.childNodes?.length) form.append(a11yDetails);
 
     // AI refine box last: tooling under the settings.
     if (aiIteratePanel) form.append(aiIteratePanel);
@@ -665,7 +670,7 @@ export function createRerenderEditor({
     // Selection-aware inspector: with an element selected and its element form
     // populated, show a [This element | Slide] tab bar over the two panels;
     // otherwise the pane is just the slide form (identical to pre-tab behavior).
-    if (!contentOnly && elementActive && elementForm.childNodes.length) {
+    if (caps.elementTabs && elementActive && elementForm.childNodes.length) {
       const tabBar = h('div', { class: 'inspector-tabs', role: 'tablist' });
       const mkTab = (label, isEl) => {
         const on = isEl === activeElementTab;

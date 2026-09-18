@@ -47,7 +47,7 @@ const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 function renderForm({
   type,
   content,
-  contentOnly = true,
+  surface = 'bulk',
   onEditChartData,
 } = {}) {
   const editorMount = document.createElement('div');
@@ -80,7 +80,7 @@ function renderForm({
     rerenderSlideList: noop,
     rerenderPreview: noop,
     fieldRenderers: createFieldRenderers(deps),
-    contentOnly,
+    surface,
     onEditChartData,
   }).rerender;
   rerender();
@@ -177,7 +177,7 @@ test('chart: inspector renders the "Edit data…" entry point instead of the gri
   let opened = 0;
   const { editorMount } = renderForm({
     type: 'chart-slide',
-    contentOnly: false,
+    surface: 'inspector',
     onEditChartData: () => {
       opened += 1;
     },

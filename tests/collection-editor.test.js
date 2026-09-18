@@ -2,7 +2,7 @@
  * Generic collection editor (editor-behaviour-abstraction step 3): ONE
  * schema-driven add/remove/reorder/collapse machine replaces the seven
  * hand-built per-type collection forms. These tests drive the bulk-modal
- * (contentOnly) render path for the migrated types and assert the editor is
+ * (`bulk` surface) render path for the migrated types and assert the editor is
  * driven by the collection field's schema: item widgets, collapse
  * declarations, min/max enforcement, the legacy-mirror skip, and nested
  * collections.
@@ -72,7 +72,7 @@ function renderForm({ type, content }) {
     rerenderSlideList: noop,
     rerenderPreview: noop,
     fieldRenderers: createFieldRenderers(deps),
-    contentOnly: true,
+    surface: 'bulk',
   }).rerender;
   rerender();
   return { editorMount, slide };

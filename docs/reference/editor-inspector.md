@@ -25,8 +25,9 @@ one of three surfaces:
 2. **The "Edit all text" bulk modal** (`client/views/editor/bulk-edit-modal.js`) -
    the non-wysiwyg mode: all content fields in one list on the left, a live
    contain-scaled preview on the right, ‹ x/N › navigation across the deck.
-   It mounts the _existing_ form field renderers in a `contentOnly` mode
-   (no chrome, no Background/Accessibility), so items add/remove/reorder,
+   It mounts the _existing_ form field renderers on the `bulk` surface
+   (no chrome, no Background/Accessibility; the surface table is
+   `client/views/editor/editor-form/surfaces.js`), so items add/remove/reorder,
    markdown editors and validation are parity-safe **by construction** - it
    renders every non-Background/non-a11y field a type has.
 3. **The inspector** - a slim settings rail on the right. Background,

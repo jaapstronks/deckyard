@@ -1339,7 +1339,7 @@ export async function createEditorController({
   // ============================================================
 
   // Shared between the panel form and the bulk-edit modal (which runs a second
-  // createRerenderEditor instance in contentOnly mode on its own mount).
+  // createRerenderEditor instance on the `bulk` surface on its own mount).
   const editorFormDeps = {
     editorMount,
     pres,
@@ -1370,8 +1370,8 @@ export async function createEditorController({
     features,
     setInspectorCollapsed,
     // Canvas-header mounts for the slide-scoped toolbar (type chip, All
-    // text, lock, actions). The contentOnly (bulk modal) instance renders
-    // no chrome, so sharing this dep is harmless there.
+    // text, lock, actions). The `bulk` surface has neither toolbar nor
+    // header actions, so sharing this dep is harmless there.
     slideToolbar: previewPanel.slideToolbar,
   };
 
@@ -1390,7 +1390,7 @@ export async function createEditorController({
       createRerenderEditor({
         ...editorFormDeps,
         editorMount: formMount,
-        contentOnly: true,
+        surface: 'bulk',
         // Keep the main canvas live too, and repaint the modal preview.
         scheduleUiRefresh: () => {
           scheduleUiRefresh();
@@ -1400,8 +1400,8 @@ export async function createEditorController({
           rerenderPreview();
           refreshModalPreview();
         },
-        // contentOnly skips the header actions dropdown, so this instance owns
-        // no document listeners and needs no detach.
+        // The `bulk` surface has no header actions dropdown, so this instance
+        // owns no document listeners and needs no detach.
       }).rerender,
   });
 
