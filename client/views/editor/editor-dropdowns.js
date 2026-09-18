@@ -33,18 +33,11 @@ export function createEditorDropdowns({
   user,
   slideTypes,
 }) {
-  // Export dropdown (file downloads)
-  const { exportEl: topbarExport, detach: detachExportDropdown } =
-    setupExportDropdown({
-      pres,
-      id,
-      root,
-    });
-
   // Share dropdown (sharing + publishing)
   const {
     shareEl: topbarShare,
     syncShareUi,
+    openShare,
     detach: detachShareDropdown,
   } = setupShareDropdown({
     api,
@@ -61,6 +54,15 @@ export function createEditorDropdowns({
     isAdmin: isOrganizationAdmin(user),
     slideTypes,
   });
+
+  // Export dropdown (file downloads)
+  const { exportEl: topbarExport, detach: detachExportDropdown } =
+    setupExportDropdown({
+      pres,
+      id,
+      root,
+      openPublic: () => openShare({ initialTab: 'public' }),
+    });
 
   const detach = () => {
     detachExportDropdown?.();

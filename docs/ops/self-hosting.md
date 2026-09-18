@@ -245,8 +245,8 @@ documented in `server/config/sandbox.js`.
 What sandbox mode does, and what it deliberately leaves on:
 
 - **Publishing is off.** The `/publish` route returns 403 and the editor hides
-  the Publish tab, so anonymous guests can't push arbitrary content onto a
-  public `/p/` URL on your domain.
+  the Share dialog's Public tab, so anonymous guests can't push arbitrary
+  content onto a public `/p/` URL on your domain.
 - **Direct uploads are off.** Guests can't upload their own files; the editor
   shows a sandbox-specific notice pointing them at the stock sources instead.
 - **AI generation is off.** The "From content · AI" creation flow and the

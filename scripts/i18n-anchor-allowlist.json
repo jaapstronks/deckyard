@@ -1366,12 +1366,8 @@
       "forms": ["Podaj nazwę.", "Wprowadź nazwę."],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "pl  Publish": {
-      "forms": ["Opublikuj", "Publikuj"],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "pl  Published": {
-      "forms": ["Opublikowane", "Opublikowano", "Opublikowany"],
+      "forms": ["Opublikowane", "Opublikowany"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
     "pl  Reset": {

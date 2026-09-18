@@ -25,6 +25,7 @@ import { buildExportUrl } from './publish-export/urls.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { getLangShortLabel } from '../../lib/format/lang-selector.js';
+import { getFeatures } from '../../lib/state/features.js';
 
 const LUCIDE = (name) => `/client/vendor/lucide-icons/${name}.svg`;
 
@@ -267,7 +268,7 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
 }
 
 /** Build one format row (icon + meta + action button(s)). */
-function buildFormatRow(fmt, { id, getLang, title }) {
+function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
   const icon = h('span', {
     class: 'export-format-icon',
     'data-color': fmt.color,
@@ -337,15 +338,24 @@ function buildFormatRow(fmt, { id, getLang, title }) {
   makeClickable(exportThis);
 
   // The self-contained HTML export is the offline twin of Publish (same build).
-  // Point users at the hosted, always-current alternative so they can choose.
-  if (fmt.key === 'html') {
-    const hint = h('div', {
-      class: 'export-format-hint',
-      text: t(
-        'editor.export.publishHint',
-        'Want a link that stays current and revocable? Publish it from the Share menu.',
-      ),
-    });
+  // Point users at the hosted, always-current alternative, and at the embed
+  // that only a published deck has: a link straight to the Share dialog's
+  // Public tab, the mirror of that tab's "Export as a web page instead →".
+  if (fmt.key === 'html' && openPublic) {
+    const hint = h('div', { class: 'export-format-hint' }, [
+      h('span', {
+        text: t(
+          'editor.export.publicHint',
+          'Want a link that stays current, or an embed for Notion or your site? ',
+        ),
+      }),
+      h('button', {
+        type: 'button',
+        class: 'link-button',
+        text: t('editor.export.publicLink', 'Publish the deck →'),
+        onclick: openPublic,
+      }),
+    ]);
     return h('div', { class: 'export-format-rowwrap' }, [row, hint]);
   }
 
@@ -359,9 +369,12 @@ function buildFormatRow(fmt, { id, getLang, title }) {
  * @param {Object} opts.pres - Presentation data
  * @param {string} opts.id - Presentation ID
  * @param {HTMLElement} opts.root - Element to append the modal to
+ * @param {Function} [opts.openPublic] - Opens the Share dialog on its Public
+ *   tab. Without it (or in sandbox mode, which has no publishing) the HTML row
+ *   carries no hint.
  * @returns {Object} Modal API
  */
-export function openExportModal({ pres, id, root }) {
+export function openExportModal({ pres, id, root, openPublic }) {
   const activeLang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
   // Every other version this deck actually has, not "the other one": a deck
   // with `nl`, `de` and `fr` offered exactly one of them for export before.
@@ -401,11 +414,24 @@ export function openExportModal({ pres, id, root }) {
     modal.append(langRow);
   }
 
+  const publicAvailable = !!openPublic && !getFeatures()?.sandboxMode;
   const list = h('div', { class: 'export-format-list' });
   for (const group of exportGroups()) {
     list.append(h('div', { class: 'export-format-group', text: group.title }));
     for (const fmt of group.formats) {
-      list.append(buildFormatRow(fmt, { id, getLang, title }));
+      list.append(
+        buildFormatRow(fmt, {
+          id,
+          getLang,
+          title,
+          openPublic: publicAvailable
+            ? () => {
+                modal.close();
+                openPublic();
+              }
+            : null,
+        }),
+      );
     }
   }
   modal.append(list);

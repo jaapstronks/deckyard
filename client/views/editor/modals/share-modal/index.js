@@ -2,10 +2,11 @@
  * Unified Share dialog.
  *
  * One place to answer "how do I get this deck in front of someone", organised
- * by audience rather than by mechanism:
- *   - Workspace: visibility + invite colleagues (hosted, you keep control)
- *   - Link: external token links for people without an account
- *   - Publish: put it on the open web + embed
+ * by audience rather than by mechanism, and the tabs are named after that
+ * audience (D174):
+ *   - Team: visibility + invite colleagues (people with an account here)
+ *   - Guests: token links for people without an account, chosen by you
+ *   - Public: anyone; put it on the open web, as a page and as an embed
  *
  * This replaces the old two-item split ("Share links…" + "Share to workspace")
  * and the separate publish/unpublish/notion dropdown entries.
@@ -44,12 +45,13 @@ import { h } from '../../../../lib/dom.js';
  * @param {Function} options.doPublish - Runs the publish flow
  * @param {Record<string, Object>} [options.slideTypes] - The editor's
  *   slide-type registry, to name the field a refused publish points at
- * @param {Function} options.buildPublishModalData - Builds publish URLs
- * @param {Function} options.openPublishModal - Opens the publish management modal
+ * @param {Function} options.openPreviewAddress - Opens the social preview +
+ *   slug modal of a published deck
  * @param {Function} options.handleNotionPublish - Adds the embed to Notion
  * @param {Function} options.notionAvailable - Returns true if Notion is enabled
  * @param {Function} options.openExport - Opens the Export modal
- * @param {'organization'|'link'|'publish'} [options.initialTab] - Tab to open on
+ * @param {'organization'|'guests'|'public'} [options.initialTab] - Tab to open
+ *   on; `'organization'` is the tab labelled Team
  * @returns {{ close: Function, refresh: Function }}
  */
 export function openShareModal({
@@ -70,8 +72,7 @@ export function openShareModal({
   openDescriptionModal,
   doPublish,
   slideTypes,
-  buildPublishModalData,
-  openPublishModal,
+  openPreviewAddress,
   handleNotionPublish,
   notionAvailable,
   openExport,
@@ -101,7 +102,7 @@ export function openShareModal({
   // owner's address is displayed.
   const canTransfer = isOwner(currentUser, pres);
 
-  // --- Organization tab (labelled "Workspace" in the UI) ---
+  // --- Organization tab (labelled "Team" in the UI) ---
   const visibility = createVisibilitySection({
     api,
     pres,
@@ -135,7 +136,7 @@ export function openShareModal({
     [visibility.el, collaborators.el],
   );
 
-  // --- Link tab ---
+  // --- Guests tab ---
   const shareLinks = createShareLinksSection({
     api,
     presentationId: id,
@@ -143,12 +144,14 @@ export function openShareModal({
     toast,
     modalRoot: root,
   });
-  const linkPanel = h('div', { class: 'share-tab-panel', 'data-tab': 'link' }, [
-    shareLinks.el,
-  ]);
+  const guestsPanel = h(
+    'div',
+    { class: 'share-tab-panel', 'data-tab': 'guests' },
+    [shareLinks.el],
+  );
 
-  // --- Publish tab ---
-  // Sandbox stance: no public published URLs, so the Publish tab is omitted
+  // --- Public tab ---
+  // Sandbox stance: no public published URLs, so the Public tab is omitted
   // entirely (no dead button). Mirrors the server-side 403 on /publish.
   const publishAvailable = !getFeatures()?.sandboxMode;
   const publish = publishAvailable
@@ -161,8 +164,7 @@ export function openShareModal({
         toast,
         doPublish,
         slideTypes,
-        buildPublishModalData,
-        openPublishModal,
+        openPreviewAddress,
         handleNotionPublish,
         notionAvailable,
         syncShareUi,
@@ -170,16 +172,14 @@ export function openShareModal({
         requestClose: close,
       })
     : null;
-  const publishPanel = publish
-    ? h('div', { class: 'share-tab-panel', 'data-tab': 'publish' }, [
-        publish.el,
-      ])
+  const publicPanel = publish
+    ? h('div', { class: 'share-tab-panel', 'data-tab': 'public' }, [publish.el])
     : null;
 
   const panels = {
     organization: organizationPanel,
-    link: linkPanel,
-    ...(publishPanel ? { publish: publishPanel } : {}),
+    guests: guestsPanel,
+    ...(publicPanel ? { public: publicPanel } : {}),
   };
 
   const showTab = (tab) => {
@@ -194,13 +194,10 @@ export function openShareModal({
     ariaLabel: t('share.modal.title', 'Share'),
     value: panels[initialTab] ? initialTab : 'organization',
     segments: [
-      {
-        value: 'organization',
-        label: t('share.tab.organization', 'Workspace'),
-      },
-      { value: 'link', label: t('share.tab.link', 'Link') },
-      ...(publishPanel
-        ? [{ value: 'publish', label: t('share.tab.publish', 'Publish') }]
+      { value: 'organization', label: t('share.tab.organization', 'Team') },
+      { value: 'guests', label: t('share.tab.guests', 'Guests') },
+      ...(publicPanel
+        ? [{ value: 'public', label: t('share.tab.public', 'Public') }]
         : []),
     ],
     onSelect: (val) => showTab(val),
@@ -208,8 +205,8 @@ export function openShareModal({
 
   const body = h('div', { class: 'share-modal-body' }, [
     organizationPanel,
-    linkPanel,
-    ...(publishPanel ? [publishPanel] : []),
+    guestsPanel,
+    ...(publicPanel ? [publicPanel] : []),
   ]);
 
   modal.append(tabs.el, body);
