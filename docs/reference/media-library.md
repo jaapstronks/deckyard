@@ -76,7 +76,7 @@ Third-party sources:
 Routes:
 
 - `server/routes/api/media.js` — provider status, presign/confirm,
-  and the ImageKit browse/patch endpoints.
+  the ImageKit browse/patch endpoints and the ImageKit → own media import.
 - `server/routes/api/uploads.js` — the server-side data-URL upload.
 - `server/routes/api/image-library.js` — the library CRUD, usage,
   favourites, alt-text generation and in-place replace.
@@ -150,9 +150,24 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
   `/uploads/…` URL in place (so every deck using it updates at once); it is
   refused for any item whose URL is not a local upload, and the replacement's
   mime must match the existing extension.
+- **Copy an ImageKit pick into own media** — `POST /api/media/imagekit/import
+{fileId, url?}` fetches a DAM asset and stores it through the active provider,
+  answering `{url, mime, bytes, sourceUrl}`. The editor calls it _before_ a
+  picked image reaches a slide, so a deck never depends on a live third-party
+  URL (the client side is
+  [`image-picker-seam.md`](image-picker-seam.md) § _Copy-on-pick_). Three
+  things bound it: it runs the **upload** gates (signed in, `enableUploads`,
+  not demo/sandbox, a provider initialized), it **resolves the `fileId` at
+  ImageKit** and fetches only that file's own URL — `url` is accepted only when
+  it is that URL plus a `?tr=…` transformation, which is what keeps this from
+  being a generic URL proxy — and the fetch runs the same SSRF guard as the
+  Notion re-host (they share `server/media/rehost.js`). A failure answers an
+  error and never a URL, so the editor can leave the slide untouched. Under
+  `IMAGEKIT_ONLY` it refuses with `uploads_disabled`: see _Config & flags_.
 - **ImageKit browse** — `GET /api/media/imagekit/files|tags|…/details` proxy an
   external DAM read-only, plus `PATCH …/details` to write tags/custom metadata
-  back. ImageKit items are never copied into `image_library`. Listings are
+  back. ImageKit items are never copied into `image_library` as catalogue
+  entries (the import above stores bytes, not a library row). Listings are
   **newest-first**: `files` sends `sort=DESC_CREATED` unless the caller passes
   another value from `IMAGEKIT_SORT_VALUES` (anything else is a 400), and the
   tag sample is drawn from the newest files for the same reason. ImageKit's own
@@ -211,7 +226,7 @@ Feature flags (`server/config/flags-snapshot.js`):
 
 | Flag                          | Effect                                                                                                                                                                |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `IMAGEKIT_ONLY`               | Forces both `enableUploads` and `enableImageLibrary` off — ImageKit becomes the only image source.                                                                    |
+| `IMAGEKIT_ONLY`               | Forces both `enableUploads` and `enableImageLibrary` off — ImageKit becomes the only image source. Refuses new ImageKit picks; see below.                             |
 | `UPLOADS_ENABLED=false`       | Blocks the upload paths (also forced by demo and sandbox mode).                                                                                                       |
 | `IMAGE_LIBRARY_ENABLED=false` | `/api/image-library/*` answers 404.                                                                                                                                   |
 | `DEMO_MODE` / sandbox mode    | Library is read-only (GET only): no upload, no create, no edit, no delete, no alt-text generation. Sandbox additionally prepends `listSandboxMedia()` to the listing. |
@@ -223,7 +238,16 @@ provider must be both _configured_ (key present) and _enabled_ (toggled on) to
 answer anything but `status`.
 
 Size ceilings, all hardcoded: local upload 10 MB, presigned upload 20 MB,
-stock-media import 20 MB (GIFs are large), in-place replace 10 MB.
+stock-media import 20 MB (GIFs are large), in-place replace 10 MB, ImageKit
+import 20 MB.
+
+### ImageKit picks require own media storage
+
+On an install with local or S3 storage and uploads enabled, a picked ImageKit image is copied into own media before the slide changes. The slide stores the copied URL and retains the ImageKit file id as provenance. The stored image is a snapshot: later deletion or re-tagging in ImageKit does not change it.
+
+With `IMAGEKIT_ONLY=true` or uploads otherwise disabled, new ImageKit picks are refused. The picker explains that image uploads must be enabled, shows the refusal inline, and leaves the slide unchanged. The import endpoint also refuses direct requests with `uploads_disabled`. Enable uploads and configure local or S3 storage to use ImageKit picks; the picker does not fall back to an external URL.
+
+Existing decks are not migrated. Any ImageKit URLs already stored in them retain their existing dependency on that DAM asset.
 
 ## Authz & tenancy
 
@@ -272,6 +296,9 @@ Known gaps and rough edges, honestly:
   its own alt-text seed field, and its items never enter `image_library` — so
   usage lookup, favourites and per-organization scoping do not apply to them.
   The normative target is one library concept; today there are two, and
-  `IMAGEKIT_ONLY` exists precisely because they do not merge.
+  `IMAGEKIT_ONLY` exists precisely because they do not merge. Copy-on-pick
+  narrows this without closing it: the _bytes_ of a picked asset now become own
+  media, but no catalogue row is created for them, so a copied image is
+  findable in the deck and not in the library.
 - **Favourites key on `user_email`**, not `users.id` — the identity track (T10)
   moves ownership to user ids elsewhere; this table has not been converted.

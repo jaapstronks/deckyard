@@ -1,6 +1,7 @@
 import { lockDocumentScroll } from './editor-utils.js';
 import { t } from '../../lib/ui-i18n.js';
 import { confirmModal, createModal } from '../../lib/dom/modal.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 import {
   cleanStr,
   uniq,
@@ -18,6 +19,7 @@ export function openImageKitPicker({
   root,
   context = null,
   docId = '',
+  note = '',
   onPick,
 } = {}) {
   if (typeof api !== 'function')
@@ -410,55 +412,88 @@ export function openImageKitPicker({
     });
     updateAltCheckbox.checked = altKey && !existingAltSeed;
 
+    const useError = createInlineError();
+
+    let submitting = false;
     const btnUse = h('button', {
       class: 'btn btn-primary',
       type: 'button',
       text: t('imagekit.use', 'Use this image'),
       onclick: async () => {
-        const seed = cleanStr(altTa.value);
-        if (!seed) {
-          const ok = await confirmModal(root, {
-            title: t('imagekit.alt.missingTitle', 'ALT text missing'),
-            message: t(
-              'imagekit.alt.missingConfirm',
-              'ALT seed is empty. Use this image anyway?',
-            ),
-          });
-          if (!ok) return;
-        }
-
-        // Save ALT to ImageKit if checkbox is checked
-        if (updateAltCheckbox.checked && altKey && seed) {
-          try {
-            const fileId = cleanStr(selected?.fileId);
-            const tag = bestEffortTag();
-            if (fileId) {
-              const nextTags = uniq(selected?.tags);
-              if (tag && !nextTags.includes(tag)) nextTags.push(tag);
-              const patch = {
-                customMetadata: { ...(cm || {}), [altKey]: seed },
-              };
-              if (nextTags.length) patch.tags = nextTags;
-              api(
-                `/api/media/imagekit/files/${encodeURIComponent(fileId)}/details`,
-                {
-                  method: 'PATCH',
-                  body: JSON.stringify(patch),
-                },
-              ).catch(() => {});
-            }
-          } catch {
-            // ignore - don't block "Use"
+        if (busy || submitting) return;
+        submitting = true;
+        btnUse.disabled = true;
+        try {
+          useError.clear();
+          const seed = cleanStr(altTa.value);
+          if (!seed) {
+            const ok = await confirmModal(root, {
+              title: t('imagekit.alt.missingTitle', 'ALT text missing'),
+              message: t(
+                'imagekit.alt.missingConfirm',
+                'ALT seed is empty. Use this image anyway?',
+              ),
+            });
+            if (!ok) return;
           }
-        }
 
-        onPick?.({
-          url: cleanStr(urlOut.value) || cleanStr(selected?.url),
-          fileId: cleanStr(selected?.fileId),
-          altSeed: seed,
-          tags: uniq(selected?.tags),
-        });
-        close();
+          // Save ALT to ImageKit if checkbox is checked
+          if (updateAltCheckbox.checked && altKey && seed) {
+            try {
+              const fileId = cleanStr(selected?.fileId);
+              const tag = bestEffortTag();
+              if (fileId) {
+                const nextTags = uniq(selected?.tags);
+                if (tag && !nextTags.includes(tag)) nextTags.push(tag);
+                const patch = {
+                  customMetadata: { ...(cm || {}), [altKey]: seed },
+                };
+                if (nextTags.length) patch.tags = nextTags;
+                api(
+                  `/api/media/imagekit/files/${encodeURIComponent(fileId)}/details`,
+                  {
+                    method: 'PATCH',
+                    body: JSON.stringify(patch),
+                  },
+                ).catch(() => {});
+              }
+            } catch {
+              // ignore - don't block "Use"
+            }
+          }
+
+          // Keep the dialog open until the copy succeeds.
+          let failure = null;
+          try {
+            setBusy(true);
+            statusLine.textContent = t('imagekit.use.working', 'One moment…');
+            await onPick?.({
+              url: cleanStr(urlOut.value) || cleanStr(selected?.url),
+              fileId: cleanStr(selected?.fileId),
+              altSeed: seed,
+              tags: uniq(selected?.tags),
+            });
+          } catch (e) {
+            failure = e;
+          } finally {
+            setBusy(false);
+            btnUse.disabled = false;
+            statusLine.textContent = '';
+          }
+          // After setBusy(false), so the button the refusal names can take focus.
+          if (failure) {
+            useError.show(
+              cleanStr(failure?.message) ||
+                t('imagekit.use.failed', 'Could not use this image.'),
+              { control: btnUse },
+            );
+            return;
+          }
+          close();
+        } finally {
+          submitting = false;
+          btnUse.disabled = false;
+        }
       },
     });
 
@@ -524,7 +559,11 @@ export function openImageKitPicker({
               ),
             }),
       ]),
+    );
+    if (note) detail.append(h('div', { class: 'help', text: note }));
+    detail.append(
       h('div', { class: 'imagekit-detail-actions' }, [btnGenerateAlt, btnUse]),
+      useError.el,
     );
   };
 

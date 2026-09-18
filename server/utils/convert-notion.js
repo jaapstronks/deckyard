@@ -25,11 +25,8 @@ import {
   uploadImageKitUrl,
   getImageKitConfigFromEnv,
 } from '../media/imagekit.js';
-import {
-  getMediaProvider,
-  isMediaProviderInitialized,
-} from '../media/index.js';
-import { safeFetchRemoteImage } from './ssrf-guard.js';
+import { isMediaProviderInitialized } from '../media/index.js';
+import { rehostRemoteImage } from '../media/rehost.js';
 import { createLogger } from './logger.js';
 import { DEFAULT_DECK_LANG } from '../../shared/i18n-utils.js';
 
@@ -179,29 +176,10 @@ async function rehostImageToMediaLibrary(img) {
     return img.url;
   }
 
-  // SSRF-guarded fetch: a Notion `external` image URL is attacker-controllable.
-  // safeFetchRemoteImage refuses non-public addresses, refuses redirects (which
-  // could hop into private space after the check), times out, and caps the body
-  // at maxBytes. A null return throws here, and processNotionImages falls back
-  // to the original URL for this one image.
-  const fetched = await safeFetchRemoteImage(img.url, {
-    maxBytes: 20 * 1024 * 1024,
-  });
-  if (!fetched) {
-    throw new Error('Blocked or failed to fetch image');
-  }
-  const contentType =
-    fetched.contentType === 'application/octet-stream'
-      ? 'image/jpeg'
-      : fetched.contentType;
-
-  const provider = getMediaProvider();
-  const { publicUrl } = await provider.uploadBuffer({
-    buffer: fetched.buffer,
+  // processNotionImages handles failures by retaining this image's original URL.
+  const { publicUrl } = await rehostRemoteImage({
+    url: img.url,
     filename: `notion-${img.blockId || cryptoUuid()}`,
-    contentType,
-    // Notion exports can be large; allow the same ceiling as stock media (20MB).
-    maxBytes: 20 * 1024 * 1024,
   });
 
   return publicUrl || img.url;

@@ -133,10 +133,22 @@ function bundledGradientsProvider(openBundledRaw) {
 
 /**
  * Adapter: ImageKit DAM picker.
+ *
+ * Copy into own media before notifying the caller. Refusals propagate to the
+ * picker so it can keep the dialog open without mutating the slide.
+ *
  * @param {Function} openImageKitRaw - bound `openImageKitPicker`
+ * @param {((pick: {fileId: string, url: string}) => Promise<{url: string}>)} [importToOwnMedia]
  * @returns {PickerProvider}
  */
-function imagekitProvider(openImageKitRaw) {
+function imagekitProvider(openImageKitRaw, importToOwnMedia) {
+  const canCopy = typeof importToOwnMedia === 'function';
+  const unavailableMessage = canCopy
+    ? ''
+    : t(
+        'editor.image.imagekit.noCopyNote',
+        'This image cannot be used because copying it into your own media requires image uploads to be enabled.',
+      );
   return {
     id: 'imagekit',
     label: t('editor.image.source.imagekit', 'ImageKit'),
@@ -152,15 +164,31 @@ function imagekitProvider(openImageKitRaw) {
         title: opts.title,
         docId: opts.docId,
         context: opts.context,
-        onPick: (picked) => {
+        note: unavailableMessage,
+        onPick: async (picked) => {
           const url = typeof picked?.url === 'string' ? picked.url.trim() : '';
           if (!url) return;
+          const fileId = picked?.fileId || undefined;
+
+          if (!canCopy) throw new Error(unavailableMessage);
+          const stored = await importToOwnMedia({ fileId, url });
+          const copied =
+            typeof stored?.url === 'string' ? stored.url.trim() : '';
+          if (!copied) {
+            throw new Error(
+              t(
+                'editor.image.imagekit.copyFailed',
+                'Copying this image into your own media did not return a URL.',
+              ),
+            );
+          }
+
           opts.onPick?.({
-            url,
+            url: copied,
             alt:
               typeof picked?.altSeed === 'string' ? picked.altSeed : undefined,
             tags: Array.isArray(picked?.tags) ? picked.tags : undefined,
-            providerId: picked?.fileId || undefined,
+            providerId: fileId,
           });
         },
       });
@@ -264,6 +292,8 @@ function openSourceChooser({ root, providers, hint, onChoose }) {
  * @param {Function} [args.openImageLibrary]     - bound `openImageLibraryPicker`
  * @param {Function} [args.openBundledGradients] - bound `openBundledGradientPicker`
  * @param {Function} [args.openImageKit]         - bound `openImageKitPicker`
+ * @param {Function} [args.importImageKitToOwnMedia] - copies a picked ImageKit
+ *   asset into own media; absent when this deployment has no own media.
  * @returns {((opts: PickerOpts) => void) & { providers: PickerProvider[] }}
  */
 export function createImagePickerSeam({
@@ -272,6 +302,7 @@ export function createImagePickerSeam({
   openImageLibrary,
   openBundledGradients,
   openImageKit,
+  importImageKitToOwnMedia,
 } = {}) {
   const flags = features && typeof features === 'object' ? features : {};
   const providers = [];
@@ -282,7 +313,7 @@ export function createImagePickerSeam({
     providers.push(bundledGradientsProvider(openBundledGradients));
   }
   if (typeof openImageKit === 'function') {
-    providers.push(imagekitProvider(openImageKit));
+    providers.push(imagekitProvider(openImageKit, importImageKitToOwnMedia));
   }
   orderProviders(providers);
 

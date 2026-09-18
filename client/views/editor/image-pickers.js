@@ -50,6 +50,15 @@ export async function createImagePickers({ root, user, api, features }) {
         })
     : undefined;
 
+  // Without uploads, the adapter refuses picks and explains the missing storage.
+  const importImageKitToOwnMedia = features?.enableUploads
+    ? ({ fileId, url }) =>
+        api('/api/media/imagekit/import', {
+          method: 'POST',
+          body: JSON.stringify({ fileId, url }),
+        })
+    : undefined;
+
   // Same rule as ImageKit: only offer a source the server says is usable, so
   // the chooser never shows a button that leads to a "not available" error.
   const stockMedia = await fetchStockMediaStatus();
@@ -67,6 +76,7 @@ export async function createImagePickers({ root, user, api, features }) {
     openImageLibrary,
     openBundledGradients,
     openImageKit,
+    importImageKitToOwnMedia,
   });
 
   return { openImagePicker };

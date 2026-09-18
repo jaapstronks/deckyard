@@ -168,6 +168,8 @@
   "imagekit.transform.original": "Origineel",
   "imagekit.url": "URL",
   "imagekit.use": "Deze afbeelding gebruiken",
+  "imagekit.use.failed": "Deze afbeelding kon niet worden gebruikt.",
+  "imagekit.use.working": "Moment…",
   "organization.members.changeRoleFor": "Rol van {name}",
   "organization.members.empty": "Geen leden gevonden.",
   "organization.members.gone": "Dat lid zit niet meer in deze organisatie.",
