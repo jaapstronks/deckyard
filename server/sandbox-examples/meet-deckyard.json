@@ -8,7 +8,7 @@
     "title-slide": "core/title-slide",
     "content-slide": "core/content-slide",
     "list-slide": "core/list-slide",
-    "chart-slide": "core/chart-slide",
+    "icon-card-grid-slide": "core/icon-card-grid-slide",
     "comparison-slide": "core/comparison-slide",
     "chapter-title-slide": "core/chapter-title-slide",
     "quote-slide": "core/quote-slide",
@@ -61,20 +61,20 @@
             "title": "No framework, no bundler",
             "text": "Vanilla JS modules on client and server"
           },
-          { "title": "Agent-friendly", "text": "The format is the API surface" }
+          {
+            "title": "Agent-friendly",
+            "text": "The format is the API surface"
+          }
         ],
         "background": "mist"
       }
     },
     {
-      "type": "chart-slide",
+      "type": "chapter-title-slide",
       "content": {
-        "title": "One format, many surfaces",
-        "subheading": "Where a single deck can be rendered",
-        "chartType": "bar",
-        "data": "Surface,Supported\nLive present,1\nSelf-serve editor,1\nStatic export,1\nAgent API,1\nEmbed / follow,1",
-        "showValues": "no",
-        "background": "lime"
+        "title": "Why decks-as-data",
+        "subheading": "What changes when a deck is a document, not a file",
+        "layout": "center"
       }
     },
     {
@@ -90,14 +90,6 @@
       }
     },
     {
-      "type": "chapter-title-slide",
-      "content": {
-        "title": "Why decks-as-data",
-        "subheading": "The idea the whole engine is built around",
-        "layout": "center"
-      }
-    },
-    {
       "type": "quote-slide",
       "content": {
         "quote": "The format is the product. Once the deck is just data, everything else — editing, exporting, generating — is a view over it.",
@@ -106,11 +98,43 @@
       }
     },
     {
-      "type": "quote-slide",
+      "type": "icon-card-grid-slide",
       "content": {
-        "quote": "I had an agent draft the whole deck, then cleaned it up by clicking on the slides. Same document the whole way through.",
-        "authorName": "An early user",
-        "authorTitle": "Self-hosted trial"
+        "title": "One deck, many surfaces",
+        "subheading": "The same document, wherever it needs to show up",
+        "items": [
+          {
+            "icon": "file-text",
+            "title": "Editor",
+            "body": "Click on the canvas to write, reorder and restyle"
+          },
+          {
+            "icon": "users",
+            "title": "Live presenting",
+            "body": "Presenter view, with polls the room answers on their phones"
+          },
+          {
+            "icon": "link",
+            "title": "Public link and embed",
+            "body": "Publish once, share a URL or drop it into a page"
+          },
+          {
+            "icon": "clipboard-text",
+            "title": "Export",
+            "body": "PDF, PowerPoint or a self-contained HTML file"
+          },
+          {
+            "icon": "gear",
+            "title": "Agent API",
+            "body": "Agents create and edit decks through the same format"
+          },
+          {
+            "icon": "arrow-right",
+            "title": "Follow along",
+            "body": "The audience follows the slides on their own screen"
+          }
+        ],
+        "background": "lime"
       }
     },
     {
@@ -118,7 +142,7 @@
       "content": {
         "title": "Try it here",
         "layout": "one-column",
-        "body": "You're looking at a live editor. Click any headline or paragraph to change it, reorder the slides, swap the theme from the toolbar.\n\nNothing you do here is saved to anyone else — this is your sandbox.",
+        "body": "You're looking at a live editor. Click any headline or paragraph to change it, reorder the slides, or switch the theme.\n\nThis copy is yours: nobody else sees what you change here.",
         "background": "lime"
       }
     },

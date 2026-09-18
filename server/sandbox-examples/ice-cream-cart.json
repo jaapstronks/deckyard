@@ -97,10 +97,22 @@
             "title": "Stracciatella",
             "text": "Fresh cream, shards of dark chocolate"
           },
-          { "title": "Wild Strawberry", "text": "Local fruit, minimal sugar" },
-          { "title": "Pistachio", "text": "Sicilian nuts, no colouring" },
-          { "title": "Espresso Chip", "text": "For the evening concert crowd" },
-          { "title": "Lemon Sorbet", "text": "Dairy-free, the heatwave hero" }
+          {
+            "title": "Wild Strawberry",
+            "text": "Local fruit, minimal sugar"
+          },
+          {
+            "title": "Pistachio",
+            "text": "Sicilian nuts, no colouring"
+          },
+          {
+            "title": "Espresso Chip",
+            "text": "For the evening concert crowd"
+          },
+          {
+            "title": "Lemon Sorbet",
+            "text": "Dairy-free, the heatwave hero"
+          }
         ],
         "background": "lime"
       }
@@ -119,12 +131,12 @@
           {
             "date": "May",
             "title": "Soft launch",
-            "text": "Weekends only on the promenade to tune the menu."
+            "text": "Afternoons on the promenade only, to tune the menu."
           },
           {
-            "date": "Jul",
+            "date": "Jun",
             "title": "Full season",
-            "text": "Seven days a week across all three pitches."
+            "text": "All day, seven days a week, across all three pitches."
           },
           {
             "date": "Sep",
@@ -138,17 +150,9 @@
     {
       "type": "quote-slide",
       "content": {
-        "quote": "The sea salt caramel is genuinely the best thing on this beach, and I have tried everything on this beach.",
+        "quote": "The sea salt caramel is the best thing I've tasted at this market, and I've tried every stall.",
         "authorName": "Dani Roos",
-        "authorTitle": "Regular, three visits this week"
-      }
-    },
-    {
-      "type": "quote-slide",
-      "content": {
-        "quote": "My kids now navigate the whole promenade by finding your cart. It's a landmark at this point.",
-        "authorName": "Familie Bakker",
-        "authorTitle": "Saturday market visitors"
+        "authorTitle": "Tasting day at the Saturday market"
       }
     },
     {
