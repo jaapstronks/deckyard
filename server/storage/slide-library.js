@@ -44,9 +44,14 @@ function jsonb(value) {
  * @param {object} row - Database row
  * @param {import('./display-identity.js').DisplayNameLookup} [lookup] -
  *   Resolved display names; omitted derives them from the stored address.
+ * @param {string|null} [viewerEmail] - Who is reading: `favorite` is theirs.
  * @returns {object}
  */
-export function mapSlideLibraryRow(row, lookup = NO_DISPLAY_NAMES) {
+export function mapSlideLibraryRow(
+  row,
+  lookup = NO_DISPLAY_NAMES,
+  viewerEmail = null,
+) {
   // Through the deck funnel on every read, like a presentation (B286): the
   // stored content can predate any step of the schema ledger, and every reader
   // of the library - preview, insert, compose, public API, MCP - reads here.
@@ -65,7 +70,11 @@ export function mapSlideLibraryRow(row, lookup = NO_DISPLAY_NAMES) {
     themeId: row.theme_id,
     content,
     i18n,
-    favorites: row.favorites || [],
+    // A favorite is per user (D170): the item carries the reader's own flag,
+    // derived from the stored `favorites` addresses. The addresses themselves
+    // never leave this layer — on the organization shelf they would name every
+    // colleague who starred the item (D22: an address is not a display value).
+    favorite: isFavoriteOf(row, viewerEmail),
     // The optimistic-concurrency token (D170): the client sends it back as
     // `If-Match`, and a name/description/content write raises it.
     revision: row.revision ?? 0,
@@ -90,6 +99,35 @@ export function mapSlideLibraryRow(row, lookup = NO_DISPLAY_NAMES) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+/**
+ * Whether `viewerEmail` starred this row. The stored addresses are the
+ * lowercased caller addresses the routes pass in.
+ * @param {{favorites?: string[]|null}} row
+ * @param {string|null} viewerEmail
+ * @returns {boolean}
+ */
+function isFavoriteOf(row, viewerEmail) {
+  const viewer = normalizeEmail(viewerEmail);
+  return !!viewer && (row.favorites || []).includes(viewer);
+}
+
+function normalizeEmail(email) {
+  return String(email || '')
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Map rows for the reader the context names (`ctx.actorEmail`: the caller).
+ * @param {object[]} rows
+ * @param {object} ctx - Storage context
+ * @returns {Promise<object[]>}
+ */
+async function mapRowsFor(rows, ctx) {
+  const lookup = await libraryDisplayNames(rows);
+  return rows.map((row) => mapSlideLibraryRow(row, lookup, ctx?.actorEmail));
 }
 
 // ============================================================
@@ -134,8 +172,7 @@ async function listSlideLibraryRows(ctx, opts = {}) {
   // § List reads.
   const rows = await query.execute();
 
-  const lookup = await libraryDisplayNames(rows);
-  return rows.map((row) => mapSlideLibraryRow(row, lookup));
+  return mapRowsFor(rows, ctx);
 }
 
 async function getSlideLibraryRow(id, ctx) {
@@ -150,7 +187,7 @@ async function getSlideLibraryRow(id, ctx) {
     .executeTakeFirst();
 
   if (!row) return null;
-  return mapSlideLibraryRow(row, await libraryDisplayNames([row]));
+  return (await mapRowsFor([row], ctx))[0];
 }
 
 async function createSlideLibraryRow(data, ctx) {
@@ -178,7 +215,8 @@ async function createSlideLibraryRow(data, ctx) {
       theme_id: data.themeId || null,
       content: jsonb(data.content || {}),
       i18n: jsonb(data.i18n || {}),
-      favorites: sql`${data.favorites || []}::text[]`,
+      // A new item has no favorites; starring is a PATCH of its own.
+      favorites: sql`'{}'::text[]`,
       created_by: actorEmail,
       created_by_user_id: actorUserId,
       updated_by: actorEmail,
@@ -187,7 +225,7 @@ async function createSlideLibraryRow(data, ctx) {
     .returningAll()
     .executeTakeFirst();
 
-  return mapSlideLibraryRow(row, await libraryDisplayNames([row]));
+  return (await mapRowsFor([row], ctx))[0];
 }
 
 // ============================================================
@@ -284,7 +322,19 @@ async function readItem(ctx, target) {
     orgId: getOrgId(ctx),
   }).executeTakeFirst();
   if (!row) return null;
-  return mapSlideLibraryRow(row, await libraryDisplayNames([row]));
+  return (await mapRowsFor([row], ctx))[0];
+}
+
+/**
+ * The SQL that sets or clears one caller's favorite, idempotently: remove the
+ * address, then append it again when the flag is on. One statement, so two
+ * toggles never lose each other's write.
+ * @param {string} email - Normalized caller address
+ * @param {boolean} on
+ */
+function favoritesWith(email, on) {
+  const without = sql`array_remove(coalesce(favorites, '{}'::text[]), ${email}::text)`;
+  return on ? sql`array_append(${without}, ${email}::text)` : without;
 }
 
 /**
@@ -356,15 +406,23 @@ async function patchLibraryItem(ctx, target, patch, opts = {}) {
     updateData.trashed_at = patch.trashed ? nowIso() : null;
     updateData.trashed_by = patch.trashed ? opts.trashedBy || null : null;
   }
-  // `favorite` is in the key set, but storing it is B334; until then a
-  // favorite-only patch writes nothing and answers with the item as it is.
+  // Only a change to the item itself is stamped as an update; a favorite is
+  // the caller's own mark and leaves `updated_at`/`updated_by` alone.
+  const changesItem = Object.keys(updateData).length > 0;
+  if ('favorite' in patch) {
+    const viewer = normalizeEmail(ctx?.actorEmail);
+    // Every route passes the caller; reaching this without one is a caller bug.
+    if (!viewer)
+      throw new TypeError('patchLibraryItem: a favorite needs an actor');
+    updateData.favorites = favoritesWith(viewer, patch.favorite);
+  }
   if (Object.keys(updateData).length === 0) return { ok: true, item: existing };
 
-  updateData.updated_at = nowIso();
+  if (changesItem) updateData.updated_at = nowIso();
   // Dual-key (T10 PR F2): stamp updated_by_user_id from the same resolution
   // only when there is an actor to stamp, so an actor-less write never nulls
   // the id half while the e-mail half keeps the previous writer.
-  if (ctx?.actorEmail) {
+  if (changesItem && ctx?.actorEmail) {
     const actorResolution = await resolveIdentityByEmail(ctx.actorEmail);
     updateData.updated_by = ctx.actorEmail;
     updateData.updated_by_user_id = actorResolution?.userId ?? null;
@@ -379,12 +437,7 @@ async function patchLibraryItem(ctx, target, patch, opts = {}) {
   // landed between the read above and this statement makes it match nothing.
   if (edits) query = query.where('revision', '=', expectedRevision);
   const row = await query.returningAll().executeTakeFirst();
-  if (row) {
-    return {
-      ok: true,
-      item: mapSlideLibraryRow(row, await libraryDisplayNames([row])),
-    };
-  }
+  if (row) return { ok: true, item: (await mapRowsFor([row], ctx))[0] };
   const now = await readItem(ctx, target);
   if (now && edits) throw conflictError(now);
   return { ok: false, reason: 'not_found' };

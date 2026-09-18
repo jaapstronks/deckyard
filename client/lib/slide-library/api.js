@@ -45,15 +45,15 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     const s = shelf === 'organization' ? 'organization' : 'personal';
     const id = cleanStr(item?.id);
     if (!id) return;
-    const current =
-      s === 'organization' ? !!item?.isFavorite : !!item?.favorite;
+    // `favorite` is the caller's own flag on both shelves (B334).
+    const current = !!item?.favorite;
     const optimistic = !current;
 
     // Optimistic UI: update immediately, then reconcile with server response.
-    const snap = state.patchInCache(s, id, (prev) => {
-      if (s === 'organization') return { ...prev, isFavorite: optimistic };
-      return { ...prev, favorite: optimistic };
-    });
+    const snap = state.patchInCache(s, id, (prev) => ({
+      ...prev,
+      favorite: optimistic,
+    }));
     rerender?.();
 
     try {

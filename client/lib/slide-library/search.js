@@ -15,8 +15,8 @@ import {
  */
 export function sortByPinnedThenName(items) {
   return [...items].sort((a, b) => {
-    const ap = !!(a?.favorite || a?.isFavorite);
-    const bp = !!(b?.favorite || b?.isFavorite);
+    const ap = !!a?.favorite;
+    const bp = !!b?.favorite;
     if (ap !== bp) return ap ? -1 : 1;
     const an = lower(a?.name);
     const bn = lower(b?.name);
