@@ -222,11 +222,13 @@ function normalizeAnalysisOutput(parsed, slides) {
  * @param {string[]} options.categories - Filter to specific suggestion categories
  * @param {string} options.vendor - LLM vendor override
  * @param {Function} options.onProgress - Callback for progress updates
+ * @param {AbortSignal} [options.signal] - Cancels the model call; the
+ *   promise then rejects with the signal's reason
  * @returns {Promise<Object>} Analysis results with suggestions
  */
 export async function analyzePresentation(
   presentation,
-  { categories = null, vendor = null, onProgress = null } = {},
+  { categories = null, vendor = null, onProgress = null, signal } = {},
 ) {
   const startTime = Date.now();
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
@@ -271,6 +273,7 @@ export async function analyzePresentation(
     responseFormat: { type: 'json_object' },
     maxTokens: 8192,
     messages,
+    signal,
   });
 
   if (onProgress) {

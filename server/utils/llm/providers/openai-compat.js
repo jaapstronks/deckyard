@@ -31,6 +31,7 @@ export async function requestOpenAiCompatChatCompletionContent(params = {}) {
     method: 'POST',
     headers,
     body: JSON.stringify(body),
+    signal: params.signal,
   });
 
   const bodyText = await resp.text();

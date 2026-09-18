@@ -11,7 +11,7 @@ export const SSE_HEARTBEAT_MS = 15_000;
  * Open a Server-Sent Events stream — the one way a handler turns a response
  * into an event stream. Writes the canonical header set, flushes it, starts
  * the per-connection heartbeat, applies the public-stream connection guard,
- * and wires cleanup to the request lifecycle.
+ * and wires cleanup to the connection lifecycle.
  *
  * The header set, each with its reason:
  * - `Content-Type: text/event-stream` — without `charset`: SSE is UTF-8 by
@@ -37,8 +37,19 @@ export const SSE_HEARTBEAT_MS = 15_000;
  *   handler already closed the stream itself via `close()` — a handler that
  *   replaces a stream (MCP GET) has already reassigned its references, and a
  *   late disconnect of the old socket must not clean up the new stream's.
- * @returns {{ ok: true, close: () => void } | { ok: false }} `ok: false`
- *   means the guard already sent a 429 — the handler should return handled.
+ * @returns {{ ok: true, close: () => void, signal: AbortSignal } | { ok: false }}
+ *   `ok: false` means the guard already sent a 429 — the handler should
+ *   return handled. `signal` aborts when the client goes away before the
+ *   handler ended the response: pass it to whatever work the stream reports
+ *   on (a provider fetch, a write loop) so a cancelled stream stops that
+ *   work instead of finishing it for nobody.
+ *
+ * Disconnect is read from the response, not the request. A request whose
+ * body the handler already consumed is done: `req` emits `close` right then
+ * and never again, so a POST stream (analyze, convert) listening on `req`
+ * would miss the client leaving. `res` emits `close` once, when the
+ * connection ends, and `writableFinished` says whether the handler got
+ * there first.
  */
 export function openSseStream(
   req,
@@ -81,15 +92,17 @@ export function openSseStream(
     if (heartbeatTimer) clearInterval(heartbeatTimer);
   };
 
-  req.on?.('close', () => {
+  const disconnect = new AbortController();
+  res.on?.('close', () => {
     // Capture before close() flips it: onClose only fires for a stream the
     // handler had not already closed, and at most once.
     const alreadyClosed = closed;
     close();
+    if (!res.writableFinished) disconnect.abort();
     if (!alreadyClosed) onClose?.();
   });
 
-  return { ok: true, close };
+  return { ok: true, close, signal: disconnect.signal };
 }
 
 export function sseWrite(res, { event, data } = {}) {
