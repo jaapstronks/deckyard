@@ -333,8 +333,8 @@ async function handleOrganizationCreate({
 
 // PATCH /api/slide-library/organization/:id - Update an organization-shelf item.
 // Permission model (D170): changing the name, description or content, and
-// trashing, follow one guard - admin or creator. Favorites are per-user and
-// open to every authed user (storing them is B334).
+// trashing, follow one guard - admin or creator. `favorite` is per user and
+// open to every member: it marks the caller's own star, not the shared item.
 async function handleOrganizationUpdate(
   { storageScope, req, res, authedUser },
   id,

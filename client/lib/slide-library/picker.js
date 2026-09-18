@@ -217,7 +217,7 @@ export function createSlideLibraryPicker({
     shelf,
     { afterSlideId, onPicked, rerender } = {},
   ) => {
-    const fav = shelf === 'organization' ? !!it?.isFavorite : !!it?.favorite;
+    const fav = !!it?.favorite;
     const type = cleanStr(it?.slideType);
     const insertDisabled = type === 'follow-invite-slide';
     const isSelected = state.isSelected(it.id);
@@ -262,7 +262,7 @@ export function createSlideLibraryPicker({
   };
 
   const renderCardOverlay = (it, shelf, card, { rerender } = {}) => {
-    const fav = shelf === 'organization' ? !!it?.isFavorite : !!it?.favorite;
+    const fav = !!it?.favorite;
     const isSelected = state.isSelected(it.id);
     const overlay = h('div', { class: 'ps-lib-thumb-overlay' });
 

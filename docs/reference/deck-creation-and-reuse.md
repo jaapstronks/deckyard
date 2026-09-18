@@ -194,6 +194,17 @@ writer that bypasses the route still meets them.
   guard, otherwise `403 forbidden`. Tags are not part of the edit key set: a
   tags write takes no `If-Match` and does not raise the revision, because
   tags classify the item rather than change what it shows.
+- **Favorite.** A favorite is the caller's own star, not a property of the
+  shared item. Every item a route returns carries one flag, `favorite: boolean`,
+  for the caller, on both shelves; it is derived from the stored `favorites`
+  column (lowercased addresses), and those addresses never leave the storage
+  layer, so the organization list does not name who else starred an item.
+  `PATCH { favorite: true|false }` adds or removes the caller in one
+  idempotent statement, selected through the same WHERE as every mutation
+  (someone else's personal item and the wrong shelf are `404 not_found`). On
+  the organization shelf every member may star an item they cannot edit. A
+  favorite takes no `If-Match`, does not raise the revision and does not stamp
+  `updatedAt` / `updatedBy`. A create never carries favorites.
 - **Revision.** Every item carries an integer `revision` (migration
   `082_slide_library_revision.js`, starting at 0). A PATCH with `name`,
   `description` or `content` needs `If-Match: <revision>` (read with
@@ -236,12 +247,13 @@ button stays, greyed out with the reason, the description and tags are read-only
 **Duplicate to my library** creates a personal copy (type, theme, content and
 `i18n`) and opens the editor on it.
 
-**Implementation status (2026-09-18, B335, B336, B340).** All of the above is
-enforced and shipped. The editor edits the base language; a language switch
-inside it is not part of v1. `favorite` is accepted but not yet stored (B334):
-a favorite-only PATCH writes nothing and returns the item. Pinned by
+**Implementation status (2026-09-18, B334, B335, B336, B340).** All of the
+above is enforced and shipped. The editor edits the base language; a language
+switch inside it is not part of v1. Pinned by
 `tests/pg/slide-library-save-contract.pgtest.js` (ownership, guard, atomic
 revision, merge on real PostgreSQL), `tests/slide-library-save-route.test.js`
 (key set, 428, custom-HTML on create),
 `tests/pg/slide-library-tags-acl.pgtest.js` (tags ownership, shelf and guard
-through the real route) and `tests/slide-library-merge-content.test.js`.
+through the real route), `tests/pg/slide-library-favorites.pgtest.js`
+(per-user star, shelf and ownership, no revision through the real route) and
+`tests/slide-library-merge-content.test.js`.
