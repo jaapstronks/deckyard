@@ -669,24 +669,27 @@ export async function createEditorController({
     syncShareUi: dropdowns.syncShareUi,
     markDirty,
     onOpenOverview: openDeckOverview,
-    onAnalyze: () => {
-      openAnalyzeModalImpl({
-        root,
-        api,
-        toast,
-        pres,
-        id,
-        onComplete: ({ suggestionCount } = {}) => {
-          if (suggestionCount > 0) {
-            // AI suggestions can land on any slide: widen the pane to the
-            // deck scope, then open the rail on it (syncRailState shows the
-            // panel, which loads the fresh suggestions).
-            commentsPanel?.setScope?.('all');
-            inspectorPanes.open('comments');
-          }
-        },
-      });
-    },
+    // AI Analysis exists only where AI does: with `enableAi` off the server
+    // answers its route 404, so the menu has no item for it (B337).
+    onAnalyze: features.enableAi
+      ? () =>
+          openAnalyzeModalImpl({
+            root,
+            api,
+            toast,
+            pres,
+            id,
+            onComplete: ({ suggestionCount } = {}) => {
+              if (suggestionCount > 0) {
+                // AI suggestions can land on any slide: widen the pane to the
+                // deck scope, then open the rail on it (syncRailState shows the
+                // panel, which loads the fresh suggestions).
+                commentsPanel?.setScope?.('all');
+                inspectorPanes.open('comments');
+              }
+            },
+          })
+      : undefined,
   });
 
   topbarTitle = topbarApi.topbarTitleEl;

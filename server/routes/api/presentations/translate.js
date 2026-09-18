@@ -3,7 +3,6 @@ import {
   updatePresentation,
 } from '../../../storage/presentations/index.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { translatePresentationStrings } from '../../../utils/openai/translate.js';
 import {
   badRequest,
@@ -22,8 +21,6 @@ export async function handlePresentationTranslate(
   id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const flags = getFeatureFlags();
-  if (!flags.enableAi) return notFound(res);
 
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;

@@ -3,11 +3,11 @@
  * POST /api/v1/presentations/:id/translate and GET /api/v1/translate/languages.
  *
  * The surface these pin, per docs/openapi.yaml: the supported-languages
- * listing, the request-validation ladder of the translate endpoint (permission
- * → daily AI limit → AI kill switch → body → deck access → language
- * validation) and its status codes: 403 without the `ai` permission, 429 with
- * rate-limit headers when the daily AI budget is spent, 503 with AI_ENABLED=false,
- * 400 for invalid/equal languages and for an existing target without
+ * listing, the request-validation ladder of the translate endpoint (AI kill
+ * switch → permission → daily AI limit → body → deck access → language
+ * validation) and its status codes: not mounted with AI_ENABLED=false (the v1
+ * dispatcher answers 404, B337), 403 without the `ai` permission, 429 with
+ * rate-limit headers when the daily AI budget is spent, 400 for invalid/equal languages and for an existing target without
  * overwrite, 403/404 for inaccessible decks.
  *
  * The success path is NOT covered: it calls the configured LLM vendor
@@ -267,13 +267,20 @@ test('POST /translate answers 429 with limit details when the daily AI budget is
   assert.ok(ctx.res.headers['X-RateLimit-Reset']);
 });
 
-test('POST /translate answers 503 when AI is disabled on the install', async () => {
-  await installDb();
+// B337: an AI route with AI off is not mounted. The module declines the path,
+// so the v1 dispatcher falls through to its 404 — the answer /ai/* gives too —
+// and neither the permission nor the daily AI quota is consulted.
+test('POST /translate is not mounted when AI is disabled on the install', async () => {
+  await installDb({ aiUsedToday: 10 });
   process.env.AI_ENABLED = 'false';
   try {
-    const ctx = translateCtx(DECK_ID, { targetLang: 'fr' });
-    await handleTranslation(ctx);
-    assert.equal(ctx.res.statusCode, 503);
+    const ctx = translateCtx(
+      DECK_ID,
+      { targetLang: 'fr' },
+      { permissions: [] },
+    );
+    assert.equal(await handleTranslation(ctx), false);
+    assert.equal(ctx.res.statusCode, null, 'nothing is written');
   } finally {
     delete process.env.AI_ENABLED;
   }
@@ -284,8 +291,8 @@ test('POST /translate still honors the legacy DISABLE_AI spelling (until 2026-11
   process.env.DISABLE_AI = 'true';
   try {
     const ctx = translateCtx(DECK_ID, { targetLang: 'fr' });
-    await handleTranslation(ctx);
-    assert.equal(ctx.res.statusCode, 503);
+    assert.equal(await handleTranslation(ctx), false);
+    assert.equal(ctx.res.statusCode, null, 'nothing is written');
   } finally {
     delete process.env.DISABLE_AI;
   }

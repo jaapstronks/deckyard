@@ -200,10 +200,26 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
 | `NODE_ENV`                                                             | `utils/ai/logging.js`            | Full conversation logging is disabled in production.                                                                                                           |
 
 Feature flags (`server/config/flags-snapshot.js`): `enableAi` — off with
-`AI_ENABLED=false`, **demo mode** or **sandbox mode** — when false makes the
-router skip `handleAi` and `handleConvert` entirely, so `/api/ai/*` 404s rather
-than erroring per call. `aiAltText` additionally requires OpenAI as the resolved default
-vendor.
+`AI_ENABLED=false`, **demo mode** or **sandbox mode**. When it is false, **every
+AI entry is not mounted**, one rule on every surface (B337):
+
+- **Internal API** — the router skips `handleAi` and `handleConvert` entirely,
+  so `/api/ai/*` 404s. Every other route that spends tokens (deck analysis,
+  translate and its `fields`/`missing` variants, description generation,
+  version compare, alt-text generation) declares `ai: true` in its route table,
+  and `dispatchRoutes` (`server/utils/router.js`) answers it 404 before the
+  handler runs — so before any SSE header. A new AI route declares the flag; it
+  does not re-check `enableAi` itself.
+- **Public API v1** — `/api/v1/ai/*` and `POST /api/v1/presentations/:id/translate`
+  fall through to the v1 404.
+- **MCP** — a tool with the `ai` permission is left out of `tools/list` and
+  answered as an unknown tool (`isToolMounted`, `server/mcp/authorization.js`),
+  with or without an API key.
+- **Background work** — the weekly digest uses its template instead of the model.
+- **Client** — the editor shows no AI entry for a route that would 404 (the
+  "AI Analysis" menu item, "Analyze with AI" in version compare).
+
+`aiAltText` additionally requires OpenAI as the resolved default vendor.
 
 **Sandbox stance** (`utils/llm/config.js`): the sandbox allows Mistral and
 nothing else — an explicit request for another vendor is a `400`, not a silent

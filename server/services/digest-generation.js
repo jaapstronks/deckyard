@@ -3,6 +3,7 @@
  * Generates natural language engagement summaries for weekly digest emails.
  */
 
+import { getFeatureFlags } from '../config/flags-snapshot.js';
 import { getLlmConfig } from '../utils/llm/config.js';
 import { requestChatCompletionContent } from '../utils/llm/index.js';
 import { formatDuration } from '../storage/analytics/index.js';
@@ -26,6 +27,12 @@ export async function generateDigestWithAI(user, analytics) {
   // If no activity, return a simple fallback without calling AI
   if (!analytics.hasActivity) {
     return generateNoActivityDigest(user, analytics);
+  }
+
+  // AI switched off on this instance (kill switch, demo, sandbox): the
+  // template digest, never a vendor call.
+  if (!getFeatureFlags().enableAi) {
+    return generateFallbackDigest(user, analytics);
   }
 
   const { vendor, apiKey, model } = getLlmConfig({});
@@ -68,6 +75,10 @@ export async function generateDigestWithAI(user, analytics) {
 export async function generateTeamDigestWithAI(admin, teamAnalytics) {
   if (!teamAnalytics.hasActivity) {
     return generateNoActivityTeamDigest(admin, teamAnalytics);
+  }
+
+  if (!getFeatureFlags().enableAi) {
+    return generateFallbackTeamDigest(admin, teamAnalytics);
   }
 
   const { vendor, apiKey, model } = getLlmConfig({});

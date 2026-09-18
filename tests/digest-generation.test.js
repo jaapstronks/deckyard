@@ -295,6 +295,36 @@ test('team: AI throwing falls back to the template team digest', async () => {
 });
 
 // ---------------------------------------------------------------------------
+// AI switched off on the instance (B337) — the template, never a vendor call.
+// ---------------------------------------------------------------------------
+
+test('solo: AI_ENABLED=false gives the template digest without calling AI', async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({ highlights: 'model prose' });
+  process.env.AI_ENABLED = 'false';
+  try {
+    const digest = await generateDigestWithAI(user, soloAnalytics());
+    assert.equal(lastFetch, null, 'the kill switch keeps the vendor uncalled');
+    assert.match(digest.highlights, /120 views from 45 unique viewers/);
+  } finally {
+    delete process.env.AI_ENABLED;
+  }
+});
+
+test('team: AI_ENABLED=false gives the template team digest without calling AI', async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({ highlights: 'model prose' });
+  process.env.AI_ENABLED = 'false';
+  try {
+    const digest = await generateTeamDigestWithAI(admin, teamAnalytics());
+    assert.equal(lastFetch, null, 'the kill switch keeps the vendor uncalled');
+    assert.match(digest.highlights, /500 views from 200 unique viewers/);
+  } finally {
+    delete process.env.AI_ENABLED;
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Name handling — email prefix when no display name is set.
 // ---------------------------------------------------------------------------
 
