@@ -57,6 +57,21 @@ export function errorText(obj, fallback = '') {
   return fallback;
 }
 
+/**
+ * Build the request headers for `api()`: the JSON default, with the caller's
+ * own headers merged on top. A `Headers` object does the merge, so names
+ * compare case-insensitively and an explicit `Content-Type` (any spelling)
+ * replaces the default instead of sitting next to it.
+ *
+ * @param {HeadersInit} [custom] - the caller's `opts.headers`.
+ * @returns {Headers}
+ */
+export function requestHeaders(custom) {
+  const headers = new Headers({ 'Content-Type': 'application/json' });
+  new Headers(custom || {}).forEach((value, name) => headers.set(name, value));
+  return headers;
+}
+
 export async function api(path, opts = {}) {
   // Auto-stringify body if it's an object (not FormData, Blob, etc.)
   const body =
@@ -67,13 +82,16 @@ export async function api(path, opts = {}) {
       ? JSON.stringify(opts.body)
       : opts.body;
 
+  // `headers` and `body` come after `...opts`: both are derived from it, and
+  // spreading `opts` last would put the caller's raw `headers` back in place
+  // of the merged set (B341).
   // The one sanctioned fetch call: this module IS the network layer.
   // eslint-disable-next-line no-restricted-syntax
   const res = await fetch(path, {
     credentials: 'include',
     cache: 'no-store',
-    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
     ...opts,
+    headers: requestHeaders(opts.headers),
     body,
   });
   if (!res.ok) {
