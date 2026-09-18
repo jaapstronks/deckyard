@@ -144,7 +144,7 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
   `/api/image-library/:id/generate-alts` (an existing item) returns
   `{alts: {<lang>: <text>, …}}` as a _preview_; it does not persist. Saving is a
   subsequent `PUT`. The keys of `alts` follow the deck languages the caller
-  names in `langs`: the image library sends the workspace's enabled set, an
+  names in `langs`: the image library sends the organization's enabled set, an
   admin setting (Settings > Admin > supported slide languages), so one run
   writes one key per enabled language. Codes outside the deck-language axis are
   dropped; an empty or invalid list falls back to `nl` and `en-GB`
