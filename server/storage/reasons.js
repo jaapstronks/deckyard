@@ -91,6 +91,13 @@ export const REASONS = Object.freeze(
     held: { status: 409, kind: 'caller' },
     inactive: { status: 409, kind: 'caller' },
     locked: { status: 409, kind: 'caller' },
+    // The deck exists but is not in the trash; permanent deletion is the second
+    // step of trashing, never a shortcut past it.
+    not_trashed: { status: 409, kind: 'caller' },
+    // The deck is in the trash, but trashed again after the deadline the caller
+    // selected it against — a distinct state from `not_trashed`, and the one
+    // the retention sweep skips on.
+    not_due: { status: 409, kind: 'caller' },
     last_owner: { status: 409, kind: 'caller' },
     limit_exceeded: { status: 409, kind: 'caller' },
     order_mismatch: { status: 409, kind: 'caller' },

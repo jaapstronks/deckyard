@@ -236,7 +236,11 @@ test('every facade entry point refuses a bare repoRoot', async () => {
     ['deletePresentation', (fn) => fn('/srv', 'deck-1')],
     ['listTrashedPresentations', (fn) => fn('/srv')],
     ['restorePresentation', (fn) => fn('/srv', 'deck-1')],
-    ['permanentlyDeletePresentation', (fn) => fn('/srv', 'deck-1')],
+    ['deletePresentationRecord', (fn) => fn('/srv', 'deck-1')],
+    [
+      'listTrashedPresentationsBefore',
+      (fn) => fn('/srv', '2026-01-01T00:00:00.000Z'),
+    ],
     ['duplicatePresentation', (fn) => fn('/srv', 'deck-1')],
     ['getFirstSlidesForIds', (fn) => fn('/srv', ['deck-1'])],
     ['listPresentationVersions', (fn) => fn('/srv', 'deck-1')],

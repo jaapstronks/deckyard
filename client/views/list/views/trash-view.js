@@ -1,6 +1,10 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { getFeatures } from '../../../lib/state/features.js';
+
+/** The retention window the server actually sweeps on, for the hint. */
+const DEFAULT_TRASH_RETENTION_DAYS = 30;
 
 /**
  * Create the trash view (lazy-loaded)
@@ -16,11 +20,17 @@ export function createTrashView({ api, renderCard }) {
     class: 'presentation-grid-title',
     text: t('list.trash.title', 'Trash'),
   });
+  // The number comes from the server's TRASH_RETENTION_DAYS, the same value the
+  // retention sweep deletes on — the hint states a promise, so it may not state
+  // a different number than the one being kept.
+  const days =
+    getFeatures()?.trashRetentionDays || DEFAULT_TRASH_RETENTION_DAYS;
   const trashHint = h('p', {
     class: 'help',
     text: t(
       'list.trash.hint',
-      'Items in trash will be permanently deleted after 30 days. You can restore them before then.',
+      'Items in trash will be permanently deleted after {days} days. You can restore them before then.',
+      { days },
     ),
   });
   const trashList = h('div', { class: 'list presentation-grid' });

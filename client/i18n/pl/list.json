@@ -244,7 +244,7 @@
   "list.time.justNow": "przed chwilą",
   "list.time.minutesAgo": "{count} min temu",
   "list.trash.empty": "Kosz jest pusty.",
-  "list.trash.hint": "Elementy w koszu zostaną trwale usunięte po 30 dniach. Do tego czasu można je przywrócić.",
+  "list.trash.hint": "Elementy w koszu zostaną trwale usunięte po {days} dniach. Do tego czasu można je przywrócić.",
   "list.trash.loadError": "Nie udało się załadować kosza.",
   "list.trash.loading": "Ładowanie…",
   "list.trash.title": "Kosz",

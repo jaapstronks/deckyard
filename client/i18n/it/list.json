@@ -243,7 +243,7 @@
   "list.time.justNow": "adesso",
   "list.time.minutesAgo": "{count} min fa",
   "list.trash.empty": "Il cestino è vuoto.",
-  "list.trash.hint": "Gli elementi nel cestino verranno eliminati definitivamente dopo 30 giorni. Fino ad allora puoi ripristinarli.",
+  "list.trash.hint": "Gli elementi nel cestino verranno eliminati definitivamente dopo {days} giorni. Fino ad allora puoi ripristinarli.",
   "list.trash.loadError": "Impossibile caricare il cestino.",
   "list.trash.loading": "Caricamento…",
   "list.trash.title": "Cestino",

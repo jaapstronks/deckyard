@@ -243,7 +243,7 @@
   "list.time.justNow": "agora mesmo",
   "list.time.minutesAgo": "há {count} min",
   "list.trash.empty": "A reciclagem está vazia.",
-  "list.trash.hint": "Os itens na reciclagem são eliminados definitivamente ao fim de 30 dias. Até lá pode restaurá-los.",
+  "list.trash.hint": "Os itens na reciclagem são eliminados definitivamente ao fim de {days} dias. Até lá pode restaurá-los.",
   "list.trash.loadError": "Não foi possível carregar a reciclagem.",
   "list.trash.loading": "A carregar…",
   "list.trash.title": "Reciclagem",

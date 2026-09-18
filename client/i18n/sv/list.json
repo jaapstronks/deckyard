@@ -243,7 +243,7 @@
   "list.time.justNow": "just nu",
   "list.time.minutesAgo": "{count} min sedan",
   "list.trash.empty": "Papperskorgen är tom.",
-  "list.trash.hint": "Objekt i papperskorgen tas bort permanent efter 30 dagar. Till dess kan du återställa dem.",
+  "list.trash.hint": "Objekt i papperskorgen tas bort permanent efter {days} dagar. Till dess kan du återställa dem.",
   "list.trash.loadError": "Det gick inte att läsa in papperskorgen.",
   "list.trash.loading": "Läser in…",
   "list.trash.title": "Papperskorg",
