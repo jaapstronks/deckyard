@@ -216,6 +216,8 @@ export function createSlideLibraryModals({
       api,
       initialTags: initialTagNames,
       placeholder: t('slideLibrary.tagsPlaceholder', 'Add tags…'),
+      // Tags follow the same rule as the description (D170, B340).
+      readOnly: !canEdit,
       onChange: async (newTags) => {
         const result = await apiOps.saveTags(shelf, it, newTags);
         if (!result.ok) {

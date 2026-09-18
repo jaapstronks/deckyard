@@ -9,6 +9,7 @@ import { t } from '../../lib/ui-i18n.js';
  * @param {string[]} opts.initialTags - Initial tag names
  * @param {Function} opts.onChange - Callback when tags change
  * @param {string} [opts.placeholder] - Input placeholder
+ * @param {boolean} [opts.readOnly] - Show the tags without offering an edit
  * @returns {object} - { el, getTags, setTags, detach }
  */
 export function createTagEditor({
@@ -16,6 +17,7 @@ export function createTagEditor({
   initialTags = [],
   onChange,
   placeholder,
+  readOnly = false,
 }) {
   let tags = [...initialTags];
   let suggestions = [];
@@ -42,14 +44,20 @@ export function createTagEditor({
   const suggestionsEl = h('div', { class: 'tag-editor-suggestions' });
 
   inputWrapper.append(input, suggestionsEl);
-  el.append(tagsContainer, inputWrapper);
+  el.append(tagsContainer);
+  if (!readOnly) el.append(inputWrapper);
 
   // Render the tags
   function renderTags() {
     tagsContainer.innerHTML = '';
     for (const tag of tags) {
+      const text = h('span', { class: 'tag-editor-tag-text', text: tag });
+      if (readOnly) {
+        tagsContainer.append(h('span', { class: 'tag-editor-tag' }, [text]));
+        continue;
+      }
       const tagEl = h('span', { class: 'tag-editor-tag' }, [
-        h('span', { class: 'tag-editor-tag-text', text: tag }),
+        text,
         h('button', {
           class: 'tag-editor-tag-remove',
           type: 'button',

@@ -116,12 +116,14 @@ async function handleGet(ctx, itemId) {
     return true;
   }
 
-  const tags = await getTagsForSlideLibraryItem(storageScope, itemId, {
-    userEmail: apiKey.ownerEmail,
-  });
+  const tagged = await getTagsForSlideLibraryItem(
+    storageScope,
+    { id: itemId, shelf: 'organization' },
+    { userEmail: apiKey.ownerEmail },
+  );
 
   await apiSuccess(ctx, {
-    item: sanitizeLibraryItem(item, tags),
+    item: sanitizeLibraryItem(item, tagged.ok ? tagged.tags : []),
   });
   return true;
 }

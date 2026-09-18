@@ -370,38 +370,63 @@ async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
   return true;
 }
 
-// GET /api/slide-library/personal/:id/tags | /api/slide-library/organization/:id/tags
-async function handleItemTagsGet({ storageScope, res, authedUser }, id) {
-  const tags = await getTagsForSlideLibraryItem(storageScope, id, {
-    userEmail: actorEmail(authedUser),
-  });
-  serveJson(res, 200, tags);
-  return true;
+// GET /api/slide-library/{personal|organization}/:id/tags - Someone else's
+// personal item, or an item on the other shelf, is a 404. Organization-shelf
+// tags are readable by every member. The storage layer selects the item through
+// the same WHERE as every mutation, so the route adds no rule of its own (B340).
+function itemTagsGet(shelf) {
+  return async function handleItemTagsGet(
+    { storageScope, res, authedUser },
+    id,
+  ) {
+    const r = await getTagsForSlideLibraryItem(
+      storageScope,
+      { id, shelf },
+      { userEmail: actorEmail(authedUser) },
+    );
+    if (!r.ok) return mutationError(res, r);
+    serveJson(res, 200, r.tags);
+    return true;
+  };
 }
 
-// PUT /api/slide-library/personal/:id/tags | /api/slide-library/organization/:id/tags
+// PUT /api/slide-library/{personal|organization}/:id/tags
 // Body: `{ tags: [...] }` — the one canonical shape (B55). A bare array is a
 // 400 from the entry's object guarantee; a missing/non-array `tags` is a 400
-// here.
-async function handleItemTagsPut({ storageScope, req, res, authedUser }, id) {
-  const parsed = await requireJsonBody(req, res);
-  if (!parsed.ok) return true;
-  const tagNames = parsed.body.tags;
-  if (!Array.isArray(tagNames)) {
-    return badRequest(res, 'Expected { tags: [...] }');
-  }
-  const tags = await setTagsForSlideLibraryItem(storageScope, id, tagNames, {
-    userEmail: actorEmail(authedUser),
-  });
-  serveJson(res, 200, tags);
-  return true;
+// here. On the organization shelf, writing tags is changing a shared item:
+// admin or creator (D170), otherwise a 403. Tags take no If-Match; they do
+// not raise the revision.
+function itemTagsPut(shelf) {
+  return async function handleItemTagsPut(
+    { storageScope, req, res, authedUser },
+    id,
+  ) {
+    const parsed = await requireJsonBody(req, res);
+    if (!parsed.ok) return true;
+    const tagNames = parsed.body.tags;
+    if (!Array.isArray(tagNames)) {
+      return badRequest(res, 'Expected { tags: [...] }');
+    }
+    const r = await setTagsForSlideLibraryItem(
+      storageScope,
+      { id, shelf },
+      tagNames,
+      {
+        actorEmail: actorEmail(authedUser),
+        allowEdit: (item) => canEditOrganizationItem(authedUser, item),
+      },
+    );
+    if (!r.ok) return mutationError(res, r);
+    serveJson(res, 200, r.tags);
+    return true;
+  };
 }
 
 /**
  * Declarative route table for `/api/slide-library*` (A7.19 C8). Order matches
  * the previous if-chain; each path group sent an explicit 405, preserved as
  * trailing catch-all rows (Form B). The two tags groups share one GET and one
- * PUT handler, exactly as their bodies were identical in the chain.
+ * PUT handler factory; the row names the shelf, which selects the item (B340).
  *
  * The `/usage` catch-all previously called `methodNotAllowed(res)` without an
  * Allow list, which crashed on `allowed.join` — a wrong method there got a 500
@@ -484,12 +509,12 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/,
-    handler: handleItemTagsGet,
+    handler: itemTagsGet('personal'),
   },
   {
     method: 'PUT',
     pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/,
-    handler: handleItemTagsPut,
+    handler: itemTagsPut('personal'),
   },
   {
     pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/,
@@ -498,12 +523,12 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,
-    handler: handleItemTagsGet,
+    handler: itemTagsGet('organization'),
   },
   {
     method: 'PUT',
     pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,
-    handler: handleItemTagsPut,
+    handler: itemTagsPut('organization'),
   },
   {
     pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,

@@ -582,32 +582,53 @@ export async function deleteOrganizationLibraryItem(
 
 // Slide library tag functions
 // These reuse the organization's existing tags (server/storage/tags), joined
-// through slide_library_tags. Thin queries, inlined here 1:1.
+// through slide_library_tags. The single-item reader and the writer select the
+// item through `whereItem` first — on the personal shelf the caller is the
+// owner, as in `updatePersonalLibraryItem` — so tags follow the save contract (D170): an
+// item outside the caller's shelf and owner is `not_found`, and writing tags on
+// the organization shelf passes the same guard as a name or content edit. Tags
+// are not part of `EDIT_KEYS`: they do not raise `revision` and take no
+// `If-Match`.
 
+/**
+ * Read the tags of one library item, selected like every mutation selects it.
+ *
+ * @param {object} storageScope
+ * @param {object} target
+ * @param {string} target.id
+ * @param {'personal'|'organization'} target.shelf
+ * @param {object} [opts]
+ * @param {string} [opts.userEmail] - The caller; the owner, on the personal shelf
+ * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'}>}
+ */
 export async function getTagsForSlideLibraryItem(
   storageScope,
-  id,
+  target,
   { userEmail } = {},
 ) {
   const ctx = toStorageContext(storageScope, 'getTagsForSlideLibraryItem', {
     userEmail,
   });
-  const db = getDb();
-  const orgId = getOrgId(ctx);
+  const existing = await readItem(ctx, {
+    id: target.id,
+    shelf: target.shelf,
+    ownerEmail: userEmail,
+  });
+  if (!existing) return { ok: false, reason: 'not_found' };
 
-  const rows = await db
+  const rows = await getDb()
     .selectFrom('tags')
     .innerJoin('slide_library_tags', 'tags.id', 'slide_library_tags.tag_id')
     .select(['tags.id', 'tags.name'])
-    .where('slide_library_tags.slide_library_id', '=', id)
-    .where('tags.organization_id', '=', orgId)
+    .where('slide_library_tags.slide_library_id', '=', existing.id)
+    .where('tags.organization_id', '=', getOrgId(ctx))
     .orderBy('tags.name', 'asc')
     .execute();
 
-  return rows.map((row) => ({
-    id: row.id,
-    name: row.name,
-  }));
+  return {
+    ok: true,
+    tags: rows.map((row) => ({ id: row.id, name: row.name })),
+  };
 }
 
 export async function getTagsForSlideLibraryItems(
@@ -652,15 +673,42 @@ export async function getTagsForSlideLibraryItems(
   return result;
 }
 
+/**
+ * Replace the tags of one library item. The item is selected through
+ * `whereItem` (someone else's personal item, or the wrong shelf, is
+ * `not_found`); on the organization shelf the write passes `allowEdit`, the
+ * one "change a shared item" rule (D170), and without a guard it is
+ * `forbidden`.
+ *
+ * @param {object} storageScope
+ * @param {object} target - `{ id, shelf }`, as `getTagsForSlideLibraryItem`
+ * @param {string[]} tagNames
+ * @param {object} [opts]
+ * @param {string} [opts.actorEmail] - The caller; the owner, on the personal shelf
+ * @param {(item: object) => boolean|Promise<boolean>} [opts.allowEdit] - The organization-shelf guard
+ * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'|'forbidden'}>}
+ */
 export async function setTagsForSlideLibraryItem(
   storageScope,
-  id,
+  target,
   tagNames,
-  { userEmail } = {},
+  { actorEmail, allowEdit } = {},
 ) {
   const ctx = toStorageContext(storageScope, 'setTagsForSlideLibraryItem', {
-    userEmail,
+    actorEmail,
   });
+  const existing = await readItem(ctx, {
+    id: target.id,
+    shelf: target.shelf,
+    ownerEmail: actorEmail,
+  });
+  if (!existing) return { ok: false, reason: 'not_found' };
+  if (target.shelf === 'organization') {
+    const allowed =
+      typeof allowEdit === 'function' && (await allowEdit(existing));
+    if (!allowed) return { ok: false, reason: 'forbidden' };
+  }
+  const id = existing.id;
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -686,9 +734,7 @@ export async function setTagsForSlideLibraryItem(
     .where('slide_library_id', '=', id)
     .execute();
 
-  if (uniqueNames.length === 0) {
-    return [];
-  }
+  if (uniqueNames.length === 0) return { ok: true, tags: [] };
 
   // Get or create tags (reuses existing org tags).
   const tagIds = [];
@@ -731,7 +777,7 @@ export async function setTagsForSlideLibraryItem(
       .execute();
   }
 
-  return tagIds;
+  return { ok: true, tags: tagIds };
 }
 
 /**
