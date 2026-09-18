@@ -227,6 +227,7 @@ test('the surface table declares every capability on every row', () => {
   const keys = [
     'fields',
     'toolbar',
+    'typeConversion',
     'headerActions',
     'deckTools',
     'elementTabs',
@@ -272,4 +273,45 @@ test('contentOnly no longer appears in the client', () => {
   };
   walk('client');
   assert.deepEqual(offenders, [], 'use a surface from editor-form/surfaces.js');
+});
+
+// The library editor keeps the item's type (D170: `slideType` is not
+// writable), so its layout chip offers no cross-type tile.
+test('the layout chip offers cross-type tiles only where typeConversion is on', async () => {
+  const { createLayoutSwitcherChip } =
+    await import('../client/views/editor/layout-switcher.js');
+  const tileLabels = (typeConversion) => {
+    const slide = {
+      id: 's1',
+      type: 'image-text-slide',
+      content: structuredClone(SLIDE_TYPES['image-text-slide'].defaults),
+    };
+    const chip = createLayoutSwitcherChip({
+      slide,
+      pres: { id: '', slides: [slide] },
+      SLIDE_TYPES,
+      editorState: { dirtyRefreshWithItem() {} },
+      typeConversion,
+    });
+    document.body.append(chip);
+    chip.click();
+    const labels = [
+      ...document.querySelectorAll('.layout-switcher-popover button'),
+    ].map((b) => b.textContent.trim());
+    document.dispatchEvent(
+      new window.KeyboardEvent('keydown', { key: 'Escape' }),
+    );
+    chip.remove();
+    for (const el of document.querySelectorAll('.layout-switcher-popover')) {
+      el.remove();
+    }
+    return labels;
+  };
+  const withConversion = tileLabels(true);
+  const without = tileLabels(false);
+  assert.ok(
+    withConversion.length > without.length,
+    JSON.stringify({ withConversion, without }),
+  );
+  assert.ok(without.length > 0, 'same-type tiles still render');
 });

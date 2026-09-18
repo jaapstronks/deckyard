@@ -202,6 +202,33 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     }
   };
 
+  /**
+   * Copy an item to the caller's personal shelf: same type, theme, content
+   * and language versions, a name and description of its own. The way to work
+   * on a shared slide you may not change (D170).
+   * @returns {Promise<{ok: true, item: object} | {ok: false, error: any}>}
+   */
+  const duplicateToPersonal = async (item, { rerender } = {}) => {
+    try {
+      const created = await api('/api/slide-library/personal', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: cleanStr(item?.name),
+          description: cleanStr(item?.description),
+          slideType: cleanStr(item?.slideType),
+          content: item?.content || {},
+          i18n: item?.i18n || {},
+          themeId: cleanStr(item?.themeId || themeIdNorm),
+        }),
+      });
+      state.setCache('personal', [created, ...state.getCache('personal')]);
+      rerender?.();
+      return { ok: true, item: created };
+    } catch (err) {
+      return { ok: false, error: err };
+    }
+  };
+
   const pushMultipleToTeam = async (items, { rerender } = {}) => {
     let successCount = 0;
     for (const item of items) {
@@ -238,5 +265,6 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     saveDescription,
     saveTags,
     saveSlide,
+    duplicateToPersonal,
   };
 }

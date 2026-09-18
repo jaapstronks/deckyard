@@ -1,168 +1,106 @@
 /**
  * Slide Library Edit Modal
- * Allows editing slide content directly in the library
+ *
+ * Edits a library item with the full slide form (D171): the name, then the
+ * single-slide editor - the same form, field renderers and image picker as the
+ * deck editor, on the `library` surface, over a presentation that exists only
+ * in memory. Nothing is written until Save, and Save is one PATCH of
+ * `{ name, content }` against the revision the item was loaded at (D170); the
+ * server keeps the other language versions in step.
  */
 
 import { t } from '../ui-i18n.js';
 import { toast } from '../dom/toast.js';
 import { createInlineError } from '../dom/inline-error.js';
 import { createModal } from '../dom/modal.js';
-import {
-  RENDER_VIA_THEME,
-  renderSlideElement,
-} from '../slide-runtime/slide-render.js';
 import { contentLang } from './search.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { SLIDE_TYPES } from '../../../shared/slide-types.js';
+import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-schemas.js';
+import { createSingleSlideEditor } from '../../views/editor/single-slide-editor.js';
+import { loadSlideTypes } from '../../views/editor/bootstrap.js';
+import { meWithMeta } from '../user/auth.js';
 import { h } from '../dom.js';
 
 /**
- * Field types that we support editing in the library
+ * The sentence for a refused save. A 409 and a 403 are states of this form
+ * with their own explanation; anything else carries the server's sentence.
+ * @param {any} err
+ * @returns {string}
  */
-const EDITABLE_FIELD_TYPES = ['string', 'markdown', 'text'];
-
-/**
- * Field types that need a textarea (multi-line)
- */
-const MULTILINE_TYPES = ['markdown', 'text'];
-
-/**
- * Fields to skip in the editor (complex types that need the full editor)
- */
-const SKIP_FIELD_KEYS = [
-  'background',
-  'actions',
-  'cards',
-  'items',
-  'logos',
-  'members',
-  'images',
-  'image',
-  'icon',
-  'video',
-  'embed',
-  'chartData',
-  'tableData',
-  'data',
-  'options',
-  'pollId',
-  'layout', // enum - could be added later
-];
-
-/**
- * Create a field editor element
- */
-function createFieldEditor(field, value, onChange) {
-  const { key, label, type, maxLength, placeholder, helpText } = field;
-  const isMultiline = MULTILINE_TYPES.includes(type);
-
-  const wrap = h('div', { class: 'field ps-lib-edit-field' });
-  const labelEl = h('label', {
-    class: 'field-label',
-    text: label || key,
-    for: `lib-edit-${key}`,
-  });
-
-  let input;
-  if (isMultiline) {
-    input = h('textarea', {
-      class: 'form-input',
-      id: `lib-edit-${key}`,
-      rows: type === 'markdown' ? 6 : 3,
-      placeholder: placeholder || '',
-      maxlength: maxLength || undefined,
-    });
-    input.value = value || '';
-  } else {
-    input = h('input', {
-      class: 'form-input',
-      type: 'text',
-      id: `lib-edit-${key}`,
-      placeholder: placeholder || '',
-      maxlength: maxLength || undefined,
-      value: value || '',
-    });
+function saveErrorMessage(err) {
+  if (err?.statusCode === 409) {
+    return t(
+      'slideLibrary.edit.conflict',
+      'Someone else saved this slide after you opened it. Close the editor and open the slide again to see their version.',
+    );
   }
-
-  input.addEventListener('input', () => {
-    onChange(key, input.value);
-  });
-
-  wrap.append(labelEl, input);
-
-  if (helpText) {
-    wrap.append(h('div', { class: 'help is-small', text: helpText }));
+  if (err?.statusCode === 403) {
+    return t(
+      'slideLibrary.edit.notAllowed',
+      'Only its maker or an admin can edit this shared slide.',
+    );
   }
-
-  return wrap;
+  return String(err?.message || err || t('common.saveFailed', 'Save failed'));
 }
 
 /**
- * Open the edit modal for a slide library item
+ * Open the edit modal for a slide library item.
+ *
+ * @param {object} opts
+ * @param {object} opts.item - the library item (updated in place on save)
+ * @param {'personal'|'organization'} opts.shelf
+ * @param {Function} opts.api - API client
+ * @param {object} opts.apiOps - createSlideLibraryApi() operations
+ * @param {(saved: boolean) => void} [opts.onClose]
+ * @param {Function} [opts.rerender] - repaint the library behind the modal
+ * @returns {Promise<void>}
  */
-export function openEditModal({
+export async function openEditModal({
   item,
   shelf,
+  api,
   apiOps,
-  resolveThemeForItem,
   onClose,
   rerender,
 } = {}) {
   const slideType = cleanStr(item?.slideType);
-  const def = SLIDE_TYPES[slideType];
-
-  if (!def) {
+  const [SLIDE_TYPES, { user, features }] = await Promise.all([
+    loadSlideTypes({ api, LOCAL_SLIDE_TYPES }),
+    meWithMeta(),
+  ]);
+  if (!SLIDE_TYPES[slideType]) {
     toast.error(
       t('slideLibrary.edit.unsupportedType', 'Cannot edit this slide type.'),
     );
     return;
   }
 
-  // Get editable fields
-  const fields = (def.fields || []).filter((f) => {
-    if (SKIP_FIELD_KEYS.includes(f.key)) return false;
-    if (!EDITABLE_FIELD_TYPES.includes(f.type)) return false;
-    return true;
-  });
-
-  if (fields.length === 0) {
-    toast.error(
-      t(
-        'slideLibrary.edit.noEditableFields',
-        'This slide type has no editable text fields.',
-      ),
-    );
-    return;
-  }
-
-  // Working copy of the content
-  const workingContent = { ...(item.content || {}) };
   let workingName = item.name || '';
+  let saving = false;
+  let editor = null;
 
   const modal = createModal({
     title: t('slideLibrary.edit.title', 'Edit slide'),
-    modalClass: 'ps-modal ps-lib-edit-modal',
+    modalClass: 'ps-modal ps-lib-edit-modal bulk-edit-modal',
     fill: true,
-    closeLabel: t('common.cancel', 'Cancel'),
+    // Cancel lives in the footer beside Save; the header keeps the icon X.
+    closeButton: 'icon',
+    // Cancel, Escape and the backdrop all ask first when there is something
+    // to lose; nothing has been written, so closing is the whole of cancel.
+    isDirty: () =>
+      !saving &&
+      (editor?.isDirty() || workingName.trim() !== (item.name || '').trim()),
+    confirmMessage: t(
+      'slideLibrary.edit.discardConfirm',
+      'Your changes to this slide will be lost.',
+    ),
     onClose: (result) => {
-      if (previewTimeout) clearTimeout(previewTimeout);
+      editor?.detach();
       onClose?.(result?.saved === true);
     },
   });
   modal.header.classList.add('ps-modal-header');
-  modal.content.classList.add('ps-modal-body', 'ps-lib-edit-body');
 
-  // Form column
-  const formCol = h('div', { class: 'ps-lib-edit-form' });
-  const form = h('div', { class: 'stack' });
-
-  // Name field (always editable)
-  const nameField = h('div', { class: 'field ps-lib-edit-field' });
-  const nameLabel = h('label', {
-    class: 'field-label',
-    text: t('slideLibrary.edit.name', 'Name'),
-    for: 'lib-edit-name',
-  });
   const nameInput = h('input', {
     class: 'form-input',
     type: 'text',
@@ -174,75 +112,48 @@ export function openEditModal({
   nameInput.addEventListener('input', () => {
     workingName = nameInput.value;
   });
-  nameField.append(nameLabel, nameInput);
-  form.append(nameField);
+  const nameField = h('div', { class: 'field ps-lib-edit-name' });
+  nameField.append(
+    h('label', {
+      class: 'field-label',
+      text: t('slideLibrary.edit.name', 'Name'),
+      for: 'lib-edit-name',
+    }),
+    nameInput,
+  );
 
-  // Content fields
-  const updatePreview = async () => {
-    const slide = {
-      id: 'lib-edit-preview',
-      type: slideType,
-      content: workingContent,
-    };
-    const thTheme = await resolveThemeForItem(item);
-    previewThumb.innerHTML = '';
-    // The modal edits `item.content` — the base version — so the preview
-    // renders in the item's own language, not the library's browsing language.
-    const slideEl = renderSlideElement(slide, {
-      theme: thTheme,
-      renderVia: RENDER_VIA_THEME,
-      lang: contentLang(item),
-    });
-    previewThumb.appendChild(slideEl);
-
-    // Scale the slide to fit the preview container
-    requestAnimationFrame(() => {
-      const containerRect = previewThumb.getBoundingClientRect();
-      const slideW = 1600;
-      const slideH = 900;
-      const scale = Math.min(
-        (containerRect.width - 24) / slideW,
-        (containerRect.height - 24) / slideH,
-        0.5,
-      );
-      previewThumb.style.setProperty('--thumb-scale', String(scale));
-    });
-  };
-
-  // Debounced preview update
-  let previewTimeout = null;
-  const schedulePreviewUpdate = () => {
-    if (previewTimeout) clearTimeout(previewTimeout);
-    previewTimeout = setTimeout(updatePreview, 150);
-  };
-
-  for (const field of fields) {
-    const fieldEl = createFieldEditor(
-      field,
-      workingContent[field.key],
-      (key, val) => {
-        workingContent[key] = val;
-        schedulePreviewUpdate();
-      },
-    );
-    form.append(fieldEl);
-  }
-
-  formCol.append(form);
-
-  // Preview column
-  const previewCol = h('div', { class: 'ps-lib-edit-preview' });
-  const previewLabel = h('div', {
-    class: 'field-label',
-    text: t('slideLibrary.edit.preview', 'Preview'),
+  const undoBtn = h('button', {
+    class: 'btn btn-secondary',
+    type: 'button',
+    text: t('editor.undo', 'Undo'),
+    onclick: () => editor?.undo(),
   });
-  const previewThumb = h('div', { class: 'thumb ps-lib-edit-preview-thumb' });
-  previewCol.append(previewLabel, previewThumb);
+  const redoBtn = h('button', {
+    class: 'btn btn-secondary',
+    type: 'button',
+    text: t('editor.redo', 'Redo'),
+    onclick: () => editor?.redo(),
+  });
+  const syncHistory = () => {
+    undoBtn.disabled = !editor?.canUndo();
+    redoBtn.disabled = !editor?.canRedo();
+  };
 
-  modal.append(formCol, previewCol);
+  editor = await createSingleSlideEditor({
+    slideType,
+    content: item.content || {},
+    // The modal edits `item.content` - the base version - so it works in the
+    // item's own language, not the library's browsing language.
+    lang: contentLang(item),
+    themeId: cleanStr(item.themeId),
+    api,
+    user,
+    features,
+    SLIDE_TYPES,
+    onChange: syncHistory,
+  });
+  syncHistory();
 
-  // Footer with save button
-  const footer = h('div', { class: 'ps-modal-footer' });
   // `status` carries progress only ("Saving…"). A refusal is not progress: it
   // is a state of this form, so it goes in the one element for that, beside
   // Save and staying until the next attempt
@@ -254,8 +165,13 @@ export function openEditModal({
     type: 'button',
     text: t('common.save', 'Save'),
   });
+  const cancelBtn = h('button', {
+    class: 'btn btn-secondary',
+    type: 'button',
+    text: t('common.cancel', 'Cancel'),
+    onclick: () => modal.requestClose(),
+  });
 
-  let saving = false;
   saveBtn.addEventListener('click', async () => {
     saveError.clear();
     const name = String(workingName || '').trim();
@@ -266,55 +182,42 @@ export function openEditModal({
       );
       return;
     }
-
     if (saving) return;
     saving = true;
     saveBtn.disabled = true;
     status.textContent = t('common.saving', 'Saving…');
 
-    const patch = {
-      name,
-      content: workingContent,
-    };
-
-    const result = await apiOps.saveSlide(shelf, item, patch, { rerender });
+    const result = await apiOps.saveSlide(
+      shelf,
+      item,
+      { name, content: editor.getContent() },
+      { rerender },
+    );
 
     if (result.ok) {
       toast.success(t('slideLibrary.edit.saved', 'Slide saved.'));
-      // Update the item reference for the lightbox
-      if (result.item) {
-        Object.assign(item, result.item);
-      }
+      if (result.item) Object.assign(item, result.item);
       modal.close({ saved: true });
-    } else {
-      status.textContent = '';
-      // The server's sentence, not a generic replacement: `/api/slide-library`
-      // answers about the request as a whole and names no `details.field`, so
-      // the callout carries it without marking a control.
-      saveError.show(
-        String(
-          result.error?.message ||
-            result.error ||
-            t('common.saveFailed', 'Save failed'),
-        ),
-      );
-      saving = false;
-      saveBtn.disabled = false;
+      return;
     }
+    status.textContent = '';
+    saveError.show(saveErrorMessage(result.error));
+    saving = false;
+    saveBtn.disabled = false;
   });
 
-  footer.append(status, saveError.el, saveBtn);
+  const history = h('div', { class: 'row' });
+  history.append(undoBtn, redoBtn);
+  const footer = h('div', { class: 'ps-modal-footer ps-lib-edit-footer' });
+  footer.append(history, status, saveError.el, cancelBtn, saveBtn);
 
+  modal.append(nameField, editor.el);
   modal.show(document.body);
   // The footer is pinned below the scrolling body, so it sits next to
-  // `.modal-content` rather than inside it — and show() rebuilds the dialog,
+  // `.modal-content` rather than inside it - and show() rebuilds the dialog,
   // so it goes on afterwards.
   modal.modal.append(footer);
 
-  // Initial preview
-  updatePreview();
-
-  // Focus name input
   requestAnimationFrame(() => {
     try {
       nameInput.focus();

@@ -303,8 +303,6 @@
   "slideLibrary.edit.name": "Navn",
   "slideLibrary.edit.namePlaceholder": "Slidens navn…",
   "slideLibrary.edit.nameRequired": "Indtast et navn.",
-  "slideLibrary.edit.noEditableFields": "Denne slidetype har ingen tekstfelter, der kan redigeres.",
-  "slideLibrary.edit.preview": "Forhåndsvisning",
   "slideLibrary.edit.saved": "Sliden er gemt.",
   "slideLibrary.edit.title": "Redigér slide",
   "slideLibrary.edit.tooltip": "Redigér slidens indhold",

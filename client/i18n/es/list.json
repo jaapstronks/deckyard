@@ -306,8 +306,6 @@
   "slideLibrary.edit.name": "Nombre",
   "slideLibrary.edit.namePlaceholder": "Nombre de la diapositiva…",
   "slideLibrary.edit.nameRequired": "Introduzca un nombre.",
-  "slideLibrary.edit.noEditableFields": "Este tipo de diapositiva no tiene campos de texto editables.",
-  "slideLibrary.edit.preview": "Vista previa",
   "slideLibrary.edit.saved": "Diapositiva guardada.",
   "slideLibrary.edit.title": "Editar la diapositiva",
   "slideLibrary.edit.tooltip": "Editar el contenido de la diapositiva",

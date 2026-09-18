@@ -177,6 +177,8 @@ export async function createSingleSlideEditor({
     getSelectedSlideId: () => SLIDE_ID,
     markDirty,
     editorState,
+    // The caller renders labelled Undo/Redo buttons; the form shows the rest.
+    announce: false,
   });
 
   rerenderEditor();

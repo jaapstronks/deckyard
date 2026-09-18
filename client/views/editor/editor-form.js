@@ -217,6 +217,7 @@ export function createRerenderEditor({
           pres,
           SLIDE_TYPES,
           editorState,
+          typeConversion: caps.typeConversion,
         });
         if (layoutChip) tbLeft.append(layoutChip);
 

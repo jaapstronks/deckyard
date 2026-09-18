@@ -211,10 +211,25 @@ writer that bypasses the route still meets them.
   storage (`contentGuard`), and it fails closed like the organization guard: a
   `content` patch from a caller that brings none is `403 forbidden`.
 
-**Implementation status (2026-09-18, B335).** All of the above is enforced.
-The client sends `If-Match` from the item it loaded
-(`client/lib/slide-library/api.js`); the full-slide editor that replaces the
-text-only edit modal is B336. `favorite` is accepted but not yet stored (B334):
+**The editor (D171, B336).** Edit in the library lightbox opens the full slide
+form for the item's type (`client/lib/slide-library/edit-modal.js`): nested
+members and cards, images through the normal picker, background, layout and
+accessibility. It mounts `createSingleSlideEditor`
+(`client/views/editor/single-slide-editor.js`), which wraps the one slide in a
+presentation that exists only in memory and renders the form on the `library`
+surface (`client/views/editor/editor-form/surfaces.js`: all fields, background
+and a11y, no deck tools, and no cross-type layout tiles, because `slideType`
+is fixed). Nothing is written until Save, which is one PATCH of
+`{ name, content }` with `If-Match`; a `409` or `403` is shown beside Save, and
+closing with changes asks first. Cancel, a refused save and closing leave no
+deck and no library row behind. The Edit button reads `canEdit`: without it the
+button stays, greyed out with the reason, the description is read-only, and
+**Duplicate to my library** creates a personal copy (type, theme, content and
+`i18n`) and opens the editor on it.
+
+**Implementation status (2026-09-18, B335, B336).** All of the above is
+enforced and shipped. The editor edits the base language; a language switch
+inside it is not part of v1. `favorite` is accepted but not yet stored (B334):
 a favorite-only PATCH writes nothing and returns the item. Pinned by
 `tests/pg/slide-library-save-contract.pgtest.js` (ownership, guard, atomic
 revision, merge on real PostgreSQL), `tests/slide-library-save-route.test.js`

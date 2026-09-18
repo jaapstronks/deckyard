@@ -747,82 +747,49 @@
    SLIDE LIBRARY - EDIT MODAL
    ============================================================ */
 
-.modal.ps-modal.ps-lib-edit-modal {
-  width: min(1200px, 96vw);
-  max-height: 92vh;
+/* The shell, the two panes and the preview are the bulk-edit modal's
+   (`.bulk-edit-*`, 108-bulk-edit.css): the library editor is the same form on
+   another surface. Only the name row, the toolbar and the footer live here. */
+.modal.is-fill.ps-lib-edit-modal > .modal-content {
   display: flex;
   flex-direction: column;
-}
-
-/* Also a `.modal-content`; `fill: true` gives it the height, and the two
-   columns replace the base layer's flex column. */
-.modal.is-fill > .ps-lib-edit-body {
+  gap: var(--ps-space-3);
   padding: var(--ps-space-4);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--ps-space-6);
 }
 
-.ps-lib-edit-form {
-  grid-column: 1;
-  overflow-y: auto;
-  padding-right: var(--ps-space-2);
+.ps-lib-edit-name {
+  flex-shrink: 0;
+  max-width: 480px;
 }
 
-.ps-lib-edit-form .stack {
-  gap: var(--ps-space-4);
-}
-
-.ps-lib-edit-preview {
-  grid-column: 2;
+.single-slide-editor {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  gap: var(--ps-space-3);
 }
 
-.ps-lib-edit-field .field-label {
-  font-size: var(--ps-text-sm);
-  font-weight: 600;
-  margin-bottom: var(--ps-space-1);
-}
-
-.ps-lib-edit-field .form-input {
-  width: 100%;
-}
-
-.ps-lib-edit-field textarea.form-input {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.ps-lib-edit-preview .field-label {
-  font-size: var(--ps-text-sm);
-  font-weight: 600;
-  margin-bottom: var(--ps-space-2);
+.single-slide-editor-toolbar {
   flex-shrink: 0;
-}
-
-.thumb.ps-lib-edit-preview-thumb {
-  flex: 1;
-  min-height: 200px;
-  position: relative;
-  display: flex;
   align-items: center;
-  justify-content: center;
-  background: hsl(var(--app-bg-sunken));
-  border-radius: var(--ps-radius-lg);
-  padding: var(--ps-space-3);
-  overflow: hidden;
+  gap: var(--ps-space-2);
 }
 
-.thumb.ps-lib-edit-preview-thumb .slide {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 1600px;
-  height: 900px;
-  transform-origin: center center;
-  transform: translate(-50%, -50%) scale(var(--thumb-scale, 0.35));
+.single-slide-editor-toolbar:empty {
+  display: none;
+}
+
+.ps-lib-edit-footer > .row {
+  gap: var(--ps-space-2);
+  margin-right: auto;
+}
+
+/* A shared slide you may not edit: the reason sits beside the greyed-out
+   button instead of hiding in a tooltip. */
+.ps-lib-edit-reason {
+  max-width: 280px;
+  text-align: right;
 }
 
 .ps-modal-footer {
@@ -854,17 +821,4 @@
   flex: 1 1 auto;
   min-width: 0;
   margin-right: auto;
-}
-
-/* Responsive: stack columns on smaller screens */
-@media (max-width: 768px) {
-  .ps-lib-edit-body {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-  }
-
-  .ps-lib-edit-preview {
-    order: -1;
-    max-height: 300px;
-  }
 }

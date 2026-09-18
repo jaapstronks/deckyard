@@ -11,6 +11,9 @@
  *   content form.
  * - `toolbar`: the slide toolbar - type pill, retired/custom badges, layout
  *   chip (and "All text" where the caller wires it).
+ * - `typeConversion`: whether the layout chip may offer cross-type tiles
+ *   (`convertTo`). Off where the slide's type is fixed: a library item's
+ *   `slideType` is not writable (D170).
  * - `headerActions`: the pane chrome that belongs to the deck editor - the
  *   inspector's collapse control and the slide-actions menu.
  * - `deckTools`: everything that needs a saved deck around the slide - data
@@ -24,6 +27,7 @@
  * @typedef {object} SurfaceCapabilities
  * @property {'keeps'|'all'} fields
  * @property {boolean} toolbar
+ * @property {boolean} typeConversion
  * @property {boolean} headerActions
  * @property {boolean} deckTools
  * @property {boolean} elementTabs
@@ -36,6 +40,7 @@ export const FORM_SURFACES = Object.freeze({
   inspector: Object.freeze({
     fields: 'keeps',
     toolbar: true,
+    typeConversion: true,
     headerActions: true,
     deckTools: true,
     elementTabs: true,
@@ -45,6 +50,7 @@ export const FORM_SURFACES = Object.freeze({
   bulk: Object.freeze({
     fields: 'all',
     toolbar: false,
+    typeConversion: false,
     headerActions: false,
     deckTools: false,
     elementTabs: false,
@@ -54,6 +60,7 @@ export const FORM_SURFACES = Object.freeze({
   library: Object.freeze({
     fields: 'all',
     toolbar: true,
+    typeConversion: false,
     headerActions: false,
     deckTools: false,
     elementTabs: false,

@@ -13,6 +13,10 @@ import { toast } from '../../../lib/dom/toast.js';
  * @param {Function} deps.setSelectedSlideId
  * @param {Function} deps.markDirty
  * @param {object} deps.editorState - has dirtyRefreshAll()
+ * @param {boolean} [deps.announce=true] - confirm each undo/redo with a toast.
+ *   The deck editor's triggers are a shortcut and a topbar icon, so it says
+ *   what happened; a surface with labelled Undo/Redo buttons beside the form
+ *   passes false - the change is on screen, a toast would only cover it.
  * @returns {{ performUndo: Function, performRedo: Function }}
  */
 export function createUndoActions({
@@ -22,6 +26,7 @@ export function createUndoActions({
   setSelectedSlideId,
   markDirty,
   editorState,
+  announce = true,
 } = {}) {
   /**
    * Apply a snapshot to restore presentation state.
@@ -83,7 +88,7 @@ export function createUndoActions({
     const snapshot = undoManager.undo(pres);
     if (!snapshot?.pres) return false;
     applySnapshot(snapshot);
-    toast?.info?.(t('editor.undo', 'Undo'));
+    if (announce) toast?.info?.(t('editor.undo', 'Undo'));
     return true;
   };
 
@@ -92,7 +97,7 @@ export function createUndoActions({
     const snapshot = undoManager.redo(pres);
     if (!snapshot?.pres) return false;
     applySnapshot(snapshot);
-    toast?.info?.(t('editor.redo', 'Redo'));
+    if (announce) toast?.info?.(t('editor.redo', 'Redo'));
     return true;
   };
 

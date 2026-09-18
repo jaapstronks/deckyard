@@ -112,6 +112,9 @@ function renderSchematic(variant, mirrored) {
  * @param {Object} opts.pres
  * @param {Object} opts.SLIDE_TYPES
  * @param {Object} opts.editorState - createEditorStateUpdater instance
+ * @param {boolean} opts.typeConversion - whether cross-type tiles (`convertTo`)
+ *   may render: the form surface's `typeConversion` capability. A surface
+ *   whose slide keeps its type (the library editor) gets none.
  * @returns {HTMLElement|null}
  */
 export function createLayoutSwitcherChip({
@@ -119,6 +122,7 @@ export function createLayoutSwitcherChip({
   pres,
   SLIDE_TYPES,
   editorState,
+  typeConversion,
 } = {}) {
   const def = SLIDE_TYPES?.[slide?.type];
   const variants = getLayoutVariants(def);
@@ -298,11 +302,13 @@ export function createLayoutSwitcherChip({
       const mirrored = isMirrored(slide, def);
       grid.replaceChildren();
       for (const variant of variants) {
-        // Cross-type tiles only when the seam supports the conversion here
-        // (keeps custom types that override a core name working).
+        // Cross-type tiles only on a surface that may change the type, and
+        // only when the seam supports the conversion here (keeps custom types
+        // that override a core name working).
         if (
           variant.convertTo &&
-          !canConvertSlideTo(slide, variant.convertTo, SLIDE_TYPES)
+          (!typeConversion ||
+            !canConvertSlideTo(slide, variant.convertTo, SLIDE_TYPES))
         ) {
           continue;
         }

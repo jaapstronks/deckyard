@@ -29,7 +29,11 @@ one of three surfaces:
    (no chrome, no Background/Accessibility; the surface table is
    `client/views/editor/editor-form/surfaces.js`), so items add/remove/reorder,
    markdown editors and validation are parity-safe **by construction** - it
-   renders every non-Background/non-a11y field a type has.
+   renders every non-Background/non-a11y field a type has. The slide-library
+   editor mounts the same form on the `library` surface (all fields plus
+   Background and Accessibility, none of the deck tools) through
+   `client/views/editor/single-slide-editor.js`; see
+   `docs/reference/deck-creation-and-reuse.md` § _Changing a library item_.
 3. **The inspector** - a slim settings rail on the right. Background,
    Accessibility, and per-type settings/design fields (enums, icon pickers,
    URLs-as-config, focus points, chart config). No content text fields.
