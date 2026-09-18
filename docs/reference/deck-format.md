@@ -217,8 +217,9 @@ addresses, with notes, duration, visibility and every language version intact.
 
 Deliberate lossy edges (they degrade, they do not crash):
 
-- An **unknown slide type** imports as a `content-slide` placeholder (its
-  original content is not preserved).
+- An **unknown slide type** imports as a `content-slide` placeholder. The
+  placeholder names the type and carries the original content across as text
+  in its body, so nothing is lost; the typed structure is.
   Its translations are not applied: every language version keeps the
   placeholder.
 - A **missing local asset** keeps its `/uploads/…` ref and imports as a dangling

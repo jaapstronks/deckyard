@@ -36,7 +36,8 @@ shipped.
 
 To reach level 1:
 
-1. **Parse the envelope.** `format`, `version`, `title`, `theme`, `slides` — see
+1. **Parse the envelope.** `format`, `version`, `title`, `theme`, `slides`,
+   plus the optional `lang` and `translations` — see
    [`deck-format.md`](./deck-format.md). Unknown top-level keys are ignored,
    never rejected.
 2. **Accept any well-formed type id.** `slides[].type` is the type's canonical
