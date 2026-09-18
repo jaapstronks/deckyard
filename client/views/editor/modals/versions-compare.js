@@ -93,9 +93,10 @@ export function openVersionCompareModal({
   ]);
 
   // AI analysis button (insights will be shown inline with rows). Absent where
-  // AI is switched off: the server answers the compare-ai route 404 there.
+  // AI is switched off — not in the DOM, like every other AI entry: the server
+  // answers the compare-ai route 404 there.
+  const aiEnabled = !!getFeatures()?.enableAi;
   const aiSection = h('div', { class: 'version-compare-ai' });
-  if (!getFeatures()?.enableAi) aiSection.style.display = 'none';
   const aiButton = h('button', {
     class: 'btn btn-secondary btn-sm',
     text: t('editor.versions.compare.analyzeAi', 'Analyze with AI'),
@@ -110,7 +111,14 @@ export function openVersionCompareModal({
   // Map to store insight containers by slide ID for inline display
   const insightContainers = new Map();
 
-  modal.content.append(status, summary, aiSection, legend, headers, grid);
+  modal.content.append(
+    status,
+    summary,
+    ...(aiEnabled ? [aiSection] : []),
+    legend,
+    headers,
+    grid,
+  );
   modal.show(root);
 
   // AI analysis handler - populates insights inline with each row
