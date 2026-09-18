@@ -4,6 +4,25 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.36.0](https://github.com/jaapstronks/deckyard/compare/v1.35.0...v1.36.0) (2026-09-18)
+
+
+### Added
+
+* batch 2026-09-17 - fork root declaration and a dead-CSS gate that reads declarations ([#1173](https://github.com/jaapstronks/deckyard/issues/1173)) ([d91efe4](https://github.com/jaapstronks/deckyard/commit/d91efe4a24802bcee324c8e42e6f427933f57587))
+* **media:** an ImageKit pick becomes your own media before it reaches a slide ([#1175](https://github.com/jaapstronks/deckyard/issues/1175)) ([34c38ee](https://github.com/jaapstronks/deckyard/commit/34c38eeea1de2cad0073999b4a80a099a5995445))
+* **trash:** decks are deleted after the retention window the trash promises ([#1176](https://github.com/jaapstronks/deckyard/issues/1176)) ([d4828d1](https://github.com/jaapstronks/deckyard/commit/d4828d1abdad913bb0023fdc77e7d8c7274208ec))
+
+
+### Fixed
+
+* **capture:** the capture window sits on a screen that holds it ([#1170](https://github.com/jaapstronks/deckyard/issues/1170)) ([3003b10](https://github.com/jaapstronks/deckyard/commit/3003b109ebc24c1840678657070c73505e2d7169))
+* **deck:** a file that is not a zip is refused in the format's own words ([#1167](https://github.com/jaapstronks/deckyard/issues/1167)) ([191df81](https://github.com/jaapstronks/deckyard/commit/191df811a36c2141d4a171c400cf108c5a688078))
+* **editor:** show inline formatting and keep row fields in reading order ([#1171](https://github.com/jaapstronks/deckyard/issues/1171)) ([44bec48](https://github.com/jaapstronks/deckyard/commit/44bec48449f71b7744f27d2a63f55322421d7c29))
+* **picker:** library tiles keep their own content when the preview restyles ([#1169](https://github.com/jaapstronks/deckyard/issues/1169)) ([8b99a09](https://github.com/jaapstronks/deckyard/commit/8b99a09bcdcdef8df5cb5ae96e951897205db6b5))
+* **slides:** a collection under a heading centres in the space below it ([#1172](https://github.com/jaapstronks/deckyard/issues/1172)) ([5104db3](https://github.com/jaapstronks/deckyard/commit/5104db3e7fa9d3e5c17529e84bf97145e75ca84f))
+* **slides:** image blocks pack to the space they have, and their titles line up ([#1174](https://github.com/jaapstronks/deckyard/issues/1174)) ([1882994](https://github.com/jaapstronks/deckyard/commit/18829940b8695befe7234024985c80592acdc29b))
+
 ## [1.35.0](https://github.com/jaapstronks/deckyard/compare/v1.34.0...v1.35.0) (2026-09-17)
 
 
