@@ -241,7 +241,7 @@
   "list.time.justNow": "lige nu",
   "list.time.minutesAgo": "{count} min siden",
   "list.trash.empty": "Papirkurven er tom.",
-  "list.trash.hint": "Elementer i papirkurven slettes permanent efter 30 dage. Indtil da kan du gendanne dem.",
+  "list.trash.hint": "Elementer i papirkurven slettes permanent efter {days} dage. Indtil da kan du gendanne dem.",
   "list.trash.loadError": "Papirkurven kunne ikke indlæses.",
   "list.trash.loading": "Indlæser…",
   "list.trash.title": "Papirkurv",

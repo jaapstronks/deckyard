@@ -91,6 +91,10 @@ export const REASONS = Object.freeze(
     held: { status: 409, kind: 'caller' },
     inactive: { status: 409, kind: 'caller' },
     locked: { status: 409, kind: 'caller' },
+    // The deck exists; it is simply not in the trash. Permanent deletion is the
+    // second step of trashing, never a shortcut past it, so both the button and
+    // the retention sweep get this rather than an erased presentation.
+    not_trashed: { status: 409, kind: 'caller' },
     last_owner: { status: 409, kind: 'caller' },
     limit_exceeded: { status: 409, kind: 'caller' },
     order_mismatch: { status: 409, kind: 'caller' },

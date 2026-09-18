@@ -99,6 +99,34 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
       { id: 'l-expired-b', organization_id: ORG_B, expires_at: daysAgoIso(30) },
       { id: 'l-live-a', organization_id: ORG_A, expires_at: daysAheadIso(1) },
     ],
+    // The trash across two orgs: past the window goes, inside it stays, and a
+    // deck that was never trashed is not a candidate at all.
+    presentations: [
+      {
+        id: 'p-old-a',
+        organization_id: ORG_A,
+        title: 'Old A',
+        trashed_at: daysAgoIso(45),
+      },
+      {
+        id: 'p-old-b',
+        organization_id: ORG_B,
+        title: 'Old B',
+        trashed_at: daysAgoIso(31),
+      },
+      {
+        id: 'p-recent-a',
+        organization_id: ORG_A,
+        title: 'Recent A',
+        trashed_at: daysAgoIso(10),
+      },
+      {
+        id: 'p-live-a',
+        organization_id: ORG_A,
+        title: 'Live A',
+        trashed_at: null,
+      },
+    ],
   });
   __setTestDb(db);
 
@@ -109,6 +137,7 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
     shareLinks: 1,
     activityEvents: 2,
     slideLocks: 2,
+    trashedDecks: 2,
   });
 
   // api_usage_daily: only the recent row survives.
@@ -136,6 +165,13 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
   assert.deepEqual(
     db.__tables.slide_locks.map((r) => r.id),
     ['l-live-a'],
+  );
+
+  // Trash: both decks past the window are gone, in whichever organization they
+  // sat; the one still inside it and the untrashed one are untouched.
+  assert.deepEqual(
+    db.__tables.presentations.map((r) => r.id),
+    ['p-recent-a', 'p-live-a'],
   );
 });
 

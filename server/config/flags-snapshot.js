@@ -1,9 +1,10 @@
 /**
  * The feature-flag snapshot handed to the client (as `features` in the
  * `/api/auth/me` payload) and read directly by server-side routes.
- * Pure aggregator: every env-var read lives in `config/features.js` (the
- * declaration module); this file only combines declared flags with runtime
- * status (LLM config, ImageKit config, branding) into one object.
+ * Pure aggregator: every env-var read lives in a declaration module
+ * (`config/features.js` for flags, `config/retention.js` for retention
+ * windows); this file only combines declared values with runtime status (LLM
+ * config, ImageKit config, branding) into one object.
  */
 
 import { getLlmStatus } from '../utils/llm/config.js';
@@ -23,6 +24,7 @@ import {
   isNotionFeatureEnabled,
 } from './features.js';
 import { getBranding } from './branding.js';
+import { trashRetentionDays } from './retention.js';
 
 export function getFeatureFlags() {
   const demoMode = isDemoMode();
@@ -64,6 +66,9 @@ export function getFeatureFlags() {
     enableRssFeed: isRssFeedEnabled(),
     collab: isCollabEnabled(),
     collabLiveEdits: isCollabLiveEditsEnabled(),
+    // The trash hint states this number, so the copy and the sweep that acts on
+    // it read the same configuration and cannot promise different things.
+    trashRetentionDays: trashRetentionDays(),
     branding: getBranding(),
   };
 }

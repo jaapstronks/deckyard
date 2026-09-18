@@ -5,23 +5,32 @@
 import {
   listTrashedPresentations,
   restorePresentation,
-  permanentlyDeletePresentation,
   getPresentation,
 } from '../../../storage/presentations/index.js';
+import { permanentlyDeletePresentation } from '../../../services/permanent-delete.js';
 import {
   methodNotAllowed,
   notFound,
   serveJson,
   forbidden,
-  badRequest,
+  storageError,
 } from '../../../utils/http.js';
 import { canDeletePresentation } from '../../../utils/presentation-authz/index.js';
-import { pruneDeckThumbnails } from '../../../render/deck-thumbnail.js';
 import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
 import {
   isOwnerOrCreator,
   matchesIdentity,
 } from '../../../../shared/identity-match.js';
+
+/**
+ * Human copy per failure the permanent-delete seam can report. A map rather
+ * than a branch on the reason: the status already comes from the REASONS
+ * register, and only the sentence is this route's business.
+ */
+const PERMANENT_DELETE_FAILURE_MESSAGES = {
+  not_found: 'Presentation not found',
+  not_trashed: 'Presentation is not in trash',
+};
 
 /**
  * GET /api/presentations/trash - List trashed presentations
@@ -78,7 +87,11 @@ export async function handlePresentationRestore(
 
   // Check if presentation is actually trashed
   if (!existing.trashedAt) {
-    return badRequest(res, 'Presentation is not in trash');
+    return storageError(
+      res,
+      { reason: 'not_trashed' },
+      'Presentation is not in trash',
+    );
   }
 
   // Check authorization: owner, creator, trasher, or admin. Matched through
@@ -131,16 +144,18 @@ export async function handlePresentationPermanentDelete(
     );
   }
 
-  const deleted = await permanentlyDeletePresentation(storageScope, id);
-  if (!deleted) {
-    return notFound(res);
+  const deleted = await permanentlyDeletePresentation({
+    repoRoot,
+    storageScope,
+    id,
+  });
+  if (!deleted.ok) {
+    return storageError(
+      res,
+      deleted,
+      PERMANENT_DELETE_FAILURE_MESSAGES[deleted.reason],
+    );
   }
-
-  // The deck's rasters outlive nothing: this is the only path that ends a
-  // presentation for good, so it is the only place they can be cleaned up.
-  // Trashing deliberately does not — a card in the trash still shows its
-  // thumbnail, and a restore must not come back blank.
-  await pruneDeckThumbnails(repoRoot, id);
 
   serveJson(res, 200, { ok: true });
   return true;

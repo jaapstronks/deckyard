@@ -54,7 +54,8 @@ The interval jobs (`server/jobs/`):
 - `server/jobs/analytics-cleanup.js` — old view sessions and slide views, IP
   anonymization, expired leads. Daily.
 - `server/jobs/retention-cleanup.js` — `api_usage_daily`, expired share links,
-  `activity_events`, expired slide locks. Daily.
+  `activity_events`, expired slide locks, and presentations that have been in
+  the trash longer than `TRASH_RETENTION_DAYS`. Daily.
 - `server/jobs/digest-email.js` — the weekly engagement digest. Daily check,
   aligned to a wall-clock hour.
 
@@ -223,6 +224,7 @@ than at whatever time the process happened to boot.
 | `REDIS_ENABLED=false`                                         | Explicitly disables Redis even when a URL or host is configured — the supported way to force the synchronous path.                                                                                       |
 | `ANALYTICS_RETENTION_DAYS`, `ANALYTICS_IP_ANONYMIZATION_DAYS` | Seed the defaults for `settings.analytics.retention.*`; the cleanup job reads the settings value (admin UI wins). See [`analytics.md`](analytics.md) and [`analytics-privacy.md`](analytics-privacy.md). |
 | `ACTIVITY_RETENTION_DAYS`                                     | Retention for `activity_events`, default 180. Those rows carry actor emails, which is why they expire at all.                                                                                            |
+| `TRASH_RETENTION_DAYS`                                        | How long a trashed presentation stays recoverable, default 30. The retention job purges it after that, rasters included, and the trash page states this same number. No "never" value.                    |
 
 The intervals themselves are not env-configurable: they are defaults in each
 module (auth 1 h, analytics 24 h, retention 24 h, digest 24 h at `runAtHour`),

@@ -241,7 +241,7 @@
   "list.time.justNow": "à l'instant",
   "list.time.minutesAgo": "il y a {count} min",
   "list.trash.empty": "La corbeille est vide.",
-  "list.trash.hint": "Les éléments de la corbeille sont supprimés définitivement au bout de 30 jours. Vous pouvez les restaurer avant.",
+  "list.trash.hint": "Les éléments de la corbeille sont supprimés définitivement au bout de {days} jours. Vous pouvez les restaurer avant.",
   "list.trash.loadError": "Impossible de charger la corbeille.",
   "list.trash.loading": "Chargement…",
   "list.trash.title": "Corbeille",

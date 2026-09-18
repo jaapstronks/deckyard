@@ -357,17 +357,51 @@ export async function restorePresentation(storageScope, id) {
 }
 
 /**
- * Permanently delete a trashed presentation.
+ * Delete the database record of a trashed presentation. Everything keyed to it
+ * rides the `ON DELETE CASCADE` foreign keys; what lives outside the database
+ * (the deck's rasters) does not, which is why this is the *record* half of the
+ * operation and not the operation itself. Callers want
+ * `server/services/permanent-delete.js#permanentlyDeletePresentation`, the one
+ * seam that ends a deck for good — the button and the retention sweep both go
+ * through it, so they cannot drift apart.
+ *
+ * Only a deck that is actually in the trash can be erased: permanent deletion
+ * is the second step of trashing, never a shortcut past it, and the guard is
+ * what makes a repeated sweep provably unable to touch a live deck.
+ *
  * @param {import('../scope.js').StorageScope} storageScope
  * @param {string} id
+ * @returns {Promise<{ok: true}|{ok: false, reason: string}>}
+ *   `not_found` when no deck with that id lives in this organization,
+ *   `not_trashed` when it does but is not in the trash.
  */
-export async function permanentlyDeletePresentation(storageScope, id) {
+export async function deletePresentationRecord(storageScope, id) {
   try {
-    const ctx = toStorageContext(storageScope, 'permanentlyDeletePresentation');
-    return await permanentlyDeletePresentationRow(id, ctx);
+    const ctx = toStorageContext(storageScope, 'deletePresentationRecord');
+    return await deletePresentationRecordRow(id, ctx);
   } finally {
     invalidatePresentationCache(id);
   }
+}
+
+/**
+ * List the decks that have been in the trash since before `cutoffIso`, for the
+ * retention sweep. Returns the organization alongside each id: the sweep reads
+ * across organizations because retention is an instance-wide policy, but every
+ * purge it then performs is scoped to the organization the deck came from.
+ *
+ * @param {import('../scope.js').StorageScope} storageScope - A cross-organization scope.
+ * @param {string} cutoffIso - ISO timestamp; decks trashed at or before it are due.
+ * @returns {Promise<Array<{id: string, organizationId: string, title: string}>>}
+ */
+export async function listTrashedPresentationsBefore(storageScope, cutoffIso) {
+  const ctx = toStorageContext(
+    storageScope,
+    'listTrashedPresentationsBefore',
+    {},
+    { allowCrossOrganization: true },
+  );
+  return listTrashedPresentationRowsBefore(cutoffIso, ctx);
 }
 
 /**
@@ -1191,11 +1225,14 @@ async function restorePresentationRow(id, ctx) {
 }
 
 /**
- * Permanently delete a presentation (bypass trash).
+ * Delete the record of a trashed presentation. Separates "no such deck here"
+ * from "that deck is not in the trash" so the caller can say which it was,
+ * the way restore already does.
  * @param {string} id - Presentation ID
  * @param {object} ctx - Storage context
+ * @returns {Promise<{ok: true}|{ok: false, reason: string}>}
  */
-async function permanentlyDeletePresentationRow(id, ctx) {
+async function deletePresentationRecordRow(id, ctx) {
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -1203,9 +1240,50 @@ async function permanentlyDeletePresentationRow(id, ctx) {
     .deleteFrom('presentations')
     .where('id', '=', id)
     .where('organization_id', '=', orgId)
+    .where('trashed_at', 'is not', null)
     .executeTakeFirst();
 
-  return result.numDeletedRows > 0;
+  if (result.numDeletedRows > 0) return { ok: true };
+
+  // Nothing went: either the deck is not in this organization, or it is but is
+  // not trashed. One extra read tells the caller which, and costs nothing on
+  // the path that matters (a successful delete never reaches here).
+  const existing = await db
+    .selectFrom('presentations')
+    .select(['id'])
+    .where('id', '=', id)
+    .where('organization_id', '=', orgId)
+    .executeTakeFirst();
+
+  return { ok: false, reason: existing ? 'not_trashed' : 'not_found' };
+}
+
+/**
+ * Decks trashed at or before `cutoffIso`, across every organization — the
+ * retention sweep's candidate list. Deliberately unscoped as a *read*: the
+ * retention window is instance configuration, not an organization's setting.
+ * Each id comes back with its organization so the purge that follows is
+ * organization-scoped again (server/storage/scope.js § cross-organization).
+ * @param {string} cutoffIso - ISO timestamp
+ * @param {object} _ctx - Storage context (cross-organization)
+ * @returns {Promise<Array<{id: string, organizationId: string, title: string}>>}
+ */
+async function listTrashedPresentationRowsBefore(cutoffIso, _ctx) {
+  const db = getDb();
+
+  const rows = await db
+    .selectFrom('presentations')
+    .select(['id', 'organization_id as organizationId', 'title'])
+    .where('trashed_at', 'is not', null)
+    .where('trashed_at', '<=', cutoffIso)
+    .orderBy('trashed_at', 'asc')
+    .execute();
+
+  return rows.map((row) => ({
+    id: row.id,
+    organizationId: row.organizationId,
+    title: typeof row.title === 'string' ? row.title : '',
+  }));
 }
 
 /**

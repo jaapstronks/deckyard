@@ -243,7 +243,7 @@
   "list.time.justNow": "ahora mismo",
   "list.time.minutesAgo": "hace {count} min",
   "list.trash.empty": "La papelera está vacía.",
-  "list.trash.hint": "Los elementos de la papelera se eliminan definitivamente al cabo de 30 días. Hasta entonces puede restaurarlos.",
+  "list.trash.hint": "Los elementos de la papelera se eliminan definitivamente al cabo de {days} días. Hasta entonces puede restaurarlos.",
   "list.trash.loadError": "No se pudo cargar la papelera.",
   "list.trash.loading": "Cargando…",
   "list.trash.title": "Papelera",

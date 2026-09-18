@@ -240,7 +240,7 @@
   "list.time.justNow": "gerade eben",
   "list.time.minutesAgo": "vor {count} Min.",
   "list.trash.empty": "Der Papierkorb ist leer.",
-  "list.trash.hint": "Elemente im Papierkorb werden nach 30 Tagen endgültig gelöscht. Bis dahin können Sie sie wiederherstellen.",
+  "list.trash.hint": "Elemente im Papierkorb werden nach {days} Tagen endgültig gelöscht. Bis dahin können Sie sie wiederherstellen.",
   "list.trash.loadError": "Papierkorb konnte nicht geladen werden.",
   "list.trash.loading": "Wird geladen…",
   "list.trash.title": "Papierkorb",
