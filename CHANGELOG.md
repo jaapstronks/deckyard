@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.36.1](https://github.com/jaapstronks/deckyard/compare/v1.36.0...v1.36.1) (2026-09-18)
+
+
+### Security
+
+* **library:** one server-side save contract for library items ([#1177](https://github.com/jaapstronks/deckyard/issues/1177)) ([d4a8a1c](https://github.com/jaapstronks/deckyard/commit/d4a8a1c331b9689cc9011acd93201bceedd10f3c))
+
 ## [1.36.0](https://github.com/jaapstronks/deckyard/compare/v1.35.0...v1.36.0) (2026-09-18)
 
 
