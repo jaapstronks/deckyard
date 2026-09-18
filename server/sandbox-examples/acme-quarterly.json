@@ -38,7 +38,7 @@
       "type": "kpi-metrics-slide",
       "content": {
         "title": "Headline results",
-        "subheading": "Full-year, against the board-approved plan",
+        "subheading": "Full year FY25",
         "background": "mist",
         "accent": "highlight-best",
         "metrics": [
@@ -52,13 +52,13 @@
             "value": "31",
             "unit": "%",
             "label": "Gross margin",
-            "note": "+2pp"
+            "note": "+2pp vs FY24"
           },
           {
             "value": "62",
             "unit": "",
             "label": "NPS",
-            "note": "+7 vs last review"
+            "note": "+7 vs FY24"
           },
           {
             "value": "94",
@@ -86,9 +86,9 @@
       "content": {
         "title": "Plan vs actual",
         "leftTitle": "What we planned",
-        "leftBody": "- 44M€ revenue target\n- 29% gross margin\n- Two new enterprise segments\n- Flat headcount",
+        "leftBody": "- 44M€ revenue target\n- 29% gross margin\n- Two new regions (DACH, Nordics)\n- Flat headcount",
         "rightTitle": "What we delivered",
-        "rightBody": "- **48.6M€** revenue (+11% over target)\n- **31%** gross margin\n- Three segments live\n- +14 net hires in sales",
+        "rightBody": "- **48.6M€** revenue (+11% over target)\n- **31%** gross margin\n- Three regions live (DACH, Nordics, Benelux)\n- +14 net hires in sales",
         "verdict": "Ahead of plan",
         "background": "mist"
       }
@@ -102,10 +102,26 @@
         "colCount": "3",
         "tableStyle": "panel",
         "rows": [
-          { "c1": "Segment", "c2": "Revenue (M€)", "c3": "YoY growth" },
-          { "c1": "Enterprise", "c2": "22.1", "c3": "+24%" },
-          { "c1": "Mid-market", "c2": "17.4", "c3": "+15%" },
-          { "c1": "SMB", "c2": "9.1", "c3": "+6%" }
+          {
+            "c1": "Segment",
+            "c2": "Revenue (M€)",
+            "c3": "YoY growth"
+          },
+          {
+            "c1": "Enterprise",
+            "c2": "22.1",
+            "c3": "+26%"
+          },
+          {
+            "c1": "Mid-market",
+            "c2": "17.4",
+            "c3": "+15%"
+          },
+          {
+            "c1": "SMB",
+            "c2": "9.1",
+            "c3": "+6%"
+          }
         ],
         "background": "lime"
       }
@@ -141,8 +157,8 @@
           },
           {
             "date": "Q4",
-            "title": "50M€ run-rate",
-            "text": "Cross the milestone we set out to reach."
+            "title": "70M€ run-rate",
+            "text": "Up from 58M€ at the Q4 FY25 exit rate."
           }
         ],
         "background": "mist"
