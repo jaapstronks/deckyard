@@ -322,10 +322,6 @@ const smallFacades = {
       (fn) => fn('/srv', { name: 'x', slideType: 'title-slide' }),
     ],
     ['updateOrganizationLibraryItem', (fn) => fn('/srv', 'item-1', {})],
-    [
-      'setOrganizationLibraryItemTrashed',
-      (fn) => fn('/srv', 'item-1', { trashed: true }),
-    ],
     ['deleteOrganizationLibraryItem', (fn) => fn('/srv', 'item-1', {})],
     // These three never had a scope argument to begin with.
     ['getTagsForSlideLibraryItem', (fn) => fn('item-1', {})],

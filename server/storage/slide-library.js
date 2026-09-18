@@ -26,6 +26,8 @@ import {
 } from './display-identity.js';
 import { nowIso } from '../utils/normalize.js';
 import { migrateLibraryItem } from '../../shared/slide-types/schema-version.js';
+import { mergeLibraryI18n } from '../../shared/slide-library/merge-content.js';
+import { ConflictError } from '../utils/errors.js';
 
 /**
  * Serialize a JSONB value for PostgreSQL.
@@ -64,6 +66,9 @@ export function mapSlideLibraryRow(row, lookup = NO_DISPLAY_NAMES) {
     content,
     i18n,
     favorites: row.favorites || [],
+    // The optimistic-concurrency token (D170): the client sends it back as
+    // `If-Match`, and a name/description/content write raises it.
+    revision: row.revision ?? 0,
     trashedAt: row.trashed_at,
     // Everyone named on an item is a display pair (D22): the stable `users.id`
     // (migration 070) and the name to render, never the address. The id is
@@ -185,54 +190,206 @@ async function createSlideLibraryRow(data, ctx) {
   return mapSlideLibraryRow(row, await libraryDisplayNames([row]));
 }
 
-async function updateSlideLibraryRow(id, data, ctx) {
-  const db = getDb();
-  const orgId = getOrgId(ctx);
+// ============================================================
+// The save contract (D170)
+// ============================================================
 
-  // Build update object, only including fields that are defined.
+/**
+ * The keys a library PATCH may carry. `i18n` is deliberately absent: the
+ * language versions are derived by the server from `content`
+ * (`mergeLibraryI18n`), and a second route to the same state is how they went
+ * stale. `slideType`, `themeId` and `shelf` are fixed at create.
+ */
+const PATCH_KEYS = Object.freeze([
+  'name',
+  'description',
+  'content',
+  'trashed',
+  'favorite',
+]);
+
+/** The keys that change what an item *is*: they need `If-Match` and raise the revision. */
+const EDIT_KEYS = Object.freeze(['name', 'description', 'content']);
+
+function isPlainObject(v) {
+  return v !== null && typeof v === 'object' && !Array.isArray(v);
+}
+
+/**
+ * Refuse a patch outside the closed key set, or with a value of the wrong
+ * shape. One refusal names one field; the first one found wins. The route
+ * calls it before it looks at `If-Match`, and `patchLibraryItem` calls it
+ * again, so no writer reaches the table with an open patch.
+ * @param {*} patch
+ * @returns {{ok: false, reason: 'invalid', field: string}|null}
+ */
+export function libraryPatchViolation(patch) {
+  if (!isPlainObject(patch))
+    return { ok: false, reason: 'invalid', field: 'body' };
+  // A key outside the set is a fault of the body as a whole: `field` is a
+  // literal token (tests/storage-reason-vocabulary.test.js), so the key itself
+  // travels in the message.
+  const unknown = Object.keys(patch).find((k) => !PATCH_KEYS.includes(k));
+  if (unknown !== undefined) {
+    return {
+      ok: false,
+      reason: 'invalid',
+      field: 'body',
+      message: `A library PATCH takes ${PATCH_KEYS.join(', ')}; "${unknown}" is not one of them`,
+    };
+  }
+  if ('name' in patch && (typeof patch.name !== 'string' || !patch.name.trim()))
+    return { ok: false, reason: 'invalid', field: 'name' };
+  if ('description' in patch && typeof patch.description !== 'string')
+    return { ok: false, reason: 'invalid', field: 'description' };
+  if ('content' in patch && !isPlainObject(patch.content))
+    return { ok: false, reason: 'invalid', field: 'content' };
+  if ('trashed' in patch && typeof patch.trashed !== 'boolean')
+    return { ok: false, reason: 'invalid', field: 'trashed' };
+  if ('favorite' in patch && typeof patch.favorite !== 'boolean')
+    return { ok: false, reason: 'invalid', field: 'favorite' };
+  return null;
+}
+
+function conflictError(item) {
+  return new ConflictError(
+    'Conflict: this library slide was changed by someone else. Reload and try again.',
+    {
+      id: item.id,
+      revision: item.revision,
+      modified: item.updatedAt,
+      updatedBy: item.updatedBy || null,
+    },
+  );
+}
+
+/**
+ * Select the one row a mutation may touch: this id, this organization, this
+ * shelf, and on the personal shelf this owner. Everything a mutation writes or
+ * deletes carries the same WHERE, so an item outside it is not merely refused
+ * — it does not exist for the caller (`not_found`).
+ */
+function whereItem(query, { id, orgId, shelf, ownerEmail }) {
+  let q = query
+    .where('id', '=', id)
+    .where('organization_id', '=', orgId)
+    .where('shelf', '=', shelf);
+  if (shelf === 'personal') q = q.where('owner_email', '=', ownerEmail || '');
+  return q;
+}
+
+async function readItem(ctx, target) {
+  const row = await whereItem(getDb().selectFrom('slide_library').selectAll(), {
+    ...target,
+    orgId: getOrgId(ctx),
+  }).executeTakeFirst();
+  if (!row) return null;
+  return mapSlideLibraryRow(row, await libraryDisplayNames([row]));
+}
+
+/**
+ * Apply a library PATCH under the save contract (D170).
+ *
+ * @param {object} ctx - Storage context
+ * @param {object} target
+ * @param {string} target.id
+ * @param {'personal'|'organization'} target.shelf
+ * @param {string} [target.ownerEmail] - The owner, on the personal shelf
+ * @param {object} patch - Keys from `PATCH_KEYS`
+ * @param {object} opts
+ * @param {number|null} [opts.expectedRevision] - Required when the patch has an `EDIT_KEYS` key
+ * @param {(item: object) => boolean|Promise<boolean>} [opts.allowEdit] - The
+ *   organization-shelf guard; an organization edit or trash without one is refused
+ * @param {(item: object, nextContent: object) => string|null} [opts.contentGuard] -
+ *   Returns a refusal message for content the actor may not write
+ * @param {string|null} [opts.trashedBy] - Who a trash toggle is attributed to
+ * @returns {Promise<{ok: true, item: object}|{ok: false, reason: string, field?: string, message?: string}>}
+ * @throws {ConflictError} When `expectedRevision` is not the stored revision
+ */
+async function patchLibraryItem(ctx, target, patch, opts = {}) {
+  const invalid = libraryPatchViolation(patch);
+  if (invalid) return invalid;
+  const edits = EDIT_KEYS.some((k) => k in patch);
+  const { expectedRevision = null } = opts;
+  if (edits && !Number.isInteger(expectedRevision)) {
+    // The route answers 428 before it gets here; reaching this is a caller bug.
+    throw new TypeError('patchLibraryItem: an edit needs expectedRevision');
+  }
+
+  const existing = await readItem(ctx, target);
+  if (!existing) return { ok: false, reason: 'not_found' };
+
+  if (target.shelf === 'organization' && (edits || 'trashed' in patch)) {
+    // Fail closed: a shared item is changed by its creator or an admin, and a
+    // caller that brings no guard is not either.
+    const allowed =
+      typeof opts.allowEdit === 'function' && (await opts.allowEdit(existing));
+    if (!allowed) return { ok: false, reason: 'forbidden' };
+  }
+  if (edits && existing.revision !== expectedRevision) {
+    throw conflictError(existing);
+  }
+  if ('content' in patch && typeof opts.contentGuard === 'function') {
+    const message = opts.contentGuard(existing, patch.content);
+    if (message) return { ok: false, reason: 'forbidden', message };
+  }
+
+  const updateData = {};
+  if ('name' in patch) updateData.name = patch.name.trim();
+  if ('description' in patch) updateData.description = patch.description;
+  if ('content' in patch) {
+    updateData.content = jsonb(patch.content);
+    updateData.i18n = jsonb(
+      mergeLibraryI18n({
+        slideType: existing.slideType,
+        content: patch.content,
+        i18n: existing.i18n,
+      }),
+    );
+  }
+  if ('trashed' in patch) {
+    updateData.trashed_at = patch.trashed ? nowIso() : null;
+    updateData.trashed_by = patch.trashed ? opts.trashedBy || null : null;
+  }
+  // `favorite` is in the key set, but storing it is B334; until then a
+  // favorite-only patch writes nothing and answers with the item as it is.
+  if (Object.keys(updateData).length === 0) return { ok: true, item: existing };
+
+  updateData.updated_at = nowIso();
   // Dual-key (T10 PR F2): stamp updated_by_user_id from the same resolution
-  // only when there is an actor to stamp, so an actor-less write (Kysely drops
-  // the undefined updated_by) never nulls the id half while the e-mail half
-  // keeps the previous writer.
-  const updateData = {
-    updated_at: nowIso(),
-  };
+  // only when there is an actor to stamp, so an actor-less write never nulls
+  // the id half while the e-mail half keeps the previous writer.
   if (ctx?.actorEmail) {
     const actorResolution = await resolveIdentityByEmail(ctx.actorEmail);
     updateData.updated_by = ctx.actorEmail;
     updateData.updated_by_user_id = actorResolution?.userId ?? null;
   }
-  if (data.name !== undefined) updateData.name = data.name;
-  if (data.description !== undefined) updateData.description = data.description;
-  if (data.content !== undefined) updateData.content = jsonb(data.content);
-  if (data.i18n !== undefined) updateData.i18n = jsonb(data.i18n);
-  if (data.favorites !== undefined)
-    updateData.favorites = sql`${data.favorites}::text[]`;
-  if (data.trashedAt !== undefined) updateData.trashed_at = data.trashedAt;
-  if (data.trashedBy !== undefined) updateData.trashed_by = data.trashedBy;
+  if (edits) updateData.revision = expectedRevision + 1;
 
-  const row = await db
-    .updateTable('slide_library')
-    .set(updateData)
-    .where('id', '=', id)
-    .where('organization_id', '=', orgId)
-    .returningAll()
-    .executeTakeFirst();
-
-  if (!row) return null;
-  return mapSlideLibraryRow(row, await libraryDisplayNames([row]));
+  let query = whereItem(getDb().updateTable('slide_library').set(updateData), {
+    ...target,
+    orgId: getOrgId(ctx),
+  });
+  // The revision test is part of the UPDATE, so it is atomic: a write that
+  // landed between the read above and this statement makes it match nothing.
+  if (edits) query = query.where('revision', '=', expectedRevision);
+  const row = await query.returningAll().executeTakeFirst();
+  if (row) {
+    return {
+      ok: true,
+      item: mapSlideLibraryRow(row, await libraryDisplayNames([row])),
+    };
+  }
+  const now = await readItem(ctx, target);
+  if (now && edits) throw conflictError(now);
+  return { ok: false, reason: 'not_found' };
 }
 
-async function deleteSlideLibraryRow(id, ctx) {
-  const db = getDb();
-  const orgId = getOrgId(ctx);
-
-  const result = await db
-    .deleteFrom('slide_library')
-    .where('id', '=', id)
-    .where('organization_id', '=', orgId)
-    .executeTakeFirst();
-
+async function deleteLibraryItem(ctx, target) {
+  const result = await whereItem(getDb().deleteFrom('slide_library'), {
+    ...target,
+    orgId: getOrgId(ctx),
+  }).executeTakeFirst();
   return result.numDeletedRows > 0;
 }
 
@@ -281,33 +438,38 @@ export async function createPersonalLibraryItem(
   return { ok: true, item: result };
 }
 
+/**
+ * Patch an item on `userEmail`'s personal shelf. Someone else's item, and any
+ * organization item, is `not_found`. See `patchLibraryItem` for the contract.
+ */
 export async function updatePersonalLibraryItem(
   storageScope,
   userEmail,
   id,
   patch,
-  { actorEmail } = {},
+  { actorEmail, expectedRevision = null, contentGuard } = {},
 ) {
   const ctx = toStorageContext(storageScope, 'updatePersonalLibraryItem', {
     userEmail,
     actorEmail,
   });
-  const normalizedPatch = { ...patch };
-  if ('trashed' in patch) {
-    normalizedPatch.trashedAt = patch.trashed ? nowIso() : null;
-    normalizedPatch.trashedBy = patch.trashed ? actorEmail || userEmail : null;
-    delete normalizedPatch.trashed;
-  }
-  const result = await updateSlideLibraryRow(id, normalizedPatch, ctx);
-  if (!result) return { ok: false, reason: 'not_found' };
-  return { ok: true, item: result };
+  return patchLibraryItem(
+    ctx,
+    { id, shelf: 'personal', ownerEmail: userEmail },
+    patch,
+    { expectedRevision, contentGuard, trashedBy: actorEmail || userEmail },
+  );
 }
 
 export async function deletePersonalLibraryItem(storageScope, userEmail, id) {
   const ctx = toStorageContext(storageScope, 'deletePersonalLibraryItem', {
     userEmail,
   });
-  const deleted = await deleteSlideLibraryRow(id, ctx);
+  const deleted = await deleteLibraryItem(ctx, {
+    id,
+    shelf: 'personal',
+    ownerEmail: userEmail,
+  });
   if (!deleted) return { ok: false, reason: 'not_found' };
   return { ok: true };
 }
@@ -365,51 +527,27 @@ export async function createOrganizationLibraryItem(
   return { ok: true, item: result };
 }
 
+/**
+ * Patch an item on the organization shelf. Changing its name, description or
+ * content, or trashing it, passes `allowEdit` — one rule for "change a shared
+ * item" (D170); without a guard it is `forbidden`. A personal item is
+ * `not_found`. See `patchLibraryItem` for the contract.
+ */
 export async function updateOrganizationLibraryItem(
   storageScope,
   id,
   patch,
-  { actorEmail } = {},
+  { actorEmail, expectedRevision = null, allowEdit, contentGuard } = {},
 ) {
   const ctx = toStorageContext(storageScope, 'updateOrganizationLibraryItem', {
     actorEmail,
   });
-  const result = await updateSlideLibraryRow(id, patch, ctx);
-  if (!result) return { ok: false, reason: 'not_found' };
-  return { ok: true, item: result };
-}
-
-export async function setOrganizationLibraryItemTrashed(
-  storageScope,
-  id,
-  { trashed, actorEmail, allowTrash } = {},
-) {
-  const ctx = toStorageContext(
-    storageScope,
-    'setOrganizationLibraryItemTrashed',
-    { actorEmail },
-  );
-  if (typeof allowTrash === 'function') {
-    // Resolve the guard's target directly by id, never through the org list:
-    // that list was capped at 100 rows (B85), so an item past the newest page
-    // would have failed the authz guard with a false not_found. A non-org-shelf
-    // id is not an organization-shelf item, so it stays not_found here.
-    const item = await getSlideLibraryRow(id, ctx);
-    if (!item || item.shelf !== 'organization')
-      return { ok: false, reason: 'not_found' };
-    const ok = await allowTrash(item, { actorEmail });
-    if (!ok) return { ok: false, reason: 'forbidden' };
-  }
-  const result = await updateSlideLibraryRow(
-    id,
-    {
-      trashedAt: trashed ? nowIso() : null,
-      trashedBy: trashed ? actorEmail : null,
-    },
-    ctx,
-  );
-  if (!result) return { ok: false, reason: 'not_found' };
-  return { ok: true, item: result };
+  return patchLibraryItem(ctx, { id, shelf: 'organization' }, patch, {
+    expectedRevision,
+    allowEdit,
+    contentGuard,
+    trashedBy: actorEmail || null,
+  });
 }
 
 export async function deleteOrganizationLibraryItem(
@@ -420,18 +558,19 @@ export async function deleteOrganizationLibraryItem(
   const ctx = toStorageContext(storageScope, 'deleteOrganizationLibraryItem', {
     actorEmail,
   });
-  if (typeof allowDelete === 'function') {
-    // Resolve the guard's target directly by id, never through the org list:
-    // that list was capped at 100 rows (B85), so an item past the newest page
-    // would have failed the authz guard with a false not_found. A non-org-shelf
-    // id is not an organization-shelf item, so it stays not_found here.
-    const item = await getSlideLibraryRow(id, ctx);
-    if (!item || item.shelf !== 'organization')
-      return { ok: false, reason: 'not_found' };
-    const ok = await allowDelete(item, { actorEmail });
-    if (!ok) return { ok: false, reason: 'forbidden' };
-  }
-  const deleted = await deleteSlideLibraryRow(id, ctx);
+  // Resolve the guard's target directly by id, never through the org list
+  // (B85: that list was once capped, and a guard behind the cap failed with a
+  // false not_found). A personal item is not on this shelf: not_found. The
+  // guard is required — a shared item is deleted by its creator or an admin,
+  // and a caller that brings no guard is neither.
+  const target = { id, shelf: 'organization' };
+  const item = await readItem(ctx, target);
+  if (!item) return { ok: false, reason: 'not_found' };
+  const ok =
+    typeof allowDelete === 'function' &&
+    (await allowDelete(item, { actorEmail }));
+  if (!ok) return { ok: false, reason: 'forbidden' };
+  const deleted = await deleteLibraryItem(ctx, target);
   if (!deleted) return { ok: false, reason: 'not_found' };
   return { ok: true };
 }

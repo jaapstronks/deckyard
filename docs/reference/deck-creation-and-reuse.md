@@ -159,5 +159,62 @@ version per language, sharing a stable slide id across versions. A slide with
 no multilingual content falls back to a single version.
 
 Pinned by `tests/slide-library-compose-i18n.test.js` (both halves of the
-round-trip) and `tests/pg/slide-library-i18n-storage.pgtest.js` (create,
-read-back and update against real PostgreSQL).
+round-trip) and `tests/pg/slide-library-i18n-storage.pgtest.js` (create and
+read-back against real PostgreSQL, and a PATCH that cannot overwrite `i18n`).
+
+## Changing a library item: the save contract
+
+A library item is changed through one server-authoritative route, for every
+writer — the UI today, an API or MCP client later (D170). The rules live in the
+storage layer (`patchLibraryItem` in `server/storage/slide-library.js`), so a
+writer that bypasses the route still meets them.
+
+- **Address and keys.** `PATCH /api/slide-library/<shelf>/<id>`, where `shelf`
+  is `personal` or `organization`. The body takes a closed key set: `name`,
+  `description`, `content`, `trashed`, `favorite`. Any other key — `i18n`
+  included — is `400 invalid` with `details.field: 'body'` and the key named in
+  the message; a known key with a value of the wrong shape is `400 invalid`
+  naming that field. `slideType`, `themeId` and `shelf` are fixed at create.
+- **Who.** Every update and delete carries `shelf` and, on the personal shelf,
+  `owner_email` in its WHERE. Someone else's personal item, a personal item
+  addressed through the organization route and an organization item addressed
+  through the personal route are all `404 not_found`: the item's existence is
+  not given away. On the organization shelf, changing `name`, `description` or
+  `content`, trashing and deleting follow one guard — an admin or the item's
+  creator (`matchesIdentity` on `createdBy.id`), otherwise `403 forbidden`.
+  `favorite` is per user and open to everyone. Both list routes return
+  `canEdit` on every item from that same predicate, so a client derives
+  nothing; the personal list is always `canEdit: true`.
+- **Revision.** Every item carries an integer `revision` (migration
+  `082_slide_library_revision.js`, starting at 0). A PATCH with `name`,
+  `description` or `content` needs `If-Match: <revision>` (read with
+  `parseIfMatchRevision`, as on a deck) — without it `428 missing_if_match`,
+  and with a stale one `409 conflict` carrying the stored `id`, `revision`,
+  `modified` and `updatedBy`. The UPDATE has `revision` in its WHERE, so the
+  test is atomic, and the write raises it by one. `trashed` and `favorite` do
+  not touch the revision.
+- **Languages.** `content` is the base-language content, and the server
+  rebuilds `i18n` from it (`mergeLibraryI18n` in
+  `shared/slide-library/merge-content.js`): `versions[dominant].content`
+  becomes the new content, and every other version keeps its prose on the new
+  structure through `contentTranslation` / `applyContentTranslation` — the same
+  pair the deck save and the portable deck use. Structure, images, layout and
+  background follow the base; an item added to the base is empty in the other
+  languages; items match by index. An item without `i18n.dominant` gets no
+  versions added. Unknown keys on `i18n` and on a version are kept.
+- **Content.** `content` replaces the stored content as a whole; the client
+  sends its full working copy, keys the schema does not know included. The
+  server does not validate it against the type's schema, but it must be a plain
+  object, and the raw-HTML/CSS capability gate (`customHtmlEditViolation`)
+  applies against the stored version — on create too, where every language
+  version in the body is checked.
+
+**Implementation status (2026-09-18, B335).** All of the above is enforced.
+The client sends `If-Match` from the item it loaded
+(`client/lib/slide-library/api.js`); the full-slide editor that replaces the
+text-only edit modal is B336. `favorite` is accepted but not yet stored (B334):
+a favorite-only PATCH writes nothing and returns the item. Pinned by
+`tests/pg/slide-library-save-contract.pgtest.js` (ownership, guard, atomic
+revision, merge on real PostgreSQL), `tests/slide-library-save-route.test.js`
+(key set, 428, custom-HTML on create) and
+`tests/slide-library-merge-content.test.js`.

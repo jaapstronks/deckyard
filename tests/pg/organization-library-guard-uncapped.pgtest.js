@@ -2,7 +2,7 @@
  * The organization-library trash/delete authz guard resolves its target un-capped (B85).
  *
  * B79 inherited the old `applyPagination()` default as a literal `.limit(100)`
- * on the slide-library list. `setOrganizationLibraryItemTrashed`/`deleteOrganizationLibraryItem`
+ * on the slide-library list. `updateOrganizationLibraryItem` (trash)/`deleteOrganizationLibraryItem`
  * then resolved the guard's target by scanning that capped list, so an item that
  * sat past the newest 100 rows failed the authz guard with a false `not_found` —
  * an organization simply could not trash or delete the tail of its own shelf.
@@ -39,7 +39,7 @@ import {
 import { testScope } from '../helpers/storage-scope.js';
 import {
   listOrganizationLibrary,
-  setOrganizationLibraryItemTrashed,
+  updateOrganizationLibraryItem,
   deleteOrganizationLibraryItem,
 } from '../../server/storage/slide-library.js';
 import { getDefaultOrganizationId } from '../../server/config/database.js';
@@ -107,11 +107,12 @@ pgDescribe(
     });
 
     it('trashes an item past the newest 100 (no false not_found)', async () => {
-      const r = await setOrganizationLibraryItemTrashed(storageScope, tailId, {
-        trashed: true,
-        actorEmail: CREATOR,
-        allowTrash: () => true,
-      });
+      const r = await updateOrganizationLibraryItem(
+        storageScope,
+        tailId,
+        { trashed: true },
+        { actorEmail: CREATOR, allowEdit: () => true },
+      );
       assert.equal(r.ok, true, 'the guard resolved the capped-out item');
       assert.ok(r.item.trashedAt, 'it was actually soft-deleted');
 
@@ -138,12 +139,13 @@ pgDescribe(
       assert.equal(row, undefined, 'the row is gone');
     });
 
-    it('still enforces the guard: a rejecting allowTrash returns forbidden', async () => {
-      const r = await setOrganizationLibraryItemTrashed(storageScope, tailId, {
-        trashed: true,
-        actorEmail: 'someone-else@example.com',
-        allowTrash: () => false,
-      });
+    it('still enforces the guard: a rejecting allowEdit returns forbidden', async () => {
+      const r = await updateOrganizationLibraryItem(
+        storageScope,
+        tailId,
+        { trashed: true },
+        { actorEmail: 'someone-else@example.com', allowEdit: () => false },
+      );
       assert.equal(r.ok, false);
       assert.equal(
         r.reason,

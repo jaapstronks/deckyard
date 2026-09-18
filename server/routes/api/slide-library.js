@@ -1,5 +1,7 @@
 import {
   badRequest,
+  forbidden,
+  jsonError,
   methodNotAllowed,
   requireJsonBody,
   serveJson,
@@ -16,7 +18,7 @@ import {
   listOrganizationLibrary,
   updatePersonalLibraryItem,
   updateOrganizationLibraryItem,
-  setOrganizationLibraryItemTrashed,
+  libraryPatchViolation,
   getTagsForSlideLibraryItem,
   getTagsForSlideLibraryItems,
   setTagsForSlideLibraryItem,
@@ -33,6 +35,11 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { createLogger } from '../../utils/logger.js';
 import { matchesIdentity } from '../../../shared/identity-match.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
+import {
+  canEditCustomHtml,
+  customHtmlEditViolation,
+} from '../../utils/route-middleware.js';
+import { parseIfMatchRevision } from './presentations/helpers.js';
 const log = createLogger('slide-library');
 
 function cleanThemeId(v) {
@@ -51,7 +58,86 @@ function cleanThemeId(v) {
  * @returns {true}
  */
 function mutationError(res, result) {
-  return storageError(res, result);
+  return storageError(res, result, result.message);
+}
+
+/**
+ * The one predicate for "may this user change this shared item" (D170): its
+ * name, description or content, trashing it, and deleting it. An admin, or the
+ * creator by `users.id` (T10 PR F2) — the creator keeps the right across a
+ * rename, and an item whose creator column is a defined NULL belongs to nobody
+ * but an admin. The lists expose it as `canEdit`, so the client derives nothing.
+ *
+ * @param {object|null} authedUser
+ * @param {object} item - A mapped library item
+ * @returns {boolean}
+ */
+function canEditOrganizationItem(authedUser, item) {
+  if (authedUser?.isAdmin) return true;
+  return matchesIdentity(authedUser, { userId: item?.createdBy?.id });
+}
+
+/**
+ * The raw-HTML/CSS capability gate on a library item, the same one every deck
+ * write path enforces: a user without `canEditCustomHtml` may not create or
+ * change the markup of a custom-html-slide. Returns a refusal message or null.
+ *
+ * @param {object|null} authedUser
+ * @param {{id?: string, slideType?: string, content?: object}|null} prev - The stored item, or null on create
+ * @param {string} slideType
+ * @param {object[]} nextContents - Every content object being written
+ * @returns {string|null}
+ */
+function customHtmlViolation(authedUser, prev, slideType, nextContents) {
+  const id = prev?.id || 'new';
+  const prevSlides = prev
+    ? [{ id, type: prev.slideType, content: prev.content }]
+    : [];
+  for (const content of nextContents) {
+    const violation = customHtmlEditViolation(
+      prevSlides,
+      [{ id, type: slideType, content }],
+      canEditCustomHtml(authedUser),
+    );
+    if (violation) return violation;
+  }
+  return null;
+}
+
+/** Every content object a create body carries: the base and each language version. */
+function createContents(body) {
+  const versions = body?.i18n?.versions;
+  return [
+    body?.content,
+    ...(versions && typeof versions === 'object'
+      ? Object.values(versions).map((v) => v?.content)
+      : []),
+  ].filter(Boolean);
+}
+
+/**
+ * The save-contract options a PATCH hands to storage (D170): the `If-Match`
+ * revision and the content gate. Answers itself and returns null for a patch
+ * outside the closed key set (400 `invalid` with the field) and for a
+ * name/description/content edit without `If-Match` (428).
+ */
+function patchOptions(req, res, body, authedUser) {
+  const invalid = libraryPatchViolation(body);
+  if (invalid) {
+    mutationError(res, invalid);
+    return null;
+  }
+  const edits = ['name', 'description', 'content'].some((k) => k in body);
+  const expectedRevision = parseIfMatchRevision(req);
+  if (edits && expectedRevision == null) {
+    jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
+    return null;
+  }
+  return {
+    expectedRevision,
+    contentGuard: (item, next) =>
+      customHtmlViolation(authedUser, item, item.slideType, [next]),
+  };
 }
 
 function actorEmail(authedUser) {
@@ -88,6 +174,8 @@ async function handlePersonalList({ storageScope, res, url, authedUser }) {
   const email = actorEmail(authedUser);
   const themeId = cleanThemeId(url.searchParams.get('theme') || '');
   const out = await listPersonalLibrary(storageScope, email, { themeId });
+  // The personal list holds only the caller's own items.
+  for (const item of out.items) item.canEdit = true;
   // Attach tags to each item
   if (Array.isArray(out?.items) && out.items.length > 0) {
     const ids = out.items.map((it) => it.id);
@@ -108,6 +196,13 @@ async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  const violation = customHtmlViolation(
+    authedUser,
+    null,
+    body?.slideType,
+    createContents(body),
+  );
+  if (violation) return forbidden(res, violation);
   const r = await createPersonalLibraryItem(storageScope, email, body, {
     actorEmail: email,
   });
@@ -125,11 +220,14 @@ async function handlePersonalUpdate(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  const opts = patchOptions(req, res, body, authedUser);
+  if (!opts) return true;
   const r = await updatePersonalLibraryItem(storageScope, email, id, body, {
     actorEmail: email,
+    ...opts,
   });
   if (!r.ok) return mutationError(res, r);
-  serveJson(res, 200, r.item);
+  serveJson(res, 200, { ...r.item, canEdit: true });
   return true;
 }
 
@@ -155,6 +253,9 @@ async function handleOrganizationList({ storageScope, res, url, authedUser }) {
     themeId,
     userEmail: email,
   });
+  for (const item of out.items) {
+    item.canEdit = canEditOrganizationItem(authedUser, item);
+  }
   // Attach tags to each item
   if (Array.isArray(out?.items) && out.items.length > 0) {
     const ids = out.items.map((it) => it.id);
@@ -181,6 +282,13 @@ async function handleOrganizationCreate({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  const violation = customHtmlViolation(
+    authedUser,
+    null,
+    body?.slideType,
+    createContents(body),
+  );
+  if (violation) return forbidden(res, violation);
   const r = await createOrganizationLibraryItem(storageScope, body, {
     actorEmail: email,
   });
@@ -224,9 +332,9 @@ async function handleOrganizationCreate({
 }
 
 // PATCH /api/slide-library/organization/:id - Update an organization-shelf item.
-// Permission model:
-// - Favorites are per-user and always allowed for authed users.
-// - Trashing (soft delete) is restricted to admins or the creator.
+// Permission model (D170): changing the name, description or content, and
+// trashing, follow one guard - admin or creator. Favorites are per-user and
+// open to every authed user (storing them is B334).
 async function handleOrganizationUpdate(
   { storageScope, req, res, authedUser },
   id,
@@ -235,28 +343,18 @@ async function handleOrganizationUpdate(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  if ('trashed' in body) {
-    const r = await setOrganizationLibraryItemTrashed(storageScope, id, {
-      trashed: !!body.trashed,
-      actorEmail: email,
-      allowTrash: (item) => {
-        // Identity is the `users.id` (T10 PR F2): the creator keeps their
-        // trash right across a rename, and an item whose creator column is a
-        // defined NULL belongs to nobody but an admin.
-        if (authedUser?.isAdmin) return true;
-        return matchesIdentity(authedUser, { userId: item?.createdBy?.id });
-      },
-    });
-    if (!r.ok) return mutationError(res, r);
-    serveJson(res, 200, r.item);
-    return true;
-  }
-
+  const opts = patchOptions(req, res, body, authedUser);
+  if (!opts) return true;
   const r = await updateOrganizationLibraryItem(storageScope, id, body, {
     actorEmail: email,
+    ...opts,
+    allowEdit: (item) => canEditOrganizationItem(authedUser, item),
   });
   if (!r.ok) return mutationError(res, r);
-  serveJson(res, 200, r.item);
+  serveJson(res, 200, {
+    ...r.item,
+    canEdit: canEditOrganizationItem(authedUser, r.item),
+  });
   return true;
 }
 
@@ -265,11 +363,7 @@ async function handleOrganizationUpdate(
 async function handleOrganizationDelete({ storageScope, res, authedUser }, id) {
   const r = await deleteOrganizationLibraryItem(storageScope, id, {
     actorEmail: actorEmail(authedUser),
-    allowDelete: (item) => {
-      // Identity is the `users.id` (T10 PR F2); see the trash guard above.
-      if (authedUser?.isAdmin) return true;
-      return matchesIdentity(authedUser, { userId: item?.createdBy?.id });
-    },
+    allowDelete: (item) => canEditOrganizationItem(authedUser, item),
   });
   if (!r.ok) return mutationError(res, r);
   serveJson(res, 200, { ok: true });

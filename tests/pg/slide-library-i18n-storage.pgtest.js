@@ -7,8 +7,9 @@
  * it says so in its own header — is the Postgres **write** path: migration 049's
  * `i18n` jsonb column and the create/update round-trip through
  * server/storage/slide-library.js. This is that test: create a personal library item with
- * two languages, and assert both survive create, read-back, and update on real
- * PostgreSQL.
+ * two languages, and assert both survive create and read-back on real
+ * PostgreSQL, and that a PATCH cannot overwrite them: since D170 the versions
+ * are derived by the server from `content` (tests/pg/slide-library-save-contract.pgtest.js).
  */
 
 import { after, before, it } from 'node:test';
@@ -81,24 +82,22 @@ pgDescribe(
       const found = listed.items.find((i) => i.id === created.item.id);
       assert.deepStrictEqual(found?.i18n, BILINGUAL, 'i18n survives read-back');
 
-      const nextI18n = {
-        versions: {
-          nl: { content: { title: 'Dag' } },
-          'en-GB': { content: { title: 'Bye' } },
-        },
-      };
-      const updated = await updatePersonalLibraryItem(
+      const refused = await updatePersonalLibraryItem(
         storageScope,
         ALICE,
         created.item.id,
-        { i18n: nextI18n },
+        { i18n: { versions: { nl: { content: { title: 'Dag' } } } } },
         { actorEmail: ALICE },
       );
-      assert.ok(updated?.ok, 'update ok');
+      assert.equal(refused.ok, false);
+      assert.equal(refused.reason, 'invalid', 'i18n is not a PATCH key');
+      assert.equal(refused.field, 'body');
+      assert.match(refused.message, /"i18n"/);
+      const again = await listPersonalLibrary(storageScope, ALICE);
       assert.deepStrictEqual(
-        updated.item.i18n,
-        nextI18n,
-        'i18n survives update',
+        again.items.find((i) => i.id === created.item.id)?.i18n,
+        BILINGUAL,
+        'the refused patch wrote nothing',
       );
     });
   },
