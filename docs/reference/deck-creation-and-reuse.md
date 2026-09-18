@@ -207,7 +207,9 @@ writer that bypasses the route still meets them.
   server does not validate it against the type's schema, but it must be a plain
   object, and the raw-HTML/CSS capability gate (`customHtmlEditViolation`)
   applies against the stored version — on create too, where every language
-  version in the body is checked.
+  version in the body is checked. The gate is a callback the caller hands to
+  storage (`contentGuard`), and it fails closed like the organization guard: a
+  `content` patch from a caller that brings none is `403 forbidden`.
 
 **Implementation status (2026-09-18, B335).** All of the above is enforced.
 The client sends `If-Match` from the item it loaded

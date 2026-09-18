@@ -170,7 +170,12 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
       storageScope,
       orgItem.id,
       { content: { title: 'Nieuw' } },
-      { actorEmail: ALICE, expectedRevision: 0, allowEdit: () => true },
+      {
+        actorEmail: ALICE,
+        expectedRevision: 0,
+        allowEdit: () => true,
+        contentGuard: () => null,
+      },
     );
     assert.equal(r.ok, true);
     assert.equal(r.item.revision, 1);
@@ -204,6 +209,41 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
     assert.equal((await readRow(db, alicePersonal.id)).name, 'First');
   });
 
+  it('loses a race atomically: a write that lands after the read is a ConflictError, not an overwrite', async () => {
+    // The guard runs between the read and the UPDATE, so a write made inside
+    // it is exactly the race the pre-read check cannot see: only the
+    // `revision` in the UPDATE's WHERE stops the second writer.
+    await assert.rejects(
+      updateOrganizationLibraryItem(
+        storageScope,
+        orgItem.id,
+        { name: 'Loser' },
+        {
+          actorEmail: ALICE,
+          expectedRevision: 0,
+          allowEdit: async () => {
+            const winner = await updateOrganizationLibraryItem(
+              storageScope,
+              orgItem.id,
+              { name: 'Winner' },
+              { actorEmail: ALICE, expectedRevision: 0, allowEdit: () => true },
+            );
+            assert.equal(winner.item.revision, 1);
+            return true;
+          },
+        },
+      ),
+      (err) => {
+        assert.ok(err instanceof ConflictError);
+        assert.equal(err.details.revision, 1);
+        return true;
+      },
+    );
+    const row = await readRow(db, orgItem.id);
+    assert.equal(row.name, 'Winner');
+    assert.equal(row.revision, 1);
+  });
+
   it('refuses content the contentGuard rejects, with its message, and writes nothing', async () => {
     const r = await updatePersonalLibraryItem(
       storageScope,
@@ -221,6 +261,20 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
       reason: 'forbidden',
       message: 'no markup for you',
     });
+    assert.deepEqual((await readRow(db, alicePersonal.id)).content, {
+      title: 'Hallo',
+    });
+  });
+
+  it('refuses a content patch from a caller that brings no contentGuard', async () => {
+    const r = await updatePersonalLibraryItem(
+      storageScope,
+      ALICE,
+      alicePersonal.id,
+      { content: { title: 'Ongepoort' } },
+      { actorEmail: ALICE, expectedRevision: 0 },
+    );
+    assert.deepEqual(r, { ok: false, reason: 'forbidden' });
     assert.deepEqual((await readRow(db, alicePersonal.id)).content, {
       title: 'Hallo',
     });
@@ -262,7 +316,7 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
       ALICE,
       created.item.id,
       { content: { title: 'Dag', body: 'Tekst' } },
-      { actorEmail: ALICE, expectedRevision: 0 },
+      { actorEmail: ALICE, expectedRevision: 0, contentGuard: () => null },
     );
     assert.equal(r.ok, true);
     assert.deepEqual(r.item.i18n.versions.nl.content, {

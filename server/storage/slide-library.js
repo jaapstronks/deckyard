@@ -301,7 +301,8 @@ async function readItem(ctx, target) {
  * @param {(item: object) => boolean|Promise<boolean>} [opts.allowEdit] - The
  *   organization-shelf guard; an organization edit or trash without one is refused
  * @param {(item: object, nextContent: object) => string|null} [opts.contentGuard] -
- *   Returns a refusal message for content the actor may not write
+ *   Returns a refusal message for content the actor may not write; a content
+ *   patch without one is refused
  * @param {string|null} [opts.trashedBy] - Who a trash toggle is attributed to
  * @returns {Promise<{ok: true, item: object}|{ok: false, reason: string, field?: string, message?: string}>}
  * @throws {ConflictError} When `expectedRevision` is not the stored revision
@@ -329,7 +330,11 @@ async function patchLibraryItem(ctx, target, patch, opts = {}) {
   if (edits && existing.revision !== expectedRevision) {
     throw conflictError(existing);
   }
-  if ('content' in patch && typeof opts.contentGuard === 'function') {
+  if ('content' in patch) {
+    // Fail closed, like `allowEdit` (D172): the raw-HTML/CSS capability is the
+    // caller's to know, so a writer that brings no gate may not write content.
+    if (typeof opts.contentGuard !== 'function')
+      return { ok: false, reason: 'forbidden' };
     const message = opts.contentGuard(existing, patch.content);
     if (message) return { ok: false, reason: 'forbidden', message };
   }
