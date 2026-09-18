@@ -2,9 +2,18 @@ import crypto from 'node:crypto';
 import { parseCookies } from '../utils/cookies.js';
 import { sandboxCookieMaxAgeDays, sandboxEnabled } from '../config/sandbox.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
+import { getDefaultOrganizationId } from '../config/database.js';
+import { withDbGuard } from '../storage/utils/index.js';
+import { nowIso } from '../utils/normalize.js';
 
 const COOKIE_NAME = 'sb_sandbox';
 const GUEST_EMAIL_DOMAIN = 'sandbox.local';
+
+/**
+ * SQL `LIKE` pattern matching every sandbox guest address, for the cleanup
+ * sweep that removes guest rows once their cookie can no longer exist.
+ */
+export const SANDBOX_GUEST_EMAIL_PATTERN = `guest-%@${GUEST_EMAIL_DOMAIN}`;
 
 function normalizeId(raw) {
   const s = String(raw || '').trim();
@@ -63,4 +72,80 @@ export function ensureSandboxUser(req, res) {
     isSandboxGuest: true,
     sandboxId: token,
   };
+}
+
+/**
+ * The sandbox guest with its `users.id` resolved — the shape every request that
+ * takes an authorization decision must carry.
+ *
+ * Ownership is keyed on `users.id` and on nothing else (D22,
+ * shared/identity-match.js). A guest known only by the address in its cookie
+ * owns nothing: it could create a deck (the insert stamps `owner_email`) and
+ * then not open it — every example on the sandbox Home answered "Access
+ * Denied". So a guest is a real `users` row, exactly like the development
+ * bypass (auth/dev-bypass.js).
+ *
+ * The row is created on the first request that *returns* the cookie. The
+ * request that mints a cookie carries no id yet — a client that keeps no
+ * cookies (a crawler) never gets past that point, so it never leaves a row
+ * behind; the browser app has its cookie from the app shell before its first
+ * API call. The cleanup sweep (jobs/sandbox-cleanup.js) removes a guest row
+ * once its cookie has expired.
+ *
+ * With the database unreachable the guest carries `id: null` and matches no
+ * ownership stamp — the honest degraded state, not a crash.
+ *
+ * @param {import('http').IncomingMessage} req
+ * @param {import('http').ServerResponse} res
+ * @returns {Promise<Object|null>} null outside sandbox mode
+ */
+export async function ensureSandboxUserAsync(req, res) {
+  if (!sandboxEnabled()) return null;
+  const returning = getSandboxUserFromRequest(req);
+  if (!returning) return { ...ensureSandboxUser(req, res), id: null };
+  const id = await resolveSandboxGuestUserId(returning.email);
+  return { ...returning, id };
+}
+
+/**
+ * Look up the `users.id` of a sandbox guest, creating the row on first use.
+ *
+ * @param {string} email - The guest address minted from the cookie token
+ * @returns {Promise<string|null>}
+ */
+async function resolveSandboxGuestUserId(email) {
+  return withDbGuard(null, async (db) => {
+    const existing = await db
+      .selectFrom('users')
+      .select('id')
+      .where('email', '=', email)
+      .executeTakeFirst();
+    if (existing?.id) return existing.id;
+
+    const now = nowIso();
+    const inserted = await db
+      .insertInto('users')
+      .values({
+        organization_id: getDefaultOrganizationId(),
+        email,
+        name: 'Guest',
+        role: 'user',
+        // No password: a guest is only ever reached through its cookie.
+        auth_source: 'database',
+        created_at: now,
+        updated_at: now,
+      })
+      // Two parallel first writes from the same guest race here.
+      .onConflict((oc) => oc.column('email').doNothing())
+      .returning('id')
+      .executeTakeFirst();
+    if (inserted?.id) return inserted.id;
+
+    const raced = await db
+      .selectFrom('users')
+      .select('id')
+      .where('email', '=', email)
+      .executeTakeFirst();
+    return raced?.id || null;
+  });
 }

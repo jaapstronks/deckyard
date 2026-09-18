@@ -73,6 +73,13 @@ const ALLOWLIST = [
       'development',
   },
   {
+    file: 'server/auth/sandbox.js',
+    reason:
+      'a sandbox guest users row is created in the default organization; ' +
+      'the sandbox is single-org by definition and a guest has no session ' +
+      'to read one from',
+  },
+  {
     file: 'server/utils/context.js',
     reason:
       'createStorageScope pre-auth default (reset / magic-link / SSO have no resolved org)',

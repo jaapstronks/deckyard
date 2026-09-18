@@ -15,7 +15,7 @@ import {
 import { authEnabled, getUserFromRequestAsync } from '../../auth/auth.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
-import { ensureSandboxUser } from '../../auth/sandbox.js';
+import { ensureSandboxUserAsync } from '../../auth/sandbox.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
 import { canEditCustomHtml } from '../../utils/route-middleware.js';
 import { createStorageScope } from '../../utils/context.js';
@@ -180,7 +180,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // Use async version to properly validate database users who migrated from ENV auth.
   const authCtx = { repoRoot, req };
   let authedUser = sandboxEnabled()
-    ? ensureSandboxUser(req, res)
+    ? await ensureSandboxUserAsync(req, res)
     : await getUserFromRequestAsync(req, authCtx);
   if (!sandboxEnabled() && authEnabled() && !authedUser)
     return unauthorized(res);
