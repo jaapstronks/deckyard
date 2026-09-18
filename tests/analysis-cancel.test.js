@@ -1,25 +1,6 @@
 /**
- * Cancelling an AI analysis stops the server, not just the browser (B338).
- *
- * The analyze modal cancels by aborting its fetch, which closes the SSE stream.
- * Before B338 the route never noticed: the model call ran to completion and
- * every suggestion was still stored as a comment and broadcast to live viewers.
- * Now the stream's disconnect signal reaches the provider fetch and is checked
- * before each comment is created. Pinned at both moments a cancel can land:
- *
- *   - during the model call: the provider fetch receives the signal and is
- *     aborted; nothing is stored, nothing broadcast;
- *   - during comment creation: the comment whose write was under way is kept
- *     (and broadcast, so live viewers match storage), the rest is never
- *     written.
- *
- * House shape: the exported handler is called directly with a req/res double
- * over `tests/helpers/fake-db.js`, so a client disconnect is `res.emit('close')`
- * at an exact moment instead of a race over a socket. The real-socket half
- * (a disconnect after the body was read reaches the signal at all) lives in
- * `tests/sse-open-stream.test.js`.
- *
- * Run with: node --test tests/analysis-cancel.test.js
+ * Deterministic disconnects during provider work and comment writes.
+ * Real-socket disconnect coverage lives in sse-open-stream.test.js.
  */
 
 import test from 'node:test';
@@ -287,6 +268,53 @@ test('cancel during comment creation stops before the next comment', async (t) =
   );
   assert.equal(viewer.created, 1, 'nothing broadcast after the cancel');
   assert.ok(!res.events.includes('complete'), 'no completion after a cancel');
+});
+
+test('cancel during an in-flight write keeps and broadcasts that comment only', async (t) => {
+  seed();
+  const res = makeSseRes();
+  const viewer = watchBroadcasts(t);
+  stubFetch(t, async () => ({
+    ok: true,
+    status: 200,
+    text: async () => THREE_SUGGESTIONS,
+  }));
+
+  const started = Promise.withResolvers();
+  const release = Promise.withResolvers();
+  t.after(() => release.resolve());
+  const insertInto = db.insertInto.bind(db);
+  let writes = 0;
+  t.mock.method(db, 'insertInto', (table) => {
+    const query = insertInto(table);
+    if (table === 'presentation_comments') {
+      const execute = query.execute.bind(query);
+      query.execute = async () => {
+        writes += 1;
+        started.resolve();
+        await release.promise;
+        return execute();
+      };
+    }
+    return query;
+  });
+
+  const done = analyze(res);
+  await started.promise;
+  assert.equal(storedComments().length, 0);
+  disconnect(res);
+  assert.equal(viewer.created, 0);
+  release.resolve();
+  assert.equal(await done, true);
+
+  assert.equal(writes, 1, 'no subsequent comment write starts');
+  assert.deepEqual(
+    storedComments().map((c) => c.body),
+    ['Suggestion for s1'],
+  );
+  assert.equal(viewer.created, 1, 'viewers see the write already in flight');
+  assert.ok(!res.events.includes('complete'));
+  assert.ok(!res.events.includes('error'));
 });
 
 test('an analysis nobody cancels still stores and broadcasts every suggestion', async (t) => {
