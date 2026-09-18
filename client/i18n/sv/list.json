@@ -306,8 +306,6 @@
   "slideLibrary.edit.name": "Namn",
   "slideLibrary.edit.namePlaceholder": "Slidens namn…",
   "slideLibrary.edit.nameRequired": "Ange ett namn.",
-  "slideLibrary.edit.noEditableFields": "Den här slidetypen har inga textfält som går att redigera.",
-  "slideLibrary.edit.preview": "Förhandsgranskning",
   "slideLibrary.edit.saved": "Sliden har sparats.",
   "slideLibrary.edit.title": "Redigera sliden",
   "slideLibrary.edit.tooltip": "Redigera slidens innehåll",

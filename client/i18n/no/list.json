@@ -306,8 +306,6 @@
   "slideLibrary.edit.name": "Navn",
   "slideLibrary.edit.namePlaceholder": "Lysbildets navn…",
   "slideLibrary.edit.nameRequired": "Skriv inn et navn.",
-  "slideLibrary.edit.noEditableFields": "Denne lysbildetypen har ingen tekstfelter som kan redigeres.",
-  "slideLibrary.edit.preview": "Forhåndsvisning",
   "slideLibrary.edit.saved": "Lysbildet er lagret.",
   "slideLibrary.edit.title": "Rediger lysbildet",
   "slideLibrary.edit.tooltip": "Rediger innholdet på lysbildet",

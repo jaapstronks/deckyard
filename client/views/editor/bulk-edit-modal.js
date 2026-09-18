@@ -2,8 +2,8 @@
  * Bulk-edit modal ("Edit all text") - phase 2 of the editor-UI track.
  *
  * A roomy two-pane overlay: every content field of the current slide on the
- * left (the EXISTING form renderers via createRerenderEditor's contentOnly
- * mode - so items add/remove/reorder, markdown editors and validation are
+ * left (the EXISTING form renderers via createRerenderEditor on the `bulk`
+ * surface - so items add/remove/reorder, markdown editors and validation are
  * inherited, never reimplemented), a live slide preview on the right.
  * Prev/next navigate the deck without leaving the modal; navigation goes
  * through the caller's setSelectedSlideId seam so slide locks, presence and
@@ -24,7 +24,7 @@ import { h } from '../../lib/dom.js';
  * @param {Function} opts.setSelectedSlideId - the lock-aware selection seam
  * @param {Function} opts.createFormRenderer - (formMount, refreshPreview) =>
  *   rerender function; the controller builds this from createRerenderEditor
- *   with `contentOnly: true` so the modal reuses the exact form machinery.
+ *   with `surface: 'bulk'` so the modal reuses the exact form machinery.
  * @param {Function} [opts.getTheme] - () => current theme (for the preview)
  * @param {Function} [opts.getSlideLockKind] - (slideId) => 'author' | 'other'
  *   | null. The panel's locked-slide gating is CSS scoped to .editor-shell;
@@ -118,8 +118,8 @@ export function createBulkEditModal({
       });
     };
 
-    // The form renderer is a full createRerenderEditor instance in
-    // contentOnly mode, mounted on the modal's own container.
+    // The form renderer is a full createRerenderEditor instance on
+    // the `bulk` surface, mounted on the modal's own container.
     const rerenderForm = createFormRenderer(formMount, refreshPreview);
 
     const currentIndex = () =>

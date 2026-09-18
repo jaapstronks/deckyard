@@ -15,6 +15,7 @@ import { createModal } from '../dom/modal.js';
 import { createTagEditor } from '../../views/list/tag-editor.js';
 import { getContentForLang } from './search.js';
 import { openEditModal } from './edit-modal.js';
+import { createInlineError } from '../dom/inline-error.js';
 import { h } from '../dom.js';
 
 /**
@@ -77,32 +78,83 @@ export function createSlideLibraryModals({
     // Header actions (Edit + the standard close button, side by side)
     const headerActions = h('div', { class: 'ps-modal-header-actions' });
 
-    // Edit button
+    const openEditor = (item, itemShelf) =>
+      openEditModal({
+        item,
+        shelf: itemShelf,
+        api,
+        apiOps,
+        rerender,
+        onClose: (saved) => {
+          // Reopen the lightbox on the saved item, so it shows what was saved.
+          // A fresh duplicate lives on the other shelf: the library behind
+          // the modal already shows it, and this lightbox is gone.
+          if (!saved || itemShelf !== shelf) return;
+          close();
+          openLightbox(item, { rerender, updateUrl });
+        },
+      });
+
+    // Edit reads the server's verdict (`canEdit`, D170). A slide you may not
+    // change keeps the button, greyed out with the reason, and offers the way
+    // that is open to you: a copy of your own.
+    const canEdit = it?.canEdit === true;
+    const notAllowed = t(
+      'slideLibrary.edit.notAllowed',
+      'Only its maker or an admin can edit this shared slide.',
+    );
     const editBtn = h('button', {
       class: 'btn btn-secondary',
       type: 'button',
       text: t('common.edit', 'Edit'),
-      title: t('slideLibrary.edit.tooltip', 'Edit slide content'),
-      onclick: () => {
-        openEditModal({
-          item: it,
-          shelf,
-          apiOps,
-          resolveThemeForItem,
-          rerender,
-          onClose: (saved) => {
-            if (saved) {
-              // Refresh the lightbox with updated content
-              close();
-              // Re-open with updated item
-              openLightbox(it, { rerender, updateUrl });
-            }
-          },
-        });
-      },
+      title: canEdit
+        ? t('slideLibrary.edit.tooltip', 'Edit slide content')
+        : notAllowed,
+      disabled: !canEdit,
+      onclick: () => openEditor(it, shelf),
     });
+    if (canEdit) {
+      headerActions.append(editBtn);
+    } else {
+      const reason = h('span', {
+        class: 'help ps-lib-edit-reason',
+        id: `ps-lib-edit-reason-${cleanStr(it?.id)}`,
+        text: notAllowed,
+      });
+      editBtn.setAttribute('aria-describedby', reason.id);
+      const duplicateBtn = h('button', {
+        class: 'btn btn-secondary',
+        type: 'button',
+        text: t('slideLibrary.duplicate.action', 'Duplicate to my library'),
+        title: t(
+          'slideLibrary.duplicate.tooltip',
+          'Make your own copy of this slide and edit that',
+        ),
+        onclick: async () => {
+          duplicateError.clear();
+          duplicateBtn.disabled = true;
+          const result = await apiOps.duplicateToPersonal(it, { rerender });
+          duplicateBtn.disabled = false;
+          // A refused copy stays beside the button that asked for it.
+          if (!result.ok) {
+            duplicateError.show(
+              String(result.error?.message || result.error || ''),
+              { control: duplicateBtn },
+            );
+            return;
+          }
+          toast.success(
+            t('slideLibrary.duplicate.done', 'Copied to your library.'),
+          );
+          close();
+          openEditor(result.item, 'personal');
+        },
+      });
+      const duplicateError = createInlineError({ callout: true });
+      headerActions.append(reason, editBtn, duplicateBtn, duplicateError.el);
+    }
 
-    headerActions.append(editBtn, modal.closeBtn);
+    headerActions.append(modal.closeBtn);
     modal.header.append(headerActions);
 
     const stage = h('div', { class: 'ps-lib-lightbox-stage' });
@@ -132,6 +184,9 @@ export function createSlideLibraryModals({
         'Add a description…',
       ),
       value: it?.description || '',
+      // The description is guarded like the content (D170); a slide you may
+      // not change shows it without offering an edit the server refuses.
+      readonly: !canEdit,
     });
     const descField = h('div', { class: 'field' });
     descField.append(descLabel, descInput);

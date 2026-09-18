@@ -56,8 +56,8 @@ const TOAST_SITES = [
   // --- the server's sentence thrown away for generic copy (B205) ---
   {
     file: 'client/lib/slide-library/edit-modal.js',
-    total: 2,
-    discarded: 2,
+    total: 1,
+    discarded: 1,
   },
   {
     file: 'client/views/editor/inline-edit/inline-editor.js',
@@ -124,7 +124,7 @@ const TOAST_SITES = [
 ];
 
 /** The burndown as the TODO items state it; each PR lowers both. */
-const BURNDOWN = { refusals: 0, discarded: 24, background: 10 };
+const BURNDOWN = { refusals: 0, discarded: 23, background: 10 };
 
 /**
  * `toast.error` as the whole answer of a guard clause. Every one of these is
@@ -137,7 +137,7 @@ const BURNDOWN = { refusals: 0, discarded: 24, background: 10 };
  * toast — so B205 settles their wording, not their placement.
  */
 const REFUSE_AND_RETURN = [
-  { file: 'client/lib/slide-library/edit-modal.js', hits: 2 },
+  { file: 'client/lib/slide-library/edit-modal.js', hits: 1 },
   { file: 'client/views/editor/inline-edit/inline-editor.js', hits: 1 },
   { file: 'client/views/editor/modals/json-debug-modal.js', hits: 1 },
   { file: 'client/views/editor/topbar.js', hits: 1 },
