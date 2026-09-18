@@ -226,7 +226,7 @@ Feature flags (`server/config/flags-snapshot.js`):
 
 | Flag                          | Effect                                                                                                                                                                |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `IMAGEKIT_ONLY`               | Forces both `enableUploads` and `enableImageLibrary` off — ImageKit becomes the only image source. Also removes copy-on-pick; see below.                              |
+| `IMAGEKIT_ONLY`               | Forces both `enableUploads` and `enableImageLibrary` off — ImageKit becomes the only image source. Refuses new ImageKit picks; see below.                             |
 | `UPLOADS_ENABLED=false`       | Blocks the upload paths (also forced by demo and sandbox mode).                                                                                                       |
 | `IMAGE_LIBRARY_ENABLED=false` | `/api/image-library/*` answers 404.                                                                                                                                   |
 | `DEMO_MODE` / sandbox mode    | Library is read-only (GET only): no upload, no create, no edit, no delete, no alt-text generation. Sandbox additionally prepends `listSandboxMedia()` to the listing. |
@@ -241,28 +241,13 @@ Size ceilings, all hardcoded: local upload 10 MB, presigned upload 20 MB,
 stock-media import 20 MB (GIFs are large), in-place replace 10 MB, ImageKit
 import 20 MB.
 
-### `IMAGEKIT_ONLY` decks keep pointing at the DAM
+### ImageKit picks require own media storage
 
-One configuration difference is visible in the decks themselves, so it is
-stated here rather than left to be discovered.
+On an install with local or S3 storage and uploads enabled, a picked ImageKit image is copied into own media before the slide changes. The slide stores the copied URL and retains the ImageKit file id as provenance. The stored image is a snapshot: later deletion or re-tagging in ImageKit does not change it.
 
-On a normal install (local or S3, uploads on) a picked ImageKit image is
-**copied into own media**, and the slide stores a URL this installation serves;
-the ImageKit file id stays on the slide as provenance. Deleting or re-tagging
-the asset in ImageKit afterwards does not change the deck: it holds a snapshot,
-not a live reference.
+With `IMAGEKIT_ONLY=true` or uploads otherwise disabled, new ImageKit picks are refused. The picker explains that image uploads must be enabled, shows the refusal inline, and leaves the slide unchanged. The import endpoint also refuses direct requests with `uploads_disabled`. Enable uploads and configure local or S3 storage to use ImageKit picks; the picker does not fall back to an external URL.
 
-Under `IMAGEKIT_ONLY` — or with uploads off for any other reason — there is no
-own media to copy into. The slide keeps the **ImageKit URL**, exactly as before
-this feature existed, and the picker says so in a line under the confirm
-button. Those decks keep depending on ImageKit: an asset deleted or moved there
-breaks them. The import endpoint refuses a direct request the same way
-(`uploads_disabled`), so the flag is not worked around from either side.
-
-This is a deliberate refusal rather than a second storage contract:
-`IMAGEKIT_ONLY` means _this install has no media storage_, and the honest
-answer to "copy it here" is then that there is no here. An install that wants
-the snapshot behaviour turns uploads on.
+Existing decks are not migrated. Any ImageKit URLs already stored in them retain their existing dependency on that DAM asset.
 
 ## Authz & tenancy
 

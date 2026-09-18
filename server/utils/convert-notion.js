@@ -176,10 +176,7 @@ async function rehostImageToMediaLibrary(img) {
     return img.url;
   }
 
-  // The fetch-and-store steps (SSRF guard, content-type repair, uploadBuffer)
-  // are shared with the ImageKit copy-on-pick path; the difference is only the
-  // failure policy, which stays here: processNotionImages falls back to the
-  // original URL for this one image.
+  // processNotionImages handles failures by retaining this image's original URL.
   const { publicUrl } = await rehostRemoteImage({
     url: img.url,
     filename: `notion-${img.blockId || cryptoUuid()}`,

@@ -110,7 +110,7 @@ function stubFetch({
   globalThis.fetch = async (rawUrl) => {
     const u = String(rawUrl);
     seen.fetched.push(u);
-    if (u.startsWith(DETAILS_URL)) {
+    if (/^https:\/\/api\.imagekit\.io\/v1\/files\/[^/]+\/details$/.test(u)) {
       if (!details) {
         return {
           ok: false,
@@ -245,6 +245,40 @@ test("a transformation on the file's own URL is kept", async () => {
   assert.equal(seen.fetched[1], withTr);
 });
 
+test('a transformation preserves an existing source query', async () => {
+  const canonical = `${CANONICAL_URL}?updatedAt=123`;
+  const transformed = `${canonical}&tr=n-deck_slide_full_2x`;
+  const seen = stubFetch({ details: { url: canonical, name: 'olive.jpg' } });
+  const { res } = await importImage(
+    { fileId: FILE_ID, url: transformed },
+    { as: USER },
+  );
+
+  assert.equal(res.statusCode, 201);
+  assert.equal(seen.fetched[1], transformed);
+});
+
+for (const query of [
+  '?updatedAt=123&other=value',
+  '?updatedAt=123&tr=n-full&other=value',
+  '?updatedAt=456&tr=n-full',
+  '?tr=n-full',
+  '?updatedAt=123&tr=n-full&tr=n-other',
+]) {
+  test(`unrelated or changed source query is refused: ${query}`, async () => {
+    const seen = stubFetch({
+      details: { url: `${CANONICAL_URL}?updatedAt=123`, name: 'olive.jpg' },
+    });
+    const { res } = await importImage(
+      { fileId: FILE_ID, url: `${CANONICAL_URL}${query}` },
+      { as: USER },
+    );
+
+    assert.equal(res.statusCode, 400);
+    assert.equal(seen.fetched.length, 1);
+  });
+}
+
 test('a URL that is not this file is refused, and never fetched', async () => {
   const seen = stubFetch();
   const { res } = await importImage(
@@ -320,7 +354,8 @@ test('a file the configured account does not have is refused', async () => {
   stubFetch({ details: null });
   const { res } = await importImage({ fileId: 'not-ours' }, { as: USER });
 
-  assert.ok(res.statusCode >= 400, `expected a refusal, got ${res.statusCode}`);
+  assert.equal(res.statusCode, 404);
+  assert.match(res.body.message, /not found/i);
   assert.equal(res.body.url, undefined);
 });
 

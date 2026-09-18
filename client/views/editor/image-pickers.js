@@ -50,12 +50,7 @@ export async function createImagePickers({ root, user, api, features }) {
         })
     : undefined;
 
-  // B327/D162: an ImageKit pick is copied into this deployment's own media
-  // before it reaches a slide, so a deck never depends on a live third-party
-  // URL. It needs somewhere to copy *to*, which is exactly what `enableUploads`
-  // answers — and `IMAGEKIT_ONLY` turns that off, so there the copy is absent
-  // by design rather than failing per pick. The server applies the same gate to
-  // a direct request; this one only keeps the editor from offering it.
+  // Without uploads, the adapter refuses picks and explains the missing storage.
   const importImageKitToOwnMedia = features?.enableUploads
     ? ({ fileId, url }) =>
         api('/api/media/imagekit/import', {

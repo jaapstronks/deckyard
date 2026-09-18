@@ -17,8 +17,7 @@
  *   3. A refused or failed copy never reaches `opts.onPick`, so nothing is
  *      written to the slide, and the error travels on to the picker (which
  *      keeps its dialog open on it).
- *   4. With no own media to copy into, the pick goes through unchanged and the
- *      picker is given the sentence that says why.
+ *   4. Without own media, the adapter refuses the pick and explains why.
  *
  * Run with: node --test tests/imagekit-copy-on-pick-seam.test.js
  */
@@ -149,23 +148,19 @@ test('a copy that answers no URL is a failure, not a silent external URL', async
   assert.equal(picks.length, 0);
 });
 
-test('without own media the pick goes through unchanged, and the picker is told why', async () => {
-  // IMAGEKIT_ONLY / uploads off: the copy is absent by design, so the ImageKit
-  // URL is used exactly as it was before this feature — with a sentence in the
-  // picker saying the image stays hosted there.
+test('without own media the pick is refused without mutating the slide', async () => {
   const { seam, picker } = seamWithImageKit(undefined);
   const picks = [];
   seam({ onPick: (p) => picks.push(p) });
-  await picker.state.pick();
 
-  assert.equal(picks.length, 1);
-  assert.equal(picks[0].url, IK_URL);
-  assert.equal(picks[0].providerId, 'ik-file-1');
   assert.match(
     picker.state.opts.note,
-    /stays hosted on ImageKit/i,
-    'the picker is handed the explanation, not left silent',
+    /cannot be used.*uploads to be enabled/i,
   );
+  await assert.rejects(() => picker.state.pick(), {
+    message: picker.state.opts.note,
+  });
+  assert.equal(picks.length, 0);
 });
 
 test('with own media the picker gets no note to show', async () => {

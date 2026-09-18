@@ -134,16 +134,8 @@ function bundledGradientsProvider(openBundledRaw) {
 /**
  * Adapter: ImageKit DAM picker.
  *
- * Picking a DAM image copies it into this deployment's own media first (B327,
- * D162): the slide gets a URL this installation serves, and the ImageKit file
- * id stays on it only as provenance, never as a second live image source. The
- * copy is the one place this happens, so the side-form fields, the collection
- * images and the inline popover all inherit it without knowing about it.
- *
- * The copy runs *before* `opts.onPick`, and a failure is thrown rather than
- * swallowed: the picker stays open on it and the slide is left alone. With no
- * own media to copy into (`IMAGEKIT_ONLY`, uploads off) `importToOwnMedia` is
- * absent — then the ImageKit URL is used as before, and the picker says why.
+ * Copy into own media before notifying the caller. Refusals propagate to the
+ * picker so it can keep the dialog open without mutating the slide.
  *
  * @param {Function} openImageKitRaw - bound `openImageKitPicker`
  * @param {((pick: {fileId: string, url: string}) => Promise<{url: string}>)} [importToOwnMedia]
@@ -151,6 +143,12 @@ function bundledGradientsProvider(openBundledRaw) {
  */
 function imagekitProvider(openImageKitRaw, importToOwnMedia) {
   const canCopy = typeof importToOwnMedia === 'function';
+  const unavailableMessage = canCopy
+    ? ''
+    : t(
+        'editor.image.imagekit.noCopyNote',
+        'This image cannot be used because copying it into your own media requires image uploads to be enabled.',
+      );
   return {
     id: 'imagekit',
     label: t('editor.image.source.imagekit', 'ImageKit'),
@@ -166,39 +164,27 @@ function imagekitProvider(openImageKitRaw, importToOwnMedia) {
         title: opts.title,
         docId: opts.docId,
         context: opts.context,
-        // Shown under the confirm button when the image will stay on ImageKit,
-        // so the difference between deployments is visible where it is decided.
-        note: canCopy
-          ? ''
-          : t(
-              'editor.image.imagekit.noCopyNote',
-              'This image stays hosted on ImageKit: copying it into your own media needs image uploads to be enabled.',
-            ),
+        note: unavailableMessage,
         onPick: async (picked) => {
           const url = typeof picked?.url === 'string' ? picked.url.trim() : '';
           if (!url) return;
           const fileId = picked?.fileId || undefined;
 
-          let finalUrl = url;
-          if (canCopy) {
-            // Throws on refusal or failure — the picker keeps the dialog open
-            // and nothing has been written to the slide yet.
-            const stored = await importToOwnMedia({ fileId, url });
-            const copied =
-              typeof stored?.url === 'string' ? stored.url.trim() : '';
-            if (!copied) {
-              throw new Error(
-                t(
-                  'editor.image.imagekit.copyFailed',
-                  'Copying this image into your own media did not return a URL.',
-                ),
-              );
-            }
-            finalUrl = copied;
+          if (!canCopy) throw new Error(unavailableMessage);
+          const stored = await importToOwnMedia({ fileId, url });
+          const copied =
+            typeof stored?.url === 'string' ? stored.url.trim() : '';
+          if (!copied) {
+            throw new Error(
+              t(
+                'editor.image.imagekit.copyFailed',
+                'Copying this image into your own media did not return a URL.',
+              ),
+            );
           }
 
           opts.onPick?.({
-            url: finalUrl,
+            url: copied,
             alt:
               typeof picked?.altSeed === 'string' ? picked.altSeed : undefined,
             tags: Array.isArray(picked?.tags) ? picked.tags : undefined,

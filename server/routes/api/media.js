@@ -154,20 +154,32 @@ async function handleImageKitDetailsGet({ res }, fileId) {
   return true;
 }
 
+/** Allow only the asset URL plus one picker transformation parameter. */
+function isImageKitPickUrl(canonicalUrl, requestedUrl) {
+  try {
+    const canonical = new URL(canonicalUrl);
+    const requested = new URL(requestedUrl);
+    const transformations = requested.searchParams.getAll('tr');
+    if (
+      transformations.length !==
+      canonical.searchParams.getAll('tr').length + 1
+    ) {
+      return false;
+    }
+    canonical.searchParams.append('tr', transformations.at(-1));
+    canonical.searchParams.sort();
+    requested.searchParams.sort();
+    return canonical.href === requested.href;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * POST /api/media/imagekit/import - Copy an ImageKit asset into own media.
  *
- * B327/D162: picking a DAM image must not leave a live third-party URL on the
- * slide, so the editor asks for a copy *before* it writes anything. The gates
- * are the upload gates — this stores bytes, so it is an upload by another name
- * — and the fetched URL is not the caller's to choose: the fileId is resolved
- * against the configured ImageKit account and only its own URL (optionally
- * carrying the picker's `?tr=` transformation) is accepted. That is what keeps
- * this from being a generic URL proxy.
- *
- * `IMAGEKIT_ONLY` deliberately has no copy path: it turns uploads off, so there
- * is no own media to copy into, and the refusal here is the same one the picker
- * explains up front.
+ * Requires upload permission and resolves the asset in the configured account
+ * before fetching it; caller-supplied URLs must belong to that asset.
  */
 async function handleImageKitImport({ req, res, authedUser }) {
   if (!authedUser) return unauthorized(res);
@@ -203,12 +215,10 @@ async function handleImageKitImport({ req, res, authedUser }) {
     return badRequest(res, 'ImageKit did not return a URL for this file');
   }
 
-  // The picker may append a transformation (`?tr=…`); anything else is a
-  // different URL than the one this fileId names, and is refused rather than
-  // fetched.
+  // Preserve source query parameters; only a picker transformation may be added.
   let sourceUrl = canonicalUrl;
   if (requestedUrl && requestedUrl !== canonicalUrl) {
-    if (!requestedUrl.startsWith(`${canonicalUrl}?`)) {
+    if (!isImageKitPickUrl(canonicalUrl, requestedUrl)) {
       return badRequest(res, 'url does not belong to this ImageKit file');
     }
     sourceUrl = requestedUrl;

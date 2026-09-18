@@ -106,11 +106,7 @@ so a failure leaves the slide exactly as it was.
   an inline refusal beside "Use this image" and keeps the dialog open, one
   click from a retry. There is no fallback to the external URL: a silent
   hot-link is the outcome the feature exists to prevent.
-- **No own media** (`IMAGEKIT_ONLY`, uploads off) — there is nowhere to copy
-  to, so `importImageKitToOwnMedia` is not injected at all, the ImageKit URL is
-  used as before, and the picker carries a line saying the image stays hosted
-  on ImageKit. A direct request to the endpoint is refused with
-  `uploads_disabled`: the flag is not worked around from either side.
+- **No own media** (`IMAGEKIT_ONLY`, uploads off): `importImageKitToOwnMedia` is not injected. The adapter refuses the pick, the picker explains that uploads must be enabled, and the slide remains unchanged. A direct request to the endpoint is also refused with `uploads_disabled`. There is no external-URL fallback.
 
 The server half (which URL it will fetch, and why that is not a proxy) is in
 [`media-library.md`](media-library.md) § _Flows_.
