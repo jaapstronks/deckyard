@@ -187,21 +187,25 @@ const ROUTES = [
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate\/fields$/,
     handler: handlePresentationTranslateFields,
+    ai: true,
   },
   // Translate only missing (empty) fields into the other language (safe for manual edits).
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate\/missing$/,
     handler: handlePresentationTranslateMissing,
+    ai: true,
   },
   // Translate a presentation into the other supported language and store as an i18n version.
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate$/,
     handler: handlePresentationTranslate,
+    ai: true,
   },
 
   {
     pattern: /^\/api\/presentations\/([^/]+)\/description\/generate$/,
     handler: handlePresentationDescriptionGenerate,
+    ai: true,
   },
 
   {
@@ -272,6 +276,7 @@ const ROUTES = [
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/compare-ai$/,
     handler: handlePresentationVersionCompareAi,
+    ai: true,
   },
   // Single version retrieval (for preview/comparison)
   {
@@ -329,6 +334,7 @@ const ROUTES = [
   {
     pattern: /^\/api\/presentations\/([^/]+)\/analyze$/,
     handler: handlePresentationAnalyze,
+    ai: true,
   },
 
   // ============================================================

@@ -48,13 +48,6 @@ async function handleTranslate(ctx, presentationId) {
   // Check daily AI rate limit
   if (!(await checkAiLimit(ctx))) return true;
 
-  // Check if AI is disabled
-  const flags = getFeatureFlags();
-  if (!flags.enableAi) {
-    await apiError(ctx, 503, 'AI features are disabled');
-    return true;
-  }
-
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
@@ -229,7 +222,9 @@ export const handleTranslation = withV1ErrorHandler(
     const translateMatch = url.pathname.match(
       /^\/api\/v1\/presentations\/([^/]+)\/translate$/,
     );
-    if (translateMatch) {
+    // An AI route: with AI off it is not mounted, so it falls through to the
+    // v1 404 like /ai/* does (./index.js), before the permission or AI quota.
+    if (translateMatch && getFeatureFlags().enableAi) {
       if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
       return handleTranslate(ctx, translateMatch[1]);
     }

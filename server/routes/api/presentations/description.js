@@ -1,5 +1,4 @@
 import { getPresentation } from '../../../storage/presentations/index.js';
-import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import {
   methodNotAllowed,
   notFound,
@@ -88,8 +87,6 @@ export async function handlePresentationDescriptionGenerate(
   id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  const flags = getFeatureFlags();
-  if (!flags.enableAi) return notFound(res);
 
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;

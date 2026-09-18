@@ -14,6 +14,7 @@ import {
 import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { getFeatures } from '../../../lib/state/features.js';
 
 /**
  * Opens a modal comparing current presentation with a snapshot version.
@@ -91,8 +92,10 @@ export function openVersionCompareModal({
     }),
   ]);
 
-  // AI analysis button (insights will be shown inline with rows)
+  // AI analysis button (insights will be shown inline with rows). Absent where
+  // AI is switched off: the server answers the compare-ai route 404 there.
   const aiSection = h('div', { class: 'version-compare-ai' });
+  if (!getFeatures()?.enableAi) aiSection.style.display = 'none';
   const aiButton = h('button', {
     class: 'btn btn-secondary btn-sm',
     text: t('editor.versions.compare.analyzeAi', 'Analyze with AI'),

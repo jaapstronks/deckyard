@@ -51,7 +51,8 @@ info:
     - `401` - Unauthorized (no valid API key: missing, malformed or revoked)
     - `403` - Forbidden (the key is valid but lacks the permission, or has no
       access to this presentation)
-    - `404` - Not Found
+    - `404` - Not Found (also every AI endpoint on an instance with AI switched
+      off: `AI_ENABLED=false`, demo or sandbox — it is not mounted there)
     - `405` - Method Not Allowed (the `Allow` header lists the accepted methods)
     - `413` - Payload Too Large (request body over the configured size cap)
     - `423` - Locked (a changed slide is locked by the author or being edited by another user)

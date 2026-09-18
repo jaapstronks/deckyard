@@ -23,7 +23,8 @@ export function createEditorTopbarMoreMenu({
   onLogout,
   // Responsive overflow item (shown at narrow widths via CSS)
   onToggleTheme,
-  // Utilities demoted from their own topbar icons
+  // Utilities demoted from their own topbar icons. `onAnalyze` is absent
+  // where AI is switched off, and so is its item.
   onAnalyze,
   onShowShortcuts,
   onOpenSettings,
@@ -213,10 +214,12 @@ export function createEditorTopbarMoreMenu({
 
   // Utilities demoted from their own topbar icons (2026-07-16 chrome
   // re-org): still one click away, without crowding the deck-action zone.
-  const btnAnalyze = menuItem({
-    text: t('editor.analyze', 'AI Analysis'),
-    onclick: () => run(onAnalyze),
-  });
+  const btnAnalyze = onAnalyze
+    ? menuItem({
+        text: t('editor.analyze', 'AI Analysis'),
+        onclick: () => run(onAnalyze),
+      })
+    : null;
 
   const btnSettings = menuItem({
     text: t('common.settings', 'Settings'),
@@ -268,6 +271,7 @@ export function createEditorTopbarMoreMenu({
     title: t('common.moreOptions', 'More options'),
     ariaLabel: t('common.moreOptions', 'More options'),
     menuClass: 'dropdown-menu-right',
+    // `btnAnalyze` is null where AI is off; `append` would print that.
     items: [
       btnOverview,
       btnAnalyze,
@@ -283,7 +287,7 @@ export function createEditorTopbarMoreMenu({
       h('div', { class: 'dropdown-sep' }),
       btnMoveToTrash,
       btnLogout,
-    ],
+    ].filter(Boolean),
   });
   detachers.push(detachMore);
   closeMore = closeDropdown;

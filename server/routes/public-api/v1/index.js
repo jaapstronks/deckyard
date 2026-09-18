@@ -30,6 +30,7 @@ import { handleSlideLibrary } from './slide-library.js';
 import { handleSlides } from './slides.js';
 import { handleTranslation } from './translate.js';
 import { handleComments } from './comments.js';
+import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 // Generated deck JSON Schema (single source: the slide-type field registry).
@@ -282,7 +283,9 @@ export const handlePublicApiV1 = withV1ErrorHandler(
     if (await handleComments(ctx)) return true;
     if (await handlePresentations(ctx)) return true;
     if (await handleExports(ctx)) return true;
-    if (await handleAi(ctx)) return true;
+    // AI off (kill switch, demo, sandbox) unmounts /ai/* — the same 404 the
+    // internal /api/ai/* gives (server/routes/api/index.js).
+    if (getFeatureFlags().enableAi && (await handleAi(ctx))) return true;
     if (await handleResources(ctx)) return true;
 
     return v1NotFound(ctx.res);

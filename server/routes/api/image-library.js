@@ -77,11 +77,11 @@ async function handleImageLibraryCollection({
 }
 
 // POST /api/image-library/generate-alts - Generate alt texts (preview; does
-// not persist)
+// not persist). An `ai` route: with AI off (kill switch, demo, sandbox) the
+// dispatcher answers 404 before this runs; `aiAltText` then only adds the
+// OpenAI-vendor requirement.
 async function handleGenerateAltsPreview({ repoRoot, req, res, authedUser }) {
   const flags = getFeatureFlags();
-  if (flags.demoMode || flags.sandboxMode)
-    return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
   if (!flags.aiAltText) return forbidden(res, 'AI alt text is not enabled');
   const parsed = await requireJsonBody(req, res);
@@ -127,8 +127,6 @@ async function handleItemGenerateAlts(
   const flags = getFeatureFlags();
   if (!flags.enableImageLibrary) return notFound(res);
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  if (flags.demoMode || flags.sandboxMode)
-    return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
   if (!flags.aiAltText) return forbidden(res, 'AI alt text is not enabled');
   const item = await getImageLibraryItem(storageScope, imageId);
@@ -269,10 +267,12 @@ export const ROUTES = [
     method: 'POST',
     pattern: '/api/image-library/generate-alts',
     handler: handleGenerateAltsPreview,
+    ai: true,
   },
   {
     pattern: '/api/image-library/generate-alts',
     handler: ({ res }) => methodNotAllowed(res, ['POST']),
+    ai: true,
   },
   {
     pattern: /^\/api\/image-library\/([^/]+)\/usage$/,
@@ -281,6 +281,7 @@ export const ROUTES = [
   {
     pattern: /^\/api\/image-library\/([^/]+)\/generate-alts$/,
     handler: handleItemGenerateAlts,
+    ai: true,
   },
   {
     pattern: /^\/api\/image-library\/([^/]+)\/replace-upload$/,

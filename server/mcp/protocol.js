@@ -9,7 +9,11 @@ import {
   MaintenanceWriteError,
   assertWritable,
 } from '../config/maintenance.js';
-import { enforceToolPolicy, isToolVisible } from './authorization.js';
+import {
+  enforceToolPolicy,
+  isToolMounted,
+  isToolVisible,
+} from './authorization.js';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const SERVER_NAME = 'deckyard';
@@ -278,15 +282,17 @@ export class McpServer {
   async _handleToolsCall(id, params, context) {
     const { name, arguments: args } = params || {};
 
-    if (!name || !this.tools.has(name)) {
+    // An unmounted tool (an `ai` tool while AI is off) is answered as the
+    // unknown tool it is on this instance — the MCP spelling of the 404 its
+    // HTTP twin gives (./authorization.js).
+    const tool = name ? this.tools.get(name) : undefined;
+    if (!tool || !isToolMounted(tool)) {
       return jsonRpcError(
         id,
         ErrorCodes.METHOD_NOT_FOUND,
         `Unknown tool: ${name}`,
       );
     }
-
-    const tool = this.tools.get(name);
 
     // Permission + quota gate — the MCP spelling of v1's requirePermission and
     // its rate limiters, so one API key may do the same things on both

@@ -15,9 +15,9 @@
  * is enforced once at the dispatch site (`server/routes/api/index.js` refuses an
  * unauthenticated non-guest before `handleAi` is reached) and the `AI_ENABLED=false`
  * kill-switch is likewise a single upstream mount gate (`flags.enableAi &&
- * handleAi(ctx)`), not a per-route check — so, unlike the public v1 AI surface
- * (#758) where the kill-switch is uneven, the internal surface has one gate for
- * all of its routes and none of the handlers re-check it. There is therefore no
+ * handleAi(ctx)`), not a per-route check — the internal surface has one gate
+ * for all of its routes and none of the handlers re-check it (the other AI
+ * entries follow the same rule since B337: `tests/ai-kill-switch.test.js`). There is therefore no
  * handler-level authz-negative to pin here; the contract that *is* the
  * handlers' own is input validation, which is what this file covers, plus the
  * one endpoint that answers without an LLM at all (`/api/ai/vendors`).

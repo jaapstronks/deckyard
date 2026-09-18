@@ -10,6 +10,9 @@
  * `routes/api/presentations/index.js` — the behaviour is unchanged, only shared.
  */
 
+import { getFeatureFlags } from '../config/flags-snapshot.js';
+import { notFound } from './http.js';
+
 /**
  * A single declarative route.
  *
@@ -19,6 +22,12 @@
  * @property {string|RegExp} pattern - Exact pathname (string) or a pattern whose
  *   capture groups become trailing positional handler arguments.
  * @property {(ctx: object, ...params: string[]) => unknown} handler
+ * @property {boolean} [ai] - The route spends LLM tokens. With `enableAi` off
+ *   (`AI_ENABLED=false`, demo mode, sandbox) it is not mounted: a match
+ *   answers 404 before the handler runs, whatever the method — the same
+ *   answer `/api/ai/*` gives, whose whole module is skipped at the mount.
+ *   Declare it here rather than re-checking the flag in the handler, so no AI
+ *   entry can open its stream or call a vendor first.
  */
 
 /**
@@ -31,6 +40,7 @@
  *   - A string `pattern` is an exact pathname match.
  *   - A RegExp `pattern` is tested against the pathname; its capture groups are
  *     passed to the handler as trailing positional arguments.
+ *   - A matched `ai` route answers 404 instead while `enableAi` is off.
  *
  * **Order is significant** for RegExp/overlapping tables (`/search` before
  * `/:id`): the table author owns the order, and this walks it top to bottom.
@@ -50,14 +60,18 @@ export function dispatchRoutes(routes, ctx) {
   for (const route of routes) {
     if (route.method && req.method !== route.method) continue;
 
+    let params;
     if (typeof route.pattern === 'string') {
       if (url.pathname !== route.pattern) continue;
-      return route.handler(ctx);
+      params = [];
+    } else {
+      const match = route.pattern.exec(url.pathname);
+      if (!match) continue;
+      params = match.slice(1);
     }
 
-    const match = route.pattern.exec(url.pathname);
-    if (!match) continue;
-    return route.handler(ctx, ...match.slice(1));
+    if (route.ai && !getFeatureFlags().enableAi) return notFound(ctx.res);
+    return route.handler(ctx, ...params);
   }
 
   return false;

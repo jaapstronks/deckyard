@@ -299,7 +299,7 @@ export function createEditorTopbar({
     onToggleTheme: toggleTheme,
     // Demoted from their own topbar icons (2026-07-16 chrome re-org): the
     // bar keeps deck-level actions; utilities live here.
-    onAnalyze: () => onAnalyze?.(),
+    onAnalyze,
     onShowShortcuts: () => onShowShortcuts?.(),
     onOpenSettings: () => openSettings(),
     onSubscription: () =>
