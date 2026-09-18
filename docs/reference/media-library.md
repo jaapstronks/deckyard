@@ -142,8 +142,14 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
   step; picking one writes its URL onto the slide.
 - **Alt text** — `POST /api/image-library/generate-alts` (ad-hoc URL) or
   `/api/image-library/:id/generate-alts` (an existing item) returns
-  `{alts: {nl, en-GB}}` as a _preview_; it does not persist. Saving is a
-  subsequent `PUT`.
+  `{alts: {<lang>: <text>, …}}` as a _preview_; it does not persist. Saving is a
+  subsequent `PUT`. The keys of `alts` follow the deck languages the caller
+  names in `langs`: the image library sends the workspace's enabled set, an
+  admin setting (Settings > Admin > supported slide languages), so one run
+  writes one key per enabled language. Codes outside the deck-language axis are
+  dropped; an empty or invalid list falls back to `nl` and `en-GB`
+  (`resolveAltLangs` in `server/utils/llm/alt-text.js`). The ImageKit picker is
+  the exception: it asks for one language.
 - **Usage & replace** — `GET /api/image-library/:id/usage` joins the image URL
   against the organization's decks and publish index. `POST
 /api/image-library/:id/replace-upload` swaps the bytes behind an existing
