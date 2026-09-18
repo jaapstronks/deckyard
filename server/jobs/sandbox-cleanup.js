@@ -1,6 +1,11 @@
 import { getDb } from '../db/client.js';
 import { getDefaultOrganizationId } from '../config/database.js';
-import { sandboxEnabled, sandboxTtlMs } from '../config/sandbox.js';
+import {
+  sandboxCookieMaxAgeDays,
+  sandboxEnabled,
+  sandboxTtlMs,
+} from '../config/sandbox.js';
+import { SANDBOX_GUEST_EMAIL_PATTERN } from '../auth/sandbox.js';
 import {
   getSandboxTotalBytes,
   sandboxMaxTotalBytes,
@@ -59,6 +64,32 @@ export async function sweepExpiredSandboxDecks() {
 }
 
 /**
+ * Delete the `users` rows of sandbox guests whose cookie has expired, once.
+ *
+ * A guest becomes a `users` row on its first request (auth/sandbox.js) so it
+ * can own what it creates. The cookie is minted before the row and lives
+ * `SANDBOX_COOKIE_DAYS`, so a row older than that belongs to a cookie
+ * no browser still sends: nobody can act as that guest again. Every foreign
+ * key onto `users.id` is `SET NULL` or `CASCADE`, so the delete never blocks
+ * on a stamp the guest left behind; their decks are long gone by then anyway
+ * (the deck TTL is hours, the cookie lifetime days).
+ *
+ * @returns {Promise<number>} How many guest rows were deleted.
+ */
+export async function sweepExpiredSandboxGuests() {
+  const db = getDb();
+  const cutoff = new Date(
+    Date.now() - sandboxCookieMaxAgeDays() * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const result = await db
+    .deleteFrom('users')
+    .where('email', 'like', SANDBOX_GUEST_EMAIL_PATTERN)
+    .where('created_at', '<=', cutoff)
+    .executeTakeFirst();
+  return Number(result?.numDeletedRows ?? 0);
+}
+
+/**
  * Schedule the periodic sandbox TTL sweep. No-op (returns an inert handle)
  * outside sandbox mode, so non-sandbox deploys never touch the database here.
  *
@@ -78,6 +109,8 @@ export function scheduleSandboxCleanup({ intervalMs = 10 * 60 * 1000 } = {}) {
     try {
       const deleted = await sweepExpiredSandboxDecks();
       if (deleted > 0) log.info(`swept ${deleted} expired sandbox deck(s)`);
+      const guests = await sweepExpiredSandboxGuests();
+      if (guests > 0) log.info(`swept ${guests} expired sandbox guest(s)`);
     } catch (err) {
       // Best-effort: a sweep that fails (DB blip) simply retries next interval.
       log.warn(`sandbox sweep failed: ${err?.message || err}`);

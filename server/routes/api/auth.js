@@ -33,7 +33,7 @@ import { t } from '../../i18n/index.js';
 import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { getUserSettings } from '../../storage/settings.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
-import { ensureSandboxUser } from '../../auth/sandbox.js';
+import { ensureSandboxUserAsync } from '../../auth/sandbox.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
 import { getClientIp } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -155,7 +155,7 @@ async function handleAuthMe({ repoRoot, req, res }) {
   // otherwise the client will treat the user as admin and show global/organization data.
   // Use async version to properly validate database users who migrated from ENV auth.
   const u = sandboxEnabled()
-    ? ensureSandboxUser(req, res)
+    ? await ensureSandboxUserAsync(req, res)
     : await getUserFromRequestAsync(req, ctx);
   if (!sandboxEnabled() && !u && authEnabled()) return unauthorized(res);
   let outUser = u;
