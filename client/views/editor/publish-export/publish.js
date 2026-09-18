@@ -27,7 +27,7 @@ import { getSlideType } from '../../../../shared/slide-types/registry.js';
  * It used to build two — "this language" and `otherLang()`'s answer — so a deck
  * with `nl`, `de` and `fr` published three versions and offered links to two of
  * them (D72 #6). The order is deliberate: the current language leads, because
- * that is the link the modal copies to the clipboard on open.
+ * that is the one the Public tab's language picker starts on.
  *
  * @param {Object} opts
  * @param {Object} opts.pres - the deck
@@ -70,27 +70,18 @@ function buildLangLinks({ pres, currentLang, path, publishId, slug }) {
 }
 
 /**
- * The link set of the language being edited — the one a "copy the public link"
- * affordance means when it does not name a language.
+ * The links of a published deck, one set per language version, the one being
+ * edited first. The Share dialog's Public tab renders them; the deck must be
+ * published (`pres.published.id`).
  *
- * @param {{currentLang?: string, langs?: PublishLangLinks[]}} [data]
- * @returns {PublishLangLinks|null}
+ * @param {Object} pres - the deck
+ * @returns {{currentLang: string, langs: PublishLangLinks[]}}
  */
-export function primaryLangLinks(data) {
-  const langs = Array.isArray(data?.langs) ? data.langs : [];
-  return langs.find((x) => x?.lang === data?.currentLang) || langs[0] || null;
-}
-
-/**
- * Build modal data from existing published presentation data.
- * Used when opening the "manage published" modal without re-publishing.
- */
-export function buildPublishModalData({ pres, activeLang = null } = {}) {
+export function buildPublishedLinks(pres) {
   const publishId = pres?.published?.id || '';
   const slug = pres?.published?.slug || '';
 
-  const currentLang =
-    activeLang || normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
+  const currentLang = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
 
   return {
     currentLang,
@@ -166,6 +157,14 @@ export function missingAltMessage(err, { pres, slideTypes } = {}) {
   return `${sentence} ${fix}`;
 }
 
+/**
+ * Publish the deck, or republish it when it already is. A first publish asks
+ * for a description (when missing) and a confirmation; `null` means the author
+ * backed out. The caller renders the resulting links itself
+ * ({@link buildPublishedLinks}).
+ *
+ * @returns {Promise<Object|null>} the server's publish response
+ */
 export async function doPublish({
   root,
   api,
@@ -173,8 +172,6 @@ export async function doPublish({
   pres,
   id,
   requestSave,
-  openPublishModal,
-  activeLang = null,
 } = {}) {
   // Make sure the latest edits are persisted before publishing.
   await requestSave?.();
@@ -249,20 +246,6 @@ export async function doPublish({
       // Silently ignore — RSS notice is informational
     }
   }
-
-  const currentLang =
-    activeLang || normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-
-  openPublishModal?.({
-    currentLang,
-    langs: buildLangLinks({
-      pres,
-      currentLang,
-      path: pub.path,
-      publishId: pub.publishId,
-      slug: pub.slug,
-    }),
-  });
 
   pres.published = pres.published || {};
   pres.published.id = pub.publishId;

@@ -64,7 +64,13 @@ The feed:
 
 Client surfaces:
 
-- `client/views/editor/publish-export/publish.js` — the publish panel.
+- `client/views/editor/publish-export/publish.js` — the publish flow
+  (`doPublish`) and the link set of a published deck (`buildPublishedLinks`:
+  page, embed, iframe and SDK snippet, per language version).
+- `client/views/editor/modals/share-modal/publish-section.js` — the Share
+  dialog's **Public** tab, the one place the links are shown (below).
+- `client/views/editor/publish-export/preview-address-modal.js` — "Preview and
+  address…": the social preview image and the slug.
 - `client/views/editor/modals/settings-modal/toggles.js` — the per-deck
   `excludeFromFeed` toggle.
 - `client/views/settings/tabs/integrations-tab.js` — the organization's RSS
@@ -194,6 +200,30 @@ routes can never disagree.
 an API key, authorized by scope (`write` / `read`) plus deck access. The response
 shapes match the app's, plus a `GET` that answers `{ isPublished: false }` or
 the full publish state.
+
+## The Public tab: two links, not one
+
+The Share dialog's tabs are named after who gets access (D174): **Team**
+(people with an account on this server), **Guests** (people without one, on a
+token link you chose) and **Public** (anyone). Publishing lives on Public, and a
+published deck shows two links there as equal rows (B342):
+
+- **Link** — `/p/<id>-<slug>`, a page: findable (`index,follow`), with a social
+  preview, and it refuses to be framed (`frame-ancestors 'none'`,
+  `server/utils/document-csp.js`).
+- **Embed** — `/embed/<id>-<slug>`, the player: `noindex`, frameable by any
+  origin, controls under the slide. This is the URL for Notion or an `<iframe>`.
+
+They are not interchangeable: a `/p/` URL pasted into Notion renders an empty
+frame, which is why the embed sits beside the link rather than a level deeper.
+The iframe and embed-SDK snippets fold out underneath. When the deck has more
+than one language version, one `<select>` above the rows sets `?lang=` in both
+URLs and in the snippets, starting on the language being edited; with one
+version there is no picker. The social preview and the slug are managed in
+"Preview and address…"; Unpublish and "Add to Notion page" sit on the tab.
+
+The Export dialog points here from its HTML row (the offline twin of the
+published page): its hint opens the Share dialog on the Public tab.
 
 ## Config & flags
 

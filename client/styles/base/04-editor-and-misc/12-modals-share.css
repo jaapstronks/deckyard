@@ -114,11 +114,42 @@
   margin-bottom: var(--ps-space-4);
 }
 
+/* Link and Embed as equal rows, the snippets folded underneath (B342). */
+.share-publish-links {
+  margin-bottom: var(--ps-space-4);
+}
+
+.share-publish-lang {
+  gap: var(--ps-space-2);
+  margin-bottom: var(--ps-space-3);
+}
+
+.share-publish-lang .field-label {
+  margin: 0;
+}
+
+.share-publish-link .help {
+  margin-bottom: var(--ps-space-1-5);
+}
+
 .share-publish-url-row {
   display: flex;
   gap: var(--ps-space-2);
   align-items: center;
+}
+
+.share-publish-snippets > summary {
+  cursor: pointer;
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+}
+
+.share-publish-snippets[open] > summary {
   margin-bottom: var(--ps-space-3);
+}
+
+.share-publish-snippets .share-publish-url-row {
+  align-items: flex-start;
 }
 
 .share-publish-url {
@@ -126,6 +157,12 @@
   min-width: 0;
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
   font-size: var(--ps-text-sm);
+}
+
+.share-publish-snippet {
+  min-height: 92px;
+  resize: vertical;
+  line-height: 1.35;
 }
 
 .share-publish-actions {
@@ -142,7 +179,8 @@
   border-top: 1px solid hsl(var(--app-border-subtle));
 }
 
-.share-xref-hint .link-button {
+.share-xref-hint .link-button,
+.export-format-hint .link-button {
   background: none;
   border: none;
   padding: 0;
@@ -152,7 +190,8 @@
   text-decoration: underline;
 }
 
-.share-xref-hint .link-button:hover {
+.share-xref-hint .link-button:hover,
+.export-format-hint .link-button:hover {
   text-decoration: none;
 }
 

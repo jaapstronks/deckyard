@@ -10,7 +10,15 @@ import { t } from '../../lib/ui-i18n.js';
 import { openExportModal } from './export-modal.js';
 import { h } from '../../lib/dom.js';
 
-export function setupExportDropdown({ pres, id, root } = {}) {
+/**
+ * @param {Object} opts
+ * @param {Object} opts.pres - the deck
+ * @param {string} opts.id - the deck id
+ * @param {HTMLElement} [opts.root] - element to append the modal to
+ * @param {Function} [opts.openPublic] - opens the Share dialog on its Public
+ *   tab; the HTML row's hint links there
+ */
+export function setupExportDropdown({ pres, id, root, openPublic } = {}) {
   let modal = null;
 
   const button = h('button', {
@@ -23,6 +31,7 @@ export function setupExportDropdown({ pres, id, root } = {}) {
         pres,
         id,
         root: root || document.body,
+        openPublic,
       });
     },
   });

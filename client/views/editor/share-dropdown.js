@@ -3,14 +3,14 @@
  *
  * This used to render a dropdown menu ("Share links…", "Share to workspace",
  * "Move to private", Publish/Unpublish, Notion). Those overlapping entries are
- * now one dialog (`modals/share-modal`) with Workspace / Link / Publish tabs;
- * the button just opens it and keeps its published-state indicator in sync.
+ * now one dialog (`modals/share-modal`) with Team / Guests / Public tabs; the
+ * button just opens it and keeps its published-state indicator in sync.
  */
 
 import { lockDocumentScroll } from './editor-utils.js';
 import { copyToClipboard } from './publish-export/clipboard.js';
-import { openPublishModal } from './publish-export/publish-modal.js';
-import { doPublish, buildPublishModalData } from './publish-export/publish.js';
+import { openPreviewAddressModal } from './publish-export/preview-address-modal.js';
+import { doPublish } from './publish-export/publish.js';
 import { openShareModal } from './modals/share-modal.js';
 import { openDescriptionModal } from './modals/description-modal.js';
 import { openExportModal } from './export-modal.js';
@@ -64,38 +64,34 @@ export function setupShareDropdown({
     dialog?.refresh?.();
   }
 
-  // Bound helpers passed into the dialog's Publish tab.
-  const openPublishModalBound = (data) =>
-    openPublishModal({
-      ...data,
+  // Bound helpers passed into the dialog's Public tab.
+  const openPreviewAddress = () =>
+    openPreviewAddressModal({
       api,
       pres,
       id,
       root,
       lockDocumentScroll,
-      copyToClipboard,
-      syncPublishUi: syncShareUi,
+      onChange: syncShareUi,
     });
 
-  const doPublishBound = ({ openPublishModal: opm } = {}) =>
-    doPublish({
-      root,
-      api,
-      toast,
-      pres,
-      id,
-      requestSave,
-      openPublishModal: opm || openPublishModalBound,
-    });
+  const doPublishBound = () =>
+    doPublish({ root, api, toast, pres, id, requestSave });
 
   const openExport = () =>
     openExportModal({
       pres,
       id,
       root: root || document.body,
+      openPublic: () => openShare({ initialTab: 'public' }),
     });
 
-  button.addEventListener('click', () => {
+  /**
+   * Open the Share dialog, on the Team tab unless another is asked for.
+   * @param {{initialTab?: 'organization'|'guests'|'public'}} [opts]
+   */
+  function openShare({ initialTab } = {}) {
+    dialog?.close?.();
     dialog = openShareModal({
       api,
       pres,
@@ -114,13 +110,15 @@ export function setupShareDropdown({
       openDescriptionModal,
       doPublish: doPublishBound,
       slideTypes,
-      buildPublishModalData,
-      openPublishModal: openPublishModalBound,
+      openPreviewAddress,
       handleNotionPublish: () => handleNotionPublish({ api, toast, pres }),
       notionAvailable: () => notionAvailable,
       openExport,
+      initialTab,
     });
-  });
+  }
+
+  button.addEventListener('click', () => openShare());
 
   // Check whether Notion publishing is available (drives the Notion action).
   api('/api/notion/status')
@@ -142,5 +140,5 @@ export function setupShareDropdown({
     dialog = null;
   };
 
-  return { shareEl: button, syncShareUi, detach };
+  return { shareEl: button, syncShareUi, openShare, detach };
 }
