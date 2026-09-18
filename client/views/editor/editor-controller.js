@@ -1407,6 +1407,7 @@ export async function createEditorController({
 
   const editorForm = createRerenderEditor({
     ...editorFormDeps,
+    surface: 'inspector',
     onOpenBulkEdit: () => bulkEditModal.open(),
     getSelectedElement: () => selectedElement,
     // Chart inspector's "Edit data…" entry point opens the chart-data modal

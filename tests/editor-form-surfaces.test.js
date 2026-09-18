@@ -247,6 +247,11 @@ test('the surface table declares every capability on every row', () => {
     () => surfaceCapabilities('panel'),
     /Unknown editor form surface/,
   );
+  // No default surface: a caller that names none is refused the same way.
+  assert.throws(
+    () => surfaceCapabilities(undefined),
+    /Unknown editor form surface/,
+  );
 });
 
 // Guard: the one-boolean form mode is gone for good. `contentOnly` on the AI

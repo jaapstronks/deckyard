@@ -62,6 +62,7 @@ function renderForm({ theme = null } = {}) {
   };
   createRerenderEditor({
     ...deps,
+    surface: 'inspector',
     editorMount,
     SLIDE_TYPES,
     api: null,

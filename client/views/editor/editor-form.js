@@ -74,7 +74,8 @@ export function createRerenderEditor({
   // the form that is not on every surface reads one capability from that row;
   // nothing here branches on the name. All surfaces share the exact same
   // field renderers, so no surface can drift from what the form can edit.
-  surface = 'inspector',
+  // Required: a caller that names no surface throws, like an unknown name.
+  surface,
   // Selection-aware inspector: () => {kind:'image'|'card', idx} | null. When an
   // element is selected the inspector grows a [This element | Slide] tab bar.
   getSelectedElement,
