@@ -119,12 +119,12 @@
             "body": "Publish once, share a URL or drop it into a page"
           },
           {
-            "icon": "clipboard-text",
+            "icon": "clipboard",
             "title": "Export",
             "body": "PDF, PowerPoint or a self-contained HTML file"
           },
           {
-            "icon": "gear",
+            "icon": "settings",
             "title": "Agent API",
             "body": "Agents create and edit decks through the same format"
           },
