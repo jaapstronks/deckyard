@@ -21,6 +21,7 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 
 import { handlePresentations } from '../server/routes/api/presentations/index.js';
+import { handleCollaborators } from '../server/routes/api/collaborators.js';
 
 const A_UUID = '123e4567-e89b-42d3-a456-426614174000';
 
@@ -113,6 +114,55 @@ test('a uuid-shaped id passes the gate into normal dispatch', async () => {
     assert.equal(handled, true, `${pathname}: handled`);
     assert.notEqual(ctx.res.statusCode, 404, `${pathname}: not gated out`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// The collaborator rows of the same surface (B359)
+// ---------------------------------------------------------------------------
+
+test('a non-uuid presentation id answers 404 on every collaborator row', async () => {
+  // All four id-carrying rows, not one of them as a stand-in for the others:
+  // the gate is declared per row, so a row that lost it fails only here.
+  const rows = [
+    ['POST', '/api/presentations/does-not-exist/collaborators'],
+    ['GET', '/api/presentations/does-not-exist/collaborators'],
+    ['DELETE', '/api/presentations/does-not-exist/collaborators/a%40b.test'],
+    ['PATCH', '/api/presentations/does-not-exist/collaborators/a%40b.test'],
+  ];
+  for (const [method, pathname] of rows) {
+    const ctx = ctxFor(method, pathname);
+    const handled = await handleCollaborators(ctx);
+    assert.equal(handled, true, `${method} ${pathname}: handled`);
+    assert.equal(ctx.res.statusCode, 404, `${method} ${pathname}: 404`);
+    const body = ctx.res.body();
+    assert.equal(body.ok, false, `${pathname}: ok:false`);
+    assert.equal(body.error, 'not_found', `${pathname}: machine code`);
+  }
+});
+
+test('a uuid-shaped id passes the collaborator gate into normal dispatch', async () => {
+  // Same proof as for the presentation rows: with no database reachable, a row
+  // that got through answers 500 — the gate did not short-circuit everything.
+  for (const [method, pathname] of [
+    ['GET', `/api/presentations/${A_UUID}/collaborators`],
+    ['POST', `/api/presentations/${A_UUID}/collaborators`],
+    ['DELETE', `/api/presentations/${A_UUID}/collaborators/a%40b.test`],
+    ['PATCH', `/api/presentations/${A_UUID}/collaborators/a%40b.test`],
+  ]) {
+    const ctx = ctxFor(method, pathname);
+    const handled = await handleCollaborators(ctx);
+    assert.equal(handled, true, `${method} ${pathname}: handled`);
+    assert.notEqual(ctx.res.statusCode, 404, `${pathname}: not gated out`);
+  }
+});
+
+test('shared-with-me carries no id and so no gate', async () => {
+  // The one collaborator row without a capture group: it must keep answering
+  // for the caller's own session rather than 404 on a path shape.
+  const ctx = ctxFor('GET', '/api/presentations/shared-with-me');
+  const handled = await handleCollaborators(ctx);
+  assert.equal(handled, true, 'handled');
+  assert.notEqual(ctx.res.statusCode, 404, 'not gated out');
 });
 
 test('an uppercase uuid is a uuid', async () => {

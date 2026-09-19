@@ -99,13 +99,26 @@ function person(email, name, organizationId) {
   return { id: uid(email), email, name, organizationId };
 }
 
-const DECKS = [
-  'deck-owned',
-  'deck-second',
-  'deck-organization',
-  'deck-trashed',
-  'deck-foreign',
-];
+/**
+ * The decks, by uuid.
+ *
+ * Readable ids (`deck-owned` and kin) were a second id form that existed only
+ * here: `presentations.id` and `presentation_collaborators.presentation_id` are
+ * Postgres `uuid` columns, and since B359 the route table shape-checks the
+ * captured id (`requireUuidId`), so a non-uuid fixture would be answered 404
+ * before any handler ran. One id form, named here so the tests below still read
+ * as sentences.
+ */
+const DECK = {
+  owned: '0000d0c0-0000-4000-8000-000000000001',
+  second: '0000d0c0-0000-4000-8000-000000000002',
+  organization: '0000d0c0-0000-4000-8000-000000000003',
+  trashed: '0000d0c0-0000-4000-8000-000000000004',
+  foreign: '0000d0c0-0000-4000-8000-000000000005',
+};
+
+/** Every seeded deck id, for the per-(deck, person) cache drop in `seed()`. */
+const DECKS = Object.values(DECK);
 
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
@@ -186,7 +199,7 @@ function deckRow(overrides) {
 function collaboratorRow(overrides) {
   return {
     organization_id: ORG,
-    presentation_id: 'deck-owned',
+    presentation_id: DECK.owned,
     user_id: null,
     invited_by: ACTORS.owner.email,
     invited_at: '2026-02-01T00:00:00.000Z',
@@ -219,14 +232,14 @@ async function seed() {
     ],
     users: Object.values(ACTORS).map(userRow),
     presentations: [
-      deckRow({ id: 'deck-owned' }),
+      deckRow({ id: DECK.owned }),
       // No slides: the "shared with me" grid reduces the thumbnail to a
       // presence boolean, and this deck is the one that must report `false`.
-      deckRow({ id: 'deck-second', slides: [] }),
-      deckRow({ id: 'deck-organization', visibility: 'organization' }),
-      deckRow({ id: 'deck-trashed', trashed_at: '2026-03-01T00:00:00.000Z' }),
+      deckRow({ id: DECK.second, slides: [] }),
+      deckRow({ id: DECK.organization, visibility: 'organization' }),
+      deckRow({ id: DECK.trashed, trashed_at: '2026-03-01T00:00:00.000Z' }),
       deckRow({
-        id: 'deck-foreign',
+        id: DECK.foreign,
         organization_id: OTHER_ORG,
         owner_email: ACTORS.outsider.email,
         created_by: ACTORS.outsider.email,
@@ -261,14 +274,14 @@ async function seed() {
       }),
       collaboratorRow({
         id: 'c-second',
-        presentation_id: 'deck-second',
+        presentation_id: DECK.second,
         user_email: ACTORS.viewer.email,
         permission: 'comment',
         invited_at: '2026-02-03T00:00:00.000Z',
       }),
       collaboratorRow({
         id: 'c-trashed',
-        presentation_id: 'deck-trashed',
+        presentation_id: DECK.trashed,
         user_email: ACTORS.viewer.email,
         permission: 'view',
       }),
@@ -277,7 +290,7 @@ async function seed() {
       collaboratorRow({
         id: 'c-foreign',
         organization_id: OTHER_ORG,
-        presentation_id: 'deck-foreign',
+        presentation_id: DECK.foreign,
         user_email: ACTORS.viewer.email,
         permission: 'edit',
       }),
@@ -376,7 +389,7 @@ const notifications = () => db.__tables.user_notifications || [];
 /** Activity-event rows written so far. */
 const activity = () => db.__tables.activity_events || [];
 
-/** Everyone who may not manage collaborators on `deck-owned`, and why. */
+/** Everyone who may not manage collaborators on `DECK.owned`, and why. */
 const REFUSED = [
   ['editor', 'edit is not manage'],
   ['viewer', 'view is not manage'],
@@ -407,8 +420,8 @@ test('shared-with-me lists the decks shared with the caller, newest invite first
   assert.deepEqual(
     res.body.presentations.map((p) => [p.id, p.permission, p.hasSlides]),
     [
-      ['deck-second', 'comment', false],
-      ['deck-owned', 'view', true],
+      [DECK.second, 'comment', false],
+      [DECK.owned, 'view', true],
     ],
     'each deck carries the permission of the invite, and slide presence as a boolean',
   );
@@ -432,7 +445,7 @@ test('a trashed deck is not shared with anyone', async () => {
   });
 
   assert.equal(
-    res.body.presentations.some((p) => p.id === 'deck-trashed'),
+    res.body.presentations.some((p) => p.id === DECK.trashed),
     false,
   );
 });
@@ -444,7 +457,7 @@ test('a collaborator row in another organization does not surface', async () => 
   });
 
   assert.equal(
-    res.body.presentations.some((p) => p.id === 'deck-foreign'),
+    res.body.presentations.some((p) => p.id === DECK.foreign),
     false,
     'the same address is a collaborator there; this session does not act in that organization',
   );
@@ -485,7 +498,7 @@ test('the owner adds a collaborator, and the invite is recorded once', async () 
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.owner,
       body: { userEmail: ACTORS.newcomer.email, permission: 'edit' },
@@ -497,7 +510,7 @@ test('the owner adds a collaborator, and the invite is recorded once', async () 
   assert.equal(res.body.collaborator.userEmail, ACTORS.newcomer.email);
   assert.equal(res.body.collaborator.permission, 'edit');
 
-  const row = rowFor('deck-owned', ACTORS.newcomer.email);
+  const row = rowFor(DECK.owned, ACTORS.newcomer.email);
   assert.equal(row.permission, 'edit');
   assert.equal(
     row.organization_id,
@@ -514,7 +527,7 @@ test('the owner adds a collaborator, and the invite is recorded once', async () 
 
 test('adding a collaborator notifies them and lands in the activity feed', async () => {
   await seed();
-  await call('POST', '/api/presentations/deck-owned/collaborators', {
+  await call('POST', `/api/presentations/${DECK.owned}/collaborators`, {
     as: ACTORS.owner,
     body: { userEmail: ACTORS.newcomer.email, permission: 'comment' },
   });
@@ -523,17 +536,17 @@ test('adding a collaborator notifies them and lands in the activity feed', async
     (n) => n.user_email === ACTORS.newcomer.email,
   );
   assert.equal(notification.notification_type, 'share_received');
-  assert.equal(notification.presentation_id, 'deck-owned');
+  assert.equal(notification.presentation_id, DECK.owned);
   assert.equal(notification.actor_email, ACTORS.owner.email);
   assert.match(
     notification.action_url,
-    /\/app\/deck-owned\?email=newcomer%40example\.com$/,
+    new RegExp(`/app/${DECK.owned}\\?email=newcomer%40example\\.com$`),
     'the invite link pre-fills the address it was sent to',
   );
 
   const event = activity().find((e) => e.entity_type === 'collaborator');
   assert.equal(event.event_type, 'collaborator.added');
-  assert.equal(event.presentation_id, 'deck-owned');
+  assert.equal(event.presentation_id, DECK.owned);
   assert.equal(event.data.collaboratorEmail, ACTORS.newcomer.email);
 });
 
@@ -541,7 +554,7 @@ test('a collaborator holding admin may add collaborators', async () => {
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.admin,
       body: { userEmail: ACTORS.newcomer.email, permission: 'view' },
@@ -550,7 +563,7 @@ test('a collaborator holding admin may add collaborators', async () => {
 
   assert.equal(res.status, 201);
   assert.equal(
-    rowFor('deck-owned', ACTORS.newcomer.email).invited_by,
+    rowFor(DECK.owned, ACTORS.newcomer.email).invited_by,
     ACTORS.admin.email,
   );
 });
@@ -560,7 +573,7 @@ test('nobody else may add a collaborator', async () => {
     await seed();
     const res = await call(
       'POST',
-      '/api/presentations/deck-owned/collaborators',
+      `/api/presentations/${DECK.owned}/collaborators`,
       {
         as: actor(key),
         body: { userEmail: ACTORS.newcomer.email, permission: 'admin' },
@@ -569,7 +582,7 @@ test('nobody else may add a collaborator', async () => {
 
     assert.equal(res.status, 403, `${key ?? 'anonymous'}: ${why}`);
     assert.equal(
-      rowFor('deck-owned', ACTORS.newcomer.email),
+      rowFor(DECK.owned, ACTORS.newcomer.email),
       undefined,
       'no row is written',
     );
@@ -581,7 +594,7 @@ test('an organization deck does not make every colleague a collaborator manager'
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-organization/collaborators',
+    `/api/presentations/${DECK.organization}/collaborators`,
     {
       as: ACTORS.stranger,
       body: { userEmail: ACTORS.newcomer.email, permission: 'edit' },
@@ -593,14 +606,14 @@ test('an organization deck does not make every colleague a collaborator manager'
     403,
     'organization visibility grants reading and writing, never handing the deck to someone new',
   );
-  assert.equal(rowFor('deck-organization', ACTORS.newcomer.email), undefined);
+  assert.equal(rowFor(DECK.organization, ACTORS.newcomer.email), undefined);
 });
 
 test('a deck in another organization is absent, not forbidden', async () => {
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-foreign/collaborators',
+    `/api/presentations/${DECK.foreign}/collaborators`,
     {
       as: ACTORS.owner,
       body: { userEmail: ACTORS.newcomer.email, permission: 'edit' },
@@ -612,14 +625,14 @@ test('a deck in another organization is absent, not forbidden', async () => {
     404,
     'the deck never reaches the authorization check',
   );
-  assert.equal(rowFor('deck-foreign', ACTORS.newcomer.email), undefined);
+  assert.equal(rowFor(DECK.foreign, ACTORS.newcomer.email), undefined);
 });
 
 test('its owner, acting in their own organization, still reaches that deck', async () => {
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-foreign/collaborators',
+    `/api/presentations/${DECK.foreign}/collaborators`,
     {
       as: ACTORS.outsider,
       body: { userEmail: ACTORS.newcomer.email, permission: 'view' },
@@ -656,7 +669,7 @@ test('an invalid permission is refused before anything is written', async () => 
   for (const permission of ['owner', 'ADMIN', '', null, undefined]) {
     const res = await call(
       'POST',
-      '/api/presentations/deck-owned/collaborators',
+      `/api/presentations/${DECK.owned}/collaborators`,
       {
         as: ACTORS.owner,
         body: { userEmail: ACTORS.newcomer.email, permission },
@@ -668,7 +681,7 @@ test('an invalid permission is refused before anything is written', async () => 
       `${JSON.stringify(permission)} is not a permission`,
     );
   }
-  assert.equal(rowFor('deck-owned', ACTORS.newcomer.email), undefined);
+  assert.equal(rowFor(DECK.owned, ACTORS.newcomer.email), undefined);
 });
 
 test('a body without a usable address is a 400', async () => {
@@ -681,7 +694,7 @@ test('a body without a usable address is a 400', async () => {
   ]) {
     const res = await call(
       'POST',
-      '/api/presentations/deck-owned/collaborators',
+      `/api/presentations/${DECK.owned}/collaborators`,
       {
         as: ACTORS.owner,
         body,
@@ -690,7 +703,7 @@ test('a body without a usable address is a 400', async () => {
     assert.equal(res.status, 400, `${JSON.stringify(body)} is refused`);
   }
   assert.equal(
-    rowsFor('deck-owned').length,
+    rowsFor(DECK.owned).length,
     4,
     'the seeded rows are all there is',
   );
@@ -701,7 +714,7 @@ test('an empty or unparseable body is a 400, not a crash', async () => {
   for (const body of [undefined, '{nope']) {
     const res = await call(
       'POST',
-      '/api/presentations/deck-owned/collaborators',
+      `/api/presentations/${DECK.owned}/collaborators`,
       {
         as: ACTORS.owner,
         body,
@@ -715,7 +728,7 @@ test('you cannot add yourself', async () => {
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.owner,
       body: { userEmail: 'OWNER@Example.com', permission: 'admin' },
@@ -723,14 +736,14 @@ test('you cannot add yourself', async () => {
   );
 
   assert.equal(res.status, 400);
-  assert.equal(rowFor('deck-owned', ACTORS.owner.email), undefined);
+  assert.equal(rowFor(DECK.owned, ACTORS.owner.email), undefined);
 });
 
 test('a batch larger than twenty is refused whole', async () => {
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.owner,
       body: {
@@ -745,7 +758,7 @@ test('a batch larger than twenty is refused whole', async () => {
 
   assert.equal(res.status, 400);
   assert.equal(
-    rowsFor('deck-owned').length,
+    rowsFor(DECK.owned).length,
     4,
     'not one of the twenty-one is written',
   );
@@ -755,7 +768,7 @@ test('someone outside the organization cannot be invited', async () => {
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.owner,
       body: { userEmail: ACTORS.outsider.email, permission: 'view' },
@@ -763,7 +776,7 @@ test('someone outside the organization cannot be invited', async () => {
   );
 
   assert.equal(res.status, 400);
-  assert.equal(rowFor('deck-owned', ACTORS.outsider.email), undefined);
+  assert.equal(rowFor(DECK.owned, ACTORS.outsider.email), undefined);
   assert.deepEqual(
     notifications(),
     [],
@@ -775,7 +788,7 @@ test('adding an existing collaborator twice is a conflict, not a silent upgrade'
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.owner,
       body: { userEmail: ACTORS.viewer.email, permission: 'admin' },
@@ -784,7 +797,7 @@ test('adding an existing collaborator twice is a conflict, not a silent upgrade'
 
   assert.equal(res.status, 409);
   assert.equal(
-    rowFor('deck-owned', ACTORS.viewer.email).permission,
+    rowFor(DECK.owned, ACTORS.viewer.email).permission,
     'view',
     'the standing permission is untouched',
   );
@@ -794,7 +807,7 @@ test('re-adding a revoked collaborator reactivates the row at the new permission
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.owner,
       body: { userEmail: ACTORS.revoked.email, permission: 'comment' },
@@ -804,11 +817,11 @@ test('re-adding a revoked collaborator reactivates the row at the new permission
   assert.equal(res.status, 201);
   assert.equal(res.body.reactivated, true);
 
-  const row = rowFor('deck-owned', ACTORS.revoked.email);
+  const row = rowFor(DECK.owned, ACTORS.revoked.email);
   assert.equal(row.permission, 'comment');
   assert.equal(row.revoked_at, null);
   assert.equal(row.revoked_by, null);
-  assert.equal(rowsFor('deck-owned').length, 4, 'reactivated, not duplicated');
+  assert.equal(rowsFor(DECK.owned).length, 4, 'reactivated, not duplicated');
 });
 
 /**
@@ -834,7 +847,7 @@ test("a database failure during a single invite is our fault, not the caller's",
 
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.owner,
       body: { userEmail: ACTORS.newcomer.email, permission: 'view' },
@@ -847,7 +860,7 @@ test("a database failure during a single invite is our fault, not the caller's",
   assert.equal(res.status, 500, 'a failed insert is a 500, not a 400');
   assert.equal(res.body.error, 'database_error');
   assert.equal(
-    rowFor('deck-owned', ACTORS.newcomer.email),
+    rowFor(DECK.owned, ACTORS.newcomer.email),
     undefined,
     'and nothing is written',
   );
@@ -859,7 +872,7 @@ test('a database failure inside a batch is reported per address, not as a 400', 
 
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.owner,
       body: {
@@ -902,7 +915,7 @@ test('the reasons a single invite can fail each carry their own status', async (
     await seed();
     const res = await call(
       'POST',
-      '/api/presentations/deck-owned/collaborators',
+      `/api/presentations/${DECK.owned}/collaborators`,
       {
         as: ACTORS.owner,
         body,
@@ -918,7 +931,7 @@ test('a batch reports per address and does not let one failure sink the rest', a
   await seed();
   const res = await call(
     'POST',
-    '/api/presentations/deck-owned/collaborators',
+    `/api/presentations/${DECK.owned}/collaborators`,
     {
       as: ACTORS.owner,
       body: {
@@ -942,8 +955,8 @@ test('a batch reports per address and does not let one failure sink the rest', a
     ],
   );
   assert.deepEqual(res.body.summary, { total: 3, successful: 1, failed: 2 });
-  assert.equal(rowFor('deck-owned', ACTORS.newcomer.email).permission, 'view');
-  assert.equal(rowFor('deck-owned', 'ghost@example.com'), undefined);
+  assert.equal(rowFor(DECK.owned, ACTORS.newcomer.email).permission, 'view');
+  assert.equal(rowFor(DECK.owned, 'ghost@example.com'), undefined);
 });
 
 // ---------------------------------------------------------------------------
@@ -952,9 +965,13 @@ test('a batch reports per address and does not let one failure sink the rest', a
 
 test('the owner sees the live collaborators, enriched with names', async () => {
   await seed();
-  const res = await call('GET', '/api/presentations/deck-owned/collaborators', {
-    as: ACTORS.owner,
-  });
+  const res = await call(
+    'GET',
+    `/api/presentations/${DECK.owned}/collaborators`,
+    {
+      as: ACTORS.owner,
+    },
+  );
 
   assert.equal(res.status, 200);
   assert.deepEqual(
@@ -970,18 +987,26 @@ test('the owner sees the live collaborators, enriched with names', async () => {
 
 test('the collaborator list carries no password hashes', async () => {
   await seed();
-  const res = await call('GET', '/api/presentations/deck-owned/collaborators', {
-    as: ACTORS.owner,
-  });
+  const res = await call(
+    'GET',
+    `/api/presentations/${DECK.owned}/collaborators`,
+    {
+      as: ACTORS.owner,
+    },
+  );
 
   assert.doesNotMatch(res.raw, /password|hash|scrypt/i);
 });
 
 test('a collaborator holding admin may read the list', async () => {
   await seed();
-  const res = await call('GET', '/api/presentations/deck-owned/collaborators', {
-    as: ACTORS.admin,
-  });
+  const res = await call(
+    'GET',
+    `/api/presentations/${DECK.owned}/collaborators`,
+    {
+      as: ACTORS.admin,
+    },
+  );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.collaborators.length, 3);
@@ -992,7 +1017,7 @@ test('nobody else may read the collaborator list', async () => {
   for (const [key, why] of REFUSED) {
     const res = await call(
       'GET',
-      '/api/presentations/deck-owned/collaborators',
+      `/api/presentations/${DECK.owned}/collaborators`,
       {
         as: actor(key),
       },
@@ -1006,7 +1031,7 @@ test('the collaborator list of a deck in another organization is a 404', async (
   await seed();
   const res = await call(
     'GET',
-    '/api/presentations/deck-foreign/collaborators',
+    `/api/presentations/${DECK.foreign}/collaborators`,
     {
       as: ACTORS.owner,
     },
@@ -1023,23 +1048,23 @@ test('the owner revokes an invite, with a message and an attribution', async () 
   await seed();
   const res = await call(
     'DELETE',
-    `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+    `/api/presentations/${DECK.owned}/collaborators/${ACTORS.viewer.email}`,
     { as: ACTORS.owner, body: { message: 'Project finished.' } },
   );
 
   assert.equal(res.status, 200);
-  const row = rowFor('deck-owned', ACTORS.viewer.email);
+  const row = rowFor(DECK.owned, ACTORS.viewer.email);
   assert.equal(row.revoked_by, ACTORS.owner.email);
   assert.equal(row.revocation_message, 'Project finished.');
   assert.equal(typeof row.revoked_at, 'string');
-  assert.equal(rowsFor('deck-owned').length, 4, 'revoked, not deleted');
+  assert.equal(rowsFor(DECK.owned).length, 4, 'revoked, not deleted');
 });
 
 test('revoking logs a collaborator.removed event and hands the message back', async () => {
   await seed();
   const res = await call(
     'DELETE',
-    `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+    `/api/presentations/${DECK.owned}/collaborators/${ACTORS.viewer.email}`,
     { as: ACTORS.owner, body: { message: 'Project finished.' } },
   );
 
@@ -1056,7 +1081,7 @@ test('revoking logs a collaborator.removed event and hands the message back', as
     event,
     'a revoke writes an event, symmetric with collaborator.added',
   );
-  assert.equal(event.presentation_id, 'deck-owned');
+  assert.equal(event.presentation_id, DECK.owned);
   assert.equal(event.entity_type, 'collaborator');
   assert.equal(event.actor_email, ACTORS.owner.email);
   assert.equal(event.data.collaboratorEmail, ACTORS.viewer.email);
@@ -1067,7 +1092,7 @@ test('a revoke with no message still logs, with a null message in the payload', 
   await seed();
   const res = await call(
     'DELETE',
-    `/api/presentations/deck-owned/collaborators/${ACTORS.editor.email}`,
+    `/api/presentations/${DECK.owned}/collaborators/${ACTORS.editor.email}`,
     { as: ACTORS.owner },
   );
 
@@ -1087,13 +1112,13 @@ test('an url-encoded address in the path reaches the right row', async () => {
   await seed();
   const res = await call(
     'DELETE',
-    `/api/presentations/deck-owned/collaborators/${encodeURIComponent(ACTORS.editor.email)}`,
+    `/api/presentations/${DECK.owned}/collaborators/${encodeURIComponent(ACTORS.editor.email)}`,
     { as: ACTORS.owner },
   );
 
   assert.equal(res.status, 200);
   assert.equal(
-    typeof rowFor('deck-owned', ACTORS.editor.email).revoked_at,
+    typeof rowFor(DECK.owned, ACTORS.editor.email).revoked_at,
     'string',
   );
 });
@@ -1103,7 +1128,7 @@ test('revoking someone who is not a collaborator is a 404', async () => {
   for (const email of [ACTORS.stranger.email, ACTORS.revoked.email]) {
     const res = await call(
       'DELETE',
-      `/api/presentations/deck-owned/collaborators/${email}`,
+      `/api/presentations/${DECK.owned}/collaborators/${email}`,
       { as: ACTORS.owner },
     );
     assert.equal(res.status, 404, `${email} holds no live invite`);
@@ -1115,13 +1140,13 @@ test('nobody but the owner or an admin may revoke', async () => {
     await seed();
     const res = await call(
       'DELETE',
-      `/api/presentations/deck-owned/collaborators/${ACTORS.admin.email}`,
+      `/api/presentations/${DECK.owned}/collaborators/${ACTORS.admin.email}`,
       { as: actor(key) },
     );
 
     assert.equal(res.status, 403, `${key ?? 'anonymous'}: ${why}`);
     assert.equal(
-      rowFor('deck-owned', ACTORS.admin.email).revoked_at,
+      rowFor(DECK.owned, ACTORS.admin.email).revoked_at,
       null,
       'the invite stands',
     );
@@ -1132,13 +1157,13 @@ test('an admin collaborator may revoke', async () => {
   await seed();
   const res = await call(
     'DELETE',
-    `/api/presentations/deck-owned/collaborators/${ACTORS.editor.email}`,
+    `/api/presentations/${DECK.owned}/collaborators/${ACTORS.editor.email}`,
     { as: ACTORS.admin },
   );
 
   assert.equal(res.status, 200);
   assert.equal(
-    rowFor('deck-owned', ACTORS.editor.email).revoked_by,
+    rowFor(DECK.owned, ACTORS.editor.email).revoked_by,
     ACTORS.admin.email,
   );
 });
@@ -1147,12 +1172,12 @@ test('revoking on a deck in another organization is a 404', async () => {
   await seed();
   const res = await call(
     'DELETE',
-    `/api/presentations/deck-foreign/collaborators/${ACTORS.viewer.email}`,
+    `/api/presentations/${DECK.foreign}/collaborators/${ACTORS.viewer.email}`,
     { as: ACTORS.owner },
   );
 
   assert.equal(res.status, 404);
-  assert.equal(rowFor('deck-foreign', ACTORS.viewer.email).revoked_at, null);
+  assert.equal(rowFor(DECK.foreign, ACTORS.viewer.email).revoked_at, null);
 });
 
 // ---------------------------------------------------------------------------
@@ -1163,20 +1188,20 @@ test('the owner changes a permission', async () => {
   await seed();
   const res = await call(
     'PATCH',
-    `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+    `/api/presentations/${DECK.owned}/collaborators/${ACTORS.viewer.email}`,
     { as: ACTORS.owner, body: { permission: 'admin' } },
   );
 
   assert.equal(res.status, 200);
   assert.equal(res.body.collaborator.permission, 'admin');
-  assert.equal(rowFor('deck-owned', ACTORS.viewer.email).permission, 'admin');
+  assert.equal(rowFor(DECK.owned, ACTORS.viewer.email).permission, 'admin');
 });
 
 test('changing a permission logs a collaborator.permission_changed event', async () => {
   await seed();
   const res = await call(
     'PATCH',
-    `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+    `/api/presentations/${DECK.owned}/collaborators/${ACTORS.viewer.email}`,
     { as: ACTORS.owner, body: { permission: 'admin' } },
   );
 
@@ -1185,7 +1210,7 @@ test('changing a permission logs a collaborator.permission_changed event', async
     (e) => e.event_type === 'collaborator.permission_changed',
   );
   assert.ok(event, 'a permission change is an access-model event too');
-  assert.equal(event.presentation_id, 'deck-owned');
+  assert.equal(event.presentation_id, DECK.owned);
   assert.equal(event.entity_type, 'collaborator');
   assert.equal(event.actor_email, ACTORS.owner.email);
   assert.equal(event.data.collaboratorEmail, ACTORS.viewer.email);
@@ -1196,7 +1221,7 @@ test('a refused permission change writes no event', async () => {
   await seed();
   await call(
     'PATCH',
-    `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+    `/api/presentations/${DECK.owned}/collaborators/${ACTORS.viewer.email}`,
     { as: ACTORS.editor, body: { permission: 'admin' } },
   );
   assert.deepEqual(
@@ -1213,7 +1238,7 @@ test('an invalid permission changes nothing', async () => {
   for (const permission of ['superuser', '', null]) {
     const res = await call(
       'PATCH',
-      `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+      `/api/presentations/${DECK.owned}/collaborators/${ACTORS.viewer.email}`,
       { as: ACTORS.owner, body: { permission } },
     );
     assert.equal(
@@ -1222,19 +1247,19 @@ test('an invalid permission changes nothing', async () => {
       `${JSON.stringify(permission)} is not a permission`,
     );
   }
-  assert.equal(rowFor('deck-owned', ACTORS.viewer.email).permission, 'view');
+  assert.equal(rowFor(DECK.owned, ACTORS.viewer.email).permission, 'view');
 });
 
 test('changing the permission of a revoked invite is a 404', async () => {
   await seed();
   const res = await call(
     'PATCH',
-    `/api/presentations/deck-owned/collaborators/${ACTORS.revoked.email}`,
+    `/api/presentations/${DECK.owned}/collaborators/${ACTORS.revoked.email}`,
     { as: ACTORS.owner, body: { permission: 'edit' } },
   );
 
   assert.equal(res.status, 404);
-  assert.equal(rowFor('deck-owned', ACTORS.revoked.email).permission, 'view');
+  assert.equal(rowFor(DECK.owned, ACTORS.revoked.email).permission, 'view');
 });
 
 test('nobody but the owner or an admin may change a permission', async () => {
@@ -1242,13 +1267,13 @@ test('nobody but the owner or an admin may change a permission', async () => {
     await seed();
     const res = await call(
       'PATCH',
-      `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+      `/api/presentations/${DECK.owned}/collaborators/${ACTORS.viewer.email}`,
       { as: actor(key), body: { permission: 'admin' } },
     );
 
     assert.equal(res.status, 403, `${key ?? 'anonymous'}: ${why}`);
     assert.equal(
-      rowFor('deck-owned', ACTORS.viewer.email).permission,
+      rowFor(DECK.owned, ACTORS.viewer.email).permission,
       'view',
       'nobody promotes themselves or anyone else',
     );
@@ -1259,24 +1284,24 @@ test('an editor cannot promote themselves to admin', async () => {
   await seed();
   const res = await call(
     'PATCH',
-    `/api/presentations/deck-owned/collaborators/${ACTORS.editor.email}`,
+    `/api/presentations/${DECK.owned}/collaborators/${ACTORS.editor.email}`,
     { as: ACTORS.editor, body: { permission: 'admin' } },
   );
 
   assert.equal(res.status, 403);
-  assert.equal(rowFor('deck-owned', ACTORS.editor.email).permission, 'edit');
+  assert.equal(rowFor(DECK.owned, ACTORS.editor.email).permission, 'edit');
 });
 
 test('changing a permission on a deck in another organization is a 404', async () => {
   await seed();
   const res = await call(
     'PATCH',
-    `/api/presentations/deck-foreign/collaborators/${ACTORS.viewer.email}`,
+    `/api/presentations/${DECK.foreign}/collaborators/${ACTORS.viewer.email}`,
     { as: ACTORS.owner, body: { permission: 'view' } },
   );
 
   assert.equal(res.status, 404);
-  assert.equal(rowFor('deck-foreign', ACTORS.viewer.email).permission, 'edit');
+  assert.equal(rowFor(DECK.foreign, ACTORS.viewer.email).permission, 'edit');
 });
 
 // ---------------------------------------------------------------------------
@@ -1286,19 +1311,19 @@ test('changing a permission on a deck in another organization is a 404', async (
 test('the handler declines everything outside its five endpoints', async () => {
   await seed();
   const declined = [
-    ['PUT', '/api/presentations/deck-owned/collaborators'],
-    ['DELETE', '/api/presentations/deck-owned/collaborators'],
+    ['PUT', `/api/presentations/${DECK.owned}/collaborators`],
+    ['DELETE', `/api/presentations/${DECK.owned}/collaborators`],
     [
       'POST',
-      `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+      `/api/presentations/${DECK.owned}/collaborators/${ACTORS.viewer.email}`,
     ],
     [
       'GET',
-      `/api/presentations/deck-owned/collaborators/${ACTORS.viewer.email}`,
+      `/api/presentations/${DECK.owned}/collaborators/${ACTORS.viewer.email}`,
     ],
     ['POST', '/api/presentations/shared-with-me'],
-    ['GET', '/api/presentations/deck-owned'],
-    ['GET', '/api/presentations/deck-owned/collaborators/deep/nested'],
+    ['GET', `/api/presentations/${DECK.owned}`],
+    ['GET', `/api/presentations/${DECK.owned}/collaborators/deep/nested`],
   ];
 
   for (const [method, path] of declined) {
