@@ -148,6 +148,10 @@ async function launchCaptureBrowser(extraArgs = []) {
       '--no-sandbox',
       '--disable-setuid-sandbox',
       '--disable-dev-shm-usage',
+      // A scrollbar is host chrome, not app UI: macOS draws overlay bars that
+      // are invisible at rest, headful Linux draws classic ones into every
+      // scrolling panel. Hidden everywhere, so a shot is the same on both.
+      '--hide-scrollbars',
       ...extraArgs,
     ],
   });
