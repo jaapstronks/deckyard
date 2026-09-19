@@ -1,15 +1,15 @@
 /**
- * Browser plumbing for the capture runner. Reuses the app's own
- * getPuppeteerBrowser() so we depend on the same system Chrome/Chromium the PDF
- * and PNG exporters already use — no extra browser download, no new dependency.
+ * Browser plumbing for the capture runner. Uses the same system Chrome/Chromium
+ * the PDF and PNG exporters resolve — no extra browser download, no new
+ * dependency — but launches it itself, because a capture needs a browser that
+ * says it has a mouse (see {@link launchCaptureBrowser}).
  */
+
+import { spawn } from 'node:child_process';
 
 import puppeteer from 'puppeteer-core';
 
-import {
-  getPuppeteerBrowser,
-  resolveChromeExecutablePath,
-} from '../../server/utils/puppeteer-browser.js';
+import { resolveChromeExecutablePath } from '../../server/utils/puppeteer-browser.js';
 
 /** @typedef {{ width: number, height: number, deviceScaleFactor?: number }} Viewport */
 
@@ -57,6 +57,110 @@ async function emulateWindowScreen(page, viewport) {
 }
 
 /**
+ * Size of the virtual X screen, in device pixels. Large enough to hold the
+ * biggest window a capture opens: a take is 1280×720 CSS pixels at a forced
+ * 3×, so 3840×2160 native, plus the window's own chrome.
+ */
+const XVFB_SCREEN = '3840x2400x24';
+
+/** @type {Promise<{ display: string, stop: () => void }> | null} */
+let xvfb = null;
+
+/**
+ * A private X server for the capture browser, on Linux only.
+ *
+ * Headless Chrome on a Linux host without a mouse reports `(hover: none)` and
+ * no `(pointer: fine)`, and nothing in a launch flag or a CDP emulation changes
+ * that (tried: `Emulation.setEmulatedMedia`, `--blink-settings=primaryHoverType`,
+ * `--touch-events=disabled`, `headless: 'shell'`). The editor then draws its
+ * touch affordances permanently — dashed outlines round every field, "+" chips
+ * over the numbers — and every editor shot from the canonical recorder
+ * (dev-server-1) is a picture of the tablet UI. A headful Chrome on an X
+ * display does report a mouse, so on Linux the capture browser is headful on
+ * a virtual display it starts itself. macOS headless Chrome reports a mouse
+ * already and stays headless.
+ *
+ * `-displayfd` lets Xvfb pick a free display and tell us which, so two runs on
+ * one host (a manual capture next to the weekly refresh) do not collide.
+ *
+ * @returns {Promise<{ display: string, stop: () => void }>}
+ */
+function startXvfb() {
+  xvfb ??= new Promise((resolve, reject) => {
+    const child = spawn(
+      'Xvfb',
+      ['-displayfd', '3', '-screen', '0', XVFB_SCREEN, '-nolisten', 'tcp'],
+      { stdio: ['ignore', 'ignore', 'ignore', 'pipe'] },
+    );
+    let out = '';
+    child.once('error', (err) => {
+      reject(
+        err.code === 'ENOENT'
+          ? new Error(
+              'Capture on Linux needs Xvfb: headless Chrome there reports a ' +
+                'touch screen, so the editor draws its touch affordances into ' +
+                'every shot. Install it (apt install xvfb).',
+            )
+          : err,
+      );
+    });
+    child.once('exit', (code) => {
+      if (!out.includes('\n')) {
+        reject(
+          new Error(`Xvfb exited (code ${code}) before naming a display.`),
+        );
+      }
+    });
+    child.stdio[3].on('data', (chunk) => {
+      out += chunk;
+      if (!out.includes('\n')) return;
+      resolve({ display: `:${out.trim()}`, stop: () => child.kill() });
+    });
+  });
+  return xvfb;
+}
+
+/**
+ * Launch a Chrome for capturing.
+ *
+ * Its own launch, not the app's export browser (`getPuppeteerBrowser()`): on
+ * Linux it has to be headful on a virtual display (see {@link startXvfb}), and
+ * the export browser a server runs has no business opening X windows.
+ *
+ * @param {string[]} [extraArgs] launch flags on top of the capture defaults
+ * @returns {Promise<import('puppeteer-core').Browser>}
+ */
+async function launchCaptureBrowser(extraArgs = []) {
+  const executablePath = await resolveChromeExecutablePath();
+  if (!executablePath) {
+    throw new Error(
+      'Capture needs a Chrome/Chromium executable. Install Chrome, or set ' +
+        'PUPPETEER_EXECUTABLE_PATH to the browser binary.',
+    );
+  }
+  const display =
+    process.platform === 'linux' ? (await startXvfb()).display : null;
+  return puppeteer.launch({
+    headless: display === null,
+    executablePath,
+    env: display ? { ...process.env, DISPLAY: display } : process.env,
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      // A scrollbar is host chrome, not app UI: macOS draws overlay bars that
+      // are invisible at rest, headful Linux draws classic ones into every
+      // scrolling panel. Hidden everywhere, so a shot is the same on both.
+      '--hide-scrollbars',
+      ...extraArgs,
+    ],
+  });
+}
+
+/** @type {Promise<import('puppeteer-core').Browser> | null} */
+let screenshotBrowser = null;
+
+/**
  * A second browser, launched only for recordings, at a forced device scale.
  *
  * Why a screenshot and a recording cannot share one browser: `page.screenshot()`
@@ -69,8 +173,8 @@ async function emulateWindowScreen(page, viewport) {
  *
  * The fix is `--force-device-scale-factor`, and that is a *launch* flag: it
  * makes the ratio native rather than emulated, so the screencast sees it. It
- * cannot go on the shared browser — that one is the app's own export browser
- * (PDF, PNG), and forcing 3× there would triple every exported page.
+ * cannot go on the screenshot browser — forcing 3× there would render every
+ * @2x shot at 3× and downsample it.
  *
  * @type {{ scale: number, browser: Promise<import('puppeteer-core').Browser> } | null}
  */
@@ -93,31 +197,35 @@ async function getRecordingBrowser(scale) {
         `cannot also record at ${scale}× in one run.`,
     );
   }
-  if (!recordingBrowser) {
-    recordingBrowser = {
-      scale,
-      browser: (async () => {
-        const executablePath = await resolveChromeExecutablePath();
-        if (!executablePath) {
-          throw new Error(
-            'Video capture needs a Chrome/Chromium executable. Install Chrome, ' +
-              'or set PUPPETEER_EXECUTABLE_PATH to the browser binary.',
-          );
-        }
-        return puppeteer.launch({
-          headless: true,
-          executablePath,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            `--force-device-scale-factor=${scale}`,
-          ],
-        });
-      })(),
-    };
-  }
+  recordingBrowser ??= {
+    scale,
+    browser: launchCaptureBrowser([`--force-device-scale-factor=${scale}`]),
+  };
   return recordingBrowser.browser;
+}
+
+/**
+ * Refuse a page that has no mouse.
+ *
+ * A capture on a touch-mode page is a wrong photograph, not jitter: the editor
+ * swaps its hover affordances for always-visible touch ones, and no hash in the
+ * registry moves when that happens. So the harness checks the input type the
+ * page reports rather than trusting the host to be set up right.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @returns {Promise<void>}
+ */
+async function assertMousePage(page) {
+  const hover = await page.evaluate(
+    () => globalThis.matchMedia('(hover: hover)').matches,
+  );
+  if (!hover) {
+    throw new Error(
+      'Capture page reports (hover: none): this browser renders the touch UI, ' +
+        'so every editor shot would show touch affordances. Capture needs a ' +
+        'browser with a mouse (headful on Xvfb on Linux; see lib/browser.js).',
+    );
+  }
 }
 
 /**
@@ -142,8 +250,9 @@ export async function openPage(
 ) {
   const browser = forRecording
     ? await getRecordingBrowser(viewport.deviceScaleFactor ?? 2)
-    : await getPuppeteerBrowser({ featureName: 'Screenshot capture' });
+    : await (screenshotBrowser ??= launchCaptureBrowser());
   const page = await browser.newPage();
+  await assertMousePage(page);
   await page.setViewport({
     width: viewport.width,
     height: viewport.height,
@@ -172,27 +281,30 @@ export async function gotoStable(page, url) {
 }
 
 /**
- * Close the shared browser so the Node process can exit. getPuppeteerBrowser()
- * caches a single long-lived browser (for the server), so nothing closes it for
- * a one-shot CLI — without this the runner hangs after the last capture.
+ * Close the capture browsers and their X server so the Node process can exit:
+ * a live Chrome or Xvfb child keeps a one-shot CLI hanging after its last
+ * capture.
  */
 export async function closeBrowser() {
-  const pending = recordingBrowser;
+  const pending = [screenshotBrowser, recordingBrowser?.browser];
+  screenshotBrowser = null;
   recordingBrowser = null;
-  if (pending) {
+  for (const browser of pending) {
+    if (!browser) continue;
     try {
-      await (await pending.browser).close();
+      await (await browser).close();
     } catch {
-      // already gone — ignore
+      // never launched or already gone — ignore
     }
   }
-  try {
-    const browser = await getPuppeteerBrowser({
-      featureName: 'Screenshot capture',
-    });
-    await browser.close();
-  } catch {
-    // already gone — ignore
+  const server = xvfb;
+  xvfb = null;
+  if (server) {
+    try {
+      (await server).stop();
+    } catch {
+      // never started — ignore
+    }
   }
 }
 
