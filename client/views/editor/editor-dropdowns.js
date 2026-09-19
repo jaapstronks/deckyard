@@ -56,13 +56,16 @@ export function createEditorDropdowns({
   });
 
   // Export dropdown (file downloads)
-  const { exportEl: topbarExport, detach: detachExportDropdown } =
-    setupExportDropdown({
-      pres,
-      id,
-      root,
-      openPublic: () => openShare({ initialTab: 'public' }),
-    });
+  const {
+    exportEl: topbarExport,
+    openExport,
+    detach: detachExportDropdown,
+  } = setupExportDropdown({
+    pres,
+    id,
+    root,
+    openPublic: () => openShare({ initialTab: 'public' }),
+  });
 
   const detach = () => {
     detachExportDropdown?.();
@@ -72,6 +75,11 @@ export function createEditorDropdowns({
   return {
     topbarExport,
     topbarShare,
+    // The openers behind those two buttons. The topbar's more-menu offers the
+    // same actions at widths where the bar folds the buttons away (B354), and
+    // calls these rather than keeping a second copy of the wiring.
+    openExport,
+    openShare,
     syncShareUi,
     detach,
   };

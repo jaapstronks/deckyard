@@ -666,6 +666,10 @@ export async function createEditorController({
     normalizeLang,
     topbarExportEl: dropdowns.topbarExport,
     topbarShareEl: dropdowns.topbarShare,
+    // Same actions as the two buttons above, for the more-menu entries that
+    // stand in for them at narrow widths (B354).
+    onExport: dropdowns.openExport,
+    onShare: dropdowns.openShare,
     syncShareUi: dropdowns.syncShareUi,
     markDirty,
     onOpenOverview: openDeckOverview,
