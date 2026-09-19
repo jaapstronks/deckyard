@@ -12,6 +12,30 @@
 
 import { getFeatureFlags } from '../config/flags-snapshot.js';
 import { notFound } from './http.js';
+import { isUuid } from './uuid.js';
+
+/**
+ * Shape-check a route's first capture group — the presentation id — before the
+ * handler runs (A7.19-C7h).
+ *
+ * The storage underneath queries Postgres `uuid` columns with the captured id
+ * verbatim, so a non-uuid id leaves the uuid parser as a 22P02 — a 500 —
+ * before any reason mapping. An id that cannot be a uuid cannot name a row,
+ * so the honest answer is `not_found`, given here once per route rather than
+ * re-checked inside every handler.
+ *
+ * @param {(ctx: object, ...params: string[]) => unknown} handler
+ * @returns {(ctx: object, ...params: string[]) => unknown}
+ */
+export function requireUuidId(handler) {
+  const wrapped = (ctx, presentationId, ...rest) =>
+    isUuid(presentationId)
+      ? handler(ctx, presentationId, ...rest)
+      : notFound(ctx.res);
+  // Keep the sub-handler's name visible on the row (the dispatch tests pin it).
+  Object.defineProperty(wrapped, 'name', { value: handler.name });
+  return wrapped;
+}
 
 /**
  * A single declarative route.

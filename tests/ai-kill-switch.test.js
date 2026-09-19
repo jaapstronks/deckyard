@@ -126,13 +126,17 @@ describe('dispatchRoutes — the `ai` declaration', () => {
 });
 
 describe('presentation AI routes are not mounted with AI_ENABLED=false', () => {
+  // A uuid-shaped id, so the 404s below can only come from the kill switch:
+  // the presentation rows also gate the id's shape (B222), and a placeholder
+  // like `p-1` would answer 404 whether or not AI is off.
+  const P = '123e4567-e89b-42d3-a456-426614174000';
   const AI_PATHS = [
-    '/api/presentations/p-1/analyze',
-    '/api/presentations/p-1/translate',
-    '/api/presentations/p-1/translate/fields',
-    '/api/presentations/p-1/translate/missing',
-    '/api/presentations/p-1/description/generate',
-    '/api/presentations/p-1/versions/v-1/compare-ai',
+    `/api/presentations/${P}/analyze`,
+    `/api/presentations/${P}/translate`,
+    `/api/presentations/${P}/translate/fields`,
+    `/api/presentations/${P}/translate/missing`,
+    `/api/presentations/${P}/description/generate`,
+    `/api/presentations/${P}/versions/v-1/compare-ai`,
   ];
 
   for (const path of AI_PATHS) {
@@ -147,7 +151,7 @@ describe('presentation AI routes are not mounted with AI_ENABLED=false', () => {
 
   it('analyze answers JSON, not an event stream — the check sits before the SSE headers', async () => {
     process.env.AI_ENABLED = 'false';
-    const c = ctx('POST', '/api/presentations/p-1/analyze');
+    const c = ctx('POST', `/api/presentations/${P}/analyze`);
     await handlePresentations(c);
     assert.equal(c.res.statusCode, 404);
     assert.match(c.res.headers['Content-Type'], /^application\/json/);
@@ -155,13 +159,13 @@ describe('presentation AI routes are not mounted with AI_ENABLED=false', () => {
 
   it('a wrong method is still 404, not 405: the route does not exist here', async () => {
     process.env.AI_ENABLED = 'false';
-    const c = ctx('GET', '/api/presentations/p-1/analyze');
+    const c = ctx('GET', `/api/presentations/${P}/analyze`);
     await handlePresentations(c);
     assert.equal(c.res.statusCode, 404);
   });
 
   it('with AI on, analyze reaches its handler (405 on a GET is the handler speaking)', async () => {
-    const c = ctx('GET', '/api/presentations/p-1/analyze');
+    const c = ctx('GET', `/api/presentations/${P}/analyze`);
     await handlePresentations(c);
     assert.equal(c.res.statusCode, 405);
   });
