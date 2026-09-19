@@ -30,6 +30,11 @@ export function createEditorTopbarMoreMenu({
   onOpenSettings,
   onOpenOverview,
   onSubscription,
+  // The opener behind the bar's analytics button. Like Export and Share this
+  // is the same call, not a copy — but unlike them the control is conditional
+  // (a deck with no audience has no statistics), so the caller drives both
+  // halves through `setAnalyticsAvailable` (B354 round 2).
+  onOpenAnalytics,
   // The openers behind the bar's Export and Share buttons. Their entries here
   // are not copies of those actions but the same call, shown at the widths
   // where the bar folds the buttons away (B354).
@@ -259,6 +264,18 @@ export function createEditorTopbarMoreMenu({
     onclick: () => run(onShare),
   });
 
+  // Analytics folds at the same rung, with one extra condition on top of the
+  // width: a deck that nobody can reach has nothing to count. Hidden inline
+  // until the caller says otherwise — an inline `display: none` beats the fold
+  // rule, so "no audience" wins at every width and the entry never leads to an
+  // empty dashboard.
+  const btnAnalytics = menuItem({
+    class: 'dropdown-item topbar-fold-lg',
+    text: t('editor.analytics', 'Analytics'),
+    onclick: () => run(onOpenAnalytics),
+  });
+  btnAnalytics.style.display = 'none';
+
   // The theme toggle has no bar half at any width, so it carries no rung: it
   // is simply a menu item. It used to be hidden above 1024px, mirroring a
   // `.sb-segmented` switch in the bar that no longer exists - which left the
@@ -299,6 +316,7 @@ export function createEditorTopbarMoreMenu({
       btnExport,
       btnShare,
       btnOverview,
+      btnAnalytics,
       btnAnalyze,
       btnTranslateOther,
       btnVersions,
@@ -328,6 +346,18 @@ export function createEditorTopbarMoreMenu({
 
   return {
     el: moreDetails,
+    /**
+     * Show or hide the menu's analytics entry. The caller owns the condition
+     * (published, or a share link exists) and applies it to the bar button and
+     * to this entry in one go, so the control cannot be present in one half
+     * and absent in the other.
+     *
+     * @param {boolean} available
+     * @returns {void}
+     */
+    setAnalyticsAvailable: (available) => {
+      btnAnalytics.style.display = available ? '' : 'none';
+    },
     detach: () => {
       for (const d of detachers) {
         try {

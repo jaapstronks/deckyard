@@ -306,6 +306,7 @@ export function createEditorTopbar({
     // Demoted from their own topbar icons (2026-07-16 chrome re-org): the
     // bar keeps deck-level actions; utilities live here.
     onAnalyze,
+    onOpenAnalytics: () => nav(`/analytics/${id}`),
     onShowShortcuts: () => onShowShortcuts?.(),
     onOpenSettings: () => openSettings(),
     onSubscription: () =>
@@ -319,7 +320,7 @@ export function createEditorTopbar({
   // ============================================================
 
   const btnAnalytics = h('button', {
-    class: 'ghost-icon-btn topbar-analytics-btn',
+    class: 'ghost-icon-btn topbar-analytics-btn topbar-fold-lg',
     type: 'button',
     title: t('editor.analytics', 'Analytics'),
     'aria-label': t('editor.analytics', 'Analytics'),
@@ -327,20 +328,36 @@ export function createEditorTopbar({
   });
   btnAnalytics.append(icon('chart-column', { size: 16 }));
 
-  // Only show analytics button if presentation is published or has share links
-  // (analytics only tracks external viewers via share links/follow mode)
+  /**
+   * Analytics is a control with two conditions, not one: the fold ladder says
+   * *where* it lives (bar above 1024px, ⋯ menu below), and this says whether
+   * it exists at all — analytics only counts external viewers, so a deck with
+   * neither a publication nor a share link has nothing to show.
+   *
+   * Both halves go through here, which is what makes the ladder's invariant
+   * hold for this control too: one home at any width, never both, never
+   * neither (B354 round 2). An inline `display: none` outranks the fold rule,
+   * and clearing it hands the decision back to CSS.
+   *
+   * @param {boolean} available
+   * @returns {void}
+   */
+  const setAnalyticsAvailable = (available) => {
+    btnAnalytics.style.display = available ? '' : 'none';
+    moreMenu.setAnalyticsAvailable(available);
+  };
+
   const isPublished = !!pres?.published?.id;
   if (isPublished) {
-    // Already published - show analytics button immediately
-    btnAnalytics.style.display = '';
+    setAnalyticsAvailable(true);
   } else {
-    // Not published - check for share links
-    btnAnalytics.style.display = 'none';
+    // Not published: the deck may still have an audience through a share link.
+    setAnalyticsAvailable(false);
     api(`/api/presentations/${id}/share-links`)
       .then((resp) => {
-        const hasShareLinks =
-          Array.isArray(resp?.shareLinks) && resp.shareLinks.length > 0;
-        btnAnalytics.style.display = hasShareLinks ? '' : 'none';
+        setAnalyticsAvailable(
+          Array.isArray(resp?.shareLinks) && resp.shareLinks.length > 0,
+        );
       })
       .catch(() => {
         // On error, keep hidden
@@ -351,9 +368,12 @@ export function createEditorTopbar({
   // PRESENT BUTTON
   // ============================================================
 
+  // No `title`: the button carries its own word below, and a tooltip that
+  // repeats the visible label is noise on a desktop. Where the label is hidden
+  // (≤480px, a touch device) a tooltip never appears anyway, and the label
+  // stays the accessible name there.
   const btnPresent = h('button', {
     class: 'btn btn-primary',
-    title: t('editor.present', 'Present'),
     onclick: async () => {
       if (isDirty?.()) {
         toast.info(t('common.savingFirst', 'Saving first…'), {

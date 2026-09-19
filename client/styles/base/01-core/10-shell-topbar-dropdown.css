@@ -484,18 +484,30 @@ summary.ghost-icon-btn::-webkit-details-marker {
      <= 1280  author chip   - no mirror: the avatar two slots along says it
      <= 1024  save status   - no mirror: a transient chip, not an action
      <= 1024  undo / redo   - no mirror: the keyboard shortcuts keep working
-     <= 1024  slide overview, Export
+     <= 1024  slide overview, Export, analytics
      <= 768   Share; the language trigger drops to its code ("NL")
      <= 640   user avatar (Settings / Sign out / theme sit in the menu), seps
      <= 480   nothing folds: the CTA sheds its word, the gutter halves
 
    Below 341px the bar overflows again: four controls, a tappable title and a
    16px touch target do not fit, and the next thing to shed would be the
-   Present CTA itself. 341px is the floor, not an oversight.
+   Present CTA itself. 341px is the floor, not an oversight - measured by
+   walking a deck pixel by pixel from 335px up (340 -> +1px, 341 -> 0).
+
+   One floor, for every deck. The analytics button is conditional on top of
+   its rung (a deck without a publication or a share link has nothing to
+   count), and before it joined the ladder its 32px sat outside the budget: a
+   *shared* deck then overflowed up to 378px and only fitted from 379. A
+   control that is sometimes there is a control the budget has to carry, so it
+   folds at lg like the other two deck-level actions, and the floor is the
+   same number either way.
 
    The notification bell never folds: its unread badge *is* the signal, and a
    badge inside a closed menu signals nothing. The title never folds either -
-   it is the flexible element and absorbs whatever the row has left.
+   it is the flexible element and absorbs whatever the row has left. The full
+   list of never-folds children, with the reason per control, is the
+   `NEVER_FOLDS` table in `tests/topbar-fold-ladder.test.js`, which also
+   checks that no bar child escapes this ladder unnoticed.
    ───────────────────────────────────────────────────────────────────────────── */
 
 /* Above its rung a control shows in the bar and its menu counterpart hides. */
