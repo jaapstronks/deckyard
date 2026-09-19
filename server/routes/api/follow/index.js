@@ -9,7 +9,7 @@
  * the old branch order exactly.
  */
 
-import { dispatchRoutes, requireUuidId } from '../../../utils/router.js';
+import { dispatchRoutes } from '../../../utils/router.js';
 import { withErrorHandler } from '../../../utils/http.js';
 import { handleFollowState } from './state.js';
 import {
@@ -28,55 +28,76 @@ import {
   handleFollowInteractionFeedback,
 } from './interactions.js';
 
-/** @type {import('../../../utils/router.js').Route[]} */
+/**
+ * Every row declares its `captures` (B222/B360). The first is always the
+ * presentation id, a Postgres `uuid`. The second differs per family, and that
+ * is why the declaration is per capture rather than per row: the
+ * `/interactions/:slideId` rows capture a slide id, which is author-chosen
+ * text (migration 051), while `/questions/:questionId` captures `questions.id`,
+ * a uuid.
+ *
+ * @type {import('../../../utils/router.js').Route[]}
+ */
 export const ROUTES = [
   {
     pattern: /^\/api\/follow\/([^/]+)\/state$/,
-    handler: requireUuidId(handleFollowState),
+    captures: ['uuid'],
+    handler: handleFollowState,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/interactions\/current$/,
-    handler: requireUuidId(handleFollowInteractionsCurrent),
+    captures: ['uuid'],
+    handler: handleFollowInteractionsCurrent,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/state$/,
-    handler: requireUuidId(handleFollowInteractionState),
+    captures: ['uuid', 'text'],
+    handler: handleFollowInteractionState,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/vote$/,
-    handler: requireUuidId(handleFollowInteractionVote),
+    captures: ['uuid', 'text'],
+    handler: handleFollowInteractionVote,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/interactions\/([^/]+)\/feedback$/,
-    handler: requireUuidId(handleFollowInteractionFeedback),
+    captures: ['uuid', 'text'],
+    handler: handleFollowInteractionFeedback,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/questions$/,
-    handler: requireUuidId(handleFollowQuestions),
+    captures: ['uuid'],
+    handler: handleFollowQuestions,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/questions\/events$/,
-    handler: requireUuidId(handleFollowQuestionsEvents),
+    captures: ['uuid'],
+    handler: handleFollowQuestionsEvents,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/upvote$/,
-    handler: requireUuidId(handleFollowUpvote),
+    captures: ['uuid', 'uuid'],
+    handler: handleFollowUpvote,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/questions\/([^/]+)\/cancel$/,
-    handler: requireUuidId(handleFollowCancel),
+    captures: ['uuid', 'uuid'],
+    handler: handleFollowCancel,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/presentation$/,
-    handler: requireUuidId(handleFollowPresentation),
+    captures: ['uuid'],
+    handler: handleFollowPresentation,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/events$/,
-    handler: requireUuidId(handleFollowEvents),
+    captures: ['uuid'],
+    handler: handleFollowEvents,
   },
   {
     pattern: /^\/api\/follow\/([^/]+)\/render-slide$/,
-    handler: requireUuidId(handleFollowRenderSlide),
+    captures: ['uuid'],
+    handler: handleFollowRenderSlide,
   },
 ];
 

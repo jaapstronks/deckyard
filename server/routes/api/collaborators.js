@@ -24,7 +24,7 @@ import {
 import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz/index.js';
-import { dispatchRoutes, requireUuidId } from '../../utils/router.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import {
   badRequest,
   notFound,
@@ -519,12 +519,14 @@ async function handleCollaboratorUpdate(
  * (the chain had no 405). The `([^/]+)` email capture is url-encoded and decoded
  * inside the handler.
  *
- * Every row that captures a presentation id carries {@link requireUuidId}, the
- * same gate the sibling `/api/presentations/:id/...` rows carry (B222): the
- * handlers hand the captured id to `presentations` and `presentation_collaborators`,
- * both keyed on a Postgres `uuid` column, so without it a non-uuid id leaves
- * the uuid parser as a 22P02 — `500 internal_error` where `404 not_found` is
- * the honest answer. `shared-with-me` captures no id and takes no gate.
+ * Every row declares its `captures` (B222/B360), the same declaration the
+ * sibling `/api/presentations/:id/...` rows carry: the handlers hand the
+ * captured id to `presentations` and `presentation_collaborators`, both keyed
+ * on a Postgres `uuid` column, so without the gate a non-uuid id leaves the
+ * uuid parser as a 22P02 — `500 internal_error` where `404 not_found` is the
+ * honest answer. The second capture of the item rows is `text` on purpose: it
+ * is a url-encoded e-mail address, and gating it would 404 every real request.
+ * `shared-with-me` captures nothing and declares nothing.
  *
  * @type {import('../../utils/router.js').Route[]}
  */
@@ -537,22 +539,26 @@ export const ROUTES = [
   {
     method: 'POST',
     pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/,
-    handler: requireUuidId(handleCollaboratorAdd),
+    captures: ['uuid'],
+    handler: handleCollaboratorAdd,
   },
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/,
-    handler: requireUuidId(handleCollaboratorList),
+    captures: ['uuid'],
+    handler: handleCollaboratorList,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/,
-    handler: requireUuidId(handleCollaboratorRemove),
+    captures: ['uuid', 'text'],
+    handler: handleCollaboratorRemove,
   },
   {
     method: 'PATCH',
     pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/,
-    handler: requireUuidId(handleCollaboratorUpdate),
+    captures: ['uuid', 'text'],
+    handler: handleCollaboratorUpdate,
   },
 ];
 
