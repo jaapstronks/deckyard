@@ -38,6 +38,7 @@ import {
 } from '../../server/storage/presentations/sandbox-quota.js';
 
 const HOUR = 60 * 60 * 1000;
+const GUEST = 'guest-0000aaaa-sweep@sandbox.local';
 const ctx = { organizationId: getDefaultOrganizationId() };
 
 /**
@@ -113,8 +114,16 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
   });
 
   it('deletes expired ephemeral decks, spares fresh and organization decks', async () => {
-    const expired = await insertDeck(db, { agedHours: 48, title: 'expired' });
-    const fresh = await insertDeck(db, { agedHours: 1, title: 'fresh' });
+    const expired = await insertDeck(db, {
+      ownerEmail: GUEST,
+      agedHours: 48,
+      title: 'expired',
+    });
+    const fresh = await insertDeck(db, {
+      ownerEmail: GUEST,
+      agedHours: 1,
+      title: 'fresh',
+    });
     const curated = await insertDeck(db, {
       agedHours: 72,
       visibility: 'organization',
@@ -133,8 +142,23 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
     assert.ok(!ids.includes(expired));
   });
 
+  it('never touches a deck a real user owns, however old', async () => {
+    const own = await insertDeck(db, {
+      ownerEmail: 'dev@local.test',
+      agedHours: 24 * 90,
+    });
+    const orphan = await insertDeck(db, { agedHours: 24 * 90 });
+
+    const deleted = await sweepExpiredSandboxDecks();
+    assert.equal(deleted, 0);
+    const ids = (await db.selectFrom('presentations').select('id').execute())
+      .map((r) => r.id)
+      .sort();
+    assert.deepEqual(ids, [own, orphan].sort());
+  });
+
   it('cascades: an expired deck takes its versions and published entry with it', async () => {
-    const expired = await insertDeck(db, { agedHours: 48 });
+    const expired = await insertDeck(db, { ownerEmail: GUEST, agedHours: 48 });
 
     await db
       .insertInto('presentation_versions')

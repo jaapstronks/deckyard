@@ -69,12 +69,14 @@ shared `presentations` table keyed by the guest's synthetic `owner_email`.
 Isolation is per-cookie / per-owner-email within the one org.
 
 - **Ephemeral vs seed** — `server/storage/presentations/sandbox.js`: a deck is
-  ephemeral unless its `scope === 'organization'`. `attachSandboxMeta()` stamps
+  ephemeral when a sandbox guest owns it and its visibility is not
+  `organization`. A deck a real user owns never expires, so switching the flag
+  on against a database that also holds real work is safe. `attachSandboxMeta()` stamps
   `pres.sandbox.enabled` and `pres.sandbox.expires = created + TTL`.
 - **TTL sweep** — `server/jobs/sandbox-cleanup.js`: `scheduleSandboxCleanup()`
   (started from `server/server.js`) runs every ~10 min, no-op outside sandbox.
-  `sweepExpiredSandboxDecks()` bulk-deletes non-`organization` decks older than the
-  TTL; FKs cascade (version snapshots, published entry, cold Y.Doc state). It
+  `sweepExpiredSandboxDecks()` bulk-deletes guest-owned, non-`organization` decks
+  older than the TTL; FKs cascade (version snapshots, published entry, cold Y.Doc state). It
   also emits a **non-destructive** warning against `SANDBOX_MAX_TOTAL_BYTES` —
   it never evicts live decks.
 - **Per-guest quota** — `server/storage/presentations/sandbox-quota.js`:
@@ -90,9 +92,12 @@ Isolation is per-cookie / per-owner-email within the one org.
 `server/auth/sandbox.js` provides an **auto-login, throwaway, per-visitor**
 identity — not a shared account:
 
-- Cookie `sb_sandbox` = a `crypto.randomUUID()`; email domain `sandbox.local`.
+- Cookie `sb_sandbox` = a `crypto.randomUUID()`; the guest's address is
+  `guest-<first 32 hex of sha256(token)>@sandbox.local`. The address is an
+  identity other guests can see (user search, share modal); the token is the
+  credential and never appears in it.
 - `getSandboxUserFromRequest(req)` returns a guest object
-  `{ email: guest-<token>@sandbox.local, role: 'user', name: 'Guest',
+  `{ email: guest-<hash>@sandbox.local, role: 'user', name: 'Guest',
 isAdmin: false, isSandboxGuest: true, sandboxId: token }` when the cookie is
   present and valid.
 - `ensureSandboxUser(req, res)` returns the existing guest or mints a new token

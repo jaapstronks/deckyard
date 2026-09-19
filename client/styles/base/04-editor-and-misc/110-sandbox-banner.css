@@ -43,6 +43,21 @@
   }
 }
 
+/* On a phone the bottom edge already carries the only navigation there is:
+   the tab bar that replaces the sidebar (40-sidebar.css) and, in the editor,
+   the floating "Open slides" toggle (20-editor-layout.css). Pinned at the
+   bottom the banner covered both, so it sits above them. 80px is the space the
+   shell reserves for the tab bar; 76px clears the 48px toggle at its 16px
+   inset plus the banner's own 12px gap. */
+@media (max-width: 768px) {
+  body:has(.app-shell.has-sidebar) .sandbox-banner {
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+  body:has(.slides-drawer-toggle) .sandbox-banner {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ============================================================
    Sandbox "Try an example" shelf (first-run Home)
    A row of ready-made demo decks. Each card previews the deck's first slide

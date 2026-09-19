@@ -104,6 +104,15 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
     assert.equal(again.id, back.id, 'the id is stable across requests');
   });
 
+  it('never puts the cookie token in the address other guests can see', async () => {
+    const token = 'cccccccc-guest-carol';
+    const carol = await ensureSandboxUserAsync(guestReq(token), fakeRes());
+    assert.ok(!carol.email.includes(token), carol.email);
+    assert.match(carol.email, /^guest-[0-9a-f]{32}@sandbox\.local$/);
+    const again = await ensureSandboxUserAsync(guestReq(token), fakeRes());
+    assert.equal(again.email, carol.email, 'stable per cookie');
+  });
+
   it('lets a guest read the deck it created, and keeps another guest out', async () => {
     const alice = await ensureSandboxUserAsync(
       guestReq('aaaaaaaa-guest-alice'),

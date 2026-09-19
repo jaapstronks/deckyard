@@ -34,5 +34,10 @@ export function listSandboxMedia() {
     item('sample-office', 'Sample office image', ['sample', 'office']),
     item('sample-team', 'Sample team image', ['sample', 'team', 'people']),
     item('sample-product', 'Sample product image', ['sample', 'product']),
+    item('sample-portrait', 'Illustrated portrait', [
+      'sample',
+      'people',
+      'portrait',
+    ]),
   ];
 }

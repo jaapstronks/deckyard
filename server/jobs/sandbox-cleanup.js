@@ -20,9 +20,12 @@ const log = createLogger('sandbox-cleanup');
  *
  * Sandbox runs on Postgres, so the sweep is a single bulk `DELETE` against the
  * `presentations` table rather than the old directory scan. A deck is ephemeral
- * when its visibility is not `organization` (mirroring `isSandboxEphemeralPresentation`
- * — organization-visible decks are curated seed decks that never expire), and
- * expired once it is older than the TTL. Foreign keys cascade, so the delete
+ * when a sandbox guest owns it and its visibility is not `organization`
+ * (mirroring `isSandboxEphemeralPresentation` — organization-visible decks are
+ * curated seed decks that never expire), and expired once it is older than the
+ * TTL. The owner filter is what keeps the sweep on guest work: the flag can be
+ * switched on against a database that also holds real users' decks, and those
+ * are never the sandbox's to delete. Foreign keys cascade, so the delete
  * also removes the deck's version snapshots, published entry, and cold Y.Doc
  * state in one statement — much cheaper than the per-file cleanup it replaces.
  *
@@ -38,6 +41,7 @@ export async function sweepExpiredSandboxDecks() {
   const result = await db
     .deleteFrom('presentations')
     .where('organization_id', '=', orgId)
+    .where('owner_email', 'like', SANDBOX_GUEST_EMAIL_PATTERN)
     .where('visibility', '<>', 'organization')
     .where('created_at', '<=', cutoff)
     .executeTakeFirst();

@@ -33,7 +33,7 @@
     "--t-color-text": "#0f172a",
     "--t-color-text-muted": "rgba(15, 23, 42, 0.64)",
     "--t-color-accent": "#2563eb",
-    "--t-color-accent-on-dark": "#1e3a8a",
+    "--t-color-accent-on-dark": "#60a5fa",
     "--t-radius": "6px",
     "--t-radius-sm": "4px",
     "--t-radius-lg": "10px",

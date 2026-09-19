@@ -359,18 +359,20 @@ export function createRerenderEditor({
 
     // AI Iterate panel (slide-level AI refinement). Built here, appended at
     // the very end of the form: the inspector is a settings pane first, and
-    // the refine box is a tool, not a setting.
-    const aiIteratePanel = caps.deckTools
-      ? buildAiIteratePanel({
-          api,
-          pres,
-          slide,
-          getSelectedSlideId,
-          setSelectedSlideId,
-          editorState,
-          toast,
-        })
-      : null;
+    // the refine box is a tool, not a setting. It exists only where AI does:
+    // with `enableAi` off every submit would fail on /api/ai/iterate.
+    const aiIteratePanel =
+      caps.deckTools && features?.enableAi
+        ? buildAiIteratePanel({
+            api,
+            pres,
+            slide,
+            getSelectedSlideId,
+            setSelectedSlideId,
+            editorState,
+            toast,
+          })
+        : null;
 
     // Accessibility fields (global) are tucked behind a toggle. a11yTitle/
     // a11ySummary are OVERRIDES, not the primary a11y mechanism: export/present

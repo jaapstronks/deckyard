@@ -1,4 +1,5 @@
 import { sandboxEnabled, sandboxTtlMs } from '../../config/sandbox.js';
+import { isSandboxGuestEmail } from '../../auth/sandbox.js';
 
 function safeIsoToMs(iso) {
   const t = typeof iso === 'string' ? Date.parse(iso) : NaN;
@@ -8,7 +9,10 @@ function safeIsoToMs(iso) {
 function isSandboxEphemeralPresentation(pres) {
   if (!sandboxEnabled()) return false;
   if (!pres || typeof pres !== 'object') return false;
-  // Treat organization-visible decks as curated seed decks that should not expire.
+  // Only guest work expires; organization-visible decks are curated seed decks,
+  // and a deck a real user owns is never the sandbox's to delete. Mirrors the
+  // SQL filter in jobs/sandbox-cleanup.js.
+  if (!isSandboxGuestEmail(pres.ownerEmail)) return false;
   return String(pres.visibility || 'private') !== 'organization';
 }
 
