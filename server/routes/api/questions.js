@@ -31,6 +31,78 @@ import {
   TRANSLATION_LANGS,
 } from '../../../shared/i18n-utils.js';
 
+/**
+ * Whether this user may remove a question from the feed.
+ *
+ * "Moderator path" is intended for coworkers; require admin to avoid
+ * accidental abuse. Admin *of the workspace this deck lives in* — an instance
+ * admin who is a plain member of the active organization is not a moderator
+ * here (shared/organization-role.js). Deliberately blind to the deck: the
+ * deck's own owner does not get this hatch, which
+ * tests/question-moderation-routes.test.js pins.
+ *
+ * @param {Object|null} [authedUser]
+ * @returns {boolean}
+ */
+function canRemoveQuestions(authedUser) {
+  return !!authedUser && isOrganizationAdmin(authedUser);
+}
+
+/**
+ * Whether this user may promote a question into this deck.
+ *
+ * Promotion inserts a slide, so it follows the *deck*, not the instance —
+ * `canWritePresentation` consults `isUnrestricted`, never `isAdmin`. The two
+ * gates of this module each refuse exactly whom the other admits, on purpose.
+ *
+ * @param {Object} storageScope
+ * @param {Object|null} authedUser
+ * @param {Object|null} pres - The deck, already read under `storageScope`
+ * @returns {Promise<boolean>}
+ */
+async function canPromoteQuestions(storageScope, authedUser, pres) {
+  if (!authedUser || !pres) return false;
+  const collaboratorPermission =
+    authedUser.email && pres.id
+      ? await getCollaboratorPermission(pres.id, authedUser.email)
+      : null;
+  return canWritePresentation({
+    user: authedUser,
+    pres,
+    collaboratorPermission,
+  });
+}
+
+/**
+ * GET /api/moderate/:presentationId/questions/capabilities
+ *
+ * What this caller may do on this deck's question feed — the same two
+ * predicates the POST handlers gate on, reported rather than re-derived.
+ *
+ * The notes companion used to answer this for itself with
+ * `isOrganizationAdmin(user)`, which is the remove rule, not the promote one:
+ * an editor-collaborator could promote through the API and never saw the
+ * button (B365). A client that owns a second reading of a server rule shows a
+ * control whose request is refused, or hides one whose request would have been
+ * allowed — the failure shared/organization-role.js was written to end. There
+ * the fix was a shared predicate; here it cannot be, because
+ * `canWritePresentation` needs the collaborator row and the storage scope. So
+ * the rule stays on the server and the surface asks (D182).
+ */
+async function handleQuestionCapabilities(
+  { storageScope, res, authedUser },
+  presentationId,
+) {
+  const pres = authedUser
+    ? await getPresentation(storageScope, presentationId)
+    : null;
+  serveJson(res, 200, {
+    canPromote: await canPromoteQuestions(storageScope, authedUser, pres),
+    canRemove: canRemoveQuestions(authedUser),
+  });
+  return true;
+}
+
 // POST /api/moderate/:presentationId/questions/:questionId/remove — moderator removes a question
 async function handleQuestionRemove(
   { repoRoot, storageScope, res, authedUser },
@@ -38,11 +110,7 @@ async function handleQuestionRemove(
   questionId,
 ) {
   if (!authedUser) return unauthorized(res);
-  // "Moderator path" is intended for coworkers; require admin to avoid
-  // accidental abuse. Admin *of the workspace this deck lives in* — an
-  // instance admin who is a plain member of the active organization is not a
-  // moderator here (shared/organization-role.js).
-  if (!isOrganizationAdmin(authedUser)) return forbidden(res, 'Admin required');
+  if (!canRemoveQuestions(authedUser)) return forbidden(res, 'Admin required');
 
   const state = await getFollowStateForPresentation(
     storageScope,
@@ -75,16 +143,7 @@ async function handleQuestionPromote(
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
 
-  // Fetch collaborator permission for ACL check
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))
+  if (!(await canPromoteQuestions(storageScope, authedUser, pres)))
     return forbidden(res);
 
   const parsed = await requireJsonBody(req, res);
@@ -206,12 +265,24 @@ async function handleQuestionPromote(
 
 /**
  * Declarative route table for the moderator question actions (A7.19 C8). Order
- * matches the previous if-chain. Each path was POST-only with an explicit 405
- * before the auth check, preserved here as a trailing catch-all row.
+ * matches the previous if-chain. Each action path is POST-only with an explicit
+ * 405 before the auth check, kept as a trailing catch-all row; `capabilities`
+ * is the read half and follows the same shape one method over. It sits first
+ * because it is the only two-segment path here — `:questionId` never matches
+ * it, but reading the table top-down should not require checking that.
  *
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
+  {
+    method: 'GET',
+    pattern: /^\/api\/moderate\/([^/]+)\/questions\/capabilities$/,
+    handler: handleQuestionCapabilities,
+  },
+  {
+    pattern: /^\/api\/moderate\/([^/]+)\/questions\/capabilities$/,
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
   {
     method: 'POST',
     pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/remove$/,

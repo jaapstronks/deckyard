@@ -96,7 +96,6 @@
   "slideType.kpi-metrics-slide.field.metrics.label": "Métriques",
   "slideType.likert-slide.field.options.item.text.label": "Libellé",
   "slideType.likert-slide.field.options.label": "Libellés de l'échelle",
-  "slideType.likert-slide.field.question.label": "Question",
   "slideType.likert-slide.label": "Likert (d'accord/pas d'accord)",
   "slideType.likert-slider-slide.field.maxLabel.label": "Libellé droite (10)",
   "slideType.likert-slider-slide.field.minLabel.label": "Libellé gauche (1)",

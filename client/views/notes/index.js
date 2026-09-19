@@ -28,10 +28,9 @@ import {
  *
  * @param {HTMLElement} root - mount point.
  * @param {string} sessionId - live-session id to follow.
- * @param {{ user?: object }} [opts]
  * @returns {Promise<() => void>} cleanup function.
  */
-export async function renderNotes(root, sessionId, { user } = {}) {
+export async function renderNotes(root, sessionId) {
   // Lock page to avoid sideways scroll on mobile.
   document.documentElement.classList.add('is-notes');
 
@@ -116,7 +115,6 @@ export async function renderNotes(root, sessionId, { user } = {}) {
     getPresentationId: () => pres?.id || '',
     getPresenterSlideIndex: () => presenterSlideIndex,
     getUiLang: () => uiLang,
-    user,
     flashHint,
   });
   qaCtl.refresh().catch(() => {});

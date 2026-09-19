@@ -18,6 +18,7 @@ export { createQuestionsFeed, QA_POLL_MS } from './questions-feed.js';
 export {
   askQuestion,
   cancelQuestion,
+  fetchModerationCapabilities,
   fetchQuestions,
   promoteQuestion,
   removeQuestion,

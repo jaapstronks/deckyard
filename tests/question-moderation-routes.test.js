@@ -23,6 +23,14 @@
  * Two gates that each refuse exactly whom the other admits. Nothing in the
  * dispatch table says so, and nothing did until this file.
  *
+ * Since B365 there is a third endpoint, `GET .../questions/capabilities`, whose
+ * whole job is to report those two answers — because the notes companion used
+ * to guess them, and guessed `isOrganizationAdmin` for both. The cells at the
+ * bottom pin the report against the actions: whatever `capabilities` claims,
+ * the matching POST must agree, for the same caller on the same deck. That
+ * equality is the thing under test; the individual booleans are just how it is
+ * spelled.
+ *
  * House shape (as in tests/comments-routes-authz.test.js): the exported
  * dispatcher is called with a req/res double over tests/helpers/fake-db.js.
  * No HTTP server, no browser.
@@ -49,6 +57,8 @@ const { createLiveSession, updateLiveSessionState } =
   await import('../server/storage/live-sessions/index.js');
 const { createQuestion, listQuestions } =
   await import('../server/storage/questions.js');
+const { addCollaborator } = await import('../server/storage/collaborators.js');
+const { PERMISSIONS } = await import('../shared/constants/permissions.js');
 const { handleQuestions } = await import('../server/routes/api/questions.js');
 
 // --- The people -------------------------------------------------------------
@@ -63,6 +73,9 @@ const person = (email, name) => ({
 const OWNER = person('owner@example.com', 'Olive');
 const STRANGER = person('stranger@example.com', 'Sam');
 const ADMIN = { ...person('admin@example.com', 'Ada'), isAdmin: true };
+// The person B365 was about: write access to the deck, no admin rights. The
+// API let them promote; the only UI that offers it never showed them a button.
+const EDITOR = person('editor@example.com', 'Edda');
 
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
@@ -70,7 +83,7 @@ let db;
 test.before(async () => {
   db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
-    users: [OWNER, STRANGER, ADMIN].map((a) => ({
+    users: [OWNER, STRANGER, ADMIN, EDITOR].map((a) => ({
       id: a.id,
       organization_id: ORG,
       email: a.email,
@@ -398,4 +411,136 @@ test('a path outside the moderator surface is not this module’s request', asyn
     { as: ADMIN },
   );
   assert.equal(handled, false);
+});
+
+// ===========================================================================
+// Capabilities — the answer the surface renders from
+// ===========================================================================
+
+const capabilitiesPath = (presId) =>
+  `/api/moderate/${presId}/questions/capabilities`;
+
+/**
+ * Ask the surface what it will allow, then actually try both actions as the
+ * same caller. Returns the claim next to what happened, so a cell can assert
+ * the two are the same thing rather than asserting the claim alone.
+ *
+ * @param {Object} seeded - The `seed()` result
+ * @param {Object|null} as - Acting user
+ * @returns {Promise<{claimed: Object, promoteStatus: number, removeStatus: number}>}
+ */
+async function claimVersusDeed(seeded, as) {
+  const { pres, questionId } = seeded;
+  const { res: capRes } = await call('GET', capabilitiesPath(pres.id), { as });
+  assert.equal(capRes.statusCode, 200);
+  const claimed = jsonBody(capRes);
+
+  const { res: promoteRes } = await call(
+    'POST',
+    promotePath(pres.id, questionId),
+    {
+      as,
+      body: { position: 'end' },
+    },
+  );
+  const { res: removeRes } = await call(
+    'POST',
+    removePath(pres.id, questionId),
+    {
+      as,
+    },
+  );
+  return {
+    claimed,
+    promoteStatus: promoteRes.statusCode,
+    removeStatus: removeRes.statusCode,
+  };
+}
+
+test('an editor-collaborator is told they may promote — and may', async () => {
+  // The B365 cell. Before the report existed, the notes companion decided this
+  // with `isOrganizationAdmin`, so this person saw no promote button at all
+  // while the route below happily accepted their POST.
+  const seeded = await seed();
+  const added = await addCollaborator(seeded.pres.id, {
+    userEmail: EDITOR.email,
+    permission: PERMISSIONS.EDIT,
+    invitedBy: OWNER.email,
+  });
+  assert.equal(added.ok, true, 'fixture: the collaborator row was written');
+
+  const { claimed, promoteStatus, removeStatus } = await claimVersusDeed(
+    seeded,
+    EDITOR,
+  );
+  assert.equal(claimed.canPromote, true);
+  assert.equal(promoteStatus, 200, 'the claim and the action agree');
+  assert.equal(claimed.canRemove, false);
+  assert.equal(removeStatus, 403, 'and they agree on the other gate too');
+});
+
+test('the deck owner is told promote-yes, remove-no — the deck, not the instance', async () => {
+  const seeded = await seed();
+  const { claimed, promoteStatus, removeStatus } = await claimVersusDeed(
+    seeded,
+    OWNER,
+  );
+  assert.deepEqual(claimed, { canPromote: true, canRemove: false });
+  assert.equal(promoteStatus, 200);
+  assert.equal(removeStatus, 403);
+});
+
+test('an admin on someone else’s deck is told remove-yes, promote-no', async () => {
+  const seeded = await seed();
+  const { claimed, promoteStatus, removeStatus } = await claimVersusDeed(
+    seeded,
+    ADMIN,
+  );
+  assert.deepEqual(claimed, { canPromote: false, canRemove: true });
+  assert.equal(promoteStatus, 403);
+  assert.equal(removeStatus, 200);
+});
+
+test('a signed-in stranger is told nothing is allowed', async () => {
+  const seeded = await seed();
+  const { claimed, promoteStatus, removeStatus } = await claimVersusDeed(
+    seeded,
+    STRANGER,
+  );
+  assert.deepEqual(claimed, { canPromote: false, canRemove: false });
+  assert.equal(promoteStatus, 403);
+  assert.equal(removeStatus, 403);
+});
+
+test('an anonymous caller is answered "nothing", not refused', async () => {
+  // In the running app the login gate answers this one 401 long before the
+  // dispatcher sees it, and that is the ordinary case: the notes companion is
+  // authorized by a join link, not an account. The handler still has to have an
+  // answer of its own, because the client reads a refusal and an empty grant as
+  // the same thing — no moderator controls — and a 200 keeps that honest
+  // instead of routing it through an exception.
+  const { pres } = await seed();
+  const { res } = await call('GET', capabilitiesPath(pres.id), { as: null });
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(jsonBody(res), { canPromote: false, canRemove: false });
+});
+
+test('capabilities for a deck this caller cannot see is an empty grant, not a 404', async () => {
+  // `getPresentation` is organization-scoped, so an unreadable deck and a
+  // missing one arrive here identically. Answering "nothing allowed" refuses to
+  // turn the moderator surface into a deck-existence oracle.
+  const { res } = await call('GET', capabilitiesPath('no-such-deck'), {
+    as: STRANGER,
+  });
+  assert.equal(res.statusCode, 200);
+  assert.deepEqual(jsonBody(res), { canPromote: false, canRemove: false });
+});
+
+test('capabilities is GET-only, and says so before any auth check', async () => {
+  const { pres } = await seed();
+  const { res } = await call('POST', capabilitiesPath(pres.id), {
+    as: null,
+    body: {},
+  });
+  assert.equal(res.statusCode, 405);
 });
