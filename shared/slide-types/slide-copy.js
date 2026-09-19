@@ -88,9 +88,9 @@ export const SLIDE_COPY = {
       'Deze slide bevat een video die niet in een PDF kan worden afgespeeld. Bekijk de video online:',
     videoPdfNoUrl:
       'Deze slide bevat een video. De video is niet online beschikbaar.',
-    videoPptxBunnyNotEmbedded: 'Bunny video kon niet worden ingesloten',
+    videoPptxBunnyNotEmbedded: 'Bunny-video kon niet worden ingesloten',
     videoPptxNotEmbedded: 'Video kon niet worden ingesloten',
-    videoPptxBunnyNotDownloaded: 'Bunny video kon niet worden gedownload',
+    videoPptxBunnyNotDownloaded: 'Bunny-video kon niet worden gedownload',
     videoPptxProviderVideo: '{provider}-video',
     videoPptxSourceUnknown: 'Videobron niet herkend',
     videoPptxBunnyUnconfigured:
@@ -244,11 +244,13 @@ export function getSlideCopy(lang) {
 /**
  * Fill the `{name}` placeholders of a copy template.
  *
- * The placeholder syntax belongs to the table, so the filler does too: three
- * call sites had grown two spellings of it (a private `fill()` in the chart
- * summary, a bare `.replace('{n}', …)` in the projection), and a template whose
- * value nobody passes must read the same way everywhere. An unknown name is
- * left standing rather than blanked — a visible `{provider}` names the bug.
+ * The placeholder syntax belongs to the table, so the filler does too: four
+ * call sites had grown three spellings of it (a private `fill()` in the chart
+ * summary, a bare `.replace('{n}', …)` in the projection, a `scaleCopy()` in
+ * the likert slider), and a template whose value nobody passes must read the
+ * same way everywhere. An unknown name is left standing rather than blanked —
+ * a visible `{provider}` names the bug, and so does a `String(undefined)` from
+ * a key that does not exist: this filler repairs nothing silently.
  *
  * @param {string} template - A copy string from {@link SLIDE_COPY}.
  * @param {Record<string, string|number>} values - Values by placeholder name.

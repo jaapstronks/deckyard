@@ -1,5 +1,5 @@
 import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
-import { getSlideCopy } from '../slide-copy.js';
+import { fillCopy, getSlideCopy } from '../slide-copy.js';
 
 /**
  * The scale the audience rates on, declared once (D131): the canvas draws its
@@ -13,12 +13,8 @@ const SCALE = Object.freeze({
   maxLabelKey: 'maxLabel',
 });
 
-/** Fill `{min}` / `{max}` in a copy string from the scale. */
-function scaleCopy(text) {
-  return String(text || '')
-    .replace('{min}', String(SCALE.min))
-    .replace('{max}', String(SCALE.max));
-}
+/** Fill `{min}` / `{max}` in a copy string from the scale (D131: one source). */
+const scaleCopy = (text) => fillCopy(text, { min: SCALE.min, max: SCALE.max });
 
 export default {
   structure: 'singleton',
