@@ -82,7 +82,7 @@ import {
 } from './helpers.js';
 import { isEmailAddress } from './field-types.js';
 import { durationSeconds, isoDuration, clockDuration } from './duration.js';
-import { getSlideCopy } from './slide-copy.js';
+import { fillCopy, getSlideCopy } from './slide-copy.js';
 import { slideStructure } from './structure.js';
 import { isFieldVisible, predicateHolds } from './field-visibility.js';
 import {
@@ -403,7 +403,7 @@ function linkTarget(value, { slideIds, lang } = {}) {
   if (!n) return { href: '', text: '' };
   return {
     href: `#slide-${n}`,
-    text: getSlideCopy(lang).readerSlideLink.replace('{n}', String(n)),
+    text: fillCopy(getSlideCopy(lang).readerSlideLink, { n }),
   };
 }
 

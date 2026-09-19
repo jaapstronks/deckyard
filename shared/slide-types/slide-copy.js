@@ -1,12 +1,19 @@
 /**
  * Language-aware copy for slide type rendering.
  * Used by interactive slide types (poll, likert, feedback) that need
- * to display UI copy in the presentation language.
+ * to display UI copy in the presentation language, and by the static exports
+ * (PDF, PPTX) for the words they put on a slide the format cannot carry.
  *
  * This module owns ONE decision: given a language code, which copy table does a
  * renderer read. It does not decide what a deck's language IS — that is
  * `resolveDeckLang()` in shared/i18n-utils.js, and every caller passes the
  * result in as `ctx.lang`. See docs/reference/slide-copy-language.md.
+ *
+ * It is the only copy table keyed by the deck's language. An export that needs
+ * a sentence in the deck's language adds a key here rather than a table of its
+ * own: a second table is a second fallback ladder, and that is exactly how the
+ * PDF video placeholder ended up falling back to Dutch while everything else
+ * fell back to English (B358).
  */
 
 export const SLIDE_COPY = {
@@ -70,6 +77,39 @@ export const SLIDE_COPY = {
     followMethodsLabel: 'Meekijk methodes',
     qrCodeLabel: 'QR-code',
     accessCodeLabel: 'Toegangscode',
+
+    // Video slide in a static export. A PDF and a PPTX both hand the reader a
+    // slide where the video cannot play; the PDF points at a watch URL, the
+    // PPTX explains why the file has no media and what to do about it. The
+    // `{provider}` placeholder carries a brand name (YouTube, Vimeo), which is
+    // why one template serves every provider.
+    videoPdfKicker: 'Videoslide',
+    videoPdfLead:
+      'Deze slide bevat een video die niet in een PDF kan worden afgespeeld. Bekijk de video online:',
+    videoPdfNoUrl:
+      'Deze slide bevat een video. De video is niet online beschikbaar.',
+    videoPptxBunnyNotEmbedded: 'Bunny video kon niet worden ingesloten',
+    videoPptxNotEmbedded: 'Video kon niet worden ingesloten',
+    videoPptxBunnyNotDownloaded: 'Bunny video kon niet worden gedownload',
+    videoPptxProviderVideo: '{provider}-video',
+    videoPptxSourceUnknown: 'Videobron niet herkend',
+    videoPptxBunnyUnconfigured:
+      'BUNNY_PULLZONE is niet geconfigureerd op de server.',
+    videoPptxEmbedFailed: 'Onbekende fout bij het toevoegen van de video.',
+    videoPptxBunnyFallbackHint:
+      'Controleer of MP4 Fallback is ingeschakeld in Bunny.',
+    videoPptxProviderOffline:
+      "{provider}-video's kunnen niet offline worden afgespeeld in PowerPoint.",
+    videoPptxNoSource: 'Geen videobron opgegeven',
+    videoPptxAddManually: 'Voeg de video handmatig toe in PowerPoint.',
+    videoPptxAskAdmin:
+      'Vraag de beheerder om de Bunny CDN-instellingen te configureren, of voeg de video handmatig toe.',
+    videoPptxDownloadManually:
+      'Download de video handmatig en voeg deze toe in PowerPoint.',
+    videoPptxDownloadFromProvider:
+      'Download de video van {provider} en voeg deze handmatig toe.',
+    videoPptxYouTubeInstruction:
+      'Download de video van YouTube en voeg deze handmatig toe, of gebruik "Online video invoegen" in PowerPoint (vereist internet tijdens de presentatie).',
   },
   'en-GB': {
     // Poll slide
@@ -126,6 +166,33 @@ export const SLIDE_COPY = {
     followMethodsLabel: 'Follow along methods',
     qrCodeLabel: 'QR code',
     accessCodeLabel: 'Access code',
+
+    // Video slide in a static export — see the note on the Dutch table above.
+    videoPdfKicker: 'Video slide',
+    videoPdfLead:
+      "This slide contains a video that can't play in a PDF. Watch it online:",
+    videoPdfNoUrl: "This slide contains a video. It isn't available online.",
+    videoPptxBunnyNotEmbedded: "Bunny video couldn't be embedded",
+    videoPptxNotEmbedded: "Video couldn't be embedded",
+    videoPptxBunnyNotDownloaded: "Bunny video couldn't be downloaded",
+    videoPptxProviderVideo: '{provider} video',
+    videoPptxSourceUnknown: 'Video source not recognised',
+    videoPptxBunnyUnconfigured:
+      'BUNNY_PULLZONE is not configured on the server.',
+    videoPptxEmbedFailed: 'Unknown error while adding the video.',
+    videoPptxBunnyFallbackHint: 'Check that MP4 Fallback is enabled in Bunny.',
+    videoPptxProviderOffline:
+      "{provider} videos can't play offline in PowerPoint.",
+    videoPptxNoSource: 'No video source given',
+    videoPptxAddManually: 'Add the video manually in PowerPoint.',
+    videoPptxAskAdmin:
+      'Ask the administrator to configure the Bunny CDN settings, or add the video manually.',
+    videoPptxDownloadManually:
+      'Download the video manually and add it in PowerPoint.',
+    videoPptxDownloadFromProvider:
+      'Download the video from {provider} and add it manually.',
+    videoPptxYouTubeInstruction:
+      'Download the video from YouTube and add it manually, or use "Insert Online Video" in PowerPoint (needs internet during the presentation).',
   },
 };
 
@@ -172,4 +239,23 @@ export function slideCopyLang(lang) {
  */
 export function getSlideCopy(lang) {
   return SLIDE_COPY[slideCopyLang(lang)];
+}
+
+/**
+ * Fill the `{name}` placeholders of a copy template.
+ *
+ * The placeholder syntax belongs to the table, so the filler does too: three
+ * call sites had grown two spellings of it (a private `fill()` in the chart
+ * summary, a bare `.replace('{n}', …)` in the projection), and a template whose
+ * value nobody passes must read the same way everywhere. An unknown name is
+ * left standing rather than blanked — a visible `{provider}` names the bug.
+ *
+ * @param {string} template - A copy string from {@link SLIDE_COPY}.
+ * @param {Record<string, string|number>} values - Values by placeholder name.
+ * @returns {string}
+ */
+export function fillCopy(template, values) {
+  return String(template).replace(/\{(\w+)\}/g, (m, name) =>
+    Object.hasOwn(values || {}, name) ? String(values[name]) : m,
+  );
 }

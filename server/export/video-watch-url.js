@@ -115,31 +115,3 @@ export function resolveVideoWatchUrl(
   // Rung 3: nothing resolvable.
   return { url: null, kind: null };
 }
-
-/**
- * Localised copy for the PDF video placeholder. Centralised here so the strings
- * live in one place (nl / en-GB; other langs fall back to nl).
- */
-const VIDEO_PDF_COPY = {
-  nl: {
-    kicker: 'Videoslide',
-    lead: 'Deze slide bevat een video die niet in een PDF kan worden afgespeeld. Bekijk de video online:',
-    noUrl: 'Deze slide bevat een video. De video is niet online beschikbaar.',
-    watchCta: 'Bekijk online',
-  },
-  'en-GB': {
-    kicker: 'Video slide',
-    lead: "This slide contains a video that can't play in a PDF. Watch it online:",
-    noUrl: "This slide contains a video. It isn't available online.",
-    watchCta: 'Watch online',
-  },
-};
-
-/**
- * Get the localised copy block for the given document language.
- * @param {string} docLang - Normalised doc language ('nl' | 'en-GB' | ...).
- * @returns {{kicker: string, lead: string, noUrl: string, watchCta: string}}
- */
-export function videoPdfCopy(docLang) {
-  return VIDEO_PDF_COPY[docLang] || VIDEO_PDF_COPY.nl;
-}

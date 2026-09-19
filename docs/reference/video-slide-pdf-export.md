@@ -99,13 +99,20 @@ a neighbouring slide.
 
 ## Copy
 
-The deck-language strings live in `videoPdfCopy(docLang)` in
-`server/export/video-watch-url.js` (nl / en-GB; other languages fall back to
-nl). Keep them centralised there rather than scattered through the renderer.
+The deck-language strings are the `videoPdf*` keys of the slide-copy table
+(`getSlideCopy(docLang)`, `shared/slide-types/slide-copy.js`) — the same table
+every interactive slide type reads, so the PDF placeholder inherits its one
+documented fallback: **English**, not Dutch. See
+[slide-copy-language.md](slide-copy-language.md).
+
+They lived in a `videoPdfCopy()` table of their own until B358, which is how
+they came to fall back to Dutch while the rest of the product fell back to
+English. A second copy table is a second fallback ladder; add a key to the
+shared one instead.
 
 ## Code
 
-- `server/export/video-watch-url.js` — URL resolver + localised copy.
+- `server/export/video-watch-url.js` — URL resolver (the ladder above).
 - `server/export/pdf-slides.js` — `renderVideoSlidePdfHtml()` builds the
   placeholder page and its scoped CSS (`.vpdf-*`).
 - `server/export/video-thumbnail.js` — poster resolution + inlining (shared with
