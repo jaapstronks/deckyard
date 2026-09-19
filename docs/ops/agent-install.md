@@ -23,8 +23,9 @@ Do this:
 2. Configure it non-interactively with: npm run setup -- --yes
    Ask me first whether I want to add an AI provider key or enable auth, and if
    so pass the matching flags (see the doc). If I don't care, use the defaults.
-3. Start it (npm run start; or, if I have Docker, the local compose path in the
-   doc that publishes localhost:4177).
+3. Start it. If I have Docker, use the local compose path in the doc that
+   publishes localhost:4177 — it brings its own database. Otherwise ask me for
+   a PostgreSQL, put it in .env, then: npm run db:migrate && npm run start.
 4. Add the MCP server to your own config so you can create presentations, then
    confirm the connection by listing the available Deckyard tools.
 
@@ -104,7 +105,9 @@ For a local (auth-off) install the setup script also writes
 ### 4. Start
 
 ```bash
-npm install && npm run start        # Node path → http://localhost:4177
+# Node path → http://localhost:4177. db:migrate needs .env pointed at a
+# PostgreSQL you provide; it refuses with instructions if it cannot reach one.
+npm install && npm run db:migrate && npm run start
 ```
 
 If the user prefers Docker, the **local** path publishes the app port directly

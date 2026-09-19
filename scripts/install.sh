@@ -17,10 +17,16 @@ set -euo pipefail
 #   DECKYARD_MODE    force "docker" or "node" instead of auto-detecting
 #   PORT             app port (default: 4177)
 #
+# Deckyard keeps everything in PostgreSQL; there is no other storage backend.
+# The Docker path brings its own database, so it needs nothing from you. The
+# Node path needs a PostgreSQL you provide: this script applies the schema to it
+# and stops with instructions if it cannot reach one.
+#
 # Read before you pipe: this is scripts/install.sh in the repo. It clones
-# Deckyard, writes a *local* .env, installs dependencies, and starts the app.
-# It sends none of your data anywhere. It does not install Docker or Node for
-# you; if neither is present it tells you where to get them and stops.
+# Deckyard, writes a *local* .env, installs dependencies, applies database
+# migrations, and starts the app. It sends none of your data anywhere. It does
+# not install Docker, Node or PostgreSQL for you; if neither Docker nor Node is
+# present it tells you where to get them and stops.
 
 REPO="${DECKYARD_REPO:-https://github.com/jaapstronks/deckyard.git}"
 BRANCH="${DECKYARD_BRANCH:-main}"
@@ -60,6 +66,14 @@ if [ -z "$MODE" ]; then
 fi
 [ "$MODE" = docker ] && ! docker_ok && die "DECKYARD_MODE=docker but Docker + compose plugin not found."
 [ "$MODE" = node ]   && ! node_ok   && die "DECKYARD_MODE=node but Node.js 22+ not found (found: $(node -v 2>/dev/null || echo none))."
+
+# Say the Node path's one external requirement before spending minutes on
+# `npm install`, not after. Docker users get a database from compose and never
+# read this.
+if [ "$MODE" = node ]; then
+  say "Node path — Deckyard needs a PostgreSQL 14+ database (the Docker path brings its own)."
+  note "Point .env at it with DATABASE_URL, or DATABASE_HOST/PORT/NAME/USER/PASSWORD."
+fi
 
 # --- get the source ----------------------------------------------------------
 # Already inside a clone? Use it in place and ignore DECKYARD_DIR.
@@ -123,6 +137,20 @@ fi
 # Node path.
 say "Installing dependencies (npm install)…"
 npm install
+
+# PostgreSQL is Deckyard's only storage backend, so the schema has to exist
+# before the server can serve anything. The Docker path gets this from the image
+# entrypoint (scripts/docker-entrypoint.sh); on the Node path it is this step,
+# and it belongs to installing — not to the operator's first run.
+#
+# No database probe here: `db:migrate` already refuses with the sentence that
+# names the connection it tried and how to provide one
+# (server/config/database.js, `databaseConnectionError`). A second check in
+# shell would be a second answer to the same question. `set -e` turns that
+# refusal into the end of the install, so the browser never opens on a server
+# that cannot start.
+say "Applying database migrations (npm run db:migrate)…"
+npm run db:migrate
 
 if [ -t 0 ]; then
   # Interactive terminal: start the server in the foreground (Ctrl-C to stop),

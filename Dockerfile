@@ -41,10 +41,10 @@ USER node
 
 EXPOSE 4177
 
-# The entrypoint applies pending database migrations on the Postgres path (the
-# default; a no-op on file storage) and then execs the CMD, so a compose deploy
-# needs no manual `db:migrate` step. `docker compose exec` bypasses entrypoints,
-# so one-off commands in a running container are unaffected.
+# The entrypoint applies pending database migrations and then execs the CMD, so
+# a compose deploy needs no manual `db:migrate` step. PostgreSQL is the only
+# storage backend, so this is unconditional. `docker compose exec` bypasses
+# entrypoints, so one-off commands in a running container are unaffected.
 ENTRYPOINT ["/app/scripts/docker-entrypoint.sh"]
 
 CMD ["node", "server/server.js"]

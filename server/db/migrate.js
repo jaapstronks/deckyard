@@ -21,7 +21,11 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 import pg from 'pg';
-import { getDatabaseConfig } from '../config/database.js';
+import {
+  getDatabaseConfig,
+  databaseConnectionError,
+  isDatabaseConnectionError,
+} from '../config/database.js';
 import { loadDotEnv } from '../config/env.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -234,7 +238,16 @@ function isEntryPoint() {
 // run a migration command.
 if (isEntryPoint()) {
   main().catch((err) => {
-    console.error('Migration failed:', err);
+    // `db:migrate` is the first command a manual install runs, so it is also the
+    // first to meet a missing database. Answering that with pg-pool's own
+    // AggregateError (whose `message` is empty) told the reader nothing; the
+    // sentence is the same one the server boot guard prints. A migration that
+    // fails on its own SQL keeps its stack — that is not the operator's fault.
+    if (isDatabaseConnectionError(err)) {
+      console.error(`\nDatabase: ${databaseConnectionError(err)}\n`);
+    } else {
+      console.error('Migration failed:', err);
+    }
     process.exit(1);
   });
 }

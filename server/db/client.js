@@ -5,7 +5,7 @@
 
 import pg from 'pg';
 import { Kysely, PostgresDialect, sql } from 'kysely';
-import { getDatabaseConfig, isPostgresMode } from '../config/database.js';
+import { getDatabaseConfig } from '../config/database.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('db');
@@ -40,16 +40,17 @@ let pool = null;
  */
 
 /**
- * Initialize the database connection pool.
- * Only initializes if STORAGE_MODE=postgres.
- * @returns {Promise<Kysely<Database> | null>}
+ * Initialize the database connection pool (idempotent).
+ *
+ * Unconditional: PostgreSQL is the only storage backend, so there is no mode in
+ * which opening the pool is the wrong thing to do. This used to return null
+ * after logging "storage mode is file-based" — a branch that could not be
+ * reached once STORAGE_MODES (server/config/database.js) lost its second
+ * entry, and a serving path that still described disk-JSON as a live option.
+ *
+ * @returns {Promise<Kysely<Database>>}
  */
 export async function initializeDatabase() {
-  if (!isPostgresMode()) {
-    log.info('Storage mode is file-based, skipping PostgreSQL initialization');
-    return null;
-  }
-
   if (db) {
     return db;
   }
@@ -77,7 +78,11 @@ export async function initializeDatabase() {
     client.release();
     log.info('PostgreSQL connection successful');
   } catch (err) {
-    log.error('PostgreSQL connection failed:', err.message);
+    // `err.message` alone is empty on the AggregateError pg-pool throws when
+    // every address for the host refuses, which made this line say nothing at
+    // all. The code is the part worth logging; the caller (server.js's boot
+    // guard, `db:migrate`) prints the actionable sentence.
+    log.error(`PostgreSQL connection failed: ${err.code || err.message}`);
     throw err;
   }
 
