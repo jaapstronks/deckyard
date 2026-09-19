@@ -105,7 +105,8 @@ function person(email, name, organizationId) {
  * Readable ids (`deck-owned` and kin) were a second id form that existed only
  * here: `presentations.id` and `presentation_collaborators.presentation_id` are
  * Postgres `uuid` columns, and since B359 the route table shape-checks the
- * captured id (`requireUuidId`), so a non-uuid fixture would be answered 404
+ * captured id (the row's `captures` declaration), so a non-uuid fixture
+ * would be answered 404
  * before any handler ran. One id form, named here so the tests below still read
  * as sentences.
  */

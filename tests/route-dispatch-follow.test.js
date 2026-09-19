@@ -275,3 +275,62 @@ test('follow-codes: a prefix-typo path is declined, not 405ed', async () => {
   assert.equal(await handleFollowCodes(c), false);
   assert.equal(res.statusCode, null);
 });
+
+// ---------------------------------------------------------------------------
+// The uuid gate on the follow table (B222/B360)
+// ---------------------------------------------------------------------------
+//
+// `select()` above walks the table by hand, so it deliberately does not see
+// the `captures` gate that `dispatchRoutes` applies. These go through
+// `handleFollowPublic` instead, which is the only place the gate runs.
+//
+// The first capture is the presentation id, a Postgres `uuid`. The second
+// differs per family and the declaration says so per row: `/questions/:id`
+// names `questions.id` (UUID, migration 001), while `/interactions/:slideId`
+// names a slide — author-chosen text, which migration 051 exists to allow.
+
+const FOLLOW_UUID = '123e4567-e89b-42d3-a456-426614174000';
+
+test('follow: a non-uuid presentation id is 404, not a storage call', async () => {
+  for (const path of [
+    '/api/follow/CODE/state',
+    '/api/follow/CODE/interactions/current',
+    '/api/follow/CODE/interactions/s1/state',
+    '/api/follow/CODE/questions',
+    '/api/follow/CODE/questions/events',
+    '/api/follow/CODE/questions/q1/upvote',
+    '/api/follow/CODE/presentation',
+    '/api/follow/CODE/events',
+    '/api/follow/CODE/render-slide',
+  ]) {
+    const call = ctx('GET', path);
+    assert.equal(await handleFollowPublic(call.ctx), true, `${path}: handled`);
+    assert.equal(call.res.statusCode, 404, `${path}: 404`);
+  }
+});
+
+test('follow: a non-uuid question id is 404 on both question actions', async () => {
+  for (const path of [
+    `/api/follow/${FOLLOW_UUID}/questions/not-a-uuid/upvote`,
+    `/api/follow/${FOLLOW_UUID}/questions/not-a-uuid/cancel`,
+  ]) {
+    const call = ctx('POST', path);
+    assert.equal(await handleFollowPublic(call.ctx), true, `${path}: handled`);
+    assert.equal(call.res.statusCode, 404, `${path}: 404`);
+  }
+});
+
+test('follow: a text slide id still reaches the interaction handlers', async () => {
+  // With no database reachable these fail further in — the assertion is that
+  // dispatch let them through. A uuid gate on this segment would 404 every
+  // deck whose slide ids are `s1`, `intro` or `cd-dark`.
+  for (const [method, path] of [
+    ['GET', `/api/follow/${FOLLOW_UUID}/interactions/s1/state`],
+    ['POST', `/api/follow/${FOLLOW_UUID}/interactions/intro/vote`],
+    ['POST', `/api/follow/${FOLLOW_UUID}/interactions/cd-dark/feedback`],
+  ]) {
+    const call = ctx(method, path);
+    assert.equal(await handleFollowPublic(call.ctx), true, `${path}: handled`);
+    assert.notEqual(call.res.statusCode, 404, `${path}: not gated out`);
+  }
+});

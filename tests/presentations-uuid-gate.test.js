@@ -1,13 +1,13 @@
 /**
- * B222 — the authed presentation surface shape-checks the presentation id.
+ * B222/B360 — the authed presentation surface shape-checks its captured ids.
  *
  * Every `/api/presentations/:id/...` row hands the captured id to storage
  * verbatim, and storage queries Postgres `uuid` columns with it — so a
  * non-uuid id used to 500 out of the uuid parser (22P02, `internal_error`)
  * before any reason mapping, and the editor showed its fatal app error
- * instead of "Presentation Not Found". The gate in
- * `utils/router.js#requireUuidId`, declared per row in
- * `routes/api/presentations/index.js`, answers `404 not_found` instead.
+ * instead of "Presentation Not Found". The gate in `utils/router.js`,
+ * declared per row as `captures` in `routes/api/presentations/index.js`,
+ * answers `404 not_found` instead — per capture, not just the first one.
  *
  * Pinned here by running the module with no database at all: an id that
  * reaches storage surfaces as `500 internal_error`, so the uuid rows below
@@ -169,4 +169,83 @@ test('an uppercase uuid is a uuid', async () => {
   const ctx = ctxFor('GET', `/api/presentations/${A_UUID.toUpperCase()}/tags`);
   await handlePresentations(ctx);
   assert.notEqual(ctx.res.statusCode, 404);
+});
+
+// ---------------------------------------------------------------------------
+// The second id capture of the same surface (B360)
+// ---------------------------------------------------------------------------
+//
+// The gate B222 shipped only ever shape-checked capture group 1, so on a
+// well-shaped deck id a non-uuid *second* segment still reached storage
+// verbatim. It is replaced by a per-capture `captures` declaration on the row:
+// the row says what each of its segments holds, and the dispatcher checks the
+// ones declared `'uuid'`.
+//
+// Which second captures are uuids is not a guess — it is the column type:
+//   - `/versions/:versionId/…`  → `presentation_versions.id`  UUID  (001)
+//   - `/comments/:commentId/…`  → `presentation_comments.id`  UUID  (003)
+//   - `/questions/:questionId/…`→ `questions.id`              UUID  (001)
+//   - `/slides/:slideId/lock`   → `slide_locks.slide_id`      TEXT  (023/051)
+//   - `/interactions/:slideId/…`→ a slide id                  TEXT  (051)
+//   - `/collaborators/:email`   → an e-mail address           TEXT
+// Migration 051 is explicit that slide ids are *not* uuids (`s1`, `intro`), so
+// the `text` rows below are pinned just as hard as the 404s: a greedier gate
+// would 404 the normal case and nothing else would notice.
+
+const DECK = A_UUID;
+
+test('a non-uuid second id segment answers 404 on every versions/comments row', async () => {
+  // Every row that declares a second `'uuid'` capture, not one as a stand-in:
+  // the declaration is per row, so a row that lost it fails only here.
+  const rows = [
+    ['POST', `/api/presentations/${DECK}/versions/not-a-uuid/restore`],
+    ['GET', `/api/presentations/${DECK}/versions/not-a-uuid/export/json`],
+    ['POST', `/api/presentations/${DECK}/versions/not-a-uuid/compare-ai`],
+    ['GET', `/api/presentations/${DECK}/versions/not-a-uuid`],
+    ['POST', `/api/presentations/${DECK}/comments/not-a-uuid/resolve`],
+    ['POST', `/api/presentations/${DECK}/comments/not-a-uuid/reopen`],
+    ['POST', `/api/presentations/${DECK}/comments/not-a-uuid/dismiss`],
+    ['POST', `/api/presentations/${DECK}/comments/not-a-uuid/apply`],
+    ['GET', `/api/presentations/${DECK}/comments/not-a-uuid`],
+    ['PUT', `/api/presentations/${DECK}/comments/not-a-uuid`],
+    ['DELETE', `/api/presentations/${DECK}/comments/not-a-uuid`],
+  ];
+  for (const [method, pathname] of rows) {
+    const ctx = ctxFor(method, pathname);
+    const handled = await handlePresentations(ctx);
+    assert.equal(handled, true, `${method} ${pathname}: handled`);
+    assert.equal(ctx.res.statusCode, 404, `${method} ${pathname}: 404`);
+    const body = ctx.res.body();
+    assert.equal(body.ok, false, `${pathname}: ok:false`);
+    assert.equal(body.error, 'not_found', `${pathname}: machine code`);
+  }
+});
+
+test('a text second segment is not gated — slide locks keep working', async () => {
+  // Slide ids are author-chosen strings (migration 051). With no database
+  // reachable these answer 500: the request got past dispatch, which is the
+  // whole assertion. A uuid gate on this segment would make them all 404.
+  for (const [method, pathname] of [
+    ['POST', `/api/presentations/${DECK}/slides/s1/lock/refresh`],
+    ['GET', `/api/presentations/${DECK}/slides/s1/lock`],
+    ['POST', `/api/presentations/${DECK}/slides/intro/lock`],
+    ['DELETE', `/api/presentations/${DECK}/slides/cd-dark/lock`],
+  ]) {
+    const ctx = ctxFor(method, pathname);
+    const handled = await handlePresentations(ctx);
+    assert.equal(handled, true, `${method} ${pathname}: handled`);
+    assert.notEqual(ctx.res.statusCode, 404, `${pathname}: not gated out`);
+  }
+});
+
+test('a uuid second segment passes the gate into normal dispatch', async () => {
+  for (const [method, pathname] of [
+    ['GET', `/api/presentations/${DECK}/versions/${DECK}`],
+    ['GET', `/api/presentations/${DECK}/comments/${DECK}`],
+  ]) {
+    const ctx = ctxFor(method, pathname);
+    const handled = await handlePresentations(ctx);
+    assert.equal(handled, true, `${method} ${pathname}: handled`);
+    assert.notEqual(ctx.res.statusCode, 404, `${pathname}: not gated out`);
+  }
 });

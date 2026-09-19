@@ -36,12 +36,54 @@ export function handleThings(ctx) {
 - **`pattern`**: either an exact pathname string (exact match, no prefix match)
   or a `RegExp`. A `RegExp`'s capture groups are passed to the handler as
   trailing positional arguments: `handler(ctx, ...match.slice(1))`.
+- **`captures`** (optional): what each capture group of `pattern` holds, one
+  entry per group, in handler order — `['uuid']`, `['uuid', 'text']`. See
+  _The `captures` declaration_ below.
 - **`handler`**: `(ctx, ...params) => unknown`. Its return value is the
   dispatcher's return value; a truthy value means _handled_.
 
 `dispatchRoutes` returns the matched handler's result, or `false` when nothing
 matches — so the caller in `routes/api/index.js` can fall through to the next
 mount.
+
+## The `captures` declaration
+
+Storage queries Postgres `uuid` columns with a captured id verbatim, so a
+segment that cannot be a uuid leaves the uuid parser as a `22P02` — a
+`500 internal_error` — before any reason mapping. A value that cannot be a
+uuid cannot name a row, so the honest answer is `404 not_found`, and the
+dispatcher gives it once per route rather than every handler re-checking.
+
+A row declares **what** it captures, not how many segments get checked:
+
+```js
+{
+  pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
+  captures: ['uuid', 'uuid'],
+  handler: handleCommentGet,
+}
+```
+
+Two kinds, deliberately — the dispatcher's only question is whether a segment
+may reach a `uuid` column:
+
+- **`'uuid'`** — shape-checked; a non-uuid answers `404 not_found` before the
+  handler runs.
+- **`'text'`** — anything the URL allows. The handler owns its meaning.
+
+Declaring the `'text'` ones is the point. `/collaborators/:email` captures a
+url-encoded e-mail address and `/slides/:slideId/lock` an author-chosen slide
+id (`s1`, `intro` — migration 051 widened every slide-reference column to TEXT
+for exactly that reason). A gate that checked _every_ capture would 404 the
+normal case on those rows; an undeclared row is invisible, a declared one says
+out loud that nothing checks that segment.
+
+The list is checked against the pattern on every dispatch — a wrong length
+throws rather than silently gating the wrong segment — and
+`tests/route-captures-guard.test.js` pins three rules over every exported
+table: one entry per capture group, no third spelling of a kind, and **a table
+that declares, declares fully** (once any row in a module carries `captures`,
+every capturing row in it must, or be a reasoned exception in the guard).
 
 ## First-match semantics
 

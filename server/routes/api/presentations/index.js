@@ -1,5 +1,5 @@
 import { badRequest, withErrorHandler } from '../../../utils/http.js';
-import { dispatchRoutes, requireUuidId } from '../../../utils/router.js';
+import { dispatchRoutes } from '../../../utils/router.js';
 import { isUuid } from '../../../utils/uuid.js';
 import { handlePresentationsList } from './list.js';
 import { handlePopularPresentations } from './popular.js';
@@ -84,8 +84,14 @@ import { handleAnalyzeThemeChange, handleChangeTheme } from './change-theme.js';
  * which this module is mounted ahead of. A segment that cannot be a uuid is
  * therefore not this route's id but someone else's collection name: fall
  * through and let the chain decide, which ends at the same `not_found` when
- * nobody claims it. The other 42 id rows own their path outright, so they take
- * {@link requireUuidId} and answer 404 here.
+ * nobody claims it. The other 42 id rows own their path outright, so they
+ * declare `captures` and answer 404 here.
+ *
+ * This is the one row in the table that deliberately carries no `captures`
+ * declaration, because the declaration answers 404 and this row must answer
+ * `false`. The shape check lives in the handler instead — that difference is
+ * the whole point of the row, and `tests/presentations-uuid-gate.test.js`
+ * pins both halves.
  *
  * @param {AuthedContext} ctx
  * @param {string} id
@@ -147,9 +153,16 @@ function handleLegacyImportBadRequest({ res }) {
  * a request whose method doesn't match falls through to the next route rather
  * than being rejected here.
  *
+ * Every row with capture groups declares `captures` — what each segment holds,
+ * in handler order (B222/B360). A `'uuid'` entry is shape-checked by the
+ * dispatcher and answers 404 when the segment cannot name a row; a `'text'`
+ * entry says out loud that nothing checks it. The one exception is the bare
+ * `:id` row, whose whole purpose is to answer `false` instead of 404; see
+ * {@link handlePresentationItemRoute}.
+ *
  * @type {Route[]}
  */
-const ROUTES = [
+export const ROUTES = [
   {
     method: 'GET',
     pattern: '/api/presentations',
@@ -177,35 +190,41 @@ const ROUTES = [
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/restore$/,
-    handler: requireUuidId(handlePresentationRestore),
+    captures: ['uuid'],
+    handler: handlePresentationRestore,
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/permanent$/,
-    handler: requireUuidId(handlePresentationPermanentDelete),
+    captures: ['uuid'],
+    handler: handlePresentationPermanentDelete,
   },
 
   // Translate a set of arbitrary fields (key -> string). Used for slide-level preview/apply in editor.
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate\/fields$/,
-    handler: requireUuidId(handlePresentationTranslateFields),
+    captures: ['uuid'],
+    handler: handlePresentationTranslateFields,
     ai: true,
   },
   // Translate only missing (empty) fields into the other language (safe for manual edits).
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate\/missing$/,
-    handler: requireUuidId(handlePresentationTranslateMissing),
+    captures: ['uuid'],
+    handler: handlePresentationTranslateMissing,
     ai: true,
   },
   // Translate a presentation into the other supported language and store as an i18n version.
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate$/,
-    handler: requireUuidId(handlePresentationTranslate),
+    captures: ['uuid'],
+    handler: handlePresentationTranslate,
     ai: true,
   },
 
   {
     pattern: /^\/api\/presentations\/([^/]+)\/description\/generate$/,
-    handler: requireUuidId(handlePresentationDescriptionGenerate),
+    captures: ['uuid'],
+    handler: handlePresentationDescriptionGenerate,
     ai: true,
   },
 
@@ -236,17 +255,20 @@ const ROUTES = [
 
   {
     pattern: /^\/api\/presentations\/([^/]+)\/visibility$/,
-    handler: requireUuidId(handlePresentationVisibility),
+    captures: ['uuid'],
+    handler: handlePresentationVisibility,
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/duplicate$/,
-    handler: requireUuidId(handlePresentationDuplicate),
+    captures: ['uuid'],
+    handler: handlePresentationDuplicate,
   },
 
   // Lightweight revision probe (staleness check for waking editor tabs)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/revision$/,
-    handler: requireUuidId(handlePresentationRevision),
+    captures: ['uuid'],
+    handler: handlePresentationRevision,
   },
 
   {
@@ -257,68 +279,85 @@ const ROUTES = [
   // Version history (snapshots)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions$/,
-    handler: requireUuidId(handlePresentationVersions),
+    captures: ['uuid'],
+    handler: handlePresentationVersions,
   },
   // Session-end snapshot (called when editing session ends)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/session-end$/,
-    handler: requireUuidId(handlePresentationSessionEnd),
+    captures: ['uuid'],
+    handler: handlePresentationSessionEnd,
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/restore$/,
-    handler: requireUuidId(handlePresentationRestoreVersion),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationRestoreVersion,
   },
   // Version export as JSON
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/export\/json$/,
-    handler: requireUuidId(handlePresentationVersionExport),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationVersionExport,
   },
   // AI-powered version comparison
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/compare-ai$/,
-    handler: requireUuidId(handlePresentationVersionCompareAi),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationVersionCompareAi,
     ai: true,
   },
   // Single version retrieval (for preview/comparison)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)$/,
-    handler: requireUuidId(handlePresentationVersionItem),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationVersionItem,
   },
 
   // ============================================================
   // SLIDE-LEVEL LOCKS (concurrent editing)
   // ============================================================
+  // The slide id captured below is `text`, not `uuid`: slide ids live in the
+  // `presentations.slides` JSON and are whatever the author or API client put
+  // there (`s1`, `intro`, `cd-dark`). Migration 051 widened every
+  // slide-reference column to TEXT for exactly that reason, so a uuid gate
+  // here would 404 the normal case.
 
   // List all slide locks for a presentation
   {
     pattern: /^\/api\/presentations\/([^/]+)\/slide-locks$/,
-    handler: requireUuidId(handleSlideLocksList),
+    captures: ['uuid'],
+    handler: handleSlideLocksList,
   },
   // Release all slide locks for current user
   {
     pattern: /^\/api\/presentations\/([^/]+)\/slide-locks\/release-all$/,
-    handler: requireUuidId(handleSlideLocksReleaseAll),
+    captures: ['uuid'],
+    handler: handleSlideLocksReleaseAll,
   },
   // Refresh a specific slide lock
   {
     pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock\/refresh$/,
-    handler: requireUuidId(handleSlideLockRefresh),
+    captures: ['uuid', 'text'],
+    handler: handleSlideLockRefresh,
   },
   // Acquire, release, or read a specific slide lock (method-dispatched)
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/,
-    handler: requireUuidId(handleSlideLockStatus),
+    captures: ['uuid', 'text'],
+    handler: handleSlideLockStatus,
   },
   {
     method: 'POST',
     pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/,
-    handler: requireUuidId(handleSlideLockAcquire),
+    captures: ['uuid', 'text'],
+    handler: handleSlideLockAcquire,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/,
-    handler: requireUuidId(handleSlideLockRelease),
+    captures: ['uuid', 'text'],
+    handler: handleSlideLockRelease,
   },
 
   // ============================================================
@@ -326,7 +365,8 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/import-slides-as-images$/,
-    handler: requireUuidId(handlePresentationImportSlidesAsImages),
+    captures: ['uuid'],
+    handler: handlePresentationImportSlidesAsImages,
   },
 
   // ============================================================
@@ -334,7 +374,8 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/analyze$/,
-    handler: requireUuidId(handlePresentationAnalyze),
+    captures: ['uuid'],
+    handler: handlePresentationAnalyze,
     ai: true,
   },
 
@@ -343,11 +384,13 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/analyze-theme-change$/,
-    handler: requireUuidId(handleAnalyzeThemeChange),
+    captures: ['uuid'],
+    handler: handleAnalyzeThemeChange,
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/change-theme$/,
-    handler: requireUuidId(handleChangeTheme),
+    captures: ['uuid'],
+    handler: handleChangeTheme,
   },
 
   // ============================================================
@@ -355,7 +398,8 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/tags$/,
-    handler: requireUuidId(handlePresentationTagsRoute),
+    captures: ['uuid'],
+    handler: handlePresentationTagsRoute,
   },
 
   // ============================================================
@@ -363,7 +407,8 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/transfer-ownership$/,
-    handler: requireUuidId(handleOwnershipTransfer),
+    captures: ['uuid'],
+    handler: handleOwnershipTransfer,
   },
 
   // ============================================================
@@ -371,7 +416,8 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/render-slide$/,
-    handler: requireUuidId(handleRenderSlideRoute),
+    captures: ['uuid'],
+    handler: handleRenderSlideRoute,
   },
 
   // ============================================================
@@ -379,7 +425,8 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/thumbnail$/,
-    handler: requireUuidId(handlePresentationThumbnail),
+    captures: ['uuid'],
+    handler: handlePresentationThumbnail,
   },
 
   // ============================================================
@@ -389,69 +436,82 @@ const ROUTES = [
   // Comment counts per slide (before more specific routes)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/counts$/,
-    handler: requireUuidId(handlePresentationCommentCounts),
+    captures: ['uuid'],
+    handler: handlePresentationCommentCounts,
   },
   // Per-deck notification subscription (personal, GET current / PUT set)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/subscription$/,
-    handler: requireUuidId(handlePresentationSubscription),
+    captures: ['uuid'],
+    handler: handlePresentationSubscription,
   },
   // Mark comment threads as read for the current user (batch)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/mark-read$/,
-    handler: requireUuidId(handlePresentationCommentsMarkRead),
+    captures: ['uuid'],
+    handler: handlePresentationCommentsMarkRead,
   },
   // SSE endpoint for real-time comment updates
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/events$/,
-    handler: requireUuidId(handlePresentationCommentEvents),
+    captures: ['uuid'],
+    handler: handlePresentationCommentEvents,
   },
   // Resolve comment
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/resolve$/,
-    handler: requireUuidId(handlePresentationCommentResolve),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationCommentResolve,
   },
   // Reopen comment
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/reopen$/,
-    handler: requireUuidId(handlePresentationCommentReopen),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationCommentReopen,
   },
   // Dismiss AI suggestion
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/dismiss$/,
-    handler: requireUuidId(handlePresentationCommentDismiss),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationCommentDismiss,
   },
   // Apply AI suggestion (create proposed slide)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/apply$/,
-    handler: requireUuidId(handlePresentationCommentApply),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationCommentApply,
   },
   // Single comment operations (GET/PUT/DELETE, method-dispatched)
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
-    handler: requireUuidId(handlePresentationCommentGet),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationCommentGet,
   },
   {
     method: 'PUT',
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
-    handler: requireUuidId(handlePresentationCommentUpdate),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationCommentUpdate,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
-    handler: requireUuidId(handlePresentationCommentDelete),
+    captures: ['uuid', 'uuid'],
+    handler: handlePresentationCommentDelete,
   },
   // List/Create comments (method-dispatched)
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/comments$/,
-    handler: requireUuidId(handlePresentationCommentsList),
+    captures: ['uuid'],
+    handler: handlePresentationCommentsList,
   },
   {
     method: 'POST',
     pattern: /^\/api\/presentations\/([^/]+)\/comments$/,
-    handler: requireUuidId(handlePresentationCommentsCreate),
+    captures: ['uuid'],
+    handler: handlePresentationCommentsCreate,
   },
 
   // This module purposely does NOT handle export/publish routes.
