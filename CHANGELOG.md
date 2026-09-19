@@ -4,6 +4,31 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.38.0](https://github.com/jaapstronks/deckyard/compare/v1.37.0...v1.38.0) (2026-09-19)
+
+
+### Added
+
+* **capture:** editor-canvas marketing shots in both languages ([#1190](https://github.com/jaapstronks/deckyard/issues/1190)) ([a8b76df](https://github.com/jaapstronks/deckyard/commit/a8b76dfc2d65dd2f4a713aa98bdfde618d7f6f5b))
+* **share:** embed beside the public link, tabs named after the audience ([#1185](https://github.com/jaapstronks/deckyard/issues/1185)) ([ed6f4aa](https://github.com/jaapstronks/deckyard/commit/ed6f4aa6a7443c451671384ef6e8d489702df0f5))
+
+
+### Fixed
+
+* **ai:** every AI entry follows the AI_ENABLED kill switch ([#1186](https://github.com/jaapstronks/deckyard/issues/1186)) ([9dfa80c](https://github.com/jaapstronks/deckyard/commit/9dfa80c7646ae9d1f50c70ae1b924eee070aba24))
+* **ai:** stop server analysis when the client cancels ([#1187](https://github.com/jaapstronks/deckyard/issues/1187)) ([59cf24a](https://github.com/jaapstronks/deckyard/commit/59cf24a860b4fd65671441c43896626e422c26b0))
+* **api:** a non-uuid collaborator id is a 404, not a 500 (B359) ([8b0c0aa](https://github.com/jaapstronks/deckyard/commit/8b0c0aa20c8e936521befb35c4bd7aa1d9c51c6a))
+* **api:** a non-UUID presentation id is a 404, not a 500 (B222) ([8df65b7](https://github.com/jaapstronks/deckyard/commit/8df65b7b1a67178ee4f37f4c3e0dc27f1ffa152b))
+* **api:** every id capture is shape-checked, not just the first (B360) ([71e7a5c](https://github.com/jaapstronks/deckyard/commit/71e7a5c66833637503886fa5c39fe5b482dd7532))
+* **capture:** render captures with a mouse on Linux (headful on Xvfb) ([#1192](https://github.com/jaapstronks/deckyard/issues/1192)) ([7e4df75](https://github.com/jaapstronks/deckyard/commit/7e4df75d937ec8f9a4ab443afa7d39c8002f6c24))
+* **client:** merge caller headers into the api() defaults ([#1183](https://github.com/jaapstronks/deckyard/issues/1183)) ([70d96f6](https://github.com/jaapstronks/deckyard/commit/70d96f61ca426343ef8ca6afbc5b586c1b712f3b))
+* **editor:** one topbar that fits at every width (B354) ([bbd171c](https://github.com/jaapstronks/deckyard/commit/bbd171cfae04762f507d23db434c16e94f9f76ff))
+* **export:** the PPTX video placeholder speaks the deck's language (B358) ([0c8329d](https://github.com/jaapstronks/deckyard/commit/0c8329df1d3c059e646079d297e891b30ad06eec))
+* **install:** the Node install path states and enforces its PostgreSQL requirement (B364) ([#1198](https://github.com/jaapstronks/deckyard/issues/1198)) ([d9ee510](https://github.com/jaapstronks/deckyard/commit/d9ee510683d3cf9ae1cc40d07cbd8608c66fb44b))
+* **sandbox:** a guest is a users row, so it owns the decks it creates ([#1188](https://github.com/jaapstronks/deckyard/issues/1188)) ([f3c0ced](https://github.com/jaapstronks/deckyard/commit/f3c0cedbeee6825798c96e0650841a2e9f7206a4))
+* **sandbox:** first-visitor sweep fixes, incl. guest session leak (B350) ([#1191](https://github.com/jaapstronks/deckyard/issues/1191)) ([3e1c515](https://github.com/jaapstronks/deckyard/commit/3e1c515cefd5b3ff05e653fce9e93a6556f52e29))
+* **sandbox:** make the example decks say something that holds up ([#1189](https://github.com/jaapstronks/deckyard/issues/1189)) ([3d6863d](https://github.com/jaapstronks/deckyard/commit/3d6863d333c45d21b9aee274ded2515c35ddbbff))
+
 ## [1.37.0](https://github.com/jaapstronks/deckyard/compare/v1.36.1...v1.37.0) (2026-09-18)
 
 
