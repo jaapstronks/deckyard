@@ -1,5 +1,5 @@
 /**
- * The three home-page marketing shot shapes, each a factory over the language
+ * The four home-page marketing shot shapes, each a factory over the language
  * pair. The four `/features` shapes live in `_features-shots.js`.
  *
  * The eight recipe modules for these are thin: they name a language and a shape,
