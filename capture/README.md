@@ -72,9 +72,12 @@ from the host that captured to the repo that consumes it, and an absolute path
 is the one field guaranteed to be wrong there. A take reports `take`, `events`,
 `eventCount`, `durationMs` and `slipped` instead of `registryPath`.
 
-The browser is the app's own `getPuppeteerBrowser()` (system Chrome/Chromium —
-the same one the PDF/PNG exporters use). No extra dependency, no browser
-download. Set `PUPPETEER_EXECUTABLE_PATH` if Chrome is in a non-standard place.
+The browser is the system Chrome/Chromium the PDF/PNG exporters resolve, but a
+launch of its own (`lib/browser.js`), not the app's export browser. No extra
+dependency, no browser download. Set `PUPPETEER_EXECUTABLE_PATH` if Chrome is in
+a non-standard place. **On Linux the runner also needs Xvfb** (`apt install
+xvfb`): there it launches Chrome headful on a private virtual display it starts
+itself — see § Determinism conventions, input type.
 
 ## Recipe format
 
@@ -147,6 +150,19 @@ flagged for review — the same drift mechanism the registry uses for source dep
   `1280×720 @3x` — see § Video recipes.
 - **Light color scheme** is forced on every page so captures don't depend on the
   host OS appearance.
+- **Input type: a mouse.** Every capture page must report `(hover: hover)`,
+  and `openPage()` refuses one that does not. Headless Chrome on a Linux host
+  reports a touch screen (`hover: none`), and the editor then draws its touch
+  affordances permanently — dashed outlines round every field, "+" chips over
+  the numbers, insert buttons between the thumbnails. No launch flag or CDP
+  emulation changes that, so on Linux the capture browser runs **headful on
+  its own Xvfb** (started with `-displayfd`, so two runs on one host do not
+  collide); macOS headless Chrome reports a mouse already and stays headless.
+  A touch-mode shot is a wrong photograph, not jitter, and no source hash moves
+  when it happens — hence a refusal, not a warning.
+- **Scrollbars hidden** (`--hide-scrollbars`). macOS draws overlay scrollbars
+  that are invisible at rest; headful Linux draws classic ones into every
+  scrolling panel. A scrollbar is host chrome, not app UI.
 - **Reduced motion is forced for screenshots and off for takes**, and that flip
   is a real weakening rather than a convenience. `reduce` is what keeps a
   screenshot from catching a mid-transition frame; for a clip it would switch
@@ -354,6 +370,11 @@ artefact set _is_ the claim, so the refresh takes a `--rebaseline-all` that
 re-baselines and commits everything, printing the same warning line the
 checker prints for `--all`.
 
+A change in how the host renders counts as the same switch. The first refresh
+after the input-type fix (§ Determinism conventions) is one: the dev-server-1
+baselines until then were shot in touch mode, so every editor artefact changes
+with no hash moving, and that refresh runs with `--rebaseline-all`.
+
 Implementation status: built, in `deckyard-video` `scripts/refresh.ts`
 (PR #3). The commit is the re-baseline set plus `registry.json`; everything
 else that came back byte-different is restored to `HEAD` and named under
@@ -500,8 +521,9 @@ not. Puppeteer sizes the encoder from the host's _native_ pixel ratio, which is
 1 in headless Chrome — so an emulated 3× viewport records at 1×, silently, with
 no error and a video that looks fine until you zoom into it. The fix is
 `--force-device-scale-factor`, a **launch** flag, so `lib/browser.js` launches a
-second browser for recordings. It cannot go on the shared one: that is the app's
-own export browser, and forcing 3× there would triple every exported PDF and PNG.
+second browser for recordings. It cannot go on the screenshot browser: forcing
+3× there would render every @2x shot at 3× and downsample it. Both browsers
+share the launch itself, so a take on Linux is headful on the same Xvfb.
 
 ### Where the composition lives
 
