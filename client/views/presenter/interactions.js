@@ -10,6 +10,24 @@ function pct(count, total) {
   return Math.round((clamp0(count) / clamp0(total)) * 100);
 }
 
+/**
+ * The open/closed word for the status line under a poll or likert stage.
+ *
+ * Deliberately the same key pair the presenter's own status line uses
+ * (`client/views/presenter/interaction-controls.js`): one interaction state,
+ * one spelling of it. A capitalized variant of its own would be a second
+ * spelling of one meaning, which is what let the stage keep saying "Gesloten"
+ * in an English session (B365).
+ *
+ * @param {boolean} open - Whether the interaction still accepts responses
+ * @returns {string}
+ */
+function statusText(open) {
+  return open
+    ? t('presenter.interaction.stateOpen', 'open')
+    : t('presenter.interaction.stateClosed', 'closed');
+}
+
 export function applyPollInteractionStateToStage(stageEl, interactionState) {
   const slideId = String(interactionState?.slideId || '').trim();
   if (!stageEl || !slideId) return;
@@ -56,7 +74,7 @@ export function applyPollInteractionStateToStage(stageEl, interactionState) {
     });
 
   const statusEl = pollEl.querySelector?.('[data-poll-status="1"]');
-  if (statusEl) statusEl.textContent = open ? 'Open' : 'Gesloten';
+  if (statusEl) statusEl.textContent = statusText(open);
 }
 
 export function applyLikertInteractionStateToStage(stageEl, interactionState) {
@@ -115,5 +133,5 @@ export function applyLikertInteractionStateToStage(stageEl, interactionState) {
     });
 
   const statusEl = likertEl.querySelector?.('[data-poll-status="1"]');
-  if (statusEl) statusEl.textContent = open ? 'Open' : 'Gesloten';
+  if (statusEl) statusEl.textContent = statusText(open);
 }

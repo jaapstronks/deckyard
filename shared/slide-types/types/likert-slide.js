@@ -19,7 +19,7 @@ export default {
     {
       key: 'question',
       role: 'heading',
-      label: 'Vraag / Question',
+      label: 'Question',
       type: 'string',
       required: true,
       maxLength: 200,

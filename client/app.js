@@ -201,12 +201,11 @@ async function render() {
     // session id in the link is what authorizes them (server side:
     // routes/api/live-session-audience.js). A speaker who scans the QR on a
     // phone that is not logged in must land on the companion, not on a login
-    // screen. `getMeCached()` still runs, because Q&A moderation shows extra
-    // affordances to an admin — it just answers null for a visitor here.
+    // screen — and nothing here asks who they are: the Q&A moderator controls
+    // are granted by the moderator route itself, which is the only surface
+    // that can answer both of its gates (B365/D182).
     if (r.name === 'notes') {
-      await mount(
-        renderNotes(root, r.sessionId, { user: await getMeCached() }),
-      );
+      await mount(renderNotes(root, r.sessionId));
       return;
     }
 

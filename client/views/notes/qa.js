@@ -1,9 +1,9 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
-import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 import {
   createQuestionsFeed,
+  fetchModerationCapabilities,
   promoteQuestion,
   removeQuestion,
 } from '../../lib/qa/index.js';
@@ -14,11 +14,16 @@ export function createNotesQaController({
   qaBody,
   getPresentationId,
   getPresenterSlideIndex,
-  user,
   flashHint,
 } = {}) {
   let questions = [];
   let qaEnabled = true;
+  // Which moderator controls this caller gets. The server owns both rules and
+  // they are not the same one — promote follows the deck, remove follows the
+  // workspace — so the panel renders what it is told rather than deciding for
+  // itself (B365/D182). Nothing until the answer arrives: an unauthorized
+  // control that blinks away is worse than one that appears a beat late.
+  let moderation = { canPromote: false, canRemove: false };
   const expanded = new Set();
 
   const renderQuestions = () => {
@@ -79,7 +84,7 @@ export function createNotesQaController({
         footer.append(expandBtn);
       }
 
-      if (isOrganizationAdmin(user)) {
+      if (moderation.canPromote) {
         const presId = getPresentationId?.() || '';
         const afterSlideIndex = Number(getPresenterSlideIndex?.() ?? 0) || 0;
         if (item.isPromoted) {
@@ -131,7 +136,7 @@ export function createNotesQaController({
         }
       }
 
-      if (isOrganizationAdmin(user)) {
+      if (moderation.canRemove) {
         const presId = getPresentationId?.() || '';
         const removeBtn = h('button', {
           class: 'btn btn-secondary',
@@ -182,8 +187,26 @@ export function createNotesQaController({
     },
   });
 
+  // The deck id is read lazily (the panel is built before the presenter has
+  // said which deck is on screen), so the capability read is keyed on the id it
+  // answered for rather than done once at construction.
+  let moderationFor = null;
+  const loadModeration = async () => {
+    const presId = getPresentationId?.() || '';
+    if (!presId || presId === moderationFor) return;
+    moderationFor = presId;
+    moderation = await fetchModerationCapabilities(api, presId);
+    renderQuestions();
+  };
+
   return {
-    refresh: () => feed.refresh(),
+    refresh: () =>
+      Promise.all([
+        feed.refresh(),
+        loadModeration().catch((e) =>
+          debugLog('[notes][qa] moderation capabilities failed', e),
+        ),
+      ]).then(() => {}),
     connect: () => feed.connect(),
     detach: () => feed.stop(),
   };

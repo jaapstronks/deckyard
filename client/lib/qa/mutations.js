@@ -47,6 +47,39 @@ export function fetchQuestions(api, presentationId) {
 }
 
 /**
+ * What this caller may do on the moderator surface: `{ canPromote, canRemove }`.
+ *
+ * The answer comes from the server because the two gates are not the same rule
+ * and one of them (promote) needs the deck's collaborator row, which no client
+ * holds. A view that decides for itself gets it wrong in one direction or the
+ * other — see the route's own note (B365/D182).
+ *
+ * Any failure is `false, false`: the moderator route sits behind the login
+ * gate, so an anonymous companion — which is the ordinary case for a join
+ * link — is answered 401 rather than an envelope. That is not an error worth
+ * surfacing; it is the answer.
+ *
+ * @param {ApiFn} api - The client's api() function
+ * @param {string} presentationId
+ * @returns {Promise<{canPromote: boolean, canRemove: boolean}>}
+ */
+export async function fetchModerationCapabilities(api, presentationId) {
+  const none = { canPromote: false, canRemove: false };
+  if (!presentationId) return none;
+  try {
+    const out = await api(
+      `/api/moderate/${encodeURIComponent(String(presentationId))}/questions/capabilities`,
+    );
+    return {
+      canPromote: !!out?.canPromote,
+      canRemove: !!out?.canRemove,
+    };
+  } catch {
+    return none;
+  }
+}
+
+/**
  * Ask a question as an audience member.
  * @param {ApiFn} api - The client's api() function
  * @param {string} presentationId
