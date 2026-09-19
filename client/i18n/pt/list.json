@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Carregada: {date}",
   "imageLibrary.detail.modified": "Alterada: {date}",
   "imageLibrary.detail.urlHelp": "Os diapositivos guardam o URL, por isso eliminar da biblioteca não estraga os diapositivos existentes.",
-  "imageLibrary.dropzone.hint": "Suportados PNG, JPG e SVG",
+  "imageLibrary.dropzone.hint": "Suportados {formats}",
   "imageLibrary.dropzone.text": "Largue aqui uma imagem ou clique para a carregar",
   "imageLibrary.empty": "Ainda não há itens na biblioteca.",
   "imageLibrary.favorite": "Adicionar aos favoritos",

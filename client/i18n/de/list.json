@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Hochgeladen: {date}",
   "imageLibrary.detail.modified": "Geändert: {date}",
   "imageLibrary.detail.urlHelp": "Folien speichern die URL, daher beschädigt ein Löschen aus der Bibliothek bestehende Folien nicht.",
-  "imageLibrary.dropzone.hint": "PNG, JPG und SVG werden unterstützt",
+  "imageLibrary.dropzone.hint": "{formats} werden unterstützt",
   "imageLibrary.dropzone.text": "Bild hier ablegen oder zum Hochladen klicken",
   "imageLibrary.empty": "Noch keine Elemente in der Bibliothek.",
   "imageLibrary.favorite": "Zu Favoriten hinzufügen",

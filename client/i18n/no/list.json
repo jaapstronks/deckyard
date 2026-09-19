@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Lastet opp: {date}",
   "imageLibrary.detail.modified": "Endret: {date}",
   "imageLibrary.detail.urlHelp": "Lysbildene lagrer URL-en, så sletting fra biblioteket ødelegger ikke eksisterende lysbilder.",
-  "imageLibrary.dropzone.hint": "PNG, JPG og SVG støttes",
+  "imageLibrary.dropzone.hint": "{formats} støttes",
   "imageLibrary.dropzone.text": "Slipp bildet her, eller klikk for å laste opp",
   "imageLibrary.empty": "Ingen elementer i biblioteket ennå.",
   "imageLibrary.favorite": "Legg til i favoritter",

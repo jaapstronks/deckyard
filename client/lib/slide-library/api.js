@@ -18,6 +18,40 @@ function ifMatch(item) {
 }
 
 /**
+ * The tag names of a library item. The list routes attach tags as
+ * `{id, name}` objects; a bare string is read the same way, as everywhere
+ * else the client reads tags.
+ * @param {{tags?: Array<{name?: string}|string>}} item
+ * @returns {string[]}
+ */
+function tagNamesOf(item) {
+  const tags = Array.isArray(item?.tags) ? item.tags : [];
+  return tags.map((tag) => cleanStr(tag?.name ?? tag)).filter(Boolean);
+}
+
+/**
+ * The body of a copy (D183). One shape for "copy this item to a shelf":
+ * everything that describes the item travels — name, description, type,
+ * content, language versions and theme — and the destination shelf is the
+ * only difference between the copy actions. Tags are deliberately absent:
+ * they are a relation in `slide_library_tags`, not a create field, so they
+ * follow in the PUT that `copyItemTo` makes.
+ * @param {object} item - The item being copied
+ * @param {string} themeIdNorm - The picker's normalized theme, when the item has none
+ * @returns {object}
+ */
+function copyPayload(item, themeIdNorm) {
+  return {
+    name: cleanStr(item?.name),
+    description: cleanStr(item?.description),
+    slideType: cleanStr(item?.slideType),
+    content: item?.content || {},
+    i18n: item?.i18n || {},
+    themeId: cleanStr(item?.themeId || themeIdNorm),
+  };
+}
+
+/**
  * Create API operations for the slide library
  * @param {object} options
  * @param {Function} options.api - API client function
@@ -115,28 +149,6 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     }
   };
 
-  const pushToTeam = async (item) => {
-    const name = cleanStr(item?.name);
-    const slideType = cleanStr(item?.slideType);
-    if (!name || !slideType) return;
-
-    try {
-      await api('/api/slide-library/organization', {
-        method: 'POST',
-        body: JSON.stringify({
-          name,
-          slideType,
-          content: item?.content || {},
-          themeId: cleanStr(item?.themeId || themeIdNorm),
-        }),
-      });
-      toast.success(t('slideLibrary.addedToTeam', 'Added to team library.'));
-      await fetchShelf('organization');
-    } catch (e) {
-      toast.error(e);
-    }
-  };
-
   const saveDescription = async (shelf, item, newDesc) => {
     const s = shelf === 'organization' ? 'organization' : 'personal';
     try {
@@ -203,53 +215,84 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
   };
 
   /**
-   * Copy an item to the caller's personal shelf: same type, theme, content
-   * and language versions, a name and description of its own. The way to work
-   * on a shared slide you may not change (D170).
+   * Copy `item` to `shelf` — the one copy action (D183). The create carries
+   * the whole record (`copyPayload`); the tags follow in a second write,
+   * because they are a relation rather than a create field. A copy that lands
+   * without its tags says so: the item exists, so it is a passing failure of a
+   * side of the action, not a refusal of it.
+   * @param {'personal'|'organization'} shelf - The destination shelf
+   * @param {object} item - The item being copied
    * @returns {Promise<{ok: true, item: object} | {ok: false, error: any}>}
    */
-  const duplicateToPersonal = async (item, { rerender } = {}) => {
+  const copyItemTo = async (shelf, item) => {
+    const s = shelf === 'organization' ? 'organization' : 'personal';
+    const body = copyPayload(item, themeIdNorm);
+    if (!body.name || !body.slideType) {
+      return { ok: false, error: new Error('Missing name or slide type') };
+    }
+
+    let created;
     try {
-      const created = await api('/api/slide-library/personal', {
+      created = await api(`/api/slide-library/${s}`, {
         method: 'POST',
-        body: JSON.stringify({
-          name: cleanStr(item?.name),
-          description: cleanStr(item?.description),
-          slideType: cleanStr(item?.slideType),
-          content: item?.content || {},
-          i18n: item?.i18n || {},
-          themeId: cleanStr(item?.themeId || themeIdNorm),
-        }),
+        body: JSON.stringify(body),
       });
-      state.setCache('personal', [created, ...state.getCache('personal')]);
-      rerender?.();
-      return { ok: true, item: created };
     } catch (err) {
       return { ok: false, error: err };
     }
+
+    const tagNames = tagNamesOf(item);
+    if (tagNames.length > 0) {
+      const tagged = await saveTags(s, created, tagNames);
+      if (!tagged.ok) {
+        toast.error(
+          t(
+            'slideLibrary.copy.tagsFailed',
+            'The slide was copied, but its tags were not.',
+          ),
+        );
+      }
+    }
+    return { ok: true, item: created };
+  };
+
+  const pushToTeam = async (item) => {
+    const r = await copyItemTo('organization', item);
+    if (!r.ok) return toast.error(r.error);
+    toast.success(t('slideLibrary.addedToTeam', 'Added to team library.'));
+    await fetchShelf('organization');
+  };
+
+  /**
+   * Copy an item to the caller's personal shelf. The way to work on a shared
+   * slide you may not change (D170).
+   * @returns {Promise<{ok: true, item: object} | {ok: false, error: any}>}
+   */
+  const duplicateToPersonal = async (item, { rerender } = {}) => {
+    const r = await copyItemTo('personal', item);
+    if (!r.ok) return r;
+    state.setCache('personal', [r.item, ...state.getCache('personal')]);
+    rerender?.();
+    return r;
   };
 
   const pushMultipleToTeam = async (items, { rerender } = {}) => {
     let successCount = 0;
     for (const item of items) {
-      try {
-        await api('/api/slide-library/organization', {
-          method: 'POST',
-          body: JSON.stringify({
-            name: cleanStr(item?.name),
-            description: cleanStr(item?.description),
-            slideType: cleanStr(item?.slideType),
-            content: item?.content || {},
-            themeId: cleanStr(item?.themeId || themeIdNorm),
-          }),
-        });
-        successCount++;
-      } catch (e) {
-        console.error('Failed to push item to team:', e);
-      }
+      const r = await copyItemTo('organization', item);
+      if (r.ok) successCount++;
+      else console.error('Failed to push item to team:', r.error);
     }
     if (successCount > 0) {
-      toast.success(`Added ${successCount} slide(s) to team library.`);
+      toast.success(
+        t(
+          'slideLibrary.addedToTeamCount',
+          'Added {count} slides to team library.',
+          {
+            count: successCount,
+          },
+        ),
+      );
       await fetchShelf('organization');
     }
     rerender?.();

@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Caricata: {date}",
   "imageLibrary.detail.modified": "Modificata: {date}",
   "imageLibrary.detail.urlHelp": "Le slide memorizzano l'URL, perciò eliminare l'immagine dalla libreria non danneggia le slide esistenti.",
-  "imageLibrary.dropzone.hint": "Formati supportati: PNG, JPG, SVG",
+  "imageLibrary.dropzone.hint": "Formati supportati: {formats}",
   "imageLibrary.dropzone.text": "Trascina qui un'immagine o fai clic per caricarla",
   "imageLibrary.empty": "Nessun elemento nella libreria.",
   "imageLibrary.favorite": "Aggiungi ai preferiti",

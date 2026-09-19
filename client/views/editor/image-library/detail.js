@@ -9,6 +9,7 @@ import {
   createAltLangInputs,
 } from './utils.js';
 import { h } from '../../../lib/dom.js';
+import { formatDateTime } from '../../../lib/format/format.js';
 import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 
 /**
@@ -280,8 +281,13 @@ export function createImageLibraryDetail({
         })
       : null;
 
-    const created = typeof it?.created === 'string' ? it.created : '';
-    const modified = typeof it?.modified === 'string' ? it.modified : '';
+    // The API spells these `createdAt` / `updatedAt` (`mapImageRow` in
+    // server/storage/image-library.js); reading `created` / `modified` here
+    // meant both lines always rendered the em-dash (B366).
+    const created =
+      typeof it?.createdAt === 'string' ? formatDateTime(it.createdAt) : '';
+    const modified =
+      typeof it?.updatedAt === 'string' ? formatDateTime(it.updatedAt) : '';
     const dates = h('div', { class: 'help' }, [
       h('div', {
         text: t('imageLibrary.detail.created', 'Uploaded: {date}', {

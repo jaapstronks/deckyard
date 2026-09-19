@@ -7,6 +7,10 @@ import {
   parseDataUrl,
   optimizeRasterImage,
 } from '../media/local.js';
+import {
+  IMAGE_UPLOAD_MIME_TO_EXT,
+  IMAGE_UPLOAD_EXT_TO_MIMES,
+} from '../../shared/constants/image-uploads.js';
 
 function uploadsDir(repoRoot) {
   return uploadsBaseDir(repoRoot);
@@ -15,23 +19,10 @@ function uploadsDir(repoRoot) {
 // Image types accepted by these disk-upload helpers. This is a policy allowlist
 // (image-only — fonts and other provider-supported types are intentionally
 // rejected here), kept separate from the LocalProvider's wider MIME table.
-const MIME_TO_EXT = {
-  'image/png': 'png',
-  'image/jpeg': 'jpg',
-  'image/jpg': 'jpg',
-  'image/gif': 'gif',
-  'image/webp': 'webp',
-  'image/svg+xml': 'svg',
-};
-
-const EXT_TO_MIMES = {
-  png: ['image/png'],
-  jpg: ['image/jpeg', 'image/jpg'],
-  jpeg: ['image/jpeg', 'image/jpg'],
-  gif: ['image/gif'],
-  webp: ['image/webp'],
-  svg: ['image/svg+xml'],
-};
+// The list itself lives in shared/ (B366), because the dropzone hint and the
+// file picker name the same formats to the user and had drifted from it.
+const MIME_TO_EXT = IMAGE_UPLOAD_MIME_TO_EXT;
+const EXT_TO_MIMES = IMAGE_UPLOAD_EXT_TO_MIMES;
 
 const STOCK_MAX_BYTES = 20 * 1024 * 1024; // 20MB for stock media (GIFs can be large)
 

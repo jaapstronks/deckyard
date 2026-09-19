@@ -10,6 +10,10 @@ import {
   createAltLangInputs,
 } from './utils.js';
 import { h } from '../../../lib/dom.js';
+import {
+  imageUploadAccept,
+  imageUploadFormatList,
+} from '../../../../shared/constants/image-uploads.js';
 
 // Cache media status to avoid repeated API calls
 let _mediaStatus = null;
@@ -145,7 +149,9 @@ export function createImageLibraryUpload({
   // Hidden file input
   const inputFile = h('input', {
     type: 'file',
-    accept: 'image/*,.svg',
+    // Exactly what the server takes (B366): `image/*` also offered AVIF and
+    // BMP, which the upload policy then refused after the pick.
+    accept: imageUploadAccept(),
     style: 'display:none',
   });
 
@@ -159,7 +165,9 @@ export function createImageLibraryUpload({
   });
   const dropzoneHint = h('div', {
     class: 'image-lib-dropzone-hint help',
-    text: t('imageLibrary.dropzone.hint', 'PNG, JPG, SVG supported'),
+    text: t('imageLibrary.dropzone.hint', '{formats} supported', {
+      formats: imageUploadFormatList(),
+    }),
   });
 
   const dropzone = h('div', { class: 'image-lib-dropzone' }, [

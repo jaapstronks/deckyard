@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Uploadet: {date}",
   "imageLibrary.detail.modified": "Ændret: {date}",
   "imageLibrary.detail.urlHelp": "Slides gemmer URL'en, så en sletning fra biblioteket ødelægger ikke eksisterende slides.",
-  "imageLibrary.dropzone.hint": "PNG, JPG og SVG understøttes",
+  "imageLibrary.dropzone.hint": "{formats} understøttes",
   "imageLibrary.dropzone.text": "Slip billedet her, eller klik for at uploade",
   "imageLibrary.empty": "Ingen elementer i biblioteket endnu.",
   "imageLibrary.favorite": "Tilføj til favoritter",

@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Przesłano: {date}",
   "imageLibrary.detail.modified": "Zmodyfikowano: {date}",
   "imageLibrary.detail.urlHelp": "Slajdy przechowują adres URL, więc usunięcie z biblioteki nie psuje istniejących slajdów.",
-  "imageLibrary.dropzone.hint": "Obsługiwane formaty: PNG, JPG, SVG",
+  "imageLibrary.dropzone.hint": "Obsługiwane formaty: {formats}",
   "imageLibrary.dropzone.text": "Upuść tu obraz albo kliknij, aby go przesłać",
   "imageLibrary.empty": "Brak elementów w bibliotece.",
   "imageLibrary.favorite": "Dodaj do ulubionych",

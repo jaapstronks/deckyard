@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Téléversée : {date}",
   "imageLibrary.detail.modified": "Modifiée : {date}",
   "imageLibrary.detail.urlHelp": "Les diapositives conservent l'URL : supprimer de la bibliothèque ne casse donc pas les diapositives existantes.",
-  "imageLibrary.dropzone.hint": "PNG, JPG et SVG pris en charge",
+  "imageLibrary.dropzone.hint": "{formats} pris en charge",
   "imageLibrary.dropzone.text": "Déposez une image ici ou cliquez pour téléverser",
   "imageLibrary.empty": "Pas encore d'éléments dans la bibliothèque.",
   "imageLibrary.favorite": "Ajouter aux favoris",
