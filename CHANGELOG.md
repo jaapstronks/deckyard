@@ -4,6 +4,14 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.38.1](https://github.com/jaapstronks/deckyard/compare/v1.38.0...v1.38.1) (2026-09-19)
+
+
+### Fixed
+
+* **i18n:** the presenter stage and the en locale stop speaking Dutch, and the notes Q&A reads one promote rule (B365) ([#1200](https://github.com/jaapstronks/deckyard/issues/1200)) ([ae11945](https://github.com/jaapstronks/deckyard/commit/ae11945cf02de48a3e657d31a0c14bbed8e90ad7))
+* **library:** a copy carries the whole item, and the library tells the truth about dates and formats (B366) ([#1202](https://github.com/jaapstronks/deckyard/issues/1202)) ([e2e5448](https://github.com/jaapstronks/deckyard/commit/e2e54487ec4937c7872b3dcc8d1c0bc86f0874b2))
+
 ## [1.38.0](https://github.com/jaapstronks/deckyard/compare/v1.37.0...v1.38.0) (2026-09-19)
 
 
