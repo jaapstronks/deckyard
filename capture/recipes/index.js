@@ -14,9 +14,12 @@ import themeEditorFull from './theme-editor-full.js';
 // Marketing shots — deckyard-website public/images/marketing/, one pair per
 // shot. See capture/README.md § Marketing shots for how they differ from the
 // docs screenshots above (viewport, pinned theme, UI locale, live session).
-// The first three carry the home page; the last four carry /features.
+// The first four carry the home page (editor-canvas also /features); the last
+// four carry /features.
 import editorFormNl from './editor-form-nl.js';
 import editorFormEn from './editor-form-en.js';
+import editorCanvasNl from './editor-canvas-nl.js';
+import editorCanvasEn from './editor-canvas-en.js';
 import pollLiveNl from './poll-live-nl.js';
 import pollLiveEn from './poll-live-en.js';
 import joinScreenNl from './join-screen-nl.js';
@@ -44,6 +47,8 @@ export const RECIPES = [
   themeEditorFull,
   editorFormNl,
   editorFormEn,
+  editorCanvasNl,
+  editorCanvasEn,
   pollLiveNl,
   pollLiveEn,
   joinScreenNl,

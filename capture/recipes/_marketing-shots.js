@@ -1,18 +1,24 @@
 /**
- * The three home-page marketing shot shapes, each a factory over the language
+ * The four home-page marketing shot shapes, each a factory over the language
  * pair. The four `/features` shapes live in `_features-shots.js`.
  *
- * The six recipe modules for these are thin: they name a language and a shape,
+ * The eight recipe modules for these are thin: they name a language and a shape,
  * and the body lives here. That keeps the `-nl` and `-en` halves of a pair
  * provably identical apart from the two language codes — the failure mode a
  * copy-pasted pair invites is one half drifting silently.
  *
- * A change *in this file* moves the registry hash of all six shots:
+ * A change *in this file* moves the registry hash of all eight shots:
  * `hashRecipeGraph()` walks each recipe's imports within `capture/`, so the
  * factory is part of what they hash. See `capture/README.md` § Known limits.
  */
 
-import { seedDeck, setUiLocale } from '../lib/api.js';
+import {
+  CAPTURE_ACCOUNT_NAME,
+  seedDeck,
+  setDisplayName,
+  setUiLocale,
+} from '../lib/api.js';
+import { DEFAULT_VIEWPORT } from '../lib/browser.js';
 import {
   MARKETING_LANGS,
   MARKETING_PUBLIC_ORIGIN,
@@ -22,6 +28,7 @@ import {
   dismissPresenterStartGate,
   pinJoinCode,
   rewriteJoinOrigin,
+  seedBilingualDeck,
   seedPollVotes,
   startLiveSession,
   waitForStageTally,
@@ -89,6 +96,75 @@ export function editorFormShot(lang) {
         visible: true,
         timeout: 10_000,
       });
+    },
+  };
+}
+
+/**
+ * `editor-canvas-{nl,en}` — the ordinary editor on the KPI slide: thumbnails
+ * left, the slide on the canvas, the inspector right. No modal.
+ *
+ * Where `editor-form` shows the bulk-edit view, this is the editor as someone
+ * opens it every day, so nothing is opened or overwritten after render.
+ *
+ * Three choices, each for a stated reason:
+ *
+ * - **A one-version deck in the shot's language, with a real `i18n`
+ *   envelope** (dominant = active = `deckLang`, a single entry in
+ *   `versions`). Setting only `lang` leaves the editor's language switcher on
+ *   the default, so chrome and deck would disagree; a second version would put
+ *   translation-provenance chips on the fields, as in `editor-form`.
+ * - **No follow-invite slide.** Its rail thumbnail builds a join URL from
+ *   `location.origin` and carries a per-run code, which is the capture box's
+ *   address; leaving the slide out is cleaner than rewriting a thumbnail.
+ * - **The harness viewport (1440×900 @2x)**, not `MARKETING_VIEWPORT`: the
+ *   editor needs the width for rail, canvas and inspector side by side, and
+ *   the website derives its 2400 px variant from this 2880 px source.
+ *
+ * @param {'nl'|'en'} lang
+ * @returns {import('../lib/recipe.js').Recipe}
+ */
+export function editorCanvasShot(lang) {
+  const { suffix, deckLang, uiLocale } = MARKETING_LANGS[lang];
+  return {
+    id: `editor-canvas-${suffix}`,
+    output: `editor-canvas-${suffix}.png`,
+    registryPath: `public/images/marketing/editor-canvas-${suffix}.png`,
+    viewport: DEFAULT_VIEWPORT,
+    fullPage: false,
+    localStorage: { 'editor.inline.coachSeen': '1' },
+
+    async state(api) {
+      await clearMarketingDecks(api);
+      await setUiLocale(api, uiLocale);
+      await setDisplayName(api, CAPTURE_ACCOUNT_NAME);
+      const deck = marketingDeckVersions();
+      const slides = deck.versions[deckLang].filter(
+        (s) => s.id !== deck.slideIds.followInvite,
+      );
+      const deckId = await seedBilingualDeck(api, {
+        title: deck.titles[deckLang],
+        theme: MARKETING_THEME,
+        dominant: deckLang,
+        titles: { [deckLang]: deck.titles[deckLang] },
+        versions: { [deckLang]: slides },
+      });
+      return { deckId, slideId: deck.slideIds.kpi };
+    },
+
+    navigate: (ctx) =>
+      `/app/${ctx.deckId}?slideId=${ctx.slideId}&lang=${deckLang}`,
+    waitFor: '.app-shell.editor-shell .slides-add-btn',
+
+    async action(page) {
+      await page.waitForFunction(
+        () => !document.querySelector('.editor-loading-skeleton'),
+        { timeout: 15_000 },
+      );
+    },
+
+    async cleanup(api, ctx) {
+      await api.del(`/api/presentations/${ctx.deckId}`);
     },
   };
 }

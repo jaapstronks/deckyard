@@ -187,15 +187,17 @@ flagged for review — the same drift mechanism the registry uses for source dep
 ## Marketing shots
 
 `public/images/marketing/` is the second destination, driven by the shot list in
-deckyard-website `planning/marketing-beeld.md`. Fourteen recipes, seven shots ×
+deckyard-website `planning/marketing-beeld.md`. Sixteen recipes, eight shots ×
 two languages, in two groups:
 
 | group       | shots                                                               | shapes live in                |
 | ----------- | ------------------------------------------------------------------- | ----------------------------- |
-| home page   | `editor-form`, `poll-live`, `join-screen`                           | `recipes/_marketing-shots.js` |
+| home page   | `editor-form`, `editor-canvas`, `poll-live`, `join-screen`          | `recipes/_marketing-shots.js` |
 | `/features` | `presenter-view`, `comments`, `share-link-rules`, `ai-fills-fields` | `recipes/_features-shots.js`  |
 
-They share the docs harness but differ in four ways, each for a stated reason:
+They share the docs harness but differ in four ways, each for a stated reason
+(`editor-canvas` keeps the harness viewport, because the editor needs the
+width for rail, canvas and inspector side by side):
 
 |          | docs shots                     | marketing shots                                                                                                                                                                                                                                               |
 | -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

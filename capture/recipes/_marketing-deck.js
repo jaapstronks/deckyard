@@ -496,8 +496,8 @@ const POLL_INDEX = SLIDE_SPECS.findIndex((s) => s.type === 'poll-slide');
  *   dominant: 'nl',
  *   titles: {nl: string, 'en-GB': string},
  *   versions: {nl: Array<object>, 'en-GB': Array<object>},
- *   slideIds: {all: string[], title: string, followInvite: string, funnel: string,
- *     timeline: string, poll: string},
+ *   slideIds: {all: string[], title: string, followInvite: string, kpi: string,
+ *     funnel: string, timeline: string, poll: string},
  * }}
  */
 export function marketingDeckVersions() {
@@ -528,6 +528,7 @@ export function marketingDeckVersions() {
       all: ids,
       title: ids[indexOfType('title-slide')],
       followInvite: ids[indexOfType('follow-invite-slide')],
+      kpi: ids[indexOfType('kpi-metrics-slide')],
       funnel: ids[indexOfType('funnel-slide')],
       timeline: ids[indexOfType('timeline-slide')],
       poll: ids[POLL_INDEX],
