@@ -1,3 +1,4 @@
+import { sql } from 'kysely';
 import { getDb } from '../db/client.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import {
@@ -5,7 +6,10 @@ import {
   sandboxEnabled,
   sandboxTtlMs,
 } from '../config/sandbox.js';
-import { SANDBOX_GUEST_EMAIL_PATTERN } from '../auth/sandbox.js';
+import {
+  SANDBOX_GUEST_EMAIL_PATTERN,
+  SANDBOX_GUEST_EMAIL_REGEX,
+} from '../auth/sandbox.js';
 import {
   getSandboxTotalBytes,
   sandboxMaxTotalBytes,
@@ -78,6 +82,10 @@ export async function sweepExpiredSandboxDecks() {
  * on a stamp the guest left behind; their decks are long gone by then anyway
  * (the deck TTL is hours, the cookie lifetime days).
  *
+ * A guest row whose address is not in the current form goes too, whatever its
+ * age: no cookie maps onto it any more, and the old form carried the cookie
+ * token itself, readable by every other guest through user search.
+ *
  * @returns {Promise<number>} How many guest rows were deleted.
  */
 export async function sweepExpiredSandboxGuests() {
@@ -88,7 +96,12 @@ export async function sweepExpiredSandboxGuests() {
   const result = await db
     .deleteFrom('users')
     .where('email', 'like', SANDBOX_GUEST_EMAIL_PATTERN)
-    .where('created_at', '<=', cutoff)
+    .where((eb) =>
+      eb.or([
+        eb('created_at', '<=', cutoff),
+        sql`email !~ ${SANDBOX_GUEST_EMAIL_REGEX.source}`,
+      ]),
+    )
     .executeTakeFirst();
   return Number(result?.numDeletedRows ?? 0);
 }

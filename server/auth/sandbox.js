@@ -16,6 +16,13 @@ const GUEST_EMAIL_DOMAIN = 'sandbox.local';
 export const SANDBOX_GUEST_EMAIL_PATTERN = `guest-%@${GUEST_EMAIL_DOMAIN}`;
 
 /**
+ * The exact shape of a guest address as `guestEmailForToken` mints it. A row
+ * that matches the pattern above but not this is a leftover of an earlier
+ * form, which the cleanup sweep removes.
+ */
+export const SANDBOX_GUEST_EMAIL_REGEX = /^guest-[0-9a-f]{32}@sandbox\.local$/;
+
+/**
  * Whether an address belongs to a sandbox guest: the in-memory twin of
  * `SANDBOX_GUEST_EMAIL_PATTERN`, so "is this guest work" has one answer in SQL
  * and in code.

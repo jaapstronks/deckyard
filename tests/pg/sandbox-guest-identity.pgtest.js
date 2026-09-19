@@ -141,21 +141,13 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
   it('sweeps guest rows older than the cookie lifetime and nothing else', async () => {
     const old = new Date(Date.now() - 31 * DAY).toISOString();
     const fresh = new Date(Date.now() - 1 * DAY).toISOString();
+    const oldGuest = `guest-${'a'.repeat(32)}@sandbox.local`;
+    const freshGuest = `guest-${'b'.repeat(32)}@sandbox.local`;
     await db
       .insertInto('users')
       .values([
-        {
-          email: 'guest-old00000@sandbox.local',
-          name: 'Guest',
-          role: 'user',
-          created_at: old,
-        },
-        {
-          email: 'guest-fresh000@sandbox.local',
-          name: 'Guest',
-          role: 'user',
-          created_at: fresh,
-        },
+        { email: oldGuest, name: 'Guest', role: 'user', created_at: old },
+        { email: freshGuest, name: 'Guest', role: 'user', created_at: fresh },
         {
           email: 'admin@example.com',
           name: 'Admin',
@@ -169,9 +161,29 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
     const left = (await db.selectFrom('users').select('email').execute())
       .map((r) => r.email)
       .sort();
-    assert.deepEqual(left, [
-      'admin@example.com',
-      'guest-fresh000@sandbox.local',
-    ]);
+    assert.deepEqual(left, ['admin@example.com', freshGuest]);
+  });
+
+  it('sweeps a fresh guest row in the old token-bearing form', async () => {
+    const fresh = new Date(Date.now() - 1 * DAY).toISOString();
+    const current = `guest-${'c'.repeat(32)}@sandbox.local`;
+    await db
+      .insertInto('users')
+      .values([
+        {
+          email: 'guest-3f2b1c4d-0000-4000-8000-000000000000@sandbox.local',
+          name: 'Guest',
+          role: 'user',
+          created_at: fresh,
+        },
+        { email: current, name: 'Guest', role: 'user', created_at: fresh },
+      ])
+      .execute();
+
+    assert.equal(await sweepExpiredSandboxGuests(), 1);
+    const left = (await db.selectFrom('users').select('email').execute()).map(
+      (r) => r.email,
+    );
+    assert.deepEqual(left, [current]);
   });
 });
