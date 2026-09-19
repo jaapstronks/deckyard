@@ -1,10 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-  resolveVideoWatchUrl,
-  videoPdfCopy,
-} from '../server/export/video-watch-url.js';
+import { resolveVideoWatchUrl } from '../server/export/video-watch-url.js';
 
 /**
  * The PDF video-slide placeholder resolves a "watch online" URL server-side.
@@ -162,10 +159,4 @@ test('unresolvable source (not a known provider) resolves to nothing', () => {
   const { url, kind } = resolveVideoWatchUrl(slide, {}, {});
   assert.equal(url, null);
   assert.equal(kind, null);
-});
-
-test('copy falls back to nl for unknown languages, en-GB is distinct', () => {
-  assert.equal(videoPdfCopy('nl').kicker, 'Videoslide');
-  assert.equal(videoPdfCopy('en-GB').kicker, 'Video slide');
-  assert.equal(videoPdfCopy('ar').kicker, videoPdfCopy('nl').kicker);
 });

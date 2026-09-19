@@ -8,6 +8,7 @@ import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { getAppName } from '../config/branding.js';
 import { createLogger } from '../utils/logger.js';
+import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
   parseVideoSource,
   buildBunnyMp4Url,
@@ -185,6 +186,7 @@ export async function buildPptxBuffer(
       const nativeResult = await composeNative(pptxSlide, slide, slideNum, {
         slideWidth: SLIDE_W_IN,
         slideHeight: SLIDE_H_IN,
+        docLang,
       });
       if (nativeResult?.warning) {
         warnings.push(nativeResult.warning);
@@ -250,18 +252,35 @@ function addSpeakerNotes(pptxSlide, slide) {
  *
  * Composes onto a slide the caller already added, so that every slide — raster
  * or video — is created and annotated in one place.
+ *
+ * Two audiences, two languages, and the split is deliberate (B358). What lands
+ * *on the slide* is copy the reader of the deck sees, so it comes from the
+ * deck's own language (`docLang`) through the slide-copy table — the same
+ * source the PDF placeholder and every interactive type read. The `warning`
+ * this returns is not copy: it goes to the server log (a .pptx has no channel
+ * for a message), where the rest of this module already writes English.
+ *
+ * @param {object} pptxSlide - The pptxgenjs slide to compose onto.
+ * @param {object} slide - The stored video slide.
+ * @param {number} slideNum - 1-based slide number, for the log line.
+ * @param {object} options
+ * @param {number} options.slideWidth - Slide width in inches.
+ * @param {number} options.slideHeight - Slide height in inches.
+ * @param {string} [options.docLang] - The deck's document language.
+ * @returns {Promise<{warning: string|null}>}
  */
 async function handleVideoSlide(
   pptxSlide,
   slide,
   slideNum,
-  { slideWidth, slideHeight },
+  { slideWidth, slideHeight, docLang = '' },
 ) {
   const content = slide?.content || {};
   const source = String(content.source || '').trim();
   const title = String(content.title || '').trim();
   const bunnyLibraryId = String(content.bunnyLibraryId || '366590').trim();
   const background = content.background === 'lime' ? 'DBFF00' : 'E8F0F0'; // lime or mist
+  const copy = getSlideCopy(docLang);
 
   const parsed = parseVideoSource(source, bunnyLibraryId);
 
@@ -278,14 +297,13 @@ async function handleVideoSlide(
         title,
         slideWidth,
         slideHeight,
-        message: 'Bunny video kon niet worden ingesloten',
-        detail: 'BUNNY_PULLZONE is niet geconfigureerd op de server.',
-        instruction:
-          'Vraag de beheerder om de Bunny CDN-instellingen te configureren, of voeg de video handmatig toe.',
+        message: copy.videoPptxBunnyNotEmbedded,
+        detail: copy.videoPptxBunnyUnconfigured,
+        instruction: copy.videoPptxAskAdmin,
         videoUrl: `https://iframe.mediadelivery.net/embed/${parsed.libraryId}/${parsed.videoId}`,
       });
       return {
-        warning: `Slide ${slideNum}: Bunny video niet ingesloten - BUNNY_PULLZONE niet geconfigureerd`,
+        warning: `Slide ${slideNum}: Bunny video not embedded — BUNNY_PULLZONE is not configured`,
       };
     }
 
@@ -328,13 +346,16 @@ async function handleVideoSlide(
           title,
           slideWidth,
           slideHeight,
-          message: 'Video kon niet worden ingesloten',
-          detail: err.message || 'Onbekende fout bij het toevoegen van video',
-          instruction: 'Voeg de video handmatig toe in PowerPoint.',
+          message: copy.videoPptxNotEmbedded,
+          // The thrown message is diagnostic data, not copy: it comes from
+          // pptxgenjs in English whatever the deck says. Only the stand-in for
+          // a throw without one is a sentence, so only that is translated.
+          detail: err.message || copy.videoPptxEmbedFailed,
+          instruction: copy.videoPptxAddManually,
           videoUrl: mp4Url,
         });
         return {
-          warning: `Slide ${slideNum}: Video niet ingesloten - ${err.message}`,
+          warning: `Slide ${slideNum}: video not embedded — ${err.message}`,
         };
       }
     } else {
@@ -343,16 +364,14 @@ async function handleVideoSlide(
         title,
         slideWidth,
         slideHeight,
-        message: 'Bunny video kon niet worden gedownload',
-        detail:
-          fetchResult.error ||
-          'Controleer of MP4 Fallback is ingeschakeld in Bunny.',
-        instruction:
-          'Download de video handmatig en voeg deze toe in PowerPoint.',
+        message: copy.videoPptxBunnyNotDownloaded,
+        // As above: the fetch error is data; the hint that replaces it is copy.
+        detail: fetchResult.error || copy.videoPptxBunnyFallbackHint,
+        instruction: copy.videoPptxDownloadManually,
         videoUrl: mp4Url,
       });
       return {
-        warning: `Slide ${slideNum}: Bunny video niet ingesloten - ${fetchResult.error}`,
+        warning: `Slide ${slideNum}: Bunny video not embedded — ${fetchResult.error}`,
       };
     }
   }
@@ -364,15 +383,16 @@ async function handleVideoSlide(
       title,
       slideWidth,
       slideHeight,
-      message: 'YouTube video',
-      detail:
-        "YouTube-video's kunnen niet offline worden afgespeeld in PowerPoint.",
-      instruction:
-        'Download de video van YouTube en voeg deze handmatig toe, of gebruik "Online video invoegen" in PowerPoint (vereist internet tijdens presentatie).',
+      message: fillCopy(copy.videoPptxProviderVideo, { provider: 'YouTube' }),
+      detail: fillCopy(copy.videoPptxProviderOffline, { provider: 'YouTube' }),
+      // YouTube gets its own instruction rather than the shared
+      // download-from-provider one: PowerPoint's "Insert Online Video" takes a
+      // YouTube URL, so there is a second route worth naming. Vimeo has none.
+      instruction: copy.videoPptxYouTubeInstruction,
       videoUrl: youtubeUrl,
     });
     return {
-      warning: `Slide ${slideNum}: YouTube video niet ingesloten - download handmatig of voeg online video toe`,
+      warning: `Slide ${slideNum}: YouTube video not embedded — download it or insert it as an online video`,
     };
   }
 
@@ -383,14 +403,15 @@ async function handleVideoSlide(
       title,
       slideWidth,
       slideHeight,
-      message: 'Vimeo video',
-      detail:
-        "Vimeo-video's kunnen niet offline worden afgespeeld in PowerPoint.",
-      instruction: 'Download de video van Vimeo en voeg deze handmatig toe.',
+      message: fillCopy(copy.videoPptxProviderVideo, { provider: 'Vimeo' }),
+      detail: fillCopy(copy.videoPptxProviderOffline, { provider: 'Vimeo' }),
+      instruction: fillCopy(copy.videoPptxDownloadFromProvider, {
+        provider: 'Vimeo',
+      }),
       videoUrl: vimeoUrl,
     });
     return {
-      warning: `Slide ${slideNum}: Vimeo video niet ingesloten - download handmatig`,
+      warning: `Slide ${slideNum}: Vimeo video not embedded — download it manually`,
     };
   }
 
@@ -399,13 +420,15 @@ async function handleVideoSlide(
     title,
     slideWidth,
     slideHeight,
-    message: 'Video bron niet herkend',
-    detail: source || 'Geen video bron opgegeven',
-    instruction: 'Voeg de video handmatig toe in PowerPoint.',
+    message: copy.videoPptxSourceUnknown,
+    // The unrecognised source itself is the useful detail; only its absence
+    // needs a sentence.
+    detail: source || copy.videoPptxNoSource,
+    instruction: copy.videoPptxAddManually,
     videoUrl: source,
   });
   return {
-    warning: `Slide ${slideNum}: Video bron niet herkend`,
+    warning: `Slide ${slideNum}: video source not recognised`,
   };
 }
 

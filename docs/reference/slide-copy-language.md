@@ -109,6 +109,24 @@ not yet fixed. The `aria-label` group is the closer of the two to this page's
 defect (a Dutch deck's screen reader announces English), and it is the cheaper
 fix: four keys in each table, no markup change.
 
+## Copy an export writes itself
+
+Most copy reaches a slide through `renderSlideHtml` and `ctx.lang`. Two
+sentences do not: the PDF and PPTX video placeholders, which the exporter
+composes directly because neither format can play a video and there is nothing
+to render. They read the same table, with the document language
+(`resolveDocLangFromPresentation`, which always answers a string) as the key:
+`videoPdf*` in `server/export/pdf-slides.js`, `videoPptx*` in
+`server/export/pptx.js`.
+
+They are here rather than in an export-local table on purpose. The PDF strings
+_were_ such a table, and it carried its own `|| nl` fallback — the same accident
+this page describes, one module further out, invisible to every guard above.
+An export that needs a sentence in the deck's language adds a key here (B358).
+
+A `warning` an export returns is not copy: it goes to the server log, which is
+English throughout, and never reaches a reader.
+
 ## Where the language is passed from
 
 Client render surfaces go through `renderSlideElement` / `mountSlideInto`

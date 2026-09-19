@@ -452,6 +452,8 @@ const ABSENT_SYMBOLS = {
     'tenant-isolation.md names the boot guard that was removed with the file backend, in a paragraph whose whole point is that it is gone',
   stringToTypedArray:
     'export-smoke-test.md names a pdf.js internal to explain the Uint8Array/Buffer flake; it is third-party, not ours',
+  videoPdfCopy:
+    'video-slide-pdf-export.md names the export-local copy table B358 folded into slide-copy, in the paragraph explaining why a second one must not come back',
 };
 
 /** Every identifier that occurs anywhere in the first-party source corpus. */

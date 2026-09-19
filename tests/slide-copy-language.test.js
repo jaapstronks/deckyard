@@ -275,3 +275,25 @@ test('a deck with no language gets the default, not Dutch', () => {
     }
   }
 });
+
+// The filler is one shape (`fillCopy`), so its failure mode is one shape too:
+// a `{name}` that reaches the slide unfilled. Pinning the rendered output
+// rather than the helper catches a renderer that forgets to fill at all —
+// which is what the private spellings (`fill()`, `.replace('{n}', …)`,
+// `scaleCopy()`) each risked separately.
+test('no copy placeholder survives into rendered slide HTML', () => {
+  for (const type of COPY_TYPES) {
+    const def = SLIDE_TYPES[type];
+    for (const lang of SLIDE_COPY_LANGS) {
+      const html = def.renderHtml(def.defaults || {}, { type }, { lang });
+      for (const [key, template] of Object.entries(SLIDE_COPY[lang])) {
+        for (const [, name] of template.matchAll(/\{(\w+)\}/g)) {
+          assert.ok(
+            !html.includes(`{${name}}`),
+            `${type} (${lang}) left "{${name}}" from ${key} unfilled`,
+          );
+        }
+      }
+    }
+  }
+});

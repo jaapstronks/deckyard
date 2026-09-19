@@ -14,7 +14,8 @@ import {
 } from '../utils/script-chain.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
-import { resolveVideoWatchUrl, videoPdfCopy } from './video-watch-url.js';
+import { resolveVideoWatchUrl } from './video-watch-url.js';
+import { getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
   loadExportCssBundle,
   buildExportStyleContent,
@@ -54,11 +55,11 @@ async function renderVideoSlidePdfHtml(
   const content = slide && typeof slide === 'object' ? slide.content : {};
   const title = String(content?.title || '').trim();
   const bg = content?.background === 'lime' ? 'slide-bg-lime' : 'slide-bg-mist';
-  const copy = videoPdfCopy(docLang);
+  const copy = getSlideCopy(docLang);
 
   const titleHtml = title
     ? `<div class="heading vpdf-title">${escapeHtml(title)}</div>`
-    : `<div class="heading vpdf-title vpdf-kicker">${escapeHtml(copy.kicker)}</div>`;
+    : `<div class="heading vpdf-title vpdf-kicker">${escapeHtml(copy.videoPdfKicker)}</div>`;
 
   // The still: the video's own poster, fetched and inlined here rather than left
   // as a remote <img src> for the generic embed pass. Bunny's CDN 403s a request
@@ -69,7 +70,7 @@ async function renderVideoSlidePdfHtml(
   });
   const stillHtml = thumbnailDataUrl
     ? `<img class="vpdf-still" src="${escapeHtml(thumbnailDataUrl)}" alt="${escapeHtml(
-        title || copy.kicker,
+        title || copy.videoPdfKicker,
       )}" />`
     : `<div class="vpdf-still vpdf-still--empty"></div>`;
 
@@ -95,11 +96,11 @@ async function renderVideoSlidePdfHtml(
     .replace(/^https?:\/\//i, '')
     .replace(/\/$/, '');
   const linkHtml = url
-    ? `<p class="vpdf-lead">${escapeHtml(copy.lead)}</p>
+    ? `<p class="vpdf-lead">${escapeHtml(copy.videoPdfLead)}</p>
        <a class="vpdf-url" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(
          linkText,
        )}</a>`
-    : `<p class="vpdf-lead">${escapeHtml(copy.noUrl)}</p>`;
+    : `<p class="vpdf-lead">${escapeHtml(copy.videoPdfNoUrl)}</p>`;
 
   return `
     <div class="slide slide-video vpdf ${bg}">

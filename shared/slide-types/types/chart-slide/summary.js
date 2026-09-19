@@ -7,7 +7,7 @@
  * two places would say two things about one chart.
  */
 
-import { getSlideCopy } from '../../slide-copy.js';
+import { fillCopy, getSlideCopy } from '../../slide-copy.js';
 
 /** Chart kind → the slide-copy key that names it. */
 const KIND_COPY_KEYS = {
@@ -15,18 +15,6 @@ const KIND_COPY_KEYS = {
   pie: 'chartKindPie',
   line: 'chartKindLine',
 };
-
-/**
- * Fill `{name}` placeholders in a copy template.
- * @param {string} template
- * @param {Record<string, string|number>} values
- * @returns {string}
- */
-function fill(template, values) {
-  return template.replace(/\{(\w+)\}/g, (m, name) =>
-    Object.hasOwn(values, name) ? String(values[name]) : m,
-  );
-}
 
 /**
  * @param {object} parsed - the result of `parseChartData()`
@@ -46,7 +34,7 @@ export function chartSummary(parsed, lang) {
     pairs.sort((a, b) => b.v - a.v);
     const top = pairs[0];
     if (!top) return '';
-    return fill(copy.chartSummaryTop, {
+    return fillCopy(copy.chartSummaryTop, {
       kind,
       count: pairs.length,
       label: top.l,
@@ -57,7 +45,7 @@ export function chartSummary(parsed, lang) {
   for (const v of parsed.dataset.y1 || []) if (v != null) all.push(v);
   for (const v of parsed.dataset.y2 || []) if (v != null) all.push(v);
   if (!all.length) return '';
-  return fill(copy.chartSummaryRange, {
+  return fillCopy(copy.chartSummaryRange, {
     kind,
     count: parsed.dataset.x.length,
     min: Math.min(...all),
