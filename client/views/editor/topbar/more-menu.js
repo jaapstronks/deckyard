@@ -30,6 +30,11 @@ export function createEditorTopbarMoreMenu({
   onOpenSettings,
   onOpenOverview,
   onSubscription,
+  // The openers behind the bar's Export and Share buttons. Their entries here
+  // are not copies of those actions but the same call, shown at the widths
+  // where the bar folds the buttons away (B354).
+  onExport,
+  onShare,
 } = {}) {
   const detachers = [];
 
@@ -231,17 +236,35 @@ export function createEditorTopbarMoreMenu({
     onclick: () => run(onShowShortcuts),
   });
 
-  // Mirror of the deck-grid topbar button; CSS shows it only at widths
-  // where the bar hides that button.
+  // The bar halves of these three fold at their rung; `.topbar-fold-<rung>`
+  // shows the entry here at exactly the widths where the bar hides the
+  // control, so a deck always has one Export, one Share and one deck grid.
   const btnOverview = menuItem({
-    class: 'dropdown-item topbar-overflow-item-lg',
+    class: 'dropdown-item topbar-fold-lg',
     text: t('editor.deckGrid.open', 'Slide overview'),
     onclick: () => run(onOpenOverview),
   });
 
-  // Responsive overflow items - visible only at narrow widths (CSS hides on desktop)
+  const btnExport = menuItem({
+    class: 'dropdown-item topbar-fold-lg',
+    text: t('editor.export.button', 'Export'),
+    title: t('editor.export.title', 'Export to file'),
+    onclick: () => run(onExport),
+  });
+
+  const btnShare = menuItem({
+    class: 'dropdown-item topbar-fold-md',
+    text: t('editor.share.button', 'Share'),
+    title: t('editor.share.title', 'Share and publish options'),
+    onclick: () => run(onShare),
+  });
+
+  // The theme toggle has no bar half at any width, so it carries no rung: it
+  // is simply a menu item. It used to be hidden above 1024px, mirroring a
+  // `.sb-segmented` switch in the bar that no longer exists - which left the
+  // editor with no way to change theme on a desktop at all (B354).
   const btnThemeToggle = menuItem({
-    class: 'dropdown-item topbar-overflow-item',
+    class: 'dropdown-item',
     text: t('common.toggleTheme', 'Toggle dark/light mode'),
     onclick: () => run(onToggleTheme),
   });
@@ -273,6 +296,8 @@ export function createEditorTopbarMoreMenu({
     menuClass: 'dropdown-menu-right',
     // `btnAnalyze` is null where AI is off; `append` would print that.
     items: [
+      btnExport,
+      btnShare,
       btnOverview,
       btnAnalyze,
       btnTranslateOther,
@@ -282,7 +307,6 @@ export function createEditorTopbarMoreMenu({
       btnSubscription,
       btnSettings,
       btnShortcuts,
-      // Responsive overflow item (visible only at narrow viewports)
       btnThemeToggle,
       h('div', { class: 'dropdown-sep' }),
       btnMoveToTrash,

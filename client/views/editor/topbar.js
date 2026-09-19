@@ -52,6 +52,8 @@ export function createEditorTopbar({
   normalizeLang,
   topbarExportEl,
   topbarShareEl,
+  onExport,
+  onShare,
   syncShareUi,
   markDirty,
   onAnalyze,
@@ -68,7 +70,7 @@ export function createEditorTopbar({
   // still seeds the initials; the profile lookup keys on the stable id.
   const ownerEmail = pres?.ownerEmail || '';
   const ownerId = pres?.ownerId || pres?.createdBy?.id || '';
-  const authorDisplayEl = h('div', { class: 'topbar-author' });
+  const authorDisplayEl = h('div', { class: 'topbar-author topbar-fold-xl' });
 
   if (ownerEmail || ownerId) {
     // Start from the name the address derives; the profile lookup below
@@ -121,7 +123,7 @@ export function createEditorTopbar({
     onclick: () => openTitleModal?.({ mode: 'edit' }),
   });
   topbarTitleEl.append(
-    h('span', { text: pres.title }),
+    h('span', { class: 'topbar-pres-title-text', text: pres.title }),
     icon('pencil', { size: 12, className: 'topbar-title-pencil' }),
   );
 
@@ -133,7 +135,7 @@ export function createEditorTopbar({
   // does not rely on colour alone.
 
   const saveStatusEl = h('span', {
-    class: 'topbar-save-status',
+    class: 'topbar-save-status topbar-fold-lg',
     role: 'status',
     'aria-live': 'polite',
   });
@@ -196,7 +198,7 @@ export function createEditorTopbar({
   // ============================================================
 
   const btnOverview = h('button', {
-    class: 'ghost-icon-btn topbar-overview-btn',
+    class: 'ghost-icon-btn topbar-overview-btn topbar-fold-lg',
     type: 'button',
     title: t('editor.deckGrid.open', 'Slide overview'),
     'aria-label': t('editor.deckGrid.open', 'Slide overview'),
@@ -297,6 +299,10 @@ export function createEditorTopbar({
       }),
     onLogout: () => logout(),
     onToggleTheme: toggleTheme,
+    // Stand-ins for the Export and Share buttons at the widths where the bar
+    // folds them away. Same openers, so there is one action per concept.
+    onExport,
+    onShare,
     // Demoted from their own topbar icons (2026-07-16 chrome re-org): the
     // bar keeps deck-level actions; utilities live here.
     onAnalyze,
@@ -347,7 +353,7 @@ export function createEditorTopbar({
 
   const btnPresent = h('button', {
     class: 'btn btn-primary',
-    text: t('editor.present', 'Present'),
+    title: t('editor.present', 'Present'),
     onclick: async () => {
       if (isDirty?.()) {
         toast.info(t('common.savingFirst', 'Saving first…'), {
@@ -385,6 +391,16 @@ export function createEditorTopbar({
       }
     },
   });
+  // Icon plus label, so the primary CTA can shed its word on a phone without
+  // shedding the action (B354). Below the xs rung the label is hidden from
+  // the eye only - it stays the button's accessible name.
+  btnPresent.append(
+    icon('play', { size: 16, className: 'topbar-present-icon' }),
+    h('span', {
+      class: 'topbar-present-label',
+      text: t('editor.present', 'Present'),
+    }),
+  );
 
   // Present is the primary CTA; the attached caret menu holds the live-
   // presenting extras you never need while editing (Companion phone remote).
@@ -444,10 +460,11 @@ export function createEditorTopbar({
   });
   btnRedo.append(icon('redo', { size: 16 }));
 
-  const undoRedoGroup = h('div', { class: 'topbar-undo-group' }, [
-    btnUndo,
-    btnRedo,
-  ]);
+  const undoRedoGroup = h(
+    'div',
+    { class: 'topbar-undo-group topbar-fold-lg' },
+    [btnUndo, btnRedo],
+  );
 
   // Reflect the undo manager's stacks on the buttons. Called on every stack change.
   const syncUndoButtons = () => {
@@ -476,6 +493,14 @@ export function createEditorTopbar({
   });
   backBtn.append(icon('arrow-left', { size: 16 }));
 
+  // The fold rung of a control the bar does not build itself. The rung belongs
+  // to the bar's width budget, not to the button, so it is stamped here next
+  // to the layout it serves - the ladder is documented in
+  // `styles/base/01-core/10-shell-topbar-dropdown.css` (Topbar Responsive).
+  topbarExportEl?.classList?.add('topbar-fold-lg');
+  topbarShareEl?.classList?.add('topbar-fold-md');
+  userMenu.el.classList.add('topbar-fold-sm');
+
   const topbarEl = h('div', { class: 'topbar' }, [
     backBtn,
     topbarTitleEl,
@@ -484,14 +509,20 @@ export function createEditorTopbar({
     h('div', { class: 'topbar-spacer' }),
     undoRedoGroup,
     languageMode.el,
-    h('div', { class: 'topbar-zone-sep', 'aria-hidden': 'true' }),
+    h('div', {
+      class: 'topbar-zone-sep topbar-fold-sm',
+      'aria-hidden': 'true',
+    }),
     btnOverview,
     btnAnalytics,
     moreMenu.el,
     topbarExportEl,
     topbarShareEl,
     presentGroup,
-    h('div', { class: 'topbar-zone-sep', 'aria-hidden': 'true' }),
+    h('div', {
+      class: 'topbar-zone-sep topbar-fold-sm',
+      'aria-hidden': 'true',
+    }),
     notificationBell.el,
     userMenu.el,
   ]);

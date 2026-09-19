@@ -137,6 +137,12 @@ summary.ghost-icon-btn::-webkit-details-marker {
   margin-left: 1px;
 }
 
+/* The CTA carries both a word and a glyph and shows one of them; which one is
+   the xs rung's business (see Topbar Responsive below). */
+.topbar-present-icon {
+  display: none;
+}
+
 /* Author display in topbar - shown after title */
 .topbar-author {
   display: inline-flex;
@@ -165,13 +171,6 @@ summary.ghost-icon-btn::-webkit-details-marker {
   max-width: 100px;
 }
 
-/* Hide author on smaller screens to save space */
-@media (max-width: 768px) {
-  .topbar-author {
-    display: none;
-  }
-}
-
 .topbar-pres-title {
   appearance: none;
   display: flex;
@@ -189,9 +188,20 @@ summary.ghost-icon-btn::-webkit-details-marker {
   max-width: min(300px, 26vw);
   min-width: 120px;
   overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   transition: all var(--ps-transition-fast);
+}
+
+/* The truncation lives on the text, not on the button. `text-overflow` only
+   acts on a block container's own inline content, so on this flex button it
+   did nothing: the title was hard-clipped mid-word, without an ellipsis
+   (B354). The full title stays reachable - `title=` on hover, tap to open the
+   rename dialog. */
+.topbar-pres-title-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 .topbar-pres-title:hover {
   background: hsl(var(--app-bg-hover));
@@ -208,6 +218,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
    text colour instead of staying a fixed-black stroke. */
 .topbar-title-pencil {
   opacity: 0.55;
+  flex-shrink: 0;
 }
 
 /* Save-status chip: persistent Saving/Saved/Unsaved/Failed indicator.
@@ -269,13 +280,6 @@ summary.ghost-icon-btn::-webkit-details-marker {
     animation: none;
   }
 }
-/* Hide the chip on narrow viewports to protect the title/action row. */
-@media (max-width: 768px) {
-  .topbar-save-status {
-    display: none !important;
-  }
-}
-
 /* Dropdown (details-based) */
 .dropdown {
   position: relative;
@@ -456,71 +460,122 @@ summary.ghost-icon-btn::-webkit-details-marker {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────
-   Topbar Responsive
+   Topbar Responsive - the fold ladder
+   ─────────────────────────────────────────────────────────────────────────────
+
+   One bar at every width. A control has exactly one home - the bar, or the
+   more-menu; never both, never neither. `.topbar-fold-<rung>` marks **both
+   halves** of one control (the bar element and its menu counterpart) and the
+   selector's context decides which half renders, so the two cannot drift
+   apart. Rungs come from `docs/reference/css-breakpoints.md`; no new widths.
+
+   The ladder is a width budget, not a taste. Before B354 every rung was
+   guessed and none of them held: the bar overflowed at *every* width below
+   ~870px, and again in a band just above each breakpoint (641-657, 769-870,
+   1025-1062) - which is how Share ended up half off-screen on a phone. The
+   property to keep is that each band fits from its own low edge up, measured
+   with a title at its minimum:
+
+     band  341-480  481-640  641-768  769-1024  1025-1280  1281+
+     fits  from 341 from 481 from 641 from 769  from 1025  from 1281
+
+   What leaves the bar, and where it goes:
+
+     <= 1280  author chip   - no mirror: the avatar two slots along says it
+     <= 1024  save status   - no mirror: a transient chip, not an action
+     <= 1024  undo / redo   - no mirror: the keyboard shortcuts keep working
+     <= 1024  slide overview, Export
+     <= 768   Share; the language trigger drops to its code ("NL")
+     <= 640   user avatar (Settings / Sign out / theme sit in the menu), seps
+     <= 480   nothing folds: the CTA sheds its word, the gutter halves
+
+   Below 341px the bar overflows again: four controls, a tappable title and a
+   16px touch target do not fit, and the next thing to shed would be the
+   Present CTA itself. 341px is the floor, not an oversight.
+
+   The notification bell never folds: its unread badge *is* the signal, and a
+   badge inside a closed menu signals nothing. The title never folds either -
+   it is the flexible element and absorbs whatever the row has left.
    ───────────────────────────────────────────────────────────────────────────── */
 
-/* Narrow topbar: shrink title, hide secondary items progressively. (The
-   pane tabs live in the slide toolbar now, so the topbar only sheds
-   deck-level extras here.) */
-@media (max-width: 1024px) {
-  .topbar-pres-title {
-    max-width: min(200px, 20vw);
-    flex: 0 1 200px;
-    min-width: 56px;
-  }
-
-  /* Deck grid moves into the ⋯ menu at this width */
-  .topbar .topbar-overview-btn {
-    display: none;
-  }
-
-  /* Author chip: redundant with the user avatar, sheds early for headroom */
-  .topbar .topbar-author {
-    display: none;
-  }
-}
-
-@media (max-width: 768px) {
-  /* Undo/redo shed from the bar (⌘Z / ⇧⌘Z keep working) */
-  .topbar .topbar-undo-group {
-    display: none;
-  }
-}
-
-/* ⋯-menu mirror of the deck-grid button, shown only when the bar hides it */
-.topbar-overflow-item-lg {
+/* Above its rung a control shows in the bar and its menu counterpart hides. */
+.dropdown-menu > .topbar-fold-xl,
+.dropdown-menu > .topbar-fold-lg,
+.dropdown-menu > .topbar-fold-md,
+.dropdown-menu > .topbar-fold-sm {
   display: none;
 }
 
-@media (max-width: 1024px) {
-  .topbar-overflow-item-lg {
+@media (max-width: 1280px) {
+  .topbar > .topbar-fold-xl {
+    display: none;
+  }
+  .dropdown-menu > .topbar-fold-xl {
     display: flex;
   }
 }
 
 @media (max-width: 1024px) {
-  /* Hide theme toggle (stays reachable in the ⋯ menu, see below) */
-  .topbar .sb-segmented.is-toggle:not(.is-compact) {
+  .topbar > .topbar-fold-lg {
     display: none;
+  }
+  .dropdown-menu > .topbar-fold-lg {
+    display: flex;
+  }
+
+  .topbar-pres-title {
+    max-width: min(200px, 20vw);
+    flex: 0 1 200px;
+    min-width: 56px;
   }
 }
 
-/* No discrete 700px title cap: the ≤1024 rule's `min(200px, 20vw)` already
-   yields ~140px around 700px and scales down smoothly to the ≤640 cap below. */
+@media (max-width: 768px) {
+  .topbar > .topbar-fold-md {
+    display: none;
+  }
+  .dropdown-menu > .topbar-fold-md {
+    display: flex;
+  }
+
+  /* The language trigger keeps its control and sheds its label: the code says
+     the same in less room. The name stays in the accessibility tree, so a
+     screen reader still hears "Nederlands". */
+  .topbar .lang-menu-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .topbar .lang-menu-code {
+    display: inline;
+  }
+}
+
 @media (max-width: 640px) {
+  .topbar > .topbar-fold-sm {
+    display: none;
+  }
+  .dropdown-menu > .topbar-fold-sm {
+    display: flex;
+  }
+
+  /* With four controls left, the title takes the rest of the row instead of a
+     fixed cap - so the spacer stops competing with it for the room. */
+  .topbar-spacer {
+    flex: 0 1 auto;
+  }
   .topbar-pres-title {
-    max-width: 100px;
-    flex: 0 1 100px;
+    flex: 1 1 auto;
+    max-width: none;
     min-width: 48px;
+    padding-left: var(--ps-space-2);
+    padding-right: var(--ps-space-2);
   }
-  /* Hide language toggle at very narrow widths */
-  .topbar .sb-segmented.is-compact {
-    display: none;
-  }
-  /* User avatar sheds (sign out stays reachable via the ⋯ menu) */
-  .topbar .user-menu {
-    display: none;
-  }
+
   /* Compact the remaining labeled buttons */
   .topbar .btn {
     padding-left: 8px;
@@ -531,15 +586,32 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 }
 
-/* Responsive overflow items in More menu - hidden on desktop, shown at narrow widths */
-.topbar-overflow-item {
-  display: none;
-}
+@media (max-width: 480px) {
+  /* A phone. Nothing further folds here - the four controls left are the
+     minimum the editor needs - so the room comes out of the two things that
+     still spend it on decoration: the CTA's word and the outer gutter. */
+  .topbar .topbar-present-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .topbar .topbar-present-icon {
+    display: inline-flex;
+  }
+  .topbar {
+    padding-left: max(var(--ps-space-2), env(safe-area-inset-left, 0));
+    padding-right: max(var(--ps-space-2), env(safe-area-inset-right, 0));
+  }
 
-@media (max-width: 1024px) {
-  /* Show theme toggle and notes QR in menu when hidden from topbar */
-  .topbar-overflow-item {
-    display: flex;
+  /* The pencil annotates the title and costs a fifth of it here. The chip is
+     the control at any width - tapping it opens the rename dialog - so the
+     glyph is the part that can go. */
+  .topbar-title-pencil {
+    display: none;
   }
 }
 
@@ -553,6 +625,20 @@ summary.ghost-icon-btn::-webkit-details-marker {
 .lang-menu > .dropdown-trigger {
   min-width: 7.5rem;
   justify-content: space-between;
+}
+
+/* The label's stand-in below the md rung: same statement, two characters. */
+.lang-menu-code {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* The floor above exists so a longer language name does not reflow the bar.
+     The code is fixed-width by construction, so the floor has nothing to hold
+     and only costs room the title needs. */
+  .lang-menu > .dropdown-trigger {
+    min-width: 0;
+  }
 }
 
 .lang-menu > .dropdown-trigger.is-disabled {

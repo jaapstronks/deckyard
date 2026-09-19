@@ -384,6 +384,10 @@ export function createLanguageMode({
   // disappearing under the busy modal's backdrop.
   const syncLangUi = () => {
     langMenuLabel.textContent = getLangDisplayName(activeLang());
+    // The primary subtag only: "pt-BR" is a name's worth of room again.
+    langMenuCode.textContent = String(activeLang() || '')
+      .split('-')[0]
+      .toUpperCase();
     langMenu.summary.setAttribute(
       'aria-busy',
       translateBusy ? 'true' : 'false',
@@ -859,10 +863,17 @@ export function createLanguageMode({
   // UI elements
   const langMenuWrapper = h('div', { class: 'lang-menu-wrapper' });
   const langMenuLabel = h('span', { class: 'lang-menu-label' });
+  // The label's stand-in below the md rung, where the bar has no room for a
+  // language name (B354). `aria-hidden` because the name itself is only
+  // visually hidden there, so it is still what a screen reader reads.
+  const langMenuCode = h('span', {
+    class: 'lang-menu-code',
+    'aria-hidden': 'true',
+  });
   // Title is set by syncLangUi (it doubles as the busy explanation).
   const langMenu = createDropdown({
     triggerClass: 'btn btn-secondary is-compact',
-    triggerContent: [langMenuLabel, makeDropdownCaret()],
+    triggerContent: [langMenuLabel, langMenuCode, makeDropdownCaret()],
     detailsClass: 'lang-menu',
     ariaLabel: t('editor.langMode.title', 'Language mode (edit + present)'),
   });

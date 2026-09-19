@@ -53,6 +53,27 @@ displays. `min-width` only — these never appear as a `max-width`.
    it expresses the same thing in a shape the ladder check cannot compare, so
    allowing it would leave a way to write an off-ladder breakpoint that passes.
 
+## Worked example: the editor topbar's fold ladder
+
+The ladder is a list of widths; what a layout _does_ at each of them is the
+layout's own business. The editor topbar is the worked example, because it has
+the hardest version of the problem — more controls than a phone row can hold —
+and because it got the answer wrong first.
+
+Its rule: a control has exactly one home at any width, the bar or the ⋯ menu,
+and `.topbar-fold-<rung>` marks **both halves** of one control so the two
+cannot flip at different widths. The rungs it folds at, the widths each band
+needs, and why the notification bell never folds are documented where the
+rules live: `client/styles/base/01-core/10-shell-topbar-dropdown.css`, section
+_Topbar Responsive_. `tests/topbar-fold-ladder.test.js` fails if a rung is
+only half wired.
+
+The lesson worth copying is the ordering: **pick what leaves the row from a
+measured budget, not from taste.** Before B354 each of that bar's rungs had
+been chosen by eye, and the bar overflowed at every width below ~870px and
+again just above each breakpoint — the rungs existed, but nobody had added up
+what was left after them.
+
 ## Why not a variable
 
 `@media (max-width: var(--bp-md))` does not work — custom properties are not

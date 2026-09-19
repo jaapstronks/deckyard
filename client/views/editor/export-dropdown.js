@@ -21,19 +21,26 @@ import { h } from '../../lib/dom.js';
 export function setupExportDropdown({ pres, id, root, openPublic } = {}) {
   let modal = null;
 
+  /**
+   * Open the export dialog. Exported so the topbar's more-menu can offer the
+   * same action at widths where the bar folds this button away, without a
+   * second copy of the wiring (B354).
+   */
+  const openExport = () => {
+    modal = openExportModal({
+      pres,
+      id,
+      root: root || document.body,
+      openPublic,
+    });
+  };
+
   const button = h('button', {
     class: 'btn btn-secondary',
     type: 'button',
     text: t('editor.export.button', 'Export'),
     title: t('editor.export.title', 'Export to file'),
-    onclick: () => {
-      modal = openExportModal({
-        pres,
-        id,
-        root: root || document.body,
-        openPublic,
-      });
-    },
+    onclick: () => openExport(),
   });
 
   const detach = () => {
@@ -45,5 +52,5 @@ export function setupExportDropdown({ pres, id, root, openPublic } = {}) {
     modal = null;
   };
 
-  return { exportEl: button, detach };
+  return { exportEl: button, openExport, detach };
 }
