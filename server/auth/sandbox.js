@@ -15,6 +15,25 @@ const GUEST_EMAIL_DOMAIN = 'sandbox.local';
  */
 export const SANDBOX_GUEST_EMAIL_PATTERN = `guest-%@${GUEST_EMAIL_DOMAIN}`;
 
+/**
+ * The exact shape of a guest address as `guestEmailForToken` mints it. A row
+ * that matches the pattern above but not this is a leftover of an earlier
+ * form, which the cleanup sweep removes.
+ */
+export const SANDBOX_GUEST_EMAIL_REGEX = /^guest-[0-9a-f]{32}@sandbox\.local$/;
+
+/**
+ * Whether an address belongs to a sandbox guest: the in-memory twin of
+ * `SANDBOX_GUEST_EMAIL_PATTERN`, so "is this guest work" has one answer in SQL
+ * and in code.
+ * @param {unknown} email
+ * @returns {boolean}
+ */
+export function isSandboxGuestEmail(email) {
+  const s = String(email || '').toLowerCase();
+  return s.startsWith('guest-') && s.endsWith(`@${GUEST_EMAIL_DOMAIN}`);
+}
+
 function normalizeId(raw) {
   const s = String(raw || '').trim();
   if (!s) return null;
@@ -24,12 +43,32 @@ function normalizeId(raw) {
   return s;
 }
 
+/**
+ * The guest's address, derived from its cookie token by a one-way hash.
+ *
+ * The address is an identity: it is stamped on every deck the guest owns and
+ * is what user search, the share modal and a collaborator list show to other
+ * guests. The token is the credential. With the token in the address, any
+ * guest could read another's cookie out of `/api/users/search` and take over
+ * that session; the hash keeps the one stable per cookie without revealing it.
+ * @param {string} token - The normalized `sb_sandbox` cookie value
+ * @returns {string}
+ */
+function guestEmailForToken(token) {
+  const digest = crypto
+    .createHash('sha256')
+    .update(String(token))
+    .digest('hex')
+    .slice(0, 32);
+  return `guest-${digest}@${GUEST_EMAIL_DOMAIN}`;
+}
+
 function getSandboxUserFromRequest(req) {
   if (!sandboxEnabled()) return null;
   const cookies = parseCookies(req.headers?.cookie);
   const token = normalizeId(cookies[COOKIE_NAME]);
   if (!token) return null;
-  const email = `guest-${token}@${GUEST_EMAIL_DOMAIN}`.toLowerCase();
+  const email = guestEmailForToken(token);
   return {
     email,
     role: 'user',
@@ -63,7 +102,7 @@ export function ensureSandboxUser(req, res) {
     res.setHeader('Set-Cookie', [...prev, parts.join('; ')]);
   else res.setHeader('Set-Cookie', [String(prev), parts.join('; ')]);
 
-  const email = `guest-${token}@${GUEST_EMAIL_DOMAIN}`.toLowerCase();
+  const email = guestEmailForToken(token);
   return {
     email,
     role: 'user',

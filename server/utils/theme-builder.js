@@ -12,7 +12,11 @@ import {
   SHADOW_SCALES,
   TEXT_SCALES,
 } from '../../shared/theme-config-schema.js';
-import { pickTextColorForBg } from '../../shared/color-utils.js';
+import {
+  getContrastRatio,
+  pickTextColorForBg,
+} from '../../shared/color-utils.js';
+import { WCAG_THRESHOLDS } from '../../shared/contrast.js';
 
 // ============================================================
 // COLOR UTILITIES
@@ -161,6 +165,27 @@ function deriveColorPalette(primary) {
 }
 
 /**
+ * The accent as it reads on the dark surface: the primary itself when it
+ * already clears body-text AA against `darkBg`, else the same hue lifted in
+ * lightness until it does. A dark brand colour (navy, burgundy) is common, and
+ * copying it straight onto the dark ground made the quote byline unreadable.
+ * @param {string} primary - Accent hex
+ * @param {string} darkBg - Dark surface hex
+ * @returns {string} Hex colour
+ */
+function accentOnDark(primary, darkBg) {
+  const want = WCAG_THRESHOLDS.body.aa;
+  if ((getContrastRatio(primary, darkBg) || 0) >= want) return primary;
+  const hsl = hexToHsl(primary);
+  if (!hsl) return '#ffffff';
+  for (let l = Math.max(hsl.l, 50); l <= 95; l += 5) {
+    const candidate = hslToHex(hsl.h, hsl.s, l);
+    if ((getContrastRatio(candidate, darkBg) || 0) >= want) return candidate;
+  }
+  return '#ffffff';
+}
+
+/**
  * Create an RGBA color string.
  * @param {string} hex - Hex color
  * @param {number} alpha - Alpha value (0-1)
@@ -264,7 +289,7 @@ export function deriveThemeTokens({
     }),
 
     // The display accent for dark grounds (quote attribution line etc.)
-    '--t-color-accent-on-dark': primary,
+    '--t-color-accent-on-dark': accentOnDark(primary, darkBg),
 
     // Border radii (using sensible defaults)
     '--t-radius': '16px',

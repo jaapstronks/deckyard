@@ -51,7 +51,7 @@
     "--t-color-accent": "#ea580c",
     "--t-color-brand-1": "#db2777",
     "--t-color-brand-2": "#c2410c",
-    "--t-color-accent-on-dark": "#db2777",
+    "--t-color-accent-on-dark": "#f9a8d4",
     "--t-radius": "22px",
     "--t-radius-sm": "14px",
     "--t-radius-lg": "32px",

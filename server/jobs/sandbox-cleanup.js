@@ -1,3 +1,4 @@
+import { sql } from 'kysely';
 import { getDb } from '../db/client.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import {
@@ -5,7 +6,10 @@ import {
   sandboxEnabled,
   sandboxTtlMs,
 } from '../config/sandbox.js';
-import { SANDBOX_GUEST_EMAIL_PATTERN } from '../auth/sandbox.js';
+import {
+  SANDBOX_GUEST_EMAIL_PATTERN,
+  SANDBOX_GUEST_EMAIL_REGEX,
+} from '../auth/sandbox.js';
 import {
   getSandboxTotalBytes,
   sandboxMaxTotalBytes,
@@ -20,9 +24,12 @@ const log = createLogger('sandbox-cleanup');
  *
  * Sandbox runs on Postgres, so the sweep is a single bulk `DELETE` against the
  * `presentations` table rather than the old directory scan. A deck is ephemeral
- * when its visibility is not `organization` (mirroring `isSandboxEphemeralPresentation`
- * — organization-visible decks are curated seed decks that never expire), and
- * expired once it is older than the TTL. Foreign keys cascade, so the delete
+ * when a sandbox guest owns it and its visibility is not `organization`
+ * (mirroring `isSandboxEphemeralPresentation` — organization-visible decks are
+ * curated seed decks that never expire), and expired once it is older than the
+ * TTL. The owner filter is what keeps the sweep on guest work: the flag can be
+ * switched on against a database that also holds real users' decks, and those
+ * are never the sandbox's to delete. Foreign keys cascade, so the delete
  * also removes the deck's version snapshots, published entry, and cold Y.Doc
  * state in one statement — much cheaper than the per-file cleanup it replaces.
  *
@@ -38,6 +45,7 @@ export async function sweepExpiredSandboxDecks() {
   const result = await db
     .deleteFrom('presentations')
     .where('organization_id', '=', orgId)
+    .where('owner_email', 'like', SANDBOX_GUEST_EMAIL_PATTERN)
     .where('visibility', '<>', 'organization')
     .where('created_at', '<=', cutoff)
     .executeTakeFirst();
@@ -74,6 +82,10 @@ export async function sweepExpiredSandboxDecks() {
  * on a stamp the guest left behind; their decks are long gone by then anyway
  * (the deck TTL is hours, the cookie lifetime days).
  *
+ * A guest row whose address is not in the current form goes too, whatever its
+ * age: no cookie maps onto it any more, and the old form carried the cookie
+ * token itself, readable by every other guest through user search.
+ *
  * @returns {Promise<number>} How many guest rows were deleted.
  */
 export async function sweepExpiredSandboxGuests() {
@@ -84,7 +96,12 @@ export async function sweepExpiredSandboxGuests() {
   const result = await db
     .deleteFrom('users')
     .where('email', 'like', SANDBOX_GUEST_EMAIL_PATTERN)
-    .where('created_at', '<=', cutoff)
+    .where((eb) =>
+      eb.or([
+        eb('created_at', '<=', cutoff),
+        sql`email !~ ${SANDBOX_GUEST_EMAIL_REGEX.source}`,
+      ]),
+    )
     .executeTakeFirst();
   return Number(result?.numDeletedRows ?? 0);
 }

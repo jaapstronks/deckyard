@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="400" height="400" role="img" aria-label="Illustrated portrait">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fde2c4"/>
+      <stop offset="1" stop-color="#f4b8a4"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" fill="url(#g)"/>
+  <path d="M70 400c8-86 62-138 130-138s122 52 130 138z" fill="#7c2d12"/>
+  <path d="M168 238h64v42c0 18-14 30-32 30s-32-12-32-30z" fill="#c98a6b"/>
+  <ellipse cx="200" cy="176" rx="74" ry="84" fill="#dca283"/>
+  <path d="M124 170c-6-64 32-106 80-106 50 0 86 36 80 104-12-34-40-56-78-60-36 12-64 32-82 62z" fill="#3b1d12"/>
+  <circle cx="172" cy="184" r="6" fill="#3b1d12"/>
+  <circle cx="228" cy="184" r="6" fill="#3b1d12"/>
+  <path d="M178 222c14 12 30 12 44 0" stroke="#7c2d12" stroke-width="6" fill="none" stroke-linecap="round"/>
+</svg>
