@@ -9,7 +9,11 @@ import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { deprecatedFlagWarnings } from './config/features.js';
 import { mediaConfigWarnings } from './media/config.js';
 import { ssoConfigError } from './config/sso.js';
-import { storageModeError } from './config/database.js';
+import {
+  storageModeError,
+  databaseConnectionError,
+  isDatabaseConnectionError,
+} from './config/database.js';
 import { publicUrlWarnings, envStr, envBool, envInt } from './config/utils.js';
 import { handleApi } from './routes/api/index.js';
 import { handleStatic } from './routes/static/index.js';
@@ -25,7 +29,10 @@ import { scheduleLiveSessionCleanup } from './jobs/live-session-cleanup.js';
 import { scheduleMcpSessionSweep } from './jobs/mcp-session-sweep.js';
 import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/lifecycle.js';
-import { strandedFileDataError } from './storage/boot-check.js';
+import {
+  pendingMigrationsError,
+  strandedFileDataError,
+} from './storage/boot-check.js';
 import { initializeMediaProvider } from './media/index.js';
 import { warnUnbackedFidelityClaims } from './export/pptx.js';
 import {
@@ -251,7 +258,33 @@ async function main() {
   }
 
   await ensureUploadsDir();
-  await initializeStorage();
+
+  // Database check: PostgreSQL is the only storage backend, so an unreachable
+  // one is a boot error and not a degraded mode. Left to bubble, it exits on an
+  // unhandled AggregateError from pg-pool whose own message is empty — thirty
+  // lines of driver internals and no instruction. Same message as `db:migrate`.
+  try {
+    await initializeStorage();
+  } catch (err) {
+    // Only a connection-class failure is the operator's to fix. Anything else
+    // thrown here is a Deckyard bug and keeps its stack trace.
+    if (!isDatabaseConnectionError(err)) throw err;
+    console.error(`\n⚠️  DATABASE: ${databaseConnectionError(err)}\n`);
+    process.exit(1);
+  }
+
+  // Schema check: a reachable database whose migrations never ran serves 500s
+  // from every route. The compose entrypoint migrates before start; the Node
+  // path (README § Quick Start, scripts/install.sh) asks the operator to, and
+  // this is what happens when they did not.
+  {
+    const schemaErr = await pendingMigrationsError();
+    if (schemaErr) {
+      console.error(`\n⚠️  DATABASE: ${schemaErr}\n`);
+      await closeStorage();
+      process.exit(1);
+    }
+  }
 
   // Data check: an empty database next to a populated file-storage data
   // directory means this install predates the Postgres default and has not been

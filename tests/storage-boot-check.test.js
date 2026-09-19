@@ -4,7 +4,11 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { __setTestDb } from '../server/db/client.js';
-import { strandedFileDataError } from '../server/storage/boot-check.js';
+import {
+  pendingMigrationsError,
+  strandedFileDataError,
+} from '../server/storage/boot-check.js';
+import { listMigrationFiles } from '../server/db/migrate.js';
 
 /**
  * Boot guard for the Postgres default: an install that predates the flip has
@@ -142,4 +146,94 @@ test('the DATA_DIR override is where the guard looks', async () => {
   } finally {
     delete process.env.DATA_DIR;
   }
+});
+
+/**
+ * The second boot guard in this module: a reachable database whose migrations
+ * never ran. Before it existed, that install started, announced its URL and
+ * answered every request with a 500 `relation "app_settings" does not exist` —
+ * the state `scripts/install.sh` left a Node-path install in, since only the
+ * Docker entrypoint migrated. The comparison is the migration runner's own, so
+ * these run against the real migrations directory.
+ */
+
+/** Minimal Kysely-shaped double for `listAppliedMigrations`. */
+function dbWithMigrations(names) {
+  return {
+    selectFrom() {
+      const builder = {
+        select: () => builder,
+        orderBy: () => builder,
+        execute: async () => names.map((name) => ({ name })),
+      };
+      return builder;
+    },
+  };
+}
+
+/** A database with no `_migrations` table: the read itself throws (42P01). */
+function dbWithoutMigrationsTable() {
+  return {
+    selectFrom() {
+      const builder = {
+        select: () => builder,
+        orderBy: () => builder,
+        execute: async () => {
+          const err = new Error('relation "_migrations" does not exist');
+          err.code = '42P01';
+          throw err;
+        },
+      };
+      return builder;
+    },
+  };
+}
+
+test('a database with no schema at all refuses the boot, naming db:migrate', async () => {
+  __setTestDb(dbWithoutMigrationsTable());
+
+  const err = await pendingMigrationsError();
+  const all = await listMigrationFiles();
+  assert.ok(err, 'expected the boot to be refused');
+  assert.match(err, /has no Deckyard schema/);
+  assert.match(
+    err,
+    new RegExp(`${all.length} of ${all.length} migrations`),
+    'must count every migration as pending, from the real directory',
+  );
+  assert.match(err, /First pending: 001_/);
+  assert.match(err, /npm run db:migrate/);
+  // The symptom it prevents, so the reader recognizes what they were about to
+  // debug for themselves.
+  assert.match(err, /relation "…" does not exist/);
+});
+
+test('a schema behind the migrations on disk refuses the boot and says how far', async () => {
+  const all = await listMigrationFiles();
+  __setTestDb(dbWithMigrations(all.slice(0, -1)));
+
+  const err = await pendingMigrationsError();
+  assert.ok(err, 'expected the boot to be refused');
+  assert.match(err, /is behind/, 'a partial schema is behind, not absent');
+  assert.match(err, new RegExp(`1 of ${all.length} migrations has not`));
+  assert.match(err, new RegExp(`First pending: ${all[all.length - 1]}`));
+});
+
+test('a current schema boots', async () => {
+  __setTestDb(dbWithMigrations(await listMigrationFiles()));
+
+  assert.equal(await pendingMigrationsError(), null);
+});
+
+test('extra rows in _migrations (a rolled-back file) do not refuse the boot', async () => {
+  const all = await listMigrationFiles();
+  __setTestDb(dbWithMigrations([...all, '999_from_a_newer_deckyard.js']));
+
+  assert.equal(await pendingMigrationsError(), null);
+});
+
+test("no database connection at all is not the schema guard's business either", async () => {
+  __setTestDb(null);
+
+  assert.equal(await pendingMigrationsError(), null);
 });

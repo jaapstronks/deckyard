@@ -21,9 +21,14 @@
  */
 
 /**
- * Open the database pool (idempotent). In `STORAGE_MODE=file` this is a no-op,
- * and when a test has injected a handle via `__setTestDb` the existing handle
- * is returned rather than a second pool being opened.
+ * Open the database pool (idempotent). PostgreSQL is the only storage backend,
+ * so there is no mode in which this does nothing; when a test has injected a
+ * handle via `__setTestDb` the existing handle is returned rather than a second
+ * pool being opened.
+ *
+ * Throws when the database cannot be reached. The server's boot guard turns
+ * that into a refusal naming the connection and the fix
+ * (`databaseConnectionError` in server/config/database.js).
  * @returns {Promise<void>}
  */
 export async function initializeStorage() {

@@ -50,7 +50,10 @@ const ALLOWLIST = [
     file: 'server/server.js',
     reason:
       'boot banners (pre/at-listen fatals and warnings) go to stdout unadorned; shutdown logs through createLogger',
-    count: 8,
+    // 8 → 10 with the two database refusals (B364): an unreachable database and
+    // an unmigrated schema, in the same row of guards as the auth/SSO/storage
+    // fatals above them.
+    count: 10,
   },
 ];
 

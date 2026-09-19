@@ -238,7 +238,7 @@ Deckyard has a sandbox mode (anonymous guest sessions, 24h auto-cleanup,
 watermarked exports, uploads disabled) for public demo instances. Run it as a
 stack of its own — `docker compose -f docker-compose.sandbox.yml up -d --build`
 — not as an override on `docker-compose.yml`: it defines its own app, proxy
-and volumes, and runs on file storage in throwaway volumes. It sets
+and volumes, including its own throwaway `postgres` service. It sets
 `SANDBOX_MODE=1` and the related `SANDBOX_*` variables (TTL, watermark, theme)
 documented in `server/config/sandbox.js`.
 

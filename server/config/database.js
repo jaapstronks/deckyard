@@ -68,6 +68,131 @@ export function isPostgresMode() {
   return getStorageMode() === 'postgres';
 }
 
+/** `code` on the error thrown for an unparseable `DATABASE_URL`. */
+const DATABASE_URL_INVALID = 'DECKYARD_DATABASE_URL_INVALID';
+
+/**
+ * Error codes that mean "Deckyard never got a usable connection": the socket,
+ * the credentials, the database name, or the URL that describes them. Every one
+ * of these is the operator's environment to fix.
+ *
+ * Deliberately not a catch-all. A migration that throws `42P07`, or any error
+ * without a code, is a Deckyard problem and keeps its stack trace — dressing
+ * that up as "cannot reach PostgreSQL" would send the reader to the wrong place.
+ * @type {ReadonlySet<string>}
+ */
+const CONNECTION_ERROR_CODES = new Set([
+  // Socket level.
+  'ECONNREFUSED',
+  'ENOTFOUND',
+  'ETIMEDOUT',
+  'EAI_AGAIN',
+  'ECONNRESET',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  // PostgreSQL answered, but not with a session.
+  '08001', // sqlclient_unable_to_establish_sqlconnection
+  '08004', // sqlserver_rejected_establishment_of_sqlconnection
+  '08006', // connection_failure
+  '28000', // invalid_authorization_specification
+  '28P01', // invalid_password
+  '3D000', // invalid_catalog_name — no such database
+  '57P03', // cannot_connect_now — still starting up
+  DATABASE_URL_INVALID,
+]);
+
+/**
+ * The one connection failure pg raises client-side, before a code exists: the
+ * server asked for SCRAM and the config carries no password. Matched on the
+ * driver's own fixed string because there is nothing else to match on.
+ *
+ * This is the likeliest failure of a fresh Node install that *does* have a
+ * PostgreSQL: `scripts/install.sh` writes a minimal `.env` with no
+ * `DATABASE_PASSWORD`, so the default connection reaches a real server and then
+ * cannot authenticate.
+ */
+const MISSING_PASSWORD = /client password must be a string/i;
+
+/**
+ * Whether this error means the database was never reached.
+ * @param {any} err
+ * @returns {boolean}
+ */
+export function isDatabaseConnectionError(err) {
+  if (CONNECTION_ERROR_CODES.has(String(err?.code || ''))) return true;
+  return MISSING_PASSWORD.test(String(err?.message || ''));
+}
+
+/**
+ * Turn a failed connection attempt into the sentence an operator can act on.
+ *
+ * One message for the whole stack: the boot guard in server.js and the
+ * migration runner (`db:migrate`) both fail on the same three causes a fresh
+ * install hits, and both used to answer with a raw `AggregateError` stack from
+ * pg-pool whose own `message` is the empty string. PostgreSQL is the only
+ * storage backend ({@link STORAGE_MODES}), so there is nothing to fall back to
+ * and nothing to soften: name the target, name the cause, name the fix.
+ *
+ * @param {any} err - The error thrown while connecting.
+ * @returns {string} Error message, for a `⚠️  DATABASE:` boot refusal.
+ */
+export function databaseConnectionError(err) {
+  // An unparseable DATABASE_URL fails before any socket is opened, and
+  // getDatabaseConfig() has already said so in a full sentence. Asking it for a
+  // connection target here would throw a second time, inside the error path.
+  let config;
+  try {
+    config = getDatabaseConfig();
+  } catch (configErr) {
+    return String(configErr?.message || configErr);
+  }
+
+  const target = `${config.user}@${config.host}:${config.port}/${config.database}`;
+  const code = String(err?.code || '');
+  const detail = String(err?.message || '').trim();
+
+  // 3D000 / 28P01 mean the server answered: it is running and reachable, so the
+  // fix is a database or a credential, not an installation.
+  if (code === '3D000') {
+    return (
+      `PostgreSQL at ${target} is reachable, but that database does not exist.\n` +
+      `  Create it:  createdb -h ${config.host} -U ${config.user} ${config.database}\n` +
+      `  Or point DATABASE_URL / DATABASE_NAME in .env at an existing database.\n` +
+      `Then apply the schema:  npm run db:migrate`
+    );
+  }
+  if (MISSING_PASSWORD.test(detail)) {
+    return (
+      `PostgreSQL at ${target} asked for a password, and none is configured.\n` +
+      `  Set one in .env:  DATABASE_PASSWORD=…\n` +
+      `  Or give the whole connection at once:  DATABASE_URL=postgres://user:password@host:5432/dbname\n` +
+      `A fresh install writes a minimal .env without database settings, so this is the usual first stop.`
+    );
+  }
+  if (code === '28P01' || code === '28000') {
+    return (
+      `PostgreSQL at ${target} refused the credentials.\n` +
+      `  Check DATABASE_USER and DATABASE_PASSWORD in .env (or the user:password in DATABASE_URL).`
+    );
+  }
+
+  const cause = code
+    ? `${code}${detail ? `: ${detail}` : ''}`
+    : detail || 'unknown error';
+  return (
+    `Cannot reach PostgreSQL at ${target} (${cause}).\n` +
+    `PostgreSQL is the only storage backend — there is no file-storage mode to fall back on — so Deckyard stops here.\n` +
+    `Bring a database up, then point .env at it and apply the schema:\n` +
+    `  1. A throwaway local one, if you have Docker:\n` +
+    `       docker run -d --name deckyard-pg -p 5432:5432 \\\n` +
+    `         -e POSTGRES_USER=deckyard -e POSTGRES_PASSWORD=deckyard -e POSTGRES_DB=deckyard postgres:16\n` +
+    `     Or install PostgreSQL 14+ and create that role and database yourself.\n` +
+    `  2. In .env:  DATABASE_URL=postgres://deckyard:deckyard@localhost:5432/deckyard\n` +
+    `  3. npm run db:migrate\n` +
+    `Not what you wanted? \`docker compose -f docker-compose.yml -f docker-compose.local.yml up -d --build\` brings its own database (README § Quick Start).`
+  );
+}
+
 /**
  * SSL settings for a connection, derived the same way regardless of whether the
  * host came from `DATABASE_HOST` or a parsed `DATABASE_URL`.
@@ -120,10 +245,14 @@ export function getDatabaseConfig() {
     try {
       parsed = new URL(url);
     } catch {
-      throw new Error(
+      const err = new Error(
         'DATABASE_URL is set but is not a valid connection URL ' +
           '(expected e.g. postgres://user:pass@host:5432/dbname).',
       );
+      // Carries a code so the boot guard and `db:migrate` classify it the same
+      // way as a refused socket: an operator's env to fix, not a Deckyard bug.
+      err.code = DATABASE_URL_INVALID;
+      throw err;
     }
     const host = parsed.hostname || 'localhost';
     return {

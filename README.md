@@ -42,21 +42,37 @@ starts the app, and opens your browser:
 curl -fsSL https://raw.githubusercontent.com/jaapstronks/deckyard/main/scripts/install.sh | bash
 ```
 
-Prefer to do it by hand (or read before you pipe)? The manual path:
+Deckyard keeps everything in **PostgreSQL 14+** — there is no other storage
+backend. With Docker the installer brings its own database and you need nothing
+else; on the Node path you provide one.
+
+Prefer to do it by hand (or read before you pipe)? The manual path, against a
+PostgreSQL you already have:
 
 ```bash
 git clone https://github.com/jaapstronks/deckyard.git
 cd deckyard
 npm install
 npm run setup   # optional: AI key, auth, port (Enter accepts defaults)
+
+# Point .env at your database, e.g.
+echo 'DATABASE_URL=postgres://deckyard:deckyard@localhost:5432/deckyard' >> .env
+
+npm run db:migrate   # create the schema (idempotent; repeat after every update)
 npm run start
 # Open http://localhost:4177
 ```
 
+No PostgreSQL at hand? Either use the Docker path above, or start a throwaway
+one: `docker run -d --name deckyard-pg -p 5432:5432 -e POSTGRES_USER=deckyard -e
+POSTGRES_PASSWORD=deckyard -e POSTGRES_DB=deckyard postgres:16`. Deckyard
+refuses to start without a reachable, migrated database and says which one it
+tried — it never falls back to storing decks somewhere else.
+
 The installer is [`scripts/install.sh`](scripts/install.sh); it clones the repo,
-writes a local `.env`, installs dependencies, and starts the app — nothing
-leaves your machine. See the [self-hosting guide](docs/ops/self-hosting.md) for
-the VPS/HTTPS path.
+writes a local `.env`, installs dependencies, applies the migrations, and starts
+the app — nothing leaves your machine. See the
+[self-hosting guide](docs/ops/self-hosting.md) for the VPS/HTTPS path.
 
 ### Or let your AI agent install it
 
