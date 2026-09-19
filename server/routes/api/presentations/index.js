@@ -1,5 +1,6 @@
 import { badRequest, withErrorHandler } from '../../../utils/http.js';
-import { dispatchRoutes } from '../../../utils/router.js';
+import { dispatchRoutes, requireUuidId } from '../../../utils/router.js';
+import { isUuid } from '../../../utils/uuid.js';
 import { handlePresentationsList } from './list.js';
 import { handlePopularPresentations } from './popular.js';
 import { handlePresentationsSearch } from './search.js';
@@ -74,23 +75,23 @@ import { handleAnalyzeThemeChange, handleChangeTheme } from './change-theme.js';
 //    `handler(ctx, ...captureGroups)` ────────────────────────────────────────
 
 /**
- * Bare `/api/presentations/:id`. Skips ids that belong to sibling modules so
- * this generic route never swallows their (possibly method-mismatched) requests.
+ * Bare `/api/presentations/:id` — the one id row that answers `false` instead
+ * of 404 for a non-uuid.
+ *
+ * Its pattern is the same shape as the collection routes of sibling modules
+ * (`/api/presentations/shared-with-me` in `collaborators.js`) and of its own
+ * method-dispatched neighbours (`/search`, `/trash`, `/popular`, `/import`),
+ * which this module is mounted ahead of. A segment that cannot be a uuid is
+ * therefore not this route's id but someone else's collection name: fall
+ * through and let the chain decide, which ends at the same `not_found` when
+ * nobody claims it. The other 42 id rows own their path outright, so they take
+ * {@link requireUuidId} and answer 404 here.
+ *
  * @param {AuthedContext} ctx
  * @param {string} id
  */
 function handlePresentationItemRoute(ctx, id) {
-  // Skip special routes handled by other modules
-  const specialRoutes = [
-    'shared-with-me',
-    'search',
-    'trash',
-    'import',
-    'popular',
-  ];
-  if (specialRoutes.includes(id)) {
-    return false;
-  }
+  if (!isUuid(id)) return false;
   return handlePresentationItem(ctx, id);
 }
 
@@ -176,35 +177,35 @@ const ROUTES = [
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/restore$/,
-    handler: handlePresentationRestore,
+    handler: requireUuidId(handlePresentationRestore),
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/permanent$/,
-    handler: handlePresentationPermanentDelete,
+    handler: requireUuidId(handlePresentationPermanentDelete),
   },
 
   // Translate a set of arbitrary fields (key -> string). Used for slide-level preview/apply in editor.
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate\/fields$/,
-    handler: handlePresentationTranslateFields,
+    handler: requireUuidId(handlePresentationTranslateFields),
     ai: true,
   },
   // Translate only missing (empty) fields into the other language (safe for manual edits).
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate\/missing$/,
-    handler: handlePresentationTranslateMissing,
+    handler: requireUuidId(handlePresentationTranslateMissing),
     ai: true,
   },
   // Translate a presentation into the other supported language and store as an i18n version.
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate$/,
-    handler: handlePresentationTranslate,
+    handler: requireUuidId(handlePresentationTranslate),
     ai: true,
   },
 
   {
     pattern: /^\/api\/presentations\/([^/]+)\/description\/generate$/,
-    handler: handlePresentationDescriptionGenerate,
+    handler: requireUuidId(handlePresentationDescriptionGenerate),
     ai: true,
   },
 
@@ -235,17 +236,17 @@ const ROUTES = [
 
   {
     pattern: /^\/api\/presentations\/([^/]+)\/visibility$/,
-    handler: handlePresentationVisibility,
+    handler: requireUuidId(handlePresentationVisibility),
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/duplicate$/,
-    handler: handlePresentationDuplicate,
+    handler: requireUuidId(handlePresentationDuplicate),
   },
 
   // Lightweight revision probe (staleness check for waking editor tabs)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/revision$/,
-    handler: handlePresentationRevision,
+    handler: requireUuidId(handlePresentationRevision),
   },
 
   {
@@ -256,32 +257,32 @@ const ROUTES = [
   // Version history (snapshots)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions$/,
-    handler: handlePresentationVersions,
+    handler: requireUuidId(handlePresentationVersions),
   },
   // Session-end snapshot (called when editing session ends)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/session-end$/,
-    handler: handlePresentationSessionEnd,
+    handler: requireUuidId(handlePresentationSessionEnd),
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/restore$/,
-    handler: handlePresentationRestoreVersion,
+    handler: requireUuidId(handlePresentationRestoreVersion),
   },
   // Version export as JSON
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/export\/json$/,
-    handler: handlePresentationVersionExport,
+    handler: requireUuidId(handlePresentationVersionExport),
   },
   // AI-powered version comparison
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/compare-ai$/,
-    handler: handlePresentationVersionCompareAi,
+    handler: requireUuidId(handlePresentationVersionCompareAi),
     ai: true,
   },
   // Single version retrieval (for preview/comparison)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)$/,
-    handler: handlePresentationVersionItem,
+    handler: requireUuidId(handlePresentationVersionItem),
   },
 
   // ============================================================
@@ -291,33 +292,33 @@ const ROUTES = [
   // List all slide locks for a presentation
   {
     pattern: /^\/api\/presentations\/([^/]+)\/slide-locks$/,
-    handler: handleSlideLocksList,
+    handler: requireUuidId(handleSlideLocksList),
   },
   // Release all slide locks for current user
   {
     pattern: /^\/api\/presentations\/([^/]+)\/slide-locks\/release-all$/,
-    handler: handleSlideLocksReleaseAll,
+    handler: requireUuidId(handleSlideLocksReleaseAll),
   },
   // Refresh a specific slide lock
   {
     pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock\/refresh$/,
-    handler: handleSlideLockRefresh,
+    handler: requireUuidId(handleSlideLockRefresh),
   },
   // Acquire, release, or read a specific slide lock (method-dispatched)
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/,
-    handler: handleSlideLockStatus,
+    handler: requireUuidId(handleSlideLockStatus),
   },
   {
     method: 'POST',
     pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/,
-    handler: handleSlideLockAcquire,
+    handler: requireUuidId(handleSlideLockAcquire),
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/presentations\/([^/]+)\/slides\/([^/]+)\/lock$/,
-    handler: handleSlideLockRelease,
+    handler: requireUuidId(handleSlideLockRelease),
   },
 
   // ============================================================
@@ -325,7 +326,7 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/import-slides-as-images$/,
-    handler: handlePresentationImportSlidesAsImages,
+    handler: requireUuidId(handlePresentationImportSlidesAsImages),
   },
 
   // ============================================================
@@ -333,7 +334,7 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/analyze$/,
-    handler: handlePresentationAnalyze,
+    handler: requireUuidId(handlePresentationAnalyze),
     ai: true,
   },
 
@@ -342,11 +343,11 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/analyze-theme-change$/,
-    handler: handleAnalyzeThemeChange,
+    handler: requireUuidId(handleAnalyzeThemeChange),
   },
   {
     pattern: /^\/api\/presentations\/([^/]+)\/change-theme$/,
-    handler: handleChangeTheme,
+    handler: requireUuidId(handleChangeTheme),
   },
 
   // ============================================================
@@ -354,7 +355,7 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/tags$/,
-    handler: handlePresentationTagsRoute,
+    handler: requireUuidId(handlePresentationTagsRoute),
   },
 
   // ============================================================
@@ -362,7 +363,7 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/transfer-ownership$/,
-    handler: handleOwnershipTransfer,
+    handler: requireUuidId(handleOwnershipTransfer),
   },
 
   // ============================================================
@@ -370,7 +371,7 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/render-slide$/,
-    handler: handleRenderSlideRoute,
+    handler: requireUuidId(handleRenderSlideRoute),
   },
 
   // ============================================================
@@ -378,7 +379,7 @@ const ROUTES = [
   // ============================================================
   {
     pattern: /^\/api\/presentations\/([^/]+)\/thumbnail$/,
-    handler: handlePresentationThumbnail,
+    handler: requireUuidId(handlePresentationThumbnail),
   },
 
   // ============================================================
@@ -388,69 +389,69 @@ const ROUTES = [
   // Comment counts per slide (before more specific routes)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/counts$/,
-    handler: handlePresentationCommentCounts,
+    handler: requireUuidId(handlePresentationCommentCounts),
   },
   // Per-deck notification subscription (personal, GET current / PUT set)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/subscription$/,
-    handler: handlePresentationSubscription,
+    handler: requireUuidId(handlePresentationSubscription),
   },
   // Mark comment threads as read for the current user (batch)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/mark-read$/,
-    handler: handlePresentationCommentsMarkRead,
+    handler: requireUuidId(handlePresentationCommentsMarkRead),
   },
   // SSE endpoint for real-time comment updates
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/events$/,
-    handler: handlePresentationCommentEvents,
+    handler: requireUuidId(handlePresentationCommentEvents),
   },
   // Resolve comment
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/resolve$/,
-    handler: handlePresentationCommentResolve,
+    handler: requireUuidId(handlePresentationCommentResolve),
   },
   // Reopen comment
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/reopen$/,
-    handler: handlePresentationCommentReopen,
+    handler: requireUuidId(handlePresentationCommentReopen),
   },
   // Dismiss AI suggestion
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/dismiss$/,
-    handler: handlePresentationCommentDismiss,
+    handler: requireUuidId(handlePresentationCommentDismiss),
   },
   // Apply AI suggestion (create proposed slide)
   {
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)\/apply$/,
-    handler: handlePresentationCommentApply,
+    handler: requireUuidId(handlePresentationCommentApply),
   },
   // Single comment operations (GET/PUT/DELETE, method-dispatched)
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
-    handler: handlePresentationCommentGet,
+    handler: requireUuidId(handlePresentationCommentGet),
   },
   {
     method: 'PUT',
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
-    handler: handlePresentationCommentUpdate,
+    handler: requireUuidId(handlePresentationCommentUpdate),
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/presentations\/([^/]+)\/comments\/([^/]+)$/,
-    handler: handlePresentationCommentDelete,
+    handler: requireUuidId(handlePresentationCommentDelete),
   },
   // List/Create comments (method-dispatched)
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/comments$/,
-    handler: handlePresentationCommentsList,
+    handler: requireUuidId(handlePresentationCommentsList),
   },
   {
     method: 'POST',
     pattern: /^\/api\/presentations\/([^/]+)\/comments$/,
-    handler: handlePresentationCommentsCreate,
+    handler: requireUuidId(handlePresentationCommentsCreate),
   },
 
   // This module purposely does NOT handle export/publish routes.
