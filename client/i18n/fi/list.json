@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Lähetetty: {date}",
   "imageLibrary.detail.modified": "Muokattu: {date}",
   "imageLibrary.detail.urlHelp": "Diat tallentavat URL-osoitteen, joten kirjastosta poistaminen ei riko olemassa olevia dioja.",
-  "imageLibrary.dropzone.hint": "Tuetut muodot: PNG, JPG, SVG",
+  "imageLibrary.dropzone.hint": "Tuetut muodot: {formats}",
   "imageLibrary.dropzone.text": "Pudota kuva tähän tai lähetä napsauttamalla",
   "imageLibrary.empty": "Kirjastossa ei ole vielä kohteita.",
   "imageLibrary.favorite": "Lisää suosikkeihin",

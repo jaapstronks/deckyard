@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Uppladdad: {date}",
   "imageLibrary.detail.modified": "Ändrad: {date}",
   "imageLibrary.detail.urlHelp": "Slides sparar URL:en, så en borttagning från biblioteket förstör inte befintliga slides.",
-  "imageLibrary.dropzone.hint": "PNG, JPG och SVG stöds",
+  "imageLibrary.dropzone.hint": "{formats} stöds",
   "imageLibrary.dropzone.text": "Släpp bilden här, eller klicka för att ladda upp",
   "imageLibrary.empty": "Inga objekt i biblioteket ännu.",
   "imageLibrary.favorite": "Lägg till bland favoriter",

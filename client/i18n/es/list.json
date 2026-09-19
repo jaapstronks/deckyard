@@ -27,7 +27,7 @@
   "imageLibrary.detail.created": "Subida: {date}",
   "imageLibrary.detail.modified": "Modificada: {date}",
   "imageLibrary.detail.urlHelp": "Las diapositivas guardan la URL, así que eliminarla de la biblioteca no rompe las diapositivas existentes.",
-  "imageLibrary.dropzone.hint": "Se admiten PNG, JPG y SVG",
+  "imageLibrary.dropzone.hint": "Se admiten {formats}",
   "imageLibrary.dropzone.text": "Suelte aquí una imagen o haga clic para subirla",
   "imageLibrary.empty": "Aún no hay elementos en la biblioteca.",
   "imageLibrary.favorite": "Añadir a favoritos",

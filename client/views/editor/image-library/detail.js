@@ -9,6 +9,8 @@ import {
   createAltLangInputs,
 } from './utils.js';
 import { h } from '../../../lib/dom.js';
+import { formatDateTime } from '../../../lib/format/format.js';
+import { imageUploadAccept } from '../../../../shared/constants/image-uploads.js';
 import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 
 /**
@@ -280,8 +282,13 @@ export function createImageLibraryDetail({
         })
       : null;
 
-    const created = typeof it?.created === 'string' ? it.created : '';
-    const modified = typeof it?.modified === 'string' ? it.modified : '';
+    // The API spells these `createdAt` / `updatedAt` (`mapImageRow` in
+    // server/storage/image-library.js); reading `created` / `modified` here
+    // meant both lines always rendered the em-dash (B366).
+    const created =
+      typeof it?.createdAt === 'string' ? formatDateTime(it.createdAt) : '';
+    const modified =
+      typeof it?.updatedAt === 'string' ? formatDateTime(it.updatedAt) : '';
     const dates = h('div', { class: 'help' }, [
       h('div', {
         text: t('imageLibrary.detail.created', 'Uploaded: {date}', {
@@ -348,7 +355,10 @@ export function createImageLibraryDetail({
     const canReplaceInPlace = String(it?.url || '').startsWith('/uploads/');
     const inputReplace = h('input', {
       type: 'file',
-      accept: 'image/png,image/jpeg,image/webp,image/gif,image/svg+xml',
+      // Same declaration as the dropzone (B366). `replaceUploadFromDataUrl`
+      // refuses from the very allowlist this list is derived from, so a
+      // hand-spelled copy here is the drift the shared constant removed.
+      accept: imageUploadAccept(),
       class: 'is-hidden',
     });
     const btnReplace = isEditable
