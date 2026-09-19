@@ -24,7 +24,7 @@ import {
 import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { canManageCollaborators } from '../../utils/presentation-authz/index.js';
-import { dispatchRoutes, requireUuidId } from '../../utils/router.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import {
   badRequest,
   notFound,
@@ -519,11 +519,6 @@ async function handleCollaboratorUpdate(
  * (the chain had no 405). The `([^/]+)` email capture is url-encoded and decoded
  * inside the handler.
  *
- * The four `/:id/collaborators` rows carry the same presentation-id gate as the
- * `/api/presentations/*` table (B222): their id reaches Postgres `uuid` columns
- * verbatim, so a non-uuid is `not_found`, not a 22P02 500. `shared-with-me` is
- * a collection name, not an id, and takes no gate.
- *
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
@@ -535,22 +530,22 @@ export const ROUTES = [
   {
     method: 'POST',
     pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/,
-    handler: requireUuidId(handleCollaboratorAdd),
+    handler: handleCollaboratorAdd,
   },
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/collaborators$/,
-    handler: requireUuidId(handleCollaboratorList),
+    handler: handleCollaboratorList,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/,
-    handler: requireUuidId(handleCollaboratorRemove),
+    handler: handleCollaboratorRemove,
   },
   {
     method: 'PATCH',
     pattern: /^\/api\/presentations\/([^/]+)\/collaborators\/([^/]+)$/,
-    handler: requireUuidId(handleCollaboratorUpdate),
+    handler: handleCollaboratorUpdate,
   },
 ];
 

@@ -21,7 +21,6 @@ import { test } from 'node:test';
 import assert from 'node:assert';
 
 import { handlePresentations } from '../server/routes/api/presentations/index.js';
-import { handleCollaborators } from '../server/routes/api/collaborators.js';
 
 const A_UUID = '123e4567-e89b-42d3-a456-426614174000';
 
@@ -114,28 +113,6 @@ test('a uuid-shaped id passes the gate into normal dispatch', async () => {
     assert.equal(handled, true, `${pathname}: handled`);
     assert.notEqual(ctx.res.statusCode, 404, `${pathname}: not gated out`);
   }
-});
-
-test('the collaborator rows on the same prefix carry the same gate', async () => {
-  // `/api/presentations/:id/collaborators` lives in collaborators.js but is the
-  // same URL prefix and the same Postgres `uuid` column, so it takes the same
-  // answer. `shared-with-me` is a collection name there, not an id.
-  for (const [method, pathname] of [
-    ['GET', '/api/presentations/does-not-exist/collaborators'],
-    ['POST', '/api/presentations/does-not-exist/collaborators'],
-    ['DELETE', '/api/presentations/does-not-exist/collaborators/a%40b.test'],
-    ['PATCH', '/api/presentations/does-not-exist/collaborators/a%40b.test'],
-  ]) {
-    const ctx = ctxFor(method, pathname);
-    const handled = await handleCollaborators(ctx);
-    assert.equal(handled, true, `${method} ${pathname}: handled`);
-    assert.equal(ctx.res.statusCode, 404, `${method} ${pathname}: 404`);
-    assert.equal(ctx.res.body().error, 'not_found');
-  }
-
-  const shared = ctxFor('GET', '/api/presentations/shared-with-me');
-  await handleCollaborators(shared);
-  assert.notEqual(shared.res.statusCode, 404, 'shared-with-me is not an id');
 });
 
 test('an uppercase uuid is a uuid', async () => {
