@@ -15,6 +15,9 @@
 // Core functionality
 export { sendEmail, getSenderIdentity, BREVO_API_URL } from './core.js';
 
+// The language a mail is written in
+export { resolveRecipientLocale, FALLBACK_LOCALE } from './recipient-locale.js';
+
 // Template building (for internal use)
 export {
   trySendCustomTemplate,

@@ -3,41 +3,66 @@
  * Mirrors the client-side ui-i18n.js pattern.
  *
  * Usage:
- *   import { t, setLocale, getLocale } from './i18n/index.js';
+ *   import { t, createTranslator } from './i18n/index.js';
  *   const msg = t('email.passwordReset.subject', 'Reset your password');
+ *   const tr = createTranslator('nl'); // bound to one recipient's locale
+ *
+ * There is no ambient "current locale": a process serves every recipient, so
+ * the locale travels with the call. Outgoing mail gets it from
+ * `resolveRecipientLocale()` (server/integrations/email/recipient-locale.js).
  */
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+const LOCALES_DIR = join(__dirname, 'locales');
+
+// Not exported: the *default* language is a policy shared with the client and
+// is settled separately (D190/B380). This module owns only the question of
+// which locales exist on disk.
 const DEFAULT_LOCALE = 'en';
-const SUPPORTED_LOCALES = [
-  'en',
-  'nl',
-  'de',
-  'fr',
-  'es',
-  'pt',
-  'da',
-  'sv',
-  'no',
-];
+
+/**
+ * The locales this server has strings for — **derived from the files in
+ * `locales/`, never declared**. A hand-maintained list named nine languages
+ * while the directory held two, so seven "supported" locales resolved every
+ * key to its English fallback and the admin panel offered template tabs that
+ * could not differ from English (B379). Adding `de.json` is now the whole act
+ * of supporting German.
+ *
+ * The default locale leads; the rest follow alphabetically, so the admin
+ * panel's tab order is stable across machines regardless of readdir order.
+ *
+ * @type {string[]}
+ */
+export const SUPPORTED_LOCALES = Object.freeze(
+  readdirSync(LOCALES_DIR)
+    .filter((name) => name.endsWith('.json'))
+    .map((name) => name.slice(0, -'.json'.length))
+    .sort((a, b) => {
+      if (a === DEFAULT_LOCALE) return -1;
+      if (b === DEFAULT_LOCALE) return 1;
+      return a.localeCompare(b);
+    }),
+);
 
 // Cache for loaded translations
 const translationCache = new Map();
 
-// Current locale (can be set per-request in a real app, here we use a default)
-let currentLocale = DEFAULT_LOCALE;
-
 /**
- * Normalize locale string.
+ * Narrow any locale tag to one this server has strings for.
+ *
+ * The one authority on "is this locale supported": callers that hold a stored
+ * preference (`uiLocale` is a BCP-47-ish tag, so `en-GB` arrives here) run it
+ * through this instead of testing {@link SUPPORTED_LOCALES} themselves.
+ *
  * @param {string} locale - Locale string
- * @returns {string|null} Normalized locale or null if invalid
+ * @returns {string|null} Normalized locale or null if unsupported
  */
-function normalizeLocale(locale) {
+export function normalizeLocale(locale) {
   const s = String(locale || '')
     .trim()
     .toLowerCase();
@@ -49,29 +74,29 @@ function normalizeLocale(locale) {
 }
 
 /**
- * Load translations for a locale.
- * @param {string} locale - Locale to load
+ * Load translations for an already-normalized locale.
+ * @param {string} normalized - Supported locale code (see {@link normalizeLocale})
  * @returns {Object} Translation dictionary
  */
-function loadTranslations(locale) {
-  const normalized = normalizeLocale(locale) || DEFAULT_LOCALE;
-
+function loadTranslations(normalized) {
   if (translationCache.has(normalized)) {
     return translationCache.get(normalized);
   }
 
   try {
-    const filePath = join(__dirname, 'locales', `${normalized}.json`);
+    const filePath = join(LOCALES_DIR, `${normalized}.json`);
     const content = readFileSync(filePath, 'utf8');
     const translations = JSON.parse(content);
     translationCache.set(normalized, translations);
     return translations;
   } catch {
-    // Fall back to English if locale file not found
+    // The file exists — the list is read from the directory — so this is an
+    // unreadable or malformed one. English still carries every key as a
+    // fallback string in the `t()` call, so an empty dictionary degrades to
+    // English copy rather than to key names.
     if (normalized !== DEFAULT_LOCALE) {
       return loadTranslations(DEFAULT_LOCALE);
     }
-    // Return empty object if even English fails
     return {};
   }
 }
@@ -102,9 +127,7 @@ export function t(key, fallback, vars, locale) {
   const k = String(key || '').trim();
   if (!k) return '';
 
-  const useLocale = locale
-    ? normalizeLocale(locale) || currentLocale
-    : currentLocale;
+  const useLocale = normalizeLocale(locale) || DEFAULT_LOCALE;
   const dict = loadTranslations(useLocale);
 
   const has = dict && typeof dict === 'object' && typeof dict[k] === 'string';
