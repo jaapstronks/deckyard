@@ -118,12 +118,12 @@ export function createImageLibraryDetail({
     const tags = Array.isArray(it?.tags) ? it.tags : [];
 
     // Favorite button in detail view
-    const isFavorite = !!it?.isFavorite;
+    const favorite = !!it?.favorite;
     const btnFavorite = onToggleFavorite
       ? h('button', {
-          class: `btn btn-secondary image-lib-detail-favorite${isFavorite ? ' is-favorite' : ''}`,
+          class: `btn btn-secondary image-lib-detail-favorite${favorite ? ' is-favorite' : ''}`,
           type: 'button',
-          title: isFavorite
+          title: favorite
             ? t('imageLibrary.unfavorite', 'Remove from favorites')
             : t('imageLibrary.favorite', 'Add to favorites'),
           onclick: () => onToggleFavorite(it),

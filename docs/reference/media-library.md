@@ -113,6 +113,18 @@ organization_id)` composite primary key, both FKs **ON DELETE CASCADE**, indexed
 on `(organization_id, user_email)`. Favourites are per user _within_ an
 organization, so the same person in two organizations has two sets.
 
+On the wire the star has **one spelling, `favorite: boolean`** (D176, the same
+form the slide library uses — see
+[`deck-creation-and-reuse.md`](deck-creation-and-reuse.md) § save contract).
+Every item a route hands back carries it — the list, `GET`/`PUT` on one item,
+`POST` of a new one, and `POST /api/image-library/:id/favorite`, which answers
+`{ id, favorite }` with the new state. It is **derived per caller** from the
+table above and never stored on the item, so two people reading the same image
+see different values and an anonymous reader sees `false`. It is also **outside
+the edit contract**: `updateImageLibraryItem` writes a closed key set, so a
+`PUT` body that carries `favorite` is ignored — the toggle route is the only way
+to write one. The stored addresses never leave the storage layer (D22).
+
 There is **no row for the bytes**: a media provider key is not persisted
 anywhere except inside the `url` of the library item (or of a slide, a theme
 logo, or an avatar) that points at it.

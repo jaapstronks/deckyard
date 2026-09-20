@@ -304,6 +304,20 @@ export async function getImageFavorites(storageScope, userEmail) {
 }
 
 /**
+ * Whether `userEmail` starred this image. The caller's own flag, so that every
+ * route can stamp `favorite` on the item it hands back (D176) without reading
+ * the stored addresses — those never leave this layer (D22).
+ * @param {import('./scope.js').StorageScope} storageScope
+ * @param {string} imageId - Image ID
+ * @param {string} userEmail - User's email
+ * @returns {Promise<boolean>} True when this user starred the image
+ */
+export async function isImageFavorite(storageScope, imageId, userEmail) {
+  const ctx = resolveScope(storageScope, 'isImageFavorite');
+  return isFavorite(imageId, userEmail, ctx);
+}
+
+/**
  * Toggle favorite status for an image.
  * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} imageId - Image ID
