@@ -39,9 +39,15 @@ export const SLIDE_COPY = {
     // Feedback slide
     feedbackHelp: 'Geef je feedback via je telefoon.',
     feedbackMethodsLabel: 'Feedbackmethodes',
-    feedbackScan: 'Scan',
-    feedbackOrGoTo: 'Of ga naar',
-    feedbackQrCodeLabel: 'QR-code',
+
+    // Shared by the two slides that hand an audience a way in (feedback,
+    // follow-invite). Both draw the same pair of cards — scan a QR, or type a
+    // code at /go — so one text gets one key; a per-type spelling would be a
+    // second key for one meaning (B146/D60).
+    scanLabel: 'Scan',
+    orGoToLabel: 'Of ga naar',
+    qrCodeLabel: 'QR-code',
+    accessCodeLabel: 'Toegangscode',
 
     // Empty image placeholder (editor canvas only)
     imagePlaceholder: 'Afbeelding',
@@ -74,9 +80,11 @@ export const SLIDE_COPY = {
     timelineLabel: 'Tijdlijn',
 
     // Follow-invite slide
-    followMethodsLabel: 'Meekijkmethodes',
-    qrCodeLabel: 'QR-code',
-    accessCodeLabel: 'Toegangscode',
+    followInviteTitle: 'Volg mee op je telefoon',
+    followInviteBody:
+      'Scan de QR-code om mee te kijken. Wissel van taal en stel vragen via Q&A.',
+    followInviteMethodsLabel: 'Meekijkmethodes',
+    followInviteCodeLabel: 'Code',
 
     // Video slide in a static export. A PDF and a PPTX both hand the reader a
     // slide where the video cannot play; the PDF points at a watch URL, the
@@ -133,9 +141,12 @@ export const SLIDE_COPY = {
     // Feedback slide
     feedbackHelp: 'Give your feedback via your phone.',
     feedbackMethodsLabel: 'Feedback methods',
-    feedbackScan: 'Scan',
-    feedbackOrGoTo: 'Or go to',
-    feedbackQrCodeLabel: 'QR code',
+
+    // Shared with the follow-invite slide — see the note on the Dutch table.
+    scanLabel: 'Scan',
+    orGoToLabel: 'Or go to',
+    qrCodeLabel: 'QR code',
+    accessCodeLabel: 'Access code',
 
     // Empty image placeholder (editor canvas only)
     imagePlaceholder: 'Image',
@@ -163,9 +174,11 @@ export const SLIDE_COPY = {
     timelineLabel: 'Timeline',
 
     // Follow-invite slide
-    followMethodsLabel: 'Follow along methods',
-    qrCodeLabel: 'QR code',
-    accessCodeLabel: 'Access code',
+    followInviteTitle: 'Follow along on your phone',
+    followInviteBody:
+      'Scan the QR code to follow along. Switch language and submit questions via Q&A.',
+    followInviteMethodsLabel: 'Follow along methods',
+    followInviteCodeLabel: 'Code',
 
     // Video slide in a static export — see the note on the Dutch table above.
     videoPdfKicker: 'Video slide',

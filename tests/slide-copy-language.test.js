@@ -237,6 +237,10 @@ const COPY_TYPES = [
   'feedback-slide',
   'timeline-slide',
   'chart-slide',
+  // Folded in with B383: its copy used to live in a private table inside the
+  // type, where `COPY[lang] || COPY.nl` handed a German deck Dutch — exactly
+  // what the tests above pin for every other type.
+  'follow-invite-slide',
 ];
 
 test('an en-GB deck shows no Dutch copy on any interactive type', () => {

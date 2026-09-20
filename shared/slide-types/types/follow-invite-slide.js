@@ -1,29 +1,6 @@
 import { escapeHtml } from '../helpers.js';
-import { normalizeLang } from '../../i18n-utils.js';
-import { DEFAULT_DECK_LANG } from '../../i18n-utils.js';
-
-const COPY = {
-  nl: {
-    title: 'Volg mee op je telefoon',
-    body: 'Scan de QR-code om mee te kijken. Wissel van taal en stel vragen via Q&A.',
-    methodScan: 'Scan',
-    methodType: 'Of ga naar',
-    codeLabel: 'Code',
-    followMethodsLabel: 'Meekijkmethodes',
-    qrCodeLabel: 'QR-code',
-    accessCodeLabel: 'Toegangscode',
-  },
-  'en-GB': {
-    title: 'Follow along on your phone',
-    body: 'Scan the QR code to follow along. Switch language and submit questions via Q&A.',
-    methodScan: 'Scan',
-    methodType: 'Or go to',
-    codeLabel: 'Code',
-    followMethodsLabel: 'Follow along methods',
-    qrCodeLabel: 'QR code',
-    accessCodeLabel: 'Access code',
-  },
-};
+import { normalizeLang, DEFAULT_DECK_LANG } from '../../i18n-utils.js';
+import { getSlideCopy } from '../slide-copy.js';
 
 export default {
   structure: 'chrome',
@@ -76,7 +53,12 @@ export default {
     const presId = String(content?.presentationId || '').trim();
     // Derived, never read from the slide: this is the invite for *this* version.
     const lang = normalizeLang(ctx?.lang) || DEFAULT_DECK_LANG;
-    const base = COPY[lang] || COPY.nl;
+    // The shared table, not a private one: a second copy table is a second
+    // fallback ladder, and this one fell back to Dutch (`COPY[lang] || COPY.nl`)
+    // while every other renderer fell back to English — the B358 defect, alive
+    // in the one type that had not been folded in yet. `getSlideCopy()` owns the
+    // fallback now (docs/reference/slide-copy-language.md).
+    const base = getSlideCopy(ctx?.lang);
     const customTitle =
       typeof content?.customTitle === 'string'
         ? content.customTitle.trim()
@@ -84,8 +66,8 @@ export default {
     const customBody =
       typeof content?.customBody === 'string' ? content.customBody.trim() : '';
     const copy = {
-      title: customTitle || base.title,
-      body: customBody || base.body,
+      title: customTitle || base.followInviteTitle,
+      body: customBody || base.followInviteBody,
     };
 
     const relFollow = presId
@@ -112,9 +94,9 @@ export default {
               <div class="sfi-body" dir="auto">${escapeHtml(copy.body)}</div>
             </div>
 
-            <div class="sfi-methods" role="group" aria-label="${escapeHtml(base.followMethodsLabel)}">
+            <div class="sfi-methods" role="group" aria-label="${escapeHtml(base.followInviteMethodsLabel)}">
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-title">${escapeHtml(base.methodScan)}</div>
+                <div class="sfi-card-title">${escapeHtml(base.scanLabel)}</div>
                 <div class="sfi-qr-wrap">
                   <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
                     relFollow,
@@ -123,12 +105,12 @@ export default {
               </div>
 
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-title">${escapeHtml(base.methodType)}</div>
+                <div class="sfi-card-title">${escapeHtml(base.orGoToLabel)}</div>
                 <div class="sfi-go" data-follow-go-url="1">${escapeHtml(
                   goHref,
                 )}</div>
                 <div class="sfi-code-row">
-                  <div class="sfi-row-label">${escapeHtml(base.codeLabel)}</div>
+                  <div class="sfi-row-label">${escapeHtml(base.followInviteCodeLabel)}</div>
                   <div class="sfi-code" data-follow-code="${escapeHtml(lang)}" aria-label="${escapeHtml(base.accessCodeLabel)}">${escapeHtml(
                     code || '----',
                   )}</div>
