@@ -72,6 +72,36 @@ export const UNIQUE_CONSTRAINTS = {
 };
 
 /**
+ * Unique indexes keyed on an **expression** rather than a column list, one per
+ * table. `UNIQUE_CONSTRAINTS` above compares columns for equality; these cannot
+ * be written that way, so each says in JavaScript which rows the index treats
+ * as one row.
+ *
+ * They do double duty: the double collides on them like PostgreSQL does, and
+ * `onConflict((oc) => oc.expression(…))` resolves here — the double cannot read
+ * the SQL fragment the storage layer passes, so the table it inserts into is
+ * what names the index. One expression index per table is all the schema has.
+ *
+ * **These folds are JavaScript's, and PostgreSQL's are not the same** —
+ * `'İ'.toLowerCase()` is `i` plus a combining dot where `lower('İ')` is a plain
+ * `i`. Everything that turns on the fold itself therefore belongs in
+ * `tests/pg/` against a real database (B370, D187); what the double buys is
+ * that a second tag row cannot quietly appear where production has one.
+ */
+export const UNIQUE_EXPRESSION_INDEXES = {
+  // CREATE UNIQUE INDEX idx_tags_org_name ON tags (organization_id, lower(name))
+  tags: {
+    name: 'idx_tags_org_name',
+    columns: ['organization_id', 'lower(name)'],
+    sameRow: (a, b) =>
+      a.organization_id === b.organization_id &&
+      String(a.name ?? '').toLowerCase() === String(b.name ?? '').toLowerCase(),
+    keyOf: (row) =>
+      `${row.organization_id}, ${String(row.name ?? '').toLowerCase()}`,
+  },
+};
+
+/**
  * jsonb columns. The storage layer writes them via the `jsonb()` helper, which
  * hands the driver a JSON string; PostgreSQL stores it as jsonb and reads it
  * back as a parsed value. The double reproduces that round-trip so tests see
@@ -515,6 +545,19 @@ export function createFakeDb(seed = {}) {
   };
 
   const assertUnique = (table, candidate, ignoreRow = null) => {
+    const expressionIndex = UNIQUE_EXPRESSION_INDEXES[table];
+    if (expressionIndex) {
+      const clash = rowsOf(table).find(
+        (row) => row !== ignoreRow && expressionIndex.sameRow(row, candidate),
+      );
+      if (clash) {
+        throw new UniqueViolationError(
+          table,
+          expressionIndex.columns,
+          expressionIndex.keyOf(candidate),
+        );
+      }
+    }
     for (const columns of UNIQUE_CONSTRAINTS[table] || []) {
       if (
         columns.some((c) => candidate[c] === undefined || candidate[c] === null)
@@ -790,14 +833,21 @@ export function createFakeDb(seed = {}) {
           return builder;
         },
         /**
-         * Model INSERT ... ON CONFLICT. Supports the two shapes the storage
-         * layer uses: `.columns([...]).doNothing()` and
-         * `.columns([...]).doUpdateSet({...}).where(cb)`. The optional WHERE on
-         * the update branch matches the *existing* row (as PostgreSQL does), so
-         * a suppressed update inserts/returns nothing.
+         * Model INSERT ... ON CONFLICT. Supports the three shapes the storage
+         * layer uses: `.columns([...]).doNothing()`,
+         * `.columns([...]).doUpdateSet({...}).where(cb)` and
+         * `.expression(sql`…`).doNothing()`. The optional WHERE on the update
+         * branch matches the *existing* row (as PostgreSQL does), so a
+         * suppressed update inserts/returns nothing.
          */
         onConflict(callback) {
-          const oc = { columns: [], doNothing: false, set: null, where: [] };
+          const oc = {
+            columns: [],
+            expression: null,
+            doNothing: false,
+            set: null,
+            where: [],
+          };
           const ocBuilder = {
             columns(cols) {
               oc.columns = Array.isArray(cols) ? cols : [cols];
@@ -805,6 +855,23 @@ export function createFakeDb(seed = {}) {
             },
             column(col) {
               oc.columns = [col];
+              return ocBuilder;
+            },
+            /**
+             * An expression index as the conflict target. The double cannot
+             * read the SQL fragment, so the target is the one expression index
+             * this table has — see {@link UNIQUE_EXPRESSION_INDEXES}. A table
+             * without one is a conflict target the double would silently match
+             * against nothing, so it says so instead.
+             */
+            expression() {
+              oc.expression = UNIQUE_EXPRESSION_INDEXES[table];
+              if (!oc.expression) {
+                throw new Error(
+                  `fake-db: onConflict().expression() on "${table}", which has ` +
+                    'no entry in UNIQUE_EXPRESSION_INDEXES',
+                );
+              }
               return ocBuilder;
             },
             doNothing() {
@@ -846,7 +913,9 @@ export function createFakeDb(seed = {}) {
           for (const value of pending) {
             if (conflict) {
               const existing = rowsOf(table).find((row) =>
-                conflict.columns.every((c) => row[c] === value[c]),
+                conflict.expression
+                  ? conflict.expression.sameRow(row, value)
+                  : conflict.columns.every((c) => row[c] === value[c]),
               );
               if (existing) {
                 if (conflict.doNothing) continue;
