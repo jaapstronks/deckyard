@@ -48,7 +48,10 @@ const ENV_READS = [
   /process\.env\.([A-Z][A-Z0-9_]*)/g,
   /\b(?:envStr|envBool|envInt|envList|requireEnv|optionalEnv|createConfigChecker)\(\s*['"]([A-Z][A-Z0-9_]*)['"]/g,
 ];
-const DECLARATION = /^#? ?([A-Z][A-Z0-9_]+)=/;
+// One answer to "is this a declaration line, and what is its value?" for both
+// guards below. The optional leading `# ` covers commented-out declarations —
+// they are the ones an operator uncomments, note and all.
+const DECLARATION = /^#? ?([A-Z][A-Z0-9_]+)=(.*)$/;
 
 // A note tacked onto the value: ` # …` (a would-be inline comment) or ` (…`
 // (a parenthetical aside). Both end up inside the value at load time.
@@ -88,10 +91,7 @@ test('no declaration line in .env.example carries a trailing note', () => {
 
   const offenders = [];
   lines.forEach((line, i) => {
-    // Strip one leading `# ` so commented-out declarations are checked too —
-    // they are the ones an operator uncomments, note and all.
-    const bare = line.replace(/^#\s?/, '');
-    const m = bare.match(/^([A-Z][A-Z0-9_]+)=(.*)$/);
+    const m = line.match(DECLARATION);
     if (!m) return;
     if (TRAILING_NOTE.test(m[2])) offenders.push(`${i + 1}: ${line}`);
   });
