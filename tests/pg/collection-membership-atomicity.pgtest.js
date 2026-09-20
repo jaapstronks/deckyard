@@ -26,6 +26,12 @@
  * the insert). Without the transaction both failure cases below leave the
  * collection empty.
  *
+ * **The metadata half (B372).** The same forced failure pins that an update
+ * which renames *and* replaces applies neither when the replacement fails. The
+ * metadata write cannot join `replaceMembership`'s transaction, so it runs
+ * after it; before B372 it ran before, and a rolled back replacement left the
+ * rename and a fresh `updated_at` standing behind the error.
+ *
  * Run with: DATABASE_URL=… npm run test:pg
  */
 
@@ -155,6 +161,65 @@ pgDescribe('collection membership is replaced atomically (PostgreSQL)', () => {
     });
 
     assert.deepEqual(await memberIds(), [sC, sA, sB]);
+  });
+
+  /** The metadata half of the same update, straight from the row. */
+  async function metadata() {
+    return db
+      .selectFrom('slide_collections')
+      .select(['name', 'description', 'updated_at'])
+      .where('id', '=', collectionId)
+      .executeTakeFirstOrThrow();
+  }
+
+  it('leaves the metadata untouched when the replacement fails (B372)', async () => {
+    // The rename used to be stamped *before* the membership swap, in a write of
+    // its own that `replaceMembership`'s transaction cannot roll back. The
+    // caller saw an error while the collection had quietly been renamed — and
+    // carried a fresh `updated_at` to say so. Metadata now follows the
+    // replacement, so a refused insert leaves the whole update unapplied.
+    const before = await metadata();
+
+    await withRefusedMember(async () => {
+      await assert.rejects(() =>
+        updatePersonalCollection(
+          storageScope,
+          OWNER,
+          collectionId,
+          {
+            name: 'Renamed mid-failure',
+            description: 'and re-described',
+            slideIds: [sB, poison, sA],
+          },
+          { actorEmail: OWNER },
+        ),
+      );
+    });
+
+    assert.deepEqual(
+      await metadata(),
+      before,
+      'name, description and updated_at are untouched behind the error',
+    );
+    assert.deepEqual(await memberIds(), [sC, sA, sB]);
+  });
+
+  it('applies the metadata when the replacement succeeds', async () => {
+    const updated = await updatePersonalCollection(
+      storageScope,
+      OWNER,
+      collectionId,
+      { name: 'Renamed', description: 'and re-described', slideIds: [sA] },
+      { actorEmail: OWNER },
+    );
+    assert.equal(updated.ok, true);
+    assert.equal(updated.item.name, 'Renamed');
+    assert.equal(updated.item.description, 'and re-described');
+    assert.deepEqual(updated.item.slideIds, [sA]);
+
+    const stored = await metadata();
+    assert.equal(stored.name, 'Renamed');
+    assert.equal(stored.description, 'and re-described');
   });
 
   it('still replaces the membership when nothing refuses it', async () => {

@@ -266,9 +266,46 @@ async function createSlideCollection(data, ctx) {
   );
 }
 
+/**
+ * Update a collection's metadata and, when asked, its membership.
+ *
+ * **Order matters (B372).** The membership replacement runs first and the
+ * metadata is stamped only after it succeeded. `replaceMembership` opens its
+ * own transaction (B371/D186) that this update cannot join, so a metadata write
+ * placed before it is a separate committed write: a rolled back replacement
+ * used to leave the rename — and a fresh `updated_at` — standing while the
+ * caller was handed an error. Half an update that reads as a failed one.
+ *
+ * Existence and organization are therefore checked in their **own** scoped
+ * SELECT up front. That check used to be a side effect of the metadata UPDATE's
+ * `where organization_id`, and it is also what keeps `replaceMembership`'s
+ * org-less delete inside this organization.
+ * @param {string} id
+ * @param {object} data
+ * @param {object} ctx - Storage context
+ * @returns {Promise<object|null>} the updated collection, or null when it does
+ *   not exist in this organization
+ */
 async function updateSlideCollection(id, data, ctx) {
   const db = getDb();
   const orgId = getOrgId(ctx);
+
+  const existing = await db
+    .selectFrom('slide_collections')
+    .select('id')
+    .where('id', '=', id)
+    .where('organization_id', '=', orgId)
+    .executeTakeFirst();
+
+  if (!existing) return null;
+
+  let slideIds;
+  if (data.slideIds !== undefined) {
+    slideIds = await replaceMembership(orgId, id, data.slideIds || []);
+  } else {
+    const membership = await loadMembership(db, [id]);
+    slideIds = membership.get(id) || [];
+  }
 
   // Dual-key (T10 PR F2): stamp updated_by_user_id from the same resolution
   // only when there is an actor, so an actor-less write never nulls the id
@@ -294,13 +331,6 @@ async function updateSlideCollection(id, data, ctx) {
 
   if (!row) return null;
 
-  let slideIds;
-  if (data.slideIds !== undefined) {
-    slideIds = await replaceMembership(orgId, id, data.slideIds || []);
-  } else {
-    const membership = await loadMembership(db, [id]);
-    slideIds = membership.get(id) || [];
-  }
   return mapSlideCollectionRow(
     row,
     slideIds,
