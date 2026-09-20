@@ -6,7 +6,12 @@ Keycloak, and most modern IdPs. This is **Track 1** of the SSO work: one IdP,
 configured entirely through environment variables, no multi-tenant machinery.
 
 Password and magic-link login keep working alongside SSO unless you turn on
-`SSO_ENFORCE`.
+`SSO_ENFORCE`. **Implementation status (beta):** `SSO_ENFORCE=true` currently
+only hides those forms on the login screen — the password, magic-link and
+password-reset endpoints still accept requests from users who have them. The
+normative target is that `SSO_ENFORCE` refuses them server-side, so that
+enforcing SSO also enforces the IdP's MFA and deprovisioning; until that
+lands, treat the setting as "SSO-first", not "SSO-only".
 
 > Multi-tenant, per-organization SSO (each org brings its own IdP through an
 > admin UI) is a separate, later track and is not planned for this codebase;
@@ -47,7 +52,7 @@ Set these in `.env` (see `.env.example` for the annotated block):
 | `OIDC_AUTO_PROVISION`  | no       | JIT-create unknown users on first login. Default `true`. Set `false` to require users be invited first.            |
 | `OIDC_DEFAULT_ROLE`    | no       | Role for newly provisioned users: `user` (default) or `admin`.                                                     |
 | `OIDC_ADMIN_GROUPS`    | no       | Comma-separated IdP group/role claim values that map to the Deckyard `admin` role.                                 |
-| `SSO_ENFORCE`          | no       | `true` hides password + magic-link login (SSO only). Default `false`.                                              |
+| `SSO_ENFORCE`          | no       | `true` hides the password + magic-link forms on the login screen. Default `false`. Does **not** yet refuse those endpoints — see the status note above. |
 
 The server **refuses to boot** when `SSO_ENABLED=true` but a required OIDC
 setting is missing or an URL is malformed — a half-configured SSO fails loudly
