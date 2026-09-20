@@ -144,10 +144,12 @@ const CLAUSE =
  *
  * Read per clause, because one sentence can deny one thing while claiming
  * another: "deliberately not offered to agents — the app manages this slide"
- * denies the agent gate, not the placement, and the placement is the lie. And
- * within its clause the denial has to come *before* the claim to be about it
- * ("Does NOT auto-insert a slide"), so "is managed automatically and can't be
- * saved" is still the claim, with the negation spent on something else.
+ * denies the agent gate, not the placement, and the placement is the lie.
+ * Within its clause a denial counts when it stands before or *inside* the
+ * claim, because English puts it between subject and verb and the match starts
+ * at the subject: "The app does NOT insert a Follow-along invite" denies the
+ * placement from within. Past the claim it is spent on something else, so "is
+ * managed automatically and can't be saved" is still the claim.
  *
  * @param {string} sentence
  * @returns {string|null}
@@ -155,9 +157,9 @@ const CLAUSE =
 function claimIn(sentence) {
   for (const clause of sentence.split(CLAUSE)) {
     for (const re of ARRIVES_BY_ITSELF) {
-      const at = clause.search(re);
-      if (at < 0) continue;
-      if (DENIAL.test(clause.slice(0, at))) continue;
+      const m = clause.match(re);
+      if (!m) continue;
+      if (DENIAL.test(clause.slice(0, m.index + m[0].length))) continue;
       return clause.trim();
     }
   }
