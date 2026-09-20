@@ -493,20 +493,17 @@ export function renderSlideElement(
     cleanups.push(initKpiMetricsSlides(el));
   // Thumbnails use the same logical slide dimensions as full-size renders.
   cleanups.push(initTeamCardsJustify(el));
-  if (slide?.type === 'follow-invite-slide') {
-    // Follow-invite slides look blank without QR rendering. For thumbnails we render once
-    // without resize/copy handlers to avoid leaking listeners across many thumbnails.
-    if (mode === 'thumb')
-      cleanups.push(
-        initFollowInviteSlides(el, {
-          enableResize: false,
-          interactive: false,
-        }),
-      );
-    else cleanups.push(initFollowInviteSlides(el));
-  } else if (mode !== 'thumb') {
-    cleanups.push(initFollowInviteSlides(el));
-  }
+  // Follow-invite slides look blank without QR rendering. Which slides those
+  // are is a question of markup, not of type name: the init scans for the
+  // `[data-follow-qr]` / `[data-follow-go-url]` it fills and does nothing when
+  // a slide carries neither (B386). Thumbnails render once without the resize
+  // handler, so many of them can't leak listeners.
+  cleanups.push(
+    initFollowInviteSlides(
+      el,
+      mode === 'thumb' ? { enableResize: false } : undefined,
+    ),
+  );
   // Countdown timer: presenter-driven in present/follow, static in thumbnails.
   if (slide?.type === 'countdown-slide') {
     cleanups.push(
