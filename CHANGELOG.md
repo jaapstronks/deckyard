@@ -4,6 +4,20 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.38.1](https://github.com/jaapstronks/deckyard/compare/v1.38.0...v1.38.1) (2026-09-20)
+
+
+### Fixed
+
+* **i18n:** one spelling per Dutch compound in the slide-type copy (B363) ([beaf2d0](https://github.com/jaapstronks/deckyard/commit/beaf2d0ac5c05f4f96dbccf92adefe6cf23a7f91))
+* **i18n:** the presenter stage and the en locale stop speaking Dutch, and the notes Q&A reads one promote rule (B365) ([#1200](https://github.com/jaapstronks/deckyard/issues/1200)) ([ae11945](https://github.com/jaapstronks/deckyard/commit/ae11945cf02de48a3e657d31a0c14bbed8e90ad7))
+* **image-library:** one spelling for the star of the caller (B344) ([#1206](https://github.com/jaapstronks/deckyard/issues/1206)) ([dc6ae97](https://github.com/jaapstronks/deckyard/commit/dc6ae9797cd9193f787b8ec79572f7f5d0c1da1e))
+* **library:** a copy carries the whole item, and the library tells the truth about dates and formats (B366) ([#1202](https://github.com/jaapstronks/deckyard/issues/1202)) ([e2e5448](https://github.com/jaapstronks/deckyard/commit/e2e54487ec4937c7872b3dcc8d1c0bc86f0874b2))
+* **scripts:** drop the unreachable isPostgresMode() branch from two importers (B367) ([#1207](https://github.com/jaapstronks/deckyard/issues/1207)) ([86706a8](https://github.com/jaapstronks/deckyard/commit/86706a82c98b6f2ea9b62fa4d4aac7d2c8e83b56))
+* **storage:** a tag name the column cannot carry is a 400, not a 500 (B370) ([#1205](https://github.com/jaapstronks/deckyard/issues/1205)) ([1dc1bca](https://github.com/jaapstronks/deckyard/commit/1dc1bca3703f1330d9f3a47b96fce1fe719010cc))
+* **storage:** replacing a collection's membership is one transaction (B371) ([#1204](https://github.com/jaapstronks/deckyard/issues/1204)) ([b358ed9](https://github.com/jaapstronks/deckyard/commit/b358ed9198a94c542321d908dfcbd3f1c7b90f4c))
+* **storage:** replacing a row's tags is one transaction, in one place (B343) ([#1203](https://github.com/jaapstronks/deckyard/issues/1203)) ([1f06713](https://github.com/jaapstronks/deckyard/commit/1f0671334af95c909256a5c39155341b4324716c))
+
 ## [1.38.0](https://github.com/jaapstronks/deckyard/compare/v1.37.0...v1.38.0) (2026-09-19)
 
 
