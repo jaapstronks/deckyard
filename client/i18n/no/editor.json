@@ -732,7 +732,7 @@
   "editor.slideField.title.label": "Tittel",
   "editor.slideField.titleBlockAlign.label": "Justering av tittelblokk",
   "editor.slideLibrary.save": "Lagre til lysbilde-bibliotek…",
-  "editor.slideLibrary.save.disabled": "Dette lysbildet styres automatisk og kan ikke lagres.",
+  "editor.slideLibrary.save.disabled": "Følg-med-invitasjonen har ikke noe eget innhold, så det er ingenting å lagre.",
   "editor.slideLibrary.save.title": "Lagre dette lysbildet slik at du kan gjenbruke det senere.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Dette lysbildet har innhold på både nederlandsk og engelsk. Begge versjonene lagres.",
   "editor.slideLibrary.saveModal.description": "Beskrivelse",

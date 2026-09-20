@@ -208,8 +208,9 @@ test('neither editor module names a slide type any more', () => {
       new RegExp(`(['"\`])${name}\\1`).test(src),
     );
     // follow-invite-slide is the documented single-type exception in
-    // header-actions: a slide the app maintains itself may not be saved to the
-    // slide library. Not a table — no future type can be missing from it.
+    // header-actions: the follow-invite slide has no content of its own, so
+    // there is nothing for the slide library to hold. Not a table — no future
+    // type can be missing from it.
     const allowed = new Set(['follow-invite-slide']);
     assert.deepEqual(
       named.filter((n) => !allowed.has(n)),

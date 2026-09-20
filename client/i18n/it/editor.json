@@ -731,7 +731,7 @@
   "editor.slideField.title.label": "Titolo",
   "editor.slideField.titleBlockAlign.label": "Allineamento del blocco del titolo",
   "editor.slideLibrary.save": "Salva nella libreria slide…",
-  "editor.slideLibrary.save.disabled": "Questa slide è gestita automaticamente e non può essere salvata.",
+  "editor.slideLibrary.save.disabled": "L’invito Follow-along non ha contenuti propri, quindi non c’è nulla da salvare.",
   "editor.slideLibrary.save.title": "Salva questa slide per poterla riutilizzare in seguito.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Questa slide ha contenuti sia in olandese sia in inglese. Verranno salvate entrambe le versioni.",
   "editor.slideLibrary.saveModal.description": "Descrizione",

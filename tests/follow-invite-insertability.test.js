@@ -89,8 +89,8 @@ test('nothing claims a slide arrives in a deck without a person', () => {
   const offenders = [];
   for (const rel of sourceFiles()) {
     for (const [line, sentence] of claimsAbout(rel)) {
-      if (ARRIVES_BY_ITSELF.some((re) => re.test(sentence)))
-        offenders.push(`${rel}:${line} — ${sentence.trim()}`);
+      const claim = claimIn(sentence);
+      if (claim) offenders.push(`${rel}:${line} — ${claim}`);
     }
   }
 
@@ -105,10 +105,20 @@ test('nothing claims a slide arrives in a deck without a person', () => {
   );
 });
 
-/** The one false claim, in the spellings it has actually taken. */
+/**
+ * The one false claim, in the spellings it has actually taken.
+ *
+ * The adverb is not what makes it false: "the app manages this slide" says the
+ * same thing as "the app manages that automatically", and the first is how the
+ * claim survived a sweep that greppped for `automatic` (D195). So the verb
+ * alone counts — bounded by its object, a slide, which keeps true prose about
+ * the machinery the app really does manage (sessions, join codes) out.
+ */
 const ARRIVES_BY_ITSELF = [
-  // "the app manages that automatically", "the server maintains it automatically"
-  /\b(app|server|editor|deckyard|system)\b[^,]{0,40}\b(manages?|inserts?|adds?|places?|maintains?)\b[^,]{0,60}\bautomatic/i,
+  // "the app manages that automatically", "the app manages this slide"
+  /\b(app|server|editor|deckyard|system)\b[\s\w'’*`-]{0,40}\b(manages?|inserts?|adds?|places?|maintains?)\b[\s\w'’*`-]{0,60}\b(slide|invite|automatic)/i,
+  // The same claim with the slide in front: "a slide the app maintains itself"
+  /\b(slide|invite)\b[\s\w'’*`-]{0,40}\b(app|server|editor|deckyard|system)\b[\s\w'’*`-]{0,20}\b(manages?|inserts?|adds?|places?|maintains?)\b/i,
   // "This slide is managed automatically by the server"
   /\b(managed|inserted|added|placed|maintained)\s+automatically\b/i,
   // "the app auto-inserts one if missing"
@@ -122,11 +132,48 @@ const ARRIVES_BY_ITSELF = [
 const DENIAL = /\b(not|never|nor|no|nothing|none|without)\b|n't\b/i;
 
 /**
+ * Clause boundaries: a comma, a dash that separates, a bracket, or a
+ * coordinator. Never a bare hyphen — "auto-insert" and "Follow-along" are one
+ * word each.
+ */
+const CLAUSE =
+  /\s+[—–]\s+|\s+-\s+|\s*[,:()[\]{}]\s*|\s+\b(?:and|but|so|yet|because|while|though|although)\b\s+/i;
+
+/**
+ * The clause that makes the claim, or `null` if this sentence does not.
+ *
+ * Read per clause, because one sentence can deny one thing while claiming
+ * another: "deliberately not offered to agents — the app manages this slide"
+ * denies the agent gate, not the placement, and the placement is the lie. And
+ * within its clause the denial has to come *before* the claim to be about it
+ * ("Does NOT auto-insert a slide"), so "is managed automatically and can't be
+ * saved" is still the claim, with the negation spent on something else.
+ *
+ * @param {string} sentence
+ * @returns {string|null}
+ */
+function claimIn(sentence) {
+  for (const clause of sentence.split(CLAUSE)) {
+    for (const re of ARRIVES_BY_ITSELF) {
+      const at = clause.search(re);
+      if (at < 0) continue;
+      if (DENIAL.test(clause.slice(0, at))) continue;
+      return clause.trim();
+    }
+  }
+  return null;
+}
+
+/**
  * Sentences from `rel` that speak about a slide type, as [line, sentence].
  *
  * A file under shared/slide-types/types/ is its type's definition, so all of
  * it counts; anywhere else only the lines that name the invite do, which
  * keeps unrelated prose about other automatic machinery out of the guard.
+ * That is why the copy on those lines names its subject rather than saying
+ * "this slide": a sentence that says what it is about is both better copy and
+ * within reach of the guard, which a multi-line window would only buy with
+ * false positives.
  *
  * @param {string} rel - Repo-relative path.
  * @returns {Array<[number, string]>}
@@ -137,9 +184,7 @@ function claimsAbout(rel) {
   const out = [];
   src.split('\n').forEach((text, i) => {
     if (!wholeFile && !/follow-invite|follow-along invite/i.test(text)) return;
-    for (const sentence of text.split(/[.;]/)) {
-      if (!DENIAL.test(sentence)) out.push([i + 1, sentence]);
-    }
+    for (const sentence of text.split(/[.;]/)) out.push([i + 1, sentence]);
   });
   return out;
 }

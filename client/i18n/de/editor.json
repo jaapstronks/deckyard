@@ -727,7 +727,7 @@
   "editor.slideField.title.label": "Titel",
   "editor.slideField.titleBlockAlign.label": "Ausrichtung des Titelblocks",
   "editor.slideLibrary.save": "In Folienbibliothek speichern…",
-  "editor.slideLibrary.save.disabled": "Diese Folie wird automatisch verwaltet und kann nicht gespeichert werden.",
+  "editor.slideLibrary.save.disabled": "Die Begleitmodus-Einladung hat keine eigenen Inhalte, es gibt also nichts zu speichern.",
   "editor.slideLibrary.save.title": "Diese Folie speichern, um sie später wiederzuverwenden.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Diese Folie hat Inhalte auf Niederländisch und Englisch. Beide Versionen werden gespeichert.",
   "editor.slideLibrary.saveModal.description": "Beschreibung",

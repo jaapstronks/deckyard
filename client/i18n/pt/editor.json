@@ -735,7 +735,7 @@
   "editor.slideField.title.label": "Título",
   "editor.slideField.titleBlockAlign.label": "Alinhamento do bloco de título",
   "editor.slideLibrary.save": "Guardar na biblioteca…",
-  "editor.slideLibrary.save.disabled": "Este diapositivo é gerido automaticamente e não pode ser guardado.",
+  "editor.slideLibrary.save.disabled": "O convite modo de acompanhamento não tem conteúdo próprio, por isso não há nada para guardar.",
   "editor.slideLibrary.save.title": "Guardar este diapositivo para reutilizar mais tarde.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Este diapositivo tem conteúdo em neerlandês e em inglês. Vão ser guardadas as duas versões.",
   "editor.slideLibrary.saveModal.description": "Descrição",

@@ -52,7 +52,8 @@ export function buildHeaderActions({
 }) {
   const headerActions = h('div', { class: 'row editor-form-header-actions' });
   const isFollowInviteSlide = slide.type === 'follow-invite-slide';
-  // Follow-invite slides shouldn't be saved to library (they're presentation-specific)
+  // The Follow-along invite has no content of its own (`fields: []`; the join
+  // code comes from the render context), so a library copy would carry nothing.
   const canSaveToLibrary = !!api && !isFollowInviteSlide;
 
   const saveToLibrary = () => {
@@ -303,7 +304,7 @@ export function buildHeaderActions({
           )
         : t(
             'editor.slideLibrary.save.disabled',
-            "This slide is managed automatically and can't be saved.",
+            'The Follow-along invite has no content of its own, so there is nothing to save.',
           ),
       disabled: !canSaveToLibrary,
       onclick: () => {

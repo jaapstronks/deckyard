@@ -431,7 +431,9 @@ To withhold a type on purpose, say so:
 ```javascript
 export default {
   label: 'Follow-along invite',
-  ai: false, // deliberately not offered to agents — the app manages this slide
+  // Withheld on purpose: the Follow-along invite points an audience at a live
+  // session's join code, which a deck being drafted does not have.
+  ai: false,
   // …
 };
 ```
