@@ -27,6 +27,8 @@ import {
   NEW_TYPE,
   renameSlideTypeDeep,
   migrateFileStore,
+  parseArgs,
+  BACKENDS,
 } from '../scripts/migrate-lijstje-slide.js';
 
 describe('renameSlideTypeDeep', () => {
@@ -246,5 +248,38 @@ describe('migrateFileStore', () => {
     const before = await readFile(untouched, 'utf8');
     await migrateFileStore(root);
     assert.equal(await readFile(untouched, 'utf8'), before);
+  });
+});
+
+describe('parseArgs --backend (D191)', () => {
+  it('defaults to postgres, the one storage backend Deckyard has', () => {
+    assert.equal(parseArgs([]).backend, 'postgres');
+    assert.equal(parseArgs(['--dry-run']).backend, 'postgres');
+  });
+
+  it('defaults to file when --dir points at an export to walk', () => {
+    const { backend, dir } = parseArgs(['--dir', 'export']);
+    assert.equal(backend, 'file');
+    assert.equal(dir, path.resolve('export'));
+  });
+
+  it('lets an explicit --backend win over the --dir default', () => {
+    assert.equal(
+      parseArgs(['--dir', 'export', '--backend', 'both']).backend,
+      'both',
+    );
+    assert.equal(
+      parseArgs(['--dir', 'export', '--backend', 'postgres']).backend,
+      'postgres',
+    );
+  });
+
+  it('does not accept "auto": it named no store of its own', () => {
+    assert.equal(BACKENDS.includes('auto'), false);
+    assert.deepEqual([...BACKENDS], ['file', 'postgres', 'both']);
+    assert.equal(
+      BACKENDS.includes(parseArgs(['--backend', 'auto']).backend),
+      false,
+    );
   });
 });

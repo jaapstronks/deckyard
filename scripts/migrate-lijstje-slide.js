@@ -33,7 +33,7 @@
  *
  * `scripts/migrate-slides.js` is file-only. slides.ciiic.nl runs on Postgres, so
  * a file-only script would migrate nothing where it matters. This one covers
- * both backends and picks by `STORAGE_MODE` unless told otherwise, and
+ * both backends and picks by `--dir` unless told otherwise, and
  * `migrate-legacy-bg-image.js` now does the same through the shared
  * `scripts/lib/pg-json-rewrite.js`.
  *
@@ -69,11 +69,11 @@
  *
  * Options:
  *   --dry-run            Report what would change; write nothing.
- *   --backend <mode>     `auto` (default, follows STORAGE_MODE), `file`,
- *                        `postgres`, or `both`.
+ *   --backend <mode>     `postgres` (the default), `file`, or `both`.
  *   --dir <path>         File-store root to walk (default: the configured data
- *                        dir). Implies `--backend file`; use it to migrate an
- *                        export before running `scripts/scan-slide-type.js`.
+ *                        dir). Makes `file` the default backend; use it to
+ *                        migrate an export before running
+ *                        `scripts/scan-slide-type.js`.
  *
  * Exit code: 0 on success, 1 on failure.
  */
@@ -87,7 +87,6 @@ import {
   rewriteJsonColumns,
 } from './lib/pg-json-rewrite.js';
 import { loadDotEnv } from '../server/config/env.js';
-import { isPostgresMode } from '../server/config/database.js';
 import { dataDir } from '../server/config/storage-paths.js';
 
 const REPO_ROOT = path.resolve(
@@ -300,40 +299,50 @@ export async function migratePostgres(db, opts = {}) {
  * ------------------------------------------------------------------ */
 
 /**
+ * Parse the CLI flags.
+ *
+ * `--backend` names a store to walk, not a configuration to read: `--dir`
+ * points at a legacy file-store export, which exists regardless of how this
+ * install stores its own data. Without the flag the default follows from
+ * `--dir` — an export to walk means `file`, anything else means `postgres`,
+ * the one storage backend Deckyard has (D191).
+ *
  * @param {string[]} argv - `process.argv.slice(2)`
  * @returns {{dryRun: boolean, backend: string, dir: (string|null)}}
  */
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const dryRun = argv.includes('--dry-run');
   const backendIdx = argv.indexOf('--backend');
   const dirIdx = argv.indexOf('--dir');
   const dir = dirIdx !== -1 ? path.resolve(argv[dirIdx + 1] || '') : null;
-  let backend =
+  const backend =
     backendIdx !== -1
       ? String(argv[backendIdx + 1] || '').toLowerCase()
-      : 'auto';
-  if (dir && backend === 'auto') backend = 'file';
+      : dir
+        ? 'file'
+        : 'postgres';
   return { dryRun, backend, dir };
 }
 
+/** Stores `--backend` may name. */
+export const BACKENDS = Object.freeze(['file', 'postgres', 'both']);
+
 async function main() {
   const { dryRun, backend, dir } = parseArgs(process.argv.slice(2));
-  if (!['auto', 'file', 'postgres', 'both'].includes(backend)) {
+  if (!BACKENDS.includes(backend)) {
     console.error(
-      `Unknown --backend "${backend}" (use auto, file, postgres or both).`,
+      `Unknown --backend "${backend}" (use ${BACKENDS.join(', ')}).`,
     );
     process.exit(1);
   }
 
   await loadDotEnv(REPO_ROOT);
-  const resolved =
-    backend === 'auto' ? (isPostgresMode() ? 'postgres' : 'file') : backend;
   const prefix = dryRun ? '[DRY RUN] ' : '';
   console.log(
-    `${prefix}Renaming "${OLD_TYPE}" → "${NEW_TYPE}" (backend: ${resolved})\n`,
+    `${prefix}Renaming "${OLD_TYPE}" → "${NEW_TYPE}" (backend: ${backend})\n`,
   );
 
-  if (resolved === 'file' || resolved === 'both') {
+  if (backend === 'file' || backend === 'both') {
     const root = dir || dataDir(REPO_ROOT);
     const stats = await migrateFileStore(root, { dryRun });
     console.log(`File store: ${stats.root}`);
@@ -344,16 +353,9 @@ async function main() {
     console.log('');
   }
 
-  if (resolved === 'postgres' || resolved === 'both') {
+  if (backend === 'postgres' || backend === 'both') {
     const { initializeDatabase, closeDatabase } =
       await import('../server/db/client.js');
-    if (!isPostgresMode()) {
-      console.error(
-        'STORAGE_MODE is not "postgres", so there is no database to migrate.\n' +
-          'Run this on the Postgres install (or point --dir at a file-store export).',
-      );
-      process.exit(1);
-    }
     const db = await initializeDatabase();
     try {
       const results = await migratePostgres(db, { dryRun });

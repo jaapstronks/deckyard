@@ -59,11 +59,10 @@
  *
  * Options:
  *   --dry-run            Report what would change; write nothing.
- *   --backend <mode>     `auto` (default, follows STORAGE_MODE), `file`,
- *                        `postgres`, or `both`.
+ *   --backend <mode>     `postgres` (the default), `file`, or `both`.
  *   --dir <path>         File-store root to walk (default: the configured data
- *                        dir). Implies `--backend file`; use it to migrate an
- *                        export.
+ *                        dir). Makes `file` the default backend; use it to
+ *                        migrate an export.
  *   --include-versions   Also fold version snapshots (see above).
  *
  * Exit code: 0 on success, 1 on failure.
@@ -76,7 +75,6 @@ import { fileURLToPath } from 'node:url';
 import { isCli } from './lib/is-cli.js';
 import { rewriteJsonColumns } from './lib/pg-json-rewrite.js';
 import { loadDotEnv } from '../server/config/env.js';
-import { isPostgresMode } from '../server/config/database.js';
 import { dataDir } from '../server/config/storage-paths.js';
 import { ensureSlideBgImage } from '../shared/slide-types/legacy-bg-image.js';
 
@@ -273,45 +271,55 @@ export async function migratePostgres(db, opts = {}) {
  * ------------------------------------------------------------------ */
 
 /**
+ * Parse the CLI flags.
+ *
+ * `--backend` names a store to walk, not a configuration to read: `--dir`
+ * points at a legacy file-store export, which exists regardless of how this
+ * install stores its own data. Without the flag the default follows from
+ * `--dir` — an export to walk means `file`, anything else means `postgres`,
+ * the one storage backend Deckyard has (D191).
+ *
  * @param {string[]} argv - `process.argv.slice(2)`
  * @returns {{dryRun: boolean, backend: string, dir: (string|null), includeVersions: boolean}}
  */
-function parseArgs(argv) {
+export function parseArgs(argv) {
   const dryRun = argv.includes('--dry-run');
   const includeVersions = argv.includes('--include-versions');
   const backendIdx = argv.indexOf('--backend');
   const dirIdx = argv.indexOf('--dir');
   const dir = dirIdx !== -1 ? path.resolve(argv[dirIdx + 1] || '') : null;
-  let backend =
+  const backend =
     backendIdx !== -1
       ? String(argv[backendIdx + 1] || '').toLowerCase()
-      : 'auto';
-  if (dir && backend === 'auto') backend = 'file';
+      : dir
+        ? 'file'
+        : 'postgres';
   return { dryRun, backend, dir, includeVersions };
 }
+
+/** Stores `--backend` may name. */
+export const BACKENDS = Object.freeze(['file', 'postgres', 'both']);
 
 async function main() {
   const { dryRun, backend, dir, includeVersions } = parseArgs(
     process.argv.slice(2),
   );
-  if (!['auto', 'file', 'postgres', 'both'].includes(backend)) {
+  if (!BACKENDS.includes(backend)) {
     console.error(
-      `Unknown --backend "${backend}" (use auto, file, postgres or both).`,
+      `Unknown --backend "${backend}" (use ${BACKENDS.join(', ')}).`,
     );
     process.exit(1);
   }
 
   await loadDotEnv(REPO_ROOT);
-  const resolved =
-    backend === 'auto' ? (isPostgresMode() ? 'postgres' : 'file') : backend;
   const prefix = dryRun ? '[DRY RUN] ' : '';
   console.log(
     `${prefix}Folding legacy backgrounds (bgImage → slideBgImage) ` +
-      `(backend: ${resolved}, version history: ` +
+      `(backend: ${backend}, version history: ` +
       `${includeVersions ? 'included' : 'skipped'})\n`,
   );
 
-  if (resolved === 'file' || resolved === 'both') {
+  if (backend === 'file' || backend === 'both') {
     const root = dir || dataDir(REPO_ROOT);
     const stats = await migrateFileStore(root, { dryRun, includeVersions });
     console.log(`File store: ${stats.root}`);
@@ -322,14 +330,7 @@ async function main() {
     console.log('');
   }
 
-  if (resolved === 'postgres' || resolved === 'both') {
-    if (!isPostgresMode()) {
-      console.error(
-        'STORAGE_MODE is not "postgres", so there is no database to migrate.\n' +
-          'Run this on the Postgres install (or point --dir at a file-store export).',
-      );
-      process.exit(1);
-    }
+  if (backend === 'postgres' || backend === 'both') {
     const { initializeDatabase, closeDatabase } =
       await import('../server/db/client.js');
     const db = await initializeDatabase();
