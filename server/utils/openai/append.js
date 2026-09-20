@@ -85,7 +85,7 @@ export async function generateSlidesToAppendFromRawContent(
     '- Do NOT include UUIDs or ids.',
     '- Do NOT repeat existing slides; build logically on what already exists.',
     '- Do NOT add a new title-slide unless the user explicitly asks for it.',
-    '- Do NOT output follow-invite-slide; the app manages that automatically.',
+    '- Do NOT output follow-invite-slide.',
     '',
     buildSlideTypesPrompt({
       preferredPlaceholderImage,

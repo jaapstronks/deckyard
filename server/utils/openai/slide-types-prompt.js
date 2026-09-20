@@ -413,9 +413,7 @@ export function buildSlideTypesPrompt({
     }
   }
 
-  lines.push(
-    'IMPORTANT: Do NOT output "follow-invite-slide"; the app manages that automatically.',
-  );
+  lines.push('IMPORTANT: Do NOT output "follow-invite-slide".');
 
   return lines.join('\n');
 }

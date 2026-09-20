@@ -1,5 +1,5 @@
 /**
- * Who may insert a slide type, and where that answer is allowed to live.
+ * Who puts a slide in a deck, and where that answer is allowed to live.
  *
  * `follow-invite-slide` carried two answers to one question (B368). Its
  * definition claimed "the app inserts and maintains this slide itself, right
@@ -14,10 +14,20 @@
  * Two halves, so it cannot drift back:
  *
  * 1. The contract itself — agent opt-out is not an insertion ban.
- * 2. The form — a type definition does not carry a second answer about the
- *    editor's insertion gate. A type that really is uninsertable declares it
- *    in shared/slide-types/policy.js, next to `custom-html-slide` and
- *    `deprecated`; prose beside `ai:` is not a gate and cannot be executed.
+ * 2. The claim, wherever it is written. One assertion over one concept: a
+ *    slide does not arrive in a deck by itself, and a type definition is not
+ *    where an insertion gate is declared. A type that really is uninsertable
+ *    declares it in shared/slide-types/policy.js, next to `custom-html-slide`
+ *    and `deprecated`; prose beside `ai:` is not a gate and cannot be
+ *    executed.
+ *
+ * Half 2 scans the shipping surfaces rather than one folder, because that is
+ * exactly how the claim survived the first attempt: the retired sentence was
+ * still four times over in the prompt copy the model reads
+ * (server/utils/openai/*, server/utils/ai/prompts/*), which a scan of
+ * shared/slide-types/types/ cannot see (D195). History is not a surface:
+ * CHANGELOG.md and docs/plans/ quote the retired sentence on purpose, and are
+ * not scanned.
  */
 
 import { test } from 'node:test';
@@ -31,9 +41,25 @@ import { isInsertableSlideType } from '../shared/slide-types/policy.js';
 import { isAgentOptOut } from '../server/utils/ai/slide-catalog/agent-catalog.js';
 import { PICKER_GROUP_ORDER } from '../client/views/editor/slide-type-picker/data.js';
 
-const TYPES_DIR = fileURLToPath(
-  new URL('../shared/slide-types/types/', import.meta.url),
-);
+const ROOT = fileURLToPath(new URL('../', import.meta.url));
+
+/** Shipping surfaces: code the app runs, and docs that describe what is. */
+const SCANNED = [
+  { dir: 'shared', ext: ['.js'] },
+  { dir: 'server', ext: ['.js'] },
+  { dir: 'client', ext: ['.js'] },
+  { dir: 'tests', ext: ['.js'] },
+  { dir: 'docs', ext: ['.md'] },
+];
+
+/** Not a surface: history, generated output, and this guard's own examples. */
+const SKIP = new Set([
+  'node_modules',
+  'plans', // symlink to the private planning repo; quotes retired wording
+  'follow-invite-insertability.test.js',
+]);
+
+const TYPES_PREFIX = path.join('shared', 'slide-types', 'types') + path.sep;
 
 test('the follow-along invite is withheld from agents and offered to people', () => {
   const type = 'follow-invite-slide';
@@ -59,36 +85,82 @@ test('the follow-along invite is withheld from agents and offered to people', ()
   );
 });
 
-test('no slide-type definition claims the picker refuses it', () => {
-  // Substance, not wording: a claim that the picker *refuses to insert*.
-  // "one picker tile", "the alignment picker", "which shelf offers this type"
-  // all describe the type and are fine — the gate is isInsertableSlideType(),
-  // and only a claim about that gate belongs elsewhere. See the docstring.
-  const REFUSAL =
-    /\bpicker\b[^.]{0,60}\b(disabl|refus|block|prevent|forbid)\w*\s+(insert|add)/i;
-  const REVERSED =
-    /\b(disabl|refus|block|prevent|forbid)\w*\s+(insertion|inserting|adding)[^.]{0,60}\bpicker\b/i;
-
+test('nothing claims a slide arrives in a deck without a person', () => {
   const offenders = [];
-  for (const entry of readdirSync(TYPES_DIR, { withFileTypes: true })) {
-    const files = entry.isDirectory()
-      ? readdirSync(path.join(TYPES_DIR, entry.name))
-          .filter((f) => f.endsWith('.js'))
-          .map((f) => path.join(entry.name, f))
-      : entry.name.endsWith('.js')
-        ? [entry.name]
-        : [];
-    for (const rel of files) {
-      const src = readFileSync(path.join(TYPES_DIR, rel), 'utf8');
-      if (REFUSAL.test(src) || REVERSED.test(src)) offenders.push(rel);
+  for (const rel of sourceFiles()) {
+    for (const [line, sentence] of claimsAbout(rel)) {
+      if (ARRIVES_BY_ITSELF.some((re) => re.test(sentence)))
+        offenders.push(`${rel}:${line} — ${sentence.trim()}`);
     }
   }
 
   assert.deepEqual(
     offenders,
     [],
-    'a type definition must not describe the editor as refusing to insert it — ' +
-      'declare it in shared/slide-types/policy.js § isInsertableSlideType instead, ' +
-      'where the picker, the slides panel and the theme preview all read it',
+    'a slide type does not place itself and the picker does not refuse one on ' +
+      'its own authority — say what is true (the user inserts it; the editor ' +
+      'may suggest a position), and declare a real insertion gate in ' +
+      'shared/slide-types/policy.js § isInsertableSlideType, where the picker, ' +
+      'the slides panel and the theme preview all read it',
   );
 });
+
+/** The one false claim, in the spellings it has actually taken. */
+const ARRIVES_BY_ITSELF = [
+  // "the app manages that automatically", "the server maintains it automatically"
+  /\b(app|server|editor|deckyard|system)\b[^,]{0,40}\b(manages?|inserts?|adds?|places?|maintains?)\b[^,]{0,60}\bautomatic/i,
+  // "This slide is managed automatically by the server"
+  /\b(managed|inserted|added|placed|maintained)\s+automatically\b/i,
+  // "the app auto-inserts one if missing"
+  /\bauto-?(insert|add|place)\w*/i,
+  // "the picker disables insertion for the same reason"
+  /\bpicker\b[^,]{0,60}\b(disabl|refus|block|prevent|forbid)\w*\s+(insert|add)/i,
+  /\b(disabl|refus|block|prevent|forbid)\w*\s+(insertion|inserting|adding)[^,]{0,60}\bpicker\b/i,
+];
+
+/** A sentence that denies the claim is the claim's cure, not the claim. */
+const DENIAL = /\b(not|never|nor|no|nothing|none|without)\b|n't\b/i;
+
+/**
+ * Sentences from `rel` that speak about a slide type, as [line, sentence].
+ *
+ * A file under shared/slide-types/types/ is its type's definition, so all of
+ * it counts; anywhere else only the lines that name the invite do, which
+ * keeps unrelated prose about other automatic machinery out of the guard.
+ *
+ * @param {string} rel - Repo-relative path.
+ * @returns {Array<[number, string]>}
+ */
+function claimsAbout(rel) {
+  const src = readFileSync(path.join(ROOT, rel), 'utf8');
+  const wholeFile = rel.startsWith(TYPES_PREFIX);
+  const out = [];
+  src.split('\n').forEach((text, i) => {
+    if (!wholeFile && !/follow-invite|follow-along invite/i.test(text)) return;
+    for (const sentence of text.split(/[.;]/)) {
+      if (!DENIAL.test(sentence)) out.push([i + 1, sentence]);
+    }
+  });
+  return out;
+}
+
+/**
+ * Every scanned source file, repo-relative, symlinks not followed.
+ *
+ * @returns {string[]}
+ */
+function sourceFiles() {
+  const out = [];
+  const walk = (rel, ext) => {
+    for (const entry of readdirSync(path.join(ROOT, rel), {
+      withFileTypes: true,
+    })) {
+      if (SKIP.has(entry.name) || entry.isSymbolicLink()) continue;
+      const child = path.join(rel, entry.name);
+      if (entry.isDirectory()) walk(child, ext);
+      else if (ext.includes(path.extname(entry.name))) out.push(child);
+    }
+  };
+  for (const { dir, ext } of SCANNED) walk(dir, ext);
+  return out;
+}
