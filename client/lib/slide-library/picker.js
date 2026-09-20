@@ -219,7 +219,6 @@ export function createSlideLibraryPicker({
   ) => {
     const fav = !!it?.favorite;
     const type = cleanStr(it?.slideType);
-    const insertDisabled = type === 'follow-invite-slide';
     const isSelected = state.isSelected(it.id);
     const activeView = state.getView();
 
@@ -253,7 +252,6 @@ export function createSlideLibraryPicker({
     const content = renderCardContent(it, shelf, type, {
       afterSlideId,
       onPicked,
-      insertDisabled,
       rerender,
     });
     card.append(content);
@@ -406,7 +404,7 @@ export function createSlideLibraryPicker({
     it,
     shelf,
     type,
-    { afterSlideId, onPicked, insertDisabled, rerender } = {},
+    { afterSlideId, onPicked, rerender } = {},
   ) => {
     const activeView = state.getView();
     const content = h('div', { class: 'ps-lib-card-content' });
@@ -452,15 +450,16 @@ export function createSlideLibraryPicker({
 
     content.append(meta);
 
-    // Action buttons
+    // Action buttons. Whether this type may be inserted at all is not decided
+    // here: `insertFromLibraryItem` asks `isInsertableSlideType()` (the one
+    // authority, shared/slide-types/policy.js) and refuses with a toast, the
+    // same as every other insertion path (B386).
     if (allowInsert && activeView !== 'trash') {
       const insertBtn = h('button', {
         class: 'btn btn-primary is-compact ps-lib-action-btn',
         type: 'button',
         text: t('slideLibrary.action.insert', 'Insert'),
-        disabled: insertDisabled,
         onclick: () => {
-          if (insertDisabled) return;
           insertFromLibraryItem?.(it, { afterSlideId });
           onPicked?.();
         },
