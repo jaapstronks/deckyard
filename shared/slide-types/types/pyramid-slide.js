@@ -118,7 +118,7 @@ export default {
   ],
   defaultsByLang: {
     nl: {
-      title: "Maslow's piramide",
+      title: 'Piramide van Maslow',
       subheading: '',
       bottomSubheading: '',
       levels: [
