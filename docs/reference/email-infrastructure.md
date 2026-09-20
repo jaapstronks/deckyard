@@ -206,11 +206,17 @@ Honest gaps:
   answers "which language does this address read?", and the password-reset and
   magic-link routes hand its answer to the sender. Every other sender still
   falls back to its `locale = 'en'` default, so an invitation, a collaborator
-  invite, a guest verification, a comment notification and a digest go out in
-  English regardless of the recipient — and the instance default locale an
-  admin sets in the panel governs template _editing_, not what is sent. The
-  remaining senders are not one decision: an invitation's recipient has no
-  account yet, so there is no `uiLocale` to read.
+  invite, a guest verification, a comment notification, an export-ready notice
+  and a digest go out in English regardless of the recipient — and the
+  instance default locale an admin sets in the panel governs template
+  _editing_, not what is sent. The rest are **two** groups, not one: an
+  invitation or guest verification reaches an address with no account, so
+  there is no `uiLocale` to read and the instance default is the answer;
+  export-ready and the two digests reach an account holder, so for them this
+  is the same question with a different answer and only the hand-off is
+  missing (B389). The digests need more than a hand-off: they have no `locale`
+  parameter at all, and their body is AI-generated prose, so translating their
+  chrome alone would half-translate the mail.
 
 - **`exportReady` is not a real template type.** `senders-export.js` asks
   `trySendCustomTemplate` for `templateType: 'exportReady'`, but

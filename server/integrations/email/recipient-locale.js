@@ -8,14 +8,17 @@
  */
 
 import { normalizeLocale } from '../../i18n/index.js';
+import { DEFAULT_LOCALE } from '../../storage/email-templates.js';
 import { getUserSettings } from '../../storage/settings.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { createLogger } from '../../utils/logger.js';
 
 const log = createLogger('email');
 
-/** The language Deckyard writes in when it has nothing better to go on. */
-export const FALLBACK_LOCALE = 'en';
+// The language Deckyard writes in when it has nothing better to go on is the
+// mail default locale, not a second constant beside it: `DEFAULT_LOCALE`
+// already names that meaning and `email-template-resolver.js` falls back to
+// the same value one layer down. Which language that should be is D190/B380.
 
 /**
  * Resolve the locale to write to one recipient in.
@@ -37,7 +40,7 @@ export const FALLBACK_LOCALE = 'en';
  */
 export async function resolveRecipientLocale({ repoRoot, email }) {
   const address = String(email || '').trim();
-  if (!address) return FALLBACK_LOCALE;
+  if (!address) return DEFAULT_LOCALE;
 
   try {
     const settings = await getUserSettings(
@@ -47,14 +50,14 @@ export async function resolveRecipientLocale({ repoRoot, email }) {
       ),
       address,
     );
-    return normalizeLocale(settings?.uiLocale) || FALLBACK_LOCALE;
+    return normalizeLocale(settings?.uiLocale) || DEFAULT_LOCALE;
   } catch (err) {
     // A mail in the wrong language beats no mail: this sits in front of a
     // password reset, so a settings read that fails must not stop the send.
     log.warn(
-      `Could not read the recipient locale, sending in ${FALLBACK_LOCALE}:`,
+      `Could not read the recipient locale, sending in ${DEFAULT_LOCALE}:`,
       err.message,
     );
-    return FALLBACK_LOCALE;
+    return DEFAULT_LOCALE;
   }
 }
