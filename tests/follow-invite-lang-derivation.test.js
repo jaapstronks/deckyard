@@ -191,10 +191,26 @@ test('a stale stored language on an unsaved deck is ignored at render', () => {
   assert.doesNotMatch(html, /Follow along on your phone/);
 });
 
-test('rendering without a language falls back to nl, as before', () => {
+test('rendering without a language uses the one documented copy fallback', () => {
+  // Unreachable in production — `tests/slide-copy-language.test.js` pins that
+  // every render entrypoint hands the renderer a language explicitly. When a
+  // caller omits one anyway, the copy follows the single documented ladder and
+  // that ladder ends in English (`DEFAULT_SLIDE_COPY_LANG`,
+  // docs/reference/slide-copy-language.md).
+  //
+  // It used to answer Dutch here, because the invite carried a private copy
+  // table with `COPY[lang] || COPY.nl` — a second fallback ladder, which is the
+  // B358 defect. B383 folded that table into `SLIDE_COPY`; this assertion is
+  // the one that would notice a third one coming back.
+  //
+  // The QR target and `data-follow-code` still resolve through the *deck*
+  // language (`DEFAULT_DECK_LANG`), because they answer a different question —
+  // which language version's join code is this — and a deck may have versions
+  // that `SLIDE_COPY` has no table for.
   const html = renderSlideHtml(
     { type: 'follow-invite-slide', content: { presentationId: 'deck-1' } },
     {},
   );
-  assert.match(html, /Volg mee op je telefoon/);
+  assert.match(html, /Follow along on your phone/);
+  assert.doesNotMatch(html, /Volg mee op je telefoon/);
 });

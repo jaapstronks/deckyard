@@ -90,16 +90,16 @@ export default {
 
             <div class="sfi-methods" role="group" aria-label="${escapeHtml(copy.feedbackMethodsLabel)}">
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-title">${escapeHtml(copy.feedbackScan)}</div>
+                <div class="sfi-card-title">${escapeHtml(copy.scanLabel)}</div>
                 <div class="sfi-qr-wrap">
                   <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
                     relFollow,
-                  )}" role="img" aria-label="${escapeHtml(copy.feedbackQrCodeLabel)}"></canvas>
+                  )}" role="img" aria-label="${escapeHtml(copy.qrCodeLabel)}"></canvas>
                 </div>
               </div>
 
               <div class="sfi-card on-surface-light">
-                <div class="sfi-card-title">${escapeHtml(copy.feedbackOrGoTo)}</div>
+                <div class="sfi-card-title">${escapeHtml(copy.orGoToLabel)}</div>
                 <div class="sfi-go" data-follow-go-url="1">/go</div>
                 ${codeRows
                   .map(
