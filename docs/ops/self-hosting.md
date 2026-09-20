@@ -189,8 +189,10 @@ Do this in order (on a compose stack, prefix the npm commands with
    ```
 
    Zero rows in `presentations` while `server/data/presentations/` has decks →
-   **stop**: that data never reached the database and there is no import path
-   left to run. Keep the directory and its backup; do not prune.
+   **stop**: those decks never reached the database and there is no import path
+   left for them — migrations 053/058–061 still read a legacy `DATA_DIR`, but
+   none of them covers `presentations/`. Keep the directory and its backup; do
+   not prune.
 
 3. **Back up the whole directory** before deleting anything, and keep the
    archive at least one release:
