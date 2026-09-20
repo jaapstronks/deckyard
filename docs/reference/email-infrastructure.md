@@ -213,10 +213,10 @@ Honest gaps:
   invitation or guest verification reaches an address with no account, so
   there is no `uiLocale` to read and the instance default is the answer;
   export-ready and the two digests reach an account holder, so for them this
-  is the same question with a different answer and only the hand-off is
-  missing (B389). The digests need more than a hand-off: they have no `locale`
-  parameter at all, and their body is AI-generated prose, so translating their
-  chrome alone would half-translate the mail.
+  is the same question with a different answer. For export-ready only the
+  hand-off is missing. The digests need more than a hand-off: they have no
+  `locale` parameter at all, and their body is AI-generated prose, so
+  translating their chrome alone would half-translate the mail.
 
 - **`exportReady` is not a real template type.** `senders-export.js` asks
   `trySendCustomTemplate` for `templateType: 'exportReady'`, but
