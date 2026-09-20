@@ -9,7 +9,7 @@ const COPY = {
     methodScan: 'Scan',
     methodType: 'Of ga naar',
     codeLabel: 'Code',
-    followMethodsLabel: 'Meekijk methodes',
+    followMethodsLabel: 'Meekijkmethodes',
     qrCodeLabel: 'QR-code',
     accessCodeLabel: 'Toegangscode',
   },
