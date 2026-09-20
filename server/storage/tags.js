@@ -14,10 +14,12 @@
  * indirection); the shapes below are the storage contract for tags.
  */
 
+import { sql } from 'kysely';
+
 import { getDb, transaction } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
-import { ValidationError } from '../utils/errors.js';
 import { nowIso } from '../utils/normalize.js';
+import { checkTagName, TAG_NAME_MESSAGES } from '../../shared/tag-name.js';
 import { resolveScope } from './scope.js';
 
 /**
@@ -31,23 +33,55 @@ const LINK_COLUMN = {
 };
 
 /**
- * The names a tag write keeps: trimmed, non-empty, at most the column's 100
- * characters, and each name once regardless of case.
- * @param {string[]} tagNames
- * @returns {string[]}
+ * The located half of an `invalid` result for a refused tag name — everything
+ * but the field, which each mint site spells out as a literal so the
+ * vocabulary gate can read it (`tests/storage-reason-vocabulary.test.js`).
+ * `index` rides along only when the name came out of a list, because there is
+ * nowhere to point otherwise.
+ *
+ * @param {string} code
+ * @param {number|null} index
+ * @returns {{fieldProblem: object, message: string}}
  */
-function normalizeTagNames(tagNames) {
-  const kept = [];
-  const seenLower = new Set();
-  for (const raw of tagNames || []) {
-    const name = String(raw || '').trim();
-    if (!name || name.length > 100) continue;
-    const lower = name.toLowerCase();
-    if (seenLower.has(lower)) continue;
-    seenLower.add(lower);
-    kept.push(name);
+function tagNameProblem(code, index) {
+  return {
+    fieldProblem: index == null ? { code } : { code, index },
+    message: TAG_NAME_MESSAGES[code],
+  };
+}
+
+/**
+ * Validate a whole list of tag names, refusing on the first bad one and saying
+ * where it sits — `details.field` plus `details.index` on the wire, so a client
+ * can point at the offending chip instead of parsing a sentence.
+ *
+ * The list is **not** deduplicated here. Two names are the same tag when the
+ * database says so (`idx_tags_org_name` is unique on `lower(name)`), and
+ * JavaScript's fold is not the database's: `'İ'.toLowerCase()` is `i` + a
+ * combining dot, where PostgreSQL's `lower('İ')` is a plain `i`. A second fold
+ * here would be a second authority on tag identity, and it was exactly that
+ * disagreement that let two names through as one tag row and crashed the write
+ * (B370). {@link replaceTagLinks} dedupes on the resolved tag instead.
+ *
+ * @param {string[]} tagNames
+ * @returns {{ok: true, names: string[]}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: {code: string, index: number}, message: string}}
+ */
+function validateTagNames(tagNames) {
+  const names = [];
+  const list = tagNames || [];
+  for (let index = 0; index < list.length; index += 1) {
+    const checked = checkTagName(list[index]);
+    if (!checked.ok) {
+      return {
+        ok: false,
+        reason: 'invalid',
+        field: 'tags',
+        ...tagNameProblem(checked.code, index),
+      };
+    }
+    names.push(checked.name);
   }
-  return kept;
+  return { ok: true, names };
 }
 
 /**
@@ -61,14 +95,17 @@ function normalizeTagNames(tagNames) {
  * tags stay and the caller sees the error.
  *
  * Tags themselves are the organization's, reused case-insensitively and created
- * on first use.
+ * on first use. **The database owns that fold**: `idx_tags_org_name` is unique
+ * on `(organization_id, lower(name))`, so the lookup lowercases through
+ * PostgreSQL and the list is deduplicated on the tag it resolved to, never on a
+ * JavaScript approximation of `lower()` (B370).
  *
  * @param {object} params
  * @param {'presentation_tags'|'slide_library_tags'} params.linkTable
  * @param {string} params.rowId - The presentation or library item
  * @param {string} params.orgId
  * @param {string[]} params.tagNames
- * @returns {Promise<Array<{id: string, name: string}>>} The tags the row now carries
+ * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
  */
 export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
   const linkColumn = LINK_COLUMN[linkTable];
@@ -76,19 +113,23 @@ export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
   if (!linkColumn) {
     throw new TypeError(`replaceTagLinks: unknown link table "${linkTable}"`);
   }
-  const names = normalizeTagNames(tagNames);
+  const validated = validateTagNames(tagNames);
+  if (!validated.ok) return validated;
+  const names = validated.names;
 
-  return transaction(async (trx) => {
+  const tags = await transaction(async (trx) => {
     await trx.deleteFrom(linkTable).where(linkColumn, '=', rowId).execute();
     if (names.length === 0) return [];
 
-    const tags = [];
+    /** The tags this row will carry, in first-seen order, each one once. */
+    const resolved = [];
+    const seenIds = new Set();
     for (const name of names) {
       let tag = await trx
         .selectFrom('tags')
         .select(['id', 'name'])
         .where('organization_id', '=', orgId)
-        .where(trx.fn('lower', ['name']), '=', name.toLowerCase())
+        .where(trx.fn('lower', ['name']), '=', trx.fn('lower', [sql.val(name)]))
         .executeTakeFirst();
 
       if (!tag) {
@@ -99,13 +140,15 @@ export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
           .executeTakeFirst();
       }
 
-      tags.push({ id: tag.id, name: tag.name });
+      if (seenIds.has(tag.id)) continue;
+      seenIds.add(tag.id);
+      resolved.push({ id: tag.id, name: tag.name });
     }
 
     await trx
       .insertInto(linkTable)
       .values(
-        tags.map((tag) => ({
+        resolved.map((tag) => ({
           [linkColumn]: rowId,
           tag_id: tag.id,
           created_at: nowIso(),
@@ -113,8 +156,10 @@ export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
       )
       .execute();
 
-    return tags;
+    return resolved;
   });
+
+  return { ok: true, tags };
 }
 
 /**
@@ -221,7 +266,7 @@ export async function getTagsForPresentations(storageScope, presentationIds) {
  * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} presentationId - Presentation ID
  * @param {string[]} tagNames - Array of tag names
- * @returns {Promise<Array<{id: string, name: string}>>}
+ * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
  */
 export async function setTagsForPresentation(
   storageScope,
@@ -239,30 +284,46 @@ export async function setTagsForPresentation(
 
 /**
  * Create a new tag in the storageScope's organization (if it doesn't exist).
+ *
+ * Takes the same name contract as a tag write ({@link replaceTagLinks}) — one
+ * answer to "what may a tag be called", not one per entry point — and refuses
+ * through the storage vocabulary rather than a thrown 400, so both surfaces
+ * answer in the one envelope `storageError()` writes.
+ *
  * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} name - Tag name
- * @returns {Promise<{id: string, name: string}>}
+ * @returns {Promise<{ok: true, tag: {id: string, name: string}}|{ok: false, reason: 'invalid', field: 'name', fieldProblem: object, message: string}>}
  */
 export async function createTag(storageScope, name) {
   const ctx = resolveScope(storageScope, 'createTag');
+
+  // The name is judged before the database is reached: a refusal is the
+  // caller's input, and it needs nothing looked up to say so.
+  const checked = checkTagName(name);
+  if (!checked.ok) {
+    return {
+      ok: false,
+      reason: 'invalid',
+      field: 'name',
+      ...tagNameProblem(checked.code, null),
+    };
+  }
+  const tagName = checked.name;
+
   const db = getDb();
   const orgId = getOrgId(ctx);
 
-  const trimmedName = String(name || '').trim();
-  if (!trimmedName || trimmedName.length > 100) {
-    throw new ValidationError('Invalid tag name');
-  }
-
-  // Check if tag already exists.
+  // Check if tag already exists — through the database's fold, the same one
+  // `idx_tags_org_name` keys on.
   const existing = await db
     .selectFrom('tags')
     .select(['id', 'name'])
     .where('organization_id', '=', orgId)
-    .where(db.fn('lower', ['name']), '=', trimmedName.toLowerCase())
+    .where(db.fn('lower', ['name']), '=', db.fn('lower', [sql.val(tagName)]))
     .executeTakeFirst();
 
   if (existing) {
-    return { id: existing.id, name: existing.name };
+    return { ok: true, tag: { id: existing.id, name: existing.name } };
   }
 
   // Create new tag.
@@ -270,13 +331,13 @@ export async function createTag(storageScope, name) {
     .insertInto('tags')
     .values({
       organization_id: orgId,
-      name: trimmedName,
+      name: tagName,
       created_at: nowIso(),
     })
     .returning(['id', 'name'])
     .executeTakeFirst();
 
-  return { id: row.id, name: row.name };
+  return { ok: true, tag: { id: row.id, name: row.name } };
 }
 
 /**

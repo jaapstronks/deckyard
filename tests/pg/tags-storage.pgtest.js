@@ -5,7 +5,7 @@
  * same `server/storage/tags.js` facade against the file adapter). This is
  * the coverage that must survive the file adapter's removal (PR G): the tag
  * round-trip the editor and list views depend on —
- * - set/get tags for a presentation (case-insensitive dedup, blank drop)
+ * - set/get tags for a presentation (case-insensitive dedup, blank refused)
  * - a shared tag id across presentations by name
  * - bulk fetch (list views)
  * - org-wide list with usage counts
@@ -81,15 +81,25 @@ pgDescribe('tags storage (real PostgreSQL, via facade)', () => {
     assert.strictEqual(map.size, 0);
   });
 
+  it('refuses a blank name instead of dropping it (B370)', async () => {
+    const r = await setTagsForPresentation(storageScope, p1, ['Sales', '']);
+    assert.strictEqual(r.ok, false);
+    assert.strictEqual(r.reason, 'invalid');
+    assert.strictEqual(r.field, 'tags');
+    // It used to answer 200 with the name silently gone; the contract and its
+    // wire shape live in tests/pg/tag-name-contract.pgtest.js.
+    assert.strictEqual(r.fieldProblem.index, 1);
+  });
+
   it('sets and gets tags for a presentation (sorted, deduped)', async () => {
     const set = await setTagsForPresentation(storageScope, p1, [
       'Sales',
       'sales',
       'Q3',
-      '',
     ]);
-    // 'sales' is a case-insensitive dup of 'Sales'; blank is dropped.
-    assert.deepStrictEqual(set.map((t) => t.name).sort(), ['Q3', 'Sales']);
+    // 'sales' is the same tag as 'Sales' — the database's fold decides that.
+    assert.strictEqual(set.ok, true);
+    assert.deepStrictEqual(set.tags.map((t) => t.name).sort(), ['Q3', 'Sales']);
 
     const got = await getTagsForPresentation(storageScope, p1);
     assert.deepStrictEqual(
@@ -148,7 +158,8 @@ pgDescribe('tags storage (real PostgreSQL, via facade)', () => {
 
   it('creates a standalone tag and finds it via prefix search', async () => {
     const created = await createTag(storageScope, 'Engineering');
-    assert.strictEqual(created.name, 'Engineering');
+    assert.strictEqual(created.ok, true);
+    assert.strictEqual(created.tag.name, 'Engineering');
     const hits = await searchTags(storageScope, 'eng');
     assert.ok(hits.some((t) => t.name === 'Engineering'));
     // Unused tag has a zero count.
