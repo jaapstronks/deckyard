@@ -19,7 +19,7 @@
  * indirection); getDb() throws on an uninitialized database.
  */
 
-import { getDb } from '../db/client.js';
+import { getDb, transaction } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import { toStorageContext } from './scope.js';
@@ -129,35 +129,48 @@ async function filterExistingSlideIds(db, orgId, slideIds) {
 }
 
 /**
- * Replace a collection's ordered membership.
- * @param {import('kysely').Kysely} db
+ * Replace a collection's ordered membership, atomically (B371, D186).
+ *
+ * Filter, delete and insert run in **one** transaction this function opens
+ * itself; it takes no database handle, so there is no second shape in which a
+ * caller hands it a loose `db` and the delete can land alone. A failure after
+ * the delete — a constraint, a dropped connection, a slide deleted between the
+ * filter and the insert — rolls the whole replacement back and leaves the
+ * previous members in their previous order. Pinned by
+ * tests/pg/collection-membership-atomicity.pgtest.js.
+ *
+ * The filter is inside the transaction on purpose: it reads the very rows the
+ * insert's foreign key depends on, so reading it outside would guard against a
+ * state the write no longer sees.
  * @param {string} orgId
  * @param {string} collectionId
  * @param {string[]} slideIds
  * @returns {Promise<string[]>} the stored (validated) slide ids in order
  */
-async function replaceMembership(db, orgId, collectionId, slideIds) {
-  const valid = await filterExistingSlideIds(db, orgId, slideIds);
+async function replaceMembership(orgId, collectionId, slideIds) {
+  return transaction(async (trx) => {
+    const valid = await filterExistingSlideIds(trx, orgId, slideIds);
 
-  await db
-    .deleteFrom('slide_collection_items')
-    .where('collection_id', '=', collectionId)
-    .execute();
-
-  if (valid.length > 0) {
-    await db
-      .insertInto('slide_collection_items')
-      .values(
-        valid.map((slideId, index) => ({
-          collection_id: collectionId,
-          slide_library_id: slideId,
-          position: index,
-          created_at: now(),
-        })),
-      )
+    await trx
+      .deleteFrom('slide_collection_items')
+      .where('collection_id', '=', collectionId)
       .execute();
-  }
-  return valid;
+
+    if (valid.length > 0) {
+      await trx
+        .insertInto('slide_collection_items')
+        .values(
+          valid.map((slideId, index) => ({
+            collection_id: collectionId,
+            slide_library_id: slideId,
+            position: index,
+            created_at: now(),
+          })),
+        )
+        .execute();
+    }
+    return valid;
+  });
 }
 
 // ============================================================
@@ -245,12 +258,7 @@ async function createSlideCollection(data, ctx) {
     .returningAll()
     .executeTakeFirst();
 
-  const slideIds = await replaceMembership(
-    db,
-    orgId,
-    row.id,
-    data.slideIds || [],
-  );
+  const slideIds = await replaceMembership(orgId, row.id, data.slideIds || []);
   return mapSlideCollectionRow(
     row,
     slideIds,
@@ -288,7 +296,7 @@ async function updateSlideCollection(id, data, ctx) {
 
   let slideIds;
   if (data.slideIds !== undefined) {
-    slideIds = await replaceMembership(db, orgId, id, data.slideIds || []);
+    slideIds = await replaceMembership(orgId, id, data.slideIds || []);
   } else {
     const membership = await loadMembership(db, [id]);
     slideIds = membership.get(id) || [];
