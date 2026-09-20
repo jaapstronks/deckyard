@@ -28,6 +28,7 @@ import { nowIso } from '../utils/normalize.js';
 import { migrateLibraryItem } from '../../shared/slide-types/schema-version.js';
 import { mergeLibraryI18n } from '../../shared/slide-library/merge-content.js';
 import { ConflictError } from '../utils/errors.js';
+import { replaceTagLinks } from './tags.js';
 
 /**
  * Serialize a JSONB value for PostgreSQL.
@@ -641,7 +642,8 @@ export async function deleteOrganizationLibraryItem(
 // item outside the caller's shelf and owner is `not_found`, and writing tags on
 // the organization shelf passes the same guard as a name or content edit. Tags
 // are not part of `EDIT_KEYS`: they do not raise `revision` and take no
-// `If-Match`.
+// `If-Match`. Only the *selection* is library business: the replacement itself
+// is `replaceTagLinks` in server/storage/tags.js, shared with presentations.
 
 /**
  * Read the tags of one library item, selected like every mutation selects it.
@@ -731,7 +733,8 @@ export async function getTagsForSlideLibraryItems(
  * `whereItem` (someone else's personal item, or the wrong shelf, is
  * `not_found`); on the organization shelf the write passes `allowEdit`, the
  * one "change a shared item" rule (D170), and without a guard it is
- * `forbidden`.
+ * `forbidden`. The replacement itself is `replaceTagLinks`, the one
+ * tag-replacement path, and is atomic (B343, D184).
  *
  * @param {object} storageScope
  * @param {object} target - `{ id, shelf }`, as `getTagsForSlideLibraryItem`
@@ -761,76 +764,13 @@ export async function setTagsForSlideLibraryItem(
       typeof allowEdit === 'function' && (await allowEdit(existing));
     if (!allowed) return { ok: false, reason: 'forbidden' };
   }
-  const id = existing.id;
-  const db = getDb();
-  const orgId = getOrgId(ctx);
-
-  // Normalize tag names (trim, drop empties and over-long).
-  const normalizedNames = (tagNames || [])
-    .map((name) => String(name || '').trim())
-    .filter((name) => name.length > 0 && name.length <= 100);
-
-  // Remove duplicates (case-insensitive).
-  const uniqueNames = [];
-  const seenLower = new Set();
-  for (const name of normalizedNames) {
-    const lower = name.toLowerCase();
-    if (!seenLower.has(lower)) {
-      seenLower.add(lower);
-      uniqueNames.push(name);
-    }
-  }
-
-  // Remove all existing tags for this slide library item.
-  await db
-    .deleteFrom('slide_library_tags')
-    .where('slide_library_id', '=', id)
-    .execute();
-
-  if (uniqueNames.length === 0) return { ok: true, tags: [] };
-
-  // Get or create tags (reuses existing org tags).
-  const tagIds = [];
-  for (const name of uniqueNames) {
-    // Try to find existing tag (case-insensitive).
-    let tag = await db
-      .selectFrom('tags')
-      .select(['id', 'name'])
-      .where('organization_id', '=', orgId)
-      .where(db.fn('lower', ['name']), '=', name.toLowerCase())
-      .executeTakeFirst();
-
-    if (!tag) {
-      // Create new tag.
-      tag = await db
-        .insertInto('tags')
-        .values({
-          organization_id: orgId,
-          name,
-          created_at: nowIso(),
-        })
-        .returning(['id', 'name'])
-        .executeTakeFirst();
-    }
-
-    tagIds.push({ id: tag.id, name: tag.name });
-  }
-
-  // Insert slide_library_tags relationships.
-  if (tagIds.length > 0) {
-    await db
-      .insertInto('slide_library_tags')
-      .values(
-        tagIds.map((tag) => ({
-          slide_library_id: id,
-          tag_id: tag.id,
-          created_at: nowIso(),
-        })),
-      )
-      .execute();
-  }
-
-  return { ok: true, tags: tagIds };
+  const tags = await replaceTagLinks({
+    linkTable: 'slide_library_tags',
+    rowId: existing.id,
+    orgId: getOrgId(ctx),
+    tagNames,
+  });
+  return { ok: true, tags };
 }
 
 /**
