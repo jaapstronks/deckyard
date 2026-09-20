@@ -48,9 +48,9 @@ export function storageModeError() {
   if (raw === 'file') {
     return (
       'STORAGE_MODE="file" is no longer supported: disk-JSON storage was ' +
-      'removed in 1.x. Run `npm run db:import` once against your existing ' +
-      'data directory to move it into PostgreSQL, then remove STORAGE_MODE ' +
-      'from your environment (unset means "postgres").'
+      'removed in 1.x, and so was the one-time import that moved such a data ' +
+      'directory into PostgreSQL. Remove STORAGE_MODE from your environment ' +
+      '(unset means "postgres").'
     );
   }
   const hint =

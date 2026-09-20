@@ -186,8 +186,8 @@ Storage selection lives in `server/config/database.js`:
 
 - `STORAGE_MODE` — accepts exactly `postgres` (the default when unset).
   `storageModeError()` rejects anything else, with targeted messages for the
-  removed `file` mode (→ run `npm run db:import`) and the misspelling
-  `postgresql` (→ `postgres`).
+  removed `file` mode (→ unset the variable; there is no import path left) and
+  the misspelling `postgresql` (→ `postgres`).
 - Connection: `DATABASE_URL` **or** the discrete `DATABASE_HOST/PORT/NAME/USER/
 PASSWORD` set (`DATABASE_URL` wins when both are present), plus
   `DATABASE_SSL`, `DATABASE_SSL_REJECT_UNAUTHORIZED`, `DATABASE_POOL_MIN/MAX`.

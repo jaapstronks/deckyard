@@ -461,9 +461,8 @@ docker compose up -d --build
 ```
 
 Deckyard runs on PostgreSQL; the compose stack ships its own `postgres:16` and
-applies pending migrations automatically at container start. If your fork still
-holds decks in file storage, import them once with
-`docker compose exec app npm run db:import` — see `docs/ops/self-hosting.md`.
+applies pending migrations automatically at container start. File storage and
+its one-time import were both removed in 1.x — see `docs/ops/self-hosting.md`.
 
 Make sure your `.env` file on the server has:
 

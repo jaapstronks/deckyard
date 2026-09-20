@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
 /**
- * Prune the disk-JSON fossils that the one-time `db:import` left behind under
- * the data directory (`server/data/` by default).
+ * Prune the disk-JSON fossils left under the data directory (`server/data/`
+ * by default) by installs that predate PostgreSQL-only storage.
  *
  * Everything this removes was migrated into PostgreSQL during beta
- * (migrations 053, 058–061 and `db:import`); the files on disk are dead
- * copies. Two things in the data directory are ALIVE and are never touched:
+ * (migrations 053, 058–061, and the one-time file import retired in B385);
+ * the files on disk are dead copies. Two things in the data directory are
+ * ALIVE and are never touched:
  *
  *   - `deck-thumbs/`  — the deck-thumbnail cache (still written on every render)
  *   - `../uploads/`   — uploaded media (not under the data directory, listed
@@ -17,8 +18,8 @@
  *   1. The script refuses to run at all unless PostgreSQL is reachable AND the
  *      `presentations` table holds data for every deck JSON still on disk —
  *      the same signal as the boot-time migration guard
- *      (server/storage/boot-check.js). An un-imported install must run
- *      `npm run db:migrate && npm run db:import` first.
+ *      (server/storage/boot-check.js). On an install whose decks never reached
+ *      the database it refuses outright: there is no importer left to run.
  *   2. The default mode is a dry run: it prints what would be removed and
  *      exits. Deleting requires the explicit `--delete` flag.
  *   3. The prune list is a fixed allowlist of known-migrated paths; anything
@@ -55,7 +56,7 @@ const PRUNE_PATHS = [
   // on disk, which the live-session vocabulary guard forbids as a literal.
   'present' + '-sessions', //  migration 060
   'user-settings', //         migration 059
-  'presentations', //         db:import (this one arms the boot guard)
+  'presentations', //         retired file import (this one arms the boot guard)
   'published', //             empty remnant of the old ensureDirs()
   'polls', //                 empty remnant of the old ensureDirs()
   'settings.json', //         migration 059
@@ -112,8 +113,9 @@ async function main() {
     console.error(
       `The database holds no presentations while ${diskDecks} deck JSON ` +
         `file${diskDecks === 1 ? '' : 's'} still sit under ${path.join(base, 'presentations')}.\n` +
-        'That data has NOT been imported. Refusing to touch anything.\n' +
-        'Run first:  npm run db:migrate && npm run db:import',
+        'That data never reached the database, and the one-time file import ' +
+        'was retired in 1.x. Refusing to touch anything.\n' +
+        'Back the directory up yourself before removing it.',
     );
     process.exitCode = 1;
     return;

@@ -14,8 +14,9 @@
  *   disk JSON pulls a newer Deckyard and boots against an empty database while
  *   its data sits untouched under `server/data/`. An empty organization next to
  *   real data looks exactly like data loss. Nothing is read, written or deleted
- *   in the data directory; once `server/data/presentations/` is pruned after a
- *   verified import (scripts/prune-legacy-data.js), the trigger disarms itself.
+ *   in the data directory; once `server/data/presentations/` is moved aside,
+ *   the trigger disarms itself. There is no import path any more (B385): the
+ *   guard reports the situation, it does not offer to fix it.
  *
  * Order matters in server.js: the schema check runs first, because "is this
  * database empty?" is only a meaningful question once the tables exist.
@@ -130,9 +131,8 @@ export async function strandedFileDataError(repoRoot) {
     `legacy data directory is not empty:\n` +
     `  ${dir} - ${fileCount} deck${fileCount === 1 ? '' : 's'}\n` +
     `Starting now would show an empty organization next to your data, so Deckyard stops here.\n` +
-    `Your files have not been touched. Import them into Postgres (idempotent, safe to repeat):\n` +
-    `    npm run db:migrate && npm run db:import\n` +
-    `  Inside docker compose: docker compose exec app npm run db:import\n` +
-    `Disk-JSON storage was removed in 1.x, so STORAGE_MODE=file is no longer a way out.`
+    `Your files have not been touched, but Deckyard cannot read them: disk-JSON storage was ` +
+    `removed in 1.x and the one-time file->Postgres import was retired with it.\n` +
+    `Back the directory up and move it aside (or point DATA_DIR elsewhere) to continue.`
   );
 }

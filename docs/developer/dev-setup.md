@@ -97,7 +97,6 @@ NOTION_FEATURE=true
 | `npm run db:migrate`                      | Run pending database migrations                                                             |
 | `npm run db:migrate:down`                 | Rollback last migration                                                                     |
 | `npm run db:migrate:status`               | Show migration status                                                                       |
-| `npm run db:import`                       | Import file data into PostgreSQL                                                            |
 | `npm run i18n:audit`                      | Find hardcoded copy that bypasses `t()`, and orphan keys                                    |
 | `npm run i18n:sync`                       | Report what pruning dead keys and stripping Tier-2 copies of English would change           |
 | `npm run i18n:sync:apply`                 | Write that plan to disk                                                                     |
@@ -137,27 +136,6 @@ Or let compose do it:
 starts a bundled `postgres:16`, applies pending migrations at boot
 (`scripts/docker-entrypoint.sh`), and publishes the database on host port 5433.
 See `docs/ops/self-hosting.md`.
-
-### Importing Data: File to PostgreSQL
-
-For data left behind by the removed disk-JSON store. It reads an old data
-directory from disk and covers every domain that lived there (presentations,
-image library, slide library, published, tags, slide collections,
-slide-library usage). The import stays after the teardown, and is idempotent —
-running it twice imports nothing the second time.
-Presentation versions (DB migration 053) and derived ydoc collab-state are
-intentionally not imported.
-
-```bash
-# Dry run (see what would be imported, with per-domain counts)
-npm run db:import -- --dry-run
-
-# Import with reset (clear existing data first)
-npm run db:import -- --reset
-
-# Standard import
-npm run db:import
-```
 
 ---
 
