@@ -4,6 +4,10 @@ import path from 'node:path';
 // Minimal, dependency-free .env loader (server-side only).
 // - Only sets vars that are not already present in process.env
 // - Supports simple KEY=VALUE pairs, with optional quotes
+// - Everything after the first `=` is the value: there is no inline-comment
+//   syntax, so a `#` inside a value stays part of the value. Comments get
+//   their own line (the guard in tests/env-manifest.test.js pins that for
+//   .env.example).
 export function loadDotEnv(repoRoot) {
   const envPath = path.join(repoRoot, '.env');
   let raw = '';

@@ -1,6 +1,7 @@
 /**
- * Guard: `.env.example` is the complete manifest of recognized environment
- * variables.
+ * Guards over `.env.example`: it is the complete manifest of recognized
+ * environment variables, and every declaration line carries a value and
+ * nothing else.
  *
  * Every env var the engine reads — as a literal `process.env.SOME_VAR` or
  * through the accessor family (`envStr('SOME_VAR')` and friends) — must have
@@ -10,6 +11,12 @@
  *
  * The manifest may only grow: renaming or removing a declared variable is a
  * breaking change per docs/reference/versioning.md.
+ *
+ * The second guard is about the shape of those lines. `loadDotEnv()` takes
+ * everything after the first `=` as the value — no inline-comment syntax,
+ * deliberately, because stripping a `#` would silently truncate a secret that
+ * contains one. So a declaration line may not carry a trailing note: comments
+ * go on their own line above the declaration.
  *
  * The walk covers every tree that runs on a server: `server/` and the
  * server-side half of `shared/`. A knob is public surface wherever it is read
@@ -43,6 +50,10 @@ const ENV_READS = [
 ];
 const DECLARATION = /^#? ?([A-Z][A-Z0-9_]+)=/;
 
+// A note tacked onto the value: ` # …` (a would-be inline comment) or ` (…`
+// (a parenthetical aside). Both end up inside the value at load time.
+const TRAILING_NOTE = /\s#|\s\(/;
+
 function* envReads(src) {
   for (const re of ENV_READS) {
     for (const m of src.matchAll(re)) yield m;
@@ -69,6 +80,30 @@ function declaredVars() {
   }
   return declared;
 }
+
+test('no declaration line in .env.example carries a trailing note', () => {
+  const lines = fs
+    .readFileSync(path.join(repoRoot, '.env.example'), 'utf8')
+    .split('\n');
+
+  const offenders = [];
+  lines.forEach((line, i) => {
+    // Strip one leading `# ` so commented-out declarations are checked too —
+    // they are the ones an operator uncomments, note and all.
+    const bare = line.replace(/^#\s?/, '');
+    const m = bare.match(/^([A-Z][A-Z0-9_]+)=(.*)$/);
+    if (!m) return;
+    if (TRAILING_NOTE.test(m[2])) offenders.push(`${i + 1}: ${line}`);
+  });
+
+  assert.equal(
+    offenders.length,
+    0,
+    'Declaration lines in .env.example with a trailing note — everything ' +
+      'after `=` is the value, so put the comment on its own line above:\n  ' +
+      offenders.join('\n  '),
+  );
+});
 
 test('every env var the engine reads is declared in .env.example', () => {
   const declared = declaredVars();
