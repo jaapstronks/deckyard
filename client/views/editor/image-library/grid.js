@@ -106,12 +106,12 @@ export function createImageLibraryGrid({
           : null;
 
       // Favorite star button
-      const isFavorite = !!it?.isFavorite;
+      const favorite = !!it?.favorite;
       const starBtn = onToggleFavorite
         ? h('button', {
-            class: `image-lib-favorite-btn${isFavorite ? ' is-favorite' : ''}`,
+            class: `image-lib-favorite-btn${favorite ? ' is-favorite' : ''}`,
             type: 'button',
-            title: isFavorite
+            title: favorite
               ? t('imageLibrary.unfavorite', 'Remove from favorites')
               : t('imageLibrary.favorite', 'Add to favorites'),
             onclick: (e) => {

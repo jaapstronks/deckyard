@@ -204,7 +204,14 @@ writer that bypasses the route still meets them.
   (someone else's personal item and the wrong shelf are `404 not_found`). On
   the organization shelf every member may star an item they cannot edit. A
   favorite takes no `If-Match`, does not raise the revision and does not stamp
-  `updatedAt` / `updatedBy`. A create never carries favorites.
+  `updatedAt` / `updatedBy`. A create never carries favorites. The spelling is
+  the concept's, not this resource's: the image library carries the same
+  `favorite` flag, derived the same way and likewise outside its edit contract
+  (B344; [`media-library.md`](media-library.md) § Data model). Where the two
+  differ is only the write: an image is starred through
+  `POST /api/image-library/:id/favorite`, which toggles and answers
+  `{ id, favorite }`, because that library has no PATCH contract to hang a key
+  on.
 - **Revision.** Every item carries an integer `revision` (migration
   `082_slide_library_revision.js`, starting at 0). A PATCH with `name`,
   `description` or `content` needs `If-Match: <revision>` (read with

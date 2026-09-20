@@ -54,7 +54,7 @@ function filterBySection(items, section, userEmail) {
 
     case SECTIONS.FAVORITES:
       // Filter to favorited items (requires favorites data)
-      return items.filter((it) => it?.isFavorite);
+      return items.filter((it) => it?.favorite);
 
     case SECTIONS.ALL:
     default:
@@ -119,7 +119,6 @@ export function openImageLibraryPicker({
   let closed = false;
   let busy = false;
   let items = [];
-  let favorites = new Set();
   let activeTag = '';
   // Restore last-used section from localStorage, default to ALL
   let activeSection = SECTIONS.ALL;
@@ -208,16 +207,12 @@ export function openImageLibraryPicker({
       const resp = await api(`/api/image-library/${item.id}/favorite`, {
         method: 'POST',
       });
-      // Update the item's isFavorite status in our local array
+      // The item's own flag is the only record of the caller's star (D176):
+      // the toggle answers with the new state, the grid and the detail view
+      // read it straight off the item.
       items = items.map((it) =>
-        it?.id === item.id ? { ...it, isFavorite: resp.isFavorite } : it,
+        it?.id === item.id ? { ...it, favorite: resp.favorite } : it,
       );
-      // Update favorites set
-      if (resp.isFavorite) {
-        favorites.add(item.id);
-      } else {
-        favorites.delete(item.id);
-      }
       sidebarComponent?.render();
       gridComponent.renderGrid();
     } catch (e) {
@@ -404,7 +399,6 @@ export function openImageLibraryPicker({
   sidebarComponent = createMediaLibrarySidebar({
     user,
     items: () => items,
-    favorites: () => favorites,
     getActiveSection: () => activeSection,
     setActiveSection: handleSectionChange,
     getActiveTag: () => activeTag,
@@ -515,7 +509,6 @@ export function openImageLibraryPicker({
       sidebarComponent = createMediaLibrarySidebar({
         user,
         items: () => items,
-        favorites: () => favorites,
         getActiveSection: () => activeSection,
         setActiveSection: handleSectionChange,
         getActiveTag: () => activeTag,

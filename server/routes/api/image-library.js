@@ -5,6 +5,7 @@ import {
   listImageLibrary,
   updateImageLibraryItem,
   getImageFavorites,
+  isImageFavorite,
   toggleImageFavorite,
 } from '../../storage/image-library.js';
 import { getImageLibraryUsage } from '../../storage/image-library-usage.js';
@@ -26,6 +27,25 @@ import { listSandboxMedia } from '../../sandbox/media.js';
 import { getDataUrl } from '../../utils/request-validators.js';
 import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 
+/**
+ * Stamp the caller's own star on an item the route hands back (D176: every
+ * item a route returns carries `favorite` for the caller). Derived, never
+ * stored on the item and never part of the edit contract — a PUT body that
+ * carries it is ignored, because `updateImageLibraryItem` writes a closed key
+ * set. An anonymous caller has no star, so the flag is false without a query.
+ * @param {import('../../storage/scope.js').StorageScope} storageScope
+ * @param {{email?: string}|null} authedUser
+ * @param {object} item - A mapped image-library item
+ * @returns {Promise<object>} The item with `favorite`
+ */
+async function withFavorite(storageScope, authedUser, item) {
+  const email = authedUser?.email;
+  const favorite = email
+    ? await isImageFavorite(storageScope, item.id, email)
+    : false;
+  return { ...item, favorite };
+}
+
 // /api/image-library - Shared image library (shared across users).
 // The enableImageLibrary flag answers 404 before the method decision, so the
 // whole path stays one no-method handler (route-dispatch.md, guard-before-
@@ -43,18 +63,20 @@ async function handleImageLibraryCollection({
     // Sandbox: uploads are off, so seed a curated set of sample images and
     // logos a guest can actually place on a slide.
     if (flags.sandboxMode) items.unshift(...listSandboxMedia());
-    // Get user's favorites if logged in
-    let favoriteIds = [];
-    if (authedUser?.email) {
-      favoriteIds = await getImageFavorites(storageScope, authedUser.email);
-    }
-    const favoriteSet = new Set(favoriteIds);
-    // Add isFavorite flag to each item
-    const itemsWithFavorites = items.map((item) => ({
-      ...item,
-      isFavorite: favoriteSet.has(item.id),
-    }));
-    serveJson(res, 200, { items: itemsWithFavorites, favoriteIds });
+    // One star per item, spelled `favorite` (D176). The caller's own flag,
+    // derived here from their favorite rows; the set is the lookup, not a
+    // second field on the wire.
+    const favoriteSet = new Set(
+      authedUser?.email
+        ? await getImageFavorites(storageScope, authedUser.email)
+        : [],
+    );
+    serveJson(res, 200, {
+      items: items.map((item) => ({
+        ...item,
+        favorite: favoriteSet.has(item.id),
+      })),
+    });
     return true;
   }
   if (req.method === 'POST') {
@@ -70,7 +92,9 @@ async function handleImageLibraryCollection({
       ...body,
       uploadedBy: authedUser.email || null,
     });
-    serveJson(res, 201, created);
+    // A fresh image is nobody's favorite yet, but it still answers in the one
+    // shape every item-returning route uses (D176).
+    serveJson(res, 201, { ...created, favorite: false });
     return true;
   }
   return methodNotAllowed(res, ['GET', 'POST']);
@@ -181,7 +205,11 @@ async function handleReplaceUpload(
   await replaceUploadFromDataUrl(repoRoot, item.url, dataUrl);
   const updated = await updateImageLibraryItem(storageScope, imageId, {});
   if (!updated.ok) return notFound(res);
-  serveJson(res, 200, updated.image);
+  serveJson(
+    res,
+    200,
+    await withFavorite(storageScope, authedUser, updated.image),
+  );
   return true;
 }
 
@@ -199,12 +227,12 @@ async function handleToggleFavorite(
   const item = await getImageLibraryItem(storageScope, imageId);
   if (!item) return notFound(res);
 
-  const isFavorite = await toggleImageFavorite(
+  const favorite = await toggleImageFavorite(
     storageScope,
     imageId,
     authedUser.email,
   );
-  serveJson(res, 200, { id: imageId, isFavorite });
+  serveJson(res, 200, { id: imageId, favorite });
   return true;
 }
 
@@ -219,7 +247,7 @@ async function handleImageItem(
   if (req.method === 'GET') {
     const item = await getImageLibraryItem(storageScope, imageId);
     if (!item) return notFound(res);
-    serveJson(res, 200, item);
+    serveJson(res, 200, await withFavorite(storageScope, authedUser, item));
     return true;
   }
   if (req.method === 'PUT') {
@@ -231,7 +259,11 @@ async function handleImageItem(
     const body = parsed.body;
     const updated = await updateImageLibraryItem(storageScope, imageId, body);
     if (!updated.ok) return notFound(res);
-    serveJson(res, 200, updated.image);
+    serveJson(
+      res,
+      200,
+      await withFavorite(storageScope, authedUser, updated.image),
+    );
     return true;
   }
   if (req.method === 'DELETE') {
