@@ -40,7 +40,7 @@ export const LEGACY_DECK_FORMAT_IDS = Object.freeze(['slidecreator.deck']);
 
 /**
  * The MIME type a `.deck` bundle declares. Registered with IANA in the vendor
- * tree on 2026-08-14; changing it goes through Expert Review, so it is not a
+ * tree on 2026-08-13; changing it goes through Expert Review, so it is not a
  * value to rename lightly.
  * @see https://www.iana.org/assignments/media-types/application/vnd.deckyard.deck
  */

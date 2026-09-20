@@ -126,7 +126,7 @@ export default {
   ],
   defaultsByLang: {
     nl: {
-      title: 'SWOT Analyse',
+      title: 'SWOT-analyse',
       subheading: '',
       bottomSubheading: '',
       cells: [

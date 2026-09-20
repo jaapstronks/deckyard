@@ -127,11 +127,11 @@ export default {
   ],
   defaultsByLang: {
     nl: {
-      title: 'Conversie funnel',
+      title: 'Conversiefunnel',
       subheading: '',
       bottomSubheading: '',
       items: [
-        { label: 'Bezoekers', value: '10.000', text: 'Website verkeer' },
+        { label: 'Bezoekers', value: '10.000', text: 'Websiteverkeer' },
         { label: 'Leads', value: '2.500', text: '25% conversie' },
         { label: 'Opportunities', value: '500', text: '20% kwalificatie' },
         { label: 'Klanten', value: '100', text: '20% closing rate' },

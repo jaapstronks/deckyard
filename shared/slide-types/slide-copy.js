@@ -38,7 +38,7 @@ export const SLIDE_COPY = {
 
     // Feedback slide
     feedbackHelp: 'Geef je feedback via je telefoon.',
-    feedbackMethodsLabel: 'Feedback methodes',
+    feedbackMethodsLabel: 'Feedbackmethodes',
     feedbackScan: 'Scan',
     feedbackOrGoTo: 'Of ga naar',
     feedbackQrCodeLabel: 'QR-code',
@@ -74,7 +74,7 @@ export const SLIDE_COPY = {
     timelineLabel: 'Tijdlijn',
 
     // Follow-invite slide
-    followMethodsLabel: 'Meekijk methodes',
+    followMethodsLabel: 'Meekijkmethodes',
     qrCodeLabel: 'QR-code',
     accessCodeLabel: 'Toegangscode',
 
