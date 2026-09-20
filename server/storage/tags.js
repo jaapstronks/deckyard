@@ -51,6 +51,75 @@ function tagNameProblem(code, index) {
 }
 
 /**
+ * The conflict target of `idx_tags_org_name`, spelled as the index spells it.
+ *
+ * The index is functional — `CREATE UNIQUE INDEX idx_tags_org_name ON tags
+ * (organization_id, lower(name))` (migration 018) — so `ON CONFLICT` has to
+ * name the expression, not a column pair; a column list would target an index
+ * that does not exist and PostgreSQL would refuse the statement outright.
+ */
+const TAG_NAME_INDEX = sql`organization_id, lower(name)`;
+
+/**
+ * Resolve one tag name to the organization's tag row, creating it on first use
+ * — the single place where a name becomes a tag (B373).
+ *
+ * It is written as an insert that may find the tag already there, rather than a
+ * look followed by an insert, because those are two statements with a gap
+ * between them: two requests in one organization writing the same not-yet-
+ * existing name both missed the look, both inserted, and one came back with a
+ * `23505` the client saw as a 500. Within a single request it could not happen
+ * — a transaction sees its own insert — so it was a race *between* requests,
+ * and D187 left it outside the fold decision for that reason.
+ *
+ * The shape removes the race instead of catching it: `ON CONFLICT … DO NOTHING`
+ * makes a name another writer already took a no-op rather than an error, and
+ * the select that follows reads the row that won. **That select is not a race
+ * arm.** It answers "the tag the database already had", whether from last week
+ * or from a writer that committed a millisecond ago — the two cases are one
+ * case, which is why there is no retry and no error swallowed anywhere here.
+ * `DO UPDATE` would also return the row in one statement, but it rewrites and
+ * row-locks every tag on every save, and two saves touching the same two tags
+ * in opposite order would deadlock — a 500 traded for a rarer 500.
+ *
+ * **The fold stays the database's** (D187): the index keys on PostgreSQL's
+ * `lower()`, so both the conflict target and the lookup below lowercase in SQL.
+ * A JavaScript `toLowerCase()` here would be a second authority on tag identity
+ * and is exactly what B370 removed.
+ *
+ * @param {import('kysely').Kysely<any>|import('kysely').Transaction<any>} executor
+ * @param {string} orgId
+ * @param {string} name - Already validated by {@link validateTagNames}
+ * @returns {Promise<{id: string, name: string}>}
+ */
+async function resolveTag(executor, orgId, name) {
+  const inserted = await executor
+    .insertInto('tags')
+    .values({ organization_id: orgId, name, created_at: nowIso() })
+    .onConflict((oc) => oc.expression(TAG_NAME_INDEX).doNothing())
+    .returning(['id', 'name'])
+    .executeTakeFirst();
+  if (inserted) return inserted;
+
+  const existing = await executor
+    .selectFrom('tags')
+    .select(['id', 'name'])
+    .where('organization_id', '=', orgId)
+    .where(
+      executor.fn('lower', ['name']),
+      '=',
+      executor.fn('lower', [sql.val(name)]),
+    )
+    .executeTakeFirst();
+  if (existing) return existing;
+
+  // Neither inserted nor found: the row the insert yielded to is gone again,
+  // which takes a concurrent delete landing in the gap. Say so rather than
+  // hand the caller an undefined tag id.
+  throw new Error(`resolveTag: tag "${name}" was neither inserted nor found`);
+}
+
+/**
  * Validate a whole list of tag names, refusing on the first bad one and saying
  * where it sits — `details.field` plus `details.index` on the wire, so a client
  * can point at the offending chip instead of parsing a sentence.
@@ -95,10 +164,10 @@ function validateTagNames(tagNames) {
  * tags stay and the caller sees the error.
  *
  * Tags themselves are the organization's, reused case-insensitively and created
- * on first use. **The database owns that fold**: `idx_tags_org_name` is unique
- * on `(organization_id, lower(name))`, so the lookup lowercases through
- * PostgreSQL and the list is deduplicated on the tag it resolved to, never on a
- * JavaScript approximation of `lower()` (B370).
+ * on first use through {@link resolveTag}. **The database owns that fold**:
+ * `idx_tags_org_name` is unique on `(organization_id, lower(name))`, so the
+ * lookup lowercases through PostgreSQL and the list is deduplicated on the tag
+ * it resolved to, never on a JavaScript approximation of `lower()` (B370).
  *
  * @param {object} params
  * @param {'presentation_tags'|'slide_library_tags'} params.linkTable
@@ -125,20 +194,7 @@ export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
     const resolved = [];
     const seenIds = new Set();
     for (const name of names) {
-      let tag = await trx
-        .selectFrom('tags')
-        .select(['id', 'name'])
-        .where('organization_id', '=', orgId)
-        .where(trx.fn('lower', ['name']), '=', trx.fn('lower', [sql.val(name)]))
-        .executeTakeFirst();
-
-      if (!tag) {
-        tag = await trx
-          .insertInto('tags')
-          .values({ organization_id: orgId, name, created_at: nowIso() })
-          .returning(['id', 'name'])
-          .executeTakeFirst();
-      }
+      const tag = await resolveTag(trx, orgId, name);
 
       if (seenIds.has(tag.id)) continue;
       seenIds.add(tag.id);
@@ -286,9 +342,11 @@ export async function setTagsForPresentation(
  * Create a new tag in the storageScope's organization (if it doesn't exist).
  *
  * Takes the same name contract as a tag write ({@link replaceTagLinks}) — one
- * answer to "what may a tag be called", not one per entry point — and refuses
- * through the storage vocabulary rather than a thrown 400, so both surfaces
- * answer in the one envelope `storageError()` writes.
+ * answer to "what may a tag be called", not one per entry point — and creates
+ * it through the same {@link resolveTag}, so neither entry point carries a
+ * lookup-then-insert gap the other has closed. It refuses through the storage
+ * vocabulary rather than a thrown 400, so both surfaces answer in the one
+ * envelope `storageError()` writes.
  *
  * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} name - Tag name
@@ -313,31 +371,12 @@ export async function createTag(storageScope, name) {
   const db = getDb();
   const orgId = getOrgId(ctx);
 
-  // Check if tag already exists — through the database's fold, the same one
-  // `idx_tags_org_name` keys on.
-  const existing = await db
-    .selectFrom('tags')
-    .select(['id', 'name'])
-    .where('organization_id', '=', orgId)
-    .where(db.fn('lower', ['name']), '=', db.fn('lower', [sql.val(tagName)]))
-    .executeTakeFirst();
+  // Create-or-get runs through the same resolver as a tag write: one place
+  // where a name becomes a tag, so this entry point cannot race where the
+  // other one does not (B373).
+  const tag = await resolveTag(db, orgId, tagName);
 
-  if (existing) {
-    return { ok: true, tag: { id: existing.id, name: existing.name } };
-  }
-
-  // Create new tag.
-  const row = await db
-    .insertInto('tags')
-    .values({
-      organization_id: orgId,
-      name: tagName,
-      created_at: nowIso(),
-    })
-    .returning(['id', 'name'])
-    .executeTakeFirst();
-
-  return { ok: true, tag: { id: row.id, name: row.name } };
+  return { ok: true, tag: { id: tag.id, name: tag.name } };
 }
 
 /**
