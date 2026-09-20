@@ -14,14 +14,107 @@
  * indirection); the shapes below are the storage contract for tags.
  */
 
-import { getDb } from '../db/client.js';
+import { getDb, transaction } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { ValidationError } from '../utils/errors.js';
+import { nowIso } from '../utils/normalize.js';
 import { resolveScope } from './scope.js';
 
-/** @returns {string} current ISO timestamp */
-function now() {
-  return new Date().toISOString();
+/**
+ * The tables that link a tag to a row, and the column each keys the row on.
+ * One mapping, so a caller names the table and cannot pair it with the wrong
+ * column.
+ */
+const LINK_COLUMN = {
+  presentation_tags: 'presentation_id',
+  slide_library_tags: 'slide_library_id',
+};
+
+/**
+ * The names a tag write keeps: trimmed, non-empty, at most the column's 100
+ * characters, and each name once regardless of case.
+ * @param {string[]} tagNames
+ * @returns {string[]}
+ */
+function normalizeTagNames(tagNames) {
+  const kept = [];
+  const seenLower = new Set();
+  for (const raw of tagNames || []) {
+    const name = String(raw || '').trim();
+    if (!name || name.length > 100) continue;
+    const lower = name.toLowerCase();
+    if (seenLower.has(lower)) continue;
+    seenLower.add(lower);
+    kept.push(name);
+  }
+  return kept;
+}
+
+/**
+ * Replace every tag link of one row — the single tag-replacement path, for
+ * presentations and for library items alike (D184).
+ *
+ * Selection, delete and insert run in **one transaction** (B343). They used to
+ * be loose statements in two near-identical copies: the delete landed, and a
+ * failure anywhere after it left the row with no tags at all — data loss with
+ * no way back. A failure now rolls the whole replacement back, so the previous
+ * tags stay and the caller sees the error.
+ *
+ * Tags themselves are the organization's, reused case-insensitively and created
+ * on first use.
+ *
+ * @param {object} params
+ * @param {'presentation_tags'|'slide_library_tags'} params.linkTable
+ * @param {string} params.rowId - The presentation or library item
+ * @param {string} params.orgId
+ * @param {string[]} params.tagNames
+ * @returns {Promise<Array<{id: string, name: string}>>} The tags the row now carries
+ */
+export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
+  const linkColumn = LINK_COLUMN[linkTable];
+  // Reaching this with another table is a caller bug, not an input error.
+  if (!linkColumn) {
+    throw new TypeError(`replaceTagLinks: unknown link table "${linkTable}"`);
+  }
+  const names = normalizeTagNames(tagNames);
+
+  return transaction(async (trx) => {
+    await trx.deleteFrom(linkTable).where(linkColumn, '=', rowId).execute();
+    if (names.length === 0) return [];
+
+    const tags = [];
+    for (const name of names) {
+      let tag = await trx
+        .selectFrom('tags')
+        .select(['id', 'name'])
+        .where('organization_id', '=', orgId)
+        .where(trx.fn('lower', ['name']), '=', name.toLowerCase())
+        .executeTakeFirst();
+
+      if (!tag) {
+        tag = await trx
+          .insertInto('tags')
+          .values({ organization_id: orgId, name, created_at: nowIso() })
+          .returning(['id', 'name'])
+          .executeTakeFirst();
+      }
+
+      tags.push({ id: tag.id, name: tag.name });
+    }
+
+    await trx
+      .insertInto(linkTable)
+      .values(
+        tags.map((tag) => ({
+          [linkColumn]: rowId,
+          tag_id: tag.id,
+          created_at: nowIso(),
+        })),
+      )
+      .execute();
+
+    return tags;
+  });
 }
 
 /**
@@ -124,7 +217,7 @@ export async function getTagsForPresentations(storageScope, presentationIds) {
 
 /**
  * Set tags for a presentation (replaces existing tags).
- * Creates new tags if they don't exist.
+ * Creates new tags if they don't exist. Atomic: see {@link replaceTagLinks}.
  * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} presentationId - Presentation ID
  * @param {string[]} tagNames - Array of tag names
@@ -136,77 +229,12 @@ export async function setTagsForPresentation(
   tagNames,
 ) {
   const ctx = resolveScope(storageScope, 'setTagsForPresentation');
-  const db = getDb();
-  const orgId = getOrgId(ctx);
-
-  // Normalize tag names (trim, drop empties and over-long).
-  const normalizedNames = (tagNames || [])
-    .map((name) => String(name || '').trim())
-    .filter((name) => name.length > 0 && name.length <= 100);
-
-  // Remove duplicates (case-insensitive).
-  const uniqueNames = [];
-  const seenLower = new Set();
-  for (const name of normalizedNames) {
-    const lower = name.toLowerCase();
-    if (!seenLower.has(lower)) {
-      seenLower.add(lower);
-      uniqueNames.push(name);
-    }
-  }
-
-  // Remove all existing tags for this presentation.
-  await db
-    .deleteFrom('presentation_tags')
-    .where('presentation_id', '=', presentationId)
-    .execute();
-
-  if (uniqueNames.length === 0) {
-    return [];
-  }
-
-  // Get or create tags.
-  const tagIds = [];
-  for (const name of uniqueNames) {
-    // Try to find existing tag (case-insensitive).
-    let tag = await db
-      .selectFrom('tags')
-      .select(['id', 'name'])
-      .where('organization_id', '=', orgId)
-      .where(db.fn('lower', ['name']), '=', name.toLowerCase())
-      .executeTakeFirst();
-
-    if (!tag) {
-      // Create new tag.
-      tag = await db
-        .insertInto('tags')
-        .values({
-          organization_id: orgId,
-          name,
-          created_at: now(),
-        })
-        .returning(['id', 'name'])
-        .executeTakeFirst();
-    }
-
-    tagIds.push({ id: tag.id, name: tag.name });
-  }
-
-  // Insert presentation_tags relationships.
-  if (tagIds.length > 0) {
-    await db
-      .insertInto('presentation_tags')
-      .values(
-        tagIds.map((tag) => ({
-          presentation_id: presentationId,
-          tag_id: tag.id,
-          created_at: now(),
-        })),
-      )
-      .execute();
-  }
-
-  return tagIds;
+  return replaceTagLinks({
+    linkTable: 'presentation_tags',
+    rowId: presentationId,
+    orgId: getOrgId(ctx),
+    tagNames,
+  });
 }
 
 /**
@@ -243,7 +271,7 @@ export async function createTag(storageScope, name) {
     .values({
       organization_id: orgId,
       name: trimmedName,
-      created_at: now(),
+      created_at: nowIso(),
     })
     .returning(['id', 'name'])
     .executeTakeFirst();
