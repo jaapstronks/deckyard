@@ -6,8 +6,8 @@ results back to the parent over a **v8-serialized IPC channel**. On Node
 **v24.18.0** this occasionally failed with:
 
 ```
-test at tests/migrate-data-import.test.js:1:1
-✖ tests/migrate-data-import.test.js
+test at <the noisy file>:1:1
+✖ <the noisy file>
   Error: Unable to deserialize cloned data due to invalid or unsupported version.
       at #processRawBuffer (node:internal/test_runner/runner:469:20)
       at FileTest.parseMessage (node:internal/test_runner/runner:376:29)
@@ -15,7 +15,7 @@ test at tests/migrate-data-import.test.js:1:1
 ```
 
 Measured frequency before the fix: **~27% of parallel runs** (4/15) exited
-non-zero, always attributed to `tests/migrate-data-import.test.js`.
+non-zero, always attributed to the same file — the one that printed most.
 
 ## Root cause
 
@@ -26,11 +26,11 @@ results. When a file emits a burst of `stdout`, the parent's `#processRawBuffer`
 can mis-frame the byte stream and fail to deserialize a message — surfacing as a
 spurious failure of whichever file produced the burst.
 
-`tests/migrate-data-import.test.js` was the reliable trigger because the
-functions it exercises (`migrateTags`, `migrateSlideCollections`,
-`migrateSlideLibraryUsage` in `scripts/migrate-data-to-postgres.js`) double as a
-CLI and print emoji-laden progress banners via `console.log`. Those lines were
-captured and forwarded as IPC messages; the burst tripped the framing bug.
+The reliable trigger was the test of the file-based data importer: the
+migration functions it exercised doubled as a CLI and printed emoji-laden
+progress banners via `console.log`. Those lines were captured and forwarded as
+IPC messages; the burst tripped the framing bug. Nothing about the trigger was
+specific to that code — any test whose subject prints a lot does it.
 
 ## Options considered
 
@@ -43,11 +43,16 @@ captured and forwarded as IPC messages; the burst tripped the framing bug.
 
 ## The fix
 
-`tests/migrate-data-import.test.js` silences `console.log/error/info/warn` for
-the duration of its run (restored in `after`). The test asserts on return values
-and database state, never on the banners, so nothing is hidden. Removing the
-stdout burst removes the trigger, and the suite is green in parallel at full
-speed.
+The trigger test silenced `console.log/error/info/warn` for the duration of its
+run (restored in `after`). It asserted on return values and database state,
+never on the banners, so nothing was hidden. Removing the stdout burst removed
+the trigger, and the suite went green in parallel at full speed.
+
+Both that test and the CLI under it were **retired in B385**, together with the
+file-based importer they covered — file-based Deckyard installs do not exist.
+So the repo now carries no live instance of the silencing pattern, and no test
+emits a burst big enough to trip the bug. The rule below is the whole
+mitigation; this page is the diagnosis to reach for when it stops holding.
 
 ## Guidance for new tests
 

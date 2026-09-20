@@ -146,7 +146,8 @@ direct helpers.
 ### One backend, one adapter
 
 PostgreSQL is the only storage backend; the old `file` backend (JSON on disk)
-was removed in 1.x. Old file data imports once with `npm run db:import`.
+was removed in 1.x, and so was the one-time import path for such a data
+directory.
 
 ```javascript
 // Storage mode validation (server/config/database.js)
@@ -443,7 +444,7 @@ comma-separated env values rather than hand-rolling another split/trim/filter.
 | ------------------------ | ----------------------------------------------------------------------------------------- |
 | No framework             | Minimal dependencies, full control                                                        |
 | Functional middleware    | Composition over inheritance, explicit data flow                                          |
-| Storage abstraction      | Swappable backends with a one-shot file→Postgres import path (`db:import`)                |
+| Storage abstraction      | One backend (PostgreSQL) behind one adapter seam                                          |
 | In-memory SSE            | Fast, no message queue (sessions reset on restart)                                        |
 | Atomic file writes       | Temp + rename prevents corruption                                                         |
 | Puppeteer rendering      | Server-side PNG/PDF at request time                                                       |

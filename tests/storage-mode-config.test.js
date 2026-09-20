@@ -47,12 +47,21 @@ test('postgres is the only accepted value', () => {
   });
 });
 
-test('file is rejected with the import instructions', () => {
+test('file is rejected, without pointing at a retired importer', () => {
   withMode('file', () => {
     const err = storageModeError();
     assert.ok(err, 'the removed file backend must not be accepted');
     assert.match(err, /removed/);
-    assert.match(err, /db:import/);
+    assert.doesNotMatch(
+      err,
+      /db:import/,
+      'the one-time file import was retired (B385)',
+    );
+    assert.match(
+      err,
+      /Remove STORAGE_MODE/,
+      'must name what the operator does instead',
+    );
     // getStorageMode still resolves to the default for unvalidated callers.
     assert.equal(getStorageMode(), 'postgres');
   });

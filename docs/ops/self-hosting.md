@@ -128,9 +128,10 @@ unset or set to `postgres`, and there is no third spelling:
 > **Upgrading an existing file-storage install?** Your `server/data/` decks are
 > not served from Postgres. Deckyard **refuses to start** when it finds decks
 > on disk while the database holds none — so you get a stopped container,
-> never an empty organization. Import the data once with `npm run db:import`
-> (in compose: `docker compose exec app npm run db:import`). The import is
-> idempotent and your files are never touched.
+> never an empty organization. The one-time import that used to move such a
+> directory into the database was retired in 1.x: your files are never touched,
+> but Deckyard will not read them. Back the directory up and move it aside to
+> start.
 
 ### Backups
 
@@ -166,10 +167,11 @@ Outside compose, back up your own PostgreSQL plus the same two directories:
 
 An install that ran Deckyard before the PostgreSQL migration still carries the
 old disk-JSON state under `server/data/` — decks, versions, interactions,
-settings — all of which `db:import` and migrations 053/058–061 moved into the
-database. Those files are dead copies, but do not delete them by hand: the
-boot-time migration guard uses `server/data/presentations/` to detect an
-un-imported install, so removing it in the wrong order disarms that guard.
+settings — all of which migrations 053/058–061 and the retired one-time file
+import moved into the database. Those files are dead copies, but do not delete
+them by hand: the boot-time guard uses `server/data/presentations/` to detect
+an install whose decks never reached the database, so removing it in the wrong
+order disarms that guard.
 What stays alive in that directory is exactly one thing: `deck-thumbs/`, the
 thumbnail cache. `server/uploads/` is unrelated and always stays.
 
@@ -187,7 +189,8 @@ Do this in order (on a compose stack, prefix the npm commands with
    ```
 
    Zero rows in `presentations` while `server/data/presentations/` has decks →
-   **stop**: run `npm run db:import` first.
+   **stop**: that data never reached the database and there is no import path
+   left to run. Keep the directory and its backup; do not prune.
 
 3. **Back up the whole directory** before deleting anything, and keep the
    archive at least one release:

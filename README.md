@@ -312,10 +312,10 @@ compose stack ships its own database. Back up the `pg_data` volume
 (`docker compose exec postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`)
 together with `server/uploads/`, which is where uploaded media stays.
 
-The old `file` backend (JSON in `server/data/`) was removed in 1.x. An install
-with existing file data imports it once with `npm run db:import`; until then
-Deckyard refuses to boot on an empty database rather than show an empty
-workspace.
+The old `file` backend (JSON in `server/data/`) was removed in 1.x, and the
+one-time import that moved such a data directory into PostgreSQL was retired
+with it. Deckyard refuses to boot on an empty database while file data is still
+on disk, rather than show an empty workspace.
 
 See the [self-hosting guide](docs/ops/self-hosting.md) for the storage options
 and `.env.example` for every `DATABASE_*` variable.

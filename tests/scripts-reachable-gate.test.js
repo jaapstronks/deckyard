@@ -62,7 +62,6 @@ const CUSTOM_SCRIPTS_DIR = 'custom/scripts';
  * {@link SCRIPTS_SEAM_HINT}.
  */
 const RUN_BY_HAND = {
-  'migrate-data-to-postgres.js': 'one-time SQLite → Postgres move, per install',
   'migrate-lijstje-slide.js': 'one-time slide-type rename, exercised by tests',
   'migrate-slides.js': 'one-time slide-shape migration, per install',
   'migrate-legacy-bg-image.js':

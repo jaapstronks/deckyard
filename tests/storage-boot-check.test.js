@@ -66,7 +66,7 @@ afterEach(async () => {
     await fs.rm(cleanup.pop(), { recursive: true, force: true });
 });
 
-test('empty database plus decks on disk refuses the boot with the import fix', async () => {
+test('empty database plus decks on disk refuses the boot, naming no importer', async () => {
   const root = await makeDataDir({ decks: 2 });
   cleanup.push(root);
   process.env.STORAGE_MODE = 'postgres';
@@ -75,13 +75,23 @@ test('empty database plus decks on disk refuses the boot with the import fix', a
   const err = await strandedFileDataError(root);
   assert.ok(err, 'expected the boot to be refused');
   assert.match(err, /2 decks/);
-  assert.match(err, /db:import/, 'must name the import command');
+  assert.doesNotMatch(
+    err,
+    /db:import/,
+    'the one-time file import was retired (B385): a refusal may not send the ' +
+      'operator to a command that no longer exists',
+  );
   assert.match(
     err,
     /removed in 1\.x/,
     'must say the file backend is gone, not an option',
   );
   assert.match(err, /not been touched/, 'must say the file data is left alone');
+  assert.match(
+    err,
+    /move it aside|DATA_DIR/,
+    'must name the one way forward that is left',
+  );
 });
 
 test('a database that already holds decks boots normally', async () => {
