@@ -44,13 +44,21 @@ export default {
   // Vocabulary and rationale in shared/slide-types/instance-keys.js.
   instanceKeys: { presentationId: 'presentation-id' },
   label: 'Follow-along invite',
-  // Deliberately not offered to agents (see server/utils/ai/slide-catalog/
-  // agent-catalog.js): the app inserts and maintains this slide itself, right
-  // after the title slide, so an agent must never place one. The editor's
-  // picker disables insertion for the same reason.
+  // Withheld from agents (see server/utils/ai/slide-catalog/agent-catalog.js):
+  // the invite points an audience at a live session's join code, which a deck
+  // being drafted does not have — an agent has nothing to place it with.
+  //
+  // This says nothing about people. Who may insert a type is decided in one
+  // place, `isInsertableSlideType()` in shared/slide-types/policy.js, and it
+  // has no rule against this one: a person inserts the invite like any other
+  // slide. Nor does anything place one automatically — the editor only
+  // *suggests* an invite when an interactive slide lands in a deck without
+  // one, and the user chooses the position (B368).
   ai: false,
   // Intentionally no editable fields:
-  // - This slide is managed automatically by the server (kept right after title-slide)
+  // - Content is derived, not authored: the join code and language come from
+  //   the render context, and `presentationId` is an instance key the editor
+  //   re-points on copy (the Enabled checkbox lives in its own slide form)
   // - Our translation feature only translates fields declared as string/markdown in the slide schema;
   //   leaving `fields` empty ensures it won't "flip" the invite language.
   fields: [],

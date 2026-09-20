@@ -54,8 +54,11 @@ test('the three formerly invisible live types are resolved correctly', () => {
     assert.ok(resolved[name].bestFor.length, `${name} needs bestFor guidance`);
   }
 
-  // follow-invite-slide is the third, and the opposite call: the app inserts
-  // and maintains it, so it is withheld on purpose rather than documented.
+  // follow-invite-slide is the third, and the opposite call: it is withheld on
+  // purpose rather than documented, because it invites an audience into a live
+  // session a drafting agent does not have. Withheld from agents is not
+  // withheld from people — tests/follow-invite-insertability.test.js pins that
+  // half (B368).
   assert.equal(resolved['follow-invite-slide'], undefined);
   assert.equal(isAgentOptOut(SLIDE_TYPES['follow-invite-slide']), true);
 });

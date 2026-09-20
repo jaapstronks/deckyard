@@ -735,7 +735,7 @@
   "editor.slideField.title.label": "Tytuł",
   "editor.slideField.titleBlockAlign.label": "Wyrównanie bloku tytułu",
   "editor.slideLibrary.save": "Zapisz w bibliotece slajdów…",
-  "editor.slideLibrary.save.disabled": "Ten slajd jest zarządzany automatycznie i nie może być zapisany.",
+  "editor.slideLibrary.save.disabled": "Zaproszenie do śledzenia nie ma własnej treści, więc nie ma czego zapisywać.",
   "editor.slideLibrary.save.title": "Zapisz ten slajd, aby móc go później użyć ponownie.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Ten slajd ma treść po niderlandzku i po angielsku. Zapisane zostaną obie wersje.",
   "editor.slideLibrary.saveModal.description": "Opis",

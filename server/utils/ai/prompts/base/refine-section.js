@@ -42,7 +42,7 @@ export function buildSectionSystemPrompt({
     `- Write all slide text, the rationale, and the "why" lines in ${langLabel}.`,
     '- Stay coherent with the surrounding context slides (no duplicated content, keep the narrative flowing).',
     '- Apply the feedback fully, but keep material the feedback does not touch intact.',
-    '- Do NOT output follow-invite-slide; the app manages that automatically.',
+    '- Do NOT output follow-invite-slide.',
     '',
     buildPhase2CatalogPrompt({ disabledSlideTypes, customSlideTypes }),
   ].join('\n');

@@ -800,7 +800,7 @@
   "editor.slideField.title.label": "Title",
   "editor.slideField.titleBlockAlign.label": "Title block alignment",
   "editor.slideLibrary.save": "Save to slide library…",
-  "editor.slideLibrary.save.disabled": "This slide is managed automatically and can't be saved.",
+  "editor.slideLibrary.save.disabled": "The Follow-along invite has no content of its own, so there is nothing to save.",
   "editor.slideLibrary.save.title": "Save this slide so you can reuse it later.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "This slide has content in both Dutch and English. Both versions will be saved.",
   "editor.slideLibrary.saveModal.description": "Description",
