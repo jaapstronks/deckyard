@@ -89,7 +89,7 @@ pgDescribe('replacing tags is atomic (real PostgreSQL)', () => {
 
     // The tag whose link the database will refuse, created up front so the
     // constraint below can name its id.
-    poison = await createTag(storageScope, 'poison');
+    poison = (await createTag(storageScope, 'poison')).tag;
 
     await setTagsForSlideLibraryItem(
       storageScope,

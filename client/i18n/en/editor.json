@@ -290,6 +290,7 @@
   "editor.deckSettings.rssFeed.title": "Exclude from RSS feed",
   "editor.deckSettings.tags.error": "Failed to load tag editor.",
   "editor.deckSettings.tags.help": "Add tags to organize and filter presentations. Press Enter or comma to add.",
+  "editor.deckSettings.tags.saveFailed": "The tags were not saved.",
   "editor.deckSettings.tags.title": "Tags",
   "editor.deckSettings.tags.unavailable": "Tags are not available in this mode.",
   "editor.deckSettings.theme.help": "Visual styling for your presentation. Changing themes may affect some slides.",

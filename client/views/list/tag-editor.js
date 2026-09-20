@@ -1,5 +1,25 @@
 import { h, installDismissOnOutside } from '../../lib/dom.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 import { t } from '../../lib/ui-i18n.js';
+import { checkTagName, TAG_NAME_MESSAGES } from '../../../shared/tag-name.js';
+
+/**
+ * The editor's voice for a refused tag name. The rule is `shared/tag-name.js`;
+ * this is only the translated sentence for each of its codes, with the shared
+ * English as the fallback — so the editor and the server refuse the same names
+ * and say the same thing. Keys are full literals, so the i18n audit can see
+ * every reference by exact match.
+ * @type {Readonly<Record<'blank'|'too_long'|'control_character', () => string>>}
+ */
+const TAG_NAME_REFUSALS = Object.freeze({
+  blank: () => t('tags.editor.refused.blank', TAG_NAME_MESSAGES.blank),
+  too_long: () => t('tags.editor.refused.tooLong', TAG_NAME_MESSAGES.too_long),
+  control_character: () =>
+    t(
+      'tags.editor.refused.controlCharacter',
+      TAG_NAME_MESSAGES.control_character,
+    ),
+});
 
 /**
  * Create a tag editor component with autocomplete.
@@ -43,9 +63,13 @@ export function createTagEditor({
   // Suggestions dropdown
   const suggestionsEl = h('div', { class: 'tag-editor-suggestions' });
 
+  // A refused name is a state of this field, not a passing message
+  // (docs/reference/feedback-surfaces.md).
+  const nameError = createInlineError();
+
   inputWrapper.append(input, suggestionsEl);
   el.append(tagsContainer);
-  if (!readOnly) el.append(inputWrapper);
+  if (!readOnly) el.append(inputWrapper, nameError.el);
 
   // Render the tags
   function renderTags() {
@@ -93,16 +117,29 @@ export function createTagEditor({
     });
   }
 
-  // Add a tag
+  /**
+   * Add a tag, refusing a name the server would refuse — the same rule, from
+   * `shared/tag-name.js`, so a name that cannot be stored is said here instead
+   * of being dropped on the way to the database (B370).
+   *
+   * @param {string} name
+   * @returns {boolean} Whether the input may be cleared; false leaves the
+   *   refused text in place for the user to fix.
+   */
   function addTag(name) {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    // Check for duplicates (case-insensitive)
-    const lowerName = trimmed.toLowerCase();
-    if (tags.some((t) => t.toLowerCase() === lowerName)) return;
-    tags.push(trimmed);
+    nameError.clear();
+    const checked = checkTagName(name);
+    if (!checked.ok) {
+      nameError.show(TAG_NAME_REFUSALS[checked.code](), { control: input });
+      return false;
+    }
+    // Already on the chip row: nothing to add and nothing to refuse.
+    const lowerName = checked.name.toLowerCase();
+    if (tags.some((t) => t.toLowerCase() === lowerName)) return true;
+    tags.push(checked.name);
     renderTags();
     onChange?.(tags);
+    return true;
   }
 
   // Remove a tag
@@ -115,7 +152,7 @@ export function createTagEditor({
 
   // Select a suggestion
   function selectSuggestion(name) {
-    addTag(name);
+    if (!addTag(name)) return;
     input.value = '';
     suggestions = [];
     highlightedIndex = -1;
@@ -182,7 +219,7 @@ export function createTagEditor({
       if (highlightedIndex >= 0 && suggestions[highlightedIndex]) {
         selectSuggestion(suggestions[highlightedIndex].name);
       } else if (input.value.trim()) {
-        addTag(input.value);
+        if (!addTag(input.value)) return;
         input.value = '';
         suggestions = [];
         isOpen = false;
@@ -200,7 +237,7 @@ export function createTagEditor({
       // Allow comma or tab to add tag
       if (input.value.trim()) {
         e.preventDefault();
-        addTag(input.value.replace(',', ''));
+        if (!addTag(input.value.replace(',', ''))) return;
         input.value = '';
         suggestions = [];
         isOpen = false;

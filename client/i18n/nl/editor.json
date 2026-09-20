@@ -290,6 +290,7 @@
   "editor.deckSettings.rssFeed.title": "Uitsluiten van RSS-feed",
   "editor.deckSettings.tags.error": "Kon de tag-editor niet laden.",
   "editor.deckSettings.tags.help": "Voeg tags toe om presentaties te ordenen en filteren. Druk op Enter of komma om toe te voegen.",
+  "editor.deckSettings.tags.saveFailed": "De tags zijn niet opgeslagen.",
   "editor.deckSettings.tags.title": "Tags",
   "editor.deckSettings.tags.unavailable": "Tags zijn niet beschikbaar in deze modus.",
   "editor.deckSettings.theme.help": "Visuele stijl van je presentatie. Thema wijzigen kan sommige slides beinvloeden.",

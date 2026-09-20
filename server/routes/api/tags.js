@@ -23,6 +23,7 @@ import {
   notFound,
   requireJsonBody,
   methodNotAllowed,
+  storageError,
   withErrorHandler,
 } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
@@ -52,14 +53,12 @@ async function handleTagCreate({ storageScope, req, res }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  if (!body?.name) {
-    return badRequest(res, 'Tag name is required');
-  }
-  // Duplicate/invalid tag names come back as a 400 from storage; the
-  // withErrorHandler wrapper on this dispatcher serves that status with the
-  // canonical envelope.
-  const tag = await createTag(storageScope, body.name);
-  serveJson(res, 201, tag);
+  // What a tag may be called is storage's contract, not this handler's: a
+  // missing, blank, over-long or control-character name comes back as the one
+  // `invalid` result, naming the field (B370).
+  const r = await createTag(storageScope, body?.name);
+  if (!r.ok) return storageError(res, r, r.message);
+  serveJson(res, 201, r.tag);
   return true;
 }
 
@@ -132,12 +131,13 @@ export async function handlePresentationTags({
     if (!Array.isArray(body?.tags)) {
       return badRequest(res, 'Tags array is required');
     }
-    const tags = await setTagsForPresentation(
+    const r = await setTagsForPresentation(
       storageScope,
       presentationId,
       body.tags,
     );
-    serveJson(res, 200, tags);
+    if (!r.ok) return storageError(res, r, r.message);
+    serveJson(res, 200, r.tags);
     return true;
   }
 

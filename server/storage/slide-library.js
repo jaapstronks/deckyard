@@ -742,7 +742,7 @@ export async function getTagsForSlideLibraryItems(
  * @param {object} [opts]
  * @param {string} [opts.actorEmail] - The caller; the owner, on the personal shelf
  * @param {(item: object) => boolean|Promise<boolean>} [opts.allowEdit] - The organization-shelf guard
- * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'|'forbidden'}>}
+ * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'|'forbidden'|'invalid'}>}
  */
 export async function setTagsForSlideLibraryItem(
   storageScope,
@@ -764,13 +764,13 @@ export async function setTagsForSlideLibraryItem(
       typeof allowEdit === 'function' && (await allowEdit(existing));
     if (!allowed) return { ok: false, reason: 'forbidden' };
   }
-  const tags = await replaceTagLinks({
+  // A refused tag name is already an `invalid` result; it travels as it is.
+  return replaceTagLinks({
     linkTable: 'slide_library_tags',
     rowId: existing.id,
     orgId: getOrgId(ctx),
     tagNames,
   });
-  return { ok: true, tags };
 }
 
 /**
