@@ -4,7 +4,6 @@ import {
   STORAGE_MODES,
   DEFAULT_STORAGE_MODE,
   getStorageMode,
-  isPostgresMode,
   storageModeError,
 } from '../server/config/database.js';
 
@@ -32,7 +31,6 @@ test('unset STORAGE_MODE resolves to Postgres', () => {
   withMode(undefined, () => {
     assert.equal(getStorageMode(), 'postgres');
     assert.equal(getStorageMode(), DEFAULT_STORAGE_MODE);
-    assert.equal(isPostgresMode(), true);
     assert.equal(storageModeError(), null);
   });
   withMode('', () => {

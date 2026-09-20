@@ -64,10 +64,6 @@ export function storageModeError() {
   );
 }
 
-export function isPostgresMode() {
-  return getStorageMode() === 'postgres';
-}
-
 /** `code` on the error thrown for an unparseable `DATABASE_URL`. */
 const DATABASE_URL_INVALID = 'DECKYARD_DATABASE_URL_INVALID';
 
