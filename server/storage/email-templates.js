@@ -17,10 +17,10 @@ import { sql } from 'kysely';
 import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/index.js';
 import {
-  SUPPORTED_LOCALES as SHARED_SUPPORTED_LOCALES,
   DEFAULT_LOCALE as SHARED_DEFAULT_LOCALE,
   TEMPLATE_METADATA,
 } from '../../shared/constants/email-templates.js';
+import { SUPPORTED_LOCALES as I18N_SUPPORTED_LOCALES } from '../i18n/index.js';
 
 // ============================================================
 // TYPE DEFINITIONS
@@ -32,8 +32,11 @@ import {
  */
 
 /**
- * @typedef {'en' | 'nl' | 'de' | 'fr' | 'es' | 'pt' | 'da' | 'sv' | 'no'} SupportedLocale
- * Supported locale codes for email templates.
+ * @typedef {string} SupportedLocale
+ * A locale code this install has strings for. Deliberately not a union: the
+ * set follows the files in `server/i18n/locales/` and is answered at runtime
+ * by {@link SUPPORTED_LOCALES}. The union that stood here was a third copy of
+ * the list and named seven locales that had no translation file (B379).
  */
 
 /**
@@ -89,10 +92,11 @@ import {
 export { TEMPLATE_METADATA };
 
 /**
- * Supported locales for email templates.
- * Re-exported from shared constants for server-side use.
+ * Supported locales for email templates: the locales this install has strings
+ * for, derived from `server/i18n/locales/`. Re-exported here so the server
+ * call sites (resolver, API route) keep importing it from the storage layer.
  */
-export const SUPPORTED_LOCALES = SHARED_SUPPORTED_LOCALES;
+export const SUPPORTED_LOCALES = I18N_SUPPORTED_LOCALES;
 
 /**
  * Default locale for email templates.

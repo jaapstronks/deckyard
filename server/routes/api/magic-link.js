@@ -20,7 +20,10 @@ import { getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { sendMagicLinkEmail } from '../../integrations/brevo.js';
+import {
+  sendMagicLinkEmail,
+  resolveRecipientLocale,
+} from '../../integrations/email/index.js';
 import { validateEmail } from '../../utils/secure-tokens.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import {
@@ -150,18 +153,26 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
       const magicLinkUrl = buildMagicLinkUrl(req, result.token);
       const loginUrl = buildLoginUrl(req);
 
-      // Send email with password setup hint if user doesn't have a password
-      sendMagicLinkEmail({
-        recipientEmail: email,
-        magicLinkUrl,
-        expiresAt: result.expiresAt,
-        hasPassword: userInfo.hasPassword,
-        loginUrl,
-        repoRoot,
-      }).catch((err) => {
-        // eslint-disable-next-line no-console
-        log.error('[magic-link] Failed to send email:', err);
-      });
+      // Send email with password setup hint if user doesn't have a password.
+      // The locale is the recipient's own: this branch only runs for an
+      // address that has an account, and the response below is identical
+      // either way, so reading their preference tells the requester nothing.
+      resolveRecipientLocale({ repoRoot, email })
+        .then((locale) =>
+          sendMagicLinkEmail({
+            recipientEmail: email,
+            magicLinkUrl,
+            expiresAt: result.expiresAt,
+            hasPassword: userInfo.hasPassword,
+            loginUrl,
+            locale,
+            repoRoot,
+          }),
+        )
+        .catch((err) => {
+          // eslint-disable-next-line no-console
+          log.error('[magic-link] Failed to send email:', err);
+        });
     }
   }
 

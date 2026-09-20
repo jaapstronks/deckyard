@@ -4,20 +4,14 @@
  */
 
 /**
- * Supported locales for email templates.
- * @type {string[]}
+ * There is deliberately no `SUPPORTED_LOCALES` here. The locales an install
+ * has strings for follow from the files in `server/i18n/locales/`, which this
+ * module cannot read — it is imported by the browser too. A second
+ * hand-maintained copy lived here and named nine languages while the
+ * directory held two (B379). The server derives the list in
+ * `server/i18n/index.js`; the admin panel reads it off the
+ * `/api/admin/email-templates` payload (`supportedLocales`).
  */
-export const SUPPORTED_LOCALES = [
-  'en',
-  'nl',
-  'de',
-  'fr',
-  'es',
-  'pt',
-  'da',
-  'sv',
-  'no',
-];
 
 /**
  * Default locale for email templates.

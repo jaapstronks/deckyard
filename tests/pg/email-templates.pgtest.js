@@ -141,12 +141,27 @@ pgDescribe('email-templates storage (real PostgreSQL)', () => {
   });
 
   it('persists the instance default locale as a singleton', async () => {
-    await updateDefaultLocale(testScope(), 'de');
-    assert.equal(await getEmailDefaultLocale(testScope()), 'de');
+    // The two locales this install has strings for. The case used to write
+    // `de` and `fr`, which the storage layer now rejects: `SUPPORTED_LOCALES`
+    // is derived from `server/i18n/locales/` (B379), so a code without a
+    // translation file is no longer a locale you can store.
+    //
+    // `nl` leads deliberately. `en` is also the value `getEmailDefaultLocale()`
+    // falls back to when the stored one is unreadable, so asserting `en` first
+    // would pass without any write ever landing.
+    await updateDefaultLocale(testScope(), 'nl');
+    assert.equal(await getEmailDefaultLocale(testScope()), 'nl');
 
-    // A second update overwrites the same row, not a second one.
-    await updateDefaultLocale(testScope(), 'fr');
-    assert.equal(await getEmailDefaultLocale(testScope()), 'fr');
+    // A second update overwrites the same row, not a second one. Read the
+    // column itself for the overwrite, for the same reason: the getter cannot
+    // tell a stored `en` from the fallback.
+    await updateDefaultLocale(testScope(), 'en');
+    const stored = await db
+      .selectFrom('email_template_settings')
+      .select('default_locale')
+      .executeTakeFirst();
+    assert.equal(stored.default_locale, 'en');
+    assert.equal(await getEmailDefaultLocale(testScope()), 'en');
 
     const count = await db
       .selectFrom('email_template_settings')
@@ -155,7 +170,7 @@ pgDescribe('email-templates storage (real PostgreSQL)', () => {
     assert.equal(Number(count.n), 1);
 
     const config = await getEmailTemplates(testScope());
-    assert.equal(config.defaultLocale, 'fr');
+    assert.equal(config.defaultLocale, 'en');
   });
 
   it('rejects an unknown type or locale before touching the database', async () => {

@@ -66,9 +66,17 @@ Override store and resolution:
   `resolveTemplate(repoRoot, type, locale)` with the fallback chain _custom
   override → code default → `en` default_, plus `interpolatePlaceholders` and the
   preview builders.
-- `shared/constants/email-templates.js` — `TEMPLATE_TYPES`, `SUPPORTED_LOCALES`
-  (9: en, nl, de, fr, es, pt, da, sv, no), `DEFAULT_LOCALE` (`en`),
-  `TEMPLATE_FIELDS` (`subject`, `greeting`, `body`, `buttonLabel`, `footer`).
+- `shared/constants/email-templates.js` — `TEMPLATE_TYPES`, `DEFAULT_LOCALE`
+  (`en`), `TEMPLATE_FIELDS` (`subject`, `greeting`, `body`, `buttonLabel`,
+  `footer`).
+- `server/i18n/index.js` — `SUPPORTED_LOCALES`, **derived from the files in
+  `server/i18n/locales/`** (today: `en`, `nl`). Adding `de.json` is the whole
+  act of supporting German: the admin panel gains a tab, the API accepts the
+  locale, and outgoing mail can be written in it. The list is re-exported by
+  `server/storage/email-templates.js` for the server call sites and reaches the
+  admin panel over the wire as `supportedLocales`;
+  `tests/i18n-supported-locales.test.js` fails when a listed locale lacks the
+  full English key set.
 
 Routes and UI:
 
@@ -185,11 +193,30 @@ whether `BREVO_API_KEY` is set.
 ## Implementation status (as of 2026-08-21)
 
 Shipped and in use: the Brevo transport, all three sender families plus export,
-the code-default builders in nine locales' worth of translator strings, the
-Postgres override store with its migration off disk, the resolver's
-custom → default → `en` chain, and the admin panel with preview and test-send.
+the code-default builders in two locales' worth of translator strings (`en`,
+`nl` — the list used to claim nine, see B379), the Postgres override store with
+its migration off disk, the resolver's custom → default → `en` chain, and the
+admin panel with preview and test-send.
 
 Honest gaps:
+
+- **Only the two auth mails are written in the recipient's language.**
+  `resolveRecipientLocale()`
+  (`server/integrations/email/recipient-locale.js`) is the one place that
+  answers "which language does this address read?", and the password-reset and
+  magic-link routes hand its answer to the sender. Every other sender still
+  falls back to its `locale = 'en'` default, so an invitation, a collaborator
+  invite, a guest verification, a comment notification, an export-ready notice
+  and a digest go out in English regardless of the recipient — and the
+  instance default locale an admin sets in the panel governs template
+  _editing_, not what is sent. The rest are **two** groups, not one: an
+  invitation or guest verification reaches an address with no account, so
+  there is no `uiLocale` to read and the instance default is the answer;
+  export-ready and the two digests reach an account holder, so for them this
+  is the same question with a different answer and only the hand-off is
+  missing (B389). The digests need more than a hand-off: they have no `locale`
+  parameter at all, and their body is AI-generated prose, so translating their
+  chrome alone would half-translate the mail.
 
 - **`exportReady` is not a real template type.** `senders-export.js` asks
   `trySendCustomTemplate` for `templateType: 'exportReady'`, but
