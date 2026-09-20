@@ -508,9 +508,12 @@ export function renderSlideElement(
   // Like the follow-invite init above, which slides these are is a question of
   // markup, not of type name: the init scans for `.slide-countdown` and does
   // nothing when a slide carries none (B387). `detectSlideRuntimeNeeds()` on
-  // the server answers the same question the same way, so the export path and
-  // this one cannot disagree. `interactive` stays a branch — that one is
-  // driven by the render mode, not by the type.
+  // the server reads the same markup for the export path, so neither side
+  // answers by type name. Both read the markup that exists *here*: markup a
+  // server render swaps in below reaches neither init, because
+  // `triggerServerRender` re-runs only the theme vars and code/math (B391).
+  // `interactive` stays a branch — that one is driven by the render mode, not
+  // by the type.
   cleanups.push(
     initCountdownSlides(el, {
       interactive: mode === 'present' || mode === 'follow',
