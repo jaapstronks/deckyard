@@ -11,7 +11,7 @@ import {
   listPresentationVersions,
   getPresentationVersion,
 } from '../storage/presentations/index.js';
-import { listImageLibrary } from '../storage/image-library.js';
+import { listImageLibrary, stampFavorites } from '../storage/image-library.js';
 import {
   listPersonalLibrary,
   listOrganizationLibrary,
@@ -298,7 +298,15 @@ export async function buildBulkExport(opts) {
   // ── 3. Collect image library (35-45%) ───────────────────────
   if (includeImageLibrary) {
     try {
-      const images = await listImageLibrary(storageScope);
+      // A backup is of this installation *as this person sees it*, so the
+      // exported items carry their own star, exactly like the slide-library
+      // halves below (D176 names the bulk export). Through the facade's
+      // stamper, not a second favorites query here.
+      const images = await stampFavorites(
+        storageScope,
+        await listImageLibrary(storageScope),
+        userEmail,
+      );
       zip.file('image-library/index.json', JSON.stringify(images, null, 2));
       manifest.stats.imageLibraryItems = Array.isArray(images)
         ? images.length
