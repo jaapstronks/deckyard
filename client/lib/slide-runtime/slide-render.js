@@ -631,12 +631,14 @@ export function slideRendered(el) {
  * `el.__sbCleanup` drains. It is passed in rather than rebuilt because the
  * markup this swaps in gets the same runtimes the original markup got
  * (`MARKUP_RUNTIMES`), and a second render that kept its listeners in a row of
- * its own would leak every one of them (B391).
+ * its own would leak every one of them (B391). It has no default: there is one
+ * row per element and a caller without it has nowhere to put its cleanups, so
+ * the omission should fail rather than quietly grow a second row.
  */
 async function triggerServerRender(
   el,
   slide,
-  { mode, theme, renderVia, lang, api, cleanups = [] },
+  { mode, theme, renderVia, lang, api, cleanups },
 ) {
   try {
     const html = await serverRenderSlide({
