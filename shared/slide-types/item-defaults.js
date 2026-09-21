@@ -14,15 +14,38 @@
  * editor (side form) and the canvas inline editor's add button — so a new
  * item in an NL deck arrives in Dutch on either surface, and the two
  * cannot drift.
+ *
+ * A `tabular` field is the one skeleton that is not a declaration: a new row is
+ * as wide as the table is at that moment, so it resolves from the sibling count
+ * the field names in `columnCountKey` (./tabular.js).
  */
+import { emptyTabularRow, tabularColumnCount } from './tabular.js';
 
 /**
  * @param {Object} field - a `type: 'items'` field schema
  * @param {string|null} [lang] - deck language (`resolveDeckLang(pres)`)
+ * @param {Object} [content] - the slide content, for fields whose skeleton
+ *   depends on a sibling key (a `tabular` field's column count). Omit it and a
+ *   tabular field falls back to its declared column maximum's neutral shape.
  * @returns {Object} the new-item skeleton for that language (not a clone —
  *   callers must `structuredClone` before pushing, as they already do)
  */
-export function resolveItemDefaults(field, lang) {
+export function resolveItemDefaults(field, lang, content) {
+  // A tabular field's new row is as wide as the table is right now, so its
+  // skeleton cannot be a static declaration — it reads the sibling count the
+  // field itself names (`columnCountKey`). Declared, not branched on by type
+  // name, so a fork's tabular type resolves the same way.
+  if (field?.columnCountKey) {
+    const maxCols = Array.isArray(field.itemFields)
+      ? field.itemFields.length
+      : 1;
+    return emptyTabularRow(
+      tabularColumnCount(content, {
+        columnCountKey: field.columnCountKey,
+        maxCols,
+      }),
+    );
+  }
   const byLang = field?.itemDefaultsByLang;
   const langDefaults =
     typeof lang === 'string' &&

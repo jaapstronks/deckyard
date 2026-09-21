@@ -3,6 +3,11 @@ import {
   MAX_COLS,
   MAX_ROWS,
 } from '../../../../shared/slide-types/types/table-slide.js';
+import {
+  addTabularColumn,
+  deleteTabularColumn,
+  emptyTabularRow,
+} from '../../../../shared/slide-types/tabular.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
@@ -56,10 +61,16 @@ function normalizeRows(slide, colCount) {
   return out;
 }
 
+// The row/column shape lives in shared/slide-types/tabular.js, so the canvas
+// inline editor and this grid cannot disagree about what an empty row is.
+const TABULAR_KEYS = {
+  rowsKey: 'rows',
+  columnCountKey: 'colCount',
+  maxCols: MAX_COLS,
+};
+
 function emptyRow(colCount) {
-  const row = {};
-  for (let c = 1; c <= colCount; c += 1) row[`c${c}`] = '';
-  return row;
+  return emptyTabularRow(colCount);
 }
 
 function colLabel(i) {
@@ -99,16 +110,7 @@ function addRow(slide) {
 }
 
 function addColumn(slide) {
-  const cols = clampInt(slide.content.colCount || 1, 1, MAX_COLS);
-  if (cols >= MAX_COLS) return false;
-  const next = cols + 1;
-  slide.content.colCount = String(next);
-  for (const r of slide.content.rows || []) {
-    if (!r || typeof r !== 'object') continue;
-    const k = `c${next}`;
-    if (typeof r[k] !== 'string') r[k] = '';
-  }
-  return true;
+  return addTabularColumn(slide.content, TABULAR_KEYS);
 }
 
 function deleteRow(slide, rIdx) {
@@ -123,18 +125,7 @@ function deleteRow(slide, rIdx) {
  * button could only drop the last column).
  */
 function deleteColumn(slide, cIdx) {
-  const cols = clampInt(slide.content.colCount || 1, 1, MAX_COLS);
-  if (cols <= 1) return false;
-  for (const r of slide.content.rows || []) {
-    if (!r || typeof r !== 'object') continue;
-    for (let c = cIdx; c < cols; c += 1) {
-      const next = r[`c${c + 1}`];
-      r[`c${c}`] = typeof next === 'string' ? next : '';
-    }
-    delete r[`c${cols}`];
-  }
-  slide.content.colCount = String(cols - 1);
-  return true;
+  return deleteTabularColumn(slide.content, cIdx, TABULAR_KEYS);
 }
 
 // ─── grid ────────────────────────────────────────────────────────────────────

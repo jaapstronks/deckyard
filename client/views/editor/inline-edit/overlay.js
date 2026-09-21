@@ -74,7 +74,7 @@ export function createInlineOverlay({ thumb }) {
    * Place an interactive affordance (chip / button) relative to a target.
    * @param {HTMLElement} el
    * @param {HTMLElement} target
-   * @param {string} place - 'top-right' | 'bottom-center' | 'right-center' | 'below-start'
+   * @param {string} place - 'top-right' | 'bottom-center' | 'right-center' | 'right-outside' | 'below-start'
    * @param {number} [gap]
    */
   function place(el, target, placeMode = 'below-start', gap = 6) {
@@ -315,6 +315,22 @@ export function createInlineOverlay({ thumb }) {
         const maxCx = (pack?.width || 9999) - w / 2 - 2;
         if (cx > maxCx) cx = maxCx;
         s.left = `${cx}px`;
+        s.top = `${r.top + r.height / 2}px`;
+        break;
+      }
+      case 'right-outside': {
+        // Beside the target's right edge, vertically centred - the horizontal
+        // twin of 'bottom-center' (which sits below with the same gap). Use it
+        // for an affordance that acts on the target as a whole and must not
+        // cover it: the table's add-column "+", where 'right-center' would put
+        // half the pill over the last column's cells. The canvas has a hard
+        // right edge, so clamp the pill inward rather than let it clip.
+        s.transform = 'translateY(-50%)';
+        const w = p.el.offsetWidth || 90;
+        let left = r.left + r.width + p.gap;
+        const maxLeft = (pack?.width || 9999) - w - 2;
+        if (left > maxLeft) left = Math.max(r.left, maxLeft);
+        s.left = `${left}px`;
         s.top = `${r.top + r.height / 2}px`;
         break;
       }

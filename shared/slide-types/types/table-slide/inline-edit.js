@@ -19,9 +19,28 @@ export const inlineEdit = {
   cards: {
     field: 'rows',
     container: '.md-table-wrap',
+    // Anchor the "+" to the table, not the wrap: the wrap is a flex box that
+    // fills the whole slide body, so against it the button landed on the
+    // bottom edge of the slide - measured at ~330px below a three-row table,
+    // which is why a user reported the row could not be added at all (B394).
+    addAnchor: '.md-table',
+    addLabelKey: 'editor.inline.addRow',
+    addLabel: 'Add row',
+    removeLabelKey: 'editor.inline.removeRow',
+    removeLabel: 'Remove row',
     itemSelector: '.md-table tr',
+    // The other structural axis. Columns are not items - they are the sibling
+    // count the `rows` field names in `columnCountKey` - so they need their
+    // own affordance rather than a second cards level.
+    columns: {
+      addAnchor: '.md-table',
+      addPlacement: 'right-outside',
+      addLabelKey: 'editor.inline.addColumn',
+      addLabel: 'Add column',
+    },
   },
-  // rows stays: column add/remove only exists in the form's grid editor.
+  // rows stays out of formText: the grid editor also carries column delete and
+  // markdown import, which the inline layer does not cover.
   formText: ['title', 'caption'],
 };
 

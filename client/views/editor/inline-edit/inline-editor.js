@@ -41,6 +41,10 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createBasicFields } from '../fields/basic.js';
 import { resolveItemDefaults } from '../../../../shared/slide-types/item-defaults.js';
 import {
+  addTabularColumn,
+  tabularColumnCount,
+} from '../../../../shared/slide-types/tabular.js';
+import {
   DEFAULT_DECK_LANG,
   resolveDeckLang,
 } from '../../../../shared/i18n-utils.js';
@@ -793,6 +797,8 @@ export function createInlineEditor({
       reorderPlacement: cards.reorderPlacement,
     });
 
+    insertColumnControls(root, slide, listField, cards.columns);
+
     // Nested card level (text-blocks: blocks within rows.{i}) - one card set
     // per parent item element, writing to the `${path}.${i}.${child.field}`
     // array. The child's min/max/itemDefaults come from the nested itemFields
@@ -924,7 +930,10 @@ export function createInlineEditor({
             e.stopPropagation();
             // Deck language, not UI locale: placeholder copy in a new item is
             // deck content (shared/slide-types/item-defaults.js).
-            addCard(path, resolveItemDefaults(meta, resolveDeckLang(pres)));
+            addCard(
+              path,
+              resolveItemDefaults(meta, resolveDeckLang(pres), slide.content),
+            );
           },
         },
         [
@@ -948,6 +957,61 @@ export function createInlineEditor({
         placement === 'bottom-center' ? 10 : 6,
       );
     }
+  }
+
+  /**
+   * Add-column affordance for a `tabular` items field (descriptor
+   * `cards.columns`). A table has two structural axes and the array only
+   * carries one: rows are items, columns are the sibling count the field names
+   * in `columnCountKey` plus one cell key per row. Before this, the canvas
+   * offered the row axis and the column axis existed only inside the form's
+   * table grid — reachable through the "Edit all text" modal, which is the
+   * route a user has no reason to look for while standing on the slide.
+   *
+   * Only the "+" lives here. Deleting a column is a per-column control that
+   * needs a column head to hang on, which the rendered table does not have
+   * with the header row off; it stays in the grid, where the whole table is
+   * visible and a destructive click is deliberate.
+   */
+  function insertColumnControls(root, slide, listField, columns) {
+    if (!columns) return;
+    const columnCountKey = listField?.columnCountKey;
+    const maxCols = Array.isArray(listField?.itemFields)
+      ? listField.itemFields.length
+      : 0;
+    if (!columnCountKey || maxCols < 2) return;
+    const anchorEl = columns.addAnchor && root.querySelector(columns.addAnchor);
+    if (!anchorEl) return;
+    const cols = tabularColumnCount(slide.content, { columnCountKey, maxCols });
+    if (cols >= maxCols) return;
+
+    const add = h(
+      'button',
+      {
+        class: 'ie-card-add',
+        type: 'button',
+        onclick: (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const grew = addTabularColumn(slide.content, {
+            rowsKey: listField.key,
+            columnCountKey,
+            maxCols,
+          });
+          if (grew) afterStructuralChange();
+        },
+      },
+      [
+        h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
+        h('span', {
+          text: t(
+            columns.addLabelKey || 'editor.inline.addColumn',
+            columns.addLabel || 'Add column',
+          ),
+        }),
+      ],
+    );
+    overlay.place(add, anchorEl, columns.addPlacement || 'right-outside', 10);
   }
 
   /**
