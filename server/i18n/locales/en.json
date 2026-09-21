@@ -59,6 +59,12 @@
   "email.guestInvitation.button": "View Presentation",
   "email.guestInvitation.footer": "You'll be asked to verify your email address when you access the presentation.",
 
+  "email.exportReady.subject": "Your data export is ready",
+  "email.exportReady.body": "Your data export is ready to download. The archive contains {count} presentation{s}.",
+  "email.exportReady.size": "File size: {size}",
+  "email.exportReady.button": "Download backup",
+  "email.exportReady.footer": "This link will expire in 2 hours. If the link has expired, you can start a new export from your settings.",
+
   "api.error.invalidEmailPassword": "Invalid email/password",
   "api.error.authNotEnabled": "Authentication is not enabled",
   "api.error.validEmailRequired": "Valid email is required",
