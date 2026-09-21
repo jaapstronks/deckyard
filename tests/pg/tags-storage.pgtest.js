@@ -10,7 +10,7 @@
  * - bulk fetch (list views)
  * - org-wide list with usage counts
  * - create + delete (delete strips the tag from every link)
- * - prefix search
+ * - prefix search (one case fold, and typed wildcards taken literally)
  *
  * Unlike the file suite, a presentation id here is a real `presentations.id`
  * uuid — `presentation_tags.presentation_id` is a NOT NULL foreign key — so the
@@ -164,6 +164,45 @@ pgDescribe('tags storage (real PostgreSQL, via facade)', () => {
     assert.ok(hits.some((t) => t.name === 'Engineering'));
     // Unused tag has a zero count.
     assert.strictEqual(hits.find((t) => t.name === 'Engineering').count, 0);
+  });
+
+  it("finds a name whose JavaScript fold differs from PostgreSQL's", async () => {
+    // B388: the prefix used to be lowercased in JavaScript and compared to
+    // SQL `lower(tags.name)` — two folders for one comparison. They disagree
+    // on U+0130: JavaScript answers `i` + a combining dot, the database (this
+    // suite's `en_US.utf8`) answers a bare `i`, so the tag could not be found
+    // by typing its own name. Folding only in SQL removes the disagreement.
+    assert.strictEqual((await createTag(storageScope, 'İstanbul')).ok, true);
+
+    const exact = await searchTags(storageScope, 'İstanbul');
+    assert.ok(
+      exact.some((t) => t.name === 'İstanbul'),
+      'a tag is findable by its own name',
+    );
+    const prefix = await searchTags(storageScope, 'İs');
+    assert.ok(prefix.some((t) => t.name === 'İstanbul'));
+    // And the fold still folds: a plainly-typed prefix finds it too.
+    const folded = await searchTags(storageScope, 'is');
+    assert.ok(folded.some((t) => t.name === 'İstanbul'));
+  });
+
+  it('treats a typed %, _ or backslash as a letter, not a wildcard', async () => {
+    for (const name of ['100% pure', '1000 ideas', 'a_b', 'axb', 'C:\\temp']) {
+      assert.strictEqual((await createTag(storageScope, name)).ok, true, name);
+    }
+
+    const percent = (await searchTags(storageScope, '100%')).map((t) => t.name);
+    assert.deepStrictEqual(percent, ['100% pure']);
+
+    const underscore = (await searchTags(storageScope, 'a_')).map(
+      (t) => t.name,
+    );
+    assert.deepStrictEqual(underscore, ['a_b']);
+
+    const backslash = (await searchTags(storageScope, 'C:\\')).map(
+      (t) => t.name,
+    );
+    assert.deepStrictEqual(backslash, ['C:\\temp']);
   });
 
   it('deletes a tag and strips it from every presentation link', async () => {

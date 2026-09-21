@@ -1,6 +1,6 @@
 /**
- * Shared storage helpers for custom-slide-types and font-families.
- * DRY: these functions were duplicated across both storage modules.
+ * Shared storage helpers — small value functions no single store owns.
+ * DRY: each of these was duplicated across stores before it moved here.
  */
 
 const MAX_SLUG_LEN = 80;
@@ -37,4 +37,25 @@ export async function getUserIdByEmail(db, orgId, email) {
     .where('email', '=', email)
     .executeTakeFirst();
   return user?.id || null;
+}
+
+/**
+ * Escape a user-typed string so it matches itself inside a SQL `LIKE`/`ILIKE`
+ * pattern.
+ *
+ * `LIKE` reads `%`, `_` and the escape character as syntax, so a search term
+ * carrying one of those is a wildcard rather than a letter. Callers compose
+ * the wildcards themselves (`${escapeLikePattern(term)}%` for a prefix match,
+ * `%…%` for a contains match) — where the wildcard sits is the query's
+ * business; what a typed character means is not.
+ *
+ * The escape character is the backslash: that is `LIKE`'s default in
+ * PostgreSQL, fixed by the standard rather than by a setting, and the pattern
+ * travels as a bound parameter, so no literal parsing happens on the way in.
+ *
+ * @param {string} value - Raw search term as the user typed it
+ * @returns {string} - The same text, safe to embed in a LIKE pattern
+ */
+export function escapeLikePattern(value) {
+  return String(value ?? '').replace(/[\\%_]/g, '\\$&');
 }
