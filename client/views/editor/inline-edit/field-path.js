@@ -7,6 +7,8 @@
  * `data-inline-field`.
  */
 
+import { t } from '../../../lib/ui-i18n.js';
+
 /**
  * Read a value from a content object by field path.
  * @param {Object} content
@@ -61,6 +63,35 @@ export function fieldMetaForPath(slideDef, path) {
     meta = itemFields.find((f) => f.key === parts[i + 1]) || {};
   }
   return meta;
+}
+
+/**
+ * The name a field goes by on the canvas — on a ghost chip ("+ Caption"), in a
+ * clear button's title and as the markdown modal's field label.
+ *
+ * It reads the field's own `labelKey`, the key the registry stamps on every
+ * field (shared/ui-i18n-keys.js) and the one the inspector already renders
+ * from. One field, one name, wherever it is shown.
+ *
+ * It used to look the name up under `editor.inline.field.<last path segment>`
+ * — a second key scheme for the same concept, with **zero** entries in all
+ * twelve locales, so every chip fell through to `meta.label`, the English
+ * schema label. On a Dutch canvas "+ Caption" stood next to "+ Rij toevoegen"
+ * (B395). The scheme could not have worked as written either: it keyed on the
+ * last path segment, so one `title` entry would have had to serve
+ * `comparison-slide`'s "Title", `team-cards-slide`'s and a text-blocks row's.
+ *
+ * A path the schema does not know (`fieldMetaForPath` answers `{}`) carries no
+ * key, so it names itself with its last path segment rather than asking `t()`
+ * for the empty string.
+ *
+ * @param {string} path - field path, e.g. `subheading` or `items.0.text`
+ * @param {Object} [meta] - the field definition, from `fieldMetaForPath`
+ * @returns {string}
+ */
+export function fieldLabel(path, meta) {
+  const fallback = meta?.label || String(path).split('.').pop();
+  return meta?.labelKey ? t(meta.labelKey, fallback) : fallback;
 }
 
 /**

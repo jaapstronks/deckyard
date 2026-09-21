@@ -30,6 +30,7 @@ import {
   getByPath,
   setByPath,
   fieldMetaForPath,
+  fieldLabel,
   isEmptyValue,
 } from './field-path.js';
 import { createInlineOverlay } from './overlay.js';
@@ -156,7 +157,6 @@ export function createInlineEditor({
     mdHost,
     mdField,
     getSlide,
-    fieldLabel: (path, meta) => fieldLabel(path, meta),
     endActiveTextEdit: () => {
       if (editing) endTextEdit();
     },
@@ -510,10 +510,6 @@ export function createInlineEditor({
   // ----------------------------------------------------------------
   // Ghost affordances (empty optional fields)
   // ----------------------------------------------------------------
-  function fieldLabel(path, meta) {
-    const key = String(path).split('.').pop();
-    return t(`editor.inline.field.${key}`, meta?.label || key);
-  }
 
   /**
    * Resolve a ghost's anchor: `anchors` is an ordered list of
