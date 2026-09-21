@@ -15,8 +15,6 @@
  * @param {Function} deps.mdField - canonical markdown field factory (label,
  *   value, help, onChange, opts) -> element.
  * @param {() => (object|null)} deps.getSlide - current slide accessor.
- * @param {(path: string|string[], meta: object) => string} deps.fieldLabel -
- *   human label for a field path.
  * @param {() => void} deps.endActiveTextEdit - close any in-place edit first.
  * @param {() => void} [deps.markDirty] - mark the deck dirty.
  * @param {() => void} [deps.requestSave] - request a debounced save.
@@ -25,7 +23,7 @@
  * @returns {{ open: Function, dismiss: Function, isOpen: () => boolean }}
  */
 
-import { getByPath, setByPath } from './field-path.js';
+import { getByPath, setByPath, fieldLabel } from './field-path.js';
 import { h, installDismissOnOutside } from '../../../lib/dom.js';
 import { createOverlay } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -34,7 +32,6 @@ export function createMarkdownEditModal({
   mdHost,
   mdField,
   getSlide,
-  fieldLabel,
   endActiveTextEdit,
   markDirty,
   requestSave,
