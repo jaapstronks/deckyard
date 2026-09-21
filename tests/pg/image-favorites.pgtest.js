@@ -19,11 +19,19 @@
  * rather than the facade. The half no response assertion can reach (that no
  * reader accepts `isFavorite` as well) is a grep in
  * `tests/image-library-favorite-guard.test.js`.
+ *
+ * B374 added the third: the bulk export is not a route, so no wire assertion
+ * reaches it, and `image-library/index.json` shipped starless while the
+ * slide-library halves of the same ZIP carried the flag. The bottom block
+ * builds a real export and reads the bundle back.
  */
 
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
+import { readFile, rm } from 'node:fs/promises';
+
+import JSZip from 'jszip';
 
 import {
   closeTestDb,
@@ -43,6 +51,7 @@ import {
   toggleImageFavorite,
 } from '../../server/storage/image-library.js';
 import { handleImageLibrary } from '../../server/routes/api/image-library.js';
+import { buildBulkExport } from '../../server/export/bulk-export.js';
 
 const storageScope = testScope();
 const ALICE = 'alice@example.com';
@@ -333,3 +342,78 @@ pgDescribe(
     });
   },
 );
+
+// ===========================================================================
+// The backup: the exported library carries the exporter's star (B374, D176)
+// ===========================================================================
+//
+// D176 names the bulk export ("so the bulk export carries the exporter's own
+// flag"), but `image-library/index.json` came straight out of
+// `listImageLibrary()` and arrived starless, while the slide-library halves of
+// the same ZIP carried the flag out of their row mapper. The export is not a
+// route, so no wire assertion above reaches it: this block drives the real
+// `buildBulkExport` and reads the bundle back.
+
+pgDescribe('image favorites in the bulk export (real PostgreSQL)', () => {
+  /** @type {import('kysely').Kysely<any>} */
+  let db;
+  /** @type {string} */
+  let imageId;
+
+  /** Read `image-library/index.json` back out of a built export ZIP. */
+  async function exportedImages(userEmail) {
+    const { filePath } = await buildBulkExport({
+      repoRoot: '/tmp',
+      userEmail,
+      organizationId: storageScope.organizationId,
+      options: { includeImageLibrary: true },
+    });
+    try {
+      const zip = await JSZip.loadAsync(await readFile(filePath));
+      return JSON.parse(
+        await zip.file('image-library/index.json').async('string'),
+      );
+    } finally {
+      await rm(filePath, { force: true });
+    }
+  }
+
+  before(async () => {
+    db = await openTestDb();
+    await installFacadeStorage();
+  });
+
+  after(async () => {
+    uninstallFacadeStorage();
+    await closeTestDb(db);
+  });
+
+  beforeEach(async () => {
+    await truncate(db, 'organizations');
+    await seedDefaultOrganization(db);
+    // A local path, so building the export resolves it off disk (and fails
+    // quietly) instead of reaching for the network.
+    imageId = await seedImageLibraryItem(db, { url: '/uploads/b374.png' });
+  });
+
+  it('carries the exporter’s own star, not somebody else’s', async () => {
+    await toggleImageFavorite(storageScope, imageId, ALICE);
+
+    const [mine] = await exportedImages(ALICE);
+    assert.equal(mine.id, imageId);
+    assert.equal(mine.favorite, true, 'Alice backs up her own star');
+
+    const [theirs] = await exportedImages(BOB);
+    assert.equal(
+      theirs.favorite,
+      false,
+      "Bob's backup does not inherit Alice's star",
+    );
+  });
+
+  it('carries the flag on an unstarred image too', async () => {
+    const [item] = await exportedImages(ALICE);
+    assert.equal(item.favorite, false, 'nobody has starred it yet');
+    assert.equal('isFavorite' in item, false, 'the old spelling is gone');
+  });
+});

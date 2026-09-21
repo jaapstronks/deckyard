@@ -4,8 +4,8 @@ import {
   getImageLibraryItem,
   listImageLibrary,
   updateImageLibraryItem,
-  getImageFavorites,
   isImageFavorite,
+  stampFavorites,
   toggleImageFavorite,
 } from '../../storage/image-library.js';
 import { getImageLibraryUsage } from '../../storage/image-library-usage.js';
@@ -64,18 +64,10 @@ async function handleImageLibraryCollection({
     // logos a guest can actually place on a slide.
     if (flags.sandboxMode) items.unshift(...listSandboxMedia());
     // One star per item, spelled `favorite` (D176). The caller's own flag,
-    // derived here from their favorite rows; the set is the lookup, not a
-    // second field on the wire.
-    const favoriteSet = new Set(
-      authedUser?.email
-        ? await getImageFavorites(storageScope, authedUser.email)
-        : [],
-    );
+    // derived in the facade — the same stamper the bulk export uses, so the
+    // two surfaces cannot disagree about whose star an item carries.
     serveJson(res, 200, {
-      items: items.map((item) => ({
-        ...item,
-        favorite: favoriteSet.has(item.id),
-      })),
+      items: await stampFavorites(storageScope, items, authedUser?.email),
     });
     return true;
   }

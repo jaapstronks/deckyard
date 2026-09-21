@@ -304,6 +304,28 @@ export async function getImageFavorites(storageScope, userEmail) {
 }
 
 /**
+ * Stamp a list of image-library items with the reader's own star (D176).
+ *
+ * The one place a *list* of items gets `favorite`, so the surfaces that hand
+ * one out — the collection route and the bulk export — cannot answer "has this
+ * person starred this image" differently. One query for the reader's rows, one
+ * lookup per item; the stored addresses never leave this layer (D22).
+ *
+ * A reader without an address has no stars, so every item comes back
+ * `favorite: false` — still the field, the same answer the route already gives
+ * an anonymous caller.
+ * @param {import('./scope.js').StorageScope} storageScope
+ * @param {Array<Object>} items - Mapped image-library items
+ * @param {string|null} [viewerEmail] - Who is reading
+ * @returns {Promise<Array<Object>>} The items, each carrying `favorite`
+ */
+export async function stampFavorites(storageScope, items, viewerEmail = null) {
+  const ctx = resolveScope(storageScope, 'stampFavorites');
+  const starred = new Set(await favoritesOf(viewerEmail, ctx));
+  return items.map((item) => ({ ...item, favorite: starred.has(item.id) }));
+}
+
+/**
  * Whether `userEmail` starred this image. The caller's own flag, so that every
  * route can stamp `favorite` on the item it hands back (D176) without reading
  * the stored addresses — those never leave this layer (D22).
