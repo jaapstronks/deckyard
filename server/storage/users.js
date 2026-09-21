@@ -6,7 +6,7 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso, isoAfter, normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard, escapeLikePattern } from './utils/index.js';
 import { generateSecureToken, hashToken } from '../utils/secure-tokens.js';
 import { invalidateDisplayNames } from './display-identity.js';
 
@@ -374,6 +374,17 @@ export async function resendInvitation(scope, userId) {
 
 /**
  * Search users by email or name (case-insensitive partial match).
+ *
+ * Case folding is PostgreSQL's, once: `ILIKE` folds both sides. Lowercasing
+ * the query in JavaScript first put a second folder on the same comparison —
+ * the defect B388 names in `searchTags`, in its second location — and the two
+ * can differ on input like `'İ'` (U+0130). `ILIKE` rather than `lower()` here
+ * because neither `users.email` nor `users.name` carries a `lower()` index to
+ * stay consistent with; addresses are normalized on write by `normalizeEmail`.
+ *
+ * The query is escaped, so a typed `%`, `_` or `\` matches itself instead of
+ * acting as a wildcard.
+ *
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} query - Search query
  * @param {Object} options - Search options
@@ -383,16 +394,19 @@ export async function resendInvitation(scope, userId) {
  */
 export async function searchUsers(scope, query, options = {}) {
   toStorageContext(scope, 'searchUsers');
-  const searchTerm = String(query || '')
-    .toLowerCase()
-    .trim();
+  const searchTerm = String(query || '').trim();
   if (!searchTerm) return [];
+  const pattern = `%${escapeLikePattern(searchTerm)}%`;
 
   return withDbGuard([], async (db) => {
     const orgId = getOrgId(scope);
     const limit = Math.min(Math.max(1, options.limit || 10), 50);
+    // `normalizeEmail` is what wrote these addresses, so it is also what reads
+    // them back; the open-coded lowercase-and-trim here was a second spelling
+    // of the same rule. It answers `null` for an empty entry, and a `null` in
+    // a `NOT IN` list makes the whole predicate unknown — hence the filter.
     const exclude = Array.isArray(options.exclude)
-      ? options.exclude.map((e) => String(e).toLowerCase().trim())
+      ? options.exclude.map(normalizeEmail).filter(Boolean)
       : [];
 
     let qb = db
@@ -408,10 +422,7 @@ export async function searchUsers(scope, query, options = {}) {
       ])
       .where('organization_id', '=', orgId)
       .where((eb) =>
-        eb.or([
-          eb('email', 'ilike', `%${searchTerm}%`),
-          eb('name', 'ilike', `%${searchTerm}%`),
-        ]),
+        eb.or([eb('email', 'ilike', pattern), eb('name', 'ilike', pattern)]),
       );
 
     // Exclude specific emails

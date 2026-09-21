@@ -4,7 +4,8 @@
  * Not a store: nothing here reads or writes a domain table. It holds the two
  * things every store needs and none of them owns — the database-availability
  * guard, and the small value helpers (`parseJson`, slug handling, e-mail →
- * user id) that were duplicated across stores before they moved here.
+ * user id, `LIKE`-pattern escaping) that no one store owns — most of them
+ * because they were duplicated across stores before they moved here.
  *
  * Consumers import this barrel, not `./db-guard.js` or `./helpers.js`
  * (`AGENTS.md` § _Module layout: one folder = one seam_), which is what
@@ -18,4 +19,5 @@ export {
   generateSlug,
   isValidSlug,
   getUserIdByEmail,
+  escapeLikePattern,
 } from './helpers.js';

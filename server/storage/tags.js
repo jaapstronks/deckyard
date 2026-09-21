@@ -21,6 +21,7 @@ import { getOrgId } from '../utils/context.js';
 import { nowIso } from '../utils/normalize.js';
 import { checkTagName, TAG_NAME_MESSAGES } from '../../shared/tag-name.js';
 import { resolveScope } from './scope.js';
+import { escapeLikePattern } from './utils/index.js';
 
 /**
  * The tables that link a tag to a row, and the column each keys the row on.
@@ -401,6 +402,20 @@ export async function deleteTag(storageScope, tagId) {
 
 /**
  * Search tags by prefix (for autocomplete).
+ *
+ * Case folding is PostgreSQL's, once: `lower()` on both sides of the
+ * comparison. That is the same authority tag *identity* runs on — the unique
+ * index on `(organization_id, lower(name))` from migration 018, which
+ * `resolveTag` matches against — so search cannot disagree with it about what
+ * two spellings of a name mean. Folding the prefix in JavaScript instead put a
+ * second folder on one comparison, and the two can differ: `'İ'` (U+0130)
+ * lowercases to `i` + a combining dot in JavaScript, and to a bare `i` under
+ * PostgreSQL's `lower()` (measured on `en_US.utf8`), so a tag whose name
+ * starts with it could not be found by typing that name.
+ *
+ * The prefix is escaped, so a typed `%`, `_` or `\` is a letter to match and
+ * not a wildcard.
+ *
  * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} prefix - Search prefix
  * @param {number} [limit=10] - Max results
@@ -411,12 +426,11 @@ export async function searchTags(storageScope, prefix, limit = 10) {
   const db = getDb();
   const orgId = getOrgId(ctx);
 
-  const searchTerm = String(prefix || '')
-    .trim()
-    .toLowerCase();
+  const searchTerm = String(prefix || '').trim();
   if (!searchTerm) {
     return listTags(storageScope);
   }
+  const pattern = `${escapeLikePattern(searchTerm)}%`;
 
   const rows = await db
     .selectFrom('tags')
@@ -427,7 +441,11 @@ export async function searchTags(storageScope, prefix, limit = 10) {
       db.fn.count('presentation_tags.presentation_id').as('count'),
     ])
     .where('tags.organization_id', '=', orgId)
-    .where(db.fn('lower', ['tags.name']), 'like', `${searchTerm}%`)
+    .where(
+      db.fn('lower', ['tags.name']),
+      'like',
+      db.fn('lower', [sql.val(pattern)]),
+    )
     .groupBy(['tags.id', 'tags.name'])
     .orderBy('tags.name', 'asc')
     .limit(limit)
