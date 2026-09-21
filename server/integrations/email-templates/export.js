@@ -17,9 +17,12 @@ export function buildExportReadyEmail({ tr, stats, downloadUrl }) {
   const greeting = tr('email.common.greetingAnonymous', 'Hi there,');
   const presCount = stats?.presentations || 0;
 
+  // `{s}` is the plural suffix of the noun, not of the sentence: the carrier
+  // phrase deliberately has no verb agreeing with `{count}`, so one string
+  // reads correctly for 1 and for n in both locales this install ships.
   const bodyText = tr(
     'email.exportReady.body',
-    'Your data export is ready to download. {count} presentation{s} have been exported.',
+    'Your data export is ready to download. The archive contains {count} presentation{s}.',
     { count: presCount, s: presCount !== 1 ? 's' : '' },
   );
 

@@ -127,6 +127,11 @@ export function clearActiveBulkExport(userEmail) {
 
 /**
  * Send notifications after a successful export (non-blocking).
+ *
+ * Exported because it is the whole answer to "who gets told, and in which
+ * language" — the job around it needs Redis and a real export on disk, so this
+ * is the seam `tests/export-mail-recipient-language.test.js` drives.
+ *
  * @param {Object} params
  * @param {string} params.userEmail
  * @param {string} params.jobId - Full job ID (heavy-xxx)
@@ -134,7 +139,7 @@ export function clearActiveBulkExport(userEmail) {
  * @param {string} [params.organizationId]
  * @param {string} [params.repoRoot]
  */
-async function sendExportNotifications({
+export async function sendExportNotifications({
   userEmail,
   jobId,
   manifest,
@@ -174,10 +179,17 @@ async function sendExportNotifications({
   try {
     const { sendExportReadyNotification } =
       await import('../../../integrations/email/senders-export.js');
+    const { resolveRecipientLocale } =
+      await import('../../../integrations/email/recipient-locale.js');
+    // The recipient is the account holder who asked for this export, so the
+    // mail is written in the language they set — the same answer reset and
+    // magic-link mail give for the same person (B389).
+    const locale = await resolveRecipientLocale({ repoRoot, email: userEmail });
     await sendExportReadyNotification({
       recipientEmail: userEmail,
       stats,
       downloadUrl,
+      locale,
       repoRoot,
     });
   } catch (err) {

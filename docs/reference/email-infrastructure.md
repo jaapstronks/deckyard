@@ -190,7 +190,7 @@ whether `BREVO_API_KEY` is set.
 - **Test-send goes to the calling admin's own address**, so the admin API cannot
   be used to mail arbitrary third parties.
 
-## Implementation status (as of 2026-08-21)
+## Implementation status (as of 2026-09-21)
 
 Shipped and in use: the Brevo transport, all three sender families plus export,
 the code-default builders in two locales' worth of translator strings (`en`,
@@ -200,32 +200,32 @@ admin panel with preview and test-send.
 
 Honest gaps:
 
-- **Only the two auth mails are written in the recipient's language.**
-  `resolveRecipientLocale()`
+- **The mails that reach an account holder carry their language; the rest do
+  not yet.** `resolveRecipientLocale()`
   (`server/integrations/email/recipient-locale.js`) is the one place that
-  answers "which language does this address read?", and the password-reset and
-  magic-link routes hand its answer to the sender. Every other sender still
-  falls back to its `locale = 'en'` default, so an invitation, a collaborator
-  invite, a guest verification, a comment notification, an export-ready notice
-  and a digest go out in English regardless of the recipient — and the
-  instance default locale an admin sets in the panel governs template
-  _editing_, not what is sent. The rest are **two** groups, not one: an
-  invitation or guest verification reaches an address with no account, so
-  there is no `uiLocale` to read and the instance default is the answer;
-  export-ready and the two digests reach an account holder, so for them this
-  is the same question with a different answer. For export-ready only the
-  hand-off is missing. The digests need more than a hand-off: they have no
-  `locale` parameter at all, and their body is AI-generated prose, so
-  translating their chrome alone would half-translate the mail.
+  answers "which language does this address read?", and the password-reset
+  route, the magic-link route and the bulk-export worker hand its answer to
+  their sender. The senders that are left still fall back to their
+  `locale = 'en'` default, so an invitation, a collaborator invite, a guest
+  verification, a comment notification and a digest go out in English
+  regardless of the recipient — and the instance default locale an admin sets
+  in the panel governs template _editing_, not what is sent. Those are **two**
+  groups, not one: an invitation or guest verification reaches an address with
+  no account, so there is no `uiLocale` to read and the instance default is
+  the answer; the two digests reach an account holder, so for them this is the
+  same question with a different answer. The digests need more than a
+  hand-off: they have no `locale` parameter at all, and their body is
+  AI-generated prose, so translating their chrome alone would half-translate
+  the mail (B390).
 
-- **`exportReady` is not a real template type.** `senders-export.js` asks
-  `trySendCustomTemplate` for `templateType: 'exportReady'`, but
-  `TEMPLATE_METADATA` has no such key, so `resolveTemplate` throws
-  `Invalid template type` on every export mail. The throw is swallowed by
-  `trySendCustomTemplate`'s catch-all, which returns `null` and falls back to the
-  code default — so the mail is correct, the customization path is dead, and
-  nothing reports it. Same for the two digest senders, which do not attempt a
-  custom template at all.
+- **The export mail and the two digests have no admin-customizable
+  template.** `senders-export.js` renders a bespoke stats table through
+  `buildExportReadyEmail` and deliberately does not ask
+  `trySendCustomTemplate`; `exportReady` is absent from `TEMPLATE_METADATA` to
+  match. (It used to ask, and every export mail silently threw
+  `Invalid template type` into a catch-all — removed in #659.) The two digest
+  senders likewise never attempt a custom template. So these three mails can
+  be translated but not edited in the admin panel.
 - **`integrations/brevo.js` is a shim** with ten live importers — the module move
   was made but the call sites were not followed through.
 - **No delivery observability.** No send log, no retry, no bounce handling, no

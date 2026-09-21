@@ -59,6 +59,12 @@
   "email.guestInvitation.button": "Presentatie bekijken",
   "email.guestInvitation.footer": "Je wordt gevraagd om je e-mailadres te verifiëren wanneer je de presentatie opent.",
 
+  "email.exportReady.subject": "Je data-export staat klaar",
+  "email.exportReady.body": "Je data-export staat klaar om te downloaden. Het archief bevat {count} presentatie{s}.",
+  "email.exportReady.size": "Bestandsgrootte: {size}",
+  "email.exportReady.button": "Back-up downloaden",
+  "email.exportReady.footer": "Deze link verloopt na 2 uur. Is de link verlopen, dan kun je via je instellingen een nieuwe export starten.",
+
   "api.error.invalidEmailPassword": "Ongeldig e-mailadres/wachtwoord",
   "api.error.authNotEnabled": "Authenticatie is niet ingeschakeld",
   "api.error.validEmailRequired": "Geldig e-mailadres vereist",
