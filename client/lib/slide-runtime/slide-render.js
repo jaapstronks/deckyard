@@ -423,6 +423,95 @@ export function mountSlideInto(
 }
 
 /**
+ * The runtimes that read a slide's markup, in the order they run.
+ *
+ * One list, two callers: `renderSlideElement()` runs it on the markup it just
+ * built, and `triggerServerRender()` runs it again on the markup the server
+ * swapped in (B391). That second call is the point of the list. Which slides
+ * these runtimes belong to is a question of markup, not of type name — the
+ * countdown init scans for `.slide-countdown` (B387), the follow-invite one for
+ * `[data-follow-qr]` / `[data-follow-go-url]` (B386) — so a custom type whose
+ * template carries that markup has the runtime, and a server render that hands
+ * the markup over after the inits have run used to leave it dead in the app
+ * while `detectSlideRuntimeNeeds()` on the server happily found it for the
+ * export. Two lists would put those surfaces back out of step, so there is one,
+ * and the mode condition lives in the declaration (`runsIn`) rather than at the
+ * call site — two of them are mode-gated and a caller cannot be trusted to
+ * remember which.
+ *
+ * `run` returns a cleanup function or nothing; whatever it returns joins the
+ * element's cleanup row, so running the list a second time cannot leave a
+ * listener behind. Every init is idempotent on markup it has already seen
+ * (each one returns a no-op when its selector matches nothing, and the
+ * placeholder markup matches none of them), so the second pass only ever
+ * initialises what the server actually delivered.
+ *
+ * @type {ReadonlyArray<{
+ *   name: string,
+ *   runsIn?: (mode: string | undefined) => boolean,
+ *   run: (el: Element, mode: string | undefined) => (() => void) | void,
+ * }>}
+ */
+const MARKUP_RUNTIMES = Object.freeze([
+  {
+    name: 'video-embeds',
+    // Thumbnails should never spin up video SDKs (and should never autoplay).
+    runsIn: (mode) => mode !== 'thumb',
+    run: (el) => initVideoEmbeds(el),
+  },
+  {
+    name: 'code-and-math',
+    run: (el) => initCodeAndMath(el),
+  },
+  {
+    name: 'kpi-metrics',
+    runsIn: (mode) => mode === 'present' || mode === 'follow',
+    run: (el) => initKpiMetricsSlides(el),
+  },
+  {
+    // Thumbnails use the same logical slide dimensions as full-size renders.
+    name: 'team-cards-justify',
+    run: (el) => initTeamCardsJustify(el),
+  },
+  {
+    // Follow-invite slides look blank without QR rendering. Thumbnails render
+    // once without the resize handler, so many of them can't leak listeners.
+    name: 'follow-invite',
+    run: (el, mode) =>
+      initFollowInviteSlides(
+        el,
+        mode === 'thumb' ? { enableResize: false } : undefined,
+      ),
+  },
+  {
+    // Countdown timer: presenter-driven in present/follow, static in
+    // thumbnails. `interactive` stays a branch inside the call — that one is
+    // driven by the render mode, not by whether the runtime applies at all.
+    name: 'countdown',
+    run: (el, mode) =>
+      initCountdownSlides(el, {
+        interactive: mode === 'present' || mode === 'follow',
+      }),
+  },
+]);
+
+/**
+ * Run every markup-reading runtime that applies in `mode` against `el`, and
+ * collect the cleanups they hand back into `cleanups`.
+ *
+ * @param {Element} el
+ * @param {string|undefined} mode
+ * @param {Array<() => void>} cleanups - the row `el.__sbCleanup` drains.
+ */
+function runMarkupRuntimes(el, mode, cleanups) {
+  for (const runtime of MARKUP_RUNTIMES) {
+    if (runtime.runsIn && !runtime.runsIn(mode)) continue;
+    const cleanup = runtime.run(el, mode);
+    if (typeof cleanup === 'function') cleanups.push(cleanup);
+  }
+}
+
+/**
  * Render a slide element synchronously.
  * Falls back to "Unknown slide type" for custom types not bundled in client;
  * `triggerServerRender` swaps in the server-rendered HTML afterwards.
@@ -485,40 +574,7 @@ export function renderSlideElement(
   // Apply theme vars per slide so the application UI stays theme-independent.
   // (Vars are scoped to the slide element so multiple presentations can coexist.)
   if (theme) applyThemeVarsToElement(el, theme);
-  // Thumbnails should never spin up video SDKs (and should never autoplay).
-  if (mode !== 'thumb') initVideoEmbeds(el);
-  // Initialize code highlighting and math rendering
-  initCodeAndMath(el);
-  if (mode === 'present' || mode === 'follow')
-    cleanups.push(initKpiMetricsSlides(el));
-  // Thumbnails use the same logical slide dimensions as full-size renders.
-  cleanups.push(initTeamCardsJustify(el));
-  // Follow-invite slides look blank without QR rendering. Which slides those
-  // are is a question of markup, not of type name: the init scans for the
-  // `[data-follow-qr]` / `[data-follow-go-url]` it fills and does nothing when
-  // a slide carries neither (B386). Thumbnails render once without the resize
-  // handler, so many of them can't leak listeners.
-  cleanups.push(
-    initFollowInviteSlides(
-      el,
-      mode === 'thumb' ? { enableResize: false } : undefined,
-    ),
-  );
-  // Countdown timer: presenter-driven in present/follow, static in thumbnails.
-  // Like the follow-invite init above, which slides these are is a question of
-  // markup, not of type name: the init scans for `.slide-countdown` and does
-  // nothing when a slide carries none (B387). `detectSlideRuntimeNeeds()` on
-  // the server reads the same markup for the export path, so neither side
-  // answers by type name. Both read the markup that exists *here*: markup a
-  // server render swaps in below reaches neither init, because
-  // `triggerServerRender` re-runs only the theme vars and code/math (B391).
-  // `interactive` stays a branch — that one is driven by the render mode, not
-  // by the type.
-  cleanups.push(
-    initCountdownSlides(el, {
-      interactive: mode === 'present' || mode === 'follow',
-    }),
-  );
+  runMarkupRuntimes(el, mode, cleanups);
 
   // For custom slide types, trigger async server-side rendering through the
   // route the surface declared.
@@ -531,6 +587,7 @@ export function renderSlideElement(
         renderVia,
         lang,
         api,
+        cleanups,
       }),
     );
   }
@@ -569,11 +626,17 @@ export function slideRendered(el) {
  * Trigger server-side rendering for a custom slide type.
  * Replaces the placeholder element's content with server-rendered HTML.
  * Resolves `true` when the markup was swapped in, `false` otherwise.
+ *
+ * `cleanups` is the row `renderSlideElement()` built for this element and
+ * `el.__sbCleanup` drains. It is passed in rather than rebuilt because the
+ * markup this swaps in gets the same runtimes the original markup got
+ * (`MARKUP_RUNTIMES`), and a second render that kept its listeners in a row of
+ * its own would leak every one of them (B391).
  */
 async function triggerServerRender(
   el,
   slide,
-  { mode, theme, renderVia, lang, api },
+  { mode, theme, renderVia, lang, api, cleanups = [] },
 ) {
   try {
     const html = await serverRenderSlide({
@@ -593,13 +656,25 @@ async function triggerServerRender(
       el.innerHTML = newContent.innerHTML;
       // Copy classes from rendered slide
       el.className = newContent.className;
+      // …and every other attribute the server's slide root carries. A slide's
+      // root is markup too: the countdown reads `data-countdown-seconds` and
+      // `data-countdown-autostart` off it, the background reads its own data
+      // attributes. Copying only the class used to hand the runtimes a root
+      // stripped of its own configuration, so a server-rendered countdown ran
+      // at the runtime's fallback length instead of the one the slide declares
+      // (B391). Attributes the surface put on the placeholder are kept — the
+      // server's markup adds to the element, it does not own it.
+      for (const { name, value } of newContent.attributes) {
+        if (name === 'class') continue;
+        el.setAttribute(name, value);
+      }
       // Remove the loading marker
       delete el.dataset.needsServerRender;
 
       // Apply theme vars
       if (theme) applyThemeVarsToElement(el, theme);
-      // Initialize code highlighting and math rendering
-      initCodeAndMath(el);
+      // The markup only exists now, so the runtimes that read markup run now.
+      runMarkupRuntimes(el, mode, cleanups);
       // Callers that decorated the placeholder re-apply against the real slide
       // DOM by awaiting slideRendered(el).
       return true;
