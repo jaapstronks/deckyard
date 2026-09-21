@@ -51,6 +51,16 @@
  *     `(slide) => mode` when it depends on content (e.g. process direction).
  *     `addLabelKey`/`addLabel` (and the remove variants) override the generic
  *     "Add item"/"Remove item" copy per level.
+ *   cards.columns: the second structural axis of a `tabular` field. A table's
+ *     rows are the items; its columns are the sibling count the field names in
+ *     `columnCountKey` plus one cell key per row, so they cannot be a second
+ *     cards level. One "+" against the table, reading the field's own
+ *     declaration (`columnCountKey`, `itemFields` for the maximum) - no type
+ *     name anywhere, so a fork's tabular type gets it too.
+ *       { addAnchor, addPlacement?, addLabelKey?, addLabel? }
+ *     Add only: deleting a column is a per-column control that needs a column
+ *     head to hang on, which the rendered table has not got with the header row
+ *     off. That stays in the form's grid, where the whole table is visible.
  *   cards.child: a nested card level for two-level list types (text-blocks
  *     rows -> blocks). One card set is rendered per parent item element,
  *     scoped to it, writing to `${field}.{parentIdx}.${child.field}`; min/max/
