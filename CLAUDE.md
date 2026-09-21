@@ -205,9 +205,11 @@ Apply it at the recurring moments:
 - **After merging a delegated PR** (a "review en merge" hand-off you completed):
   run the **`merge-housekeeping`** skill as the tail of the flow, before you
   stop. It cleans up the branch, ticks the shipped item off `docs/plans/TODO.md`,
-  and runs a shallow TODO/roadmap consistency scan that logs drift and nudges
-  Jaap when a deeper reorganization audit is warranted. It is part of the merge,
-  not a proposed "next step". Skip it for PRs you only opened (Jaap merges those).
+  and runs a shallow TODO/roadmap consistency scan that logs drift and, when the
+  threshold is met, makes your closing hand-off the reorg-audit assignment
+  instead of the next uitvoersessie (no phone nudge for that — the hand-off
+  schedules it). It is part of the merge, not a proposed "next step". Skip it
+  for PRs you only opened (Jaap merges those).
 
 ## Verifying work
 
