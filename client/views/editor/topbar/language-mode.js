@@ -672,12 +672,12 @@ export function createLanguageMode({
       // AND per-item texts) and only translates the empty ones from `source`.
       const resp = await api?.(`/api/presentations/${id}/translate`, {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           from: source,
           to,
           overwrite: false,
           fillMissing: true,
-        }),
+        },
       });
       applyServerMeta(resp?.presentation);
       // Live-edit mode: the server applied the translation to the live doc
@@ -772,12 +772,12 @@ export function createLanguageMode({
       for (const to of targets) {
         const resp = await api?.(`/api/presentations/${id}/translate`, {
           method: 'POST',
-          body: JSON.stringify({
+          body: {
             from,
             to,
             overwrite: true,
             fillMissing: false,
-          }),
+          },
         });
         const updated = resp?.presentation;
         if (updated?.i18n) pres.i18n = updated.i18n;

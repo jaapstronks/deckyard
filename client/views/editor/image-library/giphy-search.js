@@ -208,7 +208,7 @@ export function createGiphySearch({ api, onSelect, setStatus, setBusy }) {
     try {
       const data = await api('/api/stock-media/giphy/download', {
         method: 'POST',
-        body: JSON.stringify({ gifId: gif.id }),
+        body: { gifId: gif.id },
       });
 
       if (data.ok && data.libraryItem) {

@@ -83,7 +83,7 @@ function fakeApi() {
   const calls = [];
   const api = async (path, opts = {}) => {
     const method = opts.method || 'GET';
-    const body = opts.body ? JSON.parse(opts.body) : null;
+    const body = opts.body || null;
     calls.push({ path, method, body });
     if (method === 'GET') return { items: [] };
     if (method === 'POST') return { ...body, id: 'copy-1', revision: 1 };

@@ -389,14 +389,14 @@ export function openImageKitPicker({
               );
               const resp = await api('/api/image-library/generate-alts', {
                 method: 'POST',
-                body: JSON.stringify({
+                body: {
                   url: cleanStr(selected?.url),
                   description: cleanStr(selected?.name),
                   tags: uniq(selected?.tags),
                   photographer: '',
                   langs: [seedLang],
                   context: context || null,
-                }),
+                },
               });
               const a =
                 resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
@@ -464,7 +464,7 @@ export function openImageKitPicker({
                   `/api/media/imagekit/files/${encodeURIComponent(fileId)}/details`,
                   {
                     method: 'PATCH',
-                    body: JSON.stringify(patch),
+                    body: patch,
                   },
                 ).catch(() => {});
               }

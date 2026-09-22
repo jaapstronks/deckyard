@@ -319,11 +319,11 @@ test('mutation paths escape their segments and carry the documented body', async
       '/api/moderate/d/questions/q/remove',
     ],
   );
-  assert.deepEqual(JSON.parse(api.calls[1].init.body), {
+  assert.deepEqual(api.calls[1].init.body, {
     position: 'next',
     afterSlideIndex: 4,
   });
   // 'end' takes no index — sending one would be a field the route ignores.
-  assert.deepEqual(JSON.parse(api.calls[2].init.body), { position: 'end' });
+  assert.deepEqual(api.calls[2].init.body, { position: 'end' });
   assert.equal(api.calls[3].init.method, 'POST');
 });

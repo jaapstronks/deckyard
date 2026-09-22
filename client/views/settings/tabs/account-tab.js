@@ -125,7 +125,7 @@ export function createAccountTab({ user }) {
       // Upload to server
       const resp = await api('/api/profile/image', {
         method: 'POST',
-        body: JSON.stringify({ dataUrl }),
+        body: { dataUrl },
       });
 
       if (resp?.imageUrl) {

@@ -17,7 +17,7 @@ function makeStubApi(handler) {
     calls.push({
       path,
       method: init?.method || 'GET',
-      body: init?.body ? JSON.parse(init.body) : undefined,
+      body: init?.body,
     });
     return handler(path, init);
   };
@@ -28,7 +28,7 @@ describe('createCollectionsApi.addSlide', () => {
   it('appends a new id and PATCHes the full ordered membership', async () => {
     const { api, calls } = makeStubApi((path, init) => {
       if (init?.method === 'PATCH') {
-        const body = JSON.parse(init.body);
+        const body = init.body;
         return { id: 'c1', shelf: 'personal', slideIds: body.slideIds };
       }
       return {};

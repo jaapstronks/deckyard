@@ -367,7 +367,7 @@ describe('save-manager — base fingerprints', () => {
     const sentHeaders = [];
     const apiImpl = async (_path, opts) => {
       sentHeaders.push(opts.headers);
-      const body = JSON.parse(opts.body);
+      const body = structuredClone(opts.body);
       return {
         ...body,
         revision: Number(opts.headers['If-Match']) + 1,
@@ -395,7 +395,7 @@ describe('save-manager — base fingerprints', () => {
     const sentHeaders = [];
     const apiImpl = async (_path, opts) => {
       sentHeaders.push(opts.headers);
-      const body = JSON.parse(opts.body);
+      const body = structuredClone(opts.body);
       return {
         ...body,
         revision: Number(opts.headers['If-Match']) + 1,

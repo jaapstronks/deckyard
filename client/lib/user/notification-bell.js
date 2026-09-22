@@ -374,7 +374,7 @@ export function createNotificationBell({ api }) {
     try {
       await api('/api/notifications/mark-read', {
         method: 'POST',
-        body: JSON.stringify({ notificationId }),
+        body: { notificationId },
       });
 
       // Update local state
@@ -395,7 +395,7 @@ export function createNotificationBell({ api }) {
     try {
       await api('/api/notifications/mark-read', {
         method: 'POST',
-        body: JSON.stringify({ all: true }),
+        body: { all: true },
       });
 
       // Update local state
@@ -415,7 +415,7 @@ export function createNotificationBell({ api }) {
     try {
       await api('/api/notifications/archive', {
         method: 'POST',
-        body: JSON.stringify({ notificationId: notif.id }),
+        body: { notificationId: notif.id },
       });
       // Archived items leave every non-archived lens; archiving also reads.
       if (!notif.isRead) {
@@ -438,7 +438,7 @@ export function createNotificationBell({ api }) {
     try {
       await api('/api/notifications/archive', {
         method: 'POST',
-        body: JSON.stringify({ all: true }),
+        body: { all: true },
       });
       notifications = []; // Button only renders on the All lens
       unreadCount = 0;

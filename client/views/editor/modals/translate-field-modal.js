@@ -97,12 +97,12 @@ export async function openTranslateFieldModal({
     const vendor = readPreferredLlmVendor?.() || null;
     const resp = await api?.(`/api/presentations/${id}/translate/fields`, {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         from: sourceLang,
         to: targetLang,
         fields: { [k]: srcText },
         ...(vendor ? { vendor } : {}),
-      }),
+      },
     });
     translated =
       typeof resp?.translations?.[k] === 'string' ? resp.translations[k] : '';

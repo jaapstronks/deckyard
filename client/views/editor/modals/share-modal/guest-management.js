@@ -199,7 +199,7 @@ export function createGuestManagementSection({
         `/api/presentations/${presentationId}/share-links/${link.id}/guests`,
         {
           method: 'POST',
-          body: JSON.stringify({ email, name: name || null }),
+          body: { email, name: name || null },
         },
       );
       emailInput.value = '';

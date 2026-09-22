@@ -183,7 +183,7 @@ export function openPreviewAddressModal({
             try {
               const resp = await api(`/api/presentations/${id}/publish/slug`, {
                 method: 'PATCH',
-                body: JSON.stringify({ slug: input.value }),
+                body: { slug: input.value },
               });
               pres.published = pres.published || {};
               pres.published.slug = resp.slug;

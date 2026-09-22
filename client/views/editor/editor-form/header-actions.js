@@ -219,7 +219,7 @@ export function buildHeaderActions({
               const resp = await api('/api/ai/convert-slide', {
                 method: 'POST',
                 signal: controller.signal,
-                body: JSON.stringify({
+                body: {
                   slide: {
                     id: slide.id,
                     type: slide.type,
@@ -229,7 +229,7 @@ export function buildHeaderActions({
                   toType: target,
                   lang,
                   vendor,
-                }),
+                },
               });
 
               if (resp?.slide) {

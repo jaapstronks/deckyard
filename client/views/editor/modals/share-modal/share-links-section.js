@@ -233,13 +233,13 @@ export function createShareLinksSection({
         `/api/presentations/${presentationId}/share-links`,
         {
           method: 'POST',
-          body: JSON.stringify({
+          body: {
             permission,
             label: labelInput.value.trim() || null,
             password: passwordInput.value || null,
             expiresAt,
             registrationMode,
-          }),
+          },
         },
       );
 
@@ -382,7 +382,7 @@ export function createShareLinksSection({
               `/api/presentations/${presentationId}/share-links/${link.id}`,
               {
                 method: 'DELETE',
-                body: JSON.stringify({ message: result.message }),
+                body: { message: result.message },
               },
             );
             await loadShareLinks();

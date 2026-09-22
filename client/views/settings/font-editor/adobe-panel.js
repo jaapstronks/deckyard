@@ -75,7 +75,7 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
     try {
       const result = await api('/api/font-families/discover-adobe', {
         method: 'POST',
-        body: JSON.stringify({ projectId }),
+        body: { projectId },
       });
 
       if (!result.families || result.families.length === 0) {
@@ -126,12 +126,12 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
               '/api/font-families/import-adobe-family',
               {
                 method: 'POST',
-                body: JSON.stringify({
+                body: {
                   projectId,
                   familyName: family.name,
                   category: 'sans-serif',
                   variants: family.variants,
-                }),
+                },
               },
             );
             toast.success(

@@ -44,7 +44,7 @@ export function createSessionStatePoster({
         // eslint-disable-next-line no-await-in-loop
         await api(`/api/live-sessions/${sessionId}/state`, {
           method: 'POST',
-          body: JSON.stringify(payload),
+          body: payload,
         }).catch(() => {});
       }
     };

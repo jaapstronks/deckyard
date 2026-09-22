@@ -100,12 +100,12 @@ export async function openTranslateSlideModal({
     const vendor = readPreferredLlmVendor?.() || null;
     const resp = await api?.(`/api/presentations/${id}/translate/fields`, {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         from: sourceLang,
         to: targetLang,
         fields,
         ...(vendor ? { vendor } : {}),
-      }),
+      },
     });
     translations =
       resp?.translations && typeof resp.translations === 'object'

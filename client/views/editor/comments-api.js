@@ -54,7 +54,7 @@ export function createCommentsApi({ api, presentationId }) {
     }
     const resp = await api(`/api/presentations/${pid}/comments`, {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: payload,
     });
     return resp;
   };
@@ -67,7 +67,7 @@ export function createCommentsApi({ api, presentationId }) {
   const updateComment = async (commentId, { body }) => {
     const resp = await api(`/api/presentations/${pid}/comments/${commentId}`, {
       method: 'PUT',
-      body: JSON.stringify({ body }),
+      body: { body },
     });
     return resp;
   };
@@ -84,7 +84,7 @@ export function createCommentsApi({ api, presentationId }) {
       `/api/presentations/${pid}/comments/${commentId}/resolve`,
       {
         method: 'POST',
-        body: JSON.stringify({}),
+        body: {},
       },
     );
     return resp;
@@ -95,7 +95,7 @@ export function createCommentsApi({ api, presentationId }) {
       `/api/presentations/${pid}/comments/${commentId}/reopen`,
       {
         method: 'POST',
-        body: JSON.stringify({}),
+        body: {},
       },
     );
     return resp;
@@ -117,7 +117,7 @@ export function createCommentsApi({ api, presentationId }) {
   const markThreadsRead = async (commentIds) => {
     const resp = await api(`/api/presentations/${pid}/comments/mark-read`, {
       method: 'POST',
-      body: JSON.stringify({ commentIds }),
+      body: { commentIds },
     });
     return resp;
   };

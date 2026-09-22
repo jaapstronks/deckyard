@@ -55,7 +55,7 @@ export async function createImagePickers({ root, user, api, features }) {
     ? ({ fileId, url }) =>
         api('/api/media/imagekit/import', {
           method: 'POST',
-          body: JSON.stringify({ fileId, url }),
+          body: { fileId, url },
         })
     : undefined;
 

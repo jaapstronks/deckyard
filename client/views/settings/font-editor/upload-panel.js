@@ -162,12 +162,12 @@ export function createUploadPanel({
             `/api/font-families/${familyId}/upload-variant`,
             {
               method: 'POST',
-              body: JSON.stringify({
+              body: {
                 dataUrl: reader.result,
                 weight,
                 style,
                 format,
-              }),
+              },
             },
           );
 

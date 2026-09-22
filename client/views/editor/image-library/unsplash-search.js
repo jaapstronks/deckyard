@@ -164,7 +164,7 @@ export function createUnsplashSearch({ api, onSelect, setStatus, setBusy }) {
     try {
       const data = await api('/api/stock-media/unsplash/download', {
         method: 'POST',
-        body: JSON.stringify({ photoId: photo.id, size: 'regular' }),
+        body: { photoId: photo.id, size: 'regular' },
       });
 
       if (data.ok && data.libraryItem) {

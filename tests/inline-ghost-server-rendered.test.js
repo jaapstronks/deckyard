@@ -80,7 +80,7 @@ function setup(slide) {
   const requests = [];
   const server = { down: false };
   const api = async (url, { body }) => {
-    const sent = JSON.parse(body);
+    const sent = body;
     requests.push({ url, slide: sent.slide });
     await new Promise((r) => setTimeout(r, 20));
     if (server.down) throw new Error('render-slide unavailable');

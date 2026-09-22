@@ -98,11 +98,11 @@ export function ensureFollowAlongTranslations({
     const fill = (to) =>
       api(`/api/presentations/${presentationId}/translate/missing`, {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           from: translationSourceFor(pres, to),
           to,
           mode: 'background',
-        }),
+        },
       })
         .then(() => waitForJob(to))
         .catch(() => false);

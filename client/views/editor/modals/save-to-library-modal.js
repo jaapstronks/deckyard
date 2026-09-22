@@ -331,7 +331,7 @@ export function openSaveToLibraryModal({
 
       const result = await api(endpoint, {
         method: 'POST',
-        body: JSON.stringify(payload),
+        body: payload,
       });
 
       // Save tags if any were specified
@@ -339,7 +339,7 @@ export function openSaveToLibraryModal({
         try {
           await api(`${endpoint}/${encodeURIComponent(result.id)}/tags`, {
             method: 'PUT',
-            body: JSON.stringify({ tags }),
+            body: { tags },
           });
         } catch (tagErr) {
           console.warn('Failed to save tags:', tagErr);

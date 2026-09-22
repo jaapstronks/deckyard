@@ -41,12 +41,12 @@ export function createAiReviewAnnotations({
     try {
       const resp = await api('/api/ai/convert-slide', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           slide: { type: slide.type, content: slide.content },
           toType: alt.type,
           ...(lang ? { lang } : {}),
           ...(vendor ? { vendor } : {}),
-        }),
+        },
       });
       const converted = resp?.slide;
       if (!converted?.type) {

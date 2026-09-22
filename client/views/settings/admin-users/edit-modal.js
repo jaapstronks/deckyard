@@ -91,7 +91,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
         `/api/profile/image/${encodeURIComponent(targetUser.email)}`,
         {
           method: 'POST',
-          body: JSON.stringify({ dataUrl }),
+          body: { dataUrl },
         },
       );
 

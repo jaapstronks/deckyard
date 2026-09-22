@@ -97,6 +97,6 @@ export function createDeckFromLibraryItems({
   if (collectionId) payload.sourceCollectionId = collectionId;
   return api('/api/presentations', {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: payload,
   });
 }

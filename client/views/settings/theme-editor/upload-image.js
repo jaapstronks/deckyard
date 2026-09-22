@@ -37,11 +37,11 @@ export async function uploadImage(file) {
   if (mediaStatus.presignedSupported) {
     const presign = await api('/api/media/presign', {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         filename: file.name,
         contentType: file.type,
         size: file.size,
-      }),
+      },
     });
 
     // Presigned upload straight to external storage: not our /api/*
@@ -58,7 +58,7 @@ export async function uploadImage(file) {
 
     const confirm = await api('/api/media/confirm', {
       method: 'POST',
-      body: JSON.stringify({ key: presign.key }),
+      body: { key: presign.key },
     });
     return { url: confirm.publicUrl };
   }
@@ -66,7 +66,7 @@ export async function uploadImage(file) {
   const dataUrl = await readFileAsDataUrl(file);
   const saved = await api('/api/uploads', {
     method: 'POST',
-    body: JSON.stringify({ dataUrl, originalName: file.name }),
+    body: { dataUrl, originalName: file.name },
   });
   return { url: saved.url };
 }

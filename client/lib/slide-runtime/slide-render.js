@@ -281,7 +281,7 @@ async function serverRenderSlide({ slide, renderVia, mode, theme, lang, api }) {
   const apiFn = api || defaultApi;
   const resp = await apiFn(request.path, {
     method: 'POST',
-    body: JSON.stringify(request.body),
+    body: request.body,
   });
 
   const html =

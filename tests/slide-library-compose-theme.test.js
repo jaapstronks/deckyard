@@ -18,7 +18,7 @@ import { createDeckFromLibraryItems } from '../client/lib/slide-library/compose.
 function captureApi() {
   const calls = [];
   const api = async (url, opts) => {
-    calls.push({ url, body: JSON.parse(opts.body) });
+    calls.push({ url, body: opts.body });
     return { id: 'new' };
   };
   return { api, calls };

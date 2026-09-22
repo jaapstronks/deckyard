@@ -375,7 +375,7 @@ export function createActivityFeed({ api, onUnreadCountChange }) {
     try {
       await api('/api/activity/mark-read', {
         method: 'POST',
-        body: JSON.stringify({ eventId: null }), // null marks all as read
+        body: { eventId: null }, // null marks all as read
       });
 
       if (onUnreadCountChange) {

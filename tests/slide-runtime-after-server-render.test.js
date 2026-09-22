@@ -75,7 +75,7 @@ async function mountServerCountdown(content, { mode = 'present' } = {}) {
   const slide = { id: 'cd1', type: 'countdown-slide', content };
   const requests = [];
   const api = async (url, { body }) => {
-    const sent = JSON.parse(body);
+    const sent = body;
     requests.push(url);
     await new Promise((r) => setTimeout(r, 10));
     return { html: renderSlideHtml(sent.slide, { mode: sent.mode }) };

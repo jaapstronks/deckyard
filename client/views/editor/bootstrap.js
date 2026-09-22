@@ -188,7 +188,7 @@ export function createNotesSessionEnsurer({ api, presentationId } = {}) {
     notesSessionInFlight = (async () => {
       const created = await api('/api/live-sessions', {
         method: 'POST',
-        body: JSON.stringify({ presentationId }),
+        body: { presentationId },
       });
       const sid = created?.sessionId;
       if (!sid) throw new Error('No sessionId');

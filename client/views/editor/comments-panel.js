@@ -273,10 +273,10 @@ export function createCommentsPanel({
     try {
       await api(`/api/presentations/${presentationId}/collaborators`, {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           userEmails: missing.map((m) => m.email),
           permission: 'comment',
-        }),
+        },
       });
       for (const m of missing) accessEmails.add(m.email);
       toast?.success?.(t('mentions.shared', 'Shared with comment access'));

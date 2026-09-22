@@ -495,7 +495,6 @@ export function createSaveManager({
         // ignore (best-effort)
       }
 
-      const payload = JSON.stringify(pres);
       const sentRevision = Number(pres?.revision) || 1;
       const headers = {
         'If-Match': String(sentRevision),
@@ -522,7 +521,7 @@ export function createSaveManager({
       const updated = await api(`/api/presentations/${id}`, {
         method: 'PUT',
         headers,
-        body: payload,
+        body: pres,
       });
       applyServerMeta(updated);
 

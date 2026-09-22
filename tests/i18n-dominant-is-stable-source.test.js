@@ -116,7 +116,7 @@ test('saving in a second language does not move the source', async () => {
   const sent = [];
   const mgr = createSaveManager({
     api: async (_path, opts) => {
-      const body = JSON.parse(opts.body);
+      const body = structuredClone(opts.body);
       sent.push(body);
       return {
         ...body,
