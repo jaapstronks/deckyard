@@ -310,7 +310,7 @@
   "editor.export.descNotes": "Notatki prelegenta",
   "editor.export.descPdf": "Jeden slajd na stronę (16:9)",
   "editor.export.descPng": "Obraz każdego slajdu",
-  "editor.export.descPptx": "Plik PowerPoint",
+  "editor.export.descPptx": "PowerPoint, każdy slajd jako obraz",
   "editor.export.descTextPdf": "Czytelny materiał, bez układu slajdów",
   "editor.export.exportAction": "Eksportuj",
   "editor.export.groupData": "Dane i paczka",

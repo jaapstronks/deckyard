@@ -306,7 +306,7 @@
   "editor.export.descNotes": "Talernoter",
   "editor.export.descPdf": "Én slide per side (16:9)",
   "editor.export.descPng": "Billede af hver slide",
-  "editor.export.descPptx": "PowerPoint-fil",
+  "editor.export.descPptx": "PowerPoint, hver slide som billede",
   "editor.export.descTextPdf": "Læsevenligt handout uden slidelayout",
   "editor.export.exportAction": "Eksportér",
   "editor.export.groupData": "Data og samlet pakke",

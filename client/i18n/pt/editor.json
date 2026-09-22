@@ -311,7 +311,7 @@
   "editor.export.descNotes": "Notas do apresentador",
   "editor.export.descPdf": "Um diapositivo por página (16:9)",
   "editor.export.descPng": "Imagem de cada diapositivo",
-  "editor.export.descPptx": "Ficheiro PowerPoint",
+  "editor.export.descPptx": "PowerPoint, cada diapositivo como imagem",
   "editor.export.descTextPdf": "Documento legível para distribuir, sem esquema de diapositivo",
   "editor.export.exportAction": "Exportar",
   "editor.export.groupData": "Dados e pacote",

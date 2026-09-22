@@ -317,7 +317,7 @@
   "editor.export.descNotes": "Speaker notes",
   "editor.export.descPdf": "One slide per page (16:9)",
   "editor.export.descPng": "Image of each slide",
-  "editor.export.descPptx": "PowerPoint file",
+  "editor.export.descPptx": "PowerPoint, each slide as an image",
   "editor.export.descPptxTemplate": "Empty deck with the theme's layouts",
   "editor.export.descTextPdf": "Readable handout, no slide layout",
   "editor.export.exportAction": "Export",

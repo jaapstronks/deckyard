@@ -312,7 +312,7 @@
   "editor.export.descNotes": "Puhujan muistiinpanot",
   "editor.export.descPdf": "Yksi dia sivua kohden (16:9)",
   "editor.export.descPng": "Kuva jokaisesta diasta",
-  "editor.export.descPptx": "PowerPoint-tiedosto",
+  "editor.export.descPptx": "PowerPoint, jokainen dia kuvana",
   "editor.export.descTextPdf": "Luettava moniste ilman diojen asettelua",
   "editor.export.exportAction": "Vie",
   "editor.export.groupData": "Data ja paketti",

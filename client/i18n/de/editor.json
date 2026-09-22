@@ -307,7 +307,7 @@
   "editor.export.descNotes": "Moderatornotizen",
   "editor.export.descPdf": "Eine Folie pro Seite (16:9)",
   "editor.export.descPng": "Bild jeder Folie",
-  "editor.export.descPptx": "PowerPoint-Datei",
+  "editor.export.descPptx": "PowerPoint, jede Folie als Bild",
   "editor.export.descTextPdf": "Lesbares Handout, ohne Folienlayout",
   "editor.export.exportAction": "Exportieren",
   "editor.export.groupData": "Daten & Bündel",

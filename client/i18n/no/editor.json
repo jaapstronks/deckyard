@@ -309,7 +309,7 @@
   "editor.export.descNotes": "Talernotater",
   "editor.export.descPdf": "Ett lysbilde per side (16:9)",
   "editor.export.descPng": "Bilde av hvert lysbilde",
-  "editor.export.descPptx": "PowerPoint-fil",
+  "editor.export.descPptx": "PowerPoint, hvert lysbilde som bilde",
   "editor.export.descTextPdf": "Lesbart utdelingsark, uten lysbildelayout",
   "editor.export.exportAction": "Eksporter",
   "editor.export.groupData": "Data og samlet pakke",

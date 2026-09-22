@@ -317,7 +317,7 @@
   "editor.export.descNotes": "Sprekersnotities",
   "editor.export.descPdf": "Eén slide per pagina (16:9)",
   "editor.export.descPng": "Beeld van elke slide",
-  "editor.export.descPptx": "PowerPoint-bestand",
+  "editor.export.descPptx": "PowerPoint, elke slide als beeld",
   "editor.export.descPptxTemplate": "Leeg deck met de layouts van het thema",
   "editor.export.descTextPdf": "Leesbare hand-out, geen slide-opmaak",
   "editor.export.exportAction": "Exporteren",
