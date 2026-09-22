@@ -92,6 +92,7 @@ import {
 } from './text-roles.js';
 import { semanticEnumAttrs } from './semantic-enums.js';
 import { resolveItemDefaults } from './item-defaults.js';
+import { tabularColumnCount } from './tabular.js';
 import { optionDefaultText, chosenOptionCopy } from './option-default.js';
 import {
   renderUnresolvedSlideSemanticHtml,
@@ -587,12 +588,18 @@ function renderRowTable(field, content, defaults) {
     : [];
   if (!declared.length) return '';
 
+  // The width is the one the canvas draws (./tabular.js), so the reader and the
+  // slide cannot disagree about how many columns a table has.
   const countKey = str(field.columnCountKey);
-  const rawCount = countKey
-    ? Number.parseInt(str(content?.[countKey]) || str(defaults?.[countKey]), 10)
-    : NaN;
-  const columns = Number.isFinite(rawCount)
-    ? declared.slice(0, Math.max(0, Math.min(rawCount, declared.length)))
+  const columns = countKey
+    ? declared.slice(
+        0,
+        tabularColumnCount(content, {
+          columnCountKey: countKey,
+          maxCols: declared.length,
+          defaults,
+        }),
+      )
     : declared;
   if (!columns.length) return '';
 

@@ -793,7 +793,7 @@ export function createInlineEditor({
       reorderPlacement: cards.reorderPlacement,
     });
 
-    insertColumnControls(root, slide, listField, cards.columns);
+    insertColumnControls(root, slide, def, listField, cards.columns);
 
     // Nested card level (text-blocks: blocks within rows.{i}) - one card set
     // per parent item element, writing to the `${path}.${i}.${child.field}`
@@ -928,7 +928,12 @@ export function createInlineEditor({
             // deck content (shared/slide-types/item-defaults.js).
             addCard(
               path,
-              resolveItemDefaults(meta, resolveDeckLang(pres), slide.content),
+              resolveItemDefaults(
+                meta,
+                resolveDeckLang(pres),
+                slide.content,
+                currentDef()?.defaults,
+              ),
             );
           },
         },
@@ -969,7 +974,7 @@ export function createInlineEditor({
    * with the header row off; it stays in the grid, where the whole table is
    * visible and a destructive click is deliberate.
    */
-  function insertColumnControls(root, slide, listField, columns) {
+  function insertColumnControls(root, slide, def, listField, columns) {
     if (!columns) return;
     const columnCountKey = listField?.columnCountKey;
     const maxCols = Array.isArray(listField?.itemFields)
@@ -978,7 +983,12 @@ export function createInlineEditor({
     if (!columnCountKey || maxCols < 2) return;
     const anchorEl = columns.addAnchor && root.querySelector(columns.addAnchor);
     if (!anchorEl) return;
-    const cols = tabularColumnCount(slide.content, { columnCountKey, maxCols });
+    const defaults = def?.defaults;
+    const cols = tabularColumnCount(slide.content, {
+      columnCountKey,
+      maxCols,
+      defaults,
+    });
     if (cols >= maxCols) return;
 
     const add = h(
@@ -993,6 +1003,7 @@ export function createInlineEditor({
             rowsKey: listField.key,
             columnCountKey,
             maxCols,
+            defaults,
           });
           if (grew) afterStructuralChange();
         },

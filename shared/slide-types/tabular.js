@@ -32,18 +32,24 @@ function clampInt(n, min, max) {
 /**
  * The column count a tabular field currently has.
  *
+ * A slide without a count takes the one its type declares in `defaults` - the
+ * same seed a new slide clones, and the same one the semantic projection reads
+ * - so there is no second default here. With neither, the table is one column
+ * wide (the clamp's floor).
+ *
  * @param {Object} content - the slide content holding the count
  * @param {Object} opts
  * @param {string} opts.columnCountKey - content key holding the count
  * @param {number} opts.maxCols
- * @param {number} [opts.fallback] - count to assume when the key is absent
+ * @param {Object} [opts.defaults] - the type's language-less `defaults`
  * @returns {number}
  */
 export function tabularColumnCount(
   content,
-  { columnCountKey, maxCols, fallback = 4 },
+  { columnCountKey, maxCols, defaults },
 ) {
-  return clampInt(content?.[columnCountKey] || fallback, 1, maxCols);
+  const count = content?.[columnCountKey] || defaults?.[columnCountKey];
+  return clampInt(count, 1, maxCols);
 }
 
 /**
@@ -67,14 +73,19 @@ export function emptyTabularRow(colCount) {
  * @param {string} opts.rowsKey - content key holding the row array
  * @param {string} opts.columnCountKey
  * @param {number} opts.maxCols
+ * @param {Object} [opts.defaults] - the type's `defaults` (see tabularColumnCount)
  * @returns {boolean} false when already at `maxCols` (nothing mutated)
  */
 export function addTabularColumn(
   content,
-  { rowsKey, columnCountKey, maxCols },
+  { rowsKey, columnCountKey, maxCols, defaults },
 ) {
   if (!content) return false;
-  const cols = tabularColumnCount(content, { columnCountKey, maxCols });
+  const cols = tabularColumnCount(content, {
+    columnCountKey,
+    maxCols,
+    defaults,
+  });
   if (cols >= maxCols) return false;
   const next = cols + 1;
   content[columnCountKey] = String(next);
@@ -96,15 +107,20 @@ export function addTabularColumn(
  * @param {string} opts.rowsKey
  * @param {string} opts.columnCountKey
  * @param {number} opts.maxCols
+ * @param {Object} [opts.defaults] - the type's `defaults` (see tabularColumnCount)
  * @returns {boolean} false when only one column is left (nothing mutated)
  */
 export function deleteTabularColumn(
   content,
   cIdx,
-  { rowsKey, columnCountKey, maxCols },
+  { rowsKey, columnCountKey, maxCols, defaults },
 ) {
   if (!content) return false;
-  const cols = tabularColumnCount(content, { columnCountKey, maxCols });
+  const cols = tabularColumnCount(content, {
+    columnCountKey,
+    maxCols,
+    defaults,
+  });
   if (cols <= 1) return false;
   for (const r of content[rowsKey] || []) {
     if (!r || typeof r !== 'object') continue;
