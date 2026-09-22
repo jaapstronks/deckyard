@@ -464,7 +464,7 @@ export function openImageKitPicker({
                   `/api/media/imagekit/files/${encodeURIComponent(fileId)}/details`,
                   {
                     method: 'PATCH',
-                    body: JSON.stringify(patch),
+                    body: patch,
                   },
                 ).catch(() => {});
               }
