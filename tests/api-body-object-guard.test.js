@@ -80,16 +80,29 @@ test('a pre-stringified body is refused, not quietly passed through', async () =
 });
 
 test('the empty-object string — the form four presenter call sites used — is refused too', () => {
-  assert.throws(() => assertBodyShape('{}'), /pre-stringified/);
+  assert.throws(() => assertBodyShape('{}'), /body must be the value to send/);
 });
 
-test('a string body that declares its own Content-Type is allowed', () => {
+test('a string body is refused even when the caller names the JSON Content-Type — the old form (D202)', async () => {
+  await withStubbedFetch(async (seen) => {
+    await assert.rejects(
+      () =>
+        api('/api/things', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{"a":1}',
+        }),
+      /body must be the value to send/,
+      'a header name is not a licence to stringify',
+    );
+    assert.equal(seen.length, 0, 'the request is never sent');
+  });
+});
+
+test('a string body has no typed escape: a non-JSON body is a Blob with its type', () => {
+  assert.throws(() => assertBodyShape('a,b\n1,2'));
   assert.doesNotThrow(() =>
-    assertBodyShape('a,b\n1,2', { 'Content-Type': 'text/csv' }),
-  );
-  assert.doesNotThrow(
-    () => assertBodyShape('<x/>', new Headers({ 'content-type': 'text/xml' })),
-    'the header name compares case-insensitively',
+    assertBodyShape(new Blob(['a,b\n1,2'], { type: 'text/csv' })),
   );
 });
 

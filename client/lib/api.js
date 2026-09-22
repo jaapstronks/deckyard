@@ -73,33 +73,33 @@ export function requestHeaders(custom) {
 }
 
 /**
- * Refuse a pre-stringified body. The body of an `api()` call is a value, not a
- * string: `api()` owns the serialisation and the JSON `Content-Type`, and the
- * caller only describes *what* it sends (D177). A caller that stringifies
- * itself leaves a second form of one concept standing, so the network layer
- * refuses it rather than quietly passing it through.
+ * Refuse a string body. The body of an `api()` call is a value, not a string:
+ * `api()` owns the serialisation and the JSON `Content-Type`, and the caller
+ * only describes *what* it sends (D177). A caller that stringifies itself
+ * leaves a second form of one concept standing, so the network layer refuses
+ * it rather than quietly passing it through — also when the caller adds the
+ * JSON `Content-Type` itself, which was exactly the old form.
  *
- * The one legitimate string body is one the caller has typed itself — it
- * declares its own `Content-Type`, which wins the merge in `requestHeaders()`.
- * Bodies with their own encoding (`Blob`, `File`, `FormData`,
- * `URLSearchParams`) are not strings and never reach this check.
+ * A body that is not JSON is a `Blob`, `File` or `FormData`: it carries its
+ * own type, is never a string, and passes through untouched (the `.deckyard`
+ * import sends a `File` with `DECK_MIMETYPE`). There is no typed-string escape
+ * (D202): no caller sends one, and a check that branches on a header name
+ * would keep the string form alive behind that header.
  *
  * @param {*} body - the caller's `opts.body`.
- * @param {HeadersInit} [headers] - the caller's `opts.headers`.
- * @throws {Error} when a string body arrives without its own `Content-Type`.
+ * @throws {Error} when the body is a string.
  */
-export function assertBodyShape(body, headers) {
+export function assertBodyShape(body) {
   if (typeof body !== 'string') return;
-  if (new Headers(headers || {}).has('Content-Type')) return;
   throw new Error(
-    'api(): body must be the value to send, not a pre-stringified string — ' +
-      'pass the object and let api() serialise it (D177). A body that is not ' +
-      'JSON must declare its own Content-Type.',
+    'api(): body must be the value to send, not a string — pass the object ' +
+      'and let api() serialise it (D177). A body that is not JSON is a Blob, ' +
+      'File or FormData carrying its own type.',
   );
 }
 
 export async function api(path, opts = {}) {
-  assertBodyShape(opts.body, opts.headers);
+  assertBodyShape(opts.body);
   // `api()` owns the serialisation: an object body becomes JSON here. FormData
   // and Blob carry their own encoding and pass through untouched.
   const body =
