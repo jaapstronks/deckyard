@@ -4,6 +4,7 @@ import {
 } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { aiEnabled } from '../../../lib/state/features.js';
 
 function countSentences(text) {
   const s = String(text || '').trim();
@@ -88,37 +89,41 @@ export function openDescriptionModal({
   ta.addEventListener('input', sync);
 
   const btnRow = h('div', { class: 'row is-end is-mt-8' });
-  const btnGenerate = h('button', {
-    class: 'btn btn-secondary',
-    text: t('editor.descriptionModal.generate', 'Generate with AI'),
-    onclick: async () => {
-      if (busyManager.isBusy()) return;
-      busyManager.setBusy(true);
-      try {
-        const resp = await api(
-          `/api/presentations/${id}/description/generate`,
-          {
-            method: 'POST',
-            body: JSON.stringify({}),
-          },
-        );
-        const d = typeof resp?.description === 'string' ? resp.description : '';
-        if (!d.trim())
-          throw new Error(
-            t(
-              'editor.descriptionModal.generateFailed',
-              'Could not generate a description.',
-            ),
-          );
-        ta.value = d.trim();
-        sync();
-      } catch (e) {
-        toast?.error?.(e, { id: 'desc-generate' });
-      } finally {
-        busyManager.setBusy(false);
-      }
-    },
-  });
+  // Absent where AI is off: the server does not mount the route (D179).
+  const btnGenerate = aiEnabled()
+    ? h('button', {
+        class: 'btn btn-secondary',
+        text: t('editor.descriptionModal.generate', 'Generate with AI'),
+        onclick: async () => {
+          if (busyManager.isBusy()) return;
+          busyManager.setBusy(true);
+          try {
+            const resp = await api(
+              `/api/presentations/${id}/description/generate`,
+              {
+                method: 'POST',
+                body: JSON.stringify({}),
+              },
+            );
+            const d =
+              typeof resp?.description === 'string' ? resp.description : '';
+            if (!d.trim())
+              throw new Error(
+                t(
+                  'editor.descriptionModal.generateFailed',
+                  'Could not generate a description.',
+                ),
+              );
+            ta.value = d.trim();
+            sync();
+          } catch (e) {
+            toast?.error?.(e, { id: 'desc-generate' });
+          } finally {
+            busyManager.setBusy(false);
+          }
+        },
+      })
+    : null;
 
   const btnCancel = h('button', {
     class: 'btn btn-secondary',
@@ -154,14 +159,11 @@ export function openDescriptionModal({
   });
 
   // Use busy manager to control all interactive elements
-  const busyManager = createBusyManager([
-    btnCancel,
-    btnContinue,
-    btnGenerate,
-    ta,
-  ]);
+  const busyManager = createBusyManager(
+    [btnCancel, btnContinue, btnGenerate, ta].filter(Boolean),
+  );
 
-  btnRow.append(btnGenerate, btnCancel, btnContinue);
+  btnRow.append(...[btnGenerate, btnCancel, btnContinue].filter(Boolean));
 
   modal.content.append(ta, status, btnRow);
   modal.show(root);

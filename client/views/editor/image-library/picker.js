@@ -13,6 +13,7 @@ import {
   isStockSourceAvailable,
 } from '../../../lib/net/stock-media.js';
 import { h } from '../../../lib/dom.js';
+import { aiAltTextEnabled } from '../../../lib/state/features.js';
 
 // Re-export for backward compatibility
 export { readFileAsDataUrl } from './utils.js';
@@ -113,7 +114,7 @@ export function openImageLibraryPicker({
 } = {}) {
   const flags = features && typeof features === 'object' ? features : {};
   const uploadsDisabled = !flags.enableUploads;
-  const canAiAlt = !!flags.enableAi && !!flags.aiAltText;
+  const canAiAlt = aiAltTextEnabled();
 
   const unlockScroll = lockDocumentScroll();
   let closed = false;

@@ -36,6 +36,7 @@ import {
 import { buildAiIteratePanel } from './editor-form/ai-iterate-panel.js';
 import { h } from '../../lib/dom.js';
 import { surfaceCapabilities } from './editor-form/surfaces.js';
+import { aiEnabled } from '../../lib/state/features.js';
 
 export function createRerenderEditor({
   editorMount,
@@ -360,9 +361,9 @@ export function createRerenderEditor({
     // AI Iterate panel (slide-level AI refinement). Built here, appended at
     // the very end of the form: the inspector is a settings pane first, and
     // the refine box is a tool, not a setting. It exists only where AI does:
-    // with `enableAi` off every submit would fail on /api/ai/iterate.
+    // with AI off every submit would fail on /api/ai/iterate (D179).
     const aiIteratePanel =
-      caps.deckTools && features?.enableAi
+      caps.deckTools && aiEnabled()
         ? buildAiIteratePanel({
             api,
             pres,

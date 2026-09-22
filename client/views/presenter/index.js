@@ -10,6 +10,7 @@
 
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
+import { aiEnabled } from '../../lib/state/features.js';
 import {
   activateVideoEmbeds,
   cleanupSlideRuntimes,
@@ -142,11 +143,11 @@ export async function renderPresenter(root, id) {
   // slide). The tools menu re-parents the pill and relabels its copy button.
   const followCodes = createPresenterFollowCodesPill({ modeLang });
 
-  const translatePill = h('div', {
-    class: 'pill',
-    hidden: true,
-    text: '',
-  });
+  // The status of the background translation fill below, which is an AI call:
+  // where AI is off there is no fill and no pill (D179).
+  const translatePill = aiEnabled()
+    ? h('div', { class: 'pill', hidden: true, text: '' })
+    : null;
 
   const toolsMenu = createPresenterToolsMenu({
     modeLang,
@@ -724,7 +725,8 @@ export async function renderPresenter(root, id) {
   }
 
   // Background: ensure every language the follow-along audience may pick can
-  // render (fill missing only; preserve any manual translations).
+  // render (fill missing only; preserve any manual translations). Without
+  // the pill (AI off) the fill does nothing.
   ensureFollowAlongTranslations({
     api,
     presentationId: id,

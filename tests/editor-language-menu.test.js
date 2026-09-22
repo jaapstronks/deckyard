@@ -41,6 +41,11 @@ const { normalizeLang, setSupportedLangs } =
   await import('../client/lib/format/i18n.js');
 const { createLanguageMode } =
   await import('../client/views/editor/topbar/language-mode.js');
+const { setFeatures } = await import('../client/lib/state/features.js');
+
+// An install with AI: the translate invite exists. The AI-off shape (no invite,
+// no Translate action; D179) has its own test below.
+setFeatures({ enableAi: true });
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
@@ -251,6 +256,40 @@ test('a language with no version yet is created on the spot', async () => {
   // Dismiss it: the invite holds a 15s auto-hide timer that would otherwise
   // keep the test runner's event loop alive until it fires.
   popover.querySelectorAll('.lang-popover-btn')[1].click();
+});
+
+test('with AI off, a new version gets no translate invite (D179)', async () => {
+  setFeatures({ enableAi: false });
+  try {
+    setSupportedLangs(['nl', 'en-GB', 'de', 'fr']);
+    const pres = makeTrilingualPres();
+    const controller = mount({
+      pres,
+      api: async () => ({
+        title: 'Deck',
+        slides: [],
+        theme: null,
+        revision: 2,
+        i18n: {
+          active: 'en-GB',
+          dominant: 'nl',
+          versions: { ...structuredClone(pres.i18n.versions), 'en-GB': {} },
+        },
+      }),
+    });
+    const english = [...controller.el.querySelectorAll('.lang-menu-item')].find(
+      (b) => b.textContent.trim() === 'English',
+    );
+    english.click();
+    await flush();
+
+    assert.equal(pres.i18n.active, 'en-GB', 'the switch itself still works');
+    assert.equal(controller.el.querySelector('.lang-popover'), null);
+    assert.equal(controller.translateOtherLanguage, null);
+    controller.detach();
+  } finally {
+    setFeatures({ enableAi: true });
+  }
 });
 
 test('adding an empty version leaves the source where it was (D74)', async () => {

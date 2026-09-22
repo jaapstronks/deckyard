@@ -21,6 +21,7 @@ import {
   insertSlideAfter,
 } from './slide-insert-position.js';
 import { h } from '../../lib/dom.js';
+import { aiEnabled } from '../../lib/state/features.js';
 
 // Which slide types need audience participation, and therefore a follow-invite
 // slide in the deck for the audience to join through. Declared by the type
@@ -42,7 +43,6 @@ export function createSlidesPanel({
   pres,
   user,
   api,
-  features,
   theme,
   SLIDE_TYPES,
   disabledSlideTypes,
@@ -58,7 +58,6 @@ export function createSlidesPanel({
   setSlidesCollapsed,
   isAuthor,
 } = {}) {
-  const flags = features && typeof features === 'object' ? features : {};
   let slideDrawerOpen = false;
   let slideDrawerAfterId = null;
   let searchQuery = '';
@@ -381,8 +380,9 @@ export function createSlidesPanel({
     canEditCustomHtml,
     // Escape hatch: when a search finds no matching type, offer to build it with
     // AI, seeded with the query. Lazy arrow — openAiAppendWizard is defined below
-    // and only invoked at click time. Null when AI is disabled (button hidden).
-    requestAi: !flags.enableAi
+    // and only invoked at click time. Null where AI is off: the picker then
+    // builds no button (D179).
+    requestAi: !aiEnabled()
       ? null
       : ({ afterSlideId, query } = {}) =>
           openAiAppendWizard({ afterSlideId, initialPrompt: query || '' }),
@@ -528,27 +528,29 @@ export function createSlidesPanel({
       allowInsert,
     });
 
-  const openAiAppendWizard = ({ afterSlideId, initialPrompt = '' } = {}) => {
-    if (!flags.enableAi) return;
-    return openAiAppendWizardModal({
-      root,
-      pres,
-      // Explicit insert position from the "+" / number controls (a slide id, or
-      // null for "at the beginning"). Undefined => fall back to selected slide.
-      afterSlideId,
-      getSelectedSlideId,
-      setSelectedSlideId,
-      editorState,
-      api,
-      user,
-      initialPrompt,
-      // Batch-review context: lets multi-slide results open the review grid
-      // (truthful previews) before anything is inserted.
-      theme,
-      SLIDE_TYPES,
-      onReviewInserted: () => openDeckOverview?.(),
-    });
-  };
+  // Null where AI is off, so the type modal builds no "Add with AI…" button
+  // (D179) — a guard inside the opener left the button standing, dead.
+  const openAiAppendWizard = !aiEnabled()
+    ? null
+    : ({ afterSlideId, initialPrompt = '' } = {}) =>
+        openAiAppendWizardModal({
+          root,
+          pres,
+          // Explicit insert position from the "+" / number controls (a slide id, or
+          // null for "at the beginning"). Undefined => fall back to selected slide.
+          afterSlideId,
+          getSelectedSlideId,
+          setSelectedSlideId,
+          editorState,
+          api,
+          user,
+          initialPrompt,
+          // Batch-review context: lets multi-slide results open the review grid
+          // (truthful previews) before anything is inserted.
+          theme,
+          SLIDE_TYPES,
+          onReviewInserted: () => openDeckOverview?.(),
+        });
 
   const updateCollapseBtn = (btn) => {
     const collapsed = isSlidesCollapsed?.() ?? false;

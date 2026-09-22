@@ -14,6 +14,7 @@ export function createEditorTopbarMoreMenu({
   requestSave,
   isDirty,
   onError,
+  // Absent where AI is switched off, and so is the Translate item.
   onTranslateOther,
   // A predicate, not a boolean: whether there is another language version to
   // retranslate changes while the menu exists (the language menu creates them),
@@ -104,15 +105,20 @@ export function createEditorTopbarMoreMenu({
       },
     });
 
-  const btnTranslateOther = menuItem({
-    text: t('editor.more.translate', 'Translate'),
-    title: t(
-      'editor.more.translate.title',
-      'Refresh every other language version of this deck from the one you are editing.',
-    ),
-    onclick: () => run(onTranslateOther),
-  });
+  // Translate is an AI action: `onTranslateOther` is absent where AI is off,
+  // and so is the item (D179).
+  const btnTranslateOther = onTranslateOther
+    ? menuItem({
+        text: t('editor.more.translate', 'Translate'),
+        title: t(
+          'editor.more.translate.title',
+          'Refresh every other language version of this deck from the one you are editing.',
+        ),
+        onclick: () => run(onTranslateOther),
+      })
+    : null;
   const syncTranslateItem = () => {
+    if (!btnTranslateOther) return;
     btnTranslateOther.style.display = canTranslate?.() ? '' : 'none';
   };
   syncTranslateItem();
@@ -311,7 +317,8 @@ export function createEditorTopbarMoreMenu({
     title: t('common.moreOptions', 'More options'),
     ariaLabel: t('common.moreOptions', 'More options'),
     menuClass: 'dropdown-menu-right',
-    // `btnAnalyze` is null where AI is off; `append` would print that.
+    // `btnAnalyze` and `btnTranslateOther` are null where AI is off; `append`
+    // would print that.
     items: [
       btnExport,
       btnShare,
