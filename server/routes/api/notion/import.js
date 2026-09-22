@@ -157,6 +157,9 @@ export async function handleNotionImportStream({
 
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
+  // Cancelling is closing the stream: the signal aborts the model calls and
+  // the image re-hosting, and is checked before the presentation is written.
+  const { signal } = stream;
 
   // Initial messages (Dutch by default - actual content language is auto-detected)
   const isNl = true;
@@ -177,6 +180,7 @@ export async function handleNotionImportStream({
     const progressStep = Math.floor(20 / initialMessages.length);
 
     for (const msg of initialMessages) {
+      signal.throwIfAborted();
       sseWrite(res, {
         event: 'status',
         data: { message: msg, phase: 'fetch', progress },
@@ -208,6 +212,7 @@ export async function handleNotionImportStream({
       lang,
       vendor,
       enableLogging: true,
+      signal,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
         if (!statusMessagesSent) {
@@ -277,6 +282,9 @@ export async function handleNotionImportStream({
       },
     });
 
+    // The write step: no deck is created for a client that already left.
+    signal.throwIfAborted();
+
     // Create the presentation
     const effectiveLang =
       deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
@@ -317,9 +325,13 @@ export async function handleNotionImportStream({
       },
     });
   } catch (e) {
-    log.error('[Notion Import Stream] Error:', e);
-    const msg = String(e?.message || e || 'Unknown error');
-    sseError(res, msg);
+    if (signal.aborted) {
+      log.info('[Notion Import Stream] cancelled by the client');
+    } else {
+      log.error('[Notion Import Stream] Error:', e);
+      const msg = String(e?.message || e || 'Unknown error');
+      sseError(res, msg);
+    }
   }
 
   res.end();

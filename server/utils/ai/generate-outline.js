@@ -236,6 +236,9 @@ function resolveStructuralSlide(slide) {
  * @param {string} options.targetLength - Target length: 'auto', '5min', '10min', '20min', '30min'
  * @param {string} options.rawFirstSlideTitle - Original title from source file's first slide (for context)
  * @param {Function} options.onLog - Callback to log the conversation
+ * @param {AbortSignal} [options.signal] - Reaches the provider fetch, so a
+ *   caller whose reader left (an SSE client that disconnected) cancels the
+ *   model call instead of paying for an outline nobody reads.
  * @returns {Promise<Object>} The presentation outline
  */
 export async function generateOutline(
@@ -247,6 +250,7 @@ export async function generateOutline(
     targetLength = 'auto',
     rawFirstSlideTitle = '',
     onLog = null,
+    signal = null,
   } = {},
 ) {
   const startTime = Date.now();
@@ -298,6 +302,7 @@ export async function generateOutline(
     // (adaptive) thinking, and large decks produce long outlines.
     maxTokens: 16000,
     messages,
+    signal,
   });
 
   const parsed = extractJsonObject(rawResponse);

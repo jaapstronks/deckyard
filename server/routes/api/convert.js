@@ -211,6 +211,9 @@ async function handleConvertStream({
   // Set up SSE headers
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
+  // Cancelling is closing the stream: the signal aborts the model calls and
+  // the image uploads, and is checked before the presentation is written.
+  const { signal } = stream;
 
   // Determine file type for contextual messages
   const isPptx =
@@ -282,6 +285,7 @@ async function handleConvertStream({
     const progressStep = Math.floor(20 / initialMessages.length);
 
     for (const msg of initialMessages) {
+      signal.throwIfAborted();
       sseWrite(res, {
         event: 'status',
         data: {
@@ -317,6 +321,7 @@ async function handleConvertStream({
       lang,
       vendor,
       enableLogging: true,
+      signal,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
         // Send messages immediately as they arrive (for real-time feel)
@@ -401,6 +406,9 @@ async function handleConvertStream({
     const effectiveLang =
       deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
 
+    // The write step: no deck is created for a client that already left.
+    signal.throwIfAborted();
+
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Converted Presentation',
       theme: theme,
@@ -432,8 +440,12 @@ async function handleConvertStream({
       },
     });
   } catch (e) {
-    log.error('[Convert Stream] Error:', e);
-    sseError(res, e.message || 'Conversion failed');
+    if (signal.aborted) {
+      log.info('[Convert Stream] cancelled by the client');
+    } else {
+      log.error('[Convert Stream] Error:', e);
+      sseError(res, e.message || 'Conversion failed');
+    }
   }
 
   res.end();

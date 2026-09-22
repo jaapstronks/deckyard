@@ -37,6 +37,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     imageOnlySlides = [], // Pre-processed image-only slides to merge back in
     aiSlideIndexOffset = 0, // Offset to apply to AI slide indices for correct source ordering
     titleSlideCandidate = null, // Pre-extracted title slide from first image-only slide
+    signal = null, // Aborts both model phases when the caller's reader left
   } = options;
 
   const sessionId = generateSessionId();
@@ -54,6 +55,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     rawFirstSlideTitle:
       titleSlideCandidate?.title || firstSlideContent?.split('\n')[0] || '',
     onLog: logger ? (data) => logger.logPhase1(data) : null,
+    signal,
   });
 
   log.info(`Phase 1 complete: ${outline.slides.length} slides outlined`);
@@ -97,6 +99,7 @@ export async function convertWithAi(formattedContent, options = {}) {
       },
       onLog: logger ? (data) => logger.logPhase2Call(data) : null,
       onStatusMessage,
+      signal,
     });
   }
 

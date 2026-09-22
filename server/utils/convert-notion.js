@@ -41,6 +41,9 @@ const log = createLogger('convert-notion');
  * @param {boolean} options.enableLogging - Enable AI conversation logging (default: true)
  * @param {function} options.onStatusMessage - Callback for status messages during conversion
  * @param {function} options.onOutlineComplete - Callback when outline is ready (with statusMessages)
+ * @param {AbortSignal} [options.signal] - Cancels the import: it reaches both
+ *   model phases and is checked before every image re-host, so a caller whose
+ *   reader left stops instead of importing for nobody.
  * @returns {Promise<{deck: object|null, report: object, pageId: string}>}
  */
 export async function convertNotionPage(urlOrPageId, options = {}) {
@@ -50,6 +53,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
+    signal = null,
   } = options;
 
   const report = {
@@ -118,6 +122,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     }
     const uploadedImages = await processNotionImages(richContent.allImages, {
       onStatusMessage,
+      signal,
     });
     processedImages.push(...uploadedImages);
   }
@@ -137,6 +142,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       onOutlineComplete,
       processedImages,
       richContent, // Pass full content for image/table slide creation
+      signal,
     });
 
     // Include status messages in report
@@ -154,6 +160,9 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
 
     return { deck, report, pageId };
   } catch (e) {
+    // A cancelled conversion is not a failed one: it propagates so the caller
+    // can tell "the client left" from "this file could not be converted".
+    if (signal?.aborted) throw e;
     report.errors.push(`AI conversion failed: ${e.message}`);
     return { deck: null, report, pageId };
   }
@@ -194,9 +203,12 @@ async function rehostImageToMediaLibrary(img) {
  * to the original URL when an individual image cannot be re-hosted.
  * @param {Array} images - Array of { url, caption, blockId }
  * @param {object} options - Options
+ * @param {AbortSignal} [options.signal] - Checked before every re-host, so a
+ *   cancelled import stops filling the media library.
  * @returns {Promise<Array<{originalUrl: string, uploadedUrl: string, caption: string}>>}
  */
 export async function processNotionImages(images, options = {}) {
+  const { signal = null } = options;
   const results = [];
 
   // Check if ImageKit is configured
@@ -206,6 +218,7 @@ export async function processNotionImages(images, options = {}) {
     // Fallback: re-host each image through the own media library so imported
     // decks survive Notion's ~1h signed-URL expiry.
     for (const img of images) {
+      signal?.throwIfAborted();
       try {
         const uploadedUrl = await rehostImageToMediaLibrary(img);
         results.push({
@@ -229,6 +242,7 @@ export async function processNotionImages(images, options = {}) {
   }
 
   for (let i = 0; i < images.length; i++) {
+    signal?.throwIfAborted();
     const img = images[i];
     try {
       // Upload image from URL to ImageKit
@@ -270,6 +284,7 @@ async function convertWithAi(formattedContent, options = {}) {
     onOutlineComplete = null,
     processedImages = [],
     richContent = null,
+    signal = null,
   } = options;
 
   const sessionId = generateSessionId();
@@ -290,6 +305,7 @@ async function convertWithAi(formattedContent, options = {}) {
     targetLang: lang === 'auto' ? null : lang,
     vendor,
     onLog: logger ? (data) => logger.logPhase1(data) : null,
+    signal,
   });
 
   // Determine effective language
@@ -334,6 +350,7 @@ async function convertWithAi(formattedContent, options = {}) {
         summary: outline.summary,
       },
       onLog: logger ? (data) => logger.logPhase2(data) : null,
+      signal,
     });
   }
 

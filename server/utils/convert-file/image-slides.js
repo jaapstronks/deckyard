@@ -23,10 +23,13 @@ const log = createLogger('convert-file');
  *
  * @param {Array} slides - Parsed slides from PPTX/PDF
  * @param {object} options - Options
+ * @param {Function} [options.onStatusMessage] - Progress callback
+ * @param {AbortSignal} [options.signal] - Checked before every upload, so a
+ *   cancelled conversion stops filling the media library.
  * @returns {Promise<{imageOnlySlides: Array<{originalIndex: number, slideData: object}>, regularSlides: Array, titleSlideCandidate: object|null}>}
  */
 export async function processImageOnlySlides(slides, options = {}) {
-  const { onStatusMessage } = options;
+  const { onStatusMessage, signal = null } = options;
   const imageOnlySlides = [];
   const regularSlides = [];
   let titleSlideCandidate = null;
@@ -46,6 +49,9 @@ export async function processImageOnlySlides(slides, options = {}) {
   }
 
   for (let i = 0; i < slides.length; i++) {
+    // Each iteration may upload an image to the media library — a write for
+    // whoever asked. Checked before the upload, not after.
+    signal?.throwIfAborted();
     const slide = slides[i];
 
     if (slide.isImageOnly && slide.images?.length > 0) {
