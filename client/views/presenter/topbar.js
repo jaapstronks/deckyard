@@ -15,7 +15,7 @@ import { createPresenterControlToggle } from './control-toggle.js';
  * @param {object} opts
  * @param {object} opts.pres - presentation (for the title).
  * @param {HTMLElement} opts.langSeg
- * @param {HTMLElement} opts.translatePill
+ * @param {HTMLElement|null} opts.translatePill - absent where AI is off
  * @param {HTMLElement} opts.interactionPill
  * @param {HTMLElement} opts.toolsWrap
  * @param {HTMLElement} opts.autoAdvanceBtn
@@ -46,7 +46,8 @@ export function buildPresenterTopbar({
   const top = h('div', { class: 'presenter-topbar' });
   const actions = h('div', { class: 'presenter-actions' });
 
-  actions.append(
+  // `translatePill` is null where AI is off; `append` would print that.
+  const items = [
     // Notes companion + remote control
     langSeg,
     translatePill,
@@ -80,7 +81,8 @@ export function buildPresenterTopbar({
       class: 'presenter-help',
       text: t('presenter.help', '←/→ move · F fullscreen · ? shortcuts'),
     }),
-  );
+  ];
+  actions.append(...items.filter(Boolean));
 
   top.append(
     h('div', {

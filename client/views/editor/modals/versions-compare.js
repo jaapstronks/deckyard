@@ -14,7 +14,7 @@ import {
 import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
-import { getFeatures } from '../../../lib/state/features.js';
+import { aiEnabled } from '../../../lib/state/features.js';
 
 /**
  * Opens a modal comparing current presentation with a snapshot version.
@@ -95,15 +95,22 @@ export function openVersionCompareModal({
   // AI analysis button (insights will be shown inline with rows). Absent where
   // AI is switched off — not in the DOM, like every other AI entry: the server
   // answers the compare-ai route 404 there.
-  const aiEnabled = !!getFeatures()?.enableAi;
-  const aiSection = h('div', { class: 'version-compare-ai' });
-  const aiButton = h('button', {
-    class: 'btn btn-secondary btn-sm',
-    text: t('editor.versions.compare.analyzeAi', 'Analyze with AI'),
-    onclick: analyzeWithAi,
-  });
-  const aiStatus = h('span', { class: 'version-compare-ai-status' });
-  aiSection.append(aiButton, aiStatus);
+  // (D179). `analyzeWithAi` is only reachable through the button, so it never
+  // meets the nulls.
+  const aiOn = aiEnabled();
+  const aiButton = aiOn
+    ? h('button', {
+        class: 'btn btn-secondary btn-sm',
+        text: t('editor.versions.compare.analyzeAi', 'Analyze with AI'),
+        onclick: analyzeWithAi,
+      })
+    : null;
+  const aiStatus = aiOn
+    ? h('span', { class: 'version-compare-ai-status' })
+    : null;
+  const aiSection = aiOn
+    ? h('div', { class: 'version-compare-ai' }, [aiButton, aiStatus])
+    : null;
 
   // Comparison grid
   const grid = h('div', { class: 'version-compare-grid' });
@@ -114,7 +121,7 @@ export function openVersionCompareModal({
   modal.content.append(
     status,
     summary,
-    ...(aiEnabled ? [aiSection] : []),
+    ...(aiSection ? [aiSection] : []),
     legend,
     headers,
     grid,
