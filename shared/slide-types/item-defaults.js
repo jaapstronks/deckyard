@@ -25,12 +25,13 @@ import { emptyTabularRow, tabularColumnCount } from './tabular.js';
  * @param {Object} field - a `type: 'items'` field schema
  * @param {string|null} [lang] - deck language (`resolveDeckLang(pres)`)
  * @param {Object} [content] - the slide content, for fields whose skeleton
- *   depends on a sibling key (a `tabular` field's column count). Omit it and a
- *   tabular field falls back to its declared column maximum's neutral shape.
+ *   depends on a sibling key (a `tabular` field's column count).
+ * @param {Object} [typeDefaults] - the type's language-less `defaults`, where a
+ *   tabular field's count lives when `content` has none (./tabular.js).
  * @returns {Object} the new-item skeleton for that language (not a clone —
  *   callers must `structuredClone` before pushing, as they already do)
  */
-export function resolveItemDefaults(field, lang, content) {
+export function resolveItemDefaults(field, lang, content, typeDefaults) {
   // A tabular field's new row is as wide as the table is right now, so its
   // skeleton cannot be a static declaration — it reads the sibling count the
   // field itself names (`columnCountKey`). Declared, not branched on by type
@@ -43,6 +44,7 @@ export function resolveItemDefaults(field, lang, content) {
       tabularColumnCount(content, {
         columnCountKey: field.columnCountKey,
         maxCols,
+        defaults: typeDefaults,
       }),
     );
   }

@@ -6,19 +6,43 @@ import {
   tableStyleClass,
 } from '../helpers.js';
 import { inlineMarkdownToSafeHtml } from '../../markdown.js';
+import { tabularColumnCount } from '../tabular.js';
 
 export const MAX_COLS = 10;
 export const MAX_ROWS = 40;
 
-function clampInt(n, min, max) {
-  const x = Number(n);
-  if (Number.isNaN(x)) return min;
-  return Math.max(min, Math.min(max, Math.floor(x)));
-}
+// The language-less seed: what every path with no deck language clones.
+// Key-identical to the `defaultsByLang` maps; see `defaults` in
+// validate-definition.js. Its `colCount` is also the one place the default
+// column count lives: a slide without a count renders, grows and projects at
+// this width (`tabularColumnCount` reads it here, the semantic projection
+// reads the same `defaults`).
+const DEFAULTS = {
+  title: 'New table',
+  caption: '',
+  headerRow: 'on',
+  animateByCell: 'off',
+  colCount: '4',
+  rows: [
+    { c1: 'Column A', c2: 'Column B', c3: 'Column C', c4: 'Column D' },
+    { c1: 'Row 1', c2: '…', c3: '…', c4: '…' },
+    { c1: 'Row 2', c2: '…', c3: '…', c4: '…' },
+  ],
+  tableStyle: 'plain',
+  cornerCell: 'label',
+  background: 'lime',
+};
 
-function colCountFromContent(content) {
-  return clampInt(content?.colCount || 4, 1, MAX_COLS);
-}
+/**
+ * The count keys of this type's `rows` field, for `tabularColumnCount` and the
+ * column mutations in ../tabular.js.
+ */
+export const TABLE_COLUMN_KEYS = Object.freeze({
+  rowsKey: 'rows',
+  columnCountKey: 'colCount',
+  maxCols: MAX_COLS,
+  defaults: DEFAULTS,
+});
 
 function normalizeRows(content, colCount) {
   const raw = Array.isArray(content?.rows) ? content.rows : [];
@@ -136,7 +160,7 @@ export default {
       // (shared/slide-types/structure.js). Declared rather than branched on by
       // name, so an external reader gets the same three facts through
       // /api/slide-types.
-      columnCountKey: 'colCount',
+      columnCountKey: TABLE_COLUMN_KEYS.columnCountKey,
       headerRowKey: 'headerRow',
       captionKey: 'caption',
       // The canvas styles column 1 as the label column on every table, with no
@@ -194,23 +218,7 @@ export default {
       background: 'lime',
     },
   },
-  // The language-less seed: what every path with no deck language clones.
-  // Key-identical to the maps above; see `defaults` in validate-definition.js.
-  defaults: {
-    title: 'New table',
-    caption: '',
-    headerRow: 'on',
-    animateByCell: 'off',
-    colCount: '4',
-    rows: [
-      { c1: 'Column A', c2: 'Column B', c3: 'Column C', c4: 'Column D' },
-      { c1: 'Row 1', c2: '…', c3: '…', c4: '…' },
-      { c1: 'Row 2', c2: '…', c3: '…', c4: '…' },
-    ],
-    tableStyle: 'plain',
-    cornerCell: 'label',
-    background: 'lime',
-  },
+  defaults: DEFAULTS,
   renderHtml: (content) => {
     const bg = bgClass(content?.background);
     const tableStyle = tableStyleClass(content?.tableStyle);
@@ -222,7 +230,7 @@ export default {
       String(content?.cornerCell || 'label') === 'header'
         ? ' md-table--corner-header'
         : '';
-    const colCount = colCountFromContent(content);
+    const colCount = tabularColumnCount(content, TABLE_COLUMN_KEYS);
     const rows = normalizeRows(content, colCount);
     const animateByCell = String(content?.animateByCell || 'off') === 'on';
 

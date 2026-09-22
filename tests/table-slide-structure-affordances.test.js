@@ -10,6 +10,7 @@ import {
   emptyTabularRow,
   tabularColumnCount,
 } from '../shared/slide-types/tabular.js';
+import { TABLE_COLUMN_KEYS } from '../shared/slide-types/types/table-slide.js';
 
 /**
  * B394 — a user could not add a row to a table on the canvas. Nothing was
@@ -143,10 +144,24 @@ test('both surfaces that grow a table build the same row', () => {
 test('a clamped or absent column count still yields a usable row', () => {
   assert.deepEqual(emptyTabularRow(1), { c1: '' });
   assert.equal(
-    Object.keys(resolveItemDefaults(ROWS_FIELD, null, {})).length,
+    Object.keys(resolveItemDefaults(ROWS_FIELD, null, {}, TABLE.defaults))
+      .length,
     4,
-    'no count declared falls back to the four-column default',
+    'no count on the slide takes the one the type declares in `defaults`',
   );
+  // The default lives in the type's `defaults` alone: the shared module holds
+  // no second one (B396).
+  assert.equal(
+    tabularColumnCount({}, { columnCountKey: 'colCount', maxCols: MAX_COLS }),
+    1,
+  );
+  assert.equal(TABLE.defaults.colCount, '4');
+  assert.equal(tabularColumnCount({}, TABLE_COLUMN_KEYS), 4);
+  // …and the renderer draws a count-less slide at that same width.
+  const { colCount: _omit, ...countless } = structuredClone(TABLE.defaults);
+  const doc = new JSDOM(`<body>${TABLE.renderHtml(countless)}</body>`).window
+    .document;
+  assert.equal(doc.querySelectorAll('.md-table thead th').length, 4);
   assert.equal(
     tabularColumnCount(
       { colCount: '99' },

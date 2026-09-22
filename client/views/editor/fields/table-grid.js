@@ -2,11 +2,13 @@ import { parseMarkdownTable } from '../../../../shared/markdown.js';
 import {
   MAX_COLS,
   MAX_ROWS,
+  TABLE_COLUMN_KEYS,
 } from '../../../../shared/slide-types/types/table-slide.js';
 import {
   addTabularColumn,
   deleteTabularColumn,
   emptyTabularRow,
+  tabularColumnCount,
 } from '../../../../shared/slide-types/tabular.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -39,7 +41,7 @@ function clampInt(n, min, max) {
 function ensureTableContent(slide) {
   if (!slide.content || typeof slide.content !== 'object') slide.content = {};
   if (!Array.isArray(slide.content.rows)) slide.content.rows = [];
-  const c = clampInt(slide.content.colCount || 4, 1, MAX_COLS);
+  const c = tabularColumnCount(slide.content, TABLE_COLUMN_KEYS);
   slide.content.colCount = String(c);
   if (slide.content.headerRow !== 'off') slide.content.headerRow = 'on';
 }
@@ -62,12 +64,9 @@ function normalizeRows(slide, colCount) {
 }
 
 // The row/column shape lives in shared/slide-types/tabular.js, so the canvas
-// inline editor and this grid cannot disagree about what an empty row is.
-const TABULAR_KEYS = {
-  rowsKey: 'rows',
-  columnCountKey: 'colCount',
-  maxCols: MAX_COLS,
-};
+// inline editor and this grid cannot disagree about what an empty row is. The
+// count keys, default included, come from the type (TABLE_COLUMN_KEYS), so the
+// grid and the renderer cannot disagree about how wide a table is.
 
 function emptyRow(colCount) {
   return emptyTabularRow(colCount);
@@ -103,14 +102,14 @@ function tableToMarkdown({ header, rows, colCount }) {
 // ─── structure mutations ─────────────────────────────────────────────────────
 
 function addRow(slide) {
-  const cols = clampInt(slide.content.colCount || 1, 1, MAX_COLS);
+  const cols = tabularColumnCount(slide.content, TABLE_COLUMN_KEYS);
   if ((slide.content.rows || []).length >= MAX_ROWS) return false;
   slide.content.rows.push(emptyRow(cols));
   return true;
 }
 
 function addColumn(slide) {
-  return addTabularColumn(slide.content, TABULAR_KEYS);
+  return addTabularColumn(slide.content, TABLE_COLUMN_KEYS);
 }
 
 function deleteRow(slide, rIdx) {
@@ -125,7 +124,7 @@ function deleteRow(slide, rIdx) {
  * button could only drop the last column).
  */
 function deleteColumn(slide, cIdx) {
-  return deleteTabularColumn(slide.content, cIdx, TABULAR_KEYS);
+  return deleteTabularColumn(slide.content, cIdx, TABLE_COLUMN_KEYS);
 }
 
 // ─── grid ────────────────────────────────────────────────────────────────────
@@ -151,7 +150,7 @@ function buildTableGrid({
   onStructure,
   focusCell = null,
 } = {}) {
-  const colCount = clampInt(slide.content.colCount || 4, 1, MAX_COLS);
+  const colCount = tabularColumnCount(slide.content, TABLE_COLUMN_KEYS);
   slide.content.colCount = String(colCount);
   const rows = normalizeRows(slide, colCount);
   if (rows.length === 0) rows.push(emptyRow(colCount));
@@ -363,7 +362,7 @@ export function createTableGridEditor({
 } = {}) {
   ensureTableContent(slide);
 
-  const colCount = clampInt(slide.content.colCount || 4, 1, MAX_COLS);
+  const colCount = tabularColumnCount(slide.content, TABLE_COLUMN_KEYS);
   const rows = normalizeRows(slide, colCount);
 
   const wrap = h('div', { class: 'stack table-editor' });
@@ -466,7 +465,7 @@ export function createTableGridEditor({
       class: 'btn btn-secondary',
       text: t('editor.table.copyMarkdown', 'Copy as Markdown'),
       onclick: async () => {
-        const cols = clampInt(slide.content.colCount || 1, 1, MAX_COLS);
+        const cols = tabularColumnCount(slide.content, TABLE_COLUMN_KEYS);
         const headerOn = String(slide.content.headerRow || 'on') !== 'off';
         const rs = normalizeRows(slide, cols);
         const header = headerOn && rs.length ? rs[0] : emptyRow(cols);
