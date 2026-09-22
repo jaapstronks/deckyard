@@ -18,7 +18,7 @@ import {
   resolveInitialDeckLang,
 } from '../../../../lib/format/i18n.js';
 import { createModal } from '../../../../lib/dom/modal.js';
-import { getFeatures } from '../../../../lib/state/features.js';
+import { aiEnabled, getFeatures } from '../../../../lib/state/features.js';
 import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
 import { createLibraryCompose } from './library-compose.js';
@@ -48,7 +48,6 @@ export function openCreationView({
   preselect,
 } = {}) {
   const features = getFeatures() || {};
-  const aiDisabled = !features.enableAi;
   // Sandbox guests have no slide library of their own, so "From the library"
   // has nothing to compose from — hide the method entirely there.
   const libraryDisabled = !!features.sandboxMode;
@@ -64,7 +63,7 @@ export function openCreationView({
   const getEffectiveMode = () => {
     if (method === 'blank') return 'empty';
     if (method === 'library') return 'library';
-    if (method === 'content') return content.getMode();
+    if (method === 'content') return content?.getMode() ?? null;
     if (method === 'import') return importMethod.getMode();
     return null;
   };
@@ -135,7 +134,7 @@ export function openCreationView({
     );
     rail.append(libraryItem);
   }
-  if (!aiDisabled) {
+  if (aiEnabled()) {
     rail.append(
       makeRailItem(
         'content',
@@ -196,12 +195,11 @@ export function openCreationView({
   // Another self-contained concern: the active sub-tab, the selected upload
   // file, and the Notion reveal all live in the module. syncUI drives its panel,
   // getEffectiveMode/isDirty read its state, and Create delegates to its run().
-  const content = createContentCompose({
-    api,
-    onChange: () => syncUI(),
-    aiDisabled,
-  });
-  const contentPanel = content.panel;
+  // Not built where AI is off (D179): the rail offers no "From content" there,
+  // and the wizard and convert routes behind it are not mounted.
+  const content = aiEnabled()
+    ? createContentCompose({ api, onChange: () => syncUI() })
+    : null;
 
   // --- Import panel (.deck / .json / .md file / paste markdown) ---
   // A third self-contained concern: the active sub-tab, the two selected files,
@@ -295,7 +293,15 @@ export function openCreationView({
     syncThemeHint();
   };
 
-  pane.append(blankPanel, libraryPanel, contentPanel, importPanel, setupWrap);
+  pane.append(
+    ...[
+      blankPanel,
+      libraryPanel,
+      content?.panel,
+      importPanel,
+      setupWrap,
+    ].filter(Boolean),
+  );
 
   // ===== Footer (pinned) =====
   const status = h('div', { class: 'help modal-status', text: '' });
@@ -357,11 +363,11 @@ export function openCreationView({
     }
     blankPanel.classList.toggle('is-hidden', method !== 'blank');
     libraryPanel.classList.toggle('is-hidden', method !== 'library');
-    contentPanel.classList.toggle('is-hidden', method !== 'content');
+    content?.panel.classList.toggle('is-hidden', method !== 'content');
     importPanel.classList.toggle('is-hidden', method !== 'import');
 
     // Content sub-tabs — the panel owns its controls.
-    content.syncPanel();
+    content?.syncPanel();
 
     // Library source (collections vs all slides) — the panel owns its controls.
     library.syncPanel();
@@ -426,7 +432,7 @@ export function openCreationView({
     const mode = getEffectiveMode();
     if (mode === 'empty') return !!String(emptyTitleInput.value || '').trim();
     if (mode === 'library') return library.isDirty();
-    if (method === 'content') return content.isDirty();
+    if (method === 'content') return !!content?.isDirty();
     if (method === 'import') return importMethod.isDirty();
     return false;
   };
@@ -472,7 +478,7 @@ export function openCreationView({
       case 'paste-text':
       case 'convert-file':
       case 'notion':
-        await content.run({
+        await content?.run({
           commonOpts,
           langMode: langSelect.getLang(),
           themeId: themeSelect.getTheme(),

@@ -10,6 +10,7 @@
 
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom.js';
+import { aiEnabled } from '../../lib/state/features.js';
 import {
   activateVideoEmbeds,
   cleanupSlideRuntimes,
@@ -142,11 +143,11 @@ export async function renderPresenter(root, id) {
   // slide). The tools menu re-parents the pill and relabels its copy button.
   const followCodes = createPresenterFollowCodesPill({ modeLang });
 
-  const translatePill = h('div', {
-    class: 'pill',
-    hidden: true,
-    text: '',
-  });
+  // The status of the background translation fill below, which is an AI call:
+  // where AI is off there is no fill and no pill (D179).
+  const translatePill = aiEnabled()
+    ? h('div', { class: 'pill', hidden: true, text: '' })
+    : null;
 
   const toolsMenu = createPresenterToolsMenu({
     modeLang,
@@ -724,13 +725,15 @@ export async function renderPresenter(root, id) {
   }
 
   // Background: ensure every language the follow-along audience may pick can
-  // render (fill missing only; preserve any manual translations).
-  ensureFollowAlongTranslations({
-    api,
-    presentationId: id,
-    pres,
-    translatePill,
-  });
+  // render (fill missing only; preserve any manual translations). The fill
+  // is an AI call, so where AI is off it does not run (D179).
+  if (aiEnabled())
+    ensureFollowAlongTranslations({
+      api,
+      presentationId: id,
+      pres,
+      translatePill,
+    });
 
   // Let the SPA router unmount this view cleanly (pushState navigation doesn't fire popstate).
   return createPresenterTeardown({

@@ -23,6 +23,7 @@ import { convertSlideWithConfirm } from '../convert-slide-action.js';
 import { openJsonDebugModal } from '../modals/json-debug-modal.js';
 import { openSaveToLibraryModal } from '../modals/save-to-library-modal.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
+import { aiEnabled } from '../../../lib/state/features.js';
 import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 import { icon } from '../../../lib/dom/icons.js';
 import {
@@ -151,10 +152,11 @@ export function buildHeaderActions({
   // Build AI conversion submenu. Which targets a type offers comes from the
   // one AI_CONVERT_PAIRS map (shared/slide-types/convert.js); the labels come
   // from the same typeLabel() the deterministic Convert submenu uses, so the
-  // menu holds no type knowledge.
-  const aiConvertTargets = getAiConvertibleSlideTypes(slide, {
-    slideTypes: SLIDE_TYPES,
-  });
+  // menu holds no type knowledge. Absent where AI is off (D179): the server
+  // does not mount /api/ai/convert-slide there.
+  const aiConvertTargets = aiEnabled()
+    ? getAiConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES })
+    : [];
   let aiConvertDetails = null;
   if (aiConvertTargets.length && api) {
     const built = createDropdown({
@@ -273,26 +275,29 @@ export function buildHeaderActions({
   }
 
   // Assemble menu items (filter out null entries to avoid "null" text in DOM)
+  // "Fill slide…" is an AI translation: the caller passes no
+  // `onTranslateSlide` where AI is off, and then the item is not built (D179).
   const menuItems = [
-    h('button', {
-      class: 'dropdown-item slide-fill-translation-item',
-      type: 'button',
-      text: t('editor.slide.fillTranslation', 'Fill slide…'),
-      title: t(
-        'editor.slide.fillTranslation.title',
-        'Fill this slide from the source version (with preview).',
-      ),
-      onclick: async () => {
-        actionsDetails.open = false;
-        if (convertDetails) convertDetails.open = false;
-        if (aiConvertDetails) aiConvertDetails.open = false;
-        try {
-          await onTranslateSlide?.({ slideId: slide.id });
-        } catch (e) {
-          debugLog('[editor] translate slide failed', e);
-        }
-      },
-    }),
+    onTranslateSlide &&
+      h('button', {
+        class: 'dropdown-item slide-fill-translation-item',
+        type: 'button',
+        text: t('editor.slide.fillTranslation', 'Fill slide…'),
+        title: t(
+          'editor.slide.fillTranslation.title',
+          'Fill this slide from the source version (with preview).',
+        ),
+        onclick: async () => {
+          actionsDetails.open = false;
+          if (convertDetails) convertDetails.open = false;
+          if (aiConvertDetails) aiConvertDetails.open = false;
+          try {
+            await onTranslateSlide({ slideId: slide.id });
+          } catch (e) {
+            debugLog('[editor] translate slide failed', e);
+          }
+        },
+      }),
     h('button', {
       class: 'dropdown-item',
       type: 'button',

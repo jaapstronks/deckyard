@@ -33,6 +33,7 @@ import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { makeDropdownCaret } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { aiEnabled } from '../../../lib/state/features.js';
 import {
   DEFAULT_DECK_LANG,
   getLangDisplayName,
@@ -815,50 +816,55 @@ export function createLanguageMode({
     return modal;
   }
 
-  // Post-switch invite popover: offer to AI-translate the missing texts of a
-  // freshly created (or still incomplete) language version. Non-blocking.
-  const langPopoverMsg = h('div', { class: 'lang-popover-msg' });
-  const langPopoverBtn = h('button', {
-    class: 'btn btn-primary btn-sm lang-popover-btn',
-    type: 'button',
-    text: t('editor.translate.missingBtn', 'Translate with AI'),
-  });
-  const langPopoverDismiss = h('button', {
-    class: 'btn btn-secondary btn-sm lang-popover-btn',
-    type: 'button',
-    text: t('editor.lang.notNow', 'Not now, I’ll write it myself'),
-  });
-  const langPopover = h('div', { class: 'lang-popover' }, [
-    langPopoverMsg,
-    langPopoverBtn,
-    langPopoverDismiss,
-  ]);
-  let langPopoverTimeout = null;
-  // The version the invite offers to translate FROM, pinned when it is shown:
-  // by the time the button is clicked the deck's own source answer has moved on.
-  let langPopoverSource = null;
-
-  const showTranslateInvite = (msg, sourceLang) => {
-    if (langPopoverTimeout) clearTimeout(langPopoverTimeout);
-    langPopoverMsg.textContent = msg;
-    langPopoverSource = sourceLang || null;
-    langPopover.classList.add('is-visible');
-    langPopoverTimeout = setTimeout(() => {
-      langPopover.classList.remove('is-visible');
-    }, 15000);
+  /**
+   * Post-switch invite popover: offer to AI-translate the missing texts of a
+   * freshly created (or still incomplete) language version. Non-blocking.
+   *
+   * @returns {{ el: HTMLElement, show: (msg: string, sourceLang: string) => void, hide: () => void }}
+   */
+  const createTranslateInvite = () => {
+    const msgEl = h('div', { class: 'lang-popover-msg' });
+    let timeout = null;
+    // The version the invite offers to translate FROM, pinned when it is
+    // shown: by the time the button is clicked the deck's own source answer
+    // has moved on.
+    let source = null;
+    const hide = () => {
+      if (timeout) clearTimeout(timeout);
+      el.classList.remove('is-visible');
+    };
+    const el = h('div', { class: 'lang-popover' }, [
+      msgEl,
+      h('button', {
+        class: 'btn btn-primary btn-sm lang-popover-btn',
+        type: 'button',
+        text: t('editor.translate.missingBtn', 'Translate with AI'),
+        onclick: () => {
+          const from = source;
+          hide();
+          translateMissingForActive({ onStatus: toastStatus, from });
+        },
+      }),
+      h('button', {
+        class: 'btn btn-secondary btn-sm lang-popover-btn',
+        type: 'button',
+        text: t('editor.lang.notNow', 'Not now, I’ll write it myself'),
+        onclick: () => hide(),
+      }),
+    ]);
+    const show = (msg, sourceLang) => {
+      if (timeout) clearTimeout(timeout);
+      msgEl.textContent = msg;
+      source = sourceLang || null;
+      el.classList.add('is-visible');
+      timeout = setTimeout(() => el.classList.remove('is-visible'), 15000);
+    };
+    return { el, show, hide };
   };
-
-  const hideLangPopover = () => {
-    if (langPopoverTimeout) clearTimeout(langPopoverTimeout);
-    langPopover.classList.remove('is-visible');
-  };
-
-  langPopoverBtn.onclick = () => {
-    const from = langPopoverSource;
-    hideLangPopover();
-    translateMissingForActive({ onStatus: toastStatus, from });
-  };
-  langPopoverDismiss.onclick = () => hideLangPopover();
+  // Not built where AI is off (D179): creating a version then just switches.
+  const translateInvite = aiEnabled() ? createTranslateInvite() : null;
+  const showTranslateInvite = (msg, sourceLang) =>
+    translateInvite?.show(msg, sourceLang);
 
   // UI elements
   const langMenuWrapper = h('div', { class: 'lang-menu-wrapper' });
@@ -885,7 +891,8 @@ export function createLanguageMode({
     if (langMenu.details.open) buildMenu();
   });
 
-  langMenuWrapper.append(langMenu.el, langPopover);
+  langMenuWrapper.append(langMenu.el);
+  if (translateInvite) langMenuWrapper.append(translateInvite.el);
 
   syncLangUi();
 
@@ -893,11 +900,13 @@ export function createLanguageMode({
     el: langMenuWrapper,
     syncLangUi,
     detach: () => {
-      hideLangPopover();
+      translateInvite?.hide();
       langMenu.detach();
     },
-    translateOtherLanguage: () =>
-      translateOtherLanguage({ onStatus: toastStatus }),
+    // Null where AI is off: the More menu then builds no Translate item.
+    translateOtherLanguage: aiEnabled()
+      ? () => translateOtherLanguage({ onStatus: toastStatus })
+      : null,
     translateMissingForActive: () =>
       translateMissingForActive({ onStatus: toastStatus }),
     canTranslate: () => retranslateTargets().length > 0,

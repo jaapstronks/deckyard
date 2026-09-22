@@ -10,6 +10,7 @@ import {
   buildDocTag,
 } from './imagekit-picker/transform-utils.js';
 import { h } from '../../lib/dom.js';
+import { aiAltTextEnabled } from '../../lib/state/features.js';
 import { defaultLang } from '../../lib/format/i18n.js';
 import { getLangDisplayName } from '../../../shared/i18n-utils.js';
 
@@ -372,36 +373,46 @@ export function openImageKitPicker({
       placeholder: t('imagekit.tags.placeholder', 'tags (comma-separated)'),
     });
 
-    const btnGenerateAlt = h('button', {
-      class: 'btn btn-secondary',
-      type: 'button',
-      text: t('imagekit.alt.generate', 'Generate ALT (AI)'),
-      onclick: async () => {
-        try {
-          setBusy(true);
-          statusLine.textContent = t('imagekit.alt.generating', 'Generating…');
-          const resp = await api('/api/image-library/generate-alts', {
-            method: 'POST',
-            body: {
-              url: cleanStr(selected?.url),
-              description: cleanStr(selected?.name),
-              tags: uniq(selected?.tags),
-              photographer: '',
-              langs: [seedLang],
-              context: context || null,
-            },
-          });
-          const a =
-            resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
-          altTa.value = cleanStr(a?.[seedLang]);
-          statusLine.textContent = t('imagekit.alt.generated', 'Generated.');
-        } catch (e) {
-          statusLine.textContent = String(e?.message || e);
-        } finally {
-          setBusy(false);
-        }
-      },
-    });
+    // Absent where AI alt text is unavailable (D179): the same answer the
+    // image library's picker reads, so the two cannot disagree.
+    const btnGenerateAlt = aiAltTextEnabled()
+      ? h('button', {
+          class: 'btn btn-secondary',
+          type: 'button',
+          text: t('imagekit.alt.generate', 'Generate ALT (AI)'),
+          onclick: async () => {
+            try {
+              setBusy(true);
+              statusLine.textContent = t(
+                'imagekit.alt.generating',
+                'Generating…',
+              );
+              const resp = await api('/api/image-library/generate-alts', {
+                method: 'POST',
+                body: {
+                  url: cleanStr(selected?.url),
+                  description: cleanStr(selected?.name),
+                  tags: uniq(selected?.tags),
+                  photographer: '',
+                  langs: [seedLang],
+                  context: context || null,
+                },
+              });
+              const a =
+                resp?.alts && typeof resp.alts === 'object' ? resp.alts : {};
+              altTa.value = cleanStr(a?.[seedLang]);
+              statusLine.textContent = t(
+                'imagekit.alt.generated',
+                'Generated.',
+              );
+            } catch (e) {
+              statusLine.textContent = String(e?.message || e);
+            } finally {
+              setBusy(false);
+            }
+          },
+        })
+      : null;
 
     const bestEffortTag = () => buildDocTag(cfg, docId);
 
@@ -453,7 +464,7 @@ export function openImageKitPicker({
                   `/api/media/imagekit/files/${encodeURIComponent(fileId)}/details`,
                   {
                     method: 'PATCH',
-                    body: patch,
+                    body: JSON.stringify(patch),
                   },
                 ).catch(() => {});
               }
@@ -562,7 +573,11 @@ export function openImageKitPicker({
     );
     if (note) detail.append(h('div', { class: 'help', text: note }));
     detail.append(
-      h('div', { class: 'imagekit-detail-actions' }, [btnGenerateAlt, btnUse]),
+      h(
+        'div',
+        { class: 'imagekit-detail-actions' },
+        [btnGenerateAlt, btnUse].filter(Boolean),
+      ),
       useError.el,
     );
   };

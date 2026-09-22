@@ -64,7 +64,7 @@ import {
 } from './bootstrap.js';
 import { loadEditorModel } from './load-editor-model.js';
 import { attachEditorLifecycle } from './editor-lifecycle.js';
-import { getFeatures } from '../../lib/state/features.js';
+import { aiEnabled, getFeatures } from '../../lib/state/features.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
 import { restoreSlideFromServer } from './slide-lock-restore.js';
 import { debugLog } from '../../lib/util/debug.js';
@@ -673,9 +673,9 @@ export async function createEditorController({
     syncShareUi: dropdowns.syncShareUi,
     markDirty,
     onOpenOverview: openDeckOverview,
-    // AI Analysis exists only where AI does: with `enableAi` off the server
-    // answers its route 404, so the menu has no item for it (B337).
-    onAnalyze: features.enableAi
+    // AI Analysis exists only where AI does: with AI off the server answers
+    // its route 404, so the menu has no item for it (B337, D179).
+    onAnalyze: aiEnabled()
       ? () =>
           openAnalyzeModalImpl({
             root,
@@ -725,7 +725,6 @@ export async function createEditorController({
     pres,
     user,
     api,
-    features,
     theme,
     SLIDE_TYPES,
     disabledSlideTypes,
@@ -1368,9 +1367,14 @@ export async function createEditorController({
     // Needed for the theme's override locks: a locked brand property hides its
     // control instead of offering an edit the renderer will ignore.
     theme,
-    onTranslateSlide: ({ slideId }) => openTranslateSlideModal({ slideId }),
-    onTranslateField: ({ slideId, key }) =>
-      openTranslateFieldModal({ slideId, key }),
+    // Both translate by AI, so where AI is off they are absent and so are the
+    // "Fill slide…" item and the per-field "From {lang}" button (D179).
+    onTranslateSlide: aiEnabled()
+      ? ({ slideId }) => openTranslateSlideModal({ slideId })
+      : null,
+    onTranslateField: aiEnabled()
+      ? ({ slideId, key }) => openTranslateFieldModal({ slideId, key })
+      : null,
     user,
     isAuthor: isAuthor(),
     disabledSlideTypes,
@@ -1592,9 +1596,12 @@ export async function createEditorController({
 
   // Fresh AI-generated deck: open the whole-deck review grid on top of the
   // editor. The flag is stripped from the URL so a refresh doesn't reopen it.
+  // Where AI is off no deck was AI-generated and the review's swap and refine
+  // routes are not mounted, so a stray flag opens nothing (D179).
   if (queryParam('aiReview') === '1') {
     setQueryParams({ aiReview: null });
-    requestAnimationFrame(() => openAiDeckReview({ postGeneration: true }));
+    if (aiEnabled())
+      requestAnimationFrame(() => openAiDeckReview({ postGeneration: true }));
   }
 
   updatePills();

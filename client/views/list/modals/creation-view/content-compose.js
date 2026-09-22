@@ -11,8 +11,8 @@
  * The host provides two things:
  *   - onChange()   — re-run the host's syncUI (the Create button label reads the
  *     active sub-tab; the shared theme picker applies to every sub-tab).
- *   - aiDisabled   — when true the method is never surfaced in the rail, but the
- *     panel is still built (hidden); it only gates the Notion sub-tab reveal.
+ *
+ * The host builds this only where AI is on (D179), so nothing in here asks.
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
@@ -27,10 +27,9 @@ import { h } from '../../../../lib/dom.js';
  * @param {object} opts
  * @param {Function} opts.api - fetch wrapper.
  * @param {() => void} opts.onChange - re-run host syncUI.
- * @param {boolean} opts.aiDisabled - AI features off (gates the Notion reveal).
  * @returns {object} content-compose controller
  */
-export function createContentCompose({ api, onChange, aiDisabled }) {
+export function createContentCompose({ api, onChange }) {
   const syncUI = () => onChange?.();
 
   // ===== State =====
@@ -139,8 +138,7 @@ export function createContentCompose({ api, onChange, aiDisabled }) {
   // Reveal the Notion sub-tab only when the integration is configured.
   api('/api/notion/status')
     .then((resp) => {
-      if (resp?.enabled && !aiDisabled)
-        btnSubNotion.classList.remove('is-hidden');
+      if (resp?.enabled) btnSubNotion.classList.remove('is-hidden');
     })
     .catch(() => {});
 
