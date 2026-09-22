@@ -39,6 +39,9 @@ export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
  * @param {boolean} options.enableLogging - Enable AI conversation logging (default: true)
  * @param {function} options.onStatusMessage - Callback for status messages during conversion
  * @param {function} options.onOutlineComplete - Callback when outline is ready (with statusMessages)
+ * @param {AbortSignal} [options.signal] - Cancels the conversion: it reaches
+ *   both model phases and is checked before every image upload, so a caller
+ *   whose reader left stops instead of converting for nobody.
  * @returns {Promise<{deck: object|null, report: object}>}
  */
 export async function convertFile(buffer, options = {}) {
@@ -50,6 +53,7 @@ export async function convertFile(buffer, options = {}) {
     enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
+    signal = null,
   } = options;
 
   const report = {
@@ -143,7 +147,10 @@ export async function convertFile(buffer, options = {}) {
 
   // Process image-only slides: upload images and create image-slides directly
   const { imageOnlySlides, regularSlides, titleSlideCandidate } =
-    await processImageOnlySlides(parseResult.slides, { onStatusMessage });
+    await processImageOnlySlides(parseResult.slides, {
+      onStatusMessage,
+      signal,
+    });
 
   if (imageOnlySlides.length > 0) {
     log.info(`Found ${imageOnlySlides.length} image-only slide(s)`);
@@ -189,6 +196,7 @@ export async function convertFile(buffer, options = {}) {
       imageOnlySlides, // Pass image-only slides to merge back in
       aiSlideIndexOffset, // Offset to apply to AI slide indices for correct ordering
       titleSlideCandidate, // Pre-extracted title slide from image-only first slide
+      signal,
     });
 
     // Include status messages in report
@@ -233,6 +241,9 @@ export async function convertFile(buffer, options = {}) {
 
     return { deck, report };
   } catch (e) {
+    // A cancelled conversion is not a failed one: it propagates so the caller
+    // can tell "the client left" from "this file could not be converted".
+    if (signal?.aborted) throw e;
     report.errors.push(`AI conversion failed: ${e.message}`);
     return { deck: null, report };
   }

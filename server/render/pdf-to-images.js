@@ -43,6 +43,8 @@ function readPdfjsSources() {
  * @param {number} [options.width=1920] - Render width in pixels
  * @param {number} [options.height=1080] - Render height in pixels
  * @param {function} [options.onProgress] - Callback for progress updates: (page, totalPages) => void
+ * @param {AbortSignal} [options.signal] - Checked before every page render, so
+ *   a caller whose reader left stops driving the browser.
  * @returns {Promise<Array<{page: number, buffer: Buffer}>>} Array of page images
  */
 export async function pdfToImages({
@@ -51,6 +53,7 @@ export async function pdfToImages({
   width = 1920,
   height = 1080,
   onProgress,
+  signal = null,
 } = {}) {
   // Convert buffer to data URL if provided
   let pdfDataUrl = dataUrl;
@@ -193,6 +196,7 @@ export async function pdfToImages({
 
     // Render each page
     for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      signal?.throwIfAborted();
       if (onProgress) {
         onProgress(pageNum, totalPages);
       }
@@ -223,6 +227,9 @@ export async function pdfToImages({
 
     await renderPage.close();
   } catch (err) {
+    // A cancelled render is not a broken PDF — it keeps its own error so the
+    // caller can tell the two apart.
+    if (signal?.aborted) throw err;
     // Re-throw with more context
     const error = new Error(`Failed to convert PDF to images: ${err.message}`);
     error.cause = err;

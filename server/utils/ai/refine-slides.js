@@ -260,6 +260,9 @@ function createFallbackSlide(originalSlide) {
  * @param {string} options.adjacentContext - Context about adjacent slides
  * @param {Object} options.presentationContext - Title and summary of presentation
  * @param {Function} options.onLog - Callback to log the conversation
+ * @param {AbortSignal} [options.signal] - Reaches the provider fetch. A
+ *   cancelled call is not a failed call: it propagates instead of retrying
+ *   into a fallback slide.
  * @returns {Promise<Array>} Refined slides
  */
 export async function refineSlideGroup(
@@ -273,6 +276,7 @@ export async function refineSlideGroup(
     disabledSlideTypes = [],
     customSlideTypes = [],
     themeContext = null,
+    signal = null,
   } = {},
 ) {
   const startTime = Date.now();
@@ -316,6 +320,7 @@ export async function refineSlideGroup(
         // tokens on thinking.
         maxTokens: 12000,
         messages,
+        signal,
       });
 
       parsed = extractJsonObject(rawResponse);
@@ -330,6 +335,10 @@ export async function refineSlideGroup(
 
       throw new Error('Invalid response structure');
     } catch (err) {
+      // A cancelled call is not a failed call. Retrying it would re-open the
+      // provider fetch the caller just aborted, and the fallback slides would
+      // be written for a reader who is already gone.
+      if (signal?.aborted) throw err;
       retryCount++;
       if (retryCount > maxRetries) {
         log.error(
@@ -472,6 +481,9 @@ function getPhase2StatusMessages(lang) {
  * @param {Function} options.onStatusMessage - Callback for status messages
  * @param {Function} options.onGroupDone - ({ done, total }) => void, called as
  *   each section group finishes (real progress, for streaming UIs)
+ * @param {AbortSignal} [options.signal] - Passed to every group call and
+ *   checked between batches, so a cancelled caller stops after the batch in
+ *   flight instead of working through the remaining groups.
  * @returns {Promise<Array>} All refined slides in order
  */
 export async function refineAllSlideGroups(
@@ -487,6 +499,7 @@ export async function refineAllSlideGroups(
     disabledSlideTypes = [],
     customSlideTypes = [],
     themeContext = null,
+    signal = null,
   } = {},
 ) {
   const allRefinedSlides = [];
@@ -518,6 +531,7 @@ export async function refineAllSlideGroups(
   try {
     // Process in batches
     for (let i = 0; i < groups.length; i += batchSize) {
+      signal?.throwIfAborted();
       const batch = groups.slice(i, i + batchSize);
 
       const batchPromises = batch.map((group, batchIndex) => {
@@ -533,6 +547,7 @@ export async function refineAllSlideGroups(
           disabledSlideTypes,
           customSlideTypes,
           themeContext,
+          signal,
         }).then((refinedSlides) => {
           // Track resolved types for adjacent context
           group.resolvedTypes = refinedSlides.map((s) => s.type);

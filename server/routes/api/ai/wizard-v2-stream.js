@@ -84,6 +84,9 @@ export async function handleAiWizardV2Stream({
 
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
+  // Cancelling is closing the stream: the signal aborts both model phases and
+  // is checked before the presentation is written.
+  const { signal } = stream;
 
   try {
     // Phase 1: Generate outline (get status messages)
@@ -101,6 +104,7 @@ export async function handleAiWizardV2Stream({
       vendor,
       targetLength,
       onLog: logger ? (data) => logger.logPhase1(data) : null,
+      signal,
     });
 
     // Send status messages to client. The rotator on the client replays
@@ -146,6 +150,7 @@ export async function handleAiWizardV2Stream({
           summary: outline.summary,
         },
         onLog: logger ? (data) => logger.logPhase2Call(data) : null,
+        signal,
         disabledSlideTypes: slideTypeCtx.disabled,
         customSlideTypes: slideTypeCtx.custom,
         themeContext,
@@ -226,6 +231,9 @@ export async function handleAiWizardV2Stream({
     // the whole-deck review grid reads them after the editor loads the deck.
     reattachAiMeta(parts.slides, deck.slides);
 
+    // The write step: no deck is created for a client that already left.
+    signal.throwIfAborted();
+
     // Create presentation
     sseWrite(res, {
       event: 'status',
@@ -270,6 +278,12 @@ export async function handleAiWizardV2Stream({
       },
     });
   } catch (e) {
+    if (signal.aborted) {
+      log.info(`[AI Wizard V2 Stream] ${sessionId}: cancelled by the client`);
+      res.end();
+      return true;
+    }
+
     log.error('[AI Wizard V2 Stream] Error:', e);
 
     // Log the error too

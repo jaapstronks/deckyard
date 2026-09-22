@@ -110,6 +110,9 @@ export async function handlePresentationImportSlidesAsImages(
   // Set up SSE
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
+  // Cancelling is closing the stream: the signal stops the page renders, is
+  // checked before every image upload, and before the deck is written.
+  const { signal } = stream;
 
   const sendProgress = (message, data = {}) => {
     sseWrite(res, {
@@ -143,6 +146,7 @@ export async function handlePresentationImportSlidesAsImages(
       dataUrl,
       width: 1920,
       height: 1080,
+      signal,
       onProgress: (page, total) => {
         sendProgress(`Rendering page ${page} of ${total}...`, {
           stage: 'converting',
@@ -168,6 +172,9 @@ export async function handlePresentationImportSlidesAsImages(
     const baseFilename = (filename || 'imported').replace(/\.pdf$/i, '');
 
     for (let i = 0; i < images.length; i++) {
+      // Each iteration uploads a page to the media library — a write for
+      // whoever asked. Checked before the upload, not after.
+      signal.throwIfAborted();
       const img = images[i];
       const pageNum = img.page;
 
@@ -219,6 +226,9 @@ export async function handlePresentationImportSlidesAsImages(
       newSlides.push(slide);
     }
 
+    // The write step: the deck is not changed for a client that already left.
+    signal.throwIfAborted();
+
     sendProgress('Updating presentation...', {
       stage: 'saving',
       current: images.length,
@@ -264,6 +274,11 @@ export async function handlePresentationImportSlidesAsImages(
 
     return true;
   } catch (err) {
+    if (signal.aborted) {
+      log.info('[import-slides] cancelled by the client');
+      res.end();
+      return true;
+    }
     log.error('[import-slides] Error:', err?.message, err?.stack);
     sendError(err?.message || 'Failed to import PDF');
     return true;
