@@ -768,6 +768,22 @@ describe('the structure contract: tabular projects to a real <table>', () => {
     assert.ok(/<td>A<\/td><td>B<\/td>/.test(html), html);
   });
 
+  it('reads the width the canvas draws: count-less takes defaults, junk is one column (B396)', () => {
+    const wide = [{ c1: 'A', c2: 'B', c3: 'C' }];
+    const countless = body(
+      { content: { title: 'T', rows: wide } },
+      tabular({ columnCountKey: 'colCount' }),
+      { headingKey: 'title' },
+    );
+    assert.ok(/<td>A<\/td><td>B<\/td><td>C<\/td>/.test(countless), countless);
+    const junk = body(
+      { content: { title: 'T', colCount: 'abc', rows: wide } },
+      tabular({ columnCountKey: 'colCount' }),
+      { headingKey: 'title' },
+    );
+    assert.ok(/<tr><td>A<\/td><\/tr>/.test(junk), junk);
+  });
+
   it('uses the declared caption key as <caption>, not as a loose paragraph', () => {
     const html = body(
       { content: { title: 'T', caption: 'In thousands', rows } },
