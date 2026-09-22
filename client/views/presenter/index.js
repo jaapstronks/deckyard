@@ -725,14 +725,15 @@ export async function renderPresenter(root, id) {
   }
 
   // Background: ensure every language the follow-along audience may pick can
-  // render (fill missing only; preserve any manual translations). Without
-  // the pill (AI off) the fill does nothing.
-  ensureFollowAlongTranslations({
-    api,
-    presentationId: id,
-    pres,
-    translatePill,
-  });
+  // render (fill missing only; preserve any manual translations). The fill
+  // is an AI call, so where AI is off it does not run (D179).
+  if (aiEnabled())
+    ensureFollowAlongTranslations({
+      api,
+      presentationId: id,
+      pres,
+      translatePill,
+    });
 
   // Let the SPA router unmount this view cleanly (pushState navigation doesn't fire popstate).
   return createPresenterTeardown({
