@@ -308,7 +308,7 @@
   "editor.export.descNotes": "Talaranteckningar",
   "editor.export.descPdf": "En slide per sida (16:9)",
   "editor.export.descPng": "Bild av varje slide",
-  "editor.export.descPptx": "PowerPoint-fil",
+  "editor.export.descPptx": "PowerPoint, varje slide som bild",
   "editor.export.descTextPdf": "Läsbart underlag, utan slidelayout",
   "editor.export.exportAction": "Exportera",
   "editor.export.groupData": "Data och paket",

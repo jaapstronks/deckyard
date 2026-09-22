@@ -309,7 +309,7 @@
   "editor.export.descNotes": "Notas del presentador",
   "editor.export.descPdf": "Una diapositiva por página (16:9)",
   "editor.export.descPng": "Imagen de cada diapositiva",
-  "editor.export.descPptx": "Archivo de PowerPoint",
+  "editor.export.descPptx": "PowerPoint, cada diapositiva como imagen",
   "editor.export.descTextPdf": "Documento legible para repartir, sin diseño de diapositiva",
   "editor.export.exportAction": "Exportar",
   "editor.export.groupData": "Datos y paquete",

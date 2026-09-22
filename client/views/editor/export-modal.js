@@ -68,7 +68,10 @@ function exportGroups() {
         {
           key: 'pptx',
           name: 'PPTX',
-          desc: t('editor.export.descPptx', 'PowerPoint file'),
+          desc: t(
+            'editor.export.descPptx',
+            'PowerPoint, each slide as an image',
+          ),
           icon: 'presentation',
           color: 'amber',
           path: 'pptx',

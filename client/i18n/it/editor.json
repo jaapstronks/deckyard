@@ -310,7 +310,7 @@
   "editor.export.descNotes": "Note del relatore",
   "editor.export.descPdf": "Una slide per pagina (16:9)",
   "editor.export.descPng": "Immagine di ogni slide",
-  "editor.export.descPptx": "File PowerPoint",
+  "editor.export.descPptx": "PowerPoint, ogni slide come immagine",
   "editor.export.descTextPdf": "Dispensa leggibile, senza il layout delle slide",
   "editor.export.exportAction": "Esporta",
   "editor.export.groupData": "Dati e pacchetto",
