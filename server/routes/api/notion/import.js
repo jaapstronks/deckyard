@@ -25,6 +25,7 @@ import { loadDeckTheme } from '../../../utils/themes.js';
 import { handleNotionError, refuseNotionUnconfigured } from './utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
+import { clientDisconnectSignal } from '../../../utils/client-disconnect.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 const log = createLogger('import');
 
@@ -59,6 +60,10 @@ export async function handleNotionImport({
     return badRequest(res, 'Invalid Notion URL or page ID format');
   }
 
+  // Cancelling is dropping the request: the signal aborts the model calls
+  // and the image uploads, and is checked before the presentation is written.
+  const signal = clientDisconnectSignal(res);
+
   try {
     // Convert the Notion page
     const {
@@ -69,6 +74,7 @@ export async function handleNotionImport({
       lang,
       vendor,
       enableLogging: true,
+      signal,
     });
 
     if (!deck || report.errors.length > 0) {
@@ -89,6 +95,9 @@ export async function handleNotionImport({
       theme: await loadDeckTheme(repoRoot, theme),
       lang: effectiveLang,
     });
+
+    // The write step: no deck is created for a client that already left.
+    signal.throwIfAborted();
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Imported from Notion',
@@ -120,7 +129,8 @@ export async function handleNotionImport({
       detectedLang: effectiveLang,
     });
   } catch (e) {
-    handleNotionError(e, res);
+    if (signal.aborted) log.info('[Notion Import] cancelled by the client');
+    else handleNotionError(e, res);
   }
   return true;
 }

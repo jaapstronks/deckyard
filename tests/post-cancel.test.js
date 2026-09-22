@@ -1,5 +1,6 @@
 /**
- * The four long POST-SSE streams stop when the client goes away (B347).
+ * Long POST routes stop when the client goes away: the four SSE streams
+ * (B347) and the two plain JSON routes that do the same work (B397).
  *
  * `openSseStream` has exposed a disconnect `signal` since #1187 (B338), but
  * only the analyze route read it. These four kept working for nobody: the
@@ -15,6 +16,9 @@
  *
  * The PDF route is the exception: its work is a real browser render, so it
  * uses puppeteer (like the export tests) and cancels between page uploads.
+ *
+ * The JSON routes have no stream, so no `openSseStream` signal: they take
+ * theirs from `clientDisconnectSignal`, the one source both carriers share.
  */
 
 import test from 'node:test';
@@ -50,7 +54,7 @@ const { initializeStorage, __resetStorageForTests } =
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handleAiWizardV2Stream } =
   await import('../server/routes/api/ai/wizard-v2-stream.js');
-const { handleNotionImportStream } =
+const { handleNotionImport, handleNotionImportStream } =
   await import('../server/routes/api/notion/import.js');
 const { handlePresentationImportSlidesAsImages } =
   await import('../server/routes/api/presentations/import-slides-as-images.js');
@@ -58,6 +62,9 @@ const convertRoutes = await import('../server/routes/api/convert.js');
 
 const handleConvertStream = convertRoutes.ROUTES.find(
   (r) => r.pattern === '/api/convert/stream',
+).handler;
+const handleConvertFile = convertRoutes.ROUTES.find(
+  (r) => r.pattern === '/api/convert',
 ).handler;
 
 /** @type {ReturnType<typeof createFakeDb>} */
@@ -148,6 +155,27 @@ function makeSseRes({ onEvent } = {}) {
   };
   res.end = () => {
     res.writableEnded = true;
+    res.writable = false;
+  };
+  return res;
+}
+
+/**
+ * A response double for a plain JSON route: nothing is written until the
+ * answer, and ending it is what marks the request answered.
+ */
+function makeJsonRes() {
+  const res = new EventEmitter();
+  res.writable = true;
+  res.writableEnded = false;
+  res.writableFinished = false;
+  res.statusCode = null;
+  res.writeHead = (status) => {
+    res.statusCode = status;
+  };
+  res.end = () => {
+    res.writableEnded = true;
+    res.writableFinished = true;
     res.writable = false;
   };
   return res;
@@ -481,3 +509,90 @@ async function twoPagePdf() {
 function toNodeBuffer(value) {
   return Buffer.isBuffer(value) ? value : Buffer.from(value);
 }
+
+test('convert (JSON): leaving during the conversion aborts the model call and saves nothing', async (t) => {
+  seed();
+  let called = false;
+  let providerSignal = null;
+  stubFetch(
+    t,
+    slowProvider((opts) => {
+      called = true;
+      providerSignal = opts.signal;
+    }),
+  );
+
+  const dataUrl = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${(await minimalPptx()).toString('base64')}`;
+  const res = makeJsonRes();
+  const done = handleConvertFile({
+    repoRoot: process.cwd(),
+    storageScope: scope(),
+    req: makeReq({ dataUrl, filename: 'deck.pptx' }),
+    res,
+    authedUser: OWNER,
+  });
+
+  await waitFor(() => called, 20_000);
+  disconnect(res);
+  await done;
+
+  assert.equal(
+    providerSignal?.aborted,
+    true,
+    'the conversion keeps calling the model after the client left',
+  );
+  assert.equal(
+    storedPresentations().length,
+    1,
+    'a converted presentation was saved for a client that had already left',
+  );
+  assert.equal(
+    res.statusCode,
+    null,
+    'a cancel was answered as if someone were still listening',
+  );
+});
+
+test('notion import (JSON): leaving during the conversion aborts the model call and saves nothing', async (t) => {
+  seed();
+  let called = false;
+  let providerSignal = null;
+  const provider = slowProvider((opts) => {
+    called = true;
+    providerSignal = opts.signal;
+  });
+  stubFetch(t, (url, opts = {}) => {
+    const href = String(url);
+    if (href.includes('api.notion.com')) return notionResponse(href);
+    return provider(url, opts);
+  });
+
+  const res = makeJsonRes();
+  const done = handleNotionImport({
+    repoRoot: process.cwd(),
+    storageScope: scope(),
+    req: makeReq({ url: NOTION_PAGE_ID }),
+    res,
+    authedUser: OWNER,
+  });
+
+  await waitFor(() => called, 20_000);
+  disconnect(res);
+  await done;
+
+  assert.equal(
+    providerSignal?.aborted,
+    true,
+    'the import keeps calling the model after the client left',
+  );
+  assert.equal(
+    storedPresentations().length,
+    1,
+    'an imported presentation was saved for a client that had already left',
+  );
+  assert.equal(
+    res.statusCode,
+    null,
+    'a cancel was answered as if someone were still listening',
+  );
+});
