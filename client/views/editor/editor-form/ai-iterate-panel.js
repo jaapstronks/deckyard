@@ -91,14 +91,14 @@ export function buildAiIteratePanel({
       const resp = await api('/api/ai/iterate', {
         method: 'POST',
         signal: iterateController.signal,
-        body: JSON.stringify({
+        body: {
           presentation: pres,
           command,
           lang,
           vendor,
           currentSlideIndex,
           applyChanges: true,
-        }),
+        },
       });
 
       if (resp?.plan?.modifications?.length > 0 && resp.presentation?.slides) {

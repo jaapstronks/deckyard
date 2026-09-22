@@ -399,7 +399,7 @@ export function createSlidesPanel({
     if (!id) return;
     api('/api/slide-library/usage', {
       method: 'POST',
-      body: JSON.stringify({ items: [{ type: 'slide', id }] }),
+      body: { items: [{ type: 'slide', id }] },
     }).catch((err) =>
       debugLog('[slides-panel] library-usage ping failed', err),
     );

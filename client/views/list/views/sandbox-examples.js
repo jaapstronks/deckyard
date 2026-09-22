@@ -71,7 +71,7 @@ export function createSandboxExamplesSection({ api, detachThumbs }) {
       const lang = exampleLang(example);
       const created = await api('/api/presentations/import/json', {
         method: 'POST',
-        body: JSON.stringify({ deck: example.deck, lang }),
+        body: { deck: example.deck, lang },
       });
       if (created?.id) {
         nav(

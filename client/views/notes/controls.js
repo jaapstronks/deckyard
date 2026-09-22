@@ -41,7 +41,7 @@ export function createNotesControls({ sessionId, enabled, flashHint }) {
   const sendControl = async (body) => {
     await api(`/api/live-sessions/${sessionId}/control`, {
       method: 'POST',
-      body: JSON.stringify(body),
+      body,
     });
   };
 

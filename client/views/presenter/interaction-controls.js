@@ -68,7 +68,7 @@ export function createPresenterInteractionControls({
           `/api/live-sessions/${encodeURIComponent(
             sessionId,
           )}/interactions/${encodeURIComponent(cur.id)}/open`,
-          { method: 'POST', body: '{}' },
+          { method: 'POST', body: {} },
         );
       } catch {
         // ignore
@@ -89,7 +89,7 @@ export function createPresenterInteractionControls({
           `/api/live-sessions/${encodeURIComponent(
             sessionId,
           )}/interactions/${encodeURIComponent(cur.id)}/close`,
-          { method: 'POST', body: '{}' },
+          { method: 'POST', body: {} },
         );
       } catch {
         // ignore
@@ -119,7 +119,7 @@ export function createPresenterInteractionControls({
           `/api/live-sessions/${encodeURIComponent(
             sessionId,
           )}/interactions/${encodeURIComponent(cur.id)}/reset`,
-          { method: 'POST', body: '{}' },
+          { method: 'POST', body: {} },
         );
       } catch {
         // ignore

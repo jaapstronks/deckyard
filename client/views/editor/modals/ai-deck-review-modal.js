@@ -195,7 +195,7 @@ export function openAiDeckReviewModal({
     try {
       const resp = await api('/api/ai/refine-section', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           presentation: {
             title: pres.title,
             theme: pres.theme,
@@ -208,7 +208,7 @@ export function openAiDeckReviewModal({
           slideIds,
           feedback,
           ...(lang ? { lang } : {}),
-        }),
+        },
       });
       const revised = Array.isArray(resp?.slides) ? resp.slides : [];
       const range = resp?.range;

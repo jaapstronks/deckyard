@@ -30,7 +30,7 @@ export async function fetchAppSettings({ maxAgeMs = 60_000 } = {}) {
 export async function updateAppSettings(next) {
   const resp = await api('/api/settings/app', {
     method: 'PUT',
-    body: JSON.stringify(next || {}),
+    body: next || {},
   });
   const s =
     resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
@@ -53,7 +53,7 @@ export async function fetchOrgSettings({ maxAgeMs = 60_000 } = {}) {
 export async function updateOrgSettings(next) {
   const resp = await api('/api/settings/organization', {
     method: 'PATCH',
-    body: JSON.stringify(next || {}),
+    body: next || {},
   });
   const s =
     resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
@@ -76,7 +76,7 @@ export async function fetchMySettings({ maxAgeMs = 60_000 } = {}) {
 export async function updateMySettings(next) {
   const resp = await api('/api/settings/me', {
     method: 'PUT',
-    body: JSON.stringify(next || {}),
+    body: next || {},
   });
   const s =
     resp?.settings && typeof resp.settings === 'object' ? resp.settings : {};
@@ -111,7 +111,7 @@ export async function fetchEmailTemplates({ maxAgeMs = 60_000 } = {}) {
 export async function updateEmailTemplate(type, locale, fields) {
   const resp = await api(`/api/admin/email-templates/${type}/${locale}`, {
     method: 'PUT',
-    body: JSON.stringify(fields),
+    body: fields,
   });
   invalidateEmailTemplatesCache();
   return resp;
@@ -128,7 +128,7 @@ export async function resetEmailTemplate(type, locale) {
 export async function updateEmailDefaultLocale(locale) {
   const resp = await api('/api/admin/email-templates/settings', {
     method: 'PUT',
-    body: JSON.stringify({ defaultLocale: locale }),
+    body: { defaultLocale: locale },
   });
   invalidateEmailTemplatesCache();
   return resp;
@@ -137,13 +137,13 @@ export async function updateEmailDefaultLocale(locale) {
 export async function previewEmailTemplate(type, locale, fields = null) {
   return api(`/api/admin/email-templates/${type}/preview`, {
     method: 'POST',
-    body: JSON.stringify({ locale, fields }),
+    body: { locale, fields },
   });
 }
 
 export async function sendTestEmail(type, locale, fields = null) {
   return api(`/api/admin/email-templates/${type}/test`, {
     method: 'POST',
-    body: JSON.stringify({ locale, fields }),
+    body: { locale, fields },
   });
 }

@@ -95,7 +95,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         `/api/slide-library/${s}/${encodeURIComponent(id)}`,
         {
           method: 'PATCH',
-          body: JSON.stringify({ favorite: !current }),
+          body: { favorite: !current },
         },
       );
       const arr = state.getCache(s);
@@ -133,7 +133,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         `/api/slide-library/${s}/${encodeURIComponent(id)}`,
         {
           method: 'PATCH',
-          body: JSON.stringify({ trashed: !!trashed }),
+          body: { trashed: !!trashed },
         },
       );
       const arr = state.getCache(s);
@@ -157,7 +157,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         {
           method: 'PATCH',
           headers: ifMatch(item),
-          body: JSON.stringify({ description: newDesc }),
+          body: { description: newDesc },
         },
       );
       item.description = newDesc;
@@ -177,7 +177,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         `/api/slide-library/${s}/${encodeURIComponent(item.id)}/tags`,
         {
           method: 'PUT',
-          body: JSON.stringify({ tags: newTags }),
+          body: { tags: newTags },
         },
       );
       item.tags = result;
@@ -199,7 +199,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         {
           method: 'PATCH',
           headers: ifMatch(item),
-          body: JSON.stringify(patch),
+          body: patch,
         },
       );
       // Update cache
@@ -235,7 +235,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
     try {
       created = await api(`/api/slide-library/${s}`, {
         method: 'POST',
-        body: JSON.stringify(body),
+        body,
       });
     } catch (err) {
       return { ok: false, error: err };

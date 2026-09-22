@@ -99,7 +99,7 @@ export function openDescriptionModal({
           `/api/presentations/${id}/description/generate`,
           {
             method: 'POST',
-            body: JSON.stringify({}),
+            body: {},
           },
         );
         const d = typeof resp?.description === 'string' ? resp.description : '';

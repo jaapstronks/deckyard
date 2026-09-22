@@ -247,7 +247,7 @@ export function createFieldImages(ctx) {
             const dataUrl = await readFileAsDataUrl(file);
             const uploaded = await api('/api/images/upload', {
               method: 'POST',
-              body: JSON.stringify({ dataUrl, filename: file.name }),
+              body: { dataUrl, filename: file.name },
             });
             const url =
               typeof uploaded?.url === 'string' ? uploaded.url.trim() : '';

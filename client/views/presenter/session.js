@@ -23,7 +23,7 @@ export async function startPresenterSession({
 } = {}) {
   const created = await api('/api/live-sessions', {
     method: 'POST',
-    body: JSON.stringify({ presentationId }),
+    body: { presentationId },
   });
   const sessionId = created?.sessionId || null;
   let connection = null;

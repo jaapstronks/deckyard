@@ -114,7 +114,7 @@ test('the field modal translates from the dominant version into the active one',
     root: document.body,
     normalizeLang,
     api: async (_url, opts) => {
-      sent = JSON.parse(opts.body);
+      sent = opts.body;
       return { translations: { title: 'Bonjour' } };
     },
   });
@@ -200,7 +200,7 @@ test('the slide modal names both versions natively too', async (t) => {
     normalizeLang,
     perLanguageKeysForSlide: () => ['title', 'subtitle'],
     api: async (_url, opts) => {
-      sent = JSON.parse(opts.body);
+      sent = opts.body;
       return { translations: { title: 'Bonjour', subtitle: 'Bienvenue' } };
     },
   });

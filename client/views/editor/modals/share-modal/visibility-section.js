@@ -78,11 +78,10 @@ export function createVisibilitySection({
       const updated = await api(`/api/presentations/${id}/visibility`, {
         method: 'PATCH',
         headers: { 'If-Match': await ifMatchRevision({ api, id, pres }) },
-        body: JSON.stringify(
+        body:
           visibility === 'organization'
             ? { visibility, isViewOnly }
             : { visibility },
-        ),
       });
       if (updated && typeof updated === 'object') {
         if (typeof updated.visibility === 'string')

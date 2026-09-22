@@ -72,8 +72,36 @@ export function requestHeaders(custom) {
   return headers;
 }
 
+/**
+ * Refuse a pre-stringified body. The body of an `api()` call is a value, not a
+ * string: `api()` owns the serialisation and the JSON `Content-Type`, and the
+ * caller only describes *what* it sends (D177). A caller that stringifies
+ * itself leaves a second form of one concept standing, so the network layer
+ * refuses it rather than quietly passing it through.
+ *
+ * The one legitimate string body is one the caller has typed itself — it
+ * declares its own `Content-Type`, which wins the merge in `requestHeaders()`.
+ * Bodies with their own encoding (`Blob`, `File`, `FormData`,
+ * `URLSearchParams`) are not strings and never reach this check.
+ *
+ * @param {*} body - the caller's `opts.body`.
+ * @param {HeadersInit} [headers] - the caller's `opts.headers`.
+ * @throws {Error} when a string body arrives without its own `Content-Type`.
+ */
+export function assertBodyShape(body, headers) {
+  if (typeof body !== 'string') return;
+  if (new Headers(headers || {}).has('Content-Type')) return;
+  throw new Error(
+    'api(): body must be the value to send, not a pre-stringified string — ' +
+      'pass the object and let api() serialise it (D177). A body that is not ' +
+      'JSON must declare its own Content-Type.',
+  );
+}
+
 export async function api(path, opts = {}) {
-  // Auto-stringify body if it's an object (not FormData, Blob, etc.)
+  assertBodyShape(opts.body, opts.headers);
+  // `api()` owns the serialisation: an object body becomes JSON here. FormData
+  // and Blob carry their own encoding and pass through untouched.
   const body =
     opts.body &&
     typeof opts.body === 'object' &&

@@ -202,17 +202,17 @@ export function createImageLibraryDetail({
               `/api/image-library/${it.id}/generate-alts`,
               {
                 method: 'POST',
-                body: JSON.stringify({
+                body: {
                   langs: altInputs.langs,
                   context: context || null,
-                }),
+                },
               },
             );
             altInputs.write(resp?.alts);
 
             const updated = await api(`/api/image-library/${it.id}`, {
               method: 'PUT',
-              body: JSON.stringify({ alts: altInputs.read() }),
+              body: { alts: altInputs.read() },
             });
             onItemUpdated(updated);
             setStatus(t('imageLibrary.alt.generated', 'Generated.'));
@@ -265,10 +265,10 @@ export function createImageLibraryDetail({
                 `/api/image-library/${it.id}/generate-alts`,
                 {
                   method: 'POST',
-                  body: JSON.stringify({
+                  body: {
                     langs: altInputs.langs,
                     context: context || null,
-                  }),
+                  },
                 },
               );
               altInputs.write(resp?.alts);
@@ -333,12 +333,12 @@ export function createImageLibraryDetail({
                 .filter(Boolean);
               const updated = await api(`/api/image-library/${it.id}`, {
                 method: 'PUT',
-                body: JSON.stringify({
+                body: {
                   description: inDescription.value || '',
                   tags: tagsArr,
                   photographer: inPhotographer.value || '',
                   alts: altInputs.read(),
-                }),
+                },
               });
               onItemUpdated(updated);
               setStatus(t('common.saved', 'Saved'));
@@ -382,7 +382,7 @@ export function createImageLibraryDetail({
           `/api/image-library/${it.id}/replace-upload`,
           {
             method: 'POST',
-            body: JSON.stringify({ dataUrl }),
+            body: { dataUrl },
           },
         );
         onItemUpdated(updated);

@@ -92,7 +92,7 @@ export async function fetchModerationCapabilities(api, presentationId) {
 export function askQuestion(api, presentationId, { authorName, lang, text }) {
   return api(followPath(presentationId), {
     method: 'POST',
-    body: JSON.stringify({ authorName, lang, text }),
+    body: { authorName, lang, text },
   });
 }
 
@@ -109,7 +109,7 @@ export function upvoteQuestion(api, presentationId, questionId) {
       presentationId,
       `/${encodeURIComponent(String(questionId || ''))}/upvote`,
     ),
-    { method: 'POST', body: JSON.stringify({}) },
+    { method: 'POST', body: {} },
   );
 }
 
@@ -126,7 +126,7 @@ export function cancelQuestion(api, presentationId, questionId) {
       presentationId,
       `/${encodeURIComponent(String(questionId || ''))}/cancel`,
     ),
-    { method: 'POST', body: JSON.stringify({}) },
+    { method: 'POST', body: {} },
   );
 }
 
@@ -150,7 +150,7 @@ export function promoteQuestion(
     position === 'next' ? { position, afterSlideIndex } : { position };
   return api(moderatePath(presentationId, questionId, 'promote'), {
     method: 'POST',
-    body: JSON.stringify(body),
+    body,
   });
 }
 
@@ -164,6 +164,6 @@ export function promoteQuestion(
 export function removeQuestion(api, presentationId, questionId) {
   return api(moderatePath(presentationId, questionId, 'remove'), {
     method: 'POST',
-    body: JSON.stringify({}),
+    body: {},
   });
 }

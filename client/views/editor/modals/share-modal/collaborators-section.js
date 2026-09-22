@@ -259,7 +259,7 @@ export function createCollaboratorsSection({
     try {
       await api(`/api/presentations/${presentationId}/transfer-ownership`, {
         method: 'POST',
-        body: JSON.stringify({ newOwnerEmail: trimmedEmail }),
+        body: { newOwnerEmail: trimmedEmail },
       });
       toast?.success(
         t(
@@ -320,7 +320,7 @@ export function createCollaboratorsSection({
               `/api/presentations/${presentationId}/collaborators/${encodeURIComponent(collab.userEmail)}`,
               {
                 method: 'PATCH',
-                body: JSON.stringify({ permission: permSelect.value }),
+                body: { permission: permSelect.value },
               },
             );
             await loadCollaborators();
@@ -362,7 +362,7 @@ export function createCollaboratorsSection({
               `/api/presentations/${presentationId}/collaborators/${encodeURIComponent(collab.userEmail)}`,
               {
                 method: 'DELETE',
-                body: JSON.stringify({ message: result.message }),
+                body: { message: result.message },
               },
             );
             await loadCollaborators();
@@ -421,10 +421,10 @@ export function createCollaboratorsSection({
         `/api/presentations/${presentationId}/collaborators`,
         {
           method: 'POST',
-          body: JSON.stringify({
+          body: {
             userEmails,
             permission: permissionSelect.value,
-          }),
+          },
         },
       );
 

@@ -40,7 +40,7 @@ export async function handleEmpty({
   try {
     const created = await api('/api/presentations', {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         title: titleText,
         lang,
         theme: themeId,
@@ -48,7 +48,7 @@ export async function handleEmpty({
           stepParagraphs: true,
           transitions: { preset: 'fade' },
         },
-      }),
+      },
     });
     close();
     nav(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
@@ -156,7 +156,7 @@ export async function handlePasteText({
       loadingModal.update(t('editor.aiAppend.generating', 'Generating…'));
       const created = await api('/api/ai/wizard', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           raw,
           lang: langMode,
           theme: themeId,
@@ -164,7 +164,7 @@ export async function handlePasteText({
             stepParagraphs: true,
             transitions: { preset: 'fade' },
           },
-        }),
+        },
       });
       loadingModal.update(t('common.done', 'Done'));
       loadingModal.setProgress(100);
@@ -307,12 +307,12 @@ export async function handleConvertFile({
       );
       const result = await api('/api/convert', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           dataUrl,
           filename: selectedFile.name,
           lang,
           theme: themeId,
-        }),
+        },
       });
 
       if (result.success && result.presentation) {
@@ -377,7 +377,7 @@ export async function handleImportJson({
 
     const created = await api('/api/presentations/import/json', {
       method: 'POST',
-      body: JSON.stringify({ deck, lang }),
+      body: { deck, lang },
     });
 
     // Use the language from the response (which reflects the actual presentation language)
@@ -426,7 +426,7 @@ export async function handleImportMarkdown({
 
     const created = await api('/api/presentations/import/markdown', {
       method: 'POST',
-      body: JSON.stringify({ markdown, lang, theme: themeId }),
+      body: { markdown, lang, theme: themeId },
     });
 
     const navLang = created?.lang || lang;
@@ -478,7 +478,7 @@ export async function handlePasteMarkdown({
 
     const created = await api('/api/presentations/import/markdown', {
       method: 'POST',
-      body: JSON.stringify({ markdown: raw, lang, theme: themeId }),
+      body: { markdown: raw, lang, theme: themeId },
     });
 
     const navLang = created?.lang || lang;
@@ -628,11 +628,11 @@ export async function handleNotion({
       );
       const result = await api('/api/notion/import', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           url: notionUrl,
           lang: 'auto',
           theme: themeId,
-        }),
+        },
       });
 
       if (result.success && result.presentation) {

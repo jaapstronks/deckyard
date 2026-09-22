@@ -211,7 +211,7 @@ export function openAiAppendWizard({
       const resp = await api('/api/ai/append-slides', {
         method: 'POST',
         signal: controller.signal,
-        body: JSON.stringify(requestBody),
+        body: requestBody,
       });
       const newSlides = Array.isArray(resp?.slides) ? resp.slides : [];
       if (!newSlides.length) {

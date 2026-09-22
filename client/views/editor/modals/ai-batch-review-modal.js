@@ -179,14 +179,14 @@ export function openAiBatchReviewModal({
     try {
       const resp = await api('/api/ai/append-slides', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           ...request,
           priorSlides: slides.map((s) => ({
             type: s.type,
             content: s.content,
           })),
           feedback,
-        }),
+        },
       });
       const next = Array.isArray(resp?.slides) ? resp.slides : [];
       if (!next.length) {

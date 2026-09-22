@@ -217,7 +217,7 @@ export async function doPublish({
 
   const pub = await api(`/api/presentations/${id}/publish`, {
     method: 'POST',
-    body: JSON.stringify({}),
+    body: {},
   });
 
   // RSS feed notice (non-blocking info toast, first publish only). After the

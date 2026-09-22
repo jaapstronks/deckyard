@@ -272,7 +272,7 @@ export function openVersionsModal({
       try {
         await api(`/api/presentations/${id}/versions`, {
           method: 'POST',
-          body: JSON.stringify({ label: label.trim() || undefined }),
+          body: { label: label.trim() || undefined },
         });
         await load();
         setStatus(t('editor.versions.savePointCreated', 'Save point created.'));

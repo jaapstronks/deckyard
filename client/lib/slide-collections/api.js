@@ -32,12 +32,12 @@ export function createCollectionsApi({ api }) {
   };
 
   const create = (shelf, data) =>
-    api(base(shelf), { method: 'POST', body: JSON.stringify(data || {}) });
+    api(base(shelf), { method: 'POST', body: data || {} });
 
   const update = (shelf, id, patch) =>
     api(`${base(shelf)}/${encodeURIComponent(id)}`, {
       method: 'PATCH',
-      body: JSON.stringify(patch || {}),
+      body: patch || {},
     });
 
   const remove = (shelf, id) =>

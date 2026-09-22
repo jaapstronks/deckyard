@@ -402,7 +402,7 @@ export function createExportTab({ user }) {
     try {
       const resp = await api('/api/bulk-export', {
         method: 'POST',
-        body: JSON.stringify(options),
+        body: options,
       });
 
       if (!resp?.ok) {

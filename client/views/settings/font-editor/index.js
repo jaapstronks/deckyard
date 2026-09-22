@@ -360,13 +360,13 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
       if (isEditing) {
         result = await api(`/api/font-families/${fontFamily.id}`, {
           method: 'PUT',
-          body: JSON.stringify(data),
+          body: data,
         });
       } else {
         data.source = state.source;
         result = await api('/api/font-families', {
           method: 'POST',
-          body: JSON.stringify(data),
+          body: data,
         });
       }
 

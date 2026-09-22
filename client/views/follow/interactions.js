@@ -159,7 +159,7 @@ export function createFollowInteractionController({
           )}/interactions/${encodeURIComponent(currentSlideId)}/vote`,
           {
             method: 'POST',
-            body: JSON.stringify({ optionIndex: idx }),
+            body: { optionIndex: idx },
           },
         );
         if (resp?.capabilities && onCapabilities)
@@ -213,7 +213,7 @@ export function createFollowInteractionController({
           )}/interactions/${encodeURIComponent(currentSlideId)}/feedback`,
           {
             method: 'POST',
-            body: JSON.stringify({ text: t }),
+            body: { text: t },
           },
         );
         if (resp?.capabilities && onCapabilities)

@@ -193,7 +193,7 @@ export function createSlideLockManager({
         `/api/presentations/${presentationId}/slides/${slideId}/lock`,
         {
           method: 'POST',
-          body: JSON.stringify({}),
+          body: {},
         },
       );
       if (resp?.ok) {
@@ -237,7 +237,7 @@ export function createSlideLockManager({
         `/api/presentations/${presentationId}/slides/${slideId}/lock`,
         {
           method: 'DELETE',
-          body: JSON.stringify({}),
+          body: {},
         },
       );
       // currentLockedSlideId is the caller's to clear: by the time a queued
@@ -265,7 +265,7 @@ export function createSlideLockManager({
         `/api/presentations/${presentationId}/slides/${slideId}/lock/refresh`,
         {
           method: 'POST',
-          body: JSON.stringify({}),
+          body: {},
         },
       );
       if (currentLockedSlideId !== slideId) return;
@@ -338,7 +338,7 @@ export function createSlideLockManager({
         `/api/presentations/${presentationId}/slide-locks/release-all`,
         {
           method: 'POST',
-          body: JSON.stringify({}),
+          body: {},
         },
       );
       currentLockedSlideId = null;

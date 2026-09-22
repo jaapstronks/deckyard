@@ -325,7 +325,7 @@ export function createSlideTypesTab({ user } = {}) {
     try {
       const res = await api('/api/custom-slide-types/reorder', {
         method: 'PUT',
-        body: JSON.stringify({ order: next.map((ct) => ct.id) }),
+        body: { order: next.map((ct) => ct.id) },
       });
       customTypes = res?.customSlideTypes || next;
       renderCustomTypesSection();
@@ -464,7 +464,7 @@ export function createSlideTypesTab({ user } = {}) {
     try {
       await api(`/api/custom-slide-types/${ct.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ isPublished: !ct.isPublished }),
+        body: { isPublished: !ct.isPublished },
       });
       toast.success(
         ct.isPublished
@@ -551,7 +551,7 @@ export function createSlideTypesTab({ user } = {}) {
         // stores imports as drafts, so nothing goes live without a review.
         await api('/api/custom-slide-types', {
           method: 'POST',
-          body: JSON.stringify({ ...def, slug }),
+          body: { ...def, slug },
         });
         toast.success(
           t(
@@ -638,7 +638,7 @@ export function createSlideTypesTab({ user } = {}) {
         if (slideType?.id) {
           await api(`/api/custom-slide-types/${slideType.id}`, {
             method: 'PUT',
-            body: JSON.stringify(data),
+            body: data,
           });
           toast.success(
             t('settings.slideTypes.updateSuccess', 'Slide type updated.'),
@@ -646,7 +646,7 @@ export function createSlideTypesTab({ user } = {}) {
         } else {
           await api('/api/custom-slide-types', {
             method: 'POST',
-            body: JSON.stringify(data),
+            body: data,
           });
           toast.success(
             t('settings.slideTypes.createSuccess', 'Slide type created.'),
@@ -678,7 +678,7 @@ export function createSlideTypesTab({ user } = {}) {
       try {
         await api('/api/settings/organization', {
           method: 'PATCH',
-          body: JSON.stringify({ disabledSlideTypes: [...disabledTypes] }),
+          body: { disabledSlideTypes: [...disabledTypes] },
         });
         toast.success(
           t('settings.slideTypes.saved', 'Slide type settings saved.'),

@@ -52,7 +52,7 @@ function makeManager({ pres, apiImpl, onRemoteMerge, selectedSlideId = 'b' }) {
 test('save without concurrent writes keeps local slides and adopts revision', async () => {
   const pres = makePres();
   const apiImpl = async (_path, opts) => {
-    const body = JSON.parse(opts.body);
+    const body = structuredClone(opts.body);
     return {
       ...body,
       revision: Number(opts.headers['If-Match']) + 1,
@@ -75,7 +75,7 @@ test("server-side merge: client adopts other editor's slides instead of going st
   const pres = makePres();
   let merged = null;
   const apiImpl = async (_path, opts) => {
-    const body = JSON.parse(opts.body);
+    const body = structuredClone(opts.body);
     // Simulate the server's slide-level merge: another editor already saved
     // revision 2 with a change to slide "a"; our If-Match 1 conflicts and the
     // server merges (their slide "a" + our slide "b") into revision 3.
@@ -125,7 +125,7 @@ test('edits made while a save is in flight stay tracked for the next save', asyn
   let call = 0;
   const apiImpl = async (_path, opts) => {
     sentModifiedHeaders.push(opts.headers['X-Modified-Slides'] || null);
-    const body = JSON.parse(opts.body);
+    const body = structuredClone(opts.body);
     call += 1;
     if (call === 1) {
       // Hold the first save open so a mid-flight edit can happen

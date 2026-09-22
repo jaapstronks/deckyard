@@ -501,7 +501,7 @@ export function createThemesTab({ user }) {
 
       const result = await api('/api/themes/custom', {
         method: 'POST',
-        body: JSON.stringify(newTheme),
+        body: newTheme,
       });
 
       toast.success(t('settings.themes.duplicateSuccess', 'Theme duplicated.'));
@@ -569,7 +569,7 @@ export function createThemesTab({ user }) {
           // Update existing
           await api(`/api/themes/custom/${theme.id}`, {
             method: 'PUT',
-            body: JSON.stringify(themeData),
+            body: themeData,
           });
           // Drop the cached copy (here and in other tabs) so decks on this
           // theme pick the change up without a reload.
@@ -579,7 +579,7 @@ export function createThemesTab({ user }) {
           // Create new
           await api('/api/themes/custom', {
             method: 'POST',
-            body: JSON.stringify(themeData),
+            body: themeData,
           });
           toast.success(t('settings.themes.createSuccess', 'Theme created.'));
         }

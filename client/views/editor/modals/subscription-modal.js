@@ -102,7 +102,7 @@ export async function openSubscriptionModal({ api, toast, presentationId }) {
           try {
             await api(`/api/presentations/${presentationId}/subscription`, {
               method: 'PUT',
-              body: JSON.stringify({ level: level.value }),
+              body: { level: level.value },
             });
             current = level.value;
             syncSelected();

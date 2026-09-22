@@ -43,11 +43,11 @@ export async function uploadFile(api, file) {
     // Presigned upload flow (S3-compatible object storage)
     const presign = await api('/api/media/presign', {
       method: 'POST',
-      body: JSON.stringify({
+      body: {
         filename: file.name,
         contentType: file.type,
         size: file.size,
-      }),
+      },
     });
 
     // Upload directly to storage provider
@@ -69,7 +69,7 @@ export async function uploadFile(api, file) {
     // Confirm the upload completed
     const confirm = await api('/api/media/confirm', {
       method: 'POST',
-      body: JSON.stringify({ key: presign.key }),
+      body: { key: presign.key },
     });
 
     if (!confirm.exists) {
@@ -83,7 +83,7 @@ export async function uploadFile(api, file) {
   const dataUrl = await readFileAsDataUrl(file);
   const saved = await api('/api/uploads', {
     method: 'POST',
-    body: JSON.stringify({ dataUrl, originalName: file.name }),
+    body: { dataUrl, originalName: file.name },
   });
   return { url: saved.url };
 }
@@ -256,14 +256,14 @@ export function createImageLibraryUpload({
             setStatus(t('imageLibrary.alt.generating', 'Generating alt text…'));
             const resp = await api('/api/image-library/generate-alts', {
               method: 'POST',
-              body: JSON.stringify({
+              body: {
                 url: newUrl,
                 description: inDescription.value || '',
                 tags: getTagsArray(),
                 photographer: inPhotographer.value || '',
                 langs: altInputs.langs,
                 context: context || null,
-              }),
+              },
             });
             altInputs.write(resp?.alts);
             setStatus(t('imageLibrary.alt.generated', 'Generated.'));
@@ -315,13 +315,13 @@ export function createImageLibraryUpload({
       try {
         const created = await api('/api/image-library', {
           method: 'POST',
-          body: JSON.stringify({
+          body: {
             url: newUrl,
             description: inDescription.value || '',
             tags: getTagsArray(),
             photographer: inPhotographer.value || '',
             alts: altInputs.read(),
-          }),
+          },
         });
         onItemCreated(created);
         setStatus(t('imageLibrary.added', 'Added.'));
@@ -356,14 +356,14 @@ export function createImageLibraryUpload({
               );
               const resp = await api('/api/image-library/generate-alts', {
                 method: 'POST',
-                body: JSON.stringify({
+                body: {
                   url: newUrl,
                   description: inDescription.value || '',
                   tags: getTagsArray(),
                   photographer: inPhotographer.value || '',
                   langs: altInputs.langs,
                   context: context || null,
-                }),
+                },
               });
               altInputs.write(resp?.alts);
               setStatus(t('imageLibrary.alt.generated', 'Generated.'));

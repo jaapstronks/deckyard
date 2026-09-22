@@ -133,14 +133,14 @@ export function createThemePreview() {
     try {
       const res = await api('/api/themes/custom/preview-config', {
         method: 'POST',
-        body: JSON.stringify({
+        body: {
           label: state?.label || '',
           logoUrl: state?.logoUrl || '',
           logoSmallUrl: state?.logoSmallUrl || '',
           colors: state?.colors || {},
           fonts: state?.fonts || {},
           config: state?.config || {},
-        }),
+        },
       });
       if (disposed || seq !== requestSeq) return;
       if (!res?.theme) throw new Error('no theme in response');

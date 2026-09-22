@@ -46,7 +46,7 @@ export async function handleNotionPublish({ api, toast, pres }) {
   try {
     const result = await api('/api/notion/publish', {
       method: 'POST',
-      body: JSON.stringify({ pageId: notionPageId, embedUrl, title, lang }),
+      body: { pageId: notionPageId, embedUrl, title, lang },
     });
     toast?.(
       result?.message ||
