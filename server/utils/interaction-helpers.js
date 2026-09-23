@@ -7,7 +7,10 @@ import {
   liveInteractionOptions,
   nonEmpty,
 } from '../../shared/slide-types/helpers.js';
-import { liveInteractionKind } from '../../shared/slide-types/runtime.js';
+import {
+  liveInteractionKind,
+  liveScale,
+} from '../../shared/slide-types/runtime.js';
 
 // `isInteractiveSlideType()` used to live here as a hard-coded list of four
 // type names — one of nine copies. It is now `isLiveSlideType()` in
@@ -52,25 +55,31 @@ export function questionFromSlide(slide) {
 }
 
 /**
- * Get likert slider option count (always 10 for slider)
- * @param {Object} _slide - Likert slider slide object (unused)
- * @returns {number} Always returns 10
+ * The number of stops on a declared scale: `min..max` inclusive.
+ * @param {{min: number, max: number}} scale
+ * @returns {number}
  */
-function likertSliderOptionCountFromSlide(_slide) {
-  return 10;
+function scaleStopCount(scale) {
+  return scale.max - scale.min + 1;
 }
 
 /**
- * Get slider-10 interaction data from a likert-slider slide
- * @param {Object} slide - Likert slider slide object
+ * Interaction data for a likert type that declares a `scale` (the slider): its
+ * options are the scale's stops, `min..max`, read from the declaration
+ * (`liveScale()`), so option `i` is the score `min + i`.
+ *
+ * @param {Object} slide - a slide of a type that declares a scale
+ * @param {{min: number, max: number}} scale - the type's `liveScale()`
  * @returns {Object} Interaction data with question, options, minLabel, maxLabel
  */
-export function slider10InteractionFromSlide(slide) {
+export function scaleInteractionFromSlide(slide, scale) {
   const c = getSlideContent(slide);
   const question = nonEmpty(c.question);
   const minLabel = nonEmpty(c.minLabel);
   const maxLabel = nonEmpty(c.maxLabel);
-  const options = Array.from({ length: 10 }, (_t, i) => String(i + 1));
+  const options = Array.from({ length: scaleStopCount(scale) }, (_t, i) =>
+    String(scale.min + i),
+  );
   return { question, options, minLabel, maxLabel };
 }
 
@@ -104,10 +113,10 @@ export function findSlideById(pres, slideId) {
 /**
  * Get option count for any live slide type
  *
- * Dispatches on the declared interaction kind, not on the type name. The one
- * remaining name check is `likert-slider-slide`'s: the slider asks for a point
- * on the same scale a likert slide does (same protocol kind), but its ten stops
- * are fixed by the widget rather than authored as options.
+ * Dispatches on declarations, not on the type name: the interaction kind says
+ * whether the slide collects a choice at all, and a likert type that declares
+ * a `scale` (the slider) answers with the scale's stops instead of authored
+ * options — same protocol kind, the stops come from the type.
  *
  * @param {string} slideType - The slide type
  * @param {Object} slide - The slide object
@@ -116,8 +125,8 @@ export function findSlideById(pres, slideId) {
 export function getOptionCountForSlide(slideType, slide) {
   if (!slide) return 0;
   const kind = liveInteractionKind(slideType);
-  if (kind === 'likert' && slideType === 'likert-slider-slide')
-    return likertSliderOptionCountFromSlide(slide);
+  const scale = liveScale(slideType);
+  if (scale) return scaleStopCount(scale);
   if (kind === 'likert' || kind === 'poll')
     return optionsFromSlide(slide).length;
   return 0;

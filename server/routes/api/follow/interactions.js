@@ -33,10 +33,13 @@ import {
   getOptionCountForSlide,
   optionsFromSlide,
   questionFromSlide,
-  slider10InteractionFromSlide,
+  scaleInteractionFromSlide,
   feedbackInteractionFromSlide,
 } from '../../../utils/interaction-helpers.js';
-import { liveInteractionKind } from '../../../../shared/slide-types/runtime.js';
+import {
+  liveInteractionKind,
+  liveScale,
+} from '../../../../shared/slide-types/runtime.js';
 
 export async function handleFollowInteractionsCurrent(
   { repoRoot, req, res, url },
@@ -90,11 +93,10 @@ export async function handleFollowInteractionsCurrent(
   }
 
   // The slider is the one thing the kind does not settle: same protocol kind
-  // as a likert slide, ten fixed stops instead of authored options.
-  const slider =
-    slideType === 'likert-slider-slide'
-      ? slider10InteractionFromSlide(slide)
-      : null;
+  // as a likert slide, but its stops come from the type's declared `scale`
+  // instead of authored options.
+  const scale = liveScale(slideType);
+  const slider = scale ? scaleInteractionFromSlide(slide, scale) : null;
   const feedback =
     type === 'feedback' ? feedbackInteractionFromSlide(slide) : null;
   // Poll and likert now carry the same `options[]` array (the live content
@@ -185,11 +187,13 @@ export async function handleFollowInteractionsCurrent(
           : { options }),
         ...(slider
           ? {
-              ui: 'slider-1-10',
+              // The range comes from the declaration too (`liveScale()`), so
+              // the wire cannot name a range the vote endpoint does not keep.
+              ui: 'slider',
               minLabel: slider.minLabel,
               maxLabel: slider.maxLabel,
-              scaleMin: 1,
-              scaleMax: 10,
+              scaleMin: scale.min,
+              scaleMax: scale.max,
             }
           : null),
       },
@@ -321,9 +325,12 @@ export async function handleFollowInteractionVote(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const optionIndex = Number(body?.optionIndex ?? NaN);
-  if (!Number.isFinite(optionIndex))
-    return badRequest(res, 'optionIndex must be a number');
+  // One shape on the wire: a JSON integer. The range is the storage layer's
+  // to judge (it holds the interaction's option count), and it refuses rather
+  // than clamps.
+  const optionIndex = body?.optionIndex;
+  if (!Number.isInteger(optionIndex))
+    return badRequest(res, 'optionIndex must be an integer');
 
   const result =
     type === 'likert'
@@ -348,7 +355,11 @@ export async function handleFollowInteractionVote(
           },
         );
   if (!result.ok) {
-    storageError(res, result, undefined, { headers: extraHeaders });
+    const message =
+      result.field === 'option_index'
+        ? `optionIndex must be between 0 and ${optionCount - 1}`
+        : undefined;
+    storageError(res, result, message, { headers: extraHeaders });
     return true;
   }
 

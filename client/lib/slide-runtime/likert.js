@@ -35,8 +35,19 @@ function svgEl(name, attrs = {}) {
   return el;
 }
 
+/**
+ * Draw the distribution hill over a likert slide's stops.
+ *
+ * `optionCount` is the length of the aggregate the server sent, which it sized
+ * from the slide (authored options, or the type's declared `scale` — see
+ * `liveScale()`), so the hill has no stop count of its own; it only needs two
+ * points to draw a line between.
+ *
+ * @param {HTMLElement} container
+ * @param {{optionCount?: number}} [opts]
+ */
 export function mountLikertHill(container, { optionCount = 5 } = {}) {
-  const n = clamp(Math.floor(Number(optionCount || 0) || 0), 2, 10);
+  const n = Math.max(2, Math.floor(Number(optionCount || 0) || 0));
   container.innerHTML = '';
 
   const W = 1000;

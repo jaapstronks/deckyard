@@ -8,8 +8,18 @@
 
 import { h } from '../../../lib/dom.js';
 
+/**
+ * The slider over a type's declared scale. `scale` is the type's
+ * `liveScale()`: the range, the end numbers and the index a score is sent as
+ * (score `min + i` is `optionIndex` `i`) all come from it.
+ *
+ * @param {object} opts
+ * @param {{min: number, max: number}} opts.scale
+ * @returns {HTMLElement}
+ */
 export function renderLikertSliderUi({
   interaction,
+  scale,
   myVote,
   open,
   busy,
@@ -23,9 +33,9 @@ export function renderLikertSliderUi({
       ? (copy?.likertSliderYourScore?.(n) ?? `Your score: ${n}`)
       : (copy?.likertSliderChooseScore?.(n) ?? `Choose a score: ${n}`);
 
-  const min = 1;
-  const max = 10;
-  const currentVal = myVote != null ? clamp0(myVote) + 1 : 5;
+  const { min, max } = scale;
+  const currentVal =
+    myVote != null ? clamp0(myVote) + min : Math.floor((min + max) / 2);
   const minLabel = String(interaction?.minLabel || '').trim();
   const maxLabel = String(interaction?.maxLabel || '').trim();
 
@@ -48,7 +58,7 @@ export function renderLikertSliderUi({
   const submitCurrent = () => {
     const v = Number(input.value ?? NaN);
     if (!Number.isFinite(v)) return;
-    vote?.(clamp0(v - 1));
+    vote?.(v - min);
   };
 
   input.addEventListener('input', () => {
@@ -94,13 +104,13 @@ export function renderLikertSliderUi({
 
   const labels = h('div', { class: 'follow-interaction-slider-labels' }, [
     h('div', { class: 'follow-interaction-slider-label' }, [
-      h('span', { class: 'follow-interaction-slider-num', text: '1' }),
+      h('span', { class: 'follow-interaction-slider-num', text: String(min) }),
       minLabel
         ? h('span', { class: 'follow-interaction-slider-text', text: minLabel })
         : null,
     ]),
     h('div', { class: 'follow-interaction-slider-label is-right' }, [
-      h('span', { class: 'follow-interaction-slider-num', text: '10' }),
+      h('span', { class: 'follow-interaction-slider-num', text: String(max) }),
       maxLabel
         ? h('span', { class: 'follow-interaction-slider-text', text: maxLabel })
         : null,
