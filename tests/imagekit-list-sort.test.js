@@ -7,7 +7,8 @@
  * photos uploaded in April were invisible behind the December import.
  *
  * These pin the URL the module builds: the default sort, a caller narrowing
- * it to another accepted value, and the refusal of anything else.
+ * it to another accepted value, and the refusal of anything else — a
+ * lower-case spelling included (D109: one spelling per value).
  *
  * Run with: node --test tests/imagekit-list-sort.test.js
  */
@@ -76,10 +77,22 @@ test('listImageKitFiles asks for the newest files by default', async () => {
 
 test('a caller may narrow the sort to another accepted value', async () => {
   stubFetch([]);
-  await listImageKitFiles({ sort: 'asc_name' });
+  await listImageKitFiles({ sort: 'ASC_NAME' });
 
   const params = new URL(requested[0]).searchParams;
   assert.equal(params.get('sort'), 'ASC_NAME');
+});
+
+test('a lower-case sort is the same 400 as an unknown one (D109)', async () => {
+  stubFetch([]);
+  await assert.rejects(
+    () => listImageKitFiles({ sort: 'asc_name' }),
+    (err) =>
+      err instanceof ValidationError &&
+      err.statusCode === 400 &&
+      /asc_name/.test(err.message),
+  );
+  assert.equal(requested.length, 0, 'no upstream call for a refused sort');
 });
 
 test('an unsupported sort is refused, not silently dropped', async () => {
