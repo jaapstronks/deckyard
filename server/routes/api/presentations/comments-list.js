@@ -143,7 +143,9 @@ export async function handlePresentationCommentEvents(
   });
   if (!pres) return true;
 
-  const stream = openSseStream(req, res);
+  const stream = openSseStream(req, res, {
+    onClose: () => removeClient(id, res),
+  });
   if (!stream.ok) return true;
 
   // Send initial connection confirmation
@@ -163,11 +165,6 @@ export async function handlePresentationCommentEvents(
   } catch {
     // Ignore initial counts error
   }
-
-  // Handle client disconnect
-  req.on('close', () => {
-    removeClient(id, res);
-  });
 
   // Keep connection open - don't end the response
   return true;

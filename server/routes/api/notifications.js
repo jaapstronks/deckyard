@@ -67,7 +67,9 @@ async function handleNotificationEvents({
 }) {
   const userEmail = authedUser.email;
 
-  const stream = openSseStream(req, res);
+  const stream = openSseStream(req, res, {
+    onClose: () => removeClient(userEmail, res),
+  });
   if (!stream.ok) return true;
 
   // Register client
@@ -76,11 +78,6 @@ async function handleNotificationEvents({
   // Send initial connection event with current unread count
   const unreadCount = await getUnreadCount(storageScope, userEmail);
   sseWrite(res, { event: 'connected', data: { unreadCount } });
-
-  // Clean up on client disconnect
-  req.on('close', () => {
-    removeClient(userEmail, res);
-  });
 
   // Keep the connection open (don't end response)
   return true;
