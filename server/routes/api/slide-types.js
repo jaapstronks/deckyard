@@ -49,6 +49,11 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // insertion policy hides them from the picker + AI. The client needs
       // the flag to enforce that, so it travels in the metadata.
       deprecated: def.deprecated === true ? true : undefined,
+      // `library: false` withholds the type from the slide library. The
+      // editor's Save-to-library action reads it off this response, so a fork
+      // type declaring it is only heard if the flag travels. See
+      // `isLibrarySlideType()` in shared/slide-types/policy.js.
+      library: def.library === false ? false : undefined,
       // The `structure` facet: what shape this type's content has
       // (singleton / collection / tabular / …). Spec-level and additive —
       // consumers that do not know the key ignore it, and the ones that do

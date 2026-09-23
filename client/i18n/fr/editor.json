@@ -714,7 +714,7 @@
   "editor.slideField.title.label": "Titre",
   "editor.slideField.titleBlockAlign.label": "Alignement du bloc de titre",
   "editor.slideLibrary.save": "Enregistrer dans la bibliothèque…",
-  "editor.slideLibrary.save.disabled": "L’invitation mode suivi n’a pas de contenu propre, il n’y a donc rien à enregistrer.",
+  "editor.slideLibrary.save.disabled": "Cette diapositive n’a pas de contenu propre, il n’y a donc rien à enregistrer.",
   "editor.slideLibrary.save.title": "Enregistrer cette diapositive pour la réutiliser plus tard.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Cette diapositive a du contenu en néerlandais et en anglais. Les deux versions seront enregistrées.",
   "editor.slideLibrary.saveModal.descriptionHint": "Facultatif. Vous aide à retrouver cette diapositive plus tard.",

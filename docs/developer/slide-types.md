@@ -444,6 +444,28 @@ offered. This is what keeps "deliberately withheld" distinguishable from
 by absence, and therefore not at all. The reader is
 `isAgentOptOut()` in `server/utils/ai/slide-catalog/agent-catalog.js`.
 
+### Withholding a type from the slide library
+
+Every type can be saved to the slide library unless it declares otherwise. A
+type with no content of its own, whose slide would arrive on the shelf empty,
+says so with `library: false`:
+
+```javascript
+export default {
+  label: 'Follow-along invite',
+  // The join code and language come from the render context, so a library
+  // copy would carry nothing worth reusing.
+  library: false,
+  // …
+};
+```
+
+`false` is the only value; anything else is a validator warning and is
+ignored. The reader is `isLibrarySlideType()` in `shared/slide-types/policy.js`,
+and both sides ask it: the editor disables "Save to slide library…" (the flag
+travels on `/api/slide-types`), and the library create routes refuse the type
+with 400 `invalid`, field `slideType`.
+
 ### The agent-facing schema is derived — and so is withholding a _field_
 
 An `ai` block carries prose only: `description`, `bestFor`, `notFor`,

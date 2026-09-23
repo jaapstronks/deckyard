@@ -727,7 +727,7 @@
   "editor.slideField.title.label": "Titel",
   "editor.slideField.titleBlockAlign.label": "Justering av titelblock",
   "editor.slideLibrary.save": "Spara till slide-bibliotek…",
-  "editor.slideLibrary.save.disabled": "Följ-med-inbjudan har inget eget innehåll, så det finns inget att spara.",
+  "editor.slideLibrary.save.disabled": "Den här bilden har inget eget innehåll, så det finns inget att spara.",
   "editor.slideLibrary.save.title": "Spara denna slide så du kan återanvända den senare.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Den här sliden har innehåll på både nederländska och engelska. Båda versionerna sparas.",
   "editor.slideLibrary.saveModal.description": "Beskrivning",

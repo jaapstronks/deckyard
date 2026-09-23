@@ -801,7 +801,7 @@
   "editor.slideField.title.label": "Titel",
   "editor.slideField.titleBlockAlign.label": "Uitlijning titelblok",
   "editor.slideLibrary.save": "Bewaar in slide-bibliotheek…",
-  "editor.slideLibrary.save.disabled": "De Follow-along invite heeft geen eigen inhoud, dus er valt niets te bewaren.",
+  "editor.slideLibrary.save.disabled": "Deze slide heeft geen eigen inhoud, dus er valt niets te bewaren.",
   "editor.slideLibrary.save.title": "Bewaar deze slide zodat je hem later opnieuw kunt gebruiken.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Deze slide heeft inhoud in zowel Nederlands als Engels. Beide versies worden bewaard.",
   "editor.slideLibrary.saveModal.description": "Omschrijving",

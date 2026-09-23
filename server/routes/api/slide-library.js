@@ -41,6 +41,8 @@ import {
 } from '../../utils/route-middleware.js';
 import { parseIfMatchRevision } from './presentations/helpers.js';
 import { sharingEnabled } from '../../config/sandbox.js';
+import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
+import { isLibrarySlideType } from '../../../shared/slide-types/policy.js';
 import { assertSharingEnabled } from '../../sandbox/sharing.js';
 const log = createLogger('slide-library');
 
@@ -106,6 +108,31 @@ function customHtmlViolation(authedUser, prev, slideType, nextContents) {
     if (violation) return violation;
   }
   return null;
+}
+
+/**
+ * Refuse a create for a type that declares `library: false` (B401): the same
+ * predicate the editor's Save-to-library action reads, so the API cannot put
+ * on a shelf what the UI withholds. Resolved against the organization's
+ * registry, like every write surface. Answers itself and returns true on a
+ * refusal (400 `invalid`, field `slideType`).
+ *
+ * @param {object} storageScope
+ * @param {import('node:http').ServerResponse} res
+ * @param {unknown} slideType
+ * @returns {Promise<boolean>}
+ */
+async function refuseNonLibraryType(storageScope, res, slideType) {
+  const type = typeof slideType === 'string' ? slideType.trim() : '';
+  if (!type) return false;
+  const slideTypes = await buildMergedSlideTypes(storageScope);
+  if (isLibrarySlideType(slideTypes[type])) return false;
+  mutationError(res, {
+    reason: 'invalid',
+    field: 'slideType',
+    message: `"${type}" has no content of its own and cannot be saved to the slide library`,
+  });
+  return true;
 }
 
 /** Every content object a create body carries: the base and each language version. */
@@ -200,6 +227,9 @@ async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  if (await refuseNonLibraryType(storageScope, res, body?.slideType)) {
+    return true;
+  }
   const violation = customHtmlViolation(
     authedUser,
     null,
@@ -287,6 +317,9 @@ async function handleOrganizationCreate({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  if (await refuseNonLibraryType(storageScope, res, body?.slideType)) {
+    return true;
+  }
   const violation = customHtmlViolation(
     authedUser,
     null,

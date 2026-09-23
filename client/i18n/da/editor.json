@@ -720,7 +720,7 @@
   "editor.slideField.title.label": "Titel",
   "editor.slideField.titleBlockAlign.label": "Justering af titelblok",
   "editor.slideLibrary.save": "Gem til slide-bibliotek…",
-  "editor.slideLibrary.save.disabled": "Følg-med-invitationen har intet eget indhold, så der er ikke noget at gemme.",
+  "editor.slideLibrary.save.disabled": "Dette slide har intet eget indhold, så der er ikke noget at gemme.",
   "editor.slideLibrary.save.title": "Gem denne slide så du kan genbruge den senere.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Denne slide har indhold på både hollandsk og engelsk. Begge versioner gemmes.",
   "editor.slideLibrary.saveModal.description": "Beskrivelse",
