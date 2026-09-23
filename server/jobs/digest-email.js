@@ -17,6 +17,7 @@ import {
 import {
   sendWeeklyDigestEmail,
   sendTeamDigestEmail,
+  resolveRecipientLocale,
 } from '../integrations/brevo.js';
 import { getAppSettings, listDigestRecipients } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
@@ -135,10 +136,11 @@ async function processUserDigest(user, repoRoot) {
     return false;
   }
 
-  // Generate digest content
+  // Generate digest content, in the language the recipient reads (B400)
   const digest = await generateDigestWithAI(
     { email: user.email, name: analytics.userName },
     analytics,
+    await resolveRecipientLocale({ repoRoot, email: user.email }),
   );
 
   // Send email
@@ -186,6 +188,7 @@ async function processTeamDigest(admin, repoRoot) {
   const digest = await generateTeamDigestWithAI(
     { email: admin.email, name: admin.email.split('@')[0] },
     teamAnalytics,
+    await resolveRecipientLocale({ repoRoot, email: admin.email }),
   );
 
   // Send email

@@ -209,16 +209,22 @@ Honest gaps:
   route, the magic-link route and the bulk-export worker hand its answer to
   their sender. The senders that are left still fall back to their
   `locale = 'en'` default, so an invitation, a collaborator invite, a guest
-  verification, a comment notification and a digest go out in English
+  verification and a comment notification go out in English
   regardless of the recipient — and the instance default locale an admin sets
   in the panel governs template _editing_, not what is sent. Those are **two**
   groups, not one: an invitation or guest verification reaches an address with
   no account, so there is no `uiLocale` to read and the instance default is
-  the answer; the two digests reach an account holder, so for them this is the
-  same question with a different answer. The digests need more than a
-  hand-off: they have no `locale` parameter at all, and their body is
-  AI-generated prose, so translating their chrome alone would half-translate
-  the mail (B390).
+  the answer.
+
+- **The two digests carry their language on the digest itself** (B390). The
+  digest job resolves the recipient's locale once through
+  `resolveRecipientLocale()`; `generateDigestWithAI` and
+  `generateTeamDigestWithAI` require it, tell the model to write every field
+  in that language, render the template fallbacks and the analytics insights
+  (from their `type` and `data`, never their English `text`) through the
+  translator, and stamp it on `digest.locale`. The digest senders render the
+  chrome in `digest.locale` and refuse a digest that names none, so prose and
+  frame cannot disagree.
 
 - **The export mail and the two digests have no admin-customizable
   template.** `senders-export.js` renders a bespoke stats table through
