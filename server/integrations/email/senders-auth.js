@@ -10,21 +10,25 @@ import {
   buildMagicLinkEmail,
 } from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
+import { resolveRecipientLocale } from './recipient-locale.js';
 import { trySendCustomTemplate } from './template-builder.js';
 
 /**
  * Send a password reset email.
  * @param {Object} options
- * @param {string} [options.repoRoot] - Repository root for custom template and sender resolution
+ * @param {string} [options.repoRoot] - Repository root for custom template, sender and recipient-language resolution
  */
 export async function sendPasswordResetEmail({
   recipientEmail,
   recipientName,
   resetUrl,
   expiresAt,
-  locale = 'en',
   repoRoot = null,
 }) {
+  const locale = await resolveRecipientLocale({
+    repoRoot,
+    email: recipientEmail,
+  });
   const tr = createTranslator(locale);
   const name = recipientName || 'there';
 
@@ -64,7 +68,7 @@ export async function sendPasswordResetEmail({
 /**
  * Send a user invitation email.
  * @param {Object} options
- * @param {string} [options.repoRoot] - Repository root for custom template and sender resolution
+ * @param {string} [options.repoRoot] - Repository root for custom template, sender and recipient-language resolution
  */
 export async function sendUserInvitationEmail({
   recipientEmail,
@@ -72,9 +76,12 @@ export async function sendUserInvitationEmail({
   invitedBy,
   setupUrl,
   expiresAt,
-  locale = 'en',
   repoRoot = null,
 }) {
+  const locale = await resolveRecipientLocale({
+    repoRoot,
+    email: recipientEmail,
+  });
   const tr = createTranslator(locale);
   const name = recipientName || 'there';
   const inviter = invitedBy || 'An administrator';
@@ -119,16 +126,19 @@ export async function sendUserInvitationEmail({
 /**
  * Send an activation reminder email (for users who haven't completed account setup).
  * @param {Object} options
- * @param {string} [options.repoRoot] - Repository root for custom template and sender resolution
+ * @param {string} [options.repoRoot] - Repository root for custom template, sender and recipient-language resolution
  */
 export async function sendActivationReminderEmail({
   recipientEmail,
   recipientName,
   invitedBy,
   setupUrl,
-  locale = 'en',
   repoRoot = null,
 }) {
+  const locale = await resolveRecipientLocale({
+    repoRoot,
+    email: recipientEmail,
+  });
   const tr = createTranslator(locale);
   const name = recipientName || 'there';
   const inviter = invitedBy || 'An administrator';
@@ -173,7 +183,7 @@ export async function sendActivationReminderEmail({
 /**
  * Send a magic link email for passwordless login.
  * @param {Object} options
- * @param {string} [options.repoRoot] - Repository root for custom template and sender resolution
+ * @param {string} [options.repoRoot] - Repository root for custom template, sender and recipient-language resolution
  */
 export async function sendMagicLinkEmail({
   recipientEmail,
@@ -181,9 +191,12 @@ export async function sendMagicLinkEmail({
   expiresAt,
   hasPassword = true,
   loginUrl = '',
-  locale = 'en',
   repoRoot = null,
 }) {
+  const locale = await resolveRecipientLocale({
+    repoRoot,
+    email: recipientEmail,
+  });
   const tr = createTranslator(locale);
 
   // Get sender identity from settings

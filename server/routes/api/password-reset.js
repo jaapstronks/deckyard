@@ -26,10 +26,7 @@ import { getString, getTrimmedString } from '../../utils/request-validators.js';
 import { t } from '../../i18n/index.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import {
-  sendPasswordResetEmail,
-  resolveRecipientLocale,
-} from '../../integrations/email/index.js';
+import { sendPasswordResetEmail } from '../../integrations/email/index.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { createLogger } from '../../utils/logger.js';
 import {
@@ -181,23 +178,17 @@ async function handleForgotPassword({ repoRoot, req, res }) {
       const resetUrl = buildResetUrl(req, result.token);
 
       // Send email (fire and forget - don't block on email delivery).
-      // The locale is the recipient's own: this branch only runs for an
-      // address that has an account, and the response above is identical
-      // either way, so reading their preference tells the requester nothing.
-      resolveRecipientLocale({ repoRoot, email })
-        .then((locale) =>
-          sendPasswordResetEmail({
-            recipientEmail: email,
-            resetUrl,
-            expiresAt: result.expiresAt,
-            locale,
-            repoRoot,
-          }),
-        )
-        .catch((err) => {
-          // eslint-disable-next-line no-console
-          log.error('[password-reset] Failed to send email:', err);
-        });
+      // The sender writes it in the recipient's own language; the response
+      // above is identical either way, so that tells the requester nothing.
+      sendPasswordResetEmail({
+        recipientEmail: email,
+        resetUrl,
+        expiresAt: result.expiresAt,
+        repoRoot,
+      }).catch((err) => {
+        // eslint-disable-next-line no-console
+        log.error('[password-reset] Failed to send email:', err);
+      });
     }
   }
 

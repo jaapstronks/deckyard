@@ -251,7 +251,7 @@
   "settings.admin.emailSender.name": "Nome",
   "settings.admin.emailSender.title": "Identità Mittente Email",
   "settings.admin.emailTemplates.customized": "Personalizzato",
-  "settings.admin.emailTemplates.defaultLocale": "Lingua predefinita per gli inviti ai nuovi utenti:",
+  "settings.admin.emailTemplates.defaultLocale": "Lingua predefinita delle email a chi non ha una preferenza di lingua:",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Lingua predefinita aggiornata.",
   "settings.admin.emailTemplates.fieldCustomized": "Usando valore personalizzato",
   "settings.admin.emailTemplates.fieldDefault": "Usando predefinito (digita per personalizzare)",

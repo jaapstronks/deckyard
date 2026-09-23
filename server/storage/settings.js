@@ -804,17 +804,42 @@ export async function getUserSettings(scope, email) {
 }
 
 /**
- * Read and normalize one person's settings, given their already-resolved keys.
+ * The interface language a person stored themselves, or null when they never
+ * stored one.
  *
- * Split out of {@link getUserSettings} so {@link writeUserSettings} can reuse
- * it without resolving the identity a second time.
+ * {@link getUserSettings} cannot answer this: it fills a missing `uiLocale`
+ * with the default, so "chose English" and "chose nothing" read the same.
+ * Outgoing mail needs the difference — a recipient without a preference gets
+ * the install's mail default instead (`resolveRecipientLocale()`).
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {string} email
+ * @returns {Promise<string|null>} A normalized locale tag, or null.
+ */
+export async function getStoredUiLocale(scope, email) {
+  toStorageContext(
+    scope,
+    'getStoredUiLocale',
+    {},
+    { allowCrossOrganization: true },
+  );
+  const key = userEmailKey(email);
+  const raw = await readStoredUserSettings(
+    key,
+    await resolveSettingsUserId(key),
+  );
+  return normalizeUiLocale(raw?.uiLocale);
+}
+
+/**
+ * The stored settings object for one person, unnormalized, or null.
  *
  * @param {string} key - The normalized `user_settings.email` key.
  * @param {string|null} userId - The resolved `users.id`, or null when external.
- * @returns {Promise<Object>} The normalized settings object.
+ * @returns {Promise<Object|null>}
  */
-async function loadUserSettings(key, userId) {
-  const raw = await withDbGuard(null, async (db) => {
+async function readStoredUserSettings(key, userId) {
+  return withDbGuard(null, async (db) => {
     // The stable id leads: after a rename the row still carries the old
     // address in its `email` column until the next write re-stamps it, so an
     // e-mail-first read would miss it and hand the person a fresh default set.
@@ -836,6 +861,20 @@ async function loadUserSettings(key, userId) {
       .executeTakeFirst();
     return row?.settings ?? null;
   });
+}
+
+/**
+ * Read and normalize one person's settings, given their already-resolved keys.
+ *
+ * Split out of {@link getUserSettings} so {@link writeUserSettings} can reuse
+ * it without resolving the identity a second time.
+ *
+ * @param {string} key - The normalized `user_settings.email` key.
+ * @param {string|null} userId - The resolved `users.id`, or null when external.
+ * @returns {Promise<Object>} The normalized settings object.
+ */
+async function loadUserSettings(key, userId) {
+  const raw = await readStoredUserSettings(key, userId);
   const obj = raw && typeof raw === 'object' ? raw : {};
   const defaults = defaultUserSettings();
   const profile =

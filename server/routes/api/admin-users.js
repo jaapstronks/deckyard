@@ -30,7 +30,6 @@ import {
   resendInvitation,
 } from '../../storage/users.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
-import { getEmailDefaultLocale } from '../../storage/email-templates.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import {
   getMembershipByEmail,
@@ -208,16 +207,12 @@ async function handleAdminUserCreate({
   if (sendInvitation && result.invitationToken) {
     const setupUrl = buildSetupUrl(req, result.invitationToken);
 
-    // Get default locale for invitations
-    const locale = await getEmailDefaultLocale(ctx).catch(() => 'en');
-
     const sendResult = await sendUserInvitationEmail({
       recipientEmail: email,
       recipientName: name,
       invitedBy: user.name || user.email,
       setupUrl,
       expiresAt: result.invitationExpiresAt,
-      locale,
       repoRoot,
     }).catch((err) => {
       log.error('[admin-users] Failed to send invitation email:', err);
@@ -360,16 +355,12 @@ async function handleAdminUserResendInvitation(
   if (targetUser && result.invitationToken) {
     const setupUrl = buildSetupUrl(req, result.invitationToken);
 
-    // Get default locale for invitations
-    const locale = await getEmailDefaultLocale(ctx).catch(() => 'en');
-
     // Use activation reminder template since this is a resend
     const sendResult = await sendActivationReminderEmail({
       recipientEmail: targetUser.email,
       recipientName: targetUser.name,
       invitedBy: user.name || user.email,
       setupUrl,
-      locale,
       repoRoot,
     }).catch((err) => {
       log.error('[admin-users] Failed to send activation reminder email:', err);

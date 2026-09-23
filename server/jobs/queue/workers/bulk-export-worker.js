@@ -179,17 +179,12 @@ export async function sendExportNotifications({
   try {
     const { sendExportReadyNotification } =
       await import('../../../integrations/email/senders-export.js');
-    const { resolveRecipientLocale } =
-      await import('../../../integrations/email/recipient-locale.js');
-    // The recipient is the account holder who asked for this export, so the
-    // mail is written in the language they set — the same answer reset and
-    // magic-link mail give for the same person (B389).
-    const locale = await resolveRecipientLocale({ repoRoot, email: userEmail });
+    // Written in the language the account holder set; the sender resolves it
+    // (B389, B400).
     await sendExportReadyNotification({
       recipientEmail: userEmail,
       stats,
       downloadUrl,
-      locale,
       repoRoot,
     });
   } catch (err) {

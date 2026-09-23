@@ -256,7 +256,7 @@
   "settings.admin.emailSender.name": "Nazwa",
   "settings.admin.emailSender.title": "Tożsamość Nadawcy E-mail",
   "settings.admin.emailTemplates.customized": "Dostosowane",
-  "settings.admin.emailTemplates.defaultLocale": "Domyślny język dla zaproszeń nowych użytkowników:",
+  "settings.admin.emailTemplates.defaultLocale": "Domyślny język wiadomości do osób bez preferencji językowej:",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Domyślny język zaktualizowany.",
   "settings.admin.emailTemplates.fieldCustomized": "Używa wartości niestandardowej",
   "settings.admin.emailTemplates.fieldDefault": "Używa domyślnej (wpisz, aby dostosować)",

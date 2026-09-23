@@ -245,7 +245,7 @@
   "settings.admin.emailSender.name": "Navn",
   "settings.admin.emailSender.title": "E-mail afsender identitet",
   "settings.admin.emailTemplates.customized": "Tilpasset",
-  "settings.admin.emailTemplates.defaultLocale": "Standardsprog for invitationer til nye brugere:",
+  "settings.admin.emailTemplates.defaultLocale": "Standardsprog for mails til personer uden sprogpræference:",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Standardsproget er opdateret.",
   "settings.admin.emailTemplates.fieldCustomized": "Bruger en tilpasset værdi",
   "settings.admin.emailTemplates.fieldDefault": "Bruger standarden (skriv for at tilpasse)",
