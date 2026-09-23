@@ -424,11 +424,6 @@
       "count": 1
     }
   },
-  "client/views/editor/publish-export/publish-modal.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "client/views/editor/publish-export/publish.js": {
     "no-restricted-syntax": {
       "count": 1
