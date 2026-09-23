@@ -164,8 +164,10 @@ test('the scan actually finds the known detail-carrying throws', () => {
     `expected the server to build several literal payloads, got ${LITERALS.length}`,
   );
   assert.ok(
-    LITERALS.some((h) => h.keys.includes('conflictingSlides')),
-    'sanity: the slide-merge conflict payload is one of them',
+    LITERALS.some(
+      (h) => h.cls === 'ConflictError' && h.keys.includes('updatedBy'),
+    ),
+    'sanity: the revision-conflict payload (revisionConflict()) is one of them',
   );
 });
 

@@ -204,6 +204,29 @@ describe('updatePresentation — stale-tab guards', () => {
   const loadDoc = async () =>
     structuredClone(await getPresentation(testScope(), deckId));
 
+  /**
+   * Every stale-`If-Match` 409 carries one payload (B217): the stored copy it
+   * lost against, with `updatedBy` as the D22 display pair of the last writer,
+   * and `conflictingSlides` only when the slide-level merge is what failed.
+   */
+  const assertConflictPayload = async (save, { conflictingSlides } = {}) => {
+    const e = await save.then(
+      () => assert.fail('expected a 409'),
+      (err) => err,
+    );
+    assert.equal(e.statusCode, 409);
+    const stored = await getPresentation(testScope(), deckId);
+    const expected = {
+      id: deckId,
+      revision: stored.revision,
+      modified: stored.modified,
+      updatedBy: stored.updatedBy,
+    };
+    if (conflictingSlides) expected.conflictingSlides = conflictingSlides;
+    assert.deepStrictEqual(e.details, expected);
+    assert.equal(e.details.updatedBy.displayName, 'Other');
+  };
+
   /** Keep the active i18n buffer in sync with top-level slides, like the client does. */
   const syncI18n = (doc) => {
     const active = doc?.i18n?.active;
@@ -248,18 +271,14 @@ describe('updatePresentation — stale-tab guards', () => {
     // The stale tab wakes up and autosaves its old copy with its own X edit.
     setTitle(staleTab, X, 'X stale edit');
     syncI18n(staleTab);
-    await assert.rejects(
+    await assertConflictPayload(
       updatePresentation(testScope(), deckId, staleTab, {
         expectedRevision: staleTab.revision,
         modifiedSlideIds: [X],
         slideBaseFingerprints: staleFingerprints,
         actorEmail: 'stale@example.com',
       }),
-      (e) => {
-        assert.equal(e.statusCode, 409);
-        assert.deepEqual(e.details?.conflictingSlides, [X]);
-        return true;
-      },
+      { conflictingSlides: [X] },
     );
 
     // Server state is untouched: other user's work survived.
@@ -314,7 +333,7 @@ describe('updatePresentation — stale-tab guards', () => {
 
     setTitle(staleTab, W, 'W stale edit');
     syncI18n(staleTab);
-    await assert.rejects(
+    await assertConflictPayload(
       updatePresentation(testScope(), deckId, staleTab, {
         expectedRevision: staleTab.revision,
         modifiedSlideIds: [W],
@@ -323,7 +342,27 @@ describe('updatePresentation — stale-tab guards', () => {
         },
         actorEmail: 'stale@example.com',
       }),
-      (e) => Number(e.statusCode) === 409,
+    );
+  });
+
+  it('a stale save without modifiedSlideIds gets the same plain 409 payload', async () => {
+    const base = await resetDeck([mkSlide(X, 'X v1')]);
+    const staleTab = structuredClone(base);
+
+    const other = await loadDoc();
+    setTitle(other, X, 'X v2 by other');
+    syncI18n(other);
+    await updatePresentation(testScope(), deckId, other, {
+      actorEmail: 'other@example.com',
+    });
+
+    setTitle(staleTab, X, 'X stale edit');
+    syncI18n(staleTab);
+    await assertConflictPayload(
+      updatePresentation(testScope(), deckId, staleTab, {
+        expectedRevision: staleTab.revision,
+        actorEmail: 'stale@example.com',
+      }),
     );
   });
 });

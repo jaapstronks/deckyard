@@ -27,7 +27,7 @@ import {
 import { nowIso } from '../utils/normalize.js';
 import { migrateLibraryItem } from '../../shared/slide-types/schema-version.js';
 import { mergeLibraryI18n } from '../../shared/slide-library/merge-content.js';
-import { ConflictError } from '../utils/errors.js';
+import { revisionConflict } from '../utils/errors.js';
 import { replaceTagLinks } from './tags.js';
 
 /**
@@ -302,14 +302,9 @@ export function libraryPatchViolation(patch) {
 }
 
 function conflictError(item) {
-  return new ConflictError(
+  return revisionConflict(
     'Conflict: this library slide was changed by someone else. Reload and try again.',
-    {
-      id: item.id,
-      revision: item.revision,
-      modified: item.updatedAt,
-      updatedBy: item.updatedBy || null,
-    },
+    { ...item, modified: item.updatedAt },
   );
 }
 
