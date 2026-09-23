@@ -18,15 +18,14 @@ function ifMatch(item) {
 }
 
 /**
- * The tag names of a library item. The list routes attach tags as
- * `{id, name}` objects; a bare string is read the same way, as everywhere
- * else the client reads tags.
- * @param {{tags?: Array<{name?: string}|string>}} item
+ * The tag names of a library item. A tag is `{id, name}` wherever the
+ * server returns one (B402).
+ * @param {{tags?: Array<{id: string, name: string}>}} item
  * @returns {string[]}
  */
 function tagNamesOf(item) {
   const tags = Array.isArray(item?.tags) ? item.tags : [];
-  return tags.map((tag) => cleanStr(tag?.name ?? tag)).filter(Boolean);
+  return tags.map((tag) => cleanStr(tag?.name)).filter(Boolean);
 }
 
 /**

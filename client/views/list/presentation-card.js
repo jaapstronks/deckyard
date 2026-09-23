@@ -536,7 +536,7 @@ export function createCardRenderer({
               .map((tag) =>
                 h('span', {
                   class: 'presentation-tag',
-                  text: typeof tag === 'string' ? tag : tag.name,
+                  text: tag.name,
                 }),
               )
               .concat(

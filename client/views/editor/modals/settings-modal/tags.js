@@ -28,7 +28,7 @@ export function buildTagsSection({ pres, api }) {
   wrap.append(label);
 
   const initialTags = Array.isArray(pres.tags)
-    ? pres.tags.map((tag) => (typeof tag === 'string' ? tag : tag.name))
+    ? pres.tags.map((tag) => tag.name)
     : [];
 
   // Saving happens on every change, with no Save button to sit beside, so a

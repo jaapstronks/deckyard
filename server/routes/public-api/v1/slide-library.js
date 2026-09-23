@@ -29,6 +29,8 @@ import { getNonNegativeNumber } from '../../../utils/request-validators.js';
 
 /**
  * Sanitize a library item for API response.
+ * @param {object} item
+ * @param {Array<{id: string, name: string}>} [tags]
  */
 function sanitizeLibraryItem(item, tags = []) {
   if (!item) return null;
