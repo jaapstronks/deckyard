@@ -240,7 +240,7 @@
   "settings.admin.emailSender.hint": "Absenderadresse für System-E-Mails. Fällt auf Umgebungsvariablen zurück, wenn leer.",
   "settings.admin.emailSender.title": "E-Mail-Absender Identität",
   "settings.admin.emailTemplates.customized": "Angepasst",
-  "settings.admin.emailTemplates.defaultLocale": "Standardsprache für neue Benutzereinladungen:",
+  "settings.admin.emailTemplates.defaultLocale": "Standardsprache für E-Mails an Personen ohne Sprachpräferenz:",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Standardsprache aktualisiert.",
   "settings.admin.emailTemplates.fieldCustomized": "Eigener Wert wird verwendet",
   "settings.admin.emailTemplates.fieldDefault": "Standard wird verwendet (zum Anpassen tippen)",

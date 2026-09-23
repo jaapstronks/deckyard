@@ -258,7 +258,7 @@
   "settings.admin.emailSender.name": "Nimi",
   "settings.admin.emailSender.title": "Sähköpostin Lähettäjän Identiteetti",
   "settings.admin.emailTemplates.customized": "Mukautettu",
-  "settings.admin.emailTemplates.defaultLocale": "Oletuskieli uusien käyttäjien kutsuille:",
+  "settings.admin.emailTemplates.defaultLocale": "Oletuskieli sähköposteille henkilöille, joilla ei ole kieliasetusta:",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Oletuskieli päivitetty.",
   "settings.admin.emailTemplates.fieldCustomized": "Käyttää mukautettua arvoa",
   "settings.admin.emailTemplates.fieldDefault": "Käyttää oletusarvoa (mukauta kirjoittamalla tähän)",

@@ -250,7 +250,7 @@
   "settings.admin.emailSender.name": "Nom",
   "settings.admin.emailSender.title": "Identité de l'expéditeur",
   "settings.admin.emailTemplates.customized": "Personnalisé",
-  "settings.admin.emailTemplates.defaultLocale": "Langue par défaut des invitations de nouveaux utilisateurs :",
+  "settings.admin.emailTemplates.defaultLocale": "Langue par défaut des e-mails aux personnes sans préférence de langue :",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Langue par défaut mise à jour.",
   "settings.admin.emailTemplates.fieldCustomized": "Valeur personnalisée utilisée",
   "settings.admin.emailTemplates.fieldDefault": "Valeur par défaut utilisée (tapez pour personnaliser)",

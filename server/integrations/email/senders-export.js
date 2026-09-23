@@ -5,6 +5,7 @@
 import { createTranslator } from '../../i18n/index.js';
 import { buildExportReadyEmail } from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
+import { resolveRecipientLocale } from './recipient-locale.js';
 
 /**
  * Send an export-ready notification email.
@@ -13,17 +14,19 @@ import { sendEmail, getSenderIdentity } from './core.js';
  * @param {string} [options.recipientName] - Recipient name
  * @param {Object} options.stats - Export stats
  * @param {string} options.downloadUrl - Download URL (relative, will be made absolute)
- * @param {string} [options.locale='en'] - Locale for translations
- * @param {string} [options.repoRoot] - Repository root for custom template and sender resolution
+ * @param {string} [options.repoRoot] - Repository root for custom template, sender and recipient-language resolution
  */
 export async function sendExportReadyNotification({
   recipientEmail,
   recipientName,
   stats,
   downloadUrl,
-  locale = 'en',
   repoRoot = null,
 }) {
+  const locale = await resolveRecipientLocale({
+    repoRoot,
+    email: recipientEmail,
+  });
   const tr = createTranslator(locale);
 
   // Get sender identity from settings

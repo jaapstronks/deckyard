@@ -58,7 +58,7 @@ export function createEmailTemplatesPanel({ user }) {
   const defaultLocaleLabel = h('label', {
     text: t(
       'settings.admin.emailTemplates.defaultLocale',
-      'Default language for new user invitations:',
+      'Default language for mail to people without a language preference:',
     ),
     style: 'font-weight: 500;',
   });

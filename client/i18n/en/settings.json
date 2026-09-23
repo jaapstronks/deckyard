@@ -269,7 +269,7 @@
   "settings.admin.emailSender.name": "Name",
   "settings.admin.emailSender.title": "Email Sender Identity",
   "settings.admin.emailTemplates.customized": "Customized",
-  "settings.admin.emailTemplates.defaultLocale": "Default language for new user invitations:",
+  "settings.admin.emailTemplates.defaultLocale": "Default language for mail to people without a language preference:",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Default language updated.",
   "settings.admin.emailTemplates.fieldCustomized": "Using custom value",
   "settings.admin.emailTemplates.fieldDefault": "Using default (type to customize)",

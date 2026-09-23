@@ -10,12 +10,13 @@ import {
   buildGuestInvitationEmail,
 } from '../email-templates/index.js';
 import { sendEmail, getSenderIdentity } from './core.js';
+import { resolveRecipientLocale } from './recipient-locale.js';
 import { trySendCustomTemplate } from './template-builder.js';
 
 /**
  * Send a comment notification email.
  * @param {Object} options
- * @param {string} [options.repoRoot] - Repository root for custom template and sender resolution
+ * @param {string} [options.repoRoot] - Repository root for custom template, sender and recipient-language resolution
  */
 export async function sendCommentNotification({
   recipientEmail,
@@ -27,9 +28,12 @@ export async function sendCommentNotification({
   isOwner,
   isMention = false,
   editUrl,
-  locale = 'en',
   repoRoot = null,
 }) {
+  const locale = await resolveRecipientLocale({
+    repoRoot,
+    email: recipientEmail,
+  });
   const tr = createTranslator(locale);
   const commenterName = commenter?.name || commenter?.email || 'Someone';
   const presTitle = presentation?.title || 'Untitled presentation';
@@ -92,7 +96,7 @@ export async function sendCommentNotification({
 /**
  * Send a guest verification email for share link access.
  * @param {Object} options
- * @param {string} [options.repoRoot] - Repository root for custom template and sender resolution
+ * @param {string} [options.repoRoot] - Repository root for custom template, sender and recipient-language resolution
  */
 export async function sendGuestVerificationEmail({
   recipientEmail,
@@ -100,9 +104,12 @@ export async function sendGuestVerificationEmail({
   presentationTitle,
   verificationUrl,
   expiresAt,
-  locale = 'en',
   repoRoot = null,
 }) {
+  const locale = await resolveRecipientLocale({
+    repoRoot,
+    email: recipientEmail,
+  });
   const tr = createTranslator(locale);
   const name = recipientName || 'there';
   const presTitle = presentationTitle || 'a presentation';
@@ -148,7 +155,7 @@ export async function sendGuestVerificationEmail({
 /**
  * Send a collaborator invitation email.
  * @param {Object} options
- * @param {string} [options.repoRoot] - Repository root for custom template and sender resolution
+ * @param {string} [options.repoRoot] - Repository root for custom template, sender and recipient-language resolution
  */
 export async function sendCollaboratorInviteEmail({
   recipientEmail,
@@ -157,9 +164,12 @@ export async function sendCollaboratorInviteEmail({
   inviterName,
   permission,
   editUrl,
-  locale = 'en',
   repoRoot = null,
 }) {
+  const locale = await resolveRecipientLocale({
+    repoRoot,
+    email: recipientEmail,
+  });
   const tr = createTranslator(locale);
   const name = recipientName || 'there';
   const presTitle = presentationTitle || 'a presentation';
@@ -232,7 +242,7 @@ export async function sendCollaboratorInviteEmail({
 /**
  * Send a guest invitation email for pre-registered share link guests.
  * @param {Object} options
- * @param {string} [options.repoRoot] - Repository root for custom template and sender resolution
+ * @param {string} [options.repoRoot] - Repository root for custom template, sender and recipient-language resolution
  */
 export async function sendGuestInvitationEmail({
   recipientEmail,
@@ -240,9 +250,12 @@ export async function sendGuestInvitationEmail({
   presentationTitle,
   shareUrl,
   inviterName,
-  locale = 'en',
   repoRoot = null,
 }) {
+  const locale = await resolveRecipientLocale({
+    repoRoot,
+    email: recipientEmail,
+  });
   const tr = createTranslator(locale);
   const name = recipientName || 'there';
   const presTitle = presentationTitle || 'a presentation';

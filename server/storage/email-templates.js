@@ -303,8 +303,9 @@ export async function getEmailTemplateOverride(scope, type, locale) {
 }
 
 /**
- * Get the configured default locale for email templates.
- * Used when sending user invitation emails without a specified locale.
+ * Get the install's mail default locale.
+ * The language of a mail to a recipient who has not chosen one — a guest, a
+ * fresh invitee — as step 2 of `resolveRecipientLocale()`.
  * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<string>} Default locale code
  */

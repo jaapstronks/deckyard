@@ -249,7 +249,7 @@
   "settings.admin.emailSender.name": "Namn",
   "settings.admin.emailSender.title": "E-postavsändare identitet",
   "settings.admin.emailTemplates.customized": "Anpassad",
-  "settings.admin.emailTemplates.defaultLocale": "Standardspråk för inbjudningar till nya användare:",
+  "settings.admin.emailTemplates.defaultLocale": "Standardspråk för e-post till personer utan språkinställning:",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Standardspråket är uppdaterat.",
   "settings.admin.emailTemplates.fieldCustomized": "Använder ett anpassat värde",
   "settings.admin.emailTemplates.fieldDefault": "Använder standarden (skriv för att anpassa)",

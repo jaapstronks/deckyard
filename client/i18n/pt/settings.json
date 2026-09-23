@@ -253,7 +253,7 @@
   "settings.admin.emailSender.name": "Nome",
   "settings.admin.emailSender.title": "Identidade do remetente",
   "settings.admin.emailTemplates.customized": "Personalizado",
-  "settings.admin.emailTemplates.defaultLocale": "Idioma por omissão dos convites a novos utilizadores:",
+  "settings.admin.emailTemplates.defaultLocale": "Idioma por omissão do e-mail para pessoas sem preferência de idioma:",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Idioma por omissão atualizado.",
   "settings.admin.emailTemplates.fieldCustomized": "A usar um valor próprio",
   "settings.admin.emailTemplates.fieldDefault": "A usar o valor por omissão (escreva para personalizar)",

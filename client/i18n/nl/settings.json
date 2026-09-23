@@ -269,7 +269,7 @@
   "settings.admin.emailSender.name": "Naam",
   "settings.admin.emailSender.title": "E-mail afzender identiteit",
   "settings.admin.emailTemplates.customized": "Aangepast",
-  "settings.admin.emailTemplates.defaultLocale": "Standaardtaal voor nieuwe gebruikersuitnodigingen:",
+  "settings.admin.emailTemplates.defaultLocale": "Standaardtaal voor mail aan mensen zonder taalvoorkeur:",
   "settings.admin.emailTemplates.defaultLocaleSaved": "Standaardtaal bijgewerkt.",
   "settings.admin.emailTemplates.fieldCustomized": "Aangepaste waarde in gebruik",
   "settings.admin.emailTemplates.fieldDefault": "Standaardwaarde in gebruik (typ om aan te passen)",
