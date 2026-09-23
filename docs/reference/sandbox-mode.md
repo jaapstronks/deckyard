@@ -17,8 +17,8 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
 ## Module map
 
 - `server/config/sandbox.js` — the flag and every tunable (`sandboxEnabled`,
-  `sandboxTtlMs`, `sandboxDefaultThemeId`, `sandboxCookieMaxAgeDays`,
-  `sandboxWatermarkText`).
+  `sandboxTtlHours`, `sandboxTtlMs`, `sandboxDefaultThemeId`,
+  `sandboxCookieMaxAgeDays`, `sandboxWatermarkText`).
 - `server/auth/sandbox.js` — the throwaway guest identity (`ensureSandboxUser`,
   `getSandboxUserFromRequest`); cookie `sb_sandbox`, synthetic
   `guest-<uuid>@sandbox.local` emails.
