@@ -289,6 +289,21 @@ test('GET /slide-types/:type/schema describes fields and an example slide', asyn
   assert.ok(body.example.content && typeof body.example.content === 'object');
 });
 
+test('GET /slide-types/:type/schema: the example contains the defaults it reports', async () => {
+  // quote-slide is one of the types whose en-GB defaults differ from its
+  // language-less ones, so a mismatch between the two halves shows here.
+  await installDb();
+  const ctx = makeCtx('GET', '/api/v1/slide-types/quote-slide/schema');
+  await handleResources(ctx);
+
+  assert.equal(ctx.res.statusCode, 200);
+  const { defaults, example } = ctx.res.body;
+  assert.ok(Object.keys(defaults).length > 0);
+  for (const [key, value] of Object.entries(defaults)) {
+    assert.deepEqual(example.content[key], value, `example.content.${key}`);
+  }
+});
+
 test('GET /slide-types/:type/schema for an unknown type answers 404', async () => {
   await installDb();
   const ctx = makeCtx('GET', '/api/v1/slide-types/never-a-slide-type/schema');

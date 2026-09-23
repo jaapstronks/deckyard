@@ -743,6 +743,49 @@ test('the owner can apply an AI suggestion, inserting the proposed slide', async
   );
 });
 
+test('an applied suggestion is composed by the slide factory (B272)', async () => {
+  const db2 = await seed();
+  const { res } = await call(handlePresentationCommentApply, 'POST', {
+    as: ACTORS.owner,
+    args: [DECK, 'cm-ai'],
+  });
+
+  assert.equal(res.statusCode, 200);
+  const slide = db2.__tables.presentations[0].slides.find(
+    (s) => s.id === res.body.newSlideId,
+  );
+  assert.equal(slide.type, 'content-slide');
+  assert.equal(slide.content.title, 'Proposed', 'the proposal is the patch');
+  assert.equal(slide.notes, '', 'the factory gives every slide notes');
+  assert.deepEqual(slide.visibility, {}, 'and a visibility');
+  assert.ok(
+    Object.keys(slide.content).length > 1,
+    'the type defaults sit under the proposed content',
+  );
+});
+
+test('a suggestion proposing a type the org does not have is refused', async () => {
+  const db2 = await seed();
+  commentById('cm-ai').proposed_slide = {
+    type: 'no-such-slide',
+    content: { title: 'Proposed' },
+  };
+  const before = db2.__tables.presentations[0].slides.length;
+
+  const { res } = await call(handlePresentationCommentApply, 'POST', {
+    as: ACTORS.owner,
+    args: [DECK, 'cm-ai'],
+  });
+
+  assert.equal(res.statusCode, 400);
+  assert.equal(db2.__tables.presentations[0].slides.length, before);
+  assert.equal(
+    commentById('cm-ai').status,
+    'open',
+    'the suggestion stays open for a human to dismiss',
+  );
+});
+
 test('applying a comment without a proposed slide is a 400', async () => {
   await seed();
   const { res } = await call(handlePresentationCommentApply, 'POST', {

@@ -30,6 +30,9 @@ import {
   normalizeLang,
   TRANSLATION_LANGS,
 } from '../../../shared/i18n-utils.js';
+import { newSlide } from '../../../shared/slide-types/presentation.js';
+import { loadDeckTheme } from '../../utils/themes.js';
+import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 
 /**
  * Whether this user may remove a question from the feed.
@@ -197,12 +200,23 @@ async function handleQuestionPromote(
     .filter(Boolean)
     .join('\n');
 
-  const makeSlide = (lang) => ({
-    id: slideId,
-    type: 'chapter-title-slide',
-    content: { title: titleFor(lang) },
-    notes: baseNotes,
-  });
+  // One slide per language version, each composed for its own language. They
+  // share one id so the versions stay aligned slide for slide.
+  const theme = await loadDeckTheme(repoRoot, pres.theme);
+  const slideTypes = await buildMergedSlideTypes(storageScope);
+  const makeSlide = (lang) => {
+    const slide = newSlide({
+      type: 'chapter-title-slide',
+      theme,
+      lang,
+      presentationId,
+      slideTypes,
+      content: { title: titleFor(lang) },
+    });
+    slide.id = slideId;
+    slide.notes = baseNotes;
+    return slide;
+  };
 
   const insertAt = (arr, idx, slide) => {
     const a = Array.isArray(arr) ? arr : [];
