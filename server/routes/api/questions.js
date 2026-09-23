@@ -30,6 +30,9 @@ import {
   normalizeLang,
   TRANSLATION_LANGS,
 } from '../../../shared/i18n-utils.js';
+import { newSlide } from '../../../shared/slide-types/presentation.js';
+import { loadDeckTheme } from '../../utils/themes.js';
+import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 
 /**
  * Whether this user may remove a question from the feed.
@@ -88,14 +91,19 @@ async function canPromoteQuestions(storageScope, authedUser, pres) {
  * the fix was a shared predicate; here it cannot be, because
  * `canWritePresentation` needs the collaborator row and the storage scope. So
  * the rule stays on the server and the surface asks (D182).
+ *
+ * Anonymous is a 401, the same answer the login gate in `handleApi` gives
+ * before this handler runs and the one both POST actions below give. It used
+ * to be 200 `{false, false}`, a second answer to the same caller that no
+ * request in the running app could reach (B409). The client reads the 401 as
+ * "no moderator controls" (`fetchModerationCapabilities`).
  */
 async function handleQuestionCapabilities(
   { storageScope, res, authedUser },
   presentationId,
 ) {
-  const pres = authedUser
-    ? await getPresentation(storageScope, presentationId)
-    : null;
+  if (!authedUser) return unauthorized(res);
+  const pres = await getPresentation(storageScope, presentationId);
   serveJson(res, 200, {
     canPromote: await canPromoteQuestions(storageScope, authedUser, pres),
     canRemove: canRemoveQuestions(authedUser),
@@ -192,12 +200,23 @@ async function handleQuestionPromote(
     .filter(Boolean)
     .join('\n');
 
-  const makeSlide = (lang) => ({
-    id: slideId,
-    type: 'chapter-title-slide',
-    content: { title: titleFor(lang) },
-    notes: baseNotes,
-  });
+  // One slide per language version, each composed for its own language. They
+  // share one id so the versions stay aligned slide for slide.
+  const theme = await loadDeckTheme(repoRoot, pres.theme);
+  const slideTypes = await buildMergedSlideTypes(storageScope);
+  const makeSlide = (lang) => {
+    const slide = newSlide({
+      type: 'chapter-title-slide',
+      theme,
+      lang,
+      presentationId,
+      slideTypes,
+      content: { title: titleFor(lang) },
+    });
+    slide.id = slideId;
+    slide.notes = baseNotes;
+    return slide;
+  };
 
   const insertAt = (arr, idx, slide) => {
     const a = Array.isArray(arr) ? arr : [];

@@ -199,6 +199,28 @@ export function liveInteractionKind(slideType) {
 }
 
 /**
+ * The rating scale a `likert` type's audience answers on, or `null` when the
+ * type declares none (it then offers authored `options[]` instead).
+ *
+ * The one reader of `scale` for the live protocol (D131, B316): the vote
+ * endpoint sizes and bounds its option range with it, and the follow client
+ * draws the slider's range and end numbers from it, so a type that declares
+ * `{ min: 1, max: 7 }` is voted on as seven stops everywhere. A vote is stored
+ * under its offset from `min`, so stop `min + i` is `option_index` `i` — the
+ * same index-is-identity rule as the options array. `validate-definition.js`
+ * refuses a malformed scale, so this reads it without repairing it.
+ *
+ * @param {string} slideType - a slide type name
+ * @returns {{min: number, max: number}|null}
+ */
+export function liveScale(slideType) {
+  if (liveInteractionKind(slideType) !== 'likert') return null;
+  const scale = SLIDE_TYPES[slideType]?.scale;
+  if (!scale || typeof scale !== 'object') return null;
+  return { min: scale.min, max: scale.max };
+}
+
+/**
  * Every registered type that declares `runtime: 'live'`.
  *
  * A function rather than a constant: the registry applies fork overrides at

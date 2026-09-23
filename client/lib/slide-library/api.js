@@ -6,6 +6,7 @@
 import { toast } from '../dom/toast.js';
 import { t } from '../ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
+import { libraryWriteFailure } from './permissions.js';
 
 /**
  * The `If-Match` header for an edit of `item` (D170): the revision it was
@@ -144,7 +145,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         state.patchInCache(s, id, () => snap.prev);
         rerender?.();
       }
-      toast.error(e);
+      toast.error(libraryWriteFailure(e));
     }
   };
 

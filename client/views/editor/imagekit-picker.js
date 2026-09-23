@@ -582,6 +582,15 @@ export function openImageKitPicker({
     );
   };
 
+  // A failed listing reads as our own sentence, never the server's message:
+  // the server refuses every ImageKit failure in one form (B415), and the
+  // picker names it in the viewer's language.
+  const loadFailedText = () =>
+    t(
+      'imagekit.loadFailed',
+      'The ImageKit library could not be loaded. Try again later.',
+    );
+
   const loadTags = async () => {
     try {
       const resp = await api('/api/media/imagekit/tags', { method: 'GET' });
@@ -619,8 +628,8 @@ export function openImageKitPicker({
       if (!Array.isArray(items))
         items = Array.isArray(filesResp?.items) ? filesResp.items : [];
       statusLine.textContent = '';
-    } catch (e) {
-      statusLine.textContent = String(e?.message || e);
+    } catch {
+      statusLine.textContent = loadFailedText();
       items = [];
       allTags = [];
     } finally {
@@ -651,8 +660,8 @@ export function openImageKitPicker({
           : resp;
       if (!Array.isArray(items)) items = [];
       statusLine.textContent = '';
-    } catch (e) {
-      statusLine.textContent = String(e?.message || e);
+    } catch {
+      statusLine.textContent = loadFailedText();
       items = [];
     } finally {
       setBusy(false);

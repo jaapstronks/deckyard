@@ -38,6 +38,10 @@ import {
 } from '../../../utils/route-middleware.js';
 import { broadcastCommentCounts } from './comments-shared.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { newSlide } from '../../../../shared/slide-types/presentation.js';
+import { resolveSlideTypeName } from '../../../../shared/slide-types/registry.js';
 
 /**
  * Resolve a comment.
@@ -225,7 +229,7 @@ export async function handlePresentationCommentDismiss(
  * after the slide referenced by the comment's slideId.
  */
 export async function handlePresentationCommentApply(
-  { storageScope, req, res, authedUser } = {},
+  { repoRoot, storageScope, req, res, authedUser } = {},
   id,
   commentId,
 ) {
@@ -272,17 +276,32 @@ export async function handlePresentationCommentApply(
     return badRequest(res, 'Referenced slide not found');
   }
 
-  // Create the new slide with a unique ID
-  const newSlideId = crypto.randomUUID();
-  const newSlide = {
-    id: newSlideId,
-    type: comment.proposedSlide.type,
+  // The proposal names a type the way an agent wrote it; fold the spelling to
+  // this org's registry key. A type the org does not have is refused, not
+  // repaired: the suggestion stays open for a human to dismiss.
+  const slideTypes = await buildMergedSlideTypes(storageScope);
+  const type = resolveSlideTypeName(comment.proposedSlide.type, slideTypes);
+  if (!type) {
+    return badRequest(
+      res,
+      `This suggestion proposes an unknown slide type: ${comment.proposedSlide.type}`,
+    );
+  }
+
+  // The proposed content is a patch over the type's defaults, composed by the
+  // one factory every other creation route uses.
+  const proposed = newSlide({
+    type,
+    theme: await loadDeckTheme(repoRoot, fullPres.theme),
+    lang: fullPres.lang,
+    presentationId: id,
+    slideTypes,
     content: comment.proposedSlide.content,
-  };
+  });
 
   // Insert the new slide after the original slide
   const updatedSlides = [...slides];
-  updatedSlides.splice(originalSlideIndex + 1, 0, newSlide);
+  updatedSlides.splice(originalSlideIndex + 1, 0, proposed);
 
   // Update the presentation
   fullPres.slides = updatedSlides;
@@ -306,7 +325,7 @@ export async function handlePresentationCommentApply(
 
   serveJson(res, 200, {
     ok: true,
-    newSlideId,
+    newSlideId: proposed.id,
     originalSlideId: comment.slideId,
     originalSlideIndex,
     newSlideIndex: originalSlideIndex + 1,

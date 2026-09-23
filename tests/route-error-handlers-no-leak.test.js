@@ -2,7 +2,7 @@
  * B100 — the two route-level catch-all handlers do not leak internal error text.
  *
  * `handleExportError()` and `handleNotionError()` pass an `AppError` through
- * (status + message are the contract) and answer anything else with a fixed
+ * (status, code and message are the contract) and answer anything else with a fixed
  * 500 envelope — a renderer crash or a missing binary carries absolute paths in
  * its message (js/stack-trace-exposure). Also pins that the Notion routes share
  * the one handler instead of inlining copies of it.
@@ -51,17 +51,22 @@ test('handleExportError: AppError passes through, anything else is a fixed 500',
   assert.ok(!JSON.stringify(crash.body).includes('/srv/'));
 });
 
-test('handleNotionError: upstream AppError keeps its status, internal errors do not leak', () => {
-  const upstream = fakeRes();
-  handleNotionError(new AppError('rate limited by Notion', 429), upstream);
-  assert.equal(upstream.status, 429);
-  assert.equal(upstream.body.error, 'notion_error');
-  assert.equal(upstream.body.message, 'rate limited by Notion');
+test('handleNotionError: an AppError answers as it is, internal errors do not leak', () => {
+  // The seam already decided what a Notion refusal means (B416); the handler
+  // does not re-read its wording.
+  const gateway = fakeRes();
+  handleNotionError(
+    new AppError('Notion could not complete this request', 502),
+    gateway,
+  );
+  assert.equal(gateway.status, 502);
+  assert.equal(gateway.body.error, 'bad_gateway');
+  assert.equal(gateway.body.message, 'Notion could not complete this request');
 
-  const notFound = fakeRes();
-  handleNotionError(new AppError('Could not find page', 404), notFound);
-  assert.equal(notFound.status, 400);
-  assert.match(notFound.body.message, /shared with your Notion integration/);
+  const invalid = fakeRes();
+  handleNotionError(new ValidationError('Invalid Notion page ID'), invalid);
+  assert.equal(invalid.status, 400);
+  assert.equal(invalid.body.error, 'bad_request');
 
   const crash = fakeRes();
   handleNotionError(INTERNAL, crash);

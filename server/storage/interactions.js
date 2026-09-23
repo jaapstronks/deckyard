@@ -342,9 +342,10 @@ export async function getInteractionAggregate(
  * @param {import('./scope.js').StorageScope} scope
  * @param {string} sessionId
  * @param {object} [opts]
- * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string}>}
- *   `invalid` for a blank slide or device id, `closed` when the presenter shut
- *   the interaction, and otherwise whatever `ensureInteractionSlide` answered
+ * @returns {Promise<{ok: true, aggregate: object}|{ok: false, reason: string, field?: string}>}
+ *   `invalid` for a blank slide or device id, and `invalid` with `field:
+ *   'option_index'` for an index that is not an integer in `0..optionCount-1`;
+ *   `closed` when the presenter shut the interaction, and otherwise whatever `ensureInteractionSlide` answered
  *   (`not_found` for a session that is gone, `unavailable` when the pool is
  *   down).
  */
@@ -355,7 +356,7 @@ async function voteInteraction(
     type = 'poll',
     slideId = '',
     deviceId = '',
-    optionIndex = 0,
+    optionIndex,
     optionCount = 0,
   } = {},
 ) {
@@ -377,7 +378,15 @@ async function voteInteraction(
   await pruneOutOfRangeVotes(slide.id, slide.optionCount);
   if (slide.status === 'closed') return { ok: false, reason: 'closed' };
 
-  const idx = clampInt(optionIndex, 0, Math.max(0, slide.optionCount - 1));
+  // A vote outside the range is refused, not clamped onto the nearest end: a
+  // clamp would store an answer the voter did not give (B316).
+  if (
+    !Number.isInteger(optionIndex) ||
+    optionIndex < 0 ||
+    optionIndex >= slide.optionCount
+  )
+    return { ok: false, reason: 'invalid', field: 'option_index' };
+  const idx = optionIndex;
   await withDbGuard(undefined, async (db) => {
     await db
       .insertInto('interaction_votes')

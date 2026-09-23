@@ -118,9 +118,17 @@ test('the copy happens before the call site is told anything', async () => {
   assert.deepEqual(order, ['copy', 'onPick']);
 });
 
+// B412: the refusal the picker shows is our sentence, never the server's
+// message (which once carried ImageKit's raw JSON into the callout).
+const COPY_FAILED =
+  'This image could not be copied into your own media. Try again or choose another image.';
+
 test('a failed copy never reaches the call site, and the error travels on', async () => {
   const { seam, picker } = seamWithImageKit(async () => {
-    const err = new Error('Copying this image into your own media failed');
+    const err = new Error(
+      '{"message":"The requested file does not exist.","help":"…"}',
+    );
+    err.code = 'import_failed';
     throw err;
   });
 
@@ -129,7 +137,7 @@ test('a failed copy never reaches the call site, and the error travels on', asyn
 
   await assert.rejects(
     () => picker.state.pick(),
-    /Copying this image into your own media failed/,
+    { message: COPY_FAILED },
     'the picker has to see the refusal to keep its dialog open',
   );
   assert.equal(
@@ -144,7 +152,7 @@ test('a copy that answers no URL is a failure, not a silent external URL', async
   const picks = [];
   seam({ onPick: (p) => picks.push(p) });
 
-  await assert.rejects(() => picker.state.pick());
+  await assert.rejects(() => picker.state.pick(), { message: COPY_FAILED });
   assert.equal(picks.length, 0);
 });
 

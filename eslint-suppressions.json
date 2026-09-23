@@ -424,11 +424,6 @@
       "count": 1
     }
   },
-  "client/views/editor/publish-export/publish-modal.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "client/views/editor/publish-export/publish.js": {
     "no-restricted-syntax": {
       "count": 1
@@ -1195,11 +1190,6 @@
   "server/utils/convert-file/pptx-parser.js": {
     "no-restricted-syntax": {
       "count": 1
-    }
-  },
-  "server/utils/data-source/providers/csv-url.js": {
-    "preserve-caught-error": {
-      "count": 3
     }
   },
   "server/utils/debug-log.js": {

@@ -180,17 +180,29 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
   it is that URL plus a `?tr=…` transformation, which is what keeps this from
   being a generic URL proxy — and the fetch runs the same SSRF guard as the
   Notion re-host (they share `server/media/rehost.js`). A failure answers an
-  error and never a URL, so the editor can leave the slide untouched. Under
+  error and never a URL, so the editor can leave the slide untouched. A lookup
+  that yields no file to copy (any ImageKit error status, an unreachable API, a
+  record without a URL) is one refusal, `502 import_failed` in our own words:
+  ImageKit's payload goes to the log, never to the client, and its status is
+  not forwarded. Under
   `IMAGEKIT_ONLY` it refuses with `uploads_disabled`: see _Config & flags_.
 - **ImageKit browse** — `GET /api/media/imagekit/files|tags|…/details` proxy an
   external DAM read-only, plus `PATCH …/details` to write tags/custom metadata
   back. ImageKit items are never copied into `image_library` as catalogue
   entries (the import above stores bytes, not a library row). Listings are
   **newest-first**: `files` sends `sort=DESC_CREATED` unless the caller passes
-  another value from `IMAGEKIT_SORT_VALUES` (anything else is a 400), and the
+  another value from `IMAGEKIT_SORT_VALUES`, spelled as ImageKit spells it
+  (anything else, a lower-case `desc_created` included, is a 400), and the
   tag sample is drawn from the newest files for the same reason. ImageKit's own
   default is oldest-first, which hides every recent upload behind the first
-  import.
+  import. Every call to ImageKit goes through one seam, `fetchJsonOrThrow` in
+  `server/media/imagekit.js`: an error status or an unreachable API is
+  `502 bad_gateway`, "ImageKit could not complete this request", with
+  ImageKit's payload in `logError` only and its status not forwarded. The tag
+  sample refuses the same way when its first batch fails; a later batch
+  failing only shrinks the sample. The picker shows its own
+  `imagekit.loadFailed` sentence for a failed listing, never the server's
+  message.
 
 ## Config & flags
 

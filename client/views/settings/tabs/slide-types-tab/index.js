@@ -580,14 +580,51 @@ export function createSlideTypesTab({ user } = {}) {
       danger: true,
     });
     if (!confirmed) return;
+    await deleteCustomType(ct, { force: false });
+  }
+
+  /**
+   * The explicit second step for a type slides still use: the server refused
+   * with the count, and deleting anyway is a choice made after seeing it.
+   * @param {Object} ct - Custom slide type
+   * @param {{slides: number, decks: number, libraryItems: number, versions: number}} usage
+   */
+  async function confirmDeleteInUse(ct, usage) {
+    const confirmed = await confirmModal(document.body, {
+      title: t('common.delete', 'Delete'),
+      message: t(
+        'settings.slideTypes.deleteInUse',
+        '"{label}" is still used by {slides} slide(s) in {decks} deck(s), {libraryItems} library item(s) and {versions} saved version(s). Deleting it anyway makes those slides render as an unknown type.',
+        { label: ct.label, ...usage },
+      ),
+      confirmLabel: t('settings.slideTypes.deleteAnyway', 'Delete anyway'),
+      danger: true,
+    });
+    if (confirmed) await deleteCustomType(ct, { force: true });
+  }
+
+  /**
+   * Send the delete. A type slides still use comes back as `in_use` with the
+   * count, which opens the second step instead of an error.
+   * @param {Object} ct - Custom slide type
+   * @param {{force: boolean}} opts - `force` deletes a type that is in use.
+   */
+  async function deleteCustomType(ct, { force }) {
+    const query = force ? '?force=true' : '';
     try {
-      await api(`/api/custom-slide-types/${ct.id}`, { method: 'DELETE' });
+      await api(`/api/custom-slide-types/${ct.id}${query}`, {
+        method: 'DELETE',
+      });
       toast.success(
         t('settings.slideTypes.deleteSuccess', 'Slide type deleted.'),
       );
       await reloadCustomTypes();
     } catch (err) {
-      toast.error(err);
+      if (err?.code === 'in_use' && err.details?.usage && !force) {
+        await confirmDeleteInUse(ct, err.details.usage);
+      } else {
+        toast.error(err);
+      }
     }
   }
 

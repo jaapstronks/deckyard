@@ -371,6 +371,74 @@ test('every slide composition and conversion is given a theme', () => {
   );
 });
 
+/**
+ * The top-level keys of every object literal in a source file. A bracket-depth
+ * scan like `callArguments`: nested literals and calls are skipped over, so
+ * `{ id, content: { type } }` reports `id` and `content`, not `type`. A spread
+ * is no key, so `{ ...newSlide(…), id }` reports only `id`.
+ * @param {string} source - Source with comments already removed.
+ * @returns {Set<string>[]}
+ */
+function objectLiteralKeys(source) {
+  const literals = [];
+  for (let start = 0; start < source.length; start++) {
+    if (source[start] !== '{') continue;
+    let depth = 0;
+    let top = '';
+    for (let i = start; i < source.length; i++) {
+      const c = source[i];
+      if ('([{'.includes(c)) depth += 1;
+      else if (')]}'.includes(c)) depth -= 1;
+      if (depth === 0) break;
+      if (depth === 1 && i > start) top += c;
+    }
+    const keys = [
+      ...top.matchAll(/(?:^|,)\s*([A-Za-z_$][\w$]*)\s*(?=[:,]|$)/g),
+    ];
+    literals.push(new Set(keys.map((m) => m[1])));
+  }
+  return literals;
+}
+
+/**
+ * Route files that hold an `{ id, type, content }` literal which is not a slide
+ * coming into being. Each names what it is instead.
+ */
+const SLIDE_LITERAL_ALLOWED = new Set([
+  // A projection of a stored slide for the activity feed.
+  'server/routes/api/activity.js',
+  // A portable-deck document; `deckToPresentationParts` composes it on import.
+  'server/routes/api/ai/wizard-v2-stream.js',
+  // A stored library item viewed as a slide for the HTML gate and the preview.
+  'server/routes/api/slide-library.js',
+  // A projection of generated slides in the response.
+  'server/routes/public-api/v1/ai.js',
+  // PATCH of a slide that already exists.
+  'server/routes/public-api/v1/slides.js',
+]);
+
+test('no route builds a new slide as a bare literal (B272)', () => {
+  // Accepting a comment's proposed slide and importing PDF pages as image
+  // slides both wrote `{ id, type, content }` straight into the deck: no type
+  // defaults, no instance keys, no notes or visibility, no theme ground. A new
+  // slide under `server/routes/` is made by `newSlide()`.
+  const offenders = [];
+  for (const file of walkJsFiles(path.join(process.cwd(), 'server/routes'))) {
+    const rel = path.relative(process.cwd(), file);
+    if (SLIDE_LITERAL_ALLOWED.has(rel)) continue;
+    const source = withoutComments(fs.readFileSync(file, 'utf8'));
+    for (const keys of objectLiteralKeys(source)) {
+      if (keys.has('id') && keys.has('type') && keys.has('content'))
+        offenders.push(`${rel}: { ${[...keys].join(', ')} }`);
+    }
+  }
+  assert.deepEqual(
+    offenders,
+    [],
+    `these routes build a slide without newSlide():\n${offenders.join('\n')}`,
+  );
+});
+
 test('the guards would catch what they are for', () => {
   assert.deepEqual(
     callArguments('x = newSlide({ type, slideTypes });', '\\bnewSlide'),
@@ -393,6 +461,14 @@ test('the guards would catch what they are for', () => {
       'deckToPresentationParts',
     ),
     [['deck']],
+  );
+  assert.deepEqual(
+    objectLiteralKeys('s = { id: uuid(), type: t, content: { a: 1 }, notes };'),
+    [new Set(['id', 'type', 'content', 'notes']), new Set(['a'])],
+  );
+  assert.deepEqual(
+    objectLiteralKeys('x = { ...newSlide({ type, theme }), id };'),
+    [new Set(['id']), new Set(['type', 'theme'])],
   );
   assert.equal(withoutComments('a // ready for foo()\nb').trim(), 'a \nb');
   assert.equal(withoutComments('/** foo() */\nb').trim(), 'b');

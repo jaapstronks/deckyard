@@ -13,7 +13,6 @@ import {
   serveJson,
   unauthorized,
   forbidden,
-  jsonError,
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
@@ -51,15 +50,11 @@ async function handleDataSourcePreview({ req, res }) {
     return badRequest(res, `Unknown provider: ${body.provider}`);
   }
 
-  try {
-    const data = await fetchProviderData(body.provider, body.config);
-    serveJson(res, 200, { data });
-    return true;
-  } catch (err) {
-    const status = err.statusCode || 502;
-    jsonError(res, status, 'data_source_error', err.message);
-    return true;
-  }
+  // A failure is an AppError in the provider's own words (B417); it falls
+  // through to withErrorHandler, which answers it as it is.
+  const data = await fetchProviderData(body.provider, body.config);
+  serveJson(res, 200, { data });
+  return true;
 }
 
 // POST /api/data-sources/refresh — refresh a slide's data from its source.
@@ -83,21 +78,14 @@ async function handleDataSourceRefresh({ req, res }) {
     return badRequest(res, validation.error);
   }
 
-  try {
-    const result = await refreshSlideData(body.dataSource, body.content);
-
-    serveJson(res, 200, {
-      content: result.content,
-      applied: result.applied,
-      errors: result.errors,
-      lastSync: result.lastSync,
-    });
-    return true;
-  } catch (err) {
-    const status = err.statusCode || 500;
-    jsonError(res, status, 'data_source_error', err.message);
-    return true;
-  }
+  const result = await refreshSlideData(body.dataSource, body.content);
+  serveJson(res, 200, {
+    content: result.content,
+    applied: result.applied,
+    errors: result.errors,
+    lastSync: result.lastSync,
+  });
+  return true;
 }
 
 /**

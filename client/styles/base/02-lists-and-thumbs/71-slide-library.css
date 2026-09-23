@@ -792,6 +792,18 @@
   text-align: right;
 }
 
+/* The same reason under a greyed-out card action or menu item (B411): it
+   reads left to right with the control above it. */
+.ps-lib-card-content > .ps-lib-edit-reason,
+.dropdown-menu > .ps-lib-edit-reason {
+  display: block;
+  text-align: left;
+}
+
+.dropdown-menu > .ps-lib-edit-reason {
+  padding: 0 var(--ps-space-3) var(--ps-space-2);
+}
+
 .ps-modal-footer {
   display: flex;
   align-items: center;

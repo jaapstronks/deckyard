@@ -102,8 +102,10 @@ adapter.onPick(pick)
 The order is the point: the copy runs _before_ the call site is told anything,
 so a failure leaves the slide exactly as it was.
 
-- **Failure** — the adapter throws, `openImageKitPicker` shows the sentence as
-  an inline refusal beside "Use this image" and keeps the dialog open, one
+- **Failure** — the adapter throws one sentence for every refused copy
+  (`editor.image.imagekit.copyFailed`), whatever the server said or whether it
+  answered no URL at all; the server's message is not display text.
+  `openImageKitPicker` shows that sentence as an inline refusal beside "Use this image" and keeps the dialog open, one
   click from a retry. There is no fallback to the external URL: a silent
   hot-link is the outcome the feature exists to prevent.
 - **No own media** (`IMAGEKIT_ONLY`, uploads off): `importImageKitToOwnMedia` is not injected. The adapter refuses the pick, the picker explains that uploads must be enabled, and the slide remains unchanged. A direct request to the endpoint is also refused with `uploads_disabled`. There is no external-URL fallback.

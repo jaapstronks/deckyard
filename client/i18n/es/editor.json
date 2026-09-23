@@ -359,6 +359,7 @@
   "editor.image.help.uploadsDisabled": "Elegir de la biblioteca (recomendado). Las subidas están desactivadas.",
   "editor.image.help.uploadsSandbox": "Las subidas están desactivadas en el entorno de pruebas. Elija de la biblioteca, de Unsplash o de Giphy.",
   "editor.image.help.withUploads": "Elegir de la biblioteca (recomendado) o subir su propia imagen.",
+  "editor.image.imagekit.copyFailed": "No se pudo copiar esta imagen a sus propios medios. Inténtelo de nuevo o elija otra imagen.",
   "editor.image.libraryTitle": "Biblioteca: elegir imagen",
   "editor.image.photoCredit": "Foto: {photographer}",
   "editor.image.presets": "Imágenes predefinidas",

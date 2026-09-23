@@ -27,8 +27,19 @@ import {
 import { nowIso } from '../utils/normalize.js';
 import { migrateLibraryItem } from '../../shared/slide-types/schema-version.js';
 import { mergeLibraryI18n } from '../../shared/slide-library/merge-content.js';
-import { ConflictError } from '../utils/errors.js';
+import { revisionConflict } from '../utils/errors.js';
 import { replaceTagLinks } from './tags.js';
+
+/**
+ * The refusal of a change to a shared item by someone who is neither its
+ * creator nor an admin (D170). Without a message the envelope's only text was
+ * the code `forbidden`, and that is what a client showed (B411).
+ */
+const NOT_EDITABLE = {
+  ok: false,
+  reason: 'forbidden',
+  message: 'Only its maker or an admin can change this shared slide.',
+};
 
 /**
  * Serialize a JSONB value for PostgreSQL.
@@ -291,14 +302,9 @@ export function libraryPatchViolation(patch) {
 }
 
 function conflictError(item) {
-  return new ConflictError(
+  return revisionConflict(
     'Conflict: this library slide was changed by someone else. Reload and try again.',
-    {
-      id: item.id,
-      revision: item.revision,
-      modified: item.updatedAt,
-      updatedBy: item.updatedBy || null,
-    },
+    { ...item, modified: item.updatedAt },
   );
 }
 
@@ -376,7 +382,7 @@ async function patchLibraryItem(ctx, target, patch, opts = {}) {
     // caller that brings no guard is not either.
     const allowed =
       typeof opts.allowEdit === 'function' && (await opts.allowEdit(existing));
-    if (!allowed) return { ok: false, reason: 'forbidden' };
+    if (!allowed) return { ...NOT_EDITABLE };
   }
   if (edits && existing.revision !== expectedRevision) {
     throw conflictError(existing);
@@ -628,7 +634,7 @@ export async function deleteOrganizationLibraryItem(
   const ok =
     typeof allowDelete === 'function' &&
     (await allowDelete(item, { actorEmail }));
-  if (!ok) return { ok: false, reason: 'forbidden' };
+  if (!ok) return { ...NOT_EDITABLE };
   const deleted = await deleteLibraryItem(ctx, target);
   if (!deleted) return { ok: false, reason: 'not_found' };
   return { ok: true };
@@ -762,7 +768,7 @@ export async function setTagsForSlideLibraryItem(
   if (target.shelf === 'organization') {
     const allowed =
       typeof allowEdit === 'function' && (await allowEdit(existing));
-    if (!allowed) return { ok: false, reason: 'forbidden' };
+    if (!allowed) return { ...NOT_EDITABLE };
   }
   // A refused tag name is already an `invalid` result; it travels as it is.
   return replaceTagLinks({

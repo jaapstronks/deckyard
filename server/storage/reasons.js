@@ -101,6 +101,9 @@ export const REASONS = Object.freeze(
     last_owner: { status: 409, kind: 'caller' },
     limit_exceeded: { status: 409, kind: 'caller' },
     order_mismatch: { status: 409, kind: 'caller' },
+    // Slides still carry the key of the custom slide type being deleted; the
+    // refusal carries the count, and `force` is the explicit second step.
+    in_use: { status: 409, kind: 'caller' },
 
     // ─── 404 Not Found ──────────────────────────────────────────────────────
     not_found: { status: 404, kind: 'caller' },

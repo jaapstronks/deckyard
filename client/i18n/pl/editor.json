@@ -360,6 +360,7 @@
   "editor.image.help.uploadsDisabled": "Wybierz z biblioteki (zalecane). Przesyłanie jest wyłączone.",
   "editor.image.help.uploadsSandbox": "Przesyłanie plików jest wyłączone w piaskownicy. Wybierz obraz z biblioteki, Unsplash lub Giphy.",
   "editor.image.help.withUploads": "Wybierz z biblioteki (zalecane) lub prześlij własny obraz.",
+  "editor.image.imagekit.copyFailed": "Nie udało się skopiować tego obrazu do własnych mediów. Spróbuj ponownie lub wybierz inny obraz.",
   "editor.image.libraryTitle": "Biblioteka: wybierz obraz",
   "editor.image.photoCredit": "Zdjęcie: {photographer}",
   "editor.image.presets": "Predefiniowane obrazy",

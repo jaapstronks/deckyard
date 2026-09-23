@@ -499,6 +499,33 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
     );
   });
 
+  it('accepts a vote on either end of the range and refuses one past it (B316)', async () => {
+    const vote = (deviceId, optionIndex) =>
+      voteLikertInteraction(testScope(), sessionId, {
+        slideId: 'scale-1',
+        deviceId,
+        optionIndex,
+        optionCount: 10,
+      });
+
+    assert.equal((await vote('dev-min', 0)).ok, true, 'the scale min');
+    assert.equal((await vote('dev-max', 9)).ok, true, 'the scale max');
+    for (const bad of [10, -1, 1.5, '3', undefined]) {
+      assert.deepEqual(
+        await vote('dev-bad', bad),
+        { ok: false, reason: 'invalid', field: 'option_index' },
+        `${JSON.stringify(bad)} is refused, not clamped`,
+      );
+    }
+    const agg = await getInteractionAggregate(testScope(), sessionId, {
+      slideId: 'scale-1',
+      optionCount: 10,
+    });
+    assert.equal(agg.totals[0], 1);
+    assert.equal(agg.totals[9], 1);
+    assert.equal(agg.total, 2, 'no refused vote was stored');
+  });
+
   it('keeps poll and likert on the kind the slide says', async () => {
     await voteLikertInteraction(testScope(), sessionId, {
       slideId: 'scale-1',

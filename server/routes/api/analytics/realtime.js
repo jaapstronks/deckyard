@@ -27,15 +27,28 @@ export async function handleRealtime(ctx, presentationId) {
   });
   if (!pres) return true;
 
-  const stream = openSseStream(req, res);
+  // Declared before the stream opens: the client can leave during the first
+  // await below, and onClose must then find nothing to stop, not a TDZ.
+  const connectionId = `${presentationId}-${Date.now()}`;
+  let intervalId = null;
+  let timeoutId = null;
+  function cleanup() {
+    clearInterval(intervalId);
+    clearTimeout(timeoutId);
+    activeConnections.delete(connectionId);
+  }
+
+  const stream = openSseStream(req, res, { onClose: cleanup });
   if (!stream.ok) return true;
 
   // Send initial count
   const initialCount = await getActiveViewerCount(presentationId);
+  // A client that left during the count is gone: start no timers for it.
+  if (stream.signal.aborted) return true;
   sseWrite(res, { event: 'viewerCount', data: { count: initialCount } });
 
   // Set up interval for updates (using configurable interval)
-  const intervalId = setInterval(async () => {
+  intervalId = setInterval(async () => {
     try {
       const count = await getActiveViewerCount(presentationId);
       sseWrite(res, { event: 'viewerCount', data: { count } });
@@ -46,29 +59,21 @@ export async function handleRealtime(ctx, presentationId) {
   }, ANALYTICS_CONFIG.SSE_UPDATE_INTERVAL_MS);
 
   // Track connection
-  const connectionId = `${presentationId}-${Date.now()}`;
   activeConnections.set(connectionId, { presentationId, intervalId });
 
-  // Cleanup function
-  function cleanup() {
-    clearInterval(intervalId);
-    clearTimeout(timeoutId);
-    activeConnections.delete(connectionId);
-  }
-
-  // Maximum connection timeout (using configurable timeout) - prevent zombie connections
-  const timeoutId = setTimeout(() => {
+  // Maximum connection timeout (using configurable timeout) - prevent zombie
+  // connections. The handler ends the stream itself, so it closes it first:
+  // onClose is for the client leaving, not for us hanging up.
+  timeoutId = setTimeout(() => {
     log.info(`[analytics] SSE connection timeout: ${connectionId}`);
     cleanup();
+    stream.close();
     try {
       res.end();
     } catch (err) {
       // Connection may already be closed
     }
   }, ANALYTICS_CONFIG.SSE_TIMEOUT_MS);
-
-  // Clean up on close
-  req.on('close', cleanup);
 
   return true;
 }
