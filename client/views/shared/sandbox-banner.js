@@ -2,7 +2,7 @@
  * Sandbox banner.
  *
  * A small, always-visible notice that tells the user they are in a temporary
- * throwaway sandbox whose data is wiped after the TTL (default 24h). Mounted
+ * throwaway sandbox whose data is wiped after the TTL. Mounted
  * once on document.body (outside the SPA view root, which is cleared on every
  * route render) and kept in sync with the `sandboxMode` feature flag.
  */
@@ -12,6 +12,19 @@ import { t } from '../../lib/ui-i18n.js';
 import { getFeatures } from '../../lib/state/features.js';
 
 let bannerEl = null;
+
+/**
+ * The banner copy. The hours come from the server's `SANDBOX_TTL_HOURS` (the
+ * `sandboxTtlHours` feature flag), the number the cleanup job deletes on; the
+ * banner is only mounted in sandbox mode, where the server always sends it.
+ */
+function bannerText() {
+  return t(
+    'sandbox.banner.text',
+    'Temporary Deckyard sandbox - your work is deleted after {hours} hours.',
+    { hours: getFeatures()?.sandboxTtlHours },
+  );
+}
 
 function buildBanner() {
   return h(
@@ -25,10 +38,7 @@ function buildBanner() {
       h('span', { class: 'sandbox-banner-dot', 'aria-hidden': 'true' }),
       h('span', {
         class: 'sandbox-banner-text',
-        text: t(
-          'sandbox.banner.text',
-          'Temporary Deckyard sandbox - your work is deleted after 24 hours.',
-        ),
+        text: bannerText(),
       }),
     ],
   );
@@ -49,10 +59,7 @@ export function syncSandboxBanner() {
     // Locale may have changed since it was built; refresh the copy in place.
     const textEl = bannerEl.querySelector('.sandbox-banner-text');
     if (textEl) {
-      textEl.textContent = t(
-        'sandbox.banner.text',
-        'Temporary Deckyard sandbox - your work is deleted after 24 hours.',
-      );
+      textEl.textContent = bannerText();
     }
   } else if (!active && bannerEl) {
     bannerEl.remove();

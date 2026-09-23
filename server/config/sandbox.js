@@ -1,14 +1,21 @@
-import { envBool } from './utils.js';
+import { envBool, envInt } from './utils.js';
 
 export function sandboxEnabled() {
   return envBool('SANDBOX_MODE');
 }
 
-function sandboxTtlHours() {
-  const raw = process.env.SANDBOX_TTL_HOURS;
-  const n = Number(raw);
-  if (Number.isFinite(n) && n > 0) return Math.floor(n);
-  return 24;
+/** Hours a sandbox deck lives before the cleanup job deletes it. */
+const DEFAULT_SANDBOX_TTL_HOURS = 24;
+
+/**
+ * The sandbox deck lifetime, in whole hours (at least 1). The one reading of
+ * `SANDBOX_TTL_HOURS`: the cleanup job deletes on it and the sandbox banner
+ * states it (via `sandboxTtlHours` in the feature snapshot), so the copy and
+ * the sweep cannot promise different numbers.
+ * @returns {number}
+ */
+export function sandboxTtlHours() {
+  return envInt('SANDBOX_TTL_HOURS', DEFAULT_SANDBOX_TTL_HOURS, { min: 1 });
 }
 
 export function sandboxTtlMs() {

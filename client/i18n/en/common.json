@@ -202,7 +202,7 @@
   "notifications.markAllRead": "Mark all read",
   "notifications.title": "Notifications",
   "qr.alt": "QR code",
-  "sandbox.banner.text": "Temporary Deckyard sandbox - your work is deleted after 24 hours.",
+  "sandbox.banner.text": "Temporary Deckyard sandbox - your work is deleted after {hours} hours.",
   "sandbox.examples.count": "{count} slides",
   "sandbox.examples.error": "Could not open that example. Please try again.",
   "sandbox.examples.hint": "Open a ready-made deck and start editing — the quickest way to explore Deckyard.",

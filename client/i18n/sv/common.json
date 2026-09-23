@@ -187,7 +187,7 @@
   "notifications.markAllRead": "Markera alla som lästa",
   "notifications.title": "Aviseringar",
   "qr.alt": "QR-kod",
-  "sandbox.banner.text": "Tillfällig Deckyard-sandlåda - ditt arbete raderas efter 24 timmar.",
+  "sandbox.banner.text": "Tillfällig Deckyard-sandlåda - ditt arbete raderas efter {hours} timmar.",
   "sandbox.examples.error": "Det gick inte att öppna exemplet. Försök igen.",
   "sandbox.examples.hint": "Öppna en färdig presentation och börja redigera — det är snabbaste sättet att utforska Deckyard.",
   "sandbox.examples.loadError": "Det gick inte att läsa in exemplen.",

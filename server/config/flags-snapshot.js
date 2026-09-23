@@ -9,7 +9,7 @@
 
 import { getLlmStatus } from '../utils/llm/config.js';
 import { getImageKitConfigFromEnv } from '../media/imagekit.js';
-import { sandboxEnabled } from './sandbox.js';
+import { sandboxEnabled, sandboxTtlHours } from './sandbox.js';
 import {
   isMultiOrgEnabled,
   isLiveDataEnabled,
@@ -53,6 +53,8 @@ export function getFeatureFlags() {
   return {
     demoMode,
     sandboxMode,
+    // The banner states this number; null outside sandbox, where nothing expires.
+    sandboxTtlHours: sandboxMode ? sandboxTtlHours() : null,
     imagekitOnly,
     imagekitConfigured,
     enableAi,

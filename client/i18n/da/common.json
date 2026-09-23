@@ -189,7 +189,7 @@
   "notifications.markAllRead": "Markér alle som læst",
   "notifications.title": "Notifikationer",
   "qr.alt": "QR-kode",
-  "sandbox.banner.text": "Midlertidig Deckyard-sandkasse - dit arbejde slettes efter 24 timer.",
+  "sandbox.banner.text": "Midlertidig Deckyard-sandkasse - dit arbejde slettes efter {hours} timer.",
   "sandbox.examples.error": "Det eksempel kunne ikke åbnes. Prøv igen.",
   "sandbox.examples.hint": "Åbn en færdig præsentation og begynd at redigere — det er den hurtigste måde at udforske Deckyard på.",
   "sandbox.examples.loadError": "Eksemplerne kunne ikke indlæses.",

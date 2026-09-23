@@ -190,7 +190,7 @@
   "notifications.markAllRead": "Segna tutte come lette",
   "notifications.title": "Notifiche",
   "qr.alt": "Codice QR",
-  "sandbox.banner.text": "Sandbox temporanea di Deckyard - il tuo lavoro viene eliminato dopo 24 ore.",
+  "sandbox.banner.text": "Sandbox temporanea di Deckyard - il tuo lavoro viene eliminato dopo {hours} ore.",
   "sandbox.examples.count": "{count} slide",
   "sandbox.examples.error": "Non è stato possibile aprire quell'esempio. Riprova.",
   "sandbox.examples.hint": "Apri una presentazione già pronta e inizia a modificarla: è il modo più rapido per esplorare Deckyard.",

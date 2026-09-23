@@ -187,7 +187,7 @@
   "notifications.label.unread": "{title} (non lu)",
   "notifications.loading": "Chargement…",
   "notifications.markAllRead": "Tout marquer comme lu",
-  "sandbox.banner.text": "Bac à sable Deckyard temporaire - votre travail est supprimé au bout de 24 heures.",
+  "sandbox.banner.text": "Bac à sable Deckyard temporaire - votre travail est supprimé au bout de {hours} heures.",
   "sandbox.examples.count": "{count} diapositives",
   "sandbox.examples.error": "Impossible d'ouvrir cet exemple. Veuillez réessayer.",
   "sandbox.examples.hint": "Ouvrez un deck tout prêt et modifiez-le — le moyen le plus rapide de découvrir Deckyard.",
