@@ -4,8 +4,13 @@ import assert from 'node:assert/strict';
 import {
   isLiveSlideType,
   liveInteractionKind,
+  liveScale,
 } from '../shared/slide-types/runtime.js';
-import { getOptionCountForSlide } from '../server/utils/interaction-helpers.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
+import {
+  getOptionCountForSlide,
+  scaleInteractionFromSlide,
+} from '../server/utils/interaction-helpers.js';
 import { computeAudienceCapabilitiesFromState } from '../server/routes/api/follow/helpers.js';
 
 /**
@@ -65,7 +70,7 @@ test('option counts per live type are the length of the authored array', () => {
   };
   assert.equal(getOptionCountForSlide('likert-slide', likert), 7);
 
-  // The slider's stops are fixed by the widget, not authored.
+  // The slider's stops are not authored: they are the type's declared scale.
   assert.equal(
     getOptionCountForSlide('likert-slider-slide', { content: {} }),
     10,
@@ -75,6 +80,34 @@ test('option counts per live type are the length of the authored array', () => {
   assert.equal(getOptionCountForSlide('feedback-slide', { content: {} }), 0);
   assert.equal(getOptionCountForSlide('content-slide', { content: {} }), 0);
   assert.equal(getOptionCountForSlide('poll-slide', null), 0);
+});
+
+test('the slider protocol reads its stops from the declared scale (B316)', () => {
+  const declared = SLIDE_TYPES['likert-slider-slide'].scale;
+  const scale = liveScale('likert-slider-slide');
+  assert.deepEqual(
+    scale,
+    { min: declared.min, max: declared.max },
+    'the one reader hands back the declaration, not a constant of its own',
+  );
+  assert.equal(
+    getOptionCountForSlide('likert-slider-slide', { content: {} }),
+    declared.max - declared.min + 1,
+    'the vote range is min..max inclusive',
+  );
+  const { options } = scaleInteractionFromSlide({ content: {} }, scale);
+  assert.equal(options[0], String(declared.min), 'index 0 is the scale min');
+  assert.equal(
+    options.at(-1),
+    String(declared.max),
+    'the last index is the scale max',
+  );
+
+  // A likert type with authored options declares no scale, and no other kind
+  // has one to read.
+  assert.equal(liveScale('likert-slide'), null);
+  assert.equal(liveScale('poll-slide'), null);
+  assert.equal(liveScale('content-slide'), null);
 });
 
 test('the audience is offered an interaction on exactly the live slides', () => {
