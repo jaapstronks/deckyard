@@ -141,8 +141,10 @@ not, and that result is discarded by most call sites.
   the copy-paste footer, identically in both. Pinned by
   `tests/email-template-escaping.test.js`.
 - **Digest** — `scheduleDigestEmailJob()` starts in `server/server.js` and runs
-  **daily**, sending only to users whose configured `digest.dayOfWeek` matches
-  today (default Monday). It pulls the week's numbers from
+  **daily**, sending only to users whose `digest` preference (Settings >
+  Preferences, stored in `user_settings`) is on and names today (default: on,
+  Monday; 0 = Sunday). `listDigestRecipients()` in `server/storage/settings.js`
+  is the one reader of that preference. It pulls the week's numbers from
   `server/storage/analytics/weekly-summary.js`, has
   `server/services/digest-generation.js` write the prose with an LLM, and sends
   through `sendWeeklyDigestEmail` / `sendTeamDigestEmail`.

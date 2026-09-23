@@ -73,6 +73,5 @@ export {
 export {
   getWeeklyAnalyticsForUser,
   getTeamWeeklyAnalytics,
-  getUsersWithDigestDay,
   formatDuration,
 } from './weekly-summary.js';

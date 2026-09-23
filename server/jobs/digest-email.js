@@ -9,7 +9,6 @@
 import {
   getWeeklyAnalyticsForUser,
   getTeamWeeklyAnalytics,
-  getUsersWithDigestDay,
 } from '../storage/analytics/index.js';
 import {
   generateDigestWithAI,
@@ -19,7 +18,7 @@ import {
   sendWeeklyDigestEmail,
   sendTeamDigestEmail,
 } from '../integrations/brevo.js';
-import { getAppSettings } from '../storage/settings.js';
+import { getAppSettings, listDigestRecipients } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
 import { envStr } from '../config/utils.js';
@@ -65,7 +64,13 @@ async function runDigestEmailJob({ repoRoot = null, dayOfWeek = null } = {}) {
   // Get users who should receive digest today
   let users;
   try {
-    users = await getUsersWithDigestDay(today);
+    users = await listDigestRecipients(
+      crossOrganizationScope(
+        repoRoot ?? null,
+        'digest job: recipients span every organization',
+      ),
+      today,
+    );
     log.info(`Found ${users.length} users with digest scheduled for today`);
   } catch (err) {
     log.error('Failed to get users:', err.message);

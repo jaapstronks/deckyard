@@ -356,6 +356,21 @@ function normalizeDayOfWeek(v) {
   return n;
 }
 
+/**
+ * Normalize a stored `digest` preference: on unless explicitly switched off,
+ * on the stored day (0 = Sunday) or Monday when none is stored. The one place
+ * the digest shape is read, for the settings API and the digest job alike.
+ * @param {*} v - The raw `digest` object from a `user_settings` bag.
+ * @returns {{enabled: boolean, dayOfWeek: number}}
+ */
+function normalizeDigestPreference(v) {
+  const obj = v && typeof v === 'object' ? v : {};
+  return {
+    enabled: obj.enabled !== false,
+    dayOfWeek: normalizeDayOfWeek(obj.dayOfWeek),
+  };
+}
+
 export async function getAppSettings(scope) {
   toStorageContext(
     scope,
@@ -849,13 +864,7 @@ async function loadUserSettings(key, userId) {
     disableAllTracking: privacyObj?.disableAllTracking === true,
   };
 
-  // Digest settings
-  const digestObj =
-    obj?.digest && typeof obj.digest === 'object' ? obj.digest : {};
-  const digest = {
-    enabled: digestObj?.enabled !== false,
-    dayOfWeek: normalizeDayOfWeek(digestObj?.dayOfWeek),
-  };
+  const digest = normalizeDigestPreference(obj?.digest);
 
   // Highlighter settings
   const highlighterObj =
@@ -885,6 +894,75 @@ async function loadUserSettings(key, userId) {
     digest,
     highlighter,
   };
+}
+
+/**
+ * The accounts whose weekly digest is due on `dayOfWeek`, read from the
+ * preferences Settings > Preferences writes (`user_settings.digest`).
+ *
+ * Each `users` row is matched to its settings row the way
+ * {@link loadUserSettings} does: by `users.id` first, by e-mail for a row
+ * that has no id yet. A user with no settings row gets the defaults (on,
+ * Monday). A background job reads this, so it takes a cross-organization
+ * scope.
+ *
+ * @param {import('./scope.js').StorageScope} scope
+ * @param {number} dayOfWeek - 0 = Sunday … 6 = Saturday.
+ * @returns {Promise<Array<{id: string, email: string, organizationId: string, role: string}>>}
+ */
+export async function listDigestRecipients(scope, dayOfWeek) {
+  toStorageContext(
+    scope,
+    'listDigestRecipients',
+    {},
+    { allowCrossOrganization: true },
+  );
+  return withDbGuard([], async (db) => {
+    const rows = await db
+      .selectFrom('users')
+      .leftJoin('user_settings', (join) =>
+        join.on((eb) =>
+          eb.or([
+            eb('user_settings.user_id', '=', eb.ref('users.id')),
+            eb.and([
+              eb('user_settings.user_id', 'is', null),
+              eb('user_settings.email', '=', sql`lower(users.email)`),
+            ]),
+          ]),
+        ),
+      )
+      .select([
+        'users.id',
+        'users.email',
+        'users.organization_id',
+        'users.role',
+        'user_settings.settings',
+        'user_settings.user_id as settings_user_id',
+      ])
+      .execute();
+
+    // Both keys can match one user until their first write drops the id-less
+    // row; the id-keyed row wins, as in loadUserSettings.
+    const byUser = new Map();
+    for (const row of rows) {
+      const seen = byUser.get(row.id);
+      if (!seen || (!seen.settings_user_id && row.settings_user_id)) {
+        byUser.set(row.id, row);
+      }
+    }
+
+    return [...byUser.values()]
+      .filter((row) => {
+        const digest = normalizeDigestPreference(row.settings?.digest);
+        return digest.enabled && digest.dayOfWeek === dayOfWeek;
+      })
+      .map((row) => ({
+        id: row.id,
+        email: row.email,
+        organizationId: row.organization_id,
+        role: row.role,
+      }));
+  });
 }
 
 export async function writeUserSettings(scope, email, next) {
