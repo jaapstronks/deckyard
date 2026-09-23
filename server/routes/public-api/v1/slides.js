@@ -430,9 +430,6 @@ async function handleReorderSlides(ctx, presentationId) {
 // ============================================================
 
 /**
- * Main handler for /api/v1/presentations/:id/slides routes.
- */
-/**
  * Slide routes; a known path with another method answers 405.
  *
  * `/slides/reorder` sits above `/slides/:slideId` and answers every method

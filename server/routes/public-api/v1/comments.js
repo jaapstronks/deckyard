@@ -411,9 +411,6 @@ async function handleCommentStatus(ctx, commentId) {
 // MAIN HANDLER
 // ============================================================
 
-/**
- * Main handler for public API v1 comment routes.
- */
 /** Comment routes; a known path with another method answers 405. */
 export const ROUTES = [
   {

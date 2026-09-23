@@ -275,9 +275,6 @@ async function handlePptxExport(ctx, id) {
 // MAIN HANDLER
 // ============================================================
 
-/**
- * Main handler for /api/v1/presentations/:id/export/* routes.
- */
 /** The four export formats, one row each; any other method answers 405. */
 export const ROUTES = [
   {

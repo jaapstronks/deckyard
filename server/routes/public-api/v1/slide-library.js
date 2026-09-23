@@ -242,9 +242,6 @@ async function handleAddFromLibrary(ctx, presentationId) {
 // MAIN HANDLER
 // ============================================================
 
-/**
- * Main handler for /api/v1/slide-library routes.
- */
 /** Slide-library routes; a known path with another method answers 405. */
 export const ROUTES = [
   {

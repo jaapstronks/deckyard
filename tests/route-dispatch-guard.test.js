@@ -54,8 +54,9 @@ const EXEMPT_TREES = [
   'public-api/',
   // Static/published/embed viewers serve HTML and files; they are not part of
   // the /api dispatch surface the norm covers. Their capturing routes are
-  // ROUTES rows all the same (B399), held by route-captures-guard.test.js. `static.js` is that tree's
-  // top-level dispatcher (its one compare is the /feed/ mount prefix).
+  // ROUTES rows all the same (B399), held by route-captures-guard.test.js.
+  // `static.js` is that tree's top-level dispatcher (its one compare is the
+  // /feed/ mount prefix).
   'static/',
   'static.js',
 ];

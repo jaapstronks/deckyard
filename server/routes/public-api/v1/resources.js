@@ -245,9 +245,6 @@ async function handleImageLibrary(ctx) {
 // MAIN HANDLER
 // ============================================================
 
-/**
- * Main handler for /api/v1/themes, /api/v1/slide-types, /api/v1/image-library routes.
- */
 /** Read-only catalogue routes; any other method answers 405. */
 export const ROUTES = [
   { method: 'GET', pattern: '/api/v1/themes', handler: handleThemes },

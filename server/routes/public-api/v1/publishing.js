@@ -116,9 +116,6 @@ async function handleUnpublish(ctx, id) {
 // MAIN HANDLER
 // ============================================================
 
-/**
- * Main handler for /api/v1/presentations/:id/publish routes.
- */
 /** Publish, status and unpublish on one path; other methods answer 405. */
 export const ROUTES = [
   {

@@ -205,9 +205,6 @@ async function handleListLanguages(ctx) {
 // ============================================================
 
 /**
- * Main handler for /api/v1/presentations/:id/translate routes.
- */
-/**
  * Translation routes. The translate rows are `ai`: with AI off they are not
  * mounted and answer the v1 404, like /ai/* does (./index.js), before the
  * permission or AI quota.

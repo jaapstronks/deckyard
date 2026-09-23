@@ -278,9 +278,6 @@ async function handleAppendSlides(ctx) {
 // ============================================================
 
 /**
- * Main handler for /api/v1/ai/* routes.
- */
-/**
  * AI routes. The whole module is unmounted with AI off (./index.js), so the
  * rows need no `ai` flag of their own.
  */

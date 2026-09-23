@@ -314,9 +314,6 @@ async function handleDuplicate(ctx, id) {
 // MAIN HANDLER
 // ============================================================
 
-/**
- * Main handler for /api/v1/presentations routes.
- */
 /** Presentation routes; a known path with another method answers 405. */
 export const ROUTES = [
   {
