@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.39.0](https://github.com/jaapstronks/deckyard/compare/v1.38.2...v1.39.0) (2026-09-23)
+
+
+### Added
+
+* **media:** hide ImageKit files by tag in the picker (IMAGEKIT_HIDDEN_TAGS) ([#1236](https://github.com/jaapstronks/deckyard/issues/1236)) ([29ef90d](https://github.com/jaapstronks/deckyard/commit/29ef90d5477f3e64bd7cf304a061f0092beeed8f))
+
+
+### Fixed
+
+* **editor:** the language controller carries no AI action where AI is off (B398) ([#1234](https://github.com/jaapstronks/deckyard/issues/1234)) ([f9270bb](https://github.com/jaapstronks/deckyard/commit/f9270bba549150d3d754e25e79a9a1a71e08d467))
+
 ## [1.38.2](https://github.com/jaapstronks/deckyard/compare/v1.38.1...v1.38.2) (2026-09-23)
 
 
