@@ -14,7 +14,6 @@ import { uploadsDir } from '../config/storage-paths.js';
 const MIME_TO_EXT = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
-  'image/jpg': 'jpg',
   'image/gif': 'gif',
   'image/webp': 'webp',
   'image/svg+xml': 'svg',
@@ -66,9 +65,7 @@ export class LocalProvider extends MediaProvider {
     let finalBuffer = buffer;
     if (
       optimize &&
-      ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'].includes(
-        contentType,
-      )
+      ['image/png', 'image/jpeg', 'image/webp'].includes(contentType)
     ) {
       finalBuffer = await optimizeRasterImage(buffer, contentType);
     }
@@ -222,7 +219,7 @@ export async function optimizeRasterImage(buffer, mime) {
       });
     }
 
-    if (mime === 'image/jpeg' || mime === 'image/jpg') {
+    if (mime === 'image/jpeg') {
       img = img.jpeg({ quality: 82, mozjpeg: true });
     } else if (mime === 'image/webp') {
       img = img.webp({ quality: 80 });
