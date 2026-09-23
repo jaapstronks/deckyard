@@ -1,4 +1,5 @@
 import { notFound } from '../../utils/http.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published.js';
@@ -25,14 +26,12 @@ import { crossOrganizationScope } from '../../storage/scope.js';
  * @param {import('./static-files.js').StaticContext} ctx
  * @returns {Promise<boolean>} true if handled.
  */
-export async function handlePublishedReader({ repoRoot, req, res, url }) {
-  const pubReaderMatch = url.pathname.match(
-    /^\/p\/([a-f0-9]{8})(?:-([^/]+))?\/reader$/,
-  );
-  if (!pubReaderMatch || req.method !== 'GET') return false;
-
-  const publishId = pubReaderMatch[1];
-  const reqSlug = String(pubReaderMatch[2] || '').trim();
+async function servePublishedReader(
+  { repoRoot, res, url },
+  publishId,
+  slugSegment,
+) {
+  const reqSlug = String(slugSegment || '').trim();
   const entry = await getPublishedById(
     crossOrganizationScope(
       repoRoot,
@@ -103,12 +102,12 @@ export async function handlePublishedReader({ repoRoot, req, res, url }) {
  * @param {import('./static-files.js').StaticContext} ctx
  * @returns {Promise<boolean>} true if handled.
  */
-export async function handlePublishedPage({ repoRoot, req, res, url }) {
-  const pubMatch = url.pathname.match(/^\/p\/([a-f0-9]{8})(?:-([^/]+))?$/);
-  if (!pubMatch || req.method !== 'GET') return false;
-
-  const publishId = pubMatch[1];
-  const reqSlug = String(pubMatch[2] || '').trim();
+async function servePublishedPage(
+  { repoRoot, req, res, url },
+  publishId,
+  slugSegment,
+) {
+  const reqSlug = String(slugSegment || '').trim();
   const entry = await getPublishedById(
     crossOrganizationScope(
       repoRoot,
@@ -285,4 +284,34 @@ export async function handlePublishedPage({ repoRoot, req, res, url }) {
   });
   res.end(html);
   return true;
+}
+
+/**
+ * The published deck at `/p/:publishId-:slug` and its reader. The publish id
+ * is a `published_presentations.id` (`varchar`, not `uuid`) and the slug is
+ * redirected to the canonical one, so both are `text`; the `{8}` hex run is
+ * what separates id from slug, not a gate.
+ */
+export const ROUTES = [
+  {
+    method: 'GET',
+    pattern: /^\/p\/([a-f0-9]{8})(?:-([^/]+))?\/reader$/,
+    captures: ['text', 'text'],
+    handler: servePublishedReader,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/p\/([a-f0-9]{8})(?:-([^/]+))?$/,
+    captures: ['text', 'text'],
+    handler: servePublishedPage,
+  },
+];
+
+/**
+ * Published public pages (open web, no auth): the canvas deck and its reader.
+ * @param {import('./static-files.js').StaticContext} ctx
+ * @returns {Promise<boolean>|false} true if handled.
+ */
+export function handlePublished(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }

@@ -35,8 +35,8 @@ process.env.STORAGE_MODE = 'postgres';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const KEY_OWNER = 'owner@example.com';
-const DECK_ID = 'deck-to-export';
-const FOREIGN_DECK_ID = 'deck-of-someone-else';
+const DECK_ID = 'd0000008-0000-4000-8000-000000000008';
+const FOREIGN_DECK_ID = 'd0000009-0000-4000-8000-000000000009';
 const KEY_ID = 'key-1';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
@@ -358,7 +358,10 @@ test("exporting someone else's private deck is refused with 403", async () => {
 
 test('exporting an unknown deck answers 404', async () => {
   await installDb();
-  const ctx = makeCtx('GET', '/api/v1/presentations/never-a-deck/export/json');
+  const ctx = makeCtx(
+    'GET',
+    '/api/v1/presentations/00000000-0000-4000-8000-00000000dead/export/json',
+  );
   await handleExports(ctx);
   assert.equal(ctx.res.statusCode, 404);
 });

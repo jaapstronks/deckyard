@@ -14,7 +14,9 @@ one per module.
 > path compare in `server/routes/**` outside the exempt trees (the separately
 > versioned `public-api/` and the non-API `static` viewers) — with **no
 > per-file allowlist**. The table is not a target anymore; it is the single
-> dispatch form.
+> dispatch form. Since B399 (2026-09) the public v1 feature modules and the
+> capturing `static` viewers are tables too; what the exemption still covers is
+> exact-path compares in the v1 entry router and the static file handlers.
 
 ## The `Route` shape
 
@@ -80,10 +82,18 @@ out loud that nothing checks that segment.
 
 The list is checked against the pattern on every dispatch — a wrong length
 throws rather than silently gating the wrong segment — and
-`tests/route-captures-guard.test.js` pins three rules over every exported
-table: one entry per capture group, no third spelling of a kind, and **a table
-that declares, declares fully** (once any row in a module carries `captures`,
-every capturing row in it must, or be a reasoned exception in the guard).
+`tests/route-captures-guard.test.js` pins the rules over every exported table
+under `server/routes/` — `api/`, the public `public-api/v1/` and the `static/`
+viewers alike: one entry per capture group, no third spelling of a kind, and
+**every capturing row declares** (or is a reasoned exception in the guard, like
+the bare `/api/presentations/:id` row that must fall through). It also refuses a
+segment captured by hand (`url.pathname.match(…)`) anywhere under
+`server/routes/`, since such a capture sits outside every table (B399).
+
+The dispatcher's own 404 (an unsatisfied `captures`, an unmounted `ai` row)
+answers in the internal `/api` envelope by default. The public v1 API walks its
+tables through `dispatchV1Routes` (`public-api/v1/middleware.js`), which passes
+`{ notFound: v1NotFound }` so the same table form answers the v1 envelope.
 
 ## First-match semantics
 

@@ -29,6 +29,7 @@ import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('ai');
 import {
   requirePermission,
+  dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   readApiV1Body,
@@ -277,28 +278,34 @@ async function handleAppendSlides(ctx) {
 // ============================================================
 
 /**
+ * AI routes. The whole module is unmounted with AI off (./index.js), so the
+ * rows need no `ai` flag of their own.
+ */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/v1/ai/vendors', handler: handleVendors },
+  {
+    pattern: '/api/v1/ai/vendors',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  { method: 'POST', pattern: '/api/v1/ai/wizard', handler: handleWizard },
+  {
+    pattern: '/api/v1/ai/wizard',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'POST',
+    pattern: '/api/v1/ai/append-slides',
+    handler: handleAppendSlides,
+  },
+  {
+    pattern: '/api/v1/ai/append-slides',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
+  },
+];
+
+/**
  * Main handler for /api/v1/ai/* routes.
  */
-export const handleAi = withV1ErrorHandler('public-api-v1:ai', async (ctx) => {
-  const { req, res, url } = ctx;
-
-  // GET /api/v1/ai/vendors
-  if (url.pathname === '/api/v1/ai/vendors') {
-    if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-    return handleVendors(ctx);
-  }
-
-  // POST /api/v1/ai/wizard
-  if (url.pathname === '/api/v1/ai/wizard') {
-    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
-    return handleWizard(ctx);
-  }
-
-  // POST /api/v1/ai/append-slides
-  if (url.pathname === '/api/v1/ai/append-slides') {
-    if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
-    return handleAppendSlides(ctx);
-  }
-
-  return false;
-});
+export const handleAi = withV1ErrorHandler('public-api-v1:ai', (ctx) =>
+  dispatchV1Routes(ROUTES, ctx),
+);

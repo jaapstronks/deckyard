@@ -25,7 +25,7 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
-const { handlePublishedPage } =
+const { handlePublished } =
   await import('../server/routes/static/published.js');
 const { handleEmbed } = await import('../server/routes/static/embed.js');
 const { renderEmbedHtmlDocument } =
@@ -162,7 +162,7 @@ function embedBoot(html) {
 }
 
 const published = () =>
-  documentFrom(handlePublishedPage, `/p/${PUBLISH_ID}-${SLUG}`);
+  documentFrom(handlePublished, `/p/${PUBLISH_ID}-${SLUG}`);
 const embed = () => documentFrom(handleEmbed, `/embed/${PUBLISH_ID}-${SLUG}`);
 
 test('a deck with nl and de offers exactly those two, named natively', async () => {
@@ -209,7 +209,7 @@ test('a single-language deck gets no switch at all', async () => {
 test('the version being served is the active button', async () => {
   seed(['nl', 'de']);
   const de = await documentFrom(
-    handlePublishedPage,
+    handlePublished,
     `/p/${PUBLISH_ID}-${SLUG}?lang=de`,
   );
   assert.match(

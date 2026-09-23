@@ -9,6 +9,7 @@ import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import {
   requirePermission,
+  dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   apiSuccess,
@@ -244,41 +245,45 @@ async function handleImageLibrary(ctx) {
 // MAIN HANDLER
 // ============================================================
 
+/** Read-only catalogue routes; any other method answers 405. */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/v1/themes', handler: handleThemes },
+  {
+    pattern: '/api/v1/themes',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  { method: 'GET', pattern: '/api/v1/slide-types', handler: handleSlideTypes },
+  {
+    pattern: '/api/v1/slide-types',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  {
+    // A slide-type name, not a row id.
+    method: 'GET',
+    pattern: /^\/api\/v1\/slide-types\/([^/]+)\/schema$/,
+    captures: ['text'],
+    handler: handleSlideTypeSchema,
+  },
+  {
+    pattern: /^\/api\/v1\/slide-types\/([^/]+)\/schema$/,
+    captures: ['text'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/v1/image-library',
+    handler: handleImageLibrary,
+  },
+  {
+    pattern: '/api/v1/image-library',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+];
+
 /**
  * Main handler for /api/v1/themes, /api/v1/slide-types, /api/v1/image-library routes.
  */
 export const handleResources = withV1ErrorHandler(
   'public-api-v1:resources',
-  async (ctx) => {
-    const { req, res, url } = ctx;
-
-    // GET /api/v1/themes
-    if (url.pathname === '/api/v1/themes') {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleThemes(ctx);
-    }
-
-    // GET /api/v1/slide-types
-    if (url.pathname === '/api/v1/slide-types') {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleSlideTypes(ctx);
-    }
-
-    // GET /api/v1/slide-types/:slideType/schema
-    const schemaMatch = url.pathname.match(
-      /^\/api\/v1\/slide-types\/([^/]+)\/schema$/,
-    );
-    if (schemaMatch) {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleSlideTypeSchema(ctx, schemaMatch[1]);
-    }
-
-    // GET /api/v1/image-library
-    if (url.pathname === '/api/v1/image-library') {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleImageLibrary(ctx);
-    }
-
-    return false;
-  },
+  (ctx) => dispatchV1Routes(ROUTES, ctx),
 );

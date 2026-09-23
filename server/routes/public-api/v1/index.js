@@ -13,6 +13,7 @@ import {
 import {
   authenticateApiKey,
   checkRequestRateLimit,
+  dispatchV1Routes,
   trackRequest,
   sendV1Error,
   v1MethodNotAllowed,
@@ -164,6 +165,14 @@ async function handleDocs(ctx) {
   return true;
 }
 
+const SCHEMA_CACHE = { 'Cache-Control': 'public, max-age=3600' };
+
+/** Anything else under `/api/v1/schema/`: GET is an unknown schema, the rest 405. */
+function handleUnknownSchema({ req, res }) {
+  if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
+  return v1NotFound(res, 'Unknown schema');
+}
+
 /**
  * Serve the generated JSON Schema for the deck format. Public (like the
  * OpenAPI spec): a published format contract should be fetchable without an
@@ -173,36 +182,37 @@ async function handleDocs(ctx) {
  *   GET /api/v1/schema/deck.json                     - full deck schema
  *   GET /api/v1/schema/slide-types/:name.json        - one type's content schema
  */
-async function handleSchema(ctx) {
-  const { req, res, url } = ctx;
+export const SCHEMA_ROUTES = [
+  {
+    method: 'GET',
+    pattern: '/api/v1/schema/deck.json',
+    handler: function handleDeckSchema({ res }) {
+      serveJson(res, 200, deckJsonSchema(SLIDE_TYPES), SCHEMA_CACHE);
+      return true;
+    },
+  },
+  {
+    // A slide-type name, not a row id.
+    method: 'GET',
+    pattern: /^\/api\/v1\/schema\/slide-types\/([^/]+)\.json$/,
+    captures: ['text'],
+    handler: function handleSlideTypeSchema({ res }, name) {
+      const def = SLIDE_TYPES[name];
+      if (!def) return v1NotFound(res, `Slide type '${name}' not found`);
+      serveJson(
+        res,
+        200,
+        slideTypeContentSchema(name, def, { withMeta: true }),
+        SCHEMA_CACHE,
+      );
+      return true;
+    },
+  },
+  { pattern: /^\/api\/v1\/schema\//, handler: handleUnknownSchema },
+];
 
-  if (!url.pathname.startsWith('/api/v1/schema/')) return false;
-  if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-
-  const headers = { 'Cache-Control': 'public, max-age=3600' };
-
-  if (url.pathname === '/api/v1/schema/deck.json') {
-    serveJson(res, 200, deckJsonSchema(SLIDE_TYPES), headers);
-    return true;
-  }
-
-  const typeMatch = url.pathname.match(
-    /^\/api\/v1\/schema\/slide-types\/([^/]+)\.json$/,
-  );
-  if (typeMatch) {
-    const name = typeMatch[1];
-    const def = SLIDE_TYPES[name];
-    if (!def) return v1NotFound(res, `Slide type '${name}' not found`);
-    serveJson(
-      res,
-      200,
-      slideTypeContentSchema(name, def, { withMeta: true }),
-      headers,
-    );
-    return true;
-  }
-
-  return v1NotFound(res, 'Unknown schema');
+function handleSchema(ctx) {
+  return dispatchV1Routes(SCHEMA_ROUTES, ctx);
 }
 
 // ============================================================

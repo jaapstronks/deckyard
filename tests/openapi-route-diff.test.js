@@ -10,14 +10,12 @@
  *
  * - **Spec** — `docs/openapi.yaml` is parsed as YAML; every `paths.<p>.<method>`
  *   is one operation.
- * - **Router** — the nine feature handlers in `server/routes/public-api/v1/`
- *   dispatch imperatively, but uniformly: a path anchor (`url.pathname === '…'`
- *   or `url.pathname.match(/…/)`) is immediately followed by a
- *   `v1MethodNotAllowed(res, ['GET', …])` call that enumerates exactly that
- *   path's methods. We pair each anchor with the method list that follows it.
- * - **Meta endpoints** live in `index.js` with a different shape (a shared
- *   `req.method !== 'GET'` guard, then path branching), so the five stable,
- *   GET-only meta/schema routes are pinned explicitly below rather than parsed.
+ * - **Router** — every v1 feature module exports a `ROUTES` table (B399), and
+ *   `index.js` exports `SCHEMA_ROUTES`. Each row with a `method` is one
+ *   operation; a method-less row is the path's 405 answer, not an operation.
+ * - **Meta endpoints** `/`, `/docs` and `/openapi.yaml` are answered by the
+ *   entry router in `index.js` before key auth, outside any table, so those
+ *   three stable GET-only routes are pinned explicitly below.
  *
  * Paths are compared structurally: every `{param}` (spec) and every capture
  * group (router regex) is normalized to `{}`, so `/presentations/{id}` and
@@ -30,7 +28,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parse as parseYaml } from 'yaml';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -47,31 +45,26 @@ const HTTP_METHODS = new Set([
   'options',
 ]);
 
-/** Feature handlers parsed for anchor→method-list pairs. */
-const FEATURE_HANDLERS = [
-  'presentations.js',
-  'slides.js',
-  'exports.js',
-  'ai.js',
-  'comments.js',
-  'publishing.js',
-  'translate.js',
-  'slide-library.js',
-  'resources.js',
+/** The v1 modules and the route tables they export. */
+const ROUTE_TABLES = [
+  ['presentations.js', 'ROUTES'],
+  ['slides.js', 'ROUTES'],
+  ['exports.js', 'ROUTES'],
+  ['ai.js', 'ROUTES'],
+  ['comments.js', 'ROUTES'],
+  ['publishing.js', 'ROUTES'],
+  ['translate.js', 'ROUTES'],
+  ['slide-library.js', 'ROUTES'],
+  ['resources.js', 'ROUTES'],
+  ['index.js', 'SCHEMA_ROUTES'],
 ];
 
 /**
- * Meta/schema endpoints served from index.js. They use a shared method guard
- * (not the anchor→method-list shape), and they are stable GET-only routes, so
- * they are pinned here by hand. A change to this set is a deliberate edit.
+ * Meta endpoints answered by the entry router in index.js, outside any table.
+ * Stable GET-only routes, pinned here by hand. A change to this set is a
+ * deliberate edit.
  */
-const META_OPERATIONS = [
-  'GET /',
-  'GET /docs',
-  'GET /openapi.yaml',
-  'GET /schema/deck.json',
-  'GET /schema/slide-types/{}.json',
-];
+const META_OPERATIONS = ['GET /', 'GET /docs', 'GET /openapi.yaml'];
 
 /** Collapse any `{name}` or capture group to a bare `{}` for structural compare. */
 function normalizePath(p) {
@@ -83,7 +76,7 @@ function regexToPath(source) {
   let s = source;
   s = s.replace(/\([^)]*\)/g, '{}'); // any capture group → placeholder (before unescaping)
   s = s.replace(/^\^/, '').replace(/\$$/, ''); // anchors
-  s = s.replace(/\\\//g, '/'); // unescape slashes
+  s = s.replace(/\\(.)/g, '$1'); // unescape `\/`, `\.`
   return s;
 }
 
@@ -115,51 +108,24 @@ function specOperations() {
 // Router side
 // ---------------------------------------------------------------------------
 
-// Anchors are matched over the whole file (not line-by-line): the regex form
-// often splits `url.pathname.match(` from its `/…/` literal across two lines.
-const ANCHOR_EXACT = /url\.pathname\s*===\s*'([^']+)'/g;
-// The regex literal runs from `match(/` to its terminating `/)`. Internal
-// escaped slashes (`\/`) are followed by more pattern, never `)`, so the
-// non-greedy body with the `s` flag stops only at the real end of the literal.
-// Prettier may break the call over three lines and leave a trailing comma
-// after the literal (`match(\n  /…/,\n)`), hence the optional `,`.
-const ANCHOR_REGEX = /url\.pathname\.match\(\s*\/(.+?)\/\s*,?\s*\)/gs;
-const METHOD_LIST = /v1MethodNotAllowed\(\s*res\s*,\s*\[([^\]]*)\]/g;
+const tables = await Promise.all(
+  ROUTE_TABLES.map(async ([file, exportName]) => {
+    const mod = await import(pathToFileURL(path.join(V1_DIR, file)).href);
+    assert.ok(Array.isArray(mod[exportName]), `${file} exports ${exportName}`);
+    return mod[exportName];
+  }),
+);
 
 function routerOperations() {
   const ops = new Set();
-  for (const file of FEATURE_HANDLERS) {
-    const src = fs.readFileSync(path.join(V1_DIR, file), 'utf8');
-
-    // Collect every anchor and method-list as positioned events, then walk them
-    // in source order pairing each method-list with the anchor that precedes it.
-    const events = [];
-    for (const m of src.matchAll(ANCHOR_EXACT)) {
-      events.push({ i: m.index, kind: 'path', path: stripPrefix(m[1]) });
-    }
-    for (const m of src.matchAll(ANCHOR_REGEX)) {
-      events.push({
-        i: m.index,
-        kind: 'path',
-        path: stripPrefix(regexToPath(m[1])),
-      });
-    }
-    for (const m of src.matchAll(METHOD_LIST)) {
-      events.push({ i: m.index, kind: 'methods', methods: m[1] });
-    }
-    events.sort((a, b) => a.i - b.i);
-
-    let currentPath = null;
-    for (const e of events) {
-      if (e.kind === 'path') {
-        currentPath = e.path;
-      } else if (currentPath) {
-        for (const raw of e.methods.split(',')) {
-          const method = raw.trim().replace(/['"]/g, '');
-          if (method)
-            ops.add(`${method.toUpperCase()} ${normalizePath(currentPath)}`);
-        }
-      }
+  for (const routes of tables) {
+    for (const route of routes) {
+      if (!route.method) continue;
+      const p =
+        typeof route.pattern === 'string'
+          ? route.pattern
+          : regexToPath(route.pattern.source);
+      ops.add(`${route.method} ${normalizePath(stripPrefix(p))}`);
     }
   }
   // META_OPERATIONS are already written with normalized (`{}`) paths.

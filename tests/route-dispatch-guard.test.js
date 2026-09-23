@@ -46,14 +46,17 @@ const ROUTES_ROOT = join(repoRoot, 'server', 'routes');
  * ROUTES-table norm governs. Everything under them is exempt as a group.
  */
 const EXEMPT_TREES = [
-  // The public v1 API is a separately versioned, OpenAPI-documented contract
-  // with its own dispatcher and middleware (routes/public-api/v1/index.js).
-  // Whether it moves to the shared table is an A7.4-adjacent decision, not a
-  // fase-2 migration.
+  // The public v1 API: its feature modules dispatch through ROUTES tables
+  // (B399), but its entry router (routes/public-api/v1/index.js) runs a
+  // middleware pipeline — maintenance gate, the unauthenticated meta
+  // endpoints, key auth, rate limit — whose exact-path compares are not
+  // route rows. Captures are held everywhere by route-captures-guard.test.js.
   'public-api/',
   // Static/published/embed viewers serve HTML and files; they are not part of
-  // the /api dispatch surface the norm covers. `static.js` is that tree's
-  // top-level dispatcher (its one compare is the /feed/ mount prefix).
+  // the /api dispatch surface the norm covers. Their capturing routes are
+  // ROUTES rows all the same (B399), held by route-captures-guard.test.js.
+  // `static.js` is that tree's top-level dispatcher (its one compare is the
+  // /feed/ mount prefix).
   'static/',
   'static.js',
 ];

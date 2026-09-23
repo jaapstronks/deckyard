@@ -14,6 +14,7 @@ import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
+  dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   getPresentationWithAccess,
@@ -429,53 +430,64 @@ async function handleReorderSlides(ctx, presentationId) {
 // ============================================================
 
 /**
+ * Slide routes; a known path with another method answers 405.
+ *
+ * `/slides/reorder` sits above `/slides/:slideId` and answers every method
+ * itself, so `reorder` never reaches the single-slide rows; `from-library`
+ * is the slide-library module's, which the v1 router walks before this one.
+ * Slide ids are author-chosen strings (migration 051), hence `text`.
+ */
+export const ROUTES = [
+  {
+    method: 'POST',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/reorder$/,
+    captures: ['uuid'],
+    handler: handleReorderSlides,
+  },
+  {
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/reorder$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/,
+    captures: ['uuid', 'text'],
+    handler: handleGetSlide,
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/,
+    captures: ['uuid', 'text'],
+    handler: handleUpdateSlide,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/,
+    captures: ['uuid', 'text'],
+    handler: handleDeleteSlide,
+  },
+  {
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/,
+    captures: ['uuid', 'text'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides$/,
+    captures: ['uuid'],
+    handler: handleCreateSlide,
+  },
+  {
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
+  },
+];
+
+/**
  * Main handler for /api/v1/presentations/:id/slides routes.
  */
-export const handleSlides = withV1ErrorHandler(
-  'public-api-v1:slides',
-  async (ctx) => {
-    const { req, res, url } = ctx;
-
-    // POST /api/v1/presentations/:id/slides/reorder
-    const reorderMatch = url.pathname.match(
-      /^\/api\/v1\/presentations\/([^/]+)\/slides\/reorder$/,
-    );
-    if (reorderMatch) {
-      if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
-      return handleReorderSlides(ctx, reorderMatch[1]);
-    }
-
-    // Single slide operations: GET, PUT, DELETE /api/v1/presentations/:id/slides/:slideId
-    const singleSlideMatch = url.pathname.match(
-      /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/,
-    );
-    if (singleSlideMatch) {
-      const [, presentationId, slideId] = singleSlideMatch;
-
-      // Exclude 'reorder' and 'from-library' which are handled separately
-      if (slideId === 'reorder' || slideId === 'from-library') {
-        return false;
-      }
-
-      if (req.method === 'GET')
-        return handleGetSlide(ctx, presentationId, slideId);
-      if (req.method === 'PUT')
-        return handleUpdateSlide(ctx, presentationId, slideId);
-      if (req.method === 'DELETE')
-        return handleDeleteSlide(ctx, presentationId, slideId);
-      return v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
-    }
-
-    // Collection: POST /api/v1/presentations/:id/slides
-    const collectionMatch = url.pathname.match(
-      /^\/api\/v1\/presentations\/([^/]+)\/slides$/,
-    );
-    if (collectionMatch) {
-      if (req.method === 'POST')
-        return handleCreateSlide(ctx, collectionMatch[1]);
-      return v1MethodNotAllowed(res, ['POST']);
-    }
-
-    return false;
-  },
+export const handleSlides = withV1ErrorHandler('public-api-v1:slides', (ctx) =>
+  dispatchV1Routes(ROUTES, ctx),
 );
