@@ -14,6 +14,20 @@ function cleanFolder(v) {
   return withSlash.replace(/\/+$/, '');
 }
 
+/** Comma-separated env value → trimmed, non-empty, de-duplicated list. */
+function cleanList(v) {
+  const s = cleanStr(v);
+  if (!s) return [];
+  return [
+    ...new Set(
+      s
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean),
+    ),
+  ];
+}
+
 export function getImageKitConfigFromEnv() {
   const privateKey = cleanStr(envStr('IMAGEKIT_PRIVATE_KEY'));
   const publicKey = cleanStr(envStr('IMAGEKIT_PUBLIC_KEY'));
@@ -23,6 +37,7 @@ export function getImageKitConfigFromEnv() {
   const metadataFieldAltSeed = cleanStr(
     envStr('IMAGEKIT_METADATA_FIELD_ALT_SEED'),
   );
+  const hiddenTags = cleanList(envStr('IMAGEKIT_HIDDEN_TAGS'));
 
   const issues = [];
   const warnings = [];
@@ -49,6 +64,7 @@ export function getImageKitConfigFromEnv() {
     urlEndpoint,
     uploadFolder,
     tagPrefix,
+    hiddenTags,
     metadataFields: {
       altSeed: metadataFieldAltSeed,
     },
@@ -90,6 +106,18 @@ async function fetchJsonOrThrow(url, opts = {}) {
   return body;
 }
 
+/**
+ * Escape a value for a double-quoted string in an ImageKit search query.
+ * Backslash first, then quote — escaping the quote first would leave a
+ * literal `\` in the value able to escape our own escape
+ * (js/incomplete-sanitization).
+ * @param {string} value
+ * @returns {string}
+ */
+function escapeQueryValue(value) {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
 function toImageKitSearchQuery({ q, searchQuery }) {
   const sq = cleanStr(searchQuery);
   if (sq) return sq;
@@ -98,9 +126,7 @@ function toImageKitSearchQuery({ q, searchQuery }) {
   // ImageKit searchable fields: name, tags, path, format, size, width, height,
   // createdAt, updatedAt, customMetadata.*, embeddedMetadata.*
   // Note: description is NOT searchable via the API.
-  // Backslash first, then quote — escaping the quote first would leave a
-  // literal `\` in the term able to escape our own escape (js/incomplete-sanitization).
-  const escaped = term.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const escaped = escapeQueryValue(term);
   // name HAS and tags HAS both support partial, case-insensitive matching
   // For multi-select custom metadata (like People), IN requires exact match with case variations
   const lower = escaped.toLowerCase();
@@ -109,6 +135,23 @@ function toImageKitSearchQuery({ q, searchQuery }) {
   const variants = [...new Set([escaped, lower, title])];
   const peopleClause = `"customMetadata.People" IN [${variants.map((v) => `"${v}"`).join(',')}]`;
   return `(name HAS "${escaped}" OR tags HAS "${escaped}" OR ${peopleClause})`;
+}
+
+/**
+ * Narrow a listing query so files carrying an `IMAGEKIT_HIDDEN_TAGS` tag stay
+ * out of pickers and search results. Lookups by id never pass through here:
+ * a deck that already points at such a file must keep resolving it.
+ * @param {string} sq - The listing's own query, empty for none.
+ * @param {string[]} hiddenTags - From {@link getImageKitConfigFromEnv}.
+ * @returns {string} - `sq` unchanged when nothing is hidden.
+ */
+function withHiddenTagsExcluded(sq, hiddenTags) {
+  if (!hiddenTags.length) return sq;
+  const list = hiddenTags.map((t) => `"${escapeQueryValue(t)}"`).join(', ');
+  const clause = `tags NOT IN [${list}]`;
+  // Parenthesise the caller's query: a bare `a OR b` would otherwise bind
+  // looser than our AND and let hidden files back in through `a`.
+  return sq ? `(${sq}) AND ${clause}` : clause;
 }
 
 /**
@@ -167,7 +210,10 @@ export async function listImageKitFiles({
     throw new ValidationError('ImageKit is not configured');
   }
 
-  const sq = toImageKitSearchQuery({ q, searchQuery });
+  const sq = withHiddenTagsExcluded(
+    toImageKitSearchQuery({ q, searchQuery }),
+    cfg.hiddenTags,
+  );
   const u = new URL('https://api.imagekit.io/v1/files');
   if (sq) u.searchParams.set('searchQuery', sq);
   u.searchParams.set(
@@ -202,12 +248,16 @@ export async function listImageKitTags() {
   const batchSize = 100;
   const batches = 5; // 500 files total
   const tagCounts = new Map();
+  const hiddenQuery = withHiddenTagsExcluded('', cfg.hiddenTags);
+  // Tags are counted lower-cased, so the hidden set is compared that way too.
+  const hidden = new Set(cfg.hiddenTags.map((t) => t.toLowerCase()));
 
   for (let i = 0; i < batches; i++) {
     try {
       const u = new URL('https://api.imagekit.io/v1/files');
       u.searchParams.set('limit', String(batchSize));
       u.searchParams.set('skip', String(i * batchSize));
+      if (hiddenQuery) u.searchParams.set('searchQuery', hiddenQuery);
       // Sample the newest files: a tag that only exists on recent uploads is
       // exactly the one a user goes looking for.
       u.searchParams.set('sort', IMAGEKIT_DEFAULT_SORT);
@@ -222,12 +272,16 @@ export async function listImageKitTags() {
       if (!Array.isArray(files) || files.length === 0) break;
 
       for (const file of files) {
-        const tags = Array.isArray(file?.tags) ? file.tags : [];
-        for (const tag of tags) {
-          const t = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
-          if (t) {
-            tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
-          }
+        const tags = (Array.isArray(file?.tags) ? file.tags : [])
+          .map((tag) =>
+            typeof tag === 'string' ? tag.trim().toLowerCase() : '',
+          )
+          .filter(Boolean);
+        // The query already leaves these out; this also covers a tag that
+        // differs from the configured one only in case.
+        if (tags.some((t) => hidden.has(t))) continue;
+        for (const t of tags) {
+          tagCounts.set(t, (tagCounts.get(t) || 0) + 1);
         }
       }
 
