@@ -8,6 +8,7 @@ import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { newSlide } from '../../../../shared/slide-types/presentation.js';
+import { resolveTypeDefaults } from '../../../../shared/slide-types/type-defaults.js';
 import {
   requirePermission,
   dispatchV1Routes,
@@ -111,6 +112,9 @@ async function handleSlideTypes(ctx) {
   return true;
 }
 
+/** The language the schema endpoint's `defaults` and `example` describe. */
+const SCHEMA_LANG = 'en-GB';
+
 /**
  * GET /api/v1/slide-types/:slideType/schema - Get detailed schema for a slide type.
  * Returns fields with full metadata, defaults, and an example slide structure.
@@ -155,18 +159,21 @@ async function handleSlideTypeSchema(ctx, slideType) {
     return fieldInfo;
   });
 
-  // Use en-GB defaults if available, otherwise fallback
-  const defaults =
-    def.defaultsByLang?.['en-GB'] ||
-    def.defaultsByLang?.['nl'] ||
-    def.defaults ||
-    {};
-
-  // The example is what the factory makes for this type in a deck without a
-  // theme or a language, with a fixed id so the document is stable. This
-  // endpoint describes the core registry, so that is the one it composes from.
+  // One language answers both halves of "what does a new slide of this type
+  // contain": `defaults` is what the registry resolves for en-GB, and the
+  // example is what the factory makes from that same resolution in an en-GB
+  // deck without a theme. Only the slide id is fixed; instance keys (a
+  // poll's question and option ids) are minted per call like any new slide.
+  // This endpoint describes the core registry, so that is the one it
+  // composes from.
+  const defaults = resolveTypeDefaults(def, SCHEMA_LANG);
   const example = {
-    ...newSlide({ type: slideType, theme: null, slideTypes: SLIDE_TYPES }),
+    ...newSlide({
+      type: slideType,
+      theme: null,
+      lang: SCHEMA_LANG,
+      slideTypes: SLIDE_TYPES,
+    }),
     id: 'example-uuid-00000000',
   };
 
