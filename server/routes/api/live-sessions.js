@@ -480,32 +480,38 @@ export const ROUTES = [
   },
   {
     pattern: /^\/api\/live-sessions\/([^/]+)\/state$/,
+    captures: ['text'],
     handler: handleLiveSessionStatePush,
   },
   {
     method: 'POST',
     pattern:
       /^\/api\/live-sessions\/([^/]+)\/interactions\/([^/]+)\/(open|close|reset)$/,
+    captures: ['text', 'text', 'text'],
     handler: handleLiveSessionInteractionAction,
   },
   {
     method: 'GET',
     pattern: /^\/api\/live-sessions\/([^/]+)\/feedback\/([^/]+)\.(csv|json)$/,
+    captures: ['text', 'text', 'text'],
     handler: handleLiveSessionFeedbackExport,
   },
   {
     method: 'POST',
     pattern: /^\/api\/live-sessions\/([^/]+)\/control\/enable$/,
+    captures: ['text'],
     handler: handleLiveSessionControlEnable,
   },
   {
     method: 'POST',
     pattern: /^\/api\/live-sessions\/([^/]+)\/control\/disable$/,
+    captures: ['text'],
     handler: handleLiveSessionControlDisable,
   },
   {
     method: 'POST',
     pattern: /^\/api\/live-sessions\/([^/]+)\/control$/,
+    captures: ['text'],
     handler: handleLiveSessionControlCommand,
   },
 ];

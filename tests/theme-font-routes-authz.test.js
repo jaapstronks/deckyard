@@ -282,7 +282,7 @@ test('reading, updating, deleting and defaulting a custom theme by id', async ()
   const missing = await call(
     handleThemes,
     'GET',
-    '/api/themes/custom/deadbeef',
+    '/api/themes/custom/00000000-0000-4000-8000-0000deadbeef',
     { as: ACTORS.member },
   );
   assert.equal(missing.res.statusCode, 404);
@@ -369,7 +369,7 @@ test('setting a default on a missing theme is a 404', async () => {
   const { res } = await call(
     handleThemes,
     'POST',
-    '/api/themes/custom/deadbeef/set-default',
+    '/api/themes/custom/00000000-0000-4000-8000-0000deadbeef/set-default',
     {
       as: ACTORS.designer,
     },
@@ -440,7 +440,7 @@ test('reading, updating and deleting a font family by id', async () => {
   const missing = await call(
     handleFontFamilies,
     'GET',
-    '/api/font-families/deadbeef',
+    '/api/font-families/00000000-0000-4000-8000-0000deadbeef',
     { as: ACTORS.member },
   );
   assert.equal(missing.res.statusCode, 404);
@@ -622,7 +622,7 @@ test('removing a variant is designer-gated', async () => {
   const { res } = await call(
     handleFontFamilies,
     'DELETE',
-    '/api/font-families/aaa111/variants/bbb222',
+    '/api/font-families/00000000-0000-4000-8000-000000000aaa/variants/00000000-0000-4000-8000-000000000bbb',
     {
       as: ACTORS.member,
     },

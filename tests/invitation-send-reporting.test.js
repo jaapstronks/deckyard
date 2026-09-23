@@ -40,6 +40,8 @@ process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+/** The unactivated user's id: a `uuid` column, declared so by the route (B399). */
+const PENDING = '00000000-0000-4000-8000-0000000000a1';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -129,7 +131,7 @@ function seed() {
       },
       {
         // Invited earlier, never set a password: the one state a resend acts on.
-        id: 'user-pending',
+        id: PENDING,
         organization_id: ORG,
         email: 'pending@example.com',
         name: 'pending',
@@ -375,7 +377,7 @@ test('a resend that could not be sent is not reported as sent', async () => {
 
   // The token is rotated whatever happens to the mail, so this is a success
   // with a caveat rather than a failure — and the caveat is the whole point.
-  const { status, body } = await resend('user-pending');
+  const { status, body } = await resend(PENDING);
 
   assert.equal(status, 200);
   assert.equal(body.ok, true);
@@ -390,7 +392,7 @@ test('a resend that did go out is reported as sent', async () => {
   seed();
   stubBrevo('ok');
 
-  const { status, body } = await resend('user-pending');
+  const { status, body } = await resend(PENDING);
 
   assert.equal(status, 200);
   assert.equal(body.invitationSent, true);

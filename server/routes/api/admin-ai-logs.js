@@ -100,7 +100,8 @@ export const ROUTES = [
   },
   {
     method: 'GET',
-    pattern: /^\/api\/admin\/ai-logs\/download\/(.+)$/,
+    pattern: /^\/api\/admin\/ai-logs\/download\/([^/]+)$/,
+    captures: ['text'],
     handler: handleAiLogsDownload,
   },
   {

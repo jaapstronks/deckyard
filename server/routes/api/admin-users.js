@@ -402,21 +402,25 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/admin\/users\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleAdminUserGet,
   },
   {
     method: 'PATCH',
     pattern: /^\/api\/admin\/users\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleAdminUserUpdate,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/admin\/users\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleAdminUserDelete,
   },
   {
     method: 'POST',
     pattern: /^\/api\/admin\/users\/([^/]+)\/resend-invitation$/,
+    captures: ['uuid'],
     handler: handleAdminUserResendInvitation,
   },
 ];

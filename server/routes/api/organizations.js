@@ -273,21 +273,25 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/organizations\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleOrgGet,
   },
   {
     method: 'PATCH',
     pattern: /^\/api\/organizations\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleOrgUpdate,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/organizations\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleOrgDelete,
   },
   {
     method: 'POST',
     pattern: /^\/api\/organizations\/([^/]+)\/switch$/,
+    captures: ['uuid'],
     handler: handleOrgSwitch,
   },
 ];

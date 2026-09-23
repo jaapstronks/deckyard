@@ -472,15 +472,18 @@ export const ROUTES = [
   {
     method: 'PATCH',
     pattern: /^\/api\/slide-library\/personal\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handlePersonalUpdate,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/slide-library\/personal\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handlePersonalDelete,
   },
   {
     pattern: /^\/api\/slide-library\/personal\/([^/]+)$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']),
   },
   {
@@ -500,43 +503,52 @@ export const ROUTES = [
   {
     method: 'PATCH',
     pattern: /^\/api\/slide-library\/organization\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleOrganizationUpdate,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/slide-library\/organization\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleOrganizationDelete,
   },
   {
     pattern: /^\/api\/slide-library\/organization\/([^/]+)$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['PATCH', 'DELETE']),
   },
   {
     method: 'GET',
     pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/,
+    captures: ['uuid'],
     handler: itemTagsGet('personal'),
   },
   {
     method: 'PUT',
     pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/,
+    captures: ['uuid'],
     handler: itemTagsPut('personal'),
   },
   {
     pattern: /^\/api\/slide-library\/personal\/([^/]+)\/tags$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']),
   },
   {
     method: 'GET',
     pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,
+    captures: ['uuid'],
     handler: itemTagsGet('organization'),
   },
   {
     method: 'PUT',
     pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,
+    captures: ['uuid'],
     handler: itemTagsPut('organization'),
   },
   {
     pattern: /^\/api\/slide-library\/organization\/([^/]+)\/tags$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT']),
   },
 ];

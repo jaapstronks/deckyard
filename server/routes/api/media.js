@@ -332,15 +332,18 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/media\/imagekit\/files\/([^/]+)\/details$/,
+    captures: ['text'],
     handler: handleImageKitDetailsGet,
   },
   {
     method: 'PATCH',
     pattern: /^\/api\/media\/imagekit\/files\/([^/]+)\/details$/,
+    captures: ['text'],
     handler: handleImageKitDetailsPatch,
   },
   {
     pattern: /^\/api\/media\/imagekit\/files\/([^/]+)\/details$/,
+    captures: ['text'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH']),
   },
 ];

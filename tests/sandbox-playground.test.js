@@ -68,7 +68,9 @@ const PNG_1x1 = Buffer.from(
 test('publish route is refused (403) in sandbox mode', async () => {
   await withEnv({ SANDBOX_MODE: '1' }, async () => {
     const res = mockRes();
-    const url = new URL('http://localhost/api/presentations/deck123/publish');
+    const url = new URL(
+      'http://localhost/api/presentations/00000000-0000-4000-8000-000000000123/publish',
+    );
     const handled = await handlePublish({
       repoRoot: process.cwd(),
       req: { method: 'POST' },

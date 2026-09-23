@@ -104,6 +104,7 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/analytics\/reports\/([^/]+)$/,
+    captures: ['text'],
     handler: handlePublicReport,
   },
 ];

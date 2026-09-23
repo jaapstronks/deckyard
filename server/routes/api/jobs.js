@@ -261,16 +261,19 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/jobs\/([^/]+)\/download$/,
+    captures: ['text'],
     handler: handleJobDownload,
   },
   {
     method: 'GET',
     pattern: /^\/api\/jobs\/queue\/([^/]+)\/stats$/,
+    captures: ['text'],
     handler: handleQueueStats,
   },
   {
     method: 'GET',
     pattern: /^\/api\/jobs\/([^/]+)$/,
+    captures: ['text'],
     handler: handleGetJobStatus,
   },
 ];

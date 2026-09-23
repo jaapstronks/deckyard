@@ -230,9 +230,6 @@ export async function listOrganizationMembers(organizationId, options = {}) {
   });
 }
 
-/** Postgres' "invalid input syntax", raised when text meets a uuid column. */
-const INVALID_TEXT_REPRESENTATION = '22P02';
-
 /**
  * Look one member up by membership id or by user id, in the same shape
  * `listOrganizationMembers` returns.
@@ -243,6 +240,10 @@ const INVALID_TEXT_REPRESENTATION = '22P02';
  * row was unreachable — a role change or removal there answered 404 while the
  * member sat visibly on the screen. Paging made those rows reachable to look at,
  * which is what turned a latent bound into a bug.
+ *
+ * Both columns are `uuid`: the caller passes an identifier that is one. The
+ * route declares the segment (`captures`, B399), so `/members/nonsense`
+ * answers 404 before it reaches this query.
  *
  * @param {string} organizationId - Organization ID
  * @param {string} identifier - Membership ID or user ID
@@ -273,15 +274,7 @@ export async function getOrganizationMember(organizationId, identifier) {
           eb('user_organizations.user_id', '=', identifier),
         ]),
       )
-      .executeTakeFirst()
-      .catch((err) => {
-        // Both columns are `uuid`, so a path segment that is not one makes
-        // Postgres refuse the comparison. "No such member" is the honest answer
-        // to `/members/nonsense`, not a 500 — which is what the scan this
-        // replaced returned, because it compared in JavaScript.
-        if (err?.code === INVALID_TEXT_REPRESENTATION) return undefined;
-        throw err;
-      });
+      .executeTakeFirst();
 
     return row ? formatMemberWithUser(row) : null;
   });

@@ -368,10 +368,14 @@ test('an instance admin may not promote into someone else’s deck either', asyn
 
 test('promoting on a deck that does not exist is a 404', async () => {
   const { questionId } = await seed();
-  const { res } = await call('POST', promotePath('no-such-deck', questionId), {
-    as: OWNER,
-    body: {},
-  });
+  const { res } = await call(
+    'POST',
+    promotePath('00000000-0000-4000-8000-00000000dead', questionId),
+    {
+      as: OWNER,
+      body: {},
+    },
+  );
   assert.equal(res.statusCode, 404);
 });
 
@@ -527,11 +531,16 @@ test('an anonymous caller is answered "nothing", not refused', async () => {
 
 test('capabilities for a deck this caller cannot see is an empty grant, not a 404', async () => {
   // `getPresentation` is organization-scoped, so an unreadable deck and a
-  // missing one arrive here identically. Answering "nothing allowed" refuses to
+  // missing one arrive here identically. (A well-formed id: a malformed one
+  // names no deck at all and is the route's 404, B399.) Answering "nothing allowed" refuses to
   // turn the moderator surface into a deck-existence oracle.
-  const { res } = await call('GET', capabilitiesPath('no-such-deck'), {
-    as: STRANGER,
-  });
+  const { res } = await call(
+    'GET',
+    capabilitiesPath('00000000-0000-4000-8000-00000000dead'),
+    {
+      as: STRANGER,
+    },
+  );
   assert.equal(res.statusCode, 200);
   assert.deepEqual(jsonBody(res), { canPromote: false, canRemove: false });
 });

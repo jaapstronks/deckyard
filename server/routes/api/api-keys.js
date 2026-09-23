@@ -195,16 +195,19 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/api-keys\/([^/]+)\/usage$/,
+    captures: ['uuid'],
     handler: handleApiKeyUsage,
   },
   {
     method: 'GET',
     pattern: /^\/api\/api-keys\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleApiKeyGet,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/api-keys\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleApiKeyRevoke,
   },
   {

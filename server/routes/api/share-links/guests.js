@@ -230,10 +230,30 @@ const RESEND_PATTERN =
  * @type {import('../../../utils/router.js').Route[]}
  */
 export const GUEST_ROUTES = [
-  { method: 'POST', pattern: GUESTS_PATTERN, handler: handleGuestPreRegister },
-  { method: 'GET', pattern: GUESTS_PATTERN, handler: handleGuestList },
-  { method: 'DELETE', pattern: GUEST_PATTERN, handler: handleGuestRemove },
-  { method: 'POST', pattern: RESEND_PATTERN, handler: handleGuestResend },
+  {
+    method: 'POST',
+    pattern: GUESTS_PATTERN,
+    captures: ['uuid', 'uuid'],
+    handler: handleGuestPreRegister,
+  },
+  {
+    method: 'GET',
+    pattern: GUESTS_PATTERN,
+    captures: ['uuid', 'uuid'],
+    handler: handleGuestList,
+  },
+  {
+    method: 'DELETE',
+    pattern: GUEST_PATTERN,
+    captures: ['uuid', 'uuid', 'uuid'],
+    handler: handleGuestRemove,
+  },
+  {
+    method: 'POST',
+    pattern: RESEND_PATTERN,
+    captures: ['uuid', 'uuid', 'uuid'],
+    handler: handleGuestResend,
+  },
 ];
 
 /**

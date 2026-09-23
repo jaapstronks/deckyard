@@ -285,26 +285,31 @@ export const ROUTES = [
   },
   {
     method: 'POST',
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)\/duplicate$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)\/duplicate$/,
+    captures: ['uuid'],
     handler: handleCustomSlideTypeDuplicate,
   },
   {
     method: 'GET',
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleCustomSlideTypeGet,
   },
   {
     method: 'PUT',
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleCustomSlideTypeUpdate,
   },
   {
     method: 'DELETE',
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleCustomSlideTypeDelete,
   },
   {
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT', 'DELETE']),
   },
 ];
