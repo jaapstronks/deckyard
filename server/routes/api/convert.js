@@ -18,6 +18,7 @@ import { deckToPresentationParts } from '../../../shared/slide-types.js';
 import { loadDeckTheme } from '../../utils/themes.js';
 import { createLogger } from '../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../utils/sse.js';
+import { clientDisconnectSignal } from '../../utils/client-disconnect.js';
 import { dispatchRoutes } from '../../utils/router.js';
 const log = createLogger('convert');
 import {
@@ -82,13 +83,26 @@ async function handleConvertFile({
     return badRequest(res, 'File too large (max 50MB)');
   }
 
+  // Cancelling is dropping the request: the signal aborts the model calls
+  // and the image uploads, and is checked before the presentation is written.
+  const signal = clientDisconnectSignal(res);
+
   // Convert the file
-  const { deck, report } = await convertFile(buffer, {
-    filename,
-    mimeType,
-    lang,
-    vendor,
-  });
+  let converted;
+  try {
+    converted = await convertFile(buffer, {
+      filename,
+      mimeType,
+      lang,
+      vendor,
+      signal,
+    });
+  } catch (e) {
+    if (!signal.aborted) throw e;
+    log.info('[Convert] cancelled by the client');
+    return true;
+  }
+  const { deck, report } = converted;
 
   if (!deck || report.errors.length > 0) {
     // Conversion failed
@@ -112,6 +126,12 @@ async function handleConvertFile({
     // Use the detected/effective language from the deck, not the original request
     const effectiveLang =
       deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
+
+    // The write step: no deck is created for a client that already left.
+    if (signal.aborted) {
+      log.info('[Convert] cancelled by the client');
+      return true;
+    }
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Converted Presentation',

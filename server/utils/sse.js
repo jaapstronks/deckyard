@@ -1,4 +1,5 @@
 import { guardSseConnection } from './sse-limiter.js';
+import { clientDisconnectSignal } from './client-disconnect.js';
 
 /**
  * Default interval for the per-connection comment heartbeat. 15s keeps
@@ -42,14 +43,8 @@ export const SSE_HEARTBEAT_MS = 15_000;
  *   return handled. `signal` aborts when the client goes away before the
  *   handler ended the response: pass it to whatever work the stream reports
  *   on (a provider fetch, a write loop) so a cancelled stream stops that
- *   work instead of finishing it for nobody.
- *
- * Disconnect is read from the response, not the request. A request whose
- * body the handler already consumed is done: `req` emits `close` right then
- * and never again, so a POST stream (analyze, convert) listening on `req`
- * would miss the client leaving. `res` emits `close` once, when the
- * connection ends, and `writableFinished` says whether the handler got
- * there first.
+ *   work instead of finishing it for nobody. It comes from
+ *   `clientDisconnectSignal`, the same source a plain JSON route uses.
  */
 export function openSseStream(
   req,
@@ -92,17 +87,16 @@ export function openSseStream(
     if (heartbeatTimer) clearInterval(heartbeatTimer);
   };
 
-  const disconnect = new AbortController();
+  const signal = clientDisconnectSignal(res);
   res.on?.('close', () => {
     // Capture before close() flips it: onClose only fires for a stream the
     // handler had not already closed, and at most once.
     const alreadyClosed = closed;
     close();
-    if (!res.writableFinished) disconnect.abort();
     if (!alreadyClosed) onClose?.();
   });
 
-  return { ok: true, close, signal: disconnect.signal };
+  return { ok: true, close, signal };
 }
 
 export function sseWrite(res, { event, data } = {}) {
