@@ -9,7 +9,6 @@
  */
 
 import { createDataSourceProvider } from '../provider-base.js';
-import { apiFetch } from '../../api-fetch.js';
 import { assertPublicHttpUrl } from '../../ssrf-guard.js';
 import { ValidationError } from '../../errors.js';
 
@@ -122,10 +121,12 @@ export async function fetchCsvData(config) {
     }
   }
 
-  const resp = await apiFetch(url, 'CSV', {
-    headers: fetchHeaders,
-    redirect: 'error',
-  });
+  // Plain `fetch`, not `apiFetch`: the provider base is this provider's seam
+  // and answers any failure with its own fixed 502 sentence (B417/B419).
+  const resp = await fetch(url, { headers: fetchHeaders, redirect: 'error' });
+  if (!resp.ok) {
+    throw new Error(`CSV URL answered ${resp.status}: ${await resp.text()}`);
+  }
   const text = await resp.text();
 
   return parseCsv(text);

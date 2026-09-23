@@ -115,12 +115,7 @@ export async function getGiphyGif(id) {
  * @returns {Promise<{ buffer: Buffer, contentType: string }>}
  */
 export async function downloadGif(url) {
-  const resp = await fetch(url);
-
-  if (!resp.ok) {
-    throw new Error(`Failed to download GIF: ${resp.status}`);
-  }
-
+  const resp = await apiFetch(url, 'Giphy');
   const buffer = Buffer.from(await resp.arrayBuffer());
   const contentType = resp.headers.get('content-type') || 'image/gif';
 
