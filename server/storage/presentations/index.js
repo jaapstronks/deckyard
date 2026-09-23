@@ -21,7 +21,7 @@ import {
   toDisplayIdentity,
   NO_DISPLAY_NAMES,
 } from '../display-identity.js';
-import { ConflictError } from '../../utils/errors.js';
+import { revisionConflict } from '../../utils/errors.js';
 import { mergeSlidesAtSlideLevel } from './crud/helpers.js';
 import { enforceSlideWritePolicy } from './crud/enforce-slide-locks.js';
 import { repoRootOf, toStorageContext } from '../scope.js';
@@ -48,6 +48,11 @@ const log = createLogger('presentations');
 // deck a public token already addressed. Everything else — listings and every
 // write — must state its organization.
 const ALLOW_CROSS_ORG = { allowCrossOrganization: true };
+
+// The 409 for a stale `If-Match` the slide-level merge was not asked for, or
+// declined. Same sentence shape as the library-slide conflict.
+const STALE_REVISION_MESSAGE =
+  'Conflict: this presentation was updated by someone else. Reload and try again.';
 
 /**
  * List the presentations of the storageScope's organization.
@@ -932,29 +937,16 @@ async function updatePresentationRow(id, data, ctx, opts = {}) {
             };
           }
         } else if (mergeResult.conflicts.length > 0) {
-          throw new ConflictError(
+          throw revisionConflict(
             'Conflict: the same slides were modified by multiple users.',
-            {
-              id: existing.id,
-              revision: existing.revision,
-              modified: existing.modified,
-              updatedBy: existing.updatedBy || null,
-              conflictingSlides: mergeResult.conflicts,
-            },
+            existing,
+            { conflictingSlides: mergeResult.conflicts },
           );
         } else {
-          throw new ConflictError('Presentation was updated by someone else', {
-            id: existing.id,
-            revision: existing.revision,
-            modified: existing.modified,
-          });
+          throw revisionConflict(STALE_REVISION_MESSAGE, existing);
         }
       } else {
-        throw new ConflictError('Presentation was updated by someone else', {
-          id: existing.id,
-          revision: existing.revision,
-          modified: existing.modified,
-        });
+        throw revisionConflict(STALE_REVISION_MESSAGE, existing);
       }
     }
   }

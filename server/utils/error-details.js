@@ -17,7 +17,7 @@
  *   `held` sends the competing slide lock (`lock`); `conflict` the server copy
  *   a stale `If-Match` lost against (`id`, `revision`, `modified`,
  *   `updatedBy`, plus `conflictingSlides` when the slide-level merge is what
- *   failed); `locked` which slide and who holds it (`slideId`,
+ *   failed; built only by `revisionConflict()` in `errors.js`); `locked` which slide and who holds it (`slideId`,
  *   `lockKind`, `holder`); `conversion_failed` the same `report` the 201 body
  *   and the SSE stream carry; `maintenance` the object `GET /api/maintenance`
  *   returns (`active`, `reason`, `retryAfter`); `sandbox_quota_exceeded` the

@@ -113,6 +113,32 @@ export class ConflictError extends AppError {
 }
 
 /**
+ * The one way to build the `conflict` 409 a stale `If-Match` loses with: the
+ * details always carry the stored copy it lost against (`id`, `revision`,
+ * `modified`, `updatedBy` - the D22 display pair, `null` when nobody is
+ * recorded), plus
+ * `conflictingSlides` when the slide-level merge is what failed. Payload
+ * register: `PAYLOAD_KEYS.conflict` in `server/utils/error-details.js`.
+ *
+ * @param {string} message
+ * @param {{ id: string, revision: number, modified: string, updatedBy?: { id: string|null, displayName: string }|null }} stored
+ * @param {{ conflictingSlides?: string[] }} [opts]
+ * @returns {ConflictError}
+ */
+export function revisionConflict(message, stored, { conflictingSlides } = {}) {
+  // The four stored-copy keys stay a literal so the details-register guard
+  // (tests/error-details-register-guard.test.js) can read them statically.
+  const err = new ConflictError(message, {
+    id: stored.id,
+    revision: stored.revision,
+    modified: stored.modified,
+    updatedBy: stored.updatedBy || null,
+  });
+  if (conflictingSlides) err.details.conflictingSlides = conflictingSlides;
+  return err;
+}
+
+/**
  * 423 Locked - Resource is locked by another user.
  */
 export class LockedError extends AppError {
