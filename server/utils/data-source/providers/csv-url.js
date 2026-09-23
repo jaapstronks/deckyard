@@ -11,6 +11,7 @@
 import { createDataSourceProvider } from '../provider-base.js';
 import { apiFetch } from '../../api-fetch.js';
 import { assertPublicHttpUrl } from '../../ssrf-guard.js';
+import { ValidationError } from '../../errors.js';
 
 const BLOCKED_HEADERS = new Set([
   'host',
@@ -96,17 +97,20 @@ function parseCellRef(ref) {
  */
 export async function fetchCsvData(config) {
   const { url, headers: customHeaders } = config;
-  if (!url) throw new Error('url is required for csv-url provider');
+  if (!url) throw new ValidationError('url is required for csv-url provider');
 
   // SSRF guard: reject non-http(s) schemes and any host that resolves to a
   // loopback/private/link-local address (incl. cloud metadata 169.254.169.254).
   try {
     await assertPublicHttpUrl(url);
   } catch (err) {
-    if (err?.code === 'SSRF_INVALID_URL') throw new Error('Invalid CSV URL');
+    if (err?.code === 'SSRF_INVALID_URL')
+      throw new ValidationError('Invalid CSV URL');
     if (err?.code === 'SSRF_BAD_SCHEME')
-      throw new Error('CSV URL must use HTTP or HTTPS');
-    throw new Error('URL must not point to internal/private addresses');
+      throw new ValidationError('CSV URL must use HTTP or HTTPS');
+    throw new ValidationError(
+      'URL must not point to internal/private addresses',
+    );
   }
 
   const fetchHeaders = { Accept: 'text/csv, text/plain, */*' };

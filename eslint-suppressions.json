@@ -1197,11 +1197,6 @@
       "count": 1
     }
   },
-  "server/utils/data-source/providers/csv-url.js": {
-    "preserve-caught-error": {
-      "count": 3
-    }
-  },
   "server/utils/debug-log.js": {
     "no-restricted-syntax": {
       "count": 1
