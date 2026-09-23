@@ -262,6 +262,7 @@ test('every registered code passes with exactly its keys', () => {
     conversion_failed: { report: { errors: [] } },
     maintenance: { active: true, reason: 'upgrade', retryAfter: 30 },
     sandbox_quota_exceeded: { resource: 'decks', limit: 2, used: 2 },
+    in_use: { usage: { slides: 3, decks: 2, libraryItems: 1, versions: 0 } },
     missing_alt: {
       lang: 'nl',
       slideIndex: 2,
