@@ -18,6 +18,7 @@
 
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
@@ -201,6 +202,13 @@ describe('copying a library item', () => {
     assert.equal(copyCalls(stub.calls).tags, undefined);
   });
 
+  it('a tag is `{id, name}`: a bare string is not read as a tag (B402)', async () => {
+    const item = richItem();
+    item.tags = ['finance', { id: 't2', name: 'q3' }];
+    await apiOps.pushToTeam(item);
+    assert.deepEqual(copyCalls(stub.calls).tags.body, { tags: ['q3'] });
+  });
+
   it('falls back to the picker theme when the item has none', async () => {
     const item = richItem();
     item.themeId = '';
@@ -225,4 +233,27 @@ describe('copying a library item', () => {
     assert.equal(r.error.message, 'nope');
     assert.ok(!calls.some((c) => c.method === 'PUT'));
   });
+});
+
+describe('one tag shape in the client (B402)', () => {
+  // Every route that returns tags returns `{id, name}` (server/storage/tags.js,
+  // server/storage/slide-library.js). A reader that also accepts a bare string
+  // is a branch for zero producers: a second shape for one meaning.
+  const readers = [
+    'client/lib/slide-library/api.js',
+    'client/lib/slide-library/controls.js',
+    'client/lib/slide-library/picker.js',
+    'client/lib/slide-library/modals.js',
+    'client/views/list/tag-filter.js',
+    'client/views/list/presentation-card.js',
+    'client/views/editor/modals/settings-modal/tags.js',
+  ];
+  for (const file of readers) {
+    it(`${file} reads a tag as an object only`, () => {
+      const src = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+      assert.doesNotMatch(src, /typeof tag === 'string'/);
+      // `tag?.name ?? tag`, `t.name || t`: the fallback, under any name.
+      assert.doesNotMatch(src, /\b(\w+)\??\.name (\?\?|\|\|) \1\b/);
+    });
+  }
 });

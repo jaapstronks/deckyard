@@ -161,7 +161,7 @@ export function createSlideLibraryPicker({
     if (activeView !== 'trash' && activeTagFilter.length > 0) {
       tagFiltered = inView.filter((it) => {
         const itemTagNames = Array.isArray(it?.tags)
-          ? it.tags.map((t) => (t?.name || t || '').toLowerCase())
+          ? it.tags.map((t) => t.name.toLowerCase())
           : [];
         return activeTagFilter.every((filterTag) =>
           itemTagNames.includes(filterTag.toLowerCase()),
@@ -433,9 +433,7 @@ export function createSlideLibraryPicker({
       const tagsWrap = h('div', { class: 'ps-lib-tags' });
       const visibleTags = itemTags.slice(0, 3);
       for (const tag of visibleTags) {
-        tagsWrap.append(
-          h('span', { class: 'ps-lib-tag', text: tag.name || tag }),
-        );
+        tagsWrap.append(h('span', { class: 'ps-lib-tag', text: tag.name }));
       }
       if (itemTags.length > 3) {
         tagsWrap.append(

@@ -210,7 +210,7 @@ export function createSlideLibraryModals({
       text: t('slideLibrary.tags', 'Tags'),
     });
     const initialTagNames = Array.isArray(it?.tags)
-      ? it.tags.map((t) => t.name || t)
+      ? it.tags.map((t) => t.name)
       : [];
     const tagEditor = createTagEditor({
       api,

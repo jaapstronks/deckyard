@@ -47,7 +47,7 @@ function filterByOwner(presentations, actor) {
 /**
  * Strip internal fields from presentation for API response.
  * @param {object} pres
- * @param {string[]} [tags]
+ * @param {Array<{id: string, name: string}>} [tags]
  * @param {string|null} [requesterEmail] - the API-key owner; the owner email is
  *   only returned to the owner themselves, redacted otherwise.
  */
