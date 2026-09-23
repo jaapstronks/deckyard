@@ -10,6 +10,8 @@ import { t } from '../ui-i18n.js';
 import { h } from '../dom.js';
 import { createModal } from '../dom/modal.js';
 import { toast } from '../dom/toast.js';
+import { sharingEnabled } from '../state/features.js';
+import { createSharingOffNote } from '../../views/shared/sharing-off.js';
 
 const SHELVES = ['personal', 'organization'];
 
@@ -78,7 +80,13 @@ export function openCollectionEditModal({
   ]);
 
   // Shelf is fixed once created (personal vs organization live in different places).
-  let shelfValue = initialShelf;
+  // Where sharing is off (sandbox, D181) a new collection goes on the personal
+  // shelf, and the Team choice stays visible, greyed out, with why.
+  const teamShelfOpen = sharingEnabled();
+  let shelfValue =
+    !isEdit && !teamShelfOpen && initialShelf === 'organization'
+      ? 'personal'
+      : initialShelf;
   if (!isEdit) {
     const shelfRow = h('div', {
       class: 'sb-segmented collection-shelf-select',
@@ -88,6 +96,7 @@ export function openCollectionEditModal({
       const btn = h('button', {
         type: 'button',
         class: `sb-segmented-btn ${s === shelfValue ? 'is-active' : ''}`,
+        disabled: s === 'organization' && !teamShelfOpen,
         text:
           s === 'organization'
             ? t('slideLibrary.shelf.organization', 'Team')
@@ -107,6 +116,7 @@ export function openCollectionEditModal({
         text: t('slideLibrary.collections.shelfLabel', 'Where'),
       }),
       shelfRow,
+      ...(teamShelfOpen ? [] : [createSharingOffNote()]),
     );
   }
 

@@ -800,7 +800,8 @@
   pointer-events: none;
 }
 
-.sandbox-settings-note {
+.sandbox-settings-note,
+.sharing-off-note {
   margin: 0 0 var(--ps-space-3);
   padding: var(--ps-space-2) var(--ps-space-3);
   border-radius: var(--ps-radius-md);

@@ -204,11 +204,13 @@ Sandbox mode is safe to expose publicly. Its isolation rests on four things:
   email-keyed, so one guest cannot read another's private decks without knowing
   their random UUID.
 - **Organization decks are intentionally shared, read-only seed content.** In
-  sandbox mode `canWritePresentation` returns `false` for organization visibility and
-  `canChangePresentationVisibility` blocks guest-to-guest sharing
-  (`server/utils/presentation-authz/presentations.js`), so the shared surface
-  is the curated demo decks only, and guests cannot mutate them or promote
-  their own decks into the shared space.
+  sandbox mode `canWritePresentation` returns `false` for organization visibility
+  (`server/utils/presentation-authz/presentations.js`), and the sandbox
+  declares sharing off (`sharingEnabled()`, D181): no user search, no
+  `→ organization` visibility, no collaborator invite, no ownership transfer
+  and no organization-shelf write (`server/sandbox/sharing.js`). The shared surface is
+  the curated demo content only; guests can neither mutate it nor promote
+  their own work into it.
 - **TTL cleanup.** Non-organization (guest) decks are ephemeral and expire after
   `SANDBOX_TTL_HOURS` (`server/storage/presentations/sandbox.js`), so a guest's
   content does not accumulate or persist indefinitely.

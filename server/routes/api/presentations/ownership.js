@@ -30,6 +30,7 @@ import {
   NotificationEventTypes,
 } from '../../../services/notification-events.js';
 import { createLogger } from '../../../utils/logger.js';
+import { assertSharingEnabled } from '../../../sandbox/sharing.js';
 const log = createLogger('ownership');
 
 export async function handleOwnershipTransfer(
@@ -37,6 +38,8 @@ export async function handleOwnershipTransfer(
   id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+  // Handing a deck to someone else is sharing it (D181).
+  assertSharingEnabled();
 
   const pres = await getPresentation(storageScope, id);
   if (!pres) return notFound(res);

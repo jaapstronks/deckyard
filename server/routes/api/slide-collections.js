@@ -30,6 +30,8 @@ import {
 } from '../../storage/collections.js';
 import { matchesIdentity } from '../../../shared/identity-match.js';
 import { dispatchRoutes } from '../../utils/router.js';
+import { sharingEnabled } from '../../config/sandbox.js';
+import { assertSharingEnabled } from '../../sandbox/sharing.js';
 
 /**
  * Organization-shelf collections may only be mutated by an admin or the creator.
@@ -42,6 +44,8 @@ import { dispatchRoutes } from '../../utils/router.js';
  */
 function organizationMutateGuard(authedUser) {
   return (collection) => {
+    // The organization shelf is read-only where sharing is off (D181), for everyone.
+    if (!sharingEnabled()) return false;
     if (authedUser?.isAdmin) return true;
     return matchesIdentity(authedUser, {
       userId: collection?.createdBy?.id,
@@ -151,6 +155,7 @@ async function handleOrganizationCreate({
   res,
   authedUser,
 }) {
+  assertSharingEnabled();
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;

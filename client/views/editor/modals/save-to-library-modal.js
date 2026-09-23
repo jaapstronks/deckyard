@@ -4,6 +4,8 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createTagEditor } from '../../list/tag-editor.js';
 import { h } from '../../../lib/dom.js';
+import { sharingEnabled } from '../../../lib/state/features.js';
+import { createSharingOffNote } from '../../shared/sharing-off.js';
 import {
   DEFAULT_DECK_LANG,
   getLangDisplayName,
@@ -233,10 +235,14 @@ export function openSaveToLibraryModal({
     type: 'button',
     text: t('slideLibrary.shelf.personal', 'Personal'),
   });
+  // Where sharing is off (sandbox, D181) the organization shelf stays as a choice,
+  // greyed out, and the hint says why instead of what it does.
+  const teamShelfOpen = sharingEnabled();
   const teamBtn = h('button', {
     class: 'sb-segmented-btn',
     type: 'button',
     text: t('slideLibrary.shelf.organization', 'Team'),
+    disabled: !teamShelfOpen,
   });
 
   personalBtn.addEventListener('click', () => {
@@ -253,13 +259,15 @@ export function openSaveToLibraryModal({
 
   shelfSegmented.append(personalBtn, teamBtn);
 
-  const shelfHint = h('div', {
-    class: 'help is-small',
-    text: t(
-      'editor.slideLibrary.saveModal.shelfHint',
-      'Personal slides are only visible to you. Team slides are shared with your organization.',
-    ),
-  });
+  const shelfHint = teamShelfOpen
+    ? h('div', {
+        class: 'help is-small',
+        text: t(
+          'editor.slideLibrary.saveModal.shelfHint',
+          'Personal slides are only visible to you. Team slides are shared with your organization.',
+        ),
+      })
+    : createSharingOffNote();
 
   const shelfField = h('div', { class: 'field' });
   shelfField.append(shelfLabel, shelfSegmented, shelfHint);

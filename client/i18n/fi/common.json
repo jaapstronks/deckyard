@@ -214,6 +214,7 @@
   "sandbox.settings.export": "Tietojen vienti on poissa käytöstä hiekkalaatikossa — työ on täällä väliaikaista. Omassa Deckyardissa esityksistä ja kirjastosta voi ladata täyden varmuuskopion.",
   "sandbox.settings.notifications": "Ilmoitukset ovat poissa käytöstä hiekkalaatikossa — vieraalla ei ole tiliä, johon ilmoittaa. Omassa Deckyardissa kommenteista saa ilmoituksen sähköpostiin tai Slackiin/Teamsiin.",
   "sandbox.settings.unavailable": "Ei käytettävissä hiekkalaatikossa.",
+  "sandbox.sharing.off": "Hiekkalaatikossa työskentelet yksin. Omassa Deckyardissasi jaat esityksiä ja dioja tiimisi kanssa.",
   "shortcuts.or": "tai",
   "shortcuts.title": "Näppäinoikotiet",
   "stockMedia.attribution": "Kuvat lähteestä {source}",

@@ -208,6 +208,7 @@
   "sandbox.settings.export": "Dataexport är avstängd i sandlådan — ditt arbete här är tillfälligt. I ditt eget Deckyard kan du ladda ner en fullständig säkerhetskopia av dina presentationer och ditt bibliotek.",
   "sandbox.settings.notifications": "Aviseringar är avstängda i sandlådan — en gäst har inget konto att avisera. I ditt eget Deckyard får du besked via e-post eller Slack/Teams när någon kommenterar.",
   "sandbox.settings.unavailable": "Inte tillgängligt i sandlådan.",
+  "sandbox.sharing.off": "I sandlådan arbetar du ensam. I ditt eget Deckyard delar du presentationer och bilder med ditt team.",
   "shortcuts.or": "eller",
   "shortcuts.title": "Kortkommandon",
   "stockMedia.attribution": "Foton från {source}",

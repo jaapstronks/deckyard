@@ -208,6 +208,7 @@
   "sandbox.settings.export": "L'export de données est désactivé dans le bac à sable — votre travail y est temporaire. Dans votre propre Deckyard, vous pouvez télécharger une sauvegarde complète de vos présentations et de votre bibliothèque.",
   "sandbox.settings.notifications": "Les notifications sont désactivées dans le bac à sable — un invité n'a pas de compte à notifier. Dans votre propre Deckyard, recevez des alertes par e-mail ou sur Slack/Teams quand quelqu'un commente.",
   "sandbox.settings.unavailable": "Non disponible dans le bac à sable.",
+  "sandbox.sharing.off": "Dans le bac à sable, vous travaillez seul. Dans votre propre Deckyard, vous partagez présentations et diapositives avec votre équipe.",
   "shortcuts.or": "ou",
   "shortcuts.title": "Raccourcis clavier",
   "stockMedia.attribution": "Photos de {source}",

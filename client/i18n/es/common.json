@@ -215,6 +215,7 @@
   "sandbox.settings.export": "La exportación de datos está desactivada en el entorno de pruebas: aquí su trabajo es temporal. En su propio Deckyard puede descargar una copia de seguridad completa de sus presentaciones y su biblioteca.",
   "sandbox.settings.notifications": "Las notificaciones están desactivadas en el entorno de pruebas: un invitado no tiene cuenta a la que avisar. En su propio Deckyard recibirá avisos por correo o en Slack/Teams cuando alguien comente.",
   "sandbox.settings.unavailable": "No disponible en el entorno de pruebas.",
+  "sandbox.sharing.off": "En el entorno de pruebas trabajas por tu cuenta. En tu propio Deckyard compartes presentaciones y diapositivas con tu equipo.",
   "shortcuts.or": "o",
   "shortcuts.title": "Atajos de teclado",
   "stockMedia.attribution": "Fotos de {source}",

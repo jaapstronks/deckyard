@@ -18,7 +18,13 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
 
 - `server/config/sandbox.js` — the flag and every tunable (`sandboxEnabled`,
   `sandboxTtlHours`, `sandboxTtlMs`, `sandboxDefaultThemeId`,
-  `sandboxCookieMaxAgeDays`, `sandboxWatermarkText`).
+  `sandboxCookieMaxAgeDays`, `sandboxWatermarkText`), plus the
+  `sharingEnabled` declaration (off in sandbox, D181).
+- `server/sandbox/sharing.js` — `assertSharingEnabled()`, the one refusal
+  every sharing route calls (`SharingDisabledError`, a 403 `forbidden`).
+- `client/views/shared/sharing-off.js` — the greyed-out treatment of a
+  sharing entry: the one-sentence note (`sandbox.sharing.off`) and the
+  disabled fieldset.
 - `server/auth/sandbox.js` — the throwaway guest identity (`ensureSandboxUser`,
   `getSandboxUserFromRequest`); cookie `sb_sandbox`, synthetic
   `guest-<uuid>@sandbox.local` emails.
@@ -57,6 +63,14 @@ Versus a normal instance:
 - **Watermarked exports.** Exports carry `SANDBOX_WATERMARK` text.
 - **Quotas.** Per-guest deck-count and stored-byte caps, a lower request-body
   cap, secure cookies, and proxy-trust for rate limiting.
+- **No sharing between guests (D181).** One declaration, `sharingEnabled()`,
+  is off: user search answers with nobody, and opening a deck to the
+  organization, inviting a collaborator, transferring ownership and writing to
+  the organization shelf (slides and collections) are refused with a 403. The client
+  reads the same value as `features.enableSharing` and keeps every such entry
+  on screen, greyed out, under one sentence of why (the Share dialog's Team
+  tab, the Team choice of the save-to-library and collection modals). Share
+  links (the Guests tab) are not part of it.
 - **Publishing off, neutral theme, SEO tuned.** Publish disabled; a neutral
   default theme; the root landing is indexable with the sandbox OG image, while
   internal SPA routes are `noindex`.

@@ -214,6 +214,7 @@
   "sandbox.settings.export": "A exportação de dados está desativada no ambiente de testes — aqui o seu trabalho é temporário. No seu próprio Deckyard pode transferir uma cópia de segurança completa das suas apresentações e da sua biblioteca.",
   "sandbox.settings.notifications": "As notificações estão desativadas no ambiente de testes — um convidado não tem conta para notificar. No seu próprio Deckyard recebe avisos por e-mail ou no Slack/Teams quando alguém comenta.",
   "sandbox.settings.unavailable": "Não disponível no ambiente de testes.",
+  "sandbox.sharing.off": "No ambiente de testes você trabalha sozinho. No seu próprio Deckyard, você compartilha apresentações e slides com sua equipe.",
   "shortcuts.or": "ou",
   "shortcuts.title": "Atalhos de teclado",
   "stockMedia.attribution": "Fotografias de {source}",

@@ -212,6 +212,7 @@
   "sandbox.settings.export": "L'esportazione dei dati è disattivata nella sandbox: qui il tuo lavoro è temporaneo. Nel tuo Deckyard puoi scaricare un backup completo delle presentazioni e della libreria.",
   "sandbox.settings.notifications": "Le notifiche sono disattivate nella sandbox: un ospite non ha un account da notificare. Nel tuo Deckyard puoi ricevere avvisi via email o Slack/Teams quando qualcuno commenta.",
   "sandbox.settings.unavailable": "Non disponibile nella sandbox.",
+  "sandbox.sharing.off": "Nella sandbox lavori da solo. Nel tuo Deckyard condividi presentazioni e slide con il tuo team.",
   "shortcuts.or": "oppure",
   "shortcuts.title": "Scorciatoie da tastiera",
   "stockMedia.attribution": "Foto da {source}",

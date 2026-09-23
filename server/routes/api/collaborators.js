@@ -36,6 +36,7 @@ import {
   forbidden,
 } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
+import { assertSharingEnabled } from '../../sandbox/sharing.js';
 import { createNotification } from '../../storage/notifications.js';
 import {
   broadcastToUser,
@@ -117,6 +118,8 @@ async function handleCollaboratorAdd(
   { repoRoot, storageScope, req, res, authedUser },
   presentationId,
 ) {
+  // Inviting someone onto a deck is sharing it (D181).
+  assertSharingEnabled();
   const pres = await getPresentation(storageScope, presentationId);
   if (!pres) return notFound(res);
   const collaboratorPermission = await getCollaboratorPermission(

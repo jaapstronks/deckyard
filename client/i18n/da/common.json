@@ -210,6 +210,7 @@
   "sandbox.settings.export": "Dataeksport er slået fra i sandkassen — dit arbejde her er midlertidigt. I dit eget Deckyard kan du hente en fuld sikkerhedskopi af dine præsentationer og dit bibliotek.",
   "sandbox.settings.notifications": "Notifikationer er slået fra i sandkassen — en gæst har ingen konto at give besked. I dit eget Deckyard får du besked på e-mail eller i Slack/Teams, når nogen kommenterer.",
   "sandbox.settings.unavailable": "Ikke tilgængelig i sandkassen.",
+  "sandbox.sharing.off": "I sandkassen arbejder du alene. I dit eget Deckyard deler du præsentationer og slides med dit team.",
   "shortcuts.or": "eller",
   "shortcuts.title": "Tastaturgenveje",
   "stockMedia.attribution": "Fotos fra {source}",

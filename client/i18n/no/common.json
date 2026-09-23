@@ -213,6 +213,7 @@
   "sandbox.settings.export": "Dataeksport er slått av i sandkassen — arbeidet ditt her er midlertidig. I ditt eget Deckyard kan du laste ned en full sikkerhetskopi av presentasjonene og biblioteket ditt.",
   "sandbox.settings.notifications": "Varsler er slått av i sandkassen — en gjest har ingen konto å varsle. I ditt eget Deckyard får du beskjed på e-post eller i Slack/Teams når noen kommenterer.",
   "sandbox.settings.unavailable": "Ikke tilgjengelig i sandkassen.",
+  "sandbox.sharing.off": "I sandkassen jobber du alene. I ditt eget Deckyard deler du presentasjoner og lysbilder med teamet ditt.",
   "shortcuts.or": "eller",
   "shortcuts.title": "Hurtigtaster",
   "stockMedia.attribution": "Bilder fra {source}",

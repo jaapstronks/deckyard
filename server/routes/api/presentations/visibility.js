@@ -19,6 +19,7 @@ import {
 import { maybeFireWebhook } from '../../../utils/webhooks.js';
 import { parseIfMatchRevision } from './helpers.js';
 import { getOptionalBoolean } from '../../../utils/request-validators.js';
+import { assertSharingEnabled } from '../../../sandbox/sharing.js';
 
 export async function handlePresentationVisibility(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -39,6 +40,9 @@ export async function handlePresentationVisibility(
         ? 'private'
         : null;
   if (!nextVisibility) return badRequest(res, 'Invalid visibility');
+  // Opening a deck to the organization is sharing; moving one back to private is
+  // not, so only the widening direction asks the declaration (D181).
+  if (nextVisibility === 'organization') assertSharingEnabled();
   if (
     !canChangePresentationVisibility({
       user: authedUser,
