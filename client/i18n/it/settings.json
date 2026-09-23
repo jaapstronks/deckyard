@@ -137,6 +137,7 @@
   "imagekit.alt.missingConfirm": "Il valore iniziale dell'ALT è vuoto. Usare comunque questa immagine?",
   "imagekit.alt.missingTitle": "Testo ALT mancante",
   "imagekit.alt.updateCheckbox": "Aggiorna l'ALT in ImageKit",
+  "imagekit.loadFailed": "Impossibile caricare la libreria ImageKit. Riprova più tardi.",
   "imagekit.noResults": "Nessun risultato.",
   "imagekit.notConfigured": "ImageKit non è configurato.",
   "imagekit.pickHint": "Seleziona un'immagine per vederne i dettagli.",

@@ -148,6 +148,7 @@
   "imagekit.alt.missingTitle": "ALT-tekst ontbreekt",
   "imagekit.alt.placeholder": "ALT-tekst ({lang}, aanbevolen)",
   "imagekit.alt.updateCheckbox": "ALT bijwerken in ImageKit",
+  "imagekit.loadFailed": "De ImageKit-bibliotheek kon niet worden geladen. Probeer het later opnieuw.",
   "imagekit.noResults": "Geen resultaten.",
   "imagekit.notConfigured": "ImageKit is niet geconfigureerd.",
   "imagekit.pickHint": "Selecteer een afbeelding om details te zien.",

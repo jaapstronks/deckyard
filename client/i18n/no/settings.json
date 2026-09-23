@@ -134,6 +134,7 @@
   "imagekit.alt.missingConfirm": "ALT-utgangsteksten er tom. Vil du bruke bildet likevel?",
   "imagekit.alt.missingTitle": "Manglende ALT-tekst",
   "imagekit.alt.updateCheckbox": "Oppdater ALT i ImageKit",
+  "imagekit.loadFailed": "ImageKit-biblioteket kunne ikke lastes inn. Prøv igjen senere.",
   "imagekit.noResults": "Ingen treff.",
   "imagekit.notConfigured": "ImageKit er ikke satt opp.",
   "imagekit.pickHint": "Velg et bilde for å se detaljene.",

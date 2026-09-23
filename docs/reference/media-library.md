@@ -194,7 +194,14 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
   another value from `IMAGEKIT_SORT_VALUES` (anything else is a 400), and the
   tag sample is drawn from the newest files for the same reason. ImageKit's own
   default is oldest-first, which hides every recent upload behind the first
-  import.
+  import. Every call to ImageKit goes through one seam, `fetchJsonOrThrow` in
+  `server/media/imagekit.js`: an error status or an unreachable API is
+  `502 bad_gateway`, "ImageKit could not complete this request", with
+  ImageKit's payload in `logError` only and its status not forwarded. The tag
+  sample refuses the same way when its first batch fails; a later batch
+  failing only shrinks the sample. The picker shows its own
+  `imagekit.loadFailed` sentence for a failed listing, never the server's
+  message.
 
 ## Config & flags
 

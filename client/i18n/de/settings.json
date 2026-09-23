@@ -132,6 +132,7 @@
   "imagekit.alt.missingConfirm": "Der ALT-Ausgangstext ist leer. Dieses Bild trotzdem verwenden?",
   "imagekit.alt.missingTitle": "ALT-Text fehlt",
   "imagekit.alt.updateCheckbox": "ALT in ImageKit aktualisieren",
+  "imagekit.loadFailed": "Die ImageKit-Bibliothek konnte nicht geladen werden. Versuche es später erneut.",
   "imagekit.noResults": "Keine Ergebnisse.",
   "imagekit.notConfigured": "ImageKit ist nicht konfiguriert.",
   "imagekit.pickHint": "Wählen Sie ein Bild, um Details zu sehen.",
