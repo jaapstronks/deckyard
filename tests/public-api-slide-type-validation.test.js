@@ -34,7 +34,7 @@ process.env.STORAGE_MODE = 'postgres';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OWNER = 'owner@example.com';
-const DECK_ID = 'deck-type-validation';
+const DECK_ID = 'd0000004-0000-4000-8000-000000000004';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');

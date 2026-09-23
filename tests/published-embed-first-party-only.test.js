@@ -33,7 +33,7 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
-const { handlePublishedPage } =
+const { handlePublished } =
   await import('../server/routes/static/published.js');
 const { handleEmbed } = await import('../server/routes/static/embed.js');
 const { analyticsHeadHtml } = await import('../server/analytics/head.js');
@@ -179,7 +179,7 @@ test('neither served surface carries an external script, however loud the analyt
 
   seed();
   for (const [surface, handle, path] of [
-    ['published', handlePublishedPage, `/p/${PUBLISH_ID}-${SLUG}`],
+    ['published', handlePublished, `/p/${PUBLISH_ID}-${SLUG}`],
     ['embed', handleEmbed, `/embed/${PUBLISH_ID}-${SLUG}`],
   ]) {
     const html = await documentFrom(handle, path);
@@ -203,10 +203,7 @@ test('neither served surface carries an external script, however loud the analyt
 
 test('the first-party tracker is still there — this is a strip, not a blackout', async () => {
   seed();
-  const html = await documentFrom(
-    handlePublishedPage,
-    `/p/${PUBLISH_ID}-${SLUG}`,
-  );
+  const html = await documentFrom(handlePublished, `/p/${PUBLISH_ID}-${SLUG}`);
   assert.match(
     html,
     /\/api\/track\//,

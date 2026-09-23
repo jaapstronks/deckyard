@@ -15,6 +15,7 @@ import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
+  dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   getPresentationWithAccess,
@@ -244,33 +245,41 @@ async function handleAddFromLibrary(ctx, presentationId) {
 /**
  * Main handler for /api/v1/slide-library routes.
  */
+/** Slide-library routes; a known path with another method answers 405. */
+export const ROUTES = [
+  {
+    method: 'POST',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/from-library$/,
+    captures: ['uuid'],
+    handler: handleAddFromLibrary,
+  },
+  {
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/from-library$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/v1\/slide-library\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: handleGet,
+  },
+  {
+    pattern: /^\/api\/v1\/slide-library\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  { method: 'GET', pattern: '/api/v1/slide-library', handler: handleList },
+  {
+    pattern: '/api/v1/slide-library',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+];
+
+/**
+ * Main handler for /api/v1/slide-library routes.
+ */
 export const handleSlideLibrary = withV1ErrorHandler(
   'public-api-v1:slide-library',
-  async (ctx) => {
-    const { req, res, url } = ctx;
-
-    // POST /api/v1/presentations/:id/slides/from-library
-    const fromLibraryMatch = url.pathname.match(
-      /^\/api\/v1\/presentations\/([^/]+)\/slides\/from-library$/,
-    );
-    if (fromLibraryMatch) {
-      if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
-      return handleAddFromLibrary(ctx, fromLibraryMatch[1]);
-    }
-
-    // GET /api/v1/slide-library/:itemId
-    const itemMatch = url.pathname.match(/^\/api\/v1\/slide-library\/([^/]+)$/);
-    if (itemMatch) {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleGet(ctx, itemMatch[1]);
-    }
-
-    // GET /api/v1/slide-library
-    if (url.pathname === '/api/v1/slide-library') {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleList(ctx);
-    }
-
-    return false;
-  },
+  (ctx) => dispatchV1Routes(ROUTES, ctx),
 );

@@ -6,7 +6,6 @@
 import { updatePresentation } from '../../../storage/presentations/index.js';
 import { translatePresentationStrings } from '../../../utils/openai/translate.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
-import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import {
   normalizeLang,
   TRANSLATION_LANGS,
@@ -14,6 +13,7 @@ import {
 } from '../../../storage/presentations/i18n.js';
 import {
   requirePermission,
+  dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   getPresentationWithAccess,
@@ -207,28 +207,40 @@ async function handleListLanguages(ctx) {
 /**
  * Main handler for /api/v1/presentations/:id/translate routes.
  */
+/**
+ * Translation routes. The translate rows are `ai`: with AI off they are not
+ * mounted and answer the v1 404, like /ai/* does (./index.js), before the
+ * permission or AI quota.
+ */
+export const ROUTES = [
+  {
+    method: 'GET',
+    pattern: '/api/v1/translate/languages',
+    handler: handleListLanguages,
+  },
+  {
+    pattern: '/api/v1/translate/languages',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/translate$/,
+    captures: ['uuid'],
+    ai: true,
+    handler: handleTranslate,
+  },
+  {
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/translate$/,
+    captures: ['uuid'],
+    ai: true,
+    handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
+  },
+];
+
+/**
+ * Main handler for /api/v1/presentations/:id/translate routes.
+ */
 export const handleTranslation = withV1ErrorHandler(
   'public-api-v1:translate',
-  async (ctx) => {
-    const { req, res, url } = ctx;
-
-    // GET /api/v1/translate/languages
-    if (url.pathname === '/api/v1/translate/languages') {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleListLanguages(ctx);
-    }
-
-    // POST /api/v1/presentations/:id/translate
-    const translateMatch = url.pathname.match(
-      /^\/api\/v1\/presentations\/([^/]+)\/translate$/,
-    );
-    // An AI route: with AI off it is not mounted, so it falls through to the
-    // v1 404 like /ai/* does (./index.js), before the permission or AI quota.
-    if (translateMatch && getFeatureFlags().enableAi) {
-      if (req.method !== 'POST') return v1MethodNotAllowed(res, ['POST']);
-      return handleTranslate(ctx, translateMatch[1]);
-    }
-
-    return false;
-  },
+  (ctx) => dispatchV1Routes(ROUTES, ctx),
 );

@@ -33,7 +33,7 @@ delete process.env.SANDBOX_MODE;
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const KEY_OWNER = 'owner@example.com';
-const DECK_ID = 'deck-to-publish';
+const DECK_ID = 'd0000011-0000-4000-8000-000000000011';
 const REPO_ROOT = process.cwd();
 // A public-IP URL so the SSRF guard passes without a DNS lookup (matching
 // tests/webhook-payload-contracts.test.js).
@@ -205,7 +205,7 @@ test('core: publishPresentation writes the entry, the deck column, and the descr
   });
 
   assert.ok(result.publishId, 'a publish id is minted');
-  assert.equal(result.slug, 'title-of-deck-to-publish');
+  assert.equal(result.slug, `title-of-${DECK_ID}`);
   assert.equal(result.path, `/p/${result.publishId}-${result.slug}`);
   assert.equal(
     result.ogImageUrl,

@@ -3,7 +3,8 @@
  * answers 404 instead of reaching a Postgres `uuid` column as a 500.
  *
  * B360 put the declaration (`captures`) on three tables; B399 carried it to
- * the rest of `server/routes/api/`. The export routes are the case the naloop
+ * the rest of `server/routes/api/` and then to the public v1 API, which
+ * answers the same 404 in its own envelope. The export routes are the case the naloop
  * named: `GET /api/presentations/foo/export/json` left the uuid parser as
  * `500 internal_error` (22P02). They used to match their own paths inside
  * `server/export/pipeline.js`; they are now rows of the export `ROUTES` table
@@ -25,6 +26,10 @@ import { handleAnalytics } from '../server/routes/api/analytics/index.js';
 import { handleShareLinks } from '../server/routes/api/share-links/index.js';
 import { handleSlideLibrary } from '../server/routes/api/slide-library.js';
 import { handleThemes } from '../server/routes/api/themes.js';
+import { handleExports as handleV1Exports } from '../server/routes/public-api/v1/exports.js';
+import { handleComments as handleV1Comments } from '../server/routes/public-api/v1/comments.js';
+import { handleSlides as handleV1Slides } from '../server/routes/public-api/v1/slides.js';
+import { handleSlideLibrary as handleV1SlideLibrary } from '../server/routes/public-api/v1/slide-library.js';
 
 const A_UUID = '123e4567-e89b-42d3-a456-426614174000';
 
@@ -139,4 +144,56 @@ test('the swept tables gate every uuid capture, not just the first', async () =>
     const ctx = await statusOf(handler, method, pathname);
     assert.equal(ctx.res.statusCode, 404, `${method} ${pathname}: 404`);
   }
+});
+
+// ---------------------------------------------------------------------------
+// The public v1 API (B399 PR 2): same gate, the v1 envelope.
+// ---------------------------------------------------------------------------
+
+test('a non-uuid presentation id on a v1 export answers the v1 404', async () => {
+  const ctx = await statusOf(
+    handleV1Exports,
+    'GET',
+    '/api/v1/presentations/foo/export/json',
+  );
+  assert.equal(ctx.res.statusCode, 404);
+  // The v1 envelope: `{ error, message }`, not the internal `{ ok: false, … }`.
+  assert.deepEqual(ctx.res.body(), {
+    error: 'not_found',
+    message: 'Not found',
+  });
+});
+
+test('v1 gates every uuid capture, and only those', async () => {
+  const cases = [
+    [handleV1Comments, 'GET', '/api/v1/presentations/foo/comments'],
+    [handleV1Comments, 'POST', '/api/v1/comments/nope/status'],
+    [handleV1SlideLibrary, 'GET', '/api/v1/slide-library/nope'],
+    // The deck id is gated; the slide id (author-chosen text) is not.
+    [handleV1Slides, 'GET', '/api/v1/presentations/foo/slides/s1'],
+  ];
+  for (const [handler, method, pathname] of cases) {
+    const ctx = await statusOf(handler, method, pathname);
+    assert.equal(ctx.res.statusCode, 404, `${method} ${pathname}: 404`);
+  }
+});
+
+test('the v1 gate answers before the 405: a non-uuid is not a resource', async () => {
+  const ctx = await statusOf(
+    handleV1Exports,
+    'POST',
+    '/api/v1/presentations/foo/export/json',
+  );
+  assert.equal(ctx.res.statusCode, 404);
+});
+
+test('a uuid deck id with a text slide id passes the v1 gate', async () => {
+  // No API key on the context: passing the gate means the handler runs and
+  // refuses for its own reason, not the gate's 404.
+  const ctx = await statusOf(
+    handleV1Slides,
+    'GET',
+    `/api/v1/presentations/${A_UUID}/slides/s1`,
+  );
+  assert.notEqual(ctx.res.statusCode, 404);
 });

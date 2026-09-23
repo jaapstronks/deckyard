@@ -40,8 +40,8 @@ delete process.env.SANDBOX_MODE;
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const KEY_OWNER = 'owner@example.com';
-const DECK_ID = 'deck-to-translate';
-const FOREIGN_DECK_ID = 'deck-of-someone-else';
+const DECK_ID = 'd000000f-0000-4000-8000-00000000000f';
+const FOREIGN_DECK_ID = 'd0000010-0000-4000-8000-000000000010';
 const KEY_ID = 'key-1';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
@@ -279,8 +279,10 @@ test('POST /translate is not mounted when AI is disabled on the install', async 
       { targetLang: 'fr' },
       { permissions: [] },
     );
-    assert.equal(await handleTranslation(ctx), false);
-    assert.equal(ctx.res.statusCode, null, 'nothing is written');
+    // Unmounted: the v1 404, before the permission or AI quota.
+    assert.equal(await handleTranslation(ctx), true);
+    assert.equal(ctx.res.statusCode, 404);
+    assert.equal(ctx.res.body.error, 'not_found');
   } finally {
     delete process.env.AI_ENABLED;
   }
@@ -291,8 +293,10 @@ test('POST /translate still honors the legacy DISABLE_AI spelling (until 2026-11
   process.env.DISABLE_AI = 'true';
   try {
     const ctx = translateCtx(DECK_ID, { targetLang: 'fr' });
-    assert.equal(await handleTranslation(ctx), false);
-    assert.equal(ctx.res.statusCode, null, 'nothing is written');
+    // Unmounted: the v1 404, before the permission or AI quota.
+    assert.equal(await handleTranslation(ctx), true);
+    assert.equal(ctx.res.statusCode, 404);
+    assert.equal(ctx.res.body.error, 'not_found');
   } finally {
     delete process.env.DISABLE_AI;
   }
@@ -345,7 +349,9 @@ test("POST /translate on someone else's private deck is refused with 403", async
 
 test('POST /translate on an unknown deck answers 404', async () => {
   await installDb();
-  const ctx = translateCtx('never-a-deck', { targetLang: 'fr' });
+  const ctx = translateCtx('00000000-0000-4000-8000-00000000dead', {
+    targetLang: 'fr',
+  });
   await handleTranslation(ctx);
   assert.equal(ctx.res.statusCode, 404);
 });

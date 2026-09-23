@@ -15,14 +15,15 @@
  *   1. A declared `captures` has exactly one entry per capture group.
  *   2. Every entry is `'uuid'` or `'text'` — the closed vocabulary. A third
  *      spelling is the tolerance creep this gate exists to stop.
- *   3. **Every capturing row under `api/` declares**, with the exceptions
- *      below named and reasoned (B399). Without this a new row lands ungated
- *      and nothing says so.
- *   4. **Elsewhere, a table that declares, declares fully**: once any row in a
- *      module carries `captures`, every capturing row in that module must.
+ *   3. **Every capturing row under `server/routes/` declares** — `api/`, the
+ *      public `public-api/v1/` and the `static/` viewers alike — with the
+ *      exceptions below named and reasoned (B399). Without this a new row
+ *      lands ungated and nothing says so.
  *
- * Rule 4 is the transitional form of rule 3 for `public-api/v1/` and
- * `static/`, which B399's second PR brings under rule 3; then rule 4 goes.
+ * Rule 3 only sees rows in a table, so a capture taken by hand
+ * (`url.pathname.match(…)`) would escape it. `route-dispatch-guard.test.js`
+ * refuses that form under `api/`; the last test here refuses it everywhere
+ * under `server/routes/`, the trees that guard exempts included.
  *
  * Run with: node --test tests/route-captures-guard.test.js
  */
@@ -106,9 +107,6 @@ for (const file of walk(ROUTES_ROOT)) {
       tables.push([relative(ROUTES_ROOT, file), exportName, value]);
 }
 
-/** Rule 3 holds here without a per-module escape; rule 4 elsewhere (B399). */
-const isApiModule = (name) => name.startsWith('api/');
-
 test('the guard sees the route tables at all', () => {
   // A broken glob would make every assertion below vacuous.
   assert.ok(tables.length >= 40, `found ${tables.length} exported tables`);
@@ -122,6 +120,11 @@ test('the guard sees the route tables at all', () => {
     'api/share-links/management.js#MANAGEMENT_ROUTES',
     'api/share-links/public.js#PUBLIC_ROUTES',
     'api/notion/index.js#GATED_ROUTES',
+    // Outside api/: the public v1 API and the static viewers (B399 PR 2).
+    'public-api/v1/exports.js#ROUTES',
+    'public-api/v1/index.js#SCHEMA_ROUTES',
+    'static/published.js#ROUTES',
+    'static/share-viewer.js#ROUTES',
   ])
     assert.ok(names.includes(expected), `${expected} is among them`);
 });
@@ -152,9 +155,8 @@ test('captures uses only the two declared kinds', () => {
   }
 });
 
-test('every capturing row declares its captures (api/ always, elsewhere per module)', () => {
+test('every capturing row declares its captures', () => {
   for (const [name, , routes] of tables) {
-    if (!isApiModule(name) && !routes.some((route) => route.captures)) continue;
     for (const route of routes) {
       if (route.captures || groupCount(route.pattern) === 0) continue;
       const reason = UNDECLARED_ROWS[name]?.[route.handler.name];
@@ -181,4 +183,21 @@ test('every reasoned exception still exists', () => {
       );
     }
   }
+});
+
+test('no module under server/routes captures a path segment by hand', () => {
+  // A `pathname.match(…)` or `.exec(url.pathname)` takes segments outside any
+  // table, where rule 3 cannot see them. Captures go through a ROUTES row.
+  const HAND_CAPTURE =
+    /\bpathname\s*\.match\(|\.exec\(\s*[\w$.]*\bpathname\s*\)/;
+  const offenders = walk(ROUTES_ROOT)
+    .flatMap((file) =>
+      readFileSync(file, 'utf8')
+        .split('\n')
+        .map((line, i) => [file, i + 1, line]),
+    )
+    .filter(([, , line]) => !/^\s*(\/\/|\*)/.test(line))
+    .filter(([, , line]) => HAND_CAPTURE.test(line))
+    .map(([file, n]) => `${relative(ROUTES_ROOT, file)}:${n}`);
+  assert.deepEqual(offenders, []);
 });

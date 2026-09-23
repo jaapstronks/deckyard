@@ -11,6 +11,7 @@ import {
 } from '../../../services/publish-presentation.js';
 import {
   requirePermission,
+  dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   getPresentationWithAccess,
@@ -118,24 +119,37 @@ async function handleUnpublish(ctx, id) {
 /**
  * Main handler for /api/v1/presentations/:id/publish routes.
  */
+/** Publish, status and unpublish on one path; other methods answer 405. */
+export const ROUTES = [
+  {
+    method: 'POST',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/publish$/,
+    captures: ['uuid'],
+    handler: handlePublish,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/publish$/,
+    captures: ['uuid'],
+    handler: handleGetPublishStatus,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/publish$/,
+    captures: ['uuid'],
+    handler: handleUnpublish,
+  },
+  {
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/publish$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET', 'POST', 'DELETE']),
+  },
+];
+
+/**
+ * Main handler for /api/v1/presentations/:id/publish routes.
+ */
 export const handlePublishing = withV1ErrorHandler(
   'public-api-v1:publishing',
-  async (ctx) => {
-    const { req, res, url } = ctx;
-
-    const publishMatch = url.pathname.match(
-      /^\/api\/v1\/presentations\/([^/]+)\/publish$/,
-    );
-    if (!publishMatch) {
-      return false;
-    }
-
-    const id = publishMatch[1];
-
-    if (req.method === 'POST') return handlePublish(ctx, id);
-    if (req.method === 'GET') return handleGetPublishStatus(ctx, id);
-    if (req.method === 'DELETE') return handleUnpublish(ctx, id);
-
-    return v1MethodNotAllowed(res, ['GET', 'POST', 'DELETE']);
-  },
+  (ctx) => dispatchV1Routes(ROUTES, ctx),
 );

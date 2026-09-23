@@ -1,5 +1,6 @@
 /**
- * Shared first-match route dispatcher for `/api/*` route modules.
+ * Shared first-match route dispatcher for the route modules under
+ * `server/routes/`: `/api/*`, the public `/api/v1/*` and the static viewers.
  *
  * The canonical dispatch form (A7.19 C8, decision B3a): a module declares a
  * `ROUTES` table and calls {@link dispatchRoutes}, rather than hand-rolling its
@@ -108,9 +109,19 @@ function capturesSatisfyDeclaration(captures, params, pattern) {
  * @param {import('./context.js').PublicContext|import('./context.js').AuthedContext} ctx
  *   - The request context; must carry `req` and `url`. Forwarded verbatim to the
  *   matched handler as its first argument.
+ * @param {object} [options]
+ * @param {(res: import('node:http').ServerResponse) => unknown} [options.notFound]
+ *   - How this surface answers the dispatcher's own 404 (an unmounted `ai`
+ *   route, an unsatisfied `captures`). Defaults to the internal `/api`
+ *   envelope; the public v1 API passes its own, so one table form serves
+ *   both wire contracts.
  * @returns {Promise<unknown>|unknown} The handler's result, or `false`.
  */
-export function dispatchRoutes(routes, ctx) {
+export function dispatchRoutes(
+  routes,
+  ctx,
+  { notFound: answerNotFound = notFound } = {},
+) {
   const { req, url } = ctx;
 
   for (const route of routes) {
@@ -126,12 +137,12 @@ export function dispatchRoutes(routes, ctx) {
       params = match.slice(1);
     }
 
-    if (route.ai && !getFeatureFlags().enableAi) return notFound(ctx.res);
+    if (route.ai && !getFeatureFlags().enableAi) return answerNotFound(ctx.res);
     if (
       route.captures &&
       !capturesSatisfyDeclaration(route.captures, params, route.pattern)
     )
-      return notFound(ctx.res);
+      return answerNotFound(ctx.res);
     return route.handler(ctx, ...params);
   }
 

@@ -1,4 +1,5 @@
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getShareLinkByToken } from '../../storage/share-links/index.js';
 import { getAppName } from '../../config/branding.js';
@@ -16,12 +17,7 @@ import {
  * @param {import('./static-files.js').StaticContext} ctx
  * @returns {Promise<boolean>} true if handled.
  */
-export async function handleShareLink({ repoRoot, req, res, url, clientDir }) {
-  const shareMatch = url.pathname.match(/^\/s\/([^/]+)$/);
-  if (!shareMatch || req.method !== 'GET') return false;
-
-  const token = shareMatch[1];
-
+async function serveShareLink({ repoRoot, req, res, url, clientDir }, token) {
   // Try to get presentation info for og: tags (best-effort, don't fail if unavailable)
   let ogHeadHtml = '';
   try {
@@ -109,4 +105,23 @@ export async function handleShareLink({ repoRoot, req, res, url, clientDir }) {
   ensureSandboxCookie(req, res);
   serveShellHtml(res, shell);
   return true;
+}
+
+/** `/s/:token`. The token is a share-link token (`varchar(64)`), so `text`. */
+export const ROUTES = [
+  {
+    method: 'GET',
+    pattern: /^\/s\/([^/]+)$/,
+    captures: ['text'],
+    handler: serveShareLink,
+  },
+];
+
+/**
+ * Share-link viewer (public, token-based).
+ * @param {import('./static-files.js').StaticContext} ctx
+ * @returns {Promise<boolean>|false} true if handled.
+ */
+export function handleShareLink(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }

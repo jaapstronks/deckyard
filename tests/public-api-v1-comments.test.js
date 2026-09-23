@@ -36,9 +36,13 @@ process.env.APP_URL = 'https://deck.example';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const KEY_OWNER = 'owner@example.com';
-const DECK_ID = 'deck-with-comments';
-const ORG_DECK_ID = 'deck-of-the-boss';
-const FOREIGN_DECK_ID = 'deck-private-of-someone-else';
+const DECK_ID = 'd0000005-0000-4000-8000-000000000005';
+const ORG_DECK_ID = 'd0000006-0000-4000-8000-000000000006';
+const FOREIGN_DECK_ID = 'd0000007-0000-4000-8000-000000000007';
+const OPEN_COMMENT_ID = 'c0000001-0000-4000-8000-000000000001';
+const REPLY_COMMENT_ID = 'c0000002-0000-4000-8000-000000000002';
+const RESOLVED_COMMENT_ID = 'c0000003-0000-4000-8000-000000000003';
+const ORG_DECK_COMMENT_ID = 'c0000004-0000-4000-8000-000000000004';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -71,7 +75,7 @@ async function installDb() {
     ],
     presentation_comments: [
       commentRow({
-        id: 'c-open',
+        id: OPEN_COMMENT_ID,
         presentation_id: DECK_ID,
         slide_id: 'slide-1',
         body: 'Please rephrase this title',
@@ -83,14 +87,14 @@ async function installDb() {
         },
       }),
       commentRow({
-        id: 'c-reply',
+        id: REPLY_COMMENT_ID,
         presentation_id: DECK_ID,
-        parent_id: 'c-open',
+        parent_id: OPEN_COMMENT_ID,
         body: 'Agreed',
         created_at: '2026-08-02T11:00:00.000Z',
       }),
       commentRow({
-        id: 'c-resolved',
+        id: RESOLVED_COMMENT_ID,
         presentation_id: DECK_ID,
         body: 'Old remark',
         status: 'resolved',
@@ -99,7 +103,7 @@ async function installDb() {
         created_at: '2026-08-01T00:00:00.000Z',
       }),
       commentRow({
-        id: 'c-on-org-deck',
+        id: ORG_DECK_COMMENT_ID,
         presentation_id: ORG_DECK_ID,
         body: 'On the boss deck',
         created_at: '2026-08-02T09:00:00.000Z',
@@ -269,11 +273,11 @@ test('GET /comments lists top-level comments with replies, context and editUrl',
   assert.equal(body.total, 2, 'replies do not count as top-level comments');
   assert.equal(body.since, null);
 
-  const open = body.comments.find((c) => c.id === 'c-open');
+  const open = body.comments.find((c) => c.id === OPEN_COMMENT_ID);
   assert.ok(open, 'the open comment is listed');
   assert.deepEqual(
     open.replies.map((r) => r.id),
-    ['c-reply'],
+    [REPLY_COMMENT_ID],
   );
   assert.deepEqual(
     open.slide,
@@ -314,7 +318,7 @@ test('GET /comments?status= filters and validates the status', async () => {
   await handleComments(resolved);
   assert.deepEqual(
     resolved.res.body.comments.map((c) => c.id),
-    ['c-resolved'],
+    [RESOLVED_COMMENT_ID],
   );
 
   const invalid = makeCtx(
@@ -335,7 +339,7 @@ test('GET /comments?since= filters on creation time and validates the date', asy
   assert.equal(since.res.statusCode, 200);
   assert.deepEqual(
     since.res.body.comments.map((c) => c.id),
-    ['c-open'],
+    [OPEN_COMMENT_ID],
   );
   assert.equal(since.res.body.since, '2026-08-02T00:00:00.000Z');
 
@@ -356,7 +360,7 @@ test('GET /comments?slideId= keeps only comments on that slide', async () => {
   await handleComments(ctx);
   assert.deepEqual(
     ctx.res.body.comments.map((c) => c.id),
-    ['c-open'],
+    [OPEN_COMMENT_ID],
   );
 });
 
@@ -381,7 +385,10 @@ test("GET /comments on someone else's private deck is refused with 403", async (
 
 test('GET /comments on an unknown deck answers 404', async () => {
   await installDb();
-  const ctx = makeCtx('GET', '/api/v1/presentations/never-a-deck/comments');
+  const ctx = makeCtx(
+    'GET',
+    '/api/v1/presentations/00000000-0000-4000-8000-00000000dead/comments',
+  );
   await handleComments(ctx);
   assert.equal(ctx.res.statusCode, 404);
 });
@@ -437,18 +444,18 @@ test('POST /comments creates a comment as the key owner and answers 201', async 
 test('POST /comments with a parentId creates a reply, 404 for an unknown parent', async () => {
   await installDb();
   const reply = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/comments`, {
-    body: { body: 'A reply', parentId: 'c-open' },
+    body: { body: 'A reply', parentId: OPEN_COMMENT_ID },
   });
   await handleComments(reply);
   assert.equal(reply.res.statusCode, 201);
-  assert.equal(reply.res.body.comment.parentId, 'c-open');
+  assert.equal(reply.res.body.comment.parentId, OPEN_COMMENT_ID);
 
   // A parent on a *different* presentation is not a valid anchor either.
   const wrongDeck = makeCtx(
     'POST',
     `/api/v1/presentations/${DECK_ID}/comments`,
     {
-      body: { body: 'A reply', parentId: 'c-on-org-deck' },
+      body: { body: 'A reply', parentId: ORG_DECK_COMMENT_ID },
     },
   );
   await handleComments(wrongDeck);
@@ -502,9 +509,13 @@ test('POST /comments without the comments:write permission is refused with 403',
 test('POST /status resolves, dismisses and reopens along the allowed transitions', async () => {
   await installDb();
 
-  const resolve = makeCtx('POST', '/api/v1/comments/c-open/status', {
-    body: { status: 'resolved' },
-  });
+  const resolve = makeCtx(
+    'POST',
+    `/api/v1/comments/${OPEN_COMMENT_ID}/status`,
+    {
+      body: { status: 'resolved' },
+    },
+  );
   await handleComments(resolve);
   assert.equal(resolve.res.statusCode, 200);
   assert.equal(resolve.res.body.comment.status, 'resolved');
@@ -514,16 +525,20 @@ test('POST /status resolves, dismisses and reopens along the allowed transitions
     'who resolved it is named by id, not by address (D22)',
   );
 
-  const reopen = makeCtx('POST', '/api/v1/comments/c-open/status', {
+  const reopen = makeCtx('POST', `/api/v1/comments/${OPEN_COMMENT_ID}/status`, {
     body: { status: 'open' },
   });
   await handleComments(reopen);
   assert.equal(reopen.res.statusCode, 200);
   assert.equal(reopen.res.body.comment.status, 'open');
 
-  const dismiss = makeCtx('POST', '/api/v1/comments/c-open/status', {
-    body: { status: 'dismissed' },
-  });
+  const dismiss = makeCtx(
+    'POST',
+    `/api/v1/comments/${OPEN_COMMENT_ID}/status`,
+    {
+      body: { status: 'dismissed' },
+    },
+  );
   await handleComments(dismiss);
   assert.equal(dismiss.res.statusCode, 200);
   assert.equal(dismiss.res.body.comment.status, 'dismissed');
@@ -531,10 +546,14 @@ test('POST /status resolves, dismisses and reopens along the allowed transitions
 
 test('POST /status answers 409 for a transition the app does not allow', async () => {
   await installDb();
-  // c-resolved is already resolved; resolving it again is not a transition.
-  const ctx = makeCtx('POST', '/api/v1/comments/c-resolved/status', {
-    body: { status: 'resolved' },
-  });
+  // RESOLVED_COMMENT_ID is already resolved; resolving it again is not a transition.
+  const ctx = makeCtx(
+    'POST',
+    `/api/v1/comments/${RESOLVED_COMMENT_ID}/status`,
+    {
+      body: { status: 'resolved' },
+    },
+  );
   await handleComments(ctx);
   assert.equal(ctx.res.statusCode, 409);
 });
@@ -542,7 +561,9 @@ test('POST /status answers 409 for a transition the app does not allow', async (
 test('POST /status validates the status value', async () => {
   await installDb();
   for (const body of [null, {}, { status: 'archived' }]) {
-    const ctx = makeCtx('POST', '/api/v1/comments/c-open/status', { body });
+    const ctx = makeCtx('POST', `/api/v1/comments/${OPEN_COMMENT_ID}/status`, {
+      body,
+    });
     await handleComments(ctx);
     assert.equal(
       ctx.res.statusCode,
@@ -556,25 +577,33 @@ test('POST /status by someone who is not the deck owner is refused with 403', as
   await installDb();
   // The org-visible deck is readable (and commentable) for the key owner,
   // but moderation stays with the presentation owner/creator.
-  const ctx = makeCtx('POST', '/api/v1/comments/c-on-org-deck/status', {
-    body: { status: 'resolved' },
-  });
+  const ctx = makeCtx(
+    'POST',
+    `/api/v1/comments/${ORG_DECK_COMMENT_ID}/status`,
+    {
+      body: { status: 'resolved' },
+    },
+  );
   await handleComments(ctx);
   assert.equal(ctx.res.statusCode, 403);
 });
 
 test('POST /status on an unknown comment answers 404', async () => {
   await installDb();
-  const ctx = makeCtx('POST', '/api/v1/comments/never-a-comment/status', {
-    body: { status: 'resolved' },
-  });
+  const ctx = makeCtx(
+    'POST',
+    '/api/v1/comments/00000000-0000-4000-8000-00000000dead/status',
+    {
+      body: { status: 'resolved' },
+    },
+  );
   await handleComments(ctx);
   assert.equal(ctx.res.statusCode, 404);
 });
 
 test('POST /status without the comments:write permission is refused with 403', async () => {
   await installDb();
-  const ctx = makeCtx('POST', '/api/v1/comments/c-open/status', {
+  const ctx = makeCtx('POST', `/api/v1/comments/${OPEN_COMMENT_ID}/status`, {
     body: { status: 'resolved' },
     permissions: ['comments:read'],
   });
