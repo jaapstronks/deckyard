@@ -7,7 +7,11 @@
  * @see https://developers.giphy.com/docs/api
  */
 
-import { apiFetch, createConfigChecker } from '../utils/api-fetch.js';
+import {
+  apiFetch,
+  apiFetchJson,
+  createConfigChecker,
+} from '../utils/api-fetch.js';
 import { envStr } from '../config/utils.js';
 
 const GIPHY_API_BASE = 'https://api.giphy.com/v1/gifs';
@@ -33,10 +37,6 @@ export async function searchGiphy({
   limit = 20,
   rating = 'g',
 }) {
-  if (!isGiphyConfigured()) {
-    throw new Error('Giphy API is not configured');
-  }
-
   const params = new URLSearchParams({
     api_key: envStr('GIPHY_API_KEY'),
     q: query,
@@ -46,8 +46,10 @@ export async function searchGiphy({
     lang: 'en',
   });
 
-  const resp = await apiFetch(`${GIPHY_API_BASE}/search?${params}`, 'Giphy');
-  const data = await resp.json();
+  const data = await apiFetchJson(
+    `${GIPHY_API_BASE}/search?${params}`,
+    'Giphy',
+  );
 
   return {
     results: data.data.map(formatGif),
@@ -69,10 +71,6 @@ export async function getTrendingGiphy({
   limit = 20,
   rating = 'g',
 } = {}) {
-  if (!isGiphyConfigured()) {
-    throw new Error('Giphy API is not configured');
-  }
-
   const params = new URLSearchParams({
     api_key: envStr('GIPHY_API_KEY'),
     offset: String(offset),
@@ -80,8 +78,10 @@ export async function getTrendingGiphy({
     rating,
   });
 
-  const resp = await apiFetch(`${GIPHY_API_BASE}/trending?${params}`, 'Giphy');
-  const data = await resp.json();
+  const data = await apiFetchJson(
+    `${GIPHY_API_BASE}/trending?${params}`,
+    'Giphy',
+  );
 
   return {
     results: data.data.map(formatGif),
@@ -96,16 +96,11 @@ export async function getTrendingGiphy({
  * @returns {Promise<Object>}
  */
 export async function getGiphyGif(id) {
-  if (!isGiphyConfigured()) {
-    throw new Error('Giphy API is not configured');
-  }
-
   const params = new URLSearchParams({
     api_key: envStr('GIPHY_API_KEY'),
   });
 
-  const resp = await apiFetch(`${GIPHY_API_BASE}/${id}?${params}`, 'Giphy');
-  const data = await resp.json();
+  const data = await apiFetchJson(`${GIPHY_API_BASE}/${id}?${params}`, 'Giphy');
   return formatGif(data.data);
 }
 

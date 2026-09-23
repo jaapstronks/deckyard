@@ -14,6 +14,9 @@
  * handler is DB-backed (the provider toggles), so the wire is asserted through
  * the same `withErrorHandler` the stock-media mount uses.
  *
+ * B420 extends the seam to the success body: an unreadable 200 is the same
+ * `502`, cases at the bottom.
+ *
  * Run with: node --test tests/stock-media-upstream-error.test.js
  */
 
@@ -124,4 +127,29 @@ for (const failure of FAILURES) {
       assert.doesNotMatch(log, /secret-key/, 'no API key in the log');
     });
   }
+}
+
+// B420 — a 200 whose body is not JSON is the same refusal. The seam parses the
+// body (`apiFetchJson`), so the callers never see a `SyntaxError` that
+// `withErrorHandler` would answer as `500 internal_error`. The downloads read
+// bytes, not JSON, and stay out of this case.
+const JSON_CALLS = CALLS.filter(([, what]) => what !== 'download');
+
+for (const [service, what, call] of JSON_CALLS) {
+  test(`${service} ${what}: a 200 with an unreadable body → 502 in our words, cause in the log`, async () => {
+    globalThis.fetch = async () =>
+      new Response(`<html>${INTERNAL}</html>`, {
+        status: 200,
+        headers: { 'content-type': 'text/html' },
+      });
+    const { res, log } = await onTheWire(call);
+    assert.equal(res.statusCode, 502);
+    assert.deepEqual(res.body, {
+      ok: false,
+      error: 'bad_gateway',
+      message: `${service} could not complete this request`,
+    });
+    assert.match(log, /internal-module/, 'the unreadable body is in the log');
+    assert.doesNotMatch(log, /secret-key/, 'no API key in the log');
+  });
 }

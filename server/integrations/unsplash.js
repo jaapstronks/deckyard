@@ -7,7 +7,11 @@
  * @see https://unsplash.com/documentation
  */
 
-import { apiFetch, createConfigChecker } from '../utils/api-fetch.js';
+import {
+  apiFetch,
+  apiFetchJson,
+  createConfigChecker,
+} from '../utils/api-fetch.js';
 import { createLogger } from '../utils/logger.js';
 import { envStr } from '../config/utils.js';
 
@@ -41,24 +45,19 @@ function getHeaders() {
  * @returns {Promise<{ results: Array, total: number, totalPages: number }>}
  */
 export async function searchUnsplash({ query, page = 1, perPage = 20 }) {
-  if (!isUnsplashConfigured()) {
-    throw new Error('Unsplash API is not configured');
-  }
-
   const params = new URLSearchParams({
     query,
     page: String(page),
     per_page: String(Math.min(perPage, 30)),
   });
 
-  const resp = await apiFetch(
+  const data = await apiFetchJson(
     `${UNSPLASH_API_BASE}/search/photos?${params}`,
     'Unsplash',
     {
       headers: getHeaders(),
     },
   );
-  const data = await resp.json();
 
   return {
     results: data.results.map(formatPhoto),
@@ -73,14 +72,12 @@ export async function searchUnsplash({ query, page = 1, perPage = 20 }) {
  * @returns {Promise<Object>}
  */
 export async function getUnsplashPhoto(id) {
-  if (!isUnsplashConfigured()) {
-    throw new Error('Unsplash API is not configured');
-  }
-
-  const resp = await apiFetch(`${UNSPLASH_API_BASE}/photos/${id}`, 'Unsplash', {
-    headers: getHeaders(),
-  });
-  return formatPhoto(await resp.json());
+  const photo = await apiFetchJson(
+    `${UNSPLASH_API_BASE}/photos/${id}`,
+    'Unsplash',
+    { headers: getHeaders() },
+  );
+  return formatPhoto(photo);
 }
 
 /**
@@ -90,10 +87,6 @@ export async function getUnsplashPhoto(id) {
  * @returns {Promise<void>}
  */
 export async function triggerDownload(downloadLocation) {
-  if (!isUnsplashConfigured()) {
-    throw new Error('Unsplash API is not configured');
-  }
-
   // The download_location already includes the client_id parameter,
   // but we need to add our authorization header
   const resp = await fetch(downloadLocation, {
