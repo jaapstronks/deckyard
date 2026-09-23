@@ -111,12 +111,7 @@ export async function triggerDownload(downloadLocation) {
  * @returns {Promise<{ buffer: Buffer, contentType: string }>}
  */
 export async function downloadImage(url) {
-  const resp = await fetch(url);
-
-  if (!resp.ok) {
-    throw new Error(`Failed to download image: ${resp.status}`);
-  }
-
+  const resp = await apiFetch(url, 'Unsplash');
   const buffer = Buffer.from(await resp.arrayBuffer());
   const contentType = resp.headers.get('content-type') || 'image/jpeg';
 
