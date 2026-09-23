@@ -15,7 +15,8 @@
  * the same `withErrorHandler` the stock-media mount uses.
  *
  * B420 extends the seam to the success body: an unreadable 200 is the same
- * `502`, cases at the bottom.
+ * `502`; B421 does the same for a 200 that parses into the wrong shape. Cases
+ * at the bottom.
  *
  * Run with: node --test tests/stock-media-upstream-error.test.js
  */
@@ -151,5 +152,97 @@ for (const [service, what, call] of JSON_CALLS) {
     });
     assert.match(log, /internal-module/, 'the unreadable body is in the log');
     assert.doesNotMatch(log, /secret-key/, 'no API key in the log');
+  });
+}
+
+// B421 — a 200 that parses but lacks what the formatter reads is the same
+// refusal. Each call declares its shape at the seam (`apiFetchJson`'s
+// `isShaped`), so `formatGif`/`formatPhoto` never throw a `TypeError` that
+// `withErrorHandler` would answer as `500 internal_error`.
+const GIF = {
+  id: 'g1',
+  images: { original: { url: 'https://media.giphy.com/g1.gif', width: '2' } },
+};
+const PHOTO = {
+  id: 'p1',
+  urls: { thumb: 't', small: 's', regular: 'r', full: 'f', raw: 'w' },
+  user: { name: 'N', username: 'n', links: { html: 'h' } },
+  links: { download_location: 'd', html: 'h' },
+};
+const PAGINATION = { total_count: 1, offset: 0 };
+
+const SHAPES = {
+  'Giphy search': {
+    good: { data: [GIF], pagination: PAGINATION },
+    wrong: [
+      ['not an object', [GIF]],
+      ['no data list', { pagination: PAGINATION }],
+      ['no pagination', { data: [GIF] }],
+      [
+        'a GIF without images',
+        { data: [{ id: 'g1' }], pagination: PAGINATION },
+      ],
+    ],
+  },
+  'Giphy trending': {
+    good: { data: [GIF], pagination: PAGINATION },
+    wrong: [
+      ['null', null],
+      ['data is an object', { data: GIF, pagination: PAGINATION }],
+    ],
+  },
+  'Giphy lookup': {
+    good: { data: GIF },
+    wrong: [
+      ['no data', {}],
+      ['a GIF without an original', { data: { id: 'g1', images: {} } }],
+    ],
+  },
+  'Unsplash search': {
+    good: { results: [PHOTO], total: 1, total_pages: 1 },
+    wrong: [
+      ['a string', 'ok'],
+      ['no results list', { total: 1 }],
+      ['a photo without a user', { results: [{ ...PHOTO, user: null }] }],
+    ],
+  },
+  'Unsplash lookup': {
+    good: PHOTO,
+    wrong: [
+      ['an array', [PHOTO]],
+      ['a photo without links', { ...PHOTO, links: undefined }],
+      [
+        'a user without links',
+        { ...PHOTO, user: { name: 'N', username: 'n' } },
+      ],
+    ],
+  },
+};
+
+for (const [service, what, call] of JSON_CALLS) {
+  const { good, wrong } = SHAPES[`${service} ${what}`];
+
+  for (const [shape, body] of wrong) {
+    test(`${service} ${what}: a 200 in the wrong shape (${shape}) → 502 in our words, body in the log`, async () => {
+      globalThis.fetch = async () =>
+        new Response(JSON.stringify(body), { status: 200 });
+      const { res, log } = await onTheWire(call);
+      assert.equal(res.statusCode, 502);
+      assert.deepEqual(res.body, {
+        ok: false,
+        error: 'bad_gateway',
+        message: `${service} could not complete this request`,
+      });
+      assert.match(log, /unexpected shape/, 'the shape is named in the log');
+      assert.doesNotMatch(log, /secret-key/, 'no API key in the log');
+    });
+  }
+
+  test(`${service} ${what}: a 200 in the expected shape still formats`, async () => {
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify(good), { status: 200 });
+    const result = await call();
+    const item = result.results ? result.results[0] : result;
+    assert.equal(item.id, service === 'Giphy' ? 'g1' : 'p1');
   });
 }
