@@ -46,6 +46,10 @@ globalThis.KeyboardEvent = dom.window.KeyboardEvent;
 globalThis.MouseEvent = dom.window.MouseEvent;
 
 const { normalizeLang } = await import('../client/lib/format/i18n.js');
+const { setFeatures } = await import('../client/lib/state/features.js');
+// The translation this file drives is an AI action: it is only reachable where
+// AI is on (D179).
+setFeatures({ enableAi: true });
 const { createLanguageMode } =
   await import('../client/views/editor/topbar/language-mode.js');
 
@@ -63,25 +67,6 @@ function makePres() {
       active: 'nl',
       dominant: 'nl',
       versions: { nl: { title: 'Deck', slides: [] } },
-    },
-  };
-}
-
-/** Deck with both shipped versions, so a fill-missing job has a source. */
-function makeBilingualPres() {
-  return {
-    id: 'p1',
-    title: 'Deck',
-    slides: [],
-    theme: null,
-    revision: 1,
-    i18n: {
-      active: 'nl',
-      dominant: 'nl',
-      versions: {
-        nl: { title: 'Deck', slides: [] },
-        'en-GB': { title: 'Deck', slides: [] },
-      },
     },
   };
 }
@@ -170,32 +155,37 @@ test('a throw past the inner catch is caught by switchLanguageMode', async () =>
 });
 
 test('the language menu is disabled with a reason while translating', async () => {
+  // Driven the way a user starts it: create a version, accept the invite.
   let release;
+  const reloaded = {
+    title: 'Deck',
+    slides: [],
+    theme: null,
+    revision: 3,
+    i18n: {
+      active: 'en-GB',
+      dominant: 'nl',
+      versions: {
+        nl: { title: 'Deck', slides: [] },
+        'en-GB': {},
+      },
+    },
+  };
   const api = (url) => {
     if (String(url).includes('/translate'))
       return new Promise((resolve) => {
         release = resolve;
       });
-    // The post-translate reload of the active version.
-    return Promise.resolve({
-      title: 'Deck',
-      slides: [],
-      theme: null,
-      revision: 3,
-      i18n: {
-        active: 'nl',
-        dominant: 'nl',
-        versions: {
-          nl: { title: 'Deck', slides: [] },
-          'en-GB': { title: 'Deck', slides: [] },
-        },
-      },
-    });
+    return Promise.resolve(structuredClone(reloaded));
   };
-  const { toasts, items, trigger, controller } = mount({
-    api,
-    pres: makeBilingualPres(),
-  });
+  const { toasts, items, item, trigger, controller } = mount({ api });
+
+  item('English').click();
+  await flush();
+  const accept = controller.el.querySelector(
+    '.lang-popover.is-visible .lang-popover-btn.btn-primary',
+  );
+  assert.ok(accept, 'creating a version offers to translate it');
   const idleTitle = trigger.title;
 
   assert.ok(
@@ -203,7 +193,7 @@ test('the language menu is disabled with a reason while translating', async () =
     'enabled while idle',
   );
 
-  const running = controller.translateMissingForActive();
+  accept.click();
   await flush();
 
   assert.ok(
@@ -219,7 +209,8 @@ test('the language menu is disabled with a reason while translating', async () =
   assert.match(trigger.title, /translat/i);
 
   release({ presentation: { revision: 2 } });
-  await running;
+  await flush();
+  await flush();
 
   assert.ok(
     items().every((b) => b.disabled === false),

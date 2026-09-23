@@ -286,6 +286,14 @@ test('with AI off, a new version gets no translate invite (D179)', async () => {
     assert.equal(pres.i18n.active, 'en-GB', 'the switch itself still works');
     assert.equal(controller.el.querySelector('.lang-popover'), null);
     assert.equal(controller.translateOtherLanguage, null);
+    // No AI action on the controller either (B398): an ungated one is a
+    // second entry no gate stands in front of. The whole surface is pinned,
+    // not a name pattern, so a new member of any name has to pass here.
+    assert.deepEqual(
+      Object.keys(controller).sort(),
+      ['canTranslate', 'detach', 'el', 'syncLangUi', 'translateOtherLanguage'],
+      'the controller surface where AI is off',
+    );
     controller.detach();
   } finally {
     setFeatures({ enableAi: true });

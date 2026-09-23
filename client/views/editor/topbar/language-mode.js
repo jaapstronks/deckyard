@@ -907,8 +907,6 @@ export function createLanguageMode({
     translateOtherLanguage: aiEnabled()
       ? () => translateOtherLanguage({ onStatus: toastStatus })
       : null,
-    translateMissingForActive: () =>
-      translateMissingForActive({ onStatus: toastStatus }),
     canTranslate: () => retranslateTargets().length > 0,
   };
 }
