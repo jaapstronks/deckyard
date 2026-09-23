@@ -190,12 +190,15 @@ export const IMAGEKIT_SORT_VALUES = Object.freeze(
 export const IMAGEKIT_DEFAULT_SORT = 'DESC_CREATED';
 
 /**
+ * One spelling per sort: ImageKit's own upper-case form. A lower-case value
+ * is refused like any other unknown one, not repaired (D109).
+ *
  * @param {unknown} sort - Caller-supplied sort, empty for the default.
  * @returns {string} - A value from {@link IMAGEKIT_SORT_VALUES}.
  * @throws {ValidationError} - When a non-empty value is not in the set.
  */
 function normalizeSort(sort) {
-  const s = cleanStr(sort).toUpperCase();
+  const s = cleanStr(sort);
   if (!s) return IMAGEKIT_DEFAULT_SORT;
   if (!IMAGEKIT_SORT_VALUES.has(s)) {
     // `details` is a registered payload per code (`error-details.js`); a

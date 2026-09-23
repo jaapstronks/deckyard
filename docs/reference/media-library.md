@@ -191,7 +191,8 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
   back. ImageKit items are never copied into `image_library` as catalogue
   entries (the import above stores bytes, not a library row). Listings are
   **newest-first**: `files` sends `sort=DESC_CREATED` unless the caller passes
-  another value from `IMAGEKIT_SORT_VALUES` (anything else is a 400), and the
+  another value from `IMAGEKIT_SORT_VALUES`, spelled as ImageKit spells it
+  (anything else, a lower-case `desc_created` included, is a 400), and the
   tag sample is drawn from the newest files for the same reason. ImageKit's own
   default is oldest-first, which hides every recent upload behind the first
   import. Every call to ImageKit goes through one seam, `fetchJsonOrThrow` in
