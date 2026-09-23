@@ -377,7 +377,8 @@ test('notion import stream: leaving during the conversion aborts the model call 
     const href = String(url);
     // The Notion API answers instantly; only the model call is slow enough
     // for a client to walk away during it.
-    if (href.includes('api.notion.com')) return notionResponse(href);
+    if (new URL(href).hostname === 'api.notion.com')
+      return notionResponse(href);
     return provider(url, opts);
   });
 
@@ -563,7 +564,8 @@ test('notion import (JSON): leaving during the conversion aborts the model call 
   });
   stubFetch(t, (url, opts = {}) => {
     const href = String(url);
-    if (href.includes('api.notion.com')) return notionResponse(href);
+    if (new URL(href).hostname === 'api.notion.com')
+      return notionResponse(href);
     return provider(url, opts);
   });
 
