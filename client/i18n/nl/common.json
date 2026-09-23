@@ -224,6 +224,7 @@
   "sandbox.settings.export": "Data-export staat uit in de sandbox — je werk hier is tijdelijk. In je eigen Deckyard download je een volledige back-up van je presentaties en bibliotheek.",
   "sandbox.settings.notifications": "Notificaties staan uit in de sandbox — een guest heeft geen account om te notificeren. In je eigen Deckyard krijg je e-mail- of Slack/Teams-meldingen bij reacties.",
   "sandbox.settings.unavailable": "Niet beschikbaar in de sandbox.",
+  "sandbox.sharing.off": "In de sandbox werk je alleen. In je eigen Deckyard deel je decks en slides met je team.",
   "shortcuts.or": "of",
   "shortcuts.title": "Sneltoetsen",
   "stockMedia.attribution": "Foto's van {source}",

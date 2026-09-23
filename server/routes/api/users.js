@@ -8,6 +8,7 @@
 
 import { searchUsers, getPublicProfilesByIds } from '../../storage/users.js';
 import { isUuid } from '../../utils/uuid.js';
+import { sharingEnabled } from '../../config/sandbox.js';
 import {
   serveJson,
   methodNotAllowed,
@@ -31,8 +32,11 @@ async function handleUserSearch({ storageScope, res, url }) {
         .filter(Boolean)
     : [];
 
-  if (!query.trim()) {
-    return serveJson(res, 200, { users: [] });
+  // Nobody to find where sharing is off (D181): a sandbox guest must not be
+  // able to look up the other guests, so the answer is the empty list.
+  if (!query.trim() || !sharingEnabled()) {
+    serveJson(res, 200, { users: [] });
+    return true;
   }
 
   const users = await searchUsers(storageScope, query, { limit, exclude });

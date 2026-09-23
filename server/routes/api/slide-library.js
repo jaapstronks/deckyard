@@ -40,6 +40,8 @@ import {
   customHtmlEditViolation,
 } from '../../utils/route-middleware.js';
 import { parseIfMatchRevision } from './presentations/helpers.js';
+import { sharingEnabled } from '../../config/sandbox.js';
+import { assertSharingEnabled } from '../../sandbox/sharing.js';
 const log = createLogger('slide-library');
 
 function cleanThemeId(v) {
@@ -73,6 +75,8 @@ function mutationError(res, result) {
  * @returns {boolean}
  */
 function canEditOrganizationItem(authedUser, item) {
+  // The organization shelf is read-only where sharing is off (D181), for everyone.
+  if (!sharingEnabled()) return false;
   if (authedUser?.isAdmin) return true;
   return matchesIdentity(authedUser, { userId: item?.createdBy?.id });
 }
@@ -278,6 +282,7 @@ async function handleOrganizationCreate({
   res,
   authedUser,
 }) {
+  assertSharingEnabled();
   const email = actorEmail(authedUser);
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;

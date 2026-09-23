@@ -211,6 +211,7 @@
   "sandbox.settings.export": "Der Datenexport ist in der Sandbox aus – Ihre Arbeit hier ist temporär. In Ihrem eigenen Deckyard können Sie eine vollständige Sicherung Ihrer Präsentationen und Bibliothek herunterladen.",
   "sandbox.settings.notifications": "Benachrichtigungen sind in der Sandbox aus – ein Gast hat kein Konto, das benachrichtigt werden kann. In Ihrem eigenen Deckyard erhalten Sie E-Mail- oder Slack-/Teams-Hinweise, wenn jemand kommentiert.",
   "sandbox.settings.unavailable": "In der Sandbox nicht verfügbar.",
+  "sandbox.sharing.off": "In der Sandbox arbeiten Sie allein. In Ihrem eigenen Deckyard teilen Sie Präsentationen und Folien mit Ihrem Team.",
   "shortcuts.or": "oder",
   "shortcuts.title": "Tastenkürzel",
   "stockMedia.attribution": "Fotos von {source}",

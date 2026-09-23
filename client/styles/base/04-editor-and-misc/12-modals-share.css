@@ -599,3 +599,16 @@
   flex: 2;
   min-width: 200px;
 }
+
+/* Sharing off (D181, sandbox): the sharing controls stay visible but dimmed
+   and inert inside a disabled fieldset, under one full-contrast sentence of
+   why (`.sharing-off-note`, styled with the sandbox settings note). Used by
+   the Share dialog's Team tab and the organization-shelf choices of the library
+   modals. */
+.sharing-off-controls {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  opacity: 0.5;
+}

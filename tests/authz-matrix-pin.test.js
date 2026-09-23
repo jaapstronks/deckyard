@@ -29,8 +29,9 @@
  * Scope: the **default single-organization install** (multi-organization off, sandbox
  * off), which is the shape the epic touches. Multi-organization org isolation is
  * already pinned in authz-organization-scope{,-multi-org}.test.js and is not
- * re-derived here. A small sandbox-on section pins the two sandbox overrides,
- * since `sandboxEnabled()` is read per call.
+ * re-derived here. A small sandbox-on section pins the sandbox override of the write
+ * decider and that the visibility decider has none, since `sandboxEnabled()`
+ * is read per call.
  *
  * Run with: node --test tests/authz-matrix-pin.test.js
  */
@@ -659,7 +660,11 @@ describe('sandbox overrides (SANDBOX_MODE on)', () => {
     });
   });
 
-  it('scope changes are refused in sandbox mode for non-admins', () => {
+  it('the visibility decider does not read sandbox mode: the refusal is the declaration', () => {
+    // Opening a deck to the organization is sharing, which the sandbox declares
+    // off (D181): the route refuses it through `assertSharingEnabled()` before
+    // this decider runs (tests/sandbox-sharing-off.test.js). The decider
+    // itself answers the ownership question the same with the flag on or off.
     withSandbox(() => {
       assert.equal(
         canChangePresentationVisibility({
@@ -667,16 +672,15 @@ describe('sandbox overrides (SANDBOX_MODE on)', () => {
           pres: privateDeck,
           nextVisibility: 'organization',
         }),
-        false,
+        true,
       );
-      // Admins still bypass (the isAdmin check precedes the sandbox gate).
       assert.equal(
         canChangePresentationVisibility({
-          user: ADMIN,
+          user: OTHER,
           pres: privateDeck,
           nextVisibility: 'organization',
         }),
-        true,
+        false,
       );
     });
   });

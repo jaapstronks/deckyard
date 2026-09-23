@@ -224,6 +224,7 @@
   "sandbox.settings.export": "Data export is off in the sandbox — your work here is temporary. In your own Deckyard you can download a full backup of your presentations and library.",
   "sandbox.settings.notifications": "Notifications are off in the sandbox — a guest has no account to notify. In your own Deckyard, get email or Slack/Teams alerts when someone comments.",
   "sandbox.settings.unavailable": "Not available in the sandbox.",
+  "sandbox.sharing.off": "In the sandbox you work on your own. In your own Deckyard you share decks and slides with your team.",
   "shortcuts.or": "or",
   "shortcuts.title": "Keyboard shortcuts",
   "stockMedia.attribution": "Photos from {source}",

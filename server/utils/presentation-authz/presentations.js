@@ -178,9 +178,6 @@ export function canChangePresentationVisibility({
   // lives in, not merely of the instance (shared/organization-role.js).
   if (isOrganizationAdmin(user)) return true;
 
-  // Sandbox stance: prevent user-to-user sharing
-  if (sandboxEnabled()) return false;
-
   // Phase 1: allow private -> organization by the owner only (D49). Widening
   // who may see a deck is power over the object, not an authorship fact.
   if (from === 'private' && to === 'organization') {

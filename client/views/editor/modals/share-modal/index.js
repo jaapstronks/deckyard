@@ -16,12 +16,16 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { isOwner } from '../../../../../shared/identity-match.js';
 import { createModal } from '../../../../lib/dom/modal.js';
 import { createSegmented } from '../../../../lib/dom/segmented.js';
-import { getFeatures } from '../../../../lib/state/features.js';
+import { getFeatures, sharingEnabled } from '../../../../lib/state/features.js';
 import { createCollaboratorsSection } from './collaborators-section.js';
 import { createShareLinksSection } from './share-links-section.js';
 import { createVisibilitySection } from './visibility-section.js';
 import { createPublishSection } from './publish-section.js';
 import { h } from '../../../../lib/dom.js';
+import {
+  createSharingOffNote,
+  createSharingOffFieldset,
+} from '../../../shared/sharing-off.js';
 
 /**
  * Open the unified share dialog.
@@ -130,10 +134,17 @@ export function openShareModal({
     modalRoot: root,
   });
 
+  // Where sharing is off (sandbox, D181) the Team tab stays, greyed out under
+  // one sentence of why: the server refuses every action in it.
   const organizationPanel = h(
     'div',
     { class: 'share-tab-panel', 'data-tab': 'organization' },
-    [visibility.el, collaborators.el],
+    sharingEnabled()
+      ? [visibility.el, collaborators.el]
+      : [
+          createSharingOffNote(),
+          createSharingOffFieldset([visibility.el, collaborators.el]),
+        ],
   );
 
   // --- Guests tab ---

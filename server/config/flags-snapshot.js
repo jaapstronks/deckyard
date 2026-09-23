@@ -9,7 +9,7 @@
 
 import { getLlmStatus } from '../utils/llm/config.js';
 import { getImageKitConfigFromEnv } from '../media/imagekit.js';
-import { sandboxEnabled, sandboxTtlHours } from './sandbox.js';
+import { sandboxEnabled, sandboxTtlHours, sharingEnabled } from './sandbox.js';
 import {
   isMultiOrgEnabled,
   isLiveDataEnabled,
@@ -55,6 +55,9 @@ export function getFeatureFlags() {
     sandboxMode,
     // The banner states this number; null outside sandbox, where nothing expires.
     sandboxTtlHours: sandboxMode ? sandboxTtlHours() : null,
+    // Sharing between people (D181): off in sandbox. The client greys out every
+    // sharing entry with one sentence of why, rather than hiding it.
+    enableSharing: sharingEnabled(),
     imagekitOnly,
     imagekitConfigured,
     enableAi,

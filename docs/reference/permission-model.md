@@ -223,8 +223,10 @@ Where the deciders differ from that shape, they differ deliberately:
   organization lets you edit it; it does not let you hand out access to it.
 - **`canChangePresentationVisibility`** is a transition check, not a level check:
   same-visibility is a no-op and always allowed; an admin may make any
-  transition; sandbox mode refuses every transition (no guest-to-guest
-  sharing); otherwise only the owner, and only `private → organization`.
+  transition; otherwise only the owner, and only `private → organization`.
+  It does not read sandbox mode: where sharing is declared off (sandbox,
+  D181) the route refuses `→ organization` before the decider runs, for
+  everyone.
   `organization → private` is admin-only. "Admin" here is the **organization**
   admin — see _Admin means admin of the organization you are in_ below.
 - **`getEffectivePermission`** is the client's answer, not a gate: it returns
@@ -305,15 +307,15 @@ every authorized request, so it is cached:
 
 ## Config & flags
 
-| Variable                       | Effect                                                                                                                                                                                   |
-| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PERMISSION_CACHE_TTL_SECONDS` | Cache TTL, default `300`.                                                                                                                                                                |
-| `PERMISSION_CACHE_MAX_SIZE`    | Max entries in the in-memory fallback, default `10000`.                                                                                                                                  |
-| `REDIS_URL`                    | When set and reachable, permissions cache in Redis and invalidation is instance-wide. Absent → memory only (the same optional-Redis rule as [`jobs-and-queues.md`](jobs-and-queues.md)). |
-| `AUTH_ENABLED=false`           | Produces the single `unrestricted` operator; every ownership-scoped check grants.                                                                                                        |
-| `AUTH_DEV_BYPASS`              | Auto-login in development. The bypass user is not a database user, so it decides on the email fallback.                                                                                  |
-| `MULTI_ORG_ENABLED`            | Turns `isSameOrganization` into a real comparison. Unset, it answers `true` from the flag without reading anything.                                                                      |
-| `SANDBOX_MODE`                 | Organization decks become read-only for guests and every visibility transition is refused. See [`sandbox-mode.md`](sandbox-mode.md).                                                     |
+| Variable                       | Effect                                                                                                                                                                                              |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PERMISSION_CACHE_TTL_SECONDS` | Cache TTL, default `300`.                                                                                                                                                                           |
+| `PERMISSION_CACHE_MAX_SIZE`    | Max entries in the in-memory fallback, default `10000`.                                                                                                                                             |
+| `REDIS_URL`                    | When set and reachable, permissions cache in Redis and invalidation is instance-wide. Absent → memory only (the same optional-Redis rule as [`jobs-and-queues.md`](jobs-and-queues.md)).            |
+| `AUTH_ENABLED=false`           | Produces the single `unrestricted` operator; every ownership-scoped check grants.                                                                                                                   |
+| `AUTH_DEV_BYPASS`              | Auto-login in development. The bypass user is not a database user, so it decides on the email fallback.                                                                                             |
+| `MULTI_ORG_ENABLED`            | Turns `isSameOrganization` into a real comparison. Unset, it answers `true` from the flag without reading anything.                                                                                 |
+| `SANDBOX_MODE`                 | Organization decks become read-only for guests, and sharing is declared off (D181): the routes refuse `→ organization` visibility, invites and transfers. See [`sandbox-mode.md`](sandbox-mode.md). |
 
 ## Authz & tenancy
 

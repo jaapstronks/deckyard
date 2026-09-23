@@ -214,6 +214,7 @@
   "sandbox.settings.export": "Eksport danych jest wyłączony w piaskownicy — praca jest tu tymczasowa. We własnej instalacji Deckyard można pobrać pełną kopię zapasową prezentacji i biblioteki.",
   "sandbox.settings.notifications": "Powiadomienia są wyłączone w piaskownicy — gość nie ma konta, na które można je wysłać. We własnej instalacji Deckyard można otrzymywać powiadomienia e-mail lub w Slacku/Teams, gdy ktoś doda komentarz.",
   "sandbox.settings.unavailable": "Niedostępne w piaskownicy.",
+  "sandbox.sharing.off": "W piaskownicy pracujesz sam. We własnym Deckyard udostępniasz prezentacje i slajdy swojemu zespołowi.",
   "shortcuts.or": "lub",
   "shortcuts.title": "Skróty klawiaturowe",
   "stockMedia.attribution": "Zdjęcia z {source}",

@@ -4,6 +4,21 @@ export function sandboxEnabled() {
   return envBool('SANDBOX_MODE');
 }
 
+/**
+ * Whether the people on this instance can reach each other: find one another
+ * in user search, open a deck to the whole organization, invite someone onto a
+ * deck, hand a deck over, and put slides or collections on the shared Team
+ * shelf. The sandbox declares it off (D181): its guests are anonymous
+ * strangers on a public URL, so anything one of them shares lands in front of
+ * the next visitor. The one reading of that stance — the server gates
+ * (`server/sandbox/sharing.js`) and the client (`enableSharing` in the feature
+ * snapshot) both ask here, never `sandboxEnabled()` for it.
+ * @returns {boolean}
+ */
+export function sharingEnabled() {
+  return !sandboxEnabled();
+}
+
 /** Hours a sandbox deck lives before the cleanup job deletes it. */
 const DEFAULT_SANDBOX_TTL_HOURS = 24;
 

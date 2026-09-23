@@ -25,6 +25,21 @@ export function aiEnabled() {
 }
 
 /**
+ * Whether people on this install can share work with each other — the client's
+ * one reading of the server's `enableSharing` (off in sandbox, D181).
+ *
+ * Unlike AI (D179), a sharing entry where this is false stays on screen,
+ * greyed out, with one sentence of why (`sandbox.sharing.off`): sharing is
+ * part of why someone picks Deckyard, so the sandbox shows it exists. Every
+ * sharing entry asks this function, never `sandboxMode`.
+ *
+ * @returns {boolean}
+ */
+export function sharingEnabled() {
+  return !!getFeatures()?.enableSharing;
+}
+
+/**
  * Whether AI alt text can be generated: AI is on and the server's alt-text
  * vendor is configured (`aiAltText`, which the server derives from `enableAi`).
  * Both image pickers ask this, so they cannot disagree about the button.
