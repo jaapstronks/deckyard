@@ -406,31 +406,37 @@ export const ROUTES = [
   },
   {
     method: 'POST',
-    pattern: /^\/api\/font-families\/([a-f0-9-]+)\/upload-variant$/,
+    pattern: /^\/api\/font-families\/([^/]+)\/upload-variant$/,
+    captures: ['uuid'],
     handler: handleFontFamilyUploadVariant,
   },
   {
     method: 'DELETE',
-    pattern: /^\/api\/font-families\/([a-f0-9-]+)\/variants\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/font-families\/([^/]+)\/variants\/([^/]+)$/,
+    captures: ['uuid', 'uuid'],
     handler: handleFontFamilyRemoveVariant,
   },
   {
     method: 'GET',
-    pattern: /^\/api\/font-families\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/font-families\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleFontFamilyGet,
   },
   {
     method: 'PUT',
-    pattern: /^\/api\/font-families\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/font-families\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleFontFamilyUpdate,
   },
   {
     method: 'DELETE',
-    pattern: /^\/api\/font-families\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/font-families\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleFontFamilyDelete,
   },
   {
-    pattern: /^\/api\/font-families\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/font-families\/([^/]+)$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT', 'DELETE']),
   },
 ];

@@ -300,22 +300,30 @@ export const ROUTES = [
   },
   {
     pattern: /^\/api\/image-library\/([^/]+)\/usage$/,
+    captures: ['uuid'],
     handler: handleImageUsage,
   },
   {
     pattern: /^\/api\/image-library\/([^/]+)\/generate-alts$/,
+    captures: ['uuid'],
     handler: handleItemGenerateAlts,
     ai: true,
   },
   {
     pattern: /^\/api\/image-library\/([^/]+)\/replace-upload$/,
+    captures: ['uuid'],
     handler: handleReplaceUpload,
   },
   {
     pattern: /^\/api\/image-library\/([^/]+)\/favorite$/,
+    captures: ['uuid'],
     handler: handleToggleFavorite,
   },
-  { pattern: /^\/api\/image-library\/([^/]+)$/, handler: handleImageItem },
+  {
+    pattern: /^\/api\/image-library\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: handleImageItem,
+  },
 ];
 
 /**

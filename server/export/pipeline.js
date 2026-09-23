@@ -180,9 +180,27 @@ export function handleExportError(res, error) {
 }
 
 /**
- * Create an export route handler with common boilerplate
+ * One export route as a row of the `/api/*` route table.
+ *
+ * Every export pattern captures exactly the presentation id, and the
+ * dispatcher shape-checks it (`captures`, B360/B399): a non-uuid answers
+ * `not_found` before `getPresentation` can hand it to the uuid column.
+ * Matching is the dispatcher's job — the factories below build the handler,
+ * they do not test the path themselves.
+ *
+ * @param {string} method
+ * @param {RegExp} pattern - One capture group: the presentation id.
+ * @param {(ctx: object, presentationId: string) => Promise<unknown>} handler
+ * @returns {import('../utils/router.js').Route}
+ */
+function exportRow(method, pattern, handler) {
+  return { method, pattern, captures: ['uuid'], handler };
+}
+
+/**
+ * Create an export route with common boilerplate.
  * @param {Object} config - Route configuration
- * @returns {Function} Route handler
+ * @returns {import('../utils/router.js').Route}
  */
 export function createExportRoute(config) {
   const {
@@ -196,91 +214,83 @@ export function createExportRoute(config) {
     getFilename = (ctx) => ctx.title,
   } = config;
 
-  return async function handler({
-    repoRoot,
-    storageScope,
-    req,
-    res,
-    url,
-    authedUser,
-  }) {
-    const match = url.pathname.match(pattern);
-    if (!match || req.method !== method) return false;
-
-    const presentationId = match[1];
-    const ctx = await prepareExportContext({
-      repoRoot,
-      res,
-      url,
-      authedUser,
+  return exportRow(
+    method,
+    pattern,
+    async function handler(
+      { repoRoot, storageScope, res, url, authedUser },
       presentationId,
-      storageScope,
-      stripLiveOnly,
-      allLanguages,
-    });
-
-    if (!ctx) return true; // Request was rejected, response already sent
-
-    try {
-      const data = await buildContent(ctx, { repoRoot, url, match });
-      const filename = getFilename(ctx);
-
-      sendExportResponse(res, {
-        contentType,
-        filename,
-        langSuffix: ctx.langSuffix,
-        extension,
-        data,
+    ) {
+      const ctx = await prepareExportContext({
+        repoRoot,
+        res,
+        url,
+        authedUser,
+        presentationId,
+        storageScope,
+        stripLiveOnly,
+        allLanguages,
       });
-      return true;
-    } catch (e) {
-      handleExportError(res, e);
-      return true;
-    }
-  };
+
+      if (!ctx) return true; // Request was rejected, response already sent
+
+      try {
+        const data = await buildContent(ctx, { repoRoot, url });
+        const filename = getFilename(ctx);
+
+        sendExportResponse(res, {
+          contentType,
+          filename,
+          langSuffix: ctx.langSuffix,
+          extension,
+          data,
+        });
+        return true;
+      } catch (e) {
+        handleExportError(res, e);
+        return true;
+      }
+    },
+  );
 }
 
 /**
  * Create an HTML preview export route (no download, just render)
  * @param {Object} config - Route configuration
- * @returns {Function} Route handler
+ * @returns {import('../utils/router.js').Route}
  */
 export function createHtmlPreviewRoute(config) {
   const { pattern, method = 'GET', stripLiveOnly = true, buildHtml } = config;
 
-  return async function handler({
-    repoRoot,
-    storageScope,
-    req,
-    res,
-    url,
-    authedUser,
-  }) {
-    const match = url.pathname.match(pattern);
-    if (!match || req.method !== method) return false;
-
-    const presentationId = match[1];
-    const ctx = await prepareExportContext({
-      repoRoot,
-      res,
-      url,
-      authedUser,
+  return exportRow(
+    method,
+    pattern,
+    async function handler(
+      { repoRoot, storageScope, res, url, authedUser },
       presentationId,
-      storageScope,
-      stripLiveOnly,
-    });
+    ) {
+      const ctx = await prepareExportContext({
+        repoRoot,
+        res,
+        url,
+        authedUser,
+        presentationId,
+        storageScope,
+        stripLiveOnly,
+      });
 
-    if (!ctx) return true;
+      if (!ctx) return true;
 
-    try {
-      const html = await buildHtml(ctx, { repoRoot, url, match });
-      sendHtmlPreviewResponse(res, html);
-      return true;
-    } catch (e) {
-      handleExportError(res, e);
-      return true;
-    }
-  };
+      try {
+        const html = await buildHtml(ctx, { repoRoot, url });
+        sendHtmlPreviewResponse(res, html);
+        return true;
+      } catch (e) {
+        handleExportError(res, e);
+        return true;
+      }
+    },
+  );
 }
 
 /**
@@ -296,7 +306,7 @@ export function stripLiveOnlySlides(pres) {
  * Create an async export route that queues jobs when available.
  * Falls back to synchronous export if queue is unavailable.
  * @param {Object} config - Route configuration
- * @returns {Function} Route handler
+ * @returns {import('../utils/router.js').Route}
  */
 export function createAsyncExportRoute(config) {
   const {
@@ -310,96 +320,95 @@ export function createAsyncExportRoute(config) {
     getFilename = (ctx) => ctx.title,
   } = config;
 
-  return async function handler({
-    repoRoot,
-    storageScope,
-    req,
-    res,
-    url,
-    authedUser,
-  }) {
-    const match = url.pathname.match(pattern);
-    if (!match || req.method !== method) return false;
-
-    const presentationId = match[1];
-
-    // Check if user prefers sync (query param ?sync=1)
-    const forceSync = url.searchParams.get('sync') === '1';
-
-    // If queue is available and not forcing sync, queue the job
-    if (!forceSync && isQueueAvailable()) {
-      // Quick auth check
-      const pres = await getPresentation(storageScope, presentationId);
-      if (!pres) {
-        return notFound(res);
-      }
-      const collaboratorPermission = authedUser?.email
-        ? await getCollaboratorPermission(presentationId, authedUser.email)
-        : null;
-      if (
-        !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
-      ) {
-        return forbidden(res);
-      }
-
-      // Queue the job
-      const exportLang = normalizeLang(url.searchParams.get('lang'));
-      const scale = Math.max(
-        1,
-        Math.min(3, Number(url.searchParams.get('scale')) || 2),
-      );
-
-      const { jobId, queued } = await addJob(QUEUE_NAMES.EXPORT, exportType, {
-        presentationId,
-        lang: exportLang,
-        stripLiveOnly,
-        scale,
-        repoRoot,
-        // Stamp the requester so the download/status routes can enforce
-        // ownership (job IDs are enumerable ints — see security-audit H3), and the
-        // organization so the worker acts in the organization the export came from.
-        ownerEmail: authedUser?.email || null,
-        organizationId: authedUser?.organizationId || undefined,
-      });
-
-      if (queued) {
-        return serveJson(res, 202, {
-          queued: true,
-          jobId: `export-${jobId}`,
-          pollUrl: `/api/jobs/export-${jobId}`,
-          message: 'Export queued. Poll the status URL for completion.',
-        });
-      }
-    }
-
-    // Fallback to synchronous export
-    const ctx = await prepareExportContext({
-      repoRoot,
-      res,
-      url,
-      authedUser,
+  return exportRow(
+    method,
+    pattern,
+    async function handler(
+      { repoRoot, storageScope, res, url, authedUser },
       presentationId,
-      storageScope,
-      stripLiveOnly,
-    });
+    ) {
+      // Check if user prefers sync (query param ?sync=1)
+      const forceSync = url.searchParams.get('sync') === '1';
 
-    if (!ctx) return true;
+      // If queue is available and not forcing sync, queue the job
+      if (!forceSync && isQueueAvailable()) {
+        // Quick auth check
+        const pres = await getPresentation(storageScope, presentationId);
+        if (!pres) {
+          return notFound(res);
+        }
+        const collaboratorPermission = authedUser?.email
+          ? await getCollaboratorPermission(presentationId, authedUser.email)
+          : null;
+        if (
+          !canReadPresentation({
+            user: authedUser,
+            pres,
+            collaboratorPermission,
+          })
+        ) {
+          return forbidden(res);
+        }
 
-    try {
-      const data = await buildContent(ctx, { repoRoot, url, match });
-      const filename = getFilename(ctx);
+        // Queue the job
+        const exportLang = normalizeLang(url.searchParams.get('lang'));
+        const scale = Math.max(
+          1,
+          Math.min(3, Number(url.searchParams.get('scale')) || 2),
+        );
 
-      sendExportResponse(res, {
-        contentType,
-        filename,
-        langSuffix: ctx.langSuffix,
-        extension,
-        data,
+        const { jobId, queued } = await addJob(QUEUE_NAMES.EXPORT, exportType, {
+          presentationId,
+          lang: exportLang,
+          stripLiveOnly,
+          scale,
+          repoRoot,
+          // Stamp the requester so the download/status routes can enforce
+          // ownership (job IDs are enumerable ints — see security-audit H3), and the
+          // organization so the worker acts in the organization the export came from.
+          ownerEmail: authedUser?.email || null,
+          organizationId: authedUser?.organizationId || undefined,
+        });
+
+        if (queued) {
+          return serveJson(res, 202, {
+            queued: true,
+            jobId: `export-${jobId}`,
+            pollUrl: `/api/jobs/export-${jobId}`,
+            message: 'Export queued. Poll the status URL for completion.',
+          });
+        }
+      }
+
+      // Fallback to synchronous export
+      const ctx = await prepareExportContext({
+        repoRoot,
+        res,
+        url,
+        authedUser,
+        presentationId,
+        storageScope,
+        stripLiveOnly,
       });
-      return true;
-    } catch (e) {
-      handleExportError(res, e);
-      return true;
-    }
-  };
+
+      if (!ctx) return true;
+
+      try {
+        const data = await buildContent(ctx, { repoRoot, url });
+        const filename = getFilename(ctx);
+
+        sendExportResponse(res, {
+          contentType,
+          filename,
+          langSuffix: ctx.langSuffix,
+          extension,
+          data,
+        });
+        return true;
+      } catch (e) {
+        handleExportError(res, e);
+        return true;
+      }
+    },
+  );
 }

@@ -531,31 +531,37 @@ export const PUBLIC_ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/share\/([^/]+)$/,
+    captures: ['text'],
     handler: handleShareValidate,
   },
   {
     method: 'POST',
     pattern: /^\/api\/share\/([^/]+)\/verify$/,
+    captures: ['text'],
     handler: handleShareVerify,
   },
   {
     method: 'POST',
     pattern: /^\/api\/share\/([^/]+)\/render-slide$/,
+    captures: ['text'],
     handler: handleShareRenderSlide,
   },
   {
     method: 'POST',
     pattern: /^\/api\/share\/([^/]+)\/guest\/request$/,
+    captures: ['text'],
     handler: handleShareGuestRequest,
   },
   {
     method: 'GET',
     pattern: /^\/api\/share\/([^/]+)\/guest\/verify\/([^/]+)$/,
+    captures: ['text', 'text'],
     handler: handleShareGuestVerify,
   },
   {
     method: 'GET',
     pattern: /^\/api\/share\/([^/]+)\/guest\/me$/,
+    captures: ['text'],
     handler: handleShareGuestMe,
   },
 ];

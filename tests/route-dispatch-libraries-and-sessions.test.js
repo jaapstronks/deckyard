@@ -124,31 +124,31 @@ test('themes: routes resolve to their named handlers in order', () => {
   named(
     THEME_ROUTES,
     'GET',
-    '/api/themes/custom/abc123',
+    '/api/themes/custom/00000000-0000-4000-8000-000000000123',
     'handleCustomThemeGet',
   );
   named(
     THEME_ROUTES,
     'PUT',
-    '/api/themes/custom/abc123',
+    '/api/themes/custom/00000000-0000-4000-8000-000000000123',
     'handleCustomThemeUpdate',
   );
   named(
     THEME_ROUTES,
     'DELETE',
-    '/api/themes/custom/abc123',
+    '/api/themes/custom/00000000-0000-4000-8000-000000000123',
     'handleCustomThemeDelete',
   );
   named(
     THEME_ROUTES,
     'POST',
-    '/api/themes/custom/abc123/set-default',
+    '/api/themes/custom/00000000-0000-4000-8000-000000000123/set-default',
     'handleCustomThemeSetDefault',
   );
   named(
     THEME_ROUTES,
     'GET',
-    '/api/themes/custom/abc123/config',
+    '/api/themes/custom/00000000-0000-4000-8000-000000000123/config',
     'handleCustomThemeConfig',
   );
 });
@@ -178,16 +178,35 @@ test('themes: an unknown sub-path falls through', async () => {
 test('api-keys: routes resolve to their named handlers in order', () => {
   named(KEY_ROUTES, 'GET', '/api/api-keys', 'handleApiKeyList');
   named(KEY_ROUTES, 'POST', '/api/api-keys', 'handleApiKeyCreate');
-  named(KEY_ROUTES, 'GET', '/api/api-keys/k-1/usage', 'handleApiKeyUsage');
-  named(KEY_ROUTES, 'GET', '/api/api-keys/k-1', 'handleApiKeyGet');
-  named(KEY_ROUTES, 'DELETE', '/api/api-keys/k-1', 'handleApiKeyRevoke');
+  named(
+    KEY_ROUTES,
+    'GET',
+    '/api/api-keys/00000000-0000-4000-8000-0000000000c1/usage',
+    'handleApiKeyUsage',
+  );
+  named(
+    KEY_ROUTES,
+    'GET',
+    '/api/api-keys/00000000-0000-4000-8000-0000000000c1',
+    'handleApiKeyGet',
+  );
+  named(
+    KEY_ROUTES,
+    'DELETE',
+    '/api/api-keys/00000000-0000-4000-8000-0000000000c1',
+    'handleApiKeyRevoke',
+  );
 });
 
 test('api-keys: a wrong method 405s with the pinned Allow list', async () => {
   for (const [method, path, allow] of [
     ['DELETE', '/api/api-keys', 'GET, POST'],
-    ['PUT', '/api/api-keys/k-1', 'GET, DELETE'],
-    ['POST', '/api/api-keys/k-1/usage', 'GET'],
+    [
+      'PUT',
+      '/api/api-keys/00000000-0000-4000-8000-0000000000c1',
+      'GET, DELETE',
+    ],
+    ['POST', '/api/api-keys/00000000-0000-4000-8000-0000000000c1/usage', 'GET'],
   ]) {
     const { ctx: c, res } = ctx(method, path);
     await handleApiKeys(c);
@@ -230,26 +249,31 @@ test('font-families: routes resolve to their named handlers in order', () => {
   named(
     FF_ROUTES,
     'POST',
-    '/api/font-families/abc123/upload-variant',
+    '/api/font-families/00000000-0000-4000-8000-000000000123/upload-variant',
     'handleFontFamilyUploadVariant',
   );
   named(
     FF_ROUTES,
     'DELETE',
-    '/api/font-families/abc123/variants/def456',
+    '/api/font-families/00000000-0000-4000-8000-000000000123/variants/00000000-0000-4000-8000-000000000456',
     'handleFontFamilyRemoveVariant',
   );
-  named(FF_ROUTES, 'GET', '/api/font-families/abc123', 'handleFontFamilyGet');
+  named(
+    FF_ROUTES,
+    'GET',
+    '/api/font-families/00000000-0000-4000-8000-000000000123',
+    'handleFontFamilyGet',
+  );
   named(
     FF_ROUTES,
     'PUT',
-    '/api/font-families/abc123',
+    '/api/font-families/00000000-0000-4000-8000-000000000123',
     'handleFontFamilyUpdate',
   );
   named(
     FF_ROUTES,
     'DELETE',
-    '/api/font-families/abc123',
+    '/api/font-families/00000000-0000-4000-8000-000000000123',
     'handleFontFamilyDelete',
   );
 });
@@ -257,7 +281,11 @@ test('font-families: routes resolve to their named handlers in order', () => {
 test('font-families: a wrong method 405s where the original did', async () => {
   for (const [method, path, allow] of [
     ['DELETE', '/api/font-families', 'GET, POST'],
-    ['PATCH', '/api/font-families/abc123', 'GET, PUT, DELETE'],
+    [
+      'PATCH',
+      '/api/font-families/00000000-0000-4000-8000-000000000123',
+      'GET, PUT, DELETE',
+    ],
   ]) {
     const { ctx: c, res } = ctx(method, path);
     await handleFontFamilies(c);
@@ -270,21 +298,38 @@ test('font-families: a wrong method 405s where the original did', async () => {
   }
 });
 
-test('font-families: the Adobe and variant paths fall through on a wrong method (Form A)', async () => {
+test('font-families: the variant paths fall through on a wrong method (Form A)', async () => {
   assert.equal(
-    select(FF_ROUTES, 'GET', '/api/font-families/discover-adobe'),
+    select(
+      FF_ROUTES,
+      'GET',
+      '/api/font-families/00000000-0000-4000-8000-000000000123/upload-variant',
+    ),
     null,
   );
   assert.equal(
-    select(FF_ROUTES, 'GET', '/api/font-families/abc123/upload-variant'),
+    select(
+      FF_ROUTES,
+      'GET',
+      '/api/font-families/00000000-0000-4000-8000-000000000123/variants/00000000-0000-4000-8000-000000000456',
+    ),
     null,
   );
-  assert.equal(
-    select(FF_ROUTES, 'GET', '/api/font-families/abc123/variants/def456'),
-    null,
+});
+
+test('font-families: a wrong method on an Adobe path is the id row, and its 404', async () => {
+  // `discover-adobe` is one segment under /api/font-families/, so a GET there
+  // is the `:id` row. The id is declared a uuid (B399), so the row answers 404
+  // itself — the answer the end of the /api chain gave when this fell through.
+  named(
+    FF_ROUTES,
+    'GET',
+    '/api/font-families/discover-adobe',
+    'handleFontFamilyGet',
   );
-  const { ctx: c } = ctx('GET', '/api/font-families/discover-adobe');
-  assert.equal(await handleFontFamilies(c), false);
+  const { ctx: c, res } = ctx('GET', '/api/font-families/discover-adobe');
+  assert.equal(await handleFontFamilies(c), true);
+  assert.equal(res.statusCode, 404);
 });
 
 test('font-families: designer guard 403s on a mutation before storage', async () => {
@@ -385,26 +430,36 @@ test('image-library: routes resolve to their named handlers in order', () => {
     '/api/image-library/generate-alts',
     'handleGenerateAltsPreview',
   );
-  named(IL_ROUTES, 'GET', '/api/image-library/img-1/usage', 'handleImageUsage');
+  named(
+    IL_ROUTES,
+    'GET',
+    '/api/image-library/00000000-0000-4000-8000-0000000000a1/usage',
+    'handleImageUsage',
+  );
   named(
     IL_ROUTES,
     'POST',
-    '/api/image-library/img-1/generate-alts',
+    '/api/image-library/00000000-0000-4000-8000-0000000000a1/generate-alts',
     'handleItemGenerateAlts',
   );
   named(
     IL_ROUTES,
     'POST',
-    '/api/image-library/img-1/replace-upload',
+    '/api/image-library/00000000-0000-4000-8000-0000000000a1/replace-upload',
     'handleReplaceUpload',
   );
   named(
     IL_ROUTES,
     'POST',
-    '/api/image-library/img-1/favorite',
+    '/api/image-library/00000000-0000-4000-8000-0000000000a1/favorite',
     'handleToggleFavorite',
   );
-  named(IL_ROUTES, 'GET', '/api/image-library/img-1', 'handleImageItem');
+  named(
+    IL_ROUTES,
+    'GET',
+    '/api/image-library/00000000-0000-4000-8000-0000000000a1',
+    'handleImageItem',
+  );
 });
 
 test('image-library: the exact /generate-alts rows shadow the /:id regex (first-match order)', () => {
@@ -438,7 +493,10 @@ test('image-library: collection-level generate-alts keeps its explicit 405', asy
 });
 
 test('image-library: an unknown deep sub-path falls through', async () => {
-  const { ctx: c } = ctx('GET', '/api/image-library/img-1/nope');
+  const { ctx: c } = ctx(
+    'GET',
+    '/api/image-library/00000000-0000-4000-8000-0000000000a1/nope',
+  );
   assert.equal(await handleImageLibrary(c), false);
 });
 

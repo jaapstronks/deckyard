@@ -301,21 +301,25 @@ export const ROUTES = [
   {
     method: 'PUT',
     pattern: /^\/api\/admin\/email-templates\/([^/]+)\/([^/]+)$/,
+    captures: ['text', 'text'],
     handler: handleEmailTemplateWrite,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/admin\/email-templates\/([^/]+)\/([^/]+)$/,
+    captures: ['text', 'text'],
     handler: handleEmailTemplateReset,
   },
   {
     method: 'POST',
     pattern: /^\/api\/admin\/email-templates\/([^/]+)\/preview$/,
+    captures: ['text'],
     handler: handleEmailTemplatePreview,
   },
   {
     method: 'POST',
     pattern: /^\/api\/admin\/email-templates\/([^/]+)\/test$/,
+    captures: ['text'],
     handler: handleEmailTemplateTest,
   },
 ];

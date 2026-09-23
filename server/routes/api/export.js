@@ -28,7 +28,7 @@ import {
   handleExportError,
 } from '../../export/pipeline.js';
 
-// Define export routes using the pipeline factory
+// Export routes built by the pipeline factories — each one a route row.
 const exportRoutes = [
   // JSON export
   createExportRoute({
@@ -256,14 +256,14 @@ async function handlePngSlideExport(
 }
 
 /**
- * Declarative route table for the export routes this module dispatches itself
- * (A7.19 C8): the PNG-slide route, which needs the extra slide-number capture.
- * It stays first, before the factory-built routes, exactly as the original
- * "more specific pattern first" comment ordered it. GET-only, Form A.
+ * Declarative route table for every export route (A7.19 C8): the PNG-slide
+ * route, which needs the extra slide-number capture, then the factory-built
+ * rows. The PNG route stays first — the original "more specific pattern
+ * first" order. GET-only, Form A.
  *
- * The factory-built routes in `exportRoutes` carry their own patterns and are
- * matched inside `server/export/pipeline.js` — they are handlers with
- * self-contained matching, tried in order after this table.
+ * Every row declares its `captures` (B399): the presentation id is a `uuid`,
+ * so `/api/presentations/foo/export/json` answers 404 rather than reaching
+ * the uuid column as a 500.
  *
  * @type {import('../../utils/router.js').Route[]}
  */
@@ -271,18 +271,12 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/png\/(\d+)\.png$/,
+    captures: ['uuid', 'text'],
     handler: handlePngSlideExport,
   },
+  ...exportRoutes,
 ];
 
-export const handleExports = withErrorHandler('export', async (context) => {
-  // PNG slide export first (more specific pattern)
-  if (await dispatchRoutes(ROUTES, context)) return true;
-
-  // Try each registered export route
-  for (const handler of exportRoutes) {
-    if (await handler(context)) return true;
-  }
-
-  return false;
-});
+export const handleExports = withErrorHandler('export', (context) =>
+  dispatchRoutes(ROUTES, context),
+);

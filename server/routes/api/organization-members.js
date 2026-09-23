@@ -452,10 +452,12 @@ async function handleMemberItem(ctx, organizationId, memberIdOrUserId) {
 export const ROUTES = [
   {
     pattern: /^\/api\/organizations\/([^/]+)\/members$/,
+    captures: ['uuid'],
     handler: handleMembersCollection,
   },
   {
     pattern: /^\/api\/organizations\/([^/]+)\/members\/([^/]+)$/,
+    captures: ['uuid', 'uuid'],
     handler: handleMemberItem,
   },
 ];

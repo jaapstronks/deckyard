@@ -86,7 +86,8 @@ export const ROUTES = [
   { method: 'POST', pattern: '/api/tags', handler: handleTagCreate },
   {
     method: 'DELETE',
-    pattern: /^\/api\/tags\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/tags\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleTagDelete,
   },
 ];

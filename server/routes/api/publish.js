@@ -219,21 +219,25 @@ export const ROUTES = [
   {
     method: 'POST',
     pattern: /^\/api\/presentations\/([^/]+)\/publish$/,
+    captures: ['uuid'],
     handler: handlePublishCreate,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/presentations\/([^/]+)\/publish$/,
+    captures: ['uuid'],
     handler: handlePublishDelete,
   },
   {
     method: 'PATCH',
     pattern: /^\/api\/presentations\/([^/]+)\/publish\/slug$/,
+    captures: ['uuid'],
     handler: handlePublishSlug,
   },
   {
     method: 'POST',
     pattern: /^\/api\/presentations\/([^/]+)\/preview\/regenerate$/,
+    captures: ['uuid'],
     handler: handlePreviewRegenerate,
   },
 ];

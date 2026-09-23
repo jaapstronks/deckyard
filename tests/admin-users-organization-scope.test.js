@@ -37,6 +37,8 @@ process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG_A = process.env.DEFAULT_ORGANIZATION_ID;
 const ORG_B = '00000000-0000-0000-0000-0000000000bb';
+/** Bob's user id: a `uuid` column, declared so by the admin-user routes (B399). */
+const BOB = '00000000-0000-4000-8000-0000000000b0';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -106,13 +108,13 @@ function seedTwoOrgs() {
     ],
     users: [
       user('user-alice', 'alice@example.com', ORG_A, 'admin'),
-      user('user-bob', 'bob@example.com', ORG_A),
+      user(BOB, 'bob@example.com', ORG_A),
       user('user-carol', 'carol@example.com', ORG_B),
     ],
     user_organizations: [
       membership('membership-alice-a', 'user-alice', ORG_A, 'admin'),
       membership('membership-alice-b', 'user-alice', ORG_B, 'owner'),
-      membership('membership-bob-a', 'user-bob', ORG_A, 'member'),
+      membership('membership-bob-a', BOB, ORG_A, 'member'),
       membership('membership-carol-b', 'user-carol', ORG_B, 'member', true),
     ],
     auth_audit_log: [],
@@ -253,14 +255,14 @@ test('the designer flag is written on the session organization membership', asyn
 
   const { status } = await callAdminUsers(
     'PATCH',
-    '/api/admin/users/user-bob',
+    `/api/admin/users/${BOB}`,
     ORG_A,
     {
       isDesigner: true,
     },
   );
   assert.equal(status, 200);
-  assert.equal(membershipOf(db, 'user-bob', ORG_A).is_designer, true);
+  assert.equal(membershipOf(db, BOB, ORG_A).is_designer, true);
 });
 
 test('a person outside the session organization cannot be edited from it', async () => {
@@ -274,7 +276,7 @@ test('a person outside the session organization cannot be edited from it', async
   // looking at, from a screen listing entirely different people.
   const { status } = await callAdminUsers(
     'PATCH',
-    '/api/admin/users/user-bob',
+    `/api/admin/users/${BOB}`,
     ORG_B,
     {
       isDesigner: true,
@@ -287,7 +289,7 @@ test('a person outside the session organization cannot be edited from it', async
     'he is not in this organization, so there is nothing to edit',
   );
   assert.equal(
-    membershipOf(db, 'user-bob', ORG_A).is_designer,
+    membershipOf(db, BOB, ORG_A).is_designer,
     false,
     'and the organization we are not in stays untouched',
   );

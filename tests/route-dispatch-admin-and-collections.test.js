@@ -125,19 +125,19 @@ test('slide-collections: routes resolve to their named handlers in order', () =>
   named(
     SC_ROUTES,
     'GET',
-    '/api/slide-collections/personal/abc',
+    '/api/slide-collections/personal/00000000-0000-4000-8000-0000000000ab',
     'handlePersonalGet',
   );
   named(
     SC_ROUTES,
     'PATCH',
-    '/api/slide-collections/personal/abc',
+    '/api/slide-collections/personal/00000000-0000-4000-8000-0000000000ab',
     'handlePersonalUpdate',
   );
   named(
     SC_ROUTES,
     'DELETE',
-    '/api/slide-collections/personal/abc',
+    '/api/slide-collections/personal/00000000-0000-4000-8000-0000000000ab',
     'handlePersonalDelete',
   );
   named(
@@ -155,19 +155,19 @@ test('slide-collections: routes resolve to their named handlers in order', () =>
   named(
     SC_ROUTES,
     'GET',
-    '/api/slide-collections/organization/abc',
+    '/api/slide-collections/organization/00000000-0000-4000-8000-0000000000ab',
     'handleOrganizationGet',
   );
   named(
     SC_ROUTES,
     'PATCH',
-    '/api/slide-collections/organization/abc',
+    '/api/slide-collections/organization/00000000-0000-4000-8000-0000000000ab',
     'handleOrganizationUpdate',
   );
   named(
     SC_ROUTES,
     'DELETE',
-    '/api/slide-collections/organization/abc',
+    '/api/slide-collections/organization/00000000-0000-4000-8000-0000000000ab',
     'handleOrganizationDelete',
   );
 });
@@ -175,9 +175,17 @@ test('slide-collections: routes resolve to their named handlers in order', () =>
 test('slide-collections: a wrong method 405s with the pinned Allow list', async () => {
   for (const [method, path, allow] of [
     ['DELETE', '/api/slide-collections/personal', 'GET, POST'],
-    ['POST', '/api/slide-collections/personal/abc', 'GET, PATCH, DELETE'],
+    [
+      'POST',
+      '/api/slide-collections/personal/00000000-0000-4000-8000-0000000000ab',
+      'GET, PATCH, DELETE',
+    ],
     ['DELETE', '/api/slide-collections/organization', 'GET, POST'],
-    ['POST', '/api/slide-collections/organization/abc', 'GET, PATCH, DELETE'],
+    [
+      'POST',
+      '/api/slide-collections/organization/00000000-0000-4000-8000-0000000000ab',
+      'GET, PATCH, DELETE',
+    ],
   ]) {
     const { ctx: c, res } = ctx(method, path);
     await handleSlideCollections(c);
@@ -213,22 +221,48 @@ test('slide-collections: an unknown sub-path falls through (authed)', async () =
 test('organizations: routes resolve to their named handlers', () => {
   named(ORG_ROUTES, 'GET', '/api/organizations', 'handleOrgList');
   named(ORG_ROUTES, 'POST', '/api/organizations', 'handleOrgCreate');
-  named(ORG_ROUTES, 'GET', '/api/organizations/org-1', 'handleOrgGet');
-  named(ORG_ROUTES, 'PATCH', '/api/organizations/org-1', 'handleOrgUpdate');
-  named(ORG_ROUTES, 'DELETE', '/api/organizations/org-1', 'handleOrgDelete');
+  named(
+    ORG_ROUTES,
+    'GET',
+    '/api/organizations/00000000-0000-4000-8000-00000000000f',
+    'handleOrgGet',
+  );
+  named(
+    ORG_ROUTES,
+    'PATCH',
+    '/api/organizations/00000000-0000-4000-8000-00000000000f',
+    'handleOrgUpdate',
+  );
+  named(
+    ORG_ROUTES,
+    'DELETE',
+    '/api/organizations/00000000-0000-4000-8000-00000000000f',
+    'handleOrgDelete',
+  );
   named(
     ORG_ROUTES,
     'POST',
-    '/api/organizations/org-1/switch',
+    '/api/organizations/00000000-0000-4000-8000-00000000000f/switch',
     'handleOrgSwitch',
   );
 });
 
 test('organizations: a wrong method falls through in the table (Form A)', () => {
   assert.equal(select(ORG_ROUTES, 'PUT', '/api/organizations'), null);
-  assert.equal(select(ORG_ROUTES, 'POST', '/api/organizations/org-1'), null);
   assert.equal(
-    select(ORG_ROUTES, 'GET', '/api/organizations/org-1/switch'),
+    select(
+      ORG_ROUTES,
+      'POST',
+      '/api/organizations/00000000-0000-4000-8000-00000000000f',
+    ),
+    null,
+  );
+  assert.equal(
+    select(
+      ORG_ROUTES,
+      'GET',
+      '/api/organizations/00000000-0000-4000-8000-00000000000f/switch',
+    ),
     null,
   );
 });
@@ -299,13 +333,28 @@ const admin = { email: 'admin@b.test', isAdmin: true };
 test('admin-users: routes resolve to their named handlers', () => {
   named(AU_ROUTES, 'GET', '/api/admin/users', 'handleAdminUserList');
   named(AU_ROUTES, 'POST', '/api/admin/users', 'handleAdminUserCreate');
-  named(AU_ROUTES, 'GET', '/api/admin/users/u-1', 'handleAdminUserGet');
-  named(AU_ROUTES, 'PATCH', '/api/admin/users/u-1', 'handleAdminUserUpdate');
-  named(AU_ROUTES, 'DELETE', '/api/admin/users/u-1', 'handleAdminUserDelete');
+  named(
+    AU_ROUTES,
+    'GET',
+    '/api/admin/users/00000000-0000-4000-8000-0000000000e1',
+    'handleAdminUserGet',
+  );
+  named(
+    AU_ROUTES,
+    'PATCH',
+    '/api/admin/users/00000000-0000-4000-8000-0000000000e1',
+    'handleAdminUserUpdate',
+  );
+  named(
+    AU_ROUTES,
+    'DELETE',
+    '/api/admin/users/00000000-0000-4000-8000-0000000000e1',
+    'handleAdminUserDelete',
+  );
   named(
     AU_ROUTES,
     'POST',
-    '/api/admin/users/u-1/resend-invitation',
+    '/api/admin/users/00000000-0000-4000-8000-0000000000e1/resend-invitation',
     'handleAdminUserResendInvitation',
   );
 });
@@ -381,25 +430,25 @@ test('custom-slide-types: routes resolve to their named handlers in order', () =
   named(
     CST_ROUTES,
     'POST',
-    '/api/custom-slide-types/abc123/duplicate',
+    '/api/custom-slide-types/00000000-0000-4000-8000-000000000123/duplicate',
     'handleCustomSlideTypeDuplicate',
   );
   named(
     CST_ROUTES,
     'GET',
-    '/api/custom-slide-types/abc123',
+    '/api/custom-slide-types/00000000-0000-4000-8000-000000000123',
     'handleCustomSlideTypeGet',
   );
   named(
     CST_ROUTES,
     'PUT',
-    '/api/custom-slide-types/abc123',
+    '/api/custom-slide-types/00000000-0000-4000-8000-000000000123',
     'handleCustomSlideTypeUpdate',
   );
   named(
     CST_ROUTES,
     'DELETE',
-    '/api/custom-slide-types/abc123',
+    '/api/custom-slide-types/00000000-0000-4000-8000-000000000123',
     'handleCustomSlideTypeDelete',
   );
 });
@@ -408,7 +457,11 @@ test('custom-slide-types: a wrong method 405s with the pinned Allow list', async
   for (const [method, path, allow] of [
     ['DELETE', '/api/custom-slide-types', 'GET, POST'],
     ['POST', '/api/custom-slide-types/reorder', 'PUT'],
-    ['PATCH', '/api/custom-slide-types/abc123', 'GET, PUT, DELETE'],
+    [
+      'PATCH',
+      '/api/custom-slide-types/00000000-0000-4000-8000-000000000123',
+      'GET, PUT, DELETE',
+    ],
   ]) {
     const { ctx: c, res } = ctx(method, path);
     await handleCustomSlideTypes(c);
@@ -435,10 +488,17 @@ test('custom-slide-types: /reorder keeps method-before-guard (405 beats 403), de
 
 test('custom-slide-types: /duplicate falls through on a wrong method (Form A)', async () => {
   assert.equal(
-    select(CST_ROUTES, 'GET', '/api/custom-slide-types/abc123/duplicate'),
+    select(
+      CST_ROUTES,
+      'GET',
+      '/api/custom-slide-types/00000000-0000-4000-8000-000000000123/duplicate',
+    ),
     null,
   );
-  const { ctx: c } = ctx('GET', '/api/custom-slide-types/abc123/duplicate');
+  const { ctx: c } = ctx(
+    'GET',
+    '/api/custom-slide-types/00000000-0000-4000-8000-000000000123/duplicate',
+  );
   assert.equal(await handleCustomSlideTypes(c), false);
 });
 

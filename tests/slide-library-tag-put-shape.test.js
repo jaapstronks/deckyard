@@ -15,6 +15,9 @@ import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { handleSlideLibrary } from '../server/routes/api/slide-library.js';
 
+/** A library item id: a `uuid` column, declared so by the route (B399). */
+const ITEM_ID = '5b0c9d1e-2f3a-4b5c-8d6e-7f8091a2b3c4';
+
 function mockRes() {
   return {
     statusCode: null,
@@ -54,7 +57,7 @@ function putCtx(path, rawBody) {
 for (const shelf of ['personal', 'organization']) {
   test(`${shelf} tags PUT: a bare array body is a 400 (object guarantee, no opt-out)`, async () => {
     const { ctx, res } = putCtx(
-      `/api/slide-library/${shelf}/item-1/tags`,
+      `/api/slide-library/${shelf}/${ITEM_ID}/tags`,
       '["a","b"]',
     );
     assert.equal(await handleSlideLibrary(ctx), true);
@@ -64,7 +67,7 @@ for (const shelf of ['personal', 'organization']) {
 
   test(`${shelf} tags PUT: a non-array tags field is a 400`, async () => {
     const { ctx, res } = putCtx(
-      `/api/slide-library/${shelf}/item-1/tags`,
+      `/api/slide-library/${shelf}/${ITEM_ID}/tags`,
       '{"tags":"a"}',
     );
     assert.equal(await handleSlideLibrary(ctx), true);
@@ -74,7 +77,7 @@ for (const shelf of ['personal', 'organization']) {
 
   test(`${shelf} tags PUT: a missing tags field is a 400`, async () => {
     const { ctx, res } = putCtx(
-      `/api/slide-library/${shelf}/item-1/tags`,
+      `/api/slide-library/${shelf}/${ITEM_ID}/tags`,
       '{}',
     );
     assert.equal(await handleSlideLibrary(ctx), true);

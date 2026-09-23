@@ -272,7 +272,8 @@ export const ROUTES = [
     handler: ({ res }) => methodNotAllowed(res, ['POST', 'DELETE']),
   },
   {
-    pattern: /^\/api\/profile\/image\/(.+)$/,
+    pattern: /^\/api\/profile\/image\/([^/]+)$/,
+    captures: ['text'],
     handler: handleProfileImageAdmin,
   },
 ];

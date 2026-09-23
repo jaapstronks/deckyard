@@ -151,7 +151,12 @@ export const ROUTES = [
     pattern: '/api/follow-codes',
     handler: handleFollowCodeCreate,
   },
-  { method: 'GET', pattern: RESOLVE_PATTERN, handler: handleFollowCodeResolve },
+  {
+    method: 'GET',
+    pattern: RESOLVE_PATTERN,
+    captures: ['text'],
+    handler: handleFollowCodeResolve,
+  },
   {
     pattern: /^\/api\/follow-codes(?:\/.*)?$/,
     handler: (ctx) => methodNotAllowed(ctx.res, ['GET', 'POST']),
@@ -169,7 +174,12 @@ export const ROUTES = [
  * @type {import('../../utils/router.js').Route[]}
  */
 export const PUBLIC_ROUTES = [
-  { method: 'GET', pattern: RESOLVE_PATTERN, handler: handleFollowCodeResolve },
+  {
+    method: 'GET',
+    pattern: RESOLVE_PATTERN,
+    captures: ['text'],
+    handler: handleFollowCodeResolve,
+  },
 ];
 
 /**

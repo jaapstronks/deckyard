@@ -277,28 +277,34 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/moderate\/([^/]+)\/questions\/capabilities$/,
+    captures: ['uuid'],
     handler: handleQuestionCapabilities,
   },
   {
     pattern: /^\/api\/moderate\/([^/]+)\/questions\/capabilities$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET']),
   },
   {
     method: 'POST',
     pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/remove$/,
+    captures: ['uuid', 'uuid'],
     handler: handleQuestionRemove,
   },
   {
     pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/remove$/,
+    captures: ['uuid', 'uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['POST']),
   },
   {
     method: 'POST',
     pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/promote$/,
+    captures: ['uuid', 'uuid'],
     handler: handleQuestionPromote,
   },
   {
     pattern: /^\/api\/moderate\/([^/]+)\/questions\/([^/]+)\/promote$/,
+    captures: ['uuid', 'uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['POST']),
   },
 ];

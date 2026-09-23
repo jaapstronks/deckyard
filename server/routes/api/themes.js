@@ -469,27 +469,32 @@ export const ROUTES = [
   },
   {
     method: 'GET',
-    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/themes\/custom\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleCustomThemeGet,
   },
   {
     method: 'PUT',
-    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/themes\/custom\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleCustomThemeUpdate,
   },
   {
     method: 'DELETE',
-    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/themes\/custom\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleCustomThemeDelete,
   },
   {
     method: 'POST',
-    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)\/set-default$/,
+    pattern: /^\/api\/themes\/custom\/([^/]+)\/set-default$/,
+    captures: ['uuid'],
     handler: handleCustomThemeSetDefault,
   },
   {
     method: 'GET',
-    pattern: /^\/api\/themes\/custom\/([a-f0-9-]+)\/config$/,
+    pattern: /^\/api\/themes\/custom\/([^/]+)\/config$/,
+    captures: ['uuid'],
     handler: handleCustomThemeConfig,
   },
 ];

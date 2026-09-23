@@ -110,8 +110,10 @@ test('convert: an unknown sub-path falls through', async () => {
 
 // ─── questions (two POST-only regex paths, Form B) ───
 
-const REMOVE = '/api/moderate/deck1/questions/q1/remove';
-const PROMOTE = '/api/moderate/deck1/questions/q1/promote';
+const REMOVE =
+  '/api/moderate/00000000-0000-4000-8000-00000000dec1/questions/00000000-0000-4000-8000-0000000000e2/remove';
+const PROMOTE =
+  '/api/moderate/00000000-0000-4000-8000-00000000dec1/questions/00000000-0000-4000-8000-0000000000e2/promote';
 
 test('questions: routes resolve to their named handlers', () => {
   named(QUESTIONS_ROUTES, 'POST', REMOVE, 'handleQuestionRemove');
@@ -127,7 +129,10 @@ test('questions: a wrong method 405s on each path', async () => {
 });
 
 test('questions: an unmatched moderate path falls through', async () => {
-  const { ctx: c } = ctx('POST', '/api/moderate/deck1/questions/q1/other');
+  const { ctx: c } = ctx(
+    'POST',
+    '/api/moderate/00000000-0000-4000-8000-00000000dec1/questions/00000000-0000-4000-8000-0000000000e2/other',
+  );
   assert.equal(await handleQuestions(c), false);
 });
 
