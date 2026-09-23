@@ -361,6 +361,16 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   // --- ai --------------------------------------------------------------------
   checkAi(def.ai, who, known, warnings);
 
+  // --- library ---------------------------------------------------------------
+  // One shape: `false` withholds the type from the slide library (B401).
+  // Absent is the default; `true` would be a second spelling of it.
+  if (def.library !== undefined && def.library !== false) {
+    warnings.push(
+      `${who}: \`library\` only takes \`false\` (withhold this type from the ` +
+        `slide library) — ${JSON.stringify(def.library)} is ignored`,
+    );
+  }
+
   // --- defaults --------------------------------------------------------------
   // `defaults` is the language-less seed, not an archive: the paths that have no
   // deck language — `newSlide()` in deck.js, presentation.js, the enum repair in

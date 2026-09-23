@@ -25,6 +25,7 @@ import { openSaveToLibraryModal } from '../modals/save-to-library-modal.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
 import { aiEnabled } from '../../../lib/state/features.js';
 import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
+import { isLibrarySlideType } from '../../../../shared/slide-types/policy.js';
 import { icon } from '../../../lib/dom/icons.js';
 import {
   DEFAULT_DECK_LANG,
@@ -52,10 +53,10 @@ export function buildHeaderActions({
   isAuthor,
 }) {
   const headerActions = h('div', { class: 'row editor-form-header-actions' });
-  const isFollowInviteSlide = slide.type === 'follow-invite-slide';
-  // The Follow-along invite has no content of its own (`fields: []`; the join
-  // code comes from the render context), so a library copy would carry nothing.
-  const canSaveToLibrary = !!api && !isFollowInviteSlide;
+  // A type without content of its own declares `library: false` (the
+  // Follow-along invite); the rule lives on the type, not on its name (B401).
+  const canSaveToLibrary =
+    !!api && isLibrarySlideType(SLIDE_TYPES?.[slide.type]);
 
   const saveToLibrary = () => {
     if (!api) return;
@@ -309,7 +310,7 @@ export function buildHeaderActions({
           )
         : t(
             'editor.slideLibrary.save.disabled',
-            'The Follow-along invite has no content of its own, so there is nothing to save.',
+            'This slide has no content of its own, so there is nothing to save.',
           ),
       disabled: !canSaveToLibrary,
       onclick: () => {

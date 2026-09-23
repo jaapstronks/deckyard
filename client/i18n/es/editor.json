@@ -733,7 +733,7 @@
   "editor.slideField.title.label": "Título",
   "editor.slideField.titleBlockAlign.label": "Alineación del bloque de título",
   "editor.slideLibrary.save": "Guardar en biblioteca…",
-  "editor.slideLibrary.save.disabled": "La invitación modo seguimiento no tiene contenido propio, así que no hay nada que guardar.",
+  "editor.slideLibrary.save.disabled": "Esta diapositiva no tiene contenido propio, así que no hay nada que guardar.",
   "editor.slideLibrary.save.title": "Guardar esta diapositiva para reutilizarla más tarde.",
   "editor.slideLibrary.saveModal.bothLangsAvailable": "Esta diapositiva tiene contenido en neerlandés y en inglés. Se guardarán las dos versiones.",
   "editor.slideLibrary.saveModal.description": "Descripción",
