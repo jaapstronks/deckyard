@@ -241,7 +241,7 @@ async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
     actorEmail: email,
   });
   if (!r.ok) return mutationError(res, r);
-  serveJson(res, 201, r.item);
+  serveJson(res, 201, { ...r.item, canEdit: true });
   return true;
 }
 
@@ -365,7 +365,11 @@ async function handleOrganizationCreate({
     'webhook delivery',
   );
 
-  serveJson(res, 201, { ...r.item, previewUrl });
+  serveJson(res, 201, {
+    ...r.item,
+    previewUrl,
+    canEdit: canEditOrganizationItem(authedUser, r.item),
+  });
   return true;
 }
 
