@@ -241,6 +241,9 @@ describe('one tag shape in the client (B402)', () => {
   // is a branch for zero producers: a second shape for one meaning.
   const readers = [
     'client/lib/slide-library/api.js',
+    'client/lib/slide-library/controls.js',
+    'client/lib/slide-library/picker.js',
+    'client/lib/slide-library/modals.js',
     'client/views/list/tag-filter.js',
     'client/views/list/presentation-card.js',
     'client/views/editor/modals/settings-modal/tags.js',
@@ -249,7 +252,8 @@ describe('one tag shape in the client (B402)', () => {
     it(`${file} reads a tag as an object only`, () => {
       const src = readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
       assert.doesNotMatch(src, /typeof tag === 'string'/);
-      assert.doesNotMatch(src, /tag\?\.name \?\? tag\b/);
+      // `tag?.name ?? tag`, `t.name || t`: the fallback, under any name.
+      assert.doesNotMatch(src, /\b(\w+)\??\.name (\?\?|\|\|) \1\b/);
     });
   }
 });

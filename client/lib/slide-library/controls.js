@@ -133,10 +133,7 @@ export function createSlideLibraryControls({
     for (const item of activeItems) {
       const itemTags = Array.isArray(item?.tags) ? item.tags : [];
       for (const tag of itemTags) {
-        const name = tag?.name || tag || '';
-        if (name) {
-          tagCounts.set(name, (tagCounts.get(name) || 0) + 1);
-        }
+        tagCounts.set(tag.name, (tagCounts.get(tag.name) || 0) + 1);
       }
     }
 
