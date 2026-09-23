@@ -193,7 +193,7 @@
   "notifications.markAllRead": "Marcar todo como leído",
   "notifications.title": "Notificaciones",
   "qr.alt": "Código QR",
-  "sandbox.banner.text": "Entorno de pruebas temporal de Deckyard - su trabajo se elimina al cabo de 24 horas.",
+  "sandbox.banner.text": "Entorno de pruebas temporal de Deckyard - su trabajo se elimina al cabo de {hours} horas.",
   "sandbox.examples.count": "{count} diapositivas",
   "sandbox.examples.error": "No se pudo abrir ese ejemplo. Inténtelo de nuevo.",
   "sandbox.examples.hint": "Abra un deck ya hecho y empiece a editarlo: la forma más rápida de descubrir Deckyard.",

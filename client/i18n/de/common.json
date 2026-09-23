@@ -189,7 +189,7 @@
   "notifications.markAllRead": "Alle als gelesen markieren",
   "notifications.title": "Benachrichtigungen",
   "qr.alt": "QR-Code",
-  "sandbox.banner.text": "Temporäre Deckyard-Sandbox – Ihre Arbeit wird nach 24 Stunden gelöscht.",
+  "sandbox.banner.text": "Temporäre Deckyard-Sandbox – Ihre Arbeit wird nach {hours} Stunden gelöscht.",
   "sandbox.examples.count": "{count} Folien",
   "sandbox.examples.error": "Dieses Beispiel konnte nicht geöffnet werden. Bitte erneut versuchen.",
   "sandbox.examples.hint": "Öffnen Sie ein fertiges Deck und legen Sie los – der schnellste Weg, Deckyard kennenzulernen.",

@@ -202,7 +202,7 @@
   "notifications.markAllRead": "Alles gelezen",
   "notifications.title": "Meldingen",
   "qr.alt": "QR-code",
-  "sandbox.banner.text": "Tijdelijke Deckyard-sandbox - je werk wordt na 24 uur verwijderd.",
+  "sandbox.banner.text": "Tijdelijke Deckyard-sandbox - je werk wordt na {hours} uur verwijderd.",
   "sandbox.examples.count": "{count} slides",
   "sandbox.examples.error": "Kon dat voorbeeld niet openen. Probeer het opnieuw.",
   "sandbox.examples.hint": "Open een kant-en-klaar deck en begin met bewerken — de snelste manier om Deckyard te verkennen.",

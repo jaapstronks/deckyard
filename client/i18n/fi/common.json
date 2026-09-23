@@ -192,7 +192,7 @@
   "notifications.markAllRead": "Merkitse kaikki luetuiksi",
   "notifications.title": "Ilmoitukset",
   "qr.alt": "QR-koodi",
-  "sandbox.banner.text": "Väliaikainen Deckyard-hiekkalaatikko - työ poistetaan 24 tunnin kuluttua.",
+  "sandbox.banner.text": "Väliaikainen Deckyard-hiekkalaatikko - työ poistetaan {hours} tunnin kuluttua.",
   "sandbox.examples.count": "{count} diaa",
   "sandbox.examples.error": "Esimerkin avaaminen ei onnistunut. Yritä uudelleen.",
   "sandbox.examples.hint": "Avaa valmis esitys ja ala muokata sitä — se on nopein tapa tutustua Deckyardiin.",
