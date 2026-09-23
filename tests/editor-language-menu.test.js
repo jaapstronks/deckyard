@@ -291,13 +291,7 @@ test('with AI off, a new version gets no translate invite (D179)', async () => {
     // not a name pattern, so a new member of any name has to pass here.
     assert.deepEqual(
       Object.keys(controller).sort(),
-      [
-        'canTranslate',
-        'detach',
-        'el',
-        'syncLangUi',
-        'translateOtherLanguage',
-      ],
+      ['canTranslate', 'detach', 'el', 'syncLangUi', 'translateOtherLanguage'],
       'the controller surface where AI is off',
     );
     controller.detach();
