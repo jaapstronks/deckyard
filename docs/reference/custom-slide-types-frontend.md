@@ -160,6 +160,21 @@ sub-fields).
   endpoint. The server **always** stores an import as a draft, even if the
   payload asks for `isPublished: true`, so nothing goes live without review.
 
+## Deleting a type that is in use
+
+Nothing in the schema points at `custom_slide_types`, so a slide that carries a
+deleted type's key (`custom-<slug>`) keeps its fields but renders as an unknown
+type. `DELETE /api/custom-slide-types/:id` therefore counts the key first — base
+slides and every language version's slides of every deck (trashed ones too; a
+slide in several language versions counts once),
+slide-library items of that type, and saved version snapshots — and refuses a
+type with any usage: `409 in_use`, the count in `details.usage`
+(`{ slides, decks, libraryItems, versions }`). `?force=true` deletes anyway. The
+Slide Types tab asks first as before; on `in_use` it shows the count in a
+second confirmation whose button sends the forced delete. Unpublishing is not a
+softer route: the render registry reads published types only, so an unpublished
+type's slides render as unknown too — only the stored record survives.
+
 ## Config & flags
 
 No dedicated feature flag gates custom slide types. Two conditions apply:

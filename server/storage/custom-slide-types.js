@@ -15,6 +15,7 @@
  * exists where external identities *can* appear.
  */
 
+import { sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
@@ -31,6 +32,7 @@ import {
   getUserIdByEmail,
 } from './utils/index.js';
 import { validateUsage } from '../../shared/slide-types/usage.js';
+import { customSlideTypeKey } from '../../shared/slide-types/custom-type-runtime.js';
 import { validateCustomFieldDefinitions } from '../../shared/slide-types/custom-field-definitions.js';
 
 const MAX_LABEL_LEN = 255;
@@ -396,11 +398,24 @@ export async function reorderCustomSlideTypes(scope, orderedIds) {
 
 /**
  * Delete a custom slide type.
+ *
+ * Nothing in the schema points at `custom_slide_types`, so a plain delete
+ * would succeed while slides still carry the type's key; those slides then
+ * fall back to the unknown-type render, silently, for whoever opens the deck
+ * next. The delete therefore counts the usage first and refuses with
+ * `in_use` and that count unless the caller passed `force` — the explicit
+ * second step a person takes after seeing the number (B414).
+ *
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} typeId - UUID
- * @returns {Promise<{ ok: boolean, reason?: string }>}
+ * @param {{ force?: boolean }} [opts] - `force` deletes a type that is in use.
+ * @returns {Promise<{ ok: boolean, reason?: string, usage?: CustomSlideTypeUsage }>}
  */
-export async function deleteCustomSlideType(scope, typeId) {
+export async function deleteCustomSlideType(
+  scope,
+  typeId,
+  { force = false } = {},
+) {
   toStorageContext(scope, 'deleteCustomSlideType');
   if (!typeId || typeof typeId !== 'string') {
     return { ok: false, reason: 'invalid', field: 'id' };
@@ -408,6 +423,25 @@ export async function deleteCustomSlideType(scope, typeId) {
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
+
+    const type = await db
+      .selectFrom('custom_slide_types')
+      .select(['slug'])
+      .where('id', '=', typeId)
+      .where('organization_id', '=', orgId)
+      .executeTakeFirst();
+    if (!type) return { ok: false, reason: 'not_found' };
+
+    if (!force) {
+      const usage = await countCustomSlideTypeUsage(
+        db,
+        orgId,
+        customSlideTypeKey(type),
+      );
+      if (usage.slides + usage.libraryItems + usage.versions > 0) {
+        return { ok: false, reason: 'in_use', usage };
+      }
+    }
 
     const result = await db
       .deleteFrom('custom_slide_types')
@@ -421,6 +455,80 @@ export async function deleteCustomSlideType(scope, typeId) {
 
     return { ok: true };
   });
+}
+
+/**
+ * @typedef {Object} CustomSlideTypeUsage
+ * @property {number} slides - Slides carrying the key, across every deck's
+ *   base slides and every language version's slides; a slide present in
+ *   several versions (same id) counts once.
+ * @property {number} decks - Decks holding at least one of those slides.
+ * @property {number} libraryItems - Slide-library items of this type.
+ * @property {number} versions - Saved version snapshots holding the key.
+ */
+
+/**
+ * Count where a custom slide type's registry key is used in one organization.
+ *
+ * A slide stores the key (`custom-<slug>`, {@link customSlideTypeKey}) as its
+ * `type`, in `presentations.slides` and in every `i18n.versions[<locale>].slides`
+ * — `versions` is an object keyed by locale, which the `.*` path step walks.
+ * A library item stores it in `slide_type`; its `content` holds the fields,
+ * not the type. A version snapshot is a whole presentation object, so it is
+ * matched on the same two paths under `presentation_data`.
+ *
+ * Trashed decks and library items count: they come back from the trash with
+ * the key still on them, so deleting the type affects them as much as any.
+ *
+ * @param {import('kysely').Kysely<any>} db
+ * @param {string} orgId
+ * @param {string} key - The type's registry key.
+ * @returns {Promise<CustomSlideTypeUsage>}
+ */
+async function countCustomSlideTypeUsage(db, orgId, key) {
+  const vars = sql`jsonb_build_object('k', ${key}::text)`;
+  // One slide in several language versions shares its id, so a slide counts
+  // once however many versions carry it.
+  const decks = await sql`
+    select count(*) as decks, coalesce(sum(n), 0) as slides
+    from (
+      select count(distinct coalesce(s->>'id', s::text)) as n
+      from presentations p
+      cross join lateral (
+        select jsonb_path_query(p.slides, '$[*] ? (@.type == $k)', ${vars})
+        union all
+        select jsonb_path_query(p.i18n, '$.versions.*.slides[*] ? (@.type == $k)', ${vars})
+      ) as used(s)
+      where p.organization_id = ${orgId}
+      group by p.id
+    ) as per_deck
+  `
+    .execute(db)
+    .then((r) => r.rows[0]);
+
+  const library = await db
+    .selectFrom('slide_library')
+    .select(sql`count(*)`.as('n'))
+    .where('organization_id', '=', orgId)
+    .where('slide_type', '=', key)
+    .executeTakeFirst();
+
+  const versions = await db
+    .selectFrom('presentation_versions')
+    .select(sql`count(*)`.as('n'))
+    .where('organization_id', '=', orgId)
+    .where(
+      sql`jsonb_path_exists(presentation_data, '$.slides[*] ? (@.type == $k)', ${vars})
+          or jsonb_path_exists(presentation_data, '$.i18n.versions.*.slides[*] ? (@.type == $k)', ${vars})`,
+    )
+    .executeTakeFirst();
+
+  return {
+    slides: Number(decks?.slides || 0),
+    decks: Number(decks?.decks || 0),
+    libraryItems: Number(library?.n || 0),
+    versions: Number(versions?.n || 0),
+  };
 }
 
 // ============================================================
