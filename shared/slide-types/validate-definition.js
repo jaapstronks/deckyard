@@ -305,11 +305,16 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
       typeof scale !== 'object' ||
       !Number.isInteger(scale.min) ||
       !Number.isInteger(scale.max) ||
-      scale.min >= scale.max
+      scale.min >= scale.max ||
+      // Ten stops is the ceiling the vote store keeps (`MAX_OPTIONS`,
+      // server/storage/interaction-slides.js) — the same bound as a likert
+      // type's `options` `maxItems`. A wider scale would draw stops whose
+      // votes are refused (B316).
+      scale.max - scale.min + 1 > 10
     ) {
       errors.push(
         `${who}: \`scale\` must be \`{ min, max, minLabelKey, maxLabelKey }\` ` +
-          `with integer \`min\` below \`max\``,
+          `with integer \`min\` below \`max\` and at most ten stops`,
       );
     } else {
       for (const prop of ['minLabelKey', 'maxLabelKey']) {

@@ -73,7 +73,8 @@ registry, so a fork that overrides a core type by name gets its own answer.
 
 The slider needs no name check either. It asks for a point on the same scale a
 likert slide does — same protocol kind — but its stops come from the type's
-declared `scale` (`{ min, max }`, D131) instead of authored options.
+declared `scale` (`{ min, max }`, D131, at most ten stops — the vote store's
+ceiling) instead of authored options.
 `liveScale()` is the one reader for the protocol (B316): the vote endpoint sizes
 the option range as `max - min + 1`, the follow client draws its range input and
 end numbers from it, and stop `min + i` is stored as `option_index` `i`. A vote
