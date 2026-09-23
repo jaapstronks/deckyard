@@ -40,27 +40,45 @@ export async function apiFetch(url, serviceName, options = {}) {
 
 /**
  * Fetch JSON from a stock-media API: {@link apiFetch} plus the body (B420). A
- * 200 whose body does not parse is the same logged `502 bad_gateway` as a
- * failed status, so no caller turns it into a `500 internal_error`.
+ * 200 whose body does not parse, or parses into a shape the caller cannot
+ * format (B421), is the same logged `502 bad_gateway` as a failed status, so
+ * no caller turns it into a `500 internal_error`.
+ *
+ * The shape is declared by the caller: `isShaped` answers whether the parsed
+ * body carries everything its formatter reads.
  *
  * @param {string} url - API endpoint URL
  * @param {string} serviceName - The service, named in the refusal (e.g. 'Giphy', 'Unsplash')
+ * @param {(body: any) => boolean} isShaped - Whether the parsed body has the expected shape
  * @param {RequestInit} [options] - Fetch options (method, headers, body, etc.)
- * @returns {Promise<any>} - The parsed body
+ * @returns {Promise<any>} - The parsed body, in the expected shape
  * @throws {AppError} - `502 bad_gateway` "<serviceName> could not complete this request"
  */
-export async function apiFetchJson(url, serviceName, options = {}) {
+export async function apiFetchJson(url, serviceName, isShaped, options = {}) {
   const resp = await apiFetch(url, serviceName, options);
   const text = await resp.text().catch(() => '');
+  const refuse = refuser(url, serviceName, options);
+  let body;
   try {
-    return JSON.parse(text);
+    body = JSON.parse(text);
   } catch {
-    refuser(
-      url,
-      serviceName,
-      options,
-    )('answered 200 with an unreadable body:', text);
+    refuse('answered 200 with an unreadable body:', text);
   }
+  if (!isShaped(body)) {
+    refuse('answered 200 in an unexpected shape:', text);
+  }
+  return body;
+}
+
+/**
+ * Whether `value` is a plain JSON object (not null, not an array): the
+ * building block of the `isShaped` predicates passed to {@link apiFetchJson}.
+ *
+ * @param {unknown} value
+ * @returns {boolean}
+ */
+export function isJsonObject(value) {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 /**

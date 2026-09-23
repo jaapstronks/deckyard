@@ -11,6 +11,7 @@ import {
   apiFetch,
   apiFetchJson,
   createConfigChecker,
+  isJsonObject,
 } from '../utils/api-fetch.js';
 import { envStr } from '../config/utils.js';
 
@@ -49,6 +50,7 @@ export async function searchGiphy({
   const data = await apiFetchJson(
     `${GIPHY_API_BASE}/search?${params}`,
     'Giphy',
+    isGifPage,
   );
 
   return {
@@ -81,6 +83,7 @@ export async function getTrendingGiphy({
   const data = await apiFetchJson(
     `${GIPHY_API_BASE}/trending?${params}`,
     'Giphy',
+    isGifPage,
   );
 
   return {
@@ -100,7 +103,11 @@ export async function getGiphyGif(id) {
     api_key: envStr('GIPHY_API_KEY'),
   });
 
-  const data = await apiFetchJson(`${GIPHY_API_BASE}/${id}?${params}`, 'Giphy');
+  const data = await apiFetchJson(
+    `${GIPHY_API_BASE}/${id}?${params}`,
+    'Giphy',
+    (body) => isJsonObject(body) && isGif(body.data),
+  );
   return formatGif(data.data);
 }
 
@@ -115,6 +122,34 @@ export async function downloadGif(url) {
   const contentType = resp.headers.get('content-type') || 'image/gif';
 
   return { buffer, contentType };
+}
+
+/**
+ * Whether a search/trending body carries what {@link formatGif} and the
+ * pagination read (B421).
+ * @param {any} body
+ * @returns {boolean}
+ */
+function isGifPage(body) {
+  return (
+    isJsonObject(body) &&
+    Array.isArray(body.data) &&
+    body.data.every(isGif) &&
+    isJsonObject(body.pagination)
+  );
+}
+
+/**
+ * Whether a raw Giphy GIF carries what {@link formatGif} reads (B421).
+ * @param {any} gif
+ * @returns {boolean}
+ */
+function isGif(gif) {
+  return (
+    isJsonObject(gif) &&
+    isJsonObject(gif.images) &&
+    isJsonObject(gif.images.original)
+  );
 }
 
 /**

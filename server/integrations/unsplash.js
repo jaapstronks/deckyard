@@ -11,6 +11,7 @@ import {
   apiFetch,
   apiFetchJson,
   createConfigChecker,
+  isJsonObject,
 } from '../utils/api-fetch.js';
 import { createLogger } from '../utils/logger.js';
 import { envStr } from '../config/utils.js';
@@ -54,9 +55,8 @@ export async function searchUnsplash({ query, page = 1, perPage = 20 }) {
   const data = await apiFetchJson(
     `${UNSPLASH_API_BASE}/search/photos?${params}`,
     'Unsplash',
-    {
-      headers: getHeaders(),
-    },
+    isPhotoPage,
+    { headers: getHeaders() },
   );
 
   return {
@@ -75,6 +75,7 @@ export async function getUnsplashPhoto(id) {
   const photo = await apiFetchJson(
     `${UNSPLASH_API_BASE}/photos/${id}`,
     'Unsplash',
+    isPhoto,
     { headers: getHeaders() },
   );
   return formatPhoto(photo);
@@ -109,6 +110,35 @@ export async function downloadImage(url) {
   const contentType = resp.headers.get('content-type') || 'image/jpeg';
 
   return { buffer, contentType };
+}
+
+/**
+ * Whether a search body carries what {@link formatPhoto} and the paging read
+ * (B421).
+ * @param {any} body
+ * @returns {boolean}
+ */
+function isPhotoPage(body) {
+  return (
+    isJsonObject(body) &&
+    Array.isArray(body.results) &&
+    body.results.every(isPhoto)
+  );
+}
+
+/**
+ * Whether a raw Unsplash photo carries what {@link formatPhoto} reads (B421).
+ * @param {any} photo
+ * @returns {boolean}
+ */
+function isPhoto(photo) {
+  return (
+    isJsonObject(photo) &&
+    isJsonObject(photo.urls) &&
+    isJsonObject(photo.user) &&
+    isJsonObject(photo.user.links) &&
+    isJsonObject(photo.links)
+  );
 }
 
 /**
