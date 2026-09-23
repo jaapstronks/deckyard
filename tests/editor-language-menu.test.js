@@ -287,11 +287,19 @@ test('with AI off, a new version gets no translate invite (D179)', async () => {
     assert.equal(controller.el.querySelector('.lang-popover'), null);
     assert.equal(controller.translateOtherLanguage, null);
     // No AI action on the controller either (B398): an ungated one is a
-    // second entry no gate stands in front of.
-    const actions = Object.entries(controller).filter(
-      ([key, value]) => /^translate/.test(key) && value !== null,
+    // second entry no gate stands in front of. The whole surface is pinned,
+    // not a name pattern, so a new member of any name has to pass here.
+    assert.deepEqual(
+      Object.keys(controller).sort(),
+      [
+        'canTranslate',
+        'detach',
+        'el',
+        'syncLangUi',
+        'translateOtherLanguage',
+      ],
+      'the controller surface where AI is off',
     );
-    assert.deepEqual(actions, [], 'every translate action is null');
     controller.detach();
   } finally {
     setFeatures({ enableAi: true });
