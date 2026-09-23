@@ -180,7 +180,11 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
   it is that URL plus a `?tr=…` transformation, which is what keeps this from
   being a generic URL proxy — and the fetch runs the same SSRF guard as the
   Notion re-host (they share `server/media/rehost.js`). A failure answers an
-  error and never a URL, so the editor can leave the slide untouched. Under
+  error and never a URL, so the editor can leave the slide untouched. A lookup
+  that yields no file to copy (any ImageKit error status, an unreachable API, a
+  record without a URL) is one refusal, `502 import_failed` in our own words:
+  ImageKit's payload goes to the log, never to the client, and its status is
+  not forwarded. Under
   `IMAGEKIT_ONLY` it refuses with `uploads_disabled`: see _Config & flags_.
 - **ImageKit browse** — `GET /api/media/imagekit/files|tags|…/details` proxy an
   external DAM read-only, plus `PATCH …/details` to write tags/custom metadata

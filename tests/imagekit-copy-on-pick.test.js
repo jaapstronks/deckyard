@@ -350,13 +350,69 @@ test('a failed image fetch refuses instead of handing back the ImageKit URL', as
   );
 });
 
-test('a file the configured account does not have is refused', async () => {
-  stubFetch({ details: null });
-  const { res } = await importImage({ fileId: 'not-ours' }, { as: USER });
+// B412: whatever ImageKit answers instead of a file is one refusal in our own
+// words. Its raw payload never reaches the client, and its status is not
+// forwarded (a 401 on our own key must not read as "you are signed out").
+const UPSTREAM_BODY = {
+  message: 'The requested file does not exist.',
+  help: 'For support kindly contact us at support@imagekit.io .',
+};
 
-  assert.equal(res.statusCode, 404);
-  assert.match(res.body.message, /not found/i);
+/** Answer the details lookup with `reply`; the image hop is never reached. */
+function stubLookup(reply) {
+  const seen = { fetched: [] };
+  globalThis.fetch = async (rawUrl) => {
+    seen.fetched.push(String(rawUrl));
+    return reply();
+  };
+  return seen;
+}
+
+const upstreamError = (status) => () => ({
+  ok: false,
+  status,
+  headers: { get: () => 'application/json' },
+  text: async () => JSON.stringify(UPSTREAM_BODY),
+  json: async () => UPSTREAM_BODY,
+});
+
+/** The one refusal shape, with nothing of ImageKit's payload in it. */
+function assertLookupRefusal(res) {
+  assert.equal(res.statusCode, 502);
+  assert.equal(res.body.ok, false);
+  assert.equal(res.body.error, 'import_failed');
   assert.equal(res.body.url, undefined);
+  const wire = JSON.stringify(res.body);
+  assert.doesNotMatch(wire, /does not exist|support@imagekit|"help"/);
+}
+
+for (const status of [404, 401, 500]) {
+  test(`an ImageKit ${status} on the lookup is our refusal, not ImageKit's body`, async () => {
+    const seen = stubLookup(upstreamError(status));
+    const { res } = await importImage({ fileId: 'not-ours' }, { as: USER });
+
+    assertLookupRefusal(res);
+    assert.equal(
+      seen.fetched.length,
+      1,
+      'nothing was fetched after the lookup',
+    );
+  });
+}
+
+test('a lookup that cannot reach ImageKit is the same refusal', async () => {
+  stubLookup(() => {
+    throw new TypeError('fetch failed');
+  });
+  const { res } = await importImage({ fileId: FILE_ID }, { as: USER });
+  assertLookupRefusal(res);
+});
+
+test('a lookup that answers no URL is the same refusal', async () => {
+  const seen = stubFetch({ details: { name: 'olive.jpg' } });
+  const { res } = await importImage({ fileId: FILE_ID }, { as: USER });
+  assertLookupRefusal(res);
+  assert.equal(seen.fetched.length, 1);
 });
 
 test('fileId is required', async () => {

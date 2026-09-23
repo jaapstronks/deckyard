@@ -357,6 +357,7 @@
   "editor.image.help.uploadsDisabled": "Aus der Bibliothek auswählen (empfohlen). Uploads sind deaktiviert.",
   "editor.image.help.uploadsSandbox": "Uploads sind in der Sandbox deaktiviert. Wählen Sie aus der Bibliothek, Unsplash oder Giphy.",
   "editor.image.help.withUploads": "Aus der Bibliothek auswählen (empfohlen) oder eigenes Bild hochladen.",
+  "editor.image.imagekit.copyFailed": "Dieses Bild konnte nicht in Ihre eigenen Medien kopiert werden. Versuchen Sie es erneut oder wählen Sie ein anderes Bild.",
   "editor.image.libraryTitle": "Bibliothek: Bild auswählen",
   "editor.image.photoCredit": "Foto: {photographer}",
   "editor.image.presets": "Voreingestellte Bilder",

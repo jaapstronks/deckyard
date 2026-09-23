@@ -22,6 +22,8 @@ import {
   isMediaProviderInitialized,
 } from '../../media/index.js';
 import { rehostRemoteImage } from '../../media/rehost.js';
+import { ValidationError } from '../../utils/errors.js';
+import { logError } from '../../utils/logger.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getString } from '../../utils/request-validators.js';
 
@@ -176,6 +178,20 @@ function isImageKitPickUrl(canonicalUrl, requestedUrl) {
 }
 
 /**
+ * The one answer for an ImageKit lookup that did not yield a file to copy.
+ * 502: the upstream failed us, and forwarding its status would let a 401 on
+ * our own key read as "you are signed out" to the editor.
+ */
+function refuseImageKitLookup(res) {
+  return jsonError(
+    res,
+    502,
+    'import_failed',
+    'This ImageKit file could not be retrieved for copying',
+  );
+}
+
+/**
  * POST /api/media/imagekit/import - Copy an ImageKit asset into own media.
  *
  * Requires upload permission and resolves the asset in the configured account
@@ -208,12 +224,20 @@ async function handleImageKitImport({ req, res, authedUser }) {
   if (!fileId) return badRequest(res, 'fileId is required');
 
   // Resolve the asset at the source: this both verifies the id belongs to the
-  // configured account and yields the canonical URL to copy from.
-  const details = await getImageKitFileDetails(fileId);
-  const canonicalUrl = String(details?.url || '').trim();
-  if (!canonicalUrl) {
-    return badRequest(res, 'ImageKit did not return a URL for this file');
+  // configured account and yields the canonical URL to copy from. Whatever
+  // ImageKit answers instead - a 404 body, a 401 on a bad key, a network error,
+  // a record without a URL - is one refusal with our own words (B412): its raw
+  // payload goes to the log, never to the client.
+  let details;
+  try {
+    details = await getImageKitFileDetails(fileId);
+  } catch (err) {
+    if (err instanceof ValidationError) throw err;
+    logError('media', 'ImageKit lookup for copy failed:', err, err?.upstream);
+    return refuseImageKitLookup(res);
   }
+  const canonicalUrl = String(details?.url || '').trim();
+  if (!canonicalUrl) return refuseImageKitLookup(res);
 
   // Preserve source query parameters; only a picker transformation may be added.
   let sourceUrl = canonicalUrl;
