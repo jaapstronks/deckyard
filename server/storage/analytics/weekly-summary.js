@@ -573,41 +573,6 @@ async function getWeeklyInsights(db, presentationIds, dateRange) {
 }
 
 // ============================================================
-// USERS WITH DIGEST ENABLED
-// ============================================================
-
-/**
- * Get users who should receive a digest on a specific day of the week.
- * @param {number} dayOfWeek - 0=Sunday, 1=Monday, etc.
- * @returns {Promise<Array<{id: string, email: string, organizationId: string, role: string}>>}
- */
-export async function getUsersWithDigestDay(dayOfWeek) {
-  return withDbGuard([], async (db) => {
-    const users = await db
-      .selectFrom('users')
-      .select(['id', 'email', 'organization_id', 'role', 'settings'])
-      .execute();
-
-    return users
-      .filter((user) => {
-        const settings = user.settings || {};
-        const digest = settings.digest || {};
-        // Default: enabled on Monday (day 1)
-        const isEnabled = digest.enabled !== false;
-        const preferredDay =
-          typeof digest.dayOfWeek === 'number' ? digest.dayOfWeek : 1;
-        return isEnabled && preferredDay === dayOfWeek;
-      })
-      .map((user) => ({
-        id: user.id,
-        email: user.email,
-        organizationId: user.organization_id,
-        role: user.role,
-      }));
-  });
-}
-
-// ============================================================
 // HELPER FUNCTIONS
 // ============================================================
 

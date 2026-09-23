@@ -614,7 +614,7 @@ export function createPreferencesTab({ user }) {
         },
         digest: {
           enabled: digestEnabledCheck.checked,
-          dayOfWeek: parseInt(digestDaySelect.value, 10) || 1,
+          dayOfWeek: Number(digestDaySelect.value),
         },
         highlighter: {
           color: highlighterColorPicker.getValue(),
