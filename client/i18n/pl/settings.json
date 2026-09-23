@@ -140,6 +140,7 @@
   "imagekit.alt.missingConfirm": "Wartość początkowa ALT jest pusta. Użyć tego obrazu mimo to?",
   "imagekit.alt.missingTitle": "Brak tekstu ALT",
   "imagekit.alt.updateCheckbox": "Zaktualizuj ALT w ImageKit",
+  "imagekit.loadFailed": "Nie udało się wczytać biblioteki ImageKit. Spróbuj ponownie później.",
   "imagekit.noResults": "Brak wyników.",
   "imagekit.notConfigured": "ImageKit nie jest skonfigurowany.",
   "imagekit.pickHint": "Zaznacz obraz, aby zobaczyć szczegóły.",

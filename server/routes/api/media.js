@@ -226,14 +226,15 @@ async function handleImageKitImport({ req, res, authedUser }) {
   // Resolve the asset at the source: this both verifies the id belongs to the
   // configured account and yields the canonical URL to copy from. Whatever
   // ImageKit answers instead - a 404 body, a 401 on a bad key, a network error,
-  // a record without a URL - is one refusal with our own words (B412): its raw
-  // payload goes to the log, never to the client.
+  // a record without a URL - is one refusal with our own words (B412). The
+  // lookup already logged ImageKit's payload (B415); the copy route only says
+  // it in its own code.
   let details;
   try {
     details = await getImageKitFileDetails(fileId);
   } catch (err) {
     if (err instanceof ValidationError) throw err;
-    logError('media', 'ImageKit lookup for copy failed:', err, err?.upstream);
+    logError('media', 'ImageKit lookup for copy failed:', err);
     return refuseImageKitLookup(res);
   }
   const canonicalUrl = String(details?.url || '').trim();

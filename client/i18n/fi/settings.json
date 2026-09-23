@@ -141,6 +141,7 @@
   "imagekit.alt.missingConfirm": "ALT-tekstin alkuarvo on tyhjä. Käytetäänkö tätä kuvaa silti?",
   "imagekit.alt.missingTitle": "ALT-teksti puuttuu",
   "imagekit.alt.updateCheckbox": "Päivitä ALT ImageKitissä",
+  "imagekit.loadFailed": "ImageKit-kirjastoa ei voitu ladata. Yritä myöhemmin uudelleen.",
   "imagekit.noResults": "Ei tuloksia.",
   "imagekit.notConfigured": "ImageKitiä ei ole määritetty.",
   "imagekit.pickHint": "Valitse kuva, niin sen tiedot tulevat näkyviin.",
