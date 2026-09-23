@@ -4,6 +4,32 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.38.2](https://github.com/jaapstronks/deckyard/compare/v1.38.1...v1.38.2) (2026-09-23)
+
+
+### Fixed
+
+* **client:** the body of an api() call is a value, not a string (B345) ([568b03a](https://github.com/jaapstronks/deckyard/commit/568b03a1451a0cc3f8d518a023dde69c700475b8))
+* **config:** keep .env.example comments off the value lines (B378) ([28b4cdf](https://github.com/jaapstronks/deckyard/commit/28b4cdf4a1ac3622bc4fda1f31cebf989d45d4fa))
+* **editor:** a field has one name, and the schema holds the key to it (B395) ([#1227](https://github.com/jaapstronks/deckyard/issues/1227)) ([9bcb208](https://github.com/jaapstronks/deckyard/commit/9bcb208059cc2f607b44cdb147cd9cdc313268bc))
+* **editor:** the PPTX export row says each slide is an image (B321) ([#1231](https://github.com/jaapstronks/deckyard/issues/1231)) ([64b5a68](https://github.com/jaapstronks/deckyard/commit/64b5a68c1b07df439a78f2966331540e102b4d10))
+* **editor:** with AI off, no AI entry is built (B346) ([#1230](https://github.com/jaapstronks/deckyard/issues/1230)) ([53fe1f8](https://github.com/jaapstronks/deckyard/commit/53fe1f88229b55bfed5af73f61e30877f4205ae7))
+* **email:** the export-ready mail carries the recipient's language (B389) ([7d08cb2](https://github.com/jaapstronks/deckyard/commit/7d08cb21a12abebf0e13675efa40d83695d5e634))
+* **export:** the bulk export carries the exporter's own star (B374) ([#1222](https://github.com/jaapstronks/deckyard/issues/1222)) ([212baf7](https://github.com/jaapstronks/deckyard/commit/212baf7a486c65a5d465bcee4ef0b6c0fed2ed44))
+* **i18n:** one locale list, derived from disk, and auth mail in the recipient's language (B379) ([#1219](https://github.com/jaapstronks/deckyard/issues/1219)) ([4e649a2](https://github.com/jaapstronks/deckyard/commit/4e649a26170e0133ec952115e1198cd93c274bfe))
+* **search:** one case fold per comparison, and typed wildcards are letters (B388) ([#1223](https://github.com/jaapstronks/deckyard/issues/1223)) ([3a512b0](https://github.com/jaapstronks/deckyard/commit/3a512b0caa6cdecd5d88776ecabdce3600403b1b))
+* **server:** a non-streaming POST whose client leaves stops working (B397) ([#1233](https://github.com/jaapstronks/deckyard/issues/1233)) ([250e389](https://github.com/jaapstronks/deckyard/commit/250e389a82c523c21292ea2243ac5bbb38d7cb95))
+* **server:** a POST-SSE stream stops when the client goes away (B347) ([4aa7416](https://github.com/jaapstronks/deckyard/commit/4aa7416046910ca1ef503a91d91e2322867a63bc))
+* **slide-library:** one authority over who may insert a slide type (B386) ([#1215](https://github.com/jaapstronks/deckyard/issues/1215)) ([77851a7](https://github.com/jaapstronks/deckyard/commit/77851a70d378e736c3564ce0a8208bd392d25286))
+* **slide-runtime:** let the countdown init decide on markup, not on a type name (B387) ([#1220](https://github.com/jaapstronks/deckyard/issues/1220)) ([879390b](https://github.com/jaapstronks/deckyard/commit/879390b05d70300b3866aadcfafa55280ff85190))
+* **slide-types:** give the pyramid slide a Dutch nl title (B384) ([#1221](https://github.com/jaapstronks/deckyard/issues/1221)) ([1beee6d](https://github.com/jaapstronks/deckyard/commit/1beee6d03130cfce1b7347069804fbcda50b130f))
+* **slide-types:** markup that arrives after the inits still gets its runtime (B391) ([42b7732](https://github.com/jaapstronks/deckyard/commit/42b773257994a9264701d63360689bc2e8688814))
+* **slide-types:** one answer about who inserts the Follow-along invite (B368) ([#1213](https://github.com/jaapstronks/deckyard/issues/1213)) ([5ccb42e](https://github.com/jaapstronks/deckyard/commit/5ccb42e1612478b8a8f987d61d3d54d5485aa9f1))
+* **slide-types:** one copy table for the follow-invite slide (B383) ([#1216](https://github.com/jaapstronks/deckyard/issues/1216)) ([713ca33](https://github.com/jaapstronks/deckyard/commit/713ca33b4417486f59ba9701c1aa209409f8fe90))
+* **storage:** resolve a tag name through one race-free insert (B373) ([#1212](https://github.com/jaapstronks/deckyard/issues/1212)) ([213aad9](https://github.com/jaapstronks/deckyard/commit/213aad9cf74cd5e76578a439db5f192bdd2e7119))
+* **storage:** stamp a collection's metadata after the membership swap (B372) ([762a181](https://github.com/jaapstronks/deckyard/commit/762a181315235611108b4d3067bacb8843b94df1))
+* **table-slide:** the add-row button lands under the table, and columns grow on the canvas (B394) ([#1226](https://github.com/jaapstronks/deckyard/issues/1226)) ([b08c9cb](https://github.com/jaapstronks/deckyard/commit/b08c9cb903e5f06aae090e8ff3fff07c964c20df))
+
 ## [1.38.1](https://github.com/jaapstronks/deckyard/compare/v1.38.0...v1.38.1) (2026-09-20)
 
 
