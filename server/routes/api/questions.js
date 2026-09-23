@@ -88,14 +88,19 @@ async function canPromoteQuestions(storageScope, authedUser, pres) {
  * the fix was a shared predicate; here it cannot be, because
  * `canWritePresentation` needs the collaborator row and the storage scope. So
  * the rule stays on the server and the surface asks (D182).
+ *
+ * Anonymous is a 401, the same answer the login gate in `handleApi` gives
+ * before this handler runs and the one both POST actions below give. It used
+ * to be 200 `{false, false}`, a second answer to the same caller that no
+ * request in the running app could reach (B409). The client reads the 401 as
+ * "no moderator controls" (`fetchModerationCapabilities`).
  */
 async function handleQuestionCapabilities(
   { storageScope, res, authedUser },
   presentationId,
 ) {
-  const pres = authedUser
-    ? await getPresentation(storageScope, presentationId)
-    : null;
+  if (!authedUser) return unauthorized(res);
+  const pres = await getPresentation(storageScope, presentationId);
   serveJson(res, 200, {
     canPromote: await canPromoteQuestions(storageScope, authedUser, pres),
     canRemove: canRemoveQuestions(authedUser),
