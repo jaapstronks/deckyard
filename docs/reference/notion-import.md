@@ -199,10 +199,17 @@ tokens/second) fronts every Notion call the process makes — imports, the wizar
 shortcut and data-source providers all draw from it. Exhausting it throws
 immediately with `statusCode: 429` and a `retryAfterMs`; it does not queue.
 
-Notion's own errors are normalized once, in `notionFetchJson`: the response
-message becomes `err.message`, the HTTP status becomes `err.statusCode`. Route
-handlers then map 404 and 401/403 to the "share the page with your integration"
-message, which is the actual cause nine times out of ten.
+Notion's own errors are decided once, in `notionFetchJson`, by status alone
+(B416) - never by Notion's wording, which does not reach the client. A 404 or
+403 is a `400` with the "share the page with your integration" sentence, which
+is the actual cause nine times out of ten. A 401 means Notion refuses our own
+`NOTION_SECRET`: `502 bad_gateway`, "Notion did not accept the integration
+token. Check NOTION_SECRET on the server." (D205). Every other failure - a 400,
+a 429, a 5xx, an HTML error page, an unreadable body on a success, an
+unreachable API - is `502 bad_gateway`, "Notion could not complete this
+request". Notion's payload and status go to
+`logError` only. `handleNotionError` answers an `AppError` as it is (status and
+code included) and anything else as a fixed `500 notion_error`.
 
 ## Config & flags
 

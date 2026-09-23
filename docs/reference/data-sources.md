@@ -90,8 +90,10 @@ All of them sit behind login **and** the `LIVE_DATA_ENABLED` feature flag
 | POST   | `/api/data-sources/refresh`   | `{dataSource, content}` → `{content, applied, errors, lastSync}`. A pure transform; it never touches a presentation or its event stream. |
 
 Provider/validation failures are 400; an unconfigured Notion is 501; upstream
-fetch failures surface as `data_source_error` with the upstream status, or 502
-when untyped. `/providers` is GET-only but _falls through_ on other methods
+fetch failures surface as `data_source_error` with the status of the provider's
+refusal, or 502 when untyped. A Notion failure carries the Notion seam's own
+sentence and status (see [`notion-import.md`](notion-import.md) § 6), never
+Notion's text. `/providers` is GET-only but _falls through_ on other methods
 (no 405) — `/preview` and `/refresh` answer an explicit 405.
 
 ## The SSRF guard (csv-url)
