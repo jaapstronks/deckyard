@@ -70,19 +70,32 @@ function notionHeaders() {
 /**
  * What a Notion request that did not succeed means, decided by Notion's status
  * alone (B416) - never by Notion's wording, which is not ours to put on the
- * wire. A 404 or 403 is a page the integration cannot see, and a 401 is a
- * token Notion does not accept; both get the one fix a user can make. Every
- * other failure - a 400, a 429, a 5xx, an HTML error page, no answer at all -
- * is `502 bad_gateway` with {@link NOTION_REFUSAL}: the upstream status stays
- * in the log, so a 401 on our own token never reads as "you are signed out".
+ * wire. A 404 or 403 is a page the integration cannot see: a `400` with the
+ * one fix a user can make, sharing the page. A 401 is our own token that
+ * Notion does not accept (D205): not the user's request and not fixable by
+ * sharing, so it is `502 bad_gateway` with {@link NOTION_TOKEN_REFUSED}, the
+ * operator's fix. Every other failure - a 400, a 429, a 5xx, an HTML error
+ * page, an unreadable body, no answer at all - is `502 bad_gateway` with
+ * {@link NOTION_REFUSAL}; the upstream status and payload stay in the log.
  */
 const NOTION_REFUSAL = 'Notion could not complete this request';
 
-/** @type {Record<number, string>} */
-const NOTION_NOT_SHARED = {
-  404: 'Notion page not found. Make sure the page is shared with your Notion integration.',
-  401: 'Access denied. Make sure the page is shared with your Notion integration.',
-  403: 'Access denied. Make sure the page is shared with your Notion integration.',
+const NOTION_TOKEN_REFUSED =
+  'Notion did not accept the integration token. Check NOTION_SECRET on the server.';
+
+/** @type {Record<number, () => AppError>} */
+const NOTION_REFUSALS = {
+  404: () =>
+    new AppError(
+      'Notion page not found. Make sure the page is shared with your Notion integration.',
+      400,
+    ),
+  403: () =>
+    new AppError(
+      'Access denied. Make sure the page is shared with your Notion integration.',
+      400,
+    ),
+  401: () => new AppError(NOTION_TOKEN_REFUSED, 502),
 };
 
 /**
@@ -91,9 +104,9 @@ const NOTION_NOT_SHARED = {
  * @param {string} path - Path under `https://api.notion.com/v1`.
  * @param {{ method?: string, body?: object | null }} [opts]
  * @returns {Promise<any>} - The parsed body of a successful answer.
- * @throws {AppError} - `501` when unconfigured, `400` with a
- *   {@link NOTION_NOT_SHARED} sentence for 401/403/404, `502 bad_gateway` with
- *   {@link NOTION_REFUSAL} for any other failure.
+ * @throws {AppError} - `501` when unconfigured, `400` "share the page" for
+ *   403/404, `502 bad_gateway` with {@link NOTION_TOKEN_REFUSED} for 401 and
+ *   with {@link NOTION_REFUSAL} for any other failure.
  * @throws {RateLimitError} - When our own token bucket is empty.
  */
 export async function notionFetchJson(
@@ -120,14 +133,20 @@ export async function notionFetchJson(
     throw new AppError(NOTION_REFUSAL, 502);
   }
   const ct = res.headers.get('content-type') || '';
-  const payload = ct.includes('application/json')
-    ? await res.json().catch(() => null)
-    : await res.text().catch(() => '');
+  let payload;
+  try {
+    payload = ct.includes('application/json')
+      ? await res.json()
+      : await res.text();
+  } catch (err) {
+    // An unreadable body never changes what the status means; on a success it
+    // is a failure of its own, never an empty answer.
+    logError('notion', `${where} answered ${res.status}, unreadable:`, err);
+    if (res.ok) throw new AppError(NOTION_REFUSAL, 502);
+  }
   if (!res.ok) {
     logError('notion', `${where} answered ${res.status}:`, payload);
-    const notShared = NOTION_NOT_SHARED[res.status];
-    if (notShared) throw new AppError(notShared, 400);
-    throw new AppError(NOTION_REFUSAL, 502);
+    throw NOTION_REFUSALS[res.status]?.() ?? new AppError(NOTION_REFUSAL, 502);
   }
   return payload;
 }

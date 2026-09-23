@@ -6,8 +6,9 @@
  * `handleNotionError` then branched on that text (`'Could not find'`,
  * `'unauthorized'`) and let every other status through with Notion's sentence.
  *
- * The seam now decides the meaning by status alone: 404/401/403 is the
- * "share the page with your integration" hint as a 400, every other failure —
+ * The seam now decides the meaning by status alone: 404/403 is the
+ * "share the page with your integration" hint as a 400, a 401 is our own
+ * token refused (D205, 502 with its own sentence), every other failure —
  * a 400, a 429, a 503 HTML page, no answer at all — is `502 bad_gateway` with
  * one sentence. Notion's payload goes to `logError` only, and that is pinned
  * too, for the Notion routes and for the Notion data-source provider.
@@ -15,7 +16,7 @@
  * Run with: node --test tests/notion-upstream-error.test.js
  */
 
-import test from 'node:test';
+import test, { mock } from 'node:test';
 import assert from 'node:assert/strict';
 
 process.env.NOTION_SECRET = 'secret_test';
@@ -31,9 +32,16 @@ const NOTION_WORDS = 'Could not find page with ID 0123-leaked';
 const savedFetch = globalThis.fetch;
 const savedConsoleError = console.error;
 
+// Every call draws from the process-wide Notion bucket (capacity 10). A mocked
+// clock that moves a second before each test keeps it from running dry, so no
+// test reads our own 429 where it expects Notion's refusal.
+mock.timers.enable({ apis: ['Date'], now: Date.now() });
+test.beforeEach(() => mock.timers.tick(1000));
+
 test.after(() => {
   globalThis.fetch = savedFetch;
   console.error = savedConsoleError;
+  mock.timers.reset();
 });
 
 /** A response double capturing the status/body the http helpers write. */
@@ -146,7 +154,7 @@ test('an unreachable Notion is 502 bad_gateway in our own words', async () => {
   assert.ok(log.includes('did not reach Notion'));
 });
 
-for (const status of [404, 401, 403]) {
+for (const status of [404, 403]) {
   test(`a Notion ${status} is the share-with-your-integration hint, decided by status`, async () => {
     // Notion's wording is deliberately unlike 'Could not find'/'unauthorized':
     // the status alone decides.
@@ -165,6 +173,45 @@ for (const status of [404, 401, 403]) {
     assert.ok(log.includes('something else'), 'the payload is logged');
   });
 }
+
+test('a Notion 401 is our token refused, not the share hint (D205)', async () => {
+  notionAnswers(401, {
+    object: 'error',
+    code: 'unauthorized',
+    message: 'API token is invalid.',
+  });
+  const { res, log } = await logged(fetchPage);
+  assert.equal(res.statusCode, 502);
+  assert.deepEqual(res.body, {
+    ok: false,
+    error: 'bad_gateway',
+    message:
+      'Notion did not accept the integration token. Check NOTION_SECRET on the server.',
+  });
+  assert.ok(log.includes('API token is invalid'), 'the payload is logged');
+});
+
+test('an unreadable body on a success is a 502, never an empty answer', async () => {
+  globalThis.fetch = async () =>
+    new Response('{not json', {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    });
+  const { res } = await logged(fetchPage);
+  assert.equal(res.statusCode, 502);
+  assert.equal(res.body.message, 'Notion could not complete this request');
+});
+
+test('an unreadable body on a 404 still reads as the share hint', async () => {
+  globalThis.fetch = async () =>
+    new Response('{not json', {
+      status: 404,
+      headers: { 'content-type': 'application/json' },
+    });
+  const { res } = await logged(fetchPage);
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body.message, /^Notion page not found\./);
+});
 
 test('Notion wording no longer decides the meaning of another status', async () => {
   notionAnswers(400, {

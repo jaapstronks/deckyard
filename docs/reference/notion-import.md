@@ -201,10 +201,13 @@ immediately with `statusCode: 429` and a `retryAfterMs`; it does not queue.
 
 Notion's own errors are decided once, in `notionFetchJson`, by status alone
 (B416) - never by Notion's wording, which does not reach the client. A 404 or
-401/403 is a `400` with the "share the page with your integration" sentence,
-which is the actual cause nine times out of ten. Every other failure - a 400, a
-429, a 5xx, an HTML error page, an unreachable API - is `502 bad_gateway`,
-"Notion could not complete this request". Notion's payload and status go to
+403 is a `400` with the "share the page with your integration" sentence, which
+is the actual cause nine times out of ten. A 401 means Notion refuses our own
+`NOTION_SECRET`: `502 bad_gateway`, "Notion did not accept the integration
+token. Check NOTION_SECRET on the server." (D205). Every other failure - a 400,
+a 429, a 5xx, an HTML error page, an unreadable body on a success, an
+unreachable API - is `502 bad_gateway`, "Notion could not complete this
+request". Notion's payload and status go to
 `logError` only. `handleNotionError` answers an `AppError` as it is (status and
 code included) and anything else as a fixed `500 notion_error`.
 
