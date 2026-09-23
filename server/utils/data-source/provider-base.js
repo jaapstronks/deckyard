@@ -7,7 +7,8 @@
  */
 
 import { applyBindings } from './bindings.js';
-import { AppError } from '../errors.js';
+import { AppError, isAppError } from '../errors.js';
+import { logError } from '../logger.js';
 
 /**
  * Create a data source provider.
@@ -31,14 +32,14 @@ export function createDataSourceProvider({ name, fetchData, parseResponse }) {
       try {
         return await fetchData(providerConfig);
       } catch (err) {
-        // Preserve the causing error's status; unknown failures are a 502
-        // (upstream fetch broke, not the caller's request).
-        const error = new AppError(
-          `Data source "${name}" fetch failed: ${err.message}`,
-          err.statusCode || 502,
-        );
-        error.provider = name;
-        throw error;
+        // An AppError already says what it means in our own words (the
+        // provider's input refusal, the Notion seam's sentence): it goes out
+        // as it is. Anything else is internal text - a network error, an
+        // upstream body, a path - so it goes to the log, and the caller gets
+        // one fixed 502 per provider (B417).
+        if (isAppError(err)) throw err;
+        logError('data-source', `Data source "${name}" fetch failed:`, err);
+        throw new AppError(`Data source "${name}" could not be fetched`, 502);
       }
     },
 
