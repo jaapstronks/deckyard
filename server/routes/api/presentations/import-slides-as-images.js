@@ -22,6 +22,9 @@ import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { getString } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
+import { loadDeckTheme } from '../../../utils/themes.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { newSlide } from '../../../../shared/slide-types/presentation.js';
 const log = createLogger('import-slides-as-images');
 
 /**
@@ -62,10 +65,6 @@ async function uploadImageBuffer({ buffer, fileName, mimeType, tags = [] }) {
   throw new Error(
     'No media provider configured (neither ImageKit nor S3/local)',
   );
-}
-
-function generateSlideId() {
-  return `slide-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 /**
@@ -168,6 +167,8 @@ export async function handlePresentationImportSlidesAsImages(
     });
 
     // Upload images to ImageKit and create slide objects
+    const theme = await loadDeckTheme(repoRoot, pres.theme);
+    const slideTypes = await buildMergedSlideTypes(storageScope);
     const newSlides = [];
     const baseFilename = (filename || 'imported').replace(/\.pdf$/i, '');
 
@@ -201,27 +202,20 @@ export async function handlePresentationImportSlidesAsImages(
         // Continue with empty URL - user can add image later
       }
 
-      // Create image-slide object (fields must be inside content object)
-      const slide = {
-        id: generateSlideId(),
+      // One page, one image-slide: the image as a patch over the type's
+      // defaults, edge to edge (`bleed`; the default fit is already cover).
+      const slide = newSlide({
         type: 'image-slide',
+        theme,
+        lang: pres.lang,
+        presentationId: id,
+        slideTypes,
         content: {
           image: imageUrl,
           alt: `${baseFilename} - Page ${pageNum}`,
-          title: '',
-          subheading: '',
-          bottomSubheading: '',
-          imageRole: 'content',
-          caption: '',
-          focusX: '',
-          focusY: '',
-          layout: 'bleed',
-          zoomSteps: '',
-          zoomLevel: 2,
-          zoomPositions: '',
+          bleed: true,
         },
-        notes: '',
-      };
+      });
 
       newSlides.push(slide);
     }

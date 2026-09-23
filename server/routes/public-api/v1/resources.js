@@ -7,6 +7,7 @@ import { listThemeIds, loadThemeAssets } from '../../../utils/themes.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
+import { newSlide } from '../../../../shared/slide-types/presentation.js';
 import {
   requirePermission,
   dispatchV1Routes,
@@ -161,14 +162,12 @@ async function handleSlideTypeSchema(ctx, slideType) {
     def.defaults ||
     {};
 
-  // Generate an example slide structure
+  // The example is what the factory makes for this type in a deck without a
+  // theme or a language, with a fixed id so the document is stable. This
+  // endpoint describes the core registry, so that is the one it composes from.
   const example = {
+    ...newSlide({ type: slideType, theme: null, slideTypes: SLIDE_TYPES }),
     id: 'example-uuid-00000000',
-    type: slideType,
-    parentId: null,
-    content: { ...defaults },
-    notes: '',
-    visibility: {},
   };
 
   await apiSuccess(ctx, {
