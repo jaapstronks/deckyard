@@ -355,6 +355,7 @@
   "editor.image.help.uploadsDisabled": "Choisir dans la bibliothèque (recommandé). Les téléversements sont désactivés.",
   "editor.image.help.uploadsSandbox": "Les téléversements sont désactivés dans le bac à sable. Choisissez dans la bibliothèque, sur Unsplash ou Giphy.",
   "editor.image.help.withUploads": "Choisir dans la bibliothèque (recommandé) ou téléverser votre propre image.",
+  "editor.image.imagekit.copyFailed": "Cette image n'a pas pu être copiée dans vos propres médias. Réessayez ou choisissez une autre image.",
   "editor.image.libraryTitle": "Bibliothèque : choisir une image",
   "editor.image.photoCredit": "Photo : {photographer}",
   "editor.image.presets": "Images prédéfinies",

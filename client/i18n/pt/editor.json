@@ -361,6 +361,7 @@
   "editor.image.help.uploadsDisabled": "Escolher da biblioteca (recomendado). Os carregamentos estão desativados.",
   "editor.image.help.uploadsSandbox": "Os carregamentos estão desativados no ambiente de testes. Escolha na biblioteca, no Unsplash ou no Giphy.",
   "editor.image.help.withUploads": "Escolher da biblioteca (recomendado) ou carregar a sua própria imagem.",
+  "editor.image.imagekit.copyFailed": "Não foi possível copiar esta imagem para os seus próprios ficheiros multimédia. Tente novamente ou escolha outra imagem.",
   "editor.image.libraryTitle": "Biblioteca: escolher imagem",
   "editor.image.photoCredit": "Foto: {photographer}",
   "editor.image.presets": "Imagens predefinidas",

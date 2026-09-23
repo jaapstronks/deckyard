@@ -360,6 +360,7 @@
   "editor.image.help.uploadsDisabled": "Scegli dalla libreria (consigliato). I caricamenti sono disabilitati.",
   "editor.image.help.uploadsSandbox": "I caricamenti sono disattivati nella sandbox. Scegli dalla libreria, da Unsplash o da Giphy.",
   "editor.image.help.withUploads": "Scegli dalla libreria (consigliato) oppure carica una tua immagine.",
+  "editor.image.imagekit.copyFailed": "Non è stato possibile copiare questa immagine nei tuoi media. Riprova o scegli un'altra immagine.",
   "editor.image.libraryTitle": "Libreria: scegli un'immagine",
   "editor.image.photoCredit": "Foto: {photographer}",
   "editor.image.presets": "Immagini predefinite",

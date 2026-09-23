@@ -355,6 +355,7 @@
   "editor.image.help.uploadsDisabled": "Vælg fra biblioteket (anbefalet). Uploads er deaktiveret.",
   "editor.image.help.uploadsSandbox": "Upload er slået fra i sandkassen. Vælg fra biblioteket, Unsplash eller Giphy.",
   "editor.image.help.withUploads": "Vælg fra biblioteket (anbefalet) eller upload dit eget billede.",
+  "editor.image.imagekit.copyFailed": "Billedet kunne ikke kopieres til dine egne medier. Prøv igen, eller vælg et andet billede.",
   "editor.image.libraryTitle": "Bibliotek: vælg et billede",
   "editor.image.photoCredit": "Foto: {photographer}",
   "editor.image.presets": "Forudindstillede billeder",

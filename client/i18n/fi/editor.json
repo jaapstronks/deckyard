@@ -362,6 +362,7 @@
   "editor.image.help.uploadsDisabled": "Valitse kirjastosta (suositeltu). Lataukset on poistettu käytöstä.",
   "editor.image.help.uploadsSandbox": "Tiedostojen lähetys on pois käytöstä hiekkalaatikossa. Valitse kuva kirjastosta, Unsplashista tai Giphystä.",
   "editor.image.help.withUploads": "Valitse kirjastosta (suositeltu) tai lataa oma kuva.",
+  "editor.image.imagekit.copyFailed": "Kuvaa ei voitu kopioida omiin mediatiedostoihisi. Yritä uudelleen tai valitse toinen kuva.",
   "editor.image.libraryTitle": "Kirjasto: valitse kuva",
   "editor.image.photoCredit": "Kuva: {photographer}",
   "editor.image.presets": "Esiasetuskuvat",
