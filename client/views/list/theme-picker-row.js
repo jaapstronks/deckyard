@@ -13,34 +13,46 @@ import {
 } from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import { h } from '../../lib/dom.js';
+import { newSlide } from '../../../shared/slide-types/presentation.js';
+
+/**
+ * The sample slide a theme tile shows: the title slide a new deck in this
+ * theme starts with, composed by `newSlide()` like that first slide is, with
+ * the theme's label as its title. So the tile carries the theme's
+ * `defaultBackground` and background preset where it declares them, and the
+ * type's own default ground where it does not; there is no ground of the
+ * tile's own (it used to hard-code `lime`, which a fork theme like Dreamkit
+ * neither uses nor colours, B431).
+ *
+ * @param {Object} theme - full theme object
+ * @param {Record<string, Object>} slideTypes - the live type map
+ *   (`/api/slide-types`), so a fork's own title type composes too
+ * @returns {Object} a slide
+ * @throws when the theme's title type is not in `slideTypes`
+ */
+export function themePreviewSlide(theme, slideTypes) {
+  return newSlide({
+    type: theme?.defaultTitleSlide || 'title-slide',
+    theme,
+    slideTypes,
+    content: { title: theme?.label || 'Theme Preview' },
+  });
+}
 
 /**
  * Create a real slide thumbnail preview for a theme.
  * @param {Object} theme - Full theme object
+ * @param {Record<string, Object>} slideTypes - the live type map
  * @param {Function[]} detachCallbacks - Array to collect cleanup functions
  * @returns {HTMLElement} Preview element
  */
-function createThemePreview(theme, detachCallbacks) {
+function createThemePreview(theme, slideTypes, detachCallbacks) {
   const preview = h('div', { class: 'theme-picker-preview' });
   const thumb = h('div', { class: 'thumb theme-picker-thumb' });
   preview.append(thumb);
 
-  // Determine title slide type from theme or default
-  const titleSlideType = theme?.defaultTitleSlide || 'title-slide';
-
-  // Create sample title slide content
-  const sampleSlide = {
-    id: 'theme-preview',
-    type: titleSlideType,
-    content: {
-      title: theme?.label || 'Theme Preview',
-      subtitle: '',
-      background: 'lime',
-    },
-  };
-
   try {
-    const slideEl = renderSlideElement(sampleSlide, {
+    const slideEl = renderSlideElement(themePreviewSlide(theme, slideTypes), {
       mode: 'thumb',
       theme,
       renderVia: RENDER_VIA_THEME,
@@ -124,7 +136,10 @@ export function createThemePickerRow({
    */
   async function load() {
     try {
-      const response = await api('/api/themes');
+      const [response, slideTypes] = await Promise.all([
+        api('/api/themes'),
+        api('/api/slide-types'),
+      ]);
       const themeList = Array.isArray(response?.themes) ? response.themes : [];
       themes = themeList;
 
@@ -151,7 +166,11 @@ export function createThemePickerRow({
             onclick: () => onThemeSelect?.(themeInfo),
           });
 
-          const preview = createThemePreview(fullTheme, detachCallbacks);
+          const preview = createThemePreview(
+            fullTheme,
+            slideTypes,
+            detachCallbacks,
+          );
           const name = h('span', {
             class: 'theme-picker-name',
             text:
