@@ -341,7 +341,16 @@ export async function handleConvertFile({
 }
 
 /**
- * Handle JSON import
+ * Handle JSON import.
+ *
+ * A refusal (no file, not JSON, the server says no) is a state of the import
+ * form, not a footer line: it goes through `refuse`, which the import tab
+ * renders as an inline error at its control
+ * (docs/reference/feedback-surfaces.md). `setStatus` only carries progress.
+ *
+ * @param {Object} opts
+ * @param {(message: string) => void} opts.refuse - Show a refusal at the tab's
+ *   control; called after the form is usable again.
  */
 export async function handleImportJson({
   api,
@@ -350,9 +359,10 @@ export async function handleImportJson({
   close,
   setBusy,
   setStatus,
+  refuse,
 }) {
   if (!selectedFile) {
-    setStatus(t('list.fileConverter.selectFirst', 'Select a file first.'));
+    refuse(t('list.fileConverter.selectFirst', 'Select a file first.'));
     return;
   }
   setBusy(true);
@@ -365,9 +375,15 @@ export async function handleImportJson({
     try {
       deck = JSON.parse(text);
     } catch (parseErr) {
-      console.error('[handleImportJson] JSON parse error:', parseErr.message);
-      setStatus(`JSON parse error: ${parseErr.message}`);
+      setStatus('');
       setBusy(false);
+      refuse(
+        t(
+          'list.newPresentation.importJson.parseError',
+          'This file is not valid JSON: {message}',
+          { message: parseErr.message },
+        ),
+      );
       return;
     }
 
@@ -385,14 +401,18 @@ export async function handleImportJson({
     close();
     nav(`/app/${created.id}?lang=${encodeURIComponent(navLang)}`);
   } catch (e) {
-    console.error('[handleImportJson] Error:', e);
-    setStatus(String(e?.message || e));
+    setStatus('');
     setBusy(false);
+    refuse(String(e?.message || e));
   }
 }
 
 /**
- * Handle Markdown import
+ * Handle Markdown import. Refusals go through `refuse`, as for JSON.
+ *
+ * @param {Object} opts
+ * @param {(message: string) => void} opts.refuse - Show a refusal at the tab's
+ *   control; called after the form is usable again.
  */
 export async function handleImportMarkdown({
   api,
@@ -402,10 +422,11 @@ export async function handleImportMarkdown({
   close,
   setBusy,
   setStatus,
+  refuse,
   showWarnings,
 }) {
   if (!selectedFile) {
-    setStatus(t('list.fileConverter.selectFirst', 'Select a file first.'));
+    refuse(t('list.fileConverter.selectFirst', 'Select a file first.'));
     return;
   }
   setBusy(true);
@@ -415,10 +436,11 @@ export async function handleImportMarkdown({
     const markdown = await selectedFile.text();
 
     if (!markdown.trim()) {
-      setStatus(
+      setStatus('');
+      setBusy(false);
+      refuse(
         t('list.newPresentation.importMarkdown.empty', 'The file is empty.'),
       );
-      setBusy(false);
       return;
     }
 
@@ -441,13 +463,19 @@ export async function handleImportMarkdown({
     close();
     nav(navUrl);
   } catch (e) {
-    setStatus(String(e?.message || e));
+    setStatus('');
     setBusy(false);
+    refuse(String(e?.message || e));
   }
 }
 
 /**
- * Handle Paste Markdown (direct text, no AI)
+ * Handle Paste Markdown (direct text, no AI). Refusals go through `refuse`,
+ * as for JSON; the refusal focuses the textarea.
+ *
+ * @param {Object} opts
+ * @param {(message: string) => void} opts.refuse - Show a refusal at the
+ *   textarea; called after the form is usable again.
  */
 export async function handlePasteMarkdown({
   api,
@@ -457,17 +485,16 @@ export async function handlePasteMarkdown({
   close,
   setBusy,
   setStatus,
-  focusTextarea,
+  refuse,
   showWarnings,
 }) {
   if (!raw) {
-    setStatus(
+    refuse(
       t(
         'list.newPresentation.pasteMarkdown.pasteFirst',
         'Paste markdown content first.',
       ),
     );
-    focusTextarea?.();
     return;
   }
   setBusy(true);
@@ -493,8 +520,9 @@ export async function handlePasteMarkdown({
     close();
     nav(navUrl);
   } catch (e) {
-    setStatus(String(e?.message || e));
+    setStatus('');
     setBusy(false);
+    refuse(String(e?.message || e));
   }
 }
 

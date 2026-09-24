@@ -86,13 +86,9 @@ test('confirmations announce politely, failures assertively', () => {
   toast.success('Saved', { id: 'aria-success' });
   toast.info('Converting…', { id: 'aria-info' });
   toast.error('Request failed (500)', { id: 'aria-error' });
-  toast.warning('Nearly out of room', { id: 'aria-warning' });
 
   assert.deepEqual(textsIn(politeRegion()), ['Saved', 'Converting…']);
-  assert.deepEqual(textsIn(assertiveRegion()), [
-    'Request failed (500)',
-    'Nearly out of room',
-  ]);
+  assert.deepEqual(textsIn(assertiveRegion()), ['Request failed (500)']);
   clear();
 });
 
@@ -174,14 +170,14 @@ test('a toast carrying an action does not expire on its own', async () => {
 });
 
 test('one spelling per kind — the old aliases are gone', () => {
-  for (const alias of ['danger', 'fail', 'ok', 'warn', 'ERROR']) {
+  for (const alias of ['danger', 'fail', 'ok', 'warn', 'warning', 'ERROR']) {
     assert.throws(
       () => toast('x', { type: alias }),
       /Unknown toast type/,
       `${alias} is not a spelling of any kind`,
     );
   }
-  for (const type of ['info', 'success', 'warning', 'error']) {
+  for (const type of ['info', 'success', 'error']) {
     toast('x', { type, id: `spell-${type}` });
     assert.ok(
       document.querySelector(`.toast.toast-${type}`),

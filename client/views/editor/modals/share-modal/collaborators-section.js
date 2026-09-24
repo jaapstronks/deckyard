@@ -96,7 +96,11 @@ export function createCollaboratorsSection({
     [autocomplete.el, permissionSelect, addBtn],
   );
 
-  form.append(formRow, progressEl);
+  // Every refusal of the invite form lands here, beside the Invite button, and
+  // is cleared at the next attempt (feedback-surfaces.md, second kind).
+  const inviteError = createInlineError();
+
+  form.append(formRow, progressEl, inviteError.el);
 
   // Invited colleagues get a notification — make that explicit, since this is
   // not link-copying (the reason "Share Links" never described this section).
@@ -196,8 +200,10 @@ export function createCollaboratorsSection({
       (c) => c.permission === 'edit' || c.permission === 'admin',
     );
 
+    // The Transfer button has no form to put a refusal in: the action's own
+    // failure carrier is the error toast (feedback-surfaces.md, third kind).
     if (eligibleUsers.length === 0) {
-      toast?.warning(
+      toast?.error(
         t(
           'share.collaborators.noEligibleOwners',
           'No collaborators with edit access to transfer ownership to. Add a collaborator with edit or admin permission first.',
@@ -382,19 +388,21 @@ export function createCollaboratorsSection({
   }
 
   addBtn.addEventListener('click', async () => {
+    if (isAddingCollaborator) return;
+    inviteError.clear();
     const selectedUsers = autocomplete.getSelected();
     if (selectedUsers.length === 0) {
-      toast?.error(
+      inviteError.show(
         t(
           'share.collaborators.selectUserError',
           'Please select at least one user',
         ),
-        { durationMs: 2000 },
+        { focus: false },
       );
+      autocomplete.focus();
       return;
     }
 
-    if (isAddingCollaborator) return;
     isAddingCollaborator = true;
     addBtn.disabled = true;
 
@@ -438,13 +446,20 @@ export function createCollaboratorsSection({
       if (resp?.summary) {
         const { successful, failed, total } = resp.summary;
         if (failed > 0) {
-          toast?.warning(
-            t(
-              'share.collaborators.invitedPartial',
-              '{successful} of {total} invitations sent. {failed} failed.',
-              { successful, total, failed },
-            ),
-            { durationMs: 4000 },
+          // Addresses that were not invited are a refusal of this form, not a
+          // passing message: name them beside the button until the next try.
+          const notInvited = (resp.results || [])
+            .filter((r) => !r.ok)
+            .map((r) => r.email)
+            .join(', ');
+          const sentence = t(
+            'share.collaborators.invitedPartial',
+            '{successful} of {total} invitations sent. {failed} failed.',
+            { successful, total, failed },
+          );
+          inviteError.show(
+            notInvited ? `${sentence} (${notInvited})` : sentence,
+            { focus: false },
           );
         } else {
           toast?.success(
@@ -466,17 +481,15 @@ export function createCollaboratorsSection({
       // envelope's `error` on `err.code` precisely so display text stays free
       // to be friendly, translated or absent. Reading the message only ever
       // worked because this 409 happens to send none.
-      if (e?.code === 'already_exists') {
-        toast?.error(
-          t(
-            'share.collaborators.alreadyExists',
-            'One or more users are already collaborators',
-          ),
-          { durationMs: 3000 },
-        );
-      } else {
-        toast?.error(e, { durationMs: 3000 });
-      }
+      inviteError.show(
+        e?.code === 'already_exists'
+          ? t(
+              'share.collaborators.alreadyExists',
+              'One or more users are already collaborators',
+            )
+          : String(e?.message || e),
+        { focus: false },
+      );
     } finally {
       isAddingCollaborator = false;
       addBtn.disabled = false;

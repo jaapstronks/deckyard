@@ -1,6 +1,6 @@
 /**
  * Guard: every *semantic* toast goes through the sugar helpers
- * (`toast.error/.success/.warning/.info`), never the raw two-argument form
+ * (`toast.error/.success/.info`), never the raw two-argument form
  * with a type intent (B74, tighten-scan 2026-08-17).
  *
  * Two minority forms are forbidden on a base `toast(msg, …)` call:
@@ -137,7 +137,7 @@ test('no raw toast(msg, …) with a type intent in client/ — use the sugar hel
           ? "string second argument (read as opts → silently 'info')"
           : 'object with a type: key';
       violations.push(
-        `${rel}:${lineOf(src, site.index)}  ${how} — use toast.error/.success/.warning/.info`,
+        `${rel}:${lineOf(src, site.index)}  ${how} — use toast.error/.success/.info`,
       );
     }
   }
@@ -176,7 +176,7 @@ test('every toast.<helper> call names a helper that exists', () => {
   const helpers = new Set(
     [...toastSrc.matchAll(/^toast\.(\w+)\s*=/gm)].map((m) => m[1]),
   );
-  assert.ok(helpers.has('warning'), 'helper list read from toast.js');
+  assert.ok(helpers.has('error'), 'helper list read from toast.js');
   const violations = [];
   for (const file of walk(path.join(repoRoot, 'client'))) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');

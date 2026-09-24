@@ -46,7 +46,7 @@
   font-weight: 700;
   color: hsl(var(--app-text-secondary, var(--app-text-primary)));
 }
-/* Kind colours ride the semantic token family (--app-success/-warning/-danger),
+/* Kind colours ride the semantic token family (--app-success/-danger),
    so a fork retunes the palette once instead of patching literals here. */
 .toast.toast-success {
   border-color: hsl(var(--app-success) / 0.5);
@@ -60,19 +60,6 @@
 .toast.toast-success::before {
   content: '✓';
   color: hsl(var(--app-success));
-}
-.toast.toast-warning {
-  border-color: hsl(var(--app-warning) / 0.55);
-  background:
-    linear-gradient(
-      hsl(var(--app-warning) / 0.12),
-      hsl(var(--app-warning) / 0.12)
-    ),
-    hsl(var(--app-bg-overlay) / 0.92);
-}
-.toast.toast-warning::before {
-  content: '⚠';
-  color: hsl(var(--app-warning-text));
 }
 .toast.toast-error {
   border-color: hsl(var(--app-danger) / 0.6);

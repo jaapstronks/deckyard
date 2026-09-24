@@ -14,9 +14,14 @@
  *     the two imports that carry their own theme, and the Create button label
  *     reads the active sub-tab).
  *
- * The `.deck` sub-tab is its own module (import-deck.js): it owns an inline
- * refusal and the install choice, which the other three do not have. What was
- * left out of an import shows through the same warnings block as Markdown.
+ * The `.deck` sub-tab is its own module (import-deck.js): it owns the install
+ * choice, which the other three do not have. What was left out of an import
+ * shows through the same warnings block as Markdown.
+ *
+ * Every sub-tab refuses the same way: an inline error at its file input or
+ * textarea, cleared at the start of the next attempt, never a footer line or
+ * a toast (docs/reference/feedback-surfaces.md, D144). The footer status only
+ * carries progress.
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
@@ -26,6 +31,7 @@ import {
   handlePasteMarkdown,
 } from '../new-presentation/handlers.js';
 import { h } from '../../../../lib/dom.js';
+import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { nav } from '../../../../lib/state/router.js';
 import { createDeckImportPanel } from './import-deck.js';
 
@@ -85,6 +91,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     class: 'form-input',
   });
   const importFileInfo = h('div', { class: 'help', text: '' });
+  const importJsonError = createInlineError();
   importFileInput.addEventListener('change', () => {
     const file = importFileInput.files?.[0];
     selectedImportFile = file || null;
@@ -100,6 +107,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     }),
     importFileInput,
     importFileInfo,
+    importJsonError.el,
   );
 
   const panelImportMd = h('div', { class: 'creation-subpanel is-hidden' });
@@ -109,6 +117,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     class: 'form-input',
   });
   const importMdFileInfo = h('div', { class: 'help', text: '' });
+  const importMdError = createInlineError();
   importMdFileInput.addEventListener('change', () => {
     const file = importMdFileInput.files?.[0];
     selectedImportMdFile = file || null;
@@ -124,6 +133,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     }),
     importMdFileInput,
     importMdFileInfo,
+    importMdError.el,
   );
 
   const panelPasteMd = h('div', { class: 'creation-subpanel is-hidden' });
@@ -134,6 +144,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
       'Paste your markdown here…',
     ),
   });
+  const pasteMdError = createInlineError();
   panelPasteMd.append(
     h('div', {
       class: 'help modal-hint',
@@ -143,6 +154,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
       ),
     }),
     pasteMdTextarea,
+    pasteMdError.el,
   );
 
   const importSubWrap = h('div', { class: 'creation-subpanels' }, [
@@ -238,6 +250,11 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
   // @param {HTMLElement} ctx.btnAction - the footer Create button (warning shower).
   const run = async ({ commonOpts, langMode, themeId, btnAction }) => {
     const warnCtx = { ...commonOpts, btnAction };
+    // A refusal of this attempt, shown at the control that has to change.
+    const refuseAt = (error, control) => {
+      error.clear();
+      return (message) => error.show(message, { control });
+    };
     switch (importSubtab) {
       case 'deck':
         await deckImport.run({
@@ -250,6 +267,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
           ...commonOpts,
           selectedFile: selectedImportFile,
           langMode,
+          refuse: refuseAt(importJsonError, importFileInput),
         });
         break;
       case 'import-md':
@@ -258,6 +276,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
           selectedFile: selectedImportMdFile,
           langMode,
           themeId,
+          refuse: refuseAt(importMdError, importMdFileInput),
           showWarnings: makeWarningShower(panelImportMd, warnCtx),
         });
         break;
@@ -267,7 +286,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
           raw: String(pasteMdTextarea.value || '').trim(),
           langMode,
           themeId,
-          focusTextarea: () => pasteMdTextarea.focus(),
+          refuse: refuseAt(pasteMdError, pasteMdTextarea),
           showWarnings: makeWarningShower(panelPasteMd, warnCtx),
         });
         break;
