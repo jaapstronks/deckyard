@@ -24,7 +24,7 @@ export default {
     },
     {
       key: 'body',
-      label: 'Body (Markdown)',
+      label: 'Body',
       labelKey: 'editor.slideField.body.label',
       type: 'markdown',
       required: false,

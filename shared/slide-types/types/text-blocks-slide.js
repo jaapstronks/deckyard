@@ -43,6 +43,13 @@ export function resolveRows(content) {
 }
 
 /**
+ * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
+ * Block{M}Body) or `arrow{N}`. The v1 -> v2 step folds them into `rows[]` and
+ * drops them (D216); `rows` itself does not match.
+ */
+export const LEGACY_ROW_KEY = /^(row|arrow)\d/;
+
+/**
  * Whether a slide carries content in the legacy numbered fields (row{N}…,
  * arrow{N}). An empty `rows[]` beside such content is a legacy deck the
  * v1 -> v2 step still has to fold; without it, it is the empty state.
@@ -53,9 +60,7 @@ export function hasLegacyRowFields(content) {
   if (!content || typeof content !== 'object') return false;
   return Object.entries(content).some(
     ([key, value]) =>
-      /^(row|arrow)\d/.test(key) &&
-      value != null &&
-      String(value).trim() !== '',
+      LEGACY_ROW_KEY.test(key) && value != null && String(value).trim() !== '',
   );
 }
 

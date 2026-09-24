@@ -728,7 +728,7 @@
   "editor.slideField.background.option.dark": "Dark",
   "editor.slideField.background.option.lime": "Lime",
   "editor.slideField.background.option.mist": "Mist",
-  "editor.slideField.body.label": "Body (Markdown)",
+  "editor.slideField.body.label": "Body",
   "editor.slideField.bottomSubheading.label": "Bottom subheading",
   "editor.slideField.caption.label": "Caption",
   "editor.slideField.density.label": "Text size",

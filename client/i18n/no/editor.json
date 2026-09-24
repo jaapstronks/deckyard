@@ -673,7 +673,7 @@
   "editor.slideField.background.option.brand-2": "Merkevare 2",
   "editor.slideField.background.option.custom": "Egen farge",
   "editor.slideField.background.option.dark": "Mørk",
-  "editor.slideField.body.label": "Brødtekst (Markdown)",
+  "editor.slideField.body.label": "Brødtekst",
   "editor.slideField.bottomSubheading.label": "Underoverskrift nederst",
   "editor.slideField.caption.label": "Bildetekst",
   "editor.slideField.density.label": "Tekststørrelse",

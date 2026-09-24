@@ -49,7 +49,7 @@ export default {
     {
       key: 'body',
       essential: true,
-      label: 'Body (Markdown)',
+      label: 'Body',
       labelKey: 'editor.slideField.body.label',
       type: 'markdown',
       // Long-form prose beside the image: same as content-slide.
