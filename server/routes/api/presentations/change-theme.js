@@ -3,10 +3,8 @@
  * Analyzes theme compatibility and applies theme changes.
  */
 
-import {
-  getPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+import { getPresentation } from '../../../storage/presentations/index.js';
+import { changePresentationTheme } from '../../../storage/presentations/change-theme.js';
 import {
   serveJson,
   methodNotAllowed,
@@ -17,17 +15,11 @@ import {
 } from '../../../utils/http.js';
 import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { getString } from '../../../utils/request-validators.js';
-import { loadThemeAssets, resolveThemeId } from '../../../utils/themes.js';
-import {
-  getConvertibleSlideTypes,
-  convertSlideToType,
-} from '../../../../shared/slide-types/convert.js';
+import { findTheme, resolveThemeId } from '../../../utils/themes.js';
+import { getConvertibleSlideTypes } from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { getThemeSlideTypeConfig } from '../../../../shared/slide-types/policy.js';
 import { cleanStr } from '../../../../shared/string-utils.js';
-import { createLogger } from '../../../utils/logger.js';
-import { DEFAULT_THEME_ID } from '../../../../shared/constants/themes.js';
-const log = createLogger('change-theme');
 
 /**
  * Check if a slide type is compatible with a theme.
@@ -109,12 +101,12 @@ export async function handleAnalyzeThemeChange(
   }
 
   // Load the new theme
-  const newTheme = await loadThemeAssets(repoRoot, newThemeId);
+  const newTheme = await findTheme(repoRoot, newThemeId, storageScope);
   if (!newTheme) {
     return badRequest(res, 'Theme not found');
   }
 
-  const currentThemeId = String(pres.themeId || DEFAULT_THEME_ID).trim();
+  const currentThemeId = resolveThemeId(pres.theme);
   const slides = Array.isArray(pres.slides) ? pres.slides : [];
 
   const problematicSlides = [];
@@ -182,7 +174,7 @@ export async function handleAnalyzeThemeChange(
  * { success: boolean, presentation: object }
  */
 export async function handleChangeTheme(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
@@ -205,70 +197,16 @@ export async function handleChangeTheme(
     return badRequest(res, 'newThemeId is required');
   }
 
-  // Load the new theme to verify it exists
-  const newTheme = await loadThemeAssets(repoRoot, newThemeId);
-  if (!newTheme) {
-    return badRequest(res, 'Theme not found');
-  }
-
-  // Apply slide conversions if requested
-  const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
-  const conversionMap = new Map();
-
-  if (Array.isArray(convertSlides)) {
-    for (const conv of convertSlides) {
-      if (conv?.slideId && conv?.convertTo) {
-        conversionMap.set(conv.slideId, conv.convertTo);
-      }
-    }
-  }
-
-  // Convert slides that were specified
-  const updatedSlides = slides.map((slide) => {
-    const targetType = conversionMap.get(slide.id);
-    if (targetType) {
-      try {
-        // The converted slide is re-seeded for its new type, and that seed
-        // reads the theme (ground, background presets): the theme the deck
-        // is moving to, not the one it leaves.
-        return convertSlideToType(slide, targetType, {
-          slideTypes: SLIDE_TYPES,
-          lang: pres.lang || null,
-          theme: newTheme,
-        });
-      } catch (err) {
-        log.warn(
-          `[change-theme] Failed to convert slide ${slide.id}:`,
-          err.message,
-        );
-        return slide; // Keep original if conversion fails
-      }
-    }
-    return slide;
-  });
-
-  // Update the presentation with new theme and converted slides.
-  // `theme` is the canonical column; `themeId` is only a read-side projection,
-  // so the real switch must go through `theme` gated by allowThemeChange (the
-  // shared write path hard-locks the theme otherwise).
-  const updateData = {
-    ...pres,
-    theme: resolveThemeId(newThemeId),
-    themeId: newThemeId,
-    slides: updatedSlides,
-  };
-
-  const result = await updatePresentation(storageScope, id, updateData, {
+  const result = await changePresentationTheme(storageScope, id, pres, {
+    theme: newThemeId,
+    convertSlides,
     actorEmail: authedUser?.email,
-    allowThemeChange: true,
   });
-
-  if (!result || result.error) {
-    return badRequest(res, result?.error || 'Failed to update presentation');
-  }
+  if (!result.ok) return badRequest(res, result.error);
+  if (!result.presentation) return notFound(res);
 
   return serveJson(res, 200, {
     success: true,
-    presentation: result,
+    presentation: result.presentation,
   });
 }

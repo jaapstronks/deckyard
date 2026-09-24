@@ -702,6 +702,7 @@ async function listPresentationRows(ctx) {
       'modified_at as modified',
       'created_at as created',
       'theme',
+      'lang',
       // The owner keeps both fields (key + an address the reader may have);
       // the creator is a display pair below. See storage/display-identity.js.
       'owner_user_id as ownerId',
@@ -749,6 +750,7 @@ async function listPresentationRows(ctx) {
       modified: row.modified,
       created: row.created,
       theme: row.theme,
+      lang: row.lang,
       ownerId: row.ownerId || null,
       ownerEmail: row.ownerEmail,
       createdBy: toDisplayIdentity(

@@ -277,7 +277,11 @@ paths:
       tags:
         - Presentations
       summary: Create a presentation
-      description: Creates a new presentation with the specified properties.
+      description: >-
+        Creates a new presentation with the specified properties. A deck's
+        theme and language are named `theme` and `lang` everywhere; the retired
+        spellings `themeId` and `language` are refused with a 400 whose
+        `details` name the field to use instead.
       requestBody:
         required: true
         content:
@@ -292,15 +296,22 @@ paths:
                 description:
                   type: string
                   description: Presentation description
-                themeId:
+                theme:
                   type: string
-                  description: Theme ID to use
+                  description: >-
+                    Theme id (a built-in theme or one of your organization's
+                    themes, by id or UUID). An unknown theme is refused with a
+                    400. Omitted, the instance default applies.
                   example: 'default'
-                language:
+                lang:
                   type: string
                   enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
-                  description: Primary language
-                  default: en-GB
+                  description: >-
+                    The deck language. Fixed at create: another language is a
+                    version of the deck, added with
+                    `POST /presentations/{id}/translate`. An unsupported value
+                    is refused with a 400. Omitted, the instance default
+                    applies.
                 slides:
                   type: array
                   items:
@@ -371,7 +382,9 @@ paths:
       tags:
         - Presentations
       summary: Update a presentation
-      description: Updates an existing presentation.
+      description: >-
+        Updates an existing presentation. As on create, `themeId` and
+        `language` are refused with a 400 naming `theme` and `lang`.
       parameters:
         - name: id
           in: path
@@ -391,8 +404,20 @@ paths:
                   type: string
                 description:
                   type: string
-                themeId:
+                theme:
                   type: string
+                  description: >-
+                    Switch the deck to this theme. Goes through the same theme
+                    switch as the editor. The deck's current theme, echoed
+                    back from a GET, is a plain save; an unknown theme is
+                    refused with a 400.
+                lang:
+                  type: string
+                  description: >-
+                    Read-only after create. The deck's current `lang`, echoed
+                    back from a GET, is accepted; a different value is refused
+                    with a 400. Add a language version with
+                    `POST /presentations/{id}/translate`.
                 slides:
                   type: array
                   items:
@@ -1479,7 +1504,7 @@ paths:
                         type: integer
                       theme:
                         type: string
-                      language:
+                      lang:
                         type: string
                       createdAt:
                         type: string
@@ -1953,10 +1978,14 @@ components:
             commentable by other members, but not editable. Always false for
             private decks. This is the property the `?viewOnly=true` list filter
             matches on.
-        themeId:
+        theme:
           type: string
-        language:
+          nullable: true
+          description: The deck's theme id.
+        lang:
           type: string
+          nullable: true
+          description: The deck language (BCP 47 tag).
         slideCount:
           type: integer
         tags:

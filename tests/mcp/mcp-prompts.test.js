@@ -111,11 +111,11 @@ describe('MCP Prompt Handlers', () => {
     );
   });
 
-  it('create-presentation includes language when specified', async () => {
+  it('create-presentation includes lang when specified', async () => {
     const server = new McpServer();
     registerPrompts(server);
     const prompt = server.prompts.get('create-presentation');
-    const result = await prompt.handler({ content: 'Test', language: 'nl' });
+    const result = await prompt.handler({ content: 'Test', lang: 'nl' });
 
     assert.ok(result.messages[0].content.text.includes('"nl"'));
   });

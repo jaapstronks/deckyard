@@ -82,6 +82,35 @@ export async function loadDeckTheme(repoRoot, rawThemeId, ctx = null) {
   }
 }
 
+/**
+ * The theme a caller named, or `null` when this instance has no such theme.
+ *
+ * `loadThemeAssets` answers a miss with the default theme, because a render
+ * needs *some* theme to draw with. A write that sets a deck's theme needs the
+ * miss itself: an unknown name must be refused, not stored and then quietly
+ * drawn as the default (B446).
+ *
+ * @param {string} repoRoot
+ * @param {string} rawThemeId - a built-in or custom theme id, or a custom
+ *   theme's UUID
+ * @param {Object} [ctx] - storage scope; a custom theme must belong to its
+ *   organization
+ * @returns {Promise<Object|null>} the loaded theme, or null
+ */
+export async function findTheme(repoRoot, rawThemeId, ctx = null) {
+  const raw = String(rawThemeId || '').trim();
+  if (!raw) return null;
+  if (UUID_RE.test(raw)) {
+    return loadCustomThemeRecord(raw.toLowerCase(), ctx, repoRoot);
+  }
+  const id = resolveThemeId(raw);
+  // resolveThemeId maps a malformed id onto the default; only the documented
+  // `default` alias may land there.
+  if (raw !== 'default' && id !== raw.toLowerCase()) return null;
+  const theme = await loadThemeAssets(repoRoot, id);
+  return theme?.id === id ? theme : null;
+}
+
 export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {
   const rawId = String(rawThemeId || '').trim();
 

@@ -43,6 +43,7 @@ import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../../shared/i18n-utils.js';
+import { refuseRetiredDeckFields } from './deck-fields.js';
 
 // ============================================================
 // VALIDATION HELPERS
@@ -91,6 +92,7 @@ async function handleWizard(ctx) {
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
+  if (body && (await refuseRetiredDeckFields(ctx, body))) return true;
 
   const { raw, vendor, lang, theme } = getAiParams(body);
 
@@ -166,8 +168,8 @@ async function handleWizard(ctx) {
         id: updated.id,
         title: updated.title,
         slideCount: Array.isArray(updated.slides) ? updated.slides.length : 0,
-        theme: updated.themeId || updated.theme,
-        language: updated.language || activeLang,
+        theme: updated.theme,
+        lang: updated.lang || activeLang,
         createdAt: updated.createdAt,
         updatedAt: updated.updatedAt,
       },
