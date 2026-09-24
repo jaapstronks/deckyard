@@ -4,6 +4,50 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.40.0](https://github.com/jaapstronks/deckyard/compare/v1.39.0...v1.40.0) (2026-09-24)
+
+
+### Added
+
+* **auth:** the sign-in card carries the instance's SSO label and logo (B432) ([#1267](https://github.com/jaapstronks/deckyard/issues/1267)) ([0a1c685](https://github.com/jaapstronks/deckyard/commit/0a1c6853238538051f4cb8b16ec39dfa46563600))
+* **email:** the weekly digests are written in the recipient's language (B390) ([#1242](https://github.com/jaapstronks/deckyard/issues/1242)) ([81ddf2b](https://github.com/jaapstronks/deckyard/commit/81ddf2b446fd82f94333dce86bd93fd0a0c20d08))
+* **sandbox:** guests do not share with each other, and the UI says why (B355) ([#1239](https://github.com/jaapstronks/deckyard/issues/1239)) ([cbaa0de](https://github.com/jaapstronks/deckyard/commit/cbaa0de3db8ccc2872af342375e652843e7ef40d))
+
+
+### Fixed
+
+* **api:** every revision 409 names its last writer, built by one helper (B217) ([#1261](https://github.com/jaapstronks/deckyard/issues/1261)) ([60231f1](https://github.com/jaapstronks/deckyard/commit/60231f147e4c83aef1e69fec1b65103246ef5df9))
+* **data-sources:** a failing provider refuses in its own words (B417) ([#1255](https://github.com/jaapstronks/deckyard/issues/1255)) ([eb3fc9a](https://github.com/jaapstronks/deckyard/commit/eb3fc9a6363cf9c1cdf39bfe74aa5d8cbcb0f34d))
+* **digest:** the job reads the Preferences digest setting, and Sunday stays Sunday (B407) ([#1240](https://github.com/jaapstronks/deckyard/issues/1240)) ([442e3e3](https://github.com/jaapstronks/deckyard/commit/442e3e34965f0400769e78258fef28225176d171))
+* **editor:** saving to the slide library follows the type's declaration (B401) ([#1245](https://github.com/jaapstronks/deckyard/issues/1245)) ([cf61dbb](https://github.com/jaapstronks/deckyard/commit/cf61dbb1691765945ad517c3df8e61b4edc945c8))
+* **email:** every mail reads its recipient's language (B400) ([#1241](https://github.com/jaapstronks/deckyard/issues/1241)) ([dc015e2](https://github.com/jaapstronks/deckyard/commit/dc015e20affcac10e043beea80fd7e80059d6f1a))
+* **interactions:** the likert protocol reads its scale from the declaration (B316) ([#1263](https://github.com/jaapstronks/deckyard/issues/1263)) ([dddf378](https://github.com/jaapstronks/deckyard/commit/dddf378169ce18716c3f518b9b18738ca0568fe6))
+* **media:** a refused ImageKit copy is one sentence, never ImageKit's JSON (B412) ([#1251](https://github.com/jaapstronks/deckyard/issues/1251)) ([ffac07b](https://github.com/jaapstronks/deckyard/commit/ffac07b15f4a5e9d45accfbe2b415d16df862031))
+* **media:** an ImageKit sort has one spelling; lower case is a 400 (B273) ([#1260](https://github.com/jaapstronks/deckyard/issues/1260)) ([54664ff](https://github.com/jaapstronks/deckyard/commit/54664ffa7b1c309197fc07ac7fdde41ace499bc3))
+* **media:** the ImageKit browse routes refuse in their own words (B415) ([#1253](https://github.com/jaapstronks/deckyard/issues/1253)) ([5d8dfbf](https://github.com/jaapstronks/deckyard/commit/5d8dfbf00430d9f1758774efa9fc3943dcfbb967))
+* **notion:** the Notion seam refuses in its own words (B416) ([#1254](https://github.com/jaapstronks/deckyard/issues/1254)) ([40e8f93](https://github.com/jaapstronks/deckyard/commit/40e8f934ba6d9930fb413669d83e816ff1ffe748))
+* **organization:** the no-mail invite report names the way in and stays (B433) ([#1266](https://github.com/jaapstronks/deckyard/issues/1266)) ([c81b637](https://github.com/jaapstronks/deckyard/commit/c81b6374977a5abbea763f8d8cccd6c4799dc62e))
+* **questions:** anonymous capabilities is a 401, the gate's answer (B409) ([#1249](https://github.com/jaapstronks/deckyard/issues/1249)) ([b915ca2](https://github.com/jaapstronks/deckyard/commit/b915ca216c9612b9a4df473c5fc01d402895570e))
+* **routes:** every capturing /api row declares its captures (B399, 1/2) ([#1243](https://github.com/jaapstronks/deckyard/issues/1243)) ([56395d0](https://github.com/jaapstronks/deckyard/commit/56395d0a5f3f8dbc329d7e01ed0f2f3f03c7465e))
+* **routes:** every capturing route row declares its captures (B399, 2/2) ([#1244](https://github.com/jaapstronks/deckyard/issues/1244)) ([b3263d4](https://github.com/jaapstronks/deckyard/commit/b3263d4f60d0347af37aa41feb21f00032068b76))
+* **sandbox:** the banner states the TTL from SANDBOX_TTL_HOURS (B356) ([#1237](https://github.com/jaapstronks/deckyard/issues/1237)) ([cf6204e](https://github.com/jaapstronks/deckyard/commit/cf6204e76b1794d3999b3efad2ce73b288dc85b1))
+* **server:** SSE routes clean up through openSseStream's onClose (B404) ([#1248](https://github.com/jaapstronks/deckyard/issues/1248)) ([9603cd9](https://github.com/jaapstronks/deckyard/commit/9603cd99bc4fbf08b40f3f0b066f334d7ee64c8f))
+* **slide-library:** a tag is {id, name}, in the client too (B402) ([#1246](https://github.com/jaapstronks/deckyard/issues/1246)) ([b81f8cb](https://github.com/jaapstronks/deckyard/commit/b81f8cba084c638830645ce7224093f883ad1966))
+* **slide-library:** the card menu reads canEdit, a refusal is a sentence (B411) ([#1250](https://github.com/jaapstronks/deckyard/issues/1250)) ([3b328e5](https://github.com/jaapstronks/deckyard/commit/3b328e5466ac736a138a0d43e4a4c672e08ec093))
+* **slide-types:** deleting a custom type in use refuses with the count (B414) ([#1252](https://github.com/jaapstronks/deckyard/issues/1252)) ([c473c3c](https://github.com/jaapstronks/deckyard/commit/c473c3cb418f721093807d6ada5013d6e0f24ace))
+* **slides:** every route that makes a slide goes through newSlide() (B272) ([#1262](https://github.com/jaapstronks/deckyard/issues/1262)) ([a813392](https://github.com/jaapstronks/deckyard/commit/a8133924a971aa72e4c8225c03dd4d7faa7617d1))
+* **stock-media:** a Giphy/Unsplash 200 in the wrong shape is 502 too (B421) ([#1259](https://github.com/jaapstronks/deckyard/issues/1259)) ([39e92b9](https://github.com/jaapstronks/deckyard/commit/39e92b998caedcc8e25ef2e5ba36690e924b93ae))
+* **stock-media:** a Giphy/Unsplash upstream failure is 502 in its own words (B419) ([#1257](https://github.com/jaapstronks/deckyard/issues/1257)) ([6f7b6c8](https://github.com/jaapstronks/deckyard/commit/6f7b6c8f2ad1a22379a4f8f2590e8cb83b91a8a4))
+* **stock-media:** an unreadable Giphy/Unsplash 200 is 502 too, and the dead not-configured guards are gone (B420) ([#1258](https://github.com/jaapstronks/deckyard/issues/1258)) ([d8fb299](https://github.com/jaapstronks/deckyard/commit/d8fb29973b353af524478cccc15233e4d65980c2))
+* **themes:** the Home theme tile shows the theme's own ground (B431) ([#1265](https://github.com/jaapstronks/deckyard/issues/1265)) ([f6dc6d5](https://github.com/jaapstronks/deckyard/commit/f6dc6d5665539f010318b027ce93be6eafbbc455))
+* **trash:** the trash hint reads only the server's retention window (B405) ([#1264](https://github.com/jaapstronks/deckyard/issues/1264)) ([96c8dda](https://github.com/jaapstronks/deckyard/commit/96c8ddaf44647fba2c9f8d9d5fd43f0b67afd18c))
+* **uploads:** JPEG has one content type, image/jpeg (B403) ([#1247](https://github.com/jaapstronks/deckyard/issues/1247)) ([d8e03aa](https://github.com/jaapstronks/deckyard/commit/d8e03aa24aad4b0f0b02248eafcbd8e4124a516f))
+
+
+### Security
+
+* **tags:** the deck tags routes authorize the deck (B436) ([#1268](https://github.com/jaapstronks/deckyard/issues/1268)) ([ed249ea](https://github.com/jaapstronks/deckyard/commit/ed249ea4e02128bb1d6291c6917f7b722d63d794))
+
 ## [1.39.0](https://github.com/jaapstronks/deckyard/compare/v1.38.2...v1.39.0) (2026-09-23)
 
 
