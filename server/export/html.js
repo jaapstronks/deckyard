@@ -605,7 +605,7 @@ export async function buildStandaloneHtml(
     <a class="skip-link" href="#deck">Skip to slides</a>
     <div class="presenter-shell">
       <header class="presenter-topbar">
-        <h1 class="presenter-title">${title}</h1>
+        <h1 class="presenter-title" title="${title}">${title}</h1>
         <div class="row" style="gap: 10px; align-items:center;">
           ${extraTopbar}
           <div class="presenter-help">←/→ or Space · F fullscreen · Esc</div>

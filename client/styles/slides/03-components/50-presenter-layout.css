@@ -108,6 +108,7 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   padding: 0 16px;
   background: hsl(var(--app-bg-elevated) / 0.92);
   border-bottom: 1px solid hsl(var(--app-border-default));
@@ -116,10 +117,29 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   position: relative;
   z-index: 50;
 }
+/* One row, one rule for how the row gives way (B324). Every control keeps its
+   own width: a flex item that shrinks below its content wraps it instead, which
+   is how the NL/EN language switch stacked its two buttons and fell out of the
+   56px bar. Only the two texts yield, the deck title and the shortcut hint,
+   each truncating with an ellipsis (the full text is on its title attribute).
+   The title and the actions share the squeeze in proportion to their size;
+   inside the actions the hint is the one item that absorbs it. */
 .presenter-actions {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.presenter-actions > * {
+  flex-shrink: 0;
+}
+.presenter-actions > .presenter-help {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .presenter-tools {
@@ -253,8 +273,11 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   font-family: 'IBM Plex Mono', monospace;
 }
 
+/* The shared .sb-segmented wraps its buttons onto a second row so a long
+   option list fits a form column. The presenter's language switch is one
+   control in a one-row bar: it keeps its buttons side by side. */
 .presenter-lang-seg {
-  width: 120px;
+  flex-wrap: nowrap;
 }
 .presenter-toggle {
   display: inline-flex;
@@ -274,6 +297,11 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   accent-color: hsl(var(--app-accent-primary));
 }
 .presenter-title {
+  flex: 1 1 12rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   /* Promoted to the document-level heading in the standalone/published export;
      reset the UA heading margin/weight so it stays visually identical to the
      topbar label it has always been. No-op for the live presenter's div. */
