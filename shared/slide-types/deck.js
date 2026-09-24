@@ -1,4 +1,4 @@
-import { cryptoUuid } from './helpers.js';
+import { cryptoUuid, slideJumpTarget } from './helpers.js';
 import { newSlide } from './presentation.js';
 import { allowedEnumValues } from './field-types.js';
 import {
@@ -364,6 +364,7 @@ export function deckToPresentationParts(
       carriedSlideTypes,
     }),
   );
+  rewriteSlideJumpIds(slidesRaw, slides, slideTypes);
   const baseLang = normalizeLang(lang) || normalizeLang(deck.lang) || null;
   const translations = baseLang
     ? deckTranslations(
@@ -375,6 +376,73 @@ export function deckToPresentationParts(
       )
     : {};
   return { title, theme, slides, translations };
+}
+
+/**
+ * Every imported slide gets a fresh id (`normalizeDeckSlide` / `newSlide`),
+ * so an in-deck jump written as `#slide:<old id>` (an action button, a card
+ * link, a logo-wall link - any `url`-typed field, at slide level or inside an
+ * `items` field's `itemFields`, via the declaration, no key list: B314) would
+ * otherwise point nowhere. Build the old→new map positionally (`slidesRaw`
+ * and `slides` share order and length by construction) and rewrite in place,
+ * mutating `slides` before `deckTranslations` reads it so a translated
+ * version inherits the same, already-correct target. The portable `.deck`
+ * format carries no per-slide `id` (deck.js top-of-file note), so a `.deck`
+ * import contributes nothing to the map and rewrites nothing - correct,
+ * since there is no old id to resolve from. A jump to an id outside this
+ * deck (or with no entry in the map) is left exactly as written.
+ *
+ * @param {Object[]} slidesRaw
+ * @param {Object[]} slides
+ * @param {Object} slideTypes
+ */
+function rewriteSlideJumpIds(slidesRaw, slides, slideTypes) {
+  const idMap = new Map();
+  slidesRaw.forEach((raw, i) => {
+    if (typeof raw?.id === 'string' && raw.id && slides[i]) {
+      idMap.set(raw.id, slides[i].id);
+    }
+  });
+  if (!idMap.size) return;
+
+  for (const slide of slides) {
+    const def = slideTypes?.[slide.type];
+    if (!def || !Array.isArray(def.fields) || !slide.content) continue;
+    for (const field of def.fields) {
+      if (field.type === 'url') {
+        if (field.key in slide.content) {
+          slide.content[field.key] = rewriteSlideJumpValue(
+            slide.content[field.key],
+            idMap,
+          );
+        }
+        continue;
+      }
+      if (field.type === 'items' && Array.isArray(slide.content[field.key])) {
+        const urlKeys = (field.itemFields || [])
+          .filter((f) => f?.type === 'url')
+          .map((f) => f.key);
+        if (!urlKeys.length) continue;
+        for (const item of slide.content[field.key]) {
+          if (!item || typeof item !== 'object') continue;
+          for (const key of urlKeys) {
+            if (key in item)
+              item[key] = rewriteSlideJumpValue(item[key], idMap);
+          }
+        }
+      }
+    }
+  }
+}
+
+/** Rewrite one `url` value's `#slide:<id>` jump via `idMap`; anything else
+ * (a web address, `#N`, an id the map does not carry) is returned unchanged. */
+function rewriteSlideJumpValue(value, idMap) {
+  if (typeof value !== 'string') return value;
+  const jump = slideJumpTarget(value);
+  if (!jump || !('id' in jump)) return value;
+  const newId = idMap.get(jump.id);
+  return newId ? `#slide:${newId}` : value;
 }
 
 /**
