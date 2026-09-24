@@ -20,6 +20,7 @@
  * posts `slides[]` straight to the API.
  */
 
+import { copySlides } from '../slide-authoring/slide-clipboard.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
@@ -52,6 +53,29 @@ export function buildSlidesFromLibraryItems(items) {
     if (Object.keys(contentByLang).length) slide.contentByLang = contentByLang;
     return slide;
   });
+}
+
+/**
+ * Copy one library item onto the slide clipboard, for a later paste in a deck.
+ *
+ * There is one slide clipboard: the `ps:slide-clipboard` buffer the editor's
+ * paste bar and Ctrl/Cmd+V read (slide-authoring/slide-clipboard.js). The
+ * library used to write raw JSON to the OS clipboard instead, which nothing
+ * reads back, so "paste it with Ctrl/Cmd+V" was a promise with no paste behind
+ * it. The item goes in as a slide of the clipboard's own shape; it has no deck
+ * id and no parent, so it pastes at the top level with fresh ids.
+ *
+ * `item.content` is the content to paste: the caller resolves the language
+ * (the use-modal hands over the version the picker shows).
+ * @param {Object} item - A library item ({ slideType, content }).
+ * @returns {boolean} Whether the clipboard was written.
+ */
+export function copyLibraryItemToClipboard(item) {
+  const type = String(item?.slideType || '').trim();
+  if (!type) return false;
+  const content =
+    item?.content && typeof item.content === 'object' ? item.content : {};
+  return copySlides([{ type, content }]);
 }
 
 /**
