@@ -142,23 +142,6 @@ function parseSince(since) {
 }
 
 /**
- * Register all Deckyard tools on an McpServer instance
- *
- * @param {McpServer} server
- * @param {Object} options
- * @param {string} options.defaultOwnerEmail - Default owner email for new presentations (from env/config)
- * @param {function(McpServer, Object)} [options.registerCustom] - Extension seam
- *   for downstream forks: called once after the core tools with
- *   `(server, ctx)`, so a fork registers its own tools from its own file
- *   instead of editing this one. `ctx` is the documented helper surface:
- *   `{ repoRoot, defaultOwnerEmail, getOwner, storageScopeOf, getAppBaseUrl,
- *   presentationUrl }`. `storageScopeOf(context)` is what a storage call takes:
- *   the facade refuses a bare `repoRoot` string, so a fork that reaches storage
- *   goes through this rather than rebuilding the scope itself.
- *   Usually supplied by the `custom/mcp-tools.js` auto-loader
- *   (see ./custom-tools-loader.js); docs in docs/reference/mcp-server.md.
- */
-/**
  * The refusal of a type change `update_slide` has no conversion for (D97),
  * worded for the agent: the pair, what this slide does convert to, and the
  * action that does fit - a new slide of the target type, with the old one
@@ -182,6 +165,23 @@ function refusedTypeChange(err, slideIndex) {
   return refused;
 }
 
+/**
+ * Register all Deckyard tools on an McpServer instance
+ *
+ * @param {McpServer} server
+ * @param {Object} options
+ * @param {string} options.defaultOwnerEmail - Default owner email for new presentations (from env/config)
+ * @param {function(McpServer, Object)} [options.registerCustom] - Extension seam
+ *   for downstream forks: called once after the core tools with
+ *   `(server, ctx)`, so a fork registers its own tools from its own file
+ *   instead of editing this one. `ctx` is the documented helper surface:
+ *   `{ repoRoot, defaultOwnerEmail, getOwner, storageScopeOf, getAppBaseUrl,
+ *   presentationUrl }`. `storageScopeOf(context)` is what a storage call takes:
+ *   the facade refuses a bare `repoRoot` string, so a fork that reaches storage
+ *   goes through this rather than rebuilding the scope itself.
+ *   Usually supplied by the `custom/mcp-tools.js` auto-loader
+ *   (see ./custom-tools-loader.js); docs in docs/reference/mcp-server.md.
+ */
 export function registerTools(
   server,
   { defaultOwnerEmail = null, registerCustom = null } = {},
@@ -835,14 +835,6 @@ export function registerTools(
 
       const slideTypes = await sessionSlideTypes(context);
       let slide = pres.slides[slideIndex];
-      // A type change is a conversion, not a new slide: the same
-      // `convertSlideToType` the editor uses re-seeds the content for the
-      // target type and carries over what maps, and it refuses a pair the
-      // model has no mapping for rather than leaving the old type's content
-      // under a new name. An update is then a patch on that slide — it is not
-      // composed through the factory, which is where a slide is *born*
-      // (defaults, theme seed, instance keys) and must not run again on
-      // something that already exists.
       if (visibility !== undefined) {
         const errors = validateVisibility(visibility);
         if (visibility === null || errors.length > 0) {
@@ -851,6 +843,14 @@ export function registerTools(
           );
         }
       }
+      // A type change is a conversion, not a new slide: the same
+      // `convertSlideToType` the editor uses re-seeds the content for the
+      // target type and carries over what maps, and it refuses a pair the
+      // model has no mapping for rather than leaving the old type's content
+      // under a new name. An update is then a patch on that slide — it is not
+      // composed through the factory, which is where a slide is *born*
+      // (defaults, theme seed, instance keys) and must not run again on
+      // something that already exists.
       if (type && type !== slide.type) {
         try {
           slide = convertSlideToType(slide, type, {
