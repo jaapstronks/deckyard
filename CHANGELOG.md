@@ -4,6 +4,13 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.41.1](https://github.com/jaapstronks/deckyard/compare/v1.41.0...v1.41.1) (2026-09-24)
+
+
+### Fixed
+
+* **library:** Copy in the slide library lands on the slide clipboard ([#1275](https://github.com/jaapstronks/deckyard/issues/1275)) ([4815f22](https://github.com/jaapstronks/deckyard/commit/4815f22dda8a6c4e6f4fb91f706270366da6cdf0))
+
 ## [1.41.0](https://github.com/jaapstronks/deckyard/compare/v1.40.0...v1.41.0) (2026-09-24)
 
 
