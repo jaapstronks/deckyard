@@ -14,30 +14,31 @@
  *   ghosts: affordances shown for optional fields that are currently empty. Each
  *     entry shows a "+ <label>" chip on the overlay and spawns an editable
  *     element at a DOM anchor when clicked.
- *       { field, anchors: [{sel, pos, chip}, ...] }
+ *       { field, anchors: [{sel, pos}, ...] }
  *     `anchors` is an ordered fallback list (first selector found in the DOM
  *     wins), so a ghost can target `.header` when it exists and `.slide-inner`
  *     when the header itself is omitted. `pos` is the DOM insertion position for
- *     the spawned editable ('prepend' | 'append' | 'before' | 'after'); `chip`
- *     is the overlay placement mode ('below-start' | 'below-end' | 'top-start'
- *     | 'bottom-start'). Legacy `{ field, anchor, pos }` still works (and
- *     accepts `chip` too).
+ *     the spawned editable ('prepend' | 'append' | 'before' | 'after'). That
+ *     is the whole declaration: where the chip stands follows from it and from
+ *     the stacking direction of the block the field lands in (B435, D212;
+ *     ghost-placement.js). A chip that would cover a field or another chip
+ *     goes compact. An empty field whose schema says `essential: true` (D211)
+ *     shows its chip without hover, or - when the renderer draws its element
+ *     anyway - an in-box placeholder instead of a chip.
  *   itemGhosts: ghosts for optional per-item subfields the renderer omits when
  *     empty (e.g. a timeline item's description).
- *       { list, field, item, within?, chipAnchor?, pos?, chip? }
+ *       { list, field, item, within?, pos? }
  *     `list` is the primary collection key, `item` the item-element selector
  *     (elements carry data-inline-item-index), `within` an optional inner
- *     element to spawn into. `chipAnchor` is an optional selector inside the
- *     item element to pin the ghost CHIP to (the visible-hint position), for
- *     items whose element is a full-height layout column while the visible card
- *     is transform-positioned within it (timeline) - the chip lands on the card,
- *     not the column. The spawned edit still goes into `within`.
+ *     element the field is inserted into - and so the block whose seam the
+ *     chip stands at (the timeline's visible card, not its full-height column).
  *   cards: repeatable-items affordances (add/remove) driven by the schema's
  *     minItems / maxItems / itemDefaults.
  *       { field, container, itemSelector, removeAnchor?,
  *         removePlacement?, addAnchor?, addPlacement?, addLabelKey?, addLabel?,
  *         removeLabelKey?, removeLabel?, child? }
- *     `removeAnchor` is an
+ *     An empty list whose schema field is `essential` (D211) shows its
+ *     "+ Add" without hover. `removeAnchor` is an
  *     optional selector inside the item element to pin the remove × to, for
  *     items whose element is a full-height layout column while the visible
  *     card is transform-positioned within it (timeline); `removePlacement`
@@ -68,7 +69,7 @@
  *       { field, itemSelector, removeAnchor?, removePlacement?, addPlacement?,
  *         addLabelKey?, addLabel?, removeLabelKey?, removeLabel?, ghosts? }
  *     The parent item element anchors the child's "+" chip. `ghosts` lists
- *     optional child-item subfields (`{ field, pos?, chip? }`) whose element
+ *     optional child-item subfields (`{ field, pos? }`) whose element
  *     the renderer omits when empty - a chip on the child item re-adds them.
  *   formText: field keys whose editing is FULLY covered by the inline
  *     layer (plain text, markdown modal, and items whose subfields are all
@@ -109,10 +110,10 @@
  *     shown when the seam actually supports the conversion for this slide
  *     (canConvertSlideTo), so custom types that override a core name keep
  *     working and unrelated types never see the affordance.
- *       addMedia: { toType, anchors: [{sel, chip}, ...] } - a "+ Add image"
- *         chip (same look as ghosts) on a type without an image side.
- *         Clicking converts to `toType` and opens the media popover on the
- *         fresh placeholder. `anchors` works like the ghost anchor list.
+ *       addMedia: { toType, anchors: [{sel, pos}, ...] } - a "+ Add image"
+ *         chip (a ghost chip) on a type without an image side, standing at
+ *         the seam `anchors` names exactly like a ghost's. Clicking converts
+ *         to `toType` and opens the media popover on the fresh placeholder.
  *       removeMedia: { toType, selector } - a hover-revealed × on the EMPTY
  *         image placeholder (`selector`). Clicking converts to `toType`,
  *         removing the reserved image area. A filled image first goes through

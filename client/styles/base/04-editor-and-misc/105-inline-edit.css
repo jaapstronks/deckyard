@@ -243,6 +243,65 @@
   opacity: 1;
 }
 
+/* A ghost chip marks an insertion point and never covers content (B435,
+   ghost-placement.js), so it needs no opaque plane: an outline and its label
+   until the chip itself is hovered, which fills it (the :hover rule below). A
+   light halo keeps the label legible on a dark slide. */
+.ie-overlay .ie-ghost {
+  background: transparent;
+  box-shadow: none;
+  text-shadow:
+    0 0 3px hsl(0 0% 100% / 0.9),
+    0 0 1px hsl(0 0% 100% / 0.9);
+}
+
+/* The compact variant for a seam without room: a round "+" in the margin at
+   the seam. The label is the button's name (aria-label) and appears beside it
+   on hover and focus, outside the chip's box so the placement stays valid. */
+.ie-overlay .ie-ghost.is-compact {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  justify-content: center;
+  gap: 0;
+}
+.ie-overlay .ie-ghost.is-compact .ie-ghost-label {
+  position: absolute;
+  left: calc(100% + var(--ps-space-1-5));
+  top: 50%;
+  transform: translateY(-50%);
+  padding: var(--ps-space-0-5) var(--ps-space-2);
+  border-radius: 999px;
+  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  box-shadow: 0 2px 6px hsl(0 0% 0% / 0.12);
+  text-shadow: none;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+.ie-overlay .ie-ghost.is-compact:hover .ie-ghost-label,
+.ie-overlay .ie-ghost.is-compact:focus-visible .ie-ghost-label {
+  opacity: 1;
+}
+
+/* `essential` (D211): an empty field the slide is not complete without asks
+   for itself without hover - its chip, the empty frame's "+ Add image", or
+   the empty list's "+ Add". */
+.ie-overlay .ie-ghost.is-essential,
+.ie-overlay .ie-card-add.is-essential,
+.ie-overlay .ie-media-hint.is-essential {
+  opacity: 1;
+}
+
+/* The in-box placeholder of an empty essential field whose element the
+   renderer draws anyway ("Click to add title"). It lives on the slide element,
+   so it takes the field's own font; the editor canvas only. */
+.thumb.is-inline-edit .ie-placeholder:empty::before {
+  content: attr(data-ie-placeholder);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
 /* Per-item reveal: an item-scoped chip (a card's ×/grip, a per-item ghost)
    shows only when its collection item is the active hovered/focused one - the
    overlay controller toggles .is-item-active - plus when the chip itself is
@@ -272,7 +331,8 @@
 /* The "Add image" chip is centred on top of an empty placeholder, which
    already shows its own icon + label — so the two stacked on each other on
    hover. The chip says the same thing and is the actual affordance, so the
-   placeholder's inner content steps aside while it is visible. Fades with the
+   placeholder's inner content steps aside while it is visible - on hover, or
+   always for an essential frame, whose chip is always there. Fades with the
    chip, and only for placeholders that are still empty. */
 .thumb.is-inline-edit .image-placeholder.is-empty .image-placeholder-inner {
   transition: opacity 0.12s ease;
@@ -280,6 +340,9 @@
 
 .thumb.is-inline-edit:hover
   .image-placeholder.is-empty
+  .image-placeholder-inner,
+.thumb.is-inline-edit
+  .image-placeholder.is-empty.ie-essential
   .image-placeholder-inner {
   opacity: 0;
 }

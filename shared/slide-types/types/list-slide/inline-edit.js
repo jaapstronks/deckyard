@@ -14,9 +14,7 @@ export const inlineEdit = {
   ghosts: [
     {
       field: 'subheading',
-      anchor: '.heading',
-      pos: 'after',
-      chip: 'below-end',
+      anchors: [{ sel: '.heading', pos: 'after' }],
     },
   ],
   // "+ Text" chip on any item that has a title but no single-line text yet.

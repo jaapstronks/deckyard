@@ -18,8 +18,8 @@ export const inlineEdit = {
     {
       field: 'title',
       anchors: [
-        { sel: '.img-heading', pos: 'prepend', chip: 'top-start' },
-        { sel: '.slide-inner', pos: 'prepend', chip: 'top-start' },
+        { sel: '.img-heading', pos: 'prepend' },
+        { sel: '.slide-inner', pos: 'prepend' },
       ],
     },
     {
@@ -27,16 +27,16 @@ export const inlineEdit = {
       anchors: [
         { sel: '.img-title', pos: 'after' },
         { sel: '.img-heading', pos: 'append' },
-        { sel: '.slide-inner', pos: 'prepend', chip: 'top-start' },
+        { sel: '.slide-inner', pos: 'prepend' },
       ],
     },
     {
       field: 'caption',
-      anchors: [{ sel: '.frame', pos: 'append', chip: 'bottom-start' }],
+      anchors: [{ sel: '.frame', pos: 'append' }],
     },
     {
       field: 'bottomSubheading',
-      anchors: [{ sel: '.slide-inner', pos: 'append', chip: 'bottom-start' }],
+      anchors: [{ sel: '.slide-inner', pos: 'append' }],
     },
   ],
   // Flat single image: clicking the frame sets image + alt in-slide. The

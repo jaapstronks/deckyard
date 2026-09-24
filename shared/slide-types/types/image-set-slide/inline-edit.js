@@ -13,7 +13,7 @@ import { resolveImageSetCell, IMAGE_SET_IMAGE_DEFAULTS } from './images.js';
 
 /** @type {Object} InlineDescriptor for image-set-slide. */
 export const inlineEdit = {
-  ghosts: [{ field: 'caption', anchor: '.frame', pos: 'append' }],
+  ghosts: [{ field: 'caption', anchors: [{ sel: '.frame', pos: 'append' }] }],
   // Every cell (filled <img> or empty placeholder) carries
   // data-inline-photo="<idx>"; clicking mutates images[idx] (src + alt) in
   // place. Per-image fit/focus and reordering stay in the images section.

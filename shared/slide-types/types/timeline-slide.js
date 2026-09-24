@@ -88,6 +88,8 @@ export default {
       // to an <ol> in the reader/reflow view (semantic-projection.js).
       ordered: true,
       required: true,
+      // A timeline without milestones is not a timeline (D211).
+      essential: true,
       minItems: 2,
       maxItems: 10,
       itemDefaults: {

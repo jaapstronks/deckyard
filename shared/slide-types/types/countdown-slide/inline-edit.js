@@ -14,7 +14,7 @@ export const inlineEdit = {
   ghosts: [
     {
       field: 'title',
-      anchors: [{ sel: '.slide-inner', pos: 'prepend', chip: 'top-start' }],
+      anchors: [{ sel: '.slide-inner', pos: 'prepend' }],
     },
   ],
   formText: ['title'],

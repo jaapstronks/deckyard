@@ -460,6 +460,7 @@ function isPlainObject(v) {
  * @param {{errors: string[], warnings: string[]}} out
  */
 function checkInline(inline, { who, known, itemsKeys }, out) {
+  checkRetiredInlineKeys(inline, `${who}.inline`, out.warnings);
   if (inline.formText !== undefined) {
     if (!Array.isArray(inline.formText)) {
       out.errors.push(
@@ -512,6 +513,45 @@ function checkInline(inline, { who, known, itemsKeys }, out) {
       `${who}: \`inline.cards.child.field\` ${JSON.stringify(child.field)} is ` +
         `not an item field of \`${parent}\``,
     );
+  }
+}
+
+/**
+ * Ghost placement keys retired by B435 (D212). Where a ghost chip stands
+ * follows from the insertion `pos` and the block's layout, so a
+ * descriptor that still names a place is naming a second answer to a question
+ * the editor no longer asks. Warnings, not errors: the chip still works from
+ * `pos`, and skipping the whole type over a dead key would cost a fork its
+ * slides. The one that does lose something is the single `anchor`, whose
+ * ghost has no `anchors` list to stand on and shows no chip until it moves.
+ */
+const RETIRED_INLINE_KEYS = Object.freeze({
+  chip: 'placement follows `pos`; drop it',
+  chipAnchor: 'use `within` for the block the field is inserted into',
+  anchor: 'use `anchors: [{ sel, pos }]` - this ghost shows no chip until then',
+});
+
+/**
+ * Walk an `inline` descriptor for retired placement keys.
+ * @param {unknown} node
+ * @param {string} path - dotted path for the message
+ * @param {string[]} warnings
+ */
+function checkRetiredInlineKeys(node, path, warnings) {
+  if (Array.isArray(node)) {
+    node.forEach((v, i) =>
+      checkRetiredInlineKeys(v, `${path}[${i}]`, warnings),
+    );
+    return;
+  }
+  if (!isPlainObject(node)) return;
+  for (const [key, value] of Object.entries(node)) {
+    if (Object.hasOwn(RETIRED_INLINE_KEYS, key)) {
+      warnings.push(
+        `${path}.${key} is retired (B435): ${RETIRED_INLINE_KEYS[key]}`,
+      );
+    }
+    checkRetiredInlineKeys(value, `${path}.${key}`, warnings);
   }
 }
 

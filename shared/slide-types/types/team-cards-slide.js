@@ -118,6 +118,8 @@ export default {
       label: 'Members',
       type: 'items',
       required: false,
+      // The first block is what the slide is; further ones are optional (D211).
+      essential: true,
       minItems: 0,
       maxItems: MAX_CARDS,
       collapsible: true, // item-rich: per-block collapse in the editor

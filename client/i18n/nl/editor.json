@@ -466,6 +466,7 @@
   "editor.inline.media.dropInvalid": "Dat is geen afbeeldingsbestand.",
   "editor.inline.media.linkedin": "LinkedIn-URL (optioneel)",
   "editor.inline.media.removeImageArea": "Beeldruimte verwijderen (wordt een tekstslide)",
+  "editor.inline.placeholder": "Klik om {label} toe te voegen",
   "editor.inline.removeAnswer": "Antwoord verwijderen",
   "editor.inline.removeBlock": "Blok verwijderen",
   "editor.inline.removeCard": "Kaart verwijderen",

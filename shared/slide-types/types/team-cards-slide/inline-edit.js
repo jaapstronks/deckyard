@@ -18,9 +18,7 @@ export const inlineEdit = {
     ...HEADER_GHOSTS,
     {
       field: 'subheading2',
-      anchors: [
-        { sel: '.team-cards-group-right', pos: 'prepend', chip: 'top-start' },
-      ],
+      anchors: [{ sel: '.team-cards-group-right', pos: 'prepend' }],
     },
   ],
   // Dual-model (members[] or legacy card{n}*): canonicalize to members[] on
@@ -32,27 +30,22 @@ export const inlineEdit = {
       field: 'name',
       item: '.team-card',
       pos: 'append',
-      chip: 'top-start',
     },
-    // Caption ghost sits directly under the title/text block (not over the
-    // card bottom, which would land on the title text and the image outline).
+    // Caption and description are inserted into the text block, so their
+    // chips stand at its seam, not over the photo.
     {
       list: 'members',
       field: 'byline',
       item: '.team-card',
-      chipAnchor: '.team-card-text',
+      within: '.team-card-text',
       pos: 'append',
-      chip: 'below-start',
     },
-    // The description is optional; its chip offers it below the text block
-    // once the block has one to anchor to.
     {
       list: 'members',
       field: 'body',
       item: '.team-card',
-      chipAnchor: '.team-card-text',
+      within: '.team-card-text',
       pos: 'append',
-      chip: 'below-end',
     },
   ],
   // ensureMembers guarantees members[] in edit mode, so no skipWhenEmpty

@@ -21,7 +21,6 @@ export const inlineEdit = {
       item: '.funnel-stage',
       within: '.stage-content',
       pos: 'append',
-      chip: 'top-start',
     },
     { list: 'items', field: 'text', item: '.funnel-stage', pos: 'append' },
   ],

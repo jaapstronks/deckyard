@@ -17,21 +17,21 @@ export const inlineEdit = {
       field: 'contactName',
       anchors: [
         { sel: '.end-contact', pos: 'prepend' },
-        { sel: '.slide-inner', pos: 'append', chip: 'bottom-start' },
+        { sel: '.slide-inner', pos: 'append' },
       ],
     },
     {
       field: 'contactEmail',
       anchors: [
         { sel: '.end-contact', pos: 'append' },
-        { sel: '.slide-inner', pos: 'append', chip: 'bottom-start' },
+        { sel: '.slide-inner', pos: 'append' },
       ],
     },
     {
       field: 'contactPhone',
       anchors: [
         { sel: '.end-contact', pos: 'append' },
-        { sel: '.slide-inner', pos: 'append', chip: 'bottom-start' },
+        { sel: '.slide-inner', pos: 'append' },
       ],
     },
   ],

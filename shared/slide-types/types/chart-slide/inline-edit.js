@@ -23,7 +23,7 @@ export const inlineEdit = {
     },
     {
       field: 'bottomSubheading',
-      anchors: [{ sel: '.slide-inner', pos: 'append', chip: 'bottom-start' }],
+      anchors: [{ sel: '.slide-inner', pos: 'append' }],
     },
   ],
   // 'data' stays: the form's chart-data editor has type-aware extras.

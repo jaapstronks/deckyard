@@ -14,11 +14,11 @@ export const inlineEdit = {
   ghosts: [
     {
       field: 'subheading',
-      anchors: [{ sel: '.title', pos: 'after', chip: 'below-start' }],
+      anchors: [{ sel: '.title', pos: 'after' }],
     },
     {
       field: 'meta',
-      anchors: [{ sel: '.tsu-content', pos: 'append', chip: 'bottom-start' }],
+      anchors: [{ sel: '.tsu-content', pos: 'append' }],
     },
   ],
   formText: ['title', 'subheading', 'meta'],
