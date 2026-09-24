@@ -14,7 +14,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
+import {
+  SLIDE_TYPES,
+  CORE_SLIDE_TYPE_DEFS,
+} from '../shared/slide-types/registry.js';
 import {
   TYPE_ID_PATTERN,
   formatCanonicalId,
@@ -26,6 +29,7 @@ import {
   resolveAgentSlideTypes,
 } from '../server/utils/ai/slide-catalog/agent-catalog.js';
 import { getCoreSlideCatalog } from '../server/utils/ai/slide-catalog/definitions.js';
+import { ESSENTIAL } from './fixtures/essential-fields.js';
 
 test('every registered type is offered, derived, or explicitly opted out', () => {
   const resolved = resolveAgentSlideTypes({});
@@ -184,6 +188,53 @@ test('the opt-out rules reach into item fields too', () => {
   ]);
 
   assert.deepEqual(Object.keys(schema.items.itemSchema), ['label']);
+});
+
+test('essential travels beside required, in item fields too (D211)', () => {
+  const schema = deriveAgentSchema([
+    { key: 'image', type: 'image', essential: true },
+    { key: 'title', type: 'string', required: true, essential: true },
+    { key: 'note', type: 'string', essential: false },
+    {
+      key: 'items',
+      type: 'items',
+      itemFields: [{ key: 'label', type: 'string', essential: true }],
+    },
+  ]);
+
+  assert.equal(schema.image.essential, true);
+  assert.ok(!('required' in schema.image), 'essential is not required');
+  assert.equal(schema.title.required, true);
+  assert.equal(schema.title.essential, true);
+  assert.ok(!('essential' in schema.note), 'false is omitted, like required');
+  assert.equal(schema.items.itemSchema.label.essential, true);
+});
+
+test('the agent catalog marks exactly the audited core fields essential', () => {
+  // Fork-stable: the core definitions, not a checkout's overrides. A type
+  // withheld from agents (custom-html-slide) has no catalog entry to carry
+  // its row.
+  const derived = [];
+  const expected = [];
+  for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
+    if (isAgentOptOut(def)) continue;
+    for (const [key, entry] of Object.entries(deriveAgentSchema(def.fields))) {
+      if (entry.essential === true) derived.push(`${name}.${key}`);
+      for (const [item, sub] of Object.entries(entry.itemSchema || {})) {
+        if (sub.essential === true) derived.push(`${name}.${key}.${item}`);
+      }
+    }
+    for (const row of Object.keys(ESSENTIAL)) {
+      if (row.startsWith(`${name}.`)) expected.push(row);
+    }
+  }
+  assert.deepEqual(derived.sort(), expected.sort());
+
+  // And the resolved catalog get_slide_types serves carries it: D211's own
+  // example, essential without being required.
+  const image = resolveAgentSlideTypes({})['image-slide'].schema.image;
+  assert.equal(image.essential, true);
+  assert.ok(!('required' in image));
 });
 
 test('org disabled types are filtered out for agents too', () => {

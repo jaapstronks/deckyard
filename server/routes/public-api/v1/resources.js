@@ -135,6 +135,8 @@ async function handleSlideTypeSchema(ctx, slideType) {
       label: field.label || field.key,
       type: field.type,
       required: field.required === true,
+      // Beside `required`, not a second meaning of it (D211).
+      essential: field.essential === true,
     };
 
     // Add optional metadata

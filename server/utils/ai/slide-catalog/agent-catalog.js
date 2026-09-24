@@ -141,6 +141,10 @@ export function deriveAgentSchema(fields) {
 
     const entry = { type: FIELD_TYPE_TO_SCHEMA_TYPE[field.type] || 'string' };
     if (field.required === true) entry.required = true;
+    // `essential` is not a second `required` (D211): it says what an empty
+    // field shows in the editor, which is also what an agent should fill for
+    // the slide not to look unfinished. On a list it means the first entry.
+    if (field.essential === true) entry.essential = true;
     if (typeof field.maxLength === 'number') entry.maxLength = field.maxLength;
     if (typeof field.min === 'number') entry.min = field.min;
     if (typeof field.max === 'number') entry.max = field.max;

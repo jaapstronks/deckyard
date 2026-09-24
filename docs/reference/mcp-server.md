@@ -253,6 +253,19 @@ contributes prose only. Individual fields opt out with `ai: false` (or
 `hidden` / `deprecated`, which legacy mirror fields already carry), and a
 field's `helpText` travels along as the schema entry's `description`.
 
+A schema entry can carry `essential: true` (D211). It is a separate property
+from `required`, not a second meaning of it. `required` decides whether
+publishing without a value is refused; `essential` decides whether an empty
+field is always visible in edit mode as "something goes here" (without hover)
+or only appears on hover. The two sometimes coincide (the title of a
+`content-slide` is both) and sometimes not (the `image` of an `image-slide` is
+`required: false` - an image-slide without an image may exist - but it is
+`essential`: an empty image frame looks unfinished, not like a deliberate
+omission). On a list field it means the first entry; later entries are always
+optional. Strict validation ignores it; for an agent it names what a slide of
+that type needs to not look unfinished. The per-field decisions for the core
+types are in [`essential-fields.md`](essential-fields.md).
+
 `ai: false` is the deliberate opt-out for a live type — an app-managed slide, a
 back-compat alias, a capability-gated escape hatch. It is the same `ai` key that
 carries the catalog entry on a custom file-based type, so one field says either

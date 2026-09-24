@@ -1240,6 +1240,24 @@ paths:
                           type: string
                         required:
                           type: boolean
+                          description: >-
+                            Saving or publishing is refused while the field
+                            has no value.
+                        essential:
+                          type: boolean
+                          description: >-
+                            A separate property from `required`, not a second
+                            meaning of it. `required` decides whether publishing
+                            without a value is refused; `essential` decides
+                            whether an empty field is always visible in edit
+                            mode as "something goes here" (without hover) or
+                            only appears on hover. The two sometimes coincide
+                            (the title of a content-slide is both) and sometimes
+                            not (the image of an image-slide is not required,
+                            since an image-slide without an image may exist, but
+                            it is essential: an empty image frame looks
+                            unfinished, not like a deliberate omission). On a list field it means the first
+                            entry; later entries are always optional.
                         maxLength:
                           type: integer
                         options:
