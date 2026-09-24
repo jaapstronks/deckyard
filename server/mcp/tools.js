@@ -57,7 +57,12 @@ import {
   deckToPresentationParts,
   newSlide,
   presentationToDeck,
+  UnsupportedConversionError,
 } from '../../shared/slide-types.js';
+import {
+  VISIBILITY_PRESETS,
+  validateVisibility,
+} from '../../shared/slide-visibility.js';
 import { generateDeckV2 } from '../utils/ai/index.js';
 import {
   validateAndFixRefinedSlides,
@@ -134,6 +139,30 @@ function parseSince(since) {
     );
   }
   return parsed.toISOString();
+}
+
+/**
+ * The refusal of a type change `update_slide` has no conversion for (D97),
+ * worded for the agent: the pair, what this slide does convert to, and the
+ * action that does fit - a new slide of the target type, with the old one
+ * removed or parked as a draft (D117). Still a refusal: nothing is stored.
+ *
+ * @param {import('../../shared/slide-types/convert.js').UnsupportedConversionError} err
+ * @param {number} slideIndex
+ * @returns {Error}
+ */
+function refusedTypeChange(err, slideIndex) {
+  const { from, to, convertible } = err.details;
+  const converts = convertible.length
+    ? `A ${from} converts only to: ${convertible.join(', ')}.`
+    : `A ${from} converts to no other type.`;
+  const refused = new Error(
+    `Cannot change slide ${slideIndex} from ${from} to ${to}: no conversion is declared for that pair, so its content would not carry over. ${converts} ` +
+      `To replace it, add a ${to} slide with add_slide, then either remove this one with remove_slide or keep it as a draft with update_slide ` +
+      `(visibility: ${JSON.stringify(VISIBILITY_PRESETS.draft)}), which hides it from the presentation, exports and published pages.`,
+  );
+  refused.details = err.details;
+  return refused;
 }
 
 /**
@@ -782,12 +811,19 @@ export function registerTools(
         type: {
           type: 'string',
           description:
-            'Optional: convert the slide to another type. Only the pairs the editor converts between are supported (content ↔ image-text, image → image-text, list → content, title ↔ chapter-title); other pairs are refused.',
+            'Optional: convert the slide to another type. Only the pairs the editor converts between are supported (content ↔ image-text, image → image-text, list → content, title ↔ chapter-title); other pairs are refused. Replacing a slide by one of another type is add_slide plus remove_slide, or add_slide plus parking this one as a draft through `visibility`.',
+        },
+        visibility: {
+          type: 'object',
+          description: `Optional: where the slide appears, replacing its current flags (hideInPresentation, hideInExport, hideInPublished, hideFromViewers; all booleans, missing = false). A draft is ${JSON.stringify(VISIBILITY_PRESETS.draft)}.`,
         },
       },
       required: ['presentationId', 'slideIndex', 'content'],
     },
-    async ({ presentationId, slideIndex, content, type }, context) => {
+    async (
+      { presentationId, slideIndex, content, type, visibility },
+      context,
+    ) => {
       const pres = await getCheckedPresentation(presentationId, context, {
         access: 'write',
       });
@@ -799,6 +835,14 @@ export function registerTools(
 
       const slideTypes = await sessionSlideTypes(context);
       let slide = pres.slides[slideIndex];
+      if (visibility !== undefined) {
+        const errors = validateVisibility(visibility);
+        if (visibility === null || errors.length > 0) {
+          throw new Error(
+            `Invalid visibility: ${errors.join('; ') || 'must be an object'}`,
+          );
+        }
+      }
       // A type change is a conversion, not a new slide: the same
       // `convertSlideToType` the editor uses re-seeds the content for the
       // target type and carries over what maps, and it refuses a pair the
@@ -808,14 +852,22 @@ export function registerTools(
       // (defaults, theme seed, instance keys) and must not run again on
       // something that already exists.
       if (type && type !== slide.type) {
-        slide = convertSlideToType(slide, type, {
-          slideTypes,
-          lang: pres?.lang,
-          theme: await loadDeckTheme(repoRoot, pres?.theme),
-        });
+        try {
+          slide = convertSlideToType(slide, type, {
+            slideTypes,
+            lang: pres?.lang,
+            theme: await loadDeckTheme(repoRoot, pres?.theme),
+          });
+        } catch (err) {
+          if (err instanceof UnsupportedConversionError) {
+            throw refusedTypeChange(err, slideIndex);
+          }
+          throw err;
+        }
         pres.slides[slideIndex] = slide;
       }
       slide.content = { ...slide.content, ...content };
+      if (visibility !== undefined) slide.visibility = { ...visibility };
 
       // Validate the updated slide
       const [validated] = validateAndFixRefinedSlides(
@@ -841,6 +893,7 @@ export function registerTools(
         slideIndex,
         type: slide.type,
         content: slide.content,
+        visibility: slide.visibility || {},
       };
     },
     { permission: 'write' },

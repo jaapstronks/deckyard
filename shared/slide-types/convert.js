@@ -273,6 +273,25 @@ export function getConversionLossyKeys(
   return extras;
 }
 
+/**
+ * A type change the model declares no conversion for (D97). It is a refusal,
+ * not a failure: replacing a slide by one of another type is a different
+ * action, which the caller names in its own vocabulary (D117). `details`
+ * carries the pair and the types this slide does convert to.
+ */
+export class UnsupportedConversionError extends Error {
+  /**
+   * @param {string} from - The slide's current type
+   * @param {string} to - The refused target type
+   * @param {string[]} convertible - The types this slide converts to
+   */
+  constructor(from, to, convertible) {
+    super(`convertSlideToType: unsupported conversion ${from} -> ${to}`);
+    this.name = 'UnsupportedConversionError';
+    this.details = { from, to, convertible: [...convertible] };
+  }
+}
+
 export function convertSlideToType(
   slide,
   toType,
@@ -287,11 +306,9 @@ export function convertSlideToType(
   if (!slideTypes?.[targetType])
     throw new Error(`convertSlideToType: unknown toType: ${targetType}`);
 
-  const allowed = new Set(getConvertibleSlideTypes(slide, { slideTypes }));
-  if (!allowed.has(targetType)) {
-    throw new Error(
-      `convertSlideToType: unsupported conversion ${fromType} -> ${targetType}`,
-    );
+  const convertible = getConvertibleSlideTypes(slide, { slideTypes });
+  if (!convertible.includes(targetType)) {
+    throw new UnsupportedConversionError(fromType, targetType, convertible);
   }
 
   const next = {
