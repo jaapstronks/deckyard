@@ -39,7 +39,7 @@ test('an action-item url jump (items -> itemFields) follows the slide to its new
   assert.equal(
     slides[0].content.actions[0].url,
     `#slide:${slides[1].id}`,
-    'the action url now points at slide two\'s new id',
+    "the action url now points at slide two's new id",
   );
 });
 
@@ -64,7 +64,7 @@ test('a slide-level url jump (end-slide.contactUrl) follows the slide to its new
   assert.equal(
     slides[1].content.contactUrl,
     `#slide:${slides[0].id}`,
-    'the contactUrl jump now points at slide one\'s new id',
+    "the contactUrl jump now points at slide one's new id",
   );
 });
 

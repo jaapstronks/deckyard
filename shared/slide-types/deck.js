@@ -426,7 +426,8 @@ function rewriteSlideJumpIds(slidesRaw, slides, slideTypes) {
         for (const item of slide.content[field.key]) {
           if (!item || typeof item !== 'object') continue;
           for (const key of urlKeys) {
-            if (key in item) item[key] = rewriteSlideJumpValue(item[key], idMap);
+            if (key in item)
+              item[key] = rewriteSlideJumpValue(item[key], idMap);
           }
         }
       }
