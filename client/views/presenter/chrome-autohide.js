@@ -13,6 +13,11 @@
  * controls: focus moving into a bar (Tab) reveals it, and a bar stays up while
  * the pointer rests on it or focus is inside it.
  *
+ * Presenter controls that live inside a slide (the countdown's Start/Pause/
+ * Reset row) declare `data-presenter-chrome` and count as chrome: they show
+ * and hide with the bars, a pointer resting on them holds them up, and Tab
+ * into them reveals them. One signal, no second idle timer (B279).
+ *
  * Fullscreen is whatever `html.is-fullscreen` says (set by fullscreen.js), so
  * the published page and the presenter share one signal. The CSS keys off
  * `.presenter-shell.is-chrome-active`; this controller only toggles that class
@@ -27,7 +32,8 @@
 export function createChromeAutoHide({ shell, idleMs = 2600 } = {}) {
   if (!shell) return { detach() {} };
 
-  const CHROME = '.presenter-topbar, .presenter-progress';
+  const CHROME =
+    '.presenter-topbar, .presenter-progress, [data-presenter-chrome]';
   const root = document.documentElement;
   const isFullscreen = () => root.classList.contains('is-fullscreen');
 

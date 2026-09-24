@@ -135,6 +135,13 @@
   gap: var(--slide-space-4);
 }
 
+/* Sized on the slide's type scale, not the app's 13px button: the row is
+   read from across a room, and it scales with the slide in every frame. */
+.slide-countdown .cd-btn {
+  font-size: var(--slide-font-size-body);
+  padding: 0.6em 1.4em;
+}
+
 .slide-countdown .cd-controls[hidden] {
   display: none;
 }

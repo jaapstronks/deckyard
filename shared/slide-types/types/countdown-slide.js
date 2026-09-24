@@ -205,7 +205,7 @@ export default {
             )}</time>
             ${zeroEl}
           </div>
-          <div class="cd-controls" data-countdown-controls="1" hidden>
+          <div class="cd-controls" data-countdown-controls="1" data-presenter-chrome hidden>
             <button type="button" class="btn btn-primary cd-btn" data-countdown-action="start">Start</button>
             <button type="button" class="btn btn-secondary cd-btn" data-countdown-action="pause" hidden>Pause</button>
             <button type="button" class="btn btn-secondary cd-btn" data-countdown-action="reset">Reset</button>
