@@ -12,7 +12,72 @@ import {
   DEFAULT_HEADING_FONT,
   DEFAULT_BODY_FONT,
 } from '../../shared/theme-fonts.js';
-import { validateThemeConfig } from '../../shared/theme-config-schema.js';
+import {
+  checkThemeConfig,
+  THEME_FIELD_PROBLEMS,
+  validateThemeColors,
+  validateThemeConfig,
+} from '../../shared/theme-config-schema.js';
+
+/**
+ * The fields a theme record takes on create and update: exactly what
+ * `portableThemeRecord` carries, plus nothing. An unknown field is refused by
+ * name (D209) — a key the record does not know would be lost on save.
+ */
+const RECORD_FIELDS = [
+  'label',
+  'slug',
+  'logoUrl',
+  'logoSmallUrl',
+  'colors',
+  'fonts',
+  'config',
+];
+const FONT_FIELDS = ['heading', 'body', 'headingFamilyId', 'bodyFamilyId'];
+
+/**
+ * A refused theme field carries three things. `field` is the record-level
+ * input (`body`, `colors`, `fonts`, `config`), a literal token like every
+ * storage field; `fieldProblem.code` says whether the field is unknown or its
+ * value invalid (`details.reason` on the wire, {@link THEME_FIELD_PROBLEMS});
+ * and `where` is the dotted path the route names in the sentence
+ * (`config.logos.logoAlt`), which stays server-side.
+ */
+
+/**
+ * The refusal for the first unknown field in a create/update body, or null
+ * (see the note above on its shape).
+ * @param {Object} data
+ * @returns {Object|null}
+ */
+function unknownRecordField(data) {
+  if (!data || typeof data !== 'object') return null;
+  const fieldProblem = { code: THEME_FIELD_PROBLEMS.unknown };
+  const top = Object.keys(data).find((k) => !RECORD_FIELDS.includes(k));
+  if (top) {
+    return {
+      ok: false,
+      reason: 'invalid',
+      field: 'body',
+      fieldProblem,
+      where: top,
+    };
+  }
+  const fonts = data.fonts;
+  if (fonts && typeof fonts === 'object' && !Array.isArray(fonts)) {
+    const extra = Object.keys(fonts).find((k) => !FONT_FIELDS.includes(k));
+    if (extra) {
+      return {
+        ok: false,
+        reason: 'invalid',
+        field: 'fonts',
+        fieldProblem,
+        where: `fonts.${extra}`,
+      };
+    }
+  }
+  return null;
+}
 
 /**
  * Verify that font familyIds referenced in fonts config exist in the org.
@@ -143,6 +208,9 @@ export async function getThemeRecord(scope, themeId) {
  */
 export async function createTheme(scope, data) {
   toStorageContext(scope, 'createTheme');
+  const unknown = unknownRecordField(data);
+  if (unknown) return unknown;
+
   const label = String(data?.label || '').trim();
   if (!label || label.length > 255) {
     return { ok: false, reason: 'invalid', field: 'label' };
@@ -154,11 +222,17 @@ export async function createTheme(scope, data) {
     return { ok: false, reason: 'invalid', field: 'slug' };
   }
 
-  // Validate colors
-  const colors = validateColors(data?.colors);
-  if (!colors) {
-    return { ok: false, reason: 'invalid', field: 'colors' };
+  const checkedColors = validateThemeColors(data?.colors);
+  if (!checkedColors.ok) {
+    return {
+      ok: false,
+      reason: 'invalid',
+      field: 'colors',
+      fieldProblem: { code: checkedColors.code },
+      where: checkedColors.path,
+    };
   }
+  const { colors } = checkedColors;
 
   // Validate fonts
   const fonts = validateFonts(data?.fonts);
@@ -166,9 +240,17 @@ export async function createTheme(scope, data) {
     return { ok: false, reason: 'invalid', field: 'fonts' };
   }
 
-  // Total: junk yields `{}` rather than an error, so a malformed config can
-  // never block creating a theme that is otherwise valid.
-  const config = validateThemeConfig(data?.config);
+  const checkedConfig = checkThemeConfig(data?.config);
+  if (!checkedConfig.ok) {
+    return {
+      ok: false,
+      reason: 'invalid',
+      field: 'config',
+      fieldProblem: { code: checkedConfig.code },
+      where: checkedConfig.path,
+    };
+  }
+  const { config } = checkedConfig;
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
@@ -232,6 +314,8 @@ export async function updateTheme(scope, themeId, updates) {
   if (!themeId || typeof themeId !== 'string') {
     return { ok: false, reason: 'invalid', field: 'id' };
   }
+  const unknown = unknownRecordField(updates);
+  if (unknown) return unknown;
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
@@ -280,11 +364,17 @@ export async function updateTheme(scope, themeId, updates) {
     }
 
     if ('colors' in updates) {
-      const colors = validateColors(updates.colors);
-      if (!colors) {
-        return { ok: false, reason: 'invalid', field: 'colors' };
+      const checked = validateThemeColors(updates.colors);
+      if (!checked.ok) {
+        return {
+          ok: false,
+          reason: 'invalid',
+          field: 'colors',
+          fieldProblem: { code: checked.code },
+          where: checked.path,
+        };
       }
-      updateData.colors = colors;
+      updateData.colors = checked.colors;
     }
 
     if ('fonts' in updates) {
@@ -300,7 +390,17 @@ export async function updateTheme(scope, themeId, updates) {
     }
 
     if ('config' in updates) {
-      updateData.config = validateThemeConfig(updates.config);
+      const checked = checkThemeConfig(updates.config);
+      if (!checked.ok) {
+        return {
+          ok: false,
+          reason: 'invalid',
+          field: 'config',
+          fieldProblem: { code: checked.code },
+          where: checked.path,
+        };
+      }
+      updateData.config = checked.config;
     }
 
     const row = await db
@@ -432,44 +532,6 @@ function generateSlug(label) {
 }
 
 /**
- * Validate and normalize color configuration.
- * @param {Object} colors - Color configuration
- * @returns {Object|null} - Normalized colors or null if invalid
- */
-function validateColors(colors) {
-  if (!colors || typeof colors !== 'object') {
-    return {
-      primary: '#3B82F6',
-      background: '#ffffff',
-      textLight: '#ffffff',
-      textDark: '#1f2937',
-    };
-  }
-
-  const normalized = {};
-
-  // Validate each color
-  const colorKeys = ['primary', 'background', 'textLight', 'textDark'];
-  for (const key of colorKeys) {
-    if (colors[key]) {
-      const color = String(colors[key]).trim();
-      if (!isValidHexColor(color)) {
-        return null;
-      }
-      normalized[key] = color;
-    }
-  }
-
-  // Apply defaults for missing colors
-  return {
-    primary: normalized.primary || '#3B82F6',
-    background: normalized.background || '#ffffff',
-    textLight: normalized.textLight || '#ffffff',
-    textDark: normalized.textDark || '#1f2937',
-  };
-}
-
-/**
  * Validate and normalize font configuration.
  * When headingFamilyId or bodyFamilyId is present, skip curated-list validation
  * for that font (it's a managed font, validated by the route handler).
@@ -523,15 +585,6 @@ function validateFonts(fonts) {
   if (normalized.bodyFamilyId) result.bodyFamilyId = normalized.bodyFamilyId;
 
   return result;
-}
-
-/**
- * Check if a string is a valid hex color.
- * @param {string} color - Color string
- * @returns {boolean}
- */
-function isValidHexColor(color) {
-  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(color);
 }
 
 /**

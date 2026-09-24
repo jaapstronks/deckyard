@@ -1,0 +1,55 @@
+{
+  "slug": "editorial",
+  "label": "Editorial",
+  "logoUrl": "/assets/images/logo-placeholder.svg",
+  "logoSmallUrl": null,
+  "colors": {
+    "primary": "#9f1239",
+    "background": "#fffdf7",
+    "textLight": "#ffffff",
+    "textDark": "#1c1917",
+    "brand": ["#7f1d1d", "#9f1239", "#b45309", "#a16207"],
+    "chart": [
+      "#9f1239",
+      "#b45309",
+      "#1c1917",
+      "#a16207",
+      "#78716c",
+      "#be123c",
+      "#44403c",
+      "#d6b98c"
+    ],
+    "accentOnDark": "#fb7185",
+    "textMuted": "rgba(28, 25, 23, 0.6)",
+    "backgrounds": {
+      "lime": "#fffdf7",
+      "mist": "#f5efe4",
+      "dark": "#1c1917"
+    }
+  },
+  "fonts": {
+    "heading": "Fraunces",
+    "body": "Work Sans"
+  },
+  "config": {
+    "logos": {
+      "alt": "Your logo"
+    },
+    "gradient": {
+      "enabled": false
+    },
+    "defaultTitleSlide": "title-slide",
+    "titleLayout": "top",
+    "typography": {
+      "headingWeight": "600"
+    },
+    "cssVarOverrides": {
+      "--t-radius": "2px",
+      "--t-radius-sm": "2px",
+      "--t-radius-lg": "4px",
+      "--t-font-heading": "'Fraunces', Georgia, 'Times New Roman', serif",
+      "--t-font-body": "'Work Sans', ui-sans-serif, system-ui, -apple-system, sans-serif",
+      "--t-color-surface-raised": "#faf6ee"
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "slug": "ciiic",
+  "label": "CIIIC",
+  "logoUrl": "/custom/assets/images/logo.svg",
+  "logoSmallUrl": null,
+  "colors": {
+    "primary": "#385c5c",
+    "background": "#e2fe52",
+    "textLight": "#ffffff",
+    "textDark": "#212121",
+    "brand": ["#dbff00", "#375c5d", "#06090b", "#084272"],
+    "chart": [
+      "#375c5d",
+      "#5d989a",
+      "#848f52",
+      "#aebd63",
+      "#a2afa7",
+      "#e0e6e2",
+      "#2c4a4b",
+      "#cfd887"
+    ],
+    "accentOnDark": "#dbff00",
+    "textMuted": "rgba(11, 11, 11, 0.65)",
+    "backgrounds": {
+      "lime": "#e2fe52",
+      "mist": "#e0e6e2",
+      "dark": "#385c5c"
+    }
+  },
+  "fonts": {
+    "heading": "GT America Extended",
+    "headingFamilyId": "00000000-0000-4000-8000-000000000001",
+    "body": "Inter"
+  },
+  "config": {
+    "logos": {
+      "dark": "/custom/assets/images/logo-lime.svg",
+      "light": "/custom/assets/images/logo.svg",
+      "payoff": "/custom/assets/images/partnerlogos/ciiic_combilogo_rgb_zwartwit.png"
+    },
+    "gradient": {
+      "enabled": true
+    },
+    "slideBackgrounds": [
+      {
+        "id": "calm",
+        "label": "Calm",
+        "value": "radial-gradient(ellipse 75% 80% at 22% 32%, rgba(56, 92, 92, 0.85) 0%, rgba(56, 92, 92, 0.35) 45%, rgba(56, 92, 92, 0) 75%), radial-gradient(ellipse 60% 55% at 75% 100%, rgba(155, 168, 70, 0.7) 0%, rgba(155, 168, 70, 0.22) 40%, rgba(155, 168, 70, 0) 72%), radial-gradient(ellipse 120% 100% at 50% 50%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.45) 100%), #0a0d0e",
+        "textColor": "#ffffff",
+        "textColorMuted": "rgba(255, 255, 255, 0.72)",
+        "linkColor": "color-mix(in srgb, var(--color-accent) 42%, #ffffff)"
+      },
+      {
+        "id": "international",
+        "label": "International",
+        "value": "linear-gradient(rgba(19, 57, 58, 0.62), rgba(19, 57, 58, 0.62)), url('/custom/assets/images/backgrounds/international.jpg') center / cover no-repeat, #13393a",
+        "textColor": "#ffffff",
+        "textColorMuted": "rgba(255, 255, 255, 0.72)",
+        "linkColor": "color-mix(in srgb, var(--color-accent) 42%, #ffffff)"
+      }
+    ],
+    "backgroundPresets": [
+      "/custom/assets/images/backgrounds/backgroundpic-1.jpg",
+      "/custom/assets/images/backgrounds/backgroundpic-2.jpeg",
+      "/custom/assets/images/backgrounds/backgroundpic-3.jpeg",
+      "/custom/assets/images/backgrounds/backgroundpic-4.jpeg",
+      "/custom/assets/images/backgrounds/backgroundpic-5.jpeg",
+      "/custom/assets/images/backgrounds/backgroundpic-6.jpeg"
+    ],
+    "slideTypes": {
+      "include": ["ciiic-title-slide"],
+      "exclude": ["title-slide", "stock-team-overview-slide"]
+    },
+    "defaultTitleSlide": "ciiic-title-slide",
+    "typography": {
+      "headingWeight": "400",
+      "mono": "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+    },
+    "cssVarOverrides": {
+      "--t-title-backdrop": "#06090b",
+      "--t-slide-bg-calm-accent": "#dbff00",
+      "--t-color-text": "#0b0b0b",
+      "--t-color-accent-soft": "#dbff00",
+      "--t-radius": "18px",
+      "--t-radius-lg": "22px",
+      "--t-font-body": "Arial, sans-serif",
+      "--t-font-caption": "var(--t-font-mono)",
+      "--t-card-stack-label-size": "21px",
+      "--t-card-stack-label-letter-spacing": "-0.01em",
+      "--t-slide-gradient-bg": "radial-gradient(circle at 62% 19%, rgba(219, 255, 0, 1) 0%, rgba(219, 255, 0, 0.65) 18%, rgba(219, 255, 0, 0.22) 42%, rgba(219, 255, 0, 0) 72%), radial-gradient(circle at 90% 82%, rgba(55, 92, 93, 0.95) 0%, rgba(55, 92, 93, 0.55) 22%, rgba(55, 92, 93, 0.18) 48%, rgba(55, 92, 93, 0) 78%), radial-gradient(circle at 17% 82%, rgba(142, 168, 162, 0.75) 0%, rgba(142, 168, 162, 0.38) 26%, rgba(142, 168, 162, 0.14) 52%, rgba(142, 168, 162, 0) 82%), radial-gradient(circle at 55% 85%, rgba(8, 66, 114, 0.55) 0%, rgba(8, 66, 114, 0) 62%), #06090b"
+    }
+  }
+}

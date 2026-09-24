@@ -45,6 +45,7 @@ import {
   getFontsByCategory,
 } from '../../../shared/theme-fonts.js';
 import { buildThemeConfig } from '../../utils/theme-builder.js';
+import { THEME_FIELD_PROBLEMS } from '../../../shared/theme-config-schema.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
 import {
   getDefaultThemeId,
@@ -86,6 +87,12 @@ const INVALID_FIELD_MESSAGES = {
   id: 'Invalid theme ID',
 };
 
+/** Sentence opener per refused-field sub-code (`fieldProblem.code`). */
+const FIELD_PROBLEM_PREFIX = {
+  [THEME_FIELD_PROBLEMS.unknown]: 'Unknown theme field',
+  [THEME_FIELD_PROBLEMS.invalid]: 'Invalid theme field',
+};
+
 /**
  * Answer a failed theme mutation in the canonical envelope.
  *
@@ -95,10 +102,14 @@ const INVALID_FIELD_MESSAGES = {
  */
 function themeError(res, result) {
   // No reason guard around the field lookup: `field` only ever rides on
-  // `invalid`, and the vocabulary gate is what keeps that true.
-  const message =
-    INVALID_FIELD_MESSAGES[result.field] ||
-    THEME_FAILURE_MESSAGES[result.reason];
+  // `invalid`, and the vocabulary gate is what keeps that true. A refused
+  // theme field is named whole in the sentence (`config.logos.logoAlt`):
+  // the record refuses a field it does not know, or a value it cannot hold,
+  // by name (D209). `details.reason` carries which of the two.
+  const message = result.where
+    ? `${FIELD_PROBLEM_PREFIX[result.fieldProblem?.code] || 'Invalid theme field'}: ${result.where}`
+    : INVALID_FIELD_MESSAGES[result.field] ||
+      THEME_FAILURE_MESSAGES[result.reason];
   return storageError(res, result, message);
 }
 

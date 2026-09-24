@@ -1,0 +1,122 @@
+{
+  "id": "ciiic-international",
+  "label": "CIIIC International",
+  "defaultTitleSlide": "ciiic-international-title-slide",
+  "defaultBackground": "international",
+  "titleLayout": "bottom",
+  "assets": {
+    "logo": "/custom/assets/images/logo.svg",
+    "logoOnDark": "/custom/assets/images/logo-lime.svg",
+    "logoOnLight": "/custom/assets/images/logo.svg",
+    "logoAlt": "CIIIC",
+    "payoffLogo": "/custom/assets/images/partnerlogos/ciiic_combilogo_rgb_zwartwit.png",
+    "payoffAlt": "CIIIC"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#0b2125",
+  "brandColors": ["#dbff00", "#13393a", "#93a635", "#06090b"],
+  "gradient": {
+    "enabled": false
+  },
+  "backgroundLabels": {
+    "lime": {
+      "en": "Lime",
+      "nl": "Lime"
+    },
+    "mist": {
+      "en": "Light",
+      "nl": "Licht"
+    }
+  },
+  "slideBackgrounds": [
+    {
+      "id": "international",
+      "label": "Streaks",
+      "value": "linear-gradient(rgba(19, 57, 58, 0.62), rgba(19, 57, 58, 0.62)), url('/custom/assets/images/backgrounds/international.jpg') center / cover no-repeat, #13393a",
+      "textColor": "#ffffff",
+      "textColorMuted": "rgba(255, 255, 255, 0.72)",
+      "linkColor": "color-mix(in srgb, var(--color-accent) 42%, #ffffff)"
+    },
+    {
+      "id": "solid",
+      "label": "Solid teal",
+      "value": "#13393a",
+      "textColor": "#ffffff",
+      "textColorMuted": "rgba(255, 255, 255, 0.72)",
+      "linkColor": "color-mix(in srgb, var(--color-accent) 42%, #ffffff)"
+    }
+  ],
+  "cssVars": {
+    "--t-slide-bg-lime": "#e2fe52",
+    "--t-slide-bg-mist": "#e4eae7",
+    "--t-slide-bg-dark": "#13393a",
+    "--t-color-background": "#13393a",
+    "--t-color-text": "#ffffff",
+    "--t-color-text-muted": "rgba(255, 255, 255, 0.72)",
+    "--t-color-accent": "#dbff00",
+    "--t-color-link-on-dark": "#dbff00",
+    "--t-color-accent-soft": "#dbff00",
+    "--t-color-accent-on-dark": "#dbff00",
+    "--t-radius": "0px",
+    "--t-radius-sm": "0px",
+    "--t-radius-lg": "0px",
+    "--t-font-heading": "'GT America Expanded', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+    "--t-font-intl-condensed": "'GT America Condensed', 'Helvetica Neue Condensed Bold', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+    "--t-font-body": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    "--t-font-mono": "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    "--t-font-caption": "var(--t-font-mono)",
+    "--t-heading-transform": "uppercase",
+    "--t-heading-weight": "700",
+    "--t-heading-letter-spacing": "normal",
+    "--t-chart-0": "#dbff00",
+    "--t-chart-1": "#93a635",
+    "--t-chart-2": "#5d989a",
+    "--t-chart-3": "#aebd63",
+    "--t-chart-4": "#a2afa7",
+    "--t-chart-5": "#e0e6e2",
+    "--t-chart-6": "#2c4a4b",
+    "--t-chart-7": "#cfd887",
+    "--t-logo-url": "url('/custom/assets/images/logo.svg')",
+    "--t-intl-duotone-dark": "#0b2125",
+    "--t-intl-duotone-light": "#9ccabd"
+  },
+  "embedFonts": [
+    {
+      "family": "GT America Expanded",
+      "path": "custom/assets/fonts/GT-America-Expanded-Bold.woff2",
+      "weight": 700,
+      "style": "normal"
+    },
+    {
+      "family": "GT America Condensed",
+      "path": "custom/assets/fonts/GT-America-Condensed-Regular.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "GT America Condensed",
+      "path": "custom/assets/fonts/GT-America-Condensed-Bold.woff2",
+      "weight": 700,
+      "style": "normal"
+    },
+    {
+      "family": "JetBrains Mono",
+      "path": "custom/assets/fonts/JetBrainsMono-Medium.woff2",
+      "weight": 500,
+      "style": "normal"
+    }
+  ],
+  "slideTypes": {
+    "exclude": ["title-slide"],
+    "include": ["ciiic-international-title-slide"]
+  },
+  "hiddenSlideTypes": ["stock-team-overview-slide"],
+  "backgroundPresets": [
+    "/custom/assets/images/backgrounds/backgroundpic-1.jpg",
+    "/custom/assets/images/backgrounds/backgroundpic-2.jpeg",
+    "/custom/assets/images/backgrounds/backgroundpic-3.jpeg",
+    "/custom/assets/images/backgrounds/backgroundpic-4.jpeg",
+    "/custom/assets/images/backgrounds/backgroundpic-5.jpeg",
+    "/custom/assets/images/backgrounds/backgroundpic-6.jpeg"
+  ]
+}

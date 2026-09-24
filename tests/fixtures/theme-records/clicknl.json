@@ -1,0 +1,59 @@
+{
+  "slug": "clicknl",
+  "label": "ClickNL",
+  "logoUrl": "/custom/assets/images/clicknl-logo.svg",
+  "logoSmallUrl": null,
+  "colors": {
+    "primary": "#009bd4",
+    "background": "#ffffff",
+    "textLight": "#ffffff",
+    "textDark": "#212121",
+    "brand": ["#009bd4", "#e1e2e3", "#434343"],
+    "chart": [
+      "#003b5c",
+      "#009bd4",
+      "#005b8f",
+      "#00b3b0",
+      "#f59e0b",
+      "#94a3b8",
+      "#434343",
+      "#2d7dd2"
+    ],
+    "accentOnDark": "#009bd4",
+    "textMuted": "rgba(67, 67, 67, 0.75)",
+    "backgrounds": {
+      "lime": "#ffffff",
+      "mist": "#e1e2e3",
+      "dark": "#212121"
+    }
+  },
+  "fonts": {
+    "heading": "Helvetica Neue Condensed Bold",
+    "headingFamilyId": "00000000-0000-4000-8000-000000000003",
+    "body": "Inter"
+  },
+  "config": {
+    "gradient": {
+      "enabled": false
+    },
+    "slideTypes": {
+      "include": [],
+      "exclude": ["stock-team-overview-slide"]
+    },
+    "defaultTitleSlide": "title-slide",
+    "typography": {
+      "headingTransform": "uppercase",
+      "mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+    },
+    "surfaces": {
+      "radius": "none"
+    },
+    "cssVarOverrides": {
+      "--t-color-text": "#434343",
+      "--t-font-body": "\"Helvetica Neue\", Helvetica, Arial, sans-serif",
+      "--t-card-stack-label-size": "24px",
+      "--t-card-stack-label-letter-spacing": "0.06em",
+      "--t-slide-bg-dark-text": "var(--t-color-text, #0b0b0b)"
+    }
+  }
+}

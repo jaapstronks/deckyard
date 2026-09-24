@@ -1,14 +1,23 @@
 # Theme config (database themes)
 
-Database themes store four colours, two fonts and two logo URLs, from which
-`server/utils/theme-builder.js` derives a full `--t-*` token set. Everything a
-**file** theme can additionally express — named background variants, background
-presets, gradient, surface tokens, slide-type curation — used to have nowhere to
-live on a DB theme.
+A database theme is a record: a label, two logo URLs, `colors`, `fonts` and
+`config`. From the four colour roles and two fonts
+`server/utils/theme-builder.js` derives a full `--t-*` token set; the explicit
+colour fields and the `themes.config` jsonb column (migration
+`050_theme_config.js`) layer everything a **file** theme can additionally
+express on top — the brand palette, chart colours, the built-in grounds, named
+background variants, background presets, gradient, surface tokens, logos per
+surface, slide-type curation.
 
-The `themes.config` jsonb column (migration `050_theme_config.js`) holds that
-richer shape. `buildThemeConfig` merges it over the derived defaults, so a DB
-theme reaches parity with a file theme.
+**The record carries every theme losslessly** (D208, B437). Each of the six
+core themes and the four CIIIC-fork themes is written as a record in
+`tests/fixtures/theme-records/`, and `tests/theme-record-parity.test.js` pins
+that each renders the same `--t-*` tokens as its file form. The only file
+fields a record does not carry are the ones D208 retired: `textSwatches`, the
+`{en, nl}` background labels, `embedFonts` (fork fonts are managed families,
+bound by name), `hiddenSlideTypes` (use `slideTypes.exclude`), `slides.*` and
+`sampleEmbedUrl`. The rule for what becomes a field: **when every theme sets
+it, it is a field; when one theme sets it, it is a `cssVarOverrides` entry.**
 
 Most of this shape is editable in **Settings → Themes**, alongside the colours
 and fonts: surfaces, heading treatment, background images, named background
@@ -17,8 +26,40 @@ exception — slide-type availability is curated org-wide in **Settings → Slid
 Types** instead, so a theme-level control would be a second switch for the same
 outcome.
 
-`POST`/`PUT /api/themes/custom[/:id]` accept a `config` object directly for
-anything the editor does not cover.
+`POST`/`PUT /api/themes/custom[/:id]` accept `colors` and `config` directly for
+anything the editor does not cover; the editor sends the colour fields it has
+no control for back unchanged, so saving there never drops them.
+
+## `colors`
+
+```jsonc
+{
+  // The four roles. Hex; defaulted when absent.
+  "primary": "#385c5c",       // → --t-color-accent
+  "background": "#e2fe52",    // → --t-color-background
+  "textLight": "#ffffff",     // the light and dark text poles
+  "textDark": "#212121",
+
+  // Optional. Absent = derived from the roles, exactly as before they existed;
+  // present = wins over the derivation.
+  "brand": ["#dbff00", "#375c5d"],  // 1–8 hex → brandColors, --t-color-brand-1..3,
+                                    //   and --t-chart-0..3 when `chart` is absent
+  "chart": ["#…", … 8 in total],    // exactly 8 hex → --t-chart-0..7
+  "accentOnDark": "#dbff00",        // → --t-color-accent-on-dark
+  "textMuted": "rgba(11, 11, 11, 0.65)",  // hex or rgb()/rgba() → --t-color-text-muted
+  "backgrounds": {                  // hex → --t-slide-bg-<slot>
+    "lime": "#e2fe52",              //   default: `background`
+    "mist": "#e0e6e2",
+    "dark": "#385c5c"
+  }
+}
+```
+
+`--t-color-text` stays derived (the pole that reads on `background`); a theme
+whose text colour is neither pole sets it through `cssVarOverrides`. A short
+`brand` list feeds the chart slots it has and the derived palette fills the
+rest; `chart` is all eight slots or none, so one palette never comes from two
+sources.
 
 ## Shape
 
@@ -28,8 +69,13 @@ anything the editor does not cover.
 
   // Logo variants keyed by the SURFACE they belong on: `dark` is the mark for
   // a dark ground, `light` the one for a light ground, `*Small` the title-slide
-  // sizes of each. See "Contrast-aware logos" below.
-  "logos": { "dark": "…", "darkSmall": "…", "light": "…", "lightSmall": "…" },
+  // sizes of each. See "Contrast-aware logos" below. `payoff` is the closing
+  // payoff slide's mark (default: the main logo); `alt` the one alternative
+  // text every variant shares (default: the label).
+  "logos": {
+    "dark": "…", "darkSmall": "…", "light": "…", "lightSmall": "…",
+    "payoff": "…", "alt": "Acme"
+  },
 
   // Named scales rather than raw pixel values, so the wizard can offer choices.
   "surfaces": {
@@ -62,6 +108,7 @@ anything the editor does not cover.
   "gradient": { "enabled": false },
   "slideTypes": { "include": [], "exclude": [] },
   "defaultTitleSlide": "title-slide",
+  "titleLayout": "bottom" | "center" | "top",
 
   // The ground a new slide starts on under this theme. See below.
   "defaultBackground": "mist",
@@ -180,18 +227,42 @@ them; a theme that genuinely needs a value outside the band can still set
 
 ## Validation
 
-`shared/theme-config-schema.js` exports `validateThemeConfig(raw)`. It is
-**total**: it never throws and never returns null.
+Two gates over one vocabulary, both in `shared/theme-config-schema.js` (D209).
+
+**The write gate refuses an unknown field by name.** `createTheme` and
+`updateTheme` (and so a `.deck` theme install, which goes through
+`createTheme`) check the whole record: a top-level field other than `label`,
+`slug`, `logoUrl`, `logoSmallUrl`, `colors`, `fonts`, `config`; a `fonts` key
+other than `heading`, `body` and their `*FamilyId`; a `colors` key outside the
+list above or a value it cannot hold (`validateThemeColors`); and a `config`
+key outside the shape above, at every level (`checkThemeConfig`) — including a
+`slideBackgrounds` entry key, a `cssVarOverrides` name outside the theme layer
+and an `{en, nl}` background label. The API answers `400 invalid` with
+`details.field` the record-level input (`body`, `colors`, `fonts`, `config`),
+`details.reason` `unknown_field` or `invalid_value`, and the dotted path in the
+message:
+
+```json
+{
+  "error": "invalid",
+  "message": "Unknown theme field: config.logos.logoAlt",
+  "details": { "field": "config", "reason": "unknown_field" }
+}
+```
+
+A field the record does not know would otherwise vanish on save; silently
+dropping it was the old behaviour and is gone. Rows written before went through
+that dropping validator, so they hold only known fields and read unchanged.
+
+**The read side normalizes and is total.** `validateThemeConfig(raw)` never
+throws and never returns null: it reads a stored config (which passed the gate)
+into the shape the builder merges.
 
 - Junk input (a string, an array, `null`) yields `{}`.
-- Unknown keys are dropped.
 - Out-of-range enums fall back to their default rather than erroring.
 - A key the input did not set stays **absent**, so the builder can tell
   "not configured" from "configured to the default value" and leave its own
   defaults in place.
-
-A malformed config therefore can never block saving an otherwise-valid theme,
-and a stored config is always safe to merge without further checking.
 
 ### `cssVarOverrides` rules
 
@@ -201,7 +272,9 @@ and a stored config is always safe to merge without further checking.
   theme must not be able to restyle the app around the slides.
 - Values are stripped of `;{}<>`, so a value cannot terminate its declaration
   and open a new rule — the same guard `shared/theme-slide-backgrounds.js`
-  applies to variant values.
+  applies to variant values. A value may be up to 2,000 characters
+  (`CSS_VAR_OVERRIDE_MAX`), long enough for a layered gradient; the character
+  rule is the real guard, the length only a sanity bound.
 - **Only contract tokens do anything.** Slide CSS reads the theme exclusively
   through the role layer, so an override outside the contract set — pinned in
   `tests/fixtures/theme-contract.json` and documented in
@@ -215,18 +288,21 @@ and a stored config is always safe to merge without further checking.
 
 `buildThemeConfig` applies, in order:
 
-1. tokens derived from `colors` and `fonts`
+1. tokens from `colors` and `fonts`: each explicit colour field where the
+   record sets it, the derivation from the four roles where it does not
 2. `surfaces` and `typography`
 3. `slideBackgrounds`, `backgroundPresets`, `gradient`, `slideTypes`,
-   `defaultTitleSlide`, `defaultBackground`, `locks`
+   `defaultTitleSlide`, `defaultBackground`, `titleLayout`, `locks`
 4. `logos` into `assets`, under their asset names (`dark` → `assets.logoOnDark`,
-   `light` → `assets.logoOnLight`, and the `*Small` pair →
-   `assets.titleLogoOn*`)
+   `light` → `assets.logoOnLight`, the `*Small` pair → `assets.titleLogoOn*`,
+   `payoff` → `assets.payoffLogo`, `alt` → `assets.logoAlt`, `titleLogoAlt` and
+   `payoffAlt`)
 5. `cssVarOverrides` — **last, so a raw override always wins**
 
-An empty config leaves the derived theme byte-identical. Every row predating the
-column reads as `{}`, which is what makes the migration safe on a live install;
-`tests/theme-builder-config.test.js` pins that against a fixture.
+An empty config and the four colour roles alone leave the derived theme
+byte-identical. Every row predating the column reads as `{}`, which is what
+makes the migration safe on a live install; `tests/theme-builder-config.test.js`
+pins that against a fixture.
 
 ## Checking a theme
 

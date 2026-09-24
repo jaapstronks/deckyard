@@ -237,6 +237,80 @@ test('create rejects an empty label with a 400', async () => {
   assert.equal(res.statusCode, 400);
 });
 
+test('a theme field the record does not know is a 400 that names it (D209)', async () => {
+  seed();
+  const cases = [
+    [
+      { label: 'X', config: { logos: { logoAlt: 'X' } } },
+      'config',
+      'unknown_field',
+      'config.logos.logoAlt',
+    ],
+    [{ label: 'X', isDefault: true }, 'body', 'unknown_field', 'isDefault'],
+    [
+      { label: 'X', fonts: { heading: 'Inter', mono: 'Inter' } },
+      'fonts',
+      'unknown_field',
+      'fonts.mono',
+    ],
+    [
+      { label: 'X', colors: { primary: '#123456', accent: '#ffffff' } },
+      'colors',
+      'unknown_field',
+      'colors.accent',
+    ],
+    [
+      { label: 'X', colors: { brand: ['red'] } },
+      'colors',
+      'invalid_value',
+      'colors.brand',
+    ],
+  ];
+  for (const [body, field, reason, where] of cases) {
+    const { res } = await call(handleThemes, 'POST', '/api/themes/custom', {
+      as: ACTORS.designer,
+      body,
+    });
+    assert.equal(res.statusCode, 400, where);
+    assert.equal(res.body.error, 'invalid', where);
+    assert.deepEqual(res.body.details, { field, reason }, where);
+    assert.ok(res.body.message.includes(where), where);
+  }
+  const list = await call(handleThemes, 'GET', '/api/themes/custom', {
+    as: ACTORS.designer,
+  });
+  assert.deepEqual(list.res.body.themes, [], 'nothing was written');
+});
+
+test('a record stores every explicit colour and logo field it is given (B437)', async () => {
+  seed();
+  const colors = {
+    primary: '#385c5c',
+    background: '#e2fe52',
+    textLight: '#ffffff',
+    textDark: '#212121',
+    brand: ['#dbff00', '#375c5d'],
+    chart: Array(8).fill('#375c5d'),
+    accentOnDark: '#dbff00',
+    textMuted: 'rgba(11, 11, 11, 0.65)',
+    backgrounds: { lime: '#e2fe52', mist: '#e0e6e2', dark: '#385c5c' },
+  };
+  const logos = { alt: 'Brand', payoff: '/uploads/payoff.png' };
+  const created = await call(handleThemes, 'POST', '/api/themes/custom', {
+    as: ACTORS.designer,
+    body: { label: 'Brand Three', colors, config: { logos } },
+  });
+  assert.equal(created.res.statusCode, 201);
+  const read = await call(
+    handleThemes,
+    'GET',
+    `/api/themes/custom/${created.res.body.id}`,
+    { as: ACTORS.member },
+  );
+  assert.deepEqual(read.res.body.colors, colors);
+  assert.deepEqual(read.res.body.config.logos, logos);
+});
+
 test('a designer can preview a draft config; a member cannot', async () => {
   seed();
   const denied = await call(
