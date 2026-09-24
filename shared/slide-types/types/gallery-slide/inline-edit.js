@@ -20,7 +20,6 @@ export const inlineEdit = {
       field: 'caption',
       item: '.gallery-item',
       pos: 'append',
-      chip: 'bottom-start',
     },
   ],
   cards: {

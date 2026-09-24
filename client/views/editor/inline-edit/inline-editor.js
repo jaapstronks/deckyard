@@ -34,6 +34,7 @@ import {
   isEmptyValue,
 } from './field-path.js';
 import { createInlineOverlay } from './overlay.js';
+import { describeSeam } from './ghost-placement.js';
 import { createInlineCoachMark } from './coach-mark.js';
 import { openIconPicker } from '../fields/icon-picker-modal.js';
 import { uploadFile } from '../image-library/upload.js';
@@ -512,20 +513,16 @@ export function createInlineEditor({
   // ----------------------------------------------------------------
 
   /**
-   * Resolve a ghost's anchor: `anchors` is an ordered list of
-   * `{sel, pos, chip}` fallbacks (first selector found in the DOM wins) so a
-   * ghost can target `.header` when it exists and `.slide-inner` when the
-   * header itself is omitted. Legacy `{anchor, pos}` still works.
-   * @returns {{el:HTMLElement, pos:string, chip:string} | null}
+   * Resolve a ghost's anchor: `anchors` is an ordered list of `{sel, pos}`
+   * fallbacks (first selector found in the DOM wins) so a ghost can target
+   * `.header` when it exists and `.slide-inner` when the header itself is
+   * omitted. Where the chip stands follows from this (ghost-placement.js).
+   * @returns {{el:HTMLElement, pos:string} | null}
    */
   function resolveGhostAnchor(root, g) {
-    const candidates = Array.isArray(g.anchors)
-      ? g.anchors
-      : [{ sel: g.anchor, pos: g.pos, chip: g.chip }];
-    for (const c of candidates) {
+    for (const c of g.anchors || []) {
       const el = c?.sel ? root.querySelector(c.sel) : null;
-      if (el)
-        return { el, pos: c.pos || 'append', chip: c.chip || 'below-start' };
+      if (el) return { el, pos: c.pos || 'append' };
     }
     return null;
   }
@@ -539,6 +536,10 @@ export function createInlineEditor({
       const meta = fieldMetaForPath(def, g.field);
       // Shared ghost sets (HEADER_GHOSTS) may name fields a type doesn't have.
       if (!meta || !meta.key) continue;
+      // An essential field drawn with its in-box placeholder asks for itself
+      // already; a chip beside it would be a second answer.
+      if (root.querySelector(`.ie-placeholder[data-inline-field="${g.field}"]`))
+        continue;
       const anchor = resolveGhostAnchor(root, g);
       if (!anchor) continue;
       // reanchor re-resolves against the CURRENT slide DOM: the spawn path
@@ -554,10 +555,10 @@ export function createInlineEditor({
    * description) whose element the renderer omits when empty. For each rendered
    * item (identified by `data-inline-item-index`), if that item's subfield is
    * empty, a chip is anchored to the item element.
-   * Shape: `{ list, field, item, within?, pos?, chip? }` where
+   * Shape: `{ list, field, item, within?, pos? }` where
    * `list` is the primary collection key (aliases resolved via the cards
    * config), `item` the item-element selector, and `within` an optional inner
-   * element to spawn into.
+   * element the field is inserted into - which is also where its chip stands.
    */
   function insertItemGhosts(root, def, descriptor) {
     const slide = getSlide?.();
@@ -572,43 +573,58 @@ export function createInlineEditor({
         const path = `${listKey}.${idx}.${g.field}`;
         if (!isEmptyValue(getByPath(slide.content, path))) continue;
         const meta = fieldMetaForPath(def, `${listKey}.0.${g.field}`);
-        const spawnHost =
-          (g.within && itemEl.querySelector(g.within)) || itemEl;
-        // The chip is pinned to chipAnchor (the visible card) when set, so it
-        // lands on the milestone card rather than the full-height column; the
-        // spawned edit still goes into `within`.
-        const chipHost =
-          (g.chipAnchor && itemEl.querySelector(g.chipAnchor)) || itemEl;
+        const host = (item) =>
+          (g.within && item.querySelector(g.within)) || item;
         const reanchor = () => {
           const freshItem = [
             ...(slideEl()?.querySelectorAll(g.item) || []),
           ].find(
             (el) => Number(el.getAttribute('data-inline-item-index')) === idx,
           );
-          if (!freshItem) return null;
-          return {
-            el:
-              (g.chipAnchor && freshItem.querySelector(g.chipAnchor)) ||
-              freshItem,
-            pos: g.pos || 'append',
-            chip: g.chip || 'below-start',
-            spawnEl:
-              (g.within && freshItem.querySelector(g.within)) || freshItem,
-          };
+          return freshItem
+            ? { el: host(freshItem), pos: g.pos || 'append' }
+            : null;
         };
         placeGhostChip(
           path,
           meta,
-          {
-            el: chipHost,
-            pos: g.pos || 'append',
-            chip: g.chip || 'below-start',
-            spawnEl: spawnHost,
-          },
+          { el: host(itemEl), pos: g.pos || 'append' },
           reanchor,
         );
       }
     }
+  }
+
+  /**
+   * A "+ <label>" chip at the seam where its field will be inserted. The
+   * overlay decides between the full chip and the compact "+" (whose label
+   * shows on hover/focus); the button's name is the label either way.
+   * @param {string} label
+   * @param {{el:HTMLElement, pos:string}} anchor
+   * @param {(e:Event)=>void} onActivate
+   * @param {Object} [attrs] - extra attributes (data-ie-ghost / -convert)
+   * @param {boolean} [essential] - shown without hover (D211)
+   */
+  function ghostChip(label, anchor, onActivate, attrs = {}, essential = false) {
+    const chip = h(
+      'button',
+      {
+        class: essential ? 'ie-ghost is-essential' : 'ie-ghost',
+        type: 'button',
+        'aria-label': label,
+        ...attrs,
+        onclick: (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onActivate(e);
+        },
+      },
+      [
+        h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
+        h('span', { class: 'ie-ghost-label', text: label }),
+      ],
+    );
+    return overlay.ghost(chip, describeSeam(anchor.el, anchor.pos));
   }
 
   function placeGhostChip(path, meta, anchor, reanchor) {
@@ -618,26 +634,46 @@ export function createInlineEditor({
         : meta?.type === 'markdown'
           ? 'markdown'
           : 'text';
-    const chip = h(
-      'button',
-      {
-        class: 'ie-ghost',
-        type: 'button',
-        'data-ie-ghost': path,
-        onclick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          spawnFromGhost(path, reanchor || (() => anchor), meta, kind).catch(
-            (err) => debugLog('[inline-editor] ghost spawn failed', path, err),
-          );
-        },
-      },
-      [
-        h('span', { class: 'ie-ghost-plus', text: '+', 'aria-hidden': 'true' }),
-        h('span', { text: fieldLabel(path, meta) }),
-      ],
+    ghostChip(
+      fieldLabel(path, meta),
+      anchor,
+      () =>
+        spawnFromGhost(path, reanchor || (() => anchor), meta, kind).catch(
+          (err) => debugLog('[inline-editor] ghost spawn failed', path, err),
+        ),
+      { 'data-ie-ghost': path },
+      meta?.essential === true,
     );
-    overlay.place(chip, anchor.el, anchor.chip, 8);
+  }
+
+  /**
+   * An empty `essential` field whose element the renderer draws anyway (a
+   * title that always has its box) shows an in-box placeholder in edit mode
+   * - PowerPoint's "Click to add title" - instead of a chip (D212). The
+   * text is CSS on the slide element itself, so it takes the field's own
+   * font, and it is gone the moment the field has a character. It runs
+   * before the ghosts, which skip a field that got one. Edit mode only: the
+   * class lives on the editor canvas, never in a render.
+   */
+  function insertEssentialPlaceholders(root, def) {
+    const slide = getSlide?.();
+    if (!slide) return;
+    for (const f of def.fields || []) {
+      // Text only: an essential image or list has its own affordance (the
+      // empty frame's "+ Add image", the list's "+ Add"), shown without hover.
+      if (f?.essential !== true) continue;
+      if (f.type !== 'string' && f.type !== 'markdown') continue;
+      if (!isEmptyValue(getByPath(slide.content, f.key))) continue;
+      const el = root.querySelector(`[data-inline-field="${f.key}"]`);
+      if (!el) continue;
+      el.classList.add('ie-placeholder');
+      el.setAttribute(
+        'data-ie-placeholder',
+        t('editor.inline.placeholder', 'Add {label}', {
+          label: fieldLabel(f.key, f),
+        }),
+      );
+    }
   }
 
   /**
@@ -711,7 +747,7 @@ export function createInlineEditor({
     if (!anchor) return;
     const host = h('p', { class: 'ie-ghost-input' });
     host.setAttribute('data-inline-field', path);
-    placeRelative(host, anchor.spawnEl || anchor.el, anchor.pos);
+    placeRelative(host, anchor.el, anchor.pos);
     beginTextEdit(host, path, meta, { isNew: true });
   }
 
@@ -916,10 +952,16 @@ export function createInlineEditor({
         typeof addPlacement === 'function'
           ? addPlacement(slide)
           : addPlacement || 'bottom-center';
+      // An empty `essential` list offers its first item without hover (D211).
+      // The canvas only: the renderer's own empty-state note under the
+      // container steps aside for the always-visible button, as the empty
+      // image frame's inner label does (105-inline-edit.css).
+      const essential = meta?.essential === true && arr.length === 0;
+      if (essential) addAnchorEl.classList.add('ie-essential');
       const add = h(
         'button',
         {
-          class: 'ie-card-add',
+          class: essential ? 'ie-card-add is-essential' : 'ie-card-add',
           type: 'button',
           onclick: (e) => {
             e.preventDefault();
@@ -1057,21 +1099,12 @@ export function createInlineEditor({
                   childIdx,
               )
             : null;
-          if (!freshChild) return null;
-          return {
-            el: freshChild,
-            pos: g.pos || 'append',
-            chip: g.chip || 'below-start',
-          };
+          return freshChild ? { el: freshChild, pos: g.pos || 'append' } : null;
         };
         placeGhostChip(
           path,
           meta,
-          {
-            el: childEl,
-            pos: g.pos || 'append',
-            chip: g.chip || 'below-start',
-          },
+          { el: childEl, pos: g.pos || 'append' },
           reanchor,
         );
       }
@@ -1143,18 +1176,28 @@ export function createInlineEditor({
    * and opens its "This image" inspector tab (routed in onThumbClickCapture),
    * which carries the explicit Replace / alt / fit / focus controls.
    */
-  function insertMediaAffordances(root, _def, descriptor) {
+  function insertMediaAffordances(root, def, descriptor) {
     const media = descriptor.media;
     if (!media || typeof openImagePicker !== 'function') return;
+    // A flat single image that is `essential` (image-slide) asks for its
+    // image without hover (D211); list-mode photos belong to items.
+    const essentialImage =
+      !media.list &&
+      fieldMetaForPath(def, media.imageField)?.essential === true;
     for (const photo of root.querySelectorAll(media.photoSelector)) {
       const outlineBox = overlay.outline(photo);
       outlineByField.set(photo, outlineBox);
       const isEmpty = photo.classList.contains('is-empty');
       if (isEmpty) {
+        // The canvas only: the frame's own icon + label steps aside for the
+        // always-visible chip (105-inline-edit.css).
+        if (essentialImage) photo.classList.add('ie-essential');
         const chip = h(
           'button',
           {
-            class: 'ie-media-hint',
+            class: essentialImage
+              ? 'ie-media-hint is-essential'
+              : 'ie-media-hint',
             type: 'button',
             onclick: (e) => {
               e.preventDefault();
@@ -1449,28 +1492,12 @@ export function createInlineEditor({
     if (add?.toType && canConvertSlideTo?.(slide, add.toType)) {
       const anchor = resolveGhostAnchor(root, add);
       if (anchor) {
-        const chip = h(
-          'button',
-          {
-            class: 'ie-ghost',
-            type: 'button',
-            'data-ie-convert': add.toType,
-            onclick: (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              convertSlideType(add.toType, { openMedia: true });
-            },
-          },
-          [
-            h('span', {
-              class: 'ie-ghost-plus',
-              text: '+',
-              'aria-hidden': 'true',
-            }),
-            h('span', { text: t('editor.inline.media.addImage', 'Add image') }),
-          ],
+        ghostChip(
+          t('editor.inline.media.addImage', 'Add image'),
+          anchor,
+          () => convertSlideType(add.toType, { openMedia: true }),
+          { 'data-ie-convert': add.toType },
         );
-        overlay.place(chip, anchor.el, anchor.chip, 8);
       }
     }
 
@@ -1574,6 +1601,7 @@ export function createInlineEditor({
     for (const el of root.querySelectorAll('[data-inline-field]')) {
       outlineByField.set(el, overlay.outline(el));
     }
+    insertEssentialPlaceholders(root, def);
     insertGhosts(root, def, descriptor);
     insertItemGhosts(root, def, descriptor);
     insertClearButtons(root, def, descriptor);

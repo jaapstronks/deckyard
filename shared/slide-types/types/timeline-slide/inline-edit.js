@@ -15,16 +15,14 @@ import { HEADER_GHOSTS, HEADER_TEXT } from '../../inline-edit-common.js';
 export const inlineEdit = {
   ghosts: HEADER_GHOSTS,
   // The item element is a full-height column; the visible card is
-  // transform-positioned within it. Pin the description chip to the card
-  // (chipAnchor) so "+ Description" lands just under the milestone card, not
-  // at the column bottom near the slide edge.
+  // transform-positioned within it. The description goes into the card, so
+  // its chip stands at the card's seam, not at the column bottom.
   itemGhosts: [
     {
       list: 'items',
       field: 'text',
       item: '.timeline-item',
       within: '.timeline-card',
-      chipAnchor: '.timeline-card',
       pos: 'append',
     },
   ],

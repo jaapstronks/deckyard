@@ -11,7 +11,7 @@
 
 /** @type {Object} InlineDescriptor for chapter-title-slide. */
 export const inlineEdit = {
-  ghosts: [{ field: 'subheading', anchor: '.title', pos: 'after' }],
+  ghosts: [{ field: 'subheading', anchors: [{ sel: '.title', pos: 'after' }] }],
   formText: ['title', 'subheading'],
 };
 

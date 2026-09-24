@@ -13,7 +13,7 @@ import { resolveImageTextImage } from './image.js';
 
 /** @type {Object} InlineDescriptor for image-text-slide. */
 export const inlineEdit = {
-  ghosts: [{ field: 'caption', anchor: '.frame', pos: 'append' }],
+  ghosts: [{ field: 'caption', anchors: [{ sel: '.frame', pos: 'append' }] }],
   // Flat single image (D100): clicking the frame sets image + alt in-slide.
   // The image IS the element, so the shared "This image" card (element tab)
   // carries its ImageRef axes; the role is slide-wide and renders via the

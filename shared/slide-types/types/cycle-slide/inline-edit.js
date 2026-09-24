@@ -17,7 +17,7 @@ export const inlineEdit = {
     ...HEADER_GHOSTS,
     {
       field: 'centerLabel',
-      anchors: [{ sel: '.cycle-center', pos: 'append', chip: 'top-start' }],
+      anchors: [{ sel: '.cycle-center', pos: 'append' }],
     },
   ],
   itemGhosts: [

@@ -82,6 +82,8 @@ export default {
       labelKey: 'editor.slideField.title.label',
       type: 'string',
       required: true,
+      // A title slide without its title looks broken, not sober (D211).
+      essential: true,
       maxLength: 120,
       group: 'title-block',
     },

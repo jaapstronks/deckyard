@@ -186,6 +186,36 @@ test('a well-formed definition reports nothing', () => {
   assert.deepEqual(formatDefinitionReport(report), []);
 });
 
+test('retired ghost placement keys: `chip` is named, a single `anchor` refused (B435)', () => {
+  // A fork descriptor from before B435. `chip` is ignored (the chip follows
+  // `pos`) and said out loud, so the type still loads; a single `anchor`
+  // would leave its ghost without a chip, so it is refused.
+  const report = validateSlideTypeDefinition(
+    validDef({
+      inline: {
+        ghosts: [
+          {
+            field: 'heading',
+            anchors: [{ sel: '.a', pos: 'after', chip: 'below-start' }],
+          },
+          { field: 'heading', anchor: '.b', pos: 'after' },
+        ],
+        media: { anchor: 'not a ghost key' },
+      },
+    }),
+    'fixture-slide',
+    { globalFieldKeys: GLOBAL_SLIDE_FIELD_KEYS },
+  );
+  assert.deepEqual(
+    report.warnings.map((w) => w.split(' is retired')[0]),
+    ['fixture-slide.inline.ghosts[0].anchors[0].chip'],
+  );
+  assert.deepEqual(
+    report.errors.map((e) => e.split(' is retired')[0]),
+    ['fixture-slide.inline.ghosts[1].anchor'],
+  );
+});
+
 /**
  * The malformed table. Each row is a definition that MUST error, plus a
  * fragment the message has to contain — so the test fails both when a shape

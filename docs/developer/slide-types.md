@@ -1064,11 +1064,12 @@ export default {
   label: 'My cards',
   fields: [/* ... incl. an items field with itemFields ... */],
   inline: {
-    // "+ <field>" chips for empty optional fields
+    // "+ <field>" chips for empty optional fields; where the chip stands
+    // follows from `pos` and the block's layout (B435)
     ghosts: [
       {
         field: 'subheading',
-        anchors: [{ sel: '.header', pos: 'append', chip: 'below-start' }],
+        anchors: [{ sel: '.header', pos: 'append' }],
       },
     ],
     // add/remove buttons for repeatable items (schema minItems/maxItems apply)
