@@ -87,6 +87,7 @@ export default {
     },
     {
       key: 'leftTitle',
+      essential: true,
       label: 'Left title',
       type: 'string',
       required: true,
@@ -94,6 +95,7 @@ export default {
     },
     {
       key: 'leftBody',
+      essential: true,
       label: 'Left content',
       type: 'markdown',
       // The column title heads its column: the pairing is the comparison.
@@ -103,6 +105,7 @@ export default {
     },
     {
       key: 'rightTitle',
+      essential: true,
       label: 'Right title',
       type: 'string',
       required: true,
@@ -110,6 +113,7 @@ export default {
     },
     {
       key: 'rightBody',
+      essential: true,
       label: 'Right content',
       type: 'markdown',
       headingKey: 'rightTitle',

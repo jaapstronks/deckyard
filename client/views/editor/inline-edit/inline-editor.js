@@ -806,10 +806,15 @@ export function createInlineEditor({
     const arr = Array.isArray(getByPath(slide.content, fieldKey))
       ? getByPath(slide.content, fieldKey)
       : [];
-    // Dual-model types (icon-card-grid: items[] OR legacy numbered card fields)
-    // must not grow an items[] array while the deck still renders from the
-    // numbered fields - that would silently switch the renderer's data source.
-    if (cards.skipWhenEmpty && arr.length === 0) return;
+    // Dual-model types (text-blocks: rows[] OR legacy numbered fields) must
+    // not grow the array on a slide that has none, since the renderer still
+    // reads the numbered fields there - an add would silently switch its data
+    // source. An empty array is the canonical empty state and gets its "+ Add".
+    if (
+      cards.skipWhenAbsent &&
+      !Array.isArray(getByPath(slide.content, fieldKey))
+    )
+      return;
 
     insertCardLevel(root, slide, {
       path: fieldKey,

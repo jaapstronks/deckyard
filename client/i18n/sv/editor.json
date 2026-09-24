@@ -667,7 +667,7 @@
   "editor.slideField.background.option.brand-2": "Varumärke 2",
   "editor.slideField.background.option.custom": "Egen färg",
   "editor.slideField.background.option.dark": "Mörk",
-  "editor.slideField.body.label": "Brödtext (Markdown)",
+  "editor.slideField.body.label": "Brödtext",
   "editor.slideField.bottomSubheading.label": "Underrubrik längst ner",
   "editor.slideField.caption.label": "Bildtext",
   "editor.slideField.density.label": "Textstorlek",

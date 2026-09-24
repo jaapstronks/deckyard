@@ -61,6 +61,7 @@ export const COUNT_MARKER_FILES = [
   'docs/reference/slide-type-structure.md',
   'docs/reference/deck-conformance.md',
   'docs/reference/ai-wizard-prompts.md',
+  'docs/reference/essential-fields.md',
 ];
 
 const MARKER_OPEN = '<!--gen:slide-type-count-->';

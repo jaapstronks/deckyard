@@ -35,6 +35,7 @@ export default {
     },
     {
       key: 'source',
+      essential: true,
       label:
         'Video URL or Bunny ID (YouTube/Vimeo URL, Bunny embed URL, or Bunny video UUID)',
       type: 'string',

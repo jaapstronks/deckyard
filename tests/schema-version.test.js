@@ -109,8 +109,11 @@ test('v1->v2 folds legacy text-blocks fields into rows[] non-destructively', () 
   assert.equal(c.rows[0].blocks.length, 2);
   assert.equal(c.rows[0].blocks[0].title, 'A');
   assert.equal(c.rows[0].blocks[1].body, 'bb');
-  // … and the legacy keys are left in place (non-destructive fold).
-  assert.equal(c.row1Block1Title, 'A');
+  // … and the legacy keys are dropped (D216): after the fold, `rows[]` is the
+  // only shape the slide carries.
+  assert.equal(c.row1Block1Title, undefined);
+  assert.equal(c.row1Count, undefined);
+  assert.equal(c.title, 'Flow');
 });
 
 test('v1->v2 leaves a text-blocks slide that already has rows[] untouched', () => {
@@ -131,6 +134,72 @@ test('v1->v2 leaves a text-blocks slide that already has rows[] untouched', () =
   };
   const migrated = migratePresentation(deck);
   assert.deepEqual(migrated.slides[0].content.rows, rows);
+});
+
+/** A v1 deck with one text-blocks slide. */
+function textBlocksDeck(content) {
+  return {
+    id: randomUUID(),
+    schemaVersion: 1,
+    title: 'TB',
+    slides: [{ id: randomUUID(), type: 'text-blocks-slide', content }],
+  };
+}
+
+test('v1->v2 keeps an empty rows[] without legacy content empty (B435)', () => {
+  // The slide's empty state, where the editor offers "+ Add row"; folding it
+  // would invent a row of three blank blocks.
+  const migrated = migratePresentation(
+    textBlocksDeck({ title: 'T', rows: [] }),
+  );
+  assert.deepEqual(migrated.slides[0].content.rows, []);
+});
+
+test('v1->v2 still folds an empty rows[] beside legacy content', () => {
+  const migrated = migratePresentation(
+    textBlocksDeck({
+      title: 'T',
+      rows: [],
+      row1Count: '1',
+      row1Block1Title: 'Kept',
+    }),
+  );
+  const c = migrated.slides[0].content;
+  assert.equal(c.rows[0].blocks[0].title, 'Kept');
+  assert.equal(c.row1Block1Title, undefined);
+});
+
+test('v1->v2 drops the legacy keys beside a populated rows[] too (D216)', () => {
+  const rows = [
+    { title: '', arrow: 'none', blocks: [{ title: 'X', body: '' }] },
+  ];
+  const migrated = migratePresentation(
+    textBlocksDeck({
+      title: 'T',
+      rows,
+      row1Count: '3',
+      row1Block1Title: 'Old',
+    }),
+  );
+  const c = migrated.slides[0].content;
+  assert.deepEqual(c.rows, rows);
+  assert.equal(c.row1Count, undefined);
+  assert.equal(c.row1Block1Title, undefined);
+});
+
+test('emptying the rows of a folded legacy slide stays empty on the next read (D216)', () => {
+  // Nothing persists `schemaVersion`, so the chain runs on every read and
+  // write. With the legacy keys left standing, `rows: []` after a fold read as
+  // "still to fold" and the deleted rows came back.
+  const first = migratePresentation(
+    textBlocksDeck({ title: 'T', row1Count: '1', row1Block1Title: 'A' }),
+  );
+  assert.equal(first.slides[0].content.rows.length, 1);
+  const saved = structuredClone(first);
+  delete saved.schemaVersion;
+  saved.slides[0].content.rows = [];
+  const second = migratePresentation(saved);
+  assert.deepEqual(second.slides[0].content.rows, []);
 });
 
 test('v3->v4 folds a canonical reverse-DNS type down to the registry key', () => {

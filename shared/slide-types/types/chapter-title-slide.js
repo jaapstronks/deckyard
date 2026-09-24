@@ -31,6 +31,7 @@ export default {
     TITLE_BLOCK.field,
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',

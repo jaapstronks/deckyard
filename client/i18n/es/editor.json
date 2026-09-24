@@ -672,7 +672,7 @@
   "editor.slideField.background.option.brand-2": "Marca 2",
   "editor.slideField.background.option.custom": "Color personalizado",
   "editor.slideField.background.option.dark": "Oscuro",
-  "editor.slideField.body.label": "Cuerpo (Markdown)",
+  "editor.slideField.body.label": "Cuerpo",
   "editor.slideField.bottomSubheading.label": "Subtítulo inferior",
   "editor.slideField.caption.label": "Leyenda",
   "editor.slideField.density.label": "Tamaño del texto",

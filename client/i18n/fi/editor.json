@@ -678,7 +678,7 @@
   "editor.slideField.background.option.brand-2": "Brändi 2",
   "editor.slideField.background.option.custom": "Mukautettu väri",
   "editor.slideField.background.option.dark": "Tumma",
-  "editor.slideField.body.label": "Sisältö (Markdown)",
+  "editor.slideField.body.label": "Sisältö",
   "editor.slideField.bottomSubheading.label": "Alaotsikko alhaalla",
   "editor.slideField.caption.label": "Kuvateksti",
   "editor.slideField.density.label": "Tekstin koko",

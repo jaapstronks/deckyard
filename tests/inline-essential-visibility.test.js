@@ -48,6 +48,10 @@ globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 globalThis.cancelAnimationFrame = clearTimeout;
 
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
+// The fork-stable definitions: a checkout's custom types carry their own
+// audit, and an override must not change what core declares.
+const { CORE_SLIDE_TYPE_DEFS } =
+  await import('../shared/slide-types/registry.js');
 const { renderSlideElement, NO_DECK_LANG } =
   await import('../client/lib/slide-runtime/slide-render.js');
 const { createInlineEditor } =
@@ -217,3 +221,127 @@ test('the stylesheet shows is-essential without hover and hides other chips unti
     'the empty-state note steps aside for the essential "+ Add"',
   );
 });
+
+/**
+ * The audit (B435 PR 2) as a table: every `essential` field of every core
+ * type, and what its empty state shows without hover. The table is the
+ * reviewable record (docs/reference/essential-fields.md carries the reasons);
+ * the test below holds the schema to it in both directions and renders each
+ * row.
+ *
+ * - `placeholder`: the renderer draws the field's element even when empty,
+ *   which gets the in-box "Add …" placeholder.
+ * - `chip`: the renderer omits the empty element; its ghost chip is marked
+ *   to show without hover.
+ * - `add`: an empty list; its "+ Add" is marked to show without hover.
+ * - `hint`: an empty flat image frame; its "+ Add image" likewise.
+ * - a selector: the field has no inline affordance (set in the inspector, or
+ *   an image list whose empty frames the renderer draws itself); the
+ *   renderer's own empty state, named here, is what asks for it.
+ */
+const ESSENTIAL = {
+  'callout-slide.body': 'placeholder',
+  'chapter-title-slide.title': 'placeholder',
+  'chart-slide.title': 'placeholder',
+  'chart-slide.data': '.chart-error',
+  'comparison-slide.leftTitle': 'chip',
+  'comparison-slide.leftBody': 'chip',
+  'comparison-slide.rightTitle': 'chip',
+  'comparison-slide.rightBody': 'chip',
+  'content-slide.title': 'placeholder',
+  'content-slide.body': 'placeholder',
+  'custom-html-slide.html': '.custom-html-empty',
+  'cycle-slide.title': 'chip',
+  'cycle-slide.items': 'add',
+  'embed-slide.embedUrl': '.embed-empty',
+  'end-slide.title': 'placeholder',
+  'feedback-slide.question': 'placeholder',
+  'funnel-slide.title': 'chip',
+  'funnel-slide.items': 'add',
+  'gallery-slide.images': 'add',
+  'icon-card-grid-slide.title': 'placeholder',
+  'icon-card-grid-slide.items': 'add',
+  'image-set-slide.title': 'placeholder',
+  'image-set-slide.body': 'placeholder',
+  'image-set-slide.images': '.image-placeholder.is-empty',
+  'image-slide.image': 'hint',
+  'image-text-slide.title': 'placeholder',
+  'image-text-slide.body': 'placeholder',
+  'image-text-slide.image': 'hint',
+  'kpi-metrics-slide.metrics': 'add',
+  'likert-slide.question': 'placeholder',
+  'likert-slide.options': 'add',
+  'likert-slider-slide.question': 'placeholder',
+  'list-slide.title': 'placeholder',
+  'list-slide.items': 'add',
+  'logo-wall-slide.logos': '.logo-wall-placeholder.is-empty',
+  'matrix-slide.cells': 'add',
+  'poll-slide.question': 'placeholder',
+  'poll-slide.options': 'add',
+  'process-slide.title': 'chip',
+  'process-slide.items': 'add',
+  'pyramid-slide.title': 'chip',
+  'pyramid-slide.levels': 'add',
+  'quote-slide.quote': 'placeholder',
+  'table-slide.title': 'placeholder',
+  'table-slide.rows': 'add',
+  'team-cards-slide.members': 'add',
+  'text-blocks-slide.title': 'placeholder',
+  'text-blocks-slide.rows': 'add',
+  'timeline-slide.items': 'add',
+  'title-slide.title': 'placeholder',
+  'video-slide.source': '.video-empty',
+};
+
+test('the essential fields of the core types are exactly the audit table', () => {
+  const declared = Object.entries(CORE_SLIDE_TYPE_DEFS)
+    .flatMap(([name, def]) =>
+      (def.fields || [])
+        .filter((f) => f.essential === true)
+        .map((f) => `${name}.${f.key}`),
+    )
+    .sort();
+  assert.deepEqual(declared, Object.keys(ESSENTIAL).sort());
+});
+
+for (const [row, expect] of Object.entries(ESSENTIAL)) {
+  test(`empty ${row} asks for itself without hover (${expect})`, () => {
+    const [type, key] = row.split('.');
+    const def = CORE_SLIDE_TYPE_DEFS[type];
+    const field = def.fields.find((f) => f.key === key);
+    const content = structuredClone(def.defaults || {});
+    content[key] = field.type === 'items' ? [] : '';
+    const env = mount({ id: 's', type, content });
+    try {
+      const q = (sel) => env.thumb.querySelector(sel);
+      if (expect === 'placeholder') {
+        const el = q(`[data-inline-field="${key}"]`);
+        assert.ok(
+          el?.classList.contains('ie-placeholder'),
+          'in-box placeholder',
+        );
+        assert.equal(el.innerHTML, '', 'empty, so the :empty rule shows it');
+      } else if (expect === 'chip') {
+        assert.ok(q(`.ie-ghost.is-essential[data-ie-ghost="${key}"]`));
+      } else if (expect === 'add') {
+        assert.ok(q('.ie-card-add.is-essential'));
+      } else if (expect === 'hint') {
+        assert.ok(q('.ie-media-hint.is-essential'));
+      } else {
+        assert.ok(q(expect), `the renderer's empty state ${expect}`);
+      }
+      // The other half of Test 2: whatever else shows a chip here is not
+      // essential and waits for hover.
+      for (const chip of env.thumb.querySelectorAll('.ie-ghost.is-essential')) {
+        const f = chip.getAttribute('data-ie-ghost');
+        assert.equal(
+          def.fields.find((x) => x.key === f)?.essential,
+          true,
+          `${f} is not essential but shows without hover`,
+        );
+      }
+    } finally {
+      env.teardown();
+    }
+  });
+}

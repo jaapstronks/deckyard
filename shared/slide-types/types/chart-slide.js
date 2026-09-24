@@ -53,6 +53,7 @@ export default {
   fields: [
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -91,6 +92,7 @@ export default {
     },
     {
       key: 'data',
+      essential: true,
       label: 'Data (CSV/TSV)',
       type: 'csv', // the csv-grid widget (field-editors.js) is this type's base editor
       required: true,

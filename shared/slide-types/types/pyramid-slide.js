@@ -49,6 +49,7 @@ export default {
   fields: [
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -74,6 +75,7 @@ export default {
     },
     {
       key: 'levels',
+      essential: true,
       label: 'Levels',
       type: 'items',
       // Pyramid levels are an ordered hierarchy, apex to base: the first level
