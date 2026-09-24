@@ -1,6 +1,6 @@
 import { cleanStr } from '../../shared/string-utils.js';
 import { AppError, ValidationError } from '../utils/errors.js';
-import { createLogger } from '../utils/logger.js';
+import { createLogger, logError } from '../utils/logger.js';
 import { envStr } from '../config/utils.js';
 import { safeFetchRemoteImage } from '../utils/ssrf-guard.js';
 
@@ -76,32 +76,39 @@ function basicAuthHeader(privateKey) {
   return `Basic ${token}`;
 }
 
+/**
+ * The one answer for an ImageKit request that did not succeed (B415). Whatever
+ * ImageKit said instead - a 4xx body, a 5xx, no answer at all - is logged here
+ * and never reaches the client: its body is ImageKit's JSON, and its status
+ * would let a 401 on our own key read as "you are signed out" to the editor.
+ * So every refusal is `502 bad_gateway` with this sentence.
+ */
+const IMAGEKIT_REFUSAL = 'ImageKit could not complete this request';
+
+/**
+ * @param {string} url
+ * @param {RequestInit} [opts]
+ * @returns {Promise<unknown>} - The parsed body of a successful answer.
+ * @throws {AppError} - `502 bad_gateway` for any failure, see {@link IMAGEKIT_REFUSAL}.
+ */
 async function fetchJsonOrThrow(url, opts = {}) {
-  const res = await fetch(url, opts);
+  const method = opts.method || 'GET';
+  const where = `${method} ${new URL(url).pathname}`;
+  let res;
+  try {
+    res = await fetch(url, opts);
+  } catch (err) {
+    logError('imagekit', `${where} did not reach ImageKit:`, err);
+    throw new AppError(IMAGEKIT_REFUSAL, 502);
+  }
   const ct = String(res.headers.get('content-type') || '');
   const isJson = ct.includes('application/json');
   const body = isJson
     ? await res.json().catch(() => null)
     : await res.text().catch(() => '');
   if (!res.ok) {
-    const msg =
-      typeof body === 'string'
-        ? body
-        : body && typeof body === 'object'
-          ? JSON.stringify(body)
-          : 'Request failed';
-    // Upstream 4xx messages were already client-visible; >=500 bodies are
-    // raw ImageKit payloads, so those get a generic message instead.
-    const err = new AppError(
-      res.status >= 500
-        ? `ImageKit request failed (${res.status})`
-        : msg || `Request failed (${res.status})`,
-      res.status,
-    );
-    // Raw upstream payload rides along for logging only — deliberately NOT
-    // in `details`, which AppError.toJSON() would echo to the client.
-    err.upstream = body && typeof body === 'object' ? body : null;
-    throw err;
+    logError('imagekit', `${where} answered ${res.status}:`, body);
+    throw new AppError(IMAGEKIT_REFUSAL, 502);
   }
   return body;
 }
@@ -183,12 +190,15 @@ export const IMAGEKIT_SORT_VALUES = Object.freeze(
 export const IMAGEKIT_DEFAULT_SORT = 'DESC_CREATED';
 
 /**
+ * One spelling per sort: ImageKit's own upper-case form. A lower-case value
+ * is refused like any other unknown one, not repaired (D109).
+ *
  * @param {unknown} sort - Caller-supplied sort, empty for the default.
  * @returns {string} - A value from {@link IMAGEKIT_SORT_VALUES}.
  * @throws {ValidationError} - When a non-empty value is not in the set.
  */
 function normalizeSort(sort) {
-  const s = cleanStr(sort).toUpperCase();
+  const s = cleanStr(sort);
   if (!s) return IMAGEKIT_DEFAULT_SORT;
   if (!IMAGEKIT_SORT_VALUES.has(s)) {
     // `details` is a registered payload per code (`error-details.js`); a
@@ -287,8 +297,11 @@ export async function listImageKitTags() {
 
       // Stop if we got fewer files than requested (end of list)
       if (files.length < batchSize) break;
-    } catch {
-      // Continue with what we have if a batch fails
+    } catch (err) {
+      // A later batch failing leaves a smaller sample, which is still a
+      // sample. The first failing leaves nothing: that is ImageKit refusing,
+      // not an account without tags, so it answers the refusal (B415).
+      if (i === 0) throw err;
       break;
     }
   }

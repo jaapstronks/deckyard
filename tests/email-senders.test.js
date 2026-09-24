@@ -68,11 +68,13 @@ async function capture(send) {
 }
 
 /**
- * Seed the override store; `rows` are `{ type, locale, fields }`.
+ * Seed the override store; `rows` are `{ type, locale, fields }`, and
+ * `tables` any other rows the send reads (a recipient's `user_settings`).
  * @returns {Object} the double, whose `__queryLog` records every table touched.
  */
-function seedTemplates(rows = []) {
+function seedTemplates(rows = [], tables = {}) {
   const db = createFakeDb({
+    ...tables,
     email_templates: rows.map((row) => ({
       ...row,
       created_at: '2026-01-01T00:00:00.000Z',
@@ -154,7 +156,7 @@ test('without an API key nothing is attempted and the reason says so', async () 
 // Which body
 // ---------------------------------------------------------------------------
 
-test('with no repoRoot the code default is used and the store is never read', async () => {
+test('with no repoRoot the code default is used and the override store is never read', async () => {
   // An override exists and still must not be reached: `repoRoot` is what
   // switches the lookup on, and a sender that reads config without one would
   // be resolving instance settings on a path that has no place to get them.
@@ -174,7 +176,10 @@ test('with no repoRoot the code default is used and the store is never read', as
   );
 
   assert.equal(payload.subject, 'Reset your password');
-  assert.deepEqual(db.__queryLog, [], 'no query at all without a repoRoot');
+  assert.ok(
+    !db.__queryLog.some((entry) => entry.table === 'email_templates'),
+    'no override lookup without a repoRoot',
+  );
 });
 
 test('an admin override replaces the code default for that type and locale', async () => {
@@ -285,31 +290,41 @@ test('a custom subject is plain text, entity-free, like the code defaults', () =
 // In which language
 // ---------------------------------------------------------------------------
 
-test('the locale picks the code default translation', async () => {
-  seedTemplates();
+// The sender asks `resolveRecipientLocale()` for its own recipient (B400);
+// these cases set the language where it lives, on the recipient's settings.
+// The full per-sender matrix is tests/recipient-locale-everywhere.test.js.
+
+/** A stored interface-language preference for one address. */
+function prefers(email, uiLocale) {
+  return { user_settings: [{ email, settings: { uiLocale } }] };
+}
+
+test("the recipient's language picks the code default translation", async () => {
+  seedTemplates([], prefers('alice@example.com', 'nl'));
 
   const { payload } = await capture(() =>
     sendPasswordResetEmail({
       recipientEmail: 'alice@example.com',
       resetUrl: 'https://deckyard.test/reset?token=abc',
-      locale: 'nl',
     }),
   );
 
   assert.equal(payload.subject, 'Wachtwoord opnieuw instellen');
 });
 
-test('the locale picks the matching override, not the default-locale one', async () => {
-  seedTemplates([
-    { type: 'magicLink', locale: 'en', fields: { subject: 'English one' } },
-    { type: 'magicLink', locale: 'nl', fields: { subject: 'Nederlandse' } },
-  ]);
+test("the recipient's language picks the matching override, not the default-locale one", async () => {
+  seedTemplates(
+    [
+      { type: 'magicLink', locale: 'en', fields: { subject: 'English one' } },
+      { type: 'magicLink', locale: 'nl', fields: { subject: 'Nederlandse' } },
+    ],
+    prefers('bob@example.com', 'nl'),
+  );
 
   const { payload } = await capture(() =>
     sendMagicLinkEmail({
       recipientEmail: 'bob@example.com',
       magicLinkUrl: 'https://deckyard.test/magic?token=xyz',
-      locale: 'nl',
       repoRoot: REPO_ROOT,
     }),
   );
@@ -317,16 +332,16 @@ test('the locale picks the matching override, not the default-locale one', async
   assert.equal(payload.subject, 'Nederlandse');
 });
 
-test('an unsupported locale falls back to en rather than sending nothing', async () => {
-  seedTemplates([
-    { type: 'magicLink', locale: 'en', fields: { subject: 'English one' } },
-  ]);
+test('an unsupported preference falls back to en rather than sending nothing', async () => {
+  seedTemplates(
+    [{ type: 'magicLink', locale: 'en', fields: { subject: 'English one' } }],
+    prefers('bob@example.com', 'kl'),
+  );
 
   const { payload } = await capture(() =>
     sendMagicLinkEmail({
       recipientEmail: 'bob@example.com',
       magicLinkUrl: 'https://deckyard.test/magic?token=xyz',
-      locale: 'kl',
       repoRoot: REPO_ROOT,
     }),
   );

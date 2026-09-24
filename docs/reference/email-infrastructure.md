@@ -140,6 +140,22 @@ not, and that result is discarded by most call sites.
   sinks and carry raw values; the action URL is escaped into its `href` and into
   the copy-paste footer, identically in both. Pinned by
   `tests/email-template-escaping.test.js`.
+- **Language** — every sender asks `resolveRecipientLocale()`
+  (`server/integrations/email/recipient-locale.js`) for its own recipient and
+  has no `locale` parameter (B400), so no call site can pick or default a
+  language. The chain it answers with: the recipient's stored `uiLocale` when
+  the install has strings for it, otherwise the install's mail default (the
+  admin panel's "default language", `en` until set). That second step covers
+  everyone who has not chosen: a share-link guest without an account and an
+  invitee whose account was created a moment ago. The two digests are the one
+  exception in form, not in outcome: their body is AI-generated prose, so the
+  digest job resolves the locale once, `generateDigestWithAI` and
+  `generateTeamDigestWithAI` require it, tell the model to write every field
+  in that language, render the template fallbacks and the analytics insights
+  (from their `type` and `data`, never their English `text`) through the
+  translator, and stamp it on `digest.locale`. The digest senders render the
+  chrome in `digest.locale` and refuse a digest that names none, so prose and
+  frame cannot disagree (B390).
 - **Digest** — `scheduleDigestEmailJob()` starts in `server/server.js` and runs
   **daily**, sending only to users whose `digest` preference (Settings >
   Preferences, stored in `user_settings`) is on and names today (default: on,
@@ -168,7 +184,8 @@ not, and that result is discarded by most call sites.
 
 Settings, not env: `settings.emailSender.{email,name}` (admin-set sender
 identity, takes precedence over the env vars) and the instance default locale in
-`email_template_settings`. Per user, `settings.digest.{enabled, dayOfWeek}`
+`email_template_settings` (the language of a mail to anyone without a stored
+preference). Per user, `settings.digest.{enabled, dayOfWeek}`
 controls the weekly digest (`enabled` defaults to true, day defaults to Monday).
 
 There is **no feature flag that disables email as a whole** — the switch is
@@ -192,7 +209,7 @@ whether `BREVO_API_KEY` is set.
 - **Test-send goes to the calling admin's own address**, so the admin API cannot
   be used to mail arbitrary third parties.
 
-## Implementation status (as of 2026-09-21)
+## Implementation status (as of 2026-09-23)
 
 Shipped and in use: the Brevo transport, all three sender families plus export,
 the code-default builders in two locales' worth of translator strings (`en`,
@@ -201,30 +218,6 @@ its migration off disk, the resolver's custom → default → `en` chain, and th
 admin panel with preview and test-send.
 
 Honest gaps:
-
-- **The mails that reach an account holder carry their language; the rest do
-  not yet.** `resolveRecipientLocale()`
-  (`server/integrations/email/recipient-locale.js`) is the one place that
-  answers "which language does this address read?", and the password-reset
-  route, the magic-link route and the bulk-export worker hand its answer to
-  their sender. The senders that are left still fall back to their
-  `locale = 'en'` default, so an invitation, a collaborator invite, a guest
-  verification and a comment notification go out in English
-  regardless of the recipient — and the instance default locale an admin sets
-  in the panel governs template _editing_, not what is sent. Those are **two**
-  groups, not one: an invitation or guest verification reaches an address with
-  no account, so there is no `uiLocale` to read and the instance default is
-  the answer.
-
-- **The two digests carry their language on the digest itself** (B390). The
-  digest job resolves the recipient's locale once through
-  `resolveRecipientLocale()`; `generateDigestWithAI` and
-  `generateTeamDigestWithAI` require it, tell the model to write every field
-  in that language, render the template fallbacks and the analytics insights
-  (from their `type` and `data`, never their English `text`) through the
-  translator, and stamp it on `digest.locale`. The digest senders render the
-  chrome in `digest.locale` and refuse a digest that names none, so prose and
-  frame cannot disagree.
 
 - **The export mail and the two digests have no admin-customizable
   template.** `senders-export.js` renders a bespoke stats table through

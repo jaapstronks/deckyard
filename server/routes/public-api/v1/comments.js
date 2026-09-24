@@ -45,6 +45,7 @@ import {
 } from '../../api/presentations/comments-shared.js';
 import {
   requirePermission,
+  dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   getPresentationWithAccess,
@@ -410,36 +411,42 @@ async function handleCommentStatus(ctx, commentId) {
 // MAIN HANDLER
 // ============================================================
 
+/** Comment routes; a known path with another method answers 405. */
+export const ROUTES = [
+  {
+    method: 'GET',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/comments$/,
+    captures: ['uuid'],
+    handler: handleListComments,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/comments$/,
+    captures: ['uuid'],
+    handler: handleCreateComment,
+  },
+  {
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/comments$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET', 'POST']),
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/v1\/comments\/([^/]+)\/status$/,
+    captures: ['uuid'],
+    handler: handleCommentStatus,
+  },
+  {
+    pattern: /^\/api\/v1\/comments\/([^/]+)\/status$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
+  },
+];
+
 /**
  * Main handler for public API v1 comment routes.
  */
 export const handleComments = withV1ErrorHandler(
   'public-api-v1:comments',
-  async (ctx) => {
-    const { req, res, url } = ctx;
-
-    // GET/POST /api/v1/presentations/:id/comments
-    const collectionMatch = url.pathname.match(
-      /^\/api\/v1\/presentations\/([^/]+)\/comments$/,
-    );
-    if (collectionMatch) {
-      if (req.method === 'GET')
-        return handleListComments(ctx, collectionMatch[1]);
-      if (req.method === 'POST')
-        return handleCreateComment(ctx, collectionMatch[1]);
-      return v1MethodNotAllowed(res, ['GET', 'POST']);
-    }
-
-    // POST /api/v1/comments/:commentId/status
-    const statusMatch = url.pathname.match(
-      /^\/api\/v1\/comments\/([^/]+)\/status$/,
-    );
-    if (statusMatch) {
-      if (req.method === 'POST')
-        return handleCommentStatus(ctx, statusMatch[1]);
-      return v1MethodNotAllowed(res, ['POST']);
-    }
-
-    return false;
-  },
+  (ctx) => dispatchV1Routes(ROUTES, ctx),
 );

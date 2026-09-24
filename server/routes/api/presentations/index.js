@@ -102,21 +102,6 @@ function handlePresentationItemRoute(ctx, id) {
 }
 
 /**
- * Tags handler takes a bespoke context shape (`presentationId`, no `repoRoot`).
- * @param {AuthedContext} ctx
- * @param {string} id
- */
-function handlePresentationTagsRoute({ storageScope, req, res, url }, id) {
-  return handlePresentationTags({
-    storageScope,
-    req,
-    res,
-    url,
-    presentationId: id,
-  });
-}
-
-/**
  * Render-slide is deliberately called without `url` in its context.
  * @param {AuthedContext} ctx
  * @param {string} id
@@ -399,7 +384,7 @@ export const ROUTES = [
   {
     pattern: /^\/api\/presentations\/([^/]+)\/tags$/,
     captures: ['uuid'],
-    handler: handlePresentationTagsRoute,
+    handler: handlePresentationTags,
   },
 
   // ============================================================

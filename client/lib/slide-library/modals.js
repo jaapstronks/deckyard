@@ -17,6 +17,7 @@ import { getContentForLang } from './search.js';
 import { openEditModal } from './edit-modal.js';
 import { createInlineError } from '../dom/inline-error.js';
 import { h } from '../dom.js';
+import { canEditLibraryItem, refuseEdit } from './permissions.js';
 
 /**
  * Create modal functions for the slide library
@@ -98,30 +99,18 @@ export function createSlideLibraryModals({
     // Edit reads the server's verdict (`canEdit`, D170). A slide you may not
     // change keeps the button, greyed out with the reason, and offers the way
     // that is open to you: a copy of your own.
-    const canEdit = it?.canEdit === true;
-    const notAllowed = t(
-      'slideLibrary.edit.notAllowed',
-      'Only its maker or an admin can edit this shared slide.',
-    );
+    const canEdit = canEditLibraryItem(it);
     const editBtn = h('button', {
       class: 'btn btn-secondary',
       type: 'button',
       text: t('common.edit', 'Edit'),
-      title: canEdit
-        ? t('slideLibrary.edit.tooltip', 'Edit slide content')
-        : notAllowed,
-      disabled: !canEdit,
+      title: t('slideLibrary.edit.tooltip', 'Edit slide content'),
       onclick: () => openEditor(it, shelf),
     });
     if (canEdit) {
       headerActions.append(editBtn);
     } else {
-      const reason = h('span', {
-        class: 'help ps-lib-edit-reason',
-        id: `ps-lib-edit-reason-${cleanStr(it?.id)}`,
-        text: notAllowed,
-      });
-      editBtn.setAttribute('aria-describedby', reason.id);
+      const reason = refuseEdit(editBtn, it, 'ps-lib-edit-reason');
       const duplicateBtn = h('button', {
         class: 'btn btn-secondary',
         type: 'button',
@@ -210,7 +199,7 @@ export function createSlideLibraryModals({
       text: t('slideLibrary.tags', 'Tags'),
     });
     const initialTagNames = Array.isArray(it?.tags)
-      ? it.tags.map((t) => t.name || t)
+      ? it.tags.map((t) => t.name)
       : [];
     const tagEditor = createTagEditor({
       api,

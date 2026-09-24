@@ -368,10 +368,14 @@ test('an instance admin may not promote into someone else’s deck either', asyn
 
 test('promoting on a deck that does not exist is a 404', async () => {
   const { questionId } = await seed();
-  const { res } = await call('POST', promotePath('no-such-deck', questionId), {
-    as: OWNER,
-    body: {},
-  });
+  const { res } = await call(
+    'POST',
+    promotePath('00000000-0000-4000-8000-00000000dead', questionId),
+    {
+      as: OWNER,
+      body: {},
+    },
+  );
   assert.equal(res.statusCode, 404);
 });
 
@@ -512,26 +516,71 @@ test('a signed-in stranger is told nothing is allowed', async () => {
   assert.equal(removeStatus, 403);
 });
 
-test('an anonymous caller is answered "nothing", not refused', async () => {
-  // In the running app the login gate answers this one 401 long before the
-  // dispatcher sees it, and that is the ordinary case: the notes companion is
-  // authorized by a join link, not an account. The handler still has to have an
-  // answer of its own, because the client reads a refusal and an empty grant as
-  // the same thing — no moderator controls — and a 200 keeps that honest
-  // instead of routing it through an exception.
+test('an anonymous caller is refused 401 by the handler, like both actions', async () => {
+  // One answer for anonymous across the module (B409). The handler used to
+  // say 200 `{false, false}` here while the login gate said 401 before it
+  // ever ran; the gate's answer is the one a browser sees, so it is the one.
   const { pres } = await seed();
   const { res } = await call('GET', capabilitiesPath(pres.id), { as: null });
-  assert.equal(res.statusCode, 200);
-  assert.deepEqual(jsonBody(res), { canPromote: false, canRemove: false });
+  assert.equal(res.statusCode, 401);
+  assert.equal(jsonBody(res).error, 'unauthorized');
+});
+
+test('an anonymous caller is refused 401 by the running /api dispatcher', async () => {
+  // The same question through `handleApi` with auth on and no session cookie:
+  // the answer the notes companion on a join link actually receives, and the
+  // one `fetchModerationCapabilities` reads as "no moderator controls".
+  const saved = {
+    AUTH_ENABLED: process.env.AUTH_ENABLED,
+    AUTH_SECRET: process.env.AUTH_SECRET,
+    AUTH_DEV_BYPASS: process.env.AUTH_DEV_BYPASS,
+    SANDBOX_MODE: process.env.SANDBOX_MODE,
+  };
+  process.env.AUTH_ENABLED = 'true';
+  process.env.AUTH_SECRET = ['deckyard', 'test', 'b409']
+    .join('-')
+    .padEnd(40, '0');
+  delete process.env.AUTH_DEV_BYPASS;
+  delete process.env.SANDBOX_MODE;
+  try {
+    const { handleApi } = await import('../server/routes/api/index.js');
+    const { pres } = await seed();
+    const pathname = capabilitiesPath(pres.id);
+    const req = {
+      method: 'GET',
+      url: pathname,
+      headers: { host: 'decks.example.test' },
+      socket: { remoteAddress: '203.0.113.9' },
+    };
+    const res = makeRes();
+    await handleApi({
+      repoRoot: REPO_ROOT,
+      req,
+      res,
+      url: new URL(`http://decks.example.test${pathname}`),
+    });
+    assert.equal(res.statusCode, 401);
+    assert.equal(jsonBody(res).error, 'unauthorized');
+  } finally {
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 });
 
 test('capabilities for a deck this caller cannot see is an empty grant, not a 404', async () => {
   // `getPresentation` is organization-scoped, so an unreadable deck and a
-  // missing one arrive here identically. Answering "nothing allowed" refuses to
+  // missing one arrive here identically. (A well-formed id: a malformed one
+  // names no deck at all and is the route's 404, B399.) Answering "nothing allowed" refuses to
   // turn the moderator surface into a deck-existence oracle.
-  const { res } = await call('GET', capabilitiesPath('no-such-deck'), {
-    as: STRANGER,
-  });
+  const { res } = await call(
+    'GET',
+    capabilitiesPath('00000000-0000-4000-8000-00000000dead'),
+    {
+      as: STRANGER,
+    },
+  );
   assert.equal(res.statusCode, 200);
   assert.deepEqual(jsonBody(res), { canPromote: false, canRemove: false });
 });

@@ -570,7 +570,12 @@ test('a type-level `scale` is refused when malformed and warns on an end label t
     defaults: { question: '', low: '' },
     renderHtml: () => '<div class="slide slide-rating"></div>',
   };
-  for (const scale of [{ min: 1 }, { min: 5, max: 5 }, { min: 1.5, max: 4 }]) {
+  for (const scale of [
+    { min: 1 },
+    { min: 5, max: 5 },
+    { min: 1.5, max: 4 },
+    { min: 0, max: 10 },
+  ]) {
     const report = validateSlideTypeDefinition({ ...base, scale }, 'rating');
     assert.ok(
       report.errors.some((e) => e.includes('`scale`')),

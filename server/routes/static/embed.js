@@ -1,4 +1,5 @@
 import { notFound } from '../../utils/http.js';
+import { dispatchRoutes } from '../../utils/router.js';
 import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations/index.js';
@@ -23,14 +24,8 @@ import { crossOrganizationScope } from '../../storage/scope.js';
  * @param {import('./static-files.js').StaticContext} ctx
  * @returns {Promise<boolean>} true if handled.
  */
-export async function handleEmbed({ repoRoot, req, res, url }) {
-  const embedMatch = url.pathname.match(
-    /^\/embed\/([a-f0-9]{8})(?:-([^/]+))?$/,
-  );
-  if (!embedMatch || req.method !== 'GET') return false;
-
-  const publishId = embedMatch[1];
-  const reqSlug = String(embedMatch[2] || '').trim();
+async function serveEmbed({ repoRoot, res, url }, publishId, slugSegment) {
+  const reqSlug = String(slugSegment || '').trim();
   const entry = await getPublishedById(
     crossOrganizationScope(
       repoRoot,
@@ -168,4 +163,27 @@ export async function handleEmbed({ repoRoot, req, res, url }) {
 </html>`);
     return true;
   }
+}
+
+/**
+ * `/embed/:publishId-:slug`. The publish id is a `published_presentations.id`
+ * (`varchar`, not `uuid`) and the slug is the one the handler redirects to, so
+ * both are `text`; the `{8}` hex run is what separates id from slug, not a gate.
+ */
+export const ROUTES = [
+  {
+    method: 'GET',
+    pattern: /^\/embed\/([a-f0-9]{8})(?:-([^/]+))?$/,
+    captures: ['text', 'text'],
+    handler: serveEmbed,
+  },
+];
+
+/**
+ * Published embed player (iframe-friendly, public, no auth).
+ * @param {import('./static-files.js').StaticContext} ctx
+ * @returns {Promise<boolean>|false} true if handled.
+ */
+export function handleEmbed(ctx) {
+  return dispatchRoutes(ROUTES, ctx);
 }

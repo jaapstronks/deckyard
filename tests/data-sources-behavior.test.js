@@ -214,10 +214,10 @@ describe('csv-url SSRF guard (binding level)', () => {
       await assert.rejects(
         () => refreshSlideData(csvDataSource({ config: { url } }), {}),
         (err) => {
-          // provider-base wraps fetch-stage failures as a 502 AppError and
-          // keeps the guard's message.
+          // The guard's refusal is the caller's URL: a 400 in its own words,
+          // which provider-base passes through unchanged (B417).
           assert.ok(isAppError(err), 'typed AppError');
-          assert.equal(err.statusCode, 502);
+          assert.equal(err.statusCode, 400);
           assert.match(err.message, message);
           return true;
         },

@@ -40,7 +40,6 @@ async function ensureS3() {
 const ALLOWED_CONTENT_TYPES = new Set([
   'image/png',
   'image/jpeg',
-  'image/jpg',
   'image/gif',
   'image/webp',
   'image/svg+xml',
@@ -51,7 +50,6 @@ const ALLOWED_CONTENT_TYPES = new Set([
 const MIME_TO_EXT = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
-  'image/jpg': 'jpg',
   'image/gif': 'gif',
   'image/webp': 'webp',
   'image/svg+xml': 'svg',

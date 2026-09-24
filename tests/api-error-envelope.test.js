@@ -29,6 +29,7 @@ import {
   ValidationError,
   errorToResponse,
   codeForStatus,
+  revisionConflict,
 } from '../server/utils/errors.js';
 import { buildTopLevelErrorBody } from '../server/utils/error-response.js';
 import {
@@ -262,6 +263,7 @@ test('every registered code passes with exactly its keys', () => {
     conversion_failed: { report: { errors: [] } },
     maintenance: { active: true, reason: 'upgrade', retryAfter: 30 },
     sandbox_quota_exceeded: { resource: 'decks', limit: 2, used: 2 },
+    in_use: { usage: { slides: 3, decks: 2, libraryItems: 1, versions: 0 } },
     missing_alt: {
       lang: 'nl',
       slideIndex: 2,
@@ -365,17 +367,35 @@ test('absent details always passes, for any code', () => {
 });
 
 test('the slide-merge conflict serializes with its full registered payload', () => {
-  // The 409 with `conflictingSlides` is built in `storage/presentations/
-  // index.js`, not in the shared `conflictError()` helper — the path a plain
-  // `.details` assertion never serializes. Pin the envelope, not the throw.
-  const err = new AppError('Conflict: the same slides were modified.', 409, {
+  // Every `conflict` 409 is built by `revisionConflict()` (B217); pin the
+  // envelope it serializes to, not just the throw.
+  const updatedBy = { id: 'u1', displayName: 'A' };
+  const err = revisionConflict(
+    'Conflict: the same slides were modified.',
+    { id: 'p1', revision: 7, modified: '2026-09-02T00:00:00.000Z', updatedBy },
+    { conflictingSlides: ['s3'] },
+  );
+  const body = err.toJSON();
+  assert.equal(body.error, 'conflict');
+  assert.deepEqual(body.details, {
     id: 'p1',
     revision: 7,
     modified: '2026-09-02T00:00:00.000Z',
-    updatedBy: 'a@b.c',
+    updatedBy,
     conflictingSlides: ['s3'],
   });
-  const body = err.toJSON();
-  assert.equal(body.error, 'conflict');
-  assert.deepEqual(body.details.conflictingSlides, ['s3']);
+});
+
+test('a plain conflict has the same keys without conflictingSlides, and a null updatedBy', () => {
+  const err = revisionConflict('Conflict.', {
+    id: 'p1',
+    revision: 7,
+    modified: '2026-09-02T00:00:00.000Z',
+  });
+  assert.deepEqual(err.toJSON().details, {
+    id: 'p1',
+    revision: 7,
+    modified: '2026-09-02T00:00:00.000Z',
+    updatedBy: null,
+  });
 });

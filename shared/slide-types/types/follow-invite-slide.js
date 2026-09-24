@@ -32,6 +32,13 @@ export default {
   // *suggests* an invite when an interactive slide lands in a deck without
   // one, and the user chooses the position (B368).
   ai: false,
+  // Not saved to the slide library: the invite has no content of its own (the
+  // join code and language come from the render context, `presentationId` is
+  // an instance key re-pointed on every copy), so a library copy would carry
+  // nothing worth reusing. Read by `isLibrarySlideType()` in
+  // shared/slide-types/policy.js — the editor's Save-to-library action and the
+  // library create routes both ask that one predicate.
+  library: false,
   // Intentionally no editable fields:
   // - Content is derived, not authored: the join code and language come from
   //   the render context, and `presentationId` is an instance key the editor

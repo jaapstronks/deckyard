@@ -46,10 +46,10 @@ function storeResult(jobId, result) {
     storedAt: Date.now(),
   });
 
-  // Schedule cleanup
+  // Schedule cleanup; unref'd so it never keeps the process alive.
   setTimeout(() => {
     jobResults.delete(jobId);
-  }, RESULT_TTL_MS);
+  }, RESULT_TTL_MS).unref();
 }
 
 /**

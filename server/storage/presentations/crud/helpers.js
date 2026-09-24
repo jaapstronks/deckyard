@@ -4,7 +4,6 @@
 
 import { normalizePresentationVisibility } from '../../../utils/presentation-authz/index.js';
 import { normalizeEmail } from '../../../utils/normalize.js';
-import { ConflictError } from '../../../utils/errors.js';
 import { slideFingerprint } from '../../../../shared/slide-fingerprint.js';
 import { envInt } from '../../../config/utils.js';
 
@@ -27,21 +26,6 @@ export function normalizeMeta(pres) {
   pres.updatedBy = updatedBy || null;
 
   return pres;
-}
-
-/**
- * Create a conflict error with revision details.
- */
-export function conflictError(existing) {
-  return new ConflictError(
-    'Conflict: presentation was updated by someone else. Reload and try again.',
-    {
-      id: existing?.id,
-      revision: existing?.revision,
-      modified: existing?.modified,
-      updatedBy: existing?.updatedBy || null,
-    },
-  );
 }
 
 // The slide-level merge exists for seconds-to-minutes concurrent editing.

@@ -46,7 +46,7 @@ process.env.STORAGE_MODE = 'postgres';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 const OWNER = 'owner@example.com';
-const DECK_ID = 'deck-org-registry';
+const DECK_ID = 'd0000002-0000-4000-8000-000000000002';
 /** The key the builder publishes a type under, and the editor inserts. */
 const CUSTOM_TYPE = 'custom-partner-wall';
 /** The custom type's own `maxLength` on `title`. */

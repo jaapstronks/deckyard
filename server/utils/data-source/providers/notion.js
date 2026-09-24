@@ -19,7 +19,7 @@ import {
   richTextToPlain,
   pageTitleFromProperties,
 } from '../../notion/parser.js';
-import { AppError } from '../../errors.js';
+import { AppError, ValidationError } from '../../errors.js';
 
 /**
  * Query a Notion database and return rows as objects keyed by property name.
@@ -31,7 +31,9 @@ async function queryDatabase(config) {
 
   const { databaseId, filter, sorts } = config;
   if (!databaseId) {
-    throw new Error('databaseId is required for notion-database provider');
+    throw new ValidationError(
+      'databaseId is required for notion-database provider',
+    );
   }
 
   const body = { page_size: 100 };
@@ -141,7 +143,9 @@ async function fetchBlock(config) {
   const { blockId, pageId } = config;
   const id = blockId || pageId;
   if (!id) {
-    throw new Error('blockId or pageId is required for notion-block provider');
+    throw new ValidationError(
+      'blockId or pageId is required for notion-block provider',
+    );
   }
 
   const blocks = await fetchAllBlockChildren(id, { limit: 50 });

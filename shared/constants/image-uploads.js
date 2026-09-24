@@ -16,17 +16,19 @@
  * Accepted image uploads, in the order the hint names them.
  *
  * `label` is the format's name as it is written in every language. `exts`
- * lists the file extensions that spell it, the first being canonical. `mimes`
- * are the content types the server accepts for it.
+ * lists the file extensions that spell it, the first being canonical. `mime`
+ * is the one content type the server accepts for it: a format has one
+ * registered type, so a second spelling (the unregistered image/jpg, B403)
+ * has no place to go.
  *
- * @type {ReadonlyArray<{label: string, exts: string[], mimes: string[]}>}
+ * @type {ReadonlyArray<{label: string, exts: string[], mime: string}>}
  */
 export const IMAGE_UPLOAD_FORMATS = Object.freeze([
-  { label: 'PNG', exts: ['png'], mimes: ['image/png'] },
-  { label: 'JPG', exts: ['jpg', 'jpeg'], mimes: ['image/jpeg', 'image/jpg'] },
-  { label: 'GIF', exts: ['gif'], mimes: ['image/gif'] },
-  { label: 'WebP', exts: ['webp'], mimes: ['image/webp'] },
-  { label: 'SVG', exts: ['svg'], mimes: ['image/svg+xml'] },
+  { label: 'PNG', exts: ['png'], mime: 'image/png' },
+  { label: 'JPG', exts: ['jpg', 'jpeg'], mime: 'image/jpeg' },
+  { label: 'GIF', exts: ['gif'], mime: 'image/gif' },
+  { label: 'WebP', exts: ['webp'], mime: 'image/webp' },
+  { label: 'SVG', exts: ['svg'], mime: 'image/svg+xml' },
 ]);
 
 /**
@@ -35,18 +37,16 @@ export const IMAGE_UPLOAD_FORMATS = Object.freeze([
  * @type {Readonly<Record<string, string>>}
  */
 export const IMAGE_UPLOAD_MIME_TO_EXT = Object.freeze(
-  Object.fromEntries(
-    IMAGE_UPLOAD_FORMATS.flatMap((f) => f.mimes.map((m) => [m, f.exts[0]])),
-  ),
+  Object.fromEntries(IMAGE_UPLOAD_FORMATS.map((f) => [f.mime, f.exts[0]])),
 );
 
 /**
- * Every accepted extension, mapped to the content types that may carry it.
- * @type {Readonly<Record<string, string[]>>}
+ * Every accepted extension, mapped to the content type that carries it.
+ * @type {Readonly<Record<string, string>>}
  */
-export const IMAGE_UPLOAD_EXT_TO_MIMES = Object.freeze(
+export const IMAGE_UPLOAD_EXT_TO_MIME = Object.freeze(
   Object.fromEntries(
-    IMAGE_UPLOAD_FORMATS.flatMap((f) => f.exts.map((e) => [e, [...f.mimes]])),
+    IMAGE_UPLOAD_FORMATS.flatMap((f) => f.exts.map((e) => [e, f.mime])),
   ),
 );
 
@@ -66,7 +66,7 @@ export function imageUploadFormatList() {
  */
 export function imageUploadAccept() {
   return IMAGE_UPLOAD_FORMATS.flatMap((f) => [
-    ...f.mimes,
+    f.mime,
     ...f.exts.map((e) => `.${e}`),
   ]).join(',');
 }

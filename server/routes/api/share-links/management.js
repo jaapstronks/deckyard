@@ -307,18 +307,40 @@ const ACCESS_LOG_PATTERN =
  * @type {import('../../../utils/router.js').Route[]}
  */
 export const MANAGEMENT_ROUTES = [
-  { method: 'POST', pattern: BASE_PATTERN, handler: handleShareLinkCreate },
-  { method: 'GET', pattern: BASE_PATTERN, handler: handleShareLinkList },
+  {
+    method: 'POST',
+    pattern: BASE_PATTERN,
+    captures: ['uuid'],
+    handler: handleShareLinkCreate,
+  },
+  {
+    method: 'GET',
+    pattern: BASE_PATTERN,
+    captures: ['uuid'],
+    handler: handleShareLinkList,
+  },
   {
     method: 'DELETE',
     pattern: BASE_PATTERN,
+    captures: ['uuid'],
     handler: handleShareLinksRevokeAll,
   },
-  { method: 'DELETE', pattern: LINK_PATTERN, handler: handleShareLinkRevoke },
-  { method: 'PATCH', pattern: LINK_PATTERN, handler: handleShareLinkUpdate },
+  {
+    method: 'DELETE',
+    pattern: LINK_PATTERN,
+    captures: ['uuid', 'uuid'],
+    handler: handleShareLinkRevoke,
+  },
+  {
+    method: 'PATCH',
+    pattern: LINK_PATTERN,
+    captures: ['uuid', 'uuid'],
+    handler: handleShareLinkUpdate,
+  },
   {
     method: 'GET',
     pattern: ACCESS_LOG_PATTERN,
+    captures: ['uuid', 'uuid'],
     handler: handleShareLinkAccessLog,
   },
 ];

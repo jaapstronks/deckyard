@@ -185,13 +185,13 @@ test('slide-library: routes resolve to their named handlers in order', () => {
   named(
     SL_ROUTES,
     'PATCH',
-    '/api/slide-library/personal/i-1',
+    '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1',
     'handlePersonalUpdate',
   );
   named(
     SL_ROUTES,
     'DELETE',
-    '/api/slide-library/personal/i-1',
+    '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1',
     'handlePersonalDelete',
   );
   named(
@@ -209,37 +209,37 @@ test('slide-library: routes resolve to their named handlers in order', () => {
   named(
     SL_ROUTES,
     'PATCH',
-    '/api/slide-library/organization/i-1',
+    '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1',
     'handleOrganizationUpdate',
   );
   named(
     SL_ROUTES,
     'DELETE',
-    '/api/slide-library/organization/i-1',
+    '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1',
     'handleOrganizationDelete',
   );
   named(
     SL_ROUTES,
     'GET',
-    '/api/slide-library/personal/i-1/tags',
+    '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1/tags',
     'handleItemTagsGet',
   );
   named(
     SL_ROUTES,
     'PUT',
-    '/api/slide-library/personal/i-1/tags',
+    '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1/tags',
     'handleItemTagsPut',
   );
   named(
     SL_ROUTES,
     'GET',
-    '/api/slide-library/organization/i-1/tags',
+    '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1/tags',
     'handleItemTagsGet',
   );
   named(
     SL_ROUTES,
     'PUT',
-    '/api/slide-library/organization/i-1/tags',
+    '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1/tags',
     'handleItemTagsPut',
   );
 });
@@ -250,11 +250,27 @@ test('slide-library: a wrong method 405s with the pinned Allow list', async () =
     // list → 500); it now carries the list its two rows imply.
     ['DELETE', '/api/slide-library/usage', 'GET, POST'],
     ['DELETE', '/api/slide-library/personal', 'GET, POST'],
-    ['GET', '/api/slide-library/personal/i-1', 'PATCH, DELETE'],
+    [
+      'GET',
+      '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1',
+      'PATCH, DELETE',
+    ],
     ['DELETE', '/api/slide-library/organization', 'GET, POST'],
-    ['GET', '/api/slide-library/organization/i-1', 'PATCH, DELETE'],
-    ['POST', '/api/slide-library/personal/i-1/tags', 'GET, PUT'],
-    ['POST', '/api/slide-library/organization/i-1/tags', 'GET, PUT'],
+    [
+      'GET',
+      '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1',
+      'PATCH, DELETE',
+    ],
+    [
+      'POST',
+      '/api/slide-library/personal/00000000-0000-4000-8000-0000000000d1/tags',
+      'GET, PUT',
+    ],
+    [
+      'POST',
+      '/api/slide-library/organization/00000000-0000-4000-8000-0000000000d1/tags',
+      'GET, PUT',
+    ],
   ]) {
     const { ctx: c, res } = ctx(method, path);
     await handleSlideLibrary(c);
@@ -316,23 +332,32 @@ test('organization-members: both member shapes resolve with their captures', () 
   const collection = select(
     OM_ROUTES,
     'GET',
-    '/api/organizations/org-1/members',
+    '/api/organizations/00000000-0000-4000-8000-00000000000f/members',
   );
   assert.equal(collection?.handler.name, 'handleMembersCollection');
   assert.deepEqual(
-    collection.pattern.exec('/api/organizations/org-1/members').slice(1),
-    ['org-1'],
+    collection.pattern
+      .exec('/api/organizations/00000000-0000-4000-8000-00000000000f/members')
+      .slice(1),
+    ['00000000-0000-4000-8000-00000000000f'],
   );
 
   const item = select(
     OM_ROUTES,
     'DELETE',
-    '/api/organizations/org-1/members/m-1',
+    '/api/organizations/00000000-0000-4000-8000-00000000000f/members/00000000-0000-4000-8000-0000000000b1',
   );
   assert.equal(item?.handler.name, 'handleMemberItem');
   assert.deepEqual(
-    item.pattern.exec('/api/organizations/org-1/members/m-1').slice(1),
-    ['org-1', 'm-1'],
+    item.pattern
+      .exec(
+        '/api/organizations/00000000-0000-4000-8000-00000000000f/members/00000000-0000-4000-8000-0000000000b1',
+      )
+      .slice(1),
+    [
+      '00000000-0000-4000-8000-00000000000f',
+      '00000000-0000-4000-8000-0000000000b1',
+    ],
   );
 });
 
@@ -340,7 +365,10 @@ test('organization-members: a non-members organizations path falls through untou
   // The old combined shape regex only claimed .../members(/...)?; a plain
   // /api/organizations/:id request must keep falling through with no 403
   // flag-guard leak.
-  const { ctx: c, res } = ctx('PUT', '/api/organizations/org-1');
+  const { ctx: c, res } = ctx(
+    'PUT',
+    '/api/organizations/00000000-0000-4000-8000-00000000000f',
+  );
   assert.equal(await handleOrganizationMembers(c), false);
   assert.equal(res.statusCode, null, 'no guard ran for a non-members path');
 });
@@ -349,7 +377,10 @@ test('organization-members: the flag guard answers 403 before the method decisio
   // MULTI_ORG is not enabled in the test environment; any method on a members
   // path gets the 403, exactly as the original guards-before-method chain did.
   for (const method of ['GET', 'PUT']) {
-    const { ctx: c, res } = ctx(method, '/api/organizations/org-1/members');
+    const { ctx: c, res } = ctx(
+      method,
+      '/api/organizations/00000000-0000-4000-8000-00000000000f/members',
+    );
     await handleOrganizationMembers(c);
     assert.equal(res.statusCode, 403, `${method} members with flag off → 403`);
   }
@@ -361,15 +392,23 @@ test('export: the PNG-slide row resolves with both captures, GET-only', () => {
   const route = select(
     EX_ROUTES,
     'GET',
-    '/api/presentations/p-1/export/png/3.png',
+    '/api/presentations/00000000-0000-4000-8000-0000000000f1/export/png/3.png',
   );
   assert.equal(route?.handler.name, 'handlePngSlideExport');
   assert.deepEqual(
-    route.pattern.exec('/api/presentations/p-1/export/png/3.png').slice(1),
-    ['p-1', '3'],
+    route.pattern
+      .exec(
+        '/api/presentations/00000000-0000-4000-8000-0000000000f1/export/png/3.png',
+      )
+      .slice(1),
+    ['00000000-0000-4000-8000-0000000000f1', '3'],
   );
   assert.equal(
-    select(EX_ROUTES, 'POST', '/api/presentations/p-1/export/png/3.png'),
+    select(
+      EX_ROUTES,
+      'POST',
+      '/api/presentations/00000000-0000-4000-8000-0000000000f1/export/png/3.png',
+    ),
     null,
   );
 });

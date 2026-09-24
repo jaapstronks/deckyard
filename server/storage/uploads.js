@@ -9,7 +9,7 @@ import {
 } from '../media/local.js';
 import {
   IMAGE_UPLOAD_MIME_TO_EXT,
-  IMAGE_UPLOAD_EXT_TO_MIMES,
+  IMAGE_UPLOAD_EXT_TO_MIME,
 } from '../../shared/constants/image-uploads.js';
 
 function uploadsDir(repoRoot) {
@@ -22,7 +22,7 @@ function uploadsDir(repoRoot) {
 // The list itself lives in shared/ (B366), because the dropzone hint and the
 // file picker name the same formats to the user and had drifted from it.
 const MIME_TO_EXT = IMAGE_UPLOAD_MIME_TO_EXT;
-const EXT_TO_MIMES = IMAGE_UPLOAD_EXT_TO_MIMES;
+const EXT_TO_MIME = IMAGE_UPLOAD_EXT_TO_MIME;
 
 const STOCK_MAX_BYTES = 20 * 1024 * 1024; // 20MB for stock media (GIFs can be large)
 
@@ -83,15 +83,15 @@ export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
   const ext = filename.includes('.')
     ? filename.split('.').pop().toLowerCase()
     : '';
-  const allowedMimes = EXT_TO_MIMES[ext] || null;
-  if (!allowedMimes) {
+  const allowedMime = EXT_TO_MIME[ext] || null;
+  if (!allowedMime) {
     throw new ValidationError(
       `Unsupported upload extension: ${ext || '(none)'}`,
     );
   }
 
   const { mime, base64 } = parseDataUrl(dataUrl);
-  if (!allowedMimes.includes(mime)) {
+  if (mime !== allowedMime) {
     throw new ValidationError(
       `Replacement type mismatch: ${mime} does not match .${ext}`,
     );
@@ -103,12 +103,7 @@ export async function replaceUploadFromDataUrl(repoRoot, targetUrl, dataUrl) {
     throw new ValidationError('Image too large (max 10MB)');
   }
 
-  if (
-    mime === 'image/png' ||
-    mime === 'image/jpeg' ||
-    mime === 'image/jpg' ||
-    mime === 'image/webp'
-  ) {
+  if (mime === 'image/png' || mime === 'image/jpeg' || mime === 'image/webp') {
     buf = await optimizeRasterImage(buf, mime);
   }
 

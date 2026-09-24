@@ -37,9 +37,9 @@ process.env.STORAGE_MODE = 'postgres';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const KEY_OWNER = 'owner@example.com';
-const DECK_ID = 'deck-to-publish';
-const PUBLISHED_DECK_ID = 'deck-already-published';
-const FOREIGN_DECK_ID = 'deck-of-someone-else';
+const DECK_ID = 'd000000a-0000-4000-8000-00000000000a';
+const PUBLISHED_DECK_ID = 'd000000b-0000-4000-8000-00000000000b';
+const FOREIGN_DECK_ID = 'd000000c-0000-4000-8000-00000000000c';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -206,7 +206,7 @@ test('POST /publish publishes the deck and answers the public path', async () =>
   assert.equal(ctx.res.statusCode, 200);
   const body = ctx.res.body;
   assert.ok(body.publishId, 'a publish id is minted');
-  assert.equal(body.slug, 'title-of-deck-to-publish');
+  assert.equal(body.slug, `title-of-${DECK_ID}`);
   assert.equal(body.path, `/p/${body.publishId}-${body.slug}`);
   // No media provider under test: the OG image comes off the fallback ladder,
   // here the first slide's own image.
@@ -270,7 +270,7 @@ test("POST /publish on someone else's private deck is refused with 403", async (
 
 test('POST /publish on an unknown deck answers 404', async () => {
   await installDb();
-  const ctx = makeCtx('POST', 'never-a-deck');
+  const ctx = makeCtx('POST', '00000000-0000-4000-8000-00000000dead');
   await handlePublishing(ctx);
   assert.equal(ctx.res.statusCode, 404);
 });

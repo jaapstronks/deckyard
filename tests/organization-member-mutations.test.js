@@ -38,11 +38,27 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 
 process.env.MULTI_ORG_ENABLED = 'true';
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 
 const ORG = '00000000-0000-0000-0000-0000000000bb';
+
+/**
+ * A stable uuid per cast key. Membership and user ids are `uuid` columns, and
+ * the member routes declare them so (B399): a non-uuid segment answers 404.
+ *
+ * @param {string} kind - `membership` or `user`
+ * @param {string} key - The cast key (`owner`, `admin2`, `m119`, …)
+ * @returns {string}
+ */
+function castId(kind, key) {
+  const hex = createHash('sha1').update(`${kind}:${key}`).digest('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-8${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+const membershipId = (key) => castId('membership', key);
+const userId = (key) => castId('user', key);
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -108,7 +124,7 @@ function seed({ people = PEOPLE, settings = {} } = {}) {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Beta', slug: 'beta', settings }],
     users: people.map((p) => ({
-      id: `user-${p.key}`,
+      id: userId(p.key),
       organization_id: ORG,
       email: p.email,
       name: p.key,
@@ -118,8 +134,8 @@ function seed({ people = PEOPLE, settings = {} } = {}) {
       settings: {},
     })),
     user_organizations: people.map((p) => ({
-      id: `membership-${p.key}`,
-      user_id: `user-${p.key}`,
+      id: membershipId(p.key),
+      user_id: userId(p.key),
       organization_id: ORG,
       role: p.role,
       is_designer: false,
@@ -171,7 +187,7 @@ function fakeExchange(method, body) {
 async function callMembers(method, actorKey, targetKey, body) {
   const actor = PEOPLE.find((p) => p.key === actorKey);
   const path = targetKey
-    ? `/api/organizations/${ORG}/members/membership-${targetKey}`
+    ? `/api/organizations/${ORG}/members/${membershipId(targetKey)}`
     : `/api/organizations/${ORG}/members`;
   const { req, res } = fakeExchange(method, body);
   await handleOrganizationMembers({
@@ -191,9 +207,8 @@ async function callMembers(method, actorKey, targetKey, body) {
 
 /** The stored role of one membership. */
 function roleOf(db, key) {
-  return db.__tables.user_organizations.find(
-    (r) => r.id === `membership-${key}`,
-  )?.role;
+  return db.__tables.user_organizations.find((r) => r.id === membershipId(key))
+    ?.role;
 }
 
 /** How many owners the organization has right now. */
@@ -238,7 +253,7 @@ test('an admin cannot demote another admin', async () => {
     req,
     res,
     url: new URL(
-      `http://localhost/api/organizations/${ORG}/members/membership-admin2`,
+      `http://localhost/api/organizations/${ORG}/members/${membershipId('admin2')}`,
     ),
     authedUser: {
       email: 'adam@example.com',
@@ -296,7 +311,7 @@ test('the last owner cannot be demoted, even below the route', async () => {
   // all. The route refuses this case too, but the storage layer is where the
   // invariant belongs — it is what a script or a future caller meets first.
   const db = seed();
-  const result = await updateMemberRole('membership-owner', 'member');
+  const result = await updateMemberRole(membershipId('owner'), 'member');
 
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'last_owner');
@@ -309,7 +324,7 @@ test('an owner may be demoted once there is a second one', async () => {
   );
   const db = seed({ people });
 
-  const result = await updateMemberRole('membership-admin', 'member');
+  const result = await updateMemberRole(membershipId('admin'), 'member');
   assert.equal(result.ok, true);
   assert.equal(ownerCount(db), 1);
 });
@@ -350,7 +365,7 @@ test('an owner handing the organization to themselves keeps it', async () => {
 
 test('transferring to yourself changes nothing, below the route too', async () => {
   const db = seed();
-  const result = await transferOwnership(ORG, 'user-owner', 'user-owner');
+  const result = await transferOwnership(ORG, userId('owner'), userId('owner'));
 
   assert.equal(result.ok, true);
   assert.equal(roleOf(db, 'owner'), 'owner');
@@ -517,8 +532,8 @@ test('a member id that belongs to another organization is not found', async () =
   // from somewhere else must not become a target.
   const db = seed();
   db.__tables.user_organizations.push({
-    id: 'membership-outsider',
-    user_id: 'user-outsider',
+    id: membershipId('outsider'),
+    user_id: userId('outsider'),
     organization_id: '00000000-0000-0000-0000-0000000000cc',
     role: 'member',
     is_designer: false,

@@ -64,31 +64,37 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics$/,
+    captures: ['uuid'],
     handler: handleOverview,
   },
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/slides$/,
+    captures: ['uuid'],
     handler: handleSlides,
   },
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/heatmap$/,
+    captures: ['uuid'],
     handler: handleHeatmap,
   },
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/journey$/,
+    captures: ['uuid'],
     handler: handleJourney,
   },
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/sessions$/,
+    captures: ['uuid'],
     handler: handleSessions,
   },
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/realtime$/,
+    captures: ['uuid'],
     handler: handleRealtime,
   },
 
@@ -96,32 +102,38 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports$/,
+    captures: ['uuid'],
     handler: handleListReports,
   },
   {
     method: 'POST',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports$/,
+    captures: ['uuid'],
     handler: handleCreateReport,
   },
   {
     method: 'GET',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/,
+    captures: ['uuid', 'uuid'],
     handler: handleGetReport,
   },
   {
     method: 'PATCH',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/,
+    captures: ['uuid', 'uuid'],
     handler: handleUpdateReport,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)$/,
+    captures: ['uuid', 'uuid'],
     handler: handleDeleteReport,
   },
   {
     method: 'POST',
     pattern:
       /^\/api\/presentations\/([^/]+)\/analytics\/reports\/([^/]+)\/regenerate-token$/,
+    captures: ['uuid', 'uuid'],
     handler: handleRegenerateToken,
   },
 

@@ -1,6 +1,6 @@
 import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
-import { login, me } from '../lib/user/auth.js';
+import { authConfig, login, me, ssoButtonLabel } from '../lib/user/auth.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
 import { createInlineError } from '../lib/dom/inline-error.js';
@@ -85,10 +85,7 @@ export async function renderLogin(root) {
   // SSO Section (shown only when the server reports SSO enabled)
   // ============================================================
   const ssoSection = h('div', { class: 'auth-sso-section', hidden: true });
-  const ssoBtn = h('button', {
-    class: 'auth-btn',
-    text: t('login.ssoSubmit', 'Sign in with SSO'),
-  });
+  const ssoBtn = h('button', { class: 'auth-btn' });
   ssoBtn.onclick = () => {
     // Full-page navigation: this hits a server route that 302-redirects to the
     // identity provider, so it cannot go through the SPA router.
@@ -339,9 +336,10 @@ export async function renderLogin(root) {
 
   // Ask the server whether SSO is enabled / enforced and adjust the form.
   try {
-    const cfg = await api('/api/auth/config');
+    const cfg = await authConfig();
     const sso = cfg?.sso;
     if (sso?.enabled) {
+      ssoBtn.textContent = ssoButtonLabel(cfg);
       ssoSection.hidden = false;
       if (sso.enforce) {
         // Enforced: SSO is the only way in — hide password + magic-link.

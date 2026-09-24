@@ -106,7 +106,7 @@ const { canInvite, invitableRoles } =
   await import('../client/views/settings/organization-members/permissions.js');
 const { inviteMember } =
   await import('../client/views/settings/organization-members/actions.js');
-const { showInviteModal } =
+const { showInviteModal, signInMode, createdWithoutEmailMessage } =
   await import('../client/views/settings/organization-members/invite-modal.js');
 const { renderOrganizationMembersPanel } =
   await import('../client/views/settings/organization-members/panel.js');
@@ -291,12 +291,15 @@ test('the invite goes to the organization on screen, with the chosen role', asyn
 // ---------------------------------------------------------------------------
 
 /** Open the dialog and hand back the pieces the tests poke at. */
-function openDialog(user, { invite, onInvited } = {}) {
+function openDialog(user, { invite, onInvited, loadAuthConfig } = {}) {
   const modal = showInviteModal({
     organizationId: ORG,
     user,
     invite,
     onInvited,
+    loadAuthConfig:
+      loadAuthConfig ||
+      (async () => ({ sso: { enabled: false, enforce: false } })),
   });
   return {
     modal,
@@ -399,15 +402,15 @@ test("a role refusal shows the server's own sentence, not a guess", async () => 
   assert.match(dialog.refusal.textContent, /Admins can only invite members/);
 });
 
-test('a success closes the dialog and reports what happened', async () => {
+test('a sent invitation is a passing confirmation: the dialog closes', async () => {
   let invited = null;
   const dialog = openDialog(viewer(OWNER, 'owner'), {
-    invite: async () => ({ outcome: 'added', email: 'known@example.com' }),
+    invite: async () => ({ outcome: 'invited', email: 'new@example.com' }),
     onInvited: (result) => {
       invited = result;
     },
   });
-  dialog.email.value = 'known@example.com';
+  dialog.email.value = 'new@example.com';
   dialog.submit.click();
   await settle();
 
@@ -416,9 +419,126 @@ test('a success closes the dialog and reports what happened', async () => {
     null,
     'dialog closed',
   );
-  assert.equal(invited?.outcome, 'added');
+  assert.equal(invited?.outcome, 'invited');
+  assert.match(
+    document.body.textContent,
+    /Invitation sent to new@example\.com/,
+  );
+});
+
+/** Submit an invite that reports `outcome`, and return the report left on screen. */
+async function inviteWithOutcome(outcome, loadAuthConfig) {
+  let invited = null;
+  const dialog = openDialog(viewer(OWNER, 'owner'), {
+    invite: async () => ({ outcome, email: 'quiet@example.com' }),
+    onInvited: (result) => {
+      invited = result;
+    },
+    loadAuthConfig,
+  });
+  dialog.email.value = 'quiet@example.com';
+  dialog.submit.click();
+  await settle();
+  return {
+    invited,
+    report: document.querySelector(
+      '.organization-invite-modal .organization-invite-outcome',
+    ),
+  };
+}
+
+test('a report that asks the inviter to act stays in the dialog until closed', async () => {
+  const { invited, report } = await inviteWithOutcome('added');
+
+  assert.equal(invited?.outcome, 'added', 'the list reloads behind it');
+  assert.ok(report, 'the dialog stays open, carrying the report');
   // The one sentence that has to survive: nobody mailed them.
-  assert.match(document.body.textContent, /not emailed/i);
+  assert.match(report.textContent, /not emailed/i);
+  assert.equal(report.getAttribute('role'), 'status');
+  assert.equal(
+    document.querySelector('.organization-invite-modal input[type="email"]'),
+    null,
+    'the form is gone: the member exists, there is nothing left to submit',
+  );
+
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.ok(
+    document.querySelector('.organization-invite-outcome'),
+    'and it does not expire',
+  );
+
+  Array.from(document.querySelectorAll('.organization-invite-modal button'))
+    .find((b) => b.textContent === 'Done')
+    .click();
+  assert.equal(document.querySelector('.organization-invite-modal'), null);
+});
+
+test('no setup mail on an SSO-only instance: no password reset, the SSO way in', async () => {
+  const { report } = await inviteWithOutcome('created', async () => ({
+    sso: { enabled: true, enforce: true },
+  }));
+
+  assert.ok(report);
+  assert.doesNotMatch(report.textContent, /password/i);
+  assert.match(report.textContent, /Sign in with SSO/);
+  assert.match(report.textContent, /\/login\?email=quiet%40example\.com/);
+  assert.ok(
+    Array.from(
+      document.querySelectorAll('.organization-invite-modal button'),
+    ).some((b) => b.textContent === 'Copy link'),
+    'the sign-in link can be copied to pass on',
+  );
+});
+
+test('no setup mail on a password instance: the reset route stays', async () => {
+  const { report } = await inviteWithOutcome('created', async () => ({
+    sso: { enabled: false, enforce: false },
+  }));
+
+  assert.match(report.textContent, /set a password/);
+  assert.match(report.textContent, /Forgot password\?/);
+  assert.doesNotMatch(report.textContent, /SSO/);
+});
+
+test('an unreadable auth config makes no claim about the way in', async () => {
+  const { report } = await inviteWithOutcome('created', async () => {
+    throw new Error('offline');
+  });
+
+  assert.ok(report, 'the member was still added, so the report still shows');
+  assert.doesNotMatch(report.textContent, /password|SSO/i);
+  assert.match(report.textContent, /how to sign in/);
+});
+
+test('the sign-in mode reads the public auth config and nothing else', () => {
+  assert.equal(signInMode({ sso: { enabled: true, enforce: true } }), 'sso');
+  assert.equal(
+    signInMode({ sso: { enabled: true, enforce: false } }),
+    'sso-or-password',
+  );
+  assert.equal(
+    signInMode({ sso: { enabled: false, enforce: false } }),
+    'password',
+  );
+  assert.equal(signInMode(null), null);
+  assert.equal(signInMode({}), null);
+
+  const mixed = createdWithoutEmailMessage(
+    'a@example.com',
+    { sso: { enabled: true, enforce: false } },
+    'https://x.test/login',
+  );
+  assert.match(mixed, /Sign in with SSO/);
+  assert.match(mixed, /Forgot password\?/);
+});
+
+test('the report names the SSO button in the words the login page shows (B432)', async () => {
+  const { report } = await inviteWithOutcome('created', async () => ({
+    sso: { enabled: true, enforce: true, buttonLabel: 'Sign in with Acme ID' },
+  }));
+
+  assert.match(report.textContent, /"Sign in with Acme ID"/);
+  assert.doesNotMatch(report.textContent, /Sign in with SSO/);
 });
 
 // ---------------------------------------------------------------------------

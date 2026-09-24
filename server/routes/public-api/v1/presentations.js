@@ -19,6 +19,7 @@ import { normalizeEmail } from '../../../utils/normalize.js';
 import { canonicalSlideType } from '../../../../shared/slide-types.js';
 import {
   requirePermission,
+  dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   canAccessPresentation,
@@ -46,7 +47,7 @@ function filterByOwner(presentations, actor) {
 /**
  * Strip internal fields from presentation for API response.
  * @param {object} pres
- * @param {string[]} [tags]
+ * @param {Array<{id: string, name: string}>} [tags]
  * @param {string|null} [requesterEmail] - the API-key owner; the owner email is
  *   only returned to the owner themselves, redacted otherwise.
  */
@@ -313,42 +314,54 @@ async function handleDuplicate(ctx, id) {
 // MAIN HANDLER
 // ============================================================
 
+/** Presentation routes; a known path with another method answers 405. */
+export const ROUTES = [
+  {
+    method: 'POST',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/duplicate$/,
+    captures: ['uuid'],
+    handler: handleDuplicate,
+  },
+  {
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/duplicate$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: handleGet,
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: handleUpdate,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: handleDelete,
+  },
+  {
+    pattern: /^\/api\/v1\/presentations\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']),
+  },
+  { method: 'GET', pattern: '/api/v1/presentations', handler: handleList },
+  { method: 'POST', pattern: '/api/v1/presentations', handler: handleCreate },
+  {
+    pattern: '/api/v1/presentations',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET', 'POST']),
+  },
+];
+
 /**
  * Main handler for /api/v1/presentations routes.
  */
 export const handlePresentations = withV1ErrorHandler(
   'public-api-v1:presentations',
-  async (ctx) => {
-    const { req, res, url } = ctx;
-
-    // Duplicate endpoint
-    const dupMatch = url.pathname.match(
-      /^\/api\/v1\/presentations\/([^/]+)\/duplicate$/,
-    );
-    if (dupMatch) {
-      if (req.method !== 'POST') {
-        return v1MethodNotAllowed(res, ['POST']);
-      }
-      return handleDuplicate(ctx, dupMatch[1]);
-    }
-
-    // Single presentation routes
-    const presMatch = url.pathname.match(/^\/api\/v1\/presentations\/([^/]+)$/);
-    if (presMatch) {
-      const id = presMatch[1];
-      if (req.method === 'GET') return handleGet(ctx, id);
-      if (req.method === 'PUT') return handleUpdate(ctx, id);
-      if (req.method === 'DELETE') return handleDelete(ctx, id);
-      return v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
-    }
-
-    // Collection routes
-    if (url.pathname === '/api/v1/presentations') {
-      if (req.method === 'GET') return handleList(ctx);
-      if (req.method === 'POST') return handleCreate(ctx);
-      return v1MethodNotAllowed(res, ['GET', 'POST']);
-    }
-
-    return false;
-  },
+  (ctx) => dispatchV1Routes(ROUTES, ctx),
 );

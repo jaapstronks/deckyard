@@ -20,6 +20,8 @@ import {
   unauthorized,
   withErrorHandler,
   forbidden,
+  getErrorStatus,
+  jsonError,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
@@ -40,6 +42,8 @@ const ERROR_MESSAGES = {
   usage_too_long: `Usage rules are too long (max ${USAGE_MAX_LENGTH} characters).`,
   slug_exists: 'A slide type with this slug already exists.',
   not_found: 'Slide type not found.',
+  in_use:
+    'Slides still use this slide type. Deleting it anyway makes them render as an unknown type.',
   unavailable: 'Database unavailable.',
   order_mismatch:
     'The order does not list exactly the current slide types. Reload and try again.',
@@ -77,7 +81,7 @@ const INVALID_FIELD_MESSAGES = {
  * unavailable."* — into a 400.
  *
  * @param {import('node:http').ServerResponse} res
- * @param {{reason: string, field?: string, fieldProblem?: Object}} result
+ * @param {{reason: string, field?: string, fieldProblem?: Object, usage?: Object}} result
  * @returns {true}
  */
 function slideTypeError(res, result) {
@@ -86,6 +90,20 @@ function slideTypeError(res, result) {
   const message = result.fieldProblem
     ? describeFieldFinding(result.fieldProblem)
     : INVALID_FIELD_MESSAGES[result.field] || ERROR_MESSAGES[result.reason];
+  // A delete refused for usage carries the count as its payload (`in_use`,
+  // registered in server/utils/error-details.js); the status still comes
+  // from the register.
+  if (result.usage) {
+    return jsonError(
+      res,
+      getErrorStatus(result.reason),
+      result.reason,
+      message,
+      {
+        details: { usage: result.usage },
+      },
+    );
+  }
   return storageError(res, result, message);
 }
 
@@ -230,13 +248,16 @@ async function handleCustomSlideTypeUpdate(
   return true;
 }
 
-// DELETE /api/custom-slide-types/:id - Delete (designer only)
+// DELETE /api/custom-slide-types/:id[?force=true] - Delete (designer only).
+// A type that slides still use refuses with 409 `in_use` and the count in
+// `details.usage`; `force=true` is the second step, taken after seeing it.
 async function handleCustomSlideTypeDelete(
-  { storageScope, res, authedUser },
+  { storageScope, url, res, authedUser },
   typeId,
 ) {
   if (!canManage(authedUser)) return forbidden(res);
-  const result = await deleteCustomSlideType(storageScope, typeId);
+  const force = url.searchParams.get('force') === 'true';
+  const result = await deleteCustomSlideType(storageScope, typeId, { force });
   if (!result.ok) {
     return slideTypeError(res, result);
   }
@@ -285,26 +306,31 @@ export const ROUTES = [
   },
   {
     method: 'POST',
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)\/duplicate$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)\/duplicate$/,
+    captures: ['uuid'],
     handler: handleCustomSlideTypeDuplicate,
   },
   {
     method: 'GET',
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleCustomSlideTypeGet,
   },
   {
     method: 'PUT',
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleCustomSlideTypeUpdate,
   },
   {
     method: 'DELETE',
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleCustomSlideTypeDelete,
   },
   {
-    pattern: /^\/api\/custom-slide-types\/([a-f0-9-]+)$/,
+    pattern: /^\/api\/custom-slide-types\/([^/]+)$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT', 'DELETE']),
   },
 ];

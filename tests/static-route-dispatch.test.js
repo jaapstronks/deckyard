@@ -71,7 +71,7 @@ test('all static handler modules export their handler function', async () => {
   const mods = {
     'static-files.js': ['handleGo', 'handleStaticFiles'],
     'embed.js': ['handleEmbed'],
-    'published.js': ['handlePublishedReader', 'handlePublishedPage'],
+    'published.js': ['handlePublished'],
     'sandbox-og.js': ['handleSandboxOg'],
     'share-viewer.js': ['handleShareLink'],
     'app-shell.js': ['serveAppIndex', 'handleAppRoutes'],

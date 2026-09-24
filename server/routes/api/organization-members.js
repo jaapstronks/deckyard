@@ -35,7 +35,6 @@ import {
 import { createUser } from '../../storage/users.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
 import { sendUserInvitationEmail } from '../../integrations/brevo.js';
-import { getEmailDefaultLocale } from '../../storage/email-templates.js';
 import { createLogger } from '../../utils/logger.js';
 
 /**
@@ -226,15 +225,12 @@ async function handleMemberInvite(
   let invitationSent = false;
   if (sendInvitation && invitationToken) {
     const setupUrl = buildSetupUrl(req, invitationToken);
-    const locale = await getEmailDefaultLocale(storageScope).catch(() => 'en');
-
     const sendResult = await sendUserInvitationEmail({
       recipientEmail: email,
       recipientName: body?.name || null,
       invitedBy: user.name || user.email,
       setupUrl,
       expiresAt: null, // Will be calculated by the email function
-      locale,
       repoRoot,
     }).catch((err) => {
       log.error('[organization-members] Failed to send invitation email:', err);
@@ -456,10 +452,12 @@ async function handleMemberItem(ctx, organizationId, memberIdOrUserId) {
 export const ROUTES = [
   {
     pattern: /^\/api\/organizations\/([^/]+)\/members$/,
+    captures: ['uuid'],
     handler: handleMembersCollection,
   },
   {
     pattern: /^\/api\/organizations\/([^/]+)\/members\/([^/]+)$/,
+    captures: ['uuid', 'uuid'],
     handler: handleMemberItem,
   },
 ];

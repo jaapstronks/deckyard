@@ -171,17 +171,25 @@ function imagekitProvider(openImageKitRaw, importToOwnMedia) {
           const fileId = picked?.fileId || undefined;
 
           if (!canCopy) throw new Error(unavailableMessage);
-          const stored = await importToOwnMedia({ fileId, url });
-          const copied =
-            typeof stored?.url === 'string' ? stored.url.trim() : '';
-          if (!copied) {
-            throw new Error(
+          // One sentence for every refused copy (B412): the server's message
+          // is not display text, and an answer without a URL is the same
+          // failure as an error envelope.
+          const copyFailed = () =>
+            new Error(
               t(
                 'editor.image.imagekit.copyFailed',
-                'Copying this image into your own media did not return a URL.',
+                'This image could not be copied into your own media. Try again or choose another image.',
               ),
             );
+          let stored;
+          try {
+            stored = await importToOwnMedia({ fileId, url });
+          } catch {
+            throw copyFailed();
           }
+          const copied =
+            typeof stored?.url === 'string' ? stored.url.trim() : '';
+          if (!copied) throw copyFailed();
 
           opts.onPick?.({
             url: copied,

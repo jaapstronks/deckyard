@@ -33,8 +33,12 @@ process.env.STORAGE_MODE = 'postgres';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 const KEY_OWNER = 'owner@example.com';
-const DECK_ID = 'deck-from-library';
-const FOREIGN_DECK_ID = 'deck-of-someone-else';
+const DECK_ID = 'd000000d-0000-4000-8000-00000000000d';
+const FOREIGN_DECK_ID = 'd000000e-0000-4000-8000-00000000000e';
+const TEAM_ITEM_ID = 'e0000001-0000-4000-8000-000000000001';
+const PERSONAL_ITEM_ID = 'e0000002-0000-4000-8000-000000000002';
+const TRASHED_ITEM_ID = 'e0000003-0000-4000-8000-000000000003';
+const FOREIGN_ITEM_ID = 'e0000004-0000-4000-8000-000000000004';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -56,33 +60,33 @@ async function installDb({ themes = [], deckTheme = 'default' } = {}) {
     users: userRows(KEY_OWNER),
     slide_library: [
       libraryRow({
-        id: 'item-team',
+        id: TEAM_ITEM_ID,
         organization_id: ORG,
         shelf: 'organization',
         name: 'Team intro',
       }),
       libraryRow({
-        id: 'item-personal',
+        id: PERSONAL_ITEM_ID,
         organization_id: ORG,
         shelf: 'personal',
         name: 'My draft',
       }),
       libraryRow({
-        id: 'item-trashed',
+        id: TRASHED_ITEM_ID,
         organization_id: ORG,
         shelf: 'organization',
         name: 'Old slide',
         trashed_at: '2026-08-01T00:00:00.000Z',
       }),
       libraryRow({
-        id: 'item-foreign',
+        id: FOREIGN_ITEM_ID,
         organization_id: OTHER_ORG,
         shelf: 'organization',
         name: 'Foreign',
       }),
     ],
     tags: [{ id: 'tag-1', organization_id: ORG, name: 'intro' }],
-    slide_library_tags: [{ slide_library_id: 'item-team', tag_id: 'tag-1' }],
+    slide_library_tags: [{ slide_library_id: TEAM_ITEM_ID, tag_id: 'tag-1' }],
     presentations: [
       deckRow({ id: DECK_ID, owner: KEY_OWNER, theme: deckTheme }),
       deckRow({ id: FOREIGN_DECK_ID, owner: 'someone-else@example.com' }),
@@ -239,20 +243,20 @@ test('GET /slide-library lists team items of the own organization only', async (
   const { items, pagination } = ctx.res.body;
   assert.deepEqual(
     items.map((it) => it.id),
-    ['item-team'],
+    [TEAM_ITEM_ID],
   );
   assert.equal(
-    items.some((it) => it.id === 'item-personal'),
+    items.some((it) => it.id === PERSONAL_ITEM_ID),
     false,
     'personal items never appear on the team surface',
   );
   assert.equal(
-    items.some((it) => it.id === 'item-trashed'),
+    items.some((it) => it.id === TRASHED_ITEM_ID),
     false,
     'trash stays out',
   );
   assert.equal(
-    items.some((it) => it.id === 'item-foreign'),
+    items.some((it) => it.id === FOREIGN_ITEM_ID),
     false,
     'other organizations stay out',
   );
@@ -287,7 +291,7 @@ test('GET /slide-library survives a non-numeric ?limit (B143)', async () => {
   assert.equal(ctx.res.statusCode, 200);
   assert.deepEqual(
     ctx.res.body.items.map((it) => it.id),
-    ['item-team'],
+    [TEAM_ITEM_ID],
     'garbage pagination must not swallow the page',
   );
   assert.deepEqual(ctx.res.body.pagination, {
@@ -321,12 +325,12 @@ test('POST /slide-library answers 405 with the allowed methods', async () => {
 
 test('GET /slide-library/:itemId returns the sanitized item', async () => {
   await installDb();
-  const ctx = makeCtx('GET', '/api/v1/slide-library/item-team');
+  const ctx = makeCtx('GET', `/api/v1/slide-library/${TEAM_ITEM_ID}`);
   assert.equal(await handleSlideLibrary(ctx), true);
 
   assert.equal(ctx.res.statusCode, 200);
   const { item } = ctx.res.body;
-  assert.equal(item.id, 'item-team');
+  assert.equal(item.id, TEAM_ITEM_ID);
   assert.equal(item.name, 'Team intro');
   assert.equal(item.slideType, 'content-slide');
   assert.deepEqual(
@@ -348,10 +352,10 @@ test('GET /slide-library/:itemId returns the sanitized item', async () => {
 test('GET /slide-library/:itemId answers 404 for unknown, trashed, personal and foreign items', async () => {
   await installDb();
   for (const itemId of [
-    'nope',
-    'item-trashed',
-    'item-personal',
-    'item-foreign',
+    '00000000-0000-4000-8000-00000000dead',
+    TRASHED_ITEM_ID,
+    PERSONAL_ITEM_ID,
+    FOREIGN_ITEM_ID,
   ]) {
     const ctx = makeCtx('GET', `/api/v1/slide-library/${itemId}`);
     await handleSlideLibrary(ctx);
@@ -369,7 +373,7 @@ test('POST /slides/from-library copies the item into the deck and answers 201', 
     'POST',
     `/api/v1/presentations/${DECK_ID}/slides/from-library`,
     {
-      body: { libraryItemId: 'item-team' },
+      body: { libraryItemId: TEAM_ITEM_ID },
     },
   );
   assert.equal(await handleSlideLibrary(ctx), true);
@@ -390,7 +394,7 @@ test('POST /slides/from-library copies the item into the deck and answers 201', 
   );
   assert.equal(body.index, 2, 'appends at the end by default');
   assert.deepEqual(body.copiedFrom, {
-    libraryItemId: 'item-team',
+    libraryItemId: TEAM_ITEM_ID,
     libraryItemName: 'Team intro',
   });
   assert.equal(body.presentation.id, DECK_ID);
@@ -401,7 +405,7 @@ test('POST /slides/from-library copies the item into the deck and answers 201', 
   assert.equal(stored.slides[2].content.title, 'Team intro title');
   assert.notEqual(
     stored.slides[2].id,
-    'item-team',
+    TEAM_ITEM_ID,
     'the copy gets a fresh slide id',
   );
 });
@@ -438,7 +442,7 @@ test('POST /slides/from-library composes against the deck theme (the ground, D98
   const ctx = makeCtx(
     'POST',
     `/api/v1/presentations/${DECK_ID}/slides/from-library`,
-    { body: { libraryItemId: 'item-team' } },
+    { body: { libraryItemId: TEAM_ITEM_ID } },
   );
   assert.equal(await handleSlideLibrary(ctx), true);
   assert.equal(ctx.res.statusCode, 201);
@@ -456,7 +460,7 @@ test('POST /slides/from-library honours atIndex', async () => {
     'POST',
     `/api/v1/presentations/${DECK_ID}/slides/from-library`,
     {
-      body: { libraryItemId: 'item-team', atIndex: 0 },
+      body: { libraryItemId: TEAM_ITEM_ID, atIndex: 0 },
     },
   );
   await handleSlideLibrary(ctx);
@@ -482,7 +486,7 @@ test('POST /slides/from-library without libraryItemId answers 400', async () => 
 
 test('POST /slides/from-library answers 404 for an invisible library item', async () => {
   await installDb();
-  for (const libraryItemId of ['nope', 'item-trashed', 'item-foreign']) {
+  for (const libraryItemId of ['nope', TRASHED_ITEM_ID, FOREIGN_ITEM_ID]) {
     const ctx = makeCtx(
       'POST',
       `/api/v1/presentations/${DECK_ID}/slides/from-library`,
@@ -501,7 +505,7 @@ test('POST /slides/from-library without the write permission is refused with 403
     'POST',
     `/api/v1/presentations/${DECK_ID}/slides/from-library`,
     {
-      body: { libraryItemId: 'item-team' },
+      body: { libraryItemId: TEAM_ITEM_ID },
       permissions: ['read'],
     },
   );
@@ -516,7 +520,7 @@ test("POST /slides/from-library into someone else's private deck is refused with
     'POST',
     `/api/v1/presentations/${FOREIGN_DECK_ID}/slides/from-library`,
     {
-      body: { libraryItemId: 'item-team' },
+      body: { libraryItemId: TEAM_ITEM_ID },
     },
   );
   await handleSlideLibrary(ctx);
@@ -531,9 +535,9 @@ test('POST /slides/from-library into an unknown deck answers 404', async () => {
   await installDb();
   const ctx = makeCtx(
     'POST',
-    '/api/v1/presentations/never-a-deck/slides/from-library',
+    '/api/v1/presentations/00000000-0000-4000-8000-00000000dead/slides/from-library',
     {
-      body: { libraryItemId: 'item-team' },
+      body: { libraryItemId: TEAM_ITEM_ID },
     },
   );
   await handleSlideLibrary(ctx);

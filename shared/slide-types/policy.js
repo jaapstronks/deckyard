@@ -94,3 +94,18 @@ export function isOrgDisabledSlideType(type, disabledSlideTypes) {
     t && Array.isArray(disabledSlideTypes) && disabledSlideTypes.includes(t),
   );
 }
+
+/**
+ * Whether a slide of this type may be saved to the slide library. A type opts
+ * out by declaring `library: false`; every other type — core, fork or
+ * DB-backed, and an unknown type the caller has no definition for — may be
+ * saved. The editor's Save-to-library action and the library create routes
+ * both answer with this predicate, so the rule lives on the type and not on a
+ * type name (B401).
+ *
+ * @param {Object|null|undefined} def - Slide type definition (or its wire metadata)
+ * @returns {boolean}
+ */
+export function isLibrarySlideType(def) {
+  return def?.library !== false;
+}

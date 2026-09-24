@@ -7,8 +7,11 @@ import { listThemeIds, loadThemeAssets } from '../../../utils/themes.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
+import { newSlide } from '../../../../shared/slide-types/presentation.js';
+import { resolveTypeDefaults } from '../../../../shared/slide-types/type-defaults.js';
 import {
   requirePermission,
+  dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   apiSuccess,
@@ -109,6 +112,9 @@ async function handleSlideTypes(ctx) {
   return true;
 }
 
+/** The language the schema endpoint's `defaults` and `example` describe. */
+const SCHEMA_LANG = 'en-GB';
+
 /**
  * GET /api/v1/slide-types/:slideType/schema - Get detailed schema for a slide type.
  * Returns fields with full metadata, defaults, and an example slide structure.
@@ -153,21 +159,22 @@ async function handleSlideTypeSchema(ctx, slideType) {
     return fieldInfo;
   });
 
-  // Use en-GB defaults if available, otherwise fallback
-  const defaults =
-    def.defaultsByLang?.['en-GB'] ||
-    def.defaultsByLang?.['nl'] ||
-    def.defaults ||
-    {};
-
-  // Generate an example slide structure
+  // One language answers both halves of "what does a new slide of this type
+  // contain": `defaults` is what the registry resolves for en-GB, and the
+  // example is what the factory makes from that same resolution in an en-GB
+  // deck without a theme. Only the slide id is fixed; instance keys (a
+  // poll's question and option ids) are minted per call like any new slide.
+  // This endpoint describes the core registry, so that is the one it
+  // composes from.
+  const defaults = resolveTypeDefaults(def, SCHEMA_LANG);
   const example = {
+    ...newSlide({
+      type: slideType,
+      theme: null,
+      lang: SCHEMA_LANG,
+      slideTypes: SLIDE_TYPES,
+    }),
     id: 'example-uuid-00000000',
-    type: slideType,
-    parentId: null,
-    content: { ...defaults },
-    notes: '',
-    visibility: {},
   };
 
   await apiSuccess(ctx, {
@@ -244,41 +251,45 @@ async function handleImageLibrary(ctx) {
 // MAIN HANDLER
 // ============================================================
 
+/** Read-only catalogue routes; any other method answers 405. */
+export const ROUTES = [
+  { method: 'GET', pattern: '/api/v1/themes', handler: handleThemes },
+  {
+    pattern: '/api/v1/themes',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  { method: 'GET', pattern: '/api/v1/slide-types', handler: handleSlideTypes },
+  {
+    pattern: '/api/v1/slide-types',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  {
+    // A slide-type name, not a row id.
+    method: 'GET',
+    pattern: /^\/api\/v1\/slide-types\/([^/]+)\/schema$/,
+    captures: ['text'],
+    handler: handleSlideTypeSchema,
+  },
+  {
+    pattern: /^\/api\/v1\/slide-types\/([^/]+)\/schema$/,
+    captures: ['text'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
+    pattern: '/api/v1/image-library',
+    handler: handleImageLibrary,
+  },
+  {
+    pattern: '/api/v1/image-library',
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+];
+
 /**
  * Main handler for /api/v1/themes, /api/v1/slide-types, /api/v1/image-library routes.
  */
 export const handleResources = withV1ErrorHandler(
   'public-api-v1:resources',
-  async (ctx) => {
-    const { req, res, url } = ctx;
-
-    // GET /api/v1/themes
-    if (url.pathname === '/api/v1/themes') {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleThemes(ctx);
-    }
-
-    // GET /api/v1/slide-types
-    if (url.pathname === '/api/v1/slide-types') {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleSlideTypes(ctx);
-    }
-
-    // GET /api/v1/slide-types/:slideType/schema
-    const schemaMatch = url.pathname.match(
-      /^\/api\/v1\/slide-types\/([^/]+)\/schema$/,
-    );
-    if (schemaMatch) {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleSlideTypeSchema(ctx, schemaMatch[1]);
-    }
-
-    // GET /api/v1/image-library
-    if (url.pathname === '/api/v1/image-library') {
-      if (req.method !== 'GET') return v1MethodNotAllowed(res, ['GET']);
-      return handleImageLibrary(ctx);
-    }
-
-    return false;
-  },
+  (ctx) => dispatchV1Routes(ROUTES, ctx),
 );

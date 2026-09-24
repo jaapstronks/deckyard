@@ -16,6 +16,9 @@ import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { handleSlideLibrary } from '../server/routes/api/slide-library.js';
 
+/** A library item id: a `uuid` column, declared so by the route (B399). */
+const ITEM_ID = '5b0c9d1e-2f3a-4b5c-8d6e-7f8091a2b3c4';
+
 function mockRes() {
   return {
     statusCode: null,
@@ -53,7 +56,7 @@ function call(method, path, body, headers = {}) {
 }
 
 for (const shelf of ['personal', 'organization']) {
-  const path = `/api/slide-library/${shelf}/item-1`;
+  const path = `/api/slide-library/${shelf}/${ITEM_ID}`;
 
   for (const key of ['i18n', 'favorites', 'slideType', 'themeId', 'shelf']) {
     test(`${shelf} PATCH: '${key}' is not a patch key (400 invalid, key named)`, async () => {

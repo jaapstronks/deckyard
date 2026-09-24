@@ -305,11 +305,16 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
       typeof scale !== 'object' ||
       !Number.isInteger(scale.min) ||
       !Number.isInteger(scale.max) ||
-      scale.min >= scale.max
+      scale.min >= scale.max ||
+      // Ten stops is the ceiling the vote store keeps (`MAX_OPTIONS`,
+      // server/storage/interaction-slides.js) — the same bound as a likert
+      // type's `options` `maxItems`. A wider scale would draw stops whose
+      // votes are refused (B316).
+      scale.max - scale.min + 1 > 10
     ) {
       errors.push(
         `${who}: \`scale\` must be \`{ min, max, minLabelKey, maxLabelKey }\` ` +
-          `with integer \`min\` below \`max\``,
+          `with integer \`min\` below \`max\` and at most ten stops`,
       );
     } else {
       for (const prop of ['minLabelKey', 'maxLabelKey']) {
@@ -360,6 +365,16 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
 
   // --- ai --------------------------------------------------------------------
   checkAi(def.ai, who, known, warnings);
+
+  // --- library ---------------------------------------------------------------
+  // One shape: `false` withholds the type from the slide library (B401).
+  // Absent is the default; `true` would be a second spelling of it.
+  if (def.library !== undefined && def.library !== false) {
+    warnings.push(
+      `${who}: \`library\` only takes \`false\` (withhold this type from the ` +
+        `slide library) — ${JSON.stringify(def.library)} is ignored`,
+    );
+  }
 
   // --- defaults --------------------------------------------------------------
   // `defaults` is the language-less seed, not an archive: the paths that have no

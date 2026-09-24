@@ -31,6 +31,7 @@ import { createSlideLibraryState } from './state.js';
 import { createSlideLibraryApi } from './api.js';
 import { createSlideLibraryModals } from './modals.js';
 import { createSlideLibraryControls } from './controls.js';
+import { canEditLibraryItem, refuseEdit } from './permissions.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 export function createSlideLibraryPicker({
@@ -161,7 +162,7 @@ export function createSlideLibraryPicker({
     if (activeView !== 'trash' && activeTagFilter.length > 0) {
       tagFiltered = inView.filter((it) => {
         const itemTagNames = Array.isArray(it?.tags)
-          ? it.tags.map((t) => (t?.name || t || '').toLowerCase())
+          ? it.tags.map((t) => t.name.toLowerCase())
           : [];
         return activeTagFilter.every((filterTag) =>
           itemTagNames.includes(filterTag.toLowerCase()),
@@ -347,7 +348,9 @@ export function createSlideLibraryPicker({
       moreMenu.append(addToCollectionBtn);
     }
 
-    // Move to trash
+    // Move to trash. The same verdict as the preview's Edit (D170): a shared
+    // slide you may not change keeps the item, greyed out with the reason,
+    // rather than offering a confirmation the server then refuses (B411).
     const trashBtn = h('button', {
       class: 'dropdown-item is-danger',
       type: 'button',
@@ -368,6 +371,9 @@ export function createSlideLibraryPicker({
       },
     });
     moreMenu.append(trashBtn);
+    if (!canEditLibraryItem(it)) {
+      moreMenu.append(refuseEdit(trashBtn, it, 'ps-lib-trash-reason'));
+    }
 
     moreDetails.append(moreSummary, moreMenu);
 
@@ -433,9 +439,7 @@ export function createSlideLibraryPicker({
       const tagsWrap = h('div', { class: 'ps-lib-tags' });
       const visibleTags = itemTags.slice(0, 3);
       for (const tag of visibleTags) {
-        tagsWrap.append(
-          h('span', { class: 'ps-lib-tag', text: tag.name || tag }),
-        );
+        tagsWrap.append(h('span', { class: 'ps-lib-tag', text: tag.name }));
       }
       if (itemTags.length > 3) {
         tagsWrap.append(
@@ -485,6 +489,9 @@ export function createSlideLibraryPicker({
         onclick: () => apiOps.setTrashed(shelf, it, false, { rerender }),
       });
       content.append(restoreBtn);
+      if (!canEditLibraryItem(it)) {
+        content.append(refuseEdit(restoreBtn, it, 'ps-lib-restore-reason'));
+      }
     }
 
     return content;
@@ -611,6 +618,17 @@ export function createSlideLibraryPicker({
           },
         });
         actions.append(trashBtn);
+        // One slide in the selection you may not change greys out the bulk
+        // action: trashing the rest and refusing that one is a half-done
+        // action with a toast per refusal.
+        const refused = state
+          .getSelectedItems()
+          .find((item) => !canEditLibraryItem(item));
+        if (refused) {
+          actions.append(
+            refuseEdit(trashBtn, refused, 'ps-lib-bulk-trash-reason'),
+          );
+        }
       }
 
       selectionBar.append(leftSide, actions);

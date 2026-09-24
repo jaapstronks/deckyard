@@ -302,38 +302,46 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/live-sessions\/([^/]+)\/state$/,
+    captures: ['text'],
     handler: handleSessionState,
   },
   {
     method: 'GET',
     pattern: /^\/api\/live-sessions\/([^/]+)\/events$/,
+    captures: ['text'],
     handler: handleSessionEvents,
   },
   {
     method: 'GET',
     pattern: /^\/api\/live-sessions\/([^/]+)\/deck$/,
+    captures: ['text'],
     handler: handleSessionDeck,
   },
   {
     pattern: /^\/api\/live-sessions\/([^/]+)\/deck$/,
+    captures: ['text'],
     handler: ({ res }) => methodNotAllowed(res, ['GET']),
   },
   {
     method: 'POST',
     pattern: /^\/api\/live-sessions\/([^/]+)\/render-slide$/,
+    captures: ['text'],
     handler: handleSessionRenderSlide,
   },
   {
     pattern: /^\/api\/live-sessions\/([^/]+)\/render-slide$/,
+    captures: ['text'],
     handler: ({ res }) => methodNotAllowed(res, ['POST']),
   },
   {
     method: 'PUT',
     pattern: /^\/api\/live-sessions\/([^/]+)\/notes\/([^/]+)$/,
+    captures: ['text', 'text'],
     handler: handleSessionNotesWrite,
   },
   {
     pattern: /^\/api\/live-sessions\/([^/]+)\/notes\/([^/]+)$/,
+    captures: ['text', 'text'],
     handler: ({ res }) => methodNotAllowed(res, ['PUT']),
   },
 ];

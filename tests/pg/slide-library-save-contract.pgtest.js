@@ -159,7 +159,12 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
       { content: { title: 'Bob was here' } },
       { actorEmail: BOB, expectedRevision: 0, allowEdit: () => false },
     );
-    assert.deepEqual(r, { ok: false, reason: 'forbidden' });
+    // A sentence, not only the code: the envelope's text was `forbidden` (B411).
+    assert.deepEqual(r, {
+      ok: false,
+      reason: 'forbidden',
+      message: 'Only its maker or an admin can change this shared slide.',
+    });
     assert.deepEqual((await readRow(db, orgItem.id)).content, {
       title: 'Team',
     });

@@ -3,7 +3,7 @@
  * Text analysis and keyword extraction helpers.
  */
 
-import { badRequest, jsonError } from '../../../utils/http.js';
+import { jsonError, serveJson } from '../../../utils/http.js';
 import { isAppError } from '../../../utils/errors.js';
 import { createLogger } from '../../../utils/logger.js';
 import { NOTION_NOT_CONFIGURED_MESSAGE } from '../../../utils/notion/index.js';
@@ -139,14 +139,14 @@ export function looksLikeUsableDoc(text) {
 /**
  * Turn a thrown Notion failure into the canonical error envelope.
  *
- * The Notion client throws `AppError`s — upstream status + Notion's own
- * message (`notionFetchJson`), or a `ValidationError` for bad input — and those
- * are the contract: a "not found"/"unauthorized" gets the shared-with-the-
- * integration hint, anything else passes through with its status and message.
- * Everything that is not an `AppError` is an internal failure whose message
- * carries paths and module layout; it is logged and the client gets a fixed
- * `notion_error` 500 (js/stack-trace-exposure). Every Notion route ends its
- * catch here — this is the one handler, not a template to inline.
+ * An `AppError` already says what it means in our own words: the seam
+ * (`notionFetchJson`) decided a Notion refusal by its status (B416), and the
+ * rest are our own refusals (`ValidationError`, the rate limiter). It is
+ * answered as it is, status and code included. Everything that is not an
+ * `AppError` is an internal failure whose message carries paths and module
+ * layout; it is logged and the client gets a fixed `notion_error` 500
+ * (js/stack-trace-exposure). Every Notion route ends its catch here - this is
+ * the one handler, not a template to inline.
  *
  * @param {Error} error - Error from the Notion flow
  * @param {Object} res - HTTP response object
@@ -157,27 +157,6 @@ export function handleNotionError(error, res) {
     log.error('Notion request failed:', error);
     return jsonError(res, 500, 'notion_error', 'Notion request failed');
   }
-  const msg = String(error.message || '');
-  const code = error.statusCode;
-
-  // Helpful error messages for common Notion API errors
-  if (msg.includes('Could not find') || code === 404) {
-    return badRequest(
-      res,
-      'Notion page not found. Make sure the page is shared with your Notion integration.',
-    );
-  }
-  if (msg.includes('unauthorized') || code === 401 || code === 403) {
-    return badRequest(
-      res,
-      'Access denied. Make sure the page is shared with your Notion integration.',
-    );
-  }
-
-  return jsonError(
-    res,
-    code >= 400 && code < 600 ? code : 500,
-    'notion_error',
-    msg || 'Notion request failed',
-  );
+  serveJson(res, error.statusCode, error.toJSON());
+  return true;
 }

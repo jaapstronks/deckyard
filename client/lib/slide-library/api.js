@@ -6,6 +6,7 @@
 import { toast } from '../dom/toast.js';
 import { t } from '../ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
+import { libraryWriteFailure } from './permissions.js';
 
 /**
  * The `If-Match` header for an edit of `item` (D170): the revision it was
@@ -18,15 +19,14 @@ function ifMatch(item) {
 }
 
 /**
- * The tag names of a library item. The list routes attach tags as
- * `{id, name}` objects; a bare string is read the same way, as everywhere
- * else the client reads tags.
- * @param {{tags?: Array<{name?: string}|string>}} item
+ * The tag names of a library item. A tag is `{id, name}` wherever the
+ * server returns one (B402).
+ * @param {{tags?: Array<{id: string, name: string}>}} item
  * @returns {string[]}
  */
 function tagNamesOf(item) {
   const tags = Array.isArray(item?.tags) ? item.tags : [];
-  return tags.map((tag) => cleanStr(tag?.name ?? tag)).filter(Boolean);
+  return tags.map((tag) => cleanStr(tag?.name)).filter(Boolean);
 }
 
 /**
@@ -145,7 +145,7 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
         state.patchInCache(s, id, () => snap.prev);
         rerender?.();
       }
-      toast.error(e);
+      toast.error(libraryWriteFailure(e));
     }
   };
 

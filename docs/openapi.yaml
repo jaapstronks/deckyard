@@ -1884,6 +1884,19 @@ components:
       description: API key authentication
 
   schemas:
+    Tag:
+      type: object
+      description: >-
+        A tag of this organization. One shape wherever a tag is returned; a
+        write takes tag names (`{ tags: ["name", ...] }`) and answers with
+        these objects.
+      required: [id, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
     PresentationSummary:
       type: object
       properties:
@@ -1949,7 +1962,7 @@ components:
         tags:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/Tag'
         createdAt:
           type: string
           format: date-time
@@ -2256,7 +2269,7 @@ components:
         tags:
           type: array
           items:
-            type: string
+            $ref: '#/components/schemas/Tag'
         createdAt:
           type: string
           format: date-time

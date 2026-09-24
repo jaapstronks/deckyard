@@ -20,6 +20,7 @@ import { createSingleSlideEditor } from '../../views/editor/single-slide-editor.
 import { loadSlideTypes } from '../../views/editor/bootstrap.js';
 import { meWithMeta } from '../user/auth.js';
 import { h } from '../dom.js';
+import { editRefusalText } from './permissions.js';
 
 /**
  * The sentence for a refused save. A 409 and a 403 are states of this form
@@ -34,12 +35,7 @@ function saveErrorMessage(err) {
       'Someone else saved this slide after you opened it. Close the editor and open the slide again to see their version.',
     );
   }
-  if (err?.statusCode === 403) {
-    return t(
-      'slideLibrary.edit.notAllowed',
-      'Only its maker or an admin can edit this shared slide.',
-    );
-  }
+  if (err?.statusCode === 403) return editRefusalText();
   return String(err?.message || err || t('common.saveFailed', 'Save failed'));
 }
 

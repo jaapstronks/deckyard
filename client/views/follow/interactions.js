@@ -5,6 +5,7 @@ import { renderLikertSliderUi } from './interactions/likert-slider-ui.js';
 import {
   isLiveSlideType,
   liveInteractionKind,
+  liveScale,
 } from '../../../shared/slide-types/runtime.js';
 import { h } from '../../lib/dom.js';
 
@@ -86,7 +87,7 @@ export function createFollowInteractionController({
 
   const doRender = () => {
     if (!mountEl) return;
-    if (sliderDragActive && currentSlideType === 'likert-slider-slide') {
+    if (sliderDragActive && liveScale(currentSlideType)) {
       pendingRenderAfterDrag = true;
       return;
     }
@@ -145,8 +146,9 @@ export function createFollowInteractionController({
     const open = st ? !!st.open : true;
 
     const type = String(interaction.type || '');
-    const isSliderLikert =
-      type === 'likert' && currentSlideType === 'likert-slider-slide';
+    // A likert type that declares a `scale` is answered on a slider over it.
+    const scale = type === 'likert' ? liveScale(currentSlideType) : null;
+    const isSliderLikert = !!scale;
     const isFeedback = type === 'feedback' && isFeedbackSlide();
 
     const vote = async (idx) => {
@@ -261,6 +263,7 @@ export function createFollowInteractionController({
     const sliderUi = isSliderLikert
       ? renderLikertSliderUi({
           interaction,
+          scale,
           myVote,
           open,
           busy,
@@ -524,7 +527,7 @@ export function createFollowInteractionController({
     // and aggregate counts updating isn't critical for the voting UX.
     if (!openChanged) return;
 
-    if (sliderDragActive && currentSlideType === 'likert-slider-slide') {
+    if (sliderDragActive && liveScale(currentSlideType)) {
       pendingRenderAfterDrag = true;
       return;
     }

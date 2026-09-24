@@ -58,7 +58,7 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
-const { handlePublishedPage, handlePublishedReader } =
+const { handlePublished } =
   await import('../server/routes/static/published.js');
 const { handleEmbed } = await import('../server/routes/static/embed.js');
 const { handleEmailTemplates } =
@@ -177,7 +177,7 @@ function makeRes() {
 }
 
 /**
- * Drive a viewer handler (`handlePublishedPage`/`handlePublishedReader`/
+ * Drive a viewer handler (`handlePublished`/
  * `handleEmbed`) with a static-route context.
  */
 async function callViewer(handle, method, pathAndQuery) {
@@ -224,7 +224,7 @@ async function callEmail(method, pathAndQuery, { as = null, body } = {}) {
 test('a published page for an unknown publish id is a 404', async () => {
   seed();
   const { handled, res } = await callViewer(
-    handlePublishedPage,
+    handlePublished,
     'GET',
     `/p/${UNKNOWN_ID}-${SLUG}`,
   );
@@ -236,7 +236,7 @@ test('a published page for an unknown publish id is a 404', async () => {
 test('a published page whose deck no longer exists is a 404', async () => {
   seed();
   const { res } = await callViewer(
-    handlePublishedPage,
+    handlePublished,
     'GET',
     `/p/${GHOST_PUBLISH_ID}-${SLUG}`,
   );
@@ -250,11 +250,7 @@ test('a published page whose deck no longer exists is a 404', async () => {
 
 test('a published page with a missing slug redirects to the canonical path', async () => {
   seed();
-  const { res } = await callViewer(
-    handlePublishedPage,
-    'GET',
-    `/p/${PUBLISH_ID}`,
-  );
+  const { res } = await callViewer(handlePublished, 'GET', `/p/${PUBLISH_ID}`);
 
   assert.equal(res.statusCode, 302);
   assert.equal(res.headers.Location, `/p/${PUBLISH_ID}-${SLUG}`);
@@ -263,7 +259,7 @@ test('a published page with a missing slug redirects to the canonical path', asy
 test('a published page with the wrong slug redirects to the canonical path', async () => {
   seed();
   const { res } = await callViewer(
-    handlePublishedPage,
+    handlePublished,
     'GET',
     `/p/${PUBLISH_ID}-not-the-slug`,
   );
@@ -275,7 +271,7 @@ test('a published page with the wrong slug redirects to the canonical path', asy
 test('a non-GET method on a published path falls through unmatched', async () => {
   seed();
   const { handled, res } = await callViewer(
-    handlePublishedPage,
+    handlePublished,
     'POST',
     `/p/${PUBLISH_ID}-${SLUG}`,
   );
@@ -287,7 +283,7 @@ test('a non-GET method on a published path falls through unmatched', async () =>
 test('the reader view refuses an unknown publish id with a 404', async () => {
   seed();
   const { res } = await callViewer(
-    handlePublishedReader,
+    handlePublished,
     'GET',
     `/p/${UNKNOWN_ID}-${SLUG}/reader`,
   );
@@ -298,7 +294,7 @@ test('the reader view refuses an unknown publish id with a 404', async () => {
 test('the reader view redirects a wrong slug to the canonical reader path', async () => {
   seed();
   const { res } = await callViewer(
-    handlePublishedReader,
+    handlePublished,
     'GET',
     `/p/${PUBLISH_ID}-wrong/reader`,
   );

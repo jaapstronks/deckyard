@@ -231,20 +231,24 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handlePersonalGet,
   },
   {
     method: 'PATCH',
     pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handlePersonalUpdate,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handlePersonalDelete,
   },
   {
     pattern: /^\/api\/slide-collections\/personal\/([^/]+)$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']),
   },
   {
@@ -264,20 +268,24 @@ export const ROUTES = [
   {
     method: 'GET',
     pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleOrganizationGet,
   },
   {
     method: 'PATCH',
     pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleOrganizationUpdate,
   },
   {
     method: 'DELETE',
     pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/,
+    captures: ['uuid'],
     handler: handleOrganizationDelete,
   },
   {
     pattern: /^\/api\/slide-collections\/organization\/([^/]+)$/,
+    captures: ['uuid'],
     handler: ({ res }) => methodNotAllowed(res, ['GET', 'PATCH', 'DELETE']),
   },
 ];

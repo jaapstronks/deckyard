@@ -72,7 +72,7 @@ Auth routes are dispatched from `server/routes/api/index.js`.
 
 **Password + session** (`server/routes/api/auth.js`):
 
-- `GET  /api/auth/config` — public login-page/SSO config.
+- `GET  /api/auth/config` — public login-page config: `sso` (enabled, enforced, button label) and `branding` (app name, help link, logo), since the auth pages have no session to read the feature flags with. The client reads it once per page load through `authConfig()`.
 - `POST /api/auth/login` — password login; **throttled** (see below).
 - `POST /api/auth/logout` — clear the session cookie.
 - `GET  /api/auth/me` — the current user (or the sandbox guest in sandbox mode).

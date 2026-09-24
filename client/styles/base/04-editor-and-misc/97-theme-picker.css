@@ -47,13 +47,21 @@
   text-decoration: underline;
 }
 
-/* Theme thumbnails container */
+/* Theme thumbnails container.
+   A scroller clips on both axes, so it has to hold everything a tile paints
+   outside its own box: the focus ring (2px outline + 2px offset) and the hover
+   lift (2px) on top of it. `--theme-picker-reach` is that room, given once as
+   padding (cancelled by the negative margin, so the row still lines up) and
+   once as scroll-padding: a snapped tile otherwise lands flush against the
+   scroller's edge and loses the ring on that side (B431). */
 .theme-picker-list {
+  --theme-picker-reach: var(--ps-space-2);
   display: flex;
   gap: var(--ps-space-3);
   overflow-x: auto;
-  padding: var(--ps-space-1);
-  margin: 0 calc(-1 * var(--ps-space-1));
+  padding: var(--theme-picker-reach);
+  margin: 0 calc(-1 * var(--theme-picker-reach));
+  scroll-padding-inline: var(--theme-picker-reach);
   scroll-snap-type: x proximity;
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--app-border-default)) transparent;
