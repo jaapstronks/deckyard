@@ -70,6 +70,21 @@ html.is-fullscreen .presenter-shell.is-chrome-active .presenter-progress {
   pointer-events: auto;
 }
 
+/* In-slide presenter controls (an element that declares
+   data-presenter-chrome, such as the countdown's Start/Pause/Reset row) follow
+   the same signal as the bars: hidden on entry, shown with them. Opacity, not
+   visibility, so Tab still reaches them; chrome-autohide.js counts them as
+   chrome, so focus or a resting pointer reveals and holds them. B279. */
+html.is-fullscreen .presenter-shell [data-presenter-chrome] {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+}
+html.is-fullscreen .presenter-shell.is-chrome-active [data-presenter-chrome] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* Hide the cursor along with the chrome when idle in fullscreen. */
 html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   cursor: none;

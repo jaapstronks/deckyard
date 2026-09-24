@@ -313,3 +313,113 @@ test('presenter: bars hide after idle, but not while the pointer rests on one', 
   assert.equal(active(), false, 'pointer left the bar: idle hides again');
   auto.detach();
 });
+
+/*
+ * In-slide presenter controls (B279). The countdown's Start/Pause/Reset row
+ * declares `data-presenter-chrome` and follows the bars' signal: hidden in
+ * fullscreen until pointer activity, shown with the bars, revealed by Tab,
+ * held while the pointer rests on it. No idle timer of its own; outside
+ * fullscreen nothing changes.
+ */
+const countdownDeck = {
+  id: 'cd',
+  title: 'Countdown',
+  slides: [
+    { id: 'c1', type: 'countdown-slide', content: { seconds: 60 } },
+    { id: 'c2', type: 'payoff-slide', content: {} },
+  ],
+};
+
+test('in-slide presenter chrome: the countdown row declares it, the CSS keys on the bars signal', async () => {
+  const html = await buildStandaloneHtml(repoRoot, countdownDeck, {
+    context: 'published',
+  });
+  assert.match(
+    html,
+    /<div class="cd-controls" data-countdown-controls="1" data-presenter-chrome hidden>/,
+  );
+  assert.match(
+    html,
+    /html\.is-fullscreen \.presenter-shell \[data-presenter-chrome\] \{[^}]*opacity: 0;[^}]*pointer-events: none;/,
+    'hidden in fullscreen by opacity, so Tab still reaches it',
+  );
+  assert.match(
+    html,
+    /html\.is-fullscreen \.presenter-shell\.is-chrome-active \[data-presenter-chrome\] \{[^}]*opacity: 1;[^}]*pointer-events: auto;/,
+    'shown with the bars',
+  );
+  assert.doesNotMatch(
+    html,
+    /\[data-presenter-chrome\][^{]*\{[^}]*visibility: hidden/,
+    'never visibility: hidden (it would drop the buttons from the tab order)',
+  );
+  assert.match(
+    html,
+    /\.slide-countdown \.cd-btn \{[^}]*font-size: var\(--slide-font-size-body\);/,
+    'the buttons are sized on the slide type scale, not the 13px app button',
+  );
+});
+
+test('in-slide presenter chrome on /p/: focus reveals the bars, a resting pointer holds them', async (t) => {
+  const html = await buildStandaloneHtml(repoRoot, countdownDeck, {
+    context: 'published',
+  });
+  const dom = new JSDOM(html, {
+    url: 'http://localhost/p/abcd1234-countdown',
+    runScripts: 'dangerously',
+    pretendToBeVisual: true,
+    beforeParse: (window) => sizeWindow(window, { width: 1280, height: 720 }),
+  });
+  t.after(() => dom.window.close());
+  const { window } = dom;
+  const { document } = window;
+  const flush = () => new Promise((r) => window.setTimeout(r, 0));
+  await flush();
+  const shell = document.querySelector('.presenter-shell');
+  const controls = document.querySelector('[data-presenter-chrome]');
+  const active = () => shell.classList.contains('is-chrome-active');
+  assert.ok(controls, 'the countdown row is on the page');
+  assert.equal(controls.hidden, false, 'interactive: the row is rendered');
+
+  resize(window, SCREEN);
+  await flush();
+  assert.equal(active(), false, 'entering fullscreen hides bars and row');
+
+  controls.querySelector('[data-countdown-action="reset"]').focus();
+  assert.equal(active(), true, 'Tab into the row reveals it with the bars');
+
+  shell.classList.remove('is-chrome-active');
+  controls.dispatchEvent(new window.MouseEvent('mousemove', { bubbles: true }));
+  assert.equal(active(), true, 'pointer activity on the row reveals');
+});
+
+test('presenter: a pointer resting on in-slide chrome holds it up', async (t) => {
+  const window = await withDomGlobals(
+    t,
+    '<div class="presenter-shell"><header class="presenter-topbar"></header><main class="deck"><div class="cd-controls" data-presenter-chrome><button>Reset</button></div></main><footer class="presenter-progress"></footer></div>',
+  );
+  const { createChromeAutoHide } =
+    await import('../client/views/presenter/chrome-autohide.js');
+  const { document } = window;
+  const shell = document.querySelector('.presenter-shell');
+  const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+  const active = () => shell.classList.contains('is-chrome-active');
+  const auto = createChromeAutoHide({ shell, idleMs: 20 });
+
+  document.documentElement.classList.add('is-fullscreen');
+  await wait(0);
+  assert.equal(active(), false);
+
+  document
+    .querySelector('[data-presenter-chrome] button')
+    .dispatchEvent(new window.MouseEvent('mousemove', { bubbles: true }));
+  await wait(50);
+  assert.equal(active(), true, 'the row under the pointer stays up');
+
+  document
+    .querySelector('.deck')
+    .dispatchEvent(new window.MouseEvent('mousemove', { bubbles: true }));
+  await wait(50);
+  assert.equal(active(), false, 'pointer left the row: idle hides it again');
+  auto.detach();
+});
