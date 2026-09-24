@@ -466,6 +466,7 @@
   "editor.inline.media.dropInvalid": "That is not an image file.",
   "editor.inline.media.linkedin": "LinkedIn URL (optional)",
   "editor.inline.media.removeImageArea": "Remove image area (becomes a text slide)",
+  "editor.inline.placeholder": "Add {label}",
   "editor.inline.removeAnswer": "Remove answer",
   "editor.inline.removeBlock": "Remove block",
   "editor.inline.removeCard": "Remove card",

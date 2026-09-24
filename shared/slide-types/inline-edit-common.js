@@ -22,23 +22,21 @@ export const HEADER_GHOSTS = [
   {
     field: 'title',
     anchors: [
-      { sel: '.header', pos: 'prepend', chip: 'top-start' },
-      { sel: '.slide-inner', pos: 'prepend', chip: 'top-start' },
+      { sel: '.header', pos: 'prepend' },
+      { sel: '.slide-inner', pos: 'prepend' },
     ],
   },
   {
     field: 'subheading',
     anchors: [
-      // below-end (right-aligned) so the opaque chip clears the first body line
-      // that starts immediately under the heading (issue #113).
-      { sel: '.heading', pos: 'after', chip: 'below-end' },
-      { sel: '.header', pos: 'append', chip: 'below-end' },
-      { sel: '.slide-inner', pos: 'prepend', chip: 'top-start' },
+      { sel: '.heading', pos: 'after' },
+      { sel: '.header', pos: 'append' },
+      { sel: '.slide-inner', pos: 'prepend' },
     ],
   },
   {
     field: 'bottomSubheading',
-    anchors: [{ sel: '.slide-inner', pos: 'append', chip: 'bottom-start' }],
+    anchors: [{ sel: '.slide-inner', pos: 'append' }],
   },
 ];
 

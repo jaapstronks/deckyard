@@ -21,7 +21,6 @@ export const inlineEdit = {
       item: '.kpi-metric',
       within: '.kpi-value',
       pos: 'append',
-      chip: 'top-start',
     },
   ],
   cards: {

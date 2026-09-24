@@ -19,17 +19,22 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { solveGhosts, SEAM_GAP } from './ghost-placement.js';
 
 /**
  * @param {Object} opts
  * @param {HTMLElement} opts.thumb - the unscaled preview container
  */
+/** Unknown placement modes already reported (reposition runs on every resize). */
+const warnedModes = new Set();
+
 export function createInlineOverlay({ thumb }) {
   const layer = h('div', { class: 'ie-overlay', 'aria-hidden': 'false' });
 
   /**
    * @type {Array<{el:HTMLElement, target:HTMLElement, place:string, gap:number}>}
-   * `place`: 'cover' | 'top-right' | 'bottom-center' | 'below-start' | 'below-end'
+   * `place`: 'cover' | 'focus-point' | 'ghost' (solved by ghost-placement.js)
+   * | one of the target-relative modes in applyPlacement()
    */
   let placements = [];
   // The collection item whose scoped chips are currently revealed (per-item
@@ -74,10 +79,12 @@ export function createInlineOverlay({ thumb }) {
    * Place an interactive affordance (chip / button) relative to a target.
    * @param {HTMLElement} el
    * @param {HTMLElement} target
-   * @param {string} place - 'top-right' | 'bottom-center' | 'right-center' | 'right-outside' | 'below-start'
+   * @param {string} placeMode - a mode of applyPlacement() ('top-right',
+   *   'bottom-center', 'right-center', 'right-outside', 'center', …), or
+   *   'ghost' via ghost()
    * @param {number} [gap]
    */
-  function place(el, target, placeMode = 'below-start', gap = 6) {
+  function place(el, target, placeMode, gap = 6) {
     el.classList.add('ie-ol-item');
     // Item-scoped chips (a card's ×/grip, a per-item ghost) reveal only for the
     // hovered/focused collection item, not the whole slide - a dense grid
@@ -92,6 +99,21 @@ export function createInlineOverlay({ thumb }) {
     }
     layer.appendChild(el);
     placements.push({ el, target, place: placeMode, gap, owner });
+    return el;
+  }
+
+  /**
+   * Place a ghost chip at the seam its field will occupy (ghost-placement.js).
+   * Unlike `place()`, the position is not a mode on a target: it is solved in
+   * `reposition()` after every other affordance, against the rendered fields
+   * and chips, so a ghost never lands on content - it goes compact instead.
+   * @param {HTMLElement} el - the chip (full label inside; `.is-compact`
+   *   hides it to a round "+")
+   * @param {import('./ghost-placement.js').Seam} seam
+   */
+  function ghost(el, seam) {
+    place(el, seam.ref, 'ghost', SEAM_GAP);
+    placements[placements.length - 1].seam = seam;
     return el;
   }
 
@@ -122,30 +144,91 @@ export function createInlineOverlay({ thumb }) {
 
   function reposition() {
     ensureAttached();
-    // Chips sharing an anchor (subheading + byline + attribution) pack into a
-    // horizontal row, wrapping to a new row only if they exceed the slide width
-    // - so bottom-anchored fields don't push chips off-slide.
-    const pack = {
-      x: new Map(),
-      rowTop: new Map(),
-      width: thumb.clientWidth || 9999,
-    };
+    const width = thumb.clientWidth || 9999;
+    const ghosts = [];
     for (const p of placements) {
       if (!p.target || !p.target.isConnected) {
         p.el.style.display = 'none';
         continue;
       }
       p.el.style.display = '';
-      applyPlacement(p, rectIn(p.target), pack);
+      if (p.place === 'ghost') ghosts.push(p);
+      else applyPlacement(p, rectIn(p.target), width);
     }
-    // Second pass: keep interactive chips from overlapping each other even when
-    // they anchor to *different* elements. The per-anchor packing above only
-    // reconciles chips that share one target; two ghosts on separate anchors
-    // (e.g. the title-slide "+ Subtitle" under `.title` and "+ Meta" inside
-    // `.tsu-content`) can still land on top of each other. Here the overlay sees
-    // every chip at once - the one place that knows the full set - so it can
-    // nudge later chips downward until nothing collides.
+    // Second pass: keep the card/clear chips from overlapping each other when
+    // they anchor to different elements. The overlay sees every chip at once -
+    // the one place that knows the full set - so it nudges later ones down.
     resolveOverlaps();
+    // Last: the ghosts, each solved against everything that is already there.
+    placeGhosts(ghosts);
+  }
+
+  /**
+   * Solve every ghost chip's position (ghost-placement.js). Obstacles are the
+   * rendered text fields of the slide and every chip already standing, ghosts
+   * included, so two ghosts on neighbouring seams do not stack either. Image
+   * slots are not: a caption is inserted onto its image.
+   * @param {Array<Object>} ghosts - placements with `place: 'ghost'`
+   */
+  function placeGhosts(ghosts) {
+    if (!ghosts.length) return;
+    const bounds = {
+      left: 0,
+      top: 0,
+      width: thumb.clientWidth || 9999,
+      height: thumb.clientHeight || 9999,
+    };
+    const fields = [...thumb.querySelectorAll('[data-inline-field]')]
+      .map(rectIn)
+      .filter((r) => r.width > 0 && r.height > 0);
+    // A ghost is solved once for every hover state, so it avoids the chips of
+    // every collection item, not only the revealed one.
+    const chips = chipPlacements({ owner: 'any' }).map((p) => rectIn(p.el));
+    // Measure each chip in both shapes: full label, and compact.
+    const measured = ghosts.map((p) => {
+      p.el.style.transform = '';
+      p.el.classList.remove('is-compact');
+      const chip = { width: p.el.offsetWidth, height: p.el.offsetHeight };
+      p.el.classList.add('is-compact');
+      const compact = { width: p.el.offsetWidth, height: p.el.offsetHeight };
+      const { direction, side, align, ref, block } = p.seam;
+      return {
+        seam: {
+          direction,
+          side,
+          align,
+          ref: rectIn(ref),
+          block: rectIn(block),
+        },
+        chip,
+        compact,
+      };
+    });
+    solveGhosts(measured, { fields, chips, bounds }).forEach((res, i) => {
+      const el = ghosts[i].el;
+      el.classList.toggle('is-compact', res.compact);
+      el.style.left = `${res.rect.left}px`;
+      el.style.top = `${res.rect.top}px`;
+    });
+  }
+
+  /**
+   * The chips that take room: not the field outlines (they sit on their field
+   * by design), not the focus handle (inside its image), not the ghosts (they
+   * are solved separately) and not a hidden one.
+   * @param {{owner: 'any'|'active'}} policy - 'active' counts item-scoped
+   *   chips only for the revealed item, since just one item's chips show at a
+   *   time; 'any' counts every item's.
+   */
+  function chipPlacements({ owner }) {
+    return placements.filter(
+      (p) =>
+        p.place !== 'cover' &&
+        p.place !== 'focus-point' &&
+        p.place !== 'ghost' &&
+        p.el.style.display !== 'none' &&
+        (owner === 'any' || !p.owner || p.owner === activeOwner),
+    );
   }
 
   /**
@@ -157,18 +240,7 @@ export function createInlineOverlay({ thumb }) {
    */
   function resolveOverlaps() {
     const MARGIN = 4; // breathing room between chips (screen px)
-    // Field outlines (`cover`) sit on their field by design and the image focus
-    // handle lives inside the image - neither participates. Item-scoped chips
-    // count only when their owner is the revealed one, since just one item's
-    // chips are visible at a time (opacity-hidden chips still occupy a rect).
-    const boxes = placements
-      .filter(
-        (p) =>
-          p.place !== 'cover' &&
-          p.place !== 'focus-point' &&
-          p.el.style.display !== 'none' &&
-          (!p.owner || p.owner === activeOwner),
-      )
+    const boxes = chipPlacements({ owner: 'active' })
       .map((p) => ({ p, r: rectIn(p.el) }))
       .sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left);
 
@@ -200,7 +272,12 @@ export function createInlineOverlay({ thumb }) {
     }
   }
 
-  function applyPlacement(p, r, pack) {
+  /**
+   * @param {Object} p - the placement
+   * @param {Object} r - the target's rect in the thumb
+   * @param {number} width - the thumb's width, for clamping at its right edge
+   */
+  function applyPlacement(p, r, width) {
     const s = p.el.style;
     switch (p.place) {
       case 'cover':
@@ -284,23 +361,6 @@ export function createInlineOverlay({ thumb }) {
         s.transform = 'translate(-50%, -50%)';
         break;
       }
-      case 'below-end': {
-        // Below the anchor, right-aligned to the anchor's right edge. Like
-        // below-start but shifted right: the anchor is a full-width heading and
-        // the body starts immediately under it, so below-start lands the opaque
-        // chip on top of the first body line (issue #113). Body text is
-        // left-aligned, so the top-right of the content area is empty - the chip
-        // sits there instead. Single-chip only (no horizontal packing): the
-        // subheading ghost is alone on its anchor.
-        s.transform = '';
-        const w = p.el.offsetWidth || 90;
-        let left = r.left + r.width - w;
-        // Never push past the anchor's own left edge (short/narrow anchors).
-        if (left < r.left) left = r.left;
-        s.left = `${left}px`;
-        s.top = `${r.top + r.height + p.gap}px`;
-        break;
-      }
       case 'right-center': {
         // At the target's right-edge midpoint, on the (vertical) center line.
         // Used for the "+ Add item" affordance of single-row horizontal layouts
@@ -312,7 +372,7 @@ export function createInlineOverlay({ thumb }) {
         s.transform = 'translate(-50%, -50%)';
         const w = p.el.offsetWidth || 90;
         let cx = r.left + r.width + p.gap;
-        const maxCx = (pack?.width || 9999) - w / 2 - 2;
+        const maxCx = width - w / 2 - 2;
         if (cx > maxCx) cx = maxCx;
         s.left = `${cx}px`;
         s.top = `${r.top + r.height / 2}px`;
@@ -328,52 +388,20 @@ export function createInlineOverlay({ thumb }) {
         s.transform = 'translateY(-50%)';
         const w = p.el.offsetWidth || 90;
         let left = r.left + r.width + p.gap;
-        const maxLeft = (pack?.width || 9999) - w - 2;
+        const maxLeft = width - w - 2;
         if (left > maxLeft) left = Math.max(r.left, maxLeft);
         s.left = `${left}px`;
         s.top = `${r.top + r.height / 2}px`;
         break;
       }
-      // Chip rows. All three share the horizontal packing; they differ only in
-      // where the first row starts relative to the target rect:
-      //   below-start  - under the target (default; ghost under its anchor)
-      //   top-start    - inside the target's top-left (headers, whole-slide anchors)
-      //   bottom-start - inside the target's bottom-left (bottom-anchored fields)
-      case 'top-start':
-      case 'bottom-start':
-      case 'below-start':
-      default: {
-        s.transform = '';
-        const hh0 = p.el.offsetHeight || 24;
-        const baseTop =
-          p.place === 'top-start'
-            ? r.top + p.gap
-            : p.place === 'bottom-start'
-              ? r.top + r.height - hh0 - p.gap
-              : r.top + r.height + p.gap;
-        const key = `${p.place}:`;
-        const mapKey = p.target; // chips share a row per target+mode
-        const xKey = pack.x.get(mapKey)?.[key];
-        const tKey = pack.rowTop.get(mapKey)?.[key];
-        let x = xKey != null ? xKey : r.left;
-        let rowTop = tKey != null ? tKey : baseTop;
-        // Tentatively place, measure, then wrap if it runs past the slide edge.
-        s.left = `${x}px`;
-        s.top = `${rowTop}px`;
-        const w = p.el.offsetWidth || 90;
-        const hh = p.el.offsetHeight || 24;
-        if (x > r.left && x + w > pack.width - 4) {
-          rowTop += hh + 6;
-          x = r.left;
-          s.left = `${x}px`;
-          s.top = `${rowTop}px`;
+      default:
+        // A mode this overlay does not know (a fork descriptor's typo) is not
+        // guessed at: the affordance stays hidden and the console says why.
+        s.display = 'none';
+        if (!warnedModes.has(p.place)) {
+          warnedModes.add(p.place);
+          console.warn(`[inline overlay] unknown placement '${p.place}'`);
         }
-        if (!pack.x.has(mapKey)) pack.x.set(mapKey, {});
-        if (!pack.rowTop.has(mapKey)) pack.rowTop.set(mapKey, {});
-        pack.x.get(mapKey)[key] = x + w + 8;
-        pack.rowTop.get(mapKey)[key] = rowTop;
-        break;
-      }
     }
   }
 
@@ -424,6 +452,7 @@ export function createInlineOverlay({ thumb }) {
     clear,
     outline,
     place,
+    ghost,
     focusPoint,
     reposition,
     ensureAttached,

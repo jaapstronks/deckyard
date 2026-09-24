@@ -18,9 +18,7 @@ export const inlineEdit = {
     // over it.
     {
       field: 'source',
-      anchor: '.callout-body',
-      pos: 'after',
-      chip: 'below-start',
+      anchors: [{ sel: '.callout-body', pos: 'after' }],
     },
   ],
   formText: ['label', 'body', 'source'],

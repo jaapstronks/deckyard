@@ -14,9 +14,7 @@ export const inlineEdit = {
   ghosts: [
     {
       field: 'subheading',
-      anchor: '.heading',
-      pos: 'after',
-      chip: 'below-end',
+      anchors: [{ sel: '.heading', pos: 'after' }],
     },
   ],
   formText: ['title', 'subheading', 'body'],
@@ -25,7 +23,7 @@ export const inlineEdit = {
     // image); the existing placeholder + media popover take over from there.
     addMedia: {
       toType: 'image-text-slide',
-      anchors: [{ sel: '.slide-inner', chip: 'bottom-start' }],
+      anchors: [{ sel: '.slide-inner' }],
     },
   },
 };

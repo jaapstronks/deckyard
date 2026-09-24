@@ -19,7 +19,6 @@ export const inlineEdit = {
       list: 'rows',
       field: 'title',
       item: '.text-blocks-row',
-      chip: 'top-start',
     },
   ],
   // Two-level cards: rows in the slide, blocks within each row. Rows append
@@ -51,10 +50,7 @@ export const inlineEdit = {
       removeLabel: 'Remove block',
       // A block whose title/body was cleared re-gains it via these chips
       // (the renderer omits the empty elements entirely).
-      ghosts: [
-        { field: 'title', chip: 'top-start' },
-        { field: 'body', chip: 'bottom-start' },
-      ],
+      ghosts: [{ field: 'title' }, { field: 'body' }],
     },
   },
   formText: HEADER_TEXT,

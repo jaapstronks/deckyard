@@ -17,33 +17,23 @@ export const inlineEdit = {
     ...HEADER_GHOSTS,
     {
       field: 'leftTitle',
-      anchors: [
-        { sel: '.comparison-side.left', pos: 'prepend', chip: 'top-start' },
-      ],
+      anchors: [{ sel: '.comparison-side.left', pos: 'prepend' }],
     },
     {
       field: 'leftBody',
-      anchors: [
-        { sel: '.comparison-side.left', pos: 'append', chip: 'bottom-start' },
-      ],
+      anchors: [{ sel: '.comparison-side.left', pos: 'append' }],
     },
     {
       field: 'rightTitle',
-      anchors: [
-        { sel: '.comparison-side.right', pos: 'prepend', chip: 'top-start' },
-      ],
+      anchors: [{ sel: '.comparison-side.right', pos: 'prepend' }],
     },
     {
       field: 'rightBody',
-      anchors: [
-        { sel: '.comparison-side.right', pos: 'append', chip: 'bottom-start' },
-      ],
+      anchors: [{ sel: '.comparison-side.right', pos: 'append' }],
     },
     {
       field: 'verdict',
-      anchors: [
-        { sel: '.comparison-split', pos: 'after', chip: 'below-start' },
-      ],
+      anchors: [{ sel: '.comparison-split', pos: 'after' }],
     },
   ],
   formText: [
