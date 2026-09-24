@@ -86,6 +86,17 @@ The field editor supports all six backend field types: `string`, `markdown`,
 `image`, `images`, `enum`, and `items` (with recursive nesting for `items`
 sub-fields).
 
+## Essential and required
+
+Each top-level row in the field editor has two checkboxes that answer different questions (D211):
+
+- **Required** refuses a save or publish of a slide that leaves the field empty.
+- **Essential** says a slide of this type looks _unfinished_ without the field, not just sober. On an `items` or `images` row it means the first entry; later entries are always optional.
+
+Both are stored the same way: `true`, or not at all. `cleanField` in `shared/slide-types/custom-field-definitions.js` drops a `false`, and the stored vocabulary (`CUSTOM_TYPE_PROPERTY_KEYS`) lists both. An item sub-field (a row inside a repeater) has a Required box but no Essential one: a list is essential as a whole, and the shared field walk refuses `essential` on a sub-field with `essential_on_item_field`, whatever route the definition arrives by. `tests/slide-type-builder-declarations.test.js` pins the control and the round-trip; `tests/field-definition-rules.test.js` pins the stored shape and the refusal.
+
+What the flag reaches for a database type is the agent side: `deriveAgentSchema()` carries `essential: true` to `get_slide_types`, and `GET /api/v1/slide-types/:type/schema` reports it beside `required` ([`mcp-server.md`](mcp-server.md)). It does not change the editor canvas of a database type, because such a type has no inline descriptor and so no inline layer; its template emits no `data-inline-field` hooks and every field is edited in the form. The canvas behaviour of `essential` on core and fork types is described in [`wysiwyg-inline-editing.md`](wysiwyg-inline-editing.md#empty-fields-essential-or-optional); the per-field decisions for the core types are in [`essential-fields.md`](essential-fields.md).
+
 ## Flows
 
 - **Author a type.** Settings → Slide Types → "Create Type" opens the editor

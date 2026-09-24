@@ -92,6 +92,19 @@ const SHARED_RULES = [
     [{ key: 'a', type: 'items', label: 'A' }],
     'items_without_item_fields',
   ],
+  [
+    // D211: a list is essential as a whole, which means its first entry.
+    'an item sub-field that declares `essential`',
+    [
+      {
+        key: 'a',
+        type: 'items',
+        label: 'A',
+        itemFields: [{ key: 'b', type: 'string', label: 'B', essential: true }],
+      },
+    ],
+    'essential_on_item_field',
+  ],
 ];
 
 for (const [why, fields, code] of SHARED_RULES) {
@@ -934,6 +947,44 @@ test('`kindKey` names a sibling enum on an aside, and only options it shows need
   assert.deepEqual(findings[1].detail.missing, ['odd']);
   for (const f of findings)
     assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+});
+
+test('a stored (DB) field carries `essential` the way it carries `required`', () => {
+  const stored = validateCustomFieldDefinitions([
+    { key: 'title', type: 'string', label: 'Title', essential: true },
+    { key: 'note', type: 'string', label: 'Note', essential: false },
+    {
+      key: 'people',
+      type: 'items',
+      label: 'People',
+      essential: true,
+      itemFields: [{ key: 'name', type: 'string', label: 'Name' }],
+    },
+  ]);
+  assert.equal(stored.ok, true);
+  assert.equal(stored.fields[0].essential, true);
+  assert.equal(
+    'essential' in stored.fields[1],
+    false,
+    '`false` says nothing and is not stored, as with `required`',
+  );
+  assert.equal(stored.fields[2].essential, true, 'a list: its first entry');
+});
+
+test('a stored (DB) item sub-field cannot declare `essential`', () => {
+  const stored = validateCustomFieldDefinitions([
+    {
+      key: 'people',
+      type: 'items',
+      label: 'People',
+      itemFields: [
+        { key: 'name', type: 'string', label: 'Name', essential: false },
+      ],
+    },
+  ]);
+  assert.equal(stored.ok, false, 'even `false`: the place cannot hold it');
+  assert.equal(stored.problem.code, 'essential_on_item_field');
+  assert.equal(stored.problem.itemIndex, 0);
 });
 
 test('a stored (DB) field cannot declare `kindKey`', () => {

@@ -358,6 +358,14 @@ export function walkFieldDefinitions(fields, profile) {
         }
       }
 
+      // `essential` on a list means its first entry (D211); there is no
+      // per-entry flag, because every entry after the first is optional by
+      // definition. On an item sub-field it would be a second place to say
+      // the same thing, so it is refused on every surface rather than read.
+      if (at.depth > 0 && field.essential !== undefined) {
+        at2('essential_on_item_field', 'error');
+      }
+
       const type = typeof field.type === 'string' ? field.type.trim() : '';
       if (!type) {
         at2('missing_type', 'error');
@@ -711,6 +719,10 @@ const FINDING_MESSAGES = {
     `${where} declares \`${f?.detail?.property}\`, which is not part of what ` +
     `a stored field definition may say — the properties accepted here are: ` +
     `${(f?.detail?.offered || []).join(', ')}.`,
+  essential_on_item_field: (where) =>
+    `${where} declares \`essential\` on an item sub-field — a list is ` +
+    `essential as a whole, which means its first entry, so declare it on the ` +
+    `list field instead.`,
   item_label_field_not_items: (where, f) =>
     `${where} declares \`itemLabelField\` on a \`${f?.detail?.type}\` field, ` +
     `but only an \`items\` field has sub-fields one of which could head an ` +

@@ -78,6 +78,7 @@ export const CUSTOM_TYPE_PROPERTY_KEYS = Object.freeze({
     'type',
     'label',
     'required',
+    'essential',
     'placeholder',
     'helpText',
   ]),
@@ -124,8 +125,8 @@ function isNonEmpty(v) {
 /**
  * Normalize one field definition for storage. Every property it reads is in the
  * vocabulary above — the walk has already refused anything else — so this trims
- * strings and drops values that say nothing (a `required: false`, an empty
- * `mediaRef.linkKey`), and decides nothing.
+ * strings and drops values that say nothing (a `required: false`, an
+ * `essential: false`, an empty `mediaRef.linkKey`), and decides nothing.
  */
 function cleanField(field) {
   const clean = {
@@ -134,6 +135,7 @@ function cleanField(field) {
     label: field.label.trim(),
   };
   if (field.required === true) clean.required = true;
+  if (field.essential === true) clean.essential = true;
   if (typeof field.maxLength === 'number' && field.maxLength > 0)
     clean.maxLength = field.maxLength;
   if (typeof field.placeholder === 'string')

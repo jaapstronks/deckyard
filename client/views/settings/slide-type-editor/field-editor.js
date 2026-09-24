@@ -35,9 +35,16 @@ const FIELD_TYPE_LABELS = {
  * @param {Object} options
  * @param {Array} options.fields - Initial field definitions
  * @param {Function} options.onChange - Called with updated fields array
+ * @param {boolean} [options.nested] - The sub-fields of an `items` row. An item
+ *   sub-field cannot be `essential` (D211: a list is essential as a whole, its
+ *   first entry), so a nested list offers no control for it.
  * @returns {{ el: HTMLElement, update: Function, showProblem: Function, clearProblem: Function }}
  */
-export function createFieldListEditor({ fields = [], onChange }) {
+export function createFieldListEditor({
+  fields = [],
+  onChange,
+  nested = false,
+}) {
   const el = h('div', { class: 'field-list-editor' });
   let currentFields = structuredClone(fields);
   /** @type {{index: number, itemIndex: number|null, message: string}|null} */
@@ -359,6 +366,41 @@ export function createFieldListEditor({ fields = [], onChange }) {
     );
 
     body.append(keyRow, labelRow, typeRow, reqRow);
+
+    // Essential (D211): a separate question from Required. Required refuses a
+    // publish without a value; essential says an empty slide looks unfinished
+    // without it, which is what agents read to know what to fill. Stored the
+    // way `required` is: `true`, or not at all.
+    if (!nested) {
+      const essRow = h('div', {
+        class: 'field-list-field-row field-list-field-row-inline',
+      });
+      const essCheckbox = h('input', {
+        type: 'checkbox',
+        checked: field.essential === true,
+      });
+      essCheckbox.addEventListener('change', () => {
+        field.essential = essCheckbox.checked;
+        notify();
+      });
+      essRow.append(
+        essCheckbox,
+        h('label', {
+          class: 'field-label field-label-sm',
+          text: t('settings.slideTypes.fields.essential', 'Essential'),
+        }),
+      );
+      body.append(
+        essRow,
+        h('p', {
+          class: 'help',
+          text: t(
+            'settings.slideTypes.fields.essentialHelp',
+            'A slide without it looks unfinished, not just sober. Agents read it as what the slide needs. On a repeater, this means the first item.',
+          ),
+        }),
+      );
+    }
 
     // maxLength (string, markdown)
     if (field.type === 'string' || field.type === 'markdown') {
@@ -725,6 +767,7 @@ export function createFieldListEditor({ fields = [], onChange }) {
       );
 
       const nestedEditor = createFieldListEditor({
+        nested: true,
         fields: Array.isArray(field.itemFields) ? field.itemFields : [],
         onChange: (subFields) => {
           field.itemFields = subFields;
