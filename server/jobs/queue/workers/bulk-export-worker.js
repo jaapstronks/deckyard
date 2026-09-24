@@ -39,7 +39,9 @@ export function storeResult(jobId, result) {
     storedAt: Date.now(),
   });
 
-  // Schedule cleanup: delete temp file and remove from map
+  // Schedule cleanup: delete temp file and remove from map. Unref'd: a
+  // pending cleanup must not keep the process alive (a test after a sync
+  // bulk export otherwise waited out the whole TTL).
   setTimeout(async () => {
     const entry = jobResults.get(jobId);
     if (entry?.result?.filePath) {
@@ -50,7 +52,7 @@ export function storeResult(jobId, result) {
       }
     }
     jobResults.delete(jobId);
-  }, RESULT_TTL_MS);
+  }, RESULT_TTL_MS).unref();
 }
 
 /**
