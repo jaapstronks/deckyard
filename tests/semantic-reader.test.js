@@ -90,7 +90,7 @@ describe('heading hierarchy', () => {
     assert.equal(
       (
         html.match(
-          /<h2 id="slide-\d+-title"(?: class="reader-sr-only"| data-field="\w+")?>/g,
+          /<h2 id="slide-\d+-title"(?: class="sr-only"| data-field="\w+")?>/g,
         ) || []
       ).length,
       3,
@@ -116,9 +116,7 @@ describe('heading hierarchy', () => {
     // image-slide without a title: hidden, named by its labelField (caption),
     // and the caption is still the figure's <figcaption>.
     assert.ok(
-      html.includes(
-        '<h2 id="slide-2-title" class="reader-sr-only">Q3 revenue</h2>',
-      ),
+      html.includes('<h2 id="slide-2-title" class="sr-only">Q3 revenue</h2>'),
       html,
     );
     assert.ok(html.includes('<figcaption>Q3 revenue</figcaption>'), html);
@@ -181,8 +179,11 @@ describe('accessibility + reflow contract', () => {
       !/1600px/.test(html) && !/900px/.test(html),
       'no canvas dimensions',
     );
+    // The one exception is the shared visually-hidden rule (B447): a 1px
+    // clipped box, not layout, read verbatim from the utility sheet.
+    const withoutSrOnly = html.replace(/^\.sr-only\s*\{[^}]*\}/m, '');
     assert.ok(
-      !/position:\s*absolute/i.test(html),
+      !/position:\s*absolute/i.test(withoutSrOnly),
       'no absolute canvas positioning',
     );
   });
