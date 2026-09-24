@@ -42,16 +42,18 @@ import { normalizeEmail } from '../../utils/normalize.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
 import { canEditCustomHtml } from '../../utils/route-middleware.js';
 import { getSsoPublicConfig } from '../../config/sso.js';
+import { getBranding } from '../../config/branding.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 
 /**
  * GET /api/auth/config
  * Public, non-secret auth config for the login page (unauthenticated).
- * Tells the client whether to show an SSO button and whether to hide the
- * password / magic-link forms (SSO_ENFORCE).
+ * Tells the client whether to show an SSO button, what it says, and whether
+ * to hide the password / magic-link forms (SSO_ENFORCE); plus the instance
+ * branding, since the auth pages have no session to read the feature flags.
  */
 async function handleAuthConfig({ res }) {
-  serveJson(res, 200, { sso: getSsoPublicConfig() });
+  serveJson(res, 200, { sso: getSsoPublicConfig(), branding: getBranding() });
   return true;
 }
 

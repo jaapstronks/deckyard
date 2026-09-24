@@ -8,6 +8,7 @@ import { CLIENT_DIR, SHARED_PUBLIC_DIRS, repoRoot } from './config/paths.js';
 import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { deprecatedFlagWarnings } from './config/features.js';
 import { mediaConfigWarnings } from './media/config.js';
+import { brandingConfigWarnings } from './config/branding.js';
 import { ssoConfigError } from './config/sso.js';
 import {
   storageModeError,
@@ -253,6 +254,7 @@ async function main() {
     ...publicUrlWarnings(),
     ...deprecatedFlagWarnings(),
     ...mediaConfigWarnings(),
+    ...brandingConfigWarnings(),
   ]) {
     console.warn(`⚠️  CONFIG: ${w}`);
   }

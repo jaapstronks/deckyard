@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { getAppName } from '../../lib/theme/branding.js';
+import { getAppLogoUrl, getAppName } from '../../lib/theme/branding.js';
 import { icon } from '../../lib/dom/icons.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { createNotificationBell } from '../../lib/user/notification-bell.js';
@@ -23,9 +23,14 @@ import { h } from '../../lib/dom.js';
  */
 export function createTopbar({ features, api, user, detachers, onSearch }) {
   const isSandbox = !!features?.sandboxMode;
-  const brandLogo = isSandbox
-    ? '/assets/images/deckyard-mark.svg'
-    : '/assets/images/logo.svg';
+  // The instance's own logo wins; it is drawn as is, never inverted for the
+  // dark UI the way the black upstream SVG is.
+  const instanceLogo = getAppLogoUrl();
+  const brandLogo =
+    instanceLogo ||
+    (isSandbox
+      ? '/assets/images/deckyard-mark.svg'
+      : '/assets/images/logo.svg');
   const brandAlt = getAppName();
 
   // Brand section
@@ -33,7 +38,9 @@ export function createTopbar({ features, api, user, detachers, onSearch }) {
   const brand = h('div', { class: 'presentation-brand' });
   brand.append(
     h('img', {
-      class: 'presentation-brand-logo',
+      class: instanceLogo
+        ? 'presentation-brand-logo is-instance-logo'
+        : 'presentation-brand-logo',
       src: brandLogo,
       alt: brandAlt,
     }),

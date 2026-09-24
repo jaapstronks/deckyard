@@ -509,6 +509,12 @@
   opacity: 0.95;
 }
 
+/* An instance logo (APP_LOGO_URL) carries its own colours. */
+.presentation-brand-logo.is-instance-logo {
+  filter: none;
+  opacity: 1;
+}
+
 /* ============================================================
    SLIDE LIBRARY VIEW (in list/overview page)
    ============================================================ */

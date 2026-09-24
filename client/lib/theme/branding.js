@@ -30,6 +30,15 @@ export function getHelpUrl() {
 }
 
 /**
+ * The instance logo (`APP_LOGO_URL`), or null when the upstream logo applies.
+ * @returns {string|null}
+ */
+export function getAppLogoUrl() {
+  const v = getFeatures()?.branding?.logoUrl;
+  return typeof v === 'string' && v ? v : null;
+}
+
+/**
  * Set the browser tab title. Pass a page/context label to get
  * "Label - AppName"; pass nothing (or empty) for just the app name.
  * @param {string} [label]

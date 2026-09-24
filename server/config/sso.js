@@ -141,5 +141,8 @@ export function getSsoPublicConfig() {
     enforce: enabled && envBool('SSO_ENFORCE'),
     provider: enabled ? getSsoProvider() : null,
     loginPath: '/api/auth/oidc/login',
+    // The words on the SSO button (SSO_BUTTON_LABEL), e.g. "Sign in with
+    // Acme ID"; null = the client's own translated "Sign in with SSO".
+    buttonLabel: (enabled && envStr('SSO_BUTTON_LABEL')) || null,
   };
 }
