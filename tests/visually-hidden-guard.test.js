@@ -121,7 +121,10 @@ test('the reader states the utility rule verbatim', () => {
     title: 'Hidden heading',
     slides: [{ id: 'a', type: 'quote', content: { quote: 'Q' } }],
   });
-  assert.ok(html.includes('class="sr-only"'), 'the hidden heading uses .sr-only');
+  assert.ok(
+    html.includes('class="sr-only"'),
+    'the hidden heading uses .sr-only',
+  );
   const rule = readFileSync(UTILITY_FILE, 'utf8').match(
     /^\.sr-only\s*\{[^}]*\}/m,
   );

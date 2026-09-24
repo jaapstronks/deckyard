@@ -116,9 +116,7 @@ describe('heading hierarchy', () => {
     // image-slide without a title: hidden, named by its labelField (caption),
     // and the caption is still the figure's <figcaption>.
     assert.ok(
-      html.includes(
-        '<h2 id="slide-2-title" class="sr-only">Q3 revenue</h2>',
-      ),
+      html.includes('<h2 id="slide-2-title" class="sr-only">Q3 revenue</h2>'),
       html,
     );
     assert.ok(html.includes('<figcaption>Q3 revenue</figcaption>'), html);

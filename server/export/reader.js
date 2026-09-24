@@ -146,7 +146,8 @@ const SR_ONLY_CSS = (() => {
     'utf8',
   );
   const rule = css.match(/^\.sr-only\s*\{[^}]*\}/m);
-  if (!rule) throw new Error('reader: no .sr-only rule in 60-accessibility.css');
+  if (!rule)
+    throw new Error('reader: no .sr-only rule in 60-accessibility.css');
   return rule[0];
 })();
 
