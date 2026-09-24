@@ -104,7 +104,10 @@ test('export: exactly one <h1> (the deck title) and a nested slide outline', asy
   });
   // The deck title is the single document <h1>.
   assert.equal((html.match(/<h1[\s>]/g) || []).length, 1);
-  assert.match(html, /<h1 class="presenter-title">Outline deck<\/h1>/);
+  assert.match(
+    html,
+    /<h1 class="presenter-title" title="Outline deck">Outline deck<\/h1>/,
+  );
   // Title slide, content slide and chapter all sit at <h2> under the deck <h1>.
   assert.match(html, /<h2[^>]*>Opening<\/h2>/);
   assert.match(html, /<h2[^>]*>Intro<\/h2>/);

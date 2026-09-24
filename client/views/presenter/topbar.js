@@ -77,20 +77,27 @@ export function buildPresenterTopbar({
       onclick: () => onToggleFullscreen(),
     }),
     autoAdvanceBtn,
-    h('div', {
-      class: 'presenter-help',
-      text: t('presenter.help', '←/→ move · F fullscreen · ? shortcuts'),
-    }),
+    presenterHelp(),
   ];
   actions.append(...items.filter(Boolean));
 
   top.append(
+    // The title truncates when the row is tight (B324); the attribute keeps
+    // the whole of it one hover away.
     h('div', {
       class: 'presenter-title',
       text: pres.title,
+      title: pres.title,
     }),
     actions,
   );
 
   return { top };
+}
+
+/** The shortcut hint; it truncates when the row is tight, so it carries its
+ *  own text as a tooltip (B324). */
+function presenterHelp() {
+  const text = t('presenter.help', '←/→ move · F fullscreen · ? shortcuts');
+  return h('div', { class: 'presenter-help', text, title: text });
 }
