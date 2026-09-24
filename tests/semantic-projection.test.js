@@ -1473,7 +1473,7 @@ describe('the deck language reaches the projection (B294, D130c)', () => {
       const html = section(slide, callout, lang);
       assert.ok(
         html.includes(
-          `<h2 id="slide-1-title" class="reader-sr-only">${word}</h2>`,
+          `<h2 id="slide-1-title" class="sr-only">${word}</h2>`,
         ),
         html,
       );
@@ -1537,7 +1537,7 @@ describe('the deck language reaches the projection (B294, D130c)', () => {
       ],
     };
     const html = section({ type: 'x', content: { kind: 'a' } }, def, 'nl');
-    assert.ok(html.includes('class="reader-sr-only">Kinds</h2>'), html);
+    assert.ok(html.includes('class="sr-only">Kinds</h2>'), html);
     assert.ok(!html.includes('reader-label'), html);
   });
 
@@ -1855,7 +1855,7 @@ describe('markup — author HTML projects as its content, not its source (B298)'
     // No h1..h3 in the sample: the hidden heading falls back to the type label.
     assert.ok(
       html.includes(
-        '<h2 id="slide-1-title" class="reader-sr-only">Custom HTML</h2>',
+        '<h2 id="slide-1-title" class="sr-only">Custom HTML</h2>',
       ),
     );
   });

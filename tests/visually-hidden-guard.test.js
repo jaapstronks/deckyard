@@ -17,17 +17,23 @@
  *    the `.sr-only` rule. A second copy of the block needs it, so this is the
  *    check that catches one.
  * 2. No other class name for the same idea is declared in `client/styles/`
- *    or set from `client/` / `shared/` code.
+ *    or set from `client/` / `shared/` / `server/` code.
+ * 3. The exports carry no copy either (B447). The print handout loads
+ *    slides.css and so the rule itself; the reader chain loads nothing of the
+ *    canvas chain, so it reads the one rule from the utility sheet. The clip
+ *    idiom therefore appears nowhere in `server/` or `shared/`, and the
+ *    reader's `.sr-only` is the utility rule byte for byte.
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { buildReaderHtml } from '../server/export/reader.js';
 
 const STYLES_ROOT = 'client/styles';
 const UTILITY_FILE = 'client/styles/slides/03-components/60-accessibility.css';
-const CODE_ROOTS = ['client', 'shared'];
+const CODE_ROOTS = ['client', 'shared', 'server'];
 const SKIP_DIRS = new Set(['vendor', 'node_modules']);
 
 /** Spellings of the same utility that must not come back. */
@@ -37,6 +43,7 @@ const RETIRED_NAMES = [
   'screen-reader-only',
   'screenreader-only',
   'sr-only-focusable',
+  'reader-sr-only',
 ];
 
 const CLIP_IDIOM = /\bclip-path\s*:\s*inset\(\s*50%\s*\)|\bclip\s*:\s*rect\(/g;
@@ -91,4 +98,32 @@ test('no second class name for visually-hidden', () => {
     }
   }
   assert.deepEqual(hits, [], 'use `.sr-only`, the one spelling');
+});
+
+test('the exports carry no copy of the block', () => {
+  const hits = [];
+  for (const file of ['server', 'shared'].flatMap((root) =>
+    walk(root, ['.js', '.css', '.html']),
+  )) {
+    const text = stripJsComments(readFileSync(file, 'utf8'));
+    for (const m of text.matchAll(CLIP_IDIOM)) hits.push(`${file}: ${m[0]}`);
+  }
+  assert.deepEqual(
+    hits,
+    [],
+    'an export that needs .sr-only loads the rule from ' +
+      `${UTILITY_FILE}, it does not declare its own`,
+  );
+});
+
+test('the reader states the utility rule verbatim', () => {
+  const html = buildReaderHtml('/repo', {
+    title: 'Hidden heading',
+    slides: [{ id: 'a', type: 'quote', content: { quote: 'Q' } }],
+  });
+  assert.ok(html.includes('class="sr-only"'), 'the hidden heading uses .sr-only');
+  const rule = readFileSync(UTILITY_FILE, 'utf8').match(
+    /^\.sr-only\s*\{[^}]*\}/m,
+  );
+  assert.ok(rule && html.includes(rule[0]), 'reader carries the one rule');
 });

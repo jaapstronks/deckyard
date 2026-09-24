@@ -94,13 +94,6 @@ const PRINT_DOC_CSS = `
         font-size: 13px;
         opacity: 0.65;
       }
-      /* A hidden heading is a name, not a title: visually hidden, still an
-         <h2> for heading navigation. */
-      .print-doc .reader-slide .reader-sr-only {
-        position: absolute;
-        width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
-        overflow: hidden; clip-path: inset(50%); white-space: nowrap;
-      }
       .print-doc h3 { font-size: 15px; margin: 14px 0 6px; }
       .print-doc p { margin: 10px 0; }
       .print-doc ul, .print-doc ol { margin: 10px 0; padding-left: 22px; }
