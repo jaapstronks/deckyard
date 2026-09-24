@@ -207,6 +207,7 @@ export default {
     QUOTE_BLOCK.field,
     {
       key: 'quote',
+      essential: true,
       label: 'Quote',
       type: 'string',
       required: true,

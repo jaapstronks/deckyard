@@ -674,7 +674,7 @@
   "editor.slideField.background.option.brand-2": "Marca 2",
   "editor.slideField.background.option.custom": "Cor personalizada",
   "editor.slideField.background.option.dark": "Escuro",
-  "editor.slideField.body.label": "Corpo (Markdown)",
+  "editor.slideField.body.label": "Corpo",
   "editor.slideField.bottomSubheading.label": "Subtítulo inferior",
   "editor.slideField.caption.label": "Legenda",
   "editor.slideField.density.label": "Tamanho do texto",

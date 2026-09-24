@@ -674,7 +674,7 @@
   "editor.slideField.background.option.brand-2": "Marka 2",
   "editor.slideField.background.option.custom": "Kolor własny",
   "editor.slideField.background.option.dark": "Ciemne",
-  "editor.slideField.body.label": "Treść (Markdown)",
+  "editor.slideField.body.label": "Treść",
   "editor.slideField.bottomSubheading.label": "Podtytuł u dołu",
   "editor.slideField.caption.label": "Podpis",
   "editor.slideField.density.label": "Rozmiar tekstu",

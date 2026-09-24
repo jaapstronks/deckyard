@@ -18,6 +18,7 @@ export default {
   fields: [
     {
       key: 'question',
+      essential: true,
       role: 'heading',
       label: 'Question',
       type: 'string',
@@ -32,6 +33,7 @@ export default {
       // reader projects as an <ol>. Ten is the ceiling the vote store clamps
       // to (`MAX_OPTIONS`, server/storage/interaction-slides.js).
       key: 'options',
+      essential: true,
       label: 'Scale labels',
       type: 'items',
       ordered: true,

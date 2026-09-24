@@ -728,7 +728,7 @@
   "editor.slideField.background.option.dark": "Donker",
   "editor.slideField.background.option.lime": "Lime",
   "editor.slideField.background.option.mist": "Mist",
-  "editor.slideField.body.label": "Tekst (Markdown)",
+  "editor.slideField.body.label": "Tekst",
   "editor.slideField.bottomSubheading.label": "Onderste subheading",
   "editor.slideField.caption.label": "Bijschrift",
   "editor.slideField.density.label": "Tekstgrootte",

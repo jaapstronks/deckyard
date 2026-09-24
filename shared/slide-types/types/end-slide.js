@@ -14,6 +14,7 @@ export default {
   fields: [
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -23,7 +24,7 @@ export default {
     },
     {
       key: 'body',
-      label: 'Body (Markdown)',
+      label: 'Body',
       labelKey: 'editor.slideField.body.label',
       type: 'markdown',
       required: false,

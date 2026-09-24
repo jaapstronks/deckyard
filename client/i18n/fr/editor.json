@@ -658,7 +658,7 @@
   "editor.slideField.background.option.brand-2": "Marque 2",
   "editor.slideField.background.option.custom": "Couleur personnalisée",
   "editor.slideField.background.option.dark": "Sombre",
-  "editor.slideField.body.label": "Corps (Markdown)",
+  "editor.slideField.body.label": "Corps",
   "editor.slideField.bottomSubheading.label": "Sous-titre du bas",
   "editor.slideField.caption.label": "Légende",
   "editor.slideField.density.label": "Taille du texte",

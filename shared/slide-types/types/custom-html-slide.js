@@ -60,6 +60,7 @@ export default {
   fields: [
     {
       key: 'html',
+      essential: true,
       label: 'HTML',
       type: 'code',
       required: false,

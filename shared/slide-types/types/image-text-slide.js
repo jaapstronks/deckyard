@@ -38,6 +38,7 @@ export default {
     // modal is a text-editing surface. The image machinery follows below.
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -47,7 +48,8 @@ export default {
     },
     {
       key: 'body',
-      label: 'Body (Markdown)',
+      essential: true,
+      label: 'Body',
       labelKey: 'editor.slideField.body.label',
       type: 'markdown',
       // Long-form prose beside the image: same as content-slide.
@@ -57,6 +59,7 @@ export default {
     },
     {
       key: 'image',
+      essential: true,
       label: 'Image',
       labelKey: 'editor.slideField.image.label',
       type: 'image',

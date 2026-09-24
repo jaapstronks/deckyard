@@ -671,7 +671,7 @@
   "editor.slideField.background.option.brand-2": "Marchio 2",
   "editor.slideField.background.option.custom": "Colore personalizzato",
   "editor.slideField.background.option.dark": "Scuro",
-  "editor.slideField.body.label": "Corpo (Markdown)",
+  "editor.slideField.body.label": "Corpo",
   "editor.slideField.bottomSubheading.label": "Sottotitolo inferiore",
   "editor.slideField.caption.label": "Didascalia",
   "editor.slideField.density.label": "Dimensione del testo",

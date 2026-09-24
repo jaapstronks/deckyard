@@ -55,6 +55,7 @@ export default {
     },
     {
       key: 'embedUrl',
+      essential: true,
       label: 'Embed URL (HTTPS only)',
       type: 'string',
       required: true,

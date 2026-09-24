@@ -103,6 +103,7 @@ export default {
     BACKGROUND_FIELD,
     {
       key: 'logos',
+      essential: true,
       label: 'Logos',
       type: 'items',
       required: false,

@@ -17,15 +17,16 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
 });
 
 /**
- * Resolve rows from content — supports both legacy numbered fields
- * (row1Block1Title, row1Count, etc.) and the new rows[] array.
- * rows[] takes precedence when present.
+ * Resolve rows from content. A `rows[]` array is the canonical shape and wins
+ * whenever it is present - also when it is empty: an empty `rows[]` is a
+ * slide with no rows yet (the editor offers "+ Add row"), not a cue to read
+ * the legacy numbered fields. Only a slide without `rows` at all falls back to
+ * those (see resolveLegacyRows).
  *
  * Returns: [{ title, color, arrow, blocks: [{ title, body }] }, ...]
  */
 export function resolveRows(content) {
-  // New format: rows[] array
-  if (Array.isArray(content?.rows) && content.rows.length > 0) {
+  if (Array.isArray(content?.rows)) {
     return content.rows.map((row, idx) => ({
       title: String(row.title || '').trim(),
       color: row.color || (idx % 2 === 0 ? 'yellow' : 'black'),
@@ -38,8 +39,39 @@ export function resolveRows(content) {
         : [],
     }));
   }
+  return resolveLegacyRows(content);
+}
 
-  // Legacy format: row{N}Block{M}Title, row{N}Count, etc.
+/**
+ * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
+ * Block{M}Body) or `arrow{N}`. The v1 -> v2 step folds them into `rows[]` and
+ * drops them (D216); `rows` itself does not match.
+ */
+export const LEGACY_ROW_KEY = /^(row|arrow)\d/;
+
+/**
+ * Whether a slide carries content in the legacy numbered fields (row{N}…,
+ * arrow{N}). An empty `rows[]` beside such content is a legacy deck the
+ * v1 -> v2 step still has to fold; without it, it is the empty state.
+ * @param {Object} content
+ * @returns {boolean}
+ */
+export function hasLegacyRowFields(content) {
+  if (!content || typeof content !== 'object') return false;
+  return Object.entries(content).some(
+    ([key, value]) =>
+      LEGACY_ROW_KEY.test(key) && value != null && String(value).trim() !== '',
+  );
+}
+
+/**
+ * The legacy numbered fields (row{N}Block{M}Title, row{N}Count, …) as rows.
+ * Read by resolveRows() for a slide without `rows`, and by the v1 -> v2
+ * schema migration that folds them into `rows[]`.
+ *
+ * Returns: [{ title, color, arrow, blocks: [{ title, body }] }, ...]
+ */
+export function resolveLegacyRows(content) {
   const rows = [];
 
   // Row 1 always exists
@@ -151,6 +183,7 @@ export default {
     // Header
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -172,6 +205,7 @@ export default {
     // New rows[] format (preferred for AI generation)
     {
       key: 'rows',
+      essential: true,
       label: 'Rows',
       labelKey: 'editor.slideField.rows.label',
       type: 'items',
@@ -484,7 +518,7 @@ export default {
     const rows = resolveRows(content);
     const rowCount = rows.length;
     // Inline-edit paths must point at the data source resolveRows() used.
-    const useRows = Array.isArray(content?.rows) && content.rows.length > 0;
+    const useRows = Array.isArray(content?.rows);
 
     function renderArrow(arrowValue) {
       if (!arrowValue || arrowValue === 'none') return '';

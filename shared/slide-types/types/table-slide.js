@@ -88,6 +88,7 @@ export default {
   fields: [
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -149,6 +150,7 @@ export default {
       // row/column add/remove, markdown import — which also manages the
       // sibling `colCount` and `headerRow` keys.
       key: 'rows',
+      essential: true,
       label: 'Rows',
       labelKey: 'editor.slideField.rows.label',
       type: 'items',
