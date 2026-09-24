@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.43.0](https://github.com/jaapstronks/deckyard/compare/v1.42.0...v1.43.0) (2026-09-24)
+
+
+### Added
+
+* **editor:** a click selects an image and shows Replace / Settings ([#1287](https://github.com/jaapstronks/deckyard/issues/1287)) ([56310b5](https://github.com/jaapstronks/deckyard/commit/56310b5c3fccc520984769487643dcf9d1312cb4))
+
+
+### Fixed
+
+* **presenter:** the language switch stays one row in a tight topbar (B324) ([#1289](https://github.com/jaapstronks/deckyard/issues/1289)) ([6b35b9b](https://github.com/jaapstronks/deckyard/commit/6b35b9b5bebb1d11dcde294578e5d339f7e05234))
+
 ## [1.42.0](https://github.com/jaapstronks/deckyard/compare/v1.41.1...v1.42.0) (2026-09-24)
 
 
