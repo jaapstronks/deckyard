@@ -166,7 +166,6 @@
   "organization.members.help": "Kaikki, joilla on pääsy nykyiseen organisaatioon.",
   "organization.members.invite.added": "Osoitteella {email} oli jo tili, joten hän on nyt jäsen. Sähköpostia ei lähetetty, joten kerro hänelle itse.",
   "organization.members.invite.alreadyMember": "Hän on jo tämän organisaation jäsen.",
-  "organization.members.invite.createdWithoutEmail": "{email} lisättiin, mutta kutsusähköpostia ei lähetetty. Lähetä hänelle salasanan palautuslinkki.",
   "organization.members.invite.emailLabel": "Sähköpostiosoite",
   "organization.members.invite.emailPlaceholder": "nimi@esimerkki.fi",
   "organization.members.invite.failed": "Kutsua ei voitu lähettää.",

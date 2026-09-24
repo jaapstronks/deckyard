@@ -160,7 +160,6 @@
   "organization.members.help": "Toutes les personnes ayant accès à l'organisation dans laquelle vous êtes.",
   "organization.members.invite.added": "{email} avait déjà un compte ici et en est maintenant membre. Aucun e-mail n'a été envoyé : prévenez cette personne vous-même.",
   "organization.members.invite.alreadyMember": "Cette personne est déjà membre de cette organisation.",
-  "organization.members.invite.createdWithoutEmail": "{email} a été ajouté, mais aucun e-mail d'invitation n'est parti. Envoyez-lui un lien de réinitialisation de mot de passe.",
   "organization.members.invite.emailLabel": "Adresse e-mail",
   "organization.members.invite.emailPlaceholder": "nom@exemple.fr",
   "organization.members.invite.failed": "Impossible d'envoyer l'invitation.",

@@ -162,7 +162,6 @@
   "organization.members.help": "Tutti coloro che hanno accesso all'organizzazione in cui si trova.",
   "organization.members.invite.added": "{email} aveva già un account qui ed è ora membro. Non ha ricevuto alcuna email, quindi avvisala tu.",
   "organization.members.invite.alreadyMember": "Questa persona è già membro dell’organizzazione.",
-  "organization.members.invite.createdWithoutEmail": "{email} è stato aggiunto, ma non è partita alcuna email di invito. Inviagli un link per reimpostare la password.",
   "organization.members.invite.emailLabel": "Indirizzo email",
   "organization.members.invite.emailPlaceholder": "nome@esempio.it",
   "organization.members.invite.failed": "Impossibile inviare l’invito.",

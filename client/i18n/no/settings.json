@@ -158,7 +158,6 @@
   "organization.members.help": "Alle med tilgang til organisasjonen du er i akkurat nå.",
   "organization.members.invite.added": "{email} hadde allerede en konto her og er nå medlem. Det ble ikke sendt e-post, så si fra selv.",
   "organization.members.invite.alreadyMember": "Den personen er allerede medlem av denne organisasjonen.",
-  "organization.members.invite.createdWithoutEmail": "{email} ble lagt til, men det gikk ingen invitasjonsmelding ut. Send dem en lenke for å tilbakestille passordet.",
   "organization.members.invite.emailLabel": "E-postadresse",
   "organization.members.invite.emailPlaceholder": "navn@eksempel.no",
   "organization.members.invite.failed": "Klarte ikke å sende invitasjonen.",

@@ -158,7 +158,6 @@
   "organization.members.help": "Alla med åtkomst till den organisation du är i just nu.",
   "organization.members.invite.added": "{email} hade redan ett konto här och är nu medlem. Inget mejl skickades, så säg till själv.",
   "organization.members.invite.alreadyMember": "Den personen är redan medlem i den här organisationen.",
-  "organization.members.invite.createdWithoutEmail": "{email} lades till, men inget inbjudningsmejl gick ut. Skicka dem en länk för att återställa lösenordet.",
   "organization.members.invite.emailLabel": "E-postadress",
   "organization.members.invite.emailPlaceholder": "namn@exempel.se",
   "organization.members.invite.failed": "Det gick inte att skicka inbjudan.",
