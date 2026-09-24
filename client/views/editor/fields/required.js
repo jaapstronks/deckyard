@@ -18,9 +18,9 @@
  * it never moves focus.
  */
 
-import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { markRequired } from '../../../lib/dom/required-mark.js';
 
 /** Fields whose "emptiness" is not just an empty string. */
 function isEmptyValue(control) {
@@ -29,7 +29,8 @@ function isEmptyValue(control) {
 }
 
 /**
- * Mark a field as required and wire its inline validation.
+ * Mark a field as required (`dom/required-mark.js`) and wire its inline
+ * validation.
  *
  * @param {Object} opts
  * @param {HTMLElement} opts.wrap - The field wrapper (`.is-field`), as
@@ -41,21 +42,7 @@ function isEmptyValue(control) {
 export function markFieldRequired({ wrap, control } = {}) {
   if (!wrap || !control) return wrap;
 
-  wrap.classList.add('is-required');
-  control.setAttribute('aria-required', 'true');
-
-  const labelEl = wrap.querySelector('.field-label');
-  if (labelEl && !labelEl.querySelector('.field-required-mark')) {
-    labelEl.append(
-      h('span', {
-        class: 'field-required-mark',
-        text: '*',
-        // The label already reads "required" to screen readers via
-        // aria-required on the control; the asterisk is decoration.
-        'aria-hidden': 'true',
-      }),
-    );
-  }
+  markRequired({ wrap, control });
 
   const error = createInlineError({ live: 'polite' });
   wrap.append(error.el);

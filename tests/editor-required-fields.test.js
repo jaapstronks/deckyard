@@ -139,3 +139,25 @@ test('emptyRequiredFields finds the empty ones only', () => {
   );
   assert.deepEqual(labels, ['A', 'D']);
 });
+
+test('markRequired is the one producer of the mark, and it only marks', async () => {
+  const { markRequired } = await import('../client/lib/dom/required-mark.js');
+  const input = h('input');
+  const wrap = h('div', { class: 'is-field' }, [
+    h('label', { class: 'field-label', text: 'Name' }),
+    input,
+  ]);
+
+  assert.equal(markRequired({ wrap, control: input }), wrap);
+  markRequired({ wrap, control: input });
+
+  assert.ok(wrap.classList.contains('is-required'));
+  assert.equal(input.getAttribute('aria-required'), 'true');
+  const marks = wrap.querySelectorAll('.field-label .field-required-mark');
+  assert.equal(marks.length, 1, 'marking twice adds a second asterisk');
+  assert.equal(marks[0].getAttribute('aria-hidden'), 'true');
+  // Validation is the caller's: no error surface, no blur flag.
+  assert.equal(wrap.querySelector('.inline-error'), null);
+  input.dispatchEvent(new dom.window.Event('blur'));
+  assert.equal(input.hasAttribute('aria-invalid'), false);
+});
