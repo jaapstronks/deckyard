@@ -76,7 +76,7 @@ Add to your Cursor MCP settings:
 
 | Tool                   | Description                                             |
 | ---------------------- | ------------------------------------------------------- |
-| `update_slide`         | Update a slide's content directly                       |
+| `update_slide`         | Patch a slide's content or visibility; convert its type |
 | `remove_slide`         | Remove a slide by index                                 |
 | `reorder_slides`       | Move a slide from one position to another               |
 | `convert_slide`        | AI-powered type conversion (e.g. content → list)        |

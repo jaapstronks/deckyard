@@ -122,8 +122,57 @@ test('a type change the model has no mapping for is refused, not stored', async 
   const db = await installDb();
   await assert.rejects(
     () => updateSlide({ type: 'poll-slide', content: { question: 'Hm?' } }),
-    /unsupported conversion/,
+    /no conversion is declared/,
   );
   assert.equal(stored(db).type, 'title-slide');
   assert.equal(stored(db).content.title, 'Hoi');
+});
+
+// B260 / D117: the refusal is not a dead end. It names the action that does
+// fit - a new slide of the target type, the old one removed or kept as a
+// draft - in the tools the agent has, and carries the pair as details.
+test('a refused type change names the route and the draft option', async () => {
+  await installDb();
+  const err = await updateSlide({ type: 'poll-slide', content: {} }).then(
+    () => assert.fail('the type change should be refused'),
+    (e) => e,
+  );
+  assert.match(err.message, /from title-slide to poll-slide/);
+  assert.match(err.message, /converts only to: chapter-title-slide/);
+  assert.match(err.message, /add a poll-slide slide with add_slide/);
+  assert.match(err.message, /remove this one with remove_slide/);
+  assert.match(err.message, /keep it as a draft with update_slide/);
+  assert.match(err.message, /"hideInPresentation":true/);
+  assert.deepEqual(err.details, {
+    from: 'title-slide',
+    to: 'poll-slide',
+    convertible: ['chapter-title-slide'],
+  });
+});
+
+test('the draft the refusal names is reachable: update_slide sets visibility', async () => {
+  const db = await installDb();
+  const draft = {
+    hideInPresentation: true,
+    hideInExport: true,
+    hideInPublished: true,
+    hideFromViewers: false,
+  };
+  const result = await updateSlide({ content: {}, visibility: draft });
+  assert.deepEqual(result.visibility, draft);
+  assert.deepEqual(stored(db).visibility, draft);
+  assert.equal(stored(db).content.title, 'Hoi', 'content is untouched');
+});
+
+test('a malformed visibility is refused, not stored', async () => {
+  const db = await installDb();
+  await assert.rejects(
+    () => updateSlide({ content: {}, visibility: { draft: true } }),
+    /Invalid visibility: .*unknown key: draft/,
+  );
+  await assert.rejects(
+    () => updateSlide({ content: {}, visibility: 'draft' }),
+    /Invalid visibility: .*must be an object/,
+  );
+  assert.equal(stored(db).visibility, undefined);
 });

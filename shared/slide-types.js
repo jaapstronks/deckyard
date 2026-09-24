@@ -43,4 +43,5 @@ export {
   getConvertibleSlideTypes,
   convertSlideToType,
   getConversionLossyKeys,
+  UnsupportedConversionError,
 } from './slide-types/convert.js';

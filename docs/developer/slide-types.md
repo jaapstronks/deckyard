@@ -913,9 +913,13 @@ Two things are deliberately _not_ the factory's (D92):
 - **An update is not a birth.** MCP `update_slide` is a patch plus validation;
   a `type` on it is a _conversion_ through `convertSlideToType` — the editor's
   converter — which carries over what maps, re-seeds the rest for the target
-  type, and refuses a pair the model has no mapping for. The factory's birth
-  steps (defaults, theme seed, instance keys) never run on a slide that already
-  exists. `tests/mcp-update-slide-is-a-patch.test.js` pins this.
+  type, and refuses a pair the model has no mapping for. The refusal
+  (`UnsupportedConversionError`, the pair and the convertible types in
+  `details`) is worded for the agent: replacing a slide by one of another type
+  is `add_slide` plus `remove_slide`, or `add_slide` plus parking the old one
+  as a draft through `update_slide`'s `visibility` (D97, D117). The factory's
+  birth steps (defaults, theme seed, instance keys) never run on a slide that
+  already exists. `tests/mcp-update-slide-is-a-patch.test.js` pins this.
 
 ### Form layout (`formLayout`)
 
