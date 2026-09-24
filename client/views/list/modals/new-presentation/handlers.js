@@ -19,14 +19,16 @@ import {
 /**
  * Handle empty presentation creation.
  *
- * A missing title and a refusal from the server are states of the title
- * field, not footer lines: both go through `refuse`, which the blank panel
- * renders as an inline error under the field and which moves focus there
- * (docs/reference/feedback-surfaces.md). `setStatus` only carries progress.
+ * A missing title and a refusal from the server are states of the form, not
+ * footer lines: both go through `refuse` with the field they name, and the
+ * blank panel puts a `title` refusal under the title field and anything else
+ * beside Create (docs/reference/feedback-surfaces.md). `setStatus` only
+ * carries progress.
  *
  * @param {Object} opts
- * @param {(message: string) => void} opts.refuse - Show a refusal at the
- *   title field; called after the form is usable again.
+ * @param {(message: string, opts?: { field?: string }) => void} opts.refuse -
+ *   Show a refusal; `field` is the one it names (`err.details.field` for a
+ *   server refusal). Called after the form is usable again.
  */
 export async function handleEmpty({
   api,
@@ -39,7 +41,9 @@ export async function handleEmpty({
   refuse,
 }) {
   if (!titleText) {
-    refuse(t('list.newPresentation.titleRequired', 'Enter a title first.'));
+    refuse(t('list.newPresentation.titleRequired', 'Enter a title first.'), {
+      field: 'title',
+    });
     return;
   }
   const lang = normalizeLang(langMode) || DEFAULT_DECK_LANG;
@@ -63,7 +67,7 @@ export async function handleEmpty({
   } catch (e) {
     setStatus('');
     setBusy(false);
-    refuse(String(e?.message || e));
+    refuse(String(e?.message || e), { field: e?.details?.field });
   }
 }
 

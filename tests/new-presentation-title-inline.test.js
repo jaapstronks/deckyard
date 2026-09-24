@@ -6,7 +6,8 @@
  * of that form (docs/reference/feedback-surfaces.md): the inline error under
  * the title field, the field marked invalid and focused, nothing toasted, and
  * the refusal gone at the start of the next attempt. The field is marked
- * required before anyone presses anything.
+ * required before anyone presses anything. A server refusal marks the title
+ * only when it names it; anything else goes beside Create.
  *
  * Run with: node --test tests/new-presentation-title-inline.test.js
  */
@@ -108,10 +109,41 @@ test('the next attempt clears the refusal before it runs', async () => {
   assert.equal(post?.opts.body.title, 'Quarterly review');
 });
 
-test('a server refusal lands on the same field, not the footer', async () => {
-  const { field, input, create } = open(() => {
-    throw new Error('Title is too long.');
-  });
+/**
+ * A server refusal: an Error carrying `details`, the shape client/lib/api.js
+ * throws for `{ ok:false, message, details }`.
+ */
+function refusal(message, details) {
+  return () => {
+    throw Object.assign(new Error(message), details ? { details } : {});
+  };
+}
+
+test('a server refusal naming no field goes beside Create, not on the title', async () => {
+  const { field, input, create } = open(refusal('Something went wrong.'));
+  input.value = 'x';
+  create.click();
+  await tick();
+  await tick();
+
+  assert.ok(field.querySelector('.inline-error').hidden, 'title was blamed');
+  assert.equal(input.hasAttribute('aria-invalid'), false);
+  const callout = document.querySelector(
+    '.creation-view-footer .inline-error.is-callout',
+  );
+  assert.ok(callout && !callout.hidden, 'no callout beside Create');
+  assert.equal(callout.textContent, 'Something went wrong.');
+  assert.equal(input.disabled, false, 'form stayed busy');
+
+  // The next attempt starts clean.
+  create.click();
+  assert.ok(callout.hidden, 'callout stayed into the next attempt');
+});
+
+test('a server refusal naming the title lands on the title field', async () => {
+  const { field, input, create } = open(
+    refusal('Title is too long.', { field: 'title' }),
+  );
   input.value = 'x';
   create.click();
   await tick();
@@ -120,5 +152,9 @@ test('a server refusal lands on the same field, not the footer', async () => {
   const error = field.querySelector('.inline-error');
   assert.equal(error.textContent, 'Title is too long.');
   assert.equal(input.getAttribute('aria-invalid'), 'true');
+  assert.ok(
+    document.querySelector('.creation-view-footer .inline-error').hidden,
+    'the title refusal was also shown beside Create',
+  );
   assert.equal(input.disabled, false, 'form stayed busy');
 });
