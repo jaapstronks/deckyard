@@ -122,7 +122,7 @@ carrier of its own beyond the save-chip and the banners is B206's call.
 ## Live regions and focus
 
 - The toast stack has two regions that exist from page load: `role="status"`
-  polite for `info`/`success`, `role="alert"` assertive for `warning`/`error`.
+  polite for `info`/`success`, `role="alert"` assertive for `error`.
   Politeness is a property of the kind, not of the call site.
 - An inline refusal of an attempt is `role="alert"`. The required-field hint on
   blur is `role="status"`: it must not talk over the label of the field the
@@ -191,8 +191,18 @@ there is a form to refuse.
 The `toast.error` calls left in the refuse-and-return allowlist are a different
 shape: a modal that refuses to open, a menu item, a card action, a file dropped
 on the canvas — an action with no form on screen, whose carrier _is_
-`toast.error`. Not `toast.warning`: no kind maps to it, and the client has no
-call site for it.
+`toast.error`. There is no `toast.warning`: no kind maps to it, so B309
+removed the helper and its style, and every caller that had reached for it
+turned out to be one of the five — the slide-lock notice is a status change
+from outside (`toast.info`), a Transfer with nobody to transfer to is the
+failure of an action (`toast.error`), and a partly failed invite is a refusal
+of the invite form (inline). `tests/toast-call-shape.test.js` refuses a call to
+a helper that does not exist, so a new `toast.warning` fails the suite.
+
+The import dialog refuses the same way on every tab (B309): `.deck`, JSON,
+Markdown file and pasted Markdown each carry a `createInlineError()` at their
+file input or textarea, cleared at the next attempt. The footer status line of
+the creation view only carries progress.
 
 The counts are the allowlists in `tests/feedback-surfaces-guard.test.js`; each
 item lowers them and the test refuses a rise. Alongside: `toast.info` used as a

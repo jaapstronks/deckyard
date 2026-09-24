@@ -182,6 +182,7 @@
   "list.newPresentation.creating": "Creating…",
   "list.newPresentation.generatingTitle": "Generating presentation",
   "list.newPresentation.importJson.help": "Import a presentation from a previously exported .json file.",
+  "list.newPresentation.importJson.parseError": "This file is not valid JSON: {message}",
   "list.newPresentation.importMarkdown.empty": "The file is empty.",
   "list.newPresentation.importMarkdown.help": "Import a presentation from a markdown file or zip bundle (.md + images). Use --- to separate slides. No AI — slides are mapped directly from your markdown structure.",
   "list.newPresentation.importMarkdown.open": "Open presentation",

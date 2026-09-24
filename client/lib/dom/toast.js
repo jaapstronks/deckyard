@@ -11,9 +11,11 @@ const MAX_VISIBLE = 6;
  * The kinds a toast can be — one spelling each. Aliases (`danger`, `fail`,
  * `ok`, `warn`) used to be accepted here while `tests/toast-call-shape.test.js`
  * already forbade the `type:` option that was the only way to reach them: dead
- * tolerance, removed.
+ * tolerance, removed. `warning` went the same way (B309): none of the five
+ * kinds in docs/reference/feedback-surfaces.md maps to it, so a caller that
+ * reached for it was always one of the others.
  */
-const TOAST_TYPES = new Set(['info', 'success', 'warning', 'error']);
+const TOAST_TYPES = new Set(['info', 'success', 'error']);
 
 /**
  * Which live region announces which kind. Politeness is a property of the
@@ -22,7 +24,6 @@ const TOAST_TYPES = new Set(['info', 'success', 'warning', 'error']);
 const POLITENESS = {
   info: 'polite',
   success: 'polite',
-  warning: 'assertive',
   error: 'assertive',
 };
 
@@ -117,7 +118,7 @@ function classifyType(type) {
   reportMisuse(
     `Unknown toast type ${JSON.stringify(type)} — use one of ` +
       `${[...TOAST_TYPES].join(', ')} via the sugar helpers ` +
-      '(toast.info/.success/.warning/.error).',
+      '(toast.info/.success/.error).',
   );
   return 'info';
 }
@@ -275,7 +276,7 @@ function dismissEl(el, { moveFocus = false } = {}) {
 /**
  * Show a toast.
  *
- * Prefer the sugar helpers (`toast.info/.success/.warning/.error`) — the base
+ * Prefer the sugar helpers (`toast.info/.success/.error`) — the base
  * form is for an info toast that needs options
  * (`tests/toast-call-shape.test.js` pins that).
  * @param {string|Error} message - Text, or the caught error itself.
@@ -353,8 +354,6 @@ toast.error = (message, opts = {}) =>
     type: 'error',
     durationMs: opts?.durationMs ?? ERROR_DURATION_MS,
   });
-toast.warning = (message, opts = {}) =>
-  toast(message, { ...opts, type: 'warning' });
 
 // The regions must outlive the first toast, so build them at import — the
 // module is pulled in by the app shell long before anything fires.

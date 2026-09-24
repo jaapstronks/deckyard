@@ -8,10 +8,14 @@
  * `message.includes('already_exists')`, which only ever worked because this
  * particular 409 sends no `message` — so `errorText()` fell back to the code
  * itself. The moment the route grows a friendly message the friendly branch
- * dies silently and the user gets a raw code in a toast.
+ * dies silently and the user gets a raw code on screen.
+ *
+ * A refusal of the invite form is a state of that form (B309,
+ * docs/reference/feedback-surfaces.md): it shows in the inline error beside
+ * the Invite button, never in a toast. The tests read that element.
  *
  * Pinned here, driven through the real `api()` against a stubbed `fetch`:
- *  1. a 409 *with* a human message still hits the "already collaborators" toast;
+ *  1. a 409 *with* a human message still shows "already collaborators";
  *  2. a 409 without a message (today's shape) behaves identically;
  *  3. an unrelated failure whose message merely mentions the string does not
  *     get mistaken for it.
@@ -64,7 +68,7 @@ function jsonResponse(status, body) {
 
 /**
  * Mount the collaborators section with a `fetch` stub, so the invite failure
- * travels the real path: envelope → `api()` → `err.code` → toast branch.
+ * travels the real path: envelope → `api()` → `err.code` → inline refusal.
  * @param {{ status: number, body: object }} inviteFailure
  */
 function mount(inviteFailure) {
@@ -97,7 +101,6 @@ function mount(inviteFailure) {
           message: m instanceof Error ? String(m.message || m) : m,
         }),
       success: (message) => toasts.push({ level: 'success', message }),
-      warning: (message) => toasts.push({ level: 'warning', message }),
     },
     isOwner: true,
     modalRoot: document.body,
@@ -129,11 +132,17 @@ async function inviteOne(section) {
   await flush();
 }
 
+/** The invite form's inline refusal, or null while it is hidden. */
+function refusal(section) {
+  const el = section.el.querySelector('.inline-error');
+  return el && !el.hidden ? el.textContent : null;
+}
+
 test.afterEach(() => {
   document.body.innerHTML = '';
 });
 
-test('a 409 that carries a friendly message still reaches the already-collaborators toast', async () => {
+test('a 409 that carries a friendly message still shows the already-collaborators refusal', async () => {
   const { section, toasts } = mount({
     status: 409,
     body: {
@@ -143,13 +152,13 @@ test('a 409 that carries a friendly message still reaches the already-collaborat
     },
   });
   await inviteOne(section);
+  const message = refusal(section);
   section.detach();
 
-  const errors = toasts.filter((t) => t.level === 'error');
-  assert.equal(errors.length, 1, 'exactly one error toast');
-  assert.match(errors[0].message, /already collaborators/i);
+  assert.deepEqual(toasts, [], 'a refusal of the form is not toasted');
+  assert.match(message, /already collaborators/i);
   assert.doesNotMatch(
-    errors[0].message,
+    message,
     /already_exists/,
     'the raw machine code never reaches the user',
   );
@@ -161,11 +170,11 @@ test('the same 409 without a message behaves identically', async () => {
     body: { ok: false, error: 'already_exists' },
   });
   await inviteOne(section);
+  const message = refusal(section);
   section.detach();
 
-  const errors = toasts.filter((t) => t.level === 'error');
-  assert.equal(errors.length, 1);
-  assert.match(errors[0].message, /already collaborators/i);
+  assert.deepEqual(toasts, []);
+  assert.match(message, /already collaborators/i);
 });
 
 test('an unrelated failure that merely mentions the string is not mistaken for it', async () => {
@@ -178,14 +187,31 @@ test('an unrelated failure that merely mentions the string is not mistaken for i
     },
   });
   await inviteOne(section);
+  const message = refusal(section);
   section.detach();
 
-  const errors = toasts.filter((t) => t.level === 'error');
-  assert.equal(errors.length, 1);
-  assert.match(errors[0].message, /insert failed/);
+  assert.deepEqual(toasts, []);
+  assert.match(message, /insert failed/);
   assert.doesNotMatch(
-    errors[0].message,
+    message,
     /already collaborators/i,
     'the friendly branch belongs to the code, not to the substring',
   );
+});
+
+test('a batch that invites nobody names the address beside the button, not in a toast', async () => {
+  const { section, toasts } = mount({
+    status: 201,
+    body: {
+      results: [{ email: INVITEE.email, ok: false, reason: 'user_not_found' }],
+      summary: { total: 1, successful: 0, failed: 1 },
+    },
+  });
+  await inviteOne(section);
+  const message = refusal(section);
+  section.detach();
+
+  assert.deepEqual(toasts, []);
+  assert.match(message, /0 of 1 invitations sent/);
+  assert.match(message, new RegExp(INVITEE.email));
 });

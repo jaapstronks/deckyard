@@ -182,6 +182,7 @@
   "list.newPresentation.creating": "Aanmaken…",
   "list.newPresentation.generatingTitle": "Presentatie genereren",
   "list.newPresentation.importJson.help": "Importeer een presentatie vanuit een eerder geëxporteerd .json-bestand.",
+  "list.newPresentation.importJson.parseError": "Dit bestand is geen geldige JSON: {message}",
   "list.newPresentation.importMarkdown.empty": "Het bestand is leeg.",
   "list.newPresentation.importMarkdown.help": "Importeer een presentatie vanuit een markdown-bestand of zip-bundel (.md + afbeeldingen). Gebruik --- om slides te scheiden. Geen AI — slides worden direct afgeleid uit de structuur van je markdown.",
   "list.newPresentation.importMarkdown.open": "Open presentatie",

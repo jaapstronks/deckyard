@@ -261,7 +261,9 @@ export async function createEditorController({
     },
     onLockFailed: ({ slideId, lock }) => {
       const name = lock?.holder?.displayName || 'another user';
-      toast.warning(
+      // A collaborator holding the slide is a status change from outside,
+      // not a failure of ours: info, no error colour (feedback-surfaces.md).
+      toast.info(
         t('editor.slideLocked.toast', 'This slide is being edited by {name}', {
           name,
         }),
