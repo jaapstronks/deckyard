@@ -15,11 +15,6 @@
   "textColorLight": "#ffffff",
   "textColorDark": "#0b2125",
   "brandColors": ["#dbff00", "#13393a", "#93a635", "#06090b"],
-  "slides": {
-    "card-stack-slide": {
-      "colors": ["#dbff00", "#13393a", "#93a635", "#06090b"]
-    }
-  },
   "gradient": {
     "enabled": false
   },

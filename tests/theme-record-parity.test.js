@@ -15,8 +15,8 @@
  * `slides.*` and `sampleEmbedUrl`.
  *
  * The fork's file forms are copies under `fork-files/` (ciiic-slides,
- * 2026-09-24, `sampleEmbedUrl` removed): the fork is not on this machine's
- * test path, and the comparison needs both sides.
+ * 2026-09-24, with the lapsed `sampleEmbedUrl` and `slides.*` removed): the
+ * fork is not on this machine's test path, and the comparison needs both sides.
  *
  * Run with: node --test tests/theme-record-parity.test.js
  */
@@ -112,11 +112,11 @@ test('every core theme has a record fixture, and there are ten themes', () => {
 for (const { id, file, record } of themes) {
   test(`${id}: the record passes the write gate and loses nothing`, () => {
     const colors = validateThemeColors(record.colors);
-    assert.ok(colors.ok, `${id}: colors refused (${colors.field})`);
+    assert.ok(colors.ok, `${id}: colors refused (${colors.path})`);
     assert.deepEqual(colors.colors, record.colors);
 
     const config = checkThemeConfig(record.config);
-    assert.ok(config.ok, `${id}: config refused (${config.field})`);
+    assert.ok(config.ok, `${id}: config refused (${config.path})`);
     const { version, ...stored } = config.config;
     assert.equal(version, 1);
     assert.deepEqual(stored, record.config);
