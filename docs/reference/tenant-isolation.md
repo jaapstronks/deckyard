@@ -98,7 +98,7 @@ organization and which never will:
   refuses a call that states neither an organization nor a reason it cannot
   have one. A tag link table (`presentation_tags`, `slide_library_tags`)
   carries no organization of its own, so a write to it first selects its
-  owner row by id *and* organization, and a row outside the organization is
+  owner row by id _and_ organization, and a row outside the organization is
   `not_found` before anything is deleted (`replaceTagLinks`, B436).
 - **R2 — Content descendants inherit the organization through their FK chain
   and carry no organization column of their own.** The live stack
