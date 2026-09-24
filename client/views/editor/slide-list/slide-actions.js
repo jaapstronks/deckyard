@@ -4,10 +4,10 @@
  * These were previously inlined in the keyboard handlers; extracting them lets
  * the keyboard shortcuts, the right-click context menu and the form header's ⋯
  * menu drive one implementation, so "Duplicate" means the same everywhere: the
- * slide with its nested children (D118). The functions take a resolved set of slide ids plus the
- * editor callbacks they need — they own the mutation, selection update, refresh
- * and user feedback, but not the "which slides are selected" resolution (the
- * caller decides that).
+ * slide with its nested children (D118). The functions take a resolved set of
+ * slide ids plus the editor callbacks they need — they own the mutation,
+ * selection update, refresh and user feedback, but not the "which slides are
+ * selected" resolution (the caller decides that).
  */
 
 import { cloneSlidesForInsert } from '../../../lib/slide-authoring/clone-slides.js';
