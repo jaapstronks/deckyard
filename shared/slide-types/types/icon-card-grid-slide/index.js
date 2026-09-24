@@ -22,6 +22,7 @@ export default {
   fields: [
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -58,6 +59,7 @@ export default {
     },
     {
       key: 'items',
+      essential: true,
       label: 'Cards',
       type: 'items',
       required: false,

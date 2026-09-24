@@ -101,6 +101,7 @@ export default {
     },
     {
       key: 'images',
+      essential: true,
       label: 'Images',
       labelKey: 'editor.slideField.images.label',
       type: 'items',

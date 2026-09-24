@@ -118,6 +118,7 @@ export default {
     },
     {
       key: 'metrics',
+      essential: true,
       label: 'Metrics',
       type: 'items',
       // The metric a reader is looking for is "Reach", not "1.2": this type

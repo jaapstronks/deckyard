@@ -231,6 +231,7 @@ export default {
   fields: [
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -295,6 +296,7 @@ export default {
     BACKGROUND_FIELD,
     {
       key: 'items',
+      essential: true,
       label: 'Items',
       type: 'items',
       // The canvas numbers the items only in the `numbers` style (a native

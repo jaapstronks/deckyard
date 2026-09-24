@@ -22,6 +22,7 @@ export default {
   fields: [
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -69,6 +70,7 @@ export default {
     densityField(['auto', 'compact']),
     {
       key: 'body',
+      essential: true,
       label: 'Body (Markdown)',
       labelKey: 'editor.slideField.body.label',
       type: 'markdown',

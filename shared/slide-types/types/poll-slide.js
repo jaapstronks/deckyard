@@ -28,6 +28,7 @@ export default {
   fields: [
     {
       key: 'question',
+      essential: true,
       role: 'heading',
       label: 'Question',
       labelKey: 'editor.slideField.question.label',
@@ -40,6 +41,7 @@ export default {
       // shared/slide-types/runtime.js § the live content contract. Two to four:
       // the renderer letters them A..D, so a fifth has no name.
       key: 'options',
+      essential: true,
       label: 'Answers',
       type: 'items',
       required: true,

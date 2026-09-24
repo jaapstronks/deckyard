@@ -73,6 +73,7 @@ export default {
     },
     {
       key: 'cells',
+      essential: true,
       label: 'Cells',
       type: 'items',
       required: true,

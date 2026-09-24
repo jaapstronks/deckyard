@@ -353,8 +353,10 @@
 /* The same for an essential list: its "+ Add" is always there at the bottom
    of the empty container, where the renderer's own "add blocks in the editor"
    note stands. The button is the affordance, so the note steps aside on the
-   canvas. Named per type, like the image placeholder above; a type the audit
-   (B435 PR 2) makes essential adds its note here. */
+   canvas. Named per type, like the image placeholder above. team-cards is
+   the only essential list whose note meets the button: logo-wall's empty
+   wall draws a placeholder cell in edit mode instead of its note (B435 PR 2
+   audit, docs/reference/essential-fields.md). */
 .thumb.is-inline-edit .team-cards-grid.ie-essential + .team-cards-empty {
   opacity: 0;
 }

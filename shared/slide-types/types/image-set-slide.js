@@ -46,6 +46,7 @@ export default {
     // is a text-editing surface. The image machinery follows below.
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -55,6 +56,7 @@ export default {
     },
     {
       key: 'body',
+      essential: true,
       label: 'Body (Markdown)',
       labelKey: 'editor.slideField.body.label',
       type: 'markdown',
@@ -68,6 +70,7 @@ export default {
       // the floor because one image beside text is an image-text-slide, not a
       // set; three is the ceiling because a fourth column stops reading.
       key: 'images',
+      essential: true,
       label: 'Images',
       labelKey: 'editor.slideField.images.label',
       type: 'items',

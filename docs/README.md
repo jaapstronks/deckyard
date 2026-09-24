@@ -120,6 +120,7 @@ nothing is discoverable only by `ls`.
 | [`editing-surfaces.md`](reference/editing-surfaces.md)                 | Canvas vs inspector vs own surface — the principle                         |
 | [`editor-inspector.md`](reference/editor-inspector.md)                 | The inspector rail, panes and toolbar zones                                |
 | [`wysiwyg-inline-editing.md`](reference/wysiwyg-inline-editing.md)     | Inline editing on the slide canvas                                         |
+| [`essential-fields.md`](reference/essential-fields.md)                 | Which fields of each core type are `essential`, and why                    |
 | [`editor-responsive-fields.md`](reference/editor-responsive-fields.md) | Size-intent field rows                                                     |
 | [`image-property-ownership.md`](reference/image-property-ownership.md) | Where each image property lives                                            |
 | [`image-picker-seam.md`](reference/image-picker-seam.md)               | The shared image-picker seam                                               |

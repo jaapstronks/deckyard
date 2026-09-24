@@ -48,6 +48,7 @@ export default {
   fields: [
     {
       key: 'title',
+      essential: true,
       role: 'heading',
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
@@ -83,6 +84,7 @@ export default {
     },
     {
       key: 'items',
+      essential: true,
       label: 'Steps',
       type: 'items',
       // Ordered steps — the sequence is the meaning. Projects to an <ol>.

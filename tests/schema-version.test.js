@@ -133,6 +133,37 @@ test('v1->v2 leaves a text-blocks slide that already has rows[] untouched', () =
   assert.deepEqual(migrated.slides[0].content.rows, rows);
 });
 
+/** A v1 deck with one text-blocks slide. */
+function textBlocksDeck(content) {
+  return {
+    id: randomUUID(),
+    schemaVersion: 1,
+    title: 'TB',
+    slides: [{ id: randomUUID(), type: 'text-blocks-slide', content }],
+  };
+}
+
+test('v1->v2 keeps an empty rows[] without legacy content empty (B435)', () => {
+  // The slide's empty state, where the editor offers "+ Add row"; folding it
+  // would invent a row of three blank blocks.
+  const migrated = migratePresentation(
+    textBlocksDeck({ title: 'T', rows: [] }),
+  );
+  assert.deepEqual(migrated.slides[0].content.rows, []);
+});
+
+test('v1->v2 still folds an empty rows[] beside legacy content', () => {
+  const migrated = migratePresentation(
+    textBlocksDeck({
+      title: 'T',
+      rows: [],
+      row1Count: '1',
+      row1Block1Title: 'Kept',
+    }),
+  );
+  assert.equal(migrated.slides[0].content.rows[0].blocks[0].title, 'Kept');
+});
+
 test('v3->v4 folds a canonical reverse-DNS type down to the registry key', () => {
   const deck = {
     id: randomUUID(),

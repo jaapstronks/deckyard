@@ -92,6 +92,7 @@ export default {
     },
     {
       key: 'body',
+      essential: true,
       label: 'Body',
       type: 'markdown',
       required: true,

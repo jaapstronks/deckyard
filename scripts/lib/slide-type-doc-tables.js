@@ -288,7 +288,7 @@ function cardsCell(d, def) {
   ) {
     notes.push(`fixed ${schema.minItems}`);
   }
-  if (cards.skipWhenEmpty) notes.push('array decks only');
+  if (cards.skipWhenAbsent) notes.push('array decks only');
   if (cards.reorder === false) notes.push('no reorder');
   return `\`${field}\`${notes.length ? ` (${notes.join('; ')})` : ''}`;
 }

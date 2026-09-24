@@ -353,3 +353,17 @@ describe('text-blocks row headings (B299)', () => {
     );
   });
 });
+
+describe('an empty rows[] is the canonical empty state (B435)', () => {
+  it('draws no rows and never falls back to the numbered fields', () => {
+    const html = render({ ...LEGACY_CONTENT, rows: [] });
+    assert.match(html, /data-rows="0"/);
+    assert.doesNotMatch(html, /Legacy body 1/);
+    assert.doesNotMatch(html, /class="text-block /);
+  });
+
+  it('a slide without rows still reads the numbered fields', () => {
+    const { rows: _unused, ...legacyOnly } = LEGACY_CONTENT;
+    assert.match(render(legacyOnly), /Legacy body 1/);
+  });
+});

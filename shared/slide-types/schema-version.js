@@ -40,7 +40,10 @@
  * B239's execution item.
  */
 
-import { resolveRows } from './types/text-blocks-slide.js';
+import {
+  hasLegacyRowFields,
+  resolveLegacyRows,
+} from './types/text-blocks-slide.js';
 import { getSlideType, resolveSlideTypeName } from './registry.js';
 import {
   getFieldGroup,
@@ -746,18 +749,23 @@ export const SCHEMA_MIGRATIONS = [
   // v1 -> v2: fold text-blocks legacy numbered fields (row{n}Count,
   // row{n}Block{m}Title/Body, arrow{n}, row{n}Enabled …) into the canonical
   // `rows[]` model, so the semantic projection and everything else read one
-  // shape. Non-destructive: it only *adds* `content.rows` when it is missing or
-  // empty (via the type's own resolver), and leaves the legacy keys in place —
+  // shape. Non-destructive: it only *adds* `content.rows` when it is missing, or
+  // empty beside legacy content (via the type's legacy resolver), and leaves the
+  // legacy keys in place —
   // they are now `hidden` in the type def (ignored by the projection) and get
   // removed in a later deprecation-window cleanup. Idempotent: a slide that
-  // already has a populated `rows[]` is untouched.
+  // already has a populated `rows[]` is untouched, and so is an empty `rows[]`
+  // with no legacy content: that is the slide's empty state, where the editor
+  // offers "+ Add row" (B435).
   (pres) => {
     for (const slide of eachSlide(pres)) {
       if (!slide || slide.type !== 'text-blocks-slide') continue;
       const content = slide.content;
       if (!content || typeof content !== 'object') continue;
-      if (Array.isArray(content.rows) && content.rows.length > 0) continue;
-      const rows = resolveRows(content);
+      if (Array.isArray(content.rows)) {
+        if (content.rows.length > 0 || !hasLegacyRowFields(content)) continue;
+      }
+      const rows = resolveLegacyRows(content);
       if (Array.isArray(rows) && rows.length > 0) content.rows = rows;
     }
     return pres;
