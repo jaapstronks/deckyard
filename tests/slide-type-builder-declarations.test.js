@@ -272,3 +272,48 @@ test('changing a row’s type drops what the new type cannot carry', () => {
     'and the enum controls arrive',
   );
 });
+
+test('a top-level row offers Essential beside Required; an item row does not (D211)', () => {
+  const view = mount([
+    { key: 'title', type: 'string', label: 'Title' },
+    {
+      key: 'people',
+      type: 'items',
+      label: 'People',
+      itemFields: [{ key: 'name', type: 'string', label: 'Name' }],
+    },
+  ]);
+  const [titleRow, peopleRow] = rows(view.el);
+  const box = control(titleRow, 'Essential');
+  assert.ok(box, 'the control is in the row');
+  assert.equal(box.checked, false, 'undeclared reads as not essential');
+  assert.ok(control(peopleRow, 'Essential'), 'a list is essential as a whole');
+
+  const nested = peopleRow.querySelector(
+    '.field-list-nested .field-list-editor',
+  );
+  const itemRow = rows(nested)[0];
+  assert.ok(control(itemRow, 'Required'), 'the item row has its own controls');
+  assert.equal(
+    control(itemRow, 'Essential'),
+    null,
+    'but no Essential: a list means its first entry, not a per-entry flag',
+  );
+
+  box.checked = true;
+  fire(box, 'change');
+  assert.equal(view.seen.fields[0].essential, true);
+
+  const stored = validateCustomFieldDefinitions(view.seen.fields);
+  assert.equal(stored.ok, true);
+  assert.equal(stored.fields[0].essential, true, 'it survives the Save');
+
+  // Reopened, the row shows what was stored; unticking stores nothing.
+  const again = mount(stored.fields);
+  const reopened = control(rows(again.el)[0], 'Essential');
+  assert.equal(reopened.checked, true);
+  reopened.checked = false;
+  fire(reopened, 'change');
+  const cleared = validateCustomFieldDefinitions(again.seen.fields);
+  assert.equal('essential' in cleared.fields[0], false);
+});

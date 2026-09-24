@@ -82,6 +82,10 @@ import { isSlideCopyKey } from './option-default.js';
  *   type.
  * @property {Record<string, string[]>} byType - Per field type, the properties
  *   that type adds. A type absent from the map adds none.
+ * @property {Record<string, 'boolean'|'string'|'number'>} [valueTypes] - Per
+ *   scalar property, the only type its value may have. A value of another type
+ *   is refused (`property_wrong_type`, D219) rather than dropped on the way to
+ *   storage.
  */
 
 /**
@@ -358,6 +362,14 @@ export function walkFieldDefinitions(fields, profile) {
         }
       }
 
+      // `essential` on a list means its first entry (D211); there is no
+      // per-entry flag, because every entry after the first is optional by
+      // definition. On an item sub-field it would be a second place to say
+      // the same thing, so it is refused on every surface rather than read.
+      if (at.depth > 0 && field.essential !== undefined) {
+        at2('essential_on_item_field', 'error');
+      }
+
       const type = typeof field.type === 'string' ? field.type.trim() : '';
       if (!type) {
         at2('missing_type', 'error');
@@ -386,6 +398,20 @@ export function walkFieldDefinitions(fields, profile) {
             property,
             offered: [...offered],
           });
+        }
+        // A scalar the vocabulary types is refused when its value has another
+        // type (D219): storage would otherwise drop `required: 'yes'` and the
+        // author would never learn the declaration did not land (D84).
+        for (const [property, want] of Object.entries(
+          propertyKeys.valueTypes || {},
+        )) {
+          const value = field[property];
+          if (value === undefined || !offered.has(property)) continue;
+          const fits =
+            want === 'number' ? Number.isFinite(value) : typeof value === want;
+          if (!fits) {
+            at2('property_wrong_type', 'error', { property, expected: want });
+          }
         }
         // Only worth reading when `mediaRef` itself is offered here: on a row
         // that may not carry one at all, the property is the finding.
@@ -711,6 +737,14 @@ const FINDING_MESSAGES = {
     `${where} declares \`${f?.detail?.property}\`, which is not part of what ` +
     `a stored field definition may say — the properties accepted here are: ` +
     `${(f?.detail?.offered || []).join(', ')}.`,
+  property_wrong_type: (where, f) =>
+    `${where} gives \`${f?.detail?.property}\` a value that is not a ` +
+    `${f?.detail?.expected} — a stored field definition only accepts a ` +
+    `${f?.detail?.expected} there.`,
+  essential_on_item_field: (where) =>
+    `${where} declares \`essential\` on an item sub-field — a list is ` +
+    `essential as a whole, which means its first entry, so declare it on the ` +
+    `list field instead.`,
   item_label_field_not_items: (where, f) =>
     `${where} declares \`itemLabelField\` on a \`${f?.detail?.type}\` field, ` +
     `but only an \`items\` field has sub-fields one of which could head an ` +

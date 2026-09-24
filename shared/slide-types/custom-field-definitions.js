@@ -78,6 +78,7 @@ export const CUSTOM_TYPE_PROPERTY_KEYS = Object.freeze({
     'type',
     'label',
     'required',
+    'essential',
     'placeholder',
     'helpText',
   ]),
@@ -91,6 +92,17 @@ export const CUSTOM_TYPE_PROPERTY_KEYS = Object.freeze({
       'maxItems',
       'itemLabelField',
     ]),
+  }),
+  // The scalars a row may carry and the one type each may have (D219): a
+  // value of another type is refused, not dropped by `cleanField`.
+  valueTypes: Object.freeze({
+    required: 'boolean',
+    essential: 'boolean',
+    placeholder: 'string',
+    helpText: 'string',
+    maxLength: 'number',
+    minItems: 'number',
+    maxItems: 'number',
   }),
 });
 
@@ -123,8 +135,9 @@ function isNonEmpty(v) {
 
 /**
  * Normalize one field definition for storage. Every property it reads is in the
- * vocabulary above — the walk has already refused anything else — so this trims
- * strings and drops values that say nothing (a `required: false`, an empty
+ * vocabulary above, with a value of the type it declares — the walk has already
+ * refused anything else (D84, D219) — so this trims strings and drops values
+ * that say nothing (a `required: false`, an `essential: false`, an empty
  * `mediaRef.linkKey`), and decides nothing.
  */
 function cleanField(field) {
@@ -134,6 +147,7 @@ function cleanField(field) {
     label: field.label.trim(),
   };
   if (field.required === true) clean.required = true;
+  if (field.essential === true) clean.essential = true;
   if (typeof field.maxLength === 'number' && field.maxLength > 0)
     clean.maxLength = field.maxLength;
   if (typeof field.placeholder === 'string')

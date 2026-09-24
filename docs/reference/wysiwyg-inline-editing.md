@@ -15,8 +15,8 @@ future contributors extend.
   DOM), so handlers attach directly to the rendered slide (the `.thumb`
   element in `editor-controller.js`).
 - The slide-type **field schema is fully machine-readable**
-  (`SLIDE_TYPES[type].fields` with `key`, `type`, `required`, `maxLength`,
-  `itemFields`, `minItems`/`maxItems`, `itemDefaults`). Ghosts, card bounds
+  (`SLIDE_TYPES[type].fields` with `key`, `type`, `required`, `essential`,
+  `maxLength`, `itemFields`, `minItems`/`maxItems`, `itemDefaults`). Ghosts, card bounds
   and field kinds are derived from it, not hardcoded - descriptors stay tiny.
 - There was an **overlay precedent** (`comment-markers.js`) that survives the
   slide remount, which is the exact pattern the affordance overlay reuses.
@@ -154,7 +154,9 @@ is on its way, the spawn drops its sentinel and stops. Pinned by
   fills that column in place; pasting a TSV/CSV block into a body cell fills
   outward from it (Sheets/Excel paste).
 - **Empty optional field** → hover-revealed "+ Label" ghost chip at an
-  anchor; click spawns via the sentinel and starts editing.
+  anchor; click spawns via the sentinel and starts editing. An empty
+  `essential` field asks for itself without hover instead; see
+  [Empty fields](#empty-fields-essential-or-optional) below.
 - **Filled optional field** → hover-revealed clear (×, `.ie-clear`) that
   empties the value; the renderer omits it, layout reclaims the space, the
   ghost returns.
@@ -171,6 +173,27 @@ is on its way, the spawn drops its sentinel and stops. Pinned by
   optional extras like a LinkedIn URL), including first-image-into-empty-slot
   where the type renders a placeholder. Preview and alt only appear once
   there **is** an image; on an empty slot focus starts on "Choose / upload…".
+
+### Empty fields: essential or optional
+
+An empty field raises two questions that the editor answers separately (D212): **whether** it shows without hover, and **where** its affordance stands.
+
+**Whether: `essential`.** A field can declare `essential: true` in its schema (D211). It is a property of its own beside `required`, not a second meaning of it:
+
+| Property    | Decides                                                                                              | Read by                                   |
+| ----------- | ---------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `required`  | Whether saving or publishing without a value is refused.                                             | Validation, the agent schema              |
+| `essential` | Whether an empty field is always visible in edit mode as "something goes here", or appears on hover. | The inline editor, the agent schema, REST |
+
+The two sometimes coincide (the title of a `content-slide` is both) and sometimes not: the `image` of an `image-slide` is `required: false`, because an image-slide without an image may exist, but it is `essential`, because an empty image frame looks unfinished rather than deliberately sober. The test for `essential` is exactly that: does an empty slide of this type look _broken_ without the field, rather than _sober_? The default is `false`, and nothing derives it; it is set per field, like `role`.
+
+On a list field (`items`, `images`), `essential` means **the first entry**: an empty essential list offers its first item without hover, and every entry after that is optional. There is no per-entry flag, so an item sub-field cannot declare `essential`; the shared field walk refuses it on every surface (`essential_on_item_field`).
+
+What an empty essential field shows follows from its kind and from what the renderer draws, never from per-type code: an in-box placeholder ("Add title") for a text field whose element is always drawn, a visible chip for one the renderer omits, the "+ Add" of an empty list, the "+ Add image" hint on an empty single frame, or the renderer's own note for a field that is edited in the inspector. The table with every core field, its behaviour and the reason is [`essential-fields.md`](essential-fields.md); `tests/inline-essential-visibility.test.js` holds the schema to it. All of it is edit mode only: presentation, export and print never show a placeholder.
+
+**Where: `pos` and the stacking direction.** A ghost chip's place is not declared. It follows from the `pos` of its anchor (`before`/`after` border the anchor, `prepend`/`append` its first or last child) and from the direction in which the block it lands in stacks its content: a vertical stack puts the chip on a horizontal seam, a horizontal one (timeline) on a vertical seam (`client/views/editor/inline-edit/ghost-placement.js`). A chip that would cover a field or another chip becomes a compact `+` in the margin at that seam. The "+ Add" of a card list is a different thing, an affordance for repeatable items with no neighbouring field to stand against, so it keeps a declared `cards.addPlacement` (D213); see [Descriptor reference](#descriptor-reference).
+
+A database slide type (built in Settings > Slide Types) has no inline descriptor, so it has no inline layer on the canvas and `essential` does not change its editor. Its builder still offers the control, because the flag also tells agents and the REST schema which fields make a slide complete; see [`custom-slide-types-frontend.md`](custom-slide-types-frontend.md#essential-and-required).
 
 ### The empty-image placeholder
 

@@ -57,6 +57,14 @@ const CODE_COPY = {
     'settings.slideTypes.fields.error.itemsWithoutItemFields',
     '{where} is a repeater with no item fields — add at least one, so something describes the shape of an item.',
   ],
+  essential_on_item_field: [
+    'settings.slideTypes.fields.error.essentialOnItemField',
+    '{where} is marked essential inside a repeater — mark the repeater itself instead, which makes its first item essential.',
+  ],
+  property_wrong_type: [
+    'settings.slideTypes.fields.error.propertyWrongType',
+    '{where} gives “{property}” a value of the wrong type — it takes a {expected}.',
+  ],
   unknown_property: [
     'settings.slideTypes.fields.error.unknownProperty',
     '{where} declares “{property}”, which a stored field definition of this type cannot carry — remove it, or change the field type.',
@@ -76,5 +84,6 @@ export function fieldProblemMessage(problem) {
     max: MAX_CUSTOM_TYPE_FIELDS,
     types: CUSTOM_TYPE_FIELD_TYPES.join(', '),
     property: problem.detail?.property || '',
+    expected: problem.detail?.expected || '',
   });
 }
