@@ -230,3 +230,81 @@ test('locks are stored on the theme for later enforcement', () => {
   });
   assert.deepEqual(built.locks, { background: 'locked' });
 });
+
+// ============================================================
+// Explicit colour and logo fields (B437, D208)
+// ============================================================
+
+test('explicit colour fields win over the derivation', () => {
+  const row = baseRow();
+  row.colors = {
+    ...row.colors,
+    brand: ['#111111', '#222222'],
+    chart: [
+      '#000001',
+      '#000002',
+      '#000003',
+      '#000004',
+      '#000005',
+      '#000006',
+      '#000007',
+      '#000008',
+    ],
+    accentOnDark: '#abcdef',
+    textMuted: 'rgba(1, 2, 3, 0.5)',
+    backgrounds: { lime: '#fafafa', mist: '#eeeeee', dark: '#101010' },
+  };
+  const theme = buildThemeConfig(row);
+  const v = theme.cssVars;
+  assert.deepEqual(theme.brandColors, ['#111111', '#222222']);
+  assert.equal(v['--t-chart-0'], '#000001');
+  assert.equal(v['--t-chart-7'], '#000008');
+  assert.equal(v['--t-color-accent-on-dark'], '#abcdef');
+  assert.equal(v['--t-color-text-muted'], 'rgba(1, 2, 3, 0.5)');
+  assert.equal(v['--t-slide-bg-lime'], '#fafafa');
+  assert.equal(v['--t-slide-bg-mist'], '#eeeeee');
+  assert.equal(v['--t-slide-bg-dark'], '#101010');
+  // The page background stays its own role.
+  assert.equal(v['--t-color-background'], '#fefefe');
+});
+
+test('a short brand list feeds the chart slots it has; derivation fills the rest', () => {
+  const row = baseRow();
+  const derived = buildThemeConfig(row).cssVars;
+  row.colors = { ...row.colors, brand: ['#111111', '#222222'] };
+  const v = buildThemeConfig(row).cssVars;
+  assert.equal(v['--t-chart-0'], '#111111');
+  assert.equal(v['--t-chart-1'], '#222222');
+  assert.equal(v['--t-chart-2'], derived['--t-chart-2']);
+  assert.equal(v['--t-chart-3'], derived['--t-chart-3']);
+});
+
+test('logos.alt and logos.payoff reach every asset they name', () => {
+  const theme = buildThemeConfig({
+    ...baseRow(),
+    config: { logos: { alt: 'Acme Inc.', payoff: '/uploads/payoff.png' } },
+  });
+  assert.equal(theme.assets.logoAlt, 'Acme Inc.');
+  assert.equal(theme.assets.titleLogoAlt, 'Acme Inc.');
+  assert.equal(theme.assets.payoffAlt, 'Acme Inc.');
+  assert.equal(theme.assets.payoffLogo, '/uploads/payoff.png');
+  // Absent: the label and the main logo, as before the fields existed.
+  const plain = buildThemeConfig(baseRow());
+  assert.equal(plain.assets.logoAlt, 'Acme');
+  assert.equal(plain.assets.payoffLogo, '/uploads/acme.svg');
+});
+
+test('config.titleLayout reaches the built theme', () => {
+  const theme = buildThemeConfig({
+    ...baseRow(),
+    config: { titleLayout: 'center' },
+  });
+  assert.equal(theme.titleLayout, 'center');
+});
+
+test('an unsaved draft with an invalid optional colour keeps the derivation', () => {
+  const row = baseRow();
+  const derived = buildThemeConfig(row).cssVars;
+  row.colors = { ...row.colors, brand: 'not-a-list' };
+  assert.deepEqual(buildThemeConfig(row).cssVars, derived);
+});

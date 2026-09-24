@@ -1,0 +1,96 @@
+{
+  "slug": "ciiic-international",
+  "label": "CIIIC International",
+  "logoUrl": "/custom/assets/images/logo.svg",
+  "logoSmallUrl": null,
+  "colors": {
+    "primary": "#dbff00",
+    "background": "#13393a",
+    "textLight": "#ffffff",
+    "textDark": "#0b2125",
+    "brand": ["#dbff00", "#13393a", "#93a635", "#06090b"],
+    "chart": [
+      "#dbff00",
+      "#93a635",
+      "#5d989a",
+      "#aebd63",
+      "#a2afa7",
+      "#e0e6e2",
+      "#2c4a4b",
+      "#cfd887"
+    ],
+    "accentOnDark": "#dbff00",
+    "textMuted": "rgba(255, 255, 255, 0.72)",
+    "backgrounds": {
+      "lime": "#e2fe52",
+      "mist": "#e4eae7",
+      "dark": "#13393a"
+    }
+  },
+  "fonts": {
+    "heading": "GT America Expanded",
+    "headingFamilyId": "00000000-0000-4000-8000-000000000002",
+    "body": "Inter"
+  },
+  "config": {
+    "logos": {
+      "dark": "/custom/assets/images/logo-lime.svg",
+      "light": "/custom/assets/images/logo.svg",
+      "payoff": "/custom/assets/images/partnerlogos/ciiic_combilogo_rgb_zwartwit.png",
+      "alt": "CIIIC"
+    },
+    "gradient": {
+      "enabled": false
+    },
+    "slideBackgrounds": [
+      {
+        "id": "international",
+        "label": "Streaks",
+        "value": "linear-gradient(rgba(19, 57, 58, 0.62), rgba(19, 57, 58, 0.62)), url('/custom/assets/images/backgrounds/international.jpg') center / cover no-repeat, #13393a",
+        "textColor": "#ffffff",
+        "textColorMuted": "rgba(255, 255, 255, 0.72)",
+        "linkColor": "color-mix(in srgb, var(--color-accent) 42%, #ffffff)"
+      },
+      {
+        "id": "solid",
+        "label": "Solid teal",
+        "value": "#13393a",
+        "textColor": "#ffffff",
+        "textColorMuted": "rgba(255, 255, 255, 0.72)",
+        "linkColor": "color-mix(in srgb, var(--color-accent) 42%, #ffffff)"
+      }
+    ],
+    "backgroundPresets": [
+      "/custom/assets/images/backgrounds/backgroundpic-1.jpg",
+      "/custom/assets/images/backgrounds/backgroundpic-2.jpeg",
+      "/custom/assets/images/backgrounds/backgroundpic-3.jpeg",
+      "/custom/assets/images/backgrounds/backgroundpic-4.jpeg",
+      "/custom/assets/images/backgrounds/backgroundpic-5.jpeg",
+      "/custom/assets/images/backgrounds/backgroundpic-6.jpeg"
+    ],
+    "slideTypes": {
+      "include": ["ciiic-international-title-slide"],
+      "exclude": ["title-slide", "stock-team-overview-slide"]
+    },
+    "defaultTitleSlide": "ciiic-international-title-slide",
+    "defaultBackground": "international",
+    "titleLayout": "bottom",
+    "typography": {
+      "headingTransform": "uppercase",
+      "letterSpacing": "normal",
+      "mono": "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+    },
+    "surfaces": {
+      "radius": "none"
+    },
+    "cssVarOverrides": {
+      "--t-color-link-on-dark": "#dbff00",
+      "--t-color-accent-soft": "#dbff00",
+      "--t-font-intl-condensed": "'GT America Condensed', 'Helvetica Neue Condensed Bold', 'Helvetica Neue', Helvetica, Arial, sans-serif",
+      "--t-font-body": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+      "--t-font-caption": "var(--t-font-mono)",
+      "--t-intl-duotone-dark": "#0b2125",
+      "--t-intl-duotone-light": "#9ccabd"
+    }
+  }
+}

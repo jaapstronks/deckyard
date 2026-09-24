@@ -1,12 +1,12 @@
 /**
  * Tests for the rich theme config schema.
  *
- * `validateThemeConfig` guards a jsonb column that reaches the CSS of every
- * slide, so it is total by design: junk in yields `{}` out, unknown keys are
- * dropped and out-of-range enums fall back rather than throwing. These tests
- * pin that contract, especially the `--t-ui-*` rejection — the app chrome is
- * deliberately theme-independent and a theme must not be able to restyle the
- * application around the slides.
+ * Two gates (D209). `checkThemeConfig` is the write gate: an unknown field is
+ * refused by name. `validateThemeConfig` normalizes what passed it and is
+ * total on the read side: junk in yields `{}` out and out-of-range enums fall
+ * back rather than throwing. These tests pin both, especially the `--t-ui-*`
+ * rejection — the app chrome is deliberately theme-independent and a theme
+ * must not be able to restyle the application around the slides.
  *
  * Run with: node --test tests/theme-config-schema.test.js
  */
@@ -14,7 +14,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  checkThemeConfig,
+  validateThemeColors,
   validateThemeConfig,
+  CSS_VAR_OVERRIDE_MAX,
+  DEFAULT_THEME_COLORS,
   THEME_CONFIG_VERSION,
   RADIUS_SCALES,
   SHADOW_SCALES,
@@ -37,7 +41,7 @@ test('garbage input yields an empty config, never a throw', () => {
   }
 });
 
-test('an object of only unknown keys is treated as unconfigured', () => {
+test('the read side leaves no unknown key in what it returns', () => {
   assert.deepEqual(validateThemeConfig({ nope: 1, alsoNope: { a: 2 } }), {});
 });
 
@@ -258,4 +262,144 @@ test('validateThemeConfig whitelists titleLayout and drops unknown values', () =
   assert.ok(
     !('titleLayout' in validateThemeConfig({ titleLayout: 'diagonal' })),
   );
+});
+
+// ============================================================
+// Write gate: an unknown field is refused by name (D209)
+// ============================================================
+
+test('checkThemeConfig refuses each unknown field with its path', () => {
+  const cases = [
+    [{ nope: 1 }, 'config.nope'],
+    [{ logos: { logoAlt: 'x' } }, 'config.logos.logoAlt'],
+    [{ surfaces: { radius: 'soft', blur: 2 } }, 'config.surfaces.blur'],
+    [{ typography: { size: 'big' } }, 'config.typography.size'],
+    [{ gradient: { enabled: true, angle: 45 } }, 'config.gradient.angle'],
+    [{ slideTypes: { hidden: ['quote'] } }, 'config.slideTypes.hidden'],
+    [{ locks: { wallpaper: 'locked' } }, 'config.locks.wallpaper'],
+    [{ backgroundLabels: { dark: 'Night' } }, 'config.backgroundLabels.dark'],
+    [
+      { backgroundLabels: { lime: { en: 'Paper', nl: 'Papier' } } },
+      'config.backgroundLabels.lime',
+      'invalid_value',
+    ],
+    [
+      { slideBackgrounds: [{ id: 'calm', value: '#000', swatch: '#111' }] },
+      'config.slideBackgrounds.0.swatch',
+    ],
+    [
+      { cssVarOverrides: { '--t-ui-sidebar-bg': '#000' } },
+      'config.cssVarOverrides.--t-ui-sidebar-bg',
+    ],
+    [{ cssVarOverrides: { color: 'red' } }, 'config.cssVarOverrides.color'],
+    // The file-theme spellings a record does not carry (D208).
+    [{ hiddenSlideTypes: ['quote'] }, 'config.hiddenSlideTypes'],
+    [{ textSwatches: [] }, 'config.textSwatches'],
+    [{ sampleEmbedUrl: 'https://example.com' }, 'config.sampleEmbedUrl'],
+    [{ embedFonts: [] }, 'config.embedFonts'],
+  ];
+  for (const [input, path, code = 'unknown_field'] of cases) {
+    assert.deepEqual(checkThemeConfig(input), { ok: false, path, code }, path);
+  }
+  assert.deepEqual(checkThemeConfig('nope'), {
+    ok: false,
+    path: 'config',
+    code: 'invalid_value',
+  });
+});
+
+test('checkThemeConfig passes a known config through the normalizer', () => {
+  assert.deepEqual(checkThemeConfig(undefined), { ok: true, config: {} });
+  const out = checkThemeConfig({
+    version: 1,
+    logos: { alt: 'Acme', payoff: '/uploads/p.png', dark: '/uploads/d.svg' },
+    backgroundLabels: { lime: 'Paper' },
+  });
+  assert.equal(out.ok, true);
+  assert.deepEqual(out.config.logos, {
+    alt: 'Acme',
+    payoff: '/uploads/p.png',
+    dark: '/uploads/d.svg',
+  });
+});
+
+test('a cssVarOverrides value may be as long as a layered gradient', () => {
+  const long = `linear-gradient(${'#000000, '.repeat(150)}#ffffff)`;
+  assert.ok(long.length > 540 && long.length <= CSS_VAR_OVERRIDE_MAX);
+  const out = validateThemeConfig({
+    cssVarOverrides: { '--t-slide-gradient-bg': long },
+  });
+  assert.equal(out.cssVarOverrides['--t-slide-gradient-bg'], long);
+});
+
+// ============================================================
+// Colors
+// ============================================================
+
+test('validateThemeColors defaults the four roles', () => {
+  assert.deepEqual(validateThemeColors(undefined), {
+    ok: true,
+    colors: { ...DEFAULT_THEME_COLORS },
+  });
+  assert.deepEqual(validateThemeColors({ primary: '#123456' }).colors, {
+    ...DEFAULT_THEME_COLORS,
+    primary: '#123456',
+  });
+});
+
+test('validateThemeColors keeps the optional fields', () => {
+  const colors = {
+    primary: '#123456',
+    background: '#ffffff',
+    textLight: '#ffffff',
+    textDark: '#111111',
+    brand: ['#111111'],
+    chart: Array(8).fill('#222222'),
+    accentOnDark: '#abc',
+    textMuted: 'rgba(17, 17, 17, 0.6)',
+    backgrounds: { lime: '#ffffff', dark: '#000000' },
+  };
+  assert.deepEqual(validateThemeColors(colors), { ok: true, colors });
+});
+
+test('validateThemeColors refuses an unknown or invalid field by name', () => {
+  const base = { primary: '#123456' };
+  const unknown = 'unknown_field';
+  const invalid = 'invalid_value';
+  const cases = [
+    [{ ...base, primary: 'blue' }, 'colors.primary', invalid],
+    [{ ...base, accent: '#ffffff' }, 'colors.accent', unknown],
+    [{ ...base, brand: [] }, 'colors.brand', invalid],
+    [{ ...base, brand: Array(9).fill('#000000') }, 'colors.brand', invalid],
+    [{ ...base, brand: ['red'] }, 'colors.brand', invalid],
+    [{ ...base, chart: Array(7).fill('#000000') }, 'colors.chart', invalid],
+    [
+      { ...base, accentOnDark: 'rgba(0, 0, 0, 1)' },
+      'colors.accentOnDark',
+      invalid,
+    ],
+    [
+      { ...base, textMuted: 'color-mix(in srgb, red, blue)' },
+      'colors.textMuted',
+      invalid,
+    ],
+    [
+      { ...base, backgrounds: { calm: '#000000' } },
+      'colors.backgrounds.calm',
+      unknown,
+    ],
+    [{ ...base, backgrounds: { mist: 'grey' } }, 'colors.backgrounds', invalid],
+  ];
+  for (const [input, path, code] of cases) {
+    assert.deepEqual(
+      validateThemeColors(input),
+      { ok: false, path, code },
+      path,
+    );
+  }
+  assert.deepEqual(validateThemeColors([]), {
+    ok: false,
+    path: 'colors',
+    code: invalid,
+  });
 });

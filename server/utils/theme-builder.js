@@ -7,6 +7,7 @@
 import { cssStringEscape, getFontFamilyCSS } from '../../shared/theme-fonts.js';
 import { curatedEmbedFonts } from './curated-font-embed.js';
 import {
+  validateThemeColors,
   validateThemeConfig,
   RADIUS_SCALES,
   SHADOW_SCALES,
@@ -239,27 +240,46 @@ export function deriveThemeTokens({
     : null;
   const bodyManaged = bodyFamilyId ? managedFontMap[bodyFamilyId] : null;
 
-  // Derive color palette from primary
-  const brandColors = deriveColorPalette(primary);
+  // Every token below is derived from the four roles, unless the record sets
+  // it explicitly (D208): an explicit field always wins, and an absent one
+  // leaves the derivation exactly as it was before the field existed.
+  const backgrounds = colors.backgrounds || {};
+
+  // Brand palette: the record's own, else derived from primary. The first four
+  // entries feed the chart slots a record's `chart` does not set; the derived
+  // palette fills any slot a short brand list leaves open.
+  const derivedPalette = deriveColorPalette(primary);
+  const brandColors = colors.brand?.length ? [...colors.brand] : derivedPalette;
+  const chart = colors.chart?.length
+    ? colors.chart
+    : [0, 1, 2, 3].map((i) => brandColors[i] ?? derivedPalette[i]);
 
   // Determine text color based on background
   const textColor = pickTextColorForBg(background, {
     light: textLight,
     dark: textDark,
   });
-  const textMuted = rgba(textColor, 0.7) || 'rgba(31, 41, 55, 0.7)';
+  const textMuted =
+    colors.textMuted || rgba(textColor, 0.7) || 'rgba(31, 41, 55, 0.7)';
 
   // Generate mist/accent background (lighter version of primary)
   const primaryHsl = hexToHsl(primary);
-  const mistBg = primaryHsl
-    ? hslToHex(primaryHsl.h, Math.min(40, primaryHsl.s * 0.5), 97)
-    : '#f8fafc';
+  const mistBg =
+    backgrounds.mist ||
+    (primaryHsl
+      ? hslToHex(primaryHsl.h, Math.min(40, primaryHsl.s * 0.5), 97)
+      : '#f8fafc');
   // Dark surface: a deep, brand-tinted tone (not the page background). Quote and
   // chapter-title slides render white text on this, so it MUST be dark — a light
   // value here means white-on-white.
-  const darkBg = primaryHsl
-    ? hslToHex(primaryHsl.h, Math.min(45, primaryHsl.s), 14)
-    : '#111827';
+  const darkBg =
+    backgrounds.dark ||
+    (primaryHsl
+      ? hslToHex(primaryHsl.h, Math.min(45, primaryHsl.s), 14)
+      : '#111827');
+  // The page surface: the background, unless the record pins it apart (a dark
+  // theme whose slide ground is a step lighter than its page).
+  const limeBg = backgrounds.lime || background;
 
   const cssVars = {
     // Core colors
@@ -273,13 +293,13 @@ export function deriveThemeTokens({
     }),
 
     // Slide backgrounds (lime = page surface, mist = soft tint, dark = deep)
-    '--t-slide-bg-lime': background,
+    '--t-slide-bg-lime': limeBg,
     '--t-slide-bg-mist': mistBg,
     '--t-slide-bg-dark': darkBg,
     // …and what reads ON each of them, for elements that paint one of these as
     // their own surface (a funnel bar, a cycle hub). Derived here as well as in
     // shared/theme-normalize.js, because a DB-built theme skips that path.
-    '--t-slide-bg-lime-text': pickTextColorForBg(background, {
+    '--t-slide-bg-lime-text': pickTextColorForBg(limeBg, {
       light: textLight,
       dark: textDark,
     }),
@@ -289,7 +309,8 @@ export function deriveThemeTokens({
     }),
 
     // The display accent for dark grounds (quote attribution line etc.)
-    '--t-color-accent-on-dark': accentOnDark(primary, darkBg),
+    '--t-color-accent-on-dark':
+      colors.accentOnDark || accentOnDark(primary, darkBg),
 
     // Border radii (using sensible defaults)
     '--t-radius': '16px',
@@ -308,14 +329,14 @@ export function deriveThemeTokens({
     '--t-heading-weight': '700',
 
     // Chart colors
-    '--t-chart-0': brandColors[0],
-    '--t-chart-1': brandColors[1],
-    '--t-chart-2': brandColors[2],
-    '--t-chart-3': brandColors[3],
-    '--t-chart-4': textColor,
-    '--t-chart-5': textMuted,
-    '--t-chart-6': primary,
-    '--t-chart-7': mistBg,
+    '--t-chart-0': chart[0],
+    '--t-chart-1': chart[1],
+    '--t-chart-2': chart[2],
+    '--t-chart-3': chart[3],
+    '--t-chart-4': chart[4] ?? textColor,
+    '--t-chart-5': chart[5] ?? textMuted,
+    '--t-chart-6': chart[6] ?? primary,
+    '--t-chart-7': chart[7] ?? mistBg,
 
     // Logo URL (if provided)
     ...(logoUrl ? { '--t-logo-url': `url('${logoUrl}')` } : {}),
@@ -332,7 +353,19 @@ export function deriveThemeTokens({
 }
 
 export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
-  const colors = dbTheme.colors || {};
+  // A stored record passed the same validator on its way in. An unsaved draft
+  // (the editor's preview) has not: its optional fields only count when valid,
+  // and the four roles read as given, as they always did.
+  const checked = validateThemeColors(dbTheme.colors);
+  const raw = dbTheme.colors || {};
+  const colors = checked.ok
+    ? checked.colors
+    : {
+        primary: raw.primary,
+        background: raw.background,
+        textLight: raw.textLight,
+        textDark: raw.textDark,
+      };
   const fonts = dbTheme.fonts || {};
 
   const {
@@ -447,6 +480,9 @@ function applyThemeConfig(theme, rawConfig) {
     theme.defaultTitleSlide = config.defaultTitleSlide;
   if (config.defaultBackground)
     theme.defaultBackground = config.defaultBackground;
+  // Validated and stored since the field existed, but never applied: a
+  // database theme always rendered its title slide at the default layout.
+  if (config.titleLayout) theme.titleLayout = config.titleLayout;
   if (config.locks) theme.locks = config.locks;
 
   // Dark/light logo variants sit alongside the existing large/small pair. The
@@ -454,14 +490,20 @@ function applyThemeConfig(theme, rawConfig) {
   // renderer reads them under their asset names, so map rather than spread —
   // `assets.dark` would be a second name for the same thing, and nothing would
   // find it (shared/theme-logo.js).
+  //
+  // `payoff` is the closing slide's mark and `alt` the one alternative text
+  // every variant shares (D208); both default to what the derived assets hold
+  // (the main logo, the label).
   if (config.logos) {
-    const { dark, light, darkSmall, lightSmall } = config.logos;
+    const { dark, light, darkSmall, lightSmall, payoff, alt } = config.logos;
     theme.assets = {
       ...theme.assets,
       ...(dark ? { logoOnDark: dark } : {}),
       ...(light ? { logoOnLight: light } : {}),
       ...(darkSmall ? { titleLogoOnDark: darkSmall } : {}),
       ...(lightSmall ? { titleLogoOnLight: lightSmall } : {}),
+      ...(payoff ? { payoffLogo: payoff } : {}),
+      ...(alt ? { logoAlt: alt, titleLogoAlt: alt, payoffAlt: alt } : {}),
     };
   }
 

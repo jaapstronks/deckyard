@@ -87,6 +87,10 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
     logoUrl: theme?.logoUrl || '',
     logoSmallUrl: theme?.logoSmallUrl || '',
     colors: {
+      // The fields this form has no control for (`brand`, `chart`, the
+      // grounds …) ride along untouched, so saving here never drops what the
+      // API or a `.deck` import set (D208).
+      ...theme?.colors,
       primary: theme?.colors?.primary || '#3B82F6',
       background: theme?.colors?.background || '#ffffff',
       textLight: theme?.colors?.textLight || '#ffffff',
@@ -484,12 +488,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
       label: state.label.trim(),
       logoUrl: state.logoUrl || null,
       logoSmallUrl: state.logoSmallUrl || null,
-      colors: {
-        primary: state.colors.primary,
-        background: state.colors.background,
-        textLight: state.colors.textLight,
-        textDark: state.colors.textDark,
-      },
+      colors: { ...state.colors },
       fonts: {
         heading: state.fonts.heading,
         headingFamilyId: state.fonts.headingFamilyId || undefined,

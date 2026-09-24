@@ -1,0 +1,72 @@
+{
+  "id": "clicknl",
+  "label": "ClickNL",
+  "defaultTitleSlide": "title-slide",
+  "assets": {
+    "logo": "/custom/assets/images/clicknl-logo.svg",
+    "logoAlt": "ClickNL",
+    "payoffLogo": "/custom/assets/images/clicknl-logo.svg",
+    "payoffAlt": "ClickNL"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#212121",
+  "brandColors": ["#009bd4", "#e1e2e3", "#434343"],
+  "gradient": {
+    "enabled": false
+  },
+  "slides": {
+    "card-stack-slide": {
+      "colors": ["#009bd4", "#003b5c", "#00b3b0", "#434343"]
+    }
+  },
+  "cssVars": {
+    "--t-slide-bg-lime": "#ffffff",
+    "--t-slide-bg-mist": "#e1e2e3",
+    "--t-color-background": "#ffffff",
+    "--t-color-text": "#434343",
+    "--t-color-text-muted": "rgba(67, 67, 67, 0.75)",
+    "--t-color-accent": "#009bd4",
+    "--t-color-accent-on-dark": "#009bd4",
+    "--t-radius": "0px",
+    "--t-radius-sm": "0px",
+    "--t-radius-lg": "0px",
+    "--t-font-heading": "'Helvetica Neue Condensed Bold', \"Helvetica Neue\", Helvetica, Arial, sans-serif",
+    "--t-font-body": "\"Helvetica Neue\", Helvetica, Arial, sans-serif",
+    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    "--t-font-caption": "var(--t-font-body)",
+    "--t-heading-transform": "uppercase",
+    "--t-heading-weight": "700",
+    "--t-card-stack-label-size": "24px",
+    "--t-card-stack-label-letter-spacing": "0.06em",
+    "--t-chart-0": "#003b5c",
+    "--t-chart-1": "#009bd4",
+    "--t-chart-2": "#005b8f",
+    "--t-chart-3": "#00b3b0",
+    "--t-chart-4": "#f59e0b",
+    "--t-chart-5": "#94a3b8",
+    "--t-chart-6": "#434343",
+    "--t-chart-7": "#2d7dd2",
+    "--t-logo-url": "url('/custom/assets/images/clicknl-logo.svg')"
+  },
+  "embedFonts": [
+    {
+      "family": "Helvetica Neue Condensed Bold",
+      "path": "custom/assets/fonts/helveticaneue-condensedbold-webfont.woff2",
+      "weight": 400,
+      "style": "normal"
+    },
+    {
+      "family": "Helvetica Neue Condensed Bold",
+      "path": "custom/assets/fonts/helveticaneue-condensedbold-webfont.woff2",
+      "weight": 700,
+      "style": "normal"
+    },
+    {
+      "family": "JetBrains Mono",
+      "path": "custom/assets/fonts/JetBrainsMono-Medium.woff2",
+      "weight": 500,
+      "style": "normal"
+    }
+  ],
+  "hiddenSlideTypes": ["stock-team-overview-slide"]
+}

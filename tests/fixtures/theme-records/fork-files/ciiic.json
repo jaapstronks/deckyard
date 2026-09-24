@@ -1,0 +1,103 @@
+{
+  "id": "ciiic",
+  "label": "CIIIC",
+  "defaultTitleSlide": "ciiic-title-slide",
+  "assets": {
+    "logo": "/custom/assets/images/logo.svg",
+    "logoOnDark": "/custom/assets/images/logo-lime.svg",
+    "logoOnLight": "/custom/assets/images/logo.svg",
+    "logoAlt": "CIIIC",
+    "payoffLogo": "/custom/assets/images/partnerlogos/ciiic_combilogo_rgb_zwartwit.png",
+    "payoffAlt": "CIIIC"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#212121",
+  "brandColors": ["#dbff00", "#375c5d", "#06090b", "#084272"],
+  "slides": {
+    "card-stack-slide": {
+      "colors": ["#dbff00", "#375c5d", "#06090b", "#084272"]
+    }
+  },
+  "gradient": {
+    "enabled": true
+  },
+  "slideBackgrounds": [
+    {
+      "id": "calm",
+      "label": "Calm",
+      "value": "radial-gradient(ellipse 75% 80% at 22% 32%, rgba(56, 92, 92, 0.85) 0%, rgba(56, 92, 92, 0.35) 45%, rgba(56, 92, 92, 0) 75%), radial-gradient(ellipse 60% 55% at 75% 100%, rgba(155, 168, 70, 0.7) 0%, rgba(155, 168, 70, 0.22) 40%, rgba(155, 168, 70, 0) 72%), radial-gradient(ellipse 120% 100% at 50% 50%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.45) 100%), #0a0d0e",
+      "textColor": "#ffffff",
+      "textColorMuted": "rgba(255, 255, 255, 0.72)",
+      "linkColor": "color-mix(in srgb, var(--color-accent) 42%, #ffffff)"
+    },
+    {
+      "id": "international",
+      "label": "International",
+      "value": "linear-gradient(rgba(19, 57, 58, 0.62), rgba(19, 57, 58, 0.62)), url('/custom/assets/images/backgrounds/international.jpg') center / cover no-repeat, #13393a",
+      "textColor": "#ffffff",
+      "textColorMuted": "rgba(255, 255, 255, 0.72)",
+      "linkColor": "color-mix(in srgb, var(--color-accent) 42%, #ffffff)"
+    }
+  ],
+  "cssVars": {
+    "--t-slide-bg-lime": "#e2fe52",
+    "--t-title-backdrop": "#06090b",
+    "--t-slide-bg-mist": "#e0e6e2",
+    "--t-slide-bg-dark": "#385c5c",
+    "--t-slide-bg-calm-accent": "#dbff00",
+    "--t-color-background": "#e2fe52",
+    "--t-color-text": "#0b0b0b",
+    "--t-color-text-muted": "rgba(11, 11, 11, 0.65)",
+    "--t-color-accent": "#385c5c",
+    "--t-color-accent-soft": "#dbff00",
+    "--t-color-accent-on-dark": "#dbff00",
+    "--t-radius": "18px",
+    "--t-radius-sm": "12px",
+    "--t-radius-lg": "22px",
+    "--t-slide-gradient-bg": "radial-gradient(circle at 62% 19%, rgba(219, 255, 0, 1) 0%, rgba(219, 255, 0, 0.65) 18%, rgba(219, 255, 0, 0.22) 42%, rgba(219, 255, 0, 0) 72%), radial-gradient(circle at 90% 82%, rgba(55, 92, 93, 0.95) 0%, rgba(55, 92, 93, 0.55) 22%, rgba(55, 92, 93, 0.18) 48%, rgba(55, 92, 93, 0) 78%), radial-gradient(circle at 17% 82%, rgba(142, 168, 162, 0.75) 0%, rgba(142, 168, 162, 0.38) 26%, rgba(142, 168, 162, 0.14) 52%, rgba(142, 168, 162, 0) 82%), radial-gradient(circle at 55% 85%, rgba(8, 66, 114, 0.55) 0%, rgba(8, 66, 114, 0) 62%), #06090b",
+    "--t-font-heading": "'GT America Extended', Arial, sans-serif",
+    "--t-font-body": "Arial, sans-serif",
+    "--t-font-mono": "'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+    "--t-font-caption": "var(--t-font-mono)",
+    "--t-heading-transform": "none",
+    "--t-heading-weight": "400",
+    "--t-card-stack-label-size": "21px",
+    "--t-card-stack-label-letter-spacing": "-0.01em",
+    "--t-chart-0": "#375c5d",
+    "--t-chart-1": "#5d989a",
+    "--t-chart-2": "#848f52",
+    "--t-chart-3": "#aebd63",
+    "--t-chart-4": "#a2afa7",
+    "--t-chart-5": "#e0e6e2",
+    "--t-chart-6": "#2c4a4b",
+    "--t-chart-7": "#cfd887",
+    "--t-logo-url": "url('/custom/assets/images/logo.svg')"
+  },
+  "embedFonts": [
+    {
+      "family": "GT America Extended",
+      "path": "custom/assets/fonts/GT-America-Extended-Medium.woff2",
+      "weight": 500,
+      "style": "normal"
+    },
+    {
+      "family": "JetBrains Mono",
+      "path": "custom/assets/fonts/JetBrainsMono-Medium.woff2",
+      "weight": 500,
+      "style": "normal"
+    }
+  ],
+  "slideTypes": {
+    "exclude": ["title-slide"],
+    "include": ["ciiic-title-slide"]
+  },
+  "hiddenSlideTypes": ["stock-team-overview-slide"],
+  "backgroundPresets": [
+    "/custom/assets/images/backgrounds/backgroundpic-1.jpg",
+    "/custom/assets/images/backgrounds/backgroundpic-2.jpeg",
+    "/custom/assets/images/backgrounds/backgroundpic-3.jpeg",
+    "/custom/assets/images/backgrounds/backgroundpic-4.jpeg",
+    "/custom/assets/images/backgrounds/backgroundpic-5.jpeg",
+    "/custom/assets/images/backgrounds/backgroundpic-6.jpeg"
+  ]
+}

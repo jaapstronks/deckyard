@@ -1,0 +1,26 @@
+[
+  {
+    "id": "00000000-0000-4000-8000-000000000001",
+    "name": "GT America Extended",
+    "source": "upload",
+    "category": "sans-serif",
+    "cssFallback": "Arial, sans-serif",
+    "variants": []
+  },
+  {
+    "id": "00000000-0000-4000-8000-000000000002",
+    "name": "GT America Expanded",
+    "source": "upload",
+    "category": "sans-serif",
+    "cssFallback": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    "variants": []
+  },
+  {
+    "id": "00000000-0000-4000-8000-000000000003",
+    "name": "Helvetica Neue Condensed Bold",
+    "source": "upload",
+    "category": "sans-serif",
+    "cssFallback": "\"Helvetica Neue\", Helvetica, Arial, sans-serif",
+    "variants": []
+  }
+]

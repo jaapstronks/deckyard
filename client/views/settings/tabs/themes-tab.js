@@ -497,6 +497,9 @@ export function createThemesTab({ user }) {
         fonts: { ...theme.fonts },
         logoUrl: theme.logoUrl,
         logoSmallUrl: theme.logoSmallUrl,
+        // The whole theme, not the four colours and two fonts: a copy that
+        // dropped the surfaces, variants and logos was a different theme.
+        config: theme.config,
       };
 
       const result = await api('/api/themes/custom', {
