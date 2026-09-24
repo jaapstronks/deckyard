@@ -4,6 +4,25 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.42.0](https://github.com/jaapstronks/deckyard/compare/v1.41.1...v1.42.0) (2026-09-24)
+
+
+### Added
+
+* **api:** essential travels to agents beside required (B435) ([#1285](https://github.com/jaapstronks/deckyard/issues/1285)) ([5a08d04](https://github.com/jaapstronks/deckyard/commit/5a08d04f649ee65b9ad0af2f8edd21b719e92b82))
+* **editor:** ghost chips stand at their seam and never cover content (B435) ([#1282](https://github.com/jaapstronks/deckyard/issues/1282)) ([af97e04](https://github.com/jaapstronks/deckyard/commit/af97e04e8df362c677564db68c8d90e20bb770a5))
+* **slide-types:** essential fields across all core types (B435) ([#1283](https://github.com/jaapstronks/deckyard/issues/1283)) ([1bdbeb9](https://github.com/jaapstronks/deckyard/commit/1bdbeb96f1997ba732f28d3b10c29826fbab7073))
+* **slide-types:** the builder declares essential beside required (B435) ([#1286](https://github.com/jaapstronks/deckyard/issues/1286)) ([740a992](https://github.com/jaapstronks/deckyard/commit/740a9926b7dcf49b434e10737aa2123c211e3e1b))
+
+
+### Fixed
+
+* **api:** theme and lang have one name on the public API, and PUT switches theme (B446) ([#1280](https://github.com/jaapstronks/deckyard/issues/1280)) ([d59e4cc](https://github.com/jaapstronks/deckyard/commit/d59e4cc829d1e61e6ab3966981f9bf64c31efcb0))
+* **export:** the reader and print handout use the one .sr-only (B447) ([#1284](https://github.com/jaapstronks/deckyard/issues/1284)) ([b76b2b6](https://github.com/jaapstronks/deckyard/commit/b76b2b67873992b7c790ea151748b63a9c94bf0c))
+* **import:** a slide-jump follows its slide's regenerated id on import (B314) ([3ea0b00](https://github.com/jaapstronks/deckyard/commit/3ea0b00c66042dad72faf5d04a6542b83901e029))
+* **ui:** an untitled blank presentation is refused at the title field (B444) ([#1281](https://github.com/jaapstronks/deckyard/issues/1281)) ([b2b13e6](https://github.com/jaapstronks/deckyard/commit/b2b13e6d1df11fc0cd510f9cdc31576fa584a083))
+* **ui:** one visually-hidden utility, .sr-only (B361) ([#1277](https://github.com/jaapstronks/deckyard/issues/1277)) ([c635e6c](https://github.com/jaapstronks/deckyard/commit/c635e6c2820230bf4b378c437e61322320c63a93))
+
 ## [1.41.1](https://github.com/jaapstronks/deckyard/compare/v1.41.0...v1.41.1) (2026-09-24)
 
 
