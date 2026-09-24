@@ -41,6 +41,16 @@
   margin-bottom: var(--ps-space-5);
 }
 
+.auth-logo {
+  display: block;
+  max-width: min(220px, 70%);
+  max-height: 48px;
+  width: auto;
+  height: auto;
+  margin: 0 auto var(--ps-space-5);
+  object-fit: contain;
+}
+
 .auth-title {
   margin: 0 0 var(--ps-space-2);
   font-size: var(--ps-text-xl);

@@ -35,7 +35,7 @@ import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createModal, createModalActions } from '../../../lib/dom/modal.js';
-import { authConfig } from '../../../lib/user/auth.js';
+import { authConfig, ssoButtonLabel } from '../../../lib/user/auth.js';
 import { inviteMember } from './actions.js';
 import { invitableRoles } from './permissions.js';
 
@@ -104,15 +104,17 @@ export function signInMode(config) {
  * words of the login page they will land on.
  *
  * @param {string} email - Who was added.
- * @param {ReturnType<typeof signInMode>} mode - How this instance signs in.
+ * @param {Object|null} config - `GET /api/auth/config`, or null when it could
+ *   not be read: how this instance signs in and what its SSO button says.
  * @param {string} url - The login page to send them to.
  * @returns {string}
  */
-export function createdWithoutEmailMessage(email, mode, url) {
+export function createdWithoutEmailMessage(email, config, url) {
+  const mode = signInMode(config);
   const vars = {
     email,
     url,
-    sso: t('login.ssoSubmit', 'Sign in with SSO'),
+    sso: ssoButtonLabel(config),
     forgot: t('login.forgotPassword', 'Forgot password?'),
   };
   if (mode === 'sso') {
@@ -337,7 +339,7 @@ export function showInviteModal({
         modal.close();
         return;
       }
-      showOutcome(result, signInMode(await configRead));
+      showOutcome(result, await configRead);
     } catch (err) {
       status.textContent = '';
       refusal.show(inviteErrorMessage(err));
@@ -363,9 +365,9 @@ export function showInviteModal({
    * submit, only something to pass on.
    *
    * @param {{outcome: string, email: string}} result - From `inviteMember()`.
-   * @param {ReturnType<typeof signInMode>} mode - How this instance signs in.
+   * @param {Object|null} config - The sign-in config, null when unreadable.
    */
-  function showOutcome(result, mode) {
+  function showOutcome(result, config) {
     const url = loginUrlFor(result.email);
     const message =
       result.outcome === 'added'
@@ -374,7 +376,7 @@ export function showInviteModal({
             '{email} already had an account here and is now a member. They were not emailed, so tell them yourself.',
             { email: result.email },
           )
-        : createdWithoutEmailMessage(result.email, mode, url);
+        : createdWithoutEmailMessage(result.email, config, url);
 
     const report = h('p', {
       class: 'organization-invite-outcome',

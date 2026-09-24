@@ -6,9 +6,15 @@
  * The returned `title` and `subtitle` elements are live references — views
  * update their `textContent` as async state changes (token validation,
  * verification progress).
+ *
+ * The header carries the instance logo (`APP_LOGO_URL`) above the title when
+ * one is configured, read from the public sign-in config; without one the
+ * card shows no logo.
  */
 
 import { h } from '../lib/dom.js';
+import { authConfig } from '../lib/user/auth.js';
+import { debugLog } from '../lib/util/debug.js';
 
 /**
  * Build the auth-view scaffolding: shell, card and header with title/subtitle.
@@ -33,5 +39,31 @@ export function authShell({ title, subtitle, centered = false } = {}) {
   header.append(titleEl, subtitleEl);
   card.append(header);
   shell.append(card);
+  authConfig()
+    .then((cfg) => {
+      const logo = authLogo(cfg?.branding);
+      if (logo) header.prepend(logo);
+    })
+    .catch((err) => {
+      // No config, no logo: the card reads fine without one.
+      debugLog('[auth-shell] sign-in config unreadable, no logo', err);
+    });
   return { shell, card, header, title: titleEl, subtitle: subtitleEl };
+}
+
+/**
+ * The instance logo for the auth header, or null when none is configured.
+ *
+ * @param {{ appName?: string, logoUrl?: string|null }|undefined} branding -
+ *   `authConfig().branding`.
+ * @returns {HTMLElement|null}
+ */
+export function authLogo(branding) {
+  const src = branding?.logoUrl;
+  if (typeof src !== 'string' || !src) return null;
+  return h('img', {
+    class: 'auth-logo',
+    src,
+    alt: branding.appName || '',
+  });
 }

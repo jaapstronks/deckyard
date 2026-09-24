@@ -525,11 +525,20 @@ test('the sign-in mode reads the public auth config and nothing else', () => {
 
   const mixed = createdWithoutEmailMessage(
     'a@example.com',
-    'sso-or-password',
+    { sso: { enabled: true, enforce: false } },
     'https://x.test/login',
   );
   assert.match(mixed, /Sign in with SSO/);
   assert.match(mixed, /Forgot password\?/);
+});
+
+test('the report names the SSO button in the words the login page shows (B432)', async () => {
+  const { report } = await inviteWithOutcome('created', async () => ({
+    sso: { enabled: true, enforce: true, buttonLabel: 'Sign in with Acme ID' },
+  }));
+
+  assert.match(report.textContent, /"Sign in with Acme ID"/);
+  assert.doesNotMatch(report.textContent, /Sign in with SSO/);
 });
 
 // ---------------------------------------------------------------------------

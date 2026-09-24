@@ -27,6 +27,7 @@ const SSO_KEYS = [
   'OIDC_AUTO_PROVISION',
   'OIDC_DEFAULT_ROLE',
   'OIDC_ADMIN_GROUPS',
+  'SSO_BUTTON_LABEL',
 ];
 
 function withEnv(env, fn) {
@@ -139,7 +140,21 @@ test('getSsoPublicConfig exposes no secret', () => {
       enforce: true,
       provider: 'oidc',
       loginPath: '/api/auth/oidc/login',
+      buttonLabel: null,
     });
     assert.equal(JSON.stringify(pub).includes('secret-xyz'), false);
+  });
+});
+
+test('getSsoPublicConfig carries the instance SSO button label (B432)', () => {
+  withEnv({ ...FULL, SSO_BUTTON_LABEL: '  Sign in with Acme ID  ' }, () => {
+    assert.equal(getSsoPublicConfig().buttonLabel, 'Sign in with Acme ID');
+  });
+  withEnv({ SSO_BUTTON_LABEL: 'Sign in with Acme ID' }, () => {
+    assert.equal(
+      getSsoPublicConfig().buttonLabel,
+      null,
+      'no SSO, no button to label',
+    );
   });
 });
