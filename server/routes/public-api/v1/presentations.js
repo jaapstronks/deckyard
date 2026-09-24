@@ -30,6 +30,13 @@ import {
   apiError,
 } from './middleware.js';
 import { parsePaginationParams } from '../../../utils/request-validators.js';
+import { changePresentationTheme } from '../../../storage/presentations/change-theme.js';
+import { normalizeLang } from '../../../../shared/i18n-utils.js';
+import {
+  refuseRetiredDeckFields,
+  refuseUnsupportedLang,
+  refuseUnknownTheme,
+} from './deck-fields.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -83,8 +90,11 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     // owner. Exposed so the documented `?viewOnly=true` list filter reads a
     // property a consumer can also see in the payload (B62 vondst 12).
     isViewOnly: !!pres.isViewOnly,
-    themeId: pres.themeId || null,
-    language: pres.language || 'en-GB',
+    // The stored names, published as-is: one name per field on every surface
+    // (B446). These read `themeId`/`language`, which no deck carries, so every
+    // deck answered `null` and `en-GB` whatever it was.
+    theme: pres.theme || null,
+    lang: pres.lang || null,
     slideCount: Array.isArray(pres.slides) ? pres.slides.length : 0,
     // Project each stored bare registry key to its one published spelling (the
     // canonical id). Storage keeps the key; nothing non-canonical crosses the
@@ -179,6 +189,9 @@ async function handleCreate(ctx) {
     requireObject: true,
   });
   if (!bodyOk) return true;
+  if (await refuseRetiredDeckFields(ctx, body)) return true;
+  if (await refuseUnsupportedLang(ctx, body)) return true;
+  if (await refuseUnknownTheme(ctx, body)) return true;
 
   // Create presentation with API key owner as the owner
   const created = await createPresentation(storageScope, {
@@ -217,23 +230,57 @@ async function handleUpdate(ctx, id) {
 
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok } = await getPresentationWithAccess(ctx, id, { access: 'write' });
+  const { ok, pres } = await getPresentationWithAccess(ctx, id, {
+    access: 'write',
+  });
   if (!ok) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req, {
     requireObject: true,
   });
   if (!bodyOk) return true;
+  if (await refuseRetiredDeckFields(ctx, body)) return true;
 
   // Don't allow changing ownership via API
   delete body.ownerEmail;
   delete body.createdBy;
 
+  // The deck language is fixed at create; another language is a version of
+  // the deck, added through /translate. The same `lang` echoed back from a GET
+  // is fine; a different one is refused rather than silently dropped.
+  if (body.lang !== undefined && normalizeLang(body.lang) !== pres.lang) {
+    await apiError(
+      ctx,
+      400,
+      'lang cannot be changed: add a language version with POST /presentations/{id}/translate',
+      { details: { field: 'lang' } },
+    );
+    return true;
+  }
+
+  // A different `theme` is a theme switch, and that has one path (the
+  // editor's /change-theme route uses it too). The same theme echoed back
+  // from a GET is a plain save.
+  const switchesTheme = body.theme !== undefined && body.theme !== pres.theme;
+
   // A thrown storage error (423 lock, 400 validation) is answered in the v1
   // envelope by the mount-level withV1ErrorHandler wrap.
-  const updated = await updatePresentation(storageScope, id, body, {
-    actorEmail: apiKey.ownerEmail,
-  });
+  let updated;
+  if (switchesTheme) {
+    const result = await changePresentationTheme(storageScope, id, body, {
+      theme: body.theme,
+      actorEmail: apiKey.ownerEmail,
+    });
+    if (!result.ok) {
+      await apiError(ctx, 400, result.error, { details: { field: 'theme' } });
+      return true;
+    }
+    updated = result.presentation;
+  } else {
+    updated = await updatePresentation(storageScope, id, body, {
+      actorEmail: apiKey.ownerEmail,
+    });
+  }
 
   if (!updated) {
     await apiError(ctx, 404, 'Presentation not found');

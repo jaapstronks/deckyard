@@ -26,9 +26,9 @@ export function registerPrompts(server) {
         required: true,
       },
       {
-        name: 'language',
+        name: 'lang',
         description:
-          'Language: "nl" for Dutch, "en-GB" for English (auto-detected if omitted)',
+          'Deck language: "nl" for Dutch, "en-GB" for English (auto-detected if omitted)',
         required: false,
       },
       {
@@ -37,8 +37,8 @@ export function registerPrompts(server) {
         required: false,
       },
     ],
-    async ({ content, language, speaker }) => {
-      const langNote = language ? ` Use language "${language}".` : '';
+    async ({ content, lang, speaker }) => {
+      const langNote = lang ? ` Use language "${lang}".` : '';
       const speakerNote = speaker ? ` The speaker is ${speaker}.` : '';
 
       return {
@@ -82,13 +82,13 @@ ${content}`,
         required: true,
       },
       {
-        name: 'language',
-        description: 'Language: "nl" or "en-GB" (default: "nl")',
+        name: 'lang',
+        description: 'Deck language: "nl" or "en-GB" (default: "nl")',
         required: false,
       },
     ],
-    async ({ title, data, language }) => {
-      const lang = language || DEFAULT_DECK_LANG;
+    async ({ title, data, lang: requestedLang }) => {
+      const lang = requestedLang || DEFAULT_DECK_LANG;
       return {
         messages: [
           {
