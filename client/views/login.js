@@ -1,6 +1,6 @@
 import { api } from '../lib/api.js';
 import { h } from '../lib/dom.js';
-import { login, me } from '../lib/user/auth.js';
+import { authConfig, login, me } from '../lib/user/auth.js';
 import { t } from '../lib/ui-i18n.js';
 import { createBusyManager } from '../lib/dom/busy.js';
 import { createInlineError } from '../lib/dom/inline-error.js';
@@ -339,7 +339,7 @@ export async function renderLogin(root) {
 
   // Ask the server whether SSO is enabled / enforced and adjust the form.
   try {
-    const cfg = await api('/api/auth/config');
+    const cfg = await authConfig();
     const sso = cfg?.sso;
     if (sso?.enabled) {
       ssoSection.hidden = false;

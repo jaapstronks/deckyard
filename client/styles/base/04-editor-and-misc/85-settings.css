@@ -809,3 +809,16 @@
   border: 1px solid hsl(var(--app-border-subtle));
   color: hsl(var(--app-text-secondary));
 }
+
+/* What an invite did, when it asks the inviter to act (B433). It replaces the
+   invite form and stays until the dialog is closed, so it reads as a state of
+   the dialog, not as a refusal: accent, never the danger colour. */
+.organization-invite-outcome {
+  margin: 0;
+  padding: var(--ps-space-3);
+  border: 1px solid hsl(var(--app-accent-primary) / 0.35);
+  border-left-width: 3px;
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-accent-primary) / 0.08);
+  overflow-wrap: anywhere;
+}

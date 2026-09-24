@@ -162,7 +162,6 @@
   "organization.members.help": "Todas as pessoas com acesso à organização em que se encontra.",
   "organization.members.invite.added": "{email} já tinha uma conta aqui e passou a ser membro. Não lhe foi enviado nenhum e-mail, por isso avise a pessoa pessoalmente.",
   "organization.members.invite.alreadyMember": "Essa pessoa já é membro desta organização.",
-  "organization.members.invite.createdWithoutEmail": "{email} foi adicionado, mas não saiu nenhum e-mail de convite. Envie-lhe um link para repor a palavra-passe.",
   "organization.members.invite.emailLabel": "Endereço de e-mail",
   "organization.members.invite.emailPlaceholder": "nome@exemplo.com",
   "organization.members.invite.failed": "Não foi possível enviar o convite.",

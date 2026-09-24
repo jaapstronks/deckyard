@@ -165,7 +165,6 @@
   "organization.members.help": "Wszyscy z dostępem do bieżącej organizacji.",
   "organization.members.invite.added": "{email} miał już tutaj konto i jest teraz członkiem. E-mail nie został wysłany, więc daj znać samodzielnie.",
   "organization.members.invite.alreadyMember": "Ta osoba jest już członkiem tej organizacji.",
-  "organization.members.invite.createdWithoutEmail": "{email} został dodany, ale e-mail z zaproszeniem nie wyszedł. Wyślij link do zresetowania hasła.",
   "organization.members.invite.emailLabel": "Adres e-mail",
   "organization.members.invite.emailPlaceholder": "imie@przyklad.pl",
   "organization.members.invite.failed": "Nie udało się wysłać zaproszenia.",

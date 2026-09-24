@@ -33,3 +33,15 @@ export async function logout() {
   await api('/api/auth/logout', { method: 'POST' });
   return true;
 }
+
+/**
+ * The instance's public sign-in configuration (`GET /api/auth/config`): which
+ * ways in exist. One reading for every screen that has to name them — the
+ * login page, and the invite dialog telling an inviter how the new member
+ * gets in when no mail went out.
+ *
+ * @returns {Promise<{ sso: { enabled: boolean, enforce: boolean, provider: string|null, loginPath: string } }>}
+ */
+export async function authConfig() {
+  return api('/api/auth/config');
+}

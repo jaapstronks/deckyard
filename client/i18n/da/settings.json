@@ -156,7 +156,6 @@
   "organization.members.help": "Alle med adgang til den organisation, du er i lige nu.",
   "organization.members.invite.added": "{email} havde allerede en konto her og er nu medlem. Der blev ikke sendt en mail, så giv selv besked.",
   "organization.members.invite.alreadyMember": "Den person er allerede medlem af denne organisation.",
-  "organization.members.invite.createdWithoutEmail": "{email} blev tilføjet, men der gik ingen invitationsmail ud. Send dem et link til nulstilling af adgangskoden.",
   "organization.members.invite.emailLabel": "E-mailadresse",
   "organization.members.invite.emailPlaceholder": "navn@eksempel.dk",
   "organization.members.invite.failed": "Invitationen kunne ikke sendes.",
