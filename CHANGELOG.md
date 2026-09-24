@@ -4,6 +4,21 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.41.0](https://github.com/jaapstronks/deckyard/compare/v1.40.0...v1.41.0) (2026-09-24)
+
+
+### Added
+
+* **slides:** image blocks carry a description, so a person card has one form (B443) ([#1274](https://github.com/jaapstronks/deckyard/issues/1274)) ([1cc1e95](https://github.com/jaapstronks/deckyard/commit/1cc1e95df0dd43496d0638c3c953ad40cdf881b3))
+* **themes:** the theme record carries every core and fork theme losslessly (B437) ([#1269](https://github.com/jaapstronks/deckyard/issues/1269)) ([1c66a2c](https://github.com/jaapstronks/deckyard/commit/1c66a2c7d77f8423c5fe1e97cb3026bfe2277a8a))
+
+
+### Fixed
+
+* **editor:** Duplicate in the header menu copies the slide with its children (D118) ([#1272](https://github.com/jaapstronks/deckyard/issues/1272)) ([7b1bcdf](https://github.com/jaapstronks/deckyard/commit/7b1bcdf2a46dabb3859476f6aac70aa33a9007dd))
+* **presenter:** the countdown controls follow the presenter chrome in fullscreen (B279) ([#1271](https://github.com/jaapstronks/deckyard/issues/1271)) ([5b40fa5](https://github.com/jaapstronks/deckyard/commit/5b40fa5f1607a8edc4e6095ac042a281a24a4de1))
+* **ui:** every import tab refuses inline, and toast.warning is gone (B309) ([#1273](https://github.com/jaapstronks/deckyard/issues/1273)) ([1896640](https://github.com/jaapstronks/deckyard/commit/1896640d83b54dcd17a7c9f5a3170239d3a55ad1))
+
 ## [1.40.0](https://github.com/jaapstronks/deckyard/compare/v1.39.0...v1.40.0) (2026-09-24)
 
 
