@@ -13,6 +13,7 @@ import {
   imagePlaceholderHtml,
   safeHref,
 } from '../helpers.js';
+import { markdownToSafeHtml } from '../../markdown.js';
 
 const MAX_CARDS = 25;
 
@@ -30,7 +31,8 @@ const LINKEDIN_ICON_SVG =
  *
  * @param {Object} content
  * @returns {Array<{image: string, alt: string, imageFocusX: number,
- *   imageFocusY: number, name: string, byline: string, linkedin: string}>}
+ *   imageFocusY: number, name: string, byline: string, body: string,
+ *   linkedin: string}>}
  */
 function resolveMembers(content) {
   if (!Array.isArray(content?.members)) return [];
@@ -41,6 +43,7 @@ function resolveMembers(content) {
     imageFocusY: m?.imageFocusY ?? 50,
     name: m?.name || '',
     byline: m?.byline || '',
+    body: m?.body || '',
     linkedin: m?.linkedin || '',
   }));
 }
@@ -128,6 +131,7 @@ export default {
         imageFocusY: 50,
         name: 'Title',
         byline: 'Caption',
+        body: '',
         linkedin: '',
       },
       itemDefaultsByLang: {
@@ -138,6 +142,7 @@ export default {
           imageFocusY: 50,
           name: 'Titel',
           byline: 'Bijschrift',
+          body: '',
           linkedin: '',
         },
       },
@@ -183,6 +188,15 @@ export default {
           label: 'Caption',
           maxLength: 120,
           role: 'caption',
+        },
+        // A block that introduces a person carries three texts: name (Title),
+        // role (Caption) and a short bio. Optional; a block without it renders
+        // exactly as before.
+        {
+          key: 'body',
+          type: 'markdown',
+          label: 'Description',
+          maxLength: 600,
         },
         {
           key: 'linkedin',
@@ -273,13 +287,18 @@ export default {
         imageFocusY: 50,
         name: 'Title',
         byline: 'Caption',
+        body: '',
         linkedin: '',
       },
     ],
   },
 
-  renderHtml: (content) => {
+  renderHtml: (content, _slide, ctx) => {
     const members = resolveMembers(content);
+    // An empty photo slot is an editor affordance (the click target for a
+    // first photo), not content: present, thumbnails and export show a block
+    // without a photo as text only. Same rule as logo-wall.
+    const editMode = ctx?.mode === 'edit';
 
     const title = nonEmpty(content?.title);
     const subheading = getSubheadingText(content);
@@ -321,7 +340,8 @@ export default {
       const focusY = member.imageFocusY;
       const name = nonEmpty(member.name);
       const byline = nonEmpty(member.byline);
-      const isUsed = !!(img || name || byline);
+      const body = nonEmpty(member.body);
+      const isUsed = !!(img || name || byline || body);
       if (!isUsed) return null;
 
       const alt = pickAltText({
@@ -347,9 +367,11 @@ export default {
             <img src="${escapeHtml(img)}" alt="${escapeHtml(alt)}"${focusStyle ? ` ${focusStyle}` : ''} />
           </div>
         `
-        : `
+        : editMode
+          ? `
           ${imagePlaceholderHtml({ className: 'team-card-photo', compact: true, attrs: photoAttr })}
-        `;
+        `
+          : '';
 
       const namePath = `members.${idx}.name`;
       const bylinePath = `members.${idx}.byline`;
@@ -358,6 +380,9 @@ export default {
         : '';
       const bylineHtml = byline
         ? `<div class="team-card-byline" data-inline-field="${bylinePath}" dir="auto">${escapeHtml(byline)}</div>`
+        : '';
+      const bodyHtml = body
+        ? `<div class="team-card-body" data-inline-field="members.${idx}.body" dir="auto">${markdownToSafeHtml(body)}</div>`
         : '';
 
       // `linkedin` is a `url` field: the validator refuses what `safeHref`
@@ -373,12 +398,12 @@ export default {
       let cardContent;
       if (textPosition === 'split') {
         // Split: title above image, caption below image
-        cardContent = `${nameHtml}${photoHtml}${bylineHtml}${linkedinHtml}`;
+        cardContent = `${nameHtml}${photoHtml}${bylineHtml}${bodyHtml}${linkedinHtml}`;
       } else {
         // Below (default): both title and caption below image
         const textHtml =
-          nameHtml || bylineHtml || linkedinHtml
-            ? `<div class="team-card-text">${nameHtml}${bylineHtml}${linkedinHtml}</div>`
+          nameHtml || bylineHtml || bodyHtml || linkedinHtml
+            ? `<div class="team-card-text">${nameHtml}${bylineHtml}${bodyHtml}${linkedinHtml}</div>`
             : '';
         cardContent = `${photoHtml}${textHtml}`;
       }
@@ -401,6 +426,10 @@ export default {
     }
 
     const count = allCards.length;
+    // Blocks that carry a description are person cards: the CSS trades photo
+    // size for text width so a bio fits under name and role.
+    const hasBody = members.some((m) => nonEmpty(m.body));
+    const bodyClass = hasBody ? ' has-body' : '';
     const emptyHtml =
       count === 0
         ? `
@@ -453,7 +482,7 @@ export default {
           showPhotoFrame ? ' has-photo-frame' : ''
         }${
           hasHeader ? ' has-header' : ''
-        }${hasBottom ? ' has-bottom-subheading' : ''} has-column-split" data-card-count="${count}" data-split-left="${leftCols}" data-split-right="${rightCols}">
+        }${hasBottom ? ' has-bottom-subheading' : ''}${bodyClass} has-column-split" data-card-count="${count}" data-split-left="${leftCols}" data-split-right="${rightCols}">
           <div class="slide-inner">
             ${headerHtml}
             <div class="team-cards-split-container">
@@ -493,7 +522,7 @@ export default {
         showPhotoFrame ? ' has-photo-frame' : ''
       }${
         hasHeader ? ' has-header' : ''
-      }${hasBottom ? ' has-bottom-subheading' : ''}" data-card-count="${count}">
+      }${hasBottom ? ' has-bottom-subheading' : ''}${bodyClass}" data-card-count="${count}">
         <div class="slide-inner">
           ${headerHtml}
           <div class="team-cards-grid">

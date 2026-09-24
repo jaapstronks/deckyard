@@ -4,6 +4,10 @@ import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { ensureLogos } from '../shared/slide-types/types/logo-wall-slide.js';
 import { ensureMembers } from '../shared/slide-types/types/team-cards-slide.js';
 import { migratePresentation } from '../shared/slide-types/schema-version.js';
+import { initSanitizer } from '../shared/sanitize.js';
+
+// Markdown fields render through DOMPurify; without it markup is escaped.
+await initSanitizer();
 
 /** Fold one v7 slide's legacy numbered slots into its canonical array. */
 function foldedContent(type, content) {
@@ -123,7 +127,7 @@ test('team-cards: a deck stored in the legacy numbered form emits members[] path
     card1Name: 'Ada',
     card1Byline: 'Engineer',
   });
-  const html = def.renderHtml(content);
+  const html = def.renderHtml(content, {}, { mode: 'edit' });
   assert.match(
     html,
     /class="[^"]*team-card-photo[^"]*is-empty"[^>]*data-inline-photo="0"/s,
@@ -133,6 +137,50 @@ test('team-cards: a deck stored in the legacy numbered form emits members[] path
     html,
     /data-inline-item="members"[^>]*data-inline-item-index="0"/s,
   );
+});
+
+test('team-cards: an empty photo slot is an edit-mode affordance, never content', () => {
+  const def = SLIDE_TYPES['team-cards-slide'];
+  const content = {
+    members: [{ image: '', name: 'Ada', byline: 'Engineer' }],
+  };
+  assert.match(
+    def.renderHtml(content, {}, { mode: 'edit' }),
+    /team-card-photo[^"]*is-empty/,
+  );
+  for (const ctx of [undefined, {}, { mode: 'present' }, { mode: 'thumb' }]) {
+    const html = def.renderHtml(content, {}, ctx);
+    assert.ok(
+      !html.includes('image-placeholder'),
+      `no placeholder in mode ${ctx?.mode}`,
+    );
+    assert.match(html, /team-card-name[^>]*>Ada</);
+  }
+});
+
+test('team-cards: a block carries an optional markdown description under its caption', () => {
+  const def = SLIDE_TYPES['team-cards-slide'];
+  const html = def.renderHtml({
+    members: [
+      {
+        name: 'Monique Dikmoet',
+        byline: 'Creative Director, Stichting SKLNE',
+        body: 'SKLNE (pronounced *skyline*) is a platform.\n\nSecond paragraph.',
+      },
+      { name: 'Ada', byline: 'Engineer' },
+    ],
+  });
+  assert.match(
+    html,
+    /team-card-byline[^>]*>Creative Director, Stichting SKLNE<\/div><div class="team-card-body" data-inline-field="members\.0\.body" dir="auto"><p>SKLNE \(pronounced <em>skyline<\/em>\) is a platform\.<\/p>\s*<p>Second paragraph\.<\/p>/,
+  );
+  // A block without a description renders no empty wrapper.
+  assert.equal(html.match(/team-card-body/g).length, 1);
+
+  // A description alone is enough to render the block.
+  const bodyOnly = def.renderHtml({ members: [{ body: 'Only a bio.' }] });
+  assert.match(bodyOnly, /data-card-count="1"/);
+  assert.match(bodyOnly, /team-card-body[^>]*><p[^>]*>Only a bio\.<\/p>/);
 });
 
 test('ensureMembers keeps a populated members[]; empty stays []', () => {

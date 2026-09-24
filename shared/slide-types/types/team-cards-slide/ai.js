@@ -31,7 +31,10 @@ export const ai = {
 
       STRUCTURE:
       - members: Array of blocks, each with { image, name (=Title),
-        byline (=Caption), alt, linkedin }. image/name/byline may be empty.
+        byline (=Caption), body (=Description), alt, linkedin }. Every text
+        and the image may be empty. body is optional markdown for a short bio
+        or explanation under the caption (1-3 sentences); use it for speaker
+        introductions (name, role, bio), keep it empty for plain rosters.
       - imageAspect: 'square' (default, crops each image to a square) or
         'original' (no crop — shows each image at its native aspect ratio).
         RULE OF THUMB: use 'original' for screenshots, UI captures, logos, or
@@ -51,7 +54,7 @@ export const ai = {
   bestFor: [
     'Multiple screenshots / UI captures in one slide (imageAspect: original)',
     'Testimonials or mixed image grids with short labels',
-    'Team introductions and speaker panels (name + role)',
+    'Team introductions and speaker panels (name + role, optional bio in body)',
     'Advisory boards or committees (up to 25, imageShape: circle)',
     'Any set of separate images that each want a small Title/Caption',
   ],

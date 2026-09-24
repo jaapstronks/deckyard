@@ -142,6 +142,11 @@
 .slide-text-blocks .text-block-body p {
   margin: 0;
 }
+/* A paragraph break in the source reads as one on the slide; without the gap
+   an Enter produced a new paragraph that looked like a soft line break. */
+.slide-text-blocks .text-block-body p + p {
+  margin-top: var(--slide-space-2);
+}
 .slide-text-blocks .text-block-body ul,
 .slide-text-blocks .text-block-body ol {
   margin: 0;

@@ -44,6 +44,16 @@ export const inlineEdit = {
       pos: 'append',
       chip: 'below-start',
     },
+    // The description is optional; its chip offers it below the text block
+    // once the block has one to anchor to.
+    {
+      list: 'members',
+      field: 'body',
+      item: '.team-card',
+      chipAnchor: '.team-card-text',
+      pos: 'append',
+      chip: 'below-end',
+    },
   ],
   // ensureMembers guarantees members[] in edit mode, so no skipWhenEmpty
   // guard is needed - add/remove/reorder work from the first block.

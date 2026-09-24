@@ -108,7 +108,7 @@ CONTENT TIPS:
 - icon-card-grid-slide: items[] array, each with {icon, title, body}
 - text-blocks-slide: rows[] array (1-3), each row has {color, arrow, blocks[]}
 - kpi-metrics-slide: metrics[] array (1-4), each with {value, unit, label, note}
-- team-cards-slide: members[] array, each with {name, byline, image}
+- team-cards-slide: members[] array, each with {name, byline, body, image}; body is an optional short bio in markdown
 - logo-wall-slide: logos[] array, each with {name, image}
 
 REMINDER: All slide content (titles, body text, etc.) MUST be written in ${langLabel}.${buildThemeContextSection(themeContext)}`;
