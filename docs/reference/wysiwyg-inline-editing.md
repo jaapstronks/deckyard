@@ -79,8 +79,11 @@ affordances therefore live on an overlay appended to the **unscaled**
 the target element's rect, so chips / buttons / outlines render at real
 screen pixels at any zoom. Corner badges sit on the field's corner
 (macOS-badge style); the thumb gets `overflow: visible` in inline-edit mode
-so overhangs aren't clipped. Ghost chips sharing an anchor pack into a
-horizontal row.
+so overhangs aren't clipped. Ghost chips are the exception to "measure a
+target and apply a mode": `ghost-placement.js` derives each chip's seam from
+its `pos` and the block's stacking direction, slides it along the seam past
+other chips, and makes it a compact "+" in the margin when the seam lies
+between two filled fields (B435, D212).
 
 ### Field paths
 

@@ -31,7 +31,7 @@
 
 /**
  * @typedef {{left:number, top:number, width:number, height:number}} Rect
- * @typedef {'vertical'|'horizontal'|'grid'} Direction
+ * @typedef {'vertical'|'horizontal'} Direction
  * @typedef {'after'|'before'|'inside'} Side
  * @typedef {'start'|'center'|'end'} Align
  * @typedef {{direction:Direction, side:Side, ref:HTMLElement,
@@ -44,10 +44,10 @@
 export const SEAM_GAP = 6;
 
 /**
- * The stacking direction of a block, from its computed layout. A flex row is
- * horizontal; a flex row that wraps, and a grid with more than one column,
- * is a grid (items fill rows, the next one lands at the end); everything
- * else - block flow, a flex column, a one-column grid - stacks vertically.
+ * The stacking direction of a block, from its computed layout: the axis the
+ * next field inserted into it runs along. A flex row - wrapping or not - and
+ * a grid with more than one column put it beside the last one (horizontal);
+ * block flow, a flex column and a one-column grid put it underneath.
  * @param {Element} el
  * @returns {Direction}
  */
@@ -56,12 +56,15 @@ export function stackDirection(el) {
   if (!cs) return 'vertical';
   const display = cs.display || '';
   if (display.includes('flex')) {
-    if (!(cs.flexDirection || 'row').startsWith('row')) return 'vertical';
-    return (cs.flexWrap || '').startsWith('wrap') ? 'grid' : 'horizontal';
+    return (cs.flexDirection || 'row').startsWith('row')
+      ? 'horizontal'
+      : 'vertical';
   }
   if (display.includes('grid')) {
     const tracks = (cs.gridTemplateColumns || '').trim().split(/\s+/);
-    return tracks.length > 1 && tracks[0] !== 'none' ? 'grid' : 'vertical';
+    return tracks.length > 1 && tracks[0] !== 'none'
+      ? 'horizontal'
+      : 'vertical';
   }
   return 'vertical';
 }
@@ -92,15 +95,10 @@ function textAlign(el) {
  * @returns {Seam}
  */
 export function describeSeam(el, pos) {
-  // A single field in a grid lands in the next cell: a seam beside, like a row.
-  const seamDirection = (block) => {
-    const d = stackDirection(block);
-    return d === 'grid' ? 'horizontal' : d;
-  };
   if (pos === 'after' || pos === 'before') {
     const block = el.parentElement || el;
     return {
-      direction: seamDirection(block),
+      direction: stackDirection(block),
       side: pos,
       ref: el,
       block,
@@ -108,7 +106,7 @@ export function describeSeam(el, pos) {
     };
   }
   const kids = [...(el.children || [])].filter(isRendered);
-  const direction = seamDirection(el);
+  const direction = stackDirection(el);
   if (!kids.length) {
     return {
       direction,
@@ -319,4 +317,34 @@ export function placeGhost({
   }
   const fallback = list.find((c) => c.compact) || list[0];
   return { ...fallback, collides: true };
+}
+
+/**
+ * Place a set of ghost chips, in order, each against the fields and every
+ * chip standing before it - the one loop the overlay and the all-types test
+ * both run, so the test measures the editor's rule and not a copy of it.
+ * @param {Array<{seam:{direction:Direction, side:Side, align:Align, ref:Rect,
+ *   block:Rect}, chip:{width:number,height:number},
+ *   compact:{width:number,height:number}}>} ghosts - seams as rects
+ * @param {{fields:Rect[], chips?:Rect[], bounds?:Rect, gap?:number}} ctx
+ * @returns {Array<{rect:Rect, compact:boolean, collides:boolean}>}
+ */
+export function solveGhosts(
+  ghosts,
+  { fields, chips = [], bounds = null, gap },
+) {
+  const standing = [...chips];
+  return ghosts.map(({ seam, chip, compact }) => {
+    const res = placeGhost({
+      ...seam,
+      chip,
+      compact,
+      fields,
+      chips: standing,
+      bounds,
+      ...(gap === undefined ? {} : { gap }),
+    });
+    standing.push(res.rect);
+    return res;
+  });
 }

@@ -460,7 +460,7 @@ function isPlainObject(v) {
  * @param {{errors: string[], warnings: string[]}} out
  */
 function checkInline(inline, { who, known, itemsKeys }, out) {
-  checkRetiredInlineKeys(inline, `${who}.inline`, out.warnings);
+  checkRetiredGhostKeys(inline, who, out);
   if (inline.formText !== undefined) {
     if (!Array.isArray(inline.formText)) {
       out.errors.push(
@@ -518,40 +518,60 @@ function checkInline(inline, { who, known, itemsKeys }, out) {
 
 /**
  * Ghost placement keys retired by B435 (D212). Where a ghost chip stands
- * follows from the insertion `pos` and the block's layout, so a
- * descriptor that still names a place is naming a second answer to a question
- * the editor no longer asks. Warnings, not errors: the chip still works from
- * `pos`, and skipping the whole type over a dead key would cost a fork its
- * slides. The one that does lose something is the single `anchor`, whose
- * ghost has no `anchors` list to stand on and shows no chip until it moves.
+ * follows from the insertion `pos` and the block's layout, so a descriptor
+ * that still names a place is naming a second answer to a question the editor
+ * no longer asks.
+ *
+ * `chip` and `chipAnchor` warn: the chip still works from `pos`, and skipping
+ * the whole type over a dead key would cost a fork its slides. The single
+ * `anchor` form errors: its ghost has no `anchors` list to stand on, so it
+ * would silently never show - refuse rather than let it look fine.
+ *
+ * Only the places a ghost is declared are walked (ghosts, itemGhosts, the
+ * child card level's ghosts and convert.addMedia); `anchor` elsewhere in a
+ * descriptor is not this key.
+ * @param {object} inline
+ * @param {string} who
+ * @param {{errors: string[], warnings: string[]}} out
  */
-const RETIRED_INLINE_KEYS = Object.freeze({
-  chip: 'placement follows `pos`; drop it',
-  chipAnchor: 'use `within` for the block the field is inserted into',
-  anchor: 'use `anchors: [{ sel, pos }]` - this ghost shows no chip until then',
-});
-
-/**
- * Walk an `inline` descriptor for retired placement keys.
- * @param {unknown} node
- * @param {string} path - dotted path for the message
- * @param {string[]} warnings
- */
-function checkRetiredInlineKeys(node, path, warnings) {
-  if (Array.isArray(node)) {
-    node.forEach((v, i) =>
-      checkRetiredInlineKeys(v, `${path}[${i}]`, warnings),
-    );
-    return;
-  }
-  if (!isPlainObject(node)) return;
-  for (const [key, value] of Object.entries(node)) {
-    if (Object.hasOwn(RETIRED_INLINE_KEYS, key)) {
-      warnings.push(
-        `${path}.${key} is retired (B435): ${RETIRED_INLINE_KEYS[key]}`,
-      );
-    }
-    checkRetiredInlineKeys(value, `${path}.${key}`, warnings);
+function checkRetiredGhostKeys(inline, who, out) {
+  const lists = [
+    ['ghosts', inline.ghosts],
+    ['itemGhosts', inline.itemGhosts],
+    ['cards.child.ghosts', inline.cards?.child?.ghosts],
+    ['convert.addMedia', inline.convert?.addMedia && [inline.convert.addMedia]],
+  ];
+  const warn = (path, key, why) =>
+    out.warnings.push(`${who}.inline.${path}.${key} is retired (B435): ${why}`);
+  for (const [name, list] of lists) {
+    if (!Array.isArray(list)) continue;
+    list.forEach((g, i) => {
+      if (!isPlainObject(g)) return;
+      const path = name === 'convert.addMedia' ? name : `${name}[${i}]`;
+      if ('chip' in g) warn(path, 'chip', 'placement follows `pos`; drop it');
+      if ('chipAnchor' in g) {
+        warn(
+          path,
+          'chipAnchor',
+          'use `within` for the block the field is inserted into',
+        );
+      }
+      if ('anchor' in g) {
+        out.errors.push(
+          `${who}.inline.${path}.anchor is retired (B435): use ` +
+            '`anchors: [{ sel, pos }]` - this ghost would never show a chip',
+        );
+      }
+      (Array.isArray(g.anchors) ? g.anchors : []).forEach((a, j) => {
+        if (isPlainObject(a) && 'chip' in a) {
+          warn(
+            `${path}.anchors[${j}]`,
+            'chip',
+            'placement follows `pos`; drop it',
+          );
+        }
+      });
+    });
   }
 }
 

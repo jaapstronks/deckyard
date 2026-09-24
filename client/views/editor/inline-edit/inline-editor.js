@@ -536,6 +536,10 @@ export function createInlineEditor({
       const meta = fieldMetaForPath(def, g.field);
       // Shared ghost sets (HEADER_GHOSTS) may name fields a type doesn't have.
       if (!meta || !meta.key) continue;
+      // An essential field drawn with its in-box placeholder asks for itself
+      // already; a chip beside it would be a second answer.
+      if (root.querySelector(`.ie-placeholder[data-inline-field="${g.field}"]`))
+        continue;
       const anchor = resolveGhostAnchor(root, g);
       if (!anchor) continue;
       // reanchor re-resolves against the CURRENT slide DOM: the spawn path
@@ -608,7 +612,6 @@ export function createInlineEditor({
         class: essential ? 'ie-ghost is-essential' : 'ie-ghost',
         type: 'button',
         'aria-label': label,
-        title: label,
         ...attrs,
         onclick: (e) => {
           e.preventDefault();
@@ -648,8 +651,9 @@ export function createInlineEditor({
    * title that always has its box) shows an in-box placeholder in edit mode
    * - PowerPoint's "Click to add title" - instead of a chip (D212). The
    * text is CSS on the slide element itself, so it takes the field's own
-   * font, and it is gone the moment the field has a character. Edit mode
-   * only: the class lives on the editor canvas, never in a render.
+   * font, and it is gone the moment the field has a character. It runs
+   * before the ghosts, which skip a field that got one. Edit mode only: the
+   * class lives on the editor canvas, never in a render.
    */
   function insertEssentialPlaceholders(root, def) {
     const slide = getSlide?.();
@@ -665,8 +669,8 @@ export function createInlineEditor({
       el.classList.add('ie-placeholder');
       el.setAttribute(
         'data-ie-placeholder',
-        t('editor.inline.placeholder', 'Click to add {label}', {
-          label: fieldLabel(f.key, f).toLowerCase(),
+        t('editor.inline.placeholder', 'Add {label}', {
+          label: fieldLabel(f.key, f),
         }),
       );
     }

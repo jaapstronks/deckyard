@@ -32,7 +32,9 @@ export const inlineEdit = {
       pos: 'append',
     },
     // Caption and description are inserted into the text block, so their
-    // chips stand at its seam, not over the photo.
+    // chips stand at its seam, not over the photo. The seam is the end of the
+    // block (after a description, if any); the renderer then puts the caption
+    // under the name, where it belongs.
     {
       list: 'members',
       field: 'byline',

@@ -99,11 +99,12 @@ async function renderDocument(slide) {
 }
 
 /**
- * In the page: place every chip the way the overlay does and report each one
- * that lands on something.
+ * In the page: describe every empty field's seam, solve them all with the
+ * overlay's own loop (`solveGhosts`) and report each chip that lands on
+ * something, plus which fields got a chip at all.
  */
 function placeAllInPage({ ghosts, itemGhosts, sizes }) {
-  /* global describeSeam, placeGhost, overlaps */
+  /* global describeSeam, solveGhosts, overlaps */
   const slide = document.querySelector('.slide');
   const r = (el) => {
     const b = el.getBoundingClientRect();
@@ -112,52 +113,58 @@ function placeAllInPage({ ghosts, itemGhosts, sizes }) {
   const fields = [...slide.querySelectorAll('[data-inline-field]')]
     .map(r)
     .filter((b) => b.width > 0 && b.height > 0);
-  const chips = [];
-  const bounds = { left: 0, top: 0, width: 1600, height: 900 };
-  const chipFor = (label) => ({
-    width: sizes.chipPad + label.length * sizes.charWidth,
-    height: sizes.chipHeight,
-  });
-  const compact = { width: sizes.compact, height: sizes.compact };
-  const problems = [];
-  let placed = 0;
-  const place = (name, el, pos, label) => {
-    placed++;
+  const items = [];
+  const add = (name, el, pos, label) => {
     const seam = describeSeam(el, pos);
-    const res = placeGhost({
-      direction: seam.direction,
-      side: seam.side,
-      align: seam.align,
-      ref: r(seam.ref),
-      block: r(seam.block),
-      chip: chipFor(label),
-      compact,
-      fields,
-      chips,
-      bounds,
-      gap: sizes.gap,
+    items.push({
+      name,
+      seam: { ...seam, ref: r(seam.ref), block: r(seam.block) },
+      chip: {
+        width: sizes.chipPad + label.length * sizes.charWidth,
+        height: sizes.chipHeight,
+      },
+      compact: { width: sizes.compact, height: sizes.compact },
     });
-    if (res.collides) {
-      const hit = [...fields, ...chips].find((o) => overlaps(res.rect, o));
-      problems.push({ name, rect: res.rect, hit });
-    }
-    chips.push(res.rect);
   };
   for (const g of ghosts) {
     const a = g.anchors
       .map((c) => ({ el: slide.querySelector(c.sel), pos: c.pos || 'append' }))
       .find((c) => c.el);
-    if (a) place(g.field || g.label, a.el, a.pos, g.label || g.field);
+    if (a) add(g.field || g.label, a.el, a.pos, g.label || g.field);
   }
   for (const g of itemGhosts) {
     for (const item of slide.querySelectorAll(g.item)) {
-      if (item.querySelector(`[data-inline-field$=".${g.field}"]`)) continue;
+      const idx = item.getAttribute('data-inline-item-index');
+      const path = `${g.list}.${idx}.${g.field}`;
+      if (idx === null || slide.querySelector(`[data-inline-field="${path}"]`))
+        continue;
       const host = (g.within && item.querySelector(g.within)) || item;
-      place(`${g.list}[].${g.field}`, host, g.pos || 'append', g.field);
+      add(`${g.list}[].${g.field}`, host, g.pos || 'append', g.field);
     }
   }
-  return { problems, placed };
+  const results = solveGhosts(items, {
+    fields,
+    bounds: { left: 0, top: 0, width: 1600, height: 900 },
+    gap: sizes.gap,
+  });
+  const problems = [];
+  results.forEach((res, i) => {
+    if (!res.collides) return;
+    const others = results.filter((_, j) => j < i).map((o) => o.rect);
+    const hit = [...fields, ...others].find((o) => overlaps(res.rect, o));
+    problems.push({ name: items[i].name, rect: res.rect, hit });
+  });
+  return { problems, placed: items.map((it) => it.name) };
 }
+
+/**
+ * Layout options some anchors only exist under. Without them a ghost would
+ * never be placed in any state and the test would pass it unseen.
+ */
+const LAYOUT_VARIANTS = {
+  // subheading2 is the heading of the right group of a column split.
+  'team-cards-slide': [{ columnSplit: 1 }],
+};
 
 const TYPES = Object.entries(SLIDE_TYPE_INLINE_EDIT).filter(
   ([name, d]) =>
@@ -177,21 +184,26 @@ for (const [name, descriptor] of TYPES) {
       const ghostFields = topGhosts(descriptor).filter(
         (g) => g.field === null || known.has(g.field),
       );
-      const optional = ghostFields
-        .map((g) => g.field)
-        .filter((f) => f && !def.fields.find((x) => x.key === f)?.required);
-      const states = [
-        { label: 'all ghost fields empty', emptied: optional },
-        ...optional.map((f) => ({ label: `only ${f} empty`, emptied: [f] })),
-      ];
+      // Every field a ghost is declared for, required or not: a ghost shows
+      // whenever its field is empty.
+      const optional = ghostFields.map((g) => g.field).filter(Boolean);
+      const bases = [{}, ...(LAYOUT_VARIANTS[name] || [])];
+      const states = bases.flatMap((base) => [
+        { base, label: 'all ghost fields empty', emptied: optional },
+        ...optional.map((f) => ({
+          base,
+          label: `only ${f} empty`,
+          emptied: [f],
+        })),
+      ]);
       const browser = await getPuppeteerBrowser({ featureName: 'test' });
       const page = await browser.newPage();
       try {
         await page.setViewport({ width: 1600, height: 900 });
         const failures = [];
-        let placed = 0;
+        const placed = new Set();
         for (const state of states) {
-          const content = contentWith(def, state.emptied);
+          const content = { ...contentWith(def, state.emptied), ...state.base };
           const html = await renderDocument({ id: 's', type: name, content });
           await page.setContent(html, { waitUntil: 'load' });
           await page.addScriptTag({ content: PLACEMENT_SRC });
@@ -208,15 +220,32 @@ for (const [name, descriptor] of TYPES) {
             itemGhosts: descriptor.itemGhosts || [],
             sizes: SIZES,
           });
-          placed += res.placed;
+          for (const n of res.placed) placed.add(n);
           for (const p of res.problems)
             failures.push(
               `${state.label}: ${p.name} at ${JSON.stringify(p.rect)} hits ${JSON.stringify(p.hit)}`,
             );
         }
         assert.deepEqual(failures, []);
-        // Not vacuous: every type here declares ghosts, so chips were placed.
-        assert.ok(placed > 0, `${name}: no ghost chip was placed at all`);
+        // Not vacuous: every ghost the type declares got a chip somewhere.
+        const declared = [
+          ...ghostFields.map((g) => g.field || g.label),
+          ...(descriptor.itemGhosts || []).map((g) => `${g.list}[].${g.field}`),
+        ];
+        const itemDefaultsEmpty = (g) =>
+          (def.defaults?.[g.list] || []).every(
+            (it) => !String(it?.[g.field] ?? '').trim(),
+          );
+        const unplaced = declared.filter(
+          (n) =>
+            !placed.has(n) &&
+            // An item ghost only shows for an item whose subfield is empty;
+            // defaults that fill it everywhere leave nothing to place.
+            !(descriptor.itemGhosts || []).some(
+              (g) => `${g.list}[].${g.field}` === n && !itemDefaultsEmpty(g),
+            ),
+        );
+        assert.deepEqual(unplaced, [], `${name}: ghosts never placed`);
       } finally {
         await page.close();
       }

@@ -19,12 +19,15 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
-import { placeGhost, SEAM_GAP } from './ghost-placement.js';
+import { solveGhosts, SEAM_GAP } from './ghost-placement.js';
 
 /**
  * @param {Object} opts
  * @param {HTMLElement} opts.thumb - the unscaled preview container
  */
+/** Unknown placement modes already reported (reposition runs on every resize). */
+const warnedModes = new Set();
+
 export function createInlineOverlay({ thumb }) {
   const layer = h('div', { class: 'ie-overlay', 'aria-hidden': 'false' });
 
@@ -178,39 +181,54 @@ export function createInlineOverlay({ thumb }) {
     const fields = [...thumb.querySelectorAll('[data-inline-field]')]
       .map(rectIn)
       .filter((r) => r.width > 0 && r.height > 0);
-    const chips = placements
-      .filter(
-        (p) =>
-          p.place !== 'ghost' &&
-          p.place !== 'cover' &&
-          p.place !== 'focus-point' &&
-          p.el.style.display !== 'none',
-      )
-      .map((p) => rectIn(p.el));
-    for (const p of ghosts) {
-      const s = p.el.style;
-      s.transform = '';
+    // A ghost is solved once for every hover state, so it avoids the chips of
+    // every collection item, not only the revealed one.
+    const chips = chipPlacements({ owner: 'any' }).map((p) => rectIn(p.el));
+    // Measure each chip in both shapes: full label, and compact.
+    const measured = ghosts.map((p) => {
+      p.el.style.transform = '';
       p.el.classList.remove('is-compact');
       const chip = { width: p.el.offsetWidth, height: p.el.offsetHeight };
       p.el.classList.add('is-compact');
       const compact = { width: p.el.offsetWidth, height: p.el.offsetHeight };
-      const { rect, compact: isCompact } = placeGhost({
-        direction: p.seam.direction,
-        side: p.seam.side,
-        align: p.seam.align,
-        ref: rectIn(p.seam.ref),
-        block: rectIn(p.seam.block),
+      const { direction, side, align, ref, block } = p.seam;
+      return {
+        seam: {
+          direction,
+          side,
+          align,
+          ref: rectIn(ref),
+          block: rectIn(block),
+        },
         chip,
         compact,
-        fields,
-        chips,
-        bounds,
-      });
-      p.el.classList.toggle('is-compact', isCompact);
-      s.left = `${rect.left}px`;
-      s.top = `${rect.top}px`;
-      chips.push(rect);
-    }
+      };
+    });
+    solveGhosts(measured, { fields, chips, bounds }).forEach((res, i) => {
+      const el = ghosts[i].el;
+      el.classList.toggle('is-compact', res.compact);
+      el.style.left = `${res.rect.left}px`;
+      el.style.top = `${res.rect.top}px`;
+    });
+  }
+
+  /**
+   * The chips that take room: not the field outlines (they sit on their field
+   * by design), not the focus handle (inside its image), not the ghosts (they
+   * are solved separately) and not a hidden one.
+   * @param {{owner: 'any'|'active'}} policy - 'active' counts item-scoped
+   *   chips only for the revealed item, since just one item's chips show at a
+   *   time; 'any' counts every item's.
+   */
+  function chipPlacements({ owner }) {
+    return placements.filter(
+      (p) =>
+        p.place !== 'cover' &&
+        p.place !== 'focus-point' &&
+        p.place !== 'ghost' &&
+        p.el.style.display !== 'none' &&
+        (owner === 'any' || !p.owner || p.owner === activeOwner),
+    );
   }
 
   /**
@@ -222,19 +240,7 @@ export function createInlineOverlay({ thumb }) {
    */
   function resolveOverlaps() {
     const MARGIN = 4; // breathing room between chips (screen px)
-    // Field outlines (`cover`) sit on their field by design and the image focus
-    // handle lives inside the image - neither participates. Item-scoped chips
-    // count only when their owner is the revealed one, since just one item's
-    // chips are visible at a time (opacity-hidden chips still occupy a rect).
-    const boxes = placements
-      .filter(
-        (p) =>
-          p.place !== 'cover' &&
-          p.place !== 'focus-point' &&
-          p.place !== 'ghost' &&
-          p.el.style.display !== 'none' &&
-          (!p.owner || p.owner === activeOwner),
-      )
+    const boxes = chipPlacements({ owner: 'active' })
       .map((p) => ({ p, r: rectIn(p.el) }))
       .sort((a, b) => a.r.top - b.r.top || a.r.left - b.r.left);
 
@@ -392,7 +398,10 @@ export function createInlineOverlay({ thumb }) {
         // A mode this overlay does not know (a fork descriptor's typo) is not
         // guessed at: the affordance stays hidden and the console says why.
         s.display = 'none';
-        console.warn(`[inline overlay] unknown placement '${p.place}'`);
+        if (!warnedModes.has(p.place)) {
+          warnedModes.add(p.place);
+          console.warn(`[inline overlay] unknown placement '${p.place}'`);
+        }
     }
   }
 

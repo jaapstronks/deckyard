@@ -88,7 +88,9 @@ export default {
       // to an <ol> in the reader/reflow view (semantic-projection.js).
       ordered: true,
       required: true,
-      // A timeline without milestones is not a timeline (D211).
+      // A timeline without milestones is not a timeline (D211). Inert on the
+      // canvas while minItems keeps the list from being empty; it tells an
+      // agent what a complete slide needs (the agent schema, B435 PR 3).
       essential: true,
       minItems: 2,
       maxItems: 10,

@@ -186,10 +186,10 @@ test('a well-formed definition reports nothing', () => {
   assert.deepEqual(formatDefinitionReport(report), []);
 });
 
-test('retired ghost placement keys are named, not refused (B435)', () => {
-  // A fork descriptor from before B435: `chip` is ignored (the chip follows
-  // `pos`), the single `anchor` loses its chip. Both are said out loud; the
-  // type still loads, so a fork does not lose its slides over a dead key.
+test('retired ghost placement keys: `chip` is named, a single `anchor` refused (B435)', () => {
+  // A fork descriptor from before B435. `chip` is ignored (the chip follows
+  // `pos`) and said out loud, so the type still loads; a single `anchor`
+  // would leave its ghost without a chip, so it is refused.
   const report = validateSlideTypeDefinition(
     validDef({
       inline: {
@@ -200,18 +200,19 @@ test('retired ghost placement keys are named, not refused (B435)', () => {
           },
           { field: 'heading', anchor: '.b', pos: 'after' },
         ],
+        media: { anchor: 'not a ghost key' },
       },
     }),
     'fixture-slide',
     { globalFieldKeys: GLOBAL_SLIDE_FIELD_KEYS },
   );
-  assert.deepEqual(report.errors, []);
   assert.deepEqual(
     report.warnings.map((w) => w.split(' is retired')[0]),
-    [
-      'fixture-slide.inline.ghosts[0].anchors[0].chip',
-      'fixture-slide.inline.ghosts[1].anchor',
-    ],
+    ['fixture-slide.inline.ghosts[0].anchors[0].chip'],
+  );
+  assert.deepEqual(
+    report.errors.map((e) => e.split(' is retired')[0]),
+    ['fixture-slide.inline.ghosts[1].anchor'],
   );
 });
 

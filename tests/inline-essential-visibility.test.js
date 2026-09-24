@@ -6,8 +6,7 @@
  * element the renderer draws anyway gets an in-box placeholder ("Click to add
  * title"), an essential image frame its "+ Add image" and an essential list
  * its "+ Add", both marked to show without hover. An empty field that is not
- * essential stays a chip that appears on hover. None of it reaches a render:
- * the placeholder is a class the editor puts on the canvas.
+ * essential stays a chip that appears on hover.
  *
  * The real inline editor runs on real renders in jsdom; the "without hover"
  * half is the stylesheet, read below.
@@ -48,15 +47,14 @@ globalThis.MutationObserver = dom.window.MutationObserver;
 globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 globalThis.cancelAnimationFrame = clearTimeout;
 
-const { SLIDE_TYPES, renderSlideHtml } =
-  await import('../shared/slide-types.js');
+const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 const { renderSlideElement, NO_DECK_LANG } =
   await import('../client/lib/slide-runtime/slide-render.js');
 const { createInlineEditor } =
   await import('../client/views/editor/inline-edit/inline-editor.js');
 
 /** Mount the inline editor on one client-rendered slide. */
-function mount(slide) {
+function mount(slide, getSlideDef = (type) => SLIDE_TYPES[type]) {
   const stage = document.createElement('div');
   const thumb = document.createElement('div');
   stage.append(thumb);
@@ -75,7 +73,7 @@ function mount(slide) {
     thumb,
     previewStage: stage,
     getSlide: () => slide,
-    getSlideDef: (type) => SLIDE_TYPES[type],
+    getSlideDef,
     getCanEdit: () => true,
     markDirty: () => {},
     rerenderPreview,
@@ -103,6 +101,31 @@ test('an empty essential title gets an in-box placeholder, not a chip', () => {
       null,
       'the placeholder replaces a chip, it does not sit beside one',
     );
+  } finally {
+    env.teardown();
+  }
+});
+
+test('a field that has both a placeholder and a declared ghost shows only the placeholder', () => {
+  // title-slide declares no title ghost; a fork descriptor (or PR 2's
+  // HEADER_GHOSTS types) can. The placeholder is the answer, not both.
+  const base = SLIDE_TYPES['title-slide'];
+  const def = {
+    ...base,
+    inline: {
+      ghosts: [
+        { field: 'title', anchors: [{ sel: '.tsu-content', pos: 'prepend' }] },
+      ],
+    },
+  };
+  const env = mount(
+    { id: 's', type: 'title-slide', content: { title: '' } },
+    () => def,
+  );
+  try {
+    const title = env.thumb.querySelector('[data-inline-field="title"]');
+    assert.ok(title.classList.contains('ie-placeholder'));
+    assert.equal(env.thumb.querySelector('[data-ie-ghost="title"]'), null);
   } finally {
     env.teardown();
   }
@@ -179,14 +202,4 @@ test('the stylesheet shows is-essential without hover and hides other chips unti
     block('.thumb.is-inline-edit .ie-placeholder:empty::before'),
     /content:\s*attr\(data-ie-placeholder\)/,
   );
-});
-
-test('the placeholder never reaches a render', () => {
-  for (const mode of [undefined, 'present', 'thumb']) {
-    const html = renderSlideHtml(
-      { id: 's', type: 'title-slide', content: { title: '' } },
-      { mode },
-    );
-    assert.doesNotMatch(html, /ie-placeholder/);
-  }
 });
