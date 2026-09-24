@@ -274,7 +274,7 @@ test('a theme field the record does not know is a 400 that names it (D209)', asy
     assert.equal(res.statusCode, 400, where);
     assert.equal(res.body.error, 'invalid', where);
     assert.deepEqual(res.body.details, { field, reason }, where);
-    assert.match(res.body.message, new RegExp(where.replace(/\./g, '\\.')));
+    assert.ok(res.body.message.includes(where), where);
   }
   const list = await call(handleThemes, 'GET', '/api/themes/custom', {
     as: ACTORS.designer,
