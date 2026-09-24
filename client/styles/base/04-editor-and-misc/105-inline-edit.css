@@ -350,6 +350,15 @@
   opacity: 0;
 }
 
+/* The same for an essential list: its "+ Add" is always there at the bottom
+   of the empty container, where the renderer's own "add blocks in the editor"
+   note stands. The button is the affordance, so the note steps aside on the
+   canvas. Named per type, like the image placeholder above; a type the audit
+   (B435 PR 2) makes essential adds its note here. */
+.thumb.is-inline-edit .team-cards-grid.ie-essential + .team-cards-empty {
+  opacity: 0;
+}
+
 /* ---- Clear (×) for a filled optional field, and card remove (×) ---- */
 .ie-overlay .ie-clear,
 .ie-overlay .ie-card-remove {

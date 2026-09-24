@@ -176,6 +176,13 @@ test('an empty essential list offers its first item without hover', () => {
     const add = env.thumb.querySelector('.ie-card-add');
     assert.ok(add, 'the list has its "+ Add"');
     assert.ok(add.classList.contains('is-essential'));
+    // The always-visible button stands where the renderer's empty-state note
+    // is; the container is marked so the note steps aside (the stylesheet).
+    assert.ok(
+      env.thumb
+        .querySelector('.team-cards-grid')
+        .classList.contains('ie-essential'),
+    );
   } finally {
     env.teardown();
   }
@@ -201,5 +208,12 @@ test('the stylesheet shows is-essential without hover and hides other chips unti
   assert.match(
     block('.thumb.is-inline-edit .ie-placeholder:empty::before'),
     /content:\s*attr\(data-ie-placeholder\)/,
+  );
+  assert.match(
+    block(
+      '.thumb.is-inline-edit .team-cards-grid.ie-essential + .team-cards-empty',
+    ),
+    /opacity:\s*0;/,
+    'the empty-state note steps aside for the essential "+ Add"',
   );
 });

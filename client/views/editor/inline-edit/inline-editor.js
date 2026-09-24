@@ -953,7 +953,11 @@ export function createInlineEditor({
           ? addPlacement(slide)
           : addPlacement || 'bottom-center';
       // An empty `essential` list offers its first item without hover (D211).
+      // The canvas only: the renderer's own empty-state note under the
+      // container steps aside for the always-visible button, as the empty
+      // image frame's inner label does (105-inline-edit.css).
       const essential = meta?.essential === true && arr.length === 0;
+      if (essential) addAnchorEl.classList.add('ie-essential');
       const add = h(
         'button',
         {
