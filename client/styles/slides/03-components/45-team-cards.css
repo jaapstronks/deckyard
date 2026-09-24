@@ -446,6 +446,16 @@
   text-align: center;
 }
 
+/* Split lines the cards up at the bottom so photos align under one- and
+   two-line titles. With a bio under the caption that bottom edge is the
+   longest bio, so the photos drift apart; person cards align at the top. */
+.slide-team-cards.text-split.has-body .team-cards-grid {
+  align-items: start;
+}
+.slide-team-cards.text-split.has-body .team-card {
+  align-content: start;
+}
+
 .slide-team-cards .team-card-linkedin {
   display: inline-flex;
   align-items: center;
