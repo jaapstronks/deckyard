@@ -12,6 +12,7 @@
  * without bespoke code and the output can't drift from the type definitions.
  */
 
+import { readFileSync } from 'node:fs';
 import {
   getSlideType,
   SLIDE_TYPES,
@@ -33,9 +34,11 @@ import { buildDocumentHead } from '../utils/head-chain.js';
 // This is the whole of the *reader chain* — the second of Deckyard's two CSS
 // chains (docs/reference/fork-setup.md § Two chains, one seam). The canvas
 // chain stacks core + theme + per-path document CSS; this one is a single
-// layer, because the reader shares no vocabulary with it: 51 `.reader-*`
+// layer, because the reader shares no vocabulary with it: `.reader-*`
 // selectors, no `.slide`, no `--t-*`, and a contract test that forbids the
-// canvas idiom outright (tests/semantic-reader.test.js). What the two chains do
+// canvas idiom outright (tests/semantic-reader.test.js). The one rule it takes
+// from the canvas chain is the visually-hidden utility (`SR_ONLY_CSS` below),
+// read from its single declaration rather than copied. What the two chains do
 // share is where they end — `buildCssChain` appends `custom/styles/` last to
 // both, so a fork can restyle the reader without patching this file.
 const READER_DOC_CSS = `
@@ -74,13 +77,6 @@ body {
   content: counter(reader-slide) ". ";
   content: counter(reader-slide) ". " / "";
   font-variant-numeric: tabular-nums; opacity: 0.5; font-size: 0.85em;
-}
-/* Hidden headings stay in flow: a 1px box pulled back by its own margin, so the
-   reader keeps its no-absolute-positioning contract. Scoped under the section
-   so it outranks the .reader-slide h2 margin above. */
-.reader-slide .reader-sr-only {
-  width: 1px; height: 1px; margin: -1px 0 0; padding: 0; border: 0;
-  overflow: hidden; clip-path: inset(50%); white-space: nowrap;
 }
 .reader-slide h3 { font-size: 1.05rem; margin: 1rem 0 0.35rem; }
 .reader-slide p { margin: 0.5rem 0; }
@@ -134,6 +130,26 @@ img { max-width: 100%; height: auto; }
   a { color: #8ab4ff; }
 }
 `.trim();
+
+/**
+ * The one visually-hidden rule (B361, B447), taken verbatim from the canvas
+ * chain's utility sheet. The reader shares no other rule with that chain, but
+ * a hidden slide heading is the same idea as every other `.sr-only`, so it
+ * reads the one declaration instead of carrying a copy of the block.
+ */
+const SR_ONLY_CSS = (() => {
+  const css = readFileSync(
+    new URL(
+      '../../client/styles/slides/03-components/60-accessibility.css',
+      import.meta.url,
+    ),
+    'utf8',
+  );
+  const rule = css.match(/^\.sr-only\s*\{[^}]*\}/m);
+  if (!rule)
+    throw new Error('reader: no .sr-only rule in 60-accessibility.css');
+  return rule[0];
+})();
 
 /**
  * Build the semantic reflowable HTML document for a presentation.
@@ -211,7 +227,7 @@ export function buildReaderHtml(
     title,
     description,
     head: [headHtml],
-    styles: [buildCssChain(repoRoot, [READER_DOC_CSS])],
+    styles: [buildCssChain(repoRoot, [READER_DOC_CSS, SR_ONLY_CSS])],
   })}
   <body>
     <header class="reader-header">

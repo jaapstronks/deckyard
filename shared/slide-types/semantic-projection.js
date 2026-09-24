@@ -1548,7 +1548,8 @@ export function imagesMissingAlt(slide, def) {
  * has to pin all of it (`tests/fixtures/semantic-projection.json`).
  *
  * - A hidden heading is still an `<h2>`, visually hidden with
- *   `reader-sr-only`, so every section is reachable by heading navigation.
+ *   `sr-only` (the one visually-hidden utility, B361), so every section is
+ *   reachable by heading navigation.
  * - The section is labelled by its `<h2>`, except when the author gave the
  *   slide an `a11yTitle` beside a visible title: that name is the section's
  *   `aria-label` and the title stays the heading.
@@ -1588,7 +1589,7 @@ export function renderSlideSectionHtml(
   // name, not a field (D129b), so it carries no marker.
   const headingAttrs = heading.visible
     ? fieldAttr(heading.key)
-    : ' class="reader-sr-only"';
+    : ' class="sr-only"';
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const enums = def ? semanticEnumAttrs(def.fields, content, def.defaults) : '';

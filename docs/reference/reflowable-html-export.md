@@ -190,7 +190,7 @@ missing_alt` when a drawn `image` field, at slide or item level, is not
   `role: 'heading'` on exactly one field (the field walk refuses a second).
   When the slide fills that field, it is the visible `<h2>` and is not repeated
   in the body. Otherwise the `<h2>` carries a **name** and is visually hidden
-  (`class="reader-sr-only"`), so every section stays reachable by heading
+  (`class="sr-only"`, the one visually-hidden utility), so every section stays reachable by heading
   navigation and in the table of contents: the slide's `a11yTitle`, else the
   value of the type's `labelField`, else the first `h1..h3` of a `markup`
   field, else the type label. A hidden heading
