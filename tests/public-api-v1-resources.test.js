@@ -284,7 +284,11 @@ test('GET /slide-types/:type/schema describes fields and an example slide', asyn
   for (const field of body.fields) {
     assert.ok(field.key, 'every field carries its key');
     assert.equal(typeof field.required, 'boolean');
+    assert.equal(typeof field.essential, 'boolean');
   }
+  // D211: essential beside required, not folded into it.
+  const title = body.fields.find((f) => f.key === 'title');
+  assert.equal(title.essential, true);
   assert.equal(body.example.type, 'title-slide');
   assert.ok(body.example.content && typeof body.example.content === 'object');
 });
