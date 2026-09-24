@@ -610,6 +610,7 @@
   "settings.slideTypes.fields.error.missingType": "{where} has no type.",
   "settings.slideTypes.fields.error.notAnArray": "The field list must be an array.",
   "settings.slideTypes.fields.error.notAnObject": "{where} is not a field definition.",
+  "settings.slideTypes.fields.error.propertyWrongType": "{where} gives “{property}” a value of the wrong type — it takes a {expected}.",
   "settings.slideTypes.fields.error.tooMany": "A slide type may have at most {max} fields.",
   "settings.slideTypes.fields.error.unknownProperty": "{where} declares “{property}”, which a stored field definition of this type cannot carry — remove it, or change the field type.",
   "settings.slideTypes.fields.error.unknownType": "{where} has a type this builder does not offer — pick one of {types}.",

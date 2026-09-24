@@ -971,6 +971,46 @@ test('a stored (DB) field carries `essential` the way it carries `required`', ()
   assert.equal(stored.fields[2].essential, true, 'a list: its first entry');
 });
 
+test('a stored (DB) scalar of the wrong type is refused, not dropped (D219)', () => {
+  const cases = [
+    [{ key: 'a', type: 'string', label: 'A', required: 'yes' }, 'required'],
+    [{ key: 'a', type: 'string', label: 'A', essential: 1 }, 'essential'],
+    [{ key: 'a', type: 'string', label: 'A', essential: null }, 'essential'],
+    [{ key: 'a', type: 'string', label: 'A', placeholder: 3 }, 'placeholder'],
+    [{ key: 'a', type: 'markdown', label: 'A', maxLength: '80' }, 'maxLength'],
+    [
+      {
+        key: 'a',
+        type: 'items',
+        label: 'A',
+        minItems: '1',
+        itemFields: [{ key: 'b', type: 'string', label: 'B' }],
+      },
+      'minItems',
+    ],
+  ];
+  for (const [field, property] of cases) {
+    const stored = validateCustomFieldDefinitions([field]);
+    assert.equal(stored.ok, false, `${property}: ${JSON.stringify(field)}`);
+    assert.equal(stored.problem.code, 'property_wrong_type');
+    assert.equal(stored.problem.detail.property, property);
+    assert.notEqual(
+      describeFieldFinding(stored.problem),
+      'Invalid field definitions.',
+    );
+  }
+  // The walk has no vocabulary on the boot surface, so hand-written source
+  // stays open (D84): the rule is the stored contract, not the file-JS one.
+  const boot = walkFieldDefinitions(
+    [{ key: 'a', type: 'string', label: 'A', required: 'yes' }],
+    { fieldTypes: ['string'] },
+  );
+  assert.equal(
+    boot.findings.some((f) => f.code === 'property_wrong_type'),
+    false,
+  );
+});
+
 test('a stored (DB) item sub-field cannot declare `essential`', () => {
   const stored = validateCustomFieldDefinitions([
     {

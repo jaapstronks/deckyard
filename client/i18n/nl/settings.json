@@ -610,6 +610,7 @@
   "settings.slideTypes.fields.error.missingType": "{where} heeft geen type.",
   "settings.slideTypes.fields.error.notAnArray": "De veldenlijst moet een array zijn.",
   "settings.slideTypes.fields.error.notAnObject": "{where} is geen velddefinitie.",
+  "settings.slideTypes.fields.error.propertyWrongType": "{where} geeft “{property}” een waarde van het verkeerde type — het veld verwacht een {expected}.",
   "settings.slideTypes.fields.error.tooMany": "Een slide-type mag hoogstens {max} velden hebben.",
   "settings.slideTypes.fields.error.unknownProperty": "{where} declareert “{property}”, en dat kan een opgeslagen velddefinitie van dit type niet dragen — haal het weg, of wijzig het veldtype.",
   "settings.slideTypes.fields.error.unknownType": "{where} heeft een type dat deze bouwer niet aanbiedt — kies er een uit {types}.",

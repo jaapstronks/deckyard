@@ -93,6 +93,17 @@ export const CUSTOM_TYPE_PROPERTY_KEYS = Object.freeze({
       'itemLabelField',
     ]),
   }),
+  // The scalars a row may carry and the one type each may have (D219): a
+  // value of another type is refused, not dropped by `cleanField`.
+  valueTypes: Object.freeze({
+    required: 'boolean',
+    essential: 'boolean',
+    placeholder: 'string',
+    helpText: 'string',
+    maxLength: 'number',
+    minItems: 'number',
+    maxItems: 'number',
+  }),
 });
 
 /**
@@ -124,9 +135,10 @@ function isNonEmpty(v) {
 
 /**
  * Normalize one field definition for storage. Every property it reads is in the
- * vocabulary above — the walk has already refused anything else — so this trims
- * strings and drops values that say nothing (a `required: false`, an
- * `essential: false`, an empty `mediaRef.linkKey`), and decides nothing.
+ * vocabulary above, with a value of the type it declares — the walk has already
+ * refused anything else (D84, D219) — so this trims strings and drops values
+ * that say nothing (a `required: false`, an `essential: false`, an empty
+ * `mediaRef.linkKey`), and decides nothing.
  */
 function cleanField(field) {
   const clean = {
