@@ -6,10 +6,7 @@
  * module imports below, so it holds no state from the editor-form closure.
  */
 import { debugLog } from '../../../lib/util/debug.js';
-import {
-  cloneSlidesForInsert,
-  insertIndexAfterSubtree,
-} from '../../../lib/slide-authoring/clone-slides.js';
+import { duplicateSlides } from '../slide-list/slide-actions.js';
 import { h, installDismissOnOutside } from '../../../lib/dom.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
@@ -330,23 +327,16 @@ export function buildHeaderActions({
         actionsDetails.open = false;
         if (convertDetails) convertDetails.open = false;
         if (aiConvertDetails) aiConvertDetails.open = false;
-        const [clone] = cloneSlidesForInsert([slide], {
+        // One meaning for "Duplicate" (D118): the slide with its nested
+        // children, through the same routine as the slide list and Cmd+D.
+        duplicateSlides({
+          ids: [slide.id],
+          pres,
           slideTypes: SLIDE_TYPES,
-          presentationId: pres?.id || '',
+          editorState,
+          setSelectedSlideId,
+          markDirty,
         });
-        // Past the source's children too: the copy is a top-level slide of
-        // its own, so landing it between a parent and its children would
-        // interleave the numbering.
-        pres.slides.splice(
-          insertIndexAfterSubtree(
-            pres.slides,
-            pres.slides.findIndex((s) => s.id === slide.id),
-          ),
-          0,
-          clone,
-        );
-        setSelectedSlideId?.(clone.id);
-        editorState.dirtyRefreshAll();
       },
     }),
     // Admin-only: View/edit raw JSON
