@@ -13,9 +13,11 @@ one of three surfaces:
 1. **The slide canvas (wysiwyg)** - the primary editing surface. In-place
    text editing, ghost chips for empty optional fields, add/remove/reorder
    of repeatable items (two-level for text-blocks rows/blocks), and direct
-   manipulation of images: a draggable focal point, and double-click to
-   replace a filled image. Empty slots keep a "+ Add image" affordance (they
-   have nothing to occlude) and accept a desktop file-drop. Everything
+   manipulation of images: a draggable focal point, a single click that
+   selects a filled image (solid ring + a toolbar below it with Replace and
+   Settings), double-click to replace it directly, and a desktop file-drop
+   onto any image. Empty slots keep a "+ Add image" affordance (they have
+   nothing to occlude). Everything
    _settable_ on an image (replace, alt, fit, focus grid, per-item metadata)
    lives in the inspector's "This image" tab, not on the image - see the
    editing-surface principle in `docs/reference/editing-surfaces.md`. Descriptor
@@ -240,12 +242,14 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
 
 - **Selection state** lives in the controller (`selectedElement =
 {kind:'image'|'card', idx} | null`), cleared on slide change. Canvas
-  interactions set it: a single click on a filled image →
-  `onOpenElementSettings({image, idx})` (selects it _and_ opens the rail on the
-  "This image" tab, the single doorway to everything settable); editing a card's
-  text or clicking its icon → `{card, idx}`; a plain-text edit or empty-slide
-  click clears it. Double-clicking a filled image, or clicking an empty slot,
-  opens the image picker directly (replace / add) rather than the tab.
+  interactions set it: a single click on a filled image → `{image, idx}`, which
+  the canvas mirrors (`getSelectedElement`) as a solid ring and a toolbar below
+  the image: Replace opens the picker, Settings calls
+  `onOpenElementSettings({image, idx})` (opens the rail on the "This image"
+  tab, the single doorway to everything settable); editing a card's text or
+  clicking its icon → `{card, idx}`; a plain-text edit or empty-slide click
+  clears it. Double-clicking a filled image, or clicking an empty slot, opens
+  the image picker directly (replace / add) rather than selecting.
 - **Rendering** (`editor-form.js`): when the selection applies to the slide
   (`elementAppliesToSlide`), per-element widgets render into `elementForm`
   ("This element" tab) and the rest into `form` ("Slide" tab). The active tab

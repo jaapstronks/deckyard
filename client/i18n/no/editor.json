@@ -439,7 +439,6 @@
   "editor.inline.link.title": "Legg til lenke",
   "editor.inline.markdownHint": "Ctrl/⌘ + Enter for å lagre",
   "editor.inline.media.addImage": "Legg til bilde",
-  "editor.inline.media.dblClickReplace": "Dobbeltklikk for å erstatte",
   "editor.inline.media.dropFailed": "Opplastingen mislyktes. Prøv igjen.",
   "editor.inline.media.dropInvalid": "Det er ikke en bildefil.",
   "editor.inline.media.linkedin": "LinkedIn-URL (valgfri)",

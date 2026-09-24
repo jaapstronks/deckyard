@@ -437,7 +437,6 @@
   "editor.inline.link.title": "Lägg till länk",
   "editor.inline.markdownHint": "Ctrl/⌘ + Enter för att spara",
   "editor.inline.media.addImage": "Lägg till bild",
-  "editor.inline.media.dblClickReplace": "Dubbelklicka för att ersätta",
   "editor.inline.media.dropFailed": "Uppladdningen misslyckades. Försök igen.",
   "editor.inline.media.dropInvalid": "Det är ingen bildfil.",
   "editor.inline.media.linkedin": "LinkedIn-URL (valfri)",

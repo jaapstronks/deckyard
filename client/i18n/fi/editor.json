@@ -442,7 +442,6 @@
   "editor.inline.link.title": "Lisää linkki",
   "editor.inline.markdownHint": "Ctrl/⌘ + Enter tallentaa",
   "editor.inline.media.addImage": "Lisää kuva",
-  "editor.inline.media.dblClickReplace": "Korvaa kaksoisnapsautuksella",
   "editor.inline.media.dropFailed": "Lähetys epäonnistui. Yritä uudelleen.",
   "editor.inline.media.dropInvalid": "Tämä ei ole kuvatiedosto.",
   "editor.inline.media.linkedin": "LinkedIn-osoite (valinnainen)",

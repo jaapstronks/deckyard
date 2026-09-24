@@ -87,12 +87,15 @@ import { debugLog } from '../../../lib/util/debug.js';
  * @param {Function} [opts.canConvertSlideTo] - (slide, toType) => boolean
  * @param {Function} [opts.onOpenElementSettings] - (element) => void; selects the
  *   canvas element and opens the inspector settings pane on its element tab.
- *   The doorway to everything settable for an element: a single click on an
- *   image opens its "This image" tab directly (no on-image chip)
+ *   The doorway to everything settable for an element: the selected image's
+ *   toolbar "Settings" button
  * @param {Function} [opts.onSelectElement] - (element|null) => void; sets the
  *   selection-aware inspector's current element ({kind:'image'|'card', idx}) or
  *   clears it. Selecting rebuilds the inspector with the element tab active; it
  *   only becomes visible if the settings pane is already open
+ * @param {Function} [opts.getSelectedElement] - () => element|null; the
+ *   controller's current selection, which the canvas mirrors (a selected image
+ *   gets a solid ring and its toolbar)
  */
 export function createInlineEditor({
   api,
@@ -115,6 +118,7 @@ export function createInlineEditor({
   canConvertSlideTo,
   onOpenElementSettings,
   onSelectElement,
+  getSelectedElement,
   // Chart data edits open the bottom-panel Data tab, not a canvas modal
   // (editing-surfaces §4.3). Clicking a chart on the canvas calls this.
   onEditChartData,
@@ -145,6 +149,9 @@ export function createInlineEditor({
   });
   // field element -> its dashed outline box, for the stronger direct-hover.
   const outlineByField = new WeakMap();
+  // Filled images of the current mount, each with its ring and toolbar; the
+  // selected one shows both (syncImageSelection). Rebuilt on every refresh.
+  let imageSelectables = [];
   let hotField = null;
   let repositionRaf = 0;
 
@@ -362,6 +369,7 @@ export function createInlineEditor({
     el.classList.add('ie-editing');
     // Swap the affordances for a single active ring that tracks this field.
     overlay.clear();
+    imageSelectables = [];
     const ring = overlay.outline(el);
     ring.classList.add('is-active');
     overlay.reposition();
@@ -403,6 +411,7 @@ export function createInlineEditor({
     el.setAttribute('contenteditable', 'true');
     el.classList.add('ie-editing', 'ie-editing-rich');
     overlay.clear();
+    imageSelectables = [];
     const ring = overlay.outline(el);
     ring.classList.add('is-active');
     overlay.reposition();
@@ -1168,6 +1177,29 @@ export function createInlineEditor({
   }
 
   // ----------------------------------------------------------------
+  // Canvas selection (mirrors the controller's selectedElement)
+  // ----------------------------------------------------------------
+  /** Set the inspector selection and mirror it on the canvas. */
+  function selectElement(el) {
+    onSelectElement?.(el);
+    syncImageSelection();
+  }
+
+  /**
+   * Show the selected image's ring and toolbar, hide every other one. The
+   * overlay gives a `hidden` chip no box, so it takes no part in de-collision.
+   */
+  function syncImageSelection() {
+    const sel = getSelectedElement?.();
+    for (const { idx, outlineBox, bar } of imageSelectables) {
+      const on = sel?.kind === 'image' && sel.idx === idx;
+      outlineBox?.classList.toggle('is-selected', on);
+      bar.hidden = !on;
+    }
+    overlay.reposition();
+  }
+
+  // ----------------------------------------------------------------
   // Media popover (per-item image + alt + extra fields, e.g. LinkedIn)
   // ----------------------------------------------------------------
   /**
@@ -1176,10 +1208,11 @@ export function createInlineEditor({
    * Empty slots get a centered "+ Add image" chip - they have nothing to
    * occlude, so an affordance in the middle is fine. Filled images get NO
    * control on the image itself (it would cover exactly what the user is
-   * judging): they are replaced by double-clicking, hinted by a small,
-   * non-interactive corner label on hover. A single click selects the image
-   * and opens its "This image" inspector tab (routed in onThumbClickCapture),
-   * which carries the explicit Replace / alt / fit / focus controls.
+   * judging), and no hint either. A single click selects the image (routed in
+   * onThumbClickCapture): a solid ring, and a small toolbar BELOW it with
+   * Replace and Settings (the "This image" inspector tab: alt / fit / focus).
+   * Double-click replaces directly, and a desktop file dropped on any image,
+   * filled or empty, replaces it.
    */
   function insertMediaAffordances(root, def, descriptor) {
     const media = descriptor.media;
@@ -1220,27 +1253,54 @@ export function createInlineEditor({
           ],
         );
         overlay.place(chip, photo, 'center', 0);
-        // Drag an image file straight from the desktop onto an empty placeholder.
-        // Empty-only: replacing a filled image goes through the picker (double-
-        // click / inspector). The chip is a separate drop target because it
-        // overlays the placeholder.
+        // Drag an image file straight from the desktop onto the placeholder.
+        // The chip is a separate drop target because it overlays it.
         if (uploadsEnabled && typeof api === 'function') {
           wireImageDrop([photo, chip], photo, outlineBox);
         }
       } else {
-        // Non-interactive hover hint (pointer-events: none in CSS) so the click
-        // still lands on the image itself. No control ON the image.
-        const hint = h('div', {
-          class: 'ie-replace-hint',
-          'aria-hidden': 'true',
-          text: t(
-            'editor.inline.media.dblClickReplace',
-            'Double-click to replace',
-          ),
-        });
-        overlay.place(hint, photo, 'inset-bottom-right', 8);
+        const idx = Number(photo.getAttribute('data-inline-photo'));
+        const bar = imageToolbar(photo, idx);
+        // Below the image, never on it; shown by the selection, not the hover.
+        overlay.place(bar, photo, 'bottom-center', 8, { scoped: false });
+        imageSelectables.push({ idx, outlineBox, bar });
+        if (uploadsEnabled && typeof api === 'function') {
+          wireImageDrop([photo], photo, outlineBox);
+        }
       }
     }
+    syncImageSelection();
+  }
+
+  /** The selected image's toolbar: Replace (the picker) and Settings (the tab). */
+  function imageToolbar(photo, idx) {
+    const button = (cls, key, fallback, onPress) =>
+      h('button', {
+        type: 'button',
+        class: `ie-image-bar-btn ${cls}`.trim(),
+        text: t(key, fallback),
+        onclick: (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          onPress();
+        },
+      });
+    return h(
+      'div',
+      {
+        class: 'ie-image-bar',
+        role: 'toolbar',
+        'aria-label': t('editor.inline.media.toolbar', 'Image'),
+      },
+      [
+        button('is-primary', 'editor.inline.media.replace', 'Replace', () =>
+          openPickerForPhoto(photo),
+        ),
+        button('', 'editor.inline.media.settings', 'Settings', () =>
+          onOpenElementSettings?.({ kind: 'image', idx }),
+        ),
+      ],
+    );
   }
 
   // ----------------------------------------------------------------
@@ -1411,9 +1471,8 @@ export function createInlineEditor({
    * Set or replace a photo's image straight from the canvas: open the shared
    * image picker (library / upload / ImageKit) on the resolved target and write
    * the pick. Alt, fit, focus and delete all live in the inspector's "This
-   * image" tab now, so this is purely the pick step. After a pick the element
-   * is selected and its inspector tab opened, so the just-added image's other
-   * settings are one glance away.
+   * image" tab now, so this is purely the pick step. After a pick the image is
+   * selected, so its toolbar (and its Settings doorway) is right there.
    */
   function openPickerForPhoto(photoEl) {
     const target = resolveMediaTarget(photoEl);
@@ -1448,9 +1507,8 @@ export function createInlineEditor({
         markDirty?.();
         requestSave?.();
         rerenderEditor?.();
+        onSelectElement?.({ kind: 'image', idx });
         rerenderPreview?.();
-        // Show where the rest of this image's settings live.
-        onOpenElementSettings?.({ kind: 'image', idx });
       },
     });
   }
@@ -1555,7 +1613,7 @@ export function createInlineEditor({
     if (!slide || !icons) return;
     const path = iconEl.getAttribute('data-inline-icon');
     if (!path) return;
-    onSelectElement?.(elementForCardPath(path));
+    selectElement(elementForCardPath(path));
     const current = getByPath(slide.content, path);
     openIconPicker({
       current: typeof current === 'string' ? current : '',
@@ -1578,6 +1636,7 @@ export function createInlineEditor({
     if (editing) return; // decoration happens on clean mounts only
     const root = slideEl();
     overlay.clear();
+    imageSelectables = [];
     if (!root) return;
     thumb.classList.remove('is-inline-edit');
     restoreThumbTitle();
@@ -1661,7 +1720,9 @@ export function createInlineEditor({
     const t = e.target;
     const fieldEl =
       t && t.closest
-        ? t.closest('[data-inline-field], [data-inline-icon]')
+        ? t.closest(
+            '[data-inline-field], [data-inline-icon], [data-inline-photo]',
+          )
         : null;
     setHotField(fieldEl && thumb.contains(fieldEl) ? fieldEl : null);
   }
@@ -1688,7 +1749,7 @@ export function createInlineEditor({
     // Our own affordance buttons manage themselves; just block the lightbox.
     if (
       target.closest(
-        '.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-focus-point, .ie-sel-toolbar',
+        '.ie-ghost, .ie-card-add, .ie-card-remove, .ie-clear, .ie-media-hint, .ie-image-bar, .ie-focus-point, .ie-sel-toolbar',
       )
     ) {
       coach.dismiss();
@@ -1708,10 +1769,10 @@ export function createInlineEditor({
       return;
     }
 
-    // Item photos: a single click selects the image and opens its "This image"
-    // inspector tab (Replace / alt / fit / focus all live there). An empty slot
-    // has nothing to settle on yet, so it opens the picker straight away.
-    // Replacing a filled image is the double-click (see onThumbDblClick).
+    // Item photos: a single click selects the image (ring + toolbar below it
+    // with Replace / Settings). An empty slot has nothing to settle on yet, so
+    // it opens the picker straight away. Double-click replaces a filled image
+    // without the toolbar step (see onThumbDblClick).
     const photoEl = target.closest('[data-inline-photo]');
     if (photoEl && thumb.contains(photoEl)) {
       coach.dismiss();
@@ -1721,10 +1782,7 @@ export function createInlineEditor({
         openPickerForPhoto(photoEl);
       } else {
         const target2 = resolveMediaTarget(photoEl);
-        onOpenElementSettings?.({
-          kind: 'image',
-          idx: target2 ? target2.idx : 0,
-        });
+        selectElement({ kind: 'image', idx: target2 ? target2.idx : 0 });
       }
       return;
     }
@@ -1732,7 +1790,7 @@ export function createInlineEditor({
     const fieldEl = target.closest('[data-inline-field]');
     if (!fieldEl || !thumb.contains(fieldEl)) {
       // A click on a non-element area of the slide clears the selection.
-      onSelectElement?.(null);
+      selectElement(null);
       return;
     }
     coach.dismiss();
@@ -1754,10 +1812,10 @@ export function createInlineEditor({
     // itself for block-level alignment/colour ("This text"); csv (chart data)
     // selects nothing.
     const cardSel = elementForCardPath(path);
-    if (cardSel) onSelectElement?.(cardSel);
+    if (cardSel) selectElement(cardSel);
     else if (kind === 'text' || kind === 'markdown')
-      onSelectElement?.({ kind: 'text', fieldKey: path });
-    else onSelectElement?.(null);
+      selectElement({ kind: 'text', fieldKey: path });
+    else selectElement(null);
     // Chart data opens on the bottom-panel Data tab, not a canvas modal
     // (editing-surfaces §4.3): one data surface, reachable from the chart or
     // the inspector's "Edit data…".
@@ -1783,8 +1841,8 @@ export function createInlineEditor({
 
   thumb.addEventListener('click', onThumbClickCapture, true);
 
-  // Double-click a filled image to replace it: the fast path that keeps the
-  // slide clear of on-image controls. (Single click selects + opens the tab.)
+  // Double-click a filled image to replace it: the shortcut past the toolbar.
+  // (Single click selects it and shows the toolbar.)
   function onThumbDblClick(e) {
     if (!getCanEdit?.()) return;
     if (isCommentAddMode?.()) return;

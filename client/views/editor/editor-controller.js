@@ -1491,9 +1491,11 @@ export async function createEditorController({
       return ok;
     },
     // Canvas → inspector selection. Clicking an element updates the inspector
-    // (visible iff the settings pane is already open). The "Settings" chip is
-    // the deliberate doorway: it also opens the pane on the element tab.
+    // (visible iff the settings pane is already open). The selected image's
+    // "Settings" button is the deliberate doorway: it also opens the pane on
+    // the element tab. The canvas mirrors the selection (getSelectedElement).
     onSelectElement: (el) => setSelectedElement(el),
+    getSelectedElement: () => selectedElement,
     onOpenElementSettings: (el) => {
       setSelectedElement(el);
       inspectorPanes.open('settings');
