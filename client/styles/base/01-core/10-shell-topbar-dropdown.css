@@ -551,16 +551,10 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 
   /* The language trigger keeps its control and sheds its label: the code says
-     the same in less room. The name stays in the accessibility tree, so a
-     screen reader still hears "Nederlands". */
+     the same in less room. Nothing leaves the accessibility tree with it -
+     the trigger's name is its own `aria-label`, not this text. */
   .topbar .lang-menu-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    display: none;
   }
   .topbar .lang-menu-code {
     display: inline;
@@ -603,13 +597,7 @@ summary.ghost-icon-btn::-webkit-details-marker {
      minimum the editor needs - so the room comes out of the two things that
      still spend it on decoration: the CTA's word and the outer gutter. */
   .topbar .topbar-present-label {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
+    display: none;
   }
   .topbar .topbar-present-icon {
     display: inline-flex;

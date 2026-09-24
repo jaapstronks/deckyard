@@ -151,7 +151,7 @@ export async function renderDashboard(root) {
     const id = 'dashboard-period-select';
     const label = h('label', {
       for: id,
-      class: 'visually-hidden',
+      class: 'sr-only',
       text: t('dashboard.periodLabel', 'Time period'),
     });
     const select = h(

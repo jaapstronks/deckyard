@@ -870,8 +870,8 @@ export function createLanguageMode({
   const langMenuWrapper = h('div', { class: 'lang-menu-wrapper' });
   const langMenuLabel = h('span', { class: 'lang-menu-label' });
   // The label's stand-in below the md rung, where the bar has no room for a
-  // language name (B354). `aria-hidden` because the name itself is only
-  // visually hidden there, so it is still what a screen reader reads.
+  // language name (B354). `aria-hidden` because it is a visual abbreviation:
+  // the trigger's name is its `aria-label`, at every width.
   const langMenuCode = h('span', {
     class: 'lang-menu-code',
     'aria-hidden': 'true',

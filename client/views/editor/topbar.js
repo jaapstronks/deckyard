@@ -370,10 +370,12 @@ export function createEditorTopbar({
 
   // No `title`: the button carries its own word below, and a tooltip that
   // repeats the visible label is noise on a desktop. Where the label is hidden
-  // (≤480px, a touch device) a tooltip never appears anyway, and the label
-  // stays the accessible name there.
+  // (≤480px, a touch device) a tooltip never appears anyway. The name is the
+  // `aria-label`, the same word as the label, so it survives the label's
+  // `display: none` there (B361).
   const btnPresent = h('button', {
     class: 'btn btn-primary',
+    'aria-label': t('editor.present', 'Present'),
     onclick: async () => {
       if (isDirty?.()) {
         toast.info(t('common.savingFirst', 'Saving first…'), {
@@ -412,8 +414,8 @@ export function createEditorTopbar({
     },
   });
   // Icon plus label, so the primary CTA can shed its word on a phone without
-  // shedding the action (B354). Below the xs rung the label is hidden from
-  // the eye only - it stays the button's accessible name.
+  // shedding the action (B354). Below the xs rung the label is gone; the
+  // button's `aria-label` above keeps its name.
   btnPresent.append(
     icon('play', { size: 16, className: 'topbar-present-icon' }),
     h('span', {

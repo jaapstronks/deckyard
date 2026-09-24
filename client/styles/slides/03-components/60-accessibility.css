@@ -1,4 +1,11 @@
 /* Accessibility helpers (shared: presenter + public exports) */
+
+/* The one visually-hidden utility (B361). slides.css loads in the app shell
+   as well as in every export, so this is the rule the editor, the dashboard
+   and the exported pages all share. Hidden from the eye, kept in the
+   accessibility tree. A second spelling or an inline copy of this block is
+   refused by tests/visually-hidden-guard.test.js; a label that only hides at
+   some widths uses `display: none` plus a name on its control instead. */
 .sr-only {
   position: absolute !important;
   width: 1px !important;
@@ -6,7 +13,7 @@
   padding: 0 !important;
   margin: -1px !important;
   overflow: hidden !important;
-  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
   white-space: nowrap !important;
   border: 0 !important;
 }
