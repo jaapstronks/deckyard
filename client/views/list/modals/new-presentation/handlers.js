@@ -17,7 +17,16 @@ import {
 } from '../../../../../shared/i18n-utils.js';
 
 /**
- * Handle empty presentation creation
+ * Handle empty presentation creation.
+ *
+ * A missing title and a refusal from the server are states of the title
+ * field, not footer lines: both go through `refuse`, which the blank panel
+ * renders as an inline error under the field and which moves focus there
+ * (docs/reference/feedback-surfaces.md). `setStatus` only carries progress.
+ *
+ * @param {Object} opts
+ * @param {(message: string) => void} opts.refuse - Show a refusal at the
+ *   title field; called after the form is usable again.
  */
 export async function handleEmpty({
   api,
@@ -27,11 +36,10 @@ export async function handleEmpty({
   close,
   setBusy,
   setStatus,
-  focusTitle,
+  refuse,
 }) {
   if (!titleText) {
-    setStatus(t('list.newPresentation.titleRequired', 'Please enter a title.'));
-    focusTitle?.();
+    refuse(t('list.newPresentation.titleRequired', 'Enter a title first.'));
     return;
   }
   const lang = normalizeLang(langMode) || DEFAULT_DECK_LANG;
@@ -53,8 +61,9 @@ export async function handleEmpty({
     close();
     nav(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
   } catch (e) {
-    setStatus(String(e?.message || e));
+    setStatus('');
     setBusy(false);
+    refuse(String(e?.message || e));
   }
 }
 

@@ -542,10 +542,6 @@
       "forms": ["Ohjeteksti kentässä", "Paikkamerkki"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
-    "fi  Please enter a title.": {
-      "forms": ["Anna otsikko.", "Syötä otsikko."],
-      "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
-    },
     "fi  Primary": {
       "forms": ["Ensisijainen", "Pääväri"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."

@@ -18,6 +18,7 @@ import {
   resolveInitialDeckLang,
 } from '../../../../lib/format/i18n.js';
 import { createModal } from '../../../../lib/dom/modal.js';
+import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { aiEnabled, getFeatures } from '../../../../lib/state/features.js';
 import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
@@ -164,18 +165,35 @@ export function openCreationView({
     class: 'creation-panel',
     'data-method': 'blank',
   });
-  const blankTitleField = h('div', { class: 'stack is-field' });
+  // The title is the one thing a blank deck needs: marked required up front
+  // (the asterisk the editor's required fields carry), and an empty one on
+  // Create is refused inline under the field (B444).
+  const blankTitleField = h('div', { class: 'stack is-field is-required' });
   const emptyTitleInput = h('input', {
     class: 'form-input',
     placeholder: t('list.newPresentation.titlePlaceholder', 'Title…'),
     'aria-label': t('list.creationView.nameLabel', 'Give it a name'),
+    'aria-required': 'true',
   });
+  const titleError = createInlineError();
   blankTitleField.append(
-    h('label', {
-      class: 'field-label',
-      text: t('list.creationView.nameLabel', 'Give it a name'),
-    }),
+    h(
+      'label',
+      {
+        class: 'field-label',
+        text: t('list.creationView.nameLabel', 'Give it a name'),
+      },
+      [
+        h('span', {
+          class: 'field-required-mark',
+          text: '*',
+          // aria-required on the input says it; the asterisk is decoration.
+          'aria-hidden': 'true',
+        }),
+      ],
+    ),
     emptyTitleInput,
+    titleError.el,
   );
   blankPanel.append(blankTitleField);
 
@@ -467,12 +485,14 @@ export function openCreationView({
         });
         break;
       case 'empty':
+        titleError.clear();
         await handleEmpty({
           ...commonOpts,
           titleText: String(emptyTitleInput.value || '').trim(),
           langMode: langSelect.getLang(),
           themeId: themeSelect.getTheme(),
-          focusTitle: () => emptyTitleInput.focus(),
+          refuse: (message) =>
+            titleError.show(message, { control: emptyTitleInput }),
         });
         break;
       case 'paste-text':

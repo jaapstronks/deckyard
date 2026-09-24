@@ -208,7 +208,7 @@
   "list.newPresentation.subtab.pasteText": "Paste text",
   "list.newPresentation.subtab.uploadFile": "Upload file",
   "list.newPresentation.titlePlaceholder": "Title…",
-  "list.newPresentation.titleRequired": "Please enter a title.",
+  "list.newPresentation.titleRequired": "Enter a title first.",
   "list.onboarding.createHint": "Start blank, from your notes, or from a template.",
   "list.onboarding.createTitle": "Create your first deck",
   "list.onboarding.dismiss": "Dismiss checklist",
