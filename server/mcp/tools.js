@@ -426,8 +426,8 @@ export function registerTools(
           id: p.id,
           title: p.title || 'Untitled',
           theme: p.theme || 'default',
-          createdAt: p.created || p.createdAt,
-          updatedAt: p.modified || p.updatedAt,
+          createdAt: p.created,
+          updatedAt: p.modified,
         };
         if (slideCount !== null) item.slideCount = slideCount;
         // Present on shared decks; marks how the caller has access.

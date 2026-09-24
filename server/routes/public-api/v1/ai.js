@@ -43,7 +43,10 @@ import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../../shared/i18n-utils.js';
-import { refuseRetiredDeckFields } from './deck-fields.js';
+import {
+  presentationTimestamps,
+  refuseRetiredDeckFields,
+} from './deck-fields.js';
 
 // ============================================================
 // VALIDATION HELPERS
@@ -170,8 +173,7 @@ async function handleWizard(ctx) {
         slideCount: Array.isArray(updated.slides) ? updated.slides.length : 0,
         theme: updated.theme,
         lang: updated.lang || activeLang,
-        createdAt: updated.createdAt,
-        updatedAt: updated.updatedAt,
+        ...presentationTimestamps(updated),
       },
     });
     return true;

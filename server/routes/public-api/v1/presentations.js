@@ -36,6 +36,7 @@ import {
   refuseRetiredDeckFields,
   refuseUnsupportedLang,
   refuseUnknownTheme,
+  presentationTimestamps,
 } from './deck-fields.js';
 
 // ============================================================
@@ -105,8 +106,7 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     })),
     i18n: pres.i18n || null,
     revision: pres.revision || 0,
-    createdAt: pres.createdAt || null,
-    updatedAt: pres.updatedAt || null,
+    ...presentationTimestamps(pres),
     tags,
   };
 }

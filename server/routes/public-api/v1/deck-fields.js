@@ -7,6 +7,10 @@
  * so a client that followed the docs got the default theme and language
  * without a word. The retired spellings are refused with the name to use
  * instead, never accepted beside the canonical one.
+ *
+ * The same holds for the two timestamps (B448): v1 publishes `createdAt` and
+ * `updatedAt`, and `presentationTimestamps()` is the one place that projects
+ * them from storage's `created`/`modified`.
  */
 
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
@@ -70,4 +74,21 @@ export async function refuseUnknownTheme(ctx, body) {
     details: { field: 'theme' },
   });
   return true;
+}
+
+/**
+ * A deck's two timestamps under their published names. Storage projects the
+ * columns as `created`/`modified`; v1 publishes `createdAt`/`updatedAt`, the
+ * names `openapi.yaml` promises and every other v1 resource uses (B448). The
+ * rename happens here, once, so no v1 response carries both spellings or reads
+ * the published name off a storage object that never had it (which answered
+ * `null` on every deck).
+ * @param {{created?: string|Date, modified?: string|Date}} pres
+ * @returns {{createdAt: string|Date|null, updatedAt: string|Date|null}}
+ */
+export function presentationTimestamps(pres) {
+  return {
+    createdAt: pres?.created || null,
+    updatedAt: pres?.modified || null,
+  };
 }

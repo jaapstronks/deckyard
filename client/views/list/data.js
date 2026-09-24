@@ -48,7 +48,7 @@ export async function loadPresentationList(api) {
 
   const getTimestamp = (p) => {
     // For shared presentations, use sharedAt as the primary date
-    const dateStr = p.sharedAt || p.updatedAt || p.createdAt;
+    const dateStr = p.sharedAt || p.modified || p.created;
     if (!dateStr) return 0;
     const time = new Date(dateStr).getTime();
     return Number.isNaN(time) ? 0 : time;
