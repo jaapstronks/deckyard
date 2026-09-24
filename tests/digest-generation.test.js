@@ -93,7 +93,25 @@ function soloAnalytics(overrides = {}) {
       { title: 'Deck C', views: 10, avgDurationSeconds: 40 },
       { title: 'Deck D', views: 5, avgDurationSeconds: 20 },
     ],
-    insights: [{ text: 'Insight one' }, { text: 'Insight two' }],
+    // The shape getWeeklyAnalyticsForUser returns; `text` is English and
+    // never reaches a reader, the digest renders from `type` and `data`.
+    insights: [
+      {
+        type: 'peak_days',
+        text: 'Monday and Tuesday saw peak engagement - ...',
+        data: {
+          days: [
+            { name: 'Monday', dayOfWeek: 1, views: 50 },
+            { name: 'Tuesday', dayOfWeek: 2, views: 40 },
+          ],
+        },
+      },
+      {
+        type: 'returning_viewers',
+        text: 'Viewers returned multiple times to "Deck A"',
+        data: { title: 'Deck A', visits: 4 },
+      },
+    ],
     ...overrides,
   };
 }
@@ -145,11 +163,11 @@ const admin = { email: 'boss@example.com', name: 'Boss' };
 
 test('solo: no activity returns the quiet-week digest without calling AI', async () => {
   resetSeam();
-  const digest = await generateDigestWithAI(user, {
-    hasActivity: false,
-    weekStart: '2026-08-04',
-    weekEnd: '2026-08-10',
-  });
+  const digest = await generateDigestWithAI(
+    user,
+    { hasActivity: false, weekStart: '2026-08-04', weekEnd: '2026-08-10' },
+    'en',
+  );
 
   assert.equal(
     lastFetch,
@@ -165,12 +183,16 @@ test('solo: no activity returns the quiet-week digest without calling AI', async
 
 test('team: no activity returns the quiet-week team digest without calling AI', async () => {
   resetSeam();
-  const digest = await generateTeamDigestWithAI(admin, {
-    hasActivity: false,
-    weekStart: '2026-08-04',
-    weekEnd: '2026-08-10',
-    presentationCount: 7,
-  });
+  const digest = await generateTeamDigestWithAI(
+    admin,
+    {
+      hasActivity: false,
+      weekStart: '2026-08-04',
+      weekEnd: '2026-08-10',
+      presentationCount: 7,
+    },
+    'en',
+  );
 
   assert.equal(lastFetch, null);
   assert.equal(digest.greeting, 'Hi Boss,');
@@ -195,7 +217,7 @@ test('solo: AI success merges model prose with server-owned metrics', async () =
     closing: 'Model closing.',
   });
 
-  const digest = await generateDigestWithAI(user, soloAnalytics());
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'en');
 
   // Model-authored prose is kept.
   assert.equal(digest.subject, 'Great week');
@@ -234,7 +256,7 @@ test('team: AI success caps presenters and presentations from analytics', async 
     closing: 'Onward.',
   });
 
-  const digest = await generateTeamDigestWithAI(admin, teamAnalytics());
+  const digest = await generateTeamDigestWithAI(admin, teamAnalytics(), 'en');
 
   assert.equal(digest.subject, 'Team week');
   assert.equal(digest.greeting, 'Hi Boss,');
@@ -252,7 +274,7 @@ test('solo: AI JSON wrapped in a markdown code fence is still parsed', async () 
   aiResponse =
     '```json\n' + JSON.stringify({ subject: 'Fenced subject' }) + '\n```';
 
-  const digest = await generateDigestWithAI(user, soloAnalytics());
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'en');
   assert.equal(digest.subject, 'Fenced subject');
   // Missing fields fall back to server defaults, not undefined.
   assert.equal(digest.closing, 'Keep creating great presentations!');
@@ -266,20 +288,23 @@ test('solo: AI throwing falls back to the template digest', async () => {
   resetSeam();
   aiThrows = true;
 
-  const digest = await generateDigestWithAI(user, soloAnalytics());
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'en');
 
   // Fallback highlight names the top deck and describes the trend.
   assert.match(digest.highlights, /Deck A/);
   assert.match(digest.highlights, /up 20% from last week/);
   assert.equal(digest.topPresentations.length, 3);
-  assert.deepEqual(digest.insights, ['Insight one', 'Insight two']);
+  assert.deepEqual(digest.insights, [
+    'Monday and Tuesday saw peak engagement - consider sharing new content early in the week',
+    'Viewers returned multiple times to "Deck A"',
+  ]);
 });
 
 test('solo: unparseable AI output falls back to the template digest', async () => {
   resetSeam();
   aiResponse = 'this is not json at all';
 
-  const digest = await generateDigestWithAI(user, soloAnalytics());
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'en');
   assert.match(digest.highlights, /120 views from 45 unique viewers/);
   assert.equal(digest.subject, 'Your weekly engagement insights - 120 views');
 });
@@ -288,7 +313,7 @@ test('team: AI throwing falls back to the template team digest', async () => {
   resetSeam();
   aiThrows = true;
 
-  const digest = await generateTeamDigestWithAI(admin, teamAnalytics());
+  const digest = await generateTeamDigestWithAI(admin, teamAnalytics(), 'en');
   assert.match(digest.highlights, /500 views from 200 unique viewers/);
   assert.match(digest.highlights, /4 team members/);
   assert.equal(digest.topPresenters.length, 5);
@@ -303,7 +328,7 @@ test('solo: AI_ENABLED=false gives the template digest without calling AI', asyn
   aiResponse = JSON.stringify({ highlights: 'model prose' });
   process.env.AI_ENABLED = 'false';
   try {
-    const digest = await generateDigestWithAI(user, soloAnalytics());
+    const digest = await generateDigestWithAI(user, soloAnalytics(), 'en');
     assert.equal(lastFetch, null, 'the kill switch keeps the vendor uncalled');
     assert.match(digest.highlights, /120 views from 45 unique viewers/);
   } finally {
@@ -316,7 +341,7 @@ test('team: AI_ENABLED=false gives the template team digest without calling AI',
   aiResponse = JSON.stringify({ highlights: 'model prose' });
   process.env.AI_ENABLED = 'false';
   try {
-    const digest = await generateTeamDigestWithAI(admin, teamAnalytics());
+    const digest = await generateTeamDigestWithAI(admin, teamAnalytics(), 'en');
     assert.equal(lastFetch, null, 'the kill switch keeps the vendor uncalled');
     assert.match(digest.highlights, /500 views from 200 unique viewers/);
   } finally {
@@ -333,6 +358,110 @@ test('a user without a name is greeted by their email prefix', async () => {
   const digest = await generateDigestWithAI(
     { email: 'jane.doe@example.com' },
     { hasActivity: false, weekStart: '2026-08-04', weekEnd: '2026-08-10' },
+    'en',
   );
   assert.equal(digest.greeting, 'Hi jane.doe,');
+});
+
+// ---------------------------------------------------------------------------
+// The recipient's language (B390): one language from prose to chrome.
+// ---------------------------------------------------------------------------
+
+test('the digest names the language it is written in', async () => {
+  resetSeam();
+  aiThrows = true;
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'nl');
+  assert.equal(digest.locale, 'nl');
+  const team = await generateTeamDigestWithAI(admin, teamAnalytics(), 'nl-NL');
+  assert.equal(
+    team.locale,
+    'nl',
+    'a regional tag narrows to the supported one',
+  );
+});
+
+test('a digest without a locale is refused, not written in English', async () => {
+  resetSeam();
+  await assert.rejects(
+    () => generateDigestWithAI(user, soloAnalytics()),
+    /recipient's locale/,
+  );
+  await assert.rejects(
+    () => generateTeamDigestWithAI(admin, teamAnalytics(), 'kl'),
+    /recipient's locale/,
+  );
+});
+
+test("the model is told to write in the recipient's language", async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({ subject: 'Goede week' });
+  await generateDigestWithAI(user, soloAnalytics(), 'nl');
+  assert.match(lastFetch.body.messages[0].content, /in Dutch\./);
+
+  resetSeam();
+  aiResponse = JSON.stringify({ subject: 'Teamweek' });
+  await generateTeamDigestWithAI(admin, teamAnalytics(), 'nl');
+  assert.match(lastFetch.body.messages[0].content, /in Dutch\./);
+});
+
+test('the template fallback is Dutch for a Dutch reader, insights included', async () => {
+  resetSeam();
+  aiThrows = true;
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'nl');
+
+  assert.equal(digest.greeting, 'Hallo Author,');
+  assert.equal(
+    digest.subject,
+    'Je wekelijkse betrokkenheidsinzichten - 120 weergaven',
+  );
+  assert.match(digest.highlights, /20% meer dan vorige week/);
+  assert.match(digest.highlights, /"Deck A" presteerde het best/);
+  assert.deepEqual(digest.insights, [
+    'Op maandag en dinsdag was de betrokkenheid het grootst - deel nieuwe content bij voorkeur vroeg in de week',
+    'Kijkers kwamen meerdere keren terug naar "Deck A"',
+  ]);
+  assert.equal(digest.closing, 'Blijf mooie presentaties maken!');
+});
+
+test('the peak days keep their weekday on a server west of Greenwich', async () => {
+  resetSeam();
+  aiThrows = true;
+  const tz = process.env.TZ;
+  process.env.TZ = 'America/New_York';
+  try {
+    const digest = await generateDigestWithAI(user, soloAnalytics(), 'nl');
+    assert.match(digest.insights[0], /^Op maandag en dinsdag /);
+  } finally {
+    if (tz === undefined) delete process.env.TZ;
+    else process.env.TZ = tz;
+  }
+});
+
+test('the quiet-week digests are Dutch for a Dutch reader', async () => {
+  resetSeam();
+  const quiet = {
+    hasActivity: false,
+    weekStart: '2026-08-04',
+    weekEnd: '2026-08-10',
+  };
+  const solo = await generateDigestWithAI(user, quiet, 'nl');
+  assert.equal(solo.subject, 'Je wekelijkse betrokkenheidsinzichten');
+  assert.match(solo.highlights, /Van 2026-08-04 tot 2026-08-10/);
+
+  const team = await generateTeamDigestWithAI(
+    admin,
+    { ...quiet, presentationCount: 2 },
+    'nl',
+  );
+  assert.equal(team.subject, 'De wekelijkse betrokkenheid van je team');
+  assert.equal(team.closing, 'We zien je team graag verder groeien!');
+});
+
+test('fields the model leaves out are filled in the digest language', async () => {
+  resetSeam();
+  aiResponse = JSON.stringify({ subject: 'Goede week' });
+  const digest = await generateDigestWithAI(user, soloAnalytics(), 'nl');
+  assert.equal(digest.subject, 'Goede week');
+  assert.equal(digest.closing, 'Blijf mooie presentaties maken!');
+  assert.equal(digest.greeting, 'Hallo Author,');
 });

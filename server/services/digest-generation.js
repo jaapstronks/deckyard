@@ -7,6 +7,7 @@ import { getFeatureFlags } from '../config/flags-snapshot.js';
 import { getLlmConfig } from '../utils/llm/config.js';
 import { requestChatCompletionContent } from '../utils/llm/index.js';
 import { formatDuration } from '../storage/analytics/index.js';
+import { createTranslator, normalizeLocale } from '../i18n/index.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('digest-generation');
@@ -17,22 +18,37 @@ const log = createLogger('digest-generation');
 
 /**
  * Generate a weekly digest email using AI.
+ *
+ * The digest is written in one language from start to finish — the model's
+ * prose, the template fallbacks and the server-owned phrases alike — and says
+ * which one on `locale`, so the sender renders the mail around it in the same
+ * language (B390).
+ *
  * @param {Object} user - User info
  * @param {string} user.email - User's email
  * @param {string} user.name - User's display name
  * @param {Object} analytics - Weekly analytics data from getWeeklyAnalyticsForUser
- * @returns {Promise<Object>} Digest content
+ * @param {string} locale - The recipient's locale, from `resolveRecipientLocale()`.
+ * @returns {Promise<Object>} Digest content, with `locale`.
  */
-export async function generateDigestWithAI(user, analytics) {
+export async function generateDigestWithAI(user, analytics, locale) {
+  const lang = requireLocale(locale);
+  const digest = await composeDigest(user, analytics, lang);
+  return { ...digest, locale: lang };
+}
+
+async function composeDigest(user, analytics, locale) {
+  const tr = createTranslator(locale);
+
   // If no activity, return a simple fallback without calling AI
   if (!analytics.hasActivity) {
-    return generateNoActivityDigest(user, analytics);
+    return generateNoActivityDigest(user, analytics, tr);
   }
 
   // AI switched off on this instance (kill switch, demo, sandbox): the
   // template digest, never a vendor call.
   if (!getFeatureFlags().enableAi) {
-    return generateFallbackDigest(user, analytics);
+    return generateFallbackDigest(user, analytics, tr, locale);
   }
 
   const { vendor, apiKey, model } = getLlmConfig({});
@@ -40,7 +56,7 @@ export async function generateDigestWithAI(user, analytics) {
   // Format analytics data for the prompt
   const formattedData = formatAnalyticsForPrompt(analytics);
 
-  const systemPrompt = buildDigestSystemPrompt();
+  const systemPrompt = buildDigestSystemPrompt(locale);
   const userPrompt = buildDigestUserPrompt(user, formattedData);
 
   try {
@@ -58,32 +74,42 @@ export async function generateDigestWithAI(user, analytics) {
     });
 
     const parsed = parseDigestResponse(content);
-    return validated(parsed, user, analytics);
+    return validated(parsed, user, analytics, tr, locale);
   } catch (err) {
     // Fallback to template-based digest if AI fails
     log.error('AI generation failed, using fallback:', err.message);
-    return generateFallbackDigest(user, analytics);
+    return generateFallbackDigest(user, analytics, tr, locale);
   }
 }
 
 /**
  * Generate a weekly digest for team admins (organization-wide).
+ * One language throughout, named on `locale`, like {@link generateDigestWithAI}.
  * @param {Object} admin - Admin user info
  * @param {Object} teamAnalytics - Weekly analytics from getTeamWeeklyAnalytics
- * @returns {Promise<Object>} Digest content
+ * @param {string} locale - The recipient's locale, from `resolveRecipientLocale()`.
+ * @returns {Promise<Object>} Digest content, with `locale`.
  */
-export async function generateTeamDigestWithAI(admin, teamAnalytics) {
+export async function generateTeamDigestWithAI(admin, teamAnalytics, locale) {
+  const lang = requireLocale(locale);
+  const digest = await composeTeamDigest(admin, teamAnalytics, lang);
+  return { ...digest, locale: lang };
+}
+
+async function composeTeamDigest(admin, teamAnalytics, locale) {
+  const tr = createTranslator(locale);
+
   if (!teamAnalytics.hasActivity) {
-    return generateNoActivityTeamDigest(admin, teamAnalytics);
+    return generateNoActivityTeamDigest(admin, teamAnalytics, tr);
   }
 
   if (!getFeatureFlags().enableAi) {
-    return generateFallbackTeamDigest(admin, teamAnalytics);
+    return generateFallbackTeamDigest(admin, teamAnalytics, tr);
   }
 
   const { vendor, apiKey, model } = getLlmConfig({});
 
-  const systemPrompt = buildTeamDigestSystemPrompt();
+  const systemPrompt = buildTeamDigestSystemPrompt(locale);
   const userPrompt = buildTeamDigestUserPrompt(admin, teamAnalytics);
 
   try {
@@ -101,19 +127,47 @@ export async function generateTeamDigestWithAI(admin, teamAnalytics) {
     });
 
     const parsed = parseDigestResponse(content);
-    return validatedTeam(parsed, admin, teamAnalytics);
+    return validatedTeam(parsed, admin, teamAnalytics, tr);
   } catch (err) {
     log.error('Team AI generation failed, using fallback:', err.message);
-    return generateFallbackTeamDigest(admin, teamAnalytics);
+    return generateFallbackTeamDigest(admin, teamAnalytics, tr);
   }
+}
+
+/**
+ * The locale a digest is written in, refused when it names none this install
+ * has strings for. The job resolves it per recipient; a digest without one
+ * would silently become English, which is the defect B390 closed.
+ * @param {string} locale
+ * @returns {string}
+ */
+function requireLocale(locale) {
+  const lang = normalizeLocale(locale);
+  if (!lang) {
+    throw new TypeError(
+      `A digest needs the recipient's locale, got ${JSON.stringify(locale)}`,
+    );
+  }
+  return lang;
+}
+
+/**
+ * The language's English name, for the model's instruction ("Dutch").
+ * @param {string} locale
+ * @returns {string}
+ */
+function languageName(locale) {
+  return new Intl.DisplayNames(['en'], { type: 'language' }).of(locale);
 }
 
 // ============================================================
 // PROMPT BUILDERS
 // ============================================================
 
-function buildDigestSystemPrompt() {
+function buildDigestSystemPrompt(locale) {
   return `You are writing a friendly weekly engagement summary email for a presentation author.
+
+Write every text field in ${languageName(locale)}. Keep the JSON field names in English.
 
 Your task is to create a brief, encouraging email digest that helps the user understand how their presentations performed this week.
 
@@ -155,8 +209,10 @@ ${JSON.stringify(formattedData, null, 2)}
 Remember: Output must be valid JSON with the specified fields.`;
 }
 
-function buildTeamDigestSystemPrompt() {
+function buildTeamDigestSystemPrompt(locale) {
   return `You are writing a weekly team-wide engagement summary email for an organization admin.
+
+Write every text field in ${languageName(locale)}. Keep the JSON field names in English.
 
 Your task is to create a brief, informative digest showing how all presentations across the organization performed this week.
 
@@ -270,26 +326,37 @@ function parseDigestResponse(content) {
   }
 }
 
-function validated(parsed, user, analytics) {
+function validated(parsed, user, analytics, tr, locale) {
   const name = user.name || user.email.split('@')[0];
 
   // If parsing failed, use fallback
   if (!parsed || typeof parsed !== 'object') {
-    return generateFallbackDigest(user, analytics);
+    return generateFallbackDigest(user, analytics, tr, locale);
   }
 
   // Ensure all required fields exist with reasonable defaults
   return {
     subject:
       parsed.subject ||
-      `Your weekly engagement insights - ${analytics.totalViews} views`,
-    greeting: (parsed.greeting || `Hi ${name},`).replace('{name}', name),
+      tr(
+        'email.digest.weekly.subjectWithViews',
+        'Your weekly engagement insights - {views} views',
+        { views: analytics.totalViews },
+      ),
+    greeting: (parsed.greeting || greeting(tr, name)).replace('{name}', name),
     highlights:
       parsed.highlights ||
-      `Your presentations received ${analytics.totalViews} views from ${analytics.uniqueViewers} unique viewers this week.`,
+      tr(
+        'email.digest.weekly.highlights',
+        'Your presentations received {views} views from {viewers} unique viewers this week.',
+        { views: analytics.totalViews, viewers: analytics.uniqueViewers },
+      ),
     topPresentationsIntro:
       parsed.topPresentationsIntro ||
-      'Here are your top performing presentations:',
+      tr(
+        'email.digest.weekly.topPresentationsIntro',
+        'Here are your top performing presentations:',
+      ),
     topPresentations: analytics.topPresentations.slice(0, 3).map((p) => ({
       title: p.title,
       views: p.views,
@@ -301,36 +368,51 @@ function validated(parsed, user, analytics) {
       uniqueViewers: `${analytics.weekOverWeek.uniqueViewers.current} (${analytics.weekOverWeek.uniqueViewers.direction === 'up' ? '+' : ''}${analytics.weekOverWeek.uniqueViewers.direction === 'down' ? '-' : ''}${analytics.weekOverWeek.uniqueViewers.percentChange}%)`,
       avgDuration: `${formatDuration(analytics.weekOverWeek.avgDuration.current)} (${analytics.weekOverWeek.avgDuration.direction === 'up' ? '+' : ''}${analytics.weekOverWeek.avgDuration.direction === 'down' ? '-' : ''}${analytics.weekOverWeek.avgDuration.percentChange}%)`,
     },
-    closing: parsed.closing || 'Keep creating great presentations!',
+    closing:
+      parsed.closing ||
+      tr('email.digest.weekly.closing', 'Keep creating great presentations!'),
     weekStart: analytics.weekStart,
     weekEnd: analytics.weekEnd,
   };
 }
 
-function validatedTeam(parsed, admin, analytics) {
+function validatedTeam(parsed, admin, analytics, tr) {
   const name = admin.name || admin.email.split('@')[0];
 
   if (!parsed || typeof parsed !== 'object') {
-    return generateFallbackTeamDigest(admin, analytics);
+    return generateFallbackTeamDigest(admin, analytics, tr);
   }
 
   return {
     subject:
       parsed.subject ||
-      `Your team's weekly engagement - ${analytics.totalViews} views`,
-    greeting: (parsed.greeting || `Hi ${name},`).replace('{name}', name),
+      tr(
+        'email.digest.team.subjectWithViews',
+        "Your team's weekly engagement - {views} views",
+        { views: analytics.totalViews },
+      ),
+    greeting: (parsed.greeting || greeting(tr, name)).replace('{name}', name),
     highlights:
       parsed.highlights ||
-      `Your team's presentations received ${analytics.totalViews} views from ${analytics.uniqueViewers} unique viewers this week.`,
+      tr(
+        'email.digest.team.highlights',
+        "Your team's presentations received {views} views from {viewers} unique viewers this week.",
+        { views: analytics.totalViews, viewers: analytics.uniqueViewers },
+      ),
     topPresentationsIntro:
       parsed.topPresentationsIntro ||
-      'Top performing presentations across your team:',
+      tr(
+        'email.digest.team.topPresentationsIntro',
+        'Top performing presentations across your team:',
+      ),
     topPresentations: analytics.topPresentations.slice(0, 5).map((p) => ({
       title: p.title,
       views: p.views,
       ownerEmail: p.ownerEmail,
     })),
-    topPresentersIntro: parsed.topPresentersIntro || 'Most active presenters:',
+    topPresentersIntro:
+      parsed.topPresentersIntro ||
+      tr('email.digest.team.topPresentersIntro', 'Most active presenters:'),
     topPresenters: analytics.topPresenters.slice(0, 5).map((p) => ({
       name: p.name,
       totalViews: p.totalViews,
@@ -340,7 +422,9 @@ function validatedTeam(parsed, admin, analytics) {
     weekOverWeek: {
       views: `${analytics.weekOverWeek.views.current} (${analytics.weekOverWeek.views.direction === 'up' ? '+' : ''}${analytics.weekOverWeek.views.percentChange}%)`,
     },
-    closing: parsed.closing || 'Keep your team engaged!',
+    closing:
+      parsed.closing ||
+      tr('email.digest.team.closing', 'Keep your team engaged!'),
     weekStart: analytics.weekStart,
     weekEnd: analytics.weekEnd,
     activePresenters: analytics.activePresenters,
@@ -352,47 +436,148 @@ function validatedTeam(parsed, admin, analytics) {
 // FALLBACK GENERATORS
 // ============================================================
 
-function generateNoActivityDigest(user, analytics) {
+function greeting(tr, name) {
+  return tr('email.common.greeting', 'Hi {name},', { name });
+}
+
+/**
+ * The week-over-week clause of a fallback highlight ("up 12% from last week").
+ * @param {Function} tr
+ * @param {{direction: string, percentChange: number}} trend
+ * @returns {string}
+ */
+function trendPhrase(tr, trend) {
+  const percent = trend.percentChange;
+  if (trend.direction === 'up') {
+    return tr('email.digest.trend.up', 'up {percent}% from last week', {
+      percent,
+    });
+  }
+  if (trend.direction === 'down') {
+    return tr('email.digest.trend.down', 'down {percent}% from last week', {
+      percent,
+    });
+  }
+  return tr('email.digest.trend.flat', 'similar to last week');
+}
+
+/**
+ * The analytics insights in the digest's language, rendered from their `type`
+ * and `data`. Their `text` is PostgreSQL-and-English and never reaches a
+ * reader; a type without a phrase here is left out rather than sent in
+ * English.
+ * @param {Array<{type: string, data: Object}>} insights
+ * @param {Function} tr
+ * @param {string} locale
+ * @returns {string[]}
+ */
+function localizedInsights(insights, tr, locale) {
+  // 2023-01-01 was a Sunday, so day n of that week is weekday n (0 = Sunday).
+  // The dates are built in UTC, so the formatter reads them in UTC too; the
+  // process default would shift the day west of Greenwich.
+  const weekday = new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    timeZone: 'UTC',
+  });
+  const dayName = (dow) => weekday.format(new Date(Date.UTC(2023, 0, 1 + dow)));
+  const list = new Intl.ListFormat(locale, { type: 'conjunction' });
+
+  return insights.flatMap((insight) => {
+    if (insight.type === 'peak_days') {
+      const days = (insight.data?.days || []).map((d) => dayName(d.dayOfWeek));
+      return [
+        tr(
+          'email.digest.insight.peakDays',
+          '{days} saw peak engagement - consider sharing new content early in the week',
+          { days: list.format(days) },
+        ),
+      ];
+    }
+    if (insight.type === 'returning_viewers') {
+      return [
+        tr(
+          'email.digest.insight.returningViewers',
+          'Viewers returned multiple times to "{title}"',
+          { title: insight.data?.title },
+        ),
+      ];
+    }
+    return [];
+  });
+}
+
+function generateNoActivityDigest(user, analytics, tr) {
   const name = user.name || user.email.split('@')[0];
+  const period = { weekStart: analytics.weekStart, weekEnd: analytics.weekEnd };
   return {
-    subject: 'Your weekly engagement insights',
-    greeting: `Hi ${name},`,
-    highlights: `It was a quiet week for your presentations. No views were recorded from ${analytics.weekStart} to ${analytics.weekEnd}. This is a great time to share your content more widely!`,
+    subject: tr(
+      'email.digest.weekly.subject',
+      'Your weekly engagement insights',
+    ),
+    greeting: greeting(tr, name),
+    highlights: tr(
+      'email.digest.weekly.quiet.highlights',
+      'It was a quiet week for your presentations. No views were recorded from {weekStart} to {weekEnd}. This is a great time to share your content more widely!',
+      period,
+    ),
     topPresentationsIntro: '',
     topPresentations: [],
     insights: [
-      'Consider sharing your presentations via email or on social media',
-      'Check if your share links are easily accessible',
+      tr(
+        'email.digest.weekly.quiet.insightShare',
+        'Consider sharing your presentations via email or on social media',
+      ),
+      tr(
+        'email.digest.weekly.quiet.insightLinks',
+        'Check if your share links are easily accessible',
+      ),
     ],
     weekOverWeek: {
       views: '0 (—)',
       uniqueViewers: '0 (—)',
       avgDuration: '0s (—)',
     },
-    closing: 'Looking forward to seeing your engagement grow!',
+    closing: tr(
+      'email.digest.weekly.quiet.closing',
+      'Looking forward to seeing your engagement grow!',
+    ),
     weekStart: analytics.weekStart,
     weekEnd: analytics.weekEnd,
   };
 }
 
-function generateNoActivityTeamDigest(admin, analytics) {
+function generateNoActivityTeamDigest(admin, analytics, tr) {
   const name = admin.name || admin.email.split('@')[0];
+  const period = { weekStart: analytics.weekStart, weekEnd: analytics.weekEnd };
   return {
-    subject: "Your team's weekly engagement",
-    greeting: `Hi ${name},`,
-    highlights: `It was a quiet week for your team's presentations. No views were recorded from ${analytics.weekStart} to ${analytics.weekEnd}.`,
+    subject: tr('email.digest.team.subject', "Your team's weekly engagement"),
+    greeting: greeting(tr, name),
+    highlights: tr(
+      'email.digest.team.quiet.highlights',
+      "It was a quiet week for your team's presentations. No views were recorded from {weekStart} to {weekEnd}.",
+      period,
+    ),
     topPresentationsIntro: '',
     topPresentations: [],
     topPresentersIntro: '',
     topPresenters: [],
     insights: [
-      'Encourage your team to share their presentations more actively',
-      'Consider creating new content to drive engagement',
+      tr(
+        'email.digest.team.quiet.insightShare',
+        'Encourage your team to share their presentations more actively',
+      ),
+      tr(
+        'email.digest.team.quiet.insightContent',
+        'Consider creating new content to drive engagement',
+      ),
     ],
     weekOverWeek: {
       views: '0 (—)',
     },
-    closing: 'Looking forward to seeing your team thrive!',
+    closing: tr(
+      'email.digest.team.quiet.closing',
+      'Looking forward to seeing your team thrive!',
+    ),
     weekStart: analytics.weekStart,
     weekEnd: analytics.weekEnd,
     activePresenters: 0,
@@ -400,61 +585,88 @@ function generateNoActivityTeamDigest(admin, analytics) {
   };
 }
 
-function generateFallbackDigest(user, analytics) {
+function generateFallbackDigest(user, analytics, tr, locale) {
   const name = user.name || user.email.split('@')[0];
   const viewTrend = analytics.weekOverWeek.views;
-  const trendText =
-    viewTrend.direction === 'up'
-      ? `up ${viewTrend.percentChange}% from last week`
-      : viewTrend.direction === 'down'
-        ? `down ${viewTrend.percentChange}% from last week`
-        : 'similar to last week';
-
-  const topTitle = analytics.topPresentations[0]?.title || 'your presentations';
+  const topTitle =
+    analytics.topPresentations[0]?.title ||
+    tr('email.digest.weekly.topTitleFallback', 'your presentations');
 
   return {
-    subject: `Your weekly engagement insights - ${analytics.totalViews} views`,
-    greeting: `Hi ${name},`,
-    highlights: `Your presentations received ${analytics.totalViews} views from ${analytics.uniqueViewers} unique viewers this week, ${trendText}. "${topTitle}" was your top performer.`,
-    topPresentationsIntro: 'Here are your top performing presentations:',
+    subject: tr(
+      'email.digest.weekly.subjectWithViews',
+      'Your weekly engagement insights - {views} views',
+      { views: analytics.totalViews },
+    ),
+    greeting: greeting(tr, name),
+    highlights: tr(
+      'email.digest.weekly.highlightsTrend',
+      'Your presentations received {views} views from {viewers} unique viewers this week, {trend}. "{topTitle}" was your top performer.',
+      {
+        views: analytics.totalViews,
+        viewers: analytics.uniqueViewers,
+        trend: trendPhrase(tr, viewTrend),
+        topTitle,
+      },
+    ),
+    topPresentationsIntro: tr(
+      'email.digest.weekly.topPresentationsIntro',
+      'Here are your top performing presentations:',
+    ),
     topPresentations: analytics.topPresentations.slice(0, 3).map((p) => ({
       title: p.title,
       views: p.views,
       avgDuration: formatDuration(p.avgDurationSeconds),
     })),
-    insights: analytics.insights.map((i) => i.text).slice(0, 3),
+    insights: localizedInsights(analytics.insights, tr, locale).slice(0, 3),
     weekOverWeek: {
       views: `${viewTrend.current} (${viewTrend.direction === 'up' ? '+' : viewTrend.direction === 'down' ? '-' : ''}${viewTrend.percentChange}%)`,
       uniqueViewers: `${analytics.weekOverWeek.uniqueViewers.current} (${analytics.weekOverWeek.uniqueViewers.direction === 'up' ? '+' : analytics.weekOverWeek.uniqueViewers.direction === 'down' ? '-' : ''}${analytics.weekOverWeek.uniqueViewers.percentChange}%)`,
       avgDuration: `${formatDuration(analytics.weekOverWeek.avgDuration.current)} (${analytics.weekOverWeek.avgDuration.direction === 'up' ? '+' : analytics.weekOverWeek.avgDuration.direction === 'down' ? '-' : ''}${analytics.weekOverWeek.avgDuration.percentChange}%)`,
     },
-    closing: 'Keep creating great presentations!',
+    closing: tr(
+      'email.digest.weekly.closing',
+      'Keep creating great presentations!',
+    ),
     weekStart: analytics.weekStart,
     weekEnd: analytics.weekEnd,
   };
 }
 
-function generateFallbackTeamDigest(admin, analytics) {
+function generateFallbackTeamDigest(admin, analytics, tr) {
   const name = admin.name || admin.email.split('@')[0];
   const viewTrend = analytics.weekOverWeek.views;
-  const trendText =
-    viewTrend.direction === 'up'
-      ? `up ${viewTrend.percentChange}% from last week`
-      : viewTrend.direction === 'down'
-        ? `down ${viewTrend.percentChange}% from last week`
-        : 'similar to last week';
 
   return {
-    subject: `Your team's weekly engagement - ${analytics.totalViews} views`,
-    greeting: `Hi ${name},`,
-    highlights: `Your team's presentations received ${analytics.totalViews} views from ${analytics.uniqueViewers} unique viewers this week, ${trendText}. ${analytics.activePresenters} team members had active engagement.`,
-    topPresentationsIntro: 'Top performing presentations across your team:',
+    subject: tr(
+      'email.digest.team.subjectWithViews',
+      "Your team's weekly engagement - {views} views",
+      { views: analytics.totalViews },
+    ),
+    greeting: greeting(tr, name),
+    highlights: tr(
+      'email.digest.team.highlightsTrend',
+      "Your team's presentations received {views} views from {viewers} unique viewers this week, {trend}. {activePresenters} team members had active engagement.",
+      {
+        views: analytics.totalViews,
+        viewers: analytics.uniqueViewers,
+        trend: trendPhrase(tr, viewTrend),
+        activePresenters: analytics.activePresenters,
+      },
+    ),
+    topPresentationsIntro: tr(
+      'email.digest.team.topPresentationsIntro',
+      'Top performing presentations across your team:',
+    ),
     topPresentations: analytics.topPresentations.slice(0, 5).map((p) => ({
       title: p.title,
       views: p.views,
       ownerEmail: p.ownerEmail,
     })),
-    topPresentersIntro: 'Most active presenters:',
+    topPresentersIntro: tr(
+      'email.digest.team.topPresentersIntro',
+      'Most active presenters:',
+    ),
     topPresenters: analytics.topPresenters.slice(0, 5).map((p) => ({
       name: p.name,
       totalViews: p.totalViews,
@@ -464,7 +676,7 @@ function generateFallbackTeamDigest(admin, analytics) {
     weekOverWeek: {
       views: `${viewTrend.current} (${viewTrend.direction === 'up' ? '+' : viewTrend.direction === 'down' ? '-' : ''}${viewTrend.percentChange}%)`,
     },
-    closing: 'Keep your team engaged!',
+    closing: tr('email.digest.team.closing', 'Keep your team engaged!'),
     weekStart: analytics.weekStart,
     weekEnd: analytics.weekEnd,
     activePresenters: analytics.activePresenters,

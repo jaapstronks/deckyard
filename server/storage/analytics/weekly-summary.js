@@ -519,6 +519,9 @@ async function getWeeklyInsights(db, presentationIds, dateRange) {
       data: {
         days: peakDays.map((d) => ({
           name: d.day_name?.trim(),
+          // 0 = Sunday. The name above is PostgreSQL's English; a reader in
+          // another language gets the day from this (the digest does).
+          dayOfWeek: Number(d.day_of_week),
           views: Number(d.views),
         })),
       },

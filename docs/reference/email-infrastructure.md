@@ -140,6 +140,22 @@ not, and that result is discarded by most call sites.
   sinks and carry raw values; the action URL is escaped into its `href` and into
   the copy-paste footer, identically in both. Pinned by
   `tests/email-template-escaping.test.js`.
+- **Language** — every sender asks `resolveRecipientLocale()`
+  (`server/integrations/email/recipient-locale.js`) for its own recipient and
+  has no `locale` parameter (B400), so no call site can pick or default a
+  language. The chain it answers with: the recipient's stored `uiLocale` when
+  the install has strings for it, otherwise the install's mail default (the
+  admin panel's "default language", `en` until set). That second step covers
+  everyone who has not chosen: a share-link guest without an account and an
+  invitee whose account was created a moment ago. The two digests are the one
+  exception in form, not in outcome: their body is AI-generated prose, so the
+  digest job resolves the locale once, `generateDigestWithAI` and
+  `generateTeamDigestWithAI` require it, tell the model to write every field
+  in that language, render the template fallbacks and the analytics insights
+  (from their `type` and `data`, never their English `text`) through the
+  translator, and stamp it on `digest.locale`. The digest senders render the
+  chrome in `digest.locale` and refuse a digest that names none, so prose and
+  frame cannot disagree (B390).
 - **Digest** — `scheduleDigestEmailJob()` starts in `server/server.js` and runs
   **daily**, sending only to users whose `digest` preference (Settings >
   Preferences, stored in `user_settings`) is on and names today (default: on,
@@ -202,17 +218,6 @@ its migration off disk, the resolver's custom → default → `en` chain, and th
 admin panel with preview and test-send.
 
 Honest gaps:
-
-- **The two digests are still English.** Every other sender asks
-  `resolveRecipientLocale()` (`server/integrations/email/recipient-locale.js`)
-  for its own recipient and has no `locale` parameter (B400), so no call site
-  can pick or default a language. The chain it answers with: the recipient's
-  stored `uiLocale` when the install has strings for it, otherwise the
-  install's mail default (the admin panel's "default language", `en` until set).
-  That second step covers everyone who has not chosen: a share-link guest
-  without an account and an invitee whose account was created a moment ago.
-  The digests need more than a hand-off: their body is AI-generated prose, so
-  translating their chrome alone would half-translate the mail (B390).
 
 - **The export mail and the two digests have no admin-customizable
   template.** `senders-export.js` renders a bespoke stats table through
