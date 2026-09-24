@@ -423,6 +423,20 @@ test('the template fallback is Dutch for a Dutch reader, insights included', asy
   assert.equal(digest.closing, 'Blijf mooie presentaties maken!');
 });
 
+test('the peak days keep their weekday on a server west of Greenwich', async () => {
+  resetSeam();
+  aiThrows = true;
+  const tz = process.env.TZ;
+  process.env.TZ = 'America/New_York';
+  try {
+    const digest = await generateDigestWithAI(user, soloAnalytics(), 'nl');
+    assert.match(digest.insights[0], /^Op maandag en dinsdag /);
+  } finally {
+    if (tz === undefined) delete process.env.TZ;
+    else process.env.TZ = tz;
+  }
+});
+
 test('the quiet-week digests are Dutch for a Dutch reader', async () => {
   resetSeam();
   const quiet = {

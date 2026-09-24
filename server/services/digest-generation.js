@@ -22,7 +22,7 @@ const log = createLogger('digest-generation');
  * The digest is written in one language from start to finish — the model's
  * prose, the template fallbacks and the server-owned phrases alike — and says
  * which one on `locale`, so the sender renders the mail around it in the same
- * language (B400).
+ * language (B390).
  *
  * @param {Object} user - User info
  * @param {string} user.email - User's email
@@ -137,7 +137,7 @@ async function composeTeamDigest(admin, teamAnalytics, locale) {
 /**
  * The locale a digest is written in, refused when it names none this install
  * has strings for. The job resolves it per recipient; a digest without one
- * would silently become English, which is the defect B400 closed.
+ * would silently become English, which is the defect B390 closed.
  * @param {string} locale
  * @returns {string}
  */
@@ -472,8 +472,13 @@ function trendPhrase(tr, trend) {
  * @returns {string[]}
  */
 function localizedInsights(insights, tr, locale) {
-  const weekday = new Intl.DateTimeFormat(locale, { weekday: 'long' });
   // 2023-01-01 was a Sunday, so day n of that week is weekday n (0 = Sunday).
+  // The dates are built in UTC, so the formatter reads them in UTC too; the
+  // process default would shift the day west of Greenwich.
+  const weekday = new Intl.DateTimeFormat(locale, {
+    weekday: 'long',
+    timeZone: 'UTC',
+  });
   const dayName = (dow) => weekday.format(new Date(Date.UTC(2023, 0, 1 + dow)));
   const list = new Intl.ListFormat(locale, { type: 'conjunction' });
 

@@ -136,7 +136,7 @@ async function processUserDigest(user, repoRoot) {
     return false;
   }
 
-  // Generate digest content, in the language the recipient reads (B400)
+  // Generate digest content, in the language the recipient reads (B390)
   const digest = await generateDigestWithAI(
     { email: user.email, name: analytics.userName },
     analytics,
