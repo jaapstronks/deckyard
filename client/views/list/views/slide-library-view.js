@@ -2,7 +2,10 @@ import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createSlideLibraryPicker } from '../../../lib/slide-library/index.js';
-import { createDeckFromLibraryItems } from '../../../lib/slide-library/compose.js';
+import {
+  copyLibraryItemToClipboard,
+  createDeckFromLibraryItems,
+} from '../../../lib/slide-library/compose.js';
 import { createCollectionsBar } from '../../../lib/slide-collections/collections-bar.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { getFeatures } from '../../../lib/state/features.js';
@@ -43,23 +46,18 @@ export function createSlideLibraryView({ api }) {
   view.append(title, hint, loading);
 
   /**
-   * Copy slide data to clipboard (uses content for the selected language)
+   * Copy a slide onto the slide clipboard (content for the selected language),
+   * where the editor's paste bar and Ctrl/Cmd+V pick it up.
    */
-  async function copySlide(item) {
-    try {
-      const slideData = {
-        type: item.slideType,
-        content: item.content || {},
-        _fromLibrary: true,
-      };
-      await navigator.clipboard.writeText(JSON.stringify(slideData));
+  function copySlide(item) {
+    if (copyLibraryItemToClipboard(item)) {
       toast.success(
         t(
           'slideLibrary.copy.done',
           'Slide copied! Paste it in a presentation with Ctrl/Cmd+V.',
         ),
       );
-    } catch (e) {
+    } else {
       toast.error(
         t('slideLibrary.copy.failed', 'Failed to copy slide to clipboard.'),
       );
