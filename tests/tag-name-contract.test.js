@@ -16,10 +16,12 @@
  * once in storage and answered in the layer's one refusal shape: `400 invalid`
  * with `details.field`, plus `details.index` when the name came out of a list
  * and `details.reason` naming the problem. These tests drive the real route
- * handlers for the two surfaces whose refusal lands before any query, so they
- * need no database. The library shelf reads and authorizes its item first
- * (D184 leaves the selection with the caller), so its refusal needs a real
- * row: it and the fold case live in tests/pg/tag-name-contract.pgtest.js.
+ * handler for the one surface whose refusal lands before any query, so they
+ * need no database. The deck and library-shelf routes authorize their row
+ * first (B436; D184 leaves the selection with the caller), so their refusal
+ * needs a real row: the library case and the fold case live in
+ * tests/pg/tag-name-contract.pgtest.js, the deck route's refusal in
+ * tests/pg/presentation-tags-authz.pgtest.js.
  *
  * Run with: node --test tests/tag-name-contract.test.js
  */
@@ -28,10 +30,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
-import {
-  handlePresentationTags,
-  handleTags,
-} from '../server/routes/api/tags.js';
+import { handleTags } from '../server/routes/api/tags.js';
 import { testScope } from './helpers/storage-scope.js';
 
 // A test is the session, so it states the organization it acts in; the
@@ -74,21 +73,6 @@ const REFUSED = [
 ];
 
 for (const { label, name, reason } of REFUSED) {
-  test(`presentation tags PUT: ${label} is a 400 naming the field`, async () => {
-    const res = mockRes();
-    await handlePresentationTags({
-      storageScope,
-      req: jsonReq('PUT', { tags: ['keeper', name] }),
-      res,
-      presentationId: 'deck-1',
-    });
-    assert.equal(res.statusCode, 400);
-    assert.equal(res.payload.error, 'invalid');
-    assert.equal(res.payload.details.field, 'tags');
-    assert.equal(res.payload.details.index, 1, 'points at the offending name');
-    assert.equal(res.payload.details.reason, reason);
-  });
-
   test(`POST /api/tags: ${label} is a 400 naming the field`, async () => {
     const res = mockRes();
     await handleTags({

@@ -27,6 +27,7 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
+import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/tags - List all tags
@@ -102,45 +103,52 @@ export const handleTags = withErrorHandler('tags', (ctx) => {
 });
 
 /**
- * Handle presentation tags API requests
- * These are called from the presentations handler.
+ * `GET|PUT /api/presentations/:id/tags`, mounted from the presentations
+ * dispatcher like every other `/api/presentations/:id/*` row.
+ *
+ * The deck is authorized before its tags are touched, through the same
+ * {@link withPresentationAuth} as the rest of the deck routes (B436): reading
+ * the tags takes read access, replacing them takes write access, and a deck
+ * outside the caller's organization is absent, so a 404. The tags used to be
+ * read and replaced on the id alone, which let a member of one organization
+ * wipe the tags of another organization's deck and let any member retag a
+ * private deck they may not open.
+ *
+ * @param {import('../../utils/context.js').AuthedContext} ctx
+ * @param {string} presentationId
+ * @returns {Promise<boolean>}
  */
-export async function handlePresentationTags({
-  storageScope,
-  req,
-  res,
+export async function handlePresentationTags(
+  { storageScope, req, res, authedUser },
   presentationId,
-}) {
-  // The path is already matched by the presentations ROUTES table
-  // (`/^\/api\/presentations\/([^/]+)\/tags$/`), which passes the captured id as
-  // `presentationId` — so the pathname always equals
-  // `/api/presentations/${presentationId}/tags`. The old exact-path recheck here
-  // was therefore dead; dropped in C8 cleanup (A7.19).
+) {
+  if (req.method !== 'GET' && req.method !== 'PUT') {
+    return methodNotAllowed(res, ['GET', 'PUT']);
+  }
 
-  // GET /api/presentations/:id/tags - Get tags for a presentation
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: req.method === 'GET' ? 'read' : 'write',
+  });
+  if (!pres) return true;
+
   if (req.method === 'GET') {
-    const tags = await getTagsForPresentation(storageScope, presentationId);
+    const tags = await getTagsForPresentation(storageScope, pres.id);
     serveJson(res, 200, tags);
     return true;
   }
 
-  // PUT /api/presentations/:id/tags - Set tags for a presentation
-  if (req.method === 'PUT') {
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    if (!Array.isArray(body?.tags)) {
-      return badRequest(res, 'Tags array is required');
-    }
-    const r = await setTagsForPresentation(
-      storageScope,
-      presentationId,
-      body.tags,
-    );
-    if (!r.ok) return storageError(res, r, r.message);
-    serveJson(res, 200, r.tags);
-    return true;
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  if (!Array.isArray(body?.tags)) {
+    return badRequest(res, 'Tags array is required');
   }
-
-  return methodNotAllowed(res);
+  const r = await setTagsForPresentation(storageScope, pres.id, body.tags);
+  if (!r.ok) return storageError(res, r, r.message);
+  serveJson(res, 200, r.tags);
+  return true;
 }

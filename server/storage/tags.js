@@ -24,13 +24,13 @@ import { resolveScope } from './scope.js';
 import { escapeLikePattern } from './utils/index.js';
 
 /**
- * The tables that link a tag to a row, and the column each keys the row on.
- * One mapping, so a caller names the table and cannot pair it with the wrong
- * column.
+ * The tables that link a tag to a row: the column each keys the row on, and the
+ * table that row lives in. One mapping, so a caller names the link table and
+ * cannot pair it with the wrong column or the wrong owner.
  */
-const LINK_COLUMN = {
-  presentation_tags: 'presentation_id',
-  slide_library_tags: 'slide_library_id',
+const LINK_TABLES = {
+  presentation_tags: { column: 'presentation_id', owner: 'presentations' },
+  slide_library_tags: { column: 'slide_library_id', owner: 'slide_library' },
 };
 
 /**
@@ -158,6 +158,14 @@ function validateTagNames(tagNames) {
  * Replace every tag link of one row — the single tag-replacement path, for
  * presentations and for library items alike (D184).
  *
+ * **The row must be the organization's** (B436). The replacement first
+ * selects the row by id *and* `orgId`, locking it, and answers `not_found`
+ * when it is not there; only then does it delete. The caller authorizes the row
+ * (a deck route through `withPresentationAuth`, a library item through
+ * `whereItem`), so this is defense in depth: a caller that forgets cannot wipe
+ * another organization's links. Before B436 the presentation route did forget,
+ * and the delete ran on the id alone.
+ *
  * Selection, delete and insert run in **one transaction** (B343). They used to
  * be loose statements in two near-identical copies: the delete landed, and a
  * failure anywhere after it left the row with no tags at all — data loss with
@@ -175,19 +183,29 @@ function validateTagNames(tagNames) {
  * @param {string} params.rowId - The presentation or library item
  * @param {string} params.orgId
  * @param {string[]} params.tagNames
- * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
+ * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
  */
 export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
-  const linkColumn = LINK_COLUMN[linkTable];
+  const link = LINK_TABLES[linkTable];
   // Reaching this with another table is a caller bug, not an input error.
-  if (!linkColumn) {
+  if (!link) {
     throw new TypeError(`replaceTagLinks: unknown link table "${linkTable}"`);
   }
+  const { column: linkColumn, owner } = link;
   const validated = validateTagNames(tagNames);
   if (!validated.ok) return validated;
   const names = validated.names;
 
   const tags = await transaction(async (trx) => {
+    const row = await trx
+      .selectFrom(owner)
+      .select('id')
+      .where('id', '=', rowId)
+      .where('organization_id', '=', orgId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!row) return null;
+
     await trx.deleteFrom(linkTable).where(linkColumn, '=', rowId).execute();
     if (names.length === 0) return [];
 
@@ -216,6 +234,7 @@ export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
     return resolved;
   });
 
+  if (!tags) return { ok: false, reason: 'not_found' };
   return { ok: true, tags };
 }
 
@@ -320,10 +339,11 @@ export async function getTagsForPresentations(storageScope, presentationIds) {
 /**
  * Set tags for a presentation (replaces existing tags).
  * Creates new tags if they don't exist. Atomic: see {@link replaceTagLinks}.
+ * A deck outside the scope's organization is `not_found`.
  * @param {import('./scope.js').StorageScope} storageScope
  * @param {string} presentationId - Presentation ID
  * @param {string[]} tagNames - Array of tag names
- * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
+ * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
  */
 export async function setTagsForPresentation(
   storageScope,
