@@ -18,6 +18,8 @@ import {
   resolveInitialDeckLang,
 } from '../../../../lib/format/i18n.js';
 import { createModal } from '../../../../lib/dom/modal.js';
+import { createInlineError } from '../../../../lib/dom/inline-error.js';
+import { markRequired } from '../../../../lib/dom/required-mark.js';
 import { aiEnabled, getFeatures } from '../../../../lib/state/features.js';
 import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
@@ -164,19 +166,24 @@ export function openCreationView({
     class: 'creation-panel',
     'data-method': 'blank',
   });
+  // The title is the one thing a blank deck needs: marked required up front,
+  // and an empty one on Create is refused inline under the field (B444).
   const blankTitleField = h('div', { class: 'stack is-field' });
   const emptyTitleInput = h('input', {
     class: 'form-input',
     placeholder: t('list.newPresentation.titlePlaceholder', 'Title…'),
     'aria-label': t('list.creationView.nameLabel', 'Give it a name'),
   });
+  const titleError = createInlineError();
   blankTitleField.append(
     h('label', {
       class: 'field-label',
       text: t('list.creationView.nameLabel', 'Give it a name'),
     }),
     emptyTitleInput,
+    titleError.el,
   );
+  markRequired({ wrap: blankTitleField, control: emptyTitleInput });
   blankPanel.append(blankTitleField);
 
   // --- Library panel (compose from reusable slides) ---
@@ -305,6 +312,10 @@ export function openCreationView({
 
   // ===== Footer (pinned) =====
   const status = h('div', { class: 'help modal-status', text: '' });
+  // A refusal of the create that names no field on screen (a 500, a refused
+  // theme, the network) is about the whole form: the callout beside Create,
+  // never the title field (docs/reference/feedback-surfaces.md).
+  const createError = createInlineError({ callout: true });
   const btnCancel = h('button', {
     class: 'btn btn-secondary',
     type: 'button',
@@ -317,7 +328,11 @@ export function openCreationView({
   });
   const footer = h('div', { class: 'creation-view-footer' }, [
     status,
-    h('div', { class: 'row is-end gap-2' }, [btnCancel, btnAction]),
+    h('div', { class: 'row is-end gap-2' }, [
+      createError.el,
+      btnCancel,
+      btnAction,
+    ]),
   ]);
 
   modal.append(rail, pane);
@@ -362,6 +377,8 @@ export function openCreationView({
       btn.setAttribute('aria-selected', String(active));
     }
     blankPanel.classList.toggle('is-hidden', method !== 'blank');
+    // The blank panel's refusal belongs to it; another method starts clean.
+    if (method !== 'blank') createError.clear();
     libraryPanel.classList.toggle('is-hidden', method !== 'library');
     content?.panel.classList.toggle('is-hidden', method !== 'content');
     importPanel.classList.toggle('is-hidden', method !== 'import');
@@ -467,12 +484,18 @@ export function openCreationView({
         });
         break;
       case 'empty':
+        titleError.clear();
+        createError.clear();
         await handleEmpty({
           ...commonOpts,
           titleText: String(emptyTitleInput.value || '').trim(),
           langMode: langSelect.getLang(),
           themeId: themeSelect.getTheme(),
-          focusTitle: () => emptyTitleInput.focus(),
+          // Only a refusal that names the title marks the title.
+          refuse: (message, { field } = {}) =>
+            field === 'title'
+              ? titleError.show(message, { control: emptyTitleInput })
+              : createError.show(message),
         });
         break;
       case 'paste-text':

@@ -17,7 +17,18 @@ import {
 } from '../../../../../shared/i18n-utils.js';
 
 /**
- * Handle empty presentation creation
+ * Handle empty presentation creation.
+ *
+ * A missing title and a refusal from the server are states of the form, not
+ * footer lines: both go through `refuse` with the field they name, and the
+ * blank panel puts a `title` refusal under the title field and anything else
+ * beside Create (docs/reference/feedback-surfaces.md). `setStatus` only
+ * carries progress.
+ *
+ * @param {Object} opts
+ * @param {(message: string, opts?: { field?: string }) => void} opts.refuse -
+ *   Show a refusal; `field` is the one it names (`err.details.field` for a
+ *   server refusal). Called after the form is usable again.
  */
 export async function handleEmpty({
   api,
@@ -27,11 +38,12 @@ export async function handleEmpty({
   close,
   setBusy,
   setStatus,
-  focusTitle,
+  refuse,
 }) {
   if (!titleText) {
-    setStatus(t('list.newPresentation.titleRequired', 'Please enter a title.'));
-    focusTitle?.();
+    refuse(t('list.newPresentation.titleRequired', 'Enter a title first.'), {
+      field: 'title',
+    });
     return;
   }
   const lang = normalizeLang(langMode) || DEFAULT_DECK_LANG;
@@ -53,8 +65,9 @@ export async function handleEmpty({
     close();
     nav(`/app/${created.id}?lang=${encodeURIComponent(lang)}`);
   } catch (e) {
-    setStatus(String(e?.message || e));
+    setStatus('');
     setBusy(false);
+    refuse(String(e?.message || e), { field: e?.details?.field });
   }
 }
 
