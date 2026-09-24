@@ -439,7 +439,6 @@
   "editor.inline.link.title": "Añadir enlace",
   "editor.inline.markdownHint": "Ctrl/⌘ + Intro para guardar",
   "editor.inline.media.addImage": "Añadir imagen",
-  "editor.inline.media.dblClickReplace": "Haga doble clic para sustituirla",
   "editor.inline.media.dropFailed": "Error al subir. Inténtelo de nuevo.",
   "editor.inline.media.dropInvalid": "Eso no es un archivo de imagen.",
   "editor.inline.media.linkedin": "URL de LinkedIn (opcional)",

@@ -83,8 +83,12 @@ export function createInlineOverlay({ thumb }) {
    *   'bottom-center', 'right-center', 'right-outside', 'center', …), or
    *   'ghost' via ghost()
    * @param {number} [gap]
+   * @param {Object} [opts]
+   * @param {boolean} [opts.scoped=true] - false keeps a chip out of the
+   *   per-item reveal even when its target sits inside a collection item (the
+   *   selected image's toolbar shows because of the selection, not the hover)
    */
-  function place(el, target, placeMode, gap = 6) {
+  function place(el, target, placeMode, gap = 6, { scoped = true } = {}) {
     el.classList.add('ie-ol-item');
     // Item-scoped chips (a card's ×/grip, a per-item ghost) reveal only for the
     // hovered/focused collection item, not the whole slide - a dense grid
@@ -92,7 +96,8 @@ export function createInlineOverlay({ thumb }) {
     // chip whose target lives inside a collection item ([data-inline-item-index])
     // is tagged and remembered against that item; slide-level chips (header
     // ghosts, the container "+ Add") stay on the whole-slide hover reveal.
-    const owner = target?.closest?.('[data-inline-item-index]') || null;
+    const owner =
+      (scoped && target?.closest?.('[data-inline-item-index]')) || null;
     if (owner) {
       el.classList.add('ie-item-scoped');
       el.__ieOwner = owner;
@@ -147,7 +152,9 @@ export function createInlineOverlay({ thumb }) {
     const width = thumb.clientWidth || 9999;
     const ghosts = [];
     for (const p of placements) {
-      if (!p.target || !p.target.isConnected) {
+      // A detached target, or a chip its owner has switched off (`hidden`,
+      // e.g. an unselected image's toolbar): no box, no part in de-collision.
+      if (!p.target || !p.target.isConnected || p.el.hidden) {
         p.el.style.display = 'none';
         continue;
       }

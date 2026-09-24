@@ -6,11 +6,15 @@
   color: var(--slide-on-surface, #0b0b0b);
   padding: var(--slide-space-12) var(--slide-space-16) var(--slide-space-16);
 
+  /* Cell sizes are reference pixels on the 1600x900 canvas
+     (--slide-canvas-unit, 00-tokens.css § THE FLUID BASIS), never viewport
+     units: the logos scale with the slide box, identically in the editor,
+     the presenter, thumbnails and export. */
   --lw-cols: 4;
   --lw-rows: 2;
   --lw-gap-x: var(--slide-space-6);
   --lw-gap-y: var(--slide-space-6);
-  --lw-cell: clamp(180px, 18vh, 240px);
+  --lw-cell: calc(240 * var(--slide-canvas-unit));
 }
 
 .slide-logo-wall:not(.has-header) .slide-inner {
@@ -21,22 +25,22 @@
 .slide-logo-wall[data-logo-count='1'] {
   --lw-cols: 1;
   --lw-rows: 1;
-  --lw-cell: clamp(320px, 40vh, 520px);
+  --lw-cell: calc(430 * var(--slide-canvas-unit));
 }
 .slide-logo-wall[data-logo-count='2'] {
   --lw-cols: 2;
   --lw-rows: 1;
-  --lw-cell: clamp(280px, 34vh, 460px);
+  --lw-cell: calc(370 * var(--slide-canvas-unit));
 }
 .slide-logo-wall[data-logo-count='3'] {
   --lw-cols: 3;
   --lw-rows: 1;
-  --lw-cell: clamp(240px, 30vh, 380px);
+  --lw-cell: calc(330 * var(--slide-canvas-unit));
 }
 .slide-logo-wall[data-logo-count='4'] {
   --lw-cols: 4;
   --lw-rows: 1;
-  --lw-cell: clamp(210px, 26vh, 320px);
+  --lw-cell: calc(290 * var(--slide-canvas-unit));
 }
 
 /* 5–6 => 3×2 */
@@ -44,7 +48,7 @@
 .slide-logo-wall[data-logo-count='6'] {
   --lw-cols: 3;
   --lw-rows: 2;
-  --lw-cell: clamp(220px, 24vh, 300px);
+  --lw-cell: calc(270 * var(--slide-canvas-unit));
 }
 
 /* 7–8 => 4×2 */
@@ -52,7 +56,7 @@
 .slide-logo-wall[data-logo-count='8'] {
   --lw-cols: 4;
   --lw-rows: 2;
-  --lw-cell: clamp(200px, 22vh, 270px);
+  --lw-cell: calc(240 * var(--slide-canvas-unit));
 }
 
 /* 9–10 => 5×2 (use width so it feels “wide”) */
@@ -60,7 +64,7 @@
 .slide-logo-wall[data-logo-count='10'] {
   --lw-cols: 5;
   --lw-rows: 2;
-  --lw-cell: clamp(180px, 11vw, 230px);
+  --lw-cell: calc(216 * var(--slide-canvas-unit));
   --lw-gap-x: var(--slide-space-5);
 }
 
@@ -69,7 +73,7 @@
 .slide-logo-wall[data-logo-count='12'] {
   --lw-cols: 6;
   --lw-rows: 2;
-  --lw-cell: clamp(170px, 10.4vw, 225px);
+  --lw-cell: calc(204 * var(--slide-canvas-unit));
   --lw-gap-x: var(--slide-space-4);
 }
 

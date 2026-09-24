@@ -698,35 +698,55 @@
   }
 }
 
-/* --- "Double-click to replace" hint ----------------------------------------
-   A small, NON-INTERACTIVE label inset at a filled image's bottom-right,
-   revealed on slide hover. Fit and the per-image settings moved into the
-   inspector's "This image" tab (a single click opens it); nothing on the image
-   is a control any more, so this only signals the double-click gesture and lets
-   the click fall through to the image (pointer-events: none). */
-.ie-overlay .ie-replace-hint {
-  pointer-events: none;
+/* --- Selected image: ring + toolbar -----------------------------------------
+   A filled image carries nothing on hover beyond its outline (the × and grip
+   of its item). A single click selects it: the ring turns solid and a small
+   toolbar appears BELOW it, never on it, with Replace and Settings. Only the
+   selected image's toolbar is displayed (the rest are display: none), so a
+   wall of twelve logos shows one toolbar at most. */
+.thumb.is-inline-edit [data-inline-photo] {
+  cursor: pointer;
+}
+
+.ie-overlay .ie-ol-outline.is-selected {
+  opacity: 1;
+  border-style: solid;
+  border-width: 2px;
+  border-color: hsl(var(--app-accent-primary));
+}
+
+.ie-overlay .ie-image-bar {
+  display: inline-flex;
+  gap: var(--ps-space-0-5);
+  padding: 3px;
+  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: 999px;
+  box-shadow: 0 2px 8px hsl(0 0% 0% / 0.16);
+  white-space: nowrap;
+}
+
+.ie-overlay .ie-image-bar-btn {
   font-family: inherit;
-  font-size: var(--ps-text-xs);
+  font-size: var(--ps-text-sm);
   font-weight: 500;
   line-height: 1.3;
-  white-space: nowrap;
-  padding: 3px 9px;
-  color: hsl(0 0% 100% / 0.92);
-  background: hsl(220 15% 12% / 0.82);
+  padding: 3px var(--ps-space-3);
+  color: hsl(var(--app-text-primary));
+  background: transparent;
+  border: 0;
   border-radius: 999px;
-  box-shadow: 0 2px 8px hsl(0 0% 0% / 0.3);
-  backdrop-filter: blur(3px);
-  opacity: 0;
-  transition: opacity 0.12s ease;
+  cursor: pointer;
 }
-.thumb.is-inline-edit:hover .ie-overlay .ie-replace-hint {
-  opacity: 1;
+.ie-overlay .ie-image-bar-btn:hover {
+  background: hsl(var(--app-accent-primary) / 0.1);
 }
-@media (hover: none) {
-  .thumb.is-inline-edit .ie-overlay .ie-replace-hint {
-    opacity: 1;
-  }
+.ie-overlay .ie-image-bar-btn.is-primary {
+  color: hsl(var(--app-accent-primary));
+}
+.ie-overlay .ie-image-bar-btn:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: 1px;
 }
 
 /* --- Touch -----------------------------------------------------------------
