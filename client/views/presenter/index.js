@@ -59,6 +59,7 @@ import { readDeckLangParam } from '../../lib/format/i18n.js';
 import { createPresenterAutoAdvanceUi } from './auto-advance-ui.js';
 import { createPresenterTeardown } from './teardown.js';
 import { resolveRevealStyle } from '../../../shared/reveal-style.js';
+import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { createStepIndicatorRenderer } from './step-indicator.js';
 import { createPresenterConsoleToggle } from './console-toggle.js';
 import { buildPresenterTopbar } from './topbar.js';
@@ -169,6 +170,7 @@ export async function renderPresenter(root, id) {
 
   const langCtl = createPresenterLangSeg({
     modeLang,
+    deckLangs: existingVersionLangs(pres),
     getCurrentSlideId: () => deckCtl?.getState?.()?.current?.id || '',
   });
   const langSeg = langCtl.el;
