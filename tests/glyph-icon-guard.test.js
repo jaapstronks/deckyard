@@ -10,7 +10,7 @@
  * What is scanned in `client/` (not `vendor/`):
  *  - every string and template literal in a `.js` file, escapes decoded
  *    (`'\u2713'`, `'&#8942;'`), comments skipped, the literals inside a
- *    template's `${\u2026}` included;
+ *    template's `${…}` included;
  *  - every CSS `content:` value, `\2713` escapes decoded;
  *  - every value in `client/i18n/<locale>/*.json`.
  *
