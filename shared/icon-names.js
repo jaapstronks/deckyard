@@ -109,6 +109,7 @@ export const UI_ICON_NAMES = [
   'tag',
   'timer',
   'trash-2',
+  'triangle-alert',
   'undo',
   'upload',
   'user',

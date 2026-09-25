@@ -225,7 +225,7 @@
   "list.section.count": "{count} Präsentationen",
   "list.section.viewAll": "Alle anzeigen →",
   "list.select": "Präsentation auswählen",
-  "list.sharedBadge": "👥 Geteilt",
+  "list.sharedBadge": "Geteilt",
   "list.sharedBy": "Geteilt von {name}",
   "list.theme.browseAll": "Alle Themes durchsehen",
   "list.theme.error": "Themes konnten nicht geladen werden",

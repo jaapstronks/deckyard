@@ -342,8 +342,15 @@
 }
 
 .creation-theme-summary::before {
-  content: '\25B8'; /* ▸ */
-  font-size: 0.85em;
+  content: '';
+  width: 1em;
+  height: 1em;
+  flex: none;
+  background-color: currentColor;
+  -webkit-mask: url('/client/vendor/lucide-icons/chevron-right.svg') center /
+    contain no-repeat;
+  mask: url('/client/vendor/lucide-icons/chevron-right.svg') center / contain
+    no-repeat;
   transition: transform 0.15s;
 }
 
@@ -1124,7 +1131,31 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--ps-text-lg);
+}
+
+/* A diff category is a status, not an icon (B466): a dot in the category's
+   token colour, like .live-dot. The legend names each colour in words and the
+   row's dot carries the label, so colour is never the only cue (1.4.1). */
+.diff-dot {
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: hsl(var(--app-text-tertiary));
+}
+.compare-indicator .diff-dot {
+  width: 14px;
+  height: 14px;
+}
+.diff-added .diff-dot {
+  background-color: hsl(var(--app-success));
+}
+.diff-removed .diff-dot {
+  background-color: hsl(var(--app-danger));
+}
+.diff-modified .diff-dot {
+  background-color: hsl(var(--app-warning));
 }
 
 /* Diff color classes for text */

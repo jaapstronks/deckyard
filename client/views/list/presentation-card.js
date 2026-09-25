@@ -566,10 +566,10 @@ export function createCardRenderer({
           // Visibility indicator
           getVisibilityIndicator(p, t),
           isOrganization
-            ? h('span', {
-                class: 'presentation-shared-badge',
-                text: t('list.sharedBadge', '👥 Shared'),
-              })
+            ? h('span', { class: 'presentation-shared-badge' }, [
+                icon('users', { size: 12 }),
+                h('span', { text: t('list.sharedBadge', 'Shared') }),
+              ])
             : null,
           isSharedWithMe
             ? h('div', { class: 'presentation-shared-with-me-badges' }, [

@@ -458,13 +458,18 @@ table.csv-grid {
   position: relative;
 }
 .bg-picker-trigger::after {
-  content: '▾';
+  content: '';
   position: absolute;
   right: 12px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: var(--ps-text-base);
-  line-height: 1;
+  width: 16px;
+  height: 16px;
+  background-color: currentColor;
+  -webkit-mask: url('/client/vendor/lucide-icons/chevron-down.svg') center /
+    contain no-repeat;
+  mask: url('/client/vendor/lucide-icons/chevron-down.svg') center / contain
+    no-repeat;
   opacity: 0.75;
   pointer-events: none;
 }

@@ -249,7 +249,7 @@
   "list.section.count": "{count} presentations",
   "list.section.viewAll": "View all →",
   "list.select": "Select presentation",
-  "list.sharedBadge": "👥 Shared",
+  "list.sharedBadge": "Shared",
   "list.sharedBy": "Shared by {name}",
   "list.theme.browseAll": "Browse all themes",
   "list.theme.error": "Failed to load themes",

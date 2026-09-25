@@ -226,7 +226,7 @@
   "list.section.count": "{count} présentations",
   "list.section.viewAll": "Voir tout →",
   "list.select": "Sélectionner la présentation",
-  "list.sharedBadge": "👥 Partagé",
+  "list.sharedBadge": "Partagé",
   "list.sharedBy": "Partagée par {name}",
   "list.theme.browseAll": "Parcourir tous les thèmes",
   "list.theme.error": "Impossible de charger les thèmes",

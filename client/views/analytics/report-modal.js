@@ -7,6 +7,7 @@ import { createModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Create and show report generation modal.
@@ -241,10 +242,11 @@ export function createReportModal({
 
     successEl.append(
       h('div', { class: 'analytics-report-success-message' }, [
+        icon('circle-check', { size: 16 }),
         h('span', {
           text: t(
-            'analytics.reportGeneratedCheck',
-            '✓ Report generated successfully!',
+            'analytics.reportGenerated',
+            'Report generated successfully!',
           ),
         }),
       ]),

@@ -23,13 +23,8 @@
  *  - the slide stylesheets in SLIDE_CONTENT, whose glyphs are bullets the
  *    author sees in the deck and every export, not app chrome.
  * An arrow alone in its string is a button (back, move up, sort), so it is an
- * icon. The rules are the allowlist; there is no per-line exemption.
- *
- * What is left is BURNDOWN: glyph icons that predate this guard, counted per
- * file like `eslint-suppressions.json`. The count may only go down: a new
- * glyph fails here, and a removed one fails until its entry is lowered, so
- * the list never carries slack another file could spend. B466 PR 2b empties
- * it, replacing each with `icon()`.
+ * icon. The rules are the allowlist; there is no per-line exemption and no
+ * burndown: every other glyph fails.
  *
  * Run with: node --test tests/glyph-icon-guard.test.js
  */
@@ -69,59 +64,6 @@ const KEY_LEGENDS = {
 const SLIDE_CONTENT = {
   'client/styles/slides/01-layout-and-title/82-comparison-slide.css':
     'the ✓/✗ pro and con bullets of the comparison slide',
-};
-
-/** Glyph icons that predate the guard, per file. May only shrink (B466). */
-const BURNDOWN = {
-  'client/i18n/da/common.json': 1,
-  'client/i18n/da/list.json': 1,
-  'client/i18n/da/presenter.json': 2,
-  'client/i18n/de/common.json': 1,
-  'client/i18n/de/list.json': 1,
-  'client/i18n/de/presenter.json': 2,
-  'client/i18n/en/common.json': 1,
-  'client/i18n/en/editor.json': 1,
-  'client/i18n/en/list.json': 1,
-  'client/i18n/en/presenter.json': 2,
-  'client/i18n/es/common.json': 1,
-  'client/i18n/es/list.json': 1,
-  'client/i18n/es/presenter.json': 2,
-  'client/i18n/fi/common.json': 1,
-  'client/i18n/fi/presenter.json': 2,
-  'client/i18n/fr/common.json': 1,
-  'client/i18n/fr/list.json': 1,
-  'client/i18n/fr/presenter.json': 2,
-  'client/i18n/it/common.json': 1,
-  'client/i18n/it/presenter.json': 2,
-  'client/i18n/nl/common.json': 1,
-  'client/i18n/nl/editor.json': 1,
-  'client/i18n/nl/list.json': 1,
-  'client/i18n/nl/presenter.json': 2,
-  'client/i18n/no/common.json': 1,
-  'client/i18n/no/list.json': 1,
-  'client/i18n/no/presenter.json': 2,
-  'client/i18n/pl/common.json': 1,
-  'client/i18n/pl/presenter.json': 2,
-  'client/i18n/pt/common.json': 1,
-  'client/i18n/pt/list.json': 1,
-  'client/i18n/pt/presenter.json': 2,
-  'client/i18n/sv/common.json': 1,
-  'client/i18n/sv/list.json': 1,
-  'client/i18n/sv/presenter.json': 2,
-  'client/lib/slide-authoring/slide-diff.js': 4,
-  'client/styles/app/components.css': 1,
-  'client/styles/base/02-lists-and-thumbs/33-slide-metadata.css': 2,
-  'client/styles/base/03-controls-and-forms.css': 2,
-  'client/styles/base/04-editor-and-misc/100-analytics.css': 1,
-  'client/styles/base/04-editor-and-misc/13-modals-misc.css': 1,
-  'client/styles/base/04-editor-and-misc/17-deck-grid.css': 1,
-  'client/styles/slides/03-components/85-presenter-start.css': 1,
-  'client/views/analytics/dashboard-cards.js': 2,
-  'client/views/analytics/report-modal.js': 1,
-  'client/views/editor/editor-form/ai-slide-notes.js': 1,
-  'client/views/editor/modals/versions-compare.js': 4,
-  'client/views/list/presentation-card.js': 1,
-  'client/views/notes/layout.js': 2,
 };
 
 // ── extraction ──────────────────────────────────────────────────────────────
@@ -372,37 +314,19 @@ function scan() {
 
 // ── tests ───────────────────────────────────────────────────────────────────
 
-test('no glyph icon in client/ beyond the burndown', () => {
-  const hits = scan();
-  const grown = [];
-  const shrunk = [];
-  for (const [file, found] of hits) {
-    const allowed = BURNDOWN[file] ?? 0;
-    if (found.length > allowed) {
-      grown.push(
-        `  ${file} (${found.length} > ${allowed}):\n    ${found.join('\n    ')}`,
-      );
-    } else if (found.length < allowed) {
-      shrunk.push(`  ${file}: lower the entry to ${found.length}`);
-    }
-  }
-  for (const file of Object.keys(BURNDOWN)) {
-    if (!hits.has(file)) shrunk.push(`  ${file}: drop the entry (0 left)`);
-  }
+test('no glyph icon in client/', () => {
+  const found = [...scan()].map(
+    ([file, hits]) => `  ${file}:\n    ${hits.join('\n    ')}`,
+  );
   assert.deepEqual(
-    grown,
+    found,
     [],
     'A unicode glyph drawn as an icon. Use icon(name) from ' +
       'client/lib/dom/icons.js (add the name to UI_ICON_NAMES in ' +
-      'shared/icon-names.js); in an i18n string, keep the words and put the ' +
-      'icon beside them in code:\n' +
-      grown.join('\n'),
-  );
-  assert.deepEqual(
-    shrunk,
-    [],
-    'The burndown only shrinks - lower it to what is left:\n' +
-      shrunk.join('\n'),
+      'shared/icon-names.js), or in CSS a mask on the vendored Lucide SVG; ' +
+      'in an i18n string, keep the words and put the icon beside them in ' +
+      'code:\n' +
+      found.join('\n'),
   );
 });
 
