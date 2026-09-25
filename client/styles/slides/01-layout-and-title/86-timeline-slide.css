@@ -108,55 +108,59 @@
   /* Geometry. --card-w is the *minimum* (preferred) card width;
      --card-max-w is the cap when content (long titles) needs more room.
      Cards size to max-content between these bounds so long single words
-     get extra width before overflow-wrap has to break them. */
+     get extra width before overflow-wrap has to break them.
+     Card widths and offsets are reference pixels on the 1600x900 canvas
+     (--slide-canvas-unit, 00-tokens.css § THE FLUID BASIS), never viewport
+     units: the cards sit in the same place relative to the slide in the
+     editor, the presenter, thumbnails and export. */
   /* Base gap for counts the per-count blocks below do not cover (1, and 9+). */
   --timeline-gap: var(--slide-space-4);
   --marker-size: 20px;
   --connector-height: 60px;
-  --card-w: clamp(200px, 18vw, 320px);
-  --card-max-w: clamp(240px, 22vw, 380px);
+  --card-w: calc(288 * var(--slide-canvas-unit));
+  --card-max-w: calc(352 * var(--slide-canvas-unit));
   --card-spill: 100px;
-  --top-x: clamp(20px, 2.5vw, 70px);
-  --bottom-x: clamp(-70px, -2.5vw, -20px);
+  --top-x: calc(40 * var(--slide-canvas-unit));
+  --bottom-x: calc(-40 * var(--slide-canvas-unit));
 }
 
 /* Responsive sizing based on item count */
 .slide-timeline .timeline-container[data-count='2'],
 .slide-timeline .timeline-container[data-count='3'] {
-  --card-w: clamp(260px, 24vw, 400px);
-  --card-max-w: clamp(300px, 28vw, 460px);
+  --card-w: calc(384 * var(--slide-canvas-unit));
+  --card-max-w: calc(448 * var(--slide-canvas-unit));
   --card-spill: 140px;
-  --top-x: clamp(24px, 3vw, 90px);
-  --bottom-x: clamp(-90px, -3vw, -24px);
+  --top-x: calc(48 * var(--slide-canvas-unit));
+  --bottom-x: calc(-48 * var(--slide-canvas-unit));
   --timeline-gap: var(--slide-space-5);
 }
 
 .slide-timeline .timeline-container[data-count='4'] {
-  --card-w: clamp(220px, 20vw, 340px);
-  --card-max-w: clamp(260px, 24vw, 400px);
+  --card-w: calc(320 * var(--slide-canvas-unit));
+  --card-max-w: calc(384 * var(--slide-canvas-unit));
   --card-spill: 120px;
-  --top-x: clamp(18px, 2.4vw, 70px);
-  --bottom-x: clamp(-70px, -2.4vw, -18px);
+  --top-x: calc(38 * var(--slide-canvas-unit));
+  --bottom-x: calc(-38 * var(--slide-canvas-unit));
   /* No --timeline-gap override: this tier's 14px snapped onto the base step. */
 }
 
 .slide-timeline .timeline-container[data-count='5'],
 .slide-timeline .timeline-container[data-count='6'] {
-  --card-w: clamp(180px, 15vw, 280px);
-  --card-max-w: clamp(220px, 19vw, 340px);
+  --card-w: calc(240 * var(--slide-canvas-unit));
+  --card-max-w: calc(304 * var(--slide-canvas-unit));
   --card-spill: 100px;
-  --top-x: clamp(14px, 1.8vw, 50px);
-  --bottom-x: clamp(-50px, -1.8vw, -14px);
+  --top-x: calc(29 * var(--slide-canvas-unit));
+  --bottom-x: calc(-29 * var(--slide-canvas-unit));
   --timeline-gap: var(--slide-space-3);
 }
 
 .slide-timeline .timeline-container[data-count='7'],
 .slide-timeline .timeline-container[data-count='8'] {
-  --card-w: clamp(160px, 12vw, 240px);
-  --card-max-w: clamp(190px, 15vw, 290px);
+  --card-w: calc(192 * var(--slide-canvas-unit));
+  --card-max-w: calc(240 * var(--slide-canvas-unit));
   --card-spill: 80px;
-  --top-x: clamp(10px, 1.2vw, 34px);
-  --bottom-x: clamp(-34px, -1.2vw, -10px);
+  --top-x: calc(19 * var(--slide-canvas-unit));
+  --bottom-x: calc(-19 * var(--slide-canvas-unit));
   --timeline-gap: var(--slide-space-2);
 }
 
@@ -192,7 +196,7 @@
 
 /* Edge protection: first/last items shouldn't push outward */
 .slide-timeline .timeline-item:first-of-type {
-  --card-x: clamp(0px, 2vw, 50px);
+  --card-x: calc(32 * var(--slide-canvas-unit));
 }
 
 .slide-timeline .timeline-item:last-of-type {
