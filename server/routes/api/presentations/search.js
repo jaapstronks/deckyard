@@ -135,6 +135,29 @@ function extractSlideText(slide) {
 }
 
 /**
+ * Which metadata fields of a listed deck match the query. The owner is
+ * matched by `ownerEmail`: the list projection carries no owner display name
+ * (that arrives with identity decoupling, docs/plans/briefs/identity-decoupling.md).
+ *
+ * @param {object} pres - a deck as `listPresentations` projects it
+ * @param {string} normalizedQuery - already passed through `normalizeForSearch`
+ * @returns {string[]} match locations (`title`, `description`, `owner`)
+ */
+export function metadataMatchLocations(pres, normalizedQuery) {
+  const locations = [];
+  if (normalizeForSearch(pres.title).includes(normalizedQuery)) {
+    locations.push('title');
+  }
+  if (normalizeForSearch(pres.description).includes(normalizedQuery)) {
+    locations.push('description');
+  }
+  if (normalizeForSearch(pres.ownerEmail).includes(normalizedQuery)) {
+    locations.push('owner');
+  }
+  return locations;
+}
+
+/**
  * Search presentations with full-text matching
  */
 export async function handlePresentationsSearch({
@@ -166,26 +189,9 @@ export async function handlePresentationsSearch({
   const results = [];
 
   for (const pres of accessiblePresentations) {
-    let matches = false;
-    const matchLocations = [];
-
     // Search in metadata (always)
-    if (normalizeForSearch(pres.title)?.includes(normalizedQuery)) {
-      matches = true;
-      matchLocations.push('title');
-    }
-    if (normalizeForSearch(pres.description)?.includes(normalizedQuery)) {
-      matches = true;
-      matchLocations.push('description');
-    }
-    if (normalizeForSearch(pres.ownerEmail)?.includes(normalizedQuery)) {
-      matches = true;
-      matchLocations.push('owner');
-    }
-    if (normalizeForSearch(pres.ownerName)?.includes(normalizedQuery)) {
-      matches = true;
-      matchLocations.push('owner');
-    }
+    const matchLocations = metadataMatchLocations(pres, normalizedQuery);
+    let matches = matchLocations.length > 0;
 
     // Deep search: search in slide content
     if (deep && !matches) {
