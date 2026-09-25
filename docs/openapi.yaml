@@ -634,7 +634,13 @@ paths:
       tags:
         - Slides
       summary: Update a slide
-      description: Replaces slide content with the provided data.
+      description: >-
+        Replaces the slide with the provided data. Changing `type` without
+        sending `content` converts the slide: its content is re-seeded for the
+        new type and the fields that map carry over, the same conversion the
+        editor and the MCP `update_slide` tool run. A pair with no declared
+        conversion is refused with 400 `unsupported_conversion`. Changing
+        `type` together with `content` replaces the slide outright.
       parameters:
         - name: id
           in: path
@@ -665,7 +671,9 @@ paths:
                     accepted and normalized on write during the beta convergence.
                 content:
                   type: object
-                  description: New slide content
+                  description: >-
+                    New slide content. Omit it on a type change to convert the
+                    existing content instead.
                 notes:
                   type: string
                   description: Speaker notes
@@ -693,7 +701,18 @@ paths:
                         type: string
                         format: date-time
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: >-
+            Bad request. Besides `bad_request` (unknown type, invalid slide
+            data), a type change without `content` for a pair that has no
+            declared conversion answers `error: unsupported_conversion` with
+            `details: { from, to, convertible }`: the current type, the refused
+            type and the types this slide does convert to, all as canonical
+            ids. Nothing is stored. Send `content` for the new type to replace
+            the slide, or create a new slide of that type.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
