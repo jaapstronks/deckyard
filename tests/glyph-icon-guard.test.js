@@ -9,7 +9,8 @@
  *
  * What is scanned in `client/` (not `vendor/`):
  *  - every string and template literal in a `.js` file, escapes decoded
- *    (`'\u2713'`, `'&#8942;'`), comments skipped;
+ *    (`'\u2713'`, `'&#8942;'`), comments skipped, the literals inside a
+ *    template's `${\u2026}` included;
  *  - every CSS `content:` value, `\2713` escapes decoded;
  *  - every value in `client/i18n/<locale>/*.json`.
  *
@@ -194,6 +195,34 @@ function decodeCss(raw) {
   );
 }
 
+/**
+ * The index of the `}` that closes a template `${…}` opened just before `i`.
+ * Quoted and template literals are skipped whole, so a brace inside one
+ * (`${'}'}`, `${`${a}`}`) does not end the expression.
+ * @param {string} src
+ * @param {number} i
+ * @returns {number}
+ */
+function expressionEnd(src, i) {
+  let depth = 1;
+  while (i < src.length) {
+    const ch = src[i];
+    if (ch === "'" || ch === '"' || ch === '`') {
+      i++;
+      while (i < src.length && src[i] !== ch) {
+        if (src[i] === '\\') i++;
+        else if (ch === '`' && src[i] === '$' && src[i + 1] === '{') {
+          i = expressionEnd(src, i + 2);
+        }
+        i++;
+      }
+    } else if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) return i;
+    i++;
+  }
+  return i;
+}
+
 const REGEX_PRECEDERS = new Set('(,=:[!&|?{};+-*%<>~^'.split(''));
 
 /**
@@ -264,14 +293,16 @@ export function jsStrings(src) {
           text += src[i++];
           text += src[i++];
         } else if (src[i] === '$' && src[i + 1] === '{') {
-          let depth = 1;
           const from = (i += 2);
-          while (i < n && depth) {
-            if (src[i] === '{') depth++;
-            else if (src[i] === '}') depth--;
-            advance(src[i++]);
+          i = expressionEnd(src, i);
+          const expr = src.slice(from, i);
+          // The expression's own literals (`${ok ? '✓' : ''}`) are strings too.
+          for (const s of jsStrings(expr)) {
+            out.push({ text: s.text, line: line + s.line - 1 });
           }
-          text += /^\s*t\(/.test(src.slice(from, i)) ? 'label' : '0';
+          for (const c of expr) advance(c);
+          i++;
+          text += /^\s*t\(/.test(expr) ? 'label' : '0';
         } else {
           advance(src[i]);
           text += src[i++];
@@ -463,7 +494,17 @@ test('the extractor reads literals and skips comments', () => {
     'const c = x / 2 / y;',
     'const d = /[✓]/.test(s);',
     "el.innerHTML = '&#8942;';",
+    "const f = `${ok ? '✕' : `${n}}`} done`;",
   ].join('\n');
   const strings = jsStrings(src).map((s) => s.text);
-  assert.deepEqual(strings, ['✓', '0 × 0', 'label (⇧⌘Z)', '⋮']);
+  assert.deepEqual(strings, [
+    '✓',
+    '0 × 0',
+    'redo',
+    'label (⇧⌘Z)',
+    '⋮',
+    '✕',
+    '0}',
+    '0 done',
+  ]);
 });
