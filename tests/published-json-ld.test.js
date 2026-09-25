@@ -1,16 +1,21 @@
 /**
- * A published deck's JSON-LD carries `datePublished` (B448).
+ * The JSON-LD a published deck writes: a real `datePublished` (B448) and no
+ * `author` (B459).
  *
  * The published page read `pres.createdAt` off `getPresentation()`, which
  * projects the column as `created`, so `datePublished` was missing from every
  * published deck. It also required a string, while Postgres hands back a
- * `Date`. These tests drive the real `/p/:id-:slug` route over the in-memory
- * database double and read the JSON-LD block it writes, with the timestamp
- * stored both as a string and as a `Date`.
+ * `Date`. It likewise read `pres.ownerName`, which `getPresentation()` never
+ * projects; that reader is gone rather than fed, because the only identity on
+ * the row is the owner's email and no part of it belongs on a public page
+ * until identity decoupling yields a real display name.
+ *
+ * These tests drive the real `/p/:id-:slug` route over the in-memory database
+ * double and read the JSON-LD block it writes.
  *
  * House shape: see tests/published-embed-first-party-only.test.js.
  *
- * Run with: node --test tests/published-json-ld-date.test.js
+ * Run with: node --test tests/published-json-ld.test.js
  */
 
 import test from 'node:test';
@@ -131,6 +136,15 @@ test('datePublished is one ISO string when storage hands back a Date (Postgres)'
   seed(new Date(CREATED));
   const ld = await jsonLdFromPublishedPage();
   assert.equal(ld.datePublished, CREATED);
+});
+
+test('the JSON-LD names no author, and no part of the owner email', async () => {
+  seed(CREATED);
+  const ld = await jsonLdFromPublishedPage();
+  assert.equal('author' in ld, false);
+  const serialized = JSON.stringify(ld);
+  assert.equal(serialized.includes('owner@example.com'), false);
+  assert.equal(/"owner"/.test(serialized), false);
 });
 
 test('toIsoOrNull: one ISO string from either shape, null for nothing usable', () => {
