@@ -15,6 +15,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createModal, createTextArea } from '../../../lib/dom/modal.js';
 import { h } from '../../../lib/dom.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * The `table-grid` widget of the field-editor vocabulary
@@ -173,16 +174,19 @@ function buildTableGrid({
     );
     if (colCount > 1) {
       head.append(
-        h('button', {
-          class: 'btn btn-danger is-compact-sm table-editor-colhead-delete',
-          text: '×',
-          title: t('editor.table.deleteCol', 'Delete column {col}', {
-            col: colLabel(c),
-          }),
-          onclick: () => {
-            if (deleteColumn(slide, c)) onStructure?.();
+        h(
+          'button',
+          {
+            class: 'btn btn-danger is-compact-sm table-editor-colhead-delete',
+            title: t('editor.table.deleteCol', 'Delete column {col}', {
+              col: colLabel(c),
+            }),
+            onclick: () => {
+              if (deleteColumn(slide, c)) onStructure?.();
+            },
           },
-        }),
+          [icon('x', { size: 14 })],
+        ),
       );
     }
     hr.append(head);
@@ -249,15 +253,20 @@ function buildTableGrid({
 
     tr.append(
       h('td', { class: 'table-editor-actions-td' }, [
-        h('button', {
-          class: 'btn btn-danger is-compact-sm',
-          text: '×',
-          title: t('editor.table.deleteRow', 'Delete row {n}', { n: rIdx + 1 }),
-          disabled: rows.length <= 1,
-          onclick: () => {
-            if (deleteRow(slide, rIdx)) onStructure?.();
+        h(
+          'button',
+          {
+            class: 'btn btn-danger is-compact-sm',
+            title: t('editor.table.deleteRow', 'Delete row {n}', {
+              n: rIdx + 1,
+            }),
+            disabled: rows.length <= 1,
+            onclick: () => {
+              if (deleteRow(slide, rIdx)) onStructure?.();
+            },
           },
-        }),
+          [icon('x', { size: 14 })],
+        ),
       ]),
     );
 

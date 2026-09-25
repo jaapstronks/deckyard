@@ -382,11 +382,6 @@
   display: none;
 }
 
-.presentation-card-present-icon {
-  font-size: 0.7em;
-  line-height: 1;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .presentation-card-present {
     transition: opacity var(--ps-transition-fast);

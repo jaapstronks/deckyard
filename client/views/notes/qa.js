@@ -7,6 +7,7 @@ import {
   promoteQuestion,
   removeQuestion,
 } from '../../lib/qa/index.js';
+import { icon } from '../../lib/dom/icons.js';
 
 export function createNotesQaController({
   api,
@@ -51,10 +52,10 @@ export function createNotesQaController({
         class: 'help notes-qa-who',
         text: item.authorName || t('qa.anonymous', 'Anonymous'),
       });
-      const votes = h('div', {
-        class: 'help notes-qa-votes',
-        text: `▲ ${item.upvotes}`,
-      });
+      const votes = h('div', { class: 'help notes-qa-votes' }, [
+        icon('chevron-up', { size: 12 }),
+        String(item.upvotes),
+      ]);
       metaLeft.append(who, votes);
       const actions = h('div', {
         class: 'row notes-qa-actions',

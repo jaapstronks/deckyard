@@ -348,7 +348,9 @@
 }
 
 .analytics-heatmap-dropoff {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-0-5);
   margin-top: var(--ps-space-1);
   padding: var(--ps-space-0-5) var(--ps-space-1-5);
   background: hsl(var(--app-danger) / 0.15);
@@ -411,16 +413,6 @@
   gap: var(--ps-space-1-5);
 }
 
-.analytics-viewer-badge {
-  font-size: var(--ps-text-base);
-}
-
-img.analytics-viewer-badge {
-  width: 14px;
-  height: 14px;
-  object-fit: contain;
-}
-
 .analytics-viewer-when {
   color: hsl(var(--app-text-secondary));
 }
@@ -452,7 +444,7 @@ img.analytics-viewer-badge {
 }
 
 .analytics-date-picker-arrow {
-  font-size: 10px;
+  margin-left: var(--ps-space-1);
   opacity: 0.6;
 }
 
@@ -865,7 +857,7 @@ img.analytics-viewer-badge {
 }
 
 .analytics-sort-indicator {
-  font-size: 10px;
+  display: inline-flex;
   opacity: 0.6;
 }
 

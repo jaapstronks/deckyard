@@ -16,6 +16,7 @@ import {
   offeredProperties,
 } from '../../../../shared/slide-types/field-definitions.js';
 import { enumOptionValues } from '../../../../shared/slide-types/field-types.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 // The dropdown offers exactly the types the storage layer accepts, in that
 // module's order — a seventh option here would be a control for something no
@@ -181,77 +182,86 @@ export function createFieldListEditor({
     // Reorder buttons
     if (index > 0) {
       summaryActions.append(
-        h('button', {
-          class: 'btn btn-secondary btn-icon btn-xs field-list-reorder',
-          type: 'button',
-          title: t('common.moveUp', 'Move up'),
-          'aria-label': t('common.moveUp', 'Move up'),
-          text: '\u2191',
-          onclick: (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            [currentFields[index - 1], currentFields[index]] = [
-              currentFields[index],
-              currentFields[index - 1],
-            ];
-            notify();
-            render();
+        h(
+          'button',
+          {
+            class: 'btn btn-secondary btn-icon btn-xs field-list-reorder',
+            type: 'button',
+            title: t('common.moveUp', 'Move up'),
+            'aria-label': t('common.moveUp', 'Move up'),
+            onclick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              [currentFields[index - 1], currentFields[index]] = [
+                currentFields[index],
+                currentFields[index - 1],
+              ];
+              notify();
+              render();
+            },
           },
-        }),
+          [icon('arrow-up', { size: 12 })],
+        ),
       );
     }
 
     if (index < currentFields.length - 1) {
       summaryActions.append(
-        h('button', {
-          class: 'btn btn-secondary btn-icon btn-xs field-list-reorder',
-          type: 'button',
-          title: t('common.moveDown', 'Move down'),
-          'aria-label': t('common.moveDown', 'Move down'),
-          text: '\u2193',
-          onclick: (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            [currentFields[index], currentFields[index + 1]] = [
-              currentFields[index + 1],
-              currentFields[index],
-            ];
-            notify();
-            render();
+        h(
+          'button',
+          {
+            class: 'btn btn-secondary btn-icon btn-xs field-list-reorder',
+            type: 'button',
+            title: t('common.moveDown', 'Move down'),
+            'aria-label': t('common.moveDown', 'Move down'),
+            onclick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              [currentFields[index], currentFields[index + 1]] = [
+                currentFields[index + 1],
+                currentFields[index],
+              ];
+              notify();
+              render();
+            },
           },
-        }),
+          [icon('arrow-down', { size: 12 })],
+        ),
       );
     }
 
     // Remove button
     summaryActions.append(
-      h('button', {
-        class: 'btn btn-danger btn-icon btn-xs',
-        type: 'button',
-        title: t('common.remove', 'Remove'),
-        'aria-label': t('common.remove', 'Remove'),
-        text: '\u00d7',
-        onclick: async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const confirmed = await confirmModal(document.body, {
-            title: t('common.remove', 'Remove'),
-            message: t(
-              'settings.slideTypes.fields.removeConfirm',
-              'Remove field "{label}"?',
-              {
-                label: field.label,
-              },
-            ),
-            confirmLabel: t('common.remove', 'Remove'),
-            danger: true,
-          });
-          if (!confirmed) return;
-          currentFields.splice(index, 1);
-          notify();
-          render();
+      h(
+        'button',
+        {
+          class: 'btn btn-danger btn-icon btn-xs',
+          type: 'button',
+          title: t('common.remove', 'Remove'),
+          'aria-label': t('common.remove', 'Remove'),
+          onclick: async (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const confirmed = await confirmModal(document.body, {
+              title: t('common.remove', 'Remove'),
+              message: t(
+                'settings.slideTypes.fields.removeConfirm',
+                'Remove field "{label}"?',
+                {
+                  label: field.label,
+                },
+              ),
+              confirmLabel: t('common.remove', 'Remove'),
+              danger: true,
+            });
+            if (!confirmed) return;
+            currentFields.splice(index, 1);
+            notify();
+            render();
+          },
         },
-      }),
+        [icon('x', { size: 12 })],
+      ),
     );
 
     summary.append(summaryInfo, summaryActions);

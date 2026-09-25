@@ -11,6 +11,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
+import { icon } from '../../lib/dom/icons.js';
 
 const DRAWER_BREAKPOINT = 820;
 
@@ -28,14 +29,17 @@ export function createResponsiveDrawers({ root } = {}) {
     'aria-hidden': 'true',
   });
 
-  const slidesDrawerToggle = h('button', {
-    class: 'slides-drawer-toggle',
-    type: 'button',
-    title: t('editor.slidesDrawer.open', 'Open slides'),
-    'aria-label': t('editor.slidesDrawer.open', 'Open slides'),
-    // Using a simple icon - list/menu style
-    text: '☰',
-  });
+  const slidesDrawerToggle = h(
+    'button',
+    {
+      class: 'slides-drawer-toggle',
+      type: 'button',
+      title: t('editor.slidesDrawer.open', 'Open slides'),
+      'aria-label': t('editor.slidesDrawer.open', 'Open slides'),
+      // Using a simple icon - list/menu style
+    },
+    [icon('menu')],
+  );
 
   const openSlidesDrawer = () => {
     doc.classList.add('is-slides-drawer-open');

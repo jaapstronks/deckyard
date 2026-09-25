@@ -52,7 +52,7 @@ export function setupShareDropdown({
       const existingDot = button.querySelector('.live-dot');
       if (isPublished && !existingDot) {
         button.insertBefore(
-          h('span', { class: 'live-dot', 'aria-hidden': 'true', text: '●' }),
+          h('span', { class: 'live-dot', 'aria-hidden': 'true' }),
           button.firstChild,
         );
       } else if (!isPublished && existingDot) {

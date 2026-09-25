@@ -28,7 +28,7 @@
  * What is left is BURNDOWN: glyph icons that predate this guard, counted per
  * file like `eslint-suppressions.json`. The count may only go down: a new
  * glyph fails here, and a removed one fails until its entry is lowered, so
- * the list never carries slack another file could spend. B466 PR 2 empties
+ * the list never carries slack another file could spend. B466 PR 2b empties
  * it, replacing each with `icon()`.
  *
  * Run with: node --test tests/glyph-icon-guard.test.js
@@ -109,13 +109,6 @@ const BURNDOWN = {
   'client/i18n/sv/list.json': 1,
   'client/i18n/sv/presenter.json': 2,
   'client/lib/slide-authoring/slide-diff.js': 4,
-  'client/lib/slide-collections/collection-modals.js': 1,
-  'client/lib/slide-collections/collections-bar.js': 2,
-  'client/lib/slide-library/modals.js': 1,
-  'client/lib/slide-library/picker.js': 3,
-  'client/lib/user/notification-bell.js': 1,
-  'client/lib/user/organization-switcher.js': 1,
-  'client/lib/user/user-autocomplete.js': 1,
   'client/styles/app/components.css': 1,
   'client/styles/base/02-lists-and-thumbs/33-slide-metadata.css': 2,
   'client/styles/base/03-controls-and-forms.css': 2,
@@ -124,48 +117,11 @@ const BURNDOWN = {
   'client/styles/base/04-editor-and-misc/17-deck-grid.css': 1,
   'client/styles/slides/03-components/85-presenter-start.css': 1,
   'client/views/analytics/dashboard-cards.js': 2,
-  'client/views/analytics/date-picker.js': 1,
-  'client/views/analytics/index.js': 1,
   'client/views/analytics/report-modal.js': 1,
-  'client/views/analytics/slide-heatmap.js': 1,
-  'client/views/analytics/viewer-list.js': 3,
-  'client/views/editor/data-source-modal.js': 1,
   'client/views/editor/editor-form/ai-slide-notes.js': 1,
-  'client/views/editor/editor-form/collection-editor.js': 1,
-  'client/views/editor/editor-form/slide-forms/image-set-images.js': 3,
-  'client/views/editor/fields/csv-grid.js': 2,
-  'client/views/editor/fields/table-grid.js': 2,
-  'client/views/editor/inline-edit/coach-mark.js': 1,
-  'client/views/editor/inline-edit/inline-editor.js': 3,
-  'client/views/editor/inline-edit/markdown-modal.js': 1,
-  'client/views/editor/modals/preview-lightbox.js': 1,
-  'client/views/editor/modals/versions-compare.js': 5,
-  'client/views/editor/responsive-drawers.js': 1,
-  'client/views/editor/share-dropdown.js': 1,
-  'client/views/editor/slide-visibility-menu.js': 3,
-  'client/views/editor/slides-panel.js': 5,
-  'client/views/editor/topbar/language-mode.js': 1,
-  'client/views/follow/qa.js': 2,
-  'client/views/list/modals/creation-view/library-compose.js': 1,
-  'client/views/list/onboarding-checklist.js': 2,
-  'client/views/list/presentation-card.js': 3,
-  'client/views/list/tag-editor.js': 1,
-  'client/views/magic-login.js': 1,
+  'client/views/editor/modals/versions-compare.js': 4,
+  'client/views/list/presentation-card.js': 1,
   'client/views/notes/layout.js': 2,
-  'client/views/notes/qa.js': 1,
-  'client/views/settings/font-editor/upload-panel.js': 1,
-  'client/views/settings/index.js': 1,
-  'client/views/settings/slide-type-editor/field-editor.js': 3,
-  'client/views/settings/tabs/analytics-tab.js': 1,
-  'client/views/settings/tabs/slide-types-tab/index.js': 1,
-  'client/views/settings/tabs/themes-tab.js': 1,
-  'client/views/settings/theme-editor/backgrounds-section.js': 1,
-  'client/views/share-viewer/guest-join.js': 2,
-  'client/views/share-viewer/guest-verify-notice.js': 1,
-  'client/views/share-viewer/index.js': 2,
-  'client/views/share-viewer/viewer-comments.js': 1,
-  'client/views/viewer/viewer-preview.js': 2,
-  'client/views/viewer/viewer-topbar.js': 1,
 };
 
 // ── extraction ──────────────────────────────────────────────────────────────

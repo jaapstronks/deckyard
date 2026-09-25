@@ -394,7 +394,6 @@
   width: 64px;
   height: 64px;
   margin: 0 auto var(--ps-space-4);
-  font-size: 32px;
   background: hsl(150 60% 95%);
   color: hsl(150 60% 40%);
   border-radius: 50%;

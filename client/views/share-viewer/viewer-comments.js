@@ -11,6 +11,7 @@ import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js
 import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
 import { h } from '../../lib/dom.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Create a comments section for the share viewer.
@@ -53,12 +54,16 @@ export function createShareViewerCommentsSection({
   });
   filterBtns.append(filterCurrentBtn, filterAllBtn);
 
-  const closeBtn = h('button', {
-    class: 'btn btn-icon share-viewer-comments-close',
-    type: 'button',
-    text: '×',
-    onclick: () => hide(),
-  });
+  const closeBtn = h(
+    'button',
+    {
+      class: 'btn btn-icon share-viewer-comments-close',
+      type: 'button',
+      'aria-label': t('common.close', 'Close'),
+      onclick: () => hide(),
+    },
+    [icon('x', { size: 18 })],
+  );
 
   header.append(headerTitle, filterBtns, closeBtn);
 

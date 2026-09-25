@@ -5,6 +5,7 @@ import { me } from '../lib/user/auth.js';
 import { spinner } from '../lib/dom/spinner.js';
 import { authShell } from './auth-shell.js';
 import { nav, queryParam } from '../lib/state/router.js';
+import { icon } from '../lib/dom/icons.js';
 
 export async function renderMagicLogin(root) {
   const returnToRaw = queryParam('returnTo') || '';
@@ -65,10 +66,9 @@ export async function renderMagicLogin(root) {
       spinnerEl.remove();
 
       // Show success icon
-      const successIcon = h('div', {
-        class: 'auth-success-icon',
-        text: '\u2713',
-      });
+      const successIcon = h('div', { class: 'auth-success-icon' }, [
+        icon('check', { size: 32 }),
+      ]);
       header.before(successIcon);
 
       title.textContent = t('magicLogin.success', 'Welcome!');

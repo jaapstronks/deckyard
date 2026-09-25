@@ -196,12 +196,16 @@ export function createPreviewLightbox({
         class: 'comment-detail-time',
         text: formatTime(comment.createdAt),
       });
-      const closeBtn = h('button', {
-        class: 'comment-detail-close',
-        type: 'button',
-        text: '×',
-        onclick: () => hideCommentDetail(),
-      });
+      const closeBtn = h(
+        'button',
+        {
+          class: 'comment-detail-close',
+          type: 'button',
+          'aria-label': t('common.close', 'Close'),
+          onclick: () => hideCommentDetail(),
+        },
+        [icon('x', { size: 14 })],
+      );
       headerEl.append(authorEl, timeEl, closeBtn);
 
       // Body with comment text (mention markers render as chips)

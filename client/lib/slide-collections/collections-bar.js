@@ -17,6 +17,7 @@ import {
   openManageMembersModal,
   openAddToCollectionModal,
 } from './collection-modals.js';
+import { icon } from '../dom/icons.js';
 
 /**
  * @param {object} opts
@@ -134,53 +135,59 @@ export function createCollectionsBar({ api, root }) {
 
     const actions = h('div', { class: 'collection-chip-actions' });
     actions.append(
-      h('button', {
-        class: 'collection-chip-action',
-        type: 'button',
-        title: t('slideLibrary.collections.rename', 'Rename'),
-        'aria-label': t('slideLibrary.collections.rename', 'Rename'),
-        text: '✎',
-        onclick: () =>
-          openCollectionEditModal({
-            root,
-            mode: 'edit',
-            collection: col,
-            collectionsApi,
-            onSaved: () => afterChange(),
-          }),
-      }),
-      h('button', {
-        class: 'collection-chip-action is-danger',
-        type: 'button',
-        title: t('common.delete', 'Delete'),
-        'aria-label': t('common.delete', 'Delete'),
-        text: '×',
-        onclick: async () => {
-          const ok = await confirmModal(root, {
-            title: t(
-              'slideLibrary.collections.delete.title',
-              'Delete collection',
-            ),
-            message: t(
-              'slideLibrary.collections.delete.confirm',
-              'Delete "{name}"? The slides themselves are not deleted.',
-              { name: col.name || '' },
-            ),
-            confirmLabel: t('common.delete', 'Delete'),
-            danger: true,
-          });
-          if (!ok) return;
-          try {
-            await collectionsApi.remove(col.shelf, col.id);
-            toast.success(
-              t('slideLibrary.collections.deleted', 'Collection deleted.'),
-            );
-            afterChange();
-          } catch (e) {
-            toast.error(e);
-          }
+      h(
+        'button',
+        {
+          class: 'collection-chip-action',
+          type: 'button',
+          title: t('slideLibrary.collections.rename', 'Rename'),
+          'aria-label': t('slideLibrary.collections.rename', 'Rename'),
+          onclick: () =>
+            openCollectionEditModal({
+              root,
+              mode: 'edit',
+              collection: col,
+              collectionsApi,
+              onSaved: () => afterChange(),
+            }),
         },
-      }),
+        [icon('pencil', { size: 12 })],
+      ),
+      h(
+        'button',
+        {
+          class: 'collection-chip-action is-danger',
+          type: 'button',
+          title: t('common.delete', 'Delete'),
+          'aria-label': t('common.delete', 'Delete'),
+          onclick: async () => {
+            const ok = await confirmModal(root, {
+              title: t(
+                'slideLibrary.collections.delete.title',
+                'Delete collection',
+              ),
+              message: t(
+                'slideLibrary.collections.delete.confirm',
+                'Delete "{name}"? The slides themselves are not deleted.',
+                { name: col.name || '' },
+              ),
+              confirmLabel: t('common.delete', 'Delete'),
+              danger: true,
+            });
+            if (!ok) return;
+            try {
+              await collectionsApi.remove(col.shelf, col.id);
+              toast.success(
+                t('slideLibrary.collections.deleted', 'Collection deleted.'),
+              );
+              afterChange();
+            } catch (e) {
+              toast.error(e);
+            }
+          },
+        },
+        [icon('x', { size: 12 })],
+      ),
     );
 
     chip.append(main, actions);

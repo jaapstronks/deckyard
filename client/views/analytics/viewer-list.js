@@ -10,6 +10,7 @@ import {
 } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import { h } from '../../lib/dom.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Create viewer list component.
@@ -140,10 +141,13 @@ export function createViewerList({
         },
         [
           h('span', { text: label }),
-          h('span', {
-            class: 'analytics-sort-indicator',
-            text: isSorted ? (sortDirection === 'asc' ? '↑' : '↓') : '',
-          }),
+          h('span', { class: 'analytics-sort-indicator' }, [
+            isSorted
+              ? icon(sortDirection === 'asc' ? 'arrow-up' : 'arrow-down', {
+                  size: 12,
+                })
+              : null,
+          ]),
         ],
       );
       return headerEl;
@@ -230,7 +234,6 @@ function createSessionRow(session) {
   // Determine viewer identifier
   let viewerText;
   let viewerBadge = '';
-  let viewerBadgeIsIcon = false;
 
   viewerText = session.viewerEmail
     ? session.viewerEmail
@@ -243,9 +246,8 @@ function createSessionRow(session) {
   const viewerType = session.viewerType || 'anonymous';
   if (viewerType === 'guest') {
     viewerBadge = 'user';
-    viewerBadgeIsIcon = true;
   } else if (viewerType === 'authenticated') {
-    viewerBadge = '✓';
+    viewerBadge = 'check';
   }
 
   // Exit slide display
@@ -269,18 +271,7 @@ function createSessionRow(session) {
       },
       [
         viewerBadge
-          ? viewerBadgeIsIcon
-            ? h('img', {
-                class: 'analytics-viewer-badge',
-                src: `/client/vendor/lucide-icons/${viewerBadge}.svg`,
-                alt: '',
-                'aria-hidden': 'true',
-              })
-            : h('span', {
-                class: 'analytics-viewer-badge',
-                'aria-hidden': 'true',
-                text: viewerBadge,
-              })
+          ? icon(viewerBadge, { size: 14, className: 'analytics-viewer-badge' })
           : null,
         h('span', { text: viewerText }),
       ].filter(Boolean),

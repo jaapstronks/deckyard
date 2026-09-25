@@ -8,6 +8,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
 import { formatFileSize } from '../../../lib/format/format.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
 
@@ -118,13 +119,16 @@ export function createUploadPanel({
         cell.append(info);
       }
 
-      const deleteBtn = h('button', {
-        class: 'btn btn-secondary is-compact is-danger',
-        type: 'button',
-        text: '\u00D7', // ×
-        title: t('fonts.removeVariant', 'Remove variant'),
-        onclick: () => handleRemoveVariant(variant.id, weight, style),
-      });
+      const deleteBtn = h(
+        'button',
+        {
+          class: 'btn btn-secondary is-compact is-danger',
+          type: 'button',
+          title: t('fonts.removeVariant', 'Remove variant'),
+          onclick: () => handleRemoveVariant(variant.id, weight, style),
+        },
+        [icon('x', { size: 14 })],
+      );
       cell.append(deleteBtn);
     } else {
       const uploadBtn = h('button', {

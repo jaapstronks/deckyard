@@ -23,6 +23,7 @@ import {
   parseCsvToGrid,
   serializeCsv,
 } from '../../../../shared/slide-types/types/chart-slide/parse.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * Column shape per chart type. bar/pie are a fixed Label,Value pair; line is
@@ -334,14 +335,17 @@ export function createCsvGridEditor({
       inp.addEventListener('paste', (e) => handleHeaderPaste(e, c));
       th.append(inp);
       if (c >= model.min) {
-        const rm = h('button', {
-          class: 'csv-grid-colremove',
-          type: 'button',
-          text: '×',
-          title: t('editor.chart.grid.removeSeries', 'Remove series'),
-          'aria-label': t('editor.chart.grid.removeSeries', 'Remove series'),
-          onclick: () => removeColumn(c),
-        });
+        const rm = h(
+          'button',
+          {
+            class: 'csv-grid-colremove',
+            type: 'button',
+            title: t('editor.chart.grid.removeSeries', 'Remove series'),
+            'aria-label': t('editor.chart.grid.removeSeries', 'Remove series'),
+            onclick: () => removeColumn(c),
+          },
+          [icon('x', { size: 12 })],
+        );
         th.append(rm);
       }
       htr.append(th);
@@ -380,16 +384,19 @@ export function createCsvGridEditor({
         tr.append(td);
       }
       const tdAct = h('td', { class: 'csv-grid-td csv-grid-td-actions' });
-      const rm = h('button', {
-        class: 'csv-grid-rowremove',
-        type: 'button',
-        text: '×',
-        title: t('editor.chart.grid.removeRow', 'Remove row'),
-        'aria-label': t('editor.chart.grid.removeRowN', 'Remove row {n}', {
-          n: r + 1,
-        }),
-        onclick: () => removeRow(r),
-      });
+      const rm = h(
+        'button',
+        {
+          class: 'csv-grid-rowremove',
+          type: 'button',
+          title: t('editor.chart.grid.removeRow', 'Remove row'),
+          'aria-label': t('editor.chart.grid.removeRowN', 'Remove row {n}', {
+            n: r + 1,
+          }),
+          onclick: () => removeRow(r),
+        },
+        [icon('x', { size: 12 })],
+      );
       tdAct.append(rm);
       tr.append(tdAct);
       tbody.append(tr);

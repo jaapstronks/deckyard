@@ -73,7 +73,7 @@ const USER_TEXT_SITES = [
   },
   {
     file: 'client/views/share-viewer/guest-join.js',
-    rhs: '` <div class="share-viewer-success-icon">…',
+    rhs: "` <h3>${t('share.guest.emailSent'…",
     reason:
       'Guest email-sent confirmation. The one user value (the address) is ' +
       'passed to t() pre-escaped with escapeHtml(); the rest are bundled ' +
