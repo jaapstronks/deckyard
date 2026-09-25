@@ -187,9 +187,6 @@ async function servePublishedPage(
     thumbnailUrl: ogImageAbs,
     inLanguage: modeLang,
   };
-  if (typeof pres?.ownerName === 'string' && pres.ownerName.trim()) {
-    jsonLd.author = { '@type': 'Person', name: pres.ownerName.trim() };
-  }
   // Storage projects the column as `created` (B448), a `Date` under Postgres.
   const datePublished = toIsoOrNull(pres?.created);
   if (datePublished) jsonLd.datePublished = datePublished;
