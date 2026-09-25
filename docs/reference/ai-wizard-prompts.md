@@ -291,7 +291,7 @@ NOT for: Time-based sequences, items needing long descriptions, cause-effect
 Fields:
 - title: Required, max 120 chars
 - subheading: Optional, max 200 chars
-- rows: 1-4 row objects, each with
+- rows: 1-3 row objects (the type accepts 4), each with
   - title: Optional row heading, max 120 chars (usually empty for row 1)
   - color: "yellow" or "black"
   - arrow: "none", "down", or "up" (the flow to the next row)
@@ -301,11 +301,11 @@ Common patterns:
 1. Activities → Outputs (arrow down between rows)
 2. Inputs → Processing → Outputs (three rows with arrows)
 3. Challenges → Solutions (arrow down)
-4. Before vs After (two rows, no arrow)
-5. Single row grid (simpler than icon-card-grid)
+4. Before → After (two rows, arrow down)
 
 Best for: Cause-effect, process flows, programme instruments→outcomes, transformations
-NOT for: Items needing icons (use icon-card-grid), timelines with dates
+NOT for: Items needing icons (use icon-card-grid), timelines with dates,
+a single row or rows with no arrow between them (use list-slide)
 
 --- kpi-metrics-slide ---
 Display 1-4 key metrics with LARGE, prominent numbers.

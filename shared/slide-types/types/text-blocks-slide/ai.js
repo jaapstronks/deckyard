@@ -175,32 +175,14 @@ export const aiExamples = [
     ],
   },
   {
-    _variation: 'Single row grid (simpler than icon-card-grid)',
-    title: 'Key Focus Areas',
-    subheading: 'Our priorities this quarter',
-    rows: [
-      {
-        title: '',
-        color: 'black',
-        arrow: 'none',
-        blocks: [
-          { title: 'Growth', body: 'Expand market share' },
-          { title: 'Quality', body: 'Improve standards' },
-          { title: 'Efficiency', body: 'Optimize processes' },
-          { title: 'Culture', body: 'Strengthen team' },
-        ],
-      },
-    ],
-  },
-  {
-    _variation: 'Two rows comparison (no arrow - contrast)',
+    _variation: 'Before -> after (the arrow claims the transformation)',
     title: 'Before vs After',
     subheading: 'The transformation',
     rows: [
       {
         title: 'Before',
         color: 'yellow',
-        arrow: 'none',
+        arrow: 'down',
         blocks: [
           { title: 'Manual', body: 'Time-consuming' },
           { title: 'Siloed', body: 'Poor collaboration' },
