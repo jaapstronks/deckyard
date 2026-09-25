@@ -254,9 +254,11 @@ published page): its hint opens the Share dialog on the Public tab.
   state an organization, and having nothing but the default one to state is
   exactly why multi-organization turns it off.
 - **What a published page exposes**: title, description, every slide the
-  `published` visibility filter admits, the theme, and — in the feed only — the
-  local-part of the owner's email as a display handle. The raw address is never
-  published.
+  `published` visibility filter admits, and the theme. No public surface names
+  the owner from their email address — not the page, not the feed (no item
+  `<author>`), not the og card, which shows an author only when the owner set a
+  profile name (`settings.ogPreview.showAuthor`). A display name for the other
+  surfaces waits on identity decoupling.
 
 ## Implementation status
 

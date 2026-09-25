@@ -3,6 +3,39 @@ import { createEmptyState } from '../../../lib/dom/empty-state.js';
 import { h } from '../../../lib/dom.js';
 
 /**
+ * Normalize string for search (lowercase, remove accents)
+ */
+function normalizeForSearch(str) {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+/**
+ * Check if a listed deck matches the search query. The owner is matched by
+ * `ownerEmail`: the list projection carries no owner display name (that
+ * arrives with identity decoupling).
+ *
+ * @param {object} presentation - a deck as the list endpoint projects it
+ * @param {string} query - the raw query as typed
+ * @returns {boolean}
+ */
+export function matchesQuery(presentation, query) {
+  const normalizedQuery = normalizeForSearch(query);
+  if (!normalizedQuery) return false;
+  return [
+    presentation.title,
+    presentation.description,
+    presentation.ownerEmail,
+    presentation.theme,
+    // Who shared it with you (shared decks only)
+    presentation.sharedBy,
+  ].some((field) => normalizeForSearch(field).includes(normalizedQuery));
+}
+
+/**
  * Create the search results view
  *
  * @param {object} opts
@@ -36,59 +69,6 @@ export function createSearchView({
   searchView.append(headerRow, searchList, statusSlot);
 
   let currentQuery = '';
-
-  /**
-   * Normalize string for search (lowercase, remove accents)
-   */
-  function normalizeForSearch(str) {
-    if (!str) return '';
-    return str
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-  }
-
-  /**
-   * Check if a presentation matches the search query
-   */
-  function matchesQuery(presentation, query) {
-    const normalizedQuery = normalizeForSearch(query);
-    if (!normalizedQuery) return false;
-
-    // Search in title
-    if (normalizeForSearch(presentation.title)?.includes(normalizedQuery)) {
-      return true;
-    }
-
-    // Search in description
-    if (
-      normalizeForSearch(presentation.description)?.includes(normalizedQuery)
-    ) {
-      return true;
-    }
-
-    // Search in owner email/name
-    if (
-      normalizeForSearch(presentation.ownerEmail)?.includes(normalizedQuery)
-    ) {
-      return true;
-    }
-    if (normalizeForSearch(presentation.ownerName)?.includes(normalizedQuery)) {
-      return true;
-    }
-
-    // Search in theme
-    if (normalizeForSearch(presentation.theme)?.includes(normalizedQuery)) {
-      return true;
-    }
-
-    // Search in sharedBy (for shared presentations)
-    if (normalizeForSearch(presentation.sharedBy)?.includes(normalizedQuery)) {
-      return true;
-    }
-
-    return false;
-  }
 
   /**
    * Perform search and update the view

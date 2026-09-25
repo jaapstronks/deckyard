@@ -64,6 +64,30 @@ export function assertPublishingEnabled() {
 }
 
 /**
+ * The author overlay for the OG card: the owner's profile name and picture,
+ * or nothing. The card is public, so no name is derived from the email
+ * address (B462); without a profile name there is no author block. The
+ * creator is a display pair (D22) and carries no address, so callers pass the
+ * acting user's email when the deck has no owner email.
+ *
+ * @param {object} storageScope
+ * @param {string|null|undefined} email - whose profile to read
+ * @returns {Promise<{ name: string, imageUrl: string } | null>}
+ */
+export async function resolveOgAuthor(storageScope, email) {
+  if (!email) return null;
+  let profile;
+  try {
+    profile = (await getUserSettings(storageScope, email))?.profile;
+  } catch {
+    return null;
+  }
+  const name = typeof profile?.name === 'string' ? profile.name.trim() : '';
+  if (!name) return null;
+  return { name, imageUrl: profile?.imageUrl || '' };
+}
+
+/**
  * Build the OG preview image for a publish. Renders a fresh preview from the
  * first meaningful slide when a media provider is configured, and otherwise
  * (and on any render failure) falls back down the ladder to a picked content
@@ -101,27 +125,9 @@ export async function buildPublishOgImage({
       const theme = await loadThemeAssets(repoRoot, pres.theme);
 
       const showAuthor = pres?.settings?.ogPreview?.showAuthor === true;
-      let authorInfo = null;
-      if (showAuthor) {
-        // The creator is a display pair now (D22) and carries no address, so
-        // the fallback is the acting user's.
-        const ownerEmail = pres?.ownerEmail || actorEmail;
-        if (ownerEmail) {
-          try {
-            const userSettings = await getUserSettings(
-              storageScope,
-              ownerEmail,
-            );
-            authorInfo = {
-              name: userSettings?.profile?.name || ownerEmail.split('@')[0],
-              imageUrl: userSettings?.profile?.imageUrl || '',
-            };
-          } catch {
-            // Fall back to an email-derived name.
-            authorInfo = { name: ownerEmail.split('@')[0], imageUrl: '' };
-          }
-        }
-      }
+      const authorInfo = showAuthor
+        ? await resolveOgAuthor(storageScope, pres?.ownerEmail || actorEmail)
+        : null;
 
       ogImageUrl = await generateAndSaveOgPreview(
         repoRoot,
