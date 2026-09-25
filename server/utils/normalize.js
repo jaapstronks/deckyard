@@ -60,6 +60,18 @@ export function isoBefore(ms) {
 }
 
 /**
+ * One ISO string for a stored timestamp, whichever shape the driver handed
+ * back: Postgres gives a `Date`, the file store and test doubles a string.
+ * @param {string|Date|null|undefined} value
+ * @returns {string|null} - ISO timestamp, or null if absent or unparseable
+ */
+export function toIsoOrNull(value) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+/**
  * Calculate duration in seconds between a start time and now.
  * Returns 0 if start time is invalid or in the future.
  * @param {string|Date} startTime - Start timestamp (ISO string or Date)

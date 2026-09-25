@@ -18,6 +18,7 @@ import { getLangDisplayName } from '../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { generateTrackingScriptHtml } from '../../analytics/tracking-script.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
+import { toIsoOrNull } from '../../utils/normalize.js';
 
 /**
  * Semantic reflowable "reader" view of a published deck (open web, no auth).
@@ -189,9 +190,9 @@ async function servePublishedPage(
   if (typeof pres?.ownerName === 'string' && pres.ownerName.trim()) {
     jsonLd.author = { '@type': 'Person', name: pres.ownerName.trim() };
   }
-  if (typeof pres?.createdAt === 'string' && pres.createdAt.trim()) {
-    jsonLd.datePublished = pres.createdAt.trim();
-  }
+  // Storage projects the column as `created` (B448), a `Date` under Postgres.
+  const datePublished = toIsoOrNull(pres?.created);
+  if (datePublished) jsonLd.datePublished = datePublished;
   // Escape `<` so a value can never break out of the <script> block.
   const jsonLdScript = `<script type="application/ld+json">${JSON.stringify(
     jsonLd,
