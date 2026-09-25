@@ -1,4 +1,5 @@
 import { h } from '../dom.js';
+import { icon } from './icons.js';
 import { reportMisuse } from '../util/dev-runtime.js';
 
 const DEFAULT_DURATION_MS = 3200;
@@ -25,6 +26,17 @@ const POLITENESS = {
   info: 'polite',
   success: 'polite',
   error: 'assertive',
+};
+
+/**
+ * The leading icon per kind. It gives each kind a shape cue, so the kind is
+ * not signalled by colour alone (WCAG 1.4.1). Decorative: the text is what
+ * the live region announces, and `icon()` marks the span `aria-hidden`.
+ */
+const KIND_ICONS = {
+  info: 'info',
+  success: 'circle-check',
+  error: 'circle-x',
 };
 
 let stackEl = null;
@@ -124,16 +136,18 @@ function classifyType(type) {
 }
 
 /**
- * Render a toast's inner content: the message text plus an optional action
- * button. Replaces any prior content so it is safe to call on reused toasts.
+ * Render a toast's inner content: the kind icon, the message text and an
+ * optional action button. Replaces any prior content so it is safe to call on
+ * reused toasts, whose kind may have changed.
  * @param {HTMLElement} el - The toast element
+ * @param {string} type - A member of TOAST_TYPES.
  * @param {*} message - Message (coerced to text)
  * @param {{label: string, onClick: Function}} [action] - Optional action button
  */
-function renderToastContent(el, message, action) {
+function renderToastContent(el, type, message, action) {
   el.textContent = '';
   const text = h('span', { class: 'toast-text', text: toText(message) });
-  el.append(text);
+  el.append(icon(KIND_ICONS[type], { className: 'toast-icon' }), text);
   if (hasAction(action)) {
     const btn = h('button', {
       type: 'button',
@@ -236,7 +250,7 @@ function makeToastEl(message, { type, action }) {
   // No live role here: the region announces, one subscription per politeness.
   const el = h('div', { class: `toast toast-${type}` });
   el.tabIndex = 0;
-  renderToastContent(el, message, action);
+  renderToastContent(el, type, message, action);
   el.addEventListener('click', () => dismissEl(el));
   el.addEventListener('keydown', onToastKeydown);
   el.addEventListener('mouseenter', () => setPaused(el, 'hovered', true));
@@ -302,7 +316,7 @@ export function toast(message, opts = {}) {
   if (existing) {
     stopTimer(existing);
     existing.className = `toast toast-${type}`;
-    renderToastContent(existing, message, action);
+    renderToastContent(existing, type, message, action);
     // Re-append rather than update in place: with `aria-relevant="additions"`
     // a text change inside the region is not announced, and an updated toast
     // ("Saving…" → "Saved") is exactly the case that must be. This also moves
