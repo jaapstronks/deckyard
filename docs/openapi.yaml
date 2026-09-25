@@ -578,7 +578,15 @@ paths:
                       revision:
                         type: integer
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: >-
+            Bad request. A slide that fails validation answers
+            `error: bad_request`, `message: Invalid slide data` and
+            `details: { errors: [...] }`: one human-readable sentence per
+            problem. `details` is an object, like every v1 error.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
@@ -702,8 +710,10 @@ paths:
                         format: date-time
         '400':
           description: >-
-            Bad request. Besides `bad_request` (unknown type, invalid slide
-            data), a type change without `content` for a pair that has no
+            Bad request. An unknown type or invalid slide data answers
+            `error: bad_request`; invalid slide data carries
+            `details: { errors: [...] }`, one sentence per problem (an object,
+            like every v1 error). A type change without `content` for a pair that has no
             declared conversion answers `error: unsupported_conversion` with
             `details: { from, to, convertible }`: the current type, the refused
             type and the types this slide does convert to, all as canonical
