@@ -36,7 +36,10 @@ import { createDeckYdocCodec } from '../shared/collab/deck-ydoc.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
 import { createLiveDocBinder } from '../client/lib/collab/live-doc-binder.js';
 
-const MIRROR_KEY = 'row1Block1Title';
+// The field that stood here was text-blocks' numbered `row1Block1Title`, gone
+// since B452. The binder's seeding does not depend on which text field was
+// misclassified, so any text field of the type reproduces the state.
+const MIRROR_KEY = 'subheading';
 
 /** A registry in which the mirror is plain — the pre-fix classification. */
 function legacyRegistry() {

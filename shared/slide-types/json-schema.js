@@ -80,13 +80,11 @@ function contentDefKey(typeName) {
  * Whether a field belongs in the *published* contract.
  *
  * A definition's `fields[]` is the editor's list, and it deliberately carries
- * shapes we no longer want anyone to build on: the legacy numbered mirror of a
- * structured array (`row1Block1Title`…), its counters, and the hidden slots the
- * dual-write still reads. Those keys keep *parsing* - the
+ * shapes we no longer want anyone to build on: the hidden slots the editor
+ * still reads beside a structured field. Those keys keep *parsing* - the
  * schema stays lenient (`additionalProperties: true`), so stored decks that
  * carry them still validate - but publishing them under `properties` states
- * them as the contract, which is the opposite of what `deprecated`/`hidden`
- * mean.
+ * them as the contract, which is the opposite of what `hidden` means.
  *
  * `ai: false` is deliberately **not** part of this test. That flag withholds a
  * field from agents for editorial reasons (`video-slide.watchUrl` points at a
@@ -99,7 +97,7 @@ function contentDefKey(typeName) {
  * @returns {boolean}
  */
 function isPublishedField(field) {
-  return field?.deprecated !== true && field?.hidden !== true;
+  return field?.hidden !== true;
 }
 
 /**
@@ -184,9 +182,9 @@ function itemsToJsonSchema(field) {
 /**
  * JSON Schema for one slide type's `content` object.
  *
- * Only fields that pass `isPublishedField()` become `properties`: a
- * `deprecated`/`hidden` field is a legacy representation the editor still
- * reads, not something the published contract should promise.
+ * Only fields that pass `isPublishedField()` become `properties`: a `hidden`
+ * field is a representation the editor still reads, not something the
+ * published contract should promise.
  * @param {string} typeName
  * @param {any} def - the slide-type definition (with `fields[]`)
  * @param {{withMeta?: boolean}} [opts] - withMeta adds `$id`/`$schema` (for a

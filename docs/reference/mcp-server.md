@@ -229,8 +229,8 @@ the way to the deck, so an agent could write content that quietly never
 appeared. It is now an error naming the key, which is the only way you get to
 fix it. `validation: "fix"` logs the same finding instead of throwing.
 
-A field the type declares but withholds from you (`ai: false`, `hidden`,
-`deprecated`) is not in the `schema` you are shown, but it is still a key the
+A field the type declares but withholds from you (`ai: false` or `hidden`) is
+not in the `schema` you are shown, but it is still a key the
 type has — writing it is accepted, not "unknown".
 
 ## Which slide types an agent sees
@@ -250,7 +250,7 @@ The `schema` is the same in all three: it is **always** derived from the type's
 `fields[]` — what the editor renders a form from and validation runs against —
 so an agent is never told about a field the type does not have. A catalog entry
 contributes prose only. Individual fields opt out with `ai: false` (or
-`hidden` / `deprecated`, which legacy mirror fields already carry), and a
+`hidden`, which carried data beside a structured field already has), and a
 field's `helpText` travels along as the schema entry's `description`.
 
 A schema entry can carry `essential: true` (D211). It is a separate property

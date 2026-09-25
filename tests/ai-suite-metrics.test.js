@@ -44,23 +44,32 @@ test('extractSlideText treats list items as bullets whatever the slide type', ()
   assert.match(bullets[0], /Launch/);
 });
 
-test('extractSlideText drops flat numbered config keys, not just exact names', () => {
-  // text-blocks-slide uses flat keys like row1Color / arrow1 / row2Enabled.
-  // An exact-name blocklist misses these, and their values then read as slide
-  // prose -- which made the judge penalize decks for invisible text.
+test('extractSlideText drops config keys by substring, not just exact names', () => {
+  // Keys like headerAlign, bgCustomColor or a row's color / arrow hold
+  // configuration. An exact-name blocklist misses the compound ones, and their
+  // values then read as slide prose -- which made the judge penalize decks for
+  // invisible text.
   const { allText } = extractSlideText({
     type: 'text-blocks-slide',
     content: {
       title: 'Barriers',
-      row1Count: '4',
-      row1Color: 'yellow',
-      arrow1: 'down',
-      row2Enabled: 'yes',
-      row1Block1Title: 'Split transitions',
-      row1Block1Body: 'The two transitions rarely meet',
+      headerAlign: 'left',
+      bgCustomColor: 'teal',
+      rows: [
+        {
+          color: 'yellow',
+          arrow: 'down',
+          blocks: [
+            {
+              title: 'Split transitions',
+              body: 'The two transitions rarely meet',
+            },
+          ],
+        },
+      ],
     },
   });
-  for (const token of ['yellow', 'down', 'yes', '4']) {
+  for (const token of ['yellow', 'down', 'left', 'teal']) {
     assert.ok(
       !allText.includes(token),
       `config value "${token}" must not count as slide text`,

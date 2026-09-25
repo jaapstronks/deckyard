@@ -118,7 +118,7 @@ function codeList(keys) {
  */
 function surfacedFieldKeys(def) {
   return (def?.fields || [])
-    .filter((f) => f && !f.hidden && !f.deprecated)
+    .filter((f) => f && !f.hidden)
     .map((f) => String(f.key))
     .filter((k) => !SHARED_SURFACE_KEYS.has(k));
 }
@@ -133,7 +133,7 @@ function markdownFieldKeys(def) {
   const out = [];
   const walk = (fields, prefix) => {
     for (const f of fields || []) {
-      if (!f || f.hidden || f.deprecated) continue;
+      if (!f || f.hidden) continue;
       const path = prefix ? `${prefix}.${f.key}` : String(f.key);
       if (f.type === 'markdown') out.push(path);
       if (Array.isArray(f.itemFields)) walk(f.itemFields, path);
@@ -288,7 +288,6 @@ function cardsCell(d, def) {
   ) {
     notes.push(`fixed ${schema.minItems}`);
   }
-  if (cards.skipWhenAbsent) notes.push('array decks only');
   if (cards.reorder === false) notes.push('no reorder');
   return `\`${field}\`${notes.length ? ` (${notes.join('; ')})` : ''}`;
 }

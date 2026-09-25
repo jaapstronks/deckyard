@@ -24,12 +24,9 @@ export const inlineEdit = {
   // Two-level cards: rows in the slide, blocks within each row. Rows append
   // at the bottom; blocks append to the right inside their row. The row's
   // remove × sits at its bottom-right corner because the top-right corner
-  // coincides with the last block's own ×. skipWhenAbsent keeps legacy
-  // numbered decks (no rows[]) free of affordances - the renderer reads the
-  // numbered fields there, so writing rows[] would switch its data source.
+  // coincides with the last block's own ×.
   cards: {
     field: 'rows',
-    skipWhenAbsent: true,
     container: '.text-blocks-content',
     itemSelector: '.text-blocks-row',
     removePlacement: 'bottom-right',

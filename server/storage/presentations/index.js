@@ -120,7 +120,12 @@ export async function createPresentation(storageScope, body) {
     };
   }
 
-  const result = await createPresentationRow(preparedPresentation, ctx);
+  // The create answers the shape a read answers, like updatePresentation: a
+  // payload in a pre-fold shape (an agent writing text-blocks' numbered rows)
+  // is stored as sent and folded on every read, so the response folds too.
+  const result = migratePresentation(
+    await createPresentationRow(preparedPresentation, ctx),
+  );
 
   // Attach warnings to the result if any
   if (validation.warnings) {
@@ -618,15 +623,21 @@ function mapVersionRowSummary(row, lookup = NO_DISPLAY_NAMES) {
 
 /**
  * Map a presentation version database row to an API object (full view).
+ *
+ * A snapshot is a stored deck like any other, so it leaves storage through the
+ * same funnel as `getPresentation`: preview, compare and restore all read the
+ * shape this build renders. A snapshot taken before a fold (the numbered
+ * text-blocks rows, B452) would otherwise reach a renderer that no longer
+ * reads the old shape.
  * @param {object} row - Database row
  * @param {import('../display-identity.js').DisplayNameLookup} [lookup] -
  *   Resolved display names; omitted derives them from the stored address.
  * @returns {object}
  */
-function mapVersionRowFull(row, lookup = NO_DISPLAY_NAMES) {
+export function mapVersionRowFull(row, lookup = NO_DISPLAY_NAMES) {
   return {
     ...mapVersionRowSummary(row, lookup),
-    presentation: row.presentation_data,
+    presentation: migratePresentation(row.presentation_data),
   };
 }
 

@@ -622,11 +622,23 @@ describe('divergent versions are normalized with warnings, not corrupted', () =>
     // Regression: `hidden` used to classify a field as "machine value, one per
     // deck", which collapsed `text-blocks-slide`'s numbered mirror of
     // translatable prose to the dominant language on the first collab edit.
-    // Reported by the CIIIC fork against a real bilingual deck.
-    const hiddenTextKey = SLIDE_TYPES['text-blocks-slide'].fields.find(
-      (f) => f.hidden === true && f.type === 'string',
-    )?.key;
-    assert.ok(hiddenTextKey, 'fixture assumes a hidden string field exists');
+    // Reported by the CIIIC fork against a real bilingual deck. That mirror is
+    // gone (B452) and no core type has a hidden text field now, so the
+    // registry here declares one: the classifier asks about the type only.
+    const hiddenTextKey = 'mirror';
+    const def = SLIDE_TYPES['text-blocks-slide'];
+    const hiddenCodec = createDeckYdocCodec(Y, {
+      slideTypes: {
+        ...SLIDE_TYPES,
+        'text-blocks-slide': {
+          ...def,
+          fields: [
+            ...def.fields,
+            { key: hiddenTextKey, type: 'string', hidden: true },
+          ],
+        },
+      },
+    });
 
     const pres = normalizeTopLevel(twoLangDeck());
     for (const [lang, version] of Object.entries(pres.i18n.versions)) {
@@ -639,7 +651,9 @@ describe('divergent versions are normalized with warnings, not corrupted', () =>
     }
     pres.slides = pres.i18n.versions.nl.slides;
 
-    const { projected, warnings } = roundTrip(pres);
+    const doc = new Y.Doc();
+    const { warnings } = hiddenCodec.bootstrapPresentationToDoc(pres, doc);
+    const projected = hiddenCodec.projectDocToPresentation(doc);
     assert.deepStrictEqual(warnings, []);
     assert.equal(
       projected.i18n.versions.nl.slides[2].content[hiddenTextKey],

@@ -107,13 +107,9 @@ step folded the numbered slots into the array once, at read time, and removed
 the keys — array canonical, with nothing left to sync (`ensureMembers` /
 `ensureLogos` / `ensureIconCards` now only materialize the array for the
 inline editor).
-`text-blocks` is the asymmetric case (since A0.4): the `rows[]` array carries
-**up to 4 rows**, but the numbered mirror is **frozen at 3** (`row1/2/3` is the
-whole vocabulary). A 4th row exists only in array form — it round-trips through
-save/load and AI validation with no numbered counterpart, while legacy ≤3-row
-decks keep their mirror. The refine schema
-(`server/utils/ai/schemas/content-schema.js`, derived from `fields[]`) validates `rows[]` (max 4) and
-keeps the numbered fields optional to match.
+`text-blocks` went the same way at **schema v1 -> v2**: the step folds the
+numbered `row{N}…`/`arrow{N}` fields into `rows[]` (up to 4 rows) and drops
+them (D216), and since B452 nothing else reads or declares the numbered shape.
 `content-columns` is the exception: **numbered-only, no array**. Since step 4
 that duality is resolved the ImageRef way rather than by a storage rewrite:
 the numbered keys stay the storage shape, but every column's image _resolves_
