@@ -233,8 +233,8 @@ export async function handlePresentationsSearch({
     if (!aInTitle && bInTitle) return 1;
 
     // Then by date
-    const aDate = new Date(a.updatedAt || a.createdAt || 0).getTime();
-    const bDate = new Date(b.updatedAt || b.createdAt || 0).getTime();
+    const aDate = new Date(a.modified || a.created || 0).getTime();
+    const bDate = new Date(b.modified || b.created || 0).getTime();
     return bDate - aDate;
   });
 

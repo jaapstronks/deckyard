@@ -691,6 +691,7 @@ paths:
                         type: integer
                       updatedAt:
                         type: string
+                        format: date-time
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1525,6 +1526,9 @@ paths:
                       lang:
                         type: string
                       createdAt:
+                        type: string
+                        format: date-time
+                      updatedAt:
                         type: string
                         format: date-time
         '400':

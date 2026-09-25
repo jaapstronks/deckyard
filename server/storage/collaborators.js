@@ -393,8 +393,10 @@ export async function listPresentationsSharedWithUser(scope, userEmail) {
         row.updated_by,
         lookup,
       ),
-      createdAt: row.created_at,
-      updatedAt: row.modified_at,
+      // The timestamps under the names every presentation projection in
+      // storage uses (B448); the deck list reads `modified` for its card.
+      created: row.created_at,
+      modified: row.modified_at,
       // Collaboration-specific fields
       permission: row.permission,
       sharedBy: row.invited_by,
