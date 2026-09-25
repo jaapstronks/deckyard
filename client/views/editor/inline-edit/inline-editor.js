@@ -149,9 +149,11 @@ export function createInlineEditor({
   });
   // field element -> its dashed outline box, for the stronger direct-hover.
   const outlineByField = new WeakMap();
-  // Filled images of the current mount, each with its ring and toolbar; the
-  // selected one shows both (syncImageSelection). Rebuilt on every refresh.
+  // What the canvas can show as selected, rebuilt on every refresh: filled
+  // images (ring + toolbar) and text fields (ring). syncSelection() mirrors the
+  // controller's selectedElement onto exactly one of them.
   let imageSelectables = [];
+  let textSelectables = [];
   let hotField = null;
   let repositionRaf = 0;
 
@@ -370,6 +372,7 @@ export function createInlineEditor({
     // Swap the affordances for a single active ring that tracks this field.
     overlay.clear();
     imageSelectables = [];
+    textSelectables = [];
     const ring = overlay.outline(el);
     ring.classList.add('is-active');
     overlay.reposition();
@@ -412,6 +415,7 @@ export function createInlineEditor({
     el.classList.add('ie-editing', 'ie-editing-rich');
     overlay.clear();
     imageSelectables = [];
+    textSelectables = [];
     const ring = overlay.outline(el);
     ring.classList.add('is-active');
     overlay.reposition();
@@ -1182,21 +1186,46 @@ export function createInlineEditor({
   /** Set the inspector selection and mirror it on the canvas. */
   function selectElement(el) {
     onSelectElement?.(el);
-    syncImageSelection();
+    syncSelection();
   }
 
   /**
-   * Show the selected image's ring and toolbar, hide every other one. The
-   * overlay gives a `hidden` chip no box, so it takes no part in de-collision.
+   * Mirror the controller's selection on the canvas: the selected image shows
+   * its ring and toolbar, the selected text field its ring, everything else
+   * neither. Runs after every decoration, so the ring survives the remount a
+   * sidebar change triggers. The overlay gives a `hidden` chip no box, so it
+   * takes no part in de-collision.
    */
-  function syncImageSelection() {
+  function syncSelection() {
     const sel = getSelectedElement?.();
     for (const { idx, outlineBox, bar } of imageSelectables) {
       const on = sel?.kind === 'image' && sel.idx === idx;
       outlineBox?.classList.toggle('is-selected', on);
       bar.hidden = !on;
     }
+    for (const { fieldKey, outlineBox } of textSelectables) {
+      const on = sel?.kind === 'text' && sel.fieldKey === fieldKey;
+      outlineBox.classList.toggle('is-selected', on);
+    }
     overlay.reposition();
+  }
+
+  /**
+   * Escape outside an edit drops the selection. An edit's own Escape (cancel)
+   * and any control that handles the key itself mark it defaultPrevented; a
+   * key typed into a form control or dialog belongs to that control.
+   */
+  function onDocumentKeydown(e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    if (isEditing() || !getSelectedElement?.()) return;
+    const target = e.target;
+    if (
+      target?.closest?.(
+        'input, textarea, select, [contenteditable], [role="dialog"], dialog',
+      )
+    )
+      return;
+    selectElement(null);
   }
 
   // ----------------------------------------------------------------
@@ -1269,7 +1298,6 @@ export function createInlineEditor({
         }
       }
     }
-    syncImageSelection();
   }
 
   /** The selected image's toolbar: Replace (the picker) and Settings (the tab). */
@@ -1637,6 +1665,7 @@ export function createInlineEditor({
     const root = slideEl();
     overlay.clear();
     imageSelectables = [];
+    textSelectables = [];
     if (!root) return;
     thumb.classList.remove('is-inline-edit');
     restoreThumbTitle();
@@ -1663,7 +1692,12 @@ export function createInlineEditor({
 
     // A dashed outline over every editable field (Keynote-style discoverability).
     for (const el of root.querySelectorAll('[data-inline-field]')) {
-      outlineByField.set(el, overlay.outline(el));
+      const outlineBox = overlay.outline(el);
+      outlineByField.set(el, outlineBox);
+      textSelectables.push({
+        fieldKey: el.getAttribute('data-inline-field'),
+        outlineBox,
+      });
     }
     insertEssentialPlaceholders(root, def);
     insertGhosts(root, def, descriptor);
@@ -1674,6 +1708,7 @@ export function createInlineEditor({
     focusDrag.insertFocusAffordances(root, def, descriptor);
     insertIconAffordances(root, def, descriptor);
     insertConvertAffordances(root, def, descriptor);
+    syncSelection();
 
     // Measure now, then again after layout settles (fonts/images can reflow).
     overlay.reposition();
@@ -1861,6 +1896,7 @@ export function createInlineEditor({
     }
   }
   thumb.addEventListener('dblclick', onThumbDblClick, true);
+  document.addEventListener('keydown', onDocumentKeydown);
 
   function isEditing() {
     return !!editing || mdModal.isOpen();
@@ -1869,6 +1905,7 @@ export function createInlineEditor({
   function detach() {
     thumb.removeEventListener('click', onThumbClickCapture, true);
     thumb.removeEventListener('dblclick', onThumbDblClick, true);
+    document.removeEventListener('keydown', onDocumentKeydown);
     thumb.removeEventListener('pointermove', onThumbPointerMove);
     thumb.removeEventListener('pointerleave', onThumbPointerLeave);
     if (repositionRaf) cancelAnimationFrame(repositionRaf);
