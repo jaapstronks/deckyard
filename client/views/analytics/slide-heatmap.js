@@ -6,6 +6,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { formatTimeShort as formatTime } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import { h } from '../../lib/dom.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Get color for engagement score (0-1).
@@ -143,11 +144,17 @@ export function createSlideHeatmap({ slides, presentation }) {
 
       // Dropoff indicator if significant (guard against undefined)
       if ((data.dropoffRate ?? 0) > 0.1) {
-        const dropoff = h('div', {
-          class: 'analytics-heatmap-dropoff',
-          text: `↓ ${Math.round(data.dropoffRate * 100)}%`,
-          title: t('analytics.dropoffRate', 'Dropoff rate'),
-        });
+        const dropoff = h(
+          'div',
+          {
+            class: 'analytics-heatmap-dropoff',
+            title: t('analytics.dropoffRate', 'Dropoff rate'),
+          },
+          [
+            icon('arrow-down', { size: 12 }),
+            `${Math.round(data.dropoffRate * 100)}%`,
+          ],
+        );
         info.append(dropoff);
       }
 

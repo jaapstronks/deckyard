@@ -2,6 +2,7 @@ import { h, installDismissOnOutside } from '../../lib/dom.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
 import { t } from '../../lib/ui-i18n.js';
 import { checkTagName, TAG_NAME_MESSAGES } from '../../../shared/tag-name.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * The editor's voice for a refused tag name. The rule is `shared/tag-name.js`;
@@ -82,13 +83,16 @@ export function createTagEditor({
       }
       const tagEl = h('span', { class: 'tag-editor-tag' }, [
         text,
-        h('button', {
-          class: 'tag-editor-tag-remove',
-          type: 'button',
-          'aria-label': t('tags.editor.remove', 'Remove tag'),
-          text: '×',
-          onclick: () => removeTag(tag),
-        }),
+        h(
+          'button',
+          {
+            class: 'tag-editor-tag-remove',
+            type: 'button',
+            'aria-label': t('tags.editor.remove', 'Remove tag'),
+            onclick: () => removeTag(tag),
+          },
+          [icon('x', { size: 12 })],
+        ),
       ]);
       tagsContainer.append(tagEl);
     }

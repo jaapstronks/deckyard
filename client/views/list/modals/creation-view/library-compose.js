@@ -23,6 +23,7 @@ import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';
 import { h } from '../../../../lib/dom.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { nav } from '../../../../lib/state/router.js';
+import { icon } from '../../../../lib/dom/icons.js';
 
 /**
  * @param {object} opts
@@ -123,13 +124,16 @@ export function createLibraryCompose({
             item.slideType ||
             t('slideLibrary.preview.untitled', 'Untitled'),
         }),
-        h('button', {
-          type: 'button',
-          class: 'creation-tray-remove',
-          'aria-label': t('common.remove', 'Remove'),
-          text: '×',
-          onclick: () => deselectFromTray(item.id),
-        }),
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'creation-tray-remove',
+            'aria-label': t('common.remove', 'Remove'),
+            onclick: () => deselectFromTray(item.id),
+          },
+          [icon('x', { size: 14 })],
+        ),
       );
 
       // Drag to reorder within the tray.

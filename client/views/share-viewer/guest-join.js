@@ -8,6 +8,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { h } from '../../lib/dom.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Get human-readable guest error message.
@@ -89,11 +90,14 @@ export function renderGuestJoinPrompt(shell, token, prefillEmail) {
     surface: modal,
   });
 
-  const closeBtn = h('button', {
-    class: 'share-viewer-modal-close',
-    text: '\u00d7',
-    'aria-label': t('common.close', 'Close'),
-  });
+  const closeBtn = h(
+    'button',
+    {
+      class: 'share-viewer-modal-close',
+      'aria-label': t('common.close', 'Close'),
+    },
+    [icon('x', { size: 20 })],
+  );
   closeBtn.addEventListener('click', () => overlay.close());
 
   const title = h('h2', {
@@ -183,7 +187,6 @@ export function renderGuestJoinPrompt(shell, token, prefillEmail) {
       // Show success message
       form.style.display = 'none';
       successEl.innerHTML = `
-        <div class="share-viewer-success-icon">✓</div>
         <h3>${t('share.guest.emailSent', 'Check your email!')}</h3>
         <p>${t(
           'share.guest.emailSentHelp',
@@ -193,6 +196,11 @@ export function renderGuestJoinPrompt(shell, token, prefillEmail) {
         )}</p>
         <p class="help">${t('share.guest.emailExpires', 'The link expires in 24 hours.')}</p>
       `;
+      successEl.prepend(
+        h('div', { class: 'share-viewer-success-icon' }, [
+          icon('check', { size: 32 }),
+        ]),
+      );
       successEl.style.display = 'block';
 
       // Close after delay or user interaction

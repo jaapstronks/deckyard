@@ -35,7 +35,10 @@ export const ICON_NAMES = CATALOG_ICON_NAMES;
  * @type {string[]}
  */
 export const UI_ICON_NAMES = [
+  'arrow-down',
   'arrow-left',
+  'arrow-right',
+  'arrow-up',
   'bell',
   'blocks',
   'bold',
@@ -45,6 +48,7 @@ export const UI_ICON_NAMES = [
   'chevron-down',
   'chevron-left',
   'chevron-right',
+  'chevron-up',
   'circle-alert',
   'circle-check',
   'circle-x',
@@ -54,6 +58,7 @@ export const UI_ICON_NAMES = [
   'columns-2',
   'copy',
   'ellipsis',
+  'ellipsis-vertical',
   'eye',
   'eye-off',
   'file',
@@ -80,6 +85,7 @@ export const UI_ICON_NAMES = [
   'lock',
   'lock-open',
   'map-pin',
+  'menu',
   'message-circle',
   'monitor',
   'moon',

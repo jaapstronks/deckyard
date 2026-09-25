@@ -306,23 +306,26 @@ export function createCollectionEditor({
       header.append(headerLeft);
 
       header.append(
-        h('button', {
-          class: 'btn btn-secondary btn-icon card-remove-btn',
-          type: 'button',
-          text: '×',
-          title: t('editor.items.remove', 'Remove item'),
-          'aria-label': t('editor.items.removeN', 'Remove item {n}', {
-            n: i + 1,
-          }),
-          disabled: current.length <= removeFloor,
-          onclick: () => {
-            const now = readArr();
-            if (now.length <= removeFloor) return;
-            const next = now.slice();
-            next.splice(i, 1);
-            commit(next);
+        h(
+          'button',
+          {
+            class: 'btn btn-secondary btn-icon card-remove-btn',
+            type: 'button',
+            title: t('editor.items.remove', 'Remove item'),
+            'aria-label': t('editor.items.removeN', 'Remove item {n}', {
+              n: i + 1,
+            }),
+            disabled: current.length <= removeFloor,
+            onclick: () => {
+              const now = readArr();
+              if (now.length <= removeFloor) return;
+              const next = now.slice();
+              next.splice(i, 1);
+              commit(next);
+            },
           },
-        }),
+          [icon('x', { size: 14 })],
+        ),
       );
       group.append(header);
 

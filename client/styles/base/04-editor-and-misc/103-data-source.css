@@ -150,7 +150,6 @@
 
 .data-source-binding-arrow {
   color: hsl(var(--app-text-tertiary));
-  font-size: var(--ps-text-sm);
 }
 
 .data-source-binding-row .form-input-sm {

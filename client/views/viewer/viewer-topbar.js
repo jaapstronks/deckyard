@@ -9,6 +9,7 @@ import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { h } from '../../lib/dom.js';
 import { nav } from '../../lib/state/router.js';
 import { normalizeLang } from '../../../shared/i18n-utils.js';
+import { icon } from '../../lib/dom/icons.js';
 
 export function createViewerTopbar({
   pres,
@@ -20,13 +21,16 @@ export function createViewerTopbar({
   const detachers = [];
 
   // Back button
-  const btnBack = h('button', {
-    class: 'btn btn-secondary btn-icon',
-    'aria-label': t('common.back', 'Back'),
-    title: t('common.back', 'Back'),
-    text: '\u2190',
-    onclick: () => nav('/app'),
-  });
+  const btnBack = h(
+    'button',
+    {
+      class: 'btn btn-secondary btn-icon',
+      'aria-label': t('common.back', 'Back'),
+      title: t('common.back', 'Back'),
+      onclick: () => nav('/app'),
+    },
+    [icon('arrow-left')],
+  );
 
   // Title (read-only, no edit button)
   const titleEl = h('div', {

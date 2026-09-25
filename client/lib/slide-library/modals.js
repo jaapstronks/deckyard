@@ -293,7 +293,9 @@ export function createSlideLibraryModals({
       },
     });
     newPresOption.append(
-      h('div', { class: 'ps-lib-use-option-icon', text: '📄' }),
+      h('div', { class: 'ps-lib-use-option-icon' }, [
+        icon('file-text', { size: 24 }),
+      ]),
       h('div', { class: 'ps-lib-use-option-text' }, [
         h('div', {
           class: 'ps-lib-use-option-title',

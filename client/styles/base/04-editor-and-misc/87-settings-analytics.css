@@ -17,11 +17,6 @@
   margin-bottom: var(--ps-space-4);
 }
 
-.settings-info-note-icon {
-  flex-shrink: 0;
-  font-size: 1.1em;
-}
-
 /* Analytics sections */
 .analytics-section {
   margin-bottom: var(--ps-space-4);

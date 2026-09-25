@@ -12,6 +12,7 @@ import {
   updateAppSettings,
   invalidateSettingsCache,
 } from '../../../lib/net/settings.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * Create a provider configuration card.
@@ -238,10 +239,7 @@ export function createAnalyticsTab({ user }) {
   // Info note about env vars
   const envNote = h('div', { class: 'settings-info-note' });
   envNote.append(
-    h('span', {
-      class: 'settings-info-note-icon',
-      text: '\u2139\uFE0F', // i emoji
-    }),
+    icon('info'),
     h('span', {
       text: t(
         'settings.analytics.envVarsNote',

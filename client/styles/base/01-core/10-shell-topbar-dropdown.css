@@ -761,10 +761,14 @@ summary.ghost-icon-btn::-webkit-details-marker {
   white-space: nowrap;
 }
 
+/* A status, not an icon (B466): a dot in the success token, no glyph. */
 .live-dot {
-  color: hsl(142 71% 45%);
-  font-size: 12px;
-  transform: translateY(-0.5px);
+  display: inline-block;
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: hsl(var(--app-success));
   margin-right: 6px;
 }
 

@@ -34,6 +34,7 @@ import {
   imageSetCellCount,
 } from '../../../../../shared/slide-types/types/image-set-slide/images.js';
 import { h } from '../../../../lib/dom.js';
+import { icon } from '../../../../lib/dom/icons.js';
 
 /**
  * Reorder/add/remove wiring for the images collection.
@@ -75,24 +76,30 @@ function cellControlButtons({ i, cellCount, canRemove, actions }) {
   const controls = h('div', { class: 'row' });
   if (i > 0) {
     controls.append(
-      h('button', {
-        type: 'button',
-        class: 'btn btn-secondary btn-icon',
-        text: '↑',
-        title: t('editor.gallery.dragToReorder', 'Drag to reorder'),
-        onclick: () => actions.swap(i, i - 1),
-      }),
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'btn btn-secondary btn-icon',
+          title: t('editor.gallery.dragToReorder', 'Drag to reorder'),
+          onclick: () => actions.swap(i, i - 1),
+        },
+        [icon('arrow-up', { size: 14 })],
+      ),
     );
   }
   if (i < cellCount - 1) {
     controls.append(
-      h('button', {
-        type: 'button',
-        class: 'btn btn-secondary btn-icon',
-        text: '↓',
-        title: t('editor.gallery.dragToReorder', 'Drag to reorder'),
-        onclick: () => actions.swap(i, i + 1),
-      }),
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'btn btn-secondary btn-icon',
+          title: t('editor.gallery.dragToReorder', 'Drag to reorder'),
+          onclick: () => actions.swap(i, i + 1),
+        },
+        [icon('arrow-down', { size: 14 })],
+      ),
     );
   }
   // Above the minimum an image can go entirely (one cell fewer); at the
@@ -100,16 +107,19 @@ function cellControlButtons({ i, cellCount, canRemove, actions }) {
   // the type has no shape with fewer than two images.
   if (canRemove) {
     controls.append(
-      h('button', {
-        type: 'button',
-        class: 'btn btn-secondary btn-icon card-remove-btn',
-        text: '×',
-        title: t('editor.imageText.removeImage', 'Remove image'),
-        'aria-label': t('editor.imageText.removeImageN', 'Remove image {n}', {
-          n: i + 1,
-        }),
-        onclick: () => actions.removeImage(i),
-      }),
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'btn btn-secondary btn-icon card-remove-btn',
+          title: t('editor.imageText.removeImage', 'Remove image'),
+          'aria-label': t('editor.imageText.removeImageN', 'Remove image {n}', {
+            n: i + 1,
+          }),
+          onclick: () => actions.removeImage(i),
+        },
+        [icon('x', { size: 14 })],
+      ),
     );
   }
   return controls.childNodes.length ? controls : null;

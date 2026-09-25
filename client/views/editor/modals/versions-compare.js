@@ -15,6 +15,7 @@ import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
 import { aiEnabled } from '../../../lib/state/features.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * Opens a modal comparing current presentation with a snapshot version.
@@ -284,11 +285,15 @@ export function openVersionCompareModal({
       // Helper to show enlarged slide preview
       function showEnlargedSlide(slide, label, lang) {
         const overlay = h('div', { class: 'compare-lightbox' });
-        const closeBtn = h('button', {
-          class: 'compare-lightbox-close',
-          text: '×',
-          onclick: () => overlay.remove(),
-        });
+        const closeBtn = h(
+          'button',
+          {
+            class: 'compare-lightbox-close',
+            'aria-label': t('common.close', 'Close'),
+            onclick: () => overlay.remove(),
+          },
+          [icon('x', { size: 20 })],
+        );
         const labelEl = h('div', {
           class: 'compare-lightbox-label',
           text: label,

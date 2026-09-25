@@ -17,6 +17,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { uploadImage } from './upload-image.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 const MAX_PRESETS = 24;
 
@@ -75,14 +76,20 @@ export function createBackgroundsSection({ config, onChange }) {
           // the tile rather than dropping it.
           onerror: () => tile.classList.add('is-broken'),
         }),
-        h('button', {
-          type: 'button',
-          class: 'btn btn-danger btn-xs theme-bg-preset-remove',
-          text: '×',
-          'aria-label': t('settings.themes.config.removeBackground', 'Remove'),
-          title: t('settings.themes.config.removeBackground', 'Remove'),
-          onclick: () => write(presets().filter((_, i) => i !== index)),
-        }),
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'btn btn-danger btn-xs theme-bg-preset-remove',
+            'aria-label': t(
+              'settings.themes.config.removeBackground',
+              'Remove',
+            ),
+            title: t('settings.themes.config.removeBackground', 'Remove'),
+            onclick: () => write(presets().filter((_, i) => i !== index)),
+          },
+          [icon('x', { size: 12 })],
+        ),
       );
       grid.append(tile);
     }

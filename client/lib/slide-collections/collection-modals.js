@@ -12,6 +12,7 @@ import { createModal } from '../dom/modal.js';
 import { toast } from '../dom/toast.js';
 import { sharingEnabled } from '../state/features.js';
 import { createSharingOffNote } from '../../views/shared/sharing-off.js';
+import { icon } from '../dom/icons.js';
 
 const SHELVES = ['personal', 'organization'];
 
@@ -254,16 +255,19 @@ export function openManageMembersModal({
           text: String(index + 1),
         }),
         h('span', { class: 'collection-member-name', text: name }),
-        h('button', {
-          type: 'button',
-          class: 'collection-member-remove',
-          'aria-label': t('common.remove', 'Remove'),
-          text: '×',
-          onclick: () => {
-            order = order.filter((x) => x !== id);
-            renderList();
+        h(
+          'button',
+          {
+            type: 'button',
+            class: 'collection-member-remove',
+            'aria-label': t('common.remove', 'Remove'),
+            onclick: () => {
+              order = order.filter((x) => x !== id);
+              renderList();
+            },
           },
-        }),
+          [icon('x', { size: 14 })],
+        ),
       );
 
       row.addEventListener('dragstart', (e) => {

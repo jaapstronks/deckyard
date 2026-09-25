@@ -1,6 +1,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { storage } from '../../../lib/storage.js';
 import { h } from '../../../lib/dom.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * One-time coach mark for the inline WYSIWYG editor.
@@ -69,13 +70,16 @@ export function createInlineCoachMark({ stage } = {}) {
           'Click any text on the slide to edit it',
         ),
       }),
-      h('button', {
-        class: 'ie-coach-dismiss',
-        type: 'button',
-        'aria-label': t('editor.inline.coachDismiss', 'Dismiss'),
-        text: '×',
-        onclick: () => remove(),
-      }),
+      h(
+        'button',
+        {
+          class: 'ie-coach-dismiss',
+          type: 'button',
+          'aria-label': t('editor.inline.coachDismiss', 'Dismiss'),
+          onclick: () => remove(),
+        },
+        [icon('x', { size: 14 })],
+      ),
     ]);
     stage.appendChild(el);
 

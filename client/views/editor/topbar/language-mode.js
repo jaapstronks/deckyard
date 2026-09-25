@@ -30,7 +30,7 @@ import {
 } from '../../../lib/format/i18n.js';
 import { confirmModal, createModal } from '../../../lib/dom/modal.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
-import { makeDropdownCaret } from '../../../lib/dom/icons.js';
+import { icon, makeDropdownCaret } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
 import { aiEnabled } from '../../../lib/state/features.js';
@@ -203,16 +203,16 @@ export function createLanguageMode({
     if (typeof missing !== 'number') return row;
     const source = getLangDisplayName(progress.dominant);
     if (missing === 0) {
+      const complete = t(
+        'editor.lang.completeTitle',
+        'Nothing the {source} version has is missing here.',
+        { source },
+      );
       row.append(
-        h('span', {
-          class: 'lang-menu-status is-complete',
-          text: '✓',
-          title: t(
-            'editor.lang.completeTitle',
-            'Nothing the {source} version has is missing here.',
-            { source },
-          ),
-        }),
+        h('span', { class: 'lang-menu-status is-complete', title: complete }, [
+          icon('check', { size: 14 }),
+          h('span', { class: 'sr-only', text: complete }),
+        ]),
       );
     } else {
       row.append(

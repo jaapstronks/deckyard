@@ -17,6 +17,7 @@ import {
 import { createThemeEditor } from '../theme-editor/index.js';
 import { invalidateTheme } from '../../../lib/theme/theme.js';
 import { createEmptyState } from '../../../lib/dom/empty-state.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * Create the themes tab component.
@@ -353,7 +354,7 @@ export function createThemesTab({ user }) {
       'aria-label': t('common.more', 'More'),
       onclick: (e) => showThemeMenu(e, theme),
     });
-    moreBtn.innerHTML = '&#8942;'; // ⋮
+    moreBtn.append(icon('ellipsis-vertical'));
 
     actions.append(editBtn, moreBtn);
 

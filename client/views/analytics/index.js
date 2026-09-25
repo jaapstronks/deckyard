@@ -14,6 +14,7 @@ import { createReportModal } from './report-modal.js';
 import { createRealtimeViewer } from './realtime-viewer.js';
 import { createPageUnavailable } from '../../lib/dom/page-unavailable.js';
 import { nav } from '../../lib/state/router.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Render the analytics dashboard for a presentation.
@@ -141,12 +142,16 @@ export async function renderAnalytics(root, presentationId) {
   function renderDashboard() {
     // Topbar
     const topbar = h('div', { class: 'analytics-topbar' }, [
-      h('button', {
-        class: 'btn btn-secondary btn-icon',
-        text: '←',
-        title: t('common.back', 'Back'),
-        onclick: () => nav(`/app/${presentationId}`),
-      }),
+      h(
+        'button',
+        {
+          class: 'btn btn-secondary btn-icon',
+          'aria-label': t('common.back', 'Back'),
+          title: t('common.back', 'Back'),
+          onclick: () => nav(`/app/${presentationId}`),
+        },
+        [icon('arrow-left')],
+      ),
       h('div', { class: 'analytics-title' }, [
         h('span', { text: t('analytics.title', 'Presentation Analytics') }),
         h('span', {

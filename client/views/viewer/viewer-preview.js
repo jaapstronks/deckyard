@@ -12,6 +12,7 @@ import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import { h } from '../../lib/dom.js';
+import { icon } from '../../lib/dom/icons.js';
 
 export function createViewerPreview({
   pres,
@@ -33,24 +34,30 @@ export function createViewerPreview({
   // Navigation area
   const navEl = h('div', { class: 'viewer-nav' });
 
-  const prevBtn = h('button', {
-    class: 'btn btn-secondary viewer-nav-btn',
-    text: '\u2190',
-    title: t('viewer.nav.prev', 'Previous slide'),
-    'aria-label': t('viewer.nav.prev', 'Previous slide'),
-  });
+  const prevBtn = h(
+    'button',
+    {
+      class: 'btn btn-secondary viewer-nav-btn',
+      title: t('viewer.nav.prev', 'Previous slide'),
+      'aria-label': t('viewer.nav.prev', 'Previous slide'),
+    },
+    [icon('arrow-left')],
+  );
 
   const counterEl = h('div', {
     class: 'viewer-counter',
     text: '1 / 1',
   });
 
-  const nextBtn = h('button', {
-    class: 'btn btn-secondary viewer-nav-btn',
-    text: '\u2192',
-    title: t('viewer.nav.next', 'Next slide'),
-    'aria-label': t('viewer.nav.next', 'Next slide'),
-  });
+  const nextBtn = h(
+    'button',
+    {
+      class: 'btn btn-secondary viewer-nav-btn',
+      title: t('viewer.nav.next', 'Next slide'),
+      'aria-label': t('viewer.nav.next', 'Next slide'),
+    },
+    [icon('arrow-right')],
+  );
 
   navEl.append(prevBtn, counterEl, nextBtn);
 
