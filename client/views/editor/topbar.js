@@ -312,6 +312,7 @@ export function createEditorTopbar({
     onSubscription: () =>
       openSubscriptionModal({ api, toast, presentationId: id }),
     onOpenOverview: () => onOpenOverview?.(),
+    onOpenCompanion: () => openNotesQr(),
   });
   detachers.push(moreMenu.detach);
 
@@ -426,6 +427,8 @@ export function createEditorTopbar({
 
   // Present is the primary CTA; the attached caret menu holds the live-
   // presenting extras you never need while editing (Companion phone remote).
+  // The caret is the one part of the group on the ladder: Present never
+  // leaves the bar, its extras do.
   const presentCompanionItem = h('button', {
     class: 'dropdown-item',
     type: 'button',
@@ -448,7 +451,8 @@ export function createEditorTopbar({
     triggerContent: [icon('chevron-down', { size: 14 })],
     title: t('editor.present.more', 'More presenting options'),
     ariaLabel: t('editor.present.more', 'More presenting options'),
-    detailsClass: 'topbar-present-more',
+    // Folds at sm into the ⋯ Companion entry; see Topbar Responsive.
+    detailsClass: 'topbar-present-more topbar-fold-sm',
     menuClass: 'dropdown-menu-right',
     items: [presentCompanionItem],
   });

@@ -41,6 +41,9 @@ export function createEditorTopbarMoreMenu({
   // where the bar folds the buttons away (B354).
   onExport,
   onShare,
+  // The opener behind the Present caret's Companion item: the caret folds at
+  // sm, and this entry is its counterpart there.
+  onOpenCompanion,
 } = {}) {
   const detachers = [];
 
@@ -282,6 +285,20 @@ export function createEditorTopbarMoreMenu({
   });
   btnAnalytics.style.display = 'none';
 
+  // The ⋯ half of the Present caret, which folds at sm: the caret holds only
+  // the Companion (a phone remote for a live talk), and on a phone its 36px
+  // are what the bar cannot carry once its icon buttons are 44px touch
+  // targets. Present itself stays in the bar.
+  const btnCompanion = menuItem({
+    class: 'dropdown-item topbar-fold-sm',
+    text: t('editor.companion', 'Companion'),
+    title: t(
+      'editor.companion.title',
+      'Open speaker notes companion on your phone (QR code).',
+    ),
+    onclick: () => run(onOpenCompanion),
+  });
+
   // The ⋯ half of the collab avatar stack, which folds at sm: the stack's
   // avatars cost more than a phone's bar can carry, and on a phone the slide
   // list - the other place that names peers - is off screen, so this entry is
@@ -332,6 +349,7 @@ export function createEditorTopbarMoreMenu({
     // would print that.
     items: [
       presenceEntry,
+      btnCompanion,
       btnExport,
       btnShare,
       btnOverview,

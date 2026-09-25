@@ -57,6 +57,33 @@ const WIDTHS = [341, 480, 481, 640, 641, 768, 769, 1024, 1025, 1280, 1281];
 /** One peer (no chip), five (the most avatars; capped, +4), and a +103. */
 const PEER_COUNTS = [1, 5, 104];
 
+/**
+ * The two pointer modes the bar has to fit in, pinned per browser launch.
+ * Chrome reports the machine's own primary pointer by default: a Mac with a
+ * mouse matches `(hover: hover)`, CI's headless Linux matches `(hover: none)`
+ * - and under `(hover: none)` the touch-target block in
+ * 20-editor-layout.css grows the bar's icon buttons to 44x44. A geometry
+ * test that inherits the mode is green on one machine and red on the other
+ * for the same code, so each mode gets its own launch with the Blink setting
+ * forced, and the test asserts the mode holds at every measurement.
+ *
+ * The viewport is resized through CDP directly, not `page.setViewport`:
+ * puppeteer's resize also switches touch emulation off, which hands the hover
+ * mode back to the machine and silently undoes the forced one.
+ */
+const POINTER_MODES = [
+  {
+    name: 'mouse',
+    blinkSettings: 'primaryHoverType=2,primaryPointerType=4',
+    query: '(hover: hover)',
+  },
+  {
+    name: 'touch',
+    blinkSettings: 'primaryHoverType=1,primaryPointerType=2',
+    query: '(hover: none)',
+  },
+];
+
 let ctx = null;
 
 before(async () => {
@@ -117,20 +144,25 @@ before(async () => {
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 
   const puppeteer = await import('puppeteer-core');
-  const browser = await puppeteer.launch({
-    headless: true,
-    executablePath: chromePath,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-dev-shm-usage',
-    ],
-  });
+  const browsers = {};
+  for (const mode of POINTER_MODES) {
+    browsers[mode.name] = await puppeteer.launch({
+      headless: true,
+      defaultViewport: null,
+      executablePath: chromePath,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        `--blink-settings=${mode.blinkSettings}`,
+      ],
+    });
+  }
 
   ctx = {
     base: `http://127.0.0.1:${server.address().port}`,
     server,
-    browser,
+    browsers,
     deck,
     __resetStorageForTests,
     __setTestDb,
@@ -139,85 +171,120 @@ before(async () => {
 
 after(async () => {
   if (!ctx) return;
-  await ctx.browser.close().catch(() => {});
+  for (const browser of Object.values(ctx.browsers)) {
+    await browser.close().catch(() => {});
+  }
   await new Promise((resolve) => ctx.server.close(resolve));
   ctx.__resetStorageForTests();
   ctx.__setTestDb(null);
 });
 
-test(
-  'no topbar element crosses the viewport or its neighbour, with peers, at any band edge',
-  { skip },
-  async () => {
-    const page = await ctx.browser.newPage();
-    const pageErrors = [];
-    page.on('pageerror', (err) => pageErrors.push(String(err?.message || err)));
-    try {
-      await page.setViewport({ width: WIDTHS[0], height: 800 });
-      await page.goto(`${ctx.base}/app/${ctx.deck.id}`, {
-        waitUntil: 'domcontentloaded',
-      });
-      await page.waitForSelector('.topbar .topbar-presence', {
-        timeout: 15000,
-      });
+for (const mode of POINTER_MODES) {
+  test(
+    `${mode.name}: no topbar element crosses the viewport or its neighbour, with peers, at any band edge`,
+    { skip },
+    () => walkLadder(mode),
+  );
+}
 
-      // Mount the real presence UI on the bar's slot. `setPresenceNames` is
-      // the topbar's: here it only has to show the slot, which is all the
-      // layout depends on.
-      await page.evaluate(async (moduleUrl) => {
-        const { createPresenceUI } = await import(moduleUrl);
-        const slot = document.querySelector('.topbar-presence');
-        let notify = () => {};
-        window.__peers = [];
-        createPresenceUI({
-          session: {
-            getPeers: () => window.__peers,
-            onPeersChange: (fn) => {
-              notify = fn;
-              return () => {};
-            },
-            setFocusField() {},
-          },
-          presenceSlot: slot,
-          setPresenceNames: (names) => {
-            slot.style.display = names.length ? '' : 'none';
-          },
-          getSelectedSlideId: () => null,
-        });
-        window.__setPeers = (n) => {
-          window.__peers = Array.from({ length: n }, (_, k) => ({
-            user: {
-              id: `u${k}`,
-              email: `peer${k}@example.com`,
-              name: `Peer ${k}`,
-              color: `hsl(${(k * 47) % 360} 70% 45%)`,
-            },
-          }));
-          notify();
-          return new Promise((r) =>
-            requestAnimationFrame(() => requestAnimationFrame(r)),
-          );
-        };
-      }, '/client/views/editor/presence/presence-ui.js');
+/**
+ * Walk every band edge with every peer count in one pointer mode.
+ *
+ * @param {{ name: string, query: string }} mode
+ */
+async function walkLadder(mode) {
+  const page = await ctx.browsers[mode.name].newPage();
+  const cdp = await page.createCDPSession();
+  const resize = (width) =>
+    cdp.send('Emulation.setDeviceMetricsOverride', {
+      width,
+      height: 800,
+      deviceScaleFactor: 1,
+      mobile: false,
+    });
+  const pageErrors = [];
+  page.on('pageerror', (err) => pageErrors.push(String(err?.message || err)));
+  try {
+    await resize(WIDTHS[0]);
+    await page.goto(`${ctx.base}/app/${ctx.deck.id}`, {
+      waitUntil: 'domcontentloaded',
+    });
+    await page.waitForSelector('.topbar .topbar-presence', {
+      timeout: 15000,
+    });
 
-      const failures = [];
-      for (const width of WIDTHS) {
-        await page.setViewport({ width, height: 800 });
-        for (const peers of PEER_COUNTS) {
-          await page.evaluate((n) => window.__setPeers(n), peers);
-          const found = await page.evaluate(measureTopbar);
-          for (const f of found)
-            failures.push(`${width}px, ${peers} peers: ${f}`);
-        }
+    // Mount the real presence UI on the bar's slot. `setPresenceNames` is
+    // the topbar's: here it only has to show the slot, which is all the
+    // layout depends on.
+    await page.evaluate(async (moduleUrl) => {
+      const { createPresenceUI } = await import(moduleUrl);
+      const slot = document.querySelector('.topbar-presence');
+      let notify = () => {};
+      window.__peers = [];
+      createPresenceUI({
+        session: {
+          getPeers: () => window.__peers,
+          onPeersChange: (fn) => {
+            notify = fn;
+            return () => {};
+          },
+          setFocusField() {},
+        },
+        presenceSlot: slot,
+        setPresenceNames: (names) => {
+          slot.style.display = names.length ? '' : 'none';
+        },
+        getSelectedSlideId: () => null,
+      });
+      window.__setPeers = (n) => {
+        window.__peers = Array.from({ length: n }, (_, k) => ({
+          user: {
+            id: `u${k}`,
+            email: `peer${k}@example.com`,
+            name: `Peer ${k}`,
+            color: `hsl(${(k * 47) % 360} 70% 45%)`,
+          },
+        }));
+        notify();
+        return new Promise((r) =>
+          requestAnimationFrame(() => requestAnimationFrame(r)),
+        );
+      };
+    }, '/client/views/editor/presence/presence-ui.js');
+
+    // The bar is measured at rest. `.topbar-pres-title` transitions `all`, so
+    // right after a resize across a rung its min-width is still animating
+    // between the two bands' floors, and the measurement would depend on how
+    // fast the machine gets there.
+    await page.addStyleTag({
+      content: '*, *::before, *::after { transition: none !important; }',
+    });
+
+    const failures = [];
+    for (const width of WIDTHS) {
+      await resize(width);
+      assert.ok(
+        await page.evaluate((q) => matchMedia(q).matches, mode.query),
+        `the ${mode.name} launch must match ${mode.query} at ${width}px`,
+      );
+      for (const peers of PEER_COUNTS) {
+        await page.evaluate((n) => window.__setPeers(n), peers);
+        const found = await page.evaluate(measureTopbar);
+        for (const f of found)
+          failures.push(`${width}px, ${peers} peers: ${f}`);
       }
-
-      assert.deepEqual(failures, [], 'the topbar must fit at every band edge');
-      assert.deepEqual(pageErrors, [], 'the editor must not throw');
-    } finally {
-      await page.close();
     }
-  },
-);
+
+    assert.deepEqual(
+      failures,
+      [],
+      `the topbar must fit at every band edge (${mode.name})`,
+    );
+    assert.deepEqual(pageErrors, [], 'the editor must not throw');
+  } finally {
+    await page.close();
+  }
+}
 
 /**
  * Runs in the page. Every rendered descendant of the bar must sit inside the

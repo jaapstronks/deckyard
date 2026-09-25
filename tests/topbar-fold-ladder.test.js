@@ -36,8 +36,8 @@ const RUNGS = { xl: 1280, lg: 1024, md: 768, sm: 640 };
 /**
  * The bar children that deliberately have no rung, and why. Each one is a
  * standing decision, so adding to this list is the moment to weigh the budget
- * again — the ladder's floor (334px) is measured with exactly these
- * present at every width.
+ * again — the ladder's floor (294px mouse, 326px touch) is measured with
+ * exactly these present at every width.
  */
 const NEVER_FOLDS = {
   backBtn: 'the way out of the editor; nothing else leads back',
@@ -45,9 +45,11 @@ const NEVER_FOLDS = {
   'topbar-spacer':
     'empty flex that pushes zones 2 and 3 right; nothing mounts into it, so ' +
     'it spends no width of its own (the avatar stack used to, unbudgeted: B362)',
-  'languageMode.el': 'sheds its label at md and keeps the control',
+  'languageMode.el': 'sheds its label at xl and keeps the control',
   'moreMenu.el': 'the ⋯ menu itself — it cannot fold into itself',
-  presentGroup: 'the primary CTA; below 480px it sheds its word, not itself',
+  presentGroup:
+    'the primary CTA; its caret folds at sm, and below 480px it sheds its ' +
+    'word, not itself',
   'notificationBell.el': 'its unread badge is the signal; a closed menu is not',
 };
 
