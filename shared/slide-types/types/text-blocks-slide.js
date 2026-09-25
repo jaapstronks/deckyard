@@ -17,142 +17,26 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
 });
 
 /**
- * Resolve rows from content. A `rows[]` array is the canonical shape and wins
- * whenever it is present - also when it is empty: an empty `rows[]` is a
- * slide with no rows yet (the editor offers "+ Add row"), not a cue to read
- * the legacy numbered fields. Only a slide without `rows` at all falls back to
- * those (see resolveLegacyRows).
+ * Resolve rows from content: the stored `rows[]`, with each row's defaults
+ * filled in. An empty or absent `rows` is a slide with no rows yet (the editor
+ * offers "+ Add row"). The numbered `row{N}…` fields of v1 decks never reach
+ * here: the v1 -> v2 step folds them into `rows[]` and drops them (D216).
  *
  * Returns: [{ title, color, arrow, blocks: [{ title, body }] }, ...]
  */
 export function resolveRows(content) {
-  if (Array.isArray(content?.rows)) {
-    return content.rows.map((row, idx) => ({
-      title: String(row.title || '').trim(),
-      color: row.color || (idx % 2 === 0 ? 'yellow' : 'black'),
-      arrow: row.arrow || 'none',
-      blocks: Array.isArray(row.blocks)
-        ? row.blocks.map((b) => ({
-            title: String(b?.title || '').trim(),
-            body: String(b?.body || '').trim(),
-          }))
-        : [],
-    }));
-  }
-  return resolveLegacyRows(content);
-}
-
-/**
- * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
- * Block{M}Body) or `arrow{N}`. The v1 -> v2 step folds them into `rows[]` and
- * drops them (D216); `rows` itself does not match.
- */
-export const LEGACY_ROW_KEY = /^(row|arrow)\d/;
-
-/**
- * Whether a slide carries content in the legacy numbered fields (row{N}…,
- * arrow{N}). An empty `rows[]` beside such content is a legacy deck the
- * v1 -> v2 step still has to fold; without it, it is the empty state.
- * @param {Object} content
- * @returns {boolean}
- */
-export function hasLegacyRowFields(content) {
-  if (!content || typeof content !== 'object') return false;
-  return Object.entries(content).some(
-    ([key, value]) =>
-      LEGACY_ROW_KEY.test(key) && value != null && String(value).trim() !== '',
-  );
-}
-
-/**
- * The legacy numbered fields (row{N}Block{M}Title, row{N}Count, …) as rows.
- * Read by resolveRows() for a slide without `rows`, and by the v1 -> v2
- * schema migration that folds them into `rows[]`.
- *
- * Returns: [{ title, color, arrow, blocks: [{ title, body }] }, ...]
- */
-export function resolveLegacyRows(content) {
-  const rows = [];
-
-  // Row 1 always exists
-  const row1Count = Math.max(1, Math.min(6, Number(content?.row1Count) || 3));
-  const row1Blocks = [];
-  for (let i = 1; i <= row1Count; i++) {
-    row1Blocks.push({
-      title: String(content?.[`row1Block${i}Title`] || '').trim(),
-      body: String(content?.[`row1Block${i}Body`] || '').trim(),
-    });
-  }
-  rows.push({
-    title: '',
-    color: content?.row1Color || 'yellow',
-    arrow: content?.arrow1 || 'none',
-    blocks: row1Blocks,
-  });
-
-  // Row 2 (optional)
-  if (content?.row2Enabled === 'yes') {
-    const row2Count = Math.max(1, Math.min(6, Number(content?.row2Count) || 3));
-    const row2Blocks = [];
-    for (let i = 1; i <= row2Count; i++) {
-      row2Blocks.push({
-        title: String(content?.[`row2Block${i}Title`] || '').trim(),
-        body: String(content?.[`row2Block${i}Body`] || '').trim(),
-      });
-    }
-    rows.push({
-      title: String(content?.row2Title || '').trim(),
-      color: content?.row2Color || 'black',
-      arrow: content?.arrow2 || 'none',
-      blocks: row2Blocks,
-    });
-  }
-
-  // Row 3 (optional)
-  if (content?.row3Enabled === 'yes') {
-    const row3Count = Math.max(1, Math.min(6, Number(content?.row3Count) || 3));
-    const row3Blocks = [];
-    for (let i = 1; i <= row3Count; i++) {
-      row3Blocks.push({
-        title: String(content?.[`row3Block${i}Title`] || '').trim(),
-        body: String(content?.[`row3Block${i}Body`] || '').trim(),
-      });
-    }
-    rows.push({
-      title: String(content?.row3Title || '').trim(),
-      color: content?.row3Color || 'yellow',
-      arrow: 'none', // no arrow after last row
-      blocks: row3Blocks,
-    });
-  }
-
-  return rows;
-}
-
-function generateBlockFields(rowNum) {
-  const fields = [];
-  for (let i = 1; i <= 6; i++) {
-    // hidden: legacy mirror of rows[].blocks[]. Kept so the editor's dual-write
-    // (syncRowsToNumbered) and old decks keep loading, but hidden from the
-    // semantic projection so it never double-projects beside the rows[] items.
-    fields.push({
-      key: `row${rowNum}Block${i}Title`,
-      label: `Row ${rowNum} Block ${i} title`,
-      type: 'string',
-      required: false,
-      maxLength: 80,
-      hidden: true,
-    });
-    fields.push({
-      key: `row${rowNum}Block${i}Body`,
-      label: `Row ${rowNum} Block ${i} body`,
-      type: 'markdown',
-      required: false,
-      maxLength: 500,
-      hidden: true,
-    });
-  }
-  return fields;
+  if (!Array.isArray(content?.rows)) return [];
+  return content.rows.map((row, idx) => ({
+    title: String(row.title || '').trim(),
+    color: row.color || (idx % 2 === 0 ? 'yellow' : 'black'),
+    arrow: row.arrow || 'none',
+    blocks: Array.isArray(row.blocks)
+      ? row.blocks.map((b) => ({
+          title: String(b?.title || '').trim(),
+          body: String(b?.body || '').trim(),
+        }))
+      : [],
+  }));
 }
 
 function generateDefaultRows(lang) {
@@ -202,7 +86,6 @@ export default {
       group: 'header-block',
     },
 
-    // New rows[] format (preferred for AI generation)
     {
       key: 'rows',
       essential: true,
@@ -211,12 +94,6 @@ export default {
       type: 'items',
       required: false,
       minItems: 1,
-      // The array shape is canonical and carries up to 4 rows. The legacy
-      // numbered mirror below is deliberately FROZEN at 3 (row1/2/3 is the whole
-      // vocabulary): a 4-row slide exists only in rows[] form. resolveRows()
-      // already prefers rows[], so the 4th row round-trips through save/load and
-      // AI validation without a numbered counterpart, while legacy ≤3-row decks
-      // render byte-for-byte unchanged. See A0.4 in docs/plans.
       maxItems: 4,
       collapsible: true, // per-row collapse in the editor (blocks stay flat)
       // The per-row `arrow` is a typed relation to the NEXT row, not content:
@@ -322,165 +199,11 @@ export default {
       maxLength: 200,
     },
 
-    // LEGACY: numbered row/block fields (row1Count, row1Block1Title, etc.)
-    // Kept for backward compatibility with existing slides and editor form.
-    // Every one of them mirrors rows[], so they carry `ai: false`: an agent
-    // authors the array shape, never the numbered one. They also carry
-    // `deprecated: true`, which keeps them out of the published JSON Schema —
-    // the contract shows rows[], not its mirror. The row/block *content*
-    // mirrors are already `hidden` (see generateBlockFields), which says the
-    // same thing to the semantic projection and drops them from the schema too.
-
-    // Row 1 (always visible)
-    {
-      key: 'row1Count',
-      ai: false,
-      deprecated: true,
-      label: 'Row 1 blocks',
-      type: 'enum',
-      required: false,
-      options: ['1', '2', '3', '4', '5', '6'],
-    },
-    {
-      key: 'row1Color',
-      ai: false,
-      deprecated: true,
-      label: 'Row 1 color',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'yellow', label: 'Accent' },
-        { value: 'black', label: 'Dark' },
-      ],
-    },
-    ...generateBlockFields(1),
-
-    // Arrow 1 (between row 1 and 2)
-    {
-      key: 'arrow1',
-      ai: false,
-      deprecated: true,
-      label: 'Arrow after row 1',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'none', label: 'None' },
-        { value: 'down', label: 'Down' },
-        { value: 'up', label: 'Up' },
-      ],
-    },
-
-    // Row 2 (optional)
-    {
-      key: 'row2Enabled',
-      ai: false,
-      deprecated: true,
-      label: 'Row 2',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'no', label: 'Disabled' },
-        { value: 'yes', label: 'Enabled' },
-      ],
-    },
-    {
-      key: 'row2Title',
-      label: 'Row 2 heading',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-      defaultAlign: 'center', // as rows[].title
-      hidden: true, // legacy mirror of rows[1].title — hidden from projection
-    },
-    {
-      key: 'row2Count',
-      ai: false,
-      deprecated: true,
-      label: 'Row 2 blocks',
-      type: 'enum',
-      required: false,
-      options: ['1', '2', '3', '4', '5', '6'],
-    },
-    {
-      key: 'row2Color',
-      ai: false,
-      deprecated: true,
-      label: 'Row 2 color',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'yellow', label: 'Accent' },
-        { value: 'black', label: 'Dark' },
-      ],
-    },
-    ...generateBlockFields(2),
-
-    // Arrow 2 (between row 2 and 3)
-    {
-      key: 'arrow2',
-      ai: false,
-      deprecated: true,
-      label: 'Arrow after row 2',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'none', label: 'None' },
-        { value: 'down', label: 'Down' },
-        { value: 'up', label: 'Up' },
-      ],
-    },
-
-    // Row 3 (optional)
-    {
-      key: 'row3Enabled',
-      ai: false,
-      deprecated: true,
-      label: 'Row 3',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'no', label: 'Disabled' },
-        { value: 'yes', label: 'Enabled' },
-      ],
-    },
-    {
-      key: 'row3Title',
-      label: 'Row 3 heading',
-      type: 'string',
-      required: false,
-      maxLength: 120,
-      defaultAlign: 'center', // as rows[].title
-      hidden: true, // legacy mirror of rows[2].title — hidden from projection
-    },
-    {
-      key: 'row3Count',
-      ai: false,
-      deprecated: true,
-      label: 'Row 3 blocks',
-      type: 'enum',
-      required: false,
-      options: ['1', '2', '3', '4', '5', '6'],
-    },
-    {
-      key: 'row3Color',
-      ai: false,
-      deprecated: true,
-      label: 'Row 3 color',
-      type: 'enum',
-      required: false,
-      options: [
-        { value: 'yellow', label: 'Accent' },
-        { value: 'black', label: 'Dark' },
-      ],
-    },
-    ...generateBlockFields(3),
     // Last, because it has no primary home in the form: the toolbar "Layout"
     // chip owns the header block's alignment (see field-groups.js).
     HEADER_BLOCK.field,
   ],
 
-  // Defaults are array-canonical: new slides start in the rows[] shape.
-  // Legacy numbered decks keep working via resolveRows()'s dual-read.
   defaultsByLang: {
     nl: {
       headerAlign: 'center',
@@ -517,8 +240,6 @@ export default {
     const alignClass = groupAlignClass(HEADER_BLOCK.group, content);
     const rows = resolveRows(content);
     const rowCount = rows.length;
-    // Inline-edit paths must point at the data source resolveRows() used.
-    const useRows = Array.isArray(content?.rows);
 
     function renderArrow(arrowValue) {
       if (!arrowValue || arrowValue === 'none') return '';
@@ -531,43 +252,29 @@ export default {
 
       let rowTitleHtml = '';
       if (row.title) {
-        const rowTitlePath = useRows
-          ? `rows.${rowIdx}.title`
-          : `row${rowIdx + 1}Title`;
-        rowTitleHtml = `<h3 class="text-blocks-row-title text-blocks-step" data-inline-field="${rowTitlePath}" dir="auto">${escapeHtml(row.title)}</h3>`;
+        rowTitleHtml = `<h3 class="text-blocks-row-title text-blocks-step" data-inline-field="rows.${rowIdx}.title" dir="auto">${escapeHtml(row.title)}</h3>`;
       }
 
       const blockCount = row.blocks.length || 1;
       const blockHtmls = row.blocks.map((block, bIdx) => {
-        const blockTitlePath = useRows
-          ? `rows.${rowIdx}.blocks.${bIdx}.title`
-          : `row${rowIdx + 1}Block${bIdx + 1}Title`;
-        const blockBodyPath = useRows
-          ? `rows.${rowIdx}.blocks.${bIdx}.body`
-          : `row${rowIdx + 1}Block${bIdx + 1}Body`;
+        const blockPath = `rows.${rowIdx}.blocks.${bIdx}`;
         const titleHtml = block.title
-          ? `<div class="text-block-title" data-inline-field="${blockTitlePath}" dir="auto">${escapeHtml(block.title)}</div>`
+          ? `<div class="text-block-title" data-inline-field="${blockPath}.title" dir="auto">${escapeHtml(block.title)}</div>`
           : '';
         const bodyHtml = block.body
-          ? `<div class="text-block-body" data-inline-field="${blockBodyPath}">${markdownToSafeHtml(block.body)}</div>`
-          : '';
-        // Item indexes only in array mode: the inline editor's card add/remove
-        // writes to rows[], so legacy numbered decks must not grow affordances.
-        const blockItemAttr = useRows
-          ? ` data-inline-item-index="${bIdx}"`
+          ? `<div class="text-block-body" data-inline-field="${blockPath}.body">${markdownToSafeHtml(block.body)}</div>`
           : '';
         return `
-          <div class="text-block text-blocks-step ${colorClass}"${blockItemAttr}>
+          <div class="text-block text-blocks-step ${colorClass}" data-inline-item-index="${bIdx}">
             ${titleHtml}
             ${bodyHtml}
           </div>
         `;
       });
 
-      const rowItemAttr = useRows ? ` data-inline-item-index="${rowIdx}"` : '';
       return `
         ${rowTitleHtml}
-        <div class="text-blocks-row" data-count="${blockCount}"${rowItemAttr}>
+        <div class="text-blocks-row" data-count="${blockCount}" data-inline-item-index="${rowIdx}">
           ${blockHtmls.join('')}
         </div>
       `;

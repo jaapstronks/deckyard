@@ -89,11 +89,10 @@ export function isAgentOptOut(def) {
 /**
  * True when a single field definition is outside the agent contract.
  *
- * Three markers, in order of how often they apply:
- *  - `deprecated: true` / `hidden: true` — the legacy numbered slots
- *    (`row2Block1Body` and its text-blocks siblings) that mirror a structured
- *    array the agent already gets. `semantic-projection.js` reads `hidden` the
- *    same way, so this is the existing vocabulary rather than a new one.
+ * Two markers:
+ *  - `hidden: true` — carried data beside a structured field the agent
+ *    already gets. `semantic-projection.js` reads `hidden` the same way, so
+ *    this is the existing vocabulary rather than a new one.
  *  - `ai: false` — "this field is not offered to agents" for a live, editable
  *    field. Same key and same meaning as the type-level `ai: false` that
  *    isAgentOptOut() honours, one level down.
@@ -107,9 +106,7 @@ export function isAgentOptOut(def) {
  * @returns {boolean}
  */
 function isFieldOptOut(field) {
-  return (
-    field?.deprecated === true || field?.hidden === true || field?.ai === false
-  );
+  return field?.hidden === true || field?.ai === false;
 }
 
 /**

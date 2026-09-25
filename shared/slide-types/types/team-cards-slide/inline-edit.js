@@ -50,8 +50,8 @@ export const inlineEdit = {
       pos: 'append',
     },
   ],
-  // ensureMembers guarantees members[] in edit mode, so no skipWhenAbsent
-  // guard is needed - add/remove/reorder work from the first block.
+  // ensureMembers guarantees members[] in edit mode, so add/remove/reorder
+  // work from the first block.
   cards: {
     field: 'members',
     container: '.team-cards-grid',

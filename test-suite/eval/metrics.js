@@ -10,11 +10,11 @@ const TITLE_KEYS = new Set(['title', 'heading', 'tagline']);
  * Configuration words. A key counts as configuration if it contains any of
  * these, case-insensitively.
  *
- * Matching on substrings rather than exact names is deliberate: several slide
- * types use flat numbered keys (`row1Color`, `arrow1`, `row2Enabled`,
- * `series1Label`) rather than nested objects. An exact-name blocklist misses
- * those, and their values ("yellow", "down", "yes") then read as slide prose --
- * which made the judge penalize decks for text no audience ever sees.
+ * Matching on substrings rather than exact names is deliberate: config keys
+ * come compounded (`headerAlign`, `bgCustomColor`, `slideBgText`). An
+ * exact-name blocklist misses those, and their values ("left", "teal") then
+ * read as slide prose -- which made the judge penalize decks for text no
+ * audience ever sees.
  */
 const CONFIG_KEY_PATTERN =
   /(^|[a-z0-9])(background|layout|variant|density|icon|colou?r|arrow|image|url|src|alt|logo|theme|tone|align|direction|enabled|count|size|width|height|position|style|id|type)([A-Z0-9]|$)/i;

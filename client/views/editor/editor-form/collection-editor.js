@@ -53,9 +53,9 @@ import { h } from '../../../lib/dom.js';
  * read, so the two surfaces cannot drift.
  *
  * The canonical array is the one written surface — the same contract the inline
- * (canvas) editor applies. text-blocks still carries a legacy numbered mirror
- * (`row1Block1Title`…), which is NOT synced here either; every other type's
- * mirror went with the v7 -> v8 schema fold.
+ * (canvas) editor applies. The numbered mirrors the array replaced are gone:
+ * text-blocks' with the v1 -> v2 schema fold (D216, B452), the others' with
+ * v7 -> v8.
  */
 
 // One collapsed-state store for every collection list; keys are scoped by

@@ -40,11 +40,6 @@
  * B239's execution item.
  */
 
-import {
-  LEGACY_ROW_KEY,
-  hasLegacyRowFields,
-  resolveLegacyRows,
-} from './types/text-blocks-slide.js';
 import { getSlideType, resolveSlideTypeName } from './registry.js';
 import {
   getFieldGroup,
@@ -57,6 +52,93 @@ import { canonicalJson } from '../slide-fingerprint.js';
 
 /** The schema version every freshly written deck is stamped with. */
 export const CURRENT_SCHEMA_VERSION = 15;
+
+/**
+ * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
+ * Block{M}Body) or `arrow{N}`. The v1 -> v2 step folds them into `rows[]` and
+ * drops them (D216); `rows` itself does not match.
+ */
+const LEGACY_ROW_KEY = /^(row|arrow)\d/;
+
+/**
+ * Whether a slide carries content in the legacy numbered fields (row{N}…,
+ * arrow{N}). An empty `rows[]` beside such content is a legacy deck the
+ * v1 -> v2 step still has to fold; without it, it is the empty state.
+ * @param {Object} content
+ * @returns {boolean}
+ */
+function hasLegacyRowFields(content) {
+  if (!content || typeof content !== 'object') return false;
+  return Object.entries(content).some(
+    ([key, value]) =>
+      LEGACY_ROW_KEY.test(key) && value != null && String(value).trim() !== '',
+  );
+}
+
+/**
+ * The legacy numbered text-blocks fields (row{N}Block{M}Title, row{N}Count, …)
+ * as rows: the reader of the v1 -> v2 step, which folds them into `rows[]`.
+ * Nothing else reads the numbered shape any more (B452).
+ *
+ * Returns: [{ title, color, arrow, blocks: [{ title, body }] }, ...]
+ */
+function resolveLegacyRows(content) {
+  const rows = [];
+
+  // Row 1 always exists
+  const row1Count = Math.max(1, Math.min(6, Number(content?.row1Count) || 3));
+  const row1Blocks = [];
+  for (let i = 1; i <= row1Count; i++) {
+    row1Blocks.push({
+      title: String(content?.[`row1Block${i}Title`] || '').trim(),
+      body: String(content?.[`row1Block${i}Body`] || '').trim(),
+    });
+  }
+  rows.push({
+    title: '',
+    color: content?.row1Color || 'yellow',
+    arrow: content?.arrow1 || 'none',
+    blocks: row1Blocks,
+  });
+
+  // Row 2 (optional)
+  if (content?.row2Enabled === 'yes') {
+    const row2Count = Math.max(1, Math.min(6, Number(content?.row2Count) || 3));
+    const row2Blocks = [];
+    for (let i = 1; i <= row2Count; i++) {
+      row2Blocks.push({
+        title: String(content?.[`row2Block${i}Title`] || '').trim(),
+        body: String(content?.[`row2Block${i}Body`] || '').trim(),
+      });
+    }
+    rows.push({
+      title: String(content?.row2Title || '').trim(),
+      color: content?.row2Color || 'black',
+      arrow: content?.arrow2 || 'none',
+      blocks: row2Blocks,
+    });
+  }
+
+  // Row 3 (optional)
+  if (content?.row3Enabled === 'yes') {
+    const row3Count = Math.max(1, Math.min(6, Number(content?.row3Count) || 3));
+    const row3Blocks = [];
+    for (let i = 1; i <= row3Count; i++) {
+      row3Blocks.push({
+        title: String(content?.[`row3Block${i}Title`] || '').trim(),
+        body: String(content?.[`row3Block${i}Body`] || '').trim(),
+      });
+    }
+    rows.push({
+      title: String(content?.row3Title || '').trim(),
+      color: content?.row3Color || 'yellow',
+      arrow: 'none', // no arrow after last row
+      blocks: row3Blocks,
+    });
+  }
+
+  return rows;
+}
 
 /**
  * The one legacy collection key each type stored before `items` — the v6 -> v7

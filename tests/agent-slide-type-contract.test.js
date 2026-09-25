@@ -140,13 +140,12 @@ test('every offered core type resolves a schema out of its own fields', () => {
   }
 });
 
-test('a field opts out of the agent contract three ways', () => {
+test('a field opts out of the agent contract two ways', () => {
   const schema = deriveAgentSchema([
     { key: 'live', type: 'string' },
-    // Legacy mirrors of a structured array: the agent authors rows[], never
-    // row1Block1Title. `hidden` is the same marker the projection reads.
-    { key: 'legacyHidden', type: 'string', hidden: true },
-    { key: 'legacyDeprecated', type: 'string', deprecated: true },
+    // Carried data beside a structured field. `hidden` is the same marker the
+    // projection reads.
+    { key: 'carried', type: 'string', hidden: true },
     // Live and editable, but withheld — same key and meaning as the type-level
     // `ai: false` that isAgentOptOut() honours.
     { key: 'infra', type: 'string', ai: false },
@@ -182,7 +181,7 @@ test('the opt-out rules reach into item fields too', () => {
       maxItems: 3,
       itemFields: [
         { key: 'label', type: 'string' },
-        { key: 'legacy', type: 'string', deprecated: true },
+        { key: 'carried', type: 'string', hidden: true },
       ],
     },
   ]);

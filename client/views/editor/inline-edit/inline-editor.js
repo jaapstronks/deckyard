@@ -815,16 +815,6 @@ export function createInlineEditor({
     const arr = Array.isArray(getByPath(slide.content, fieldKey))
       ? getByPath(slide.content, fieldKey)
       : [];
-    // Dual-model types (text-blocks: rows[] OR legacy numbered fields) must
-    // not grow the array on a slide that has none, since the renderer still
-    // reads the numbered fields there - an add would silently switch its data
-    // source. An empty array is the canonical empty state and gets its "+ Add".
-    if (
-      cards.skipWhenAbsent &&
-      !Array.isArray(getByPath(slide.content, fieldKey))
-    )
-      return;
-
     insertCardLevel(root, slide, {
       path: fieldKey,
       meta: listField,

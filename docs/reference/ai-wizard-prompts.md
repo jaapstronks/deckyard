@@ -262,52 +262,50 @@ NOT for: Time-based sequences, items needing long descriptions, cause-effect
   "type": "text-blocks-slide",
   "content": {
     "title": "Human Capital Development",
-    "subtitle": "How our instruments produce results",
-    "row1Title": "Instruments",
-    "row1Count": "3",
-    "row1Color": "yellow",
-    "row1Block1Title": "A) Learning Communities",
-    "row1Block1Body": "For students and practitioners",
-    "row1Block2Title": "B) Education Modules",
-    "row1Block2Body": "Lifelong learning",
-    "row1Block3Title": "C) Training Vouchers",
-    "row1Block3Body": "Professional development",
-    "arrow1": "down",
-    "row2Enabled": "yes",
-    "row2Title": "Outputs",
-    "row2Count": "3",
-    "row2Color": "black",
-    "row2Block1Title": "12 Communities",
-    "row2Block1Body": "Active learning networks",
-    "row2Block2Title": "30 Modules",
-    "row2Block2Body": "Training programmes",
-    "row2Block3Title": "10,000 Professionals",
-    "row2Block3Body": "Educated and upskilled"
+    "subheading": "How our instruments produce results",
+    "rows": [
+      {
+        "title": "Instruments",
+        "color": "yellow",
+        "arrow": "down",
+        "blocks": [
+          { "title": "A) Learning Communities", "body": "For students and practitioners" },
+          { "title": "B) Education Modules", "body": "Lifelong learning" },
+          { "title": "C) Training Vouchers", "body": "Professional development" }
+        ]
+      },
+      {
+        "title": "Outputs",
+        "color": "black",
+        "arrow": "none",
+        "blocks": [
+          { "title": "12 Communities", "body": "Active learning networks" },
+          { "title": "30 Modules", "body": "Training programmes" },
+          { "title": "10,000 Professionals", "body": "Educated and upskilled" }
+        ]
+      }
+    ]
   }
 }
 
 Fields:
 - title: Required, max 120 chars
-- subtitle: Optional, max 200 chars
-- row1Count: "1" to "6"
-- row1Color: "yellow" or "black"
-- row1Block{N}Title: Block title, max 80 chars
-- row1Block{N}Body: Block body, max 200 chars
-- arrow1: "none", "down", or "up"
-- row2Enabled: "yes" or "no"
-- row2Title, row2Count, row2Color, row2Block{N}Title, row2Block{N}Body: Same as row1
-- arrow2: "none", "down", or "up" (between row2 and row3)
-- row3Enabled, row3Title, row3Count, row3Color, row3Block{N}Title, row3Block{N}Body: Optional third row
+- subheading: Optional, max 200 chars
+- rows: 1-3 row objects (the type accepts 4), each with
+  - title: Optional row heading, max 120 chars (usually empty for row 1)
+  - color: "yellow" or "black"
+  - arrow: "none", "down", or "up" (the flow to the next row)
+  - blocks: 1-6 objects of { title (max 80 chars), body (max 500 chars) }
 
 Common patterns:
 1. Activities → Outputs (arrow down between rows)
 2. Inputs → Processing → Outputs (three rows with arrows)
 3. Challenges → Solutions (arrow down)
-4. Before vs After (two rows, no arrow)
-5. Single row grid (simpler than icon-card-grid)
+4. Before → After (two rows, arrow down)
 
 Best for: Cause-effect, process flows, programme instruments→outcomes, transformations
-NOT for: Items needing icons (use icon-card-grid), timelines with dates
+NOT for: Items needing icons (use icon-card-grid), timelines with dates,
+a single row or rows with no arrow between them (use list-slide)
 
 --- kpi-metrics-slide ---
 Display 1-4 key metrics with LARGE, prominent numbers.

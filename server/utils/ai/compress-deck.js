@@ -23,7 +23,7 @@ function extractSlideTitle(slide) {
     content.title ||
     content.quote?.slice(0, 60) ||
     content.tagline ||
-    content.row1Block1Title ||
+    content.rows?.[0]?.blocks?.[0]?.title ||
     (content.items?.[0]?.title || content.items?.[0]?.text)?.slice(0, 60) ||
     'Untitled'
   );

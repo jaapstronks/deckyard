@@ -78,26 +78,14 @@ export const STRUCTURE_VALIDATORS = {
 
   'text-blocks-slide': (content) => {
     const issues = [];
-    // Array-canonical rows[] is the source of truth (and the only shape that
-    // carries a 4th row — the numbered mirror below is frozen at 3). Validate
-    // it directly when present, mirroring icon-card-grid's items[] branch.
-    if (Array.isArray(content.rows) && content.rows.length > 0) {
+    if (!Array.isArray(content.rows) || content.rows.length === 0) {
+      issues.push('Missing rows[]');
+    } else {
       content.rows.forEach((row, i) => {
         if (!Array.isArray(row?.blocks) || row.blocks.length < 1) {
           issues.push(`rows[${i}] has no blocks`);
         }
       });
-    } else if (!content.row1Count) {
-      issues.push('Missing row1Count');
-    } else {
-      const row1Count = parseInt(content.row1Count, 10);
-      for (let i = 1; i <= row1Count; i++) {
-        if (!content[`row1Block${i}Title`])
-          issues.push(`Missing row1Block${i}Title`);
-      }
-      if (content.row2Enabled === 'yes' && !content.row2Count) {
-        issues.push('row2Enabled but missing row2Count');
-      }
     }
     return issues;
   },
