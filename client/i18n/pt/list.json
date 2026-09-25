@@ -228,7 +228,7 @@
   "list.section.count": "{count} apresentações",
   "list.section.viewAll": "Ver tudo →",
   "list.select": "Selecionar apresentação",
-  "list.sharedBadge": "👥 Partilhado",
+  "list.sharedBadge": "Partilhado",
   "list.sharedBy": "Partilhada por {name}",
   "list.theme.browseAll": "Ver todos os temas",
   "list.theme.error": "Não foi possível carregar os temas",

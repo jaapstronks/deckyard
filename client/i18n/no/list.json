@@ -228,7 +228,7 @@
   "list.section.count": "{count} presentasjoner",
   "list.section.viewAll": "Se alle →",
   "list.select": "Velg presentasjon",
-  "list.sharedBadge": "👥 Delt",
+  "list.sharedBadge": "Delt",
   "list.sharedBy": "Delt av {name}",
   "list.theme.browseAll": "Bla gjennom alle temaer",
   "list.theme.error": "Klarte ikke å laste inn temaene",

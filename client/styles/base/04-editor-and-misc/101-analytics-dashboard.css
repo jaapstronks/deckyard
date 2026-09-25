@@ -139,6 +139,9 @@
 }
 
 .dashboard-trend {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-1);
   font-size: var(--ps-text-xs, 12px);
   margin-top: var(--ps-space-2, 8px);
   font-weight: 500;

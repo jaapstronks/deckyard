@@ -226,7 +226,7 @@
   "list.section.count": "{count} præsentationer",
   "list.section.viewAll": "Se alle →",
   "list.select": "Vælg præsentation",
-  "list.sharedBadge": "👥 Delt",
+  "list.sharedBadge": "Delt",
   "list.sharedBy": "Delt af {name}",
   "list.theme.browseAll": "Gennemse alle temaer",
   "list.theme.error": "Temaerne kunne ikke indlæses",

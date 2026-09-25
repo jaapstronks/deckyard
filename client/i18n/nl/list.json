@@ -249,7 +249,7 @@
   "list.section.count": "{count} presentaties",
   "list.section.viewAll": "Bekijk alle →",
   "list.select": "Presentatie selecteren",
-  "list.sharedBadge": "👥 Gedeeld",
+  "list.sharedBadge": "Gedeeld",
   "list.sharedBy": "Gedeeld door {name}",
   "list.theme.browseAll": "Bekijk alle thema's",
   "list.theme.error": "Kon thema's niet laden",

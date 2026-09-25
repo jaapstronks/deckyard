@@ -1,5 +1,6 @@
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Start curtain: the first thing the presenter sees when the /present tab
@@ -25,11 +26,16 @@ export function createStartCurtain({
 } = {}) {
   let dismissed = false;
 
-  const fsBtn = h('button', {
-    class: 'btn btn-primary presenter-start-fs',
-    type: 'button',
-    text: t('presenter.start.fullscreen', 'Start in fullscreen'),
-  });
+  const fsBtn = h(
+    'button',
+    { class: 'btn btn-primary presenter-start-fs', type: 'button' },
+    [
+      icon('play', { size: 14 }),
+      h('span', {
+        text: t('presenter.start.fullscreen', 'Start in fullscreen'),
+      }),
+    ],
+  );
 
   const windowedBtn = h('button', {
     class: 'presenter-start-windowed',

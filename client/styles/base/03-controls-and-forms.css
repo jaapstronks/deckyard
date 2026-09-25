@@ -682,8 +682,21 @@
   color: hsl(var(--app-success));
   background: hsl(var(--app-success) / 0.14);
 }
+/* The chip's shape cue beside its colour (WCAG 1.4.1), from the icon set. */
+.editor-a11y-status.is-custom::before,
+.editor-a11y-status.is-no-heading::before {
+  content: '';
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.25em;
+  vertical-align: -0.125em;
+  background-color: currentColor;
+  -webkit-mask: var(--a11y-status-icon) center / contain no-repeat;
+  mask: var(--a11y-status-icon) center / contain no-repeat;
+}
 .editor-a11y-status.is-custom::before {
-  content: '✓ ';
+  --a11y-status-icon: url('/client/vendor/lucide-icons/check.svg');
 }
 /* Warning yellow is too light as text; use a darker amber for the label and
    the soft warning tint for the chip. */
@@ -692,7 +705,7 @@
   background: hsl(var(--app-warning) / 0.16);
 }
 .editor-a11y-status.is-no-heading::before {
-  content: '⚠ ';
+  --a11y-status-icon: url('/client/vendor/lucide-icons/triangle-alert.svg');
 }
 
 /* Collapse control for the inspector rail. The header row it used to live in

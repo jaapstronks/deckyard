@@ -55,24 +55,17 @@ export function openVersionCompareModal({
   const summary = h('div', { class: 'version-compare-summary' });
 
   // Legend
-  const legend = h('div', { class: 'version-compare-legend' }, [
-    h('span', {
-      class: 'legend-item diff-added',
-      text: '🟢 ' + t('editor.versions.compare.added', 'Added'),
+  const legend = h(
+    'div',
+    { class: 'version-compare-legend' },
+    ['added', 'removed', 'modified', 'unchanged'].map((category) => {
+      const style = getCategoryStyle(category);
+      return h('span', { class: `legend-item ${style.className}` }, [
+        h('span', { class: 'diff-dot', 'aria-hidden': 'true' }),
+        h('span', { text: style.label }),
+      ]);
     }),
-    h('span', {
-      class: 'legend-item diff-removed',
-      text: '🔴 ' + t('editor.versions.compare.removed', 'Removed'),
-    }),
-    h('span', {
-      class: 'legend-item diff-modified',
-      text: '🟡 ' + t('editor.versions.compare.modified', 'Modified'),
-    }),
-    h('span', {
-      class: 'legend-item diff-unchanged',
-      text: '⚪ ' + t('editor.versions.compare.unchanged', 'Unchanged'),
-    }),
-  ]);
+  );
 
   // Headers for columns (3 columns to match grid: current | indicator | snapshot)
   const snapshotHeaderText =
@@ -373,11 +366,14 @@ export function openVersionCompareModal({
         }
 
         // Category indicator
-        const indicator = h('div', {
-          class: 'compare-indicator',
-          text: style.indicator,
-          title: style.label,
-        });
+        const indicator = h('div', { class: 'compare-indicator' }, [
+          h('span', {
+            class: 'diff-dot',
+            role: 'img',
+            'aria-label': style.label,
+            title: style.label,
+          }),
+        ]);
 
         // Snapshot side
         const snapshotCell = h('div', {

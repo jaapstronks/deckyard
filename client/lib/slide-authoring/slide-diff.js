@@ -152,32 +152,28 @@ export function alignSlidesForComparison(currentSlides, snapshotSlides, diff) {
 /**
  * Get category styling info.
  * @param {string} category - Diff category
- * @returns {Object} { className, indicator, label }
+ * @returns {Object} { className, label }
  */
 export function getCategoryStyle(category) {
   switch (category) {
     case 'added':
       return {
         className: 'diff-added',
-        indicator: '🟢',
         label: t('editor.versions.compare.added', 'Added'),
       };
     case 'removed':
       return {
         className: 'diff-removed',
-        indicator: '🔴',
         label: t('editor.versions.compare.removed', 'Removed'),
       };
     case 'modified':
       return {
         className: 'diff-modified',
-        indicator: '🟡',
         label: t('editor.versions.compare.modified', 'Modified'),
       };
     default:
       return {
         className: 'diff-unchanged',
-        indicator: '⚪',
         label: t('editor.versions.compare.unchanged', 'Unchanged'),
       };
   }

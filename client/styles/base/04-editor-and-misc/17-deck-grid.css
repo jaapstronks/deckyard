@@ -67,24 +67,28 @@
   background: hsl(var(--app-accent-primary) / 0.06);
 }
 
-/* Legacy selected checkmark badge (toggle-on-click mode without a checkbox). */
+/* Legacy selected checkmark badge (toggle-on-click mode without a checkbox):
+   the accent disc is ::before, the Lucide check painted over it is ::after. */
+.deck-grid-tile.is-selected:not(.has-checkbox)::before,
 .deck-grid-tile.is-selected:not(.has-checkbox)::after {
-  content: '✓';
+  content: '';
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 2;
   width: 22px;
   height: 22px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  pointer-events: none;
+}
+.deck-grid-tile.is-selected:not(.has-checkbox)::before {
   border-radius: 50%;
   background: hsl(var(--app-accent-primary));
-  color: hsl(var(--app-text-on-solid));
-  font-size: var(--ps-text-sm);
-  font-weight: 700;
-  pointer-events: none;
+}
+.deck-grid-tile.is-selected:not(.has-checkbox)::after {
+  background-color: hsl(var(--app-text-on-solid));
+  -webkit-mask: url('/client/vendor/lucide-icons/check.svg') center / 14px
+    no-repeat;
+  mask: url('/client/vendor/lucide-icons/check.svg') center / 14px no-repeat;
 }
 
 /* Corner select checkbox (flipped preview-on-click mode): revealed on tile
