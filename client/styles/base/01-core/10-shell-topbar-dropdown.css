@@ -474,7 +474,8 @@ summary.ghost-icon-btn::-webkit-details-marker {
    ~870px, and again in a band just above each breakpoint (641-657, 769-870,
    1025-1062) - which is how Share ended up half off-screen on a phone. The
    property to keep is that each band fits from its own low edge up, measured
-   with a title at its minimum:
+   with a title at its minimum and the collab avatar stack at its widest for
+   that band (five peers and a +N; see 107-collab-presence.css):
 
      band  341-480  481-640  641-768  769-1024  1025-1280  1281+
      fits  from 341 from 481 from 641 from 769  from 1025  from 1281
@@ -482,17 +483,25 @@ summary.ghost-icon-btn::-webkit-details-marker {
    What leaves the bar, and where it goes:
 
      <= 1280  author chip   - no mirror: the avatar two slots along says it
+     <= 1280  collab stack  - capped to its first avatar and a +N count
      <= 1024  save status   - no mirror: a transient chip, not an action
      <= 1024  undo / redo   - no mirror: the keyboard shortcuts keep working
      <= 1024  slide overview, Export, analytics
      <= 768   Share; the language trigger drops to its code ("NL")
      <= 640   user avatar (Settings / Sign out / theme sit in the menu), seps
+     <= 640   collab stack  - its menu entry names who else is here
      <= 480   nothing folds: the CTA sheds its word, the gutter halves
 
-   Below 341px the bar overflows again: four controls, a tappable title and a
+   Below 334px the bar overflows again: four controls, a tappable title and a
    16px touch target do not fit, and the next thing to shed would be the
-   Present CTA itself. 341px is the floor, not an oversight - measured by
-   walking a deck pixel by pixel from 335px up (340 -> +1px, 341 -> 0).
+   Present CTA itself. 334px is the floor, not an oversight - walked pixel by
+   pixel with no peers and with five, identical because the stack has folded
+   by then (332 -> +1.4px, 333 -> +0.4px, 334 -> 0). The 341px phone band
+   therefore fits with 7px to spare. `tests/topbar-presence-geometry.test.js`
+   holds every band edge to this in Chrome, by geometry: the bar's children
+   stay inside its content box, and a child that overflows its parent - the
+   way the stack once did, in `.topbar-spacer` - is caught although it moves
+   no scrollbar.
 
    One floor, for every deck. The analytics button is conditional on top of
    its rung (a deck without a publication or a share link has nothing to
@@ -582,8 +591,11 @@ summary.ghost-icon-btn::-webkit-details-marker {
     padding-right: var(--ps-space-2);
   }
 
-  /* Compact the remaining labeled buttons */
-  .topbar .btn {
+  /* Compact the remaining labeled buttons. Only the labeled ones: an icon
+     button has no padding to trim, and the Present caret is a <summary>,
+     content-box, where this padding came on top of its 36px and made it
+     54px - the 16px that had pushed the phone floor off 341. */
+  .topbar .btn:not(.btn-icon) {
     padding-left: 8px;
     padding-right: 8px;
   }

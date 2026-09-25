@@ -15,7 +15,9 @@ import { createPresenceUI } from './presence-ui.js';
  * @param {Object} opts
  * @param {Object} opts.pres - presentation (needs .id)
  * @param {{ email: string, name?: string }} opts.user - current user
- * @param {HTMLElement} opts.topbarEl
+ * @param {HTMLElement} opts.presenceSlot - the topbar's avatar-stack slot
+ * @param {(names: string[]) => void} opts.setPresenceNames - the topbar's
+ *   switch for both halves of the stack
  * @param {HTMLElement} opts.listEl - slide list container
  * @param {HTMLElement} opts.thumb - preview slide container
  * @param {HTMLElement} [opts.editorMount] - side-form root
@@ -25,7 +27,8 @@ import { createPresenceUI } from './presence-ui.js';
 export function initEditorPresence({
   pres,
   user,
-  topbarEl,
+  presenceSlot,
+  setPresenceNames,
   listEl,
   thumb,
   editorMount,
@@ -38,7 +41,8 @@ export function initEditorPresence({
 
   const ui = createPresenceUI({
     session,
-    topbarEl,
+    presenceSlot,
+    setPresenceNames,
     listEl,
     thumb,
     editorMount,

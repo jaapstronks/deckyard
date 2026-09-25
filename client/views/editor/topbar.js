@@ -501,8 +501,8 @@ export function createEditorTopbar({
   // Three zones (chrome re-org 2026-07-19). The topbar is deck-level only: the
   // pane openers moved to the slide bar (Option A), docked at its far right
   // above the inspector column they control.
-  //   1. identity/navigation: back, title, save status, author + presence
-  //      (the collab avatar stack mounts into the spacer)
+  //   1. identity/navigation: back, title, save status, author; the collab
+  //      avatar stack sits right of the spacer, against zone 2
   //   2. edit session: undo/redo, language
   //   3. deliver: overview/analytics/more as quiet ghosts, then Export,
   //      Share and the Present CTA - with the user avatar in the corner,
@@ -519,6 +519,33 @@ export function createEditorTopbar({
   // to the bar's width budget, not to the button, so it is stamped here next
   // to the layout it serves - the ladder is documented in
   // `styles/base/01-core/10-shell-topbar-dropdown.css` (Topbar Responsive).
+  // The collab avatar stack's place in the bar. The bar builds it rather than
+  // the presence module, so it is a child of the bar and sits on the ladder
+  // like every other one: five avatars and a +N chip spend 124px, which the
+  // phone floor cannot carry, so it folds at sm into the ⋯ entry that names
+  // the same peers. Hidden inline until presence reports a peer - an inline
+  // `display: none` beats the fold rule, so a deck nobody else has open
+  // spends no width at any width. Empty and hidden where collab is off.
+  const presenceSlot = h('div', {
+    class: 'topbar-presence topbar-fold-sm',
+    role: 'group',
+    'aria-label': t('editor.presence.here', 'Also here'),
+  });
+  presenceSlot.style.display = 'none';
+
+  /**
+   * Show or hide both halves of the presence stack in one go - the bar slot
+   * and its ⋯ entry - so a peer cannot be named in one half and absent from
+   * the other. The avatars themselves are the presence module's to draw.
+   *
+   * @param {string[]} names - display names of the other people in the deck
+   * @returns {void}
+   */
+  const setPresenceNames = (names) => {
+    presenceSlot.style.display = names.length ? '' : 'none';
+    moreMenu.setPresenceNames(names);
+  };
+
   topbarExportEl?.classList?.add('topbar-fold-lg');
   topbarShareEl?.classList?.add('topbar-fold-md');
   userMenu.el.classList.add('topbar-fold-sm');
@@ -529,6 +556,7 @@ export function createEditorTopbar({
     saveStatusEl,
     authorDisplayEl,
     h('div', { class: 'topbar-spacer' }),
+    presenceSlot,
     undoRedoGroup,
     languageMode.el,
     h('div', {
@@ -569,6 +597,8 @@ export function createEditorTopbar({
   return {
     topbarEl,
     topbarTitleEl,
+    presenceSlot,
+    setPresenceNames,
     setSaveStatus,
     syncLangUi: languageMode.syncLangUi,
     syncUndoButtons,

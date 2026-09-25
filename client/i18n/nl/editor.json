@@ -569,6 +569,7 @@
   "editor.panes.label": "Zijpanelen",
   "editor.presence.editingSlide": "{name} bewerkt deze slide",
   "editor.presence.here": "Ook hier",
+  "editor.presence.hereNames": "Ook hier: {names}",
   "editor.presence.viewerTitle": "{name} is in deze presentatie",
   "editor.presence.viewingSlide": "{name} bekijkt deze slide",
   "editor.present": "Presenteren",
