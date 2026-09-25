@@ -10,6 +10,8 @@ import {
   validateSlide,
   resolveSlideTypeName,
   canonicalSlideType,
+  convertSlideToType,
+  UnsupportedConversionError,
 } from '../../../../shared/slide-types.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
@@ -79,10 +81,11 @@ async function handleGetSlide(ctx, presentationId, slideId) {
 }
 
 /**
- * PUT /api/v1/presentations/:presentationId/slides/:slideId - Update a slide (full replacement).
+ * PUT /api/v1/presentations/:presentationId/slides/:slideId - Update a slide:
+ * a full replacement, or with `type` and no `content` a conversion (B458).
  */
 async function handleUpdateSlide(ctx, presentationId, slideId) {
-  const { storageScope, req, apiKey } = ctx;
+  const { repoRoot, storageScope, req, apiKey } = ctx;
 
   if (!requirePermission(ctx, 'write')) return true;
 
@@ -118,12 +121,46 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
     return true;
   }
 
+  // A type change without new content is a conversion (D97), the same one MCP
+  // `update_slide` and the editor run: the content is re-seeded for the target
+  // type and what maps carries over. A pair the model has no mapping for is
+  // refused rather than leaving the old type's content under the new name.
+  // With `content` the caller replaces the slide outright, so nothing converts.
+  let content = body.content || existingSlide.content || {};
+  if (slideType !== existingSlide.type && !body.content) {
+    try {
+      ({ content } = convertSlideToType(existingSlide, slideType, {
+        slideTypes,
+        lang: pres?.lang,
+        theme: await loadDeckTheme(repoRoot, pres.theme),
+      }));
+    } catch (err) {
+      if (!(err instanceof UnsupportedConversionError)) throw err;
+      const { from, to, convertible } = err.details;
+      await apiError(
+        ctx,
+        400,
+        `Cannot change slide type from ${canonicalSlideType(from)} to ${canonicalSlideType(to)}: no conversion is declared for that pair. ` +
+          'Send `content` for the new type to replace the slide, or create a new slide of that type.',
+        {
+          code: 'unsupported_conversion',
+          details: {
+            from: canonicalSlideType(from),
+            to: canonicalSlideType(to),
+            convertible: convertible.map(canonicalSlideType),
+          },
+        },
+      );
+      return true;
+    }
+  }
+
   // Build updated slide, keeping id and parentId from existing
   const updatedSlide = {
     id: slideId,
     type: slideType,
     parentId: existingSlide.parentId || null,
-    content: body.content || existingSlide.content || {},
+    content,
     notes: getOptionalString(body, 'notes') ?? (existingSlide.notes || ''),
     visibility: body.visibility || existingSlide.visibility || {},
   };

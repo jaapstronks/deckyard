@@ -920,6 +920,10 @@ Two things are deliberately _not_ the factory's (D92):
   as a draft through `update_slide`'s `visibility` (D97, D117). The factory's
   birth steps (defaults, theme seed, instance keys) never run on a slide that
   already exists. `tests/mcp-update-slide-is-a-patch.test.js` pins this.
+  API v1 `PUT /slides/:slideId` takes the same route: a `type` without
+  `content` converts, and an unmapped pair is a 400 `unsupported_conversion`
+  with `{ from, to, convertible }` as canonical ids; a `type` _with_ `content`
+  is a full replacement (B458, `tests/public-api-v1-slide-type-change.test.js`).
 
 ### Form layout (`formLayout`)
 
