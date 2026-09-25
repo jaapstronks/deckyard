@@ -1,30 +1,42 @@
 import { getLangShortLabel } from '../../lib/format/lang-selector.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
-import {
-  DEFAULT_SUPPORTED_DECK_LANGS,
-  getLangDisplayName,
-} from '../../../shared/i18n-utils.js';
+import { getLangDisplayName } from '../../../shared/i18n-utils.js';
 import { urlWithQuery } from '../../lib/state/router.js';
 
 /**
+ * The languages the presenter offers: exactly the versions the deck carries,
+ * the one being presented first (D115). A language the deck has no version of
+ * is not offered, and a language the deck carries is never hidden.
+ *
+ * @param {string[]} deckLangs - the deck's versions, as `existingVersionLangs`
+ *   names them
+ * @param {string} modeLang - the language being presented
+ * @returns {string[]}
+ */
+export function presenterLangChoices(deckLangs, modeLang) {
+  return deckLangs.includes(modeLang)
+    ? [modeLang, ...deckLangs.filter((l) => l !== modeLang)]
+    : [...deckLangs];
+}
+
+/**
  * Create presenter language selector.
- * Uses toggle buttons for ≤2 languages, dropdown for >2.
+ * Uses toggle buttons for ≤2 languages, dropdown for >2; hidden when the deck
+ * carries fewer than two versions.
  *
  * @param {Object} options
  * @param {string} options.modeLang - Current language mode
  * @param {Function} options.getCurrentSlideId - Function to get current slide ID
- * @param {string[]} [options.supportedLangs] - Array of supported language codes
+ * @param {string[]} options.deckLangs - The deck's language versions
+ *   (`existingVersionLangs(pres)`)
  */
 export function createPresenterLangSeg({
   modeLang,
   getCurrentSlideId,
-  supportedLangs = DEFAULT_SUPPORTED_DECK_LANGS,
+  deckLangs,
 } = {}) {
-  const langs =
-    Array.isArray(supportedLangs) && supportedLangs.length > 0
-      ? supportedLangs
-      : DEFAULT_SUPPORTED_DECK_LANGS;
+  const langs = presenterLangChoices(deckLangs, modeLang);
 
   // Hide if only one language
   if (langs.length < 2) {
