@@ -286,19 +286,24 @@ function buildCatalogTypePrompt(type, catalogEntry) {
 function compactAgentSchema(schema) {
   const lines = [];
   for (const [key, fieldDef] of Object.entries(schema || {})) {
+    // `essential` comes from the same derivation as the agent schema (D211),
+    // so the generator and the MCP agent see one list. On a list it means the
+    // first entry; later entries stay optional.
     if (fieldDef.type === 'array') {
       const itemFields = fieldDef.itemSchema
         ? Object.keys(fieldDef.itemSchema).join(', ')
         : '';
       lines.push(
         `- ${key}: array[${fieldDef.minItems || 1}-${fieldDef.maxItems || '?'}]` +
-          `${itemFields ? ` of { ${itemFields} }` : ''}`,
+          `${itemFields ? ` of { ${itemFields} }` : ''}` +
+          `${fieldDef.essential ? ' (essential: first entry)' : ''}`,
       );
     } else if (fieldDef.type === 'enum') {
       lines.push(`- ${key}: enum = ${(fieldDef.options || []).join('|')}`);
     } else {
       const req = fieldDef.required ? 'required' : 'optional';
-      lines.push(`- ${key}: ${fieldDef.type || 'string'} (${req})`);
+      const essential = fieldDef.essential ? ', essential' : '';
+      lines.push(`- ${key}: ${fieldDef.type || 'string'} (${req}${essential})`);
     }
   }
   return lines;
@@ -316,6 +321,9 @@ export function buildSlideTypesPrompt({
 
   lines.push(
     'SLIDE TYPE CATALOG (use exact "type" strings; content must match the schemas):',
+  );
+  lines.push(
+    'Fill every field marked "essential" (for a list: at least its first entry); without it the slide looks unfinished, even where the field is optional.',
   );
   lines.push('');
 
