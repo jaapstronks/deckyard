@@ -173,7 +173,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
   // Validate the slide
   const errors = validateSlide(updatedSlide, { slideTypes });
   if (errors.length > 0) {
-    await apiError(ctx, 400, 'Invalid slide data', { details: errors });
+    await apiError(ctx, 400, 'Invalid slide data', { details: { errors } });
     return true;
   }
 
@@ -279,7 +279,7 @@ async function handleCreateSlide(ctx, presentationId) {
   // Validate the new slide
   const errors = validateSlide(newSlideObj, { slideTypes });
   if (errors.length > 0) {
-    await apiError(ctx, 400, 'Invalid slide data', { details: errors });
+    await apiError(ctx, 400, 'Invalid slide data', { details: { errors } });
     return true;
   }
 
