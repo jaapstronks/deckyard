@@ -329,8 +329,12 @@ paths:
                     A slide may carry `contentByLang`, an object of content
                     per deck language: each key becomes a language version of
                     the deck, so each key must be a canonical deck language
-                    (the `lang` values above); `en` or an unsupported key is
-                    refused with a 400 `invalid`, `details.field` = `slides`,
+                    (the `lang` values above) and each value a content object.
+                    Leave the field out for a single-language slide. A
+                    `contentByLang` that is not an object (`null` included), a
+                    value that is not an object, or an `en` or unsupported key
+                    is refused with a 400 `invalid`, `details.field` =
+                    `slides`, the message naming `slides[i].contentByLang`,
                     and nothing is created.
       responses:
         '201':
