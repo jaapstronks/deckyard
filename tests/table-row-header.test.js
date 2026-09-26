@@ -14,8 +14,8 @@ import {
  * because `rows` declares `rowHeader: 'first'`, while the canvas emitted a
  * `<td>`. Two surfaces disagreeing about one declaration is the defect. These
  * tests pin that the canvas reads the same declaration, that the step-reveal
- * and inline-edit hooks ride along on the `<th>`, and that the corner cell is
- * untouched.
+ * and inline-edit hooks ride along on the `<th>`, and (B473, D225) that the
+ * header cells, corner included, say `scope="col"` as the reader does.
  */
 
 const TABLE = SLIDE_TYPES['table-slide'];
@@ -66,12 +66,30 @@ test('canvas and reader agree on the row-header cells', () => {
   assert.deepEqual(heads(doc), heads(reader));
 });
 
-test('the corner cell stays a plain header cell, whatever cornerCell says', () => {
+test('canvas and reader agree on the column-header cells (D225)', () => {
+  const doc = canvas();
+  const reader = new JSDOM(
+    `<body>${renderSlideBodySemanticHtml({ type: 'table-slide', content: { ...structuredClone(TABLE.defaults), ...content } }, TABLE, { headingKey: 'title' })}</body>`,
+  ).window.document;
+  const heads = (d) =>
+    [...d.querySelectorAll('thead th')].map((c) => [
+      c.textContent.trim(),
+      c.getAttribute('scope'),
+    ]);
+  assert.deepEqual(heads(doc), [
+    ['Fase', 'col'],
+    ['Wat', 'col'],
+    ['Wie', 'col'],
+  ]);
+  assert.deepEqual(heads(doc), heads(reader));
+});
+
+test('the corner cell heads its column, whatever cornerCell says', () => {
   for (const cornerCell of ['label', 'header']) {
     const corner = canvas({ cornerCell }).querySelector(
       '.md-table thead th:first-child',
     );
-    assert.equal(corner.getAttribute('scope'), null);
+    assert.equal(corner.getAttribute('scope'), 'col');
     assert.equal(corner.textContent, 'Fase');
   }
 });
