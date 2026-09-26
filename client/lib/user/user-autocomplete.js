@@ -5,6 +5,7 @@
 
 import { h, installDismissOnOutside } from '../dom.js';
 import { t } from '../ui-i18n.js';
+import { icon } from '../dom/icons.js';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 1;
@@ -80,17 +81,20 @@ export function createUserAutocomplete({
           class: 'user-autocomplete-chip-text',
           text: user.name || user.email,
         }),
-        h('button', {
-          class: 'user-autocomplete-chip-remove',
-          type: 'button',
-          text: '\u00d7',
-          title: t('userAutocomplete.remove', 'Remove'),
-          onclick: (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            removeUser(user.email);
+        h(
+          'button',
+          {
+            class: 'user-autocomplete-chip-remove',
+            type: 'button',
+            title: t('userAutocomplete.remove', 'Remove'),
+            onclick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              removeUser(user.email);
+            },
           },
-        }),
+          [icon('x', { size: 12 })],
+        ),
       ]);
       chipsContainer.append(chip);
     }

@@ -919,7 +919,8 @@ export async function createEditorController({
         presenceHandle = initEditorPresence({
           pres,
           user,
-          topbarEl: topbarApi.topbarEl,
+          presenceSlot: topbarApi.presenceSlot,
+          setPresenceNames: topbarApi.setPresenceNames,
           listEl: slideListEl,
           thumb,
           editorMount,

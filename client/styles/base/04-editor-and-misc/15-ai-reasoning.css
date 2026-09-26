@@ -47,8 +47,15 @@
 }
 
 .ai-warning-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ps-space-1-5);
   margin: 0.25rem 0;
   line-height: 1.4;
+}
+/* Level with the first line of a wrapping warning. */
+.ai-warning-item .icon {
+  margin-top: calc((1.4em - var(--icon-size)) / 2);
 }
 
 .ai-warning-item:first-child {

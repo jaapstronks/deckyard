@@ -34,6 +34,7 @@ import { buildShareViewerTopbar } from './topbar.js';
 import { createGuestVerifyNotice } from './guest-verify-notice.js';
 import { setupShareAutoAdvance } from './auto-advance.js';
 import { queryParam, setQueryParams } from '../../lib/state/router.js';
+import { icon } from '../../lib/dom/icons.js';
 
 // Guest session state
 let guestSession = null;
@@ -264,18 +265,26 @@ export async function renderShareViewer(root, token) {
     }
 
     const nav = h('div', { class: 'share-viewer-nav' });
-    const prevBtn = h('button', {
-      class: 'btn btn-secondary share-viewer-nav-btn',
-      text: '←',
-    });
+    const prevBtn = h(
+      'button',
+      {
+        class: 'btn btn-secondary share-viewer-nav-btn',
+        'aria-label': t('common.previous', 'Previous slide'),
+      },
+      [icon('arrow-left')],
+    );
     const slideCounter = h('div', {
       class: 'share-viewer-counter',
       text: '1 / 1',
     });
-    const nextBtn = h('button', {
-      class: 'btn btn-secondary share-viewer-nav-btn',
-      text: '→',
-    });
+    const nextBtn = h(
+      'button',
+      {
+        class: 'btn btn-secondary share-viewer-nav-btn',
+        'aria-label': t('common.next', 'Next slide'),
+      },
+      [icon('arrow-right')],
+    );
     nav.append(prevBtn, slideCounter, nextBtn);
 
     // Auto-advance setup (skip entirely in pacing mode — pacing is presenter-only)

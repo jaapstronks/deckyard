@@ -127,12 +127,19 @@ const sourceAction = (controller) =>
 /** `[label, status]` for every row, in menu order, sections separated by `--`. */
 function readMenu(controller) {
   const menu = controller.el.querySelector('.dropdown-menu');
+  // A complete version shows a check icon and names it in .sr-only text.
+  const statusOf = (status) =>
+    status?.classList.contains('is-complete') &&
+    status.querySelector('.icon') &&
+    status.querySelector('.sr-only')?.textContent
+      ? 'complete'
+      : (status?.textContent ?? '');
   return [...menu.children].map((el) => {
     if (el.classList.contains('dropdown-sep')) return '--';
     if (el.classList.contains('dropdown-help')) return `# ${el.textContent}`;
     return [
       el.querySelector('.lang-menu-name')?.textContent ?? el.textContent,
-      el.querySelector('.lang-menu-status')?.textContent ?? '',
+      statusOf(el.querySelector('.lang-menu-status')),
     ];
   });
 }
@@ -143,7 +150,7 @@ test('every version of the deck is listed, with its translation status', () => {
 
   assert.deepEqual(readMenu(controller), [
     ['Nederlands', 'source'],
-    ['Deutsch', '✓'],
+    ['Deutsch', 'complete'],
     // One of the two French titles is empty, and the deck title is not missing.
     ['Français', '1 missing'],
     '--',
@@ -336,7 +343,7 @@ test('adding an empty version leaves the source where it was (D74)', async () =>
   );
   assert.deepEqual(readMenu(controller), [
     ['Nederlands', 'source'],
-    ['Deutsch', '✓'],
+    ['Deutsch', 'complete'],
     ['Français', '1 missing'],
     // Both slide titles the Dutch original fills are still blank here.
     ['English', '2 missing'],
@@ -484,10 +491,10 @@ test('the version being edited can be made the source version', async () => {
 
   assert.deepEqual(readMenu(controller), [
     ['Nederlands', 'source'],
-    ['Deutsch', '✓'],
+    ['Deutsch', 'complete'],
     // Measured from a Dutch version that leaves the second title empty, both
     // translations are complete.
-    ['Français', '✓'],
+    ['Français', 'complete'],
     '--',
     ['Make this the source version', ''],
     '--',

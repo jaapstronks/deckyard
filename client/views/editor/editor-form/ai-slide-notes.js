@@ -10,6 +10,7 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * "AI type reasoning" disclosure: why the generator picked this type, plus any
@@ -78,11 +79,12 @@ export function buildAiWarningsPanel({ slide }) {
 
   const warningsDiv = h('div', { class: 'ai-warnings' });
   for (const w of slide._aiWarnings) {
-    const p = h('p', { class: 'ai-warning-item' });
-    p.textContent = t('editor.slide.aiWarningItem', '⚠️ {warning}', {
-      warning: w,
-    });
-    warningsDiv.append(p);
+    warningsDiv.append(
+      h('p', { class: 'ai-warning-item' }, [
+        icon('triangle-alert', { size: 14 }),
+        h('span', { text: w }),
+      ]),
+    );
   }
   return warningsDiv;
 }

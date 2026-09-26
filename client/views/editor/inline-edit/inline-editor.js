@@ -65,6 +65,7 @@ import { createReorderDrag } from './reorder-drag.js';
 import { h } from '../../../lib/dom.js';
 import { slideRendered } from '../../../lib/slide-runtime/slide-render.js';
 import { debugLog } from '../../../lib/util/debug.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * @param {Object} opts
@@ -780,19 +781,22 @@ export function createInlineEditor({
       if (isEmptyValue(getByPath(slide.content, g.field))) continue; // empty -> ghost
       const el = root.querySelector(`[data-inline-field="${g.field}"]`);
       if (!el) continue;
-      const clear = h('button', {
-        class: 'ie-clear',
-        type: 'button',
-        title: t('editor.inline.clearField', 'Clear {label}', {
-          label: fieldLabel(g.field, meta),
-        }),
-        text: '×',
-        onclick: (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          clearOptionalField(g.field);
+      const clear = h(
+        'button',
+        {
+          class: 'ie-clear',
+          type: 'button',
+          title: t('editor.inline.clearField', 'Clear {label}', {
+            label: fieldLabel(g.field, meta),
+          }),
+          onclick: (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            clearOptionalField(g.field);
+          },
         },
-      });
+        [icon('x', { size: 14 })],
+      );
       // Pinned to the field's top-right corner on the overlay.
       overlay.place(clear, el, 'top-right', 0);
     }
@@ -819,16 +823,6 @@ export function createInlineEditor({
     const arr = Array.isArray(getByPath(slide.content, fieldKey))
       ? getByPath(slide.content, fieldKey)
       : [];
-    // Dual-model types (text-blocks: rows[] OR legacy numbered fields) must
-    // not grow the array on a slide that has none, since the renderer still
-    // reads the numbered fields there - an add would silently switch its data
-    // source. An empty array is the canonical empty state and gets its "+ Add".
-    if (
-      cards.skipWhenAbsent &&
-      !Array.isArray(getByPath(slide.content, fieldKey))
-    )
-      return;
-
     insertCardLevel(root, slide, {
       path: fieldKey,
       meta: listField,
@@ -921,20 +915,23 @@ export function createInlineEditor({
         (removeAnchor && itemEl.querySelector(removeAnchor)) || itemEl;
 
       if (arr.length > min) {
-        const remove = h('button', {
-          class: 'ie-card-remove',
-          type: 'button',
-          title: t(
-            removeLabelKey || 'editor.inline.removeItem',
-            removeLabel || 'Remove item',
-          ),
-          text: '×',
-          onclick: (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            removeCard(path, idx);
+        const remove = h(
+          'button',
+          {
+            class: 'ie-card-remove',
+            type: 'button',
+            title: t(
+              removeLabelKey || 'editor.inline.removeItem',
+              removeLabel || 'Remove item',
+            ),
+            onclick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              removeCard(path, idx);
+            },
           },
-        });
+          [icon('x', { size: 14 })],
+        );
         overlay.place(remove, badgeTarget, removePlacement || 'top-right', 0);
       }
 
@@ -1595,21 +1592,24 @@ export function createInlineEditor({
     const rem = conv.removeMedia;
     if (rem?.toType && rem.selector && canConvertSlideTo?.(slide, rem.toType)) {
       for (const el of root.querySelectorAll(rem.selector)) {
-        const btn = h('button', {
-          class: 'ie-clear',
-          type: 'button',
-          'data-ie-convert': rem.toType,
-          title: t(
-            'editor.inline.media.removeImageArea',
-            'Remove image area (becomes a text slide)',
-          ),
-          text: '×',
-          onclick: (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            convertSlideType(rem.toType);
+        const btn = h(
+          'button',
+          {
+            class: 'ie-clear',
+            type: 'button',
+            'data-ie-convert': rem.toType,
+            title: t(
+              'editor.inline.media.removeImageArea',
+              'Remove image area (becomes a text slide)',
+            ),
+            onclick: (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              convertSlideType(rem.toType);
+            },
           },
-        });
+          [icon('x', { size: 14 })],
+        );
         overlay.place(btn, el, 'top-right', 0);
       }
     }

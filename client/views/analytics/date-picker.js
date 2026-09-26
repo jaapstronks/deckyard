@@ -4,6 +4,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Get preset date ranges.
@@ -268,7 +269,10 @@ export function createDatePicker({ initialRange, onChange }) {
     button.textContent =
       text || preset?.label || t('analytics.selectRange', 'Select range');
     button.append(
-      h('span', { class: 'analytics-date-picker-arrow', text: ' ▾' }),
+      icon('chevron-down', {
+        size: 14,
+        className: 'analytics-date-picker-arrow',
+      }),
     );
   }
 

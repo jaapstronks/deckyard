@@ -129,6 +129,10 @@
       "forms": ["Del", "Delingslinks"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
+    "da  Shared": {
+      "forms": ["Delt", "Delte"],
+      "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
+    },
     "da  Slide library": {
       "forms": ["Slide-bibliotek", "Slidebibliotek"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -402,6 +406,10 @@
       "forms": ["Compartir", "Enlaces compartidos"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
+    "es  Shared": {
+      "forms": ["Compartidas", "Compartido"],
+      "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
+    },
     "es  Something went wrong": {
       "forms": ["Algo ha ido mal", "Algo salió mal"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -566,6 +574,10 @@
       "forms": ["Jaa", "Jakolinkit"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
+    "fi  Shared": {
+      "forms": ["Jaettu", "Jaetut"],
+      "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
+    },
     "fi  Square": {
       "forms": ["Neliö", "Suora"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -690,6 +702,10 @@
     "fr  Share": {
       "forms": ["Liens de partage", "Partager"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "fr  Shared": {
+      "forms": ["Partagé", "Partagées"],
+      "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
     },
     "fr  Sign in": {
       "forms": ["Connexion", "Se connecter"],
@@ -856,6 +872,10 @@
     "it  Share": {
       "forms": ["Condividi", "Link di condivisione"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "it  Shared": {
+      "forms": ["Condivise", "Condiviso"],
+      "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
     },
     "it  Slide library": {
       "forms": ["Libreria di slide", "Libreria slide"],
@@ -1219,6 +1239,10 @@
       "forms": ["Del", "Delingslenker"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
+    "no  Shared": {
+      "forms": ["Delt", "Delte"],
+      "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
+    },
     "no  Slide library": {
       "forms": ["Lysbilde-bibliotek", "Lysbildebibliotek"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
@@ -1511,6 +1535,10 @@
       "forms": ["Links de partilha", "Partilhar"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
     },
+    "pt  Shared": {
+      "forms": ["Partilhadas", "Partilhado"],
+      "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
+    },
     "pt  Something went wrong. Please try again.": {
       "forms": [
         "Algo correu mal. Por favor, tente novamente.",
@@ -1655,6 +1683,10 @@
     "sv  Share": {
       "forms": ["Dela", "Delningslänkar"],
       "reason": "unreviewed — seeded from the B148 baseline measurement; the choice between the two forms has not been made yet."
+    },
+    "sv  Shared": {
+      "forms": ["Delad", "Delade"],
+      "reason": "grammatical agreement — `list.presentations.ownership.shared` is the filter tab over many decks (plural), `list.sharedBadge` the badge on one deck card (singular); the badge lost its 👥 glyph in B466 and so became the same English word."
     },
     "sv  Slide library": {
       "forms": ["Slide-bibliotek", "Slidebibliotek"],

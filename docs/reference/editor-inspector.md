@@ -404,8 +404,8 @@ Not repeated per row, because they are the same for all
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`, `slideLogo`
 (Background image section), `a11yTitle`/`a11ySummary` (Accessibility) and the
 per-type `background`/`bgCustomColor` colour field - all **inspector**
-surfaces. `hidden` and `deprecated` schema fields are omitted too: they are
-carried data and legacy mirrors, and `editor-form.js` renders neither.
+surfaces. `hidden` schema fields are omitted too: they are carried data, and
+`editor-form.js` does not render them.
 Numbered legacy aliases are condensed to their family (`col{n}Block{m}Body`),
 and an inactive alias collection (`steps`, `stages`) follows its array field
 rather than getting a home of its own.

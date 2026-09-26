@@ -23,7 +23,7 @@ function createPresetOption({ presetName, isActive, onClick }) {
     onclick: (e) => onClick(e),
   });
 
-  const icon = h('span', {
+  const presetIcon = h('span', {
     class: `visibility-icon visibility-icon--${presetName}`,
   });
   const content = h('div', { class: 'visibility-option-content' }, [
@@ -32,10 +32,12 @@ function createPresetOption({ presetName, isActive, onClick }) {
   ]);
 
   const checkmark = isActive
-    ? h('span', { class: 'visibility-option-check', text: '\u2713' })
+    ? h('span', { class: 'visibility-option-check' }, [
+        icon('check', { size: 14 }),
+      ])
     : null;
 
-  option.append(icon, content);
+  option.append(presetIcon, content);
   if (checkmark) option.append(checkmark);
 
   return option;
@@ -110,13 +112,16 @@ export function createVisibilityMenu({ slide, onVisibilityChange, onClose }) {
 
   const header = h('div', { class: 'visibility-menu-header' }, [
     h('span', { text: t('visibility.title', 'Slide Visibility') }),
-    h('button', {
-      class: 'visibility-menu-close',
-      type: 'button',
-      title: t('common.close', 'Close'),
-      text: '\u00d7',
-      onclick: onClose,
-    }),
+    h(
+      'button',
+      {
+        class: 'visibility-menu-close',
+        type: 'button',
+        title: t('common.close', 'Close'),
+        onclick: onClose,
+      },
+      [icon('x', { size: 16 })],
+    ),
   ]);
 
   const options = h('div', { class: 'visibility-menu-options' });
@@ -141,10 +146,9 @@ export function createVisibilityMenu({ slide, onVisibilityChange, onClose }) {
           if (check) check.remove();
         });
         e.currentTarget.classList.add('is-active');
-        const check = h('span', {
-          class: 'visibility-option-check',
-          text: '\u2713',
-        });
+        const check = h('span', { class: 'visibility-option-check' }, [
+          icon('check', { size: 14 }),
+        ]);
         e.currentTarget.append(check);
 
         // Apply change and close after brief delay for feedback

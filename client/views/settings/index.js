@@ -27,6 +27,7 @@ import {
   createApiKeysTab,
 } from './tabs/index.js';
 import { nav } from '../../lib/state/router.js';
+import { icon } from '../../lib/dom/icons.js';
 
 const DEFAULT_TAB = 'account';
 const DESIGNER_TABS = ['fonts', 'themes', 'slide-types'];
@@ -144,8 +145,7 @@ export async function renderSettingsPage(root, { user } = {}) {
     title: t('common.back', 'Back'),
     onclick: () => nav('/app'),
   });
-  const backIcon = h('span', { text: '\u2190' }); // ←
-  backBtn.append(backIcon);
+  backBtn.append(icon('arrow-left'));
 
   const topbarTitle = h('div', { class: 'topbar-title' });
   topbarTitle.append(

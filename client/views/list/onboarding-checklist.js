@@ -3,6 +3,7 @@ import { storage } from '../../lib/storage.js';
 import { getFeatures } from '../../lib/state/features.js';
 import { h } from '../../lib/dom.js';
 import { nav } from '../../lib/state/router.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * First-run onboarding checklist for the Home view.
@@ -115,17 +116,20 @@ export function createOnboardingChecklist({ allByDate, onCreate, api }) {
 
   const progressLabel = h('span', { class: 'onboarding-checklist-progress' });
 
-  const dismissBtn = h('button', {
-    class: 'onboarding-checklist-dismiss',
-    type: 'button',
-    'aria-label': t('list.onboarding.dismiss', 'Dismiss checklist'),
-    text: '×',
-    onclick: () => {
-      state.dismissed = true;
-      writeState(state);
-      card.remove();
+  const dismissBtn = h(
+    'button',
+    {
+      class: 'onboarding-checklist-dismiss',
+      type: 'button',
+      'aria-label': t('list.onboarding.dismiss', 'Dismiss checklist'),
+      onclick: () => {
+        state.dismissed = true;
+        writeState(state);
+        card.remove();
+      },
     },
-  });
+    [icon('x', { size: 16 })],
+  );
 
   const header = h('div', { class: 'onboarding-checklist-header' }, [
     h('div', { class: 'onboarding-checklist-heading' }, [
@@ -152,11 +156,14 @@ export function createOnboardingChecklist({ allByDate, onCreate, api }) {
     let row;
     if (step.info) {
       // Non-interactive explainer row: a lock glyph, no click, greyed out.
-      const status = h('span', {
-        class: 'onboarding-checklist-status is-locked',
-        'aria-hidden': 'true',
-        text: '🔒',
-      });
+      const status = h(
+        'span',
+        {
+          class: 'onboarding-checklist-status is-locked',
+          'aria-hidden': 'true',
+        },
+        [icon('lock', { size: 14 })],
+      );
       row = h('li', { class: 'onboarding-checklist-step is-info' }, [
         h('div', { class: 'onboarding-checklist-step-btn' }, [
           status,

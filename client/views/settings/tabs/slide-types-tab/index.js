@@ -26,6 +26,7 @@ import { getCategories, CATEGORY_LABELS } from './categories.js';
 import { createCurationThumbnail } from './curation-thumbnails.js';
 import { openTypePreview as openTypePreviewModal } from './type-preview-modal.js';
 import { DEFAULT_THEME_ID } from '../../../../../shared/constants/themes.js';
+import { icon } from '../../../../lib/dom/icons.js';
 
 /**
  * Create the slide types curation tab.
@@ -222,7 +223,7 @@ export function createSlideTypesTab({ user } = {}) {
       'aria-label': t('common.more', 'More'),
       onclick: (e) => showCustomTypeMenu(e, ct),
     });
-    moreBtn.innerHTML = '&#8942;';
+    moreBtn.append(icon('ellipsis-vertical'));
     actions.append(editBtn, moreBtn);
 
     card.append(cardHeader, meta, actions);

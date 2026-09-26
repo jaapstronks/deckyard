@@ -19,6 +19,7 @@ import { api } from '../api.js';
 import { toast } from '../dom/toast.js';
 import { t } from '../ui-i18n.js';
 import { getFeatures } from '../state/features.js';
+import { icon } from '../dom/icons.js';
 
 /**
  * Fetch the organizations the signed-in user belongs to.
@@ -144,11 +145,9 @@ export function createOrganizationSection({
       },
       [
         // Fixed-width slot so active and inactive labels line up.
-        h('span', {
-          class: 'user-menu-org-check',
-          'aria-hidden': 'true',
-          text: isActive ? '✓' : '',
-        }),
+        h('span', { class: 'user-menu-org-check', 'aria-hidden': 'true' }, [
+          isActive ? icon('check', { size: 14 }) : null,
+        ]),
         h('span', { text: label }),
       ],
     );

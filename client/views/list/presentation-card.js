@@ -319,20 +319,24 @@ export function createCardRenderer({
     });
 
     // More actions menu (inline with title)
-    const moreBtn = h('button', {
-      class: 'presentation-card-more',
-      type: 'button',
-      title: t('list.moreActions', 'More actions'),
-      text: '\u22EF', // horizontal ellipsis
-      onclick: (e) => {
-        e.stopPropagation();
-        const willOpen = !menu.classList.contains('is-open');
-        menu.classList.toggle('is-open');
-        // Only listen for outside clicks while the menu is actually open.
-        if (willOpen) document.addEventListener('click', closeMenu);
-        else document.removeEventListener('click', closeMenu);
+    const moreBtn = h(
+      'button',
+      {
+        class: 'presentation-card-more',
+        type: 'button',
+        title: t('list.moreActions', 'More actions'),
+        'aria-label': t('list.moreActions', 'More actions'),
+        onclick: (e) => {
+          e.stopPropagation();
+          const willOpen = !menu.classList.contains('is-open');
+          menu.classList.toggle('is-open');
+          // Only listen for outside clicks while the menu is actually open.
+          if (willOpen) document.addEventListener('click', closeMenu);
+          else document.removeEventListener('click', closeMenu);
+        },
       },
-    });
+      [icon('ellipsis')],
+    );
 
     const menu = h('div', { class: 'presentation-card-menu' });
 
@@ -507,11 +511,7 @@ export function createCardRenderer({
             },
           },
           [
-            h('span', {
-              class: 'presentation-card-present-icon',
-              'aria-hidden': 'true',
-              text: '▶',
-            }),
+            icon('play', { size: 14 }),
             h('span', { text: t('list.present', 'Present') }),
           ],
         )
@@ -566,10 +566,10 @@ export function createCardRenderer({
           // Visibility indicator
           getVisibilityIndicator(p, t),
           isOrganization
-            ? h('span', {
-                class: 'presentation-shared-badge',
-                text: t('list.sharedBadge', '👥 Shared'),
-              })
+            ? h('span', { class: 'presentation-shared-badge' }, [
+                icon('users', { size: 12 }),
+                h('span', { text: t('list.sharedBadge', 'Shared') }),
+              ])
             : null,
           isSharedWithMe
             ? h('div', { class: 'presentation-shared-with-me-badges' }, [

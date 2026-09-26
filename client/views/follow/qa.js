@@ -9,6 +9,7 @@ import {
   rankQuestions,
   upvoteQuestion,
 } from '../../lib/qa/index.js';
+import { icon } from '../../lib/dom/icons.js';
 
 export function createFollowQaController({
   api,
@@ -64,50 +65,57 @@ export function createFollowQaController({
         class: 'follow-qa-votes',
         text: String(item.upvotes),
       });
-      const upvoteBtn = h('button', {
-        class: 'btn btn-secondary',
-        text: '▲',
-        title: copy.qaUpvote || 'Upvote',
-        onclick: async () => {
-          if (!qid || qaBusy) return;
-          if (item.isPromoted) return;
-          if (hasUpvoted?.(presentationId, qid)) return;
-          qaBusy = true;
-          try {
-            await upvoteQuestion(api, presentationId, qid);
-            markUpvoted?.(presentationId, qid);
-            renderQuestions();
-          } catch (e) {
-            debugLog('[follow][qa] upvote failed', { qid, e });
-          } finally {
-            qaBusy = false;
-          }
+      const upvoteBtn = h(
+        'button',
+        {
+          class: 'btn btn-secondary',
+          'aria-label': copy.qaUpvote || 'Upvote',
+          title: copy.qaUpvote || 'Upvote',
+          onclick: async () => {
+            if (!qid || qaBusy) return;
+            if (item.isPromoted) return;
+            if (hasUpvoted?.(presentationId, qid)) return;
+            qaBusy = true;
+            try {
+              await upvoteQuestion(api, presentationId, qid);
+              markUpvoted?.(presentationId, qid);
+              renderQuestions();
+            } catch (e) {
+              debugLog('[follow][qa] upvote failed', { qid, e });
+            } finally {
+              qaBusy = false;
+            }
+          },
         },
-      });
+        [icon('chevron-up')],
+      );
       if (item.isPromoted || hasUpvoted?.(presentationId, qid))
         upvoteBtn.disabled = true;
 
       actions.append(votes, upvoteBtn);
 
       if (myIds.has(qid)) {
-        const cancelBtn = h('button', {
-          class: 'btn btn-secondary',
-          text: '✕',
-          title: copy.qaCancel || 'Cancel my question',
-          onclick: async () => {
-            if (!qid || qaBusy) return;
-            if (item.isPromoted) return;
-            qaBusy = true;
-            try {
-              await cancelQuestion(api, presentationId, qid);
-              removeMyQuestionId?.(presentationId, qid);
-            } catch (e) {
-              debugLog('[follow][qa] cancel failed', { qid, e });
-            } finally {
-              qaBusy = false;
-            }
+        const cancelBtn = h(
+          'button',
+          {
+            class: 'btn btn-secondary',
+            title: copy.qaCancel || 'Cancel my question',
+            onclick: async () => {
+              if (!qid || qaBusy) return;
+              if (item.isPromoted) return;
+              qaBusy = true;
+              try {
+                await cancelQuestion(api, presentationId, qid);
+                removeMyQuestionId?.(presentationId, qid);
+              } catch (e) {
+                debugLog('[follow][qa] cancel failed', { qid, e });
+              } finally {
+                qaBusy = false;
+              }
+            },
           },
-        });
+          [icon('x', { size: 14 })],
+        );
         if (item.isPromoted) cancelBtn.disabled = true;
         actions.append(cancelBtn);
       }

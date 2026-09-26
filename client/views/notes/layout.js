@@ -1,5 +1,6 @@
 import { h } from '../../lib/dom.js';
 import { t } from '../../lib/ui-i18n.js';
+import { icon } from '../../lib/dom/icons.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 
 /**
@@ -48,16 +49,28 @@ export function buildNotesLayout() {
   const previewControls = h('div', {
     class: 'notes-preview-controls',
   });
-  const previewPrevBtn = h('button', {
-    class: 'btn btn-secondary notes-preview-prev',
-    text: t('notes.previewPrev', '◀︎ Preview'),
-    title: t('notes.prevSlide.title', 'Previous slide (local only)'),
-  });
-  const previewNextBtn = h('button', {
-    class: 'btn btn-secondary notes-preview-next',
-    text: t('notes.previewNext', 'Preview ▶︎'),
-    title: t('notes.nextSlide.title', 'Next slide (local only)'),
-  });
+  const previewPrevBtn = h(
+    'button',
+    {
+      class: 'btn btn-secondary notes-preview-prev',
+      title: t('notes.prevSlide.title', 'Previous slide (local only)'),
+    },
+    [
+      icon('chevron-left', { size: 16 }),
+      h('span', { text: t('notes.preview', 'Preview') }),
+    ],
+  );
+  const previewNextBtn = h(
+    'button',
+    {
+      class: 'btn btn-secondary notes-preview-next',
+      title: t('notes.nextSlide.title', 'Next slide (local only)'),
+    },
+    [
+      h('span', { text: t('notes.preview', 'Preview') }),
+      icon('chevron-right', { size: 16 }),
+    ],
+  );
   const previewMeta = h('div', {
     class: 'help notes-preview-meta',
     text: '',

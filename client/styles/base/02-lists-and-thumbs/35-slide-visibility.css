@@ -330,9 +330,8 @@
 }
 
 .visibility-option-check {
+  display: inline-flex;
   color: var(--c-success, #10b981);
-  font-size: var(--ps-text-lg);
-  font-weight: 700;
   flex-shrink: 0;
   margin-left: auto;
 }

@@ -1,19 +1,15 @@
 /**
- * text-blocks-slide rendering: the dual-read row/block model.
- *
- * Covers both content shapes:
- * - legacy numbered fields (row1Count, row1Block1Title, row2Enabled, ...)
- * - array-canonical rows[] (rows[i].blocks[j], now also the defaults shape)
- * and the inline-edit contract on top of them: array-mode slides emit
- * data-inline-item-index on rows and blocks (so the WYSIWYG can add/remove
- * them), legacy slides must not (their renderer reads the numbered fields).
+ * text-blocks-slide rendering: the rows[]/blocks[] model and the inline-edit
+ * contract on top of it (data-inline-item-index on rows and blocks, so the
+ * WYSIWYG can add/remove them). The numbered row{N}… fields of v1 decks are
+ * folded by the v1 -> v2 step and read by nothing else (B452); the renderer
+ * draws nothing from them.
  *
  * Run with: node --test tests/text-blocks-render.test.js
  */
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
-import { createHash } from 'node:crypto';
 
 import {
   renderSlideHtml,
@@ -26,21 +22,11 @@ function render(content) {
   return renderSlideHtml({ type: 'text-blocks-slide', content });
 }
 
-const LEGACY_CONTENT = {
-  title: 'Legacy',
-  row1Count: '2',
-  row1Color: 'yellow',
+const NUMBERED_CONTENT = {
+  title: 'Numbered',
+  row1Count: '1',
   row1Block1Title: 'L1',
   row1Block1Body: 'Legacy body 1',
-  row1Block2Title: 'L2',
-  row1Block2Body: 'Legacy body 2',
-  arrow1: 'down',
-  row2Enabled: 'yes',
-  row2Title: 'Second row',
-  row2Count: '1',
-  row2Color: 'black',
-  row2Block1Title: 'L3',
-  row2Block1Body: 'Legacy body 3',
 };
 
 const ARRAY_CONTENT = {
@@ -63,38 +49,6 @@ const ARRAY_CONTENT = {
     },
   ],
 };
-
-describe('text-blocks legacy numbered shape', () => {
-  it('renders rows, blocks and the arrow from the numbered fields', () => {
-    const html = render(LEGACY_CONTENT);
-    assert.match(html, /data-rows="2"/);
-    assert.match(html, /L1/);
-    assert.match(html, /L3/);
-    assert.match(html, /Second row/);
-    assert.match(html, /text-blocks-arrow/);
-  });
-
-  it('emits legacy inline-field paths', () => {
-    const html = render(LEGACY_CONTENT);
-    assert.match(html, /data-inline-field="row1Block1Title"/);
-    assert.match(html, /data-inline-field="row2Block1Body"/);
-    assert.match(html, /data-inline-field="row2Title"/);
-  });
-
-  it('does NOT emit item indexes (no inline add/remove on legacy decks)', () => {
-    const html = render(LEGACY_CONTENT);
-    assert.doesNotMatch(html, /data-inline-item-index/);
-  });
-
-  it('validates', () => {
-    const errors = validateSlide({
-      id: crypto.randomUUID(),
-      type: 'text-blocks-slide',
-      content: LEGACY_CONTENT,
-    });
-    assert.deepEqual(errors, []);
-  });
-});
 
 describe('text-blocks rows[] shape', () => {
   it('renders rows, blocks and the arrow from rows[]', () => {
@@ -130,14 +84,6 @@ describe('text-blocks rows[] shape', () => {
       ),
     ].map((m) => m[1]);
     assert.deepEqual(blockIndexes, ['0', '1', '0']);
-  });
-
-  it('takes precedence over legacy fields when both are present', () => {
-    const html = render({ ...LEGACY_CONTENT, ...ARRAY_CONTENT });
-    assert.match(html, /A1/);
-    assert.doesNotMatch(html, /L1/);
-    assert.match(html, /data-inline-field="rows\.0\.blocks\.0\.title"/);
-    assert.doesNotMatch(html, /data-inline-field="row1Block1Title"/);
   });
 
   it('validates', () => {
@@ -265,65 +211,11 @@ describe('text-blocks four rows (A0.4)', () => {
   });
 
   it('passes AI structure validation via the rows[] branch', () => {
-    // rows[]-canonical (no numbered mirror at all): the AI validator must read
-    // the array directly rather than demanding row1Count/row1Block1Title.
     const issues = validateSlideContentStructure(
       'text-blocks-slide',
       FOUR_ROW_CONTENT,
     );
     assert.deepEqual(issues, []);
-  });
-});
-
-describe('text-blocks legacy mirror stays frozen at 3 (A0.4)', () => {
-  // Byte-for-byte guard: bumping the rows[] cap to 4 must not perturb how a
-  // legacy numbered-only deck renders. Pinned by hash so any drift in the
-  // legacy read path fails loudly. Regenerate only with a deliberate, reviewed
-  // change to the legacy output.
-  const LEGACY_3_ROW = {
-    title: 'Roadmap',
-    row1Count: '2',
-    row1Color: 'yellow',
-    arrow1: 'down',
-    row1Block1Title: 'Now',
-    row1Block1Body: 'Ship it',
-    row1Block2Title: 'Next',
-    row1Block2Body: 'Refine',
-    row2Enabled: 'yes',
-    row2Title: 'Phase two',
-    row2Count: '1',
-    row2Color: 'black',
-    arrow2: 'down',
-    row2Block1Title: 'Later',
-    row2Block1Body: 'Scale',
-    row3Enabled: 'yes',
-    row3Title: 'Phase three',
-    row3Count: '1',
-    row3Color: 'yellow',
-    row3Block1Title: 'Someday',
-    row3Block1Body: 'Dream',
-  };
-  const LEGACY_3_ROW_SHA256 =
-    '15f50455903ff774d41d4c30d8bc68aec10a8e712293c5eaf0c4f7bdc362843d';
-
-  it('renders byte-for-byte identical to the frozen baseline', () => {
-    const html = render(LEGACY_3_ROW);
-    const digest = createHash('sha256').update(html).digest('hex');
-    assert.equal(digest, LEGACY_3_ROW_SHA256);
-    assert.match(html, /data-rows="3"/);
-  });
-
-  it('legacy read path never yields a fourth row (row4* is not vocabulary)', () => {
-    // Even with stray row4* fields, resolveRows caps a numbered-only deck at 3.
-    const html = render({
-      ...LEGACY_3_ROW,
-      row4Enabled: 'yes',
-      row4Count: '1',
-      row4Block1Title: 'Ghost',
-      row4Block1Body: 'nope',
-    });
-    assert.match(html, /data-rows="3"/);
-    assert.doesNotMatch(html, /Ghost/);
   });
 });
 
@@ -355,15 +247,33 @@ describe('text-blocks row headings (B299)', () => {
 });
 
 describe('an empty rows[] is the canonical empty state (B435)', () => {
-  it('draws no rows and never falls back to the numbered fields', () => {
-    const html = render({ ...LEGACY_CONTENT, rows: [] });
+  it('draws no rows', () => {
+    const html = render({ title: 'Empty', rows: [] });
     assert.match(html, /data-rows="0"/);
-    assert.doesNotMatch(html, /Legacy body 1/);
     assert.doesNotMatch(html, /class="text-block /);
   });
+});
 
-  it('a slide without rows still reads the numbered fields', () => {
-    const { rows: _unused, ...legacyOnly } = LEGACY_CONTENT;
-    assert.match(render(legacyOnly), /Legacy body 1/);
+describe('the numbered row{N}… fields are read by nothing but the fold (B452)', () => {
+  it('the renderer draws no rows from them', () => {
+    const html = render(NUMBERED_CONTENT);
+    assert.match(html, /data-rows="0"/);
+    assert.doesNotMatch(html, /Legacy body 1/);
+    assert.doesNotMatch(html, /data-inline-field="row1/);
+  });
+
+  it('the AI structure check asks for rows[]', () => {
+    assert.deepEqual(
+      validateSlideContentStructure('text-blocks-slide', NUMBERED_CONTENT),
+      ['Missing rows[]'],
+    );
+  });
+
+  it('the type declares no numbered field', () => {
+    const keys = SLIDE_TYPES['text-blocks-slide'].fields.map((f) => f.key);
+    assert.deepEqual(
+      keys.filter((k) => /^(row|arrow)\d/.test(k)),
+      [],
+    );
   });
 });

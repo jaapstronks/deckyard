@@ -129,11 +129,14 @@ export function createGuestVerifyNotice({
     actions.append(retryBtn);
   }
 
-  const closeBtn = h('button', {
-    class: 'share-viewer-notice-close',
-    text: '×',
-    'aria-label': t('share.guestVerify.dismiss', 'Dismiss this message'),
-  });
+  const closeBtn = h(
+    'button',
+    {
+      class: 'share-viewer-notice-close',
+      'aria-label': t('share.guestVerify.dismiss', 'Dismiss this message'),
+    },
+    [uiIcon('x', { size: 14 })],
+  );
   closeBtn.addEventListener('click', () => {
     notice.remove();
     onDismiss();

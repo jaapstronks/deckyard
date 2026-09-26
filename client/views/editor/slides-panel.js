@@ -22,6 +22,7 @@ import {
 } from './slide-insert-position.js';
 import { h } from '../../lib/dom.js';
 import { aiEnabled } from '../../lib/state/features.js';
+import { icon } from '../../lib/dom/icons.js';
 
 // Which slide types need audience participation, and therefore a follow-invite
 // slide in the deck for the audience to join through. Declared by the type
@@ -93,12 +94,15 @@ export function createSlidesPanel({
     value: '',
     'aria-label': t('editor.slides.search.aria', 'Search slides'),
   });
-  const searchClearBtn = h('button', {
-    class: 'btn btn-secondary is-compact slides-search-clear',
-    type: 'button',
-    text: '×',
-    title: t('editor.slides.search.clear', 'Clear search'),
-  });
+  const searchClearBtn = h(
+    'button',
+    {
+      class: 'btn btn-secondary is-compact slides-search-clear',
+      type: 'button',
+      title: t('editor.slides.search.clear', 'Clear search'),
+    },
+    [icon('x', { size: 14 })],
+  );
   const searchStatsEl = h('div', {
     class: 'slides-search-stats',
     text: '',
@@ -554,17 +558,14 @@ export function createSlidesPanel({
 
   const updateCollapseBtn = (btn) => {
     const collapsed = isSlidesCollapsed?.() ?? false;
-    btn.textContent = collapsed ? '▶' : '◀';
+    btn.replaceChildren(icon(collapsed ? 'chevron-right' : 'chevron-left'));
     btn.title = collapsed
       ? t('editor.slides.expand', 'Expand slide list')
       : t('editor.slides.collapse', 'Collapse slide list');
+    btn.setAttribute('aria-label', btn.title);
   };
   const collapseBtn = h('button', {
     class: 'btn btn-secondary slides-collapse-btn',
-    text: isSlidesCollapsed?.() ? '▶' : '◀',
-    title: isSlidesCollapsed?.()
-      ? t('editor.slides.expand', 'Expand slide list')
-      : t('editor.slides.collapse', 'Collapse slide list'),
     onclick: () => {
       const next = !(isSlidesCollapsed?.() ?? false);
       setSlidesCollapsed?.(next);
@@ -577,6 +578,7 @@ export function createSlidesPanel({
       }
     },
   });
+  updateCollapseBtn(collapseBtn);
 
   leftHeader.append(
     h('h2', { text: t('editor.slides.title', 'Slides') }),

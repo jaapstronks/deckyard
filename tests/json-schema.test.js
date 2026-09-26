@@ -110,12 +110,11 @@ test('items fields recurse into an object schema shaped by itemFields', () => {
 
 // --- what the schema publishes --------------------------------------------
 
-test('deprecated and hidden fields stay out of the published contract', () => {
+test('hidden fields stay out of the published contract', () => {
   const schema = slideTypeContentSchema('demo-slide', {
     fields: [
       { key: 'title', type: 'string', required: true },
-      { key: 'legacyCount', type: 'string', deprecated: true, required: true },
-      { key: 'legacyMirror', type: 'string', hidden: true },
+      { key: 'mirror', type: 'string', hidden: true, required: true },
       // `ai: false` withholds a field from agents, not from the contract: it is
       // a live field an author fills (see video-slide.watchUrl).
       { key: 'watchUrl', type: 'string', ai: false },
@@ -124,14 +123,9 @@ test('deprecated and hidden fields stay out of the published contract', () => {
   assert.deepEqual(Object.keys(schema.properties), ['title', 'watchUrl']);
   // A dropped field cannot be required either.
   assert.deepEqual(schema.required, ['title']);
-  // Still lenient: a deck carrying the legacy key validates.
+  // Still lenient: a deck carrying the hidden key validates.
   assert.deepEqual(
-    validate(
-      schema,
-      { title: 'x', legacyCount: '3', legacyMirror: 'y' },
-      'demo-slide',
-      [],
-    ),
+    validate(schema, { title: 'x', mirror: 'y' }, 'demo-slide', []),
     [],
   );
 });
@@ -142,8 +136,7 @@ test('itemFields are filtered the same way', () => {
     key: 'rows',
     itemFields: [
       { key: 'label', type: 'string', required: true },
-      { key: 'oldLabel', type: 'string', deprecated: true, required: true },
-      { key: 'mirror', type: 'string', hidden: true },
+      { key: 'mirror', type: 'string', hidden: true, required: true },
     ],
   });
   assert.deepEqual(Object.keys(schema.items.properties), ['label']);

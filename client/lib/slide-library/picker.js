@@ -286,18 +286,22 @@ export function createSlideLibraryPicker({
     overlay.append(selectCheckbox);
 
     // Favorite button
-    const favBtn = h('button', {
-      class: `ps-lib-overlay-btn ps-lib-fav-btn ${fav ? 'is-on' : ''}`,
-      type: 'button',
-      title: fav
-        ? t('slideLibrary.action.unfavorite', 'Unfavorite')
-        : t('slideLibrary.action.favorite', 'Favorite'),
-      text: fav ? '★' : '☆',
-      onclick: (e) => {
-        e.stopPropagation();
-        apiOps.toggleFavorite(shelf, it, { rerender });
+    const favBtn = h(
+      'button',
+      {
+        class: `ps-lib-overlay-btn ps-lib-fav-btn ${fav ? 'is-on' : ''}`,
+        type: 'button',
+        title: fav
+          ? t('slideLibrary.action.unfavorite', 'Unfavorite')
+          : t('slideLibrary.action.favorite', 'Favorite'),
+        'aria-pressed': fav ? 'true' : 'false',
+        onclick: (e) => {
+          e.stopPropagation();
+          apiOps.toggleFavorite(shelf, it, { rerender });
+        },
       },
-    });
+      [icon('star', { size: 14 })],
+    );
     overlay.append(favBtn);
 
     // More menu
@@ -522,22 +526,26 @@ export function createSlideLibraryPicker({
           count: String(count),
         }),
       });
-      const clearBtn = h('button', {
-        class: 'ps-lib-selection-clear-btn',
-        type: 'button',
-        text: '×',
-        onclick: () => {
-          state.clearSelection();
-          mount.querySelectorAll('.ps-lib-card').forEach((card) => {
-            card.classList.remove('is-selected');
-            const cb = card.querySelector('.ps-lib-select-checkbox input');
-            if (cb) cb.checked = false;
-            const label = card.querySelector('.ps-lib-select-checkbox');
-            if (label) label.classList.remove('is-checked');
-          });
-          updateSelectionBar();
+      const clearBtn = h(
+        'button',
+        {
+          class: 'ps-lib-selection-clear-btn',
+          type: 'button',
+          'aria-label': t('common.clear', 'Clear'),
+          onclick: () => {
+            state.clearSelection();
+            mount.querySelectorAll('.ps-lib-card').forEach((card) => {
+              card.classList.remove('is-selected');
+              const cb = card.querySelector('.ps-lib-select-checkbox input');
+              if (cb) cb.checked = false;
+              const label = card.querySelector('.ps-lib-select-checkbox');
+              if (label) label.classList.remove('is-checked');
+            });
+            updateSelectionBar();
+          },
         },
-      });
+        [icon('x', { size: 14 })],
+      );
       leftSide.append(countText, clearBtn);
 
       // Action buttons

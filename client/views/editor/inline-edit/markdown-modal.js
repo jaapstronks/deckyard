@@ -27,6 +27,7 @@ import { getByPath, setByPath, fieldLabel } from './field-path.js';
 import { h, installDismissOnOutside } from '../../../lib/dom.js';
 import { createOverlay } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 export function createMarkdownEditModal({
   mdHost,
@@ -110,13 +111,16 @@ export function createMarkdownEditModal({
     };
     const cancel = () => dismiss();
 
-    const closeBtn = h('button', {
-      class: 'ie-md-close',
-      type: 'button',
-      title: t('common.close', 'Close'),
-      text: '×',
-      onclick: cancel,
-    });
+    const closeBtn = h(
+      'button',
+      {
+        class: 'ie-md-close',
+        type: 'button',
+        title: t('common.close', 'Close'),
+        onclick: cancel,
+      },
+      [icon('x', { size: 16 })],
+    );
     const header = h('div', { class: 'ie-md-header row spread' }, [
       h('div', {
         class: 'ie-md-mode',

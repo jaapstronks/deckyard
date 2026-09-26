@@ -13,6 +13,7 @@ import {
   validateDataSource,
 } from '../../../shared/data-source.js';
 import { h } from '../../lib/dom.js';
+import { icon } from '../../lib/dom/icons.js';
 
 // `hintKey`/`labelKey` carry the i18n key and the sibling string the English
 // fallback: this table is built at import time, before the dictionary loads, so
@@ -277,9 +278,9 @@ export function openDataSourceConfigModal({
         text: target.path,
         title: target.label,
       });
-      const arrow = h('span', {
-        class: 'data-source-binding-arrow',
-        text: '←',
+      const arrow = icon('arrow-left', {
+        size: 14,
+        className: 'data-source-binding-arrow',
       });
       const sourceInput = h('input', {
         type: 'text',

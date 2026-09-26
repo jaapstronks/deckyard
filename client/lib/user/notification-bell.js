@@ -270,17 +270,20 @@ export function createNotificationBell({ api }) {
       const row = h('div', { class: 'notification-bell-row' });
       row.append(item);
       if (!notif.archivedAt) {
-        const archiveBtn = h('button', {
-          type: 'button',
-          class: 'notification-bell-archive-btn',
-          title: t('notifications.archive', 'Archive'),
-          'aria-label': t('notifications.archive', 'Archive'),
-          text: '✓',
-          onclick: (e) => {
-            e.stopPropagation();
-            archiveOne(notif);
+        const archiveBtn = h(
+          'button',
+          {
+            type: 'button',
+            class: 'notification-bell-archive-btn',
+            title: t('notifications.archive', 'Archive'),
+            'aria-label': t('notifications.archive', 'Archive'),
+            onclick: (e) => {
+              e.stopPropagation();
+              archiveOne(notif);
+            },
           },
-        });
+          [icon('check', { size: 14 })],
+        );
         row.append(archiveBtn);
       }
 

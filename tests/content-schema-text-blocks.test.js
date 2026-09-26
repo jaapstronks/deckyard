@@ -8,8 +8,8 @@
  * `blocks[]`. A hand-written schema used to require `row1Count` and know
  * nothing of `rows[]`, so every array-canonical slide — including each freshly
  * created one — failed validation. Since D87 the schema is derived from
- * `fields[]`, which is where both shapes are declared; these pin that the
- * derivation reads them, bound and all.
+ * `fields[]`, which since B452 declares `rows[]` alone; these pin that the
+ * derivation reads it, bound and all.
  *
  * Run with: node --test tests/content-schema-text-blocks.test.js
  */
@@ -92,25 +92,15 @@ describe('the derived text-blocks schema accepts the array-canonical shape', () 
     );
   });
 
-  it('a legacy numbered slide still validates (mirror stays optional)', () => {
-    assertValid(
-      {
-        title: 'Legacy numbered',
-        row1Count: '2',
-        row1Color: 'yellow',
-        row1Block1Title: 'L1',
-        row1Block1Body: 'Body 1',
-        row1Block2Title: 'L2',
-        row1Block2Body: 'Body 2',
-        arrow1: 'down',
-        row2Enabled: 'yes',
-        row2Title: 'Second',
-        row2Count: '1',
-        row2Color: 'black',
-        row2Block1Title: 'L3',
-        row2Block1Body: 'Body 3',
-      },
-      'legacy numbered slide',
-    );
+  it('a numbered slide is refused, naming the keys (B452)', () => {
+    // The numbered row{N}… shape is the v1 input of the v1 -> v2 fold, not a
+    // field of the type: an agent that writes it is told, not folded.
+    const { valid, issues } = validateSlideContent(DEF, {
+      title: 'Numbered',
+      row1Count: '1',
+      row1Block1Title: 'L1',
+    });
+    assert.equal(valid, false);
+    assert.deepEqual(issues[0].keys, ['row1Count', 'row1Block1Title']);
   });
 });

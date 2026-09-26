@@ -41,6 +41,9 @@ export function createEditorTopbarMoreMenu({
   // where the bar folds the buttons away (B354).
   onExport,
   onShare,
+  // The opener behind the Present caret's Companion item: the caret folds at
+  // sm, and this entry is its counterpart there.
+  onOpenCompanion,
 } = {}) {
   const detachers = [];
 
@@ -282,6 +285,31 @@ export function createEditorTopbarMoreMenu({
   });
   btnAnalytics.style.display = 'none';
 
+  // The ⋯ half of the Present caret, which folds at sm: the caret holds only
+  // the Companion (a phone remote for a live talk), and on a phone its 36px
+  // are what the bar cannot carry once its icon buttons are 44px touch
+  // targets. Present itself stays in the bar.
+  const btnCompanion = menuItem({
+    class: 'dropdown-item topbar-fold-sm',
+    text: t('editor.companion', 'Companion'),
+    title: t(
+      'editor.companion.title',
+      'Open speaker notes companion on your phone (QR code).',
+    ),
+    onclick: () => run(onOpenCompanion),
+  });
+
+  // The ⋯ half of the collab avatar stack, which folds at sm: the stack's
+  // avatars cost more than a phone's bar can carry, and on a phone the slide
+  // list - the other place that names peers - is off screen, so this entry is
+  // where "who else is here" goes. A statement, not an action: no click
+  // handler, no hover. Hidden inline until presence reports a peer, the same
+  // way the analytics entry waits for an audience.
+  const presenceEntry = h('div', {
+    class: 'topbar-presence-entry topbar-fold-sm',
+  });
+  presenceEntry.style.display = 'none';
+
   // The theme toggle has no bar half at any width, so it carries no rung: it
   // is simply a menu item. It used to be hidden above 1024px, mirroring a
   // `.sb-segmented` switch in the bar that no longer exists - which left the
@@ -320,6 +348,8 @@ export function createEditorTopbarMoreMenu({
     // `btnAnalyze` and `btnTranslateOther` are null where AI is off; `append`
     // would print that.
     items: [
+      presenceEntry,
+      btnCompanion,
       btnExport,
       btnShare,
       btnOverview,
@@ -364,6 +394,22 @@ export function createEditorTopbarMoreMenu({
      */
     setAnalyticsAvailable: (available) => {
       btnAnalytics.style.display = available ? '' : 'none';
+    },
+    /**
+     * Name the peers in the ⋯ half of the presence stack. The caller applies
+     * the same list to the bar half in one go (see `setPresenceNames` in
+     * topbar.js), so the two halves cannot disagree about who is here.
+     *
+     * @param {string[]} names - display names, deduplicated; empty hides it
+     * @returns {void}
+     */
+    setPresenceNames: (names) => {
+      presenceEntry.style.display = names.length ? '' : 'none';
+      presenceEntry.textContent = names.length
+        ? t('editor.presence.hereNames', 'Also here: {names}', {
+            names: names.join(', '),
+          })
+        : '';
     },
     detach: () => {
       for (const d of detachers) {

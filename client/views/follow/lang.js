@@ -1,14 +1,20 @@
 import { getLangShortLabel } from '../../lib/format/lang-selector.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { h } from '../../lib/dom.js';
-import {
-  DEFAULT_SUPPORTED_DECK_LANGS,
-  getLangDisplayName,
-} from '../../../shared/i18n-utils.js';
+import { getLangDisplayName } from '../../../shared/i18n-utils.js';
 
 /**
  * Render language selection UI for follow-along view.
- * Uses buttons for ≤2 languages, dropdown for >2.
+ * Offers exactly the deck's versions (D115, D222): buttons for two, a dropdown
+ * for more, nothing when the deck carries fewer than two.
+ *
+ * @param {Object} options
+ * @param {HTMLElement} options.langWrap
+ * @param {string} options.currentLang
+ * @param {string[]} options.availableLangs - the deck's versions, as the follow
+ *   meta names them (`existingVersionLangs` on the server)
+ * @param {string|null} [options.translatingLang]
+ * @param {Function} [options.onSelect]
  */
 export function renderFollowLangButtons({
   langWrap,
@@ -18,24 +24,21 @@ export function renderFollowLangButtons({
   onSelect,
 } = {}) {
   langWrap.innerHTML = '';
-  const avail = Array.isArray(availableLangs) ? availableLangs : [];
-  const langsToShow = avail.length >= 2 ? avail : DEFAULT_SUPPORTED_DECK_LANGS;
-
-  // Hide if only one language
-  if (langsToShow.length < 2) {
+  // A deck with one version has nothing to switch to
+  if (availableLangs.length < 2) {
     langWrap.style.display = 'none';
     return;
   }
   langWrap.style.display = '';
 
-  const useDropdown = langsToShow.length > 2;
+  const useDropdown = availableLangs.length > 2;
 
   if (useDropdown) {
     const selectEl = h('select', {
       class: 'form-input follow-lang-select',
     });
 
-    for (const code of langsToShow) {
+    for (const code of availableLangs) {
       const option = h('option', {
         value: code,
         text: getLangDisplayName(code),
@@ -79,7 +82,7 @@ export function renderFollowLangButtons({
     return btn;
   };
 
-  for (const code of langsToShow) {
+  for (const code of availableLangs) {
     langWrap.append(makeBtn(code));
   }
 }

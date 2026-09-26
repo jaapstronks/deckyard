@@ -1009,11 +1009,6 @@ test('the import seam folds a pre-v10 export off the old `subtitle` spelling', a
  * for every key it did not earn an exception for.
  */
 const ALLOWED_NUMBERED_FIELDS = {
-  'text-blocks-slide': {
-    keys: null,
-    reason:
-      'the rows[]/blocks[] mirror, frozen at 3 rows — its own cleanup (the fold landed in v1 -> v2)',
-  },
   'team-cards-slide': {
     keys: ['subheading2'],
     reason:

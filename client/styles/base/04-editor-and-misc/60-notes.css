@@ -249,6 +249,9 @@
 }
 
 .notes-qa-votes {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-0-5);
   white-space: nowrap;
 }
 
