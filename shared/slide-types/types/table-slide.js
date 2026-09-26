@@ -60,12 +60,16 @@ function normalizeRows(content, colCount) {
   return rows;
 }
 
+/**
+ * One row's cells. `cellTag` is the row's tag (`th` in the header, `td` in the
+ * body); a body row whose field declares `rowHeader: 'first'` makes its first
+ * cell `<th scope="row">`, so the canvas says what the reader says (D148).
+ */
 function rowToCellsHtml(
   rowObj,
   colCount,
   cellTag,
-  stepByCell = false,
-  rowIdx = -1,
+  { stepByCell = false, rowIdx = -1, rowHeader = false } = {},
 ) {
   let out = '';
   for (let c = 1; c <= colCount; c += 1) {
@@ -75,10 +79,47 @@ function rowToCellsHtml(
     // rowIdx < 0 marks the layout-stability placeholder row (not real data).
     const inlineAttr =
       rowIdx >= 0 ? ` data-inline-field="rows.${rowIdx}.${k}"` : '';
-    out += `<${cellTag}${cellClass}${inlineAttr} dir="auto">${inlineMarkdownToSafeHtml(v)}</${cellTag}>`;
+    const heads = rowHeader && c === 1;
+    const tag = heads ? 'th' : cellTag;
+    const scope = heads ? ' scope="row"' : '';
+    out += `<${tag}${scope}${cellClass}${inlineAttr} dir="auto">${inlineMarkdownToSafeHtml(v)}</${tag}>`;
   }
   return out;
 }
+
+// The cell rows. `editor: 'table-grid'` (field-editors.js) swaps the generic
+// collection editor for the full table widget — cell grid, row/column
+// add/remove, markdown import — which also manages the sibling `colCount` and
+// `headerRow` keys. Hoisted so the canvas reads the same `rowHeader`
+// declaration the semantic projection reads.
+const ROWS_FIELD = {
+  key: 'rows',
+  essential: true,
+  label: 'Rows',
+  labelKey: 'editor.slideField.rows.label',
+  type: 'items',
+  required: false,
+  maxItems: MAX_ROWS,
+  editor: 'table-grid',
+  // What the semantic projection needs to render these rows as a real
+  // <table> instead of a bullet list — the `tabular` structure contract
+  // (shared/slide-types/structure.js). Declared rather than branched on by
+  // name, so an external reader gets the same three facts through
+  // /api/slide-types.
+  columnCountKey: TABLE_COLUMN_KEYS.columnCountKey,
+  headerRowKey: 'headerRow',
+  captionKey: 'caption',
+  // The canvas styles column 1 as the label column on every table, with no
+  // switch, so its cells head their rows: <th scope="row"> (D130).
+  rowHeader: 'first',
+  itemFields: Array.from({ length: MAX_COLS }, (_v, idx) => ({
+    key: `c${idx + 1}`,
+    label: `C${idx + 1}`,
+    type: 'string',
+    required: false,
+    maxLength: 400,
+  })),
+};
 
 export default {
   structure: 'tabular',
@@ -144,38 +185,7 @@ export default {
         { value: 'on', label: 'On' },
       ],
     },
-    {
-      // The cell rows. `editor: 'table-grid'` (field-editors.js) swaps the
-      // generic collection editor for the full table widget — cell grid,
-      // row/column add/remove, markdown import — which also manages the
-      // sibling `colCount` and `headerRow` keys.
-      key: 'rows',
-      essential: true,
-      label: 'Rows',
-      labelKey: 'editor.slideField.rows.label',
-      type: 'items',
-      required: false,
-      maxItems: MAX_ROWS,
-      editor: 'table-grid',
-      // What the semantic projection needs to render these rows as a real
-      // <table> instead of a bullet list — the `tabular` structure contract
-      // (shared/slide-types/structure.js). Declared rather than branched on by
-      // name, so an external reader gets the same three facts through
-      // /api/slide-types.
-      columnCountKey: TABLE_COLUMN_KEYS.columnCountKey,
-      headerRowKey: 'headerRow',
-      captionKey: 'caption',
-      // The canvas styles column 1 as the label column on every table, with no
-      // switch, so its cells head their rows: <th scope="row"> (D130).
-      rowHeader: 'first',
-      itemFields: Array.from({ length: MAX_COLS }, (_v, idx) => ({
-        key: `c${idx + 1}`,
-        label: `C${idx + 1}`,
-        type: 'string',
-        required: false,
-        maxLength: 400,
-      })),
-    },
+    ROWS_FIELD,
     {
       // Managed by the table-grid widget (add/remove column); never a form
       // control of its own.
@@ -235,6 +245,7 @@ export default {
     const colCount = tabularColumnCount(content, TABLE_COLUMN_KEYS);
     const rows = normalizeRows(content, colCount);
     const animateByCell = String(content?.animateByCell || 'off') === 'on';
+    const rowHeader = ROWS_FIELD.rowHeader === 'first';
 
     const headerEnabled = String(content?.headerRow || 'on') !== 'off';
     const hasHeader = headerEnabled && rows.length > 0;
@@ -243,7 +254,7 @@ export default {
 
     // Header row: if stepping by cell, mark individual cells; otherwise no step class on header
     const thead = header
-      ? `<thead><tr data-inline-item="rows" data-inline-item-index="0">${rowToCellsHtml(header, colCount, 'th', animateByCell, 0)}</tr></thead>`
+      ? `<thead><tr data-inline-item="rows" data-inline-item-index="0">${rowToCellsHtml(header, colCount, 'th', { stepByCell: animateByCell, rowIdx: 0 })}</tr></thead>`
       : '';
 
     const safeBody =
@@ -269,7 +280,11 @@ export default {
           rowIdx >= 0
             ? ` data-inline-item="rows" data-inline-item-index="${rowIdx}"`
             : '';
-        return `<tr${rowClass}${itemAttrs}>${rowToCellsHtml(r, colCount, 'td', animateByCell, rowIdx)}</tr>`;
+        return `<tr${rowClass}${itemAttrs}>${rowToCellsHtml(r, colCount, 'td', {
+          stepByCell: animateByCell,
+          rowIdx,
+          rowHeader,
+        })}</tr>`;
       })
       .join('')}</tbody>`;
 

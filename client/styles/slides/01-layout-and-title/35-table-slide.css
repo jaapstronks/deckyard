@@ -42,8 +42,9 @@
   padding: var(--slide-space-4) var(--slide-space-5);
 }
 
-/* Header row slightly bolder for emphasis */
-.slide-table .md-table th {
+/* Header row slightly bolder for emphasis. Scoped to the header: the body's
+   row-header cells are `<th scope="row">` too (D148) and keep the body weight. */
+.slide-table .md-table thead th {
   font-weight: 500;
 }
 
@@ -71,6 +72,7 @@
   color: var(--table-header-text, var(--slide-on-surface));
 }
 .slide-table .md-table td:first-child,
+.slide-table .md-table tbody th:first-child,
 .slide-table .md-table thead th:first-child {
   background: var(--table-firstcol-bg, transparent);
   color: var(--table-firstcol-text, var(--slide-on-surface));
@@ -79,8 +81,11 @@
    the slide's --slide-on-surface. Without this, a filled panel/soft body on a dark
    slide background keeps inheriting white text and goes invisible. plain leaves
    --table-text unset, so it falls back to --slide-on-surface (historical look). The
-   first-column rule above wins by specificity, keeping its own paired colour. */
-.slide-table .md-table td {
+   first-column rule above wins by specificity, keeping its own paired colour.
+   A body row-header cell is a `<th scope="row">` (D148), so it is named here
+   too: the rule covers every body cell whatever its tag. */
+.slide-table .md-table td,
+.slide-table .md-table tbody th {
   color: var(--table-text, var(--slide-on-surface));
 }
 
