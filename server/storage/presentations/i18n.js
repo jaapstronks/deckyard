@@ -84,10 +84,22 @@ function normalizeFollowInviteSlides(slides) {
  * a route's `?lang=` — which is normalized and stored canonical. A key is not
  * a value that passes through: it is the stored shape itself.
  *
+ * A create's `slides[].contentByLang` is the same map one step earlier: each of
+ * its keys becomes a version key, so the create factory runs this check on it
+ * too, naming its own field (B483).
+ *
  * @param {Record<string, unknown>} versions
- * @throws {AppError} 400 `invalid`, `details.field` = `i18n.versions`
+ * @param {object} [opts]
+ * @param {string} [opts.field] - `details.field` of the refusal
+ * @param {string} [opts.path] - where the map sits, for the message; defaults
+ *   to `field`
+ * @throws {AppError} 400 `invalid`, `details.field` = `field` (default
+ *   `i18n.versions`)
  */
-export function refuseNonCanonicalVersionKeys(versions) {
+export function refuseNonCanonicalVersionKeys(
+  versions,
+  { field = 'i18n.versions', path = field } = {},
+) {
   for (const key of Object.keys(versions)) {
     const canonical = normalizeLang(key);
     if (canonical === key) continue;
@@ -95,9 +107,9 @@ export function refuseNonCanonicalVersionKeys(versions) {
       ? `use ${JSON.stringify(canonical)}`
       : `use one of ${TRANSLATION_LANGS.join(', ')}`;
     throw new AppError(
-      `i18n.versions key ${JSON.stringify(key)} is not a canonical deck language: ${hint}`,
+      `${path} key ${JSON.stringify(key)} is not a canonical deck language: ${hint}`,
       400,
-      { field: 'i18n.versions' },
+      { field },
       'invalid',
     );
   }

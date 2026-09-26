@@ -4,7 +4,7 @@
 
 import { newPresentation } from '../../../../shared/slide-schemas.js';
 import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
-import { normalizeI18n } from '../i18n.js';
+import { normalizeI18n, refuseNonCanonicalVersionKeys } from '../i18n.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
@@ -97,11 +97,21 @@ export async function prepareNewPresentation(
     // mapped fresh id (and the parentId links pointing at it), a repeat is a
     // slide of its own — the deck must never store two slides under one id.
     const claimed = new Set();
-    const base = providedSlidesRaw.map((s) => {
+    const base = providedSlidesRaw.map((s, i) => {
       const sourceId = typeof s?.id === 'string' && s.id ? s.id : null;
       const mapped =
         sourceId && !claimed.has(sourceId) ? idMap.get(sourceId) : null;
       if (sourceId) claimed.add(sourceId);
+      // Each `contentByLang` key becomes a version key, read below through the
+      // axis only: an alias (`en`) or an off-axis key would be dropped without
+      // a word and the deck would miss that version. Refused instead, by the
+      // check the version keys themselves pass (B481, B483).
+      if (s?.contentByLang && typeof s.contentByLang === 'object') {
+        refuseNonCanonicalVersionKeys(s.contentByLang, {
+          field: 'slides',
+          path: `slides[${i}].contentByLang`,
+        });
+      }
       return {
         id: mapped || cryptoUuid(),
         parentId:
