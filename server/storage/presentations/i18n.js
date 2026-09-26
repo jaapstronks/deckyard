@@ -1,4 +1,5 @@
 import { normalizeSlides } from './slides.js';
+import { AppError } from '../../utils/errors.js';
 import { pickVersion } from '../../../shared/i18n-progress.js';
 import {
   DEFAULT_DECK_LANG,
@@ -65,6 +66,40 @@ function normalizeFollowInviteSlides(slides) {
 }
 
 /**
+ * Refuse a language version stored under anything but its canonical key.
+ *
+ * `versions.en` used to be written as-is: the loop below only visits the keys
+ * of `TRANSLATION_LANGS`, so an alias or an off-axis key slipped past it and
+ * was stored. `pickVersion` reads the canonical key only, so that version was
+ * invisible to the reader, the publish gate and every other surface that
+ * projects a language (B481). Renaming the key here instead would be a repair
+ * with a collision rule (`en` next to `en-GB`: which one wins?), so the write
+ * is refused and the caller sends the one spelling there is.
+ *
+ * The input alias `en` stays an alias for a language *value* — `i18n.active`,
+ * a route's `?lang=` — which is normalized and stored canonical. A key is not
+ * a value that passes through: it is the stored shape itself.
+ *
+ * @param {Record<string, unknown>} versions
+ * @throws {AppError} 400 `invalid`, `details.field` = `i18n.versions`
+ */
+function refuseNonCanonicalVersionKeys(versions) {
+  for (const key of Object.keys(versions)) {
+    const canonical = normalizeLang(key);
+    if (canonical === key) continue;
+    const hint = canonical
+      ? `use ${JSON.stringify(canonical)}`
+      : `use one of ${TRANSLATION_LANGS.join(', ')}`;
+    throw new AppError(
+      `i18n.versions key ${JSON.stringify(key)} is not a canonical deck language: ${hint}`,
+      400,
+      { field: 'i18n.versions' },
+      'invalid',
+    );
+  }
+}
+
+/**
  * Normalize a deck's i18n block in place: fill in the dominant version and keep
  * every language version's slides through the write seam.
  *
@@ -81,6 +116,8 @@ function normalizeFollowInviteSlides(slides) {
  *   type registry, forwarded to `normalizeSlides` so a DB-backed custom type
  *   resolves in every language version too (B129). Omitted falls back to the
  *   process-wide registry.
+ * @throws {AppError} 400 `invalid` when a version sits under a non-canonical
+ *   key (see {@link refuseNonCanonicalVersionKeys}).
  */
 export function normalizeI18n(pres, { slideTypes } = {}) {
   if (!pres || typeof pres !== 'object') return;
@@ -90,6 +127,7 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
   const i18n = raw;
   const versionsIn =
     i18n.versions && typeof i18n.versions === 'object' ? i18n.versions : {};
+  refuseNonCanonicalVersionKeys(versionsIn);
   i18n.versions = versionsIn;
 
   const active = normalizeLang(i18n.active) || null;
