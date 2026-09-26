@@ -62,8 +62,9 @@ function normalizeRows(content, colCount) {
 
 /**
  * One row's cells. `cellTag` is the row's tag (`th` in the header, `td` in the
- * body); a body row whose field declares `rowHeader: 'first'` makes its first
- * cell `<th scope="row">`, so the canvas says what the reader says (D148).
+ * body); a header cell is `<th scope="col">`, the corner cell included, and a
+ * body row whose field declares `rowHeader: 'first'` makes its first cell
+ * `<th scope="row">`, so the canvas says what the reader says (D148, D225).
  */
 function rowToCellsHtml(
   rowObj,
@@ -81,7 +82,7 @@ function rowToCellsHtml(
       rowIdx >= 0 ? ` data-inline-field="rows.${rowIdx}.${k}"` : '';
     const heads = rowHeader && c === 1;
     const tag = heads ? 'th' : cellTag;
-    const scope = heads ? ' scope="row"' : '';
+    const scope = heads ? ' scope="row"' : tag === 'th' ? ' scope="col"' : '';
     out += `<${tag}${scope}${cellClass}${inlineAttr} dir="auto">${inlineMarkdownToSafeHtml(v)}</${tag}>`;
   }
   return out;
