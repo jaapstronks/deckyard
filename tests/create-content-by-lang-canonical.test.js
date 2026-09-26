@@ -9,6 +9,10 @@
  * runs the check the version keys pass (B481): 400 `invalid`,
  * `details.field` = `slides`, nothing written. Not dropped, not renamed.
  *
+ * B485: the same refusal covers the map's shape. A `contentByLang` that is not
+ * an object was ignored, and a language value that is not an object fell back
+ * to the flat `content` without that version appearing; both are refused now.
+ *
  * Run with: node --test tests/create-content-by-lang-canonical.test.js
  */
 
@@ -56,8 +60,8 @@ test.after(() => {
   __setTestDb(null);
 });
 
-/** A create body whose second slide carries its English under `key`. */
-function bodyWith(key) {
+/** A create body whose second slide carries `contentByLang`. */
+function bodyWithMap(contentByLang) {
   return {
     title: 'Dek',
     lang: 'nl',
@@ -66,13 +70,18 @@ function bodyWith(key) {
       {
         type: 'content-slide',
         content: { title: 'Hallo', body: '' },
-        contentByLang: {
-          nl: { title: 'Hallo', body: '' },
-          [key]: { title: 'Hello', body: '' },
-        },
+        contentByLang,
       },
     ],
   };
+}
+
+/** A create body whose second slide carries its English under `key`. */
+function bodyWith(key) {
+  return bodyWithMap({
+    nl: { title: 'Hallo', body: '' },
+    [key]: { title: 'Hello', body: '' },
+  });
 }
 
 function appPost(body) {
@@ -194,4 +203,40 @@ test('canonical contentByLang keys still build one version per language', async 
     // A slide without contentByLang falls back to its flat content.
     assert.equal(versions['en-GB'].slides[0].content.title, 'Eerste');
   }
+});
+
+test('a contentByLang that is not an object is refused on both routes', async () => {
+  const before = await deckCount();
+  for (const value of ['nl', ['nl'], null, 3]) {
+    for (const send of [appPost, v1Post]) {
+      const res = await send(bodyWithMap(value));
+      assert.equal(res.statusCode, 400, JSON.stringify(res.body));
+      assert.equal(res.body.error, 'invalid');
+      assert.deepEqual(res.body.details, { field: 'slides' });
+      assert.match(
+        res.body.message,
+        /slides\[1\]\.contentByLang must be an object/,
+      );
+    }
+  }
+  assert.equal(await deckCount(), before);
+});
+
+test('a contentByLang language value that is not an object is refused', async () => {
+  const before = await deckCount();
+  for (const value of ['Hello', null, [{ title: 'Hello' }]]) {
+    for (const send of [appPost, v1Post]) {
+      const res = await send(
+        bodyWithMap({ nl: { title: 'Hallo', body: '' }, 'en-GB': value }),
+      );
+      assert.equal(res.statusCode, 400, JSON.stringify(res.body));
+      assert.equal(res.body.error, 'invalid');
+      assert.deepEqual(res.body.details, { field: 'slides' });
+      assert.match(
+        res.body.message,
+        /slides\[1\]\.contentByLang key "en-GB" must be a content object/,
+      );
+    }
+  }
+  assert.equal(await deckCount(), before);
 });

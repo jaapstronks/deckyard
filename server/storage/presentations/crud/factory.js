@@ -8,8 +8,8 @@ import { normalizeI18n, refuseNonCanonicalVersionKeys } from '../i18n.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
-  TRANSLATION_LANGS,
 } from '../../../../shared/i18n-utils.js';
+import { AppError } from '../../../utils/errors.js';
 import { attachSandboxMeta } from '../sandbox.js';
 import {
   sandboxDefaultThemeId,
@@ -19,6 +19,40 @@ import { resolveThemeId, loadThemeAssets } from '../../../utils/themes.js';
 import { normalizeMeta } from './helpers.js';
 import { rekeyNewDeckSlides } from './rekey-new-deck.js';
 import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
+
+/** @param {unknown} value */
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * Refuse a `slides[i].contentByLang` the factory could only read by repairing
+ * it. The map becomes the deck's language versions, so it must be an object
+ * of content objects keyed by canonical deck language: a non-object map (or
+ * `null`) was ignored, a non-object language value (`"de": "tekst"`) fell back
+ * to the flat `content` and that version never appeared (B485), and an alias
+ * or off-axis key was dropped (B483). The keys pass the check the stored
+ * version keys pass (B481), under the same field and path.
+ *
+ * @param {unknown} contentByLang
+ * @param {number} i - the slide's index in the create body
+ * @throws {AppError} 400 `invalid`, `details.field` = `slides`
+ */
+function refuseMalformedContentByLang(contentByLang, i) {
+  const path = `slides[${i}].contentByLang`;
+  const refuse = (message) => {
+    throw new AppError(message, 400, { field: 'slides' }, 'invalid');
+  };
+  if (!isPlainObject(contentByLang)) {
+    refuse(`${path} must be an object of content per deck language`);
+  }
+  refuseNonCanonicalVersionKeys(contentByLang, { field: 'slides', path });
+  for (const [lang, content] of Object.entries(contentByLang)) {
+    if (!isPlainObject(content)) {
+      refuse(`${path} key ${JSON.stringify(lang)} must be a content object`);
+    }
+  }
+}
 
 /**
  * Prepare a new presentation object with all defaults, title slide, and i18n setup.
@@ -102,15 +136,8 @@ export async function prepareNewPresentation(
       const mapped =
         sourceId && !claimed.has(sourceId) ? idMap.get(sourceId) : null;
       if (sourceId) claimed.add(sourceId);
-      // Each `contentByLang` key becomes a version key, read below through the
-      // axis only: an alias (`en`) or an off-axis key would be dropped without
-      // a word and the deck would miss that version. Refused instead, by the
-      // check the version keys themselves pass (B481, B483).
-      if (s?.contentByLang && typeof s.contentByLang === 'object') {
-        refuseNonCanonicalVersionKeys(s.contentByLang, {
-          field: 'slides',
-          path: `slides[${i}].contentByLang`,
-        });
+      if (s?.contentByLang !== undefined) {
+        refuseMalformedContentByLang(s.contentByLang, i);
       }
       return {
         id: mapped || cryptoUuid(),
@@ -123,26 +150,20 @@ export async function prepareNewPresentation(
             ? structuredClone(s.content)
             : {},
         contentByLang:
-          s?.contentByLang && typeof s.contentByLang === 'object'
+          s?.contentByLang !== undefined
             ? structuredClone(s.contentByLang)
             : null,
       };
     });
 
-    // Which languages appear in any slide's contentByLang?
+    // Which languages appear in any slide's contentByLang? Its keys are
+    // canonical and its values objects, refused otherwise above.
     const langSet = new Set();
     for (const s of base) {
-      if (!s.contentByLang) continue;
-      for (const l of TRANSLATION_LANGS) {
-        if (s.contentByLang[l] && typeof s.contentByLang[l] === 'object')
-          langSet.add(l);
-      }
+      for (const l of Object.keys(s.contentByLang || {})) langSet.add(l);
     }
 
-    const contentFor = (s, lang) => {
-      const c = s.contentByLang?.[lang];
-      return c && typeof c === 'object' ? c : s.content;
-    };
+    const contentFor = (s, lang) => s.contentByLang?.[lang] ?? s.content;
 
     if (langSet.size > 0) {
       // Always include the dominant language so the top-level version exists.
