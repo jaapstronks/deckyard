@@ -1,3 +1,5 @@
+import { takeEscape } from './escape.js';
+
 /**
  * Pointer-based vertical list reordering (no HTML5 drag-and-drop).
  *
@@ -30,8 +32,6 @@
  *   move (splice semantics: remove at from, insert at to).
  * @returns {{ detach: () => void }}
  */
-
-import { takeEscape } from './escape.js';
 export function attachPointerSortable({
   container,
   itemSelector,
