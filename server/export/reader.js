@@ -23,6 +23,7 @@ import {
 } from '../../shared/slide-types/semantic-projection.js';
 import { filterForExport, filterForPublished } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
+import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import { escapeHtml } from '../utils/html-utils.js';
 import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -179,8 +180,11 @@ export function buildReaderHtml(
   const registry =
     slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
   const docLang = resolveDocLangFromPresentation(filtered);
+  // The document's own words come from the slide copy, in the deck language —
+  // the one table every other word of this document is read from.
+  const copy = getSlideCopy(docLang);
 
-  const title = str(filtered?.title) || 'Presentation';
+  const title = str(filtered?.title) || copy.readerDocument;
   const description = str(filtered?.description);
   const slides = Array.isArray(filtered?.slides) ? filtered.slides : [];
 
@@ -215,8 +219,13 @@ export function buildReaderHtml(
     )
     .join('\n      ');
 
+  const slideCount = fillCopy(
+    slides.length === 1 ? copy.readerSlideCountOne : copy.readerSlideCountOther,
+    { n: slides.length },
+  );
+
   const viewLink = canonicalUrl
-    ? `<p class="reader-viewlink"><a href="${escapeHtml(canonicalUrl)}">View the slides</a></p>`
+    ? `<p class="reader-viewlink"><a href="${escapeHtml(canonicalUrl)}">${escapeHtml(copy.readerViewSlides)}</a></p>`
     : '';
   const descHtml = description
     ? `<p class="reader-desc">${escapeHtml(description)}</p>`
@@ -231,13 +240,13 @@ export function buildReaderHtml(
   })}
   <body>
     <header class="reader-header">
-      <p class="reader-kicker">Presentation</p>
+      <p class="reader-kicker">${escapeHtml(copy.readerDocument)}</p>
       <h1>${escapeHtml(title)}</h1>
       ${descHtml}
       ${viewLink}
     </header>
-    <nav class="reader-toc" aria-label="Slides">
-      <h2>Contents</h2>
+    <nav class="reader-toc" aria-label="${escapeHtml(copy.readerSlidesLabel)}">
+      <h2>${escapeHtml(copy.readerContents)}</h2>
       <ol>
         ${toc}
       </ol>
@@ -246,7 +255,7 @@ export function buildReaderHtml(
       ${sections}
     </main>
     <footer class="reader-footer">
-      <p>${slides.length} slide${slides.length === 1 ? '' : 's'}.</p>
+      <p>${escapeHtml(slideCount)}</p>
     </footer>
   </body>
 </html>`;

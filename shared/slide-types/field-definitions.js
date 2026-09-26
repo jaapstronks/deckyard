@@ -306,6 +306,9 @@ export function walkFieldDefinitions(fields, profile) {
     // Fields declaring `kindKey`: the enum they name is a sibling at this
     // level, checked once the level is fully known.
     const kindRefs = [];
+    // Fields declaring `encodingKeys`: the fields it names are siblings at
+    // this level, checked once the level is fully known.
+    const encodingRefs = [];
     // Fields declaring `orderedWhen`: the field it reads is a sibling enum at
     // this level, checked once the level is fully known.
     const orderRefs = [];
@@ -550,6 +553,41 @@ export function walkFieldDefinitions(fields, profile) {
         }
       }
 
+      // `relationField` names the item enum whose chosen option is the item's
+      // relation to the next one; the relation's word is that option's
+      // `copyKey` and nothing else. An enum none of whose options carries one
+      // would never mark a relation, so the declaration would do nothing.
+      if (field.relationField !== undefined && field.relationField !== null) {
+        const target =
+          type === 'items' && Array.isArray(field.itemFields)
+            ? field.itemFields.find(
+                (f) =>
+                  isPlainObject(f) &&
+                  f.key === field.relationField &&
+                  f.type === 'enum',
+              )
+            : null;
+        const named = (Array.isArray(target?.options) ? target.options : [])
+          .filter((o) => isPlainObject(o) && isSlideCopyKey(o.copyKey))
+          .map((o) => String(o.value));
+        if (!named.length) {
+          at2('relation_field_without_copy', 'warning', {
+            declared: field.relationField,
+          });
+        }
+      }
+
+      // `encodingKeys` maps each sibling that describes a dataset's encoding
+      // to the slide-copy key naming its slot; the siblings are checked once
+      // the level is fully known.
+      if (field.encodingKeys !== undefined && field.encodingKeys !== null) {
+        if (type !== 'csv' || !isPlainObject(field.encodingKeys)) {
+          at2('encoding_keys_not_map', 'warning', { type });
+        } else {
+          encodingRefs.push({ where, declared: field.encodingKeys });
+        }
+      }
+
       // `rowHeader: 'first'` makes a table's first column head its rows. It is
       // a static declaration with one value, read on a `tabular` rows array.
       if (field.rowHeader !== undefined && field.rowHeader !== null) {
@@ -656,6 +694,27 @@ export function walkFieldDefinitions(fields, profile) {
           declared,
           missing,
         });
+      }
+    }
+
+    // Every encoding slot is named by a slide-copy key, and an enum slot's
+    // value by its option's `copyKey`: the caption has no other source, so a
+    // gap is said here instead of falling back to an editor-language label.
+    for (const { where, declared } of encodingRefs) {
+      const missing = [];
+      for (const [key, copyKey] of Object.entries(declared)) {
+        const target = fieldsByKey.get(key);
+        const optionsNamed =
+          target?.type !== 'enum' ||
+          (Array.isArray(target.options) ? target.options : []).every(
+            (o) => isPlainObject(o) && isSlideCopyKey(o.copyKey),
+          );
+        if (!target || !isSlideCopyKey(copyKey) || !optionsNamed) {
+          missing.push(key);
+        }
+      }
+      if (missing.length) {
+        add('encoding_key_without_copy', 'warning', where, { missing });
       }
     }
 
@@ -879,6 +938,20 @@ const FINDING_MESSAGES = {
     `${where} declares \`defaultFromOption\` ` +
     `${JSON.stringify(f?.detail?.declared)}, which is not an \`enum\` field ` +
     `beside it, so the field stays blank when it is blank.`,
+  relation_field_without_copy: (where, f) =>
+    `${where} declares \`relationField\` ` +
+    `${JSON.stringify(f?.detail?.declared)}, but no \`enum\` item field by ` +
+    `that key offers an option with a \`copyKey\` the slide copy knows in ` +
+    `every language, so no item is ever marked with a relation.`,
+  encoding_keys_not_map: (where, f) =>
+    `${where} declares \`encodingKeys\` on a \`${f?.detail?.type}\` ` +
+    `field; it must be a \`csv\` field mapping each sibling key to the ` +
+    `slide-copy key that names its slot, so it is ignored.`,
+  encoding_key_without_copy: (where, f) =>
+    `${where} declares \`encodingKeys\`, but ` +
+    `${(f?.detail?.missing || []).join(', ')} name no sibling field with a ` +
+    `slide-copy key (and, for an enum, a \`copyKey\` on every option) ` +
+    `known in every language, so the data table's caption leaves them out.`,
   default_from_option_without_copy: (where, f) =>
     `${where} declares \`defaultFromOption\` ` +
     `${JSON.stringify(f?.detail?.declared)}, but its options ` +

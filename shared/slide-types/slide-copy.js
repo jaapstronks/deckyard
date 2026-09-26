@@ -67,6 +67,21 @@ export const SLIDE_COPY = {
     // Reader: the text of a link that jumps to another slide of the deck.
     readerSlideLink: 'Dia {n}',
 
+    // Reader chrome: the words the reflowable document puts around the slides.
+    // `readerDocument` is both the kicker above the title and the title of a
+    // deck that has none.
+    readerDocument: 'Presentatie',
+    readerContents: 'Inhoud',
+    readerSlidesLabel: "Dia's",
+    readerViewSlides: "Bekijk de dia's",
+    readerSlideCountOne: '{n} dia.',
+    readerSlideCountOther: "{n} dia's.",
+
+    // A typed relation between two items of a sequence (text-blocks' arrows),
+    // named by the relation enum's option `copyKey`.
+    relationLeadsTo: 'leidt tot',
+    relationFollowsFrom: 'volgt uit',
+
     // Chart slide. The summary is the chart's text alternative: the canvas
     // puts it in its sr-only block, the reader in the data table's <caption>.
     chartLegendLabel: 'Legenda',
@@ -75,6 +90,13 @@ export const SLIDE_COPY = {
     chartKindLine: 'Lijndiagram',
     chartSummaryTop: '{kind} met {count} punten. Hoogste: {label} ({value}).',
     chartSummaryRange: '{kind} met {count} punten. Min: {min}. Max: {max}.',
+    // The encoding a chart's data table loses in the reader, named in its
+    // `<caption>` (the csv field's `encodingKeys`).
+    chartEncodingKind: 'Diagramtype',
+    chartEncodingX: 'X-as',
+    chartEncodingY: 'Y-as',
+    chartEncodingSeries1: 'Reeks 1',
+    chartEncodingSeries2: 'Reeks 2',
 
     // Agenda/Timeline slide
     timelineLabel: 'Tijdlijn',
@@ -162,6 +184,18 @@ export const SLIDE_COPY = {
     // Reader: the text of a link that jumps to another slide of the deck.
     readerSlideLink: 'Slide {n}',
 
+    // Reader chrome — see the note on the Dutch table above.
+    readerDocument: 'Presentation',
+    readerContents: 'Contents',
+    readerSlidesLabel: 'Slides',
+    readerViewSlides: 'View the slides',
+    readerSlideCountOne: '{n} slide.',
+    readerSlideCountOther: '{n} slides.',
+
+    // Relations — see the note on the Dutch table above.
+    relationLeadsTo: 'leads to',
+    relationFollowsFrom: 'follows from',
+
     // Chart slide — see the note on the Dutch table above.
     chartLegendLabel: 'Legend',
     chartKindBar: 'Bar chart',
@@ -169,6 +203,11 @@ export const SLIDE_COPY = {
     chartKindLine: 'Line chart',
     chartSummaryTop: '{kind} with {count} points. Highest: {label} ({value}).',
     chartSummaryRange: '{kind} with {count} points. Min: {min}. Max: {max}.',
+    chartEncodingKind: 'Chart type',
+    chartEncodingX: 'X axis',
+    chartEncodingY: 'Y axis',
+    chartEncodingSeries1: 'Series 1',
+    chartEncodingSeries2: 'Series 2',
 
     // Agenda/Timeline slide
     timelineLabel: 'Timeline',

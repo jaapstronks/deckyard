@@ -949,6 +949,77 @@ test('`kindKey` names a sibling enum on an aside, and only options it shows need
     assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
 });
 
+test('`relationField` and `encodingKeys` take their words from the slide copy only (B312/B319)', () => {
+  const arrow = (options) => ({
+    key: 'arrow',
+    type: 'enum',
+    label: 'Arrow',
+    options,
+  });
+  const findings = walkFieldDefinitions(
+    [
+      {
+        key: 'rows',
+        type: 'items',
+        label: 'Rows',
+        relationField: 'arrow',
+        itemFields: [
+          arrow([
+            'none',
+            { value: 'down', label: 'Down', copyKey: 'relationLeadsTo' },
+          ]),
+        ],
+      },
+      {
+        key: 'bare',
+        type: 'items',
+        label: 'Bare',
+        relationField: 'arrow',
+        itemFields: [arrow([{ value: 'down', label: 'Down' }])],
+      },
+      {
+        key: 'kind',
+        type: 'enum',
+        label: 'Kind',
+        options: [
+          { value: 'bar', label: 'Bar', copyKey: 'chartKindBar' },
+          { value: 'odd', label: 'Odd' },
+        ],
+      },
+      { key: 'x', type: 'string', label: 'X' },
+      {
+        key: 'data',
+        type: 'csv',
+        label: 'Data',
+        encodingKeys: {
+          kind: 'chartEncodingKind',
+          x: 'chartEncodingX',
+          y: 'chartEncodingY',
+        },
+      },
+      {
+        key: 'list',
+        type: 'csv',
+        label: 'List',
+        encodingKeys: ['kind', 'x'],
+      },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['bare', 'relation_field_without_copy', 'warning'],
+      ['list', 'encoding_keys_not_map', 'warning'],
+      ['data', 'encoding_key_without_copy', 'warning'],
+    ],
+  );
+  // `kind` has an option without a word, `y` is no sibling at all.
+  assert.deepEqual(findings[2].detail.missing, ['kind', 'y']);
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+});
+
 test('a stored (DB) field carries `essential` the way it carries `required`', () => {
   const stored = validateCustomFieldDefinitions([
     { key: 'title', type: 'string', label: 'Title', essential: true },

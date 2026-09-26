@@ -94,7 +94,11 @@ import {
 import { semanticEnumAttrs } from './semantic-enums.js';
 import { resolveItemDefaults } from './item-defaults.js';
 import { tabularColumnCount } from './tabular.js';
-import { optionDefaultText, chosenOptionCopy } from './option-default.js';
+import {
+  optionDefaultText,
+  chosenOptionCopy,
+  isSlideCopyKey,
+} from './option-default.js';
 import {
   renderUnresolvedSlideSemanticHtml,
   unresolvedSlideHeading,
@@ -508,32 +512,53 @@ function renderCsvTable(csv, caption = '', attrs = '') {
 
 /**
  * The caption for a `dataset` payload: the sibling fields its `encodingKeys`
- * names, each as "<declared label>: <value>".
+ * names, each as "<slot word>: <value>", in the deck language.
  *
  * The dataset contract tells a reader to decode the payload to rows and "lose
  * only the visual encoding" — which is only honest if the encoding is named
- * somewhere. It is built from the fields' own declared labels, so there is no
- * copy here to translate or to drift: a chart says "Chart type: bar. X label:
- * Year." because that is what its own schema calls those slots.
+ * somewhere. `encodingKeys` maps each sibling key to the slide-copy key that
+ * names its slot, so the word comes from the one copy table the canvas reads
+ * (a Dutch chart says "Diagramtype: Staafdiagram. X-as: Jaar."). An enum's
+ * value is its chosen option's `copyKey` word, never the raw token and never
+ * the editor-language option label. A slot or an option without a copy word
+ * says nothing; the field walk reports the declaration.
  *
  * Keys the type currently declares inactive (`visibleWhen`) are already gone by
  * the time this runs — a pie chart names no axes.
  *
- * @param {string[]} keys - the csv field's `encodingKeys`
+ * @param {Record<string, string>} encoding - the csv field's `encodingKeys`
  * @param {Map<string, object>} visibleByKey - visible fields, by key
  * @param {object} content
+ * @param {object} defaults - the slide's declared defaults
+ * @param {string} [lang] - the deck language
  * @returns {string}
  */
-function encodingCaption(keys, visibleByKey, content) {
+function encodingCaption(encoding, visibleByKey, content, defaults, lang) {
+  const copy = getSlideCopy(lang);
   const parts = [];
-  for (const key of Array.isArray(keys) ? keys : []) {
+  for (const [key, copyKey] of encodingEntries(encoding)) {
     const field = visibleByKey.get(key);
-    const value = str(content?.[key]);
-    if (!field || !value) continue;
-    const label = str(field.label) || key;
-    parts.push(`${label}: ${value}`);
+    if (!field) continue;
+    const slot = isSlideCopyKey(copyKey) ? str(copy[copyKey]) : '';
+    const value =
+      field.type === 'enum'
+        ? chosenOptionCopy(key, [field], content, defaults, lang).word
+        : str(content?.[key]);
+    if (!slot || !value) continue;
+    parts.push(`${slot}: ${value}`);
   }
   return parts.length ? `${parts.join('. ')}.` : '';
+}
+
+/**
+ * The `[fieldKey, copyKey]` pairs of an `encodingKeys` declaration, in order.
+ * @param {unknown} encoding
+ * @returns {Array<[string, string]>}
+ */
+function encodingEntries(encoding) {
+  if (!encoding || typeof encoding !== 'object' || Array.isArray(encoding))
+    return [];
+  return Object.entries(encoding).map(([k, v]) => [k, str(v)]);
 }
 
 /**
@@ -1309,39 +1334,42 @@ function renderFieldValue(
           content,
         );
       }
-      // A `relationField` names a per-item key holding a typed relation to the
-      // NEXT item (e.g. text-blocks' `arrow`: "down" ≈ leads-to). When any item
-      // carries a relation, the collection is a causal/ordered sequence → the
-      // list becomes an <ol> and each relating item gets a small relation
-      // marker. `relationLabels` maps a stored value to its reader label; a
-      // value without a label is treated as "no relation" (e.g. arrow "none").
+      // A `relationField` names a per-item enum holding a typed relation to
+      // the NEXT item (e.g. text-blocks' `arrow`: "down" ≈ leads-to). When any
+      // item carries a relation, the collection is a causal/ordered sequence →
+      // the list becomes an <ol> and each relating item gets a small relation
+      // marker. The marker's word is the chosen option's `copyKey` in the deck
+      // language, the lookup `kindKey` and `defaultFromOption` use; an option
+      // without one is "no relation" (e.g. arrow "none").
       const relField =
         typeof field.relationField === 'string' ? field.relationField : null;
-      const relLabels =
-        field.relationLabels && typeof field.relationLabels === 'object'
-          ? field.relationLabels
-          : {};
-      const relationOf = (item) => {
-        if (!relField) return '';
-        const v = str(item?.[relField]);
-        return v && Object.prototype.hasOwnProperty.call(relLabels, v) ? v : '';
-      };
-      const hasRelations = !!relField && value.some((it) => relationOf(it));
+      const itemDefaults = resolveItemDefaults(field);
+      const relationOf = (item) =>
+        relField
+          ? chosenOptionCopy(
+              relField,
+              field.itemFields,
+              item,
+              itemDefaults,
+              lang,
+            )
+          : { value: '', word: '' };
+      const hasRelations = value.some((it) => relationOf(it).word);
       const blocks = value
         .map((item) => {
           const li = renderItemBlock(
             item,
             field.itemFields,
             field.itemLabelField,
-            resolveItemDefaults(field),
+            itemDefaults,
             { lang, slideIds, parent: content, parentKey: field.key },
           );
           if (!li) return '';
           const rel = relationOf(item);
-          if (!rel) return li;
+          if (!rel.word) return li;
           const marker = `<p class="reader-relation"${fieldAttr(relField)} data-relation="${escapeHtml(
-            rel,
-          )}">${escapeHtml(relLabels[rel])}</p>`;
+            rel.value,
+          )}">${escapeHtml(rel.word)}</p>`;
           return li.replace(/<\/li>\s*$/, `${marker}</li>`);
         })
         .filter(Boolean);
@@ -1442,10 +1470,16 @@ export function renderSlideBodySemanticHtml(
     // `dataset`: decode the payload to rows, say what they show (the type's
     // own `datasetSummary`, the sentence its canvas gives assistive tech) and
     // name the encoding that is lost.
-    if (field.type === 'csv' && Array.isArray(field.encodingKeys)) {
+    if (field.type === 'csv' && field.encodingKeys) {
       const caption = [
         datasetSummaryText(def, content, lang),
-        encodingCaption(field.encodingKeys, visibleByKey, content),
+        encodingCaption(
+          field.encodingKeys,
+          visibleByKey,
+          content,
+          defaults,
+          lang,
+        ),
       ]
         .filter(Boolean)
         .join(' ');
@@ -1453,7 +1487,8 @@ export function renderSlideBodySemanticHtml(
         field.key,
         renderCsvTable(content?.[field.key], caption, fieldAttr(field.key)),
       );
-      for (const key of field.encodingKeys) consumed.add(key);
+      for (const [key] of encodingEntries(field.encodingKeys))
+        consumed.add(key);
     }
   }
 
