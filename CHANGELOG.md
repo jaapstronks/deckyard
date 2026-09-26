@@ -4,6 +4,45 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.44.0](https://github.com/jaapstronks/deckyard/compare/v1.43.0...v1.44.0) (2026-09-26)
+
+
+### Added
+
+* **mcp:** a refused type change points the agent to the route (B260) ([#1290](https://github.com/jaapstronks/deckyard/issues/1290)) ([753369e](https://github.com/jaapstronks/deckyard/commit/753369e63de7f9c06f70aa9bb6c519f576182fa4))
+* **scripts:** derive the counts planning notes cite (B393) ([#1307](https://github.com/jaapstronks/deckyard/issues/1307)) ([08da1f0](https://github.com/jaapstronks/deckyard/commit/08da1f089bb3ac5d66cdf50c55acf586d348768d))
+* **slide-types:** a matrix names its axes, and the reader heads its grid with them (B304) ([#1318](https://github.com/jaapstronks/deckyard/issues/1318)) ([464db51](https://github.com/jaapstronks/deckyard/commit/464db514aad12bf58a9bbe99ec21837b3a54bb42))
+* **slide-types:** a video carries its transcript into the reader (B303) ([#1317](https://github.com/jaapstronks/deckyard/issues/1317)) ([a23974d](https://github.com/jaapstronks/deckyard/commit/a23974d53be02810aab34ae5c78fb95642caf30f))
+
+
+### Fixed
+
+* **ai:** the generator prompt marks essential fields (B453) ([#1302](https://github.com/jaapstronks/deckyard/issues/1302)) ([82a1e84](https://github.com/jaapstronks/deckyard/commit/82a1e8461061bf2e705c1ac385249fed8dc04211))
+* **api:** a v1 slide type change converts or is refused (B458) ([#1293](https://github.com/jaapstronks/deckyard/issues/1293)) ([ed5a899](https://github.com/jaapstronks/deckyard/commit/ed5a899bea7fbecb9e7e6d848732bbb701f9c22f))
+* **api:** deck timestamps are real createdAt/updatedAt on API v1 (B448) ([#1292](https://github.com/jaapstronks/deckyard/issues/1292)) ([b2505b8](https://github.com/jaapstronks/deckyard/commit/b2505b8c1c9d4af6af5cc881625709efd0240b9f))
+* **api:** v1 invalid slide data sends details as an object (B460) ([#1295](https://github.com/jaapstronks/deckyard/issues/1295)) ([86f9a6c](https://github.com/jaapstronks/deckyard/commit/86f9a6c3cdc55c1bfd0d7d882e387490e2454e74))
+* **editor:** a published deck warns while an image without alt is live (B331) ([#1316](https://github.com/jaapstronks/deckyard/issues/1316)) ([4c12911](https://github.com/jaapstronks/deckyard/commit/4c12911a396175752b45e3d6b750715c07ff0a8e))
+* **editor:** a selected text field keeps its ring when focus moves to the sidebar (B465) ([#1297](https://github.com/jaapstronks/deckyard/issues/1297)) ([b62cdcc](https://github.com/jaapstronks/deckyard/commit/b62cdcca578bcaa90d20801ed25e16f8133db22e))
+* **follow:** the language switcher offers the deck's own versions (B467) ([#1306](https://github.com/jaapstronks/deckyard/issues/1306)) ([60e2855](https://github.com/jaapstronks/deckyard/commit/60e2855a3d154cb85b88d116387b2d39eeb22ecb))
+* **presenter:** the language switcher offers the deck's own versions (B207) ([#1304](https://github.com/jaapstronks/deckyard/issues/1304)) ([22fa6df](https://github.com/jaapstronks/deckyard/commit/22fa6df23ede06d5f867dd42c39f7f945c5bbaac))
+* **publish:** an &lt;img&gt; without alt in author markup falls under the alt gate (B318) ([#1310](https://github.com/jaapstronks/deckyard/issues/1310)) ([3669b14](https://github.com/jaapstronks/deckyard/commit/3669b14ab07434d40854c43552aa5b1bb02bbae9))
+* **published:** no public surface names the owner from their email (B461, B462) ([#1296](https://github.com/jaapstronks/deckyard/issues/1296)) ([b2da65f](https://github.com/jaapstronks/deckyard/commit/b2da65fe318f22948c3cb7e11608365f6c2af441))
+* **published:** the JSON-LD of a published deck names no author (B459) ([#1294](https://github.com/jaapstronks/deckyard/issues/1294)) ([fd00704](https://github.com/jaapstronks/deckyard/commit/fd007043550b43a20a34fd155e2543c15e332eb5))
+* **reader:** the reader speaks the deck language (B312, B319) ([#1315](https://github.com/jaapstronks/deckyard/issues/1315)) ([80ee0c0](https://github.com/jaapstronks/deckyard/commit/80ee0c0c177bab15249c70f6651e091cc2f311ca))
+* **slide-types:** the logo wall scales with its count (B445) ([#1308](https://github.com/jaapstronks/deckyard/issues/1308)) ([ae19292](https://github.com/jaapstronks/deckyard/commit/ae192926dfa4041b66f126a619737b5aee558292))
+* **slide-types:** the timeline sizes its cards on the slide canvas (B456) ([#1303](https://github.com/jaapstronks/deckyard/issues/1303)) ([6b7f932](https://github.com/jaapstronks/deckyard/commit/6b7f9326af73dd5c0e7a7d81fd6b61fa93bb5025))
+* **storage:** the create factory refuses a non-canonical contentByLang key (B483) ([#1321](https://github.com/jaapstronks/deckyard/issues/1321)) ([ed181a6](https://github.com/jaapstronks/deckyard/commit/ed181a6a7f5ae4c8796a304aaf9c964599eb3243))
+* **storage:** the library create seam refuses a non-canonical language-version key (B482) ([#1320](https://github.com/jaapstronks/deckyard/issues/1320)) ([809a9db](https://github.com/jaapstronks/deckyard/commit/809a9dbf99fdaf517c8f4923e8a5e4017040ff5c))
+* **storage:** the write seam refuses a non-canonical language-version key (B481) ([#1319](https://github.com/jaapstronks/deckyard/issues/1319)) ([b175709](https://github.com/jaapstronks/deckyard/commit/b1757093fcaaa25edcd8df49ba47083403c7e9ce))
+* **table:** the canvas header cells say scope="col", as the reader does (B473) ([#1313](https://github.com/jaapstronks/deckyard/issues/1313)) ([331dce9](https://github.com/jaapstronks/deckyard/commit/331dce9f3e83e55bd776e6350b615d89d4091798))
+* **table:** the canvas heads each body row with &lt;th scope="row"&gt; (B313) ([#1311](https://github.com/jaapstronks/deckyard/issues/1311)) ([af91514](https://github.com/jaapstronks/deckyard/commit/af91514235c5d7d488d4f227ab50b1cd3cff499e))
+* **ui:** an Escape a layer inside a modal consumed leaves the modal open (B471) ([#1309](https://github.com/jaapstronks/deckyard/issues/1309)) ([9441d9d](https://github.com/jaapstronks/deckyard/commit/9441d9d950ecdf3a9e25683c79a0853327f52ec3))
+* **ui:** every Escape layer follows one contract (B472) ([#1312](https://github.com/jaapstronks/deckyard/issues/1312)) ([5086d5a](https://github.com/jaapstronks/deckyard/commit/5086d5af483e053a41c622607348e47110aca4c0))
+* **ui:** JS buttons draw their icons from the Lucide set (B466) ([#1300](https://github.com/jaapstronks/deckyard/issues/1300)) ([a6a4f90](https://github.com/jaapstronks/deckyard/commit/a6a4f90448167b8a1e1d8d62c9b0d253ba613013))
+* **ui:** the collab avatar stack gets a rung and a width cap in the topbar (B362) ([#1305](https://github.com/jaapstronks/deckyard/issues/1305)) ([4ceb69d](https://github.com/jaapstronks/deckyard/commit/4ceb69de3b7816ce3165d510ae2339227cda6ac9))
+* **ui:** the last glyph icons move to the Lucide set, and the guard has no burndown (B466) ([#1301](https://github.com/jaapstronks/deckyard/issues/1301)) ([3883603](https://github.com/jaapstronks/deckyard/commit/38836035ef10040d08aa3d971cd7531e6b3c651f))
+* **ui:** toast kind icons come from the Lucide set, and a guard refuses glyph icons (B466) ([#1299](https://github.com/jaapstronks/deckyard/issues/1299)) ([ee84210](https://github.com/jaapstronks/deckyard/commit/ee84210d105353aa5320a40b40f58cd23f88cb9d))
+
 ## [1.43.0](https://github.com/jaapstronks/deckyard/compare/v1.42.0...v1.43.0) (2026-09-24)
 
 
