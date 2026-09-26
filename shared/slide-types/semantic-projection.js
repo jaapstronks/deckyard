@@ -72,6 +72,7 @@ import { markdownToSafeHtml, inlineMarkdownToSafeHtml } from '../markdown.js';
 import {
   sanitizeSlideHtmlSync,
   slideHtmlHeadingTextSync,
+  slideHtmlImagesWithoutAltSync,
 } from '../sanitize.js';
 import {
   escapeHtml,
@@ -1491,6 +1492,11 @@ export function renderSlideBodySemanticHtml(
  * alt per picture and is outside the check; a type whose pictures need a
  * name declares `items`.
  *
+ * Author markup (a `markup: true` field) is walked too, in the sanitized tree
+ * the reader renders: each `<img>` without an `alt` attribute is one hit on
+ * that field, and `alt=""` is decorative (B318, D151). The markup has no
+ * declaration to name a picture by, so the attribute is the only rung.
+ *
  * @param {object} slide
  * @param {object|null|undefined} def - the resolved slide-type definition
  * @returns {Array<{ field: string, itemIndex?: number, itemField?: string }>}
@@ -1508,15 +1514,21 @@ export function imagesMissingAlt(slide, def) {
     !field.hidden &&
     !isPresentationalField(field) &&
     !NON_CONTENT_GLOBAL_KEYS.has(field.key);
+  // How many pictures `field` puts in the reader without a name.
   const unnamed = (field, obj, opts) => {
-    if (field.type !== 'image' || !normalizeUrl(obj?.[field.key])) return false;
+    if (field.type === 'code' && field.markup === true)
+      return slideHtmlImagesWithoutAltSync(str(obj?.[field.key]));
+    if (field.type !== 'image' || !normalizeUrl(obj?.[field.key])) return 0;
     const { alt, decorative } = resolveImageA11y(field, obj, opts);
-    return !decorative && !alt;
+    return !decorative && !alt ? 1 : 0;
   };
   const missing = [];
+  const push = (n, hit) => {
+    for (let i = 0; i < n; i++) missing.push({ ...hit });
+  };
   for (const field of Array.isArray(def.fields) ? def.fields : []) {
     if (!drawn(field) || !isFieldVisible(field, content, defaults)) continue;
-    if (unnamed(field, content)) missing.push({ field: field.key });
+    push(unnamed(field, content), { field: field.key });
     const items = content[field.key];
     if (field.type !== 'items' || !Array.isArray(items)) continue;
     const itemFields = Array.isArray(field.itemFields) ? field.itemFields : [];
@@ -1528,9 +1540,12 @@ export function imagesMissingAlt(slide, def) {
         parentKey: field.key,
       };
       for (const sub of itemFields) {
-        if (drawn(sub) && unnamed(sub, item, opts)) {
-          missing.push({ field: field.key, itemIndex, itemField: sub.key });
-        }
+        if (!drawn(sub)) continue;
+        push(unnamed(sub, item, opts), {
+          field: field.key,
+          itemIndex,
+          itemField: sub.key,
+        });
       }
     });
   }

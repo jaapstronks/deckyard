@@ -9,6 +9,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
+const { initSanitizer } = await import('../shared/sanitize.js');
+await initSanitizer();
 const { findUnnamedImages, assertImagesNamed } =
   await import('../server/services/publish-alt-check.js');
 
@@ -175,6 +177,41 @@ test('the refusal names the first picture and counts the rest', () => {
         count: 2,
       });
       assert.match(err.message, /Slide 1 .*1 more need one too\./);
+      return true;
+    },
+  );
+});
+
+test('an <img> in author markup without an alt attribute is refused; alt="" is decorative', () => {
+  const html = (imgs) =>
+    `<h2>Diagram</h2>${imgs}<p>Text <img src="/icon.png" alt="Icon"></p>`;
+  const slides = [
+    {
+      id: 'm',
+      type: 'custom-html-slide',
+      content: { html: html('<img src="/a.png"><img src="/b.png">') },
+    },
+    {
+      id: 'n',
+      type: 'custom-html-slide',
+      content: { html: html('<img src="/a.png" alt="">') },
+    },
+    {
+      id: 'o',
+      type: 'custom-html-slide',
+      // The sanitizer strips the template, so its picture never reaches a
+      // reader and is not the gate's business either.
+      content: { html: html('<template><img src="/t.png"></template>') },
+    },
+  ];
+  const hit = { lang: null, slideIndex: 0, slideId: 'm', field: 'html' };
+  assert.deepEqual(findUnnamedImages(deck(slides), SLIDE_TYPES), [hit, hit]);
+  assert.throws(
+    () => assertImagesNamed(deck(slides), SLIDE_TYPES),
+    (err) => {
+      assert.equal(err.code, 'missing_alt');
+      assert.deepEqual(err.toJSON().details, { ...hit, count: 2 });
+      assert.match(err.message, /Slide 1 .* in "html"\. .*1 more/);
       return true;
     },
   );

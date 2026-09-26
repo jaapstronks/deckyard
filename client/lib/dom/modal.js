@@ -149,8 +149,13 @@ export function createOverlay(options = {}) {
 
   const onKey = (e) => {
     if (!closeOnEscape || e.key !== 'Escape' || busy) return;
+    // A layer inside this overlay (a dropdown, an autocomplete) already took
+    // this Escape and marked it; the overlay waits for the next one.
+    if (e.defaultPrevented) return;
     // Stacked overlays all listen on `document`; only the top one may close.
     if (!isTopmostOverlay(backdrop)) return;
+    // The overlay consumes Escape, so no other document handler acts on it.
+    e.preventDefault();
     requestClose();
   };
 

@@ -157,7 +157,10 @@ export function createBackgroundFields({ theme } = {}) {
       else openMenu();
     });
     wrap.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') close();
+      if (e.key !== 'Escape' || !open) return;
+      // Closing the menu consumes the key (one layer per Escape).
+      e.preventDefault();
+      close();
     });
 
     const renderMenu = () => {

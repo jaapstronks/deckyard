@@ -132,6 +132,55 @@ test('createOverlay Escape peels one layer: only the topmost stacked overlay clo
   assert.deepEqual(closed, ['over', 'under']);
 });
 
+test('createOverlay marks the Escape it consumes as defaultPrevented', async () => {
+  // A document-level Escape handler that runs later (the editor's selection
+  // clear, B465) skips a defaultPrevented key: one layer per Escape.
+  const overlay = createOverlay();
+  overlay.show(document.body);
+  const ev = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+  document.dispatchEvent(ev);
+  await tick();
+  assert.equal(overlay.isOpen(), false);
+  assert.equal(ev.defaultPrevented, true);
+});
+
+test('createOverlay leaves an Escape a dropdown inside it consumed (B471)', async () => {
+  // The dismiss helper takes Escape in the capture phase and marks it
+  // defaultPrevented; the overlay reads that mark, so one Escape closes the
+  // open menu and only the next one closes the overlay.
+  const { createDropdown } = await import('../client/lib/dom/dropdown.js');
+  let overlayClosed = false;
+  const surface = h('div');
+  const overlay = createOverlay({
+    surface,
+    onClose: () => (overlayClosed = true),
+  });
+  const dropdown = createDropdown({ label: 'More', items: [h('button')] });
+  surface.append(dropdown.el);
+  overlay.show(document.body);
+  dropdown.details.open = true;
+
+  const escapeFrom = (el) =>
+    el.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
+  escapeFrom(dropdown.summary);
+  await tick();
+  assert.equal(dropdown.details.open, false, 'the menu closes');
+  assert.equal(overlay.isOpen(), true, 'the overlay stays open');
+  assert.equal(overlayClosed, false);
+
+  escapeFrom(dropdown.summary);
+  await tick();
+  assert.equal(overlay.isOpen(), false, 'the next Escape closes the overlay');
+  dropdown.detach();
+});
+
 test('createOverlay hidden backdrop steps aside for the overlay under it', async () => {
   // `hide()` is how a dialog gets out of the way of a loading modal; a hidden
   // overlay must not swallow Escape just because it mounted last.
