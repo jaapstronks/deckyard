@@ -43,7 +43,8 @@ included.
 Runs on **every** surface — editor, presenter, thumbnails and library tiles
 included — and in every document the script chain assembles:
 `server/utils/script-chain.js` inlines this same module when
-`detectSlideRuntimeNeeds()` finds an uncropped, non-split image-blocks slide —
+`detectLayoutRuntimeNeeds()` (inside `detectSlideRuntimeNeeds()` for a stage)
+finds an uncropped, non-split image-blocks slide —
 the standalone export and embed as well as the static sheets (PNG, and through
 it PPTX and the PNG zip; PDF slides; print; the MCP previews). The headless
 captures wait for it through `server/utils/settle-rendered-page.js` (fonts,

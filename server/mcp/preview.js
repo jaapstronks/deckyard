@@ -17,7 +17,7 @@ import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import {
   buildScriptChain,
-  detectSlideRuntimeNeeds,
+  detectLayoutRuntimeNeeds,
 } from '../utils/script-chain.js';
 import {
   buildPrismKatexTags,
@@ -260,10 +260,8 @@ export async function buildSlidePreviewHtml(
     </div>
     ${buildScriptChain({
       needs: highlightNeeds,
-      // A static sheet: the layout runtime only, never the countdown.
-      slideNeeds: {
-        teamCards: detectSlideRuntimeNeeds(slideHtmls.join('\n')).teamCards,
-      },
+      // A static sheet: the layout runtimes only, never the countdown.
+      slideNeeds: detectLayoutRuntimeNeeds(slideHtmls.join('\n')),
     })}
   </body>
 </html>`;
@@ -323,10 +321,8 @@ export async function buildSingleSlidePreviewHtml(
     </div>
     ${buildScriptChain({
       needs: highlightNeeds,
-      // A static sheet: the layout runtime only, never the countdown.
-      slideNeeds: {
-        teamCards: detectSlideRuntimeNeeds(html).teamCards,
-      },
+      // A static sheet: the layout runtimes only, never the countdown.
+      slideNeeds: detectLayoutRuntimeNeeds(html),
     })}
   </body>
 </html>`;
