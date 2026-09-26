@@ -1330,6 +1330,43 @@ describe('mediaRef — a reference projects as a stand-in, never as an id (D82)'
     // The library id was already presentational and stays out.
     assert.ok(!html.includes('366590'), html);
   });
+
+  it('video-slide projects its transcript as prose under the stand-in (D138)', () => {
+    const type = 'video-slide';
+    const def = SLIDE_TYPES[type];
+    const slide = {
+      type,
+      content: {
+        ...structuredClone(def.defaults),
+        source: 'https://youtu.be/abc',
+        transcript: 'We open on the harbour.\n\nThen the **crew** arrives.',
+      },
+    };
+    const { key: headingKey, text: headingText } = slideHeading(slide, def);
+    const html = renderSlideBodySemanticHtml(slide, def, {
+      headingKey,
+      headingText,
+    });
+    const link = html.indexOf('<a href="https://youtu.be/abc">Video</a>');
+    const transcript = html.indexOf('data-field="transcript"');
+    assert.ok(link >= 0, html);
+    assert.ok(transcript > link, html);
+    assert.ok(html.includes('<p>We open on the harbour.</p>'), html);
+    assert.ok(html.includes('<strong>crew</strong>'), html);
+  });
+
+  it('the video canvas never shows the transcript (D138)', () => {
+    const def = SLIDE_TYPES['video-slide'];
+    const html = def.renderHtml(
+      {
+        ...structuredClone(def.defaults),
+        transcript: 'A line only the reader should say.',
+      },
+      { id: 's1' },
+      {},
+    );
+    assert.ok(!html.includes('A line only the reader should say.'), html);
+  });
 });
 
 describe('role — the projection reads what a text field is (D128)', () => {

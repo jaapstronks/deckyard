@@ -309,6 +309,8 @@
   "slideType.video-slide.field.autoplay.option.on.label": "Aan",
   "slideType.video-slide.field.bunnyLibraryId.label": "Bunny library-ID",
   "slideType.video-slide.field.source.label": "Video-URL of Bunny-ID (YouTube/Vimeo-URL, Bunny embed-URL of Bunny video-UUID)",
+  "slideType.video-slide.field.transcript.help": "Staat niet op de slide. Het leesdocument en de printversie tonen hem onder de link naar de video.",
+  "slideType.video-slide.field.transcript.label": "Transcriptie",
   "slideType.video-slide.field.watchUrl.help": "Wordt in de PDF-export en het leesdocument getoond in plaats van de gegenereerde link. Gebruik hem voor een korte, leesbare URL.",
   "slideType.video-slide.field.watchUrl.label": "Kijklink voor de PDF-export",
   "slideType.video-slide.label": "Video"

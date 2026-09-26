@@ -309,6 +309,8 @@
   "slideType.video-slide.field.autoplay.option.on.label": "On",
   "slideType.video-slide.field.bunnyLibraryId.label": "Bunny library ID",
   "slideType.video-slide.field.source.label": "Video URL or Bunny ID (YouTube/Vimeo URL, Bunny embed URL, or Bunny video UUID)",
+  "slideType.video-slide.field.transcript.help": "Not shown on the slide. The reader document and the print version show it under the link to the video.",
+  "slideType.video-slide.field.transcript.label": "Transcript",
   "slideType.video-slide.field.watchUrl.help": "Shown in the PDF export and the reader document instead of the generated link. Use it for a short, readable URL.",
   "slideType.video-slide.field.watchUrl.label": "Watch link for the PDF export",
   "slideType.video-slide.label": "Video"

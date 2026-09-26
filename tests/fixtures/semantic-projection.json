@@ -153,11 +153,13 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"video-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Video Content</h2>",
+      "<div data-field=\"transcript\"><p>Welcome to our studio. In the next two minutes we show how a deck travels from the first draft to the room.</p></div>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"video-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Video Content</h2>",
+      "<div data-field=\"transcript\"><p>Welcome to our studio. In the next two minutes we show how a deck travels from the first draft to the room.</p></div>",
       "</section>"
     ]
   },
