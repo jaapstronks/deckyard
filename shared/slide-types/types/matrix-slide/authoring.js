@@ -65,6 +65,8 @@ export default {
         tone: 'negative',
       },
     ],
+    xAxis: 'Effort',
+    yAxis: 'Impact',
     background: 'mist',
   },
 };

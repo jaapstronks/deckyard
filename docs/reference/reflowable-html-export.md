@@ -52,6 +52,11 @@ document that stays readable with JavaScript — and author CSS — turned off.
     series). A `tabular`
     type's rows array is a `<table>` too; `rowHeader: 'first'` makes its first
     column `<th scope="row">`, as the canvas styles that column the label.
+    An `items` field declaring `axes: { columns, xKey, yKey }` is a grid read
+    row by row (`matrix-slide`'s 2x2, D139): while either axis string is
+    filled it is a `<table>` whose x axis is one `<th scope="col">` spanning
+    the columns and whose y axis is one `<th scope="row">` spanning the rows,
+    each item's block in a `<td>`; with neither it stays the list.
   - A text field's `role` decides its element (D128). The same declaration that
     sets a field's style affordances (`text-alignment.md`) is its document
     semantics, because both follow from what the text is. One table, applied to

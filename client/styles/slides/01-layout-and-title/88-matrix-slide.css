@@ -46,6 +46,62 @@
   gap: var(--slide-space-4);
 }
 
+/* Axes (D139): the plot wraps the grid only when an axis is named, so a
+   matrix without axes keeps the grid above as its direct layout. The y label
+   runs bottom to top beside the rows, the x label under the columns; an
+   absent label leaves its auto track at zero, so the gap is the label's own
+   margin rather than a grid gap that would stay behind. The arrow says which
+   way the measure grows, and is spoken as nothing. */
+.slide-matrix .matrix-plot {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.slide-matrix .matrix-plot > .matrix-grid {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.slide-matrix .matrix-axis-y {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: var(--slide-space-3);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.slide-matrix .matrix-axis-x {
+  grid-column: 2;
+  grid-row: 2;
+  text-align: center;
+  margin-top: var(--slide-space-3);
+}
+
+/* The arrow is a shape, not a glyph (no font decides how it looks). Sized in
+   logical units so it runs along the text in both writing modes; the polygon
+   is physical, so the y label (rotated half a turn) draws it pointing down to
+   end up pointing up. */
+.slide-matrix .matrix-axis .slide-eyebrow::after {
+  content: '';
+  display: inline-block;
+  inline-size: 1.5em;
+  block-size: 0.6em;
+  margin-inline-start: 0.5em;
+  vertical-align: middle;
+  background: currentColor;
+  clip-path: polygon(0 42%, 70% 42%, 70% 0, 100% 50%, 70% 100%, 70% 58%, 0 58%);
+}
+
+.slide-matrix .matrix-axis-y .slide-eyebrow::after {
+  clip-path: polygon(42% 0, 58% 0, 58% 70%, 100% 70%, 50% 100%, 0 70%, 42% 70%);
+}
+
 /* Individual cell */
 .slide-matrix .matrix-cell {
   /* The cell is the card; .cell-title / .cell-body read the roles

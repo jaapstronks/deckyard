@@ -429,9 +429,9 @@ export const FIELD_TYPES = {
   items: {
     label: 'Repeating items',
     description:
-      "Repeating list of structured objects, each shaped by `itemFields`. The document projection makes it a list: an `<ol>` when `ordered: true` (order always matters) or while `orderedWhen: { field, in }` holds (the `visibleWhen` predicate on a sibling enum — a list slide in its `numbers` style), otherwise a `<ul>`. An item's heading string is an `<h3>` only when something projects below it; an item that is one line (a poll answer) is the `<li>`'s text. On a `tabular` type, `rowHeader: 'first'` makes the first column's cells `<th scope=\"row\">`.",
+      "Repeating list of structured objects, each shaped by `itemFields`. The document projection makes it a list: an `<ol>` when `ordered: true` (order always matters) or while `orderedWhen: { field, in }` holds (the `visibleWhen` predicate on a sibling enum — a list slide in its `numbers` style), otherwise a `<ul>`. An item's heading string is an `<h3>` only when something projects below it; an item that is one line (a poll answer) is the `<li>`'s text. On a `tabular` type, `rowHeader: 'first'` makes the first column's cells `<th scope=\"row\">`. `axes: { columns, xKey, yKey }` says a fixed-count collection is a grid of `columns` columns read row by row (a matrix's 2x2), with two sibling strings naming what the columns and rows measure: while either is filled the projection is a `<table>` headed by one `<th scope=\"col\">` and one `<th scope=\"row\">` spanning the grid, each item a `<td>`; with neither it stays the list.",
     docExtra:
-      '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `required`, `collapsible`, `ordered`, `orderedWhen`, `relationField`, `itemLabelField`, `columnCountKey`, `headerRowKey`, `rowHeader`, `captionKey`',
+      '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `required`, `collapsible`, `ordered`, `orderedWhen`, `relationField`, `itemLabelField`, `columnCountKey`, `headerRowKey`, `rowHeader`, `captionKey`, `axes`',
     valueKind: 'objectArray',
     validate: validateItems,
   },

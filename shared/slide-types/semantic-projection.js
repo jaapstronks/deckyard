@@ -1038,13 +1038,15 @@ function itemHeading(
  * @param {string[]} [ctx.slideIds] - the document's slide ids, for jumps
  * @param {object} [ctx.parent] - the object holding the items field
  * @param {string} [ctx.parentKey] - the key of that items field
+ * @param {'li'|'td'} [ctx.tag] - the element the item is: a list entry, or a
+ *   cell of the grid an `axes` declaration makes of the items
  */
 function renderItemBlock(
   item,
   itemFields,
   itemLabelField,
   itemDefaults,
-  { lang, slideIds, parent, parentKey } = {},
+  { lang, slideIds, parent, parentKey, tag = 'li' } = {},
 ) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
@@ -1077,15 +1079,82 @@ function renderItemBlock(
   // enum resolves through the type's `defaults`: one rule, and the canvas
   // (`.matrix-cell[data-tone]`) says the same for a cell without a tone.
   const attrs = semanticEnumAttrs(itemFields, item, itemDefaults);
+  // `reader-item` styles a list entry; a table cell has the table's own.
+  const open = tag === 'li' ? `<li class="reader-item"` : `<${tag}`;
   if (headingKey && !below.length) {
     // One field, one marker: the <li> is the block that emits it.
-    return `<li class="reader-item"${fieldAttr(headingKey)}${attrs}>${escapeHtml(headingText)}</li>`;
+    return `${open}${fieldAttr(headingKey)}${attrs}>${escapeHtml(headingText)}</${tag}>`;
   }
   const parts = headingKey
     ? [`<h3${fieldAttr(headingKey)}>${escapeHtml(headingText)}</h3>`, ...below]
     : below;
   const inner = parts.join('\n');
-  return inner ? `<li class="reader-item"${attrs}>${inner}</li>` : '';
+  return inner ? `${open}${attrs}>${inner}</${tag}>` : '';
+}
+
+/**
+ * Project an `items` field that declares `axes` as the grid it is (D139).
+ *
+ * `axes: { columns, xKey, yKey }` says the items are a grid of `columns`
+ * columns read row by row, and names the two sibling strings that say what the
+ * columns and the rows measure. A matrix's four cells are the case: the canvas
+ * draws them 2x2, and "Impact vs. effort" in the title alone left no reader a
+ * way to rebuild which quadrant is which.
+ *
+ * With either axis named, the grid is a `<table>`: the x axis one `<th
+ * scope="col">` spanning every column, the y axis one `<th scope="row">`
+ * spanning every row, each cell the item's own block in a `<td>` (a heading
+ * and its body, as in the list). An axis that is empty has no header, and the
+ * corner stays an empty `<td>`. With neither there is nothing to head the grid
+ * with, so it stays the list it always was — the evolution rule, and the
+ * honest shape: a table without headers says no more than the list.
+ *
+ * Which end of an axis is "high" is the canvas convention (right, up), carried
+ * by the arrow the canvas draws; the header names the measure, not a scale.
+ *
+ * @param {object} field - the `items` field declaring `axes`
+ * @param {object} content
+ * @param {{lang?: string, slideIds?: string[]}} ctx
+ * @returns {string} the table, or '' when no axis is named
+ */
+function renderAxesTable(field, content, { lang, slideIds }) {
+  const { columns, xKey, yKey } = field.axes;
+  const items = Array.isArray(content?.[field.key]) ? content[field.key] : [];
+  const xText = str(content?.[xKey]);
+  const yText = str(content?.[yKey]);
+  if (!items.length || !Number.isInteger(columns) || columns < 1) return '';
+  if (!xText && !yText) return '';
+  const itemDefaults = resolveItemDefaults(field);
+  const rows = [];
+  for (let i = 0; i < items.length; i += columns) {
+    rows.push(items.slice(i, i + columns));
+  }
+  const cell = (item) =>
+    renderItemBlock(
+      item,
+      field.itemFields,
+      field.itemLabelField,
+      itemDefaults,
+      {
+        lang,
+        slideIds,
+        parent: content,
+        parentKey: field.key,
+        tag: 'td',
+      },
+    ) || '<td></td>';
+  const thead = xText
+    ? `<thead><tr>${yText ? '<td></td>' : ''}<th scope="col" colspan="${columns}"${fieldAttr(xKey)}>${escapeHtml(xText)}</th></tr></thead>`
+    : '';
+  const yHead = yText
+    ? `<th scope="row" rowspan="${rows.length}"${fieldAttr(yKey)}>${escapeHtml(yText)}</th>`
+    : '';
+  const tbody = `<tbody>${rows
+    .map(
+      (row, r) => `<tr>${r === 0 ? yHead : ''}${row.map(cell).join('')}</tr>`,
+    )
+    .join('')}</tbody>`;
+  return `<table class="reader-table"${fieldAttr(field.key)}>${thead}${tbody}</table>`;
 }
 
 /**
@@ -1465,6 +1534,21 @@ export function renderSlideBodySemanticHtml(
       if (captionKey) consumed.add(captionKey);
       const countKey = str(field.columnCountKey);
       if (countKey) consumed.add(countKey);
+      continue;
+    }
+    // `axes`: the items are a grid, and the two siblings name its columns and
+    // rows — consumed whether or not they are filled, so an axis never reads
+    // as a loose paragraph beside the list either.
+    if (
+      field.type === 'items' &&
+      field.axes &&
+      typeof field.axes === 'object'
+    ) {
+      const table = renderAxesTable(field, content, { lang, slideIds });
+      if (table) structuredHtmlByKey.set(field.key, table);
+      for (const key of [field.axes.xKey, field.axes.yKey]) {
+        if (str(key)) consumed.add(key);
+      }
       continue;
     }
     // `dataset`: decode the payload to rows, say what they show (the type's

@@ -826,6 +826,73 @@ test("`rowHeader` is `'first'` on an items field; anything else warns", () => {
   }
 });
 
+test('`axes` makes a whole grid of items, headed by sibling strings (D139)', () => {
+  const item = [{ key: 'c1', type: 'string', label: 'C1' }];
+  const grid = (axes, extra = {}) => ({
+    key: 'cells',
+    type: 'items',
+    label: 'Cells',
+    itemFields: item,
+    minItems: 4,
+    maxItems: 4,
+    axes,
+    ...extra,
+  });
+  const siblings = [
+    { key: 'xAxis', type: 'string', label: 'X' },
+    { key: 'yAxis', type: 'string', label: 'Y' },
+    { key: 'count', type: 'number', label: 'N' },
+  ];
+  const codes = (fields) =>
+    walkFieldDefinitions(fields, FILE_JS).findings.map((f) => [
+      f.key,
+      f.code,
+      f.severity,
+    ]);
+
+  assert.deepEqual(
+    codes([grid({ columns: 2, xKey: 'xAxis', yKey: 'yAxis' }), ...siblings]),
+    [],
+  );
+  // One axis is a grid too.
+  assert.deepEqual(
+    codes([grid({ columns: 2, yKey: 'yAxis' }), ...siblings]),
+    [],
+  );
+
+  const findings = walkFieldDefinitions(
+    [
+      { key: 'title', type: 'string', label: 'Title', axes: { columns: 2 } },
+      grid({ columns: 3, xKey: 'xAxis' }),
+      { ...grid({ columns: 2, xKey: 'xAxis' }), key: 'open', maxItems: 8 },
+      { ...grid({ columns: 2, xKey: 'count', yKey: 'nope' }), key: 'bad' },
+      { ...grid({ columns: 2 }), key: 'none' },
+      ...siblings,
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['title', 'axes_not_items', 'warning'],
+      ['cells', 'axes_not_a_grid', 'warning'],
+      ['open', 'axes_not_a_grid', 'warning'],
+      ['bad', 'axes_key_unknown', 'warning'],
+      ['none', 'axes_key_unknown', 'warning'],
+    ],
+  );
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+
+  // A stored row has no control for it, so it refuses it (D84).
+  const stored = validateCustomFieldDefinitions([
+    grid({ columns: 2, xKey: 'xAxis' }),
+    ...siblings.slice(0, 1),
+  ]);
+  assert.equal(stored.ok, false);
+  assert.equal(stored.problem.code, 'unknown_property');
+});
+
 test('a sub-field whose role is its own element cannot head an item (D128)', () => {
   assert.deepEqual(
     [

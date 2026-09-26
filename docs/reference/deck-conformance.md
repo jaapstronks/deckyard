@@ -185,7 +185,7 @@ the encoding it drops.
 
 What that needed is **declared on the field, not branched on by type name** —
 `columnCountKey`, `headerRowKey`, `captionKey` and `rowHeader: 'first'` on the
-rows array, `encodingKeys` on the payload — so it travels through
+rows array, `axes` on a fixed collection that is a grid, `encodingKeys` on the payload — so it travels through
 `/api/slide-types` and a second implementation can follow the same facts. A `if (type === 'table-slide')`
 in the projection would have been a rule only we can obey, which is the opposite
 of what a structure contract is for.
