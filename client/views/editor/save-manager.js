@@ -7,7 +7,6 @@ import {
   textFieldSpecForType,
   valueAtPath,
 } from '../../../shared/slide-types/text-fields.js';
-import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 
 // Session idle timeout: create session-end snapshot after 5 minutes of no edits
@@ -289,7 +288,8 @@ export function createSaveManager({
    * exist are still not created here; that is the language menu's job.
    */
   const syncOtherLanguageStructureForSave = () => {
-    const from = normalizeLang(pres?.i18n?.active) || DEFAULT_DECK_LANG;
+    // Canonical since `initPresentationI18n` (B484).
+    const from = pres.i18n.active;
     ensureLangVersion(from);
 
     // Keep current buffers stored in i18n.versions
@@ -480,9 +480,8 @@ export function createSaveManager({
     const modifiedForThisSave = Array.from(modifiedSlideIds.keys());
 
     saveInFlight = (async () => {
-      // Ensure server knows which language buffer is currently in pres.title/slides.
-      pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
-      pres.i18n.active = normalizeLang(pres.i18n.active) || DEFAULT_DECK_LANG;
+      // `pres.i18n.active` tells the server which language buffer is in
+      // pres.title/slides; `initPresentationI18n` made it canonical (B484).
       // `dominant` is deliberately NOT touched here. Saving in a language does
       // not make that language the deck's source (D74) — the server keeps
       // top-level title/slides on the dominant version for the list preview and
