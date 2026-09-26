@@ -241,15 +241,22 @@ Selecting a canvas element grows the pane a **tab bar**; with nothing selected
 there is no tab bar - just the slide form (identical to the pre-tab pane).
 
 - **Selection state** lives in the controller (`selectedElement =
-{kind:'image'|'card', idx} | null`), cleared on slide change. Canvas
-  interactions set it: a single click on a filled image → `{image, idx}`, which
-  the canvas mirrors (`getSelectedElement`) as a solid ring and a toolbar below
-  the image: Replace opens the picker, Settings calls
-  `onOpenElementSettings({image, idx})` (opens the rail on the "This image"
-  tab, the single doorway to everything settable); editing a card's text or
-  clicking its icon → `{card, idx}`; a plain-text edit or empty-slide click
-  clears it. Double-clicking a filled image, or clicking an empty slot, opens
-  the image picker directly (replace / add) rather than selecting.
+{kind:'image'|'card', idx} | {kind:'text', fieldKey} | null`), cleared on
+  slide change. Canvas interactions set it: a single click on a filled image →
+  `{image, idx}`; editing a card's text or clicking its icon → `{card, idx}`;
+  editing a stylable text field (plain or markdown) → `{text, fieldKey}`; a
+  click on an empty area of the slide, or Escape outside an edit, clears it.
+  Double-clicking a filled image, or clicking an empty slot, opens the image
+  picker directly (replace / add) rather than selecting.
+- **The canvas mirrors it** (`syncSelection()` in `inline-editor.js`, run on
+  every selection change and at the end of every decoration pass): the
+  selected image gets a solid ring and a toolbar below it (Replace opens the
+  picker, Settings calls `onOpenElementSettings({image, idx})`, the single
+  doorway to everything settable); the selected text field gets the same solid
+  ring (`.ie-ol-outline.is-selected`). Because the ring is drawn from the
+  controller state rather than from focus, it survives the edit's blur and the
+  preview remount a sidebar change (alignment, colour) triggers - the user can
+  see which field the "This text" tab is acting on.
 - **Rendering** (`editor-form.js`): when the selection applies to the slide
   (`elementAppliesToSlide`), per-element widgets render into `elementForm`
   ("This element" tab) and the rest into `form` ("Slide" tab). The active tab

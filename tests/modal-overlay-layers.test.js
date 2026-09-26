@@ -132,6 +132,18 @@ test('createOverlay Escape peels one layer: only the topmost stacked overlay clo
   assert.deepEqual(closed, ['over', 'under']);
 });
 
+test('createOverlay marks the Escape it consumes as defaultPrevented', async () => {
+  // A document-level Escape handler that runs later (the editor's selection
+  // clear, B465) skips a defaultPrevented key: one layer per Escape.
+  const overlay = createOverlay();
+  overlay.show(document.body);
+  const ev = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true });
+  document.dispatchEvent(ev);
+  await tick();
+  assert.equal(overlay.isOpen(), false);
+  assert.equal(ev.defaultPrevented, true);
+});
+
 test('createOverlay hidden backdrop steps aside for the overlay under it', async () => {
   // `hide()` is how a dialog gets out of the way of a loading modal; a hidden
   // overlay must not swallow Escape just because it mounted last.
