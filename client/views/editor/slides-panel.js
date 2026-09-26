@@ -23,6 +23,7 @@ import {
 import { h } from '../../lib/dom.js';
 import { aiEnabled } from '../../lib/state/features.js';
 import { icon } from '../../lib/dom/icons.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 // Which slide types need audience participation, and therefore a follow-invite
 // slide in the deck for the audience to join through. Declared by the type
@@ -172,8 +173,7 @@ export function createSlidesPanel({
 
   searchInput.addEventListener('input', applySearchDebounced);
   searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      e.preventDefault();
+    if (takeEscape(e)) {
       applySearchNow('', { autoSelect: false });
       try {
         searchInput.blur();

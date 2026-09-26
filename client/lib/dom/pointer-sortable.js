@@ -30,6 +30,8 @@
  *   move (splice semantics: remove at from, insert at to).
  * @returns {{ detach: () => void }}
  */
+
+import { takeEscape } from './escape.js';
 export function attachPointerSortable({
   container,
   itemSelector,
@@ -234,10 +236,7 @@ export function attachPointerSortable({
 
   /** Escape aborts the gesture and puts everything back. */
   const onKeyCancel = (e) => {
-    if (e.key === 'Escape' && drag) {
-      e.stopPropagation();
-      finishDrag(false);
-    }
+    if (drag && takeEscape(e)) finishDrag(false);
   };
 
   /** ArrowUp/ArrowDown on the handle move the item one slot (a11y path). */

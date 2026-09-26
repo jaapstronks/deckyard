@@ -1,6 +1,7 @@
 import { h } from '../dom.js';
 import { icon } from './icons.js';
 import { reportMisuse } from '../util/dev-runtime.js';
+import { takeEscape } from './escape.js';
 
 const DEFAULT_DURATION_MS = 3200;
 const ERROR_DURATION_MS = 5600;
@@ -187,9 +188,9 @@ function hasAction(action) {
  */
 function onToastKeydown(e) {
   const el = /** @type {HTMLElement} */ (e.currentTarget);
-  if (e.key === 'Escape') {
-    // A toast is not a dialog: closing it must not also close what is behind it.
-    e.stopPropagation();
+  // A toast is not a dialog: closing it consumes the press, so what is behind
+  // it stays open.
+  if (takeEscape(e)) {
     dismissEl(el, { moveFocus: true });
     return;
   }

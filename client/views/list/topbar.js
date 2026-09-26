@@ -10,6 +10,7 @@ import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { createNotificationBell } from '../../lib/user/notification-bell.js';
 import { createUserMenu } from '../../lib/user/user-menu.js';
 import { h } from '../../lib/dom.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 /**
  * Create the topbar for the presentation list view
@@ -63,7 +64,7 @@ export function createTopbar({ features, api, user, detachers, onSearch }) {
     onSearch?.(e.target.value);
   });
   searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
+    if (takeEscape(e)) {
       searchInput.value = '';
       searchInput.blur();
       onSearch?.('');

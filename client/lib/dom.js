@@ -1,3 +1,5 @@
+import { takeEscape } from './dom/escape.js';
+
 export const $ = (sel, el = document) => el.querySelector(sel);
 export const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
 
@@ -149,12 +151,10 @@ export function installDismissOnOutside({
 
   const onDocKeyDown = (ev) => {
     try {
-      if (ev?.key !== 'Escape') return;
-      if (!isOpen()) return;
-      // Escape peels one layer: closing this surface consumes the key, so a
-      // document-level Escape handler (e.g. the editor's selection clear)
-      // leaves it alone.
-      ev.preventDefault();
+      // A layer in the capture phase: it hears the key before the surface it
+      // sits on, and closing it consumes the press (the contract in
+      // client/lib/dom/escape.js).
+      if (!isOpen() || !takeEscape(ev)) return;
       close();
       try {
         returnFocusEl?.focus?.();

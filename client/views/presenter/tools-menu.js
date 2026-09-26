@@ -6,6 +6,7 @@ import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../shared/i18n-utils.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 export function createPresenterToolsMenu({
   modeLang,
@@ -231,19 +232,20 @@ export function createPresenterToolsMenu({
     if (toolsWrap.contains(t)) return;
     closeTools();
   };
+  // Capture phase: the menu is a layer over the presenter, whose own Escape
+  // handler (keys.js) listens on `document` from mount on.
   const onDocKeyDown = (ev) => {
-    if (ev?.key !== 'Escape') return;
-    if (!toolsWrap.classList.contains('is-open')) return;
+    if (!toolsWrap.classList.contains('is-open') || !takeEscape(ev)) return;
     closeTools();
     try {
       toolsBtn.focus();
     } catch {}
   };
   document.addEventListener('click', onDocClick);
-  document.addEventListener('keydown', onDocKeyDown);
+  document.addEventListener('keydown', onDocKeyDown, true);
   detachToolsUi = () => {
     document.removeEventListener('click', onDocClick);
-    document.removeEventListener('keydown', onDocKeyDown);
+    document.removeEventListener('keydown', onDocKeyDown, true);
   };
 
   const syncEnabled = () => {

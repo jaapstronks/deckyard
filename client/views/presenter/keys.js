@@ -1,3 +1,5 @@
+import { takeEscape } from '../../lib/dom/escape.js';
+
 function isTypingTarget(t) {
   const el = t && t.nodeType === 1 ? t : null;
   if (!el) return false;
@@ -89,10 +91,7 @@ export function attachPresenterKeys({
       e.preventDefault();
       onToggleHelp?.();
     }
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      onEscape?.();
-    }
+    if (takeEscape(e)) onEscape?.();
   };
 
   document.addEventListener('keydown', onKeyDown);

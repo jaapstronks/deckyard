@@ -26,6 +26,7 @@ import {
 import { renderSlideSchematic } from '../../lib/slide-authoring/slide-schematic.js';
 import { registerOverlayCloser } from '../../lib/dom/modal.js';
 import { h } from '../../lib/dom.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 /**
  * The definition's mirror declaration (`layoutMirror`): which enum field
@@ -360,8 +361,7 @@ export function createLayoutSwitcherChip({
       if (!popover.contains(e.target) && !chip.contains(e.target)) close?.();
     };
     const onKey = (e) => {
-      if (e.key !== 'Escape') return;
-      e.stopPropagation();
+      if (!takeEscape(e)) return;
       close?.();
       try {
         chip.focus();

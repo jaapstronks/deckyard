@@ -3,6 +3,7 @@ import { createInlineError } from '../../lib/dom/inline-error.js';
 import { t } from '../../lib/ui-i18n.js';
 import { checkTagName, TAG_NAME_MESSAGES } from '../../../shared/tag-name.js';
 import { icon } from '../../lib/dom/icons.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 /**
  * The editor's voice for a refused tag name. The rule is `shared/tag-name.js`;
@@ -229,7 +230,7 @@ export function createTagEditor({
         isOpen = false;
         renderSuggestions();
       }
-    } else if (e.key === 'Escape') {
+    } else if (isOpen && takeEscape(e)) {
       suggestions = [];
       highlightedIndex = -1;
       isOpen = false;

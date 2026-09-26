@@ -71,6 +71,7 @@ import {
 import { openTypePeek } from './peek.js';
 import { mountLibraryStrip } from './library-strip.js';
 import { h } from '../../../lib/dom.js';
+import { takeEscape } from '../../../lib/dom/escape.js';
 
 export function createSlideTypePicker({
   SLIDE_TYPES,
@@ -828,15 +829,13 @@ export function createSlideTypePicker({
       searchQuery = searchInput.value || '';
       applyFilter();
     });
-    // Escape clears the query first; only closes the modal when already empty.
+    // Escape clears the query first; only closes the modal when already empty
+    // (the field takes the press, and the overlay reads that it was taken).
     searchInput.addEventListener('keydown', (e) => {
-      if (e.key !== 'Escape') return;
-      if (searchQuery) {
-        e.stopPropagation();
-        searchQuery = '';
-        searchInput.value = '';
-        applyFilter();
-      }
+      if (!searchQuery || !takeEscape(e)) return;
+      searchQuery = '';
+      searchInput.value = '';
+      applyFilter();
     });
 
     // Membership is derived from each type's own `group` declaration; ./data.js

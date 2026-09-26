@@ -2,6 +2,7 @@ import { icon } from '../../../../lib/dom/icons.js';
 import { h } from '../../../../lib/dom.js';
 import { t } from '../../../../lib/ui-i18n.js';
 import { createCurationThumbnail } from './curation-thumbnails.js';
+import { takeEscape } from '../../../../lib/dom/escape.js';
 
 /**
  * Open the full-screen lightbox preview for a core slide type, with prev/next
@@ -155,10 +156,7 @@ export function openTypePreview(type, allTypesList, ctx) {
   }
 
   function onKeyDown(e) {
-    if (e.key === 'Escape') {
-      close();
-      e.preventDefault();
-    }
+    if (takeEscape(e)) close();
     if (e.key === 'ArrowLeft') {
       navigate(-1);
       e.preventDefault();
