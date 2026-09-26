@@ -26,6 +26,23 @@ import { getSlideCopy } from '../slide-copy.js';
 export const MAX_LOGOS = 30;
 
 /**
+ * The grid a wall of `count` logos lays out in: one row up to three logos,
+ * two rows from four, three from nine, and never more than eight to a row
+ * (so 4 = 2x2, 6 = 3x2, 8 = 4x2, 12 = 4x3, 30 = 8x4). Logos are wide and
+ * flat, so a wall grows in rows sooner than a row of cards would: six in one
+ * row leaves each one a stamp. How large a cell is follows from this grid in
+ * the CSS, not from the count.
+ *
+ * @param {number} count
+ * @returns {{cols: number, rows: number}}
+ */
+export function logoWallGrid(count) {
+  const n = Math.max(1, count);
+  const rows = n <= 3 ? 1 : n <= 8 ? 2 : Math.max(3, Math.ceil(n / 8));
+  return { cols: Math.ceil(n / rows), rows };
+}
+
+/**
  * Normalize `logos[]` into the shape the renderer reads.
  *
  * Until the v7 -> v8 schema fold this also carried a second branch for the flat
@@ -246,23 +263,14 @@ export default {
     // Existing decks carry no background value; their historical look is mist.
     const bg = bgClass(content?.background || 'mist');
 
-    // Counts 1-12 use the hand-tuned CSS tiers (fixed cell sizes that grow as
-    // the wall empties). Beyond 12 the grid switches to fluid columns: a
-    // steady 7-wide (8 for the last tier) so cell size stays consistent and
-    // rows grow with the count.
-    let fluidClass = '';
-    let fluidStyle = '';
-    if (count > 12) {
-      const cols = count <= 28 ? 7 : 8;
-      const rows = Math.ceil(count / cols);
-      fluidClass = ' is-fluid';
-      fluidStyle = ` style="--lw-cols: ${cols}; --lw-rows: ${rows};"`;
-    }
+    // One rule for every count: the renderer names the grid, the CSS sizes
+    // the cells to fill it (46-logo-wall.css).
+    const { cols, rows } = logoWallGrid(count);
 
     return `
       <div class="slide slide-logo-wall ${alignClass ? `${alignClass} ` : ''}${bg}${
         hasHeader ? ' has-header' : ''
-      }${fluidClass}" data-logo-count="${count}"${fluidStyle}>
+      }" data-logo-count="${count}" style="--lw-cols: ${cols}; --lw-rows: ${rows};">
         <div class="slide-inner">
           ${headerHtml}
           <div class="logo-wall-grid">

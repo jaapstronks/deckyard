@@ -251,6 +251,32 @@ initTeamCardsJustify(document.body);
 }
 
 /**
+ * The logo-wall balance pass
+ * (`client/lib/slide-runtime/logo-wall-balance.js`).
+ *
+ * Every document, stage or sheet, like the team-cards pass: it is layout.
+ * Without it an export sizes each logo by its frame alone, and a square mark
+ * outweighs the wordmark beside it.
+ */
+const LOGO_WALL_MODULE = new URL(
+  '../../client/lib/slide-runtime/logo-wall-balance.js',
+  import.meta.url,
+);
+
+function logoWallRuntimeSource() {
+  return cachedModule(
+    'logo-wall',
+    () => `${SLIDE_RUNTIME_BANNER}
+// Logo-wall balance: client/lib/slide-runtime/logo-wall-balance.js, inlined.
+{
+${inlineClientModule(LOGO_WALL_MODULE, 'initLogoWallBalance')}
+
+initLogoWallBalance(document.body);
+}`,
+  );
+}
+
+/**
  * Client modules a path's body calls into, by name. A closed set, like
  * {@link SCRIPT_RUNTIMES}: a path that needs another one adds an entry here
  * instead of carrying a copy in its body. Each is inlined before the body and
@@ -298,15 +324,17 @@ ${inlineClientModule(entry.url, entry.exportName)}`,
 }
 
 /**
- * Which client slide runtimes a rendered deck needs, from its markup.
+ * Which layout runtimes a rendered deck needs, from its markup: the ones that
+ * go in any document, a static sheet as much as a stage.
  *
- * `teamCards` is only the uncropped, non-split image-blocks layout — the one
- * combination the justify pass acts on.
+ * - `teamCards` is only the uncropped, non-split image-blocks layout — the one
+ *   combination the justify pass acts on.
+ * - `logoWall` is any logo wall with an image in it.
  *
  * @param {string} slidesHtml
- * @returns {{countdown: boolean, teamCards: boolean}}
+ * @returns {{teamCards: boolean, logoWall: boolean}}
  */
-export function detectSlideRuntimeNeeds(slidesHtml) {
+export function detectLayoutRuntimeNeeds(slidesHtml) {
   const html = String(slidesHtml || '');
   const teamCards = Array.from(
     html.matchAll(/class="([^"]*\bslide-team-cards\b[^"]*)"/g),
@@ -314,7 +342,24 @@ export function detectSlideRuntimeNeeds(slidesHtml) {
     ([, cls]) =>
       /\baspect-original\b/.test(cls) && !/\bhas-column-split\b/.test(cls),
   );
-  return { countdown: /\bslide-countdown\b/.test(html), teamCards };
+  const logoWall =
+    /\bslide-logo-wall\b/.test(html) && /\blogo-wall-img\b/.test(html);
+  return { teamCards, logoWall };
+}
+
+/**
+ * Which client slide runtimes a rendered deck needs, from its markup: the
+ * layout runtimes plus the countdown, which only a stage document runs.
+ *
+ * @param {string} slidesHtml
+ * @returns {{countdown: boolean, teamCards: boolean, logoWall: boolean}}
+ */
+export function detectSlideRuntimeNeeds(slidesHtml) {
+  const html = String(slidesHtml || '');
+  return {
+    countdown: /\bslide-countdown\b/.test(html),
+    ...detectLayoutRuntimeNeeds(html),
+  };
 }
 
 /**
@@ -333,10 +378,11 @@ export function detectSlideRuntimeNeeds(slidesHtml) {
  *   rendered slides actually contain, from `detectPrismKatexNeeds()`. Omitted
  *   means "assume both". `{prism: false, katex: false}` emits no initialiser,
  *   which is the point of detecting: a deck with neither runs nothing.
- * @param {{countdown?: boolean, teamCards?: boolean}} [options.slideNeeds] -
- *   Client slide runtimes the slides need, from `detectSlideRuntimeNeeds()`.
- *   `countdown` is stage runtime only (asking for it on a `none` document
- *   throws); `teamCards` is layout and goes in any document.
+ * @param {{countdown?: boolean, teamCards?: boolean, logoWall?: boolean}} [options.slideNeeds] -
+ *   Client slide runtimes the slides need, from `detectSlideRuntimeNeeds()`
+ *   (a stage) or `detectLayoutRuntimeNeeds()` (a static sheet). `countdown`
+ *   is stage runtime only (asking for it on a `none` document throws);
+ *   `teamCards` and `logoWall` are layout and go in any document.
  * @param {string[]} [options.clientModules] - Client modules the body calls
  *   into, by name from {@link CLIENT_MODULE_NAMES}; inlined before the body.
  * @param {string} [options.body=''] - The path's own runtime.
@@ -371,6 +417,7 @@ export function buildScriptChain({
   // to mark the first slide `is-active`.
   if (slideNeeds?.countdown) parts.push(countdownRuntimeSource());
   if (slideNeeds?.teamCards) parts.push(teamCardsRuntimeSource());
+  if (slideNeeds?.logoWall) parts.push(logoWallRuntimeSource());
   for (const name of clientModules) parts.push(clientModuleSource(name));
   if (String(body || '').trim()) parts.push(dedent(String(body)));
 

@@ -15,7 +15,7 @@ import {
 } from '../utils/prism-katex.js';
 import {
   buildScriptChain,
-  detectSlideRuntimeNeeds,
+  detectLayoutRuntimeNeeds,
 } from '../utils/script-chain.js';
 import { settleRenderedPage } from '../utils/settle-rendered-page.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
@@ -105,10 +105,8 @@ export async function buildSlidePngHtml(
     <div class="ps-theme">${css.wmHtml}${slideHtml}</div>
     ${buildScriptChain({
       needs: highlightNeeds,
-      // A static sheet: the layout runtime only, never the countdown.
-      slideNeeds: {
-        teamCards: detectSlideRuntimeNeeds(slideHtml).teamCards,
-      },
+      // A static sheet: the layout runtimes only, never the countdown.
+      slideNeeds: detectLayoutRuntimeNeeds(slideHtml),
     })}
   </body>
 </html>`;

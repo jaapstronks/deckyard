@@ -4,115 +4,26 @@
      a theme-defined variant when the author picks one). */
   background: var(--slide-bg, var(--slide-bg-mist));
   color: var(--slide-on-surface, #0b0b0b);
-  padding: var(--slide-space-12) var(--slide-space-16) var(--slide-space-16);
+  /* The inline half of this inset feeds the fluid type unit, so it is stated
+     as --slide-padding rather than written into the shorthand — see
+     00-tokens.css § THE FLUID BASIS. */
+  padding: var(--slide-space-12) var(--slide-padding) var(--slide-padding);
 
-  /* Cell sizes are reference pixels on the 1600x900 canvas
-     (--slide-canvas-unit, 00-tokens.css § THE FLUID BASIS), never viewport
-     units: the logos scale with the slide box, identically in the editor,
-     the presenter, thumbnails and export. */
-  --lw-cols: 4;
-  --lw-rows: 2;
-  --lw-gap-x: var(--slide-space-6);
-  --lw-gap-y: var(--slide-space-6);
-  --lw-cell: calc(240 * var(--slide-canvas-unit));
+  /* The grid comes from the renderer (--lw-cols/--lw-rows inline, one rule
+     for every count: logoWallGrid in logo-wall-slide.js); everything below
+     sizes the cells to fill it. */
+  --lw-cols: 1;
+  --lw-rows: 1;
+  --lw-gap: var(--slide-space-6);
+  /* The largest a cell gets, in reference pixels on the 1600x900 canvas
+     (--slide-canvas-unit), so one or two logos stay a logo and not a poster. */
+  --lw-cell-max: calc(440 * var(--slide-canvas-unit));
+  /* A cell's height as a share of its width: logos are wide and flat. */
+  --lw-cell-ratio: 0.62;
 }
 
 .slide-logo-wall:not(.has-header) .slide-inner {
   justify-content: center;
-}
-
-/* Scale up for “handful of logos” */
-.slide-logo-wall[data-logo-count='1'] {
-  --lw-cols: 1;
-  --lw-rows: 1;
-  --lw-cell: calc(430 * var(--slide-canvas-unit));
-}
-.slide-logo-wall[data-logo-count='2'] {
-  --lw-cols: 2;
-  --lw-rows: 1;
-  --lw-cell: calc(370 * var(--slide-canvas-unit));
-}
-.slide-logo-wall[data-logo-count='3'] {
-  --lw-cols: 3;
-  --lw-rows: 1;
-  --lw-cell: calc(330 * var(--slide-canvas-unit));
-}
-.slide-logo-wall[data-logo-count='4'] {
-  --lw-cols: 4;
-  --lw-rows: 1;
-  --lw-cell: calc(290 * var(--slide-canvas-unit));
-}
-
-/* 5–6 => 3×2 */
-.slide-logo-wall[data-logo-count='5'],
-.slide-logo-wall[data-logo-count='6'] {
-  --lw-cols: 3;
-  --lw-rows: 2;
-  --lw-cell: calc(270 * var(--slide-canvas-unit));
-}
-
-/* 7–8 => 4×2 */
-.slide-logo-wall[data-logo-count='7'],
-.slide-logo-wall[data-logo-count='8'] {
-  --lw-cols: 4;
-  --lw-rows: 2;
-  --lw-cell: calc(240 * var(--slide-canvas-unit));
-}
-
-/* 9–10 => 5×2 (use width so it feels “wide”) */
-.slide-logo-wall[data-logo-count='9'],
-.slide-logo-wall[data-logo-count='10'] {
-  --lw-cols: 5;
-  --lw-rows: 2;
-  --lw-cell: calc(216 * var(--slide-canvas-unit));
-  --lw-gap-x: var(--slide-space-5);
-}
-
-/* 11–12 => 6×2 */
-.slide-logo-wall[data-logo-count='11'],
-.slide-logo-wall[data-logo-count='12'] {
-  --lw-cols: 6;
-  --lw-rows: 2;
-  --lw-cell: calc(204 * var(--slide-canvas-unit));
-  --lw-gap-x: var(--slide-space-4);
-}
-
-.slide-logo-wall[data-logo-count='9'],
-.slide-logo-wall[data-logo-count='10'],
-.slide-logo-wall[data-logo-count='11'],
-.slide-logo-wall[data-logo-count='12'] {
-  /* The inline half of this inset feeds the fluid type unit, so it is stated
-     as --slide-padding rather than written into the shorthand — see
-     00-tokens.css § THE FLUID BASIS. */
-  --slide-padding: var(--slide-space-12);
-}
-
-/* 13+ logos: fluid columns (renderer sets --lw-cols/--lw-rows inline).
-   Cells share the row width instead of using fixed sizes, so any count up
-   to the cap lays out without per-count CSS. */
-.slide-logo-wall.is-fluid {
-  /* The inline half of this inset feeds the fluid type unit, so it is stated
-     as --slide-padding rather than written into the shorthand — see
-     00-tokens.css § THE FLUID BASIS. */
-  --slide-padding: var(--slide-space-12);
-  padding: var(--slide-space-10) var(--slide-padding) var(--slide-padding);
-}
-
-.slide-logo-wall.is-fluid .logo-wall-grid {
-  grid-template-columns: repeat(var(--lw-cols), minmax(0, 1fr));
-  grid-template-rows: repeat(var(--lw-rows), auto);
-  gap: var(--slide-space-4);
-  width: 100%;
-}
-
-.slide-logo-wall.is-fluid .logo-wall-item {
-  width: 100%;
-}
-
-.slide-logo-wall.is-fluid .logo-wall-frame {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1.61;
 }
 
 .slide-logo-wall .slide-inner {
@@ -139,28 +50,46 @@
 }
 
 .slide-logo-wall .logo-wall-grid {
-  display: grid;
-  grid-template-columns: repeat(var(--lw-cols), var(--lw-cell));
-  grid-template-rows: repeat(var(--lw-rows), auto);
-  column-gap: var(--lw-gap-x);
-  row-gap: var(--lw-gap-y);
+  /* A cell takes its share of the slide's width (100cqi is the slide's
+     content box: the slide is the query container, 00-tokens.css), up to
+     --lw-cell-max. Declared here, on a descendant of the slide, because a
+     container is queried by its descendants only. */
+  --lw-cell: min(
+    var(--lw-cell-max),
+    calc((100cqi - (var(--lw-cols) - 1) * var(--lw-gap)) / var(--lw-cols))
+  );
+  /* Rows wrap at --lw-cols cells and each row is centred, so the short last
+     row of an uneven count (5 = 3 + 2) sits under the middle of the one
+     above instead of against its start. A grid would pin it left. */
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-content: center;
+  gap: var(--lw-gap);
+  width: calc(
+    var(--lw-cols) * var(--lw-cell) + (var(--lw-cols) - 1) * var(--lw-gap)
+  );
+  max-width: 100%;
+  margin-inline: auto;
   flex: 1 1 auto;
   min-height: 0;
 }
 
 .slide-logo-wall .logo-wall-item {
-  width: var(--lw-cell);
+  flex: 0 0 var(--lw-cell);
+  /* As tall as the cell ratio asks, and giving way evenly when the header
+     leaves less height than that: the wall never overflows the slide. */
+  height: min(
+    calc(var(--lw-cell) * var(--lw-cell-ratio)),
+    calc((100% - (var(--lw-rows) - 1) * var(--lw-gap)) / var(--lw-rows))
+  );
   min-width: 0;
   display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 .slide-logo-wall .logo-wall-frame {
-  width: var(--lw-cell);
-  height: calc(var(--lw-cell) * 0.62);
+  flex: 1 1 auto;
+  min-width: 0;
   border-radius: var(--slide-radius-sm);
   overflow: hidden;
   background: transparent; /* no backdrop */
@@ -171,12 +100,21 @@
 }
 
 .slide-logo-wall .logo-wall-img {
-  /* Less “breathing room” around the logo */
-  max-width: 96%;
-  max-height: 90%;
-  width: auto;
+  /* Optical balance: every logo gets the same area, a square of
+     --lw-logo-size cells, so a square mark and an 8:1 wordmark weigh the
+     same. The width follows from the logo's aspect ratio, which the
+     logo-wall-balance runtime sets as --lw-aspect once the image loads
+     (client/lib/slide-runtime/logo-wall-balance.js). Until then the width
+     declaration is invalid and falls back to auto, so the frame caps below
+     alone size the logo. */
+  --lw-logo-size: 0.42;
+  width: calc(var(--lw-cell) * var(--lw-logo-size) * sqrt(var(--lw-aspect)));
   height: auto;
-  object-fit: contain; /* no cropping */
+  /* Whatever the area rule asks, a logo stays inside its frame: a very wide
+     wordmark stops at the frame's width, a tall mark at 80% of its height. */
+  max-width: 96%;
+  max-height: 80%;
+  object-fit: contain; /* no cropping, and no stretching when a cap bites */
   display: block;
 }
 

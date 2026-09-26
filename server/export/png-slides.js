@@ -9,7 +9,7 @@ import {
 } from '../utils/prism-katex.js';
 import {
   buildScriptChain,
-  detectSlideRuntimeNeeds,
+  detectLayoutRuntimeNeeds,
 } from '../utils/script-chain.js';
 import { renderVideoSlidePngHtml } from '../utils/video-slide-html.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
@@ -269,10 +269,8 @@ export async function buildSlidesPngExportHtml(
     ${buildScriptChain({
       body: PNG_TOOLBAR_JS,
       needs: highlightNeeds,
-      // A static sheet: the layout runtime only, never the countdown.
-      slideNeeds: {
-        teamCards: detectSlideRuntimeNeeds(slidesHtml).teamCards,
-      },
+      // A static sheet: the layout runtimes only, never the countdown.
+      slideNeeds: detectLayoutRuntimeNeeds(slidesHtml),
     })}
   </body>
 </html>`;
