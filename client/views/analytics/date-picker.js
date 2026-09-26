@@ -5,6 +5,7 @@
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
 import { icon } from '../../lib/dom/icons.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 /**
  * Get preset date ranges.
@@ -175,10 +176,10 @@ export function createDatePicker({ initialRange, onChange }) {
     dropdown.style.display = isOpen ? 'block' : 'none';
     if (isOpen) {
       document.addEventListener('click', handleOutsideClick);
-      document.addEventListener('keydown', handleEscapeKey);
+      document.addEventListener('keydown', handleEscapeKey, true);
     } else {
       document.removeEventListener('click', handleOutsideClick);
-      document.removeEventListener('keydown', handleEscapeKey);
+      document.removeEventListener('keydown', handleEscapeKey, true);
     }
   }
 
@@ -186,19 +187,17 @@ export function createDatePicker({ initialRange, onChange }) {
     isOpen = false;
     dropdown.style.display = 'none';
     document.removeEventListener('click', handleOutsideClick);
-    document.removeEventListener('keydown', handleEscapeKey);
+    document.removeEventListener('keydown', handleEscapeKey, true);
     button.focus();
   }
 
   /**
-   * Handle escape key to close dropdown.
+   * Handle escape key to close dropdown. Capture phase: the dropdown is a
+   * layer, so it hears the key before any surface it sits on.
    * @param {KeyboardEvent} e
    */
   function handleEscapeKey(e) {
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      closeDropdown();
-    }
+    if (takeEscape(e)) closeDropdown();
   }
 
   /**
@@ -207,6 +206,10 @@ export function createDatePicker({ initialRange, onChange }) {
    * @param {number} index
    */
   function handlePresetKeydown(e, index) {
+    if (takeEscape(e)) {
+      closeDropdown();
+      return;
+    }
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault();
@@ -215,10 +218,6 @@ export function createDatePicker({ initialRange, onChange }) {
       case 'ArrowUp':
         e.preventDefault();
         focusPreset(Math.max(index - 1, 0));
-        break;
-      case 'Escape':
-        e.preventDefault();
-        closeDropdown();
         break;
       case 'Home':
         e.preventDefault();

@@ -20,6 +20,7 @@
 import { h, installDismissOnOutside } from '../dom.js';
 import { t } from '../ui-i18n.js';
 import { mentionMarkup } from '../../../shared/comment-mentions.js';
+import { takeEscape } from '../dom/escape.js';
 
 const DEBOUNCE_MS = 200;
 
@@ -197,7 +198,9 @@ export function attachMentionAutocomplete({
 
   function onKeydown(e) {
     if (!isOpen) return;
-    if (e.key === 'ArrowDown') {
+    if (takeEscape(e)) {
+      close();
+    } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       highlightIndex = Math.min(highlightIndex + 1, results.length - 1);
       render();
@@ -213,10 +216,6 @@ export function attachMentionAutocomplete({
       } else {
         close();
       }
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
-      e.stopPropagation();
-      close();
     } else if (
       e.key === 'ArrowLeft' ||
       e.key === 'ArrowRight' ||

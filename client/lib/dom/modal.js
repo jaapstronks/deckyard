@@ -1,6 +1,7 @@
 import { t } from '../ui-i18n.js';
 import { h, createFocusTrap } from '../dom.js';
 import { icon } from './icons.js';
+import { takeEscape } from './escape.js';
 export { createBusyManager } from './busy.js';
 
 /**
@@ -148,14 +149,13 @@ export function createOverlay(options = {}) {
   let previousActiveElement = null;
 
   const onKey = (e) => {
-    if (!closeOnEscape || e.key !== 'Escape' || busy) return;
-    // A layer inside this overlay (a dropdown, an autocomplete) already took
-    // this Escape and marked it; the overlay waits for the next one.
-    if (e.defaultPrevented) return;
+    if (!closeOnEscape || busy) return;
     // Stacked overlays all listen on `document`; only the top one may close.
     if (!isTopmostOverlay(backdrop)) return;
-    // The overlay consumes Escape, so no other document handler acts on it.
-    e.preventDefault();
+    // A layer inside this overlay (a dropdown, an autocomplete) that already
+    // took this press leaves the overlay for the next one; otherwise the
+    // overlay consumes it, so no other document handler acts on it.
+    if (!takeEscape(e)) return;
     requestClose();
   };
 

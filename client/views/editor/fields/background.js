@@ -2,6 +2,7 @@ import { getUiLocale, t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom.js';
 import { mergeBackgroundOptions } from '../../../../shared/theme-slide-backgrounds.js';
 import { optionCopy } from './option-copy.js';
+import { takeEscape } from '../../../lib/dom/escape.js';
 
 export function createBackgroundFields({ theme } = {}) {
   const themeVars =
@@ -157,9 +158,8 @@ export function createBackgroundFields({ theme } = {}) {
       else openMenu();
     });
     wrap.addEventListener('keydown', (e) => {
-      if (e.key !== 'Escape' || !open) return;
       // Closing the menu consumes the key (one layer per Escape).
-      e.preventDefault();
+      if (!open || !takeEscape(e)) return;
       close();
     });
 

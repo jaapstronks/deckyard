@@ -4,6 +4,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { createCommentMarkers } from '../comment-markers.js';
 import { renderCommentBodyNodes } from '../../../lib/comments/comment-body.js';
 import { h } from '../../../lib/dom.js';
+import { takeEscape } from '../../../lib/dom/escape.js';
 
 export function createPreviewLightbox({
   root,
@@ -445,7 +446,7 @@ export function createPreviewLightbox({
     rerenderPreviewLightbox = rerender;
 
     const onKey = (e) => {
-      if (e.key === 'Escape') {
+      if (takeEscape(e)) {
         if (commentDetailPopup) {
           hideCommentDetail();
         } else if (positionedPopup) {

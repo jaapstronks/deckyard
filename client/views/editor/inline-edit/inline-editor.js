@@ -66,6 +66,7 @@ import { h } from '../../../lib/dom.js';
 import { slideRendered } from '../../../lib/slide-runtime/slide-render.js';
 import { debugLog } from '../../../lib/util/debug.js';
 import { icon } from '../../../lib/dom/icons.js';
+import { takeEscape } from '../../../lib/dom/escape.js';
 
 /**
  * @param {Object} opts
@@ -250,8 +251,7 @@ export function createInlineEditor({
         e.preventDefault();
         editing.toolbar?.update();
         overlay.reposition();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
+      } else if (takeEscape(e)) {
         editing.cancel = true;
         editing.el.blur();
       } else if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
@@ -269,8 +269,7 @@ export function createInlineEditor({
     if (e.key === 'Enter') {
       e.preventDefault();
       editing.el.blur();
-    } else if (e.key === 'Escape') {
-      e.preventDefault();
+    } else if (takeEscape(e)) {
       editing.cancel = true;
       editing.el.blur();
     }
@@ -1213,7 +1212,6 @@ export function createInlineEditor({
    * key typed into a form control or dialog belongs to that control.
    */
   function onDocumentKeydown(e) {
-    if (e.key !== 'Escape' || e.defaultPrevented) return;
     if (isEditing() || !getSelectedElement?.()) return;
     const target = e.target;
     if (
@@ -1222,6 +1220,7 @@ export function createInlineEditor({
       )
     )
       return;
+    if (!takeEscape(e)) return;
     selectElement(null);
   }
 

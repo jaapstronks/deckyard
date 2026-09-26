@@ -12,6 +12,7 @@
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
 import { icon } from '../../lib/dom/icons.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 const DRAWER_BREAKPOINT = 820;
 
@@ -69,10 +70,10 @@ export function createResponsiveDrawers({ root } = {}) {
   // ─────────────────────────────────────────────────────────────────────────
 
   const handleKeydown = (e) => {
-    if (e.key === 'Escape' && doc.classList.contains('is-slides-drawer-open')) {
-      closeSlidesDrawer();
-      e.preventDefault();
-    }
+    // A standing surface: a layer opened inside the drawer (the slide context
+    // menu) takes the press first, and the drawer waits for the next one.
+    if (!doc.classList.contains('is-slides-drawer-open')) return;
+    if (takeEscape(e)) closeSlidesDrawer();
   };
 
   document.addEventListener('keydown', handleKeydown);

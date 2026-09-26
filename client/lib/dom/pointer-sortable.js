@@ -1,3 +1,5 @@
+import { takeEscape } from './escape.js';
+
 /**
  * Pointer-based vertical list reordering (no HTML5 drag-and-drop).
  *
@@ -234,10 +236,7 @@ export function attachPointerSortable({
 
   /** Escape aborts the gesture and puts everything back. */
   const onKeyCancel = (e) => {
-    if (e.key === 'Escape' && drag) {
-      e.stopPropagation();
-      finishDrag(false);
-    }
+    if (drag && takeEscape(e)) finishDrag(false);
   };
 
   /** ArrowUp/ArrowDown on the handle move the item one slot (a11y path). */

@@ -24,6 +24,7 @@
 
 import { computeDrop, resolveMove } from './reorder-geometry.js';
 import { h } from '../../../lib/dom.js';
+import { takeEscape } from '../../../lib/dom/escape.js';
 
 /**
  * @param {object} opts
@@ -89,10 +90,7 @@ export function createReorderDrag({ thumb, overlay, onReorder }) {
       }
     };
     const onKeyDown = (ev) => {
-      if (ev.key === 'Escape') {
-        ev.stopPropagation();
-        finish(false);
-      }
+      if (takeEscape(ev)) finish(false);
     };
     const onUp = () => finish(true);
     const onCancel = () => finish(false);

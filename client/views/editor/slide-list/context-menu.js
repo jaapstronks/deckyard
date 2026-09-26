@@ -15,6 +15,7 @@ import {
   createVisibilityMenu,
   showVisibilityMenuAt,
 } from '../slide-visibility-menu.js';
+import { takeEscape } from '../../../lib/dom/escape.js';
 
 let activeMenu = null;
 let detachActive = null;
@@ -211,8 +212,11 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
   const onDocClick = (e) => {
     if (!menu.contains(e.target)) closeSlideContextMenu();
   };
+  // Capture phase: the menu is a layer over the slides panel, and in the
+  // narrow drawer the drawer's own Escape (bubble, registered at mount) would
+  // otherwise hear the key first and close both.
   const onKey = (e) => {
-    if (e.key === 'Escape') closeSlideContextMenu();
+    if (takeEscape(e)) closeSlideContextMenu();
   };
   const onScrollOrResize = () => closeSlideContextMenu();
   // Defer binding the click listener so the opening click doesn't close it.
@@ -220,14 +224,14 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
     document.addEventListener('click', onDocClick, true);
     document.addEventListener('contextmenu', onDocClick, true);
   }, 0);
-  document.addEventListener('keydown', onKey);
+  document.addEventListener('keydown', onKey, true);
   window.addEventListener('scroll', onScrollOrResize, true);
   window.addEventListener('resize', onScrollOrResize);
 
   detachActive = () => {
     document.removeEventListener('click', onDocClick, true);
     document.removeEventListener('contextmenu', onDocClick, true);
-    document.removeEventListener('keydown', onKey);
+    document.removeEventListener('keydown', onKey, true);
     window.removeEventListener('scroll', onScrollOrResize, true);
     window.removeEventListener('resize', onScrollOrResize);
   };

@@ -6,6 +6,7 @@
 import { h, installDismissOnOutside } from '../dom.js';
 import { t } from '../ui-i18n.js';
 import { icon } from '../dom/icons.js';
+import { takeEscape } from '../dom/escape.js';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 1;
@@ -251,6 +252,11 @@ export function createUserAutocomplete({
   });
 
   input.addEventListener('keydown', (e) => {
+    // Open, the dropdown is the layer the key belongs to.
+    if (isOpen && takeEscape(e)) {
+      closeDropdown();
+      return;
+    }
     if (!isOpen) {
       if (
         e.key === 'ArrowDown' &&
@@ -282,10 +288,6 @@ export function createUserAutocomplete({
         if (highlightIndex >= 0 && highlightIndex < results.length) {
           selectUser(results[highlightIndex]);
         }
-        break;
-      case 'Escape':
-        e.preventDefault();
-        closeDropdown();
         break;
       case 'Backspace':
         if (input.value === '' && selected.length > 0) {

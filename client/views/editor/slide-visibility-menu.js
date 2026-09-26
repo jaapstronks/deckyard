@@ -10,6 +10,7 @@ import {
   applyVisibilityPreset,
 } from '../../../shared/slide-visibility.js';
 import { h } from '../../lib/dom.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 /**
  * Create a visibility preset option element.
@@ -274,12 +275,12 @@ export function showVisibilityMenuAt({ anchor, menu, container }) {
     document.addEventListener('click', closeOnOutsideClick, true);
   }, 0);
 
-  // Close on Escape
+  // Close on Escape. Capture phase: the menu is a layer, so it hears the key
+  // before the surface it opened over (the slides drawer, the editor).
   const closeOnEscape = (e) => {
-    if (e.key === 'Escape') {
-      menu.remove();
-      document.removeEventListener('keydown', closeOnEscape);
-    }
+    if (!takeEscape(e)) return;
+    menu.remove();
+    document.removeEventListener('keydown', closeOnEscape, true);
   };
-  document.addEventListener('keydown', closeOnEscape);
+  document.addEventListener('keydown', closeOnEscape, true);
 }
