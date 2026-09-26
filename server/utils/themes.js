@@ -22,12 +22,20 @@ const customThemeCache = new Map(); // uuid -> { theme, organizationId }
 // Default theme for OSS version (can be overridden via DEFAULT_THEME env var)
 const DEFAULT_THEME = envStr('DEFAULT_THEME', DEFAULT_THEME_ID);
 
+/**
+ * The theme value that means "this installation's default" (D232). A deck
+ * created without a theme stores it; it is resolved per render, never frozen
+ * into the id the default happens to be today.
+ */
+export const DEFAULT_THEME_REF = 'default';
+
 export function resolveThemeId(raw) {
   const s = String(raw || '').trim();
   if (!s) return DEFAULT_THEME;
-  // Back-compat: older decks / code used "default" as a theme id;
-  // it now maps to the configured DEFAULT_THEME.
-  if (s === 'default') return DEFAULT_THEME;
+  // `default` is a value of its own, not a spelling of an id (D232): a deck
+  // that carries it follows this installation's default theme, resolved at
+  // render time, so it moves along when `DEFAULT_THEME` changes.
+  if (s === DEFAULT_THEME_REF) return DEFAULT_THEME;
   // Accept UUIDs for custom themes (36 characters with hyphens)
   if (UUID_RE.test(s)) return s.toLowerCase();
   // Accept short theme IDs for system themes (up to 32 characters)
@@ -91,22 +99,21 @@ export async function loadDeckTheme(repoRoot, rawThemeId, ctx = null) {
  * drawn as the default (B446).
  *
  * @param {string} repoRoot
- * @param {string} rawThemeId - a built-in or custom theme id, or a custom
- *   theme's UUID
+ * @param {string} rawThemeId - a built-in or custom theme id, a custom
+ *   theme's UUID (lower-case), or `default`
  * @param {Object} [ctx] - storage scope; a custom theme must belong to its
  *   organization
  * @returns {Promise<Object|null>} the loaded theme, or null
  */
 export async function findTheme(repoRoot, rawThemeId, ctx = null) {
-  const raw = String(rawThemeId || '').trim();
-  if (!raw) return null;
-  if (UUID_RE.test(raw)) {
-    return loadCustomThemeRecord(raw.toLowerCase(), ctx, repoRoot);
-  }
-  const id = resolveThemeId(raw);
-  // resolveThemeId maps a malformed id onto the default; only the documented
-  // `default` alias may land there.
-  if (raw !== 'default' && id !== raw.toLowerCase()) return null;
+  if (typeof rawThemeId !== 'string' || !rawThemeId) return null;
+  // One spelling per theme (D232): the id exactly as the theme list names it.
+  // resolveThemeId trims, lower-cases and maps a malformed id onto the
+  // default, which is right for a render and wrong for a write: ` Deckyard`
+  // used to be accepted here and stored as `deckyard`.
+  const id = resolveThemeId(rawThemeId);
+  if (rawThemeId !== DEFAULT_THEME_REF && id !== rawThemeId) return null;
+  if (UUID_RE.test(id)) return loadCustomThemeRecord(id, ctx, repoRoot);
   const theme = await loadThemeAssets(repoRoot, id);
   return theme?.id === id ? theme : null;
 }

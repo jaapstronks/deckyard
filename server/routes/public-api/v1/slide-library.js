@@ -38,7 +38,9 @@ function sanitizeLibraryItem(item, tags = []) {
     id: item.id,
     name: item.name || '',
     slideType: item.slideType || '',
-    themeId: item.themeId || null,
+    // The name a theme has on every v1 surface (B446, B449). Storage keeps
+    // the column's own name; the rename happens here, once.
+    theme: item.themeId || null,
     content: item.content || {},
     tags,
     createdAt: item.createdAt || null,
@@ -62,11 +64,19 @@ async function handleList(ctx) {
 
   if (!requirePermission(ctx, 'read')) return true;
 
-  const themeId = url.searchParams.get('themeId') || '';
+  // `themeId` was this filter's name while decks said `theme`; the retired
+  // spelling is refused with the name to use, never read beside it (B449).
+  if (url.searchParams.has('themeId')) {
+    await apiError(ctx, 400, 'Unknown parameter "themeId": use "theme"', {
+      details: { field: 'themeId', use: 'theme' },
+    });
+    return true;
+  }
+  const theme = url.searchParams.get('theme') || '';
   const { limit, offset } = parsePaginationParams(url.searchParams);
 
   const { items: allItems } = await listOrganizationLibrary(storageScope, {
-    themeId,
+    themeId: theme,
     userEmail: apiKey.ownerEmail,
   });
 
