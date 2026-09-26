@@ -19,6 +19,30 @@ import {
   pickPresentationForLang,
 } from './helpers.js';
 
+/**
+ * The live-video overlay as the follow audience receives it: the fields the
+ * video layer reads, and only when the overlay is on with a stream to show.
+ * A disabled overlay stays home, stream URL included.
+ *
+ * @param {object} pres
+ * @returns {{ enabled: true, streamUrl: string, provider: string,
+ *   defaultPosition: string, mobilePosition: string } | null}
+ */
+function audienceLiveVideo(pres) {
+  const lv = pres?.settings?.liveVideo;
+  const streamUrl =
+    typeof lv?.streamUrl === 'string' ? lv.streamUrl.trim() : '';
+  if (lv?.enabled !== true || !streamUrl) return null;
+  const str = (v) => (typeof v === 'string' ? v : '');
+  return {
+    enabled: true,
+    streamUrl,
+    provider: str(lv.provider),
+    defaultPosition: str(lv.defaultPosition),
+    mobilePosition: str(lv.mobilePosition),
+  };
+}
+
 export async function handleFollowPresentation(
   { repoRoot, req, res, url },
   presentationId,
@@ -113,6 +137,10 @@ export async function handleFollowPresentation(
       // already authorizes (server/utils/themes.js § customThemeConfig);
       // null for a built-in, which the client loads from /themes/ itself.
       themeConfig: await customThemeConfig(repoRoot, picked.theme),
+      // The deck's live-video overlay, the one setting the audience renders.
+      // Not `settings` itself: that also carries owner-side switches the
+      // audience has no business reading. Null unless it would show.
+      liveVideo: audienceLiveVideo(pres),
       slides: Array.isArray(picked.slides) ? picked.slides : [],
     },
   });

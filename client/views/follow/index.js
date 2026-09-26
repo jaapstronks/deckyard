@@ -256,8 +256,9 @@ export async function renderFollow(root, presentationId) {
     stopTranslatingPoll();
     translatingInfo = null;
 
-    // Configure video layer from presentation settings
-    videoLayer.setConfig(pres?.settings?.liveVideo);
+    // The follow payload carries the live-video overlay as its own field;
+    // the deck's settings do not travel to the audience.
+    videoLayer.setConfig(pres?.liveVideo);
 
     // Initialize analytics tracking (only once, and only for non-logged-in users)
     // We skip tracking for logged-in users to protect coworker privacy
