@@ -3,7 +3,7 @@
  *
  * `client/styles/slides/00-tokens.css` derives every `--slide-text-*` step from
  * the slide's own box instead of a literal px value, and lets a theme move the
- * whole scale through `--t-slide-text-scale`. Three things have to stay true
+ * whole scale through `--t-slide-text-scale`. Four things have to stay true
  * for that to keep working, and none of them is visible in a diff:
  *
  *  1. **The slide is the query container.** Without `container-type` on
@@ -15,6 +15,9 @@
  *     on a 1280px-wide window. Slide typography must be set on descendants.
  *  3. **An unset multiplier behaves as 1**, so a theme that says nothing
  *     renders exactly as it did before the scale went fluid.
+ *  4. **A vertical writing mode inherits its size.** `cqi` follows the
+ *     inline axis of the element resolving it, which in `vertical-*` is the
+ *     slide's height: a y-axis label rendered at half size (B304).
  *
  * Run with: node --test tests/slide-typography-scale.test.js
  */
@@ -160,6 +163,39 @@ describe('the fluid slide type scale', () => {
         offenders.join('\n') +
         '\nIts subtree would size its type against that element instead of ' +
         'the slide.',
+    );
+  });
+
+  it('lets a vertical writing mode inherit its type size, never resolve it', () => {
+    // Point 4, found on the matrix y-axis (B304): `cqi` is the container's
+    // size along the INLINE axis of the element that resolves it, and in a
+    // `vertical-*` writing mode that axis is the slide's height. A scale token
+    // resolved there rendered at 7.42px beside 14px for the same token in a
+    // horizontal sibling. So an element that turns vertical takes its size
+    // already resolved from a horizontal parent: it declares
+    // `font-size: inherit` and resolves no `--slide-text-*` /
+    // `--slide-font-size-*` token itself. Its descendants may then size in
+    // `em`, which follows the inherited pixel value.
+    const offenders = [];
+    for (const { rel, css } of sheets) {
+      for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        if (!/writing-mode:\s*(sideways|vertical)-/.test(m[2])) continue;
+        const selector = m[1].trim().split('\n').pop().trim();
+        if (/var\(\s*--slide-(text|font-size)-/.test(m[2])) {
+          offenders.push(`${rel}  ${selector}  (resolves a scale token)`);
+        }
+        if (!/font-size:\s*inherit\s*;/.test(m[2])) {
+          offenders.push(`${rel}  ${selector}  (no font-size: inherit)`);
+        }
+      }
+    }
+    assert.deepStrictEqual(
+      offenders.sort(),
+      [],
+      'a vertical writing mode in the slide bundle sizes its own type:\n' +
+        offenders.join('\n') +
+        '\nIts cqi would read the slide height. Resolve the size on a ' +
+        'horizontal parent and inherit it.',
     );
   });
 

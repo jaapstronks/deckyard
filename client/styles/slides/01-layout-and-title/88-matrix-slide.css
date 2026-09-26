@@ -51,7 +51,13 @@
    runs bottom to top beside the rows, the x label under the columns; an
    absent label leaves its auto track at zero, so the gap is the label's own
    margin rather than a grid gap that would stay behind. The arrow says which
-   way the measure grows, and is spoken as nothing. */
+   way the measure grows, and is spoken as nothing.
+
+   The y label resolves its size on the horizontal wrapper and only the
+   eyebrow turns vertical, inheriting that size: the type scale is built on
+   `cqi`, and an element in a vertical writing mode reads its inline axis as
+   the slide's HEIGHT, which rendered the y label at half the x label's size
+   (tests/slide-typography-scale.test.js pins the rule). */
 .slide-matrix .matrix-plot {
   flex: 1;
   min-height: 0;
@@ -72,8 +78,13 @@
   align-items: center;
   justify-content: center;
   margin-right: var(--slide-space-3);
-  writing-mode: vertical-rl;
+  font-size: var(--slide-font-size-label);
   transform: rotate(180deg);
+}
+
+.slide-matrix .matrix-axis-y .slide-eyebrow {
+  writing-mode: vertical-rl;
+  font-size: inherit;
 }
 
 .slide-matrix .matrix-axis-x {
