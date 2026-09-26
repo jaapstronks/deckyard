@@ -40,7 +40,10 @@ function uniqueByEmail(peers) {
  *
  * @param {Object} opts
  * @param {Object} opts.session - presence session
- * @param {HTMLElement} opts.topbarEl - editor topbar root
+ * @param {HTMLElement} opts.presenceSlot - the bar's place for the avatar
+ *   stack; the topbar builds it, on its fold ladder
+ * @param {(names: string[]) => void} opts.setPresenceNames - shows or hides
+ *   both halves of the stack (the slot and its ⋯ entry) for these peers
  * @param {HTMLElement} opts.listEl - slide list container (.slides-panel .list)
  * @param {HTMLElement} opts.thumb - preview slide container
  * @param {HTMLElement} [opts.editorMount] - side-form root (re-applies form
@@ -50,7 +53,8 @@ function uniqueByEmail(peers) {
  */
 export function createPresenceUI({
   session,
-  topbarEl,
+  presenceSlot,
+  setPresenceNames,
   listEl,
   thumb,
   editorMount,
@@ -62,19 +66,17 @@ export function createPresenceUI({
   // TOPBAR AVATAR STACK
   // ============================================================
 
-  const stackEl = h('div', {
-    class: 'collab-presence-stack',
-    role: 'group',
-    'aria-label': t('editor.presence.here', 'Also here'),
+  // The bar owns the slot and its place on the fold ladder; this module only
+  // draws the avatars into it and reports who they are.
+  detachers.push(() => {
+    presenceSlot.textContent = '';
+    setPresenceNames([]);
   });
-  const spacer = topbarEl?.querySelector?.('.topbar-spacer');
-  (spacer || topbarEl)?.append(stackEl);
-  detachers.push(() => stackEl.remove());
 
   function renderStack(peers) {
-    stackEl.textContent = '';
+    presenceSlot.textContent = '';
     const unique = uniqueByEmail(peers);
-    stackEl.style.display = unique.length ? '' : 'none';
+    setPresenceNames(unique.map((p) => peerName(p)));
     for (const peer of unique.slice(0, MAX_STACK_AVATARS)) {
       const wrap = h('div', {
         class: 'collab-presence-avatar',
@@ -90,20 +92,36 @@ export function createPresenceUI({
           size: 'sm',
         }),
       );
-      stackEl.append(wrap);
+      presenceSlot.append(wrap);
     }
     if (unique.length > MAX_STACK_AVATARS) {
-      stackEl.append(
-        h('div', {
-          class: 'collab-presence-more',
-          text: `+${unique.length - MAX_STACK_AVATARS}`,
-          title: unique
-            .slice(MAX_STACK_AVATARS)
-            .map((p) => peerName(p))
-            .join(', '),
-        }),
-      );
+      presenceSlot.append(restChip(unique, MAX_STACK_AVATARS, 'is-full'));
     }
+    // The capped form the bar switches to at its xl rung: the first avatar
+    // and a count of everyone else. Both chips are always drawn and CSS picks
+    // one, the way the language trigger carries its label and its code.
+    if (unique.length > 1) {
+      presenceSlot.append(restChip(unique, 1, 'is-capped'));
+    }
+  }
+
+  /**
+   * A "+N" chip for the peers past the first `shown`, named in its tooltip.
+   *
+   * @param {Object[]} unique - deduplicated peers
+   * @param {number} shown - how many avatars precede the chip
+   * @param {string} form - `is-full` or `is-capped`, the stack form it serves
+   * @returns {HTMLElement}
+   */
+  function restChip(unique, shown, form) {
+    return h('div', {
+      class: `collab-presence-more ${form}`,
+      text: `+${unique.length - shown}`,
+      title: unique
+        .slice(shown)
+        .map((p) => peerName(p))
+        .join(', '),
+    });
   }
 
   // ============================================================

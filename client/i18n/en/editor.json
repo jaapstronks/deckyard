@@ -569,6 +569,7 @@
   "editor.panes.label": "Side panels",
   "editor.presence.editingSlide": "{name} is editing this slide",
   "editor.presence.here": "Also here",
+  "editor.presence.hereNames": "Also here: {names}",
   "editor.presence.viewerTitle": "{name} is in this deck",
   "editor.presence.viewingSlide": "{name} is viewing this slide",
   "editor.present": "Present",

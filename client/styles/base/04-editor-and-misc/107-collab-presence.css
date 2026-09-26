@@ -5,13 +5,44 @@
  * field-focus outlines + name labels on the preview canvas.
  */
 
-/* ---- Topbar avatar stack ---- */
+/* ---- Topbar avatar stack ----
+   A child of the bar on its fold ladder, built by the topbar and filled by
+   presence-ui.js. Its width is capped per band, and the ladder in
+   10-shell-topbar-dropdown.css is measured with the widest of each:
 
-.collab-presence-stack {
+     1281+     five avatars and a +N chip    142px at most
+     641-1280  the first avatar and a count   54px, up to a +999
+     <= 640    folded; the ⋯ entry names the peers
+
+   It never shrinks: a squeezed stack draws over the title, so the title is
+   what gives way. */
+
+.topbar-presence {
   display: inline-flex;
   align-items: center;
-  margin-left: auto;
-  padding-right: 8px;
+  flex-shrink: 0;
+}
+
+.topbar-presence > .collab-presence-more.is-capped {
+  display: none;
+}
+
+@media (max-width: 1280px) {
+  .topbar-presence > .collab-presence-avatar ~ .collab-presence-avatar,
+  .topbar-presence > .collab-presence-more.is-full {
+    display: none;
+  }
+  .topbar-presence > .collab-presence-more.is-capped {
+    display: inline-flex;
+  }
+}
+
+/* The ⋯ half, below the sm rung: a line of text naming the peers. Not a
+   control, so none of the item's hover or pointer. */
+.dropdown-menu > .topbar-presence-entry {
+  padding: var(--ps-space-2) var(--ps-space-3);
+  color: hsl(var(--app-text-secondary));
+  font-size: var(--ps-text-sm);
 }
 
 .collab-presence-avatar {
@@ -20,8 +51,10 @@
   line-height: 0;
 }
 
+/* A chip always follows at least one avatar, but not always directly: the
+   capped chip comes after the hidden ones and the full chip. */
 .collab-presence-avatar + .collab-presence-avatar,
-.collab-presence-avatar + .collab-presence-more {
+.collab-presence-more {
   margin-left: -6px;
 }
 
