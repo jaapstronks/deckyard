@@ -68,6 +68,10 @@ function normalizeFollowInviteSlides(slides) {
 /**
  * Refuse a language version stored under anything but its canonical key.
  *
+ * One check for every seam that stores `i18n.versions`: a deck here, a
+ * slide-library item in `server/storage/slide-library.js` (B482). Both are
+ * read through `pickVersion`, so both have the same one spelling.
+ *
  * `versions.en` used to be written as-is: the loop below only visits the keys
  * of `TRANSLATION_LANGS`, so an alias or an off-axis key slipped past it and
  * was stored. `pickVersion` reads the canonical key only, so that version was
@@ -83,7 +87,7 @@ function normalizeFollowInviteSlides(slides) {
  * @param {Record<string, unknown>} versions
  * @throws {AppError} 400 `invalid`, `details.field` = `i18n.versions`
  */
-function refuseNonCanonicalVersionKeys(versions) {
+export function refuseNonCanonicalVersionKeys(versions) {
   for (const key of Object.keys(versions)) {
     const canonical = normalizeLang(key);
     if (canonical === key) continue;
