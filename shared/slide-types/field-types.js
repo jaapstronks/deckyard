@@ -342,7 +342,7 @@ export const FIELD_TYPES = {
     label: 'Rich text',
     description:
       'Multi-line rich text (renders to HTML; **HTML is escaped**). `headingKey` names a sibling string that heads this block in the reflowable projection, as an `<h3>`, and is consumed there.',
-    docExtra: '`maxLength`, `required`, `headingKey`',
+    docExtra: '`maxLength`, `required`, `helpText`, `headingKey`',
     valueKind: 'string',
     validate: validateText,
   },
