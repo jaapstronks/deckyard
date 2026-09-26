@@ -2061,7 +2061,12 @@ components:
                 $ref: '#/components/schemas/Slide'
             i18n:
               type: object
-              description: Internationalization data
+              description: >-
+                Internationalization data. `versions` holds one language
+                version per key, and each key is a canonical deck language
+                (`nl`, `en-GB`, `de`, …). A write with any other key — the
+                alias `en` included — is refused with 400 `invalid` and
+                `details.field` = `i18n.versions`.
             revision:
               type: integer
 
