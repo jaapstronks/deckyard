@@ -55,6 +55,7 @@ import { openConflictModal as openConflictModalImpl } from './modals/conflict-mo
 import { openRemoteMergeModal } from './modals/remote-merge-modal.js';
 import { openAnalyzeModal as openAnalyzeModalImpl } from './modals/analyze-modal.js';
 import { createDeckReviewOpeners } from './deck-review-openers.js';
+import { createPublishedAltWarning } from './published-alt-warning.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import {
@@ -352,6 +353,9 @@ export async function createEditorController({
   // Bridges save-state transitions to the topbar chip. Reassigned once the
   // topbar exists (created later in this controller); a no-op until then.
   let setSaveStatus = () => {};
+  // Re-reads the published-alt warning (B331). Reassigned once it exists; a
+  // save transition or a publish/unpublish may change what it says.
+  let syncPublishedAltWarning = () => {};
 
   const saveManager = createSaveManager({
     api,
@@ -360,7 +364,10 @@ export async function createEditorController({
     id,
     SLIDE_TYPES,
     normalizeLang,
-    onStatusChange: (status) => setSaveStatus(status),
+    onStatusChange: (status) => {
+      setSaveStatus(status);
+      syncPublishedAltWarning();
+    },
     getSelectedSlideId: () => selectedSlideId,
     // A slide replaced from the server is no edit by this user.
     onServerTruth: () => slideLockManager.resyncSlide(),
@@ -606,6 +613,7 @@ export async function createEditorController({
     editorState,
     user,
     slideTypes: SLIDE_TYPES,
+    onPublishedChange: () => syncPublishedAltWarning(),
   });
   cleanup.register('dropdowns', dropdowns.detach);
 
@@ -616,19 +624,20 @@ export async function createEditorController({
   // Deck-overview + AI-review openers and the slide-jump they share. The
   // renderers and slide-list element are bound later, so they're passed as
   // indirections read at call time.
-  const { openDeckOverview, openAiDeckReview } = createDeckReviewOpeners({
-    root,
-    api,
-    pres,
-    theme,
-    SLIDE_TYPES,
-    editorState,
-    setSelectedSlideId: setSelectedSlideIdWithLock,
-    rerenderSlideList: () => rerenderSlideList(),
-    rerenderEditor: () => rerenderEditor(),
-    rerenderPreview: () => rerenderPreview(),
-    getSlideListEl: () => slideListEl,
-  });
+  const { jumpToSlide, openDeckOverview, openAiDeckReview } =
+    createDeckReviewOpeners({
+      root,
+      api,
+      pres,
+      theme,
+      SLIDE_TYPES,
+      editorState,
+      setSelectedSlideId: setSelectedSlideIdWithLock,
+      rerenderSlideList: () => rerenderSlideList(),
+      rerenderEditor: () => rerenderEditor(),
+      rerenderPreview: () => rerenderPreview(),
+      getSlideListEl: () => slideListEl,
+    });
 
   // ============================================================
   // TOPBAR
@@ -701,6 +710,18 @@ export async function createEditorController({
   topbarTitle = topbarApi.topbarTitleEl;
   cleanup.register('topbar', topbarApi.detach);
   shell.append(topbarApi.topbarEl);
+
+  // A published deck says so while a picture on it has no alt text (B331):
+  // a state under the topbar, beside the deck rather than one field.
+  const publishedAltWarning = createPublishedAltWarning({
+    pres,
+    slideTypes: SLIDE_TYPES,
+    onGoToSlide: jumpToSlide,
+  });
+  cleanup.register('publishedAltWarning', publishedAltWarning.detach);
+  shell.append(publishedAltWarning.el);
+  syncPublishedAltWarning = publishedAltWarning.sync;
+  syncPublishedAltWarning();
 
   // Now that the topbar exists, route save-state transitions to its chip and
   // reflect the current state (idle for a freshly-opened deck).
@@ -947,7 +968,10 @@ export async function createEditorController({
                 updateSelectedSlideListItem?.(),
               editorMount,
               previewNotesTa,
-              setSaveStatus: (s) => setSaveStatus(s),
+              setSaveStatus: (s) => {
+                setSaveStatus(s);
+                syncPublishedAltWarning();
+              },
               onTitleChanged: (next) => {
                 if (!topbarTitle) return;
                 topbarTitle.textContent = next;
