@@ -1,0 +1,33 @@
+/**
+ * The strip under the editor topbar while a published deck has a picture
+ * without alt text (B331). A state of the deck, not a message: it stays until
+ * the state is gone (docs/reference/feedback-surfaces.md).
+ */
+
+.published-alt-warning {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-1) var(--ps-space-3);
+  padding: var(--ps-space-1-5) var(--ps-space-4);
+  font-size: 13px;
+  background: hsl(var(--app-warning-soft));
+  color: hsl(var(--app-warning-text));
+  border-bottom: 1px solid hsl(var(--app-warning) / 0.4);
+}
+
+.published-alt-warning-go {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.published-alt-warning-go:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

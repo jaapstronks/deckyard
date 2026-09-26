@@ -31,6 +31,7 @@ export function setupShareDropdown({
   currentUserEmail,
   isAdmin,
   slideTypes,
+  onPublishedChange,
 } = {}) {
   let notionAvailable = false;
   let dialog = null;
@@ -62,6 +63,7 @@ export function setupShareDropdown({
       // ignore
     }
     dialog?.refresh?.();
+    onPublishedChange?.();
   }
 
   // Bound helpers passed into the dialog's Public tab.
