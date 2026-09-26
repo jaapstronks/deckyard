@@ -47,7 +47,9 @@ document that stays readable with JavaScript — and author CSS — turned off.
     `<caption>` is the type's `datasetSummary` sentence in the deck language
     ("Lijndiagram met 5 punten. Min: 25. Max: 85.", the same sentence the
     canvas gives assistive tech) followed by its `encodingKeys` fields as
-    "<label>: <value>" (a line chart names its two series). A `tabular`
+    "<slot word>: <value>", both in the deck language from the slide copy
+    ("Diagramtype: Lijndiagram. X-as: Jaar."; a line chart names its two
+    series). A `tabular`
     type's rows array is a `<table>` too; `rowHeader: 'first'` makes its first
     column `<th scope="row">`, as the canvas styles that column the label.
   - A text field's `role` decides its element (D128). The same declaration that

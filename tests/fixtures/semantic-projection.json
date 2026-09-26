@@ -367,13 +367,13 @@
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"chart-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Growth Metrics</h2>",
-      "<table class=\"reader-table\" data-field=\"data\"><caption>Lijndiagram met 5 punten. Min: 25. Max: 85. Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
+      "<table class=\"reader-table\" data-field=\"data\"><caption>Lijndiagram met 5 punten. Min: 25. Max: 85. Diagramtype: Lijndiagram.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
       "</section>"
     ],
     "en-GB": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"chart-slide\" aria-labelledby=\"slide-1-title\">",
       "<h2 id=\"slide-1-title\" data-field=\"title\">Growth Metrics</h2>",
-      "<table class=\"reader-table\" data-field=\"data\"><caption>Line chart with 5 points. Min: 25. Max: 85. Chart type: line.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
+      "<table class=\"reader-table\" data-field=\"data\"><caption>Line chart with 5 points. Min: 25. Max: 85. Chart type: Line chart.</caption><thead><tr><th scope=\"col\">Month</th><th scope=\"col\">Sales</th><th scope=\"col\">Target</th></tr></thead><tbody><tr><td>Jan</td><td>30</td><td>25</td></tr><tr><td>Feb</td><td>45</td><td>40</td></tr><tr><td>Mar</td><td>55</td><td>50</td></tr><tr><td>Apr</td><td>70</td><td>60</td></tr><tr><td>May</td><td>85</td><td>75</td></tr></tbody></table>",
       "</section>"
     ]
   },
@@ -385,7 +385,7 @@
       "<ol class=\"reader-items\" data-field=\"rows\"><li class=\"reader-item\"><ul class=\"reader-items\" data-field=\"blocks\"><li class=\"reader-item\"><h3 data-field=\"title\">Research</h3>",
       "<div data-field=\"body\"><p>Understanding the challenge</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Design</h3>",
       "<div data-field=\"body\"><p>Creating the solution</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Build</h3>",
-      "<div data-field=\"body\"><p>Making it real</p></div></li></ul><p class=\"reader-relation\" data-field=\"arrow\" data-relation=\"down\">leads to</p></li><li class=\"reader-item\"><h3 data-field=\"title\">The Result</h3>",
+      "<div data-field=\"body\"><p>Making it real</p></div></li></ul><p class=\"reader-relation\" data-field=\"arrow\" data-relation=\"down\">leidt tot</p></li><li class=\"reader-item\"><h3 data-field=\"title\">The Result</h3>",
       "<ul class=\"reader-items\" data-field=\"blocks\"><li class=\"reader-item\"><h3 data-field=\"title\">Launch</h3>",
       "<div data-field=\"body\"><p>Going live</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Measure</h3>",
       "<div data-field=\"body\"><p>Tracking success</p></div></li><li class=\"reader-item\"><h3 data-field=\"title\">Iterate</h3>",

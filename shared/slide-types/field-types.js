@@ -431,7 +431,7 @@ export const FIELD_TYPES = {
     description:
       "Repeating list of structured objects, each shaped by `itemFields`. The document projection makes it a list: an `<ol>` when `ordered: true` (order always matters) or while `orderedWhen: { field, in }` holds (the `visibleWhen` predicate on a sibling enum — a list slide in its `numbers` style), otherwise a `<ul>`. An item's heading string is an `<h3>` only when something projects below it; an item that is one line (a poll answer) is the `<li>`'s text. On a `tabular` type, `rowHeader: 'first'` makes the first column's cells `<th scope=\"row\">`.",
     docExtra:
-      '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `required`, `collapsible`, `ordered`, `orderedWhen`, `relationField`, `relationLabels`, `itemLabelField`, `columnCountKey`, `headerRowKey`, `rowHeader`, `captionKey`',
+      '`minItems`, `maxItems`, `itemFields`, `itemDefaults`, `itemDefaultsByLang`, `required`, `collapsible`, `ordered`, `orderedWhen`, `relationField`, `itemLabelField`, `columnCountKey`, `headerRowKey`, `rowHeader`, `captionKey`',
     valueKind: 'objectArray',
     validate: validateItems,
   },

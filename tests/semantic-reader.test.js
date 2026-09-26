@@ -213,9 +213,63 @@ describe('accessibility + reflow contract', () => {
   });
 });
 
+describe('the chrome speaks the deck language (B312)', () => {
+  // The words around the slides come from the slide copy in the document
+  // language — the table every other word of this document is read from.
+  const chrome = (lang, slides) => {
+    const out = buildReaderHtml(
+      '/repo',
+      { title: '', lang, slides },
+      { canonicalUrl: '/p/x' },
+    );
+    const text = (m) => m?.[1]?.replaceAll('&#039;', "'");
+    return {
+      kicker: text(out.match(/<p class="reader-kicker">([^<]*)</)),
+      title: text(out.match(/<h1>([^<]*)</)),
+      view: text(out.match(/class="reader-viewlink"><a [^>]*>([^<]*)</)),
+      nav: text(out.match(/<nav class="reader-toc" aria-label="([^"]*)"/)),
+      contents: text(out.match(/<nav[^>]*>\s*<h2>([^<]*)</)),
+      count: text(out.match(/<footer class="reader-footer">\s*<p>([^<]*)</)),
+    };
+  };
+  const one = [{ id: 'a', type: 'content-slide', content: { title: 'A' } }];
+  const two = [
+    ...one,
+    { id: 'b', type: 'content-slide', content: { title: 'B' } },
+  ];
+
+  it('in Dutch', () => {
+    assert.deepStrictEqual(chrome('nl', two), {
+      kicker: 'Presentatie',
+      title: 'Presentatie',
+      view: "Bekijk de dia's",
+      nav: "Dia's",
+      contents: 'Inhoud',
+      count: "2 dia's.",
+    });
+    assert.strictEqual(chrome('nl', one).count, '1 dia.');
+  });
+
+  it('in English', () => {
+    assert.deepStrictEqual(chrome('en-GB', two), {
+      kicker: 'Presentation',
+      title: 'Presentation',
+      view: 'View the slides',
+      nav: 'Slides',
+      contents: 'Contents',
+      count: '2 slides.',
+    });
+    assert.strictEqual(chrome('en-GB', one).count, '1 slide.');
+  });
+});
+
 describe('resilience', () => {
   it('handles an empty deck without throwing', () => {
-    const out = buildReaderHtml('/repo', { title: 'Empty', slides: [] });
+    const out = buildReaderHtml('/repo', {
+      title: 'Empty',
+      lang: 'en-GB',
+      slides: [],
+    });
     assert.ok(out.includes('<main class="reader-main">'));
     assert.ok(out.includes('0 slides'));
   });

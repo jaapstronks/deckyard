@@ -620,16 +620,26 @@ describe('url field projection', () => {
 });
 
 describe('relation-aware collection projection (text-blocks arrows)', () => {
+  // The relation's word is the chosen option's `copyKey` in the deck language
+  // (B312/B319): the one lookup `kindKey` and `defaultFromOption` use. An
+  // option without a copy key (`none`) is no relation.
   const relDef = () => ({
     fields: [
       {
         key: 'rows',
         type: 'items',
         relationField: 'arrow',
-        relationLabels: { down: 'leads to', up: 'follows from' },
         itemFields: [
           { key: 'title', type: 'string' },
-          { key: 'arrow', type: 'enum' },
+          {
+            key: 'arrow',
+            type: 'enum',
+            options: [
+              { value: 'none', label: 'None' },
+              { value: 'down', label: 'Down', copyKey: 'relationLeadsTo' },
+              { value: 'up', label: 'Up', copyKey: 'relationFollowsFrom' },
+            ],
+          },
           {
             key: 'blocks',
             type: 'items',
@@ -642,27 +652,34 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
       },
     ],
   });
+  const rows = (...arrows) => ({
+    content: {
+      rows: arrows.map((arrow, i) => ({
+        title: `Phase ${i + 1}`,
+        arrow,
+        blocks: [{ title: `B${i}`, body: 'b' }],
+      })),
+    },
+  });
+  const markers = (html) =>
+    [...html.matchAll(/data-relation="(\w+)">([^<]*)</g)].map(
+      ([, value, word]) => `${value}=${word}`,
+    );
+
+  it('names both relations in the deck language, and none not at all', () => {
+    const slide = rows('down', 'up', 'none');
+    assert.deepEqual(markers(body(slide, relDef(), { lang: 'nl' })), [
+      'down=leidt tot',
+      'up=volgt uit',
+    ]);
+    assert.deepEqual(markers(body(slide, relDef(), { lang: 'en-GB' })), [
+      'down=leads to',
+      'up=follows from',
+    ]);
+  });
 
   it('renders an ordered <ol> with a relation marker when rows carry an arrow', () => {
-    const html = body(
-      {
-        content: {
-          rows: [
-            {
-              title: 'Phase 1',
-              arrow: 'down',
-              blocks: [{ title: 'A', body: 'a' }],
-            },
-            {
-              title: 'Phase 2',
-              arrow: 'none',
-              blocks: [{ title: 'B', body: 'b' }],
-            },
-          ],
-        },
-      },
-      relDef(),
-    );
+    const html = body(rows('down', 'none'), relDef(), { lang: 'en-GB' });
     assert.ok(/^<ol class="reader-items" data-field="rows">/.test(html), html);
     assert.ok(
       /class="reader-relation" data-field="arrow" data-relation="down">leads to</.test(
@@ -672,7 +689,7 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
     );
     // nested blocks stay an unordered sub-list
     assert.ok(
-      /<ul class="reader-items" data-field="blocks"><li class="reader-item"><h3 data-field="title">A<\/h3>/.test(
+      /<ul class="reader-items" data-field="blocks"><li class="reader-item"><h3 data-field="title">B0<\/h3>/.test(
         html,
       ),
       html,
@@ -683,22 +700,17 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
   });
 
   it('stays an unordered <ul> with no marker when no row has an arrow', () => {
-    const html = body(
-      {
-        content: {
-          rows: [
-            {
-              title: 'Only',
-              arrow: 'none',
-              blocks: [{ title: 'A', body: 'a' }],
-            },
-          ],
-        },
-      },
-      relDef(),
-    );
+    const html = body(rows('none'), relDef(), { lang: 'nl' });
     assert.ok(/^<ul class="reader-items" data-field="rows">/.test(html), html);
     assert.ok(!/reader-relation/.test(html), html);
+  });
+
+  it('an option without a copy key marks no relation, even when stored', () => {
+    const def = relDef();
+    def.fields[0].itemFields[1].options[1] = { value: 'down', label: 'Down' };
+    const html = body(rows('down'), def, { lang: 'en-GB' });
+    assert.ok(!/reader-relation/.test(html), html);
+    assert.ok(!/Down/.test(html), html);
   });
 });
 
@@ -852,17 +864,27 @@ describe('the structure contract: tabular projects to a real <table>', () => {
 describe('the structure contract: a dataset names the encoding it drops', () => {
   // `SLIDE_STRUCTURE_CONTRACTS.dataset` tells a reader to decode the payload to
   // rows and lose "only the visual encoding" — honest only if that encoding is
-  // named. The caption is built from the fields' own declared labels, so there
-  // is no reader-side copy to drift.
+  // named. `encodingKeys` maps each slot to the slide-copy key naming it, and an
+  // enum slot's value is its option's `copyKey` word (B312/B319): no editor
+  // label and no raw token reaches the caption.
   const dataset = {
     structure: 'dataset',
     fields: [
       { key: 'title', type: 'string' },
-      { key: 'chartType', label: 'Chart type', type: 'enum' },
+      {
+        key: 'chartType',
+        label: 'Chart type',
+        type: 'enum',
+        options: [{ value: 'bar', label: 'Bar', copyKey: 'chartKindBar' }],
+      },
       {
         key: 'data',
         type: 'csv',
-        encodingKeys: ['chartType', 'xLabel', 'yLabel'],
+        encodingKeys: {
+          chartType: 'chartEncodingKind',
+          xLabel: 'chartEncodingX',
+          yLabel: 'chartEncodingY',
+        },
       },
       {
         key: 'xLabel',
@@ -873,30 +895,46 @@ describe('the structure contract: a dataset names the encoding it drops', () => 
       { key: 'yLabel', label: 'Y label', type: 'string' },
     ],
   };
+  const content = {
+    title: 'T',
+    chartType: 'bar',
+    data: 'Year,Rev\n2024,10',
+    xLabel: 'Year',
+    yLabel: 'EUR',
+  };
 
-  it('captions the decoded table with the encoding fields', () => {
-    const html = body(
-      {
-        content: {
-          title: 'T',
-          chartType: 'bar',
-          data: 'Year,Rev\n2024,10',
-          xLabel: 'Year',
-          yLabel: 'EUR',
-        },
-      },
-      dataset,
-      { headingKey: 'title' },
-    );
+  it('captions the decoded table with the encoding, in the deck language', () => {
+    const en = body({ content }, dataset, {
+      headingKey: 'title',
+      lang: 'en-GB',
+    });
     assert.ok(
-      /<caption>Chart type: bar\. X label: Year\. Y label: EUR\.<\/caption>/.test(
-        html,
+      /<caption>Chart type: Bar chart\. X axis: Year\. Y axis: EUR\.<\/caption>/.test(
+        en,
       ),
-      html,
+      en,
+    );
+    const nl = body({ content }, dataset, { headingKey: 'title', lang: 'nl' });
+    assert.ok(
+      /<caption>Diagramtype: Staafdiagram\. X-as: Year\. Y-as: EUR\.<\/caption>/.test(
+        nl,
+      ),
+      nl,
     );
     // …and never twice: the encoding fields are consumed by the caption.
-    assert.ok(!/<p[^>]*>Year<\/p>/.test(html), html);
-    assert.ok(!/<p[^>]*>EUR<\/p>/.test(html), html);
+    assert.ok(!/<p[^>]*>Year<\/p>/.test(en), en);
+    assert.ok(!/<p[^>]*>EUR<\/p>/.test(en), en);
+  });
+
+  it('a slot without a slide-copy word says nothing, rather than its label', () => {
+    const def = structuredClone(dataset);
+    def.fields[2].encodingKeys.yLabel = 'noSuchCopyKey';
+    const html = body({ content }, def, { headingKey: 'title', lang: 'en-GB' });
+    assert.ok(
+      /<caption>Chart type: Bar chart\. X axis: Year\.<\/caption>/.test(html),
+      html,
+    );
+    assert.ok(!/Y label/.test(html), html);
   });
 });
 
@@ -1567,7 +1605,7 @@ describe('the deck language reaches the projection (B294, D130c)', () => {
     const nl = section({ type: 'chart-slide', content }, chart, 'nl');
     assert.match(
       nl,
-      /<caption>Lijndiagram met 2 punten\. Min: 25\. Max: 45\. Chart type: line\. Series 1 label \(legend\): Sales\. Series 2 label \(legend\): Target\.<\/caption>/,
+      /<caption>Lijndiagram met 2 punten\. Min: 25\. Max: 45\. Diagramtype: Lijndiagram\. Reeks 1: Sales\. Reeks 2: Target\.<\/caption>/,
     );
     // Consumed by the caption, never loose paragraphs too.
     assert.ok(!/<p[^>]*>Sales<\/p>/.test(nl), nl);
@@ -1588,7 +1626,7 @@ describe('the deck language reaches the projection (B294, D130c)', () => {
     const html = section({ type: 'chart-slide', content }, chart, 'en-GB');
     assert.match(
       html,
-      /<caption>Bar chart with 2 points\. Highest: 2025 \(14\)\. Chart type: bar\.<\/caption>/,
+      /<caption>Bar chart with 2 points\. Highest: 2025 \(14\)\. Chart type: Bar chart\.<\/caption>/,
     );
     assert.ok(!html.includes('Ignored'), html);
   });
