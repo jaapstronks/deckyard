@@ -10,7 +10,7 @@ import {
 } from '../utils/prism-katex.js';
 import {
   buildScriptChain,
-  detectSlideRuntimeNeeds,
+  detectLayoutRuntimeNeeds,
 } from '../utils/script-chain.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import { resolveVideoThumbnailDataUrl } from './video-thumbnail.js';
@@ -447,10 +447,8 @@ export async function buildSlidesPdfHtml(
     ${pagesHtml}
     ${buildScriptChain({
       needs: highlightNeeds,
-      // A static sheet: the layout runtime only, never the countdown.
-      slideNeeds: {
-        teamCards: detectSlideRuntimeNeeds(pagesHtml).teamCards,
-      },
+      // A static sheet: the layout runtimes only, never the countdown.
+      slideNeeds: detectLayoutRuntimeNeeds(pagesHtml),
     })}
   </body>
 </html>`;

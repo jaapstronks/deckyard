@@ -5,6 +5,7 @@ import { initFollowInviteSlides } from './follow-invite-runtime.js';
 import { initKpiMetricsSlides } from './kpi-metrics-runtime.js';
 import { initCountdownSlides } from './countdown-runtime.js';
 import { initTeamCardsJustify } from './team-cards-justify.js';
+import { initLogoWallBalance } from './logo-wall-balance.js';
 import { applyThemeVarsToElement } from '../theme/theme.js';
 import { api as defaultApi } from '../api.js';
 import { h } from '../dom.js';
@@ -472,6 +473,11 @@ const MARKUP_RUNTIMES = Object.freeze([
     // Thumbnails use the same logical slide dimensions as full-size renders.
     name: 'team-cards-justify',
     run: (el) => initTeamCardsJustify(el),
+  },
+  {
+    // Layout too: each logo's aspect ratio, so the wall sizes them to one area.
+    name: 'logo-wall-balance',
+    run: (el) => initLogoWallBalance(el),
   },
   {
     // Follow-invite slides look blank without QR rendering. Thumbnails render
