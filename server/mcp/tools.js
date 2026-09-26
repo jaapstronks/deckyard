@@ -83,6 +83,7 @@ import {
   loadDeckTheme,
   loadThemeAssets,
   resolveThemeId,
+  settleNewDeckTheme,
 } from '../utils/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
@@ -503,7 +504,8 @@ export function registerTools(
         },
         theme: {
           type: 'string',
-          description: 'Theme ID (default: "default")',
+          description:
+            "Theme ID, as list_themes names it. Omit for this installation's default; an unknown id is refused.",
         },
         lang: {
           type: 'string',
@@ -531,7 +533,7 @@ export function registerTools(
       {
         content,
         title,
-        theme = 'default',
+        theme: requestedTheme,
         lang,
         speaker = '',
         ownerEmail,
@@ -540,7 +542,12 @@ export function registerTools(
       context,
     ) => {
       const effectiveOwner = ownerEmail || getOwner(context);
-      const themeObj = await loadDeckTheme(repoRoot, theme);
+      // Checked before the generation, so an unknown theme costs no LLM call.
+      const { themeId: theme, theme: themeObj } = await settleNewDeckTheme(
+        repoRoot,
+        requestedTheme,
+        storageScopeOf(context),
+      );
       const titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
 
       const deck = await generateDeckV2(content, {
@@ -634,7 +641,8 @@ export function registerTools(
         },
         theme: {
           type: 'string',
-          description: 'Theme ID (default: "default")',
+          description:
+            "Theme ID, as list_themes names it. Omit for this installation's default; an unknown id is refused.",
         },
         lang: {
           type: 'string',
@@ -664,7 +672,7 @@ export function registerTools(
       {
         title,
         slides,
-        theme = 'default',
+        theme: requestedTheme,
         lang = 'nl',
         ownerEmail,
         validation = 'strict',
@@ -685,7 +693,11 @@ export function registerTools(
         notes: typeof s?.notes === 'string' ? s.notes : '',
       }));
 
-      const themeObj = await loadDeckTheme(repoRoot, theme);
+      const { themeId: theme, theme: themeObj } = await settleNewDeckTheme(
+        repoRoot,
+        requestedTheme,
+        storageScopeOf(context),
+      );
 
       // Optional escape hatch: prepend an empty title slide if missing.
       if (auto_prepend_title) {

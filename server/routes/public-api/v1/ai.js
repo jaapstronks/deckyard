@@ -15,11 +15,7 @@ import {
   deckThemeId,
   presentationToDeck,
 } from '../../../../shared/slide-types.js';
-import { loadDeckTheme } from '../../../utils/themes.js';
-import {
-  sandboxDefaultThemeId,
-  sandboxEnabled,
-} from '../../../config/sandbox.js';
+import { loadDeckTheme, settleNewDeckTheme } from '../../../utils/themes.js';
 import {
   loadDisabledSlideTypes,
   loadCustomSlideTypes,
@@ -60,7 +56,7 @@ function getAiParams(body) {
     raw: String(body?.raw || '').trim(),
     vendor: body?.vendor || null,
     lang: normalizeLang(body?.lang),
-    theme: body?.theme || null,
+    theme: body?.theme,
   };
 }
 
@@ -108,6 +104,11 @@ async function handleWizard(ctx) {
     return true;
   }
 
+  // Checked before the generation, so an unknown theme costs no LLM call;
+  // absent means the installation default, never the model's pick (B486).
+  const { themeId: effectiveTheme, theme: themeConfig } =
+    await settleNewDeckTheme(repoRoot, theme, storageScope);
+
   // Track AI request
   await trackAiRequest(ctx);
 
@@ -125,14 +126,7 @@ async function handleWizard(ctx) {
       customSlideTypes,
     });
 
-    // The theme is decided before normalizing, because the slides compose
-    // against it.
-    const effectiveTheme =
-      theme || (sandboxEnabled() ? sandboxDefaultThemeId() : deckThemeId(deck));
-    const parts = deckToPresentationParts(deck, {
-      theme: await loadDeckTheme(repoRoot, effectiveTheme),
-      lang,
-    });
+    const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
 
     const created = await createPresentation(storageScope, {
       title: parts.title,

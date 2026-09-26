@@ -6,7 +6,7 @@ import {
   loadDisabledSlideTypes,
   loadCustomSlideTypes,
 } from '../../../utils/org-slide-types.js';
-import { loadDeckTheme } from '../../../utils/themes.js';
+import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
@@ -66,8 +66,10 @@ function extractThemeContext(theme) {
 }
 
 /**
- * Load the theme-appropriate title slide type and AI theme context for a deck.
- * Loading failures fall back to the default title slide with no theme context.
+ * Settle the theme of a deck the AI is about to generate, and load its
+ * title slide type and AI theme context. The theme is checked by the rule
+ * every create runs (`settleNewDeckTheme`, B486), before the generation, so an
+ * unknown theme is refused without an LLM call.
  *
  * The loaded theme comes back too: the AI routes normalize their generated deck
  * through `deckToPresentationParts`, and the slide factory behind it reads the
@@ -76,12 +78,23 @@ function extractThemeContext(theme) {
  * did before, composing their slides against no theme at all.
  *
  * @param {string} repoRoot
- * @param {string} effectiveTheme
- * @returns {Promise<{ titleSlideType: string, themeContext: object|null, theme: object|null }>}
+ * @param {unknown} requestedTheme - the theme the request named, or absent
+ * @param {Object} [storageScope]
+ * @returns {Promise<{ themeId: string, titleSlideType: string, themeContext: object|null, theme: object|null }>}
+ * @throws {AppError} 400 `invalid`, `details.field` = `theme`
  */
-export async function loadAiThemeContext(repoRoot, effectiveTheme) {
-  const theme = await loadDeckTheme(repoRoot, effectiveTheme);
+export async function loadAiThemeContext(
+  repoRoot,
+  requestedTheme,
+  storageScope = null,
+) {
+  const { themeId, theme } = await settleNewDeckTheme(
+    repoRoot,
+    requestedTheme,
+    storageScope,
+  );
   return {
+    themeId,
     titleSlideType: theme?.defaultTitleSlide || 'title-slide',
     themeContext: theme ? extractThemeContext(theme) : null,
     theme,

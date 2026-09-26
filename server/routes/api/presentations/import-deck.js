@@ -59,7 +59,7 @@ import {
   rewriteBundleRefs,
   rewriteBundleRefsIn,
 } from '../../../../shared/slide-types/deck-assets.js';
-import { loadDeckTheme } from '../../../utils/themes.js';
+import { settleNewDeckTheme } from '../../../utils/themes.js';
 
 /** What `?install=` may name (D90, D91). */
 const DECK_INSTALLABLES = Object.freeze(['theme', 'slideTypes']);
@@ -131,6 +131,11 @@ export async function handlePresentationsImportDeck({
     return true;
   }
   const { lang } = resolved;
+  // A bundle that carries no theme lands on the one deck.json names: checked
+  // like every create's (B486), before any bytes are written.
+  if (!bundledThemeJson) {
+    await settleNewDeckTheme(repoRoot, deck?.theme, storageScope);
+  }
 
   // What the carried theme becomes here, decided before any bytes are written
   // so a theme that is not installed leaves no logo files behind.
@@ -274,7 +279,9 @@ export async function handlePresentationsImportDeck({
 
   // The deck's theme, so imported slides compose against it (background
   // presets, theme slide-background variants).
-  const themeConfig = await loadDeckTheme(
+  // Without a carried theme, the id in deck.json is checked like every
+  // create's (B486).
+  const { themeId: theme, theme: themeConfig } = await settleNewDeckTheme(
     repoRoot,
     themeId ?? rehydrated?.theme,
     storageScope,
@@ -286,7 +293,6 @@ export async function handlePresentationsImportDeck({
     slideTypes,
     carriedSlideTypes,
   });
-  const theme = themeId ?? parts.theme;
 
   const created = await createPresentation(storageScope, {
     title: parts.title,

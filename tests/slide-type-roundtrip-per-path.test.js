@@ -72,7 +72,7 @@ test.after(() => {
 
 /** A scope acting as OWNER. */
 function scope() {
-  return testScope(null, { actorEmail: OWNER });
+  return testScope(process.cwd(), { actorEmail: OWNER });
 }
 
 /** Create a fresh deck and return the created object (carries title/theme/lang). */

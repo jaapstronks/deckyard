@@ -20,13 +20,10 @@ import {
   badRequest,
   requireJsonBody,
 } from '../../../utils/http.js';
-import {
-  getString,
-  getTrimmedString,
-} from '../../../utils/request-validators.js';
+import { getString } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { convertMarkdownText } from '../../../utils/markdown-import/index.js';
-import { loadDeckTheme } from '../../../utils/themes.js';
+import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 import {
   DEFAULT_DECK_LANG,
@@ -53,7 +50,7 @@ export async function handlePresentationsImportMarkdown({
   }
 
   const lang = normalizeLang(body?.lang) || DEFAULT_DECK_LANG;
-  const theme = getTrimmedString(body, 'theme') || undefined;
+  const theme = body?.theme ?? undefined;
 
   log.info('[import-markdown] Language:', lang);
   log.info('[import-markdown] Markdown length:', markdown.length);
@@ -72,8 +69,13 @@ export async function handlePresentationsImportMarkdown({
   log.info('[import-markdown] Converted:', report.slidesConverted, 'slides');
 
   // The deck's theme, so imported slides compose against it (background
-  // presets, theme slide-background variants).
-  const themeConfig = await loadDeckTheme(repoRoot, deck?.theme);
+  // presets, theme slide-background variants). The request's theme wins over
+  // the front matter's; either is checked like every create's (B486).
+  const { themeId, theme: themeConfig } = await settleNewDeckTheme(
+    repoRoot,
+    theme ?? deck?.theme,
+    storageScope,
+  );
 
   // Normalize through deckToPresentationParts (same as JSON import)
   const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
@@ -89,7 +91,7 @@ export async function handlePresentationsImportMarkdown({
   // Create presentation
   const created = await createPresentation(storageScope, {
     title: parts.title,
-    theme: parts.theme,
+    theme: themeId,
     lang,
     ownerEmail: authedUser?.email || null,
   });
@@ -112,7 +114,7 @@ export async function handlePresentationsImportMarkdown({
     created.id,
     {
       title: parts.title,
-      theme: parts.theme,
+      theme: themeId,
       lang,
       slides: parts.slides,
       i18n,

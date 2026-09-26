@@ -11,11 +11,7 @@ import {
 } from '../../../../shared/i18n-utils.js';
 import { AppError } from '../../../utils/errors.js';
 import { attachSandboxMeta } from '../sandbox.js';
-import {
-  sandboxDefaultThemeId,
-  sandboxEnabled,
-} from '../../../config/sandbox.js';
-import { resolveThemeId, loadThemeAssets } from '../../../utils/themes.js';
+import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { normalizeMeta } from './helpers.js';
 import { rekeyNewDeckSlides } from './rekey-new-deck.js';
 import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
@@ -66,40 +62,33 @@ function refuseMalformedContentByLang(contentByLang, i) {
  *   type registry. A deck can be created *with* slides (library insert, import,
  *   agent payload), and those go through the same write seam, so the org's
  *   DB-backed custom types have to be resolvable here as well (B129).
+ * @param {Object} [opts.storageScope] - the acting storage scope, so a custom
+ *   theme is found only in its own organization
  * @returns {Promise<Object>} Fully prepared presentation object
+ * @throws {AppError} 400 `invalid` with `details.field` = `theme` for a theme
+ *   this instance does not have, or `slides` for a malformed `contentByLang`
  */
 export async function prepareNewPresentation(
   repoRoot,
   body,
-  { slideTypes } = {},
+  { slideTypes, storageScope = null } = {},
 ) {
   const title =
     typeof body?.title === 'string' && body.title.trim()
       ? body.title.trim()
       : 'Naamloze presentatie';
   const initialLang = normalizeLang(body?.lang) || DEFAULT_DECK_LANG;
-  const requestedTheme =
-    typeof body?.theme === 'string' && body.theme.trim()
-      ? body.theme.trim()
-      : null;
-  const effectiveTheme =
-    requestedTheme || (sandboxEnabled() ? sandboxDefaultThemeId() : 'default');
-
-  // Default title slide differs per theme.
-  // Themes can specify a custom title slide via the `defaultTitleSlide` property.
-  let defaultTitleSlide = 'title-slide';
-  // Also carried into newPresentation and on to newSlide, so that a slide type
-  // opting in via `autoBackgroundPreset` can draw a background from the theme's
-  // own presets. That declaration is the only rule, on every route (D92); no
-  // core type sets it today, so the default title slide stays flat.
-  let themeConfig = null;
-  try {
-    const themeId = resolveThemeId(effectiveTheme);
-    themeConfig = await loadThemeAssets(repoRoot, themeId);
-    defaultTitleSlide = themeConfig?.defaultTitleSlide || 'title-slide';
-  } catch {
-    // ignore
-  }
+  // The one place a create's theme is checked (B486): absent is the
+  // installation default, anything else must be a theme this instance has, in
+  // its one spelling, or the create is refused.
+  const { themeId: effectiveTheme, theme: themeConfig } =
+    await settleNewDeckTheme(repoRoot, body?.theme, storageScope);
+  // Default title slide differs per theme. The theme also rides into
+  // newPresentation and on to newSlide, so that a slide type opting in via
+  // `autoBackgroundPreset` can draw a background from the theme's own presets.
+  // That declaration is the only rule, on every route (D92); no core type sets
+  // it today, so the default title slide stays flat.
+  const defaultTitleSlide = themeConfig?.defaultTitleSlide || 'title-slide';
 
   // If slides are provided in the body, use them instead of the default title slide.
   //

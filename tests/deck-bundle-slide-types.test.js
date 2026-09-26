@@ -172,8 +172,8 @@ async function importInto(
   const url = new URL('http://x/api/presentations/import/deck');
   if (install) url.searchParams.set('install', install);
   await handlePresentationsImportDeck({
-    repoRoot: null,
-    storageScope: { ...scope, actorEmail: user.email },
+    repoRoot: process.cwd(),
+    storageScope: { ...scope, repoRoot: process.cwd(), actorEmail: user.email },
     req: fakeReq(buf),
     res,
     url,

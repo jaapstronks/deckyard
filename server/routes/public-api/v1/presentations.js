@@ -35,7 +35,6 @@ import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   refuseRetiredDeckFields,
   refuseUnsupportedLang,
-  refuseUnknownTheme,
   presentationTimestamps,
 } from './deck-fields.js';
 
@@ -191,7 +190,6 @@ async function handleCreate(ctx) {
   if (!bodyOk) return true;
   if (await refuseRetiredDeckFields(ctx, body)) return true;
   if (await refuseUnsupportedLang(ctx, body)) return true;
-  if (await refuseUnknownTheme(ctx, body)) return true;
 
   // Create presentation with API key owner as the owner
   const created = await createPresentation(storageScope, {

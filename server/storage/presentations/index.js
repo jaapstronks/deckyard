@@ -108,6 +108,7 @@ export async function createPresentation(storageScope, body) {
   // update does — see the note on `slideTypes` below.
   const preparedPresentation = await prepareNewPresentation(repoRoot, body, {
     slideTypes: await buildMergedSlideTypes(storageScope),
+    storageScope,
   });
 
   // Validate size limits before creating
