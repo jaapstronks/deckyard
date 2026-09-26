@@ -7,7 +7,7 @@ import {
   deckImportLang,
   deckToPresentationParts,
 } from '../../../../shared/slide-types.js';
-import { loadDeckTheme } from '../../../utils/themes.js';
+import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { createLogger } from '../../../utils/logger.js';
 const log = createLogger('import-json');
@@ -43,8 +43,14 @@ export async function handlePresentationsImportJson({
   );
 
   // The deck's theme, so imported slides compose against it (background
-  // presets, theme slide-background variants).
-  const themeConfig = await loadDeckTheme(repoRoot, deck?.theme);
+  // presets, theme slide-background variants). A theme this instance does not
+  // have is refused like on every create (B486); a `.deck` bundle is the
+  // format that carries its theme along.
+  const { themeId, theme: themeConfig } = await settleNewDeckTheme(
+    repoRoot,
+    deck?.theme,
+    storageScope,
+  );
 
   // The organization's own registry, so a slide of one of its database types
   // imports as itself rather than as the placeholder.
@@ -64,7 +70,7 @@ export async function handlePresentationsImportJson({
 
   const created = await createPresentation(storageScope, {
     title: parts.title,
-    theme: parts.theme,
+    theme: themeId,
     lang,
     ownerEmail: authedUser?.email || null,
   });
@@ -91,7 +97,7 @@ export async function handlePresentationsImportJson({
     created.id,
     {
       title: parts.title,
-      theme: parts.theme,
+      theme: themeId,
       lang,
       slides: parts.slides,
       i18n,

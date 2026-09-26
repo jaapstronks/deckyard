@@ -1136,7 +1136,7 @@
   },
   "server/storage/presentations/crud/factory.js": {
     "no-restricted-syntax": {
-      "count": 3
+      "count": 2
     }
   },
   "server/storage/presentations/index.js": {

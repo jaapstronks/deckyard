@@ -12,6 +12,8 @@ import { slideBackgroundsCssText } from '../../shared/theme-slide-backgrounds.js
 import { normalizeTheme } from '../../shared/theme-normalize.js';
 import { createLogger } from './logger.js';
 import { UUID_RE } from './uuid.js';
+import { AppError } from './errors.js';
+import { sandboxDefaultThemeId, sandboxEnabled } from '../config/sandbox.js';
 
 const log = createLogger('themes');
 
@@ -116,6 +118,45 @@ export async function findTheme(repoRoot, rawThemeId, ctx = null) {
   if (UUID_RE.test(id)) return loadCustomThemeRecord(id, ctx, repoRoot);
   const theme = await loadThemeAssets(repoRoot, id);
   return theme?.id === id ? theme : null;
+}
+
+/**
+ * The theme a new deck is created with, and that theme loaded (B486).
+ *
+ * Every create path runs this one rule, whatever the theme's source (a
+ * request, an MCP call, an imported file): an absent theme (`undefined` or
+ * `null`) is the installation default, `default` in the stored deck (D232) or
+ * the sandbox's own default; anything else must be a theme `findTheme` knows,
+ * in its one spelling. The storage factory applies it to every create, so no
+ * route can store a theme it did not check; a route that does costly work
+ * before the create (an AI generation, a file conversion) calls it first as
+ * well, so a refusal comes before the work instead of after it.
+ *
+ * @param {string} repoRoot
+ * @param {unknown} requested - the theme the caller named, or absent
+ * @param {Object} [ctx] - storage scope; a custom theme must belong to its
+ *   organization
+ * @returns {Promise<{themeId: string, theme: Object|null}>} the value to
+ *   store and the loaded theme to compose slides against
+ * @throws {AppError} 400 `invalid`, `details.field` = `theme`
+ */
+export async function settleNewDeckTheme(repoRoot, requested, ctx = null) {
+  if (requested === undefined || requested === null) {
+    const themeId = sandboxEnabled()
+      ? sandboxDefaultThemeId()
+      : DEFAULT_THEME_REF;
+    return { themeId, theme: await loadDeckTheme(repoRoot, themeId, ctx) };
+  }
+  const theme = await findTheme(repoRoot, requested, ctx);
+  if (!theme) {
+    throw new AppError(
+      `Theme not found: ${JSON.stringify(requested)}`,
+      400,
+      { field: 'theme' },
+      'invalid',
+    );
+  }
+  return { themeId: requested, theme };
 }
 
 export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {

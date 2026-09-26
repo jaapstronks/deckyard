@@ -37,7 +37,7 @@ describe('updatePresentation — gated theme switch', () => {
       }),
     );
     await initializeStorage();
-    const created = await createPresentation(testScope(), {
+    const created = await createPresentation(testScope(process.cwd()), {
       title: 'Theme lock',
       ownerEmail: OWNER,
       lang: 'nl',

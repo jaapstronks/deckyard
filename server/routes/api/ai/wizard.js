@@ -3,17 +3,10 @@ import {
   getAiParams,
   getTrimmedString,
 } from '../../../utils/request-validators.js';
-import {
-  deckToPresentationParts,
-  deckThemeId,
-} from '../../../../shared/slide-types.js';
-import { loadDeckTheme } from '../../../utils/themes.js';
+import { deckToPresentationParts } from '../../../../shared/slide-types.js';
+import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { generateDeckJsonFromRawContent } from '../../../utils/openai/deck.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
-import {
-  sandboxDefaultThemeId,
-  sandboxEnabled,
-} from '../../../config/sandbox.js';
 import { loadSlideTypeContext, createPresentationWithI18n } from './shared.js';
 
 /**
@@ -39,6 +32,13 @@ export async function handleAiWizard({
   } = getAiParams(body);
   if (!raw.trim()) return badRequest(res, 'Expected { raw: "..." }');
   const notionSourcePageId = getTrimmedString(body, 'notionSourcePageId');
+  // Theme is chosen by the user at creation time, never by the model: checked
+  // before the generation, absent means the installation default (B486).
+  const { themeId: effectiveTheme, theme } = await settleNewDeckTheme(
+    repoRoot,
+    themeFromRequest,
+    storageScope,
+  );
 
   const userName = getDisplayNameForUser(authedUser);
   const slideTypeCtx = await loadSlideTypeContext(authedUser);
@@ -49,16 +49,8 @@ export async function handleAiWizard({
     disabledSlideTypes: slideTypeCtx.disabled,
     customSlideTypes: slideTypeCtx.custom,
   });
-  // Theme is chosen by the user at creation time; do not let the model/environment decide.
-  const effectiveTheme =
-    themeFromRequest ||
-    (sandboxEnabled() ? sandboxDefaultThemeId() : deckThemeId(deck));
-
-  // Resolved before normalizing: the slides compose against this theme.
-  const parts = deckToPresentationParts(deck, {
-    theme: await loadDeckTheme(repoRoot, effectiveTheme),
-    lang,
-  });
+  // Settled before normalizing: the slides compose against this theme.
+  const parts = deckToPresentationParts(deck, { theme, lang });
 
   const updated = await createPresentationWithI18n(storageScope, {
     parts,
