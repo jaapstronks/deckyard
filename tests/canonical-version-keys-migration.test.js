@@ -5,16 +5,17 @@
  * canonical key, or an off-axis key, is left for an operator — the migration
  * does not choose between two versions of one language.
  *
+ * The per-block rule is tested here; which rows `up` reads is a SQL filter, so
+ * that half runs against real PostgreSQL in
+ * tests/pg/canonical-version-keys-migration.pgtest.js.
+ *
  * Run with: node --test tests/canonical-version-keys-migration.test.js
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-  canonicalizeVersionKeys,
-  up,
-} from '../server/db/migrations/083_canonical_version_keys.js';
+import { canonicalizeVersionKeys } from '../server/db/migrations/083_canonical_version_keys.js';
 
 const v = (title) => ({ title, slides: [] });
 
@@ -47,49 +48,4 @@ test('a canonical block is untouched', () => {
     i18n: null,
     leftovers: [],
   });
-});
-
-test('up rewrites decks and snapshots, and only the rows that need it', async () => {
-  const tables = {
-    presentations: [
-      { id: 'p1', i18n: { versions: { nl: v('Dek'), en: v('Deck') } } },
-      { id: 'p2', i18n: { versions: { nl: v('Dek') } } },
-    ],
-    presentation_versions: [
-      {
-        id: 'v1',
-        presentation_data: {
-          title: 'Dek',
-          i18n: { versions: { en: v('Deck') } },
-        },
-      },
-    ],
-  };
-  const updates = [];
-  const db = {
-    selectFrom: (table) => ({
-      select: () => ({ execute: async () => tables[table] }),
-    }),
-    updateTable: (table) => ({
-      set: (patch) => ({
-        where: (_col, _op, id) => ({
-          execute: async () => updates.push({ table, id, patch }),
-        }),
-      }),
-    }),
-  };
-
-  await up(db);
-
-  assert.deepEqual(
-    updates.map(({ table, id }) => `${table}:${id}`),
-    ['presentations:p1', 'presentation_versions:v1'],
-  );
-  assert.deepEqual(JSON.parse(updates[0].patch.i18n).versions, {
-    nl: v('Dek'),
-    'en-GB': v('Deck'),
-  });
-  const snapshot = JSON.parse(updates[1].patch.presentation_data);
-  assert.equal(snapshot.title, 'Dek', 'the rest of the snapshot is kept');
-  assert.deepEqual(Object.keys(snapshot.i18n.versions), ['en-GB']);
 });
