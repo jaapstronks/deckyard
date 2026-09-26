@@ -326,6 +326,12 @@ paths:
                     follow-invite's `presentationId`) are re-derived against the
                     new deck, so a slide copied from elsewhere never shares its
                     live poll or its QR target with the deck it came from.
+                    A slide may carry `contentByLang`, an object of content
+                    per deck language: each key becomes a language version of
+                    the deck, so each key must be a canonical deck language
+                    (the `lang` values above); `en` or an unsupported key is
+                    refused with a 400 `invalid`, `details.field` = `slides`,
+                    and nothing is created.
       responses:
         '201':
           description: Presentation created
