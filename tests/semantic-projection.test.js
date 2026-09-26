@@ -2002,3 +2002,92 @@ describe('markup — author HTML projects as its content, not its source (B298)'
     );
   });
 });
+
+describe('axes — a grid of items is a table headed by its axes (B304, D139)', () => {
+  const type = 'matrix-slide';
+  const def = SLIDE_TYPES[type];
+  const slideWith = (patch) => ({
+    type,
+    content: { ...structuredClone(def.defaults), ...patch },
+  });
+  const project = (slide) => {
+    const { key: headingKey } = slideHeading(slide, def);
+    return body(slide, def, { headingKey });
+  };
+
+  it('both axes: one spanning column header, one spanning row header, cells row by row', () => {
+    const html = project(slideWith({ xAxis: 'Effort', yAxis: 'Impact' }));
+    assert.ok(
+      html.includes(
+        '<thead><tr><td></td><th scope="col" colspan="2" data-field="xAxis">Effort</th></tr></thead>',
+      ),
+      html,
+    );
+    assert.ok(
+      html.includes(
+        '<tbody><tr><th scope="row" rowspan="2" data-field="yAxis">Impact</th><td data-tone="positive"><h3 data-field="title">Strengths</h3>',
+      ),
+      html,
+    );
+    // Row-major: the second row opens with the third cell.
+    assert.ok(
+      /<\/tr><tr><td data-tone="positive"><h3 data-field="title">Opportunities<\/h3>/.test(
+        html,
+      ),
+      html,
+    );
+    assert.equal((html.match(/<td data-tone=/g) || []).length, 4, html);
+    assert.ok(!html.includes('<ul class="reader-items"'), html);
+  });
+
+  it('one axis: only its header, no empty corner', () => {
+    const xOnly = project(slideWith({ xAxis: 'Effort' }));
+    assert.ok(
+      xOnly.includes(
+        '<thead><tr><th scope="col" colspan="2" data-field="xAxis">Effort</th></tr></thead>',
+      ),
+      xOnly,
+    );
+    assert.ok(!xOnly.includes('scope="row"'), xOnly);
+
+    const yOnly = project(slideWith({ yAxis: 'Impact' }));
+    assert.ok(!yOnly.includes('<thead>'), yOnly);
+    assert.ok(
+      yOnly.includes(
+        '<tr><th scope="row" rowspan="2" data-field="yAxis">Impact</th><td',
+      ),
+      yOnly,
+    );
+  });
+
+  it('no axes: the list it always was, and no axis leaks as a paragraph', () => {
+    for (const patch of [{}, { xAxis: '  ', yAxis: '' }]) {
+      const html = project(slideWith(patch));
+      assert.ok(html.includes('<ul class="reader-items" data-field="cells">'));
+      assert.ok(!html.includes('<table'), html);
+      assert.ok(!html.includes('data-field="xAxis"'), html);
+      assert.ok(!html.includes('data-field="yAxis"'), html);
+    }
+  });
+
+  it('the canvas labels the axes, and without them draws the grid as before', () => {
+    const plain = def.renderHtml(slideWith({}).content);
+    assert.ok(!plain.includes('matrix-plot'), plain);
+    assert.ok(!plain.includes('matrix-axis'), plain);
+
+    const withAxes = def.renderHtml(
+      slideWith({ xAxis: 'Effort', yAxis: 'Impact' }).content,
+    );
+    assert.ok(withAxes.includes('<div class="matrix-plot">'), withAxes);
+    assert.ok(
+      withAxes.includes(
+        '<div class="matrix-axis matrix-axis-x"><p class="slide-eyebrow" data-inline-field="xAxis" dir="auto">Effort</p></div>',
+      ),
+      withAxes,
+    );
+    assert.ok(
+      withAxes.includes('data-inline-field="yAxis" dir="auto">Impact</p>'),
+      withAxes,
+    );
+  });
+});

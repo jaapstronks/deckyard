@@ -315,6 +315,9 @@ export function walkFieldDefinitions(fields, profile) {
     // Pair declarations (D131): each names a sibling of a given type at this
     // level, checked once the level is fully known.
     const pairRefs = [];
+    // Fields declaring `axes`: the two strings it names are siblings at this
+    // level, checked once the level is fully known.
+    const axesRefs = [];
     const fieldsByKey = new Map();
 
     list.forEach((field, i) => {
@@ -600,6 +603,30 @@ export function walkFieldDefinitions(fields, profile) {
         }
       }
 
+      // `axes: { columns, xKey, yKey }` says the items are a grid read row by
+      // row, headed by two sibling strings (D139). The grid has to be whole,
+      // so the count is fixed and a multiple of `columns`; the siblings are
+      // checked once the level is fully known.
+      if (field.axes !== undefined && field.axes !== null) {
+        const axes = field.axes;
+        const count = field.minItems === field.maxItems ? field.maxItems : NaN;
+        if (type !== 'items') {
+          at2('axes_not_items', 'warning', { type });
+        } else if (
+          !isPlainObject(axes) ||
+          !Number.isInteger(axes.columns) ||
+          axes.columns < 1 ||
+          !Number.isInteger(count) ||
+          count % axes.columns !== 0
+        ) {
+          at2('axes_not_a_grid', 'warning', {
+            columns: isPlainObject(axes) ? axes.columns : undefined,
+          });
+        } else {
+          axesRefs.push({ where, declared: axes });
+        }
+      }
+
       // The pair declarations (D131). Each belongs on one kind of field and
       // names a sibling of one kind; the projection joins the two and consumes
       // the sibling, so a declaration on the wrong field would consume a
@@ -667,6 +694,20 @@ export function walkFieldDefinitions(fields, profile) {
         add('ordered_when_unknown', 'warning', where, {
           field: isPlainObject(declared) ? declared.field : undefined,
         });
+      }
+    }
+
+    // Both axes are optional per slide, but a named one must be a string
+    // beside the grid, or the header it promises has no text.
+    for (const { where, declared } of axesRefs) {
+      const keysNamed = [declared.xKey, declared.yKey].filter(
+        (k) => k !== undefined && k !== null,
+      );
+      const unknown = keysNamed.filter(
+        (k) => !isNonEmpty(k) || fieldsByKey.get(k)?.type !== 'string',
+      );
+      if (!keysNamed.length || unknown.length) {
+        add('axes_key_unknown', 'warning', where, { unknown });
       }
     }
 
@@ -881,6 +922,19 @@ const FINDING_MESSAGES = {
     `${where} declares \`rowHeader: ${JSON.stringify(f?.detail?.declared)}\`, ` +
     `but the one value is \`'first'\` (the first column heads each row), so ` +
     `it is ignored.`,
+  axes_not_items: (where, f) =>
+    `${where} declares \`axes\` on a \`${f?.detail?.type}\` field, but only ` +
+    `an \`items\` field has entries to lay out as a grid, so it is ignored.`,
+  axes_not_a_grid: (where, f) =>
+    `${where} declares \`axes\` with \`columns: ` +
+    `${JSON.stringify(f?.detail?.columns)}\`, but a grid needs a whole ` +
+    `number of columns that divides a fixed item count (\`minItems\` equal ` +
+    `to \`maxItems\`), so it is ignored and the items stay a list.`,
+  axes_key_unknown: (where, f) =>
+    `${where} declares \`axes\` naming ` +
+    `${(f?.detail?.unknown || []).map((k) => JSON.stringify(k)).join(', ') || 'no axis'}` +
+    `, but each of \`xKey\` and \`yKey\` must be a \`string\` field beside ` +
+    `it (and at least one given), or the header it promises has no text.`,
   unit_key_wrong_type: (where, f) =>
     `${where} declares \`unitKey\` on a \`${f?.detail?.type}\` field, but ` +
     `only a \`string\` value reads with a unit, so it is ignored.`,

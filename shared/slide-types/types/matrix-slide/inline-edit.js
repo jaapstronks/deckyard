@@ -29,4 +29,6 @@ export const inlineEdit = {
  * rest of the slide.
  * @type {string[]}
  */
-export const inspectorKeeps = [];
+// The axes (D139): an empty axis draws nothing on the canvas, so there is
+// nothing to click; the inspector is where one is named.
+export const inspectorKeeps = ['xAxis', 'yAxis'];
