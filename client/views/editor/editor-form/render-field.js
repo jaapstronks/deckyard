@@ -82,9 +82,6 @@ function translateLabelRightEl({ pres, onTranslateField, slideId, key }) {
   });
 }
 
-// The slide-list label reads the type's declared labelField, then falls back
-// to `title` (see editor-utils.js slideLabel) — so exactly those two keys can
-// change it, whatever the type.
 /**
  * The help text a field declares, translated, or '' when it declares none.
  * One route for every field type: a type-specific hint (alt, markdown) is only
@@ -97,6 +94,9 @@ function declaredHelpText(field) {
     : '';
 }
 
+// The slide-list label reads the type's declared labelField, then falls back
+// to `title` (see editor-utils.js slideLabel) — so exactly those two keys can
+// change it, whatever the type.
 function affectsLabelForSlide({ def, fieldKey }) {
   return (
     fieldKey === 'title' || (!!def?.labelField && fieldKey === def.labelField)
