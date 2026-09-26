@@ -97,7 +97,14 @@ async function installDb({ themes = [], deckTheme = 'default' } = {}) {
   return db;
 }
 
-function libraryRow({ id, organization_id, shelf, name, trashed_at = null }) {
+function libraryRow({
+  id,
+  organization_id,
+  shelf,
+  name,
+  trashed_at = null,
+  theme_id = null,
+}) {
   return {
     id,
     organization_id,
@@ -106,7 +113,7 @@ function libraryRow({ id, organization_id, shelf, name, trashed_at = null }) {
     name,
     description: '',
     slide_type: 'content-slide',
-    theme_id: null,
+    theme_id,
     content: { title: `${name} title`, body: 'Library body' },
     i18n: {},
     favorites: [],
@@ -280,6 +287,39 @@ test('GET /slide-library lists team items of the own organization only', async (
   assert.deepEqual(item.tags, [{ id: 'tag-1', name: 'intro' }]);
 });
 
+test('GET /slide-library names the theme `theme` and filters on `?theme=` (B449)', async () => {
+  const db = await installDb();
+  db.__tables.slide_library.push(
+    libraryRow({
+      id: 'e0000005-0000-4000-8000-000000000005',
+      organization_id: ORG,
+      shelf: 'organization',
+      name: 'Midnight intro',
+      theme_id: 'midnight',
+    }),
+  );
+
+  const ctx = makeCtx('GET', '/api/v1/slide-library?theme=midnight');
+  await handleSlideLibrary(ctx);
+  assert.equal(ctx.res.statusCode, 200);
+  const { items } = ctx.res.body;
+  assert.deepEqual(
+    items.map((it) => it.name),
+    ['Midnight intro'],
+  );
+  assert.equal(items[0].theme, 'midnight');
+  assert.ok(!('themeId' in items[0]), 'the retired name is not published');
+});
+
+test('GET /slide-library refuses the retired `?themeId=` with the name to use', async () => {
+  await installDb();
+  const ctx = makeCtx('GET', '/api/v1/slide-library?themeId=midnight');
+  await handleSlideLibrary(ctx);
+  assert.equal(ctx.res.statusCode, 400);
+  assert.equal(ctx.res.body.details.field, 'themeId');
+  assert.equal(ctx.res.body.details.use, 'theme');
+});
+
 test('GET /slide-library survives a non-numeric ?limit (B143)', async () => {
   // The v1 copy of parsePaginationParams clamped without a NaN guard, so
   // `?limit=abc` produced `slice(NaN, NaN)` — an empty page with
@@ -343,7 +383,7 @@ test('GET /slide-library/:itemId returns the sanitized item', async () => {
       'name',
       'slideType',
       'tags',
-      'themeId',
+      'theme',
     ],
     'the sanitizer strips everything else (ownerEmail, favorites, i18n, …)',
   );

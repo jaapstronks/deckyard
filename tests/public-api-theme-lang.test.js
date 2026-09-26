@@ -258,3 +258,54 @@ test('an unknown theme or unsupported lang is refused, not defaulted', async () 
   assert.equal(langChange.body.details.field, 'lang');
   assert.equal(storedDeck(db, pres.id).lang, 'nl');
 });
+
+// ---------------------------------------------------------------------------
+// `default` and the one spelling of a theme id (B449, D232)
+// ---------------------------------------------------------------------------
+
+test('`default` is its own value: stored as-is, echoed back, and a switch to it sticks', async () => {
+  const db = await installDb();
+  const pres = await create({ title: 'Follows', theme: 'default' });
+  assert.equal(storedDeck(db, pres.id).theme, 'default');
+  assert.equal(pres.theme, 'default', 'the response names what was stored');
+
+  const got = await call('GET', `/api/v1/presentations/${pres.id}`);
+  const echo = await call('PUT', `/api/v1/presentations/${pres.id}`, {
+    theme: got.body.presentation.theme,
+  });
+  assert.equal(echo.statusCode, 200, 'the echoed `default` is a plain save');
+
+  const pinned = await call('PUT', `/api/v1/presentations/${pres.id}`, {
+    theme: 'midnight',
+  });
+  assert.equal(pinned.statusCode, 200);
+  assert.equal(storedDeck(db, pres.id).theme, 'midnight');
+
+  // Back to following the installation's default. This used to store the
+  // id the default happened to be, so the deck stopped following it.
+  const back = await call('PUT', `/api/v1/presentations/${pres.id}`, {
+    theme: 'default',
+  });
+  assert.equal(back.statusCode, 200, JSON.stringify(back.body));
+  assert.equal(storedDeck(db, pres.id).theme, 'default');
+});
+
+test('another spelling of a known theme is refused, not repaired', async () => {
+  const db = await installDb();
+  for (const theme of ['Midnight', ' midnight', 'midnight ', 'DEFAULT']) {
+    const res = await call('POST', '/api/v1/presentations', {
+      title: 'X',
+      theme,
+    });
+    assert.equal(res.statusCode, 400, JSON.stringify(theme));
+    assert.equal(res.body.details.field, 'theme');
+  }
+  assert.equal((db.__tables.presentations || []).length, 0);
+
+  const pres = await create({ title: 'Deck', theme: 'amethyst' });
+  const res = await call('PUT', `/api/v1/presentations/${pres.id}`, {
+    theme: 'Midnight',
+  });
+  assert.equal(res.statusCode, 400);
+  assert.equal(storedDeck(db, pres.id).theme, 'amethyst');
+});

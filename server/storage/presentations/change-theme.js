@@ -11,7 +11,7 @@
  */
 
 import { updatePresentation } from './index.js';
-import { findTheme, resolveThemeId } from '../../utils/themes.js';
+import { findTheme } from '../../utils/themes.js';
 import { convertSlideToType } from '../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types/registry.js';
 import { createLogger } from '../../utils/logger.js';
@@ -53,7 +53,10 @@ export async function changePresentationTheme(
     }
   }
 
-  const updateData = { ...data, theme: resolveThemeId(theme) };
+  // Stored as named: findTheme admits only the canonical spelling, and
+  // `default` must stay `default` so the deck keeps following the
+  // installation's default instead of freezing to today's id (D232).
+  const updateData = { ...data, theme };
   if (Array.isArray(data?.slides)) {
     updateData.slides = data.slides.map((slide) => {
       const targetType = conversionMap.get(slide?.id);
