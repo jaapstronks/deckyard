@@ -7,7 +7,6 @@ import { h } from '../../../lib/dom.js';
 import { sharingEnabled } from '../../../lib/state/features.js';
 import { createSharingOffNote } from '../../shared/sharing-off.js';
 import {
-  DEFAULT_DECK_LANG,
   getLangDisplayName,
   TRANSLATION_LANGS,
 } from '../../../../shared/i18n-utils.js';
@@ -94,8 +93,9 @@ export function openSaveToLibraryModal({
 
   // Detect available language versions for this slide
   const slideId = slide?.id;
-  const currentLang =
-    pres?.i18n?.active || pres?.i18n?.dominant || DEFAULT_DECK_LANG;
+  // Canonical since `initPresentationI18n` (B484): it keys a version below, and
+  // the library refuses an alias key (B482).
+  const currentLang = pres.i18n.active;
   const availableLangs = [];
   const langContents = {};
 
