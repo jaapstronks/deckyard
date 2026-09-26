@@ -151,6 +151,10 @@ export function installDismissOnOutside({
     try {
       if (ev?.key !== 'Escape') return;
       if (!isOpen()) return;
+      // Escape peels one layer: closing this surface consumes the key, so a
+      // document-level Escape handler (e.g. the editor's selection clear)
+      // leaves it alone.
+      ev.preventDefault();
       close();
       try {
         returnFocusEl?.focus?.();

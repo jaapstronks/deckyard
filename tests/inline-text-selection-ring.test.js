@@ -50,6 +50,7 @@ const { renderSlideElement, NO_DECK_LANG } =
   await import('../client/lib/slide-runtime/slide-render.js');
 const { createInlineEditor } =
   await import('../client/views/editor/inline-edit/inline-editor.js');
+const { installDismissOnOutside } = await import('../client/lib/dom.js');
 
 /** Mount the inline editor with a controller-like selection it mirrors. */
 function mount(slide) {
@@ -184,6 +185,39 @@ test('Escape typed into a form control belongs to that control', () => {
     assert.deepEqual(env.selected(), { kind: 'text', fieldKey: 'title' });
   } finally {
     input.remove();
+    env.teardown();
+  }
+});
+
+test('Escape that closes a sidebar dropdown leaves the selection alone', () => {
+  // One layer per Escape: the dropdown consumes the key (defaultPrevented), so
+  // the selection clear does not run on the same keypress. A second Escape,
+  // with nothing open, drops the selection.
+  const env = mount(structuredClone(SLIDE));
+  const menu = document.createElement('div');
+  const item = document.createElement('button');
+  menu.append(item);
+  document.body.append(menu);
+  let open = true;
+  const uninstall = installDismissOnOutside({
+    rootEl: menu,
+    isOpen: () => open,
+    close: () => {
+      open = false;
+    },
+  });
+  try {
+    click(env.field('title'));
+    env.field('title').blur();
+    escape(item);
+    assert.equal(open, false, 'the dropdown closes');
+    assert.deepEqual(env.selected(), { kind: 'text', fieldKey: 'title' });
+    assert.deepEqual(ringedFields(env), ['title']);
+    escape(item);
+    assert.equal(env.selected(), null);
+  } finally {
+    uninstall();
+    menu.remove();
     env.teardown();
   }
 });

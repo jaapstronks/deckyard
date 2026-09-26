@@ -151,6 +151,8 @@ export function createOverlay(options = {}) {
     if (!closeOnEscape || e.key !== 'Escape' || busy) return;
     // Stacked overlays all listen on `document`; only the top one may close.
     if (!isTopmostOverlay(backdrop)) return;
+    // The overlay consumes Escape, so no other document handler acts on it.
+    e.preventDefault();
     requestClose();
   };
 
