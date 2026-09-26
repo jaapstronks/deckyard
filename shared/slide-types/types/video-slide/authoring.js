@@ -43,6 +43,8 @@ export default {
   sample: {
     title: 'Video Content',
     source: '',
+    transcript:
+      'Welcome to our studio. In the next two minutes we show how a deck travels from the first draft to the room.',
     background: 'mist',
     autoplay: 'off',
   },

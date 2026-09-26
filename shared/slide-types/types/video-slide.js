@@ -50,6 +50,26 @@ export default {
       // resolved, and folds in the author's own `linkKey` field.
       mediaRef: { label: 'Video', linkKey: 'watchUrl' },
     },
+    {
+      key: 'transcript',
+      label: 'Transcript',
+      type: 'markdown',
+      required: false,
+      // A transcript of a few minutes of speech; the cap is a sanity bound,
+      // not an editorial one.
+      maxLength: 20000,
+      // The text version of the video (D138). The canvas plays the video and
+      // never shows this; the reader and print project it as prose under the
+      // stand-in link, which is where a document puts what the film says.
+      // Captions and audio description stay with the provider (`<track>` is
+      // not ours to serve).
+      role: 'prose',
+      helpText:
+        'Not shown on the slide. The reader document and the print version show it under the link to the video.',
+      // Author-supplied, not inferable: an agent has not watched the video, so
+      // anything it wrote here would be an invented transcript.
+      ai: false,
+    },
     BACKGROUND_FIELD,
     {
       key: 'autoplay',
@@ -91,6 +111,7 @@ export default {
   defaults: {
     title: '',
     watchUrl: '',
+    transcript: '',
     // Default Bunny video: "Ride the immersive wave"
     source: '3045cc09-605c-40d9-aa76-9ace93e7f637',
     background: 'mist',

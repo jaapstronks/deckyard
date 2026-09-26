@@ -47,16 +47,14 @@
  *   markdown fields come out escaped, and the fixture would pin a form no
  *   reader ever serves.
  *
- * ## One entry that reads like a hole and is not
+ * ## One entry without a stand-in, on purpose
  *
- * `video-slide` — the one type that declares `mediaRef` — projects to an empty
- * body here, because its sample sets `source: ''` and so has no reference to
- * stand in for. That blank looks deliberate (a picker tile with a real source
- * embeds a live third-party player, the concern that exempts `embed-slide` from
- * having a sample at all) but nothing says so, so it is left exactly as it is
- * and the question is Jaap's, not this test's. The D82 stand-in itself is
- * proven against the type's *defaults* in `tests/semantic-projection.test.js`
- * ("video-slide projects its default Bunny UUID as heading + stand-in").
+ * `video-slide` — the one type that declares `mediaRef` — projects no stand-in
+ * link here, because its sample sets `source: ''` (D107: a picker tile with a
+ * real source would embed a live third-party player). Its body is the sample's
+ * `transcript` alone (D138). The stand-in itself, and the transcript's place
+ * under it, are proven against the type's definition in
+ * `tests/semantic-projection.test.js`.
  */
 
 import test from 'node:test';
