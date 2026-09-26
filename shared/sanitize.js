@@ -380,15 +380,37 @@ export function sanitizeSlideHtmlSync(html, { presentation = true } = {}) {
  * @returns {string}
  */
 export function slideHtmlHeadingTextSync(html) {
-  if (!html || typeof html !== 'string') return '';
-  const dp = slidePurify();
-  if (!dp) return '';
-  const fragment = dp.sanitize(html, {
-    ...SLIDE_HTML_CONFIG,
-    RETURN_DOM_FRAGMENT: true,
-  });
-  const heading = fragment.querySelector('h1, h2, h3');
+  const heading = slideHtmlFragment(html)?.querySelector('h1, h2, h3');
   return heading ? heading.textContent.replace(/\s+/g, ' ').trim() : '';
+}
+
+/**
+ * How many `<img>` elements in author HTML, as {@link sanitizeSlideHtmlSync}
+ * keeps it, carry no `alt` attribute: the pictures the markup leaves unnamed
+ * (D137, B318). `alt=""` is HTML's own declaration of a decorative picture
+ * and does not count. Like the heading, it reads the sanitized tree, so an
+ * `<img>` the sanitizer strips is not there to name.
+ *
+ * Without DOMPurify the answer is `0`: the markup then renders escaped, and
+ * escaped source shows no pictures.
+ *
+ * @param {string} html - Raw author HTML
+ * @returns {number}
+ */
+export function slideHtmlImagesWithoutAltSync(html) {
+  const fragment = slideHtmlFragment(html);
+  return fragment ? fragment.querySelectorAll('img:not([alt])').length : 0;
+}
+
+/**
+ * Author HTML as the slide sanitizer's tree, for the helpers that read it
+ * rather than inject it; `null` when there is nothing to read or no DOMPurify.
+ */
+function slideHtmlFragment(html) {
+  if (!html || typeof html !== 'string') return null;
+  const dp = slidePurify();
+  if (!dp) return null;
+  return dp.sanitize(html, { ...SLIDE_HTML_CONFIG, RETURN_DOM_FRAGMENT: true });
 }
 
 /** The slide sanitizer's DOMPurify configuration, shared by both readers of it. */

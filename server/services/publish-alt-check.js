@@ -12,7 +12,8 @@
  * (`imagesMissingAlt` in `shared/slide-types/semantic-projection.js`), so the
  * gate can never disagree with the document it guards. The way out is the
  * alt text, a name the type declares (`nameKey`), or `imageRole: 'decorative'`
- * where the type offers it.
+ * where the type offers it; in author markup, the `<img>`'s own `alt`
+ * attribute (`alt=""` for decorative).
  *
  * @module server/services/publish-alt-check
  */

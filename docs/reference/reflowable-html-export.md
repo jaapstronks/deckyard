@@ -113,7 +113,9 @@ data-kind="warning"><p class="reader-label">Warning</p><p>…</p></aside>`).
     is this document too, so `POST /publish` (internal and v1) answers `422
 missing_alt` when a drawn `image` field, at slide or item level, is not
     decorative and ends the ladder above empty — in any language version, on
-    any slide a published page shows. The check is the projection's own
+    any slide a published page shows. Author markup counts too: each `<img>`
+    in the sanitized tree of a `markup: true` field without an `alt`
+    attribute is refused on that field, and `alt=""` is decorative (B318). The check is the projection's own
     (`imagesMissingAlt`), walked over the declarations of the deck's merged
     registry, so it covers an organisation's own types and cannot disagree
     with the document. The editor shows the refusal beside the Publish
