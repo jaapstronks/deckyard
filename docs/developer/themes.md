@@ -292,10 +292,10 @@ lists one entry per weight still exports one copy — but writing the range is
 clearer. A truly static family (one file per weight, e.g. Poppins) keeps one
 entry per weight, because those files really are different bytes.
 
-For the built-in and database themes you never write this by hand:
+For seed and organization theme records you never write this by hand:
 `curatedEmbedFonts()` (`server/utils/curated-font-embed.js`) generates the list
-from the curated set and the font lockfile, and `tests/theme-embed-fonts.test.js`
-fails if a committed `themes/*.json` drifts from it.
+from the curated set and the font lockfile when the record is loaded. The seed
+gate in `tests/theme-seeds.test.js` checks the committed `themes/*.json` files.
 
 ---
 
