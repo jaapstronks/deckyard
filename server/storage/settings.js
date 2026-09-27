@@ -1236,7 +1236,11 @@ export async function getEnabledThemeIds(scope) {
   const stored = Array.isArray(settings.enabledThemes)
     ? settings.enabledThemes
     : [];
-  if (stored.length) return stored.filter((id) => UUID_RE.test(id));
+  if (stored.length)
+    return stored.filter(
+      (id) =>
+        typeof id === 'string' && UUID_RE.test(id) && id === id.toLowerCase(),
+    );
   const handles = envStr('ENABLED_THEMES').split(',');
   const ids = await Promise.all(handles.map(seedThemeId));
   return [...new Set(ids.filter(Boolean))];

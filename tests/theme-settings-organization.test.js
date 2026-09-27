@@ -208,6 +208,14 @@ test('settings API writes only the active organization and refuses invisible IDs
     400,
   );
   assert.equal(
+    (await request(A, { defaultThemeId: EDITORIAL.toUpperCase() })).statusCode,
+    400,
+  );
+  assert.equal(
+    (await request(A, { enabledThemes: [BRAND.toUpperCase()] })).statusCode,
+    400,
+  );
+  assert.equal(
     (await request(A, { defaultThemeId: BRAND }, 'app')).statusCode,
     400,
   );

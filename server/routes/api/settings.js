@@ -27,6 +27,11 @@ import { getThemeRecord } from '../../storage/themes.js';
 import { UUID_RE } from '../../utils/uuid.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
+/** Organization theme settings store one lowercase UUID spelling. */
+function isCanonicalThemeId(id) {
+  return typeof id === 'string' && UUID_RE.test(id) && id === id.toLowerCase();
+}
+
 /**
  * Whether this user may write the organization-level admin settings keys.
  *
@@ -148,9 +153,7 @@ async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
     const id = body.defaultThemeId;
     if (
       id !== '' &&
-      (typeof id !== 'string' ||
-        !UUID_RE.test(id) ||
-        !(await getThemeRecord(storageScope, id)))
+      (!isCanonicalThemeId(id) || !(await getThemeRecord(storageScope, id)))
     )
       return badRequest(res, 'Invalid default theme');
   }
@@ -159,7 +162,7 @@ async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
     if (
       !Array.isArray(ids) ||
       ids.length > 50 ||
-      ids.some((id) => typeof id !== 'string' || !UUID_RE.test(id))
+      ids.some((id) => !isCanonicalThemeId(id))
     )
       return badRequest(res, 'Invalid enabled themes');
     for (const id of ids) {
