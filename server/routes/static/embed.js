@@ -66,7 +66,10 @@ async function serveEmbed({ repoRoot, res, url }, publishId, slugSegment) {
   }
 
   const opts = parseEmbedOptionsFromUrl(url);
-  const theme = await loadThemeAssets(repoRoot, pres?.theme);
+  const theme = await loadThemeAssets(repoRoot, pres?.theme, {
+    repoRoot,
+    organizationId: pres.organizationId,
+  });
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
   const projected = projectPresentationForLang(pres, modeLang);
   const embedOrgId = pres?.organizationId;

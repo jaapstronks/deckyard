@@ -249,7 +249,10 @@ async function servePublishedPage(
     readerLabel,
   )}</a>`;
 
-  const theme = await loadThemeAssets(repoRoot, pres?.theme);
+  const theme = await loadThemeAssets(repoRoot, pres?.theme, {
+    repoRoot,
+    organizationId: pres.organizationId,
+  });
 
   // Add analytics tracking script for published pages
   const trackingScript = generateTrackingScriptHtml({

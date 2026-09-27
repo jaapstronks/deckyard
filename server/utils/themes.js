@@ -14,6 +14,7 @@ import { createLogger } from './logger.js';
 import { UUID_RE } from './uuid.js';
 import { AppError } from './errors.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../config/sandbox.js';
+import { getDefaultThemeId } from '../storage/settings.js';
 
 const log = createLogger('themes');
 
@@ -86,7 +87,7 @@ function findThemeFile(repoRoot, themeId) {
  */
 export async function loadDeckTheme(repoRoot, rawThemeId, ctx = null) {
   try {
-    return await loadThemeAssets(repoRoot, resolveThemeId(rawThemeId), ctx);
+    return await loadThemeAssets(repoRoot, rawThemeId, ctx);
   } catch {
     return null;
   }
@@ -116,7 +117,8 @@ export async function findTheme(repoRoot, rawThemeId, ctx = null) {
   const id = resolveThemeId(rawThemeId);
   if (rawThemeId !== DEFAULT_THEME_REF && id !== rawThemeId) return null;
   if (UUID_RE.test(id)) return loadCustomThemeRecord(id, ctx, repoRoot);
-  const theme = await loadThemeAssets(repoRoot, id);
+  const theme = await loadThemeAssets(repoRoot, rawThemeId, ctx);
+  if (rawThemeId === DEFAULT_THEME_REF) return theme;
   return theme?.id === id ? theme : null;
 }
 
@@ -161,6 +163,17 @@ export async function settleNewDeckTheme(repoRoot, requested, ctx = null) {
 
 export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {
   const rawId = String(rawThemeId || '').trim();
+
+  // A stored `default` follows the current setting whenever the caller knows
+  // the deck's scope. Keep the no-scope fallback for file-only renderers.
+  if (rawId === DEFAULT_THEME_REF && ctx?.organizationId) {
+    const configured = await getDefaultThemeId(ctx);
+    return loadThemeAssets(
+      repoRoot,
+      configured === DEFAULT_THEME_REF ? DEFAULT_THEME : configured,
+      ctx,
+    );
+  }
 
   // Check if this is a custom theme UUID
   if (UUID_RE.test(rawId)) {
@@ -313,9 +326,9 @@ async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
  * exactly the pattern those endpoints were built to remove — a UUID being
  * hard to guess is not an authorization story.
  *
- * Built-in themes return null on purpose: they are static files under
- * `/themes/`, already reachable by anyone, and the client loads (and caches)
- * them itself. Only database themes need the ride.
+ * Explicit built-in themes return null: the client can load their static files.
+ * `default` carries its resolved config, because anonymous clients cannot read
+ * the workspace setting and may need a database theme.
  *
  * What goes over the wire is `buildThemeConfig`'s projection — the same
  * derived render config the authenticated route serves, not the stored row —
@@ -323,12 +336,16 @@ async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
  *
  * @param {string|null} repoRoot
  * @param {string} rawThemeId - `presentation.theme` as stored
- * @returns {Promise<Object|null>} Theme config, or null for a built-in theme
+ * @param {Object|null} [scope] - The deck's organization scope for `default`
+ * @returns {Promise<Object|null>} Theme config, or null for an explicit built-in theme
  */
-export async function customThemeConfig(repoRoot, rawThemeId) {
+export async function customThemeConfig(repoRoot, rawThemeId, scope = null) {
   const id = String(rawThemeId || '')
     .trim()
     .toLowerCase();
+  if (id === DEFAULT_THEME_REF && scope?.organizationId) {
+    return loadThemeAssets(repoRoot, id, scope);
+  }
   if (!UUID_RE.test(id)) return null;
   return loadCustomThemeRecord(id, null, repoRoot);
 }

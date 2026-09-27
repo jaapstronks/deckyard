@@ -298,6 +298,7 @@ async function fakeFetch(input, init = {}) {
         id: DECK_ID,
         title: 'Kickoff',
         theme: 'default',
+        themeConfig: { id: 'brand', label: 'Brand', cssVars: {} },
         slides: structuredClone(SLIDES),
         settings: { analyticsEnabled: scenario.analyticsEnabled },
         // The route stamps the language of the slides it serves, so the view

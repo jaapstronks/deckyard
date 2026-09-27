@@ -44,8 +44,8 @@ const { initializeStorage, __resetStorageForTests } =
 const { createTheme, listThemes, getThemeRecord } =
   await import('../server/storage/themes.js');
 const { createFontFamily } = await import('../server/storage/font-families.js');
-const { getDefaultThemeId } = await import('../server/storage/settings.js');
-const { loadThemeAssets, clearCustomThemeCache } =
+const { writeAppSettings } = await import('../server/storage/settings.js');
+const { loadThemeAssets, customThemeConfig, clearCustomThemeCache } =
   await import('../server/utils/themes.js');
 const { curatedFontFaces } = await import('../shared/theme-fonts.js');
 
@@ -340,8 +340,9 @@ test('canManage without install lands on the default and names the theme', async
     label: 'Not asked',
     status: 'not-installed',
     reason: 'install-not-requested',
+    themeId: 'default',
   });
-  assert.equal(body.theme, await getDefaultThemeId(receiverScope()));
+  assert.equal(body.theme, 'default');
   assert.equal((await listThemes(receiverScope())).length, before);
   assert.equal(countUploadsWith(logo), logoCopies, 'no logo written');
 });
@@ -358,8 +359,56 @@ test('install without canManage lands on the default', async () => {
   assert.equal(res.statusCode, 201);
   assert.equal(body.bundledTheme.status, 'not-installed');
   assert.equal(body.bundledTheme.reason, 'not-permitted');
-  assert.equal(body.theme, await getDefaultThemeId(receiverScope()));
+  assert.equal(body.bundledTheme.themeId, 'default');
+  assert.equal(body.theme, 'default');
   assert.equal((await listThemes(receiverScope())).length, before);
+});
+
+test('a non-installed bundled theme follows a changed workspace default at render time', async () => {
+  const source = await senderTheme({ label: 'Portable only' });
+  const bundle = await buildDeckBundle(repoRoot, deckOn(source.id));
+  const first = await createTheme(receiverScope(), {
+    label: 'First default',
+    slug: 'receiver-first-default',
+    colors: { primary: '#113355' },
+  });
+  const second = await createTheme(receiverScope(), {
+    label: 'Second default',
+    slug: 'receiver-second-default',
+    colors: { primary: '#335511' },
+  });
+  assert.equal(first.ok, true);
+  assert.equal(second.ok, true);
+
+  try {
+    await writeAppSettings(receiverScope(), { defaultThemeId: first.theme.id });
+    const { body } = await importInto(receiverScope(), bundle);
+    assert.equal(body.theme, 'default');
+    assert.equal(body.bundledTheme.themeId, 'default');
+    const initial = await loadThemeAssets(
+      repoRoot,
+      body.theme,
+      receiverScope(),
+    );
+    assert.equal(initial._customThemeId, first.theme.id);
+    assert.equal(
+      (await customThemeConfig(repoRoot, body.theme, receiverScope()))
+        ._customThemeId,
+      first.theme.id,
+    );
+
+    await writeAppSettings(receiverScope(), {
+      defaultThemeId: second.theme.id,
+    });
+    const changed = await loadThemeAssets(
+      repoRoot,
+      body.theme,
+      receiverScope(),
+    );
+    assert.equal(changed._customThemeId, second.theme.id);
+  } finally {
+    await writeAppSettings(receiverScope(), { defaultThemeId: '' });
+  }
 });
 
 test('a taken slug gets a suffix, never an overwrite', async () => {

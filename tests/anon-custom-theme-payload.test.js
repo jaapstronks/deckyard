@@ -209,16 +209,12 @@ test('verify hands the anonymous viewer the deck theme, not a 401 it cannot see'
   );
 });
 
-test('a built-in theme sends no config — the client loads those as static files', async () => {
+test('default sends its resolved config to an anonymous viewer', async () => {
   const { token } = await seedShareLink('default');
   const { body } = await verifyShare(token);
 
   assert.equal(body.presentation.theme, 'default');
-  assert.equal(
-    body.presentation.themeConfig,
-    null,
-    'a built-in theme is a public file; nothing to ride along',
-  );
+  assert.ok(body.presentation.themeConfig?.id);
 });
 
 test('the theme payload is the render projection, not the stored row', async () => {
@@ -282,12 +278,12 @@ test('the follow audience gets the theme with the deck the follow code authorize
   );
 });
 
-test('a built-in theme sends no config to the follow audience either', async () => {
+test('default sends its resolved config to the follow audience', async () => {
   const pres = await seedDeck('default');
   await goLive(pres);
 
   const { body } = await followPresentation(pres.id);
-  assert.equal(body.presentation.themeConfig, null);
+  assert.ok(body.presentation.themeConfig?.id);
 });
 
 // ---------------------------------------------------------------------------
@@ -317,10 +313,10 @@ test('the notes companion gets the theme with the session deck', async () => {
   assert.equal(body.themeConfig.cssVars['--t-color-accent'], '#7744ff');
 });
 
-test('a built-in theme sends no config to the notes companion either', async () => {
+test('default sends its resolved config to the notes companion', async () => {
   const pres = await seedDeck('default');
   const sessionId = await goLive(pres);
 
   const { body } = await sessionDeck(sessionId);
-  assert.equal(body.themeConfig, null);
+  assert.ok(body.themeConfig?.id);
 });

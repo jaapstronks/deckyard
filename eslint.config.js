@@ -540,6 +540,7 @@ export default [
       'docs/**',
       'skills/**',
       '.claude/**',
+      '.scratch/**',
       'coverage/**',
       '**/*.min.js',
     ],

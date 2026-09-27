@@ -122,7 +122,7 @@ export async function buildPublishOgImage({
       : null;
 
     if (firstSlide && isMediaProviderInitialized()) {
-      const theme = await loadThemeAssets(repoRoot, pres.theme);
+      const theme = await loadThemeAssets(repoRoot, pres.theme, storageScope);
 
       const showAuthor = pres?.settings?.ogPreview?.showAuthor === true;
       const authorInfo = showAuthor

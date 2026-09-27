@@ -51,7 +51,7 @@ export async function warmDeckThumbnail(scope, pres) {
   try {
     const slide = Array.isArray(pres?.slides) ? pres.slides[0] : null;
     if (!slide || typeof slide !== 'object') return;
-    const theme = await loadThemeAssets(scope.repoRoot, pres?.theme);
+    const theme = await loadThemeAssets(scope.repoRoot, pres?.theme, scope);
     const slideTypes = await buildMergedSlideTypes(scope);
     await requestThumbnailGeneration(
       scope.repoRoot,

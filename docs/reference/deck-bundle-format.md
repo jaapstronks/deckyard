@@ -272,11 +272,11 @@ its logos named by the hash of their bytes. Then one of three things happens,
 reported in the response as `bundledTheme` (`slug`, `label`, `status`, and
 `themeId`, `reason`, `fontsMissing` where they apply):
 
-| `status`        | When                                                                                           | The deck lands on                                                                                   |
-| --------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `existing`      | the organization already has a theme with this content — whoever imports; nothing is installed | that theme                                                                                          |
-| `installed`     | a user who may manage themes (`canManage`) asked for `install=theme`                           | the new organization theme; a taken slug gets `-2`, `-3`, …; an existing theme is never overwritten |
-| `not-installed` | otherwise; `reason` is `install-not-requested` or `not-permitted`                              | the organization default theme; a theme manager can re-import with `install=theme`                  |
+| `status`        | When                                                                                           | The deck lands on                                                                                                                 |
+| --------------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `existing`      | the organization already has a theme with this content — whoever imports; nothing is installed | that theme                                                                                                                        |
+| `installed`     | a user who may manage themes (`canManage`) asked for `install=theme`                           | the new organization theme; a taken slug gets `-2`, `-3`, …; an existing theme is never overwritten                               |
+| `not-installed` | otherwise; `reason` is `install-not-requested` or `not-permitted`                              | stored as `default`, following the current organization default when rendered; a theme manager can re-import with `install=theme` |
 
 **Fonts on the receiving side.** A curated family this instance vendors is used
 by name; its bytes in the bundle are not needed. A managed family is bound to

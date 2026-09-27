@@ -28,7 +28,7 @@
  * editor's `/api/slide-types` lists for that session — no more.
  *
  * Authorization differs only in the theme lookup. The deck route loads the
- * deck's theme unscoped, because the deck it just authorized is what names it.
+ * deck's theme in its storage scope, so `default` follows the current setting.
  * This route has no deck, so a database theme UUID is resolved under the
  * session's organization (`loadThemeAssets` with the storage scope): a UUID of
  * another organization's theme renders with the default theme, never with that
@@ -143,7 +143,10 @@ export async function serveDeckSlideRender(
     },
     { slide, mode: body.mode },
     {
-      theme: await loadThemeAssets(repoRoot, pres.theme),
+      theme: await loadThemeAssets(repoRoot, pres.theme, {
+        repoRoot,
+        organizationId: pres.organizationId,
+      }),
       lang,
       presentationId: pres.id,
     },
