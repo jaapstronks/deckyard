@@ -128,7 +128,6 @@ export async function listThemes(scope) {
         'colors',
         'fonts',
         'config',
-        'is_default',
         'created_at',
         'updated_at',
         'created_by',
@@ -161,7 +160,6 @@ export async function listSeedThemes() {
         'colors',
         'fonts',
         'config',
-        'is_default',
         'created_at',
         'updated_at',
         'created_by',
@@ -208,7 +206,6 @@ export async function getThemeRecord(scope, themeId) {
         'colors',
         'fonts',
         'config',
-        'is_default',
         'created_at',
         'updated_at',
         'created_by',
@@ -489,43 +486,6 @@ export async function deleteTheme(scope, themeId) {
   });
 }
 
-/**
- * Set a theme as the default for the organization.
- * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
- * @param {string} themeId - The theme ID (or null to clear default)
- * @returns {Promise<Object>} - Result with ok flag or reason
- */
-export async function setDefaultTheme(scope, themeId) {
-  toStorageContext(scope, 'setDefaultTheme');
-  return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(scope);
-
-    // Clear existing default
-    await db
-      .updateTable('themes')
-      .set({ is_default: false, updated_at: nowIso() })
-      .where('organization_id', '=', orgId)
-      .where('is_default', '=', true)
-      .execute();
-
-    if (themeId) {
-      // Set new default
-      const result = await db
-        .updateTable('themes')
-        .set({ is_default: true, updated_at: nowIso() })
-        .where('id', '=', themeId)
-        .where('organization_id', '=', orgId)
-        .executeTakeFirst();
-
-      if (result.numUpdatedRows === 0n) {
-        return { ok: false, reason: 'not_found' };
-      }
-    }
-
-    return { ok: true };
-  });
-}
-
 // ============================================================
 // HELPERS
 // ============================================================
@@ -548,7 +508,6 @@ function formatTheme(row) {
     // Always a validated object, so callers never have to guard it. Rows that
     // predate the config column read as `{}`.
     config: validateThemeConfig(row.config),
-    isDefault: row.is_default,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     createdBy: row.created_by,

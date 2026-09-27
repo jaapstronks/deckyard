@@ -285,7 +285,8 @@ async function handleCustomThemeGet(
   if (!theme) {
     return notFound(res, 'Theme not found');
   }
-  serveJson(res, 200, theme);
+  const defaultThemeId = await getDefaultThemeId(storageScope);
+  serveJson(res, 200, { ...theme, isDefault: theme.id === defaultThemeId });
   return true;
 }
 

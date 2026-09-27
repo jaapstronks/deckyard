@@ -47,8 +47,18 @@ const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 async function installDb() {
   const db = createFakeDb({
     organizations: [
-      { id: ORG, name: 'Default', slug: 'default' },
-      { id: OTHER_ORG, name: 'Other', slug: 'other' },
+      {
+        id: ORG,
+        name: 'Default',
+        slug: 'default',
+        settings: { defaultThemeId: '11111111-1111-4111-8111-111111111111' },
+      },
+      {
+        id: OTHER_ORG,
+        name: 'Other',
+        slug: 'other',
+        settings: { defaultThemeId: '11111111-1111-4111-8111-111111111111' },
+      },
     ],
     themes: [
       themeRow({
@@ -208,6 +218,7 @@ test('GET /themes returns seed and own organization records, organization first'
   assert.ok(
     system.some((t) => t.id === '11111111-1111-4111-8111-111111111111'),
   );
+  assert.equal(system[0].isDefault, true);
   assert.deepEqual(
     custom.map((t) => t.id),
     ['theme-own'],

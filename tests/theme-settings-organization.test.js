@@ -16,6 +16,7 @@ import {
   clearCustomThemeCache,
 } from '../server/utils/themes.js';
 import { handleThemes } from '../server/routes/api/themes.js';
+import { handleResources } from '../server/routes/public-api/v1/resources.js';
 
 const A = '11111111-1111-4111-8111-111111111111';
 const B = '22222222-2222-4222-8222-222222222222';
@@ -220,4 +221,80 @@ test('settings API writes only the active organization and refuses invisible IDs
     400,
   );
   assert.equal(await getDefaultThemeId(scope(A)), EDITORIAL);
+});
+
+test('internal and v1 theme routes use each organization default despite stale record flags', async () => {
+  const request = async (organizationId, path) => {
+    const res = {
+      statusCode: null,
+      body: null,
+      writeHead(code) {
+        this.statusCode = code;
+      },
+      end(value) {
+        this.body = value ? JSON.parse(value) : null;
+      },
+    };
+    const ctx = {
+      repoRoot: process.cwd(),
+      storageScope: scope(organizationId),
+      req: { method: 'GET', headers: { host: 'localhost' } },
+      res,
+      url: new URL(`http://localhost${path}`),
+      authedUser: { organizationId, email: 'member@example.com' },
+      apiKey: {
+        id: `key-${organizationId}`,
+        tier: 'free',
+        permissions: ['read'],
+      },
+    };
+    assert.equal(
+      await (path.startsWith('/api/v1/')
+        ? handleResources(ctx)
+        : handleThemes(ctx)),
+      true,
+    );
+    assert.equal(res.statusCode, 200);
+    return res.body;
+  };
+  const defaults = (themes) =>
+    themes.filter((theme) => theme.isDefault).map((theme) => theme.id);
+  const assertRoutes = async (organizationId, expected) => {
+    const internal = await request(organizationId, '/api/themes');
+    const publicList = await request(organizationId, '/api/v1/themes');
+    assert.equal(internal.defaultThemeId, expected);
+    assert.deepEqual(defaults(internal.themes), [expected]);
+    assert.deepEqual(defaults(publicList.themes), [expected]);
+    for (const theme of publicList.themes) {
+      const record = await request(organizationId, `/api/themes/${theme.id}`);
+      assert.equal(record.isDefault, theme.id === expected);
+    }
+  };
+
+  db.__tables.themes.find((row) => row.id === BRAND).is_default = true;
+  db.__tables.themes.find((row) => row.id === OWN_B).is_default = true;
+  db.__tables.organizations.find((row) => row.id === A).settings = {
+    defaultThemeId: OWN_A,
+    enabledThemes: [],
+  };
+  db.__tables.organizations.find((row) => row.id === B).settings = {
+    defaultThemeId: OWN_B,
+    enabledThemes: [],
+  };
+  await assertRoutes(A, OWN_A);
+  await assertRoutes(B, OWN_B);
+
+  db.__tables.organizations.find(
+    (row) => row.id === A,
+  ).settings.defaultThemeId = EDITORIAL;
+  db.__tables.themes.find((row) => row.id === OWN_A).is_default = true;
+  await assertRoutes(A, EDITORIAL);
+  await assertRoutes(B, OWN_B);
+
+  db.__tables.organizations.find(
+    (row) => row.id === B,
+  ).settings.defaultThemeId = BRAND;
+  db.__tables.themes.find((row) => row.id === BRAND).is_default = false;
+  await assertRoutes(A, EDITORIAL);
+  await assertRoutes(B, BRAND);
 });

@@ -2263,6 +2263,7 @@ components:
           type: object
         isDefault:
           type: boolean
+          description: Whether this theme is the API key organization's current default.
 
     SlideType:
       type: object

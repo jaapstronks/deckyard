@@ -5,6 +5,7 @@
 
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
+import { getDefaultThemeId } from '../../../storage/settings.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
 import { newSlide } from '../../../../shared/slide-types/presentation.js';
 import { resolveTypeDefaults } from '../../../../shared/slide-types/type-defaults.js';
@@ -32,7 +33,10 @@ async function handleThemes(ctx) {
   // the v1 auth middleware carries exactly that.
   const routeCtx = ctx.storageScope;
 
-  const records = await listThemes(routeCtx);
+  const [records, defaultThemeId] = await Promise.all([
+    listThemes(routeCtx),
+    getDefaultThemeId(routeCtx),
+  ]);
   const visible = sandboxEnabled()
     ? records.filter((theme) => theme.source === 'seed')
     : records;
@@ -44,7 +48,7 @@ async function handleThemes(ctx) {
     logoUrl: t.logoUrl || null,
     colors: t.colors || null,
     fonts: t.fonts || null,
-    isDefault: t.isDefault || false,
+    isDefault: t.id === defaultThemeId,
   }));
   allThemes.sort((a, b) => {
     if (a.source !== b.source) return a.source === 'organization' ? -1 : 1;
