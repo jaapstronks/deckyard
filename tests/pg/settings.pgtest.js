@@ -37,6 +37,7 @@ import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
 import { initializeThemeSeeds } from '../../server/utils/theme-seeds.js';
 import { listSeedThemes } from '../../server/storage/themes.js';
 import { testScope } from '../helpers/storage-scope.js';
+import { seedDefaultOrganization } from './helpers/seed.js';
 
 pgDescribe('settings storage (real PostgreSQL)', () => {
   /** @type {import('kysely').Kysely<any>} */
@@ -51,7 +52,8 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   });
 
   beforeEach(async () => {
-    await truncate(db, 'app_settings', 'user_settings');
+    await truncate(db, 'app_settings', 'user_settings', 'organizations');
+    await seedDefaultOrganization(db);
   });
 
   it('reads code defaults from an empty app_settings', async () => {
@@ -89,49 +91,57 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     assert.equal(settings.sessionDurationDays, 45);
   });
 
-  it('round-trips a theme record ID and falls back to the seed default', async () => {
+  it('keeps theme settings on each organization and leaves the singleton clean', async () => {
     await initializeThemeSeeds();
     const seeds = await listSeedThemes();
     const brand = seeds.find((theme) => theme.slug === DEFAULT_THEME_ID);
     const amethyst = seeds.find((theme) => theme.slug === 'amethyst');
-    await writeAppSettings(testScope(), {
-      defaultThemeId: amethyst.id,
-      enabledThemes: [amethyst.id, brand.id],
-    });
-    let s = await getAppSettings(testScope());
-    assert.equal(s.defaultThemeId, amethyst.id);
-    assert.deepEqual(s.enabledThemes, [amethyst.id, brand.id]);
-
-    // getDefaultThemeId prefers the stored setting over env/built-in.
-    delete process.env.DEFAULT_THEME;
+    const orgA = testScope().organizationId;
+    const orgB = '22222222-2222-4222-8222-222222222222';
+    await db
+      .insertInto('organizations')
+      .values({
+        id: orgB,
+        name: 'Other',
+        slug: 'other-settings',
+        settings: JSON.stringify({
+          defaultThemeId: brand.id,
+          enabledThemes: [brand.id],
+        }),
+      })
+      .execute();
+    await db
+      .updateTable('organizations')
+      .set({
+        settings: JSON.stringify({
+          defaultThemeId: amethyst.id,
+          enabledThemes: [amethyst.id],
+        }),
+      })
+      .where('id', '=', orgA)
+      .execute();
     assert.equal(await getDefaultThemeId(testScope()), amethyst.id);
-
-    // An invalid id normalizes to empty, then falls back to the built-in default.
-    await writeAppSettings(testScope(), { defaultThemeId: 'bad id!!' });
-    s = await getAppSettings(testScope());
-    assert.equal(s.defaultThemeId, '');
-    assert.equal(await getDefaultThemeId(testScope()), brand.id);
-  });
-
-  it('prefers a stored theme allowlist over the ENABLED_THEMES env seam', async () => {
-    // Same precedence as defaultThemeId/DEFAULT_THEME: what an admin clicked
-    // wins over what the fork shipped as configuration, and an empty stored
-    // list means "not configured here", so the env seam applies again.
-    process.env.ENABLED_THEMES = 'midnight';
-    try {
-      await writeAppSettings(testScope(), {
-        enabledThemes: ['amethyst', 'clicknl'],
-      });
-      assert.deepEqual(await getEnabledThemeIds(testScope()), [
-        'amethyst',
-        'clicknl',
-      ]);
-
-      await writeAppSettings(testScope(), { enabledThemes: [] });
-      assert.deepEqual(await getEnabledThemeIds(testScope()), ['midnight']);
-    } finally {
-      delete process.env.ENABLED_THEMES;
-    }
+    assert.equal(await getDefaultThemeId({ organizationId: orgB }), brand.id);
+    assert.deepEqual(await getEnabledThemeIds(testScope()), [amethyst.id]);
+    await db
+      .updateTable('organizations')
+      .set({
+        settings: JSON.stringify({
+          defaultThemeId: brand.id,
+          enabledThemes: [amethyst.id, brand.id],
+        }),
+      })
+      .where('id', '=', orgB)
+      .execute();
+    assert.equal(await getDefaultThemeId(testScope()), amethyst.id);
+    assert.deepEqual(await getEnabledThemeIds({ organizationId: orgB }), [
+      amethyst.id,
+      brand.id,
+    ]);
+    await writeAppSettings(testScope(), { sessionDurationDays: 40 });
+    const app = await getAppSettings(testScope());
+    assert.equal(app.defaultThemeId, undefined);
+    assert.equal(app.enabledThemes, undefined);
   });
 
   it('drops a third-party analytics id that is not spelled like an id', async () => {

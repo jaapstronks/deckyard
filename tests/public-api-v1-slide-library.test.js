@@ -59,9 +59,13 @@ async function installDb({
 } = {}) {
   const db = createFakeDb({
     themes,
-    app_settings: [{ id: true, settings: { defaultThemeId } }],
     organizations: [
-      { id: ORG, name: 'Default', slug: 'default' },
+      {
+        id: ORG,
+        name: 'Default',
+        slug: 'default',
+        settings: { defaultThemeId },
+      },
       { id: OTHER_ORG, name: 'Other', slug: 'other' },
     ],
     users: userRows(KEY_OWNER),

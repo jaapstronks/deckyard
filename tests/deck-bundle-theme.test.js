@@ -45,7 +45,8 @@ const { initializeStorage, __resetStorageForTests } =
 const { createTheme, listThemes, getThemeRecord } =
   await import('../server/storage/themes.js');
 const { createFontFamily } = await import('../server/storage/font-families.js');
-const { writeAppSettings } = await import('../server/storage/settings.js');
+const { updateOrganization } =
+  await import('../server/storage/user-organizations/index.js');
 const { loadThemeAssets, customThemeConfig, clearCustomThemeCache } =
   await import('../server/utils/themes.js');
 const { curatedFontFaces } = await import('../shared/theme-fonts.js');
@@ -383,7 +384,9 @@ test('a non-installed bundled theme follows a changed workspace default at rende
   assert.equal(second.ok, true);
 
   try {
-    await writeAppSettings(receiverScope(), { defaultThemeId: first.theme.id });
+    await updateOrganization(RECEIVER, {
+      settings: { defaultThemeId: first.theme.id },
+    });
     const { body } = await importInto(receiverScope(), bundle);
     assert.equal(body.theme, 'default');
     assert.equal(body.bundledTheme.themeId, 'default');
@@ -398,8 +401,8 @@ test('a non-installed bundled theme follows a changed workspace default at rende
       first.theme.id,
     );
 
-    await writeAppSettings(receiverScope(), {
-      defaultThemeId: second.theme.id,
+    await updateOrganization(RECEIVER, {
+      settings: { defaultThemeId: second.theme.id },
     });
     const changed = await loadThemeAssets(
       repoRoot,
@@ -408,7 +411,7 @@ test('a non-installed bundled theme follows a changed workspace default at rende
     );
     assert.equal(changed.id, second.theme.id);
   } finally {
-    await writeAppSettings(receiverScope(), { defaultThemeId: '' });
+    await updateOrganization(RECEIVER, { settings: { defaultThemeId: '' } });
   }
 });
 

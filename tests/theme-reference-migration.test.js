@@ -59,6 +59,7 @@ test('plans all four surfaces with per-org mapping and seed IDs without mutating
     presentations: 2,
     slide_library: 1,
     app_settings: 1,
+    organizations: 1,
     presentation_versions: 1,
   });
   const byTable = Object.fromEntries(
@@ -76,7 +77,7 @@ test('plans all four surfaces with per-org mapping and seed IDs without mutating
     A_ID,
   );
   assert.deepEqual(
-    JSON.parse(byTable['app_settings/true'].settings).enabledThemes,
+    JSON.parse(byTable[`organizations/${ORG_A}`].settings).enabledThemes,
     [A_ID, SEED_ID],
   );
   assert.equal(
@@ -152,8 +153,10 @@ test('already canonical references require no updates', async () => {
         presentation_data: { theme: A_ID },
       },
     ],
-    app_settings: [
-      { id: true, settings: { defaultThemeId: A_ID, enabledThemes: [] } },
+    app_settings: [{ id: true, settings: {} }],
+    organizations: [
+      { id: ORG_A, settings: { defaultThemeId: A_ID, enabledThemes: [] } },
+      { id: ORG_B, settings: {} },
     ],
   });
   const report = await planThemeReferenceMigration(

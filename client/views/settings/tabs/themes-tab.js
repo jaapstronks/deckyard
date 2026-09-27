@@ -10,8 +10,8 @@ import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import {
-  fetchAppSettings,
-  updateAppSettings,
+  fetchOrgSettings,
+  updateOrgSettings,
   invalidateSettingsCache,
 } from '../../../lib/net/settings.js';
 import { createThemeEditor } from '../theme-editor/index.js';
@@ -49,7 +49,7 @@ export function createThemesTab({ user }) {
 
   // ============================================================
   // Workspace theme settings: default theme + picker visibility.
-  // These write app settings (defaultThemeId / enabledThemes) that govern the
+  // These write organization settings (defaultThemeId / enabledThemes) that govern the
   // creation flow's theme picker.
   // ============================================================
   const workspaceCard = h('div', {
@@ -183,7 +183,7 @@ export function createThemesTab({ user }) {
       const enabledThemes =
         checkedIds.length === allThemes.length ? [] : checkedIds;
 
-      await updateAppSettings({
+      await updateOrgSettings({
         defaultThemeId: defaultSelect.value || '',
         enabledThemes,
       });
@@ -196,28 +196,28 @@ export function createThemesTab({ user }) {
     }
   });
 
-  /** Load themes + app settings into the workspace controls. */
+  /** Load themes + organization settings into the workspace controls. */
   async function loadWorkspaceControls() {
     try {
       // `?all=1` skips the allowlist filter every other picker gets: this card
       // is where the allowlist is edited, and a theme it cannot see is a theme
       // that can never be checked back on.
-      const [themesResp, app] = await Promise.all([
+      const [themesResp, org] = await Promise.all([
         api('/api/themes?all=1'),
-        fetchAppSettings(),
+        fetchOrgSettings(),
       ]);
       allThemes = Array.isArray(themesResp?.themes) ? themesResp.themes : [];
       const defaultThemeId = String(
-        app?.defaultThemeId || themesResp?.defaultThemeId || '',
+        org?.defaultThemeId || themesResp?.defaultThemeId || '',
       );
-      // The response carries the *effective* allowlist (app setting, else the
+      // The response carries the *effective* allowlist (organization setting, else the
       // ENABLED_THEMES env fallback), so the checkboxes show what is really in
       // force rather than only what this instance stored.
       renderWorkspaceControls(
         defaultThemeId,
         Array.isArray(themesResp?.enabledThemes)
           ? themesResp.enabledThemes
-          : app?.enabledThemes || [],
+          : org?.enabledThemes || [],
       );
     } catch (err) {
       toast.error(err);
@@ -473,7 +473,7 @@ export function createThemesTab({ user }) {
    */
   async function setDefaultTheme(themeId) {
     try {
-      await updateAppSettings({ defaultThemeId: themeId });
+      await updateOrgSettings({ defaultThemeId: themeId });
       invalidateSettingsCache();
       toast.success(
         t('settings.themes.setDefaultSuccess', 'Theme set as default.'),
@@ -490,7 +490,7 @@ export function createThemesTab({ user }) {
    */
   async function clearDefaultTheme() {
     try {
-      await updateAppSettings({ defaultThemeId: '' });
+      await updateOrgSettings({ defaultThemeId: '' });
       invalidateSettingsCache();
       toast.success(
         t('settings.themes.clearDefaultSuccess', 'Default theme cleared.'),

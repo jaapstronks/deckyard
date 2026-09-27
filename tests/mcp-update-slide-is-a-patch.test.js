@@ -38,11 +38,15 @@ const { registerTools } = await import('../server/mcp/tools.js');
 /** A deck with one title slide, in Dutch, on the default theme. */
 async function installDb() {
   const db = createFakeDb({
-    organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
-    users: userRows(OWNER),
-    app_settings: [
-      { id: true, settings: { defaultThemeId: DEFAULT_RECORD_ID } },
+    organizations: [
+      {
+        id: ORG,
+        name: 'Default',
+        slug: 'default',
+        settings: { defaultThemeId: DEFAULT_RECORD_ID },
+      },
     ],
+    users: userRows(OWNER),
     themes: [
       {
         id: DEFAULT_RECORD_ID,

@@ -43,14 +43,18 @@ test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [
-        { id: ORG_A, name: 'A', slug: 'a' },
-        { id: ORG_B, name: 'B', slug: 'b' },
+        {
+          id: ORG_A,
+          name: 'A',
+          slug: 'a',
+          settings: { defaultThemeId: ORG_ID },
+        },
+        { id: ORG_B, name: 'B', slug: 'b', settings: {} },
       ],
       themes: [
         row(SEED_ID, 'brand', null, 'lime'),
         row(ORG_ID, 'mist-org', ORG_A, 'mist'),
       ],
-      app_settings: [{ id: true, settings: { defaultThemeId: ORG_ID } }],
     }),
   );
   await initializeStorage();

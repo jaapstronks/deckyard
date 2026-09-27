@@ -124,10 +124,21 @@ export async function findTheme(repoRoot, rawThemeId, ctx = null) {
  */
 export async function settleNewDeckTheme(repoRoot, requested, ctx = null) {
   if (requested === undefined || requested === null) {
-    const themeId = sandboxEnabled()
-      ? sandboxDefaultThemeId()
-      : DEFAULT_THEME_REF;
-    return { themeId, theme: await loadDeckTheme(repoRoot, themeId, ctx) };
+    if (sandboxEnabled()) {
+      const handle = sandboxDefaultThemeId();
+      const seed = (await listSeedThemes()).find(
+        (record) => record.slug === handle || record.id === handle,
+      );
+      if (!seed) throw new Error(`Sandbox theme seed not found: ${handle}`);
+      return {
+        themeId: seed.id,
+        theme: await loadThemeAssets(repoRoot, seed.id, ctx),
+      };
+    }
+    return {
+      themeId: DEFAULT_THEME_REF,
+      theme: await loadDeckTheme(repoRoot, DEFAULT_THEME_REF, ctx),
+    };
   }
   const theme = await findTheme(repoRoot, requested, ctx);
   if (!theme) {

@@ -10,7 +10,7 @@
  * Core seed slugs resolve from the seeded themes table. An org-specific entry
  * takes precedence, so a historical fork slug can be mapped explicitly. The
  * singleton app_settings row has no organization_id; --settings-org identifies
- * its owner and is required even when its theme settings are empty.
+ * its owner. Theme settings move into that organization and leave the singleton.
  *
  * --check is read-only. --apply validates every reference and target inside one
  * transaction, then updates only changed rows. An unknown reference, invisible
@@ -23,8 +23,7 @@ import { fileURLToPath } from 'node:url';
 import { isCli } from './lib/is-cli.js';
 import { loadDotEnv } from '../server/config/env.js';
 
-const UUID =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const OWN = Object.prototype.hasOwnProperty;
 
 /** @param {unknown} value */
@@ -84,7 +83,7 @@ export async function planThemeReferenceMigration(db, mapping, settingsOrg) {
     settingsRows,
   ] = await Promise.all([
     db.selectFrom('themes').select(['id', 'slug', 'organization_id']).execute(),
-    db.selectFrom('organizations').select('id').execute(),
+    db.selectFrom('organizations').select(['id', 'settings']).execute(),
     db
       .selectFrom('presentations')
       .select(['id', 'organization_id', 'theme'])
@@ -114,6 +113,7 @@ export async function planThemeReferenceMigration(db, mapping, settingsOrg) {
     presentations: 0,
     slide_library: 0,
     app_settings: 0,
+    organizations: 0,
     presentation_versions: 0,
   };
 
@@ -241,19 +241,36 @@ export async function planThemeReferenceMigration(db, mapping, settingsOrg) {
       errors.push(`app_settings/${row.id}.settings: expected object`);
       continue;
     }
-    const next = { ...data };
-    if (OWN.call(data, 'defaultThemeId'))
-      next.defaultThemeId = resolve(
+    const nextApp = { ...data };
+    const org = organizations.find((item) => item.id === settingsOrg);
+    const previousOrg = asJson(org.settings ?? {});
+    if (!isObject(previousOrg)) {
+      errors.push(`organizations/${settingsOrg}.settings: expected object`);
+      continue;
+    }
+    const nextOrg = { ...previousOrg };
+    if (OWN.call(data, 'defaultThemeId')) {
+      const value = resolve(
         data.defaultThemeId,
         settingsOrg,
         `app_settings/${row.id}.defaultThemeId`,
         { allowDefault: false },
       );
+      if (
+        OWN.call(previousOrg, 'defaultThemeId') &&
+        previousOrg.defaultThemeId !== value
+      )
+        errors.push(
+          `organizations/${settingsOrg}.defaultThemeId: conflicts with app_settings`,
+        );
+      else nextOrg.defaultThemeId = value;
+      delete nextApp.defaultThemeId;
+    }
     if (OWN.call(data, 'enabledThemes')) {
       if (!Array.isArray(data.enabledThemes))
         errors.push(`app_settings/${row.id}.enabledThemes: expected array`);
-      else
-        next.enabledThemes = data.enabledThemes.map((value, i) =>
+      else {
+        const values = data.enabledThemes.map((value, i) =>
           resolve(
             value,
             settingsOrg,
@@ -261,14 +278,32 @@ export async function planThemeReferenceMigration(db, mapping, settingsOrg) {
             { allowDefault: false },
           ),
         );
+        if (
+          OWN.call(previousOrg, 'enabledThemes') &&
+          JSON.stringify(previousOrg.enabledThemes) !== JSON.stringify(values)
+        )
+          errors.push(
+            `organizations/${settingsOrg}.enabledThemes: conflicts with app_settings`,
+          );
+        else nextOrg.enabledThemes = values;
+      }
+      delete nextApp.enabledThemes;
     }
-    if (JSON.stringify(next) !== JSON.stringify(data)) {
+    if (JSON.stringify(nextApp) !== JSON.stringify(data)) {
       updates.push({
         table: 'app_settings',
         id: row.id,
-        values: { settings: JSON.stringify(next) },
+        values: { settings: JSON.stringify(nextApp) },
       });
       counts.app_settings++;
+    }
+    if (JSON.stringify(nextOrg) !== JSON.stringify(previousOrg)) {
+      updates.push({
+        table: 'organizations',
+        id: settingsOrg,
+        values: { settings: JSON.stringify(nextOrg) },
+      });
+      counts.organizations++;
     }
   }
   return { ok: errors.length === 0, errors, counts, updates };

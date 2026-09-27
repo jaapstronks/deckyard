@@ -121,12 +121,9 @@ organization and which never will:
 
 Four edge decisions taken with the rules:
 
-1. **`app_settings.defaultThemeId` / `enabledThemes` point at
-   organization-scoped theme rows.** Accepted as instance policy for now;
-   moving exactly these two keys to per-organization settings is a named
-   leftover for when shape 4 goes GA.
+1. **`organizations.settings.defaultThemeId` / `enabledThemes` are organization-scoped.** Each organization resolves its own theme UUIDs; deployment seed handles are resolved at the environment boundary.
 2. **Email templates stay instance-global** — the operator sends the mail.
-   Revisit at shape-4 GA together with 1.
+   Revisit at shape-4 GA.
 3. **Follow codes share one instance-wide keyspace.** Accepted: a code is a
    short-lived public token (24h TTL), and the token is the authorization; it
    needs no organization column.

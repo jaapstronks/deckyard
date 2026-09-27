@@ -78,16 +78,17 @@ const MEMBER = {
 function seed(enabledThemes) {
   __setTestDb(
     createFakeDb({
-      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
-      themes: rows,
-      app_settings: [
+      organizations: [
         {
-          id: true,
+          id: ORG,
+          name: 'Default',
+          slug: 'default',
           settings: {
             enabledThemes: enabledThemes.map((slug) => IDS[slug] || slug),
           },
         },
       ],
+      themes: rows,
     }),
   );
 }
