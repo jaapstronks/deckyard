@@ -4,7 +4,7 @@ A theme controls a presentation's palette, type, logos, backgrounds and slide-ty
 
 ## Choose or create a theme
 
-Open **Settings → Themes** and duplicate a read-only seed to make an editable theme for your organization. Set the organization's default there when new decks should use it. The six built-in seeds are Forest (`brand`), Amethyst, Boardroom (`corporate`), Editorial, Midnight and Sunset (`playful`). Forest supplies the default when no organization default is chosen. A copied theme is an organization record with its own UUID; its source seed's slug is not a deck reference.
+Open **Settings → Themes** and duplicate a read-only seed to make an editable theme for your organization. Set the organization's default there when new decks should use it. The six built-in seeds are Forest (`brand`), Amethyst, Boardroom (`corporate`), Editorial, Midnight and Sunset (`playful`). Forest supplies the installation default unless `DEFAULT_THEME` selects another seed. A copied theme is an organization record with its own UUID; its source seed's slug is not a deck reference.
 
 The editor handles colours, fonts, logos, backgrounds, typography and surface choices. `slideTypes` is curated in **Settings → Slide Types**. The themes API accepts record `colors` and `config` for settings that the editor does not expose; see [theme config](../reference/theme-config.md). Keep a theme's images at served `/assets/` or `/custom/assets/` URLs, or upload them through the app. A filesystem path under `custom/themes/` is not a served asset URL. Existing decks may store image URLs in slide content, so keep those URLs available when moving files.
 
