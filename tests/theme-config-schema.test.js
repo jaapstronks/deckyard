@@ -447,4 +447,9 @@ test('present invalid base colors and prototype names are refused, omissions def
     path: 'colors',
     code: 'invalid_value',
   });
+  assert.deepEqual(validateThemeColors({ primary: ' #123456 ' }), {
+    ok: false,
+    path: 'colors.primary',
+    code: 'invalid_value',
+  });
 });

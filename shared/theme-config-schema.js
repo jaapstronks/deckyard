@@ -402,12 +402,12 @@ const refuse = (path, code) => ({ ok: false, path, code });
 
 // A write must survive the read normalizer unchanged. Otherwise a known field
 // with a bad value (or shape) is accepted and silently disappears on read.
-function changedConfigValue(input, normalized, path = 'config') {
+function changedThemeValue(input, normalized, path = 'config') {
   if (Array.isArray(input)) {
     if (!Array.isArray(normalized) || input.length !== normalized.length)
       return path;
     for (const [index, value] of input.entries()) {
-      const changed = changedConfigValue(
+      const changed = changedThemeValue(
         value,
         normalized[index],
         `${path}.${index}`,
@@ -428,7 +428,7 @@ function changedConfigValue(input, normalized, path = 'config') {
         value === THEME_CONFIG_VERSION
       )
         continue;
-      const changed = changedConfigValue(
+      const changed = changedThemeValue(
         value,
         normalized[key],
         `${path}.${key}`,
@@ -463,7 +463,7 @@ export function checkThemeConfig(raw) {
     return refuse(path, code);
   }
   const config = validateThemeConfig(raw);
-  const changed = changedConfigValue(raw, config);
+  const changed = changedThemeValue(raw, config);
   if (changed) return refuse(changed, THEME_FIELD_PROBLEMS.invalid);
   return { ok: true, config };
 }
@@ -586,5 +586,7 @@ export function validateThemeColors(raw) {
           )
         : value.trim();
   }
+  const changed = changedThemeValue(raw, colors, 'colors');
+  if (changed) return refuse(changed, THEME_FIELD_PROBLEMS.invalid);
   return { ok: true, colors };
 }
