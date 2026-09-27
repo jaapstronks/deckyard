@@ -568,7 +568,17 @@ export function createThemesTab({ user }) {
    * Open the theme editor.
    * @param {Object|null} theme - Theme to edit, or null for new theme
    */
-  function openEditor(theme = null) {
+  async function openEditor(theme = null) {
+    // The list response is a summary. Saving it as a full record would erase
+    // config and the small logo, which only the record endpoint returns.
+    if (theme?.id) {
+      try {
+        theme = await api(`/api/themes/${theme.id}`);
+      } catch (err) {
+        toast.error(err);
+        return;
+      }
+    }
     // The workspace card configures which themes appear in the picker — it is
     // about the list, not the theme being edited, and it carries its own
     // primary Save. Leaving it above an open editor puts two primary Saves on
