@@ -1,5 +1,5 @@
 /**
- * Recipe: the share dialog's Link tab — a private link with a password and an expiry (en).
+ * Recipe: the share dialog's Guests tab with a password and an expiry (en).
  * Registry id: shot-share-link-rules-en → public/images/marketing/share-link-rules-en.png
  * Shot list: deckyard-website planning/marketing-beeld.md
  *
