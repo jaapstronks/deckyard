@@ -32,8 +32,10 @@ process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
+const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 const KEY_OWNER = 'owner@example.com';
 const VALID_KEY = 'dk_live_contract-test-key-000000000000';
+const OTHER_KEY = 'dk_live_other-org-key-00000000000000';
 const REVOKED_KEY = 'dk_live_revoked-key-0000000000000000';
 const LIMIT_KEY = 'dk_live_limit-key-000000000000000000';
 
@@ -49,11 +51,19 @@ const { SLIDE_TYPES } = await import('../shared/slide-types.js');
  * Install a freshly seeded double and point the storage facade at Postgres.
  * @returns {Promise<Object>} The database double.
  */
-async function installDb() {
+async function installDb(customSlideTypes = []) {
   const db = createFakeDb({
-    organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    organizations: [
+      { id: ORG, name: 'Default', slug: 'default' },
+      { id: OTHER_ORG, name: 'Other', slug: 'other' },
+    ],
     api_keys: [
       apiKeyRow({ id: 'key-valid', rawKey: VALID_KEY }),
+      apiKeyRow({
+        id: 'key-other',
+        rawKey: OTHER_KEY,
+        organization_id: OTHER_ORG,
+      }),
       apiKeyRow({
         id: 'key-revoked',
         rawKey: REVOKED_KEY,
@@ -61,16 +71,17 @@ async function installDb() {
       }),
       apiKeyRow({ id: 'key-limit', rawKey: LIMIT_KEY }),
     ],
+    custom_slide_types: customSlideTypes,
   });
   __setTestDb(db);
   await initializeStorage(process.cwd());
   return db;
 }
 
-function apiKeyRow({ id, rawKey, revoked_at = null }) {
+function apiKeyRow({ id, rawKey, revoked_at = null, organization_id = ORG }) {
   return {
     id,
-    organization_id: ORG,
+    organization_id,
     owner_email: KEY_OWNER,
     name: `Key ${id}`,
     key_prefix: rawKey.slice(0, 12),
@@ -209,10 +220,14 @@ test('GET /api/v1/schema/deck.json serves the generated deck schema', async () =
 
 test('GET /api/v1/schema/slide-types/:name.json serves one content schema, 404 unknown', async () => {
   await installDb();
-  const known = makeCtx('GET', '/api/v1/schema/slide-types/content-slide.json');
+  const known = makeCtx(
+    'GET',
+    '/api/v1/schema/slide-types/eu.deckyard.slide.content.json',
+  );
   await handlePublicApiV1(known);
   assert.equal(known.res.statusCode, 200);
   assert.ok(jsonBody(known.res).properties, 'a JSON Schema object comes back');
+  assert.match(jsonBody(known.res).$id, /eu\.deckyard\.slide\.content/);
 
   const unknown = makeCtx(
     'GET',
@@ -224,6 +239,46 @@ test('GET /api/v1/schema/slide-types/:name.json serves one content schema, 404 u
   const junk = makeCtx('GET', '/api/v1/schema/otherwise');
   await handlePublicApiV1(junk);
   assertV1Error(junk.res, 404, 'not_found');
+});
+
+test('a published organization type schema belongs only to its API key organization', async () => {
+  await installDb([
+    {
+      id: 'cst-partner-wall',
+      organization_id: ORG,
+      slug: 'partner-wall',
+      label: 'Partner wall',
+      base_type: null,
+      fields: [{ key: 'partner', type: 'string', required: true }],
+      defaults: { partner: '' },
+      defaults_by_lang: null,
+      template: '<div class="slide"><div class="slide-inner"></div></div>',
+      css: null,
+      usage: null,
+      is_published: true,
+      sort_order: 0,
+      created_at: '2026-07-01T00:00:00.000Z',
+      updated_at: '2026-07-01T00:00:00.000Z',
+      created_by: null,
+    },
+  ]);
+  const pathname = '/api/v1/schema/slide-types/custom-partner-wall.json';
+  const owner = makeCtx('GET', pathname, { bearer: VALID_KEY });
+  await handlePublicApiV1(owner);
+  assert.equal(owner.res.statusCode, 200);
+  assert.ok(jsonBody(owner.res).properties.partner);
+  assert.deepEqual(jsonBody(owner.res).required, ['partner']);
+  assert.match(owner.res.headers['Cache-Control'], /^private/);
+
+  for (const bearer of [null, OTHER_KEY]) {
+    const ctx = makeCtx('GET', pathname, { bearer });
+    await handlePublicApiV1(ctx);
+    assertV1Error(ctx.res, 404, 'not_found');
+  }
+
+  const invalidKey = makeCtx('GET', pathname, { bearer: 'not-a-key' });
+  await handlePublicApiV1(invalidKey);
+  assertV1Error(invalidKey.res, 401, 'unauthorized');
 });
 
 test('POST on a meta endpoint answers 405 in the v1 envelope with Allow', async () => {

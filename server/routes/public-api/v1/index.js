@@ -14,6 +14,7 @@ import {
   authenticateApiKey,
   checkRequestRateLimit,
   dispatchV1Routes,
+  requirePermission,
   trackRequest,
   sendV1Error,
   v1MethodNotAllowed,
@@ -35,7 +36,12 @@ import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 // Generated deck JSON Schema (single source: the slide-type field registry).
-import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
+import {
+  SLIDE_TYPES,
+  canonicalSlideType,
+  resolveSlideTypeName,
+} from '../../../../shared/slide-types.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   deckJsonSchema,
   slideTypeContentSchema,
@@ -166,6 +172,7 @@ async function handleDocs(ctx) {
 }
 
 const SCHEMA_CACHE = { 'Cache-Control': 'public, max-age=3600' };
+const ORG_SCHEMA_CACHE = { 'Cache-Control': 'private, max-age=3600' };
 
 /** Anything else under `/api/v1/schema/`: GET is an unknown schema, the rest 405. */
 function handleUnknownSchema({ req, res }) {
@@ -192,18 +199,31 @@ export const SCHEMA_ROUTES = [
     },
   },
   {
-    // A slide-type name, not a row id.
+    // A published type id, not a row id.
     method: 'GET',
     pattern: /^\/api\/v1\/schema\/slide-types\/([^/]+)\.json$/,
     captures: ['text'],
-    handler: function handleSlideTypeSchema({ res }, name) {
-      const def = SLIDE_TYPES[name];
-      if (!def) return v1NotFound(res, `Slide type '${name}' not found`);
+    handler: async function handleSlideTypeSchema(ctx, name) {
+      const { req, res } = ctx;
+      // A public request can describe only process-wide types. An API key
+      // supplies the organization for its published database-backed types.
+      const authenticated = Boolean(req.headers.authorization);
+      if (authenticated) {
+        if (!(await authenticateApiKey(ctx)).ok) return true;
+        if (!requirePermission(ctx, 'read')) return true;
+      }
+      const slideTypes = authenticated
+        ? await buildMergedSlideTypes(ctx.storageScope)
+        : SLIDE_TYPES;
+      const key = resolveSlideTypeName(name, slideTypes);
+      if (!key) return v1NotFound(res, `Slide type '${name}' not found`);
       serveJson(
         res,
         200,
-        slideTypeContentSchema(name, def, { withMeta: true }),
-        SCHEMA_CACHE,
+        slideTypeContentSchema(canonicalSlideType(key), slideTypes[key], {
+          withMeta: true,
+        }),
+        authenticated ? ORG_SCHEMA_CACHE : SCHEMA_CACHE,
       );
       return true;
     },

@@ -188,8 +188,8 @@ paths:
       summary: Deck format JSON Schema
       description: |
         The generated JSON Schema for the portable deck format. Generated live
-        from the slide-type registry, so it always matches this install's
-        actual types (including custom ones). Its `$defs` hold one content
+        from the process-wide slide-type registry, so it includes core and
+        file-based types. Its `$defs` hold one content
         schema per slide type, selected by a `type` discriminator.
       security: []
       responses:
@@ -205,13 +205,16 @@ paths:
       tags:
         - Meta
       summary: Slide-type content JSON Schema
-      description: The generated JSON Schema for one slide type's content shape.
+      description: |
+        The generated JSON Schema for one slide type's content shape. Core and
+        file-based types are public. Send an API key with read permission to
+        retrieve a published database-backed type from that key's organization.
       security: []
       parameters:
         - name: type
           in: path
           required: true
-          description: Slide type name (registry key, e.g. content-slide)
+          description: Canonical slide type id (e.g. eu.deckyard.slide.content) or organization type key (e.g. custom-partner-wall)
           schema:
             type: string
       responses:
@@ -221,6 +224,10 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
 
