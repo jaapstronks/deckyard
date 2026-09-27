@@ -146,6 +146,33 @@ export async function listThemes(scope) {
   });
 }
 
+/** List globally visible seed records without granting access to organization rows. */
+export async function listSeedThemes() {
+  return withDbGuard([], async (db) => {
+    const rows = await db
+      .selectFrom('themes')
+      .select([
+        'id',
+        'organization_id',
+        'slug',
+        'label',
+        'logo_url',
+        'logo_small_url',
+        'colors',
+        'fonts',
+        'config',
+        'is_default',
+        'created_at',
+        'updated_at',
+        'created_by',
+      ])
+      .where('organization_id', 'is', null)
+      .orderBy('created_at', 'desc')
+      .execute();
+    return rows.map(formatTheme);
+  });
+}
+
 /**
  * Get a theme by ID.
  *
@@ -512,6 +539,7 @@ function formatTheme(row) {
   const out = {
     id: row.id,
     slug: row.slug,
+    source: row.organization_id ? 'organization' : 'seed',
     label: row.label,
     logoUrl: row.logo_url,
     logoSmallUrl: row.logo_small_url,

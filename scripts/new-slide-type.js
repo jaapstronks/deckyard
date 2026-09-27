@@ -24,7 +24,7 @@
  *   --fields <list> comma-separated `key:type` pairs; an enum spells its
  *                   options inline (`status:enum(draft|live)`)
  *                   (default: `heading:string,body:markdown`)
- *   --theme-id <id> bind the type to a theme
+ *   --theme-only  offer the type only when a theme includes it
  *   --namespace <n> fork namespace (`acme` or `nl.example.slide`)
  *   --no-css        skip the stylesheet stub
  *   --force         overwrite an existing file
@@ -95,7 +95,7 @@ const ENUM_SPEC_RE = /^enum\(([^)]*)\)$/;
  * Parse `process.argv` into the scaffolder's options.
  *
  * @param {string[]} argv
- * @returns {{name: string, label: string|null, fields: string|null, themeId: string|null, namespace: string|null, css: boolean, force: boolean, yes: boolean}}
+ * @returns {{name: string, label: string|null, fields: string|null, themeOnly: boolean, namespace: string|null, css: boolean, force: boolean, yes: boolean}}
  */
 function parseArgs(argv) {
   const args = argv.slice(2);
@@ -103,7 +103,7 @@ function parseArgs(argv) {
     name: '',
     label: null,
     fields: null,
-    themeId: null,
+    themeOnly: false,
     namespace: null,
     css: true,
     force: false,
@@ -116,9 +116,14 @@ function parseArgs(argv) {
     else if (a === '--yes' || a === '-y') out.yes = true;
     else if (a === '--label') out.label = args[(i += 1)];
     else if (a === '--fields') out.fields = args[(i += 1)];
-    else if (a === '--theme-id') out.themeId = args[(i += 1)];
+    else if (a === '--theme-only') out.themeOnly = true;
     else if (a === '--namespace') out.namespace = args[(i += 1)];
     else if (!a.startsWith('-') && !out.name) out.name = a;
+    else if (a === '--theme-id')
+      fail(
+        '--theme-id was removed. Use --theme-only and include the type in the theme record.',
+      );
+    else fail(`Unknown argument: ${a}`);
   }
   return out;
 }
@@ -249,10 +254,10 @@ function renderLineFor({ key, type }) {
 /**
  * The generated module source.
  *
- * @param {{name: string, label: string, fields: Array<{key: string, type: string}>, themeId: string|null, namespace: string|null}} spec
+ * @param {{name: string, label: string, fields: Array<{key: string, type: string}>, themeOnly: boolean, namespace: string|null}} spec
  * @returns {string}
  */
-export function moduleSource({ name, label, fields, themeId, namespace }) {
+export function moduleSource({ name, label, fields, themeOnly, namespace }) {
   // `acme-hero-slide` → `.slide-acme-hero`: the suffix is already in `slide`,
   // which is why every core type spells it that way (`comparison-slide` renders
   // `.slide-comparison`). slideRootClass() owns that rule, and the validator
@@ -313,7 +318,7 @@ export function moduleSource({ name, label, fields, themeId, namespace }) {
 ${imports}
 
 export default {
-  label: '${label}',${namespace ? `\n  namespace: '${namespace}',` : ''}${themeId ? `\n  themeId: '${themeId}',` : ''}
+  label: '${label}',${namespace ? `\n  namespace: '${namespace}',` : ''}${themeOnly ? '\n  themeOnly: true,' : ''}
 
   // The inspector form is generated from this list — no form code to write.
   // Every \`type\` must be one of the declared field types; see
@@ -471,7 +476,7 @@ async function main() {
       name,
       label,
       fields,
-      themeId: opts.themeId,
+      themeOnly: opts.themeOnly,
       namespace: opts.namespace,
     }),
   );

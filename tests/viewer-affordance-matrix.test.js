@@ -93,6 +93,8 @@ globalThis.EventSource = class {
 };
 
 const DECK_ID = 'deck-1';
+const THEME_ID = '00000000-0000-4000-8000-0000000000bb';
+const THEME_CONFIG = { id: THEME_ID, label: 'Forest', cssVars: {} };
 
 const SLIDES = [
   { id: 's1', type: 'title', title: 'One', subtitle: 'first' },
@@ -130,12 +132,19 @@ function fakeFetch(permission) {
         id: DECK_ID,
         title: 'A shared deck',
         theme: 'default',
+        themeConfig: THEME_CONFIG,
         slides: structuredClone(SLIDES),
         _userPermission: permission,
       });
     }
-    if (url.includes('/themes/')) {
-      return json({ id: 'default', label: 'Default', cssVars: {} });
+    if (url.includes(`/api/themes/${THEME_ID}/config`)) {
+      return json(THEME_CONFIG);
+    }
+    if (url.includes('/api/themes')) {
+      return json({
+        defaultThemeId: THEME_ID,
+        themes: [{ id: THEME_ID, label: 'Forest', source: 'seed' }],
+      });
     }
     return json({});
   };

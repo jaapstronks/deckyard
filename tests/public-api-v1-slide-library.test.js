@@ -45,14 +45,21 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { handleSlideLibrary } =
   await import('../server/routes/public-api/v1/slide-library.js');
+const { handleSlides } =
+  await import('../server/routes/public-api/v1/slides.js');
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
  * @returns {Promise<Object>} The database double.
  */
-async function installDb({ themes = [], deckTheme = 'default' } = {}) {
+async function installDb({
+  themes = [],
+  deckTheme = 'default',
+  defaultThemeId = '',
+} = {}) {
   const db = createFakeDb({
     themes,
+    app_settings: [{ id: true, settings: { defaultThemeId } }],
     organizations: [
       { id: ORG, name: 'Default', slug: 'default' },
       { id: OTHER_ORG, name: 'Other', slug: 'other' },
@@ -453,31 +460,34 @@ test('POST /slides/from-library copies the item into the deck and answers 201', 
 /** Unique per file: `loadDeckTheme` memoizes a DB theme by its UUID. */
 const GROUND_THEME_ID = '99999999-2222-4333-8444-555555555555';
 
+function groundThemeRow() {
+  return {
+    id: GROUND_THEME_ID,
+    organization_id: ORG,
+    slug: 'ground',
+    label: 'Ground',
+    logo_url: null,
+    logo_small_url: null,
+    colors: {
+      primary: '#7c3aed',
+      background: '#fefefe',
+      textLight: '#ffffff',
+      textDark: '#1f2937',
+    },
+    fonts: { heading: 'Montserrat', body: 'Inter' },
+    config: { version: 1, defaultBackground: 'mist' },
+    is_default: false,
+    created_at: '2026-07-01T00:00:00.000Z',
+    updated_at: '2026-07-01T00:00:00.000Z',
+    created_by: null,
+  };
+}
+
 test('POST /slides/from-library composes against the deck theme (the ground, D98)', async () => {
   const db = await installDb({
-    deckTheme: GROUND_THEME_ID,
-    themes: [
-      {
-        id: GROUND_THEME_ID,
-        organization_id: ORG,
-        slug: 'ground',
-        label: 'Ground',
-        logo_url: null,
-        logo_small_url: null,
-        colors: {
-          primary: '#7c3aed',
-          background: '#fefefe',
-          textLight: '#ffffff',
-          textDark: '#1f2937',
-        },
-        fonts: { heading: 'Montserrat', body: 'Inter' },
-        config: { version: 1, defaultBackground: 'mist' },
-        is_default: false,
-        created_at: '2026-07-01T00:00:00.000Z',
-        updated_at: '2026-07-01T00:00:00.000Z',
-        created_by: null,
-      },
-    ],
+    deckTheme: 'default',
+    defaultThemeId: GROUND_THEME_ID,
+    themes: [groundThemeRow()],
   });
   const ctx = makeCtx(
     'POST',
@@ -489,9 +499,24 @@ test('POST /slides/from-library composes against the deck theme (the ground, D98
   assert.equal(
     ctx.res.body.slide.content.background,
     'mist',
-    'a library copy that names no background lands on the theme ground',
+    'a default deck resolves the organization setting before composition',
   );
   assert.equal(storedDeck(db).slides[2].content.background, 'mist');
+});
+
+test('POST /slides composes default against the deck organization setting', async () => {
+  const db = await installDb({
+    deckTheme: 'default',
+    defaultThemeId: GROUND_THEME_ID,
+    themes: [groundThemeRow()],
+  });
+  const ctx = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/slides`, {
+    body: { type: 'content-slide', content: { title: 'New' } },
+  });
+  assert.equal(await handleSlides(ctx), true);
+  assert.equal(ctx.res.statusCode, 201);
+  assert.equal(ctx.res.body.slide.content.background, 'mist');
+  assert.equal(storedDeck(db).slides.at(-1).content.background, 'mist');
 });
 
 test('POST /slides/from-library honours atIndex', async () => {

@@ -13,16 +13,11 @@ export const SHARED_PUBLIC_DIRS = [
   { urlPrefix: '/css/', dir: path.join(repoRoot, 'css') },
   { urlPrefix: '/client/', dir: path.join(repoRoot, 'client') },
   { urlPrefix: '/shared/', dir: path.join(repoRoot, 'shared') },
-  { urlPrefix: '/themes/', dir: path.join(repoRoot, 'themes') },
   { urlPrefix: '/uploads/', dir: uploadsDir(repoRoot) },
   // Fork-specific content, served from the fork root so an installation that
   // moved it serves the files its loaders and pickers actually list.
   {
     urlPrefix: '/custom/assets/',
     dir: path.join(customDirFor(repoRoot), 'assets'),
-  },
-  {
-    urlPrefix: '/custom/themes/',
-    dir: path.join(customDirFor(repoRoot), 'themes'),
   },
 ];

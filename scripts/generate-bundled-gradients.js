@@ -5,7 +5,7 @@
  *   npm run gen:gradients
  *
  * The set is themes × compositions (see server/media/bundled-gradients.js). Run
- * this after changing a theme's `brandColors`/background tokens or a recipe;
+ * this after changing a seed's colors/config or a recipe;
  * `tests/bundled-gradients.test.js` fails until the committed files match.
  *
  * Files that no longer belong to any item are removed, so deleting a theme

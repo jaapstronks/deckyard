@@ -1,0 +1,147 @@
+{
+  "id": "playful",
+  "label": "Sunset",
+  "defaultTitleSlide": "title-slide",
+  "titleLayout": "center",
+  "assets": {
+    "logo": "/assets/images/logo-placeholder.svg",
+    "logoAlt": "Your logo",
+    "payoffLogo": "/assets/images/logo-placeholder.svg",
+    "payoffAlt": "Your logo"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#431407",
+  "backgroundLabels": {
+    "lime": {
+      "en": "Cream",
+      "nl": "Crème"
+    },
+    "mist": {
+      "en": "Blossom",
+      "nl": "Bloesem"
+    }
+  },
+  "brandColors": ["#db2777", "#ea580c", "#f59e0b", "#fb7185"],
+  "textSwatches": [
+    {
+      "id": "brand-1",
+      "label": {
+        "en": "Pink",
+        "nl": "Roze"
+      }
+    },
+    {
+      "id": "brand-2",
+      "label": {
+        "en": "Rust",
+        "nl": "Roest"
+      }
+    }
+  ],
+  "gradient": {
+    "enabled": false
+  },
+  "cssVars": {
+    "--t-slide-bg-lime": "#fffbf5",
+    "--t-slide-bg-mist": "#ffe4e6",
+    "--t-slide-bg-dark": "#7c2d12",
+    "--t-color-background": "#fffbf5",
+    "--t-color-text": "#431407",
+    "--t-color-text-muted": "rgba(67, 20, 7, 0.6)",
+    "--t-color-accent": "#ea580c",
+    "--t-color-brand-1": "#db2777",
+    "--t-color-brand-2": "#c2410c",
+    "--t-color-accent-on-dark": "#f9a8d4",
+    "--t-radius": "22px",
+    "--t-radius-sm": "14px",
+    "--t-radius-lg": "32px",
+    "--t-font-heading": "'Poppins', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-body": "'Nunito', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-caption": "var(--t-font-body)",
+    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+    "--t-heading-transform": "none",
+    "--t-heading-weight": "700",
+    "--t-color-surface-raised": "#fff1f2",
+    "--t-chart-0": "#ea580c",
+    "--t-chart-1": "#db2777",
+    "--t-chart-2": "#f59e0b",
+    "--t-chart-3": "#14b8a6",
+    "--t-chart-4": "#8b5cf6",
+    "--t-chart-5": "#ef4444",
+    "--t-chart-6": "#22c55e",
+    "--t-chart-7": "#3b82f6",
+    "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
+  },
+  "embedFonts": [
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-400-latin.woff2",
+      "weight": 400,
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-400-latin-ext.woff2",
+      "weight": 400,
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-500-latin.woff2",
+      "weight": 500,
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-500-latin-ext.woff2",
+      "weight": 500,
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-600-latin.woff2",
+      "weight": 600,
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-600-latin-ext.woff2",
+      "weight": 600,
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-700-latin.woff2",
+      "weight": 700,
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "family": "Poppins",
+      "path": "assets/fonts/google/poppins/poppins-700-latin-ext.woff2",
+      "weight": 700,
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    },
+    {
+      "family": "Nunito",
+      "path": "assets/fonts/google/nunito/nunito-400-latin.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "family": "Nunito",
+      "path": "assets/fonts/google/nunito/nunito-400-latin-ext.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    }
+  ]
+}

@@ -13,8 +13,14 @@
  * Run with: node --test tests/app-settings-default-theme.test.js
  */
 
-import { describe, it } from 'node:test';
+import { before, after, describe, it } from 'node:test';
 import assert from 'node:assert';
+import { createFakeDb } from './helpers/fake-db.js';
+import { __setTestDb } from '../server/db/client.js';
+import {
+  initializeStorage,
+  __resetStorageForTests,
+} from '../server/storage/lifecycle.js';
 
 const { defaultAppSettings, getDefaultThemeId, getEnabledThemeIds } =
   await import('../server/storage/settings.js');
@@ -24,6 +30,40 @@ const scope = crossOrganizationScope(
   'test: instance-level settings read',
 );
 const { DEFAULT_THEME_ID } = await import('../shared/constants/themes.js');
+const BRAND_ID = '11111111-1111-4111-8111-111111111111';
+const CIIIC_ID = '22222222-2222-4222-8222-222222222222';
+
+before(async () => {
+  __setTestDb(
+    createFakeDb({
+      themes: [
+        {
+          id: BRAND_ID,
+          organization_id: null,
+          slug: DEFAULT_THEME_ID,
+          label: 'Brand',
+          colors: {},
+          fonts: {},
+          config: {},
+        },
+        {
+          id: CIIIC_ID,
+          organization_id: null,
+          slug: 'ciiic',
+          label: 'CIIIC',
+          colors: {},
+          fonts: {},
+          config: {},
+        },
+      ],
+    }),
+  );
+  await initializeStorage();
+});
+after(() => {
+  __resetStorageForTests();
+  __setTestDb(null);
+});
 
 describe('app settings: default theme + picker allowlist', () => {
   it('defaults expose defaultThemeId and enabledThemes', () => {
@@ -37,7 +77,7 @@ describe('getDefaultThemeId fallback precedence (empty store)', () => {
   it('falls back to the DEFAULT_THEME env var (fork seam)', async () => {
     process.env.DEFAULT_THEME = 'ciiic';
     try {
-      assert.strictEqual(await getDefaultThemeId(scope), 'ciiic');
+      assert.strictEqual(await getDefaultThemeId(scope), CIIIC_ID);
     } finally {
       delete process.env.DEFAULT_THEME;
     }
@@ -45,7 +85,7 @@ describe('getDefaultThemeId fallback precedence (empty store)', () => {
 
   it('falls back to the built-in default when nothing is set', async () => {
     delete process.env.DEFAULT_THEME;
-    assert.strictEqual(await getDefaultThemeId(scope), DEFAULT_THEME_ID);
+    assert.strictEqual(await getDefaultThemeId(scope), BRAND_ID);
   });
 });
 

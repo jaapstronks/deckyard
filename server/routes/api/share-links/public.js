@@ -152,8 +152,8 @@ async function handleShareValidate({ repoRoot, req, res }, token) {
  * `themeConfig` rides along for the same reason the deck itself does: a
  * database theme is resolved through a route behind the login gate, so an
  * anonymous viewer got a 401 and a blank theme (see
- * `server/utils/themes.js` § customThemeConfig). It is null for a built-in
- * theme, which the client loads from `/themes/` on its own.
+ * `server/utils/themes.js` § customThemeConfig). It includes the resolved
+ * record config for both seed and organization themes.
  *
  * @param {string|null} repoRoot
  * @param {Object} pres - Presentation as stored.

@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 import { withDeckCardFields } from '../server/utils/deck-card-fields.js';
 import { testScope } from './helpers/storage-scope.js';
+import { seedRow } from './helpers/theme-seed.js';
 import { sessionFor, userRows } from './helpers/identity-fixtures.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
@@ -54,12 +55,14 @@ const repoRoot = path.resolve(
 
 const OWNER = 'owner@example.com';
 const PARTNER = 'partner@example.com';
+const AMETHYST = '00000000-0000-4000-8000-0000000000ba';
 
 test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
       users: userRows(OWNER, PARTNER),
+      themes: [await seedRow('brand'), await seedRow('amethyst')],
     }),
   );
   await initializeStorage();
@@ -96,7 +99,7 @@ function mockRes() {
 const deckFor = (title, overrides = {}) => ({
   title,
   ownerEmail: OWNER,
-  theme: 'amethyst',
+  theme: AMETHYST,
   slides: [{ id: 's1', type: 'title-slide', content: { title } }],
   ...overrides,
 });
@@ -105,8 +108,8 @@ const deckFor = (title, overrides = {}) => ({
 
 test('withDeckCardFields attaches the theme background per item', async () => {
   const [a, b] = await withDeckCardFields(repoRoot, [
-    { id: 'a', theme: 'amethyst' },
-    { id: 'b', theme: 'amethyst' },
+    { id: 'a', theme: AMETHYST },
+    { id: 'b', theme: AMETHYST },
   ]);
   assert.match(a.thumbBg || '', /^#[0-9a-f]{3,6}$/i, 'a hex for a known theme');
   assert.equal(b.thumbBg, a.thumbBg, 'one lookup, same answer for both');
@@ -114,7 +117,7 @@ test('withDeckCardFields attaches the theme background per item', async () => {
 
 test('withDeckCardFields keeps every field the producer built', async () => {
   const [item] = await withDeckCardFields(repoRoot, [
-    { id: 'a', theme: 'amethyst', activityCount: 3 },
+    { id: 'a', theme: AMETHYST, activityCount: 3 },
   ]);
   assert.equal(item.id, 'a');
   assert.equal(item.activityCount, 3, 'producer-specific fields survive');

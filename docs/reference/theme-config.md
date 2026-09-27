@@ -1,5 +1,7 @@
 # Theme config (database themes)
 
+For the one-time cutover from stored theme slugs to record UUIDs, run `node scripts/migrate-theme-references.js --check --map /path/to/map.json --settings-org <uuid>` before `--apply` with the same arguments. The mapping file names each organization's old slug and its prepared theme-record UUID; the command validates all references before writing.
+
 A database theme is a record: a label, two logo URLs, `colors`, `fonts` and
 `config`. From the four colour roles and two fonts
 `server/utils/theme-builder.js` derives a full `--t-*` token set; the explicit
@@ -26,7 +28,7 @@ exception — slide-type availability is curated org-wide in **Settings → Slid
 Types** instead, so a theme-level control would be a second switch for the same
 outcome.
 
-`POST`/`PUT /api/themes/custom[/:id]` accept `colors` and `config` directly for
+`POST`/`PUT /api/themes[/:id]` accept `colors` and `config` directly for
 anything the editor does not cover; the editor sends the colour fields it has
 no control for back unchanged, so saving there never drops them.
 
@@ -311,14 +313,13 @@ draft you are editing — the right scope for a side panel, and not enough to
 sign off a theme. To see the whole matrix:
 
 ```sh
-npm run theme:preview <theme-id>
+npm run theme:preview <theme-uuid> [organization-uuid]
 ```
 
-`scripts/theme-preview.js` writes `tmp/theme-preview/<theme-id>/index.html`: one
+`scripts/theme-preview.js` writes `tmp/theme-preview/<theme-uuid>/index.html`: one
 tile per (slide type × background), grouped by type, plus a WCAG table for the
-theme's flat background variants. It resolves a **file** theme in
-`custom/themes/<id>/theme.json` as readily as a built-in one — the editor's
-draft-preview route does not — and it renders every tile through
+theme's flat background variants. It resolves a visible theme record in the
+given organization (or the only organization on a single-organization instance), and renders every tile through
 `renderSlideToPngBuffer`, the same CSS bundle and `setContent` chain a PDF or
 PNG export runs, so a tile is what an export produces rather than a lookalike.
 

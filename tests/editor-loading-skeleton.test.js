@@ -23,6 +23,16 @@ const dom = new JSDOM(
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.location = dom.window.location;
+const THEME_ID = '00000000-0000-4000-8000-0000000000bb';
+globalThis.fetch = async (url) =>
+  new Response(
+    JSON.stringify(
+      String(url) === '/api/themes'
+        ? { defaultThemeId: THEME_ID }
+        : { id: THEME_ID, slug: 'brand', label: 'Forest', cssVars: {} },
+    ),
+    { status: 200, headers: { 'content-type': 'application/json' } },
+  );
 
 const { showEditorLoadingSkeleton, hideEditorLoadingSkeleton } =
   await import('../client/views/editor/loading-skeleton.js');
@@ -73,6 +83,7 @@ test('loadEditorModel skips the presentation fetch when initialPres is given', a
   const initialPres = {
     id: 'test-id',
     title: 'Deck',
+    theme: 'default',
     slides: [{ id: 's1', type: 'text-slide', content: {} }],
   };
 
@@ -94,7 +105,7 @@ test('loadEditorModel still fetches when initialPres is absent', async () => {
   const fakeApi = async (path) => {
     calls.push(path);
     if (path.startsWith('/api/presentations/')) {
-      return { id: 'test-id', title: 'Deck', slides: [] };
+      return { id: 'test-id', title: 'Deck', theme: 'default', slides: [] };
     }
     return {};
   };

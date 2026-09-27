@@ -31,6 +31,7 @@ import crypto from 'node:crypto';
 import JSZip from 'jszip';
 import { testScope, otherOrganizationScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const SENDER = process.env.DEFAULT_ORGANIZATION_ID;
@@ -85,6 +86,7 @@ test.before(async () => {
         { id: RECEIVER, name: 'Receiver', slug: 'receiver' },
       ],
       users: userRows(OWNER),
+      themes: [await brandSeedRow()],
     }),
   );
   await initializeStorage();
@@ -390,10 +392,9 @@ test('a non-installed bundled theme follows a changed workspace default at rende
       body.theme,
       receiverScope(),
     );
-    assert.equal(initial._customThemeId, first.theme.id);
+    assert.equal(initial.id, first.theme.id);
     assert.equal(
-      (await customThemeConfig(repoRoot, body.theme, receiverScope()))
-        ._customThemeId,
+      (await customThemeConfig(repoRoot, body.theme, receiverScope())).id,
       first.theme.id,
     );
 
@@ -405,7 +406,7 @@ test('a non-installed bundled theme follows a changed workspace default at rende
       body.theme,
       receiverScope(),
     );
-    assert.equal(changed._customThemeId, second.theme.id);
+    assert.equal(changed.id, second.theme.id);
   } finally {
     await writeAppSettings(receiverScope(), { defaultThemeId: '' });
   }

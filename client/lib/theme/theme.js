@@ -1,18 +1,20 @@
 import { api } from '../api.js';
 import { ensureStyle } from '../dom/head-assets.js';
-import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
-import { THEMES as BUILTIN_THEMES } from '../../../shared/slide-types/registry.js';
 import { slideBackgroundsCssText } from '../../../shared/theme-slide-backgrounds.js';
 import { normalizeTheme } from '../../../shared/theme-normalize.js';
 import { cssStringEscape } from '../../../shared/theme-fonts.js';
 
 function safeThemeId(raw) {
-  const s = String(raw || '').trim();
-  if (!s) return DEFAULT_THEME_ID;
-  if (s === 'default') return s;
-  // Allow UUIDs (36 chars) and short slug IDs
-  if (!/^[a-z0-9-]{1,40}$/i.test(s)) return DEFAULT_THEME_ID;
-  return s.toLowerCase();
+  const id = String(raw || '')
+    .trim()
+    .toLowerCase();
+  if (id === 'default') return id;
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)
+  ) {
+    throw new TypeError(`Invalid theme reference: ${id || '(empty)'}`);
+  }
+  return id;
 }
 
 // Themes are per-presentation; do not treat the app as having a single "active theme".
@@ -92,59 +94,13 @@ export function clearThemeCache() {
 }
 
 async function fetchThemeData(id) {
-  // Built-in themes live in /themes/, custom themes in /custom/themes/
-  // Only try /custom/themes/ for non-built-in themes to avoid 404 errors
-  const isBuiltin = BUILTIN_THEMES.includes(id);
-  const isUuid =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id);
-
-  // Database custom themes (UUIDs) are served from the API, not the filesystem
-  if (isUuid) {
-    try {
-      return await api(`/api/themes/custom/${id}/config`);
-    } catch {
-      // ignore
-    }
-    return null;
-  }
-
-  // Candidate URLs to try, in order. Custom themes prefer the folder layout
-  // (/custom/themes/<id>/theme.json, which co-locates the theme's assets),
-  // then legacy flat (/custom/themes/<id>.json); built-ins are always
-  // /themes/<id>.json.
-  const enc = encodeURIComponent(id);
-  const candidates = isBuiltin
-    ? [`/themes/${enc}.json`]
-    : [
-        `/custom/themes/${enc}/theme.json`,
-        `/custom/themes/${enc}.json`,
-        `/themes/${enc}.json`,
-      ];
-
-  for (const urlPath of candidates) {
-    try {
-      // Static theme JSON from /themes/ and /custom/themes/ — an asset load,
-      // not an /api/* call, so it stays outside api() (like the locale JSON).
-      // eslint-disable-next-line no-restricted-syntax
-      const resp = await fetch(urlPath, { cache: 'no-store' });
-      if (resp.ok) {
-        return await resp.json();
-      }
-    } catch {
-      // ignore, try next
-    }
-  }
-  return null;
+  return api(`/api/themes/${id}/config`);
 }
 
 /**
  * Did this fetch return the theme we asked for?
  *
- * A file theme's `id` is the id we requested. A **database** theme is requested
- * by UUID but reports its slug as `id` (that is what `buildThemeConfig` emits),
- * so comparing ids alone rejected every custom theme and fell back to a blank
- * one — the whole theme rendered unstyled in the browser while server exports
- * looked correct. `_customThemeId` carries the UUID, so check both.
+ * Every theme is a record and reports its UUID as `id`.
  *
  * @param {Object} theme
  * @param {string} id - the id `loadThemeById` was asked for
@@ -152,9 +108,7 @@ async function fetchThemeData(id) {
  */
 function isThemeForId(theme, id) {
   if (!theme) return false;
-  return (
-    String(theme.id || '') === id || String(theme._customThemeId || '') === id
-  );
+  return String(theme.id || '').toLowerCase() === id;
 }
 
 /**
@@ -162,7 +116,7 @@ function isThemeForId(theme, id) {
  *
  * `config` is the preload entrance, not a second loader: an anonymous surface
  * (share viewer, follow audience, notes companion) cannot reach
- * `GET /api/themes/custom/:id/config` — it is behind the login gate — so a
+ * `GET /api/themes/:id/config` — it is behind the login gate — so a
  * deck on a database theme rendered unbranded there. Those surfaces now get
  * the theme with the payload their token authorizes and hand it in here, so
  * caching, `@font-face` injection, slide-background rules and normalization
@@ -172,20 +126,16 @@ function isThemeForId(theme, id) {
  * @param {Object} [options]
  * @param {Object|null} [options.config] - Theme config delivered with the
  *   deck payload. Omit it (or pass null) to fetch, which is what an
- *   authenticated view does and what a built-in theme always does.
+ *   authenticated view does.
  * @returns {Promise<Object>} the normalized theme
  */
 export async function loadThemeById(rawThemeId, { config = null } = {}) {
   if (rawThemeId === 'default') {
     if (config) {
-      return loadThemeById(config._customThemeId || config.id, { config });
+      return loadThemeById(config.id, { config });
     }
     const { defaultThemeId } = await api('/api/themes');
-    return loadThemeById(
-      defaultThemeId && defaultThemeId !== 'default'
-        ? defaultThemeId
-        : DEFAULT_THEME_ID,
-    );
+    return loadThemeById(defaultThemeId);
   }
   const id = safeThemeId(rawThemeId);
   if (themeCache.has(id)) return themeCache.get(id);
@@ -196,24 +146,21 @@ export async function loadThemeById(rawThemeId, { config = null } = {}) {
   }
 
   const source = config ? Promise.resolve(config) : fetchThemeData(id);
-  const promise = source.then((theme) => {
-    inFlightRequests.delete(id);
-    theme = normalizeTheme(theme);
-    if (!isThemeForId(theme, id)) {
-      theme = normalizeTheme({
-        id,
-        label: id,
-        assets: { logo: '/assets/images/logo.svg', logoAlt: 'Logo' },
-        cssVars: {},
-      });
-    }
-    // Style elements are keyed by the id we were asked for, not the theme's own
-    // id, so invalidateTheme() can find and remove them again.
-    injectThemeFontFaces(theme, id);
-    injectThemeSlideBgStyles(theme, id);
-    themeCache.set(id, theme);
-    return theme;
-  });
+  const promise = source
+    .then((theme) => {
+      theme = normalizeTheme(theme);
+      if (!isThemeForId(theme, id))
+        throw new Error(`Theme ${id} was not found`);
+      // Style elements are keyed by the id we were asked for, not the theme's own
+      // id, so invalidateTheme() can find and remove them again.
+      injectThemeFontFaces(theme, id);
+      injectThemeSlideBgStyles(theme, id);
+      themeCache.set(id, theme);
+      return theme;
+    })
+    .finally(() => {
+      if (inFlightRequests.get(id) === promise) inFlightRequests.delete(id);
+    });
 
   inFlightRequests.set(id, promise);
   return promise;

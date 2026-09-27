@@ -19,7 +19,6 @@ import { findTheme, resolveThemeId } from '../../../utils/themes.js';
 import { getConvertibleSlideTypes } from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { getThemeSlideTypeConfig } from '../../../../shared/slide-types/policy.js';
-import { cleanStr } from '../../../../shared/string-utils.js';
 
 /**
  * Check if a slide type is compatible with a theme.
@@ -34,21 +33,12 @@ function checkSlideTypeCompatibility(slideType, newTheme) {
   }
 
   const { exclude, include } = getThemeSlideTypeConfig(newTheme);
-  const newThemeId = cleanStr(newTheme?.id);
-
-  // Check if slide type has a theme-specific binding
-  const slideThemeId = cleanStr(typeDef?.themeId);
-  if (slideThemeId && slideThemeId !== newThemeId) {
-    return { compatible: false, reason: 'theme_specific' };
-  }
-
   // Check if slide type is in the exclude set
   if (exclude.has(slideType)) {
     return { compatible: false, reason: 'will_be_hidden' };
   }
 
-  // Check if theme-specific slide types need to be in include set
-  if (slideThemeId && !include.has(slideType)) {
+  if (typeDef.themeOnly === true && !include.has(slideType)) {
     return { compatible: false, reason: 'theme_specific' };
   }
 

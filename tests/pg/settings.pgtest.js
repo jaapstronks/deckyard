@@ -34,6 +34,8 @@ import {
   defaultUserSettings,
 } from '../../server/storage/settings.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
+import { initializeThemeSeeds } from '../../server/utils/theme-seeds.js';
+import { listSeedThemes } from '../../server/storage/themes.js';
 import { testScope } from '../helpers/storage-scope.js';
 
 pgDescribe('settings storage (real PostgreSQL)', () => {
@@ -87,24 +89,28 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     assert.equal(settings.sessionDurationDays, 45);
   });
 
-  it('round-trips the organization theme and normalizes an invalid id to empty', async () => {
+  it('round-trips a theme record ID and falls back to the seed default', async () => {
+    await initializeThemeSeeds();
+    const seeds = await listSeedThemes();
+    const brand = seeds.find((theme) => theme.slug === DEFAULT_THEME_ID);
+    const amethyst = seeds.find((theme) => theme.slug === 'amethyst');
     await writeAppSettings(testScope(), {
-      defaultThemeId: 'clicknl',
-      enabledThemes: ['amethyst', 'clicknl'],
+      defaultThemeId: amethyst.id,
+      enabledThemes: [amethyst.id, brand.id],
     });
     let s = await getAppSettings(testScope());
-    assert.equal(s.defaultThemeId, 'clicknl');
-    assert.deepEqual(s.enabledThemes, ['amethyst', 'clicknl']);
+    assert.equal(s.defaultThemeId, amethyst.id);
+    assert.deepEqual(s.enabledThemes, [amethyst.id, brand.id]);
 
     // getDefaultThemeId prefers the stored setting over env/built-in.
     delete process.env.DEFAULT_THEME;
-    assert.equal(await getDefaultThemeId(testScope()), 'clicknl');
+    assert.equal(await getDefaultThemeId(testScope()), amethyst.id);
 
     // An invalid id normalizes to empty, then falls back to the built-in default.
     await writeAppSettings(testScope(), { defaultThemeId: 'bad id!!' });
     s = await getAppSettings(testScope());
     assert.equal(s.defaultThemeId, '');
-    assert.equal(await getDefaultThemeId(testScope()), DEFAULT_THEME_ID);
+    assert.equal(await getDefaultThemeId(testScope()), brand.id);
   });
 
   it('prefers a stored theme allowlist over the ENABLED_THEMES env seam', async () => {

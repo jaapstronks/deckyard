@@ -24,7 +24,7 @@ import { loadSlideTypeContext } from './shared.js';
  */
 export const handleAiRefineSection = withErrorHandler(
   'ai-refine-section',
-  async ({ repoRoot, req, res, authedUser }) => {
+  async ({ repoRoot, req, res, authedUser, storageScope }) => {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -79,7 +79,7 @@ export const handleAiRefineSection = withErrorHandler(
     // Against the theme of the deck being refined: a revised slide composes
     // like a newly inserted one of the same type.
     const parts = deckToPresentationParts(revisedRaw, {
-      theme: await loadDeckTheme(repoRoot, presentation?.theme),
+      theme: await loadDeckTheme(repoRoot, presentation?.theme, storageScope),
       lang: lang || presentation?.lang,
     });
     let slides = Array.isArray(parts?.slides) ? parts.slides : [];

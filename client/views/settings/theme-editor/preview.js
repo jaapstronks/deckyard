@@ -9,7 +9,7 @@
  * derivation, so it could quietly disagree with what a deck really looks like.
  *
  * A draft is unsaved, so there is no theme id to load: the server builds one
- * from the draft on `POST /api/themes/custom/preview-config`.
+ * from the draft on `POST /api/themes/preview-config`.
  */
 
 import { h } from '../../../lib/dom.js';
@@ -131,7 +131,7 @@ export function createThemePreview() {
   async function refresh(state) {
     const seq = ++requestSeq;
     try {
-      const res = await api('/api/themes/custom/preview-config', {
+      const res = await api('/api/themes/preview-config', {
         method: 'POST',
         body: {
           label: state?.label || '',

@@ -22,6 +22,7 @@ process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
+const { brandSeedRow } = await import('./helpers/theme-seed.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
@@ -33,6 +34,7 @@ const { renderEmbedHtmlDocument } =
 
 const PUBLISH_ID = 'abcd1234';
 const SLUG = 'my-deck';
+const brandSeed = await brandSeedRow();
 
 const version = (title) => ({
   title,
@@ -46,6 +48,7 @@ function seed(langs) {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      themes: [brandSeed],
       presentations: [
         {
           id: 'deck-pub',

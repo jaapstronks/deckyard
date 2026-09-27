@@ -37,6 +37,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { testScope } from './helpers/storage-scope.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -108,6 +109,7 @@ let fakeDb;
 
 test.before(async () => {
   fakeDb = createFakeDb({
+    themes: [await brandSeedRow()],
     organizations: [
       { id: ORG, name: 'Default', slug: 'default' },
       { id: OTHER_ORG, name: 'Other', slug: 'other' },

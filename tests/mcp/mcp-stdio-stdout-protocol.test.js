@@ -182,7 +182,7 @@ describe('MCP stdio transport — stdout carries protocol only', () => {
         const dir = path.join(fixture.dir, 'themes');
         mkdirSync(dir);
         const seed = JSON.parse(
-          readFileSync(path.join(REPO_ROOT, 'themes', 'seeds', 'brand.json')),
+          readFileSync(path.join(REPO_ROOT, 'themes', 'brand.json')),
         );
         seed.slug = 'fork-theme';
         seed.config = { titleLayout: 'sideways' };

@@ -27,6 +27,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OWNER = 'owner@example.com';
 const DECK_ID = 'deck-update-slide';
 const SLIDE_ID = '11111111-2222-4333-8444-555555555555';
+const DEFAULT_RECORD_ID = '99999999-2222-4333-8444-555555555555';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -39,6 +40,31 @@ async function installDb() {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     users: userRows(OWNER),
+    app_settings: [
+      { id: true, settings: { defaultThemeId: DEFAULT_RECORD_ID } },
+    ],
+    themes: [
+      {
+        id: DEFAULT_RECORD_ID,
+        organization_id: ORG,
+        slug: 'ground',
+        label: 'Ground',
+        logo_url: null,
+        logo_small_url: null,
+        colors: {
+          primary: '#7c3aed',
+          background: '#fefefe',
+          textLight: '#ffffff',
+          textDark: '#1f2937',
+        },
+        fonts: { heading: 'Montserrat', body: 'Inter' },
+        config: { version: 1, defaultBackground: 'mist' },
+        is_default: false,
+        created_at: '2026-07-01T00:00:00.000Z',
+        updated_at: '2026-07-01T00:00:00.000Z',
+        created_by: null,
+      },
+    ],
     custom_slide_types: [],
     presentations: [
       {
@@ -116,6 +142,34 @@ test('a type change is a conversion: what maps carries over, the rest is re-seed
     'a key the target has no field for drops',
   );
   assert.equal(slide.id, SLIDE_ID, 'the same slide, not a new one');
+});
+
+test('update_slide conversion uses the scoped default record', async () => {
+  const db = await installDb();
+  const slide = stored(db);
+  slide.type = 'list-slide';
+  slide.content = { title: 'List', items: ['One'] };
+  await updateSlide({ type: 'content-slide', content: {} });
+  assert.equal(stored(db).type, 'content-slide');
+  assert.equal(stored(db).content.background, 'mist');
+});
+
+test('add_slide composes against the scoped default record', async () => {
+  const db = await installDb();
+  const server = new McpServer();
+  registerTools(server, { defaultOwnerEmail: OWNER });
+  await server.tools.get('add_slide').handler(
+    {
+      presentationId: DECK_ID,
+      type: 'content-slide',
+      content: { title: 'New' },
+    },
+    { ownerEmail: OWNER, organizationId: ORG },
+  );
+  const slides = db.__tables.presentations.find(
+    (row) => row.id === DECK_ID,
+  ).slides;
+  assert.equal(slides.at(-1).content.background, 'mist');
 });
 
 test('a type change the model has no mapping for is refused, not stored', async () => {

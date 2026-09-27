@@ -53,6 +53,8 @@ import {
   normalizeLang,
 } from '../../shared/i18n-utils.js';
 import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
+import { getThemeRecord, listSeedThemes } from './themes.js';
+import { UUID_RE } from '../utils/uuid.js';
 import { SUBSCRIPTION_LEVELS } from './presentations/subscriptions.js';
 import {
   isEmbeddableUrl,
@@ -1240,11 +1242,24 @@ export async function getDefaultThemeId(scope) {
     { allowCrossOrganization: true },
   );
   const settings = await getAppSettings(scope);
-  return (
-    settings.defaultThemeId ||
-    normalizeThemeId(envStr('DEFAULT_THEME')) ||
-    DEFAULT_THEME_ID
-  );
+  const configured = settings.defaultThemeId;
+  if (UUID_RE.test(configured)) {
+    const record = scope.organizationId
+      ? await getThemeRecord(scope, configured)
+      : (await listSeedThemes()).find((theme) => theme.id === configured);
+    if (record) return record.id;
+  }
+
+  // DEFAULT_THEME is a deployment handle, not a deck theme ID. Resolve it
+  // once at this settings boundary so every runtime and API consumer sees the
+  // record's UUID. A missing fork seed falls back to the bundled brand seed.
+  const seeds = await listSeedThemes();
+  const slug = normalizeThemeId(envStr('DEFAULT_THEME')) || DEFAULT_THEME_ID;
+  const seed =
+    seeds.find((theme) => theme.slug === slug) ||
+    seeds.find((theme) => theme.slug === DEFAULT_THEME_ID);
+  if (!seed) throw new Error('Default theme seed not found');
+  return seed.id;
 }
 
 /**

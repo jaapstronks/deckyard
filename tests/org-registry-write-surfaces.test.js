@@ -36,6 +36,7 @@ import { Readable } from 'node:stream';
 
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { walkJsFiles, callArguments } from './helpers/call-sites.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'b131']
   .join('-')
@@ -103,6 +104,7 @@ async function installDb(customSlideTypes = [customTypeRow()]) {
       { id: OTHER_ORG, name: 'Other', slug: 'other' },
     ],
     users: userRows(OWNER),
+    themes: [await brandSeedRow()],
     custom_slide_types: customSlideTypes,
     presentations: [
       {

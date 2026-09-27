@@ -78,10 +78,11 @@ test('buildThemeConfig still returns the full theme shape', () => {
     fonts,
   });
 
-  assert.equal(built.id, 'acme');
+  assert.equal(built.id, 'uuid-1');
+  assert.equal(built.slug, 'acme');
   assert.equal(built.label, 'Acme');
-  assert.equal(built._isCustomTheme, true);
-  assert.equal(built._customThemeId, 'uuid-1');
+  assert.equal('_isCustomTheme' in built, false);
+  assert.equal('_customThemeId' in built, false);
   assert.equal(built.assets.logo, '/uploads/acme.svg');
   assert.equal(built.assets.titleLogo, '/uploads/acme-small.svg');
   assert.equal(built.textColorLight, '#ffffff');

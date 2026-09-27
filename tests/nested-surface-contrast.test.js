@@ -25,18 +25,19 @@ import { normalizeTheme } from '../shared/theme-normalize.js';
 import { getContrastRatio } from '../shared/color-utils.js';
 import { WCAG_THRESHOLDS } from '../shared/contrast.js';
 import { slideBackgroundsCssText } from '../shared/theme-slide-backgrounds.js';
+import { seedThemeConfig } from './helpers/theme-seed.js';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const THEMES_DIR = join(repoRoot, 'themes');
 
-const SHIPPED = readdirSync(THEMES_DIR)
-  .filter((f) => f.endsWith('.json'))
-  .map((f) => ({
-    id: f.replace(/\.json$/, ''),
-    theme: normalizeTheme(
-      JSON.parse(readFileSync(join(THEMES_DIR, f), 'utf8')),
-    ),
-  }));
+const SHIPPED = await Promise.all(
+  readdirSync(THEMES_DIR)
+    .filter((f) => f.endsWith('.json'))
+    .map(async (f) => ({
+      id: f.replace(/\.json$/, ''),
+      theme: await seedThemeConfig(f.replace(/\.json$/, '')),
+    })),
+);
 
 test('there are shipped themes to check', () => {
   assert.ok(

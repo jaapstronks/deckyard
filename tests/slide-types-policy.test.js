@@ -196,6 +196,42 @@ test('org-disabled types are not insertable', () => {
   );
 });
 
+test('themeOnly follows explicit include after a theme is duplicated', () => {
+  const def = { label: 'House title', themeOnly: true };
+  const type = 'house-title-slide';
+  const original = {
+    id: '11111111-1111-4111-8111-111111111111',
+    slideTypes: { include: [type] },
+  };
+  const duplicate = {
+    id: '22222222-2222-4222-8222-222222222222',
+    slideTypes: { include: [type] },
+  };
+  assert.equal(isInsertableSlideType({ type, def, theme: original }), true);
+  assert.equal(isInsertableSlideType({ type, def, theme: duplicate }), true);
+  assert.equal(
+    isInsertableSlideType({ type, def, theme: { id: 'other' } }),
+    false,
+  );
+  assert.equal(
+    isInsertableSlideType({
+      type,
+      def,
+      theme: duplicate,
+      disabledSlideTypes: [type],
+    }),
+    false,
+  );
+  assert.equal(
+    isInsertableSlideType({
+      type,
+      def,
+      theme: { ...duplicate, slideTypes: { include: [type], exclude: [type] } },
+    }),
+    false,
+  );
+});
+
 test('custom-html requires the capability', () => {
   const def = { label: 'Custom HTML' };
   assert.equal(

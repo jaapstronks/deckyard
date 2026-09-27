@@ -38,7 +38,7 @@ import {
   closePuppeteerBrowser,
 } from '../server/utils/puppeteer-browser.js';
 import { renderSlidesToPdfBuffer } from '../server/render/pdf.js';
-import { loadThemeAssets } from '../server/utils/themes.js';
+import { seedThemeConfig } from './helpers/theme-seed.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -130,7 +130,7 @@ test(
     // the dark one sets its own value (10%-black is invisible on a dark ground)
     // and so slipped past the print guard. One mask per card: this deck measured
     // **9** before the fix and **0** after, and the file halved (174 → 91 KB).
-    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const theme = await seedThemeConfig('amethyst');
     const pdf = await renderSlidesToPdfBuffer(repoRoot, timelineDeck(), {
       theme,
     });
@@ -160,7 +160,7 @@ test(
     // video placeholder's `.vpdf-screen`/`.vpdf-base` live in the
     // export CSS itself (`PDF_DOC_CSS` in server/export/pdf-slides.js). A new type
     // that repeats the pattern fails here rather than in someone's Preview.
-    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const theme = await seedThemeConfig('amethyst');
     const deck = {
       title: 'Alles wat een schaduw draagt',
       slides: [

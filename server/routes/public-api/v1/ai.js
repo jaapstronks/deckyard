@@ -183,7 +183,7 @@ async function handleWizard(ctx) {
  * POST /api/v1/ai/append-slides - Generate slides to append to an existing presentation.
  */
 async function handleAppendSlides(ctx) {
-  const { repoRoot, apiKey } = ctx;
+  const { repoRoot, apiKey, storageScope } = ctx;
 
   if (!requirePermission(ctx, 'ai')) return true;
 
@@ -234,7 +234,11 @@ async function handleAppendSlides(ctx) {
     // Normalize into internal slide format, against the theme of the deck the
     // slides are being appended to.
     const parts = deckToPresentationParts(generatedSlides, {
-      theme: await loadDeckTheme(repoRoot, deckThemeId(existingDeck)),
+      theme: await loadDeckTheme(
+        repoRoot,
+        deckThemeId(existingDeck),
+        storageScope,
+      ),
       lang: lang || existingDeck?.lang,
     });
     const slides = Array.isArray(parts?.slides) ? parts.slides : [];

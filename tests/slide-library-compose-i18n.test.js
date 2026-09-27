@@ -11,13 +11,18 @@
  * Run with: node --test tests/slide-library-compose-i18n.test.js
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { buildSlidesFromLibraryItems } from '../client/lib/slide-library/compose.js';
 import { prepareNewPresentation } from '../server/storage/presentations/crud/factory.js';
+import { createFakeDb } from './helpers/fake-db.js';
+import { seedRow } from './helpers/theme-seed.js';
+import { __setTestDb } from '../server/db/client.js';
+
+const AMETHYST = (await seedRow('amethyst')).id;
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -57,6 +62,14 @@ describe('buildSlidesFromLibraryItems', () => {
 });
 
 describe('prepareNewPresentation multilingual compose', () => {
+  before(async () =>
+    __setTestDb(
+      createFakeDb({
+        themes: [await seedRow('brand'), await seedRow('amethyst')],
+      }),
+    ),
+  );
+  after(() => __setTestDb(null));
   it('builds one i18n version per language, sharing slide ids', async () => {
     const slides = buildSlidesFromLibraryItems([
       {
@@ -74,7 +87,7 @@ describe('prepareNewPresentation multilingual compose', () => {
     const pres = await prepareNewPresentation(repoRoot, {
       title: 'Composed deck',
       slides,
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     });
 
@@ -110,7 +123,7 @@ describe('prepareNewPresentation multilingual compose', () => {
     const pres = await prepareNewPresentation(repoRoot, {
       title: 'Composed deck',
       slides,
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'en-GB',
     });
     assert.strictEqual(pres.i18n.dominant, 'en-GB');
@@ -125,7 +138,7 @@ describe('prepareNewPresentation multilingual compose', () => {
     const pres = await prepareNewPresentation(repoRoot, {
       title: 'Composed deck',
       slides,
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     });
     assert.ok(pres.i18n.versions.nl, 'nl version present');

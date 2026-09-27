@@ -26,6 +26,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { Readable } from 'node:stream';
+import { seedRow } from './helpers/theme-seed.js';
 
 process.env.AUTH_SECRET = ['amethyst', 'test', 'auth']
   .join('-')
@@ -54,6 +55,7 @@ const { handleExports } =
 async function installDb({ exportsUsedToday = 0 } = {}) {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    themes: [await seedRow('brand'), await seedRow('amethyst')],
     users: userRows(KEY_OWNER),
     presentations: [
       deckRow({ id: DECK_ID, owner: KEY_OWNER }),
@@ -90,7 +92,7 @@ function deckRow({ id, owner }) {
     updated_by_user_id: userIdFor(owner),
     title: 'Export Me',
     description: null,
-    theme: 'amethyst',
+    theme: '00000000-0000-4000-8000-0000000000ba',
     lang: 'nl',
     visibility: 'private',
     revision: 1,

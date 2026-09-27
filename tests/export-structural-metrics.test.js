@@ -54,7 +54,7 @@ import {
   resolveChromeExecutablePath,
   closePuppeteerBrowser,
 } from '../server/utils/puppeteer-browser.js';
-import { loadThemeAssets } from '../server/utils/themes.js';
+import { buildThemeConfig } from '../server/utils/theme-builder.js';
 import { curatedFontPath } from '../shared/theme-fonts.js';
 import {
   FRAME,
@@ -77,6 +77,17 @@ const repoRoot = path.resolve(
   '..',
 );
 const baselineDir = path.join(repoRoot, 'tests', 'fixtures', 'export-metrics');
+
+/** Project the committed seed through the same builder as a persisted record. */
+async function loadFixtureTheme(slug) {
+  const record = JSON.parse(
+    await fs.readFile(path.join(repoRoot, 'themes', `${slug}.json`), 'utf8'),
+  );
+  return buildThemeConfig({
+    ...record,
+    id: '00000000-0000-4000-8000-0000000000aa',
+  });
+}
 
 const chromePath = await resolveChromeExecutablePath();
 const isCi = /^(1|true|yes)$/i.test(String(process.env.CI || '').trim());
@@ -196,7 +207,7 @@ for (const themeName of BUILTIN_THEMES) {
     `calibration slide holds its structure in the ${themeName} theme`,
     { skip },
     async () => {
-      const theme = await loadThemeAssets(repoRoot, themeName);
+      const theme = await loadFixtureTheme(themeName);
       const metrics = await measureSlide(repoRoot, calibrationSlide(), {
         theme,
       });
@@ -258,7 +269,7 @@ for (const themeName of BUILTIN_THEMES) {
       }
 
       // 3. Dominant colour against the theme's own token, not just against the
-      //    baseline: this ties the rendered frame back to the theme file. The
+      //    baseline: this ties the rendered frame back to the seed record. The
       //    token is the slide's background *variant*, not `--t-color-background`
       //    — in the midnight theme those differ (#18181b vs #09090b).
       const tokenName = `--t-slide-bg-${CALIBRATION_BACKGROUND_VARIANT}`;
@@ -303,10 +314,10 @@ for (const themeName of BUILTIN_THEMES) {
     `calibration PDF keeps its page geometry in the ${themeName} theme`,
     { skip },
     async () => {
-      const theme = await loadThemeAssets(repoRoot, themeName);
+      const theme = await loadFixtureTheme(themeName);
       const metrics = await measureDeckPdf(
         repoRoot,
-        calibrationDeck(themeName),
+        calibrationDeck(theme.id),
         { theme },
       );
       const baseline = await baselineFor(
@@ -348,8 +359,12 @@ test(
   { skip },
   async () => {
     const deck = allFieldTypesDeck();
-    const theme = await loadThemeAssets(repoRoot, deck.theme);
-    const metrics = await measureDeckPdf(repoRoot, deck, { theme });
+    const theme = await loadFixtureTheme(deck.theme);
+    const metrics = await measureDeckPdf(
+      repoRoot,
+      { ...deck, theme: theme.id },
+      { theme },
+    );
     const baseline = await baselineFor('all-field-types-pdf', metrics);
     if (!baseline) return;
 
@@ -382,7 +397,7 @@ test(
   { skip },
   async () => {
     const deck = allFieldTypesDeck();
-    const theme = await loadThemeAssets(repoRoot, deck.theme);
+    const theme = await loadFixtureTheme(deck.theme);
 
     const measured = [];
     for (const entry of ALL_FIELD_TYPES_SLIDES) {
@@ -464,7 +479,7 @@ test(
     // rather than only through the baselines: if the curated webfont fails to
     // load, Chrome silently paints a system face and every other metric still
     // matches. The theme's own first-choice family is the expected answer.
-    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const theme = await loadFixtureTheme('amethyst');
     const metrics = await measureSlide(repoRoot, calibrationSlide(), { theme });
 
     for (const selector of MEASURED_SELECTORS) {

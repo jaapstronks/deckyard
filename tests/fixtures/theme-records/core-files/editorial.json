@@ -1,0 +1,87 @@
+{
+  "id": "editorial",
+  "label": "Editorial",
+  "defaultTitleSlide": "title-slide",
+  "titleLayout": "top",
+  "assets": {
+    "logo": "/assets/images/logo-placeholder.svg",
+    "logoAlt": "Your logo",
+    "payoffLogo": "/assets/images/logo-placeholder.svg",
+    "payoffAlt": "Your logo"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#1c1917",
+  "backgroundLabels": {
+    "lime": {
+      "en": "Paper",
+      "nl": "Papier"
+    },
+    "mist": {
+      "en": "Cream",
+      "nl": "Crème"
+    }
+  },
+  "brandColors": ["#7f1d1d", "#9f1239", "#b45309", "#a16207"],
+  "gradient": {
+    "enabled": false
+  },
+  "cssVars": {
+    "--t-slide-bg-lime": "#fffdf7",
+    "--t-slide-bg-mist": "#f5efe4",
+    "--t-slide-bg-dark": "#1c1917",
+    "--t-color-background": "#fffdf7",
+    "--t-color-text": "#1c1917",
+    "--t-color-text-muted": "rgba(28, 25, 23, 0.6)",
+    "--t-color-accent": "#9f1239",
+    "--t-color-accent-on-dark": "#fb7185",
+    "--t-radius": "2px",
+    "--t-radius-sm": "2px",
+    "--t-radius-lg": "4px",
+    "--t-font-heading": "'Fraunces', Georgia, 'Times New Roman', serif",
+    "--t-font-body": "'Work Sans', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-caption": "var(--t-font-body)",
+    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+    "--t-heading-transform": "none",
+    "--t-heading-weight": "600",
+    "--t-color-surface-raised": "#faf6ee",
+    "--t-chart-0": "#9f1239",
+    "--t-chart-1": "#b45309",
+    "--t-chart-2": "#1c1917",
+    "--t-chart-3": "#a16207",
+    "--t-chart-4": "#78716c",
+    "--t-chart-5": "#be123c",
+    "--t-chart-6": "#44403c",
+    "--t-chart-7": "#d6b98c",
+    "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
+  },
+  "embedFonts": [
+    {
+      "family": "Fraunces",
+      "path": "assets/fonts/google/fraunces/fraunces-400-latin.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "family": "Fraunces",
+      "path": "assets/fonts/google/fraunces/fraunces-400-latin-ext.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    },
+    {
+      "family": "Work Sans",
+      "path": "assets/fonts/google/work-sans/work-sans-400-latin.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "family": "Work Sans",
+      "path": "assets/fonts/google/work-sans/work-sans-400-latin-ext.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    }
+  ]
+}

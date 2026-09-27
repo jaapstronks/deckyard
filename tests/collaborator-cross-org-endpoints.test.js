@@ -51,6 +51,7 @@
  */
 
 import test from 'node:test';
+import { brandSeedRow } from './helpers/theme-seed.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -169,6 +170,7 @@ async function seed({
   revoked = false,
 } = {}) {
   db = createFakeDb({
+    themes: [await brandSeedRow()],
     organizations: [
       { id: HOME_ORG, name: 'Home', slug: 'home' },
       { id: AWAY_ORG, name: 'Away', slug: 'away' },

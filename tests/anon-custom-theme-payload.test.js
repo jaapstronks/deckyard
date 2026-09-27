@@ -1,8 +1,8 @@
 /**
  * A database theme reaches the three anonymous surfaces, or the deck is blank.
  *
- * A **custom** (database) theme is a row, not a file: the client resolves it
- * through `GET /api/themes/custom/:id/config`, which sits behind the login
+ * A theme is a database record: the client resolves it
+ * through `GET /api/themes/:id/config`, which sits behind the login
  * gate. Every surface that exists for people without an account therefore got
  * a 401 there, swallowed it, and rendered the deck on a neutral fallback
  * theme — silently unbranded, which is the whole point of a theme.
@@ -17,8 +17,7 @@
  *   - `GET  /api/follow/:id/presentation`      — follow-along audience
  *   - `GET  /api/live-sessions/:id/deck`       — notes companion
  *
- * Pinned below: a custom-theme deck carries its theme on all three, a built-in
- * deck carries `null` (those load as static files, client-side, as before),
+ * Pinned below: a theme-record deck carries its theme on all three, including a seed,
  * and what travels is `buildThemeConfig`'s render projection — no ownership,
  * organization or authorship stamp leaves with it.
  *
@@ -46,6 +45,7 @@ const { initializeStorage, __resetStorageForTests } =
 const { createPresentation } =
   await import('../server/storage/presentations/index.js');
 const { createTheme } = await import('../server/storage/themes.js');
+const { readThemeSeeds } = await import('../server/utils/theme-seeds.js');
 const { createShareLink } =
   await import('../server/storage/share-links/index.js');
 const { createLiveSession, updateLiveSessionState } =
@@ -60,8 +60,28 @@ const { clearCustomThemeCache } = await import('../server/utils/themes.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 
 test.before(async () => {
+  const { record: brand } = (await readThemeSeeds()).find(
+    ({ record }) => record.slug === 'brand',
+  );
   __setTestDb(
     createFakeDb({
+      themes: [
+        {
+          id: '00000000-0000-4000-8000-0000000000bb',
+          organization_id: null,
+          seed_hash: 'fixture',
+          slug: brand.slug,
+          label: brand.label,
+          logo_url: brand.logoUrl || null,
+          logo_small_url: brand.logoSmallUrl || null,
+          colors: brand.colors,
+          fonts: brand.fonts,
+          config: brand.config,
+          is_default: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ],
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
       users: userRows(OWNER),
     }),
@@ -196,11 +216,7 @@ test('verify hands the anonymous viewer the deck theme, not a 401 it cannot see'
 
   const config = body.presentation.themeConfig;
   assert.equal(body.presentation.theme, theme.id, 'the id still travels');
-  assert.equal(
-    config?._customThemeId,
-    theme.id,
-    'and so does the config it addresses',
-  );
+  assert.equal(config?.id, theme.id, 'and so does the config it addresses');
   assert.equal(config.label, theme.label);
   assert.equal(
     config.cssVars['--t-color-accent'],
@@ -271,7 +287,7 @@ test('the follow audience gets the theme with the deck the follow code authorize
   assert.equal(res.statusCode, 200);
   assert.equal(body.status, 'live');
   assert.equal(body.presentation.theme, theme.id);
-  assert.equal(body.presentation.themeConfig?._customThemeId, theme.id);
+  assert.equal(body.presentation.themeConfig?.id, theme.id);
   assert.equal(
     body.presentation.themeConfig.cssVars['--t-color-accent'],
     '#00ccaa',
@@ -309,7 +325,7 @@ test('the notes companion gets the theme with the session deck', async () => {
   const { res, body } = await sessionDeck(sessionId);
   assert.equal(res.statusCode, 200);
   assert.equal(body.theme, theme.id);
-  assert.equal(body.themeConfig?._customThemeId, theme.id);
+  assert.equal(body.themeConfig?.id, theme.id);
   assert.equal(body.themeConfig.cssVars['--t-color-accent'], '#7744ff');
 });
 

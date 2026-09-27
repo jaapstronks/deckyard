@@ -95,7 +95,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
       path.join(os.tmpdir(), 'deckyard-bad-seeds-'),
     );
     try {
-      const dir = path.join(root, 'themes', 'seeds');
+      const dir = path.join(root, 'themes');
       await fs.mkdir(dir, { recursive: true });
       const seeds = await readThemeSeeds();
       for (const { record } of seeds) {
@@ -137,7 +137,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
       path.join(os.tmpdir(), 'deckyard-bad-config-seeds-'),
     );
     try {
-      const dir = path.join(root, 'themes', 'seeds');
+      const dir = path.join(root, 'themes');
       await fs.mkdir(dir, { recursive: true });
       const seeds = await readThemeSeeds();
       for (const { record } of seeds) {

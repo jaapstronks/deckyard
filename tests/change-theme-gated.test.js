@@ -14,6 +14,7 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { testScope } from './helpers/storage-scope.js';
+import { seedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -26,6 +27,8 @@ const { createPresentation, getPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
 
 const OWNER = 'owner@example.com';
+const AMETHYST = (await seedRow('amethyst')).id;
+const MIDNIGHT = (await seedRow('midnight')).id;
 
 describe('updatePresentation — gated theme switch', () => {
   let deckId;
@@ -34,6 +37,11 @@ describe('updatePresentation — gated theme switch', () => {
     __setTestDb(
       createFakeDb({
         organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+        themes: [
+          await seedRow('brand'),
+          await seedRow('amethyst'),
+          await seedRow('midnight'),
+        ],
       }),
     );
     await initializeStorage();
@@ -41,12 +49,12 @@ describe('updatePresentation — gated theme switch', () => {
       title: 'Theme lock',
       ownerEmail: OWNER,
       lang: 'nl',
-      theme: 'amethyst',
+      theme: AMETHYST,
     });
     deckId = created.id;
     assert.equal(
       created.theme,
-      'amethyst',
+      AMETHYST,
       'fixture should start on the amethyst theme',
     );
   });
@@ -58,35 +66,35 @@ describe('updatePresentation — gated theme switch', () => {
 
   it('keeps the theme locked on a normal save (no allowThemeChange)', async () => {
     const doc = structuredClone(await getPresentation(testScope(), deckId));
-    doc.theme = 'midnight'; // a would-be switch coming in on the body
+    doc.theme = MIDNIGHT; // a would-be switch coming in on the body
     const updated = await updatePresentation(testScope(), deckId, doc, {
       actorEmail: OWNER,
     });
     assert.equal(
       updated.theme,
-      'amethyst',
+      AMETHYST,
       'default write path must ignore a theme change',
     );
 
     const stored = await getPresentation(testScope(), deckId);
-    assert.equal(stored.theme, 'amethyst', 'nothing was persisted');
+    assert.equal(stored.theme, AMETHYST, 'nothing was persisted');
   });
 
   it('switches the theme when allowThemeChange is set (the /change-theme route)', async () => {
     const doc = structuredClone(await getPresentation(testScope(), deckId));
-    doc.theme = 'midnight';
+    doc.theme = MIDNIGHT;
     const updated = await updatePresentation(testScope(), deckId, doc, {
       actorEmail: OWNER,
       allowThemeChange: true,
     });
     assert.equal(
       updated.theme,
-      'midnight',
+      MIDNIGHT,
       'gated write path must apply the new theme',
     );
 
     const stored = await getPresentation(testScope(), deckId);
-    assert.equal(stored.theme, 'midnight', 'the switch was persisted');
+    assert.equal(stored.theme, MIDNIGHT, 'the switch was persisted');
   });
 
   it('leaves the theme untouched when the flag is set but no theme is provided', async () => {
@@ -99,7 +107,7 @@ describe('updatePresentation — gated theme switch', () => {
     });
     assert.equal(
       updated.theme,
-      'midnight',
+      MIDNIGHT,
       'a missing body theme falls back to the stored one',
     );
   });

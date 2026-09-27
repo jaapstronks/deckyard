@@ -167,7 +167,7 @@ export async function handlePresentationImportSlidesAsImages(
     });
 
     // Upload images to ImageKit and create slide objects
-    const theme = await loadDeckTheme(repoRoot, pres.theme);
+    const theme = await loadDeckTheme(repoRoot, pres.theme, storageScope);
     const slideTypes = await buildMergedSlideTypes(storageScope);
     const newSlides = [];
     const baseFilename = (filename || 'imported').replace(/\.pdf$/i, '');

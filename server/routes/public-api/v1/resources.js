@@ -3,7 +3,6 @@
  * Provides access to themes, slide types, and image library.
  */
 
-import { listThemeIds, loadThemeAssets } from '../../../utils/themes.js';
 import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
@@ -27,51 +26,28 @@ import { parsePaginationParams } from '../../../utils/request-validators.js';
  * GET /api/v1/themes - List available themes.
  */
 async function handleThemes(ctx) {
-  const { repoRoot } = ctx;
-
   if (!requirePermission(ctx, 'read')) return true;
 
   // A key acts in the organization it belongs to; the storage scope built by
   // the v1 auth middleware carries exactly that.
   const routeCtx = ctx.storageScope;
 
-  // Load system themes from filesystem
-  const systemThemeIds = await listThemeIds(repoRoot);
-  const filteredSystemIds = sandboxEnabled()
-    ? systemThemeIds.filter((id) => String(id).startsWith('sandbox-'))
-    : systemThemeIds;
-
-  const systemThemes = [];
-  for (const id of filteredSystemIds) {
-    try {
-      const t = await loadThemeAssets(repoRoot, id);
-      systemThemes.push({
-        id: String(t?.id || id),
-        label: String(t?.label || t?.id || id),
-        type: 'system',
-      });
-    } catch {
-      systemThemes.push({ id: String(id), label: String(id), type: 'system' });
-    }
-  }
-
-  // Load custom themes from database
-  const customThemes = await listThemes(routeCtx);
-  const customThemeList = customThemes.map((t) => ({
+  const records = await listThemes(routeCtx);
+  const visible = sandboxEnabled()
+    ? records.filter((theme) => theme.source === 'seed')
+    : records;
+  const allThemes = visible.map((t) => ({
     id: t.id,
     slug: t.slug,
+    source: t.source,
     label: t.label,
     logoUrl: t.logoUrl || null,
     colors: t.colors || null,
     fonts: t.fonts || null,
     isDefault: t.isDefault || false,
-    type: 'custom',
   }));
-
-  // Combine and sort (custom first, then system)
-  const allThemes = [...customThemeList, ...systemThemes];
   allThemes.sort((a, b) => {
-    if (a.type !== b.type) return a.type === 'custom' ? -1 : 1;
+    if (a.source !== b.source) return a.source === 'organization' ? -1 : 1;
     return String(a.label).localeCompare(String(b.label));
   });
 
@@ -94,10 +70,7 @@ async function handleSlideTypes(ctx) {
       label: def.label,
       fields: def.fields,
       defaults: def.defaults,
-      themeId:
-        typeof def.themeId === 'string' && def.themeId.trim()
-          ? def.themeId.trim()
-          : undefined,
+      themeOnly: def.themeOnly === true || undefined,
       defaultsByLang:
         def.defaultsByLang && typeof def.defaultsByLang === 'object'
           ? def.defaultsByLang
