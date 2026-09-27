@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { sql } from 'kysely';
 import { repoRoot } from '../config/paths.js';
+import { customDirFor } from '../../shared/custom-root.js';
 import { getDb } from '../db/client.js';
 import { curatedFontFaces, isValidFont } from '../../shared/theme-fonts.js';
 import {
@@ -94,7 +95,7 @@ export async function readThemeSeeds(root = repoRoot) {
   // Until B438.2 removes the old file runtime, records live below themes/seeds.
   const dirs = [
     path.join(root, 'themes', 'seeds'),
-    path.join(root, 'custom', 'themes'),
+    path.join(customDirFor(root), 'themes'),
   ];
   const seen = new Map();
   const seeds = [];

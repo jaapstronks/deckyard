@@ -400,6 +400,46 @@ export const THEME_FIELD_PROBLEMS = Object.freeze({
 
 const refuse = (path, code) => ({ ok: false, path, code });
 
+// A write must survive the read normalizer unchanged. Otherwise a known field
+// with a bad value (or shape) is accepted and silently disappears on read.
+function changedConfigValue(input, normalized, path = 'config') {
+  if (Array.isArray(input)) {
+    if (!Array.isArray(normalized) || input.length !== normalized.length)
+      return path;
+    for (const [index, value] of input.entries()) {
+      const changed = changedConfigValue(
+        value,
+        normalized[index],
+        `${path}.${index}`,
+      );
+      if (changed) return changed;
+    }
+    return null;
+  }
+  if (isPlainObject(input)) {
+    if (!isPlainObject(normalized)) {
+      if (!Object.keys(input).length) return path;
+      normalized = {};
+    }
+    for (const [key, value] of Object.entries(input)) {
+      if (
+        path === 'config' &&
+        key === 'version' &&
+        value === THEME_CONFIG_VERSION
+      )
+        continue;
+      const changed = changedConfigValue(
+        value,
+        normalized[key],
+        `${path}.${key}`,
+      );
+      if (changed) return changed;
+    }
+    return null;
+  }
+  return Object.is(input, normalized) ? null : path;
+}
+
 /**
  * The write gate for a theme config: refuse an unknown field by name, else
  * normalize. Storage calls this on create and update; `.deck` installs go
@@ -422,7 +462,10 @@ export function checkThemeConfig(raw) {
       : THEME_FIELD_PROBLEMS.unknown;
     return refuse(path, code);
   }
-  return { ok: true, config: validateThemeConfig(raw) };
+  const config = validateThemeConfig(raw);
+  const changed = changedConfigValue(raw, config);
+  if (changed) return refuse(changed, THEME_FIELD_PROBLEMS.invalid);
+  return { ok: true, config };
 }
 
 // ============================================================

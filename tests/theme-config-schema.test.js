@@ -323,6 +323,26 @@ test('checkThemeConfig passes a known config through the normalizer', () => {
   });
 });
 
+test('checkThemeConfig refuses known fields that normalization would change', () => {
+  for (const [input, path] of [
+    [{ titleLayout: 'sideways' }, 'config.titleLayout'],
+    [{ logos: [] }, 'config.logos'],
+    [{ slideTypes: { include: 'bad-shape' } }, 'config.slideTypes.include'],
+    [{ surfaces: { radius: 'enormous' } }, 'config.surfaces.radius'],
+    [{ gradient: { enabled: 'false' } }, 'config.gradient.enabled'],
+    [
+      { cssVarOverrides: { '--t-radius': '1px; color: red' } },
+      'config.cssVarOverrides.--t-radius',
+    ],
+  ]) {
+    assert.deepEqual(checkThemeConfig(input), {
+      ok: false,
+      path,
+      code: 'invalid_value',
+    });
+  }
+});
+
 test('a cssVarOverrides value may be as long as a layered gradient', () => {
   const long = `linear-gradient(${'#000000, '.repeat(150)}#ffffff)`;
   assert.ok(long.length > 540 && long.length <= CSS_VAR_OVERRIDE_MAX);
