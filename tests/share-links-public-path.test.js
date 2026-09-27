@@ -500,9 +500,9 @@ test('verify hands over the deck itself — the anonymous viewer has no other wa
   assert.equal(deck.id, 'deck-shared');
   assert.equal(deck.title, 'Title of deck-shared');
   assert.equal(deck.theme, 'default');
-  // A built-in theme is a public file the client loads itself; only a database
-  // theme has to ride along (tests/anon-custom-theme-payload.test.js).
-  assert.equal(deck.themeConfig, null);
+  // `default` needs its resolved config because the anonymous viewer cannot
+  // read the workspace setting (tests/anon-custom-theme-payload.test.js).
+  assert.ok(deck.themeConfig?.id);
   assert.equal(deck.lang, 'nl');
   assert.equal(deck.revision, 1);
   assert.deepEqual(

@@ -9,7 +9,7 @@ import { cssStringEscape } from '../../../shared/theme-fonts.js';
 function safeThemeId(raw) {
   const s = String(raw || '').trim();
   if (!s) return DEFAULT_THEME_ID;
-  if (s === 'default') return DEFAULT_THEME_ID;
+  if (s === 'default') return s;
   // Allow UUIDs (36 chars) and short slug IDs
   if (!/^[a-z0-9-]{1,40}$/i.test(s)) return DEFAULT_THEME_ID;
   return s.toLowerCase();
@@ -176,6 +176,17 @@ function isThemeForId(theme, id) {
  * @returns {Promise<Object>} the normalized theme
  */
 export async function loadThemeById(rawThemeId, { config = null } = {}) {
+  if (rawThemeId === 'default') {
+    if (config) {
+      return loadThemeById(config._customThemeId || config.id, { config });
+    }
+    const { defaultThemeId } = await api('/api/themes');
+    return loadThemeById(
+      defaultThemeId && defaultThemeId !== 'default'
+        ? defaultThemeId
+        : DEFAULT_THEME_ID,
+    );
+  }
   const id = safeThemeId(rawThemeId);
   if (themeCache.has(id)) return themeCache.get(id);
 

@@ -173,7 +173,7 @@ test('a JSON import naming a theme this instance lacks is refused, not defaulted
   const res = await appPost('/api/presentations/import/json', {
     deck: {
       title: 'Van elders',
-      theme: 'ciiic',
+      theme: 'not-installed-theme',
       lang: 'nl',
       slides: [{ type: 'title-slide', content: { title: 'Hoi' } }],
     },

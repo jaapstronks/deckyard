@@ -46,7 +46,7 @@ export async function handleRenderSlide(
   if (!jsonResult.ok) return true;
 
   return serveSlideRender({ storageScope, res }, jsonResult.body, {
-    theme: await loadThemeAssets(repoRoot, pres?.theme),
+    theme: await loadThemeAssets(repoRoot, pres?.theme, storageScope),
     // Custom types render here, so they get the same deck language the
     // bundled ones get on the client canvas.
     lang: resolveDeckLang(pres),

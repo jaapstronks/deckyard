@@ -40,19 +40,47 @@ const dbTheme = () => ({
 
 let served = dbTheme();
 let fetches = 0;
+let currentDefault = UUID;
 // Response-like enough for api(): the layer reads status and content-type.
-globalThis.fetch = async () => {
+globalThis.fetch = async (url) => {
   fetches += 1;
   return {
     ok: true,
     status: 200,
     headers: { get: () => 'application/json; charset=utf-8' },
-    json: async () => structuredClone(served),
+    json: async () =>
+      url === '/api/themes'
+        ? { defaultThemeId: currentDefault }
+        : structuredClone(served),
   };
 };
 
-const { loadThemeById, invalidateTheme, clearThemeCache } =
+const { loadThemeById, normalizeThemeId, invalidateTheme, clearThemeCache } =
   await import('../client/lib/theme/theme.js');
+
+test('default resolves the current workspace theme instead of the built-in id', async () => {
+  assert.equal(normalizeThemeId('default'), 'default');
+  clearThemeCache();
+  const before = fetches;
+  const theme = await loadThemeById('default');
+  assert.equal(theme._customThemeId, UUID);
+  assert.equal(fetches, before + 2, 'setting and selected theme are fetched');
+
+  currentDefault = 'brand';
+  served = { id: 'brand', label: 'Brand', cssVars: {} };
+  const changed = await loadThemeById('default');
+  assert.equal(changed.id, 'brand');
+  currentDefault = UUID;
+  served = dbTheme();
+});
+
+test('anonymous default uses the theme config in its deck payload', async () => {
+  clearThemeCache();
+  const before = fetches;
+  const theme = await loadThemeById('default', { config: dbTheme() });
+  assert.equal(theme._customThemeId, UUID);
+  assert.equal(fetches, before);
+});
 
 test('a database theme is accepted even though its id is the slug', async () => {
   clearThemeCache();

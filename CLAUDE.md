@@ -1,4 +1,4 @@
-# Deckyard — Claude Code instructions
+# Deckyard — agent instructions
 
 Deckyard is a self-hosted presentation engine for humans and AI agents:
 vanilla JS ESM on client and server, no framework, no bundler. Deep
@@ -42,12 +42,11 @@ de drie planning-horizonnen hierboven zijn er de deckyard-instantie van.
   het antwoord af met de sluitregel (`/handoff` + sessiesoort + model).
   Cross-machine doorgeven gaat via `queue.md` met een lane-tag (`→ mbp` /
   `→ dev`). Volledige regels: `docs/plans/handoff-systematiek.md` § Lanes.
-- **Rollen**: Fable brieft, beslist en reviewt; Opus voert één item/PR per
-  sessie uit en merget nooit de eigen PR. Een review-en-merge-sessie draait
-  op Fable — sinds 2 sep 2026 geldt dat in elke repo, en zijn de repo-tiers
-  en het reviewbudget ingetrokken. De canonieke tabel staat in `werkwijze`
-  § Modelkeuze per sessie; de zes oude escalatiesignalen leven daar verder
-  als checklist voor de reviewer, niet als modelschakelaar.
+- **Rollen**: `stuur` brieft, beslist en reviewt; `uitvoer` bouwt één item/PR
+  per sessie en merget nooit de eigen PR. De tier van het item bepaalt welk
+  model bouwt en reviewt, ook wanneer de workhorse in Codex draait. Los de
+  modelnaam op via het actieve modelprofiel en `werkwijze` § Modelkeuze per
+  sessie; leg geen vaste modelnaam in de handoff vast.
 - **Ritmes**: `merge-housekeeping` (repo-eigen skill) per gedelegeerde merge;
   `reorg-audit` bij de drift-drempel; `tighten-scan` (repo-eigen skill) op
   aanvraag.
@@ -158,7 +157,8 @@ Apply it at the recurring moments:
   `main`** — no branch or PR needed.
 - **Code changes** go via a feature branch and a **PR** — and there the
   work-agent stops. Open the PR, hand it off with `claude-notify-pr`, and let a
-  _different_ actor review and merge (Jaap, or a Fable agent Jaap points at it).
+  _different_ actor review and merge (Jaap, or the reviewer assigned by the
+  item's tier).
   **Do not self-merge code to `main`**, even when it's green and tested. The
   only exception is an explicit "review en merge" hand-off — then you're in the
   reviewing role, so merge and run `merge-housekeeping` as the tail (see below).
@@ -192,7 +192,7 @@ Apply it at the recurring moments:
 - **Release → release notes on `deckyard-website`** is a hub → spoke recipe
   (this repo is the hub of `deckyard-website`, `deckyard-planning`,
   `deckyard-cloud` and `deckyard-video`; rules and the test question in
-  `../_meta/workspace-CLAUDE.md` § Cross-repo, `hub:` in `../_meta/REPOS.yaml`).
+  `../../_meta/workspace-CLAUDE.md` § Cross-repo, `hub:` in `../../_meta/REPOS.yaml`).
   After a Release PR merges, write the note in
   `../deckyard-website/src/content/releases/{en,nl}/X.Y.Z.md` from the
   `CHANGELOG.md` section (selection criterion: what a user notices, not the

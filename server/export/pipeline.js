@@ -94,7 +94,7 @@ export async function prepareExportContext({
   const filteredPres = stripLiveOnly
     ? stripLiveOnlySlidesFromPresentation(projected)
     : projected;
-  const theme = await loadThemeAssets(repoRoot, projected?.theme);
+  const theme = await loadThemeAssets(repoRoot, projected?.theme, storageScope);
   const langSuffix = getLangSuffix(exportLang);
 
   // Load merged slide types (core + org-specific custom types)

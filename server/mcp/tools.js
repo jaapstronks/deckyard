@@ -82,7 +82,6 @@ import {
   listThemeIds,
   loadDeckTheme,
   loadThemeAssets,
-  resolveThemeId,
   settleNewDeckTheme,
 } from '../utils/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
@@ -1683,7 +1682,11 @@ export function registerTools(
       const slide = pres.slides[slideIndex];
       let theme = null;
       try {
-        theme = await loadThemeAssets(repoRoot, resolveThemeId(pres.theme));
+        theme = await loadThemeAssets(
+          repoRoot,
+          pres.theme,
+          storageScopeOf(context),
+        );
       } catch {
         /* use default styling */
       }
@@ -1722,7 +1725,11 @@ export function registerTools(
 
       let theme = null;
       try {
-        theme = await loadThemeAssets(repoRoot, resolveThemeId(pres.theme));
+        theme = await loadThemeAssets(
+          repoRoot,
+          pres.theme,
+          storageScopeOf(context),
+        );
       } catch {
         /* use default styling */
       }

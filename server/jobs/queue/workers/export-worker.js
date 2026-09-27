@@ -104,7 +104,11 @@ async function prepareExportContext(job) {
   // and custom-theme UUIDs. The storage-layer `getThemeRecord(scope, themeId)` is a
   // different signature entirely — calling it with a repoRoot used to yield
   // `theme = null` on every queued export; today it throws.
-  const theme = await loadThemeAssets(repoRoot, filteredPres.theme);
+  const theme = await loadThemeAssets(
+    repoRoot,
+    filteredPres.theme,
+    jobScope(job.data, 'export job'),
+  );
 
   // Load merged slide types (core + org-specific custom types)
   const orgId = pres?.organizationId;

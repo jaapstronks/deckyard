@@ -64,7 +64,7 @@ export async function handlePresentationThumbnail(
     return forbidden(res);
   }
 
-  const theme = await loadThemeAssets(repoRoot, pres?.theme);
+  const theme = await loadThemeAssets(repoRoot, pres?.theme, storageScope);
   const { filename, prefix } = thumbCacheKey(pres, theme);
 
   /**

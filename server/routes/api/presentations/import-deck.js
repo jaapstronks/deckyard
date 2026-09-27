@@ -48,7 +48,6 @@ import {
 } from '../../../export/deck-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { customSlideTypeKey } from '../../../../shared/slide-types/custom-type-runtime.js';
-import { getDefaultThemeId } from '../../../storage/settings.js';
 import { canManage } from '../../../utils/route-middleware.js';
 import {
   deckImportLang,
@@ -59,7 +58,10 @@ import {
   rewriteBundleRefs,
   rewriteBundleRefsIn,
 } from '../../../../shared/slide-types/deck-assets.js';
-import { settleNewDeckTheme } from '../../../utils/themes.js';
+import {
+  DEFAULT_THEME_REF,
+  settleNewDeckTheme,
+} from '../../../utils/themes.js';
 
 /** What `?install=` may name (D90, D91). */
 const DECK_INSTALLABLES = Object.freeze(['theme', 'slideTypes']);
@@ -236,9 +238,9 @@ export async function handlePresentationsImportDeck({
       }
       themeId = result.theme.id;
     } else {
-      themeId = await getDefaultThemeId(storageScope);
+      themeId = DEFAULT_THEME_REF;
     }
-    if (settled.status !== 'not-installed') bundledTheme.themeId = themeId;
+    bundledTheme.themeId = themeId;
   }
 
   // What each carried slide type became: the deck's key -> the key it landed on

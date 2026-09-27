@@ -172,7 +172,10 @@ async function shareViewerDeck(repoRoot, pres) {
     id: pres.id,
     title: typeof pres.title === 'string' ? pres.title : '',
     theme: pres.theme || '',
-    themeConfig: await customThemeConfig(repoRoot, pres.theme),
+    themeConfig: await customThemeConfig(repoRoot, pres.theme, {
+      repoRoot,
+      organizationId: pres.organizationId,
+    }),
     // Resolved here so the viewer never re-derives it from a payload that
     // deliberately omits the i18n block (shared/i18n-utils.js).
     lang: resolveDeckLang(pres) || '',

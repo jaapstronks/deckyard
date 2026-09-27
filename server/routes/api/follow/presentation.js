@@ -136,7 +136,10 @@ export async function handleFollowPresentation(
       // on an unbranded deck. The theme rides on the payload the follow code
       // already authorizes (server/utils/themes.js § customThemeConfig);
       // null for a built-in, which the client loads from /themes/ itself.
-      themeConfig: await customThemeConfig(repoRoot, picked.theme),
+      themeConfig: await customThemeConfig(repoRoot, picked.theme, {
+        repoRoot,
+        organizationId: picked.organizationId,
+      }),
       // The deck's live-video overlay, the one setting the audience renders.
       // Not `settings` itself: that also carries owner-side switches the
       // audience has no business reading. Null unless it would show.

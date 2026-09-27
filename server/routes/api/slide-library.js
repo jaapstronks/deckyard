@@ -342,7 +342,11 @@ async function handleOrganizationCreate({
         type: r.item.slideType,
         content: r.item.content,
       };
-      const theme = await loadThemeAssets(repoRoot, r.item.themeId);
+      const theme = await loadThemeAssets(
+        repoRoot,
+        r.item.themeId,
+        storageScope,
+      );
       previewUrl = await generateAndSaveOgPreview(
         repoRoot,
         mockSlide,
