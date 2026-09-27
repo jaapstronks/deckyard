@@ -54,6 +54,11 @@ import {
   slideTypeEntryRef,
 } from './deck-slide-types.js';
 import { readUploadAsset, sha256Hex } from './deck-install.js';
+import { assertExtensionDeclared } from './extension-name.js';
+import {
+  extensionNames,
+  validExtensions,
+} from '../../shared/extension-provenance.js';
 
 // Re-exported so bundle callers keep one import for the whole bundle surface.
 export { DECK_MIMETYPE };
@@ -159,6 +164,10 @@ export async function buildDeckBundle(
   const slideRefs = await addUploads(collectServedAssetRefs(deck));
   const portableDeck = rewriteAssetRefs(deck, (ref) => slideRefs.get(ref));
   delete portableDeck.theme;
+  portableDeck.extensions = extensionNames(
+    portableDeck.extensions,
+    await assertExtensionDeclared(repoRoot),
+  );
 
   // Capture the effective theme in the deck's organization (D239).
   let themeJson;
@@ -372,6 +381,9 @@ export async function readDeckBundle(buffer) {
     await manifestEntry.async('string'),
     'manifest.json',
   );
+  if (Object.hasOwn(manifest ?? {}, 'extensions')) {
+    throw new Error('manifest.json must not name extensions');
+  }
   if (manifest?.bundleVersion !== DECK_BUNDLE_VERSION) {
     throw new Error(
       `unsupported bundleVersion ${JSON.stringify(manifest?.bundleVersion)} (expected ${DECK_BUNDLE_VERSION})`,
@@ -380,6 +392,10 @@ export async function readDeckBundle(buffer) {
   const deck = entryJson(await deckEntry.async('string'), 'deck.json');
   if (Object.hasOwn(deck, 'theme'))
     throw new Error('deck.json must not name a theme');
+  if (!validExtensions(deck.extensions))
+    throw new Error(
+      'deck.json extensions must be a sorted unique list of names',
+    );
 
   // The carried theme is verified like an asset: the manifest names its hash.
   let theme;

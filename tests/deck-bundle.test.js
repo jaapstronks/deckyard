@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import JSZip from 'jszip';
 
 let tmpUploads;
 let buildDeckBundle;
@@ -83,6 +84,31 @@ const pres = () => ({
 });
 
 describe('buildDeckBundle', () => {
+  it('writes core provenance as an empty list and refuses ambiguous wire lists', async () => {
+    const buf = await buildDeckBundle('/repo', pres());
+    const parsed = await readDeckBundle(buf);
+    assert.deepEqual(parsed.deck.extensions, []);
+    const zip = await JSZip.loadAsync(buf);
+    for (const extensions of [undefined, ['b', 'a'], ['a', 'a'], ['']]) {
+      const deck = { ...parsed.deck };
+      if (extensions === undefined) delete deck.extensions;
+      else deck.extensions = extensions;
+      zip.file('deck.json', JSON.stringify(deck));
+      await assert.rejects(
+        readDeckBundle(await zip.generateAsync({ type: 'nodebuffer' })),
+        /extensions must be a sorted unique list/,
+      );
+    }
+    zip.file('deck.json', JSON.stringify(parsed.deck));
+    zip.file(
+      'manifest.json',
+      JSON.stringify({ ...parsed.manifest, extensions: [] }),
+    );
+    await assert.rejects(
+      readDeckBundle(await zip.generateAsync({ type: 'nodebuffer' })),
+      /manifest.json must not name extensions/,
+    );
+  });
   it('produces a readable bundle with a mimetype sentinel', async () => {
     const buf = await buildDeckBundle('/repo', pres());
     assert.ok(Buffer.isBuffer(buf) && buf.length > 0);

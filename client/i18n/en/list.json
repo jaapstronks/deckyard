@@ -112,6 +112,7 @@
   "list.creationView.title": "New presentation",
   "list.deckImport.askDesigner": "A designer in your workspace can install them by importing the file again.",
   "list.deckImport.assetsFailed": "{count} file(s) could not be imported.",
+  "list.deckImport.extensionsMissing": "Custom features may be missing here: {names}.",
   "list.deckImport.fileLabel": ".deck file",
   "list.deckImport.fontsMissing": "Not available here, so a default font is used: {fonts}.",
   "list.deckImport.help": "Import a current .deck file: every language, notes, images, and a snapshot of its theme and slide types.",

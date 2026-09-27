@@ -89,6 +89,15 @@ test('missing fonts and failed assets are reported', () => {
   assert.match(outcome.sentences[2], /1 file\(s\) could not be imported\./);
 });
 
+test('missing extension names warn that custom features may be absent', () => {
+  const outcome = deckImportOutcome({ extensionsMissing: ['nl.ciiic'] });
+  assert.equal(outcome.type, 'warning');
+  assert.match(
+    outcome.sentences[0],
+    /Custom features may be missing here: nl.ciiic/,
+  );
+});
+
 /** Mount a panel with a fake API and the host callbacks it expects. */
 function mount({ canInstall, api }) {
   const panel = createDeckImportPanel({ canInstall });

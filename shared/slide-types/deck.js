@@ -21,6 +21,7 @@ import { tryParseTypeId } from './type-id.js';
 import { unresolvedSlideAsMarkdown } from './unresolved.js';
 import { DECK_FORMAT_ID } from './deck-format-id.js';
 import { migratePresentation } from './schema-version.js';
+import { extensionNames } from '../extension-provenance.js';
 
 // --------
 // Portable deck format (for export/import)
@@ -184,6 +185,7 @@ export function presentationToDeck(pres, { slideTypes = SLIDE_TYPES } = {}) {
   }
   if (Object.keys(titles).length) deck.translations = titles;
   deck.theme = pres?.theme || 'default';
+  deck.extensions = extensionNames(pres?.extensions ?? []);
   deck.slides = slides;
   return deck;
 }
@@ -375,7 +377,13 @@ export function deckToPresentationParts(
         (type) => importedSlideType(type, slideTypes, carriedSlideTypes).def,
       )
     : {};
-  return { title, theme, slides, translations };
+  return {
+    title,
+    theme,
+    extensions: extensionNames(deck.extensions ?? []),
+    slides,
+    translations,
+  };
 }
 
 /**

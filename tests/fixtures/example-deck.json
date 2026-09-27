@@ -3,6 +3,7 @@
   "version": 1,
   "title": "The deckyard.deck format",
   "theme": "default",
+  "extensions": [],
   "slides": [
     {
       "type": "eu.deckyard.slide.title",

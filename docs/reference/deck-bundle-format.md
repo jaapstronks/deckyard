@@ -119,13 +119,21 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 ## `deck.json`
 
 The portable deck (`presentationToDeck` output: `format`, `version`, `title`,
-`lang`, `translations`, and `slides`, each slide's `type` in its
+`lang`, `translations`, `extensions`, and `slides`, each slide's `type` in its
 canonical id, with its `notes`, `duration`, `visibility` and `translations`).
 Every language version of the deck travels in it; see
 [Languages](./deck-format.md#languages). Asset refs in
 slide content are rewritten from served local paths to the bundle ref
 `assets/<hash>.<ext>`. External (`http(s)://`) image URLs are left untouched —
 they are already portable and are not fetched into the bundle.
+
+`extensions` is a sorted, unique list of installation extension names. Core
+exports `[]`. Export adds the current installation name to any names retained
+from earlier imports. The list lives only in `deck.json`, not in the manifest.
+Names carry provenance, never code or installation authority. On import,
+`extensionsMissing` lists names other than this installation's name; the UI
+warns that custom features may be missing. Saving, duplicating and restoring
+a presentation preserves this metadata for a later export.
 
 ## Theme
 

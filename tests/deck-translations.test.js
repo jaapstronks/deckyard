@@ -249,7 +249,13 @@ test('the schema describes the envelope, not the stored model (D94)', () => {
   for (const key of ['id', 'schemaVersion', 'created', 'modified', 'settings'])
     assert.equal(schema.properties[key], undefined, `no stored-model ${key}`);
   assert.equal(schema.$defs.slide.properties.id, undefined, 'no slide id');
-  assert.deepEqual(schema.required, ['format', 'version', 'title', 'slides']);
+  assert.deepEqual(schema.required, [
+    'format',
+    'version',
+    'title',
+    'extensions',
+    'slides',
+  ]);
 
   const bad = presentationToDeck(storedDeck(TWO_SLIDES));
   bad.slides[0].translations['en-GB'].title = 42;

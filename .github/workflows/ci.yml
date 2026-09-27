@@ -120,7 +120,9 @@ jobs:
           test -x "$CHROME_PATH"
           echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
       - name: Load fork slide types into custom/slide-types/
-        run: cp tests/fixtures/fork-slide-types/*.js custom/slide-types/
+        run: |
+          cp tests/fixtures/fork-slide-types/*.js custom/slide-types/
+          printf '{"name":"eu.deckyard.test-fork"}\n' > custom/extension.json
       - run: npm test
         env:
           DECKYARD_MCP_TEST_DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_mcp_test

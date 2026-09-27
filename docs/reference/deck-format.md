@@ -26,6 +26,7 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
   "lang": "nl",
   "translations": { "en-GB": { "title": "My deck (EN)" } },
   "theme": "default",
+  "extensions": [],
   "slides": [
     {
       "type": "eu.deckyard.slide.title",
@@ -47,6 +48,7 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
 | `lang`         | string  | Optional. BCP 47 tag of the language `title` and every slide's `content` and `notes` are in. A deck carries **one** base language; the others are `translations`.                         |
 | `translations` | object  | Optional. The deck title per other language: `{ "<lang>": { "title": "…" } }`. See [Languages](#languages).                                                                               |
 | `theme`        | string  | Optional in the JSON envelope: the theme id the deck was authored against (e.g. `"default"`). Bundle v4 omits it and uses `theme.json` instead.                                           |
+| `extensions`   | array   | Sorted unique installation extension names retained as provenance. Core exports `[]`. Names do not grant rights or load code.                                                             |
 | `slides`       | array   | Ordered list of slides, each `{ type, content }`.                                                                                                                                         |
 
 The envelope is **lenient**: unknown top-level keys are ignored by the importer,

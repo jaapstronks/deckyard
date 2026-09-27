@@ -441,9 +441,16 @@ export function deckJsonSchema(slideTypes) {
         },
       },
       theme: { type: 'string' },
+      extensions: {
+        type: 'array',
+        description:
+          'Sorted unique names of installation extensions in the deck provenance.',
+        items: { type: 'string', minLength: 1 },
+        uniqueItems: true,
+      },
       slides: { type: 'array', items: { $ref: '#/$defs/slide' } },
     },
-    required: ['format', 'version', 'title', 'slides'],
+    required: ['format', 'version', 'title', 'extensions', 'slides'],
     additionalProperties: true,
     $defs: { slide, ...$defs },
   };
