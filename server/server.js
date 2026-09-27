@@ -30,6 +30,7 @@ import { scheduleLiveSessionCleanup } from './jobs/live-session-cleanup.js';
 import { scheduleMcpSessionSweep } from './jobs/mcp-session-sweep.js';
 import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/lifecycle.js';
+import { initializeThemeSeeds } from './utils/theme-seeds.js';
 import {
   pendingMigrationsError,
   strandedFileDataError,
@@ -287,6 +288,8 @@ async function main() {
       process.exit(1);
     }
   }
+
+  await initializeThemeSeeds();
 
   // Data check: an empty database next to a populated file-storage data
   // directory means this install predates the Postgres default and has not been

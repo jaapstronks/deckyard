@@ -34,7 +34,11 @@ import { registerPrompts } from './prompts.js';
 import { helpText } from './help.js';
 import { initializeStorage } from '../storage/lifecycle.js';
 import { initSanitizer } from '../../shared/sanitize.js';
-import { strandedFileDataError } from '../storage/boot-check.js';
+import {
+  pendingMigrationsError,
+  strandedFileDataError,
+} from '../storage/boot-check.js';
+import { initializeThemeSeeds } from '../utils/theme-seeds.js';
 import { storageModeError } from '../config/database.js';
 import { repoRoot } from '../config/paths.js';
 import { envStr } from '../config/utils.js';
@@ -79,11 +83,12 @@ async function main() {
   // Initialize storage (DB connection)
   try {
     await initializeStorage();
+    const schemaErr = await pendingMigrationsError();
+    if (schemaErr) throw new Error(schemaErr);
+    await initializeThemeSeeds();
   } catch (err) {
     process.stderr.write(`[MCP] Storage init failed: ${err.message}\n`);
-    process.stderr.write(
-      '[MCP] Continuing with limited functionality (no DB-backed features)\n',
-    );
+    process.exit(1);
   }
 
   {

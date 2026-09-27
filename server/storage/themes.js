@@ -120,6 +120,7 @@ export async function listThemes(scope) {
       .selectFrom('themes')
       .select([
         'id',
+        'organization_id',
         'slug',
         'label',
         'logo_url',
@@ -132,7 +133,12 @@ export async function listThemes(scope) {
         'updated_at',
         'created_by',
       ])
-      .where('organization_id', '=', orgId)
+      .where((eb) =>
+        eb.or([
+          eb('organization_id', '=', orgId),
+          eb('organization_id', 'is', null),
+        ]),
+      )
       .orderBy('created_at', 'desc')
       .execute();
 
@@ -186,7 +192,12 @@ export async function getThemeRecord(scope, themeId) {
     // globally unique and came out of the deck being rendered); a session
     // scope keeps the organization filter.
     if (!context.crossOrganization) {
-      query = query.where('organization_id', '=', getOrgId(scope));
+      query = query.where((eb) =>
+        eb.or([
+          eb('organization_id', '=', getOrgId(scope)),
+          eb('organization_id', 'is', null),
+        ]),
+      );
     }
 
     const row = await query.executeTakeFirst();

@@ -1,0 +1,53 @@
+{
+  "slug": "playful",
+  "label": "Sunset",
+  "logoUrl": "/assets/images/logo-placeholder.svg",
+  "logoSmallUrl": null,
+  "colors": {
+    "primary": "#ea580c",
+    "background": "#fffbf5",
+    "textLight": "#ffffff",
+    "textDark": "#431407",
+    "brand": ["#db2777", "#ea580c", "#f59e0b", "#fb7185"],
+    "chart": [
+      "#ea580c",
+      "#db2777",
+      "#f59e0b",
+      "#14b8a6",
+      "#8b5cf6",
+      "#ef4444",
+      "#22c55e",
+      "#3b82f6"
+    ],
+    "accentOnDark": "#f9a8d4",
+    "textMuted": "rgba(67, 20, 7, 0.6)",
+    "backgrounds": {
+      "lime": "#fffbf5",
+      "mist": "#ffe4e6",
+      "dark": "#7c2d12"
+    }
+  },
+  "fonts": {
+    "heading": "Poppins",
+    "body": "Nunito"
+  },
+  "config": {
+    "logos": {
+      "alt": "Your logo"
+    },
+    "gradient": {
+      "enabled": false
+    },
+    "defaultTitleSlide": "title-slide",
+    "titleLayout": "center",
+    "cssVarOverrides": {
+      "--t-color-brand-2": "#c2410c",
+      "--t-radius": "22px",
+      "--t-radius-sm": "14px",
+      "--t-radius-lg": "32px",
+      "--t-font-heading": "'Poppins', ui-sans-serif, system-ui, -apple-system, sans-serif",
+      "--t-font-body": "'Nunito', ui-sans-serif, system-ui, -apple-system, sans-serif",
+      "--t-color-surface-raised": "#fff1f2"
+    }
+  }
+}
