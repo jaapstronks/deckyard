@@ -85,6 +85,8 @@ and docs alike:
    MAJOR means MAJOR. The beta window is the one chance to correct structure
    cheaply, and it is spent deliberately.
 
+**Plan against actual use (clarified 2026-09-27).** During this controlled beta, protect the data that is actually in use with a bounded, one-time migration. A manual fork upgrade is acceptable. Compatibility readers, aliases and migration frameworks require evidence of real consumers or exported files that need them. A hypothetical installed base is not an acceptance criterion. Where no exported files are in circulation, a format change may replace the previous reader outright; local test exports can be regenerated. Keep authorization, input validation and protection of existing stored data intact.
+
 Adopted 2026-08-01, triggered by the type-id one-spelling decision (an early
 draft argued for keeping three spellings because most write paths already
 tolerated them — the exact reasoning rule 4 forbids). Rule 5 was added
