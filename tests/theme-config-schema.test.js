@@ -308,6 +308,19 @@ test('checkThemeConfig refuses each unknown field with its path', () => {
   });
 });
 
+test('checkThemeConfig refuses JSON prototype keys before normalization', () => {
+  for (const key of ['__proto__', 'constructor', 'toString']) {
+    for (const value of [{}, { inserted: true }]) {
+      const input = JSON.parse(`{"${key}":${JSON.stringify(value)}}`);
+      assert.deepEqual(checkThemeConfig(input), {
+        ok: false,
+        path: `config.${key}`,
+        code: 'unknown_field',
+      });
+    }
+  }
+});
+
 test('checkThemeConfig passes a known config through the normalizer', () => {
   assert.deepEqual(checkThemeConfig(undefined), { ok: true, config: {} });
   const out = checkThemeConfig({

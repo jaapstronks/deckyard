@@ -39,6 +39,27 @@ test('unknown fields, family ids and non-curated fonts fail by path', async () =
   }
 });
 
+test('seed and API create gates refuse JSON prototype config keys', async () => {
+  const [{ record }] = await readThemeSeeds();
+  for (const key of ['__proto__', 'constructor', 'toString']) {
+    for (const value of [{}, { inserted: true }]) {
+      const config = JSON.parse(`{"${key}":${JSON.stringify(value)}}`);
+      assert.throws(
+        () => validateThemeSeed({ ...record, config }, `${record.slug}.json`),
+        (error) => error.message.includes(`config.${key}`),
+      );
+      const result = await createTheme(testScope(), {
+        ...record,
+        slug: 'bad-config',
+        config,
+      });
+      assert.equal(result.ok, false);
+      assert.equal(result.where, `config.${key}`);
+      assert.equal(result.fieldProblem.code, 'unknown_field');
+    }
+  }
+});
+
 test('seed gate refuses invalid base colors and prototype field names', async () => {
   const [{ record }] = await readThemeSeeds();
   for (const role of ['primary', 'background', 'textLight', 'textDark']) {

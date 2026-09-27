@@ -353,8 +353,8 @@ const CONFIG_FIELDS = {
  */
 function unknownConfigField(raw) {
   for (const [key, value] of Object.entries(raw)) {
+    if (!Object.hasOwn(CONFIG_FIELDS, key)) return `config.${key}`;
     const known = CONFIG_FIELDS[key];
-    if (!known) return `config.${key}`;
     if (Array.isArray(known) && isPlainObject(value)) {
       const extra = Object.keys(value).find((k) => !known.includes(k));
       if (extra) return `config.${key}.${extra}`;
@@ -430,7 +430,7 @@ function changedThemeValue(input, normalized, path = 'config') {
         continue;
       const changed = changedThemeValue(
         value,
-        normalized[key],
+        Object.hasOwn(normalized, key) ? normalized[key] : undefined,
         `${path}.${key}`,
       );
       if (changed) return changed;

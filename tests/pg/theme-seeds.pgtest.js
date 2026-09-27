@@ -125,6 +125,51 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
     }
   });
 
+  it('refuses a late prototype config key before changing an earlier seed', async () => {
+    await initializeThemeSeeds();
+    const before = await db
+      .selectFrom('themes')
+      .select(['slug', 'label', 'seed_hash'])
+      .where('organization_id', 'is', null)
+      .orderBy('slug')
+      .execute();
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'deckyard-bad-config-seeds-'),
+    );
+    try {
+      const dir = path.join(root, 'themes', 'seeds');
+      await fs.mkdir(dir, { recursive: true });
+      const seeds = await readThemeSeeds();
+      for (const { record } of seeds) {
+        const changed =
+          record.slug === seeds[0].record.slug
+            ? { ...record, label: 'Must not be written' }
+            : record.slug === seeds.at(-1).record.slug
+              ? {
+                  ...record,
+                  config: JSON.parse('{"__proto__":{}}'),
+                }
+              : record;
+        await fs.writeFile(
+          path.join(dir, `${record.slug}.json`),
+          JSON.stringify(changed),
+        );
+      }
+      await assert.rejects(initializeThemeSeeds(root), /config\.__proto__/);
+      assert.deepEqual(
+        await db
+          .selectFrom('themes')
+          .select(['slug', 'label', 'seed_hash'])
+          .where('organization_id', 'is', null)
+          .orderBy('slug')
+          .execute(),
+        before,
+      );
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('keeps seed and org scope distinct at the database boundary', async () => {
     const seed = (await readThemeSeeds())[0].record;
     await assert.rejects(
@@ -222,6 +267,43 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
         .selectFrom('themes')
         .select('id')
         .where('slug', '=', 'bad-colors')
+        .executeTakeFirst(),
+      undefined,
+    );
+  });
+
+  it('refuses JSON prototype config keys on create and update without writes', async () => {
+    const record = (await readThemeSeeds())[0].record;
+    const created = await createTheme(scopeA, {
+      ...record,
+      slug: 'config-gate-check',
+    });
+    assert.equal(created.ok, true);
+    for (const key of ['__proto__', 'constructor', 'toString']) {
+      for (const value of [{}, { inserted: true }]) {
+        const config = JSON.parse(`{"${key}":${JSON.stringify(value)}}`);
+        const create = await createTheme(scopeA, {
+          ...record,
+          slug: 'bad-config',
+          config,
+        });
+        const update = await updateTheme(scopeA, created.theme.id, { config });
+        for (const result of [create, update]) {
+          assert.equal(result.ok, false);
+          assert.equal(result.where, `config.${key}`);
+          assert.equal(result.fieldProblem.code, 'unknown_field');
+        }
+      }
+    }
+    assert.deepEqual(
+      (await getThemeRecord(scopeA, created.theme.id)).config,
+      record.config,
+    );
+    assert.equal(
+      await db
+        .selectFrom('themes')
+        .select('id')
+        .where('slug', '=', 'bad-config')
         .executeTakeFirst(),
       undefined,
     );
