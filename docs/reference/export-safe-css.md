@@ -100,10 +100,7 @@ artwork rendered blank and a remote address went straight to Chrome. Fixed
 
 ## No third-party origins
 
-A rendered document loads nothing from someone else's host: no CDN script, no
-web font, no remote stylesheet. Fonts come from the repo or from `embedFonts`
-in the theme. This is a separate, gated rule with its own page —
-[`no-third-party-origins.md`](no-third-party-origins.md).
+A rendered document loads nothing from someone else's host: no CDN script, no web font, no remote stylesheet. Fonts come from managed or curated local files, or from the fork's local `custom/styles/` CSS. This is a separate, gated rule with its own page: [`no-third-party-origins.md`](no-third-party-origins.md).
 
 ## What has not been measured
 
