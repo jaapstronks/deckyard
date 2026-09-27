@@ -423,3 +423,28 @@ test('validateThemeColors refuses an unknown or invalid field by name', () => {
     code: invalid,
   });
 });
+
+test('present invalid base colors and prototype names are refused, omissions default', () => {
+  for (const role of Object.keys(DEFAULT_THEME_COLORS)) {
+    for (const value of [false, 0, null, '']) {
+      assert.deepEqual(validateThemeColors({ [role]: value }), {
+        ok: false,
+        path: `colors.${role}`,
+        code: 'invalid_value',
+      });
+    }
+  }
+  for (const key of ['constructor', 'toString', '__proto__']) {
+    assert.deepEqual(validateThemeColors({ [key]: '#123456' }), {
+      ok: false,
+      path: `colors.${key}`,
+      code: 'unknown_field',
+    });
+  }
+  assert.deepEqual(validateThemeColors({}).colors, DEFAULT_THEME_COLORS);
+  assert.deepEqual(validateThemeColors(null), {
+    ok: false,
+    path: 'colors',
+    code: 'invalid_value',
+  });
+});

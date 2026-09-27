@@ -544,7 +544,7 @@ const OPTIONAL_COLOR_FIELDS = {
  * @returns {{ok: true, colors: Object} | {ok: false, path: string, code: string}}
  */
 export function validateThemeColors(raw) {
-  if (raw === undefined || raw === null) {
+  if (raw === undefined) {
     return { ok: true, colors: { ...DEFAULT_THEME_COLORS } };
   }
   if (!isPlainObject(raw))
@@ -552,7 +552,7 @@ export function validateThemeColors(raw) {
 
   const colors = {};
   for (const [key, fallback] of Object.entries(DEFAULT_THEME_COLORS)) {
-    if (!raw[key]) {
+    if (!Object.hasOwn(raw, key)) {
       colors[key] = fallback;
       continue;
     }
@@ -562,9 +562,10 @@ export function validateThemeColors(raw) {
   }
 
   for (const [key, value] of Object.entries(raw)) {
-    if (key in DEFAULT_THEME_COLORS) continue;
+    if (Object.hasOwn(DEFAULT_THEME_COLORS, key)) continue;
+    if (!Object.hasOwn(OPTIONAL_COLOR_FIELDS, key))
+      return refuse(`colors.${key}`, THEME_FIELD_PROBLEMS.unknown);
     const valid = OPTIONAL_COLOR_FIELDS[key];
-    if (!valid) return refuse(`colors.${key}`, THEME_FIELD_PROBLEMS.unknown);
     if (key === 'backgrounds' && isPlainObject(value)) {
       const extra = Object.keys(value).find(
         (k) => !THEME_BACKGROUND_SLOTS.includes(k),

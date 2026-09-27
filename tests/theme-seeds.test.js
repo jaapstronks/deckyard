@@ -7,6 +7,8 @@ import {
   readThemeSeeds,
   validateThemeSeed,
 } from '../server/utils/theme-seeds.js';
+import { createTheme } from '../server/storage/themes.js';
+import { testScope } from './helpers/storage-scope.js';
 
 test('six core records pass the strict seed gate', async () => {
   const seeds = await readThemeSeeds();
@@ -34,6 +36,50 @@ test('unknown fields, family ids and non-curated fonts fail by path', async () =
       () => validateThemeSeed({ ...record, ...change }, `${record.slug}.json`),
       new RegExp(field),
     );
+  }
+});
+
+test('seed gate refuses invalid base colors and prototype field names', async () => {
+  const [{ record }] = await readThemeSeeds();
+  for (const role of ['primary', 'background', 'textLight', 'textDark']) {
+    for (const value of [false, 0, null, '']) {
+      assert.throws(
+        () =>
+          validateThemeSeed(
+            { ...record, colors: { ...record.colors, [role]: value } },
+            `${record.slug}.json`,
+          ),
+        new RegExp(`colors\\.${role}`),
+      );
+    }
+  }
+  for (const key of ['constructor', 'toString', '__proto__']) {
+    assert.throws(
+      () =>
+        validateThemeSeed(
+          { ...record, colors: { ...record.colors, [key]: '#123456' } },
+          `${record.slug}.json`,
+        ),
+      new RegExp(`colors\\.${key}`),
+    );
+  }
+});
+
+test('the API create gate refuses invalid colors before opening storage', async () => {
+  for (const [colors, where] of [
+    [{ primary: false }, 'colors.primary'],
+    [{ background: 0 }, 'colors.background'],
+    [{ textLight: null }, 'colors.textLight'],
+    [{ textDark: '' }, 'colors.textDark'],
+    [{ constructor: '#123456' }, 'colors.constructor'],
+    [{ toString: '#123456' }, 'colors.toString'],
+  ]) {
+    const result = await createTheme(testScope(), {
+      label: 'Invalid colors',
+      colors,
+    });
+    assert.equal(result.ok, false);
+    assert.equal(result.where, where);
   }
 });
 

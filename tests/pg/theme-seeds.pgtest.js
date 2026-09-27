@@ -1,6 +1,9 @@
 import { after, before, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { sql } from 'kysely';
 import {
   pgDescribe,
@@ -80,6 +83,48 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
     await initializeThemeSeeds();
   });
 
+  it('rejects a malformed seed batch before writing any changed row', async () => {
+    await initializeThemeSeeds();
+    const before = await db
+      .selectFrom('themes')
+      .select(['slug', 'label', 'seed_hash'])
+      .where('organization_id', 'is', null)
+      .orderBy('slug')
+      .execute();
+    const root = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'deckyard-bad-seeds-'),
+    );
+    try {
+      const dir = path.join(root, 'themes', 'seeds');
+      await fs.mkdir(dir, { recursive: true });
+      const seeds = await readThemeSeeds();
+      for (const { record } of seeds) {
+        const changed =
+          record.slug === seeds[0].record.slug
+            ? { ...record, label: 'Must not be written' }
+            : record.slug === seeds.at(-1).record.slug
+              ? { ...record, colors: { ...record.colors, textDark: null } }
+              : record;
+        await fs.writeFile(
+          path.join(dir, `${record.slug}.json`),
+          JSON.stringify(changed),
+        );
+      }
+      await assert.rejects(initializeThemeSeeds(root), /colors\.textDark/);
+      assert.deepEqual(
+        await db
+          .selectFrom('themes')
+          .select(['slug', 'label', 'seed_hash'])
+          .where('organization_id', 'is', null)
+          .orderBy('slug')
+          .execute(),
+        before,
+      );
+    } finally {
+      await fs.rm(root, { recursive: true, force: true });
+    }
+  });
+
   it('keeps seed and org scope distinct at the database boundary', async () => {
     const seed = (await readThemeSeeds())[0].record;
     await assert.rejects(
@@ -144,5 +189,41 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
       'not_found',
     );
     assert.deepEqual((await deleteTheme(scopeA, seed.id)).reason, 'not_found');
+  });
+
+  it('refuses malformed colors at create and update gates without writes', async () => {
+    const record = (await readThemeSeeds())[0].record;
+    const created = await createTheme(scopeA, {
+      ...record,
+      slug: 'color-gate-check',
+    });
+    assert.equal(created.ok, true);
+    for (const colors of [
+      { ...record.colors, primary: false },
+      { ...record.colors, constructor: '#123456' },
+    ]) {
+      const field = Object.hasOwn(colors, 'constructor')
+        ? 'colors.constructor'
+        : 'colors.primary';
+      assert.deepEqual(
+        (await createTheme(scopeA, { ...record, slug: 'bad-colors', colors }))
+          .where,
+        field,
+      );
+      assert.deepEqual(
+        (await updateTheme(scopeA, created.theme.id, { colors })).where,
+        field,
+      );
+    }
+    const unchanged = await getThemeRecord(scopeA, created.theme.id);
+    assert.deepEqual(unchanged.colors, record.colors);
+    assert.equal(
+      await db
+        .selectFrom('themes')
+        .select('id')
+        .where('slug', '=', 'bad-colors')
+        .executeTakeFirst(),
+      undefined,
+    );
   });
 });

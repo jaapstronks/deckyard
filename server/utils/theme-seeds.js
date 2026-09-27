@@ -146,8 +146,8 @@ export async function readThemeSeeds(root = repoRoot) {
 }
 
 /** Refresh all seeds in one transaction, preserving IDs and skipping unchanged rows. */
-export async function initializeThemeSeeds() {
-  const seeds = await readThemeSeeds();
+export async function initializeThemeSeeds(root = repoRoot) {
+  const seeds = await readThemeSeeds(root);
   await upsertThemeSeeds(getDb(), seeds);
 }
 
