@@ -279,6 +279,8 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
       slug: 'config-gate-check',
     });
     assert.equal(created.ok, true);
+    const originalConfig = (await getThemeRecord(scopeA, created.theme.id))
+      .config;
     for (const key of ['__proto__', 'constructor', 'toString']) {
       for (const value of [{}, { inserted: true }]) {
         const config = JSON.parse(`{"${key}":${JSON.stringify(value)}}`);
@@ -297,7 +299,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
     }
     assert.deepEqual(
       (await getThemeRecord(scopeA, created.theme.id)).config,
-      record.config,
+      originalConfig,
     );
     assert.equal(
       await db
