@@ -620,16 +620,26 @@ describe('url field projection', () => {
 });
 
 describe('relation-aware collection projection (text-blocks arrows)', () => {
+  // The relation's word is the chosen option's `copyKey` in the deck language
+  // (B312/B319): the one lookup `kindKey` and `defaultFromOption` use. An
+  // option without a copy key (`none`) is no relation.
   const relDef = () => ({
     fields: [
       {
         key: 'rows',
         type: 'items',
         relationField: 'arrow',
-        relationLabels: { down: 'leads to', up: 'follows from' },
         itemFields: [
           { key: 'title', type: 'string' },
-          { key: 'arrow', type: 'enum' },
+          {
+            key: 'arrow',
+            type: 'enum',
+            options: [
+              { value: 'none', label: 'None' },
+              { value: 'down', label: 'Down', copyKey: 'relationLeadsTo' },
+              { value: 'up', label: 'Up', copyKey: 'relationFollowsFrom' },
+            ],
+          },
           {
             key: 'blocks',
             type: 'items',
@@ -642,27 +652,34 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
       },
     ],
   });
+  const rows = (...arrows) => ({
+    content: {
+      rows: arrows.map((arrow, i) => ({
+        title: `Phase ${i + 1}`,
+        arrow,
+        blocks: [{ title: `B${i}`, body: 'b' }],
+      })),
+    },
+  });
+  const markers = (html) =>
+    [...html.matchAll(/data-relation="(\w+)">([^<]*)</g)].map(
+      ([, value, word]) => `${value}=${word}`,
+    );
+
+  it('names both relations in the deck language, and none not at all', () => {
+    const slide = rows('down', 'up', 'none');
+    assert.deepEqual(markers(body(slide, relDef(), { lang: 'nl' })), [
+      'down=leidt tot',
+      'up=volgt uit',
+    ]);
+    assert.deepEqual(markers(body(slide, relDef(), { lang: 'en-GB' })), [
+      'down=leads to',
+      'up=follows from',
+    ]);
+  });
 
   it('renders an ordered <ol> with a relation marker when rows carry an arrow', () => {
-    const html = body(
-      {
-        content: {
-          rows: [
-            {
-              title: 'Phase 1',
-              arrow: 'down',
-              blocks: [{ title: 'A', body: 'a' }],
-            },
-            {
-              title: 'Phase 2',
-              arrow: 'none',
-              blocks: [{ title: 'B', body: 'b' }],
-            },
-          ],
-        },
-      },
-      relDef(),
-    );
+    const html = body(rows('down', 'none'), relDef(), { lang: 'en-GB' });
     assert.ok(/^<ol class="reader-items" data-field="rows">/.test(html), html);
     assert.ok(
       /class="reader-relation" data-field="arrow" data-relation="down">leads to</.test(
@@ -672,7 +689,7 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
     );
     // nested blocks stay an unordered sub-list
     assert.ok(
-      /<ul class="reader-items" data-field="blocks"><li class="reader-item"><h3 data-field="title">A<\/h3>/.test(
+      /<ul class="reader-items" data-field="blocks"><li class="reader-item"><h3 data-field="title">B0<\/h3>/.test(
         html,
       ),
       html,
@@ -683,22 +700,17 @@ describe('relation-aware collection projection (text-blocks arrows)', () => {
   });
 
   it('stays an unordered <ul> with no marker when no row has an arrow', () => {
-    const html = body(
-      {
-        content: {
-          rows: [
-            {
-              title: 'Only',
-              arrow: 'none',
-              blocks: [{ title: 'A', body: 'a' }],
-            },
-          ],
-        },
-      },
-      relDef(),
-    );
+    const html = body(rows('none'), relDef(), { lang: 'nl' });
     assert.ok(/^<ul class="reader-items" data-field="rows">/.test(html), html);
     assert.ok(!/reader-relation/.test(html), html);
+  });
+
+  it('an option without a copy key marks no relation, even when stored', () => {
+    const def = relDef();
+    def.fields[0].itemFields[1].options[1] = { value: 'down', label: 'Down' };
+    const html = body(rows('down'), def, { lang: 'en-GB' });
+    assert.ok(!/reader-relation/.test(html), html);
+    assert.ok(!/Down/.test(html), html);
   });
 });
 
@@ -852,17 +864,27 @@ describe('the structure contract: tabular projects to a real <table>', () => {
 describe('the structure contract: a dataset names the encoding it drops', () => {
   // `SLIDE_STRUCTURE_CONTRACTS.dataset` tells a reader to decode the payload to
   // rows and lose "only the visual encoding" — honest only if that encoding is
-  // named. The caption is built from the fields' own declared labels, so there
-  // is no reader-side copy to drift.
+  // named. `encodingKeys` maps each slot to the slide-copy key naming it, and an
+  // enum slot's value is its option's `copyKey` word (B312/B319): no editor
+  // label and no raw token reaches the caption.
   const dataset = {
     structure: 'dataset',
     fields: [
       { key: 'title', type: 'string' },
-      { key: 'chartType', label: 'Chart type', type: 'enum' },
+      {
+        key: 'chartType',
+        label: 'Chart type',
+        type: 'enum',
+        options: [{ value: 'bar', label: 'Bar', copyKey: 'chartKindBar' }],
+      },
       {
         key: 'data',
         type: 'csv',
-        encodingKeys: ['chartType', 'xLabel', 'yLabel'],
+        encodingKeys: {
+          chartType: 'chartEncodingKind',
+          xLabel: 'chartEncodingX',
+          yLabel: 'chartEncodingY',
+        },
       },
       {
         key: 'xLabel',
@@ -873,30 +895,46 @@ describe('the structure contract: a dataset names the encoding it drops', () => 
       { key: 'yLabel', label: 'Y label', type: 'string' },
     ],
   };
+  const content = {
+    title: 'T',
+    chartType: 'bar',
+    data: 'Year,Rev\n2024,10',
+    xLabel: 'Year',
+    yLabel: 'EUR',
+  };
 
-  it('captions the decoded table with the encoding fields', () => {
-    const html = body(
-      {
-        content: {
-          title: 'T',
-          chartType: 'bar',
-          data: 'Year,Rev\n2024,10',
-          xLabel: 'Year',
-          yLabel: 'EUR',
-        },
-      },
-      dataset,
-      { headingKey: 'title' },
-    );
+  it('captions the decoded table with the encoding, in the deck language', () => {
+    const en = body({ content }, dataset, {
+      headingKey: 'title',
+      lang: 'en-GB',
+    });
     assert.ok(
-      /<caption>Chart type: bar\. X label: Year\. Y label: EUR\.<\/caption>/.test(
-        html,
+      /<caption>Chart type: Bar chart\. X axis: Year\. Y axis: EUR\.<\/caption>/.test(
+        en,
       ),
-      html,
+      en,
+    );
+    const nl = body({ content }, dataset, { headingKey: 'title', lang: 'nl' });
+    assert.ok(
+      /<caption>Diagramtype: Staafdiagram\. X-as: Year\. Y-as: EUR\.<\/caption>/.test(
+        nl,
+      ),
+      nl,
     );
     // …and never twice: the encoding fields are consumed by the caption.
-    assert.ok(!/<p[^>]*>Year<\/p>/.test(html), html);
-    assert.ok(!/<p[^>]*>EUR<\/p>/.test(html), html);
+    assert.ok(!/<p[^>]*>Year<\/p>/.test(en), en);
+    assert.ok(!/<p[^>]*>EUR<\/p>/.test(en), en);
+  });
+
+  it('a slot without a slide-copy word says nothing, rather than its label', () => {
+    const def = structuredClone(dataset);
+    def.fields[2].encodingKeys.yLabel = 'noSuchCopyKey';
+    const html = body({ content }, def, { headingKey: 'title', lang: 'en-GB' });
+    assert.ok(
+      /<caption>Chart type: Bar chart\. X axis: Year\.<\/caption>/.test(html),
+      html,
+    );
+    assert.ok(!/Y label/.test(html), html);
   });
 });
 
@@ -1292,6 +1330,43 @@ describe('mediaRef — a reference projects as a stand-in, never as an id (D82)'
     // The library id was already presentational and stays out.
     assert.ok(!html.includes('366590'), html);
   });
+
+  it('video-slide projects its transcript as prose under the stand-in (D138)', () => {
+    const type = 'video-slide';
+    const def = SLIDE_TYPES[type];
+    const slide = {
+      type,
+      content: {
+        ...structuredClone(def.defaults),
+        source: 'https://youtu.be/abc',
+        transcript: 'We open on the harbour.\n\nThen the **crew** arrives.',
+      },
+    };
+    const { key: headingKey, text: headingText } = slideHeading(slide, def);
+    const html = renderSlideBodySemanticHtml(slide, def, {
+      headingKey,
+      headingText,
+    });
+    const link = html.indexOf('<a href="https://youtu.be/abc">Video</a>');
+    const transcript = html.indexOf('data-field="transcript"');
+    assert.ok(link >= 0, html);
+    assert.ok(transcript > link, html);
+    assert.ok(html.includes('<p>We open on the harbour.</p>'), html);
+    assert.ok(html.includes('<strong>crew</strong>'), html);
+  });
+
+  it('the video canvas never shows the transcript (D138)', () => {
+    const def = SLIDE_TYPES['video-slide'];
+    const html = def.renderHtml(
+      {
+        ...structuredClone(def.defaults),
+        transcript: 'A line only the reader should say.',
+      },
+      { id: 's1' },
+      {},
+    );
+    assert.ok(!html.includes('A line only the reader should say.'), html);
+  });
 });
 
 describe('role — the projection reads what a text field is (D128)', () => {
@@ -1567,7 +1642,7 @@ describe('the deck language reaches the projection (B294, D130c)', () => {
     const nl = section({ type: 'chart-slide', content }, chart, 'nl');
     assert.match(
       nl,
-      /<caption>Lijndiagram met 2 punten\. Min: 25\. Max: 45\. Chart type: line\. Series 1 label \(legend\): Sales\. Series 2 label \(legend\): Target\.<\/caption>/,
+      /<caption>Lijndiagram met 2 punten\. Min: 25\. Max: 45\. Diagramtype: Lijndiagram\. Reeks 1: Sales\. Reeks 2: Target\.<\/caption>/,
     );
     // Consumed by the caption, never loose paragraphs too.
     assert.ok(!/<p[^>]*>Sales<\/p>/.test(nl), nl);
@@ -1588,7 +1663,7 @@ describe('the deck language reaches the projection (B294, D130c)', () => {
     const html = section({ type: 'chart-slide', content }, chart, 'en-GB');
     assert.match(
       html,
-      /<caption>Bar chart with 2 points\. Highest: 2025 \(14\)\. Chart type: bar\.<\/caption>/,
+      /<caption>Bar chart with 2 points\. Highest: 2025 \(14\)\. Chart type: Bar chart\.<\/caption>/,
     );
     assert.ok(!html.includes('Ignored'), html);
   });
@@ -1924,6 +1999,95 @@ describe('markup — author HTML projects as its content, not its source (B298)'
     assert.equal(
       slideHeading({ content: { snippet: '<h1>x</h1>' } }, src).text,
       'Slide 1',
+    );
+  });
+});
+
+describe('axes — a grid of items is a table headed by its axes (B304, D139)', () => {
+  const type = 'matrix-slide';
+  const def = SLIDE_TYPES[type];
+  const slideWith = (patch) => ({
+    type,
+    content: { ...structuredClone(def.defaults), ...patch },
+  });
+  const project = (slide) => {
+    const { key: headingKey } = slideHeading(slide, def);
+    return body(slide, def, { headingKey });
+  };
+
+  it('both axes: one spanning column header, one spanning row header, cells row by row', () => {
+    const html = project(slideWith({ xAxis: 'Effort', yAxis: 'Impact' }));
+    assert.ok(
+      html.includes(
+        '<thead><tr><td></td><th scope="col" colspan="2" data-field="xAxis">Effort</th></tr></thead>',
+      ),
+      html,
+    );
+    assert.ok(
+      html.includes(
+        '<tbody><tr><th scope="row" rowspan="2" data-field="yAxis">Impact</th><td data-tone="positive"><h3 data-field="title">Strengths</h3>',
+      ),
+      html,
+    );
+    // Row-major: the second row opens with the third cell.
+    assert.ok(
+      /<\/tr><tr><td data-tone="positive"><h3 data-field="title">Opportunities<\/h3>/.test(
+        html,
+      ),
+      html,
+    );
+    assert.equal((html.match(/<td data-tone=/g) || []).length, 4, html);
+    assert.ok(!html.includes('<ul class="reader-items"'), html);
+  });
+
+  it('one axis: only its header, no empty corner', () => {
+    const xOnly = project(slideWith({ xAxis: 'Effort' }));
+    assert.ok(
+      xOnly.includes(
+        '<thead><tr><th scope="col" colspan="2" data-field="xAxis">Effort</th></tr></thead>',
+      ),
+      xOnly,
+    );
+    assert.ok(!xOnly.includes('scope="row"'), xOnly);
+
+    const yOnly = project(slideWith({ yAxis: 'Impact' }));
+    assert.ok(!yOnly.includes('<thead>'), yOnly);
+    assert.ok(
+      yOnly.includes(
+        '<tr><th scope="row" rowspan="2" data-field="yAxis">Impact</th><td',
+      ),
+      yOnly,
+    );
+  });
+
+  it('no axes: the list it always was, and no axis leaks as a paragraph', () => {
+    for (const patch of [{}, { xAxis: '  ', yAxis: '' }]) {
+      const html = project(slideWith(patch));
+      assert.ok(html.includes('<ul class="reader-items" data-field="cells">'));
+      assert.ok(!html.includes('<table'), html);
+      assert.ok(!html.includes('data-field="xAxis"'), html);
+      assert.ok(!html.includes('data-field="yAxis"'), html);
+    }
+  });
+
+  it('the canvas labels the axes, and without them draws the grid as before', () => {
+    const plain = def.renderHtml(slideWith({}).content);
+    assert.ok(!plain.includes('matrix-plot'), plain);
+    assert.ok(!plain.includes('matrix-axis'), plain);
+
+    const withAxes = def.renderHtml(
+      slideWith({ xAxis: 'Effort', yAxis: 'Impact' }).content,
+    );
+    assert.ok(withAxes.includes('<div class="matrix-plot">'), withAxes);
+    assert.ok(
+      withAxes.includes(
+        '<div class="matrix-axis matrix-axis-x"><p class="slide-eyebrow" data-inline-field="xAxis" dir="auto">Effort</p></div>',
+      ),
+      withAxes,
+    );
+    assert.ok(
+      withAxes.includes('data-inline-field="yAxis" dir="auto">Impact</p>'),
+      withAxes,
     );
   });
 });

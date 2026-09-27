@@ -100,5 +100,39 @@ pgDescribe(
         'the refused patch wrote nothing',
       );
     });
+
+    it('stores an alias dominant canonical, so a content edit keeps the key canonical (B482)', async () => {
+      const created = await createPersonalLibraryItem(
+        storageScope,
+        ALICE,
+        {
+          name: 'Alias',
+          slideType: 'content-slide',
+          content: { title: 'Hello' },
+          i18n: {
+            dominant: 'en',
+            versions: { 'en-GB': { content: { title: 'Hello' } } },
+          },
+        },
+        { actorEmail: ALICE },
+      );
+      assert.ok(created?.ok, JSON.stringify(created));
+      assert.equal(created.item.i18n.dominant, 'en-GB');
+
+      const edited = await updatePersonalLibraryItem(
+        storageScope,
+        ALICE,
+        created.item.id,
+        { content: { title: 'Hi' } },
+        {
+          actorEmail: ALICE,
+          expectedRevision: created.item.revision,
+          contentGuard: () => null,
+        },
+      );
+      assert.ok(edited?.ok, JSON.stringify(edited));
+      assert.deepStrictEqual(Object.keys(edited.item.i18n.versions), ['en-GB']);
+      assert.equal(edited.item.i18n.versions['en-GB'].content.title, 'Hi');
+    });
   },
 );

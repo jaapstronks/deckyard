@@ -41,7 +41,10 @@ const BILINGUAL = {
   id: 'deck-1',
   title: 'Deck',
   published: { id: 'ab12cd34', slug: 'deck' },
-  i18n: { active: 'nl', versions: { nl: { slides: [] }, en: { slides: [] } } },
+  i18n: {
+    active: 'nl',
+    versions: { nl: { slides: [] }, 'en-GB': { slides: [] } },
+  },
   slides: [{ type: 'title' }],
 };
 

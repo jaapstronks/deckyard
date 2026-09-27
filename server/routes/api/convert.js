@@ -15,7 +15,7 @@ import {
 } from '../../utils/http.js';
 import { getConvertParams } from '../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../shared/slide-types.js';
-import { loadDeckTheme } from '../../utils/themes.js';
+import { settleNewDeckTheme } from '../../utils/themes.js';
 import { createLogger } from '../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../utils/sse.js';
 import { clientDisconnectSignal } from '../../utils/client-disconnect.js';
@@ -47,6 +47,12 @@ async function handleConvertFile({
   if (!filename) {
     return badRequest(res, 'Expected { filename: "..." }');
   }
+  // Checked before the conversion, so an unknown theme costs no work.
+  const { themeId, theme: themeConfig } = await settleNewDeckTheme(
+    repoRoot,
+    theme,
+    storageScope,
+  );
 
   // Parse the data URL
   const dataUrlMatch = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
@@ -119,7 +125,7 @@ async function handleConvertFile({
   // Create the presentation from the deck
   try {
     const parts = deckToPresentationParts(deck, {
-      theme: await loadDeckTheme(repoRoot, theme),
+      theme: themeConfig,
       lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
     });
 
@@ -135,7 +141,7 @@ async function handleConvertFile({
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Converted Presentation',
-      theme: theme,
+      theme: themeId,
       ownerEmail: authedUser?.email || null,
       lang: effectiveLang,
     });
@@ -192,6 +198,12 @@ async function handleConvertStream({
   if (!filename) {
     return badRequest(res, 'Expected { filename: "..." }');
   }
+  // Checked before the conversion, so an unknown theme costs no work.
+  const { themeId, theme: themeConfig } = await settleNewDeckTheme(
+    repoRoot,
+    theme,
+    storageScope,
+  );
 
   // Parse the data URL
   const dataUrlMatch = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
@@ -418,7 +430,7 @@ async function handleConvertStream({
     });
 
     const parts = deckToPresentationParts(deck, {
-      theme: await loadDeckTheme(repoRoot, theme),
+      theme: themeConfig,
       lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
     });
 
@@ -431,7 +443,7 @@ async function handleConvertStream({
 
     const created = await createPresentation(storageScope, {
       title: parts.title || deck.title || 'Converted Presentation',
-      theme: theme,
+      theme: themeId,
       ownerEmail: authedUser?.email || null,
       lang: effectiveLang,
     });

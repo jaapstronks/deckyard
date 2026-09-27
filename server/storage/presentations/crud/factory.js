@@ -4,21 +4,51 @@
 
 import { newPresentation } from '../../../../shared/slide-schemas.js';
 import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
-import { normalizeI18n } from '../i18n.js';
+import { normalizeI18n, refuseNonCanonicalVersionKeys } from '../i18n.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
-  TRANSLATION_LANGS,
 } from '../../../../shared/i18n-utils.js';
+import { AppError } from '../../../utils/errors.js';
 import { attachSandboxMeta } from '../sandbox.js';
-import {
-  sandboxDefaultThemeId,
-  sandboxEnabled,
-} from '../../../config/sandbox.js';
-import { resolveThemeId, loadThemeAssets } from '../../../utils/themes.js';
+import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { normalizeMeta } from './helpers.js';
 import { rekeyNewDeckSlides } from './rekey-new-deck.js';
 import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
+
+/** @param {unknown} value */
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/**
+ * Refuse a `slides[i].contentByLang` the factory could only read by repairing
+ * it. The map becomes the deck's language versions, so it must be an object
+ * of content objects keyed by canonical deck language: a non-object map (or
+ * `null`) was ignored, a non-object language value (`"de": "tekst"`) fell back
+ * to the flat `content` and that version never appeared (B485), and an alias
+ * or off-axis key was dropped (B483). The keys pass the check the stored
+ * version keys pass (B481), under the same field and path.
+ *
+ * @param {unknown} contentByLang
+ * @param {number} i - the slide's index in the create body
+ * @throws {AppError} 400 `invalid`, `details.field` = `slides`
+ */
+function refuseMalformedContentByLang(contentByLang, i) {
+  const path = `slides[${i}].contentByLang`;
+  const refuse = (message) => {
+    throw new AppError(message, 400, { field: 'slides' }, 'invalid');
+  };
+  if (!isPlainObject(contentByLang)) {
+    refuse(`${path} must be an object of content per deck language`);
+  }
+  refuseNonCanonicalVersionKeys(contentByLang, { field: 'slides', path });
+  for (const [lang, content] of Object.entries(contentByLang)) {
+    if (!isPlainObject(content)) {
+      refuse(`${path} key ${JSON.stringify(lang)} must be a content object`);
+    }
+  }
+}
 
 /**
  * Prepare a new presentation object with all defaults, title slide, and i18n setup.
@@ -32,40 +62,33 @@ import { normalizeRevealStyle } from '../../../../shared/reveal-style.js';
  *   type registry. A deck can be created *with* slides (library insert, import,
  *   agent payload), and those go through the same write seam, so the org's
  *   DB-backed custom types have to be resolvable here as well (B129).
+ * @param {Object} [opts.storageScope] - the acting storage scope, so a custom
+ *   theme is found only in its own organization
  * @returns {Promise<Object>} Fully prepared presentation object
+ * @throws {AppError} 400 `invalid` with `details.field` = `theme` for a theme
+ *   this instance does not have, or `slides` for a malformed `contentByLang`
  */
 export async function prepareNewPresentation(
   repoRoot,
   body,
-  { slideTypes } = {},
+  { slideTypes, storageScope = null } = {},
 ) {
   const title =
     typeof body?.title === 'string' && body.title.trim()
       ? body.title.trim()
       : 'Naamloze presentatie';
   const initialLang = normalizeLang(body?.lang) || DEFAULT_DECK_LANG;
-  const requestedTheme =
-    typeof body?.theme === 'string' && body.theme.trim()
-      ? body.theme.trim()
-      : null;
-  const effectiveTheme =
-    requestedTheme || (sandboxEnabled() ? sandboxDefaultThemeId() : 'default');
-
-  // Default title slide differs per theme.
-  // Themes can specify a custom title slide via the `defaultTitleSlide` property.
-  let defaultTitleSlide = 'title-slide';
-  // Also carried into newPresentation and on to newSlide, so that a slide type
-  // opting in via `autoBackgroundPreset` can draw a background from the theme's
-  // own presets. That declaration is the only rule, on every route (D92); no
-  // core type sets it today, so the default title slide stays flat.
-  let themeConfig = null;
-  try {
-    const themeId = resolveThemeId(effectiveTheme);
-    themeConfig = await loadThemeAssets(repoRoot, themeId);
-    defaultTitleSlide = themeConfig?.defaultTitleSlide || 'title-slide';
-  } catch {
-    // ignore
-  }
+  // The one place a create's theme is checked (B486): absent is the
+  // installation default, anything else must be a theme this instance has, in
+  // its one spelling, or the create is refused.
+  const { themeId: effectiveTheme, theme: themeConfig } =
+    await settleNewDeckTheme(repoRoot, body?.theme, storageScope);
+  // Default title slide differs per theme. The theme also rides into
+  // newPresentation and on to newSlide, so that a slide type opting in via
+  // `autoBackgroundPreset` can draw a background from the theme's own presets.
+  // That declaration is the only rule, on every route (D92); no core type sets
+  // it today, so the default title slide stays flat.
+  const defaultTitleSlide = themeConfig?.defaultTitleSlide || 'title-slide';
 
   // If slides are provided in the body, use them instead of the default title slide.
   //
@@ -97,11 +120,14 @@ export async function prepareNewPresentation(
     // mapped fresh id (and the parentId links pointing at it), a repeat is a
     // slide of its own — the deck must never store two slides under one id.
     const claimed = new Set();
-    const base = providedSlidesRaw.map((s) => {
+    const base = providedSlidesRaw.map((s, i) => {
       const sourceId = typeof s?.id === 'string' && s.id ? s.id : null;
       const mapped =
         sourceId && !claimed.has(sourceId) ? idMap.get(sourceId) : null;
       if (sourceId) claimed.add(sourceId);
+      if (s?.contentByLang !== undefined) {
+        refuseMalformedContentByLang(s.contentByLang, i);
+      }
       return {
         id: mapped || cryptoUuid(),
         parentId:
@@ -113,26 +139,20 @@ export async function prepareNewPresentation(
             ? structuredClone(s.content)
             : {},
         contentByLang:
-          s?.contentByLang && typeof s.contentByLang === 'object'
+          s?.contentByLang !== undefined
             ? structuredClone(s.contentByLang)
             : null,
       };
     });
 
-    // Which languages appear in any slide's contentByLang?
+    // Which languages appear in any slide's contentByLang? Its keys are
+    // canonical and its values objects, refused otherwise above.
     const langSet = new Set();
     for (const s of base) {
-      if (!s.contentByLang) continue;
-      for (const l of TRANSLATION_LANGS) {
-        if (s.contentByLang[l] && typeof s.contentByLang[l] === 'object')
-          langSet.add(l);
-      }
+      for (const l of Object.keys(s.contentByLang || {})) langSet.add(l);
     }
 
-    const contentFor = (s, lang) => {
-      const c = s.contentByLang?.[lang];
-      return c && typeof c === 'object' ? c : s.content;
-    };
+    const contentFor = (s, lang) => s.contentByLang?.[lang] ?? s.content;
 
     if (langSet.size > 0) {
       // Always include the dominant language so the top-level version exists.

@@ -39,7 +39,7 @@ test('a library copy lands on the slide clipboard and pastes into a deck', () =>
       id: 'lib-1',
       slideType: 'content-slide',
       content,
-      i18n: { versions: { en: { content: { title: 'Other language' } } } },
+      i18n: { versions: { 'en-GB': { content: { title: 'Other language' } } } },
     }),
     true,
   );

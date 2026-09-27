@@ -85,9 +85,9 @@ export default {
       type: 'enum',
       required: true,
       options: [
-        { value: 'bar', label: 'Bar' },
-        { value: 'line', label: 'Line' },
-        { value: 'pie', label: 'Pie' },
+        { value: 'bar', label: 'Bar', copyKey: 'chartKindBar' },
+        { value: 'line', label: 'Line', copyKey: 'chartKindLine' },
+        { value: 'pie', label: 'Pie', copyKey: 'chartKindPie' },
       ],
     },
     {
@@ -107,17 +107,18 @@ export default {
         'an x label and one or two series, named by the header.',
       // The `dataset` contract tells a reader to decode this payload to rows
       // and lose "only the visual encoding" — which is honest only if the
-      // encoding is named. These siblings describe it; the projection captions
-      // the decoded table with their declared labels instead of dropping them
-      // in as anonymous paragraphs. `visibleWhen` still applies, so a pie chart
-      // names no axes and only a line chart names its series.
-      encodingKeys: [
-        'chartType',
-        'xLabel',
-        'yLabel',
-        'series1Label',
-        'series2Label',
-      ],
+      // encoding is named. These siblings describe it, each with the slide-copy
+      // key that names its slot in the deck language; the projection captions
+      // the decoded table with them instead of dropping them in as anonymous
+      // paragraphs. `visibleWhen` still applies, so a pie chart names no axes
+      // and only a line chart names its series.
+      encodingKeys: {
+        chartType: 'chartEncodingKind',
+        xLabel: 'chartEncodingX',
+        yLabel: 'chartEncodingY',
+        series1Label: 'chartEncodingSeries1',
+        series2Label: 'chartEncodingSeries2',
+      },
     },
     // The per-type display toggles, two-up where a chart type has two (see
     // form-layout.js).

@@ -299,9 +299,14 @@ paths:
                 theme:
                   type: string
                   description: >-
-                    Theme id (a built-in theme or one of your organization's
-                    themes, by id or UUID). An unknown theme is refused with a
-                    400. Omitted, the instance default applies.
+                    Theme id, exactly as `GET /themes` lists it: a built-in
+                    theme or one of your organization's themes, by id or
+                    (lower-case) UUID. `default` is a value of its own: the
+                    deck follows this installation's default theme, resolved
+                    at render time, so it moves along when the installation's
+                    default changes. Omitted, the installation's default
+                    applies. An unknown theme, or another spelling of a known
+                    one, is refused with a 400.
                   example: 'default'
                 lang:
                   type: string
@@ -326,6 +331,16 @@ paths:
                     follow-invite's `presentationId`) are re-derived against the
                     new deck, so a slide copied from elsewhere never shares its
                     live poll or its QR target with the deck it came from.
+                    A slide may carry `contentByLang`, an object of content
+                    per deck language: each key becomes a language version of
+                    the deck, so each key must be a canonical deck language
+                    (the `lang` values above) and each value a content object.
+                    Leave the field out for a single-language slide. A
+                    `contentByLang` that is not an object (`null` included), a
+                    value that is not an object, or an `en` or unsupported key
+                    is refused with a 400 `invalid`, `details.field` =
+                    `slides`, the message naming `slides[i].contentByLang`,
+                    and nothing is created.
       responses:
         '201':
           description: Presentation created
@@ -409,8 +424,10 @@ paths:
                   description: >-
                     Switch the deck to this theme. Goes through the same theme
                     switch as the editor. The deck's current theme, echoed
-                    back from a GET, is a plain save; an unknown theme is
-                    refused with a 400.
+                    back from a GET, is a plain save; an unknown theme, or
+                    another spelling of a known one, is refused with a 400.
+                    `default` makes the deck follow the installation's
+                    default theme again (see create).
                 lang:
                   type: string
                   description: >-
@@ -1158,11 +1175,14 @@ paths:
       tags:
         - Slide Library
       summary: List library items
-      description: Returns team slide library items.
+      description: >-
+        Returns team slide library items. The theme filter is named `theme`,
+        as on every other v1 surface; the retired `themeId` is refused with a
+        400 whose `details` name the parameter to use instead.
       parameters:
-        - name: themeId
+        - name: theme
           in: query
-          description: Filter by theme
+          description: Only items saved against this theme id.
           schema:
             type: string
         - name: limit
@@ -2032,7 +2052,9 @@ components:
         theme:
           type: string
           nullable: true
-          description: The deck's theme id.
+          description: >-
+            The deck's theme id, or `default` for a deck that follows this
+            installation's default theme.
         lang:
           type: string
           nullable: true
@@ -2061,7 +2083,12 @@ components:
                 $ref: '#/components/schemas/Slide'
             i18n:
               type: object
-              description: Internationalization data
+              description: >-
+                Internationalization data. `versions` holds one language
+                version per key, and each key is a canonical deck language
+                (`nl`, `en-GB`, `de`, …). A write with any other key — the
+                alias `en` included — is refused with 400 `invalid` and
+                `details.field` = `i18n.versions`.
             revision:
               type: integer
 
@@ -2342,8 +2369,12 @@ components:
           type: string
         slideType:
           type: string
-        themeId:
+        theme:
           type: string
+          nullable: true
+          description: >-
+            The theme the item was saved against, or null for an item that
+            fits any theme.
         content:
           type: object
         tags:

@@ -7,6 +7,7 @@ import {
   BACKGROUND_FIELD,
 } from '../helpers.js';
 import { markdownToSafeHtml } from '../../markdown.js';
+import { eyebrowHtml } from '../partials.js';
 
 function safeItemsArr(items) {
   return Array.isArray(items) ? items : [];
@@ -79,6 +80,11 @@ export default {
       required: true,
       minItems: 4,
       maxItems: 4,
+      // The four cells are a 2x2 grid read row by row (tl, tr, bl, br), and
+      // the two sibling strings name what its columns and rows measure. With
+      // either filled the reader projects a table headed by them instead of a
+      // list (D139); `fallback: 'table-slide'` already promised that shape.
+      axes: { columns: 2, xKey: 'xAxis', yKey: 'yAxis' },
       itemDefaults: {
         title: 'Cell',
         body: '- Item 1\n- Item 2',
@@ -123,6 +129,22 @@ export default {
         },
       ],
     },
+    {
+      key: 'xAxis',
+      label: 'Horizontal axis',
+      type: 'string',
+      required: false,
+      maxLength: 60,
+      helpText: 'What the columns measure, low to high (e.g. "Effort").',
+    },
+    {
+      key: 'yAxis',
+      label: 'Vertical axis',
+      type: 'string',
+      required: false,
+      maxLength: 60,
+      helpText: 'What the rows measure, low to high (e.g. "Impact").',
+    },
     BACKGROUND_FIELD,
   ],
   defaultsByLang: {
@@ -130,6 +152,8 @@ export default {
       title: 'SWOT-analyse',
       subheading: '',
       bottomSubheading: '',
+      xAxis: '',
+      yAxis: '',
       cells: [
         {
           title: 'Sterktes',
@@ -158,6 +182,8 @@ export default {
       title: 'SWOT Analysis',
       subheading: '',
       bottomSubheading: '',
+      xAxis: '',
+      yAxis: '',
       cells: [
         {
           title: 'Strengths',
@@ -189,6 +215,8 @@ export default {
     title: 'SWOT Analysis',
     subheading: '',
     bottomSubheading: '',
+    xAxis: '',
+    yAxis: '',
     cells: [
       {
         title: 'Strengths',
@@ -236,14 +264,28 @@ export default {
     }
 
     const cellsHtml = cells.map((cell, idx) => cellHtml(cell, idx)).join('');
+    const gridHtml = `<div class="matrix-grid">${cellsHtml}</div>`;
+
+    // The axes name what the columns and rows measure (D139). The label is the
+    // eyebrow partial (the caption-scale label `--slide-font-size-label` is
+    // for); the wrapper only places it. Without either the grid is exactly the
+    // one it was before the axes existed.
+    const xAxisHtml = eyebrowHtml(content?.xAxis, { field: 'xAxis' });
+    const yAxisHtml = eyebrowHtml(content?.yAxis, { field: 'yAxis' });
+    const plotHtml =
+      xAxisHtml || yAxisHtml
+        ? `<div class="matrix-plot">
+            ${yAxisHtml ? `<div class="matrix-axis matrix-axis-y">${yAxisHtml}</div>` : ''}
+            ${gridHtml}
+            ${xAxisHtml ? `<div class="matrix-axis matrix-axis-x">${xAxisHtml}</div>` : ''}
+          </div>`
+        : gridHtml;
 
     return `
       <div class="slide slide-matrix ${bg}${hasHeader ? ' has-header' : ''}${hasBottom ? ' has-bottom-subheading' : ''}">
         <div class="slide-inner">
           ${hasHeader ? `<div class="header">${title}${subheadingHtml}</div>` : ''}
-          <div class="matrix-grid">
-            ${cellsHtml}
-          </div>
+          ${plotHtml}
           ${bottomSubheadingHtml}
         </div>
       </div>

@@ -27,8 +27,13 @@ import {
 import { nowIso } from '../utils/normalize.js';
 import { migrateLibraryItem } from '../../shared/slide-types/schema-version.js';
 import { mergeLibraryI18n } from '../../shared/slide-library/merge-content.js';
-import { revisionConflict } from '../utils/errors.js';
+import { AppError, revisionConflict } from '../utils/errors.js';
 import { replaceTagLinks } from './tags.js';
+import {
+  normalizeLang,
+  refuseNonCanonicalVersionKeys,
+  TRANSLATION_LANGS,
+} from './presentations/i18n.js';
 
 /**
  * The refusal of a change to a shared item by someone who is neither its
@@ -202,7 +207,46 @@ async function getSlideLibraryRow(id, ctx) {
   return (await mapRowsFor([row], ctx))[0];
 }
 
+/**
+ * The `i18n` a create stores, in the one shape the library reads (B482).
+ *
+ * Create is the one write that carries `i18n` from the caller (a PATCH derives
+ * it from `content`, D170), so this is the seam. A version key that is not its
+ * own `normalizeLang` form is refused, the same check as a deck's. `dominant`
+ * is a language *value* and is normalized like a deck's (`en` -> `en-GB`); one
+ * off the axis is refused, because `mergeLibraryI18n` writes
+ * `versions[dominant]` on every content PATCH and would mint that key there.
+ *
+ * @param {unknown} i18n
+ * @returns {object}
+ * @throws {AppError} 400 `invalid`, `details.field` = `i18n.versions` or
+ *   `i18n.dominant`
+ */
+function canonicalCreateI18n(i18n) {
+  if (!isPlainObject(i18n)) return {};
+  if (isPlainObject(i18n.versions)) {
+    refuseNonCanonicalVersionKeys(i18n.versions);
+  }
+  if (i18n.dominant === undefined) return i18n;
+  const dominant = normalizeLang(i18n.dominant);
+  if (!dominant) {
+    throw new AppError(
+      `i18n.dominant ${JSON.stringify(i18n.dominant)} is not a deck language: use one of ${TRANSLATION_LANGS.join(', ')}`,
+      400,
+      { field: 'i18n.dominant' },
+      'invalid',
+    );
+  }
+  return { ...i18n, dominant };
+}
+
+/**
+ * Insert a library row. The `i18n` is checked before anything is written
+ * (`canonicalCreateI18n`).
+ */
 async function createSlideLibraryRow(data, ctx) {
+  const i18n = canonicalCreateI18n(data.i18n);
+
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -226,7 +270,7 @@ async function createSlideLibraryRow(data, ctx) {
       slide_type: data.slideType,
       theme_id: data.themeId || null,
       content: jsonb(data.content || {}),
-      i18n: jsonb(data.i18n || {}),
+      i18n: jsonb(i18n),
       // A new item has no favorites; starring is a PATCH of its own.
       favorites: sql`'{}'::text[]`,
       created_by: actorEmail,

@@ -160,6 +160,7 @@ const PRINT_DOC_CSS = `
         border: 1px solid rgba(0,0,0,0.15);
         padding: 4px 8px;
         text-align: left;
+        vertical-align: top;
       }
       .reader-table caption { text-align: left; font-size: 13px; opacity: 0.75; margin-bottom: 4px; }
       .reader-code {

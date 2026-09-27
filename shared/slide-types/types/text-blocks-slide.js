@@ -99,10 +99,10 @@ export default {
       // The per-row `arrow` is a typed relation to the NEXT row, not content:
       // "down" ≈ leads-to, "up" ≈ follows-from. In the reader/reflow projection
       // this turns the rows into an ordered causal sequence (<ol>) with a small
-      // relation marker between rows; "none" carries no relation. See
-      // semantic-projection.js (the `relationField` mechanism).
+      // relation marker between rows, named by the option's `copyKey`; "none"
+      // carries no copy key and so no relation. See semantic-projection.js
+      // (the `relationField` mechanism).
       relationField: 'arrow',
-      relationLabels: { down: 'leads to', up: 'follows from' },
       // Starter blocks so a freshly-added row renders visible, clickable cards
       // (an empty blocks[] would render a zero-height row with nothing to edit).
       itemDefaults: {
@@ -183,8 +183,8 @@ export default {
           required: false,
           options: [
             { value: 'none', label: 'None' },
-            { value: 'down', label: 'Down ↓' },
-            { value: 'up', label: 'Up ↑' },
+            { value: 'down', label: 'Down ↓', copyKey: 'relationLeadsTo' },
+            { value: 'up', label: 'Up ↑', copyKey: 'relationFollowsFrom' },
           ],
         },
       ],

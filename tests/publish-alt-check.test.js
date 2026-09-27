@@ -11,7 +11,8 @@ import assert from 'node:assert/strict';
 const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
 const { initSanitizer } = await import('../shared/sanitize.js');
 await initSanitizer();
-const { findUnnamedImages, assertImagesNamed } =
+const { findUnnamedImages } = await import('../shared/unnamed-images.js');
+const { assertImagesNamed } =
   await import('../server/services/publish-alt-check.js');
 
 const deck = (slides, extra = {}) => ({ id: 'd', slides, ...extra });

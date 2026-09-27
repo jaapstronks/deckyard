@@ -161,14 +161,15 @@ export function getStringArray(body, key, { trim = false } = {}) {
 /**
  * Extract common AI endpoint parameters.
  * @param {object} body - Request body
- * @returns {{ raw: string, vendor: string|null, lang: string|null, theme: string|null, settings: object|null }}
+ * `theme` is passed on as sent: `settleNewDeckTheme` decides it (B486).
+ * @returns {{ raw: string, vendor: string|null, lang: string|null, theme: unknown, settings: object|null }}
  */
 export function getAiParams(body) {
   return {
     raw: getString(body, 'raw'),
     vendor: getOptionalString(body, 'vendor'),
     lang: getLang(body),
-    theme: getTrimmedString(body, 'theme'),
+    theme: body?.theme,
     settings: getOptionalObject(body, 'settings'),
   };
 }
@@ -176,7 +177,8 @@ export function getAiParams(body) {
 /**
  * Extract common file conversion parameters.
  * @param {object} body - Request body
- * @returns {{ dataUrl: string, filename: string, vendor: string|null, lang: string, theme: string }}
+ * `theme` is passed on as sent: `settleNewDeckTheme` decides it (B486).
+ * @returns {{ dataUrl: string, filename: string, vendor: string|null, lang: string, theme: unknown }}
  */
 export function getConvertParams(body) {
   return {
@@ -184,7 +186,7 @@ export function getConvertParams(body) {
     filename: getString(body, 'filename'),
     vendor: getOptionalString(body, 'vendor'),
     lang: getLangOrAuto(body),
-    theme: getTrimmedString(body, 'theme') || 'default',
+    theme: body?.theme,
   };
 }
 

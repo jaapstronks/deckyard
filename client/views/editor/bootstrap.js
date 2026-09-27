@@ -86,21 +86,24 @@ export function initPresentationI18n({ pres, initialLang } = {}) {
       ? pres.i18n.versions
       : {};
 
-  if (!normalizeLang(pres.i18n.active)) {
-    pres.i18n.active =
-      normalizeLang(initialLang) ||
-      normalizeLang(pres.i18n.dominant) ||
-      DEFAULT_DECK_LANG;
-  }
+  // `active` leaves here canonical, and this is the only place that makes it
+  // so: an alias (`en`) would key a version the write seam refuses (B481-B484).
+  // Every later writer — the save, the language switch, the library modal —
+  // reads it as it stands.
+  pres.i18n.active =
+    normalizeLang(pres.i18n.active) ||
+    normalizeLang(initialLang) ||
+    normalizeLang(pres.i18n.dominant) ||
+    DEFAULT_DECK_LANG;
   // `dominant` is the language the deck is *written in* — the fixed point every
   // translation count is measured from. It is filled in when the deck names
   // none, and otherwise left exactly where it is: opening another version moves
   // `active`, never the source (D74). `active` is the version being edited and
   // presented both — the presenter reads it before `dominant` — so there is
   // still one language mode, it is just not the same field as the source.
-  if (!normalizeLang(pres.i18n.dominant)) {
-    pres.i18n.dominant = pres.i18n.active;
-  }
+  // An alias `dominant` is canonicalized for the same reason as `active`; that
+  // renames the source, it does not move it.
+  pres.i18n.dominant = normalizeLang(pres.i18n.dominant) || pres.i18n.active;
 
   // Ensure the active version exists and references the current editable buffers.
   if (!pres.i18n.versions[pres.i18n.active]) {

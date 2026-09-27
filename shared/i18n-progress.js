@@ -201,13 +201,19 @@ export function buildBlankTargetFromSource(source) {
 }
 
 /**
- * The deck languages this deck actually has a version for, normalized and
- * de-duplicated, in the order the versions were written.
+ * The deck languages this deck actually has a version for, in the order the
+ * versions were written.
  *
  * The one answer to "which languages does this deck offer" — the follow API's
  * `availableLangs`, the editor's language menu and the progress scan all read
  * it here. It used to be asked as `versions.nl` plus `versions['en-GB']`, which
  * is why a German version was invisible to every surface but the viewer.
+ *
+ * A key counts only in its canonical spelling, exactly as {@link pickVersion}
+ * reads it. This used to normalize the key, so a stored `versions.en` was
+ * reported as `en-GB` while `pickVersion('en-GB')` found nothing there: one
+ * deck, two answers (B481). The write seam now refuses such a key
+ * (`normalizeI18n`), so the canonical spelling is the only one there is.
  *
  * @param {Object} [pres] - a presentation
  * @returns {string[]}
@@ -220,8 +226,7 @@ export function existingVersionLangs(pres) {
   const out = [];
   for (const key of Object.keys(versions)) {
     if (!versions[key] || typeof versions[key] !== 'object') continue;
-    const lang = normalizeLang(key);
-    if (lang && !out.includes(lang)) out.push(lang);
+    if (normalizeLang(key) === key) out.push(key);
   }
   return out;
 }

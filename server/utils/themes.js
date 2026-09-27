@@ -12,6 +12,8 @@ import { slideBackgroundsCssText } from '../../shared/theme-slide-backgrounds.js
 import { normalizeTheme } from '../../shared/theme-normalize.js';
 import { createLogger } from './logger.js';
 import { UUID_RE } from './uuid.js';
+import { AppError } from './errors.js';
+import { sandboxDefaultThemeId, sandboxEnabled } from '../config/sandbox.js';
 
 const log = createLogger('themes');
 
@@ -22,12 +24,20 @@ const customThemeCache = new Map(); // uuid -> { theme, organizationId }
 // Default theme for OSS version (can be overridden via DEFAULT_THEME env var)
 const DEFAULT_THEME = envStr('DEFAULT_THEME', DEFAULT_THEME_ID);
 
+/**
+ * The theme value that means "this installation's default" (D232). A deck
+ * created without a theme stores it; it is resolved per render, never frozen
+ * into the id the default happens to be today.
+ */
+export const DEFAULT_THEME_REF = 'default';
+
 export function resolveThemeId(raw) {
   const s = String(raw || '').trim();
   if (!s) return DEFAULT_THEME;
-  // Back-compat: older decks / code used "default" as a theme id;
-  // it now maps to the configured DEFAULT_THEME.
-  if (s === 'default') return DEFAULT_THEME;
+  // `default` is a value of its own, not a spelling of an id (D232): a deck
+  // that carries it follows this installation's default theme, resolved at
+  // render time, so it moves along when `DEFAULT_THEME` changes.
+  if (s === DEFAULT_THEME_REF) return DEFAULT_THEME;
   // Accept UUIDs for custom themes (36 characters with hyphens)
   if (UUID_RE.test(s)) return s.toLowerCase();
   // Accept short theme IDs for system themes (up to 32 characters)
@@ -91,24 +101,62 @@ export async function loadDeckTheme(repoRoot, rawThemeId, ctx = null) {
  * drawn as the default (B446).
  *
  * @param {string} repoRoot
- * @param {string} rawThemeId - a built-in or custom theme id, or a custom
- *   theme's UUID
+ * @param {string} rawThemeId - a built-in or custom theme id, a custom
+ *   theme's UUID (lower-case), or `default`
  * @param {Object} [ctx] - storage scope; a custom theme must belong to its
  *   organization
  * @returns {Promise<Object|null>} the loaded theme, or null
  */
 export async function findTheme(repoRoot, rawThemeId, ctx = null) {
-  const raw = String(rawThemeId || '').trim();
-  if (!raw) return null;
-  if (UUID_RE.test(raw)) {
-    return loadCustomThemeRecord(raw.toLowerCase(), ctx, repoRoot);
-  }
-  const id = resolveThemeId(raw);
-  // resolveThemeId maps a malformed id onto the default; only the documented
-  // `default` alias may land there.
-  if (raw !== 'default' && id !== raw.toLowerCase()) return null;
+  if (typeof rawThemeId !== 'string' || !rawThemeId) return null;
+  // One spelling per theme (D232): the id exactly as the theme list names it.
+  // resolveThemeId trims, lower-cases and maps a malformed id onto the
+  // default, which is right for a render and wrong for a write: ` Deckyard`
+  // used to be accepted here and stored as `deckyard`.
+  const id = resolveThemeId(rawThemeId);
+  if (rawThemeId !== DEFAULT_THEME_REF && id !== rawThemeId) return null;
+  if (UUID_RE.test(id)) return loadCustomThemeRecord(id, ctx, repoRoot);
   const theme = await loadThemeAssets(repoRoot, id);
   return theme?.id === id ? theme : null;
+}
+
+/**
+ * The theme a new deck is created with, and that theme loaded (B486).
+ *
+ * Every create path runs this one rule, whatever the theme's source (a
+ * request, an MCP call, an imported file): an absent theme (`undefined` or
+ * `null`) is the installation default, `default` in the stored deck (D232) or
+ * the sandbox's own default; anything else must be a theme `findTheme` knows,
+ * in its one spelling. The storage factory applies it to every create, so no
+ * route can store a theme it did not check; a route that does costly work
+ * before the create (an AI generation, a file conversion) calls it first as
+ * well, so a refusal comes before the work instead of after it.
+ *
+ * @param {string} repoRoot
+ * @param {unknown} requested - the theme the caller named, or absent
+ * @param {Object} [ctx] - storage scope; a custom theme must belong to its
+ *   organization
+ * @returns {Promise<{themeId: string, theme: Object|null}>} the value to
+ *   store and the loaded theme to compose slides against
+ * @throws {AppError} 400 `invalid`, `details.field` = `theme`
+ */
+export async function settleNewDeckTheme(repoRoot, requested, ctx = null) {
+  if (requested === undefined || requested === null) {
+    const themeId = sandboxEnabled()
+      ? sandboxDefaultThemeId()
+      : DEFAULT_THEME_REF;
+    return { themeId, theme: await loadDeckTheme(repoRoot, themeId, ctx) };
+  }
+  const theme = await findTheme(repoRoot, requested, ctx);
+  if (!theme) {
+    throw new AppError(
+      `Theme not found: ${JSON.stringify(requested)}`,
+      400,
+      { field: 'theme' },
+      'invalid',
+    );
+  }
+  return { themeId: requested, theme };
 }
 
 export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {

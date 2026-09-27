@@ -29,11 +29,13 @@ export const inlineEdit = {
  * descriptor only inline-edits the title), so leaving them out orphaned them to
  * the bulk modal — a parity-invariant violation. They are inspector material
  * (editing-surfaces decision 2026-07-21). `watchUrl` is the same kind of field:
- * export configuration with no canvas surface.
+ * export configuration with no canvas surface. `transcript` (D138) is content
+ * the canvas never shows, so the inspector is its only editing surface.
  * @type {string[]}
  */
 export const inspectorKeeps = [
   'source',
+  'transcript',
   'autoplay',
   'bunnyLibraryId',
   'watchUrl',

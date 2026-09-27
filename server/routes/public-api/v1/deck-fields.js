@@ -11,10 +11,13 @@
  * The same holds for the two timestamps (B448): v1 publishes `createdAt` and
  * `updatedAt`, and `presentationTimestamps()` is the one place that projects
  * them from storage's `created`/`modified`.
+ *
+ * An unknown `theme` is not refused here: the storage factory checks the theme
+ * of every create, whatever the surface (B486), and a PUT switches it through
+ * `changePresentationTheme`, which checks it the same way.
  */
 
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
-import { findTheme } from '../../../utils/themes.js';
 import { apiError } from './middleware.js';
 
 /** Retired spelling → the one name the field has. */
@@ -55,23 +58,6 @@ export async function refuseUnsupportedLang(ctx, body) {
   if (body.lang === undefined || normalizeLang(body.lang)) return false;
   await apiError(ctx, 400, `Unsupported lang: ${JSON.stringify(body.lang)}`, {
     details: { field: 'lang' },
-  });
-  return true;
-}
-
-/**
- * Refuse a `theme` this instance does not have. An unknown theme used to be
- * stored as named and then drawn as the default.
- * @param {Object} ctx - v1 request context
- * @param {Object} body - parsed request body
- * @returns {Promise<boolean>} true when the request was refused (and answered)
- */
-export async function refuseUnknownTheme(ctx, body) {
-  if (body.theme === undefined) return false;
-  const theme = await findTheme(ctx.repoRoot, body.theme, ctx.storageScope);
-  if (theme) return false;
-  await apiError(ctx, 400, `Theme not found: ${JSON.stringify(body.theme)}`, {
-    details: { field: 'theme' },
   });
   return true;
 }

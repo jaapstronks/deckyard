@@ -25,10 +25,6 @@ import {
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import {
-  sandboxDefaultThemeId,
-  sandboxEnabled,
-} from '../../../config/sandbox.js';
-import {
   log,
   loadSlideTypeContext,
   loadAiThemeContext,
@@ -68,15 +64,14 @@ export async function handleAiWizardV2Stream({
   const slideTypeCtx = await loadSlideTypeContext(authedUser);
   const sessionId = generateSessionId();
   const logger = enableLogging ? createSessionLogger(sessionId) : null;
-  const effectiveTheme =
-    themeFromRequest ||
-    (sandboxEnabled() ? sandboxDefaultThemeId() : 'default');
-
-  // Load theme to get the correct title slide type and theme context for AI
-  const { titleSlideType, themeContext, theme } = await loadAiThemeContext(
-    repoRoot,
-    effectiveTheme,
-  );
+  // Settle the theme to get the correct title slide type and theme context
+  // for AI; an unknown theme is refused here, before the stream opens.
+  const {
+    themeId: effectiveTheme,
+    titleSlideType,
+    themeContext,
+    theme,
+  } = await loadAiThemeContext(repoRoot, themeFromRequest, storageScope);
 
   log.info(
     `[AI Wizard V2 Stream] Starting session ${sessionId}, theme: ${effectiveTheme}, titleSlideType: ${titleSlideType}, targetLength: ${targetLength}`,

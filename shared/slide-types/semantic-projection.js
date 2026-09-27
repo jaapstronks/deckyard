@@ -94,7 +94,11 @@ import {
 import { semanticEnumAttrs } from './semantic-enums.js';
 import { resolveItemDefaults } from './item-defaults.js';
 import { tabularColumnCount } from './tabular.js';
-import { optionDefaultText, chosenOptionCopy } from './option-default.js';
+import {
+  optionDefaultText,
+  chosenOptionCopy,
+  isSlideCopyKey,
+} from './option-default.js';
 import {
   renderUnresolvedSlideSemanticHtml,
   unresolvedSlideHeading,
@@ -508,32 +512,53 @@ function renderCsvTable(csv, caption = '', attrs = '') {
 
 /**
  * The caption for a `dataset` payload: the sibling fields its `encodingKeys`
- * names, each as "<declared label>: <value>".
+ * names, each as "<slot word>: <value>", in the deck language.
  *
  * The dataset contract tells a reader to decode the payload to rows and "lose
  * only the visual encoding" — which is only honest if the encoding is named
- * somewhere. It is built from the fields' own declared labels, so there is no
- * copy here to translate or to drift: a chart says "Chart type: bar. X label:
- * Year." because that is what its own schema calls those slots.
+ * somewhere. `encodingKeys` maps each sibling key to the slide-copy key that
+ * names its slot, so the word comes from the one copy table the canvas reads
+ * (a Dutch chart says "Diagramtype: Staafdiagram. X-as: Jaar."). An enum's
+ * value is its chosen option's `copyKey` word, never the raw token and never
+ * the editor-language option label. A slot or an option without a copy word
+ * says nothing; the field walk reports the declaration.
  *
  * Keys the type currently declares inactive (`visibleWhen`) are already gone by
  * the time this runs — a pie chart names no axes.
  *
- * @param {string[]} keys - the csv field's `encodingKeys`
+ * @param {Record<string, string>} encoding - the csv field's `encodingKeys`
  * @param {Map<string, object>} visibleByKey - visible fields, by key
  * @param {object} content
+ * @param {object} defaults - the slide's declared defaults
+ * @param {string} [lang] - the deck language
  * @returns {string}
  */
-function encodingCaption(keys, visibleByKey, content) {
+function encodingCaption(encoding, visibleByKey, content, defaults, lang) {
+  const copy = getSlideCopy(lang);
   const parts = [];
-  for (const key of Array.isArray(keys) ? keys : []) {
+  for (const [key, copyKey] of encodingEntries(encoding)) {
     const field = visibleByKey.get(key);
-    const value = str(content?.[key]);
-    if (!field || !value) continue;
-    const label = str(field.label) || key;
-    parts.push(`${label}: ${value}`);
+    if (!field) continue;
+    const slot = isSlideCopyKey(copyKey) ? str(copy[copyKey]) : '';
+    const value =
+      field.type === 'enum'
+        ? chosenOptionCopy(key, [field], content, defaults, lang).word
+        : str(content?.[key]);
+    if (!slot || !value) continue;
+    parts.push(`${slot}: ${value}`);
   }
   return parts.length ? `${parts.join('. ')}.` : '';
+}
+
+/**
+ * The `[fieldKey, copyKey]` pairs of an `encodingKeys` declaration, in order.
+ * @param {unknown} encoding
+ * @returns {Array<[string, string]>}
+ */
+function encodingEntries(encoding) {
+  if (!encoding || typeof encoding !== 'object' || Array.isArray(encoding))
+    return [];
+  return Object.entries(encoding).map(([k, v]) => [k, str(v)]);
 }
 
 /**
@@ -1013,13 +1038,15 @@ function itemHeading(
  * @param {string[]} [ctx.slideIds] - the document's slide ids, for jumps
  * @param {object} [ctx.parent] - the object holding the items field
  * @param {string} [ctx.parentKey] - the key of that items field
+ * @param {'li'|'td'} [ctx.tag] - the element the item is: a list entry, or a
+ *   cell of the grid an `axes` declaration makes of the items
  */
 function renderItemBlock(
   item,
   itemFields,
   itemLabelField,
   itemDefaults,
-  { lang, slideIds, parent, parentKey } = {},
+  { lang, slideIds, parent, parentKey, tag = 'li' } = {},
 ) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
@@ -1052,15 +1079,82 @@ function renderItemBlock(
   // enum resolves through the type's `defaults`: one rule, and the canvas
   // (`.matrix-cell[data-tone]`) says the same for a cell without a tone.
   const attrs = semanticEnumAttrs(itemFields, item, itemDefaults);
+  // `reader-item` styles a list entry; a table cell has the table's own.
+  const open = tag === 'li' ? `<li class="reader-item"` : `<${tag}`;
   if (headingKey && !below.length) {
     // One field, one marker: the <li> is the block that emits it.
-    return `<li class="reader-item"${fieldAttr(headingKey)}${attrs}>${escapeHtml(headingText)}</li>`;
+    return `${open}${fieldAttr(headingKey)}${attrs}>${escapeHtml(headingText)}</${tag}>`;
   }
   const parts = headingKey
     ? [`<h3${fieldAttr(headingKey)}>${escapeHtml(headingText)}</h3>`, ...below]
     : below;
   const inner = parts.join('\n');
-  return inner ? `<li class="reader-item"${attrs}>${inner}</li>` : '';
+  return inner ? `${open}${attrs}>${inner}</${tag}>` : '';
+}
+
+/**
+ * Project an `items` field that declares `axes` as the grid it is (D139).
+ *
+ * `axes: { columns, xKey, yKey }` says the items are a grid of `columns`
+ * columns read row by row, and names the two sibling strings that say what the
+ * columns and the rows measure. A matrix's four cells are the case: the canvas
+ * draws them 2x2, and "Impact vs. effort" in the title alone left no reader a
+ * way to rebuild which quadrant is which.
+ *
+ * With either axis named, the grid is a `<table>`: the x axis one `<th
+ * scope="col">` spanning every column, the y axis one `<th scope="row">`
+ * spanning every row, each cell the item's own block in a `<td>` (a heading
+ * and its body, as in the list). An axis that is empty has no header, and the
+ * corner stays an empty `<td>`. With neither there is nothing to head the grid
+ * with, so it stays the list it always was — the evolution rule, and the
+ * honest shape: a table without headers says no more than the list.
+ *
+ * Which end of an axis is "high" is the canvas convention (right, up), carried
+ * by the arrow the canvas draws; the header names the measure, not a scale.
+ *
+ * @param {object} field - the `items` field declaring `axes`
+ * @param {object} content
+ * @param {{lang?: string, slideIds?: string[]}} ctx
+ * @returns {string} the table, or '' when no axis is named
+ */
+function renderAxesTable(field, content, { lang, slideIds }) {
+  const { columns, xKey, yKey } = field.axes;
+  const items = Array.isArray(content?.[field.key]) ? content[field.key] : [];
+  const xText = str(content?.[xKey]);
+  const yText = str(content?.[yKey]);
+  if (!items.length || !Number.isInteger(columns) || columns < 1) return '';
+  if (!xText && !yText) return '';
+  const itemDefaults = resolveItemDefaults(field);
+  const rows = [];
+  for (let i = 0; i < items.length; i += columns) {
+    rows.push(items.slice(i, i + columns));
+  }
+  const cell = (item) =>
+    renderItemBlock(
+      item,
+      field.itemFields,
+      field.itemLabelField,
+      itemDefaults,
+      {
+        lang,
+        slideIds,
+        parent: content,
+        parentKey: field.key,
+        tag: 'td',
+      },
+    ) || '<td></td>';
+  const thead = xText
+    ? `<thead><tr>${yText ? '<td></td>' : ''}<th scope="col" colspan="${columns}"${fieldAttr(xKey)}>${escapeHtml(xText)}</th></tr></thead>`
+    : '';
+  const yHead = yText
+    ? `<th scope="row" rowspan="${rows.length}"${fieldAttr(yKey)}>${escapeHtml(yText)}</th>`
+    : '';
+  const tbody = `<tbody>${rows
+    .map(
+      (row, r) => `<tr>${r === 0 ? yHead : ''}${row.map(cell).join('')}</tr>`,
+    )
+    .join('')}</tbody>`;
+  return `<table class="reader-table"${fieldAttr(field.key)}>${thead}${tbody}</table>`;
 }
 
 /**
@@ -1309,39 +1403,42 @@ function renderFieldValue(
           content,
         );
       }
-      // A `relationField` names a per-item key holding a typed relation to the
-      // NEXT item (e.g. text-blocks' `arrow`: "down" ≈ leads-to). When any item
-      // carries a relation, the collection is a causal/ordered sequence → the
-      // list becomes an <ol> and each relating item gets a small relation
-      // marker. `relationLabels` maps a stored value to its reader label; a
-      // value without a label is treated as "no relation" (e.g. arrow "none").
+      // A `relationField` names a per-item enum holding a typed relation to
+      // the NEXT item (e.g. text-blocks' `arrow`: "down" ≈ leads-to). When any
+      // item carries a relation, the collection is a causal/ordered sequence →
+      // the list becomes an <ol> and each relating item gets a small relation
+      // marker. The marker's word is the chosen option's `copyKey` in the deck
+      // language, the lookup `kindKey` and `defaultFromOption` use; an option
+      // without one is "no relation" (e.g. arrow "none").
       const relField =
         typeof field.relationField === 'string' ? field.relationField : null;
-      const relLabels =
-        field.relationLabels && typeof field.relationLabels === 'object'
-          ? field.relationLabels
-          : {};
-      const relationOf = (item) => {
-        if (!relField) return '';
-        const v = str(item?.[relField]);
-        return v && Object.prototype.hasOwnProperty.call(relLabels, v) ? v : '';
-      };
-      const hasRelations = !!relField && value.some((it) => relationOf(it));
+      const itemDefaults = resolveItemDefaults(field);
+      const relationOf = (item) =>
+        relField
+          ? chosenOptionCopy(
+              relField,
+              field.itemFields,
+              item,
+              itemDefaults,
+              lang,
+            )
+          : { value: '', word: '' };
+      const hasRelations = value.some((it) => relationOf(it).word);
       const blocks = value
         .map((item) => {
           const li = renderItemBlock(
             item,
             field.itemFields,
             field.itemLabelField,
-            resolveItemDefaults(field),
+            itemDefaults,
             { lang, slideIds, parent: content, parentKey: field.key },
           );
           if (!li) return '';
           const rel = relationOf(item);
-          if (!rel) return li;
+          if (!rel.word) return li;
           const marker = `<p class="reader-relation"${fieldAttr(relField)} data-relation="${escapeHtml(
-            rel,
-          )}">${escapeHtml(relLabels[rel])}</p>`;
+            rel.value,
+          )}">${escapeHtml(rel.word)}</p>`;
           return li.replace(/<\/li>\s*$/, `${marker}</li>`);
         })
         .filter(Boolean);
@@ -1439,13 +1536,34 @@ export function renderSlideBodySemanticHtml(
       if (countKey) consumed.add(countKey);
       continue;
     }
+    // `axes`: the items are a grid, and the two siblings name its columns and
+    // rows — consumed whether or not they are filled, so an axis never reads
+    // as a loose paragraph beside the list either.
+    if (
+      field.type === 'items' &&
+      field.axes &&
+      typeof field.axes === 'object'
+    ) {
+      const table = renderAxesTable(field, content, { lang, slideIds });
+      if (table) structuredHtmlByKey.set(field.key, table);
+      for (const key of [field.axes.xKey, field.axes.yKey]) {
+        if (str(key)) consumed.add(key);
+      }
+      continue;
+    }
     // `dataset`: decode the payload to rows, say what they show (the type's
     // own `datasetSummary`, the sentence its canvas gives assistive tech) and
     // name the encoding that is lost.
-    if (field.type === 'csv' && Array.isArray(field.encodingKeys)) {
+    if (field.type === 'csv' && field.encodingKeys) {
       const caption = [
         datasetSummaryText(def, content, lang),
-        encodingCaption(field.encodingKeys, visibleByKey, content),
+        encodingCaption(
+          field.encodingKeys,
+          visibleByKey,
+          content,
+          defaults,
+          lang,
+        ),
       ]
         .filter(Boolean)
         .join(' ');
@@ -1453,7 +1571,8 @@ export function renderSlideBodySemanticHtml(
         field.key,
         renderCsvTable(content?.[field.key], caption, fieldAttr(field.key)),
       );
-      for (const key of field.encodingKeys) consumed.add(key);
+      for (const [key] of encodingEntries(field.encodingKeys))
+        consumed.add(key);
     }
   }
 

@@ -82,6 +82,18 @@ function translateLabelRightEl({ pres, onTranslateField, slideId, key }) {
   });
 }
 
+/**
+ * The help text a field declares, translated, or '' when it declares none.
+ * One route for every field type: a type-specific hint (alt, markdown) is only
+ * the fallback for a field that declares nothing, never a replacement for a
+ * declaration (B303 — the markdown branch used to ignore `helpText`).
+ */
+function declaredHelpText(field) {
+  return typeof field.helpText === 'string' && field.helpText.trim()
+    ? t(field.helpTextKey || field.key + '.help', field.helpText)
+    : '';
+}
+
 // The slide-list label reads the type's declared labelField, then falls back
 // to `title` (see editor-utils.js slideLabel) — so exactly those two keys can
 // change it, whatever the type.
@@ -246,14 +258,13 @@ export function createRenderField({
           .toLowerCase()
           .endsWith('alt');
       const helpText =
-        typeof field.helpText === 'string' && field.helpText.trim()
-          ? t(field.helpTextKey || field.key + '.help', field.helpText)
-          : isAltField
-            ? t(
-                'editor.alt.help',
-                "Describe what's important in the image (not the slide title). Aim for ~120–180 characters.",
-              )
-            : '';
+        declaredHelpText(field) ||
+        (isAltField
+          ? t(
+              'editor.alt.help',
+              "Describe what's important in the image (not the slide title). Aim for ~120–180 characters.",
+            )
+          : '');
       const helpCopyExample =
         typeof field.helpCopyExample === 'string' &&
         field.helpCopyExample.trim()
@@ -299,10 +310,7 @@ export function createRenderField({
           maxLength: field.maxLength,
           required: !!field.required,
           placeholder: field.placeholder,
-          helpText:
-            typeof field.helpText === 'string' && field.helpText.trim()
-              ? t(field.helpTextKey || field.key + '.help', field.helpText)
-              : '',
+          helpText: declaredHelpText(field),
           fieldType: field.type,
         },
       );
@@ -321,10 +329,11 @@ export function createRenderField({
       return fieldMarkdown(
         t(field.labelKey || field.key, field.label || field.key),
         slide.content[field.key] || '',
-        t(
-          'editor.markdown.help',
-          'Supports paragraphs, lists, bold/italic, links, code, math, and markdown tables.',
-        ),
+        declaredHelpText(field) ||
+          t(
+            'editor.markdown.help',
+            'Supports paragraphs, lists, bold/italic, links, code, math, and markdown tables.',
+          ),
         (v) => {
           slide.content[field.key] = v;
           markDirty?.();
@@ -352,10 +361,7 @@ export function createRenderField({
       // this is the UI half so non-capable users see but can't edit the markup.
       const gated = field.capability === 'customHtml';
       const readOnly = gated && !canEditCustomHtml;
-      const helpText =
-        typeof field.helpText === 'string' && field.helpText.trim()
-          ? t(field.helpTextKey || field.key + '.help', field.helpText)
-          : '';
+      const helpText = declaredHelpText(field);
       return fieldCode(
         t(field.labelKey || field.key, field.label || field.key),
         slide.content[field.key] || '',
@@ -381,10 +387,7 @@ export function createRenderField({
     if (field.type === 'number') {
       if (!fieldNumber) return null;
       const val = slide.content[field.key];
-      const helpText =
-        typeof field.helpText === 'string' && field.helpText.trim()
-          ? t(field.helpTextKey || field.key + '.help', field.helpText)
-          : '';
+      const helpText = declaredHelpText(field);
       return fieldNumber(
         t(field.labelKey || field.key, field.label || field.key),
         val ?? '',
@@ -517,10 +520,7 @@ export function createRenderField({
       const { fieldColor } = fieldRenderers || {};
       if (!fieldColor) return null;
       const val = slide.content[field.key] ?? '';
-      const helpText =
-        typeof field.helpText === 'string' && field.helpText.trim()
-          ? t(field.helpTextKey || field.key + '.help', field.helpText)
-          : '';
+      const helpText = declaredHelpText(field);
       return fieldColor(
         t(field.labelKey || field.key, field.label || field.key),
         val,

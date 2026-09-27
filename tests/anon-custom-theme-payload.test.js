@@ -139,7 +139,7 @@ async function seedCustomTheme(primary = '#ff0055') {
 
 /** A deck on the given theme id. */
 async function seedDeck(theme) {
-  return createPresentation(testScope(), {
+  return createPresentation(testScope(REPO_ROOT), {
     title: 'Branded deck',
     ownerEmail: OWNER,
     theme,

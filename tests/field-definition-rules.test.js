@@ -826,6 +826,73 @@ test("`rowHeader` is `'first'` on an items field; anything else warns", () => {
   }
 });
 
+test('`axes` makes a whole grid of items, headed by sibling strings (D139)', () => {
+  const item = [{ key: 'c1', type: 'string', label: 'C1' }];
+  const grid = (axes, extra = {}) => ({
+    key: 'cells',
+    type: 'items',
+    label: 'Cells',
+    itemFields: item,
+    minItems: 4,
+    maxItems: 4,
+    axes,
+    ...extra,
+  });
+  const siblings = [
+    { key: 'xAxis', type: 'string', label: 'X' },
+    { key: 'yAxis', type: 'string', label: 'Y' },
+    { key: 'count', type: 'number', label: 'N' },
+  ];
+  const codes = (fields) =>
+    walkFieldDefinitions(fields, FILE_JS).findings.map((f) => [
+      f.key,
+      f.code,
+      f.severity,
+    ]);
+
+  assert.deepEqual(
+    codes([grid({ columns: 2, xKey: 'xAxis', yKey: 'yAxis' }), ...siblings]),
+    [],
+  );
+  // One axis is a grid too.
+  assert.deepEqual(
+    codes([grid({ columns: 2, yKey: 'yAxis' }), ...siblings]),
+    [],
+  );
+
+  const findings = walkFieldDefinitions(
+    [
+      { key: 'title', type: 'string', label: 'Title', axes: { columns: 2 } },
+      grid({ columns: 3, xKey: 'xAxis' }),
+      { ...grid({ columns: 2, xKey: 'xAxis' }), key: 'open', maxItems: 8 },
+      { ...grid({ columns: 2, xKey: 'count', yKey: 'nope' }), key: 'bad' },
+      { ...grid({ columns: 2 }), key: 'none' },
+      ...siblings,
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['title', 'axes_not_items', 'warning'],
+      ['cells', 'axes_not_a_grid', 'warning'],
+      ['open', 'axes_not_a_grid', 'warning'],
+      ['bad', 'axes_key_unknown', 'warning'],
+      ['none', 'axes_key_unknown', 'warning'],
+    ],
+  );
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+
+  // A stored row has no control for it, so it refuses it (D84).
+  const stored = validateCustomFieldDefinitions([
+    grid({ columns: 2, xKey: 'xAxis' }),
+    ...siblings.slice(0, 1),
+  ]);
+  assert.equal(stored.ok, false);
+  assert.equal(stored.problem.code, 'unknown_property');
+});
+
 test('a sub-field whose role is its own element cannot head an item (D128)', () => {
   assert.deepEqual(
     [
@@ -945,6 +1012,77 @@ test('`kindKey` names a sibling enum on an aside, and only options it shows need
   );
   // `none` hides the aside, so it names no kind and needs no word.
   assert.deepEqual(findings[1].detail.missing, ['odd']);
+  for (const f of findings)
+    assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
+});
+
+test('`relationField` and `encodingKeys` take their words from the slide copy only (B312/B319)', () => {
+  const arrow = (options) => ({
+    key: 'arrow',
+    type: 'enum',
+    label: 'Arrow',
+    options,
+  });
+  const findings = walkFieldDefinitions(
+    [
+      {
+        key: 'rows',
+        type: 'items',
+        label: 'Rows',
+        relationField: 'arrow',
+        itemFields: [
+          arrow([
+            'none',
+            { value: 'down', label: 'Down', copyKey: 'relationLeadsTo' },
+          ]),
+        ],
+      },
+      {
+        key: 'bare',
+        type: 'items',
+        label: 'Bare',
+        relationField: 'arrow',
+        itemFields: [arrow([{ value: 'down', label: 'Down' }])],
+      },
+      {
+        key: 'kind',
+        type: 'enum',
+        label: 'Kind',
+        options: [
+          { value: 'bar', label: 'Bar', copyKey: 'chartKindBar' },
+          { value: 'odd', label: 'Odd' },
+        ],
+      },
+      { key: 'x', type: 'string', label: 'X' },
+      {
+        key: 'data',
+        type: 'csv',
+        label: 'Data',
+        encodingKeys: {
+          kind: 'chartEncodingKind',
+          x: 'chartEncodingX',
+          y: 'chartEncodingY',
+        },
+      },
+      {
+        key: 'list',
+        type: 'csv',
+        label: 'List',
+        encodingKeys: ['kind', 'x'],
+      },
+    ],
+    FILE_JS,
+  ).findings;
+  assert.deepEqual(
+    findings.map((f) => [f.key, f.code, f.severity]),
+    [
+      ['bare', 'relation_field_without_copy', 'warning'],
+      ['list', 'encoding_keys_not_map', 'warning'],
+      ['data', 'encoding_key_without_copy', 'warning'],
+    ],
+  );
+  // `kind` has an option without a word, `y` is no sibling at all.
+  assert.deepEqual(findings[2].detail.missing, ['kind', 'y']);
   for (const f of findings)
     assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
 });

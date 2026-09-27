@@ -21,7 +21,7 @@ import {
   updatePresentation,
 } from '../../../storage/presentations/index.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
-import { loadDeckTheme } from '../../../utils/themes.js';
+import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { handleNotionError, refuseNotionUnconfigured } from './utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
@@ -48,7 +48,6 @@ export async function handleNotionImport({
   const body = parsed.body;
   const urlOrId = getTrimmedString(body, 'url') || '';
   const lang = getLangOrAuto(body);
-  const theme = getTrimmedString(body, 'theme') || 'default';
   const vendor = getOptionalString(body, 'vendor');
 
   if (!urlOrId) {
@@ -59,6 +58,12 @@ export async function handleNotionImport({
   if (!pageId) {
     return badRequest(res, 'Invalid Notion URL or page ID format');
   }
+  // Checked before the conversion, so an unknown theme costs no work (B486).
+  const { themeId: theme, theme: themeConfig } = await settleNewDeckTheme(
+    repoRoot,
+    body?.theme,
+    storageScope,
+  );
 
   // Cancelling is dropping the request: the signal aborts the model calls
   // and the image uploads, and is checked before the presentation is written.
@@ -92,7 +97,7 @@ export async function handleNotionImport({
     const effectiveLang =
       deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
     const parts = deckToPresentationParts(deck, {
-      theme: await loadDeckTheme(repoRoot, theme),
+      theme: themeConfig,
       lang: effectiveLang,
     });
 
@@ -153,7 +158,6 @@ export async function handleNotionImportStream({
   const body = parsed.body;
   const urlOrId = getTrimmedString(body, 'url') || '';
   const lang = getLangOrAuto(body);
-  const theme = getTrimmedString(body, 'theme') || 'default';
   const vendor = getOptionalString(body, 'vendor');
 
   if (!urlOrId) {
@@ -164,6 +168,12 @@ export async function handleNotionImportStream({
   if (!pageId) {
     return badRequest(res, 'Invalid Notion URL or page ID format');
   }
+  // Checked before the conversion, so an unknown theme costs no work (B486).
+  const { themeId: theme, theme: themeConfig } = await settleNewDeckTheme(
+    repoRoot,
+    body?.theme,
+    storageScope,
+  );
 
   const stream = openSseStream(req, res);
   if (!stream.ok) return true;
@@ -299,7 +309,7 @@ export async function handleNotionImportStream({
     const effectiveLang =
       deck.lang || deck._generationMeta?.effectiveLang || DEFAULT_DECK_LANG;
     const parts = deckToPresentationParts(deck, {
-      theme: await loadDeckTheme(repoRoot, theme),
+      theme: themeConfig,
       lang: effectiveLang,
     });
 
