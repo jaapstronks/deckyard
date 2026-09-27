@@ -40,7 +40,6 @@ import {
 import {
   DECK_FORMAT_ID,
   DECK_MIMETYPE,
-  isDeckMimetype,
 } from '../../shared/slide-types/deck-format-id.js';
 import {
   THEME_ENTRY,
@@ -296,10 +295,10 @@ function entryJson(text, name) {
 }
 
 /** Refuse escaped local paths and references to absent inventory entries. */
-function checkPortableRefs(value, assets, missing, label) {
+function checkPortableRefs(value, assets, missing, label, kind) {
+  const isLocalPath = (ref) =>
+    /^(?:\/(?:uploads|assets|custom\/assets)\/|assets\/)/.test(ref);
   const inspect = (ref) => {
-    if (!/^(?:\/(?:uploads|assets|custom\/assets)\/|assets\/)/.test(ref))
-      return;
     if (isBundleRef(ref)) {
       if (!assets.has(ref))
         throw new Error(`${label} names an unlisted asset: ${ref}`);
@@ -312,18 +311,31 @@ function checkPortableRefs(value, assets, missing, label) {
       throw new Error(`${label} has an invalid local asset path: ${ref}`);
     }
   };
-  const walk = (node) => {
-    if (typeof node === 'string') {
-      inspect(node);
-      for (const match of node.matchAll(/url\(\s*['"]?([^)'"\s]+)['"]?\s*\)/gi))
-        inspect(match[1]);
-    } else if (Array.isArray(node)) {
-      node.forEach(walk);
-    } else if (node && typeof node === 'object') {
-      Object.values(node).forEach(walk);
+  if (kind === 'deck') {
+    for (const slide of Array.isArray(value?.slides) ? value.slides : []) {
+      checkPortableRefs(slide?.content, assets, missing, label, 'record');
     }
-  };
-  walk(value);
+  } else if (kind === 'theme') {
+    rewriteThemeImageRefs(
+      value,
+      (ref) => {
+        inspect(ref);
+        return ref;
+      },
+      isLocalPath,
+    );
+  } else {
+    const walk = (node) => {
+      if (typeof node === 'string') {
+        if (isLocalPath(node)) inspect(node);
+      } else if (Array.isArray(node)) {
+        node.forEach(walk);
+      } else if (node && typeof node === 'object') {
+        Object.values(node).forEach(walk);
+      }
+    };
+    walk(value);
+  }
 }
 
 /**
@@ -347,9 +359,7 @@ export async function readDeckBundle(buffer) {
 
   const mtEntry = zip.file('mimetype');
   const mimetype = mtEntry ? (await mtEntry.async('string')).trim() : '';
-  // Accepts the historical `vnd.slidecreator.deck` too: bundles already in the
-  // wild carry it, and a published format does not stop reading its own past.
-  if (!isDeckMimetype(mimetype)) {
+  if (mimetype !== DECK_MIMETYPE) {
     throw new Error('mimetype sentinel missing or mismatched');
   }
 
@@ -448,10 +458,10 @@ export async function readDeckBundle(buffer) {
   const missing = new Set(
     Array.isArray(manifest.missingAssets) ? manifest.missingAssets : [],
   );
-  checkPortableRefs(deck, assets, missing, 'deck.json');
-  checkPortableRefs(theme, assets, missing, 'theme.json');
+  checkPortableRefs(deck, assets, missing, 'deck.json', 'deck');
+  checkPortableRefs(theme, assets, missing, 'theme.json', 'theme');
   for (const definition of slideTypes)
-    checkPortableRefs(definition, assets, missing, 'slide type');
+    checkPortableRefs(definition, assets, missing, 'slide type', 'record');
 
   return { mimetype, manifest, deck, theme, slideTypes, assets };
 }

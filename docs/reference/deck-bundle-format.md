@@ -26,9 +26,8 @@ Expert Review as the original request.
 ```
 mimetype               First entry, STORED (uncompressed). Content:
                        "application/vnd.deckyard.deck". Lets the archive be
-                       identified by magic number. The historical
-                       "application/vnd.slidecreator.deck" is still accepted on
-                       read (see deck-format.md, "Legacy sentinel").
+                       identified by magic number. Version 4 requires this
+                       exact MIME type.
 manifest.json          Bundle metadata + the asset inventory (see below).
 deck.json              The portable deck (as from presentationToDeck), with
                        every asset ref rewritten to a bundle ref.

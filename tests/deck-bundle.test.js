@@ -135,6 +135,21 @@ describe('buildDeckBundle', () => {
     const aRef = manifest.assets.find((x) => x.hash === aHash).ref;
     assert.ok(assets.get(aRef).equals(PNG_A));
   });
+
+  it('round-trips CSS examples in body text and local paths in notes as prose', async () => {
+    const body = "Use url('/assets/example.png') for a background.";
+    const notes = '/assets/example.png';
+    const source = {
+      title: 'Asset path lesson',
+      slides: [{ id: '1', type: 'content-slide', content: { body }, notes }],
+    };
+    const { deck, manifest } = await readDeckBundle(
+      await buildDeckBundle('/repo', source),
+    );
+    assert.equal(deck.slides[0].content.body, body);
+    assert.equal(deck.slides[0].notes, notes);
+    assert.equal(manifest.missingAssets, undefined);
+  });
 });
 
 describe('readDeckBundle validation', () => {
@@ -146,10 +161,7 @@ describe('readDeckBundle validation', () => {
     await assert.rejects(() => readDeckBundle(bad), /mimetype sentinel/);
   });
 
-  it('accepts a bundle carrying the historical mimetype sentinel', async () => {
-    // `application/vnd.slidecreator.deck` was written by every version before
-    // the format took its publisher's name. Bundles with it exist; the reader
-    // keeps accepting them. See shared/slide-types/deck-format-id.js.
+  it('rejects the historical mimetype sentinel at the v4 bundle boundary', async () => {
     const buf = await buildDeckBundle('/repo', pres());
     const JSZip = (await import('jszip')).default;
     const zip = await JSZip.loadAsync(buf);
@@ -157,10 +169,7 @@ describe('readDeckBundle validation', () => {
       compression: 'STORE',
     });
     const legacy = await zip.generateAsync({ type: 'nodebuffer' });
-
-    const { mimetype, manifest } = await readDeckBundle(legacy);
-    assert.equal(mimetype, 'application/vnd.slidecreator.deck');
-    assert.equal(manifest.assets.length, 2);
+    await assert.rejects(() => readDeckBundle(legacy), /mimetype sentinel/);
   });
 
   it('rejects a foreign mimetype sentinel', async () => {
@@ -170,6 +179,25 @@ describe('readDeckBundle validation', () => {
     zip.file('mimetype', 'application/vnd.acme.deck', { compression: 'STORE' });
     const foreign = await zip.generateAsync({ type: 'nodebuffer' });
     await assert.rejects(() => readDeckBundle(foreign), /mimetype sentinel/);
+  });
+
+  it('refuses escaped and unlisted refs in slide content', async () => {
+    const buf = await buildDeckBundle('/repo', pres());
+    const JSZip = (await import('jszip')).default;
+    for (const ref of [
+      '/assets/../private.png',
+      'assets/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.png',
+    ]) {
+      const zip = await JSZip.loadAsync(buf);
+      const deck = JSON.parse(await zip.file('deck.json').async('string'));
+      deck.slides[0].content.image = ref;
+      zip.file('deck.json', JSON.stringify(deck));
+      const changed = await zip.generateAsync({ type: 'nodebuffer' });
+      await assert.rejects(
+        () => readDeckBundle(changed),
+        /invalid local asset path|unlisted asset/,
+      );
+    }
   });
 
   it('rejects a tampered asset (integrity check)', async () => {
