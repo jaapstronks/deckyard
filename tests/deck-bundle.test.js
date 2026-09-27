@@ -15,6 +15,8 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import JSZip from 'jszip';
+import { assertExtensionDeclared } from '../server/export/extension-name.js';
+import { readCustomStylesCss } from '../server/utils/css-chain.js';
 
 let tmpUploads;
 let buildDeckBundle;
@@ -84,6 +86,35 @@ const pres = () => ({
 });
 
 describe('buildDeckBundle', () => {
+  it('requires a declaration for every stylesheet the CSS loader accepts', async () => {
+    for (const name of ['_brand.css', '.brand.css', 'brand.CSS']) {
+      const root = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'deckyard-css-extension-'),
+      );
+      try {
+        const custom = path.join(root, 'custom');
+        fs.mkdirSync(path.join(custom, 'styles'), { recursive: true });
+        fs.writeFileSync(
+          path.join(custom, 'styles', name),
+          '.slide { color: red; }',
+        );
+        assert.match(readCustomStylesCss(root), /color: red/);
+        await assert.rejects(assertExtensionDeclared(root), /extension.json/);
+        fs.writeFileSync(
+          path.join(custom, 'extension.json'),
+          JSON.stringify({ name: 'nl.example' }),
+        );
+        assert.equal(await assertExtensionDeclared(root), 'nl.example');
+        const { deck } = await readDeckBundle(
+          await buildDeckBundle(root, pres()),
+        );
+        assert.deepEqual(deck.extensions, ['nl.example']);
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+      }
+    }
+  });
+
   it('writes core provenance as an empty list and refuses ambiguous wire lists', async () => {
     const buf = await buildDeckBundle('/repo', pres());
     const parsed = await readDeckBundle(buf);

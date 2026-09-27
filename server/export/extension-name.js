@@ -49,11 +49,12 @@ export async function assertExtensionDeclared(repoRoot) {
       throw error;
     });
     if (
-      files.some(
-        (name) =>
-          !name.startsWith('.') &&
-          !name.startsWith('_') &&
-          name.endsWith(suffix),
+      files.some((name) =>
+        directory === 'styles'
+          ? name.toLowerCase().endsWith('.css')
+          : !name.startsWith('.') &&
+            !name.startsWith('_') &&
+            name.endsWith(suffix),
       )
     ) {
       codePresent = true;

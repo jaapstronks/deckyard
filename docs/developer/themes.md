@@ -1,592 +1,71 @@
-## Themes
+# Themes
 
-**Runtime status (B438.2):** Presentations now resolve theme records by UUID; `themes/*.json` and `custom/themes/*.json` are seed inputs at startup, not render-time files. The folder-layout and flat-file migration recipes below describe the retired workflow and await the B439.2 documentation rewrite. Served theme images belong under `/assets/` or `/custom/assets/`.
+A theme controls a presentation's palette, type, logos, backgrounds and slide-type choices. Presentations refer to a theme record by UUID or use `default`, which follows the organization's chosen default. Theme records, rather than JSON files on disk, are resolved when a deck is rendered or exported.
 
-Themes control the visual identity of presentations. They are loaded at runtime (no build step).
+## Choose or create a theme
 
-**Theme locations:**
+Open **Settings → Themes** and duplicate a read-only seed to make an editable theme for your organization. Set the organization's default there when new decks should use it. The six built-in seeds are Forest (`brand`), Amethyst, Boardroom (`corporate`), Editorial, Midnight and Sunset (`playful`). Forest supplies the default when no organization default is chosen. A copied theme is an organization record with its own UUID; its source seed's slug is not a deck reference.
 
-- `themes/*.json` - Core themes (shipped with the system, always flat files)
-- `custom/themes/<id>/theme.json` - Custom themes, **folder layout** (recommended):
-  a self-contained folder that co-locates the theme's own assets under
-  `custom/themes/<id>/assets/`.
-- `custom/themes/<id>.json` - Custom themes, **legacy flat layout** (still
-  supported for backward compatibility).
+The editor handles colours, fonts, logos, backgrounds, typography and surface choices. `slideTypes` is curated in **Settings → Slide Types**. The themes API accepts record `colors` and `config` for settings that the editor does not expose; see [theme config](../reference/theme-config.md). Keep a theme's images at served `/assets/` or `/custom/assets/` URLs, or upload them through the app. A filesystem path under `custom/themes/` is not a served asset URL. Existing decks may store image URLs in slide content, so keep those URLs available when moving files.
 
-Custom themes take precedence over core themes with the same ID. The loader
-resolves a custom theme by trying the folder layout first, then the flat file.
+The `default` reference is resolved within the deck's organization. An explicit theme reference is a record UUID. To move older slug references, use the [checked migration](../reference/theme-config.md) with a slug-to-UUID mapping; do not rename directories and expect deck references to change.
 
-> **Which assets go where?** A theme folder holds the theme's own _chrome_ —
-> logo, fonts, and (for a fresh install) background presets. Assets that get
-> baked into saved slide content — uploaded images, deck-specific photos,
-> partner logos referenced by slides — belong in the shared `custom/assets/`
-> tree, because moving them would break decks that already point at the old
-> URL. See "Migrating a flat theme to a folder" below.
+## Seeds for an installation
 
----
+The six core files in `themes/*.json` and optional fork files in `custom/themes/*.json` are **seed inputs at startup**. They create or refresh shared, read-only records. They are not editable organization themes, and there is no folder layout, flat-file fallback or custom-over-core override order. Duplicate a seed in Settings when an organization needs to edit it. A fork may ship additional shared seeds with unique slugs.
 
-## The built-in set
-
-Six themes ship in `themes/`. Only one of them is Deckyard's own; the other
-five are neutral archetypes named after their palette, meant to be picked,
-forked or ignored.
-
-| id          | label     | palette                                                | note                                                                                 |
-| ----------- | --------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `brand`     | Forest    | forest green `#254d38` + brass `#b8860f` on warm paper | **the default** — Deckyard's own colours, the ones the logo mark and deckyard.eu use |
-| `amethyst`  | Amethyst  | violet `#7c3aed`                                       | was `deckyard`/"Deckyard" until it was renamed to a palette name like its neighbours |
-| `corporate` | Boardroom | blue `#2563eb`                                         |                                                                                      |
-| `editorial` | Editorial | carmine `#9f1239`                                      |                                                                                      |
-| `midnight`  | Midnight  | cyan `#38bdf8` on near-black                           | the dark archetype                                                                   |
-| `playful`   | Sunset    | orange `#ea580c`                                       |                                                                                      |
-
-Two things follow from `brand` being the default rather than one of the archetypes:
-
-- **A theme is the _user's_ house style, not the product's.** That claim is on
-  the marketing site, so the product's own colours have to live in one theme
-  among six, not in the fallback everyone inherits by accident.
-- **Marketing and docs screenshots are shot on `brand`**, so a screenshot and
-  the page around it are the same colour. `capture/` recipes therefore pin the
-  theme explicitly rather than relying on the default.
-
-Adding or renaming a built-in touches **two** places: the JSON file in
-`themes/`, and the `THEMES` array in `shared/slide-types/registry.js`. That
-array is the validation enum — a theme file on disk that is missing from it is
-rejected when a deck tries to save with it.
-
----
-
-## Quick Start: Adding a Custom Theme (folder layout)
-
-1. Create the folder and `theme.json`:
-
-```
-custom/themes/your-org/
-  theme.json
-  assets/
-    images/logo.svg
-    fonts/YourFont-Regular.woff2
-```
+A seed file is named for its `slug`, for example `custom/themes/acme.json`:
 
 ```json
 {
-  "id": "your-org",
-  "label": "Your Organization",
-  "assets": {
-    "logo": "/custom/assets/images/logo.svg",
-    "logoAlt": "Your Organization"
+  "slug": "acme",
+  "label": "Acme",
+  "logoUrl": "/custom/assets/images/acme-logo.svg",
+  "logoSmallUrl": null,
+  "colors": {
+    "primary": "#0066cc",
+    "background": "#f0f4f8",
+    "textLight": "#ffffff",
+    "textDark": "#212121"
   },
-  "cssVars": {
-    "--t-color-accent": "#0066cc",
-    "--t-slide-bg-lime": "#your-brand-color",
-    "--t-logo-url": "url('/custom/assets/images/logo.svg')"
+  "fonts": {
+    "heading": "Inter",
+    "body": "Inter"
   },
-  "embedFonts": [
-    {
-      "family": "YourFont",
-      "path": "custom/assets/fonts/YourFont-Regular.woff2",
-      "weight": 400,
-      "style": "normal"
-    }
-  ]
-}
-```
-
-Asset URLs inside the JSON are absolute site-root paths under the theme
-folder: `/custom/assets/...`. `embedFonts[].path` is
-repo-root-relative (no leading slash): `custom/assets/...`.
-
-2. Set as default in `.env`:
-
-```
-DEFAULT_THEME=your-org
-```
-
-3. Restart the server
-
-### Migrating a flat theme to a folder
-
-To convert an existing `custom/themes/your-org.json`:
-
-1. `mkdir -p custom/assets/{images,fonts}`
-2. `git mv custom/themes/your-org.json custom/themes/your-org/theme.json`
-3. Move the theme's **chrome** assets (logo, fonts) into
-   `custom/assets/…` and rewrite those paths in `theme.json`
-   (`assets.logo`, `assets.payoffLogo`, `--t-logo-url`, `embedFonts[].path`).
-   These are resolved at render time and are never stored in slide content, so
-   moving them is safe.
-4. **Leave `backgroundPresets` and any deck-content images in
-   `custom/assets/`** if existing decks already use them (their URLs are baked
-   into saved slides). For a brand-new theme with no decks yet, you may put
-   presets in the folder too.
-5. Restart; the loader picks up the folder automatically.
-
----
-
-## Theme Reference
-
-Core themes live in `themes/*.json`.
-
-They control:
-
-- slide look & feel via CSS variables (`cssVars`)
-- theme assets (logos)
-- which slide types are available to insert in the editor (universal vs theme-specific)
-
-### Theme JSON: required fields
-
-A valid theme file must include at least:
-
-- **`id`**: string (must match the filename, e.g. `themes/amethyst.json` → `"id": "amethyst"`)
-- **`label`**: human name for UI
-- **`assets`**:
-  - **`logo`**: URL path to a logo
-  - **`logoAlt`**: accessible alt text
-- **`cssVars`**: object of CSS variables (keys must start with `--t-`)
-
-Everything else is optional.
-
-### Theme JSON: contrast-aware logos
-
-`assets.logo` is the one mark every theme must ship. A theme whose slides live
-on both poles can add `assets.logoOnDark` (the mark for a **dark** ground) and
-`assets.logoOnLight`, plus `titleLogoOnDark` / `titleLogoOnLight` for the
-title-slide sizes. The per-slide corner logo and the title slide's own logo each
-pick the variant that is visible on that slide's surface; `assets.logo` is the
-fallback whenever the surface cannot be resolved. Full rules in
-[`docs/reference/theme-config.md`](../reference/theme-config.md#contrast-aware-logos).
-
-### Theme JSON: optional fields
-
-- **`sampleEmbedUrl`**: URL to use as the sample embed in the slide type picker thumbnail. If not provided, the embed slide thumbnail will show a placeholder. This should be a publicly accessible embed URL (e.g., a Miro board, Figma embed, or other iframe-compatible URL).
-
-### Slide types: universal vs theme-specific (plumbing)
-
-This codebase supports:
-
-- **Universal slide types**: normal slide types (no `themeId` in their slide type definition). These are available to all themes by default.
-- **Theme-specific slide types**: slide types whose definition includes `themeId: '<theme-id>'`. These are **not** available by default; the theme must opt into them via `slideTypes.include`.
-
-Important:
-
-- Excluding a slide type only affects **inserting new slides** in the editor. Existing slides of that type still render and can be edited.
-
-### Theme config: `slideTypes`
-
-Themes can control which slide types can be inserted:
-
-```json
-{
-  "slideTypes": {
-    "exclude": ["title-slide"],
-    "include": ["amethyst-title-slide"]
+  "config": {
+    "logos": { "alt": "Acme" },
+    "backgroundPresets": ["/custom/assets/images/acme-cover.jpg"],
+    "slideTypes": { "include": ["acme-hero-slide"], "exclude": [] },
+    "defaultTitleSlide": "acme-hero-slide"
   }
 }
 ```
 
-- **`slideTypes.exclude`**: hide these slide types from the editor “add slide” UI (and prevent inserting them from the slide library).
-- **`slideTypes.include`**: enable theme-specific slide types (ones that declare `themeId` matching this theme’s `id`).
+The required record shape is `slug`, `label`, `colors`, `fonts` and `config`; logo URLs may be null. `slug` must match the filename and cannot collide with another seed. Seed validation rejects unknown top-level fields, invalid colours, uncurated fonts and unserved logo paths before any seed row is changed. Use a curated family for each of the two font roles. See [fork setup](../reference/fork-setup.md) for adding a curated family and [theme config](../reference/theme-config.md) for the full `colors` and `config` vocabulary. The committed [seed fixtures](../../themes/) provide complete examples.
 
-#### Removed spelling: `hiddenSlideTypes`
+## Design choices in a theme record
 
-`slideTypes.exclude` is the only spelling. Older theme files may still carry:
+The four base colours in `colors` feed the slide's role tokens. Optional brand and chart palettes, text contrast colours and named background colours refine them. `config.cssVarOverrides` applies contract `--t-*` tokens last, when a particular look cannot be expressed with a record field. Slide CSS consumes [theme roles](../reference/slide-roles.md); old per-slide-type token families have no effect. Put arbitrary fork CSS rules in `custom/styles/*.css`, not in a theme record. Those styles load in the app and exports; they require an installation name in `custom/extension.json` as described in [fork setup](../reference/fork-setup.md).
 
-```json
-{ "hiddenSlideTypes": ["poll-slide"] }
+`config.backgroundPresets` lists served image URLs for the background picker and for automatic title-slide backgrounds. With no presets, no image is chosen automatically. The built-in background slots are stored as `lime` and `mist`; their colours come from `colors.backgrounds`, and their picker names can be set with `config.backgroundLabels`. Add further choices through `config.slideBackgrounds`. `config.defaultBackground` sets a new slide's ground only if that slide type offers the chosen background; a stored slide background remains intact. These settings are detailed in [theme config](../reference/theme-config.md) and [slide backgrounds](../reference/theme-slide-backgrounds.md).
+
+`config.logos` contains the alt text and optional variants for dark and light surfaces, title slides and payoff slides. The main image URLs are `logoUrl` and `logoSmallUrl` on the record. `config.surfaces` controls radius and shadow scales; `config.typography` controls the heading treatment and text scale. `config.locks.background` and `config.locks.logo` can be `locked` to stop per-slide overrides at both edit and render time. Stored slide values remain in place so unlocking restores them. [Theme config](../reference/theme-config.md) specifies the values and fallback behaviour for each field.
+
+Check large text-scale choices against every layout you use: the scale changes type but leaves spacing and component sizes in place. The table slide's `plain`, `panel` and `soft` styles take their colours and surfaces from the shared palette, so a theme does not need table-specific tokens. A font split across several subset files needs the matching `unicodeRange` on each face; otherwise one subset can shadow another. Managed organization fonts and curated seed fonts are bound by family name, while a fork's extra self-hosted faces belong in `custom/styles/fonts.css`. See [font management](../reference/font-management.md) for the font routes.
+
+## Slide types and themes
+
+A normal slide type is available under any theme unless the organization disables it or the active theme excludes it. A custom type that requires an explicit theme opt-in declares `themeOnly: true` in its definition:
+
+```js
+// custom/slide-types/acme-hero-slide.js
+export default {
+  themeOnly: true,
+  label: 'Acme Hero',
+  // fields, defaults, renderHtml and optional AI metadata
+};
 ```
 
-`normalizeTheme()` folds that into `slideTypes.exclude` on read **and drops the
-key**, so a normalized theme never carries both. Nothing downstream reads
-`hiddenSlideTypes`.
+Add its type name to the active record's `config.slideTypes.include`; set `config.defaultTitleSlide` to that name if it should replace the normal title slide. `config.slideTypes.exclude` hides a type from insertion. Neither setting deletes existing slides: they still render and can be edited. `themeOnly` does not name a seed slug or record UUID, so copying a theme keeps its type selection. The same availability policy governs the editor and AI suggestions. See [custom slide types](slide-types.md) for the complete definition and AI metadata.
 
-The fold is a migration ramp, not a supported second spelling: it exists so an
-old theme file keeps working, and it will be removed once no theme in the wild
-uses it. Deckyard is in beta — don't write new themes against it. Move the list
-into `slideTypes.exclude` and delete the old key.
-
-### Creating a theme (checklist)
-
-1. **Add the theme JSON**
-   - Create `themes/<id>.json`
-   - Ensure `id` matches the filename
-2. **Add required fields**
-   - `label`, `assets.logo`, `assets.logoAlt`, `cssVars`
-3. **(Optional) Configure slide type availability**
-   - Use `slideTypes.exclude` to remove universal slide types that don’t fit the theme
-   - Use `slideTypes.include` to enable theme-specific slide types (when you add them)
-
-### Creating a theme-specific slide type
-
-For custom slide types, use the `custom/slide-types/` directory instead of modifying core files. See `docs/developer/slide-types.md` for details.
-
----
-
-## Custom Fonts
-
-Themes can embed custom fonts for use in slides and exports:
-
-```json
-{
-  "embedFonts": [
-    {
-      "family": "Your Brand Font",
-      "path": "custom/assets/fonts/YourFont-Regular.woff2",
-      "weight": 400,
-      "style": "normal"
-    },
-    {
-      "family": "Your Brand Font",
-      "path": "custom/assets/fonts/YourFont-Bold.woff2",
-      "weight": 700,
-      "style": "normal"
-    }
-  ]
-}
-```
-
-The fonts will be:
-
-- Loaded in the browser for live editing/presenting
-- Embedded in PDF/HTML exports for offline viewing
-
-### Entry shape
-
-| Field          | Required | Meaning                                                                                              |
-| -------------- | -------- | ---------------------------------------------------------------------------------------------------- |
-| `family`       | yes      | The `font-family` name the rule declares. Must match what `--t-font-heading` / `--t-font-body` name. |
-| `path`         | one of   | Repo-root-relative path to a `woff2` (no leading slash).                                             |
-| `url`          | one of   | An `/uploads/…` path or an absolute URL, for managed/uploaded fonts.                                 |
-| `weight`       | no       | `font-weight` for the rule. Defaults to `400`.                                                       |
-| `style`        | no       | `font-style`. Defaults to `normal`.                                                                  |
-| `format`       | no       | `src` format hint for URL-based fonts. Defaults to `woff2`.                                          |
-| `unicodeRange` | no       | `unicode-range` for the rule — **required when one family is split across several files.**           |
-
-**`unicodeRange` is not optional in practice for the curated fonts.** Google
-splits every family into disjoint per-script subsets: the `latin` file holds
-ASCII and Latin-1, the `latin-ext` file the Polish/Czech/Turkish/Hungarian
-letters, and neither contains the other's glyphs. Two entries for one
-family+weight without ranges means the second simply overrides the first and
-half the alphabet falls back to a system face. A font that ships as a single
-file covering everything (a typical uploaded brand face) needs no range.
-
-**`weight` may be a range.** A variable font is one file that covers a span of
-weights, so its entry declares that span the way CSS does — two numbers
-separated by a space:
-
-```json
-{
-  "family": "Inter",
-  "path": "assets/fonts/google/inter/inter-400-latin.woff2",
-  "weight": "400 700",
-  "style": "normal",
-  "unicodeRange": "U+0000-00FF, U+0131, …"
-}
-```
-
-This is how the curated families are written, and it is what keeps exports
-honest about size: an export base64-inlines every `@font-face` rule, so four
-weight-entries pointing at the same variable file inlined the same blob four
-times. Entries that _do_ resolve to the same file are merged automatically
-(`mergeFontFaces` in `shared/theme-fonts.js`), so a hand-written theme that
-lists one entry per weight still exports one copy — but writing the range is
-clearer. A truly static family (one file per weight, e.g. Poppins) keeps one
-entry per weight, because those files really are different bytes.
-
-For seed and organization theme records you never write this by hand:
-`curatedEmbedFonts()` (`server/utils/curated-font-embed.js`) generates the list
-from the curated set and the font lockfile when the record is loaded. The seed
-gate in `tests/theme-seeds.test.js` checks the committed `themes/*.json` files.
-
----
-
-## Background Presets
-
-Themes can provide background image presets for title slides:
-
-```json
-{
-  "backgroundPresets": [
-    "/custom/assets/images/backgrounds/bg1.jpg",
-    "/custom/assets/images/backgrounds/bg2.jpg",
-    "/custom/assets/images/backgrounds/bg3.jpg"
-  ]
-}
-```
-
-These appear in the background picker (grouped as **"From this theme"**) for
-slide types that support background images, and are the pool a title slide draws
-from when one is assigned automatically — on deck import, and when converting a
-chapter-title slide to a title slide.
-
-`backgroundPresets` is the **only** mechanism for this. A theme that declares
-none gets no automatic background image: title slides stay flat rather than
-picking up imagery that isn't yours. Deckyard used to ship a hardcoded list of
-four demo photos that any deck could land on regardless of its theme; that list
-is gone.
-
-The URLs may point anywhere the server serves — `custom/assets/`, `/uploads/`, or a CDN.
-
----
-
-## Naming the built-in backgrounds
-
-Every theme has two built-in background slots, stored as `lime` and `mist`.
-Those are **storage keys, not colours**: `amethyst` paints lime white and
-`midnight` paints it near-black. With nothing else to go on the picker
-labels them "Color 1" and "Color 2", which is accurate and useless — only the
-theme knows what its own slots are.
-
-```json
-{
-  "backgroundLabels": {
-    "lime": "White",
-    "mist": { "en": "Lilac", "nl": "Lila" }
-  }
-}
-```
-
-Either a plain string or an `{ en, nl }` object per slot. Renaming the slots is
-what this is for; adding _new_ options is `slideBackgrounds`
-(`shared/theme-slide-backgrounds.js`; a theme declares extra `slideBackgrounds`
-entries and the generated CSS ships the matching `.slide-bg-<id>` rules).
-
-> Database themes set the same thing through `config.backgroundLabels`, one
-> label per slot — the theme editor has no per-locale field.
-
----
-
-## Surfaces: rounding and elevation
-
-A file theme sets these tokens directly in `cssVars`:
-
-```json
-{
-  "cssVars": {
-    "--t-radius-sm": "20px",
-    "--t-radius": "28px",
-    "--t-radius-lg": "36px",
-    "--t-shadow-scale": "1.8"
-  }
-}
-```
-
-`--t-shadow-scale` multiplies the alpha of all five `--slide-shadow-*` tokens at
-once: `0` flattens elevation away, `1` is the default, higher deepens it. The
-geometry (offset, blur) is fixed, so a theme changes how _present_ elevation
-feels rather than moving the light source. Leaving it unset means `1`.
-
-Radius is consumed by `--slide-radius-sm/-md/-lg`, which every rounded surface
-reads. Unset falls back to the design system's own `10px` / `18px` / `24px`.
-
-> Database themes express the same two through named scales
-> (`config.surfaces.radius` / `.shadow`) rather than raw values, because a
-> wizard offers choices rather than pixels. Both end up at the same tokens —
-> see `docs/reference/theme-config.md`.
-
----
-
-## Type size
-
-```json
-{
-  "cssVars": {
-    "--t-slide-text-scale": "1.1"
-  }
-}
-```
-
-One multiplier on the entire slide type scale: every `--slide-text-*` step, and
-with them every semantic role (`--slide-font-size-title`, `-heading`, `-body`,
-…). `1` is the design-system default and leaving it unset means `1`.
-
-It moves **type only**. The spacing scale and the component sizes are not
-touched, so a deck at `1.1` keeps its rhythm rather than looking zoomed — and,
-for the same reason, a large step can overflow a layout that was drawn for the
-default. Database themes offer a narrow band of named steps
-(`config.typography.textScale`: `compact` `0.9` · `normal` `1` · `large` `1.1`);
-a file theme sets the number and owns the result.
-
-The scale it multiplies is fluid: `--slide-text-*` is derived from the slide's
-own box, so it is exactly the historical px value on the 1600×900 reference
-canvas and proportional on any other. A theme never sets per-role px sizes —
-that would re-couple every theme to every role.
-
----
-
-## Override locks
-
-A theme can declare that a brand property is **not** overridable per slide:
-
-```json
-{
-  "locks": {
-    "background": "locked",
-    "logo": "open"
-  }
-}
-```
-
-- **`open`** (the default for everything) — the theme supplies a default and a
-  per-slide override wins.
-- **`locked`** — the theme wins. The editor omits the control and explains why,
-  _and_ the renderer ignores an override a slide already carries, so a deck
-  authored before the lock cannot leak past the branding.
-
-`background` governs the slide background as a whole — the colour/variant, the
-custom colour, the per-slide background image and everything positioning it.
-`logo` governs the corner logo (`slideLogo`).
-
-Enforcement is **non-destructive**: stored slide content is never rewritten, so
-unlocking gives every slide its own value back. A property you do not mention
-stays `open`, and a value that is not exactly `"locked"` reads as `open` — a
-typo cannot silently strip every slide in a deck.
-
----
-
-## Table style variants
-
-The structured **Table** slide type has a per-slide **Table style** picker with
-three variants: `plain` (transparent, gridlines only — the default), `panel`
-(filled panel with an emphasized header row + first/label column), and `soft`
-(near-white panel with a coloured header and a faint accent label column).
-
-Both `panel` and `soft` resolve their colours from the theme's standard palette
-(`--t-color-accent`, its auto-derived `--t-color-accent-contrast`, the mist and
-raised surfaces, `--t-radius`), so tables look designed on any theme with
-**zero per-theme work**. There are no table-specific theme tokens: the header
-and label-column planes follow the accent pair, and the panel/soft surfaces
-follow the shared surface roles (`docs/reference/slide-roles.md` § Colour
-roles). A theme that wants different table colours changes those palette
-tokens — the former `--t-table-<variant>-*` family was removed in the A7.9
-role-vocabulary consolidation and has no effect.
-
----
-
-## Complete Theme Example
-
-```json
-{
-  "id": "acme-corp",
-  "label": "Acme Corporation",
-
-  "assets": {
-    "logo": "/custom/assets/images/acme-logo.svg",
-    "logoAlt": "Acme Corp",
-    "payoffLogo": "/custom/assets/images/acme-payoff.svg",
-    "payoffAlt": "Acme Corp"
-  },
-
-  "defaultTitleSlide": "title-slide",
-
-  "cssVars": {
-    "--t-color-accent": "#0066cc",
-    "--t-slide-bg-lime": "#00cc66",
-    "--t-slide-bg-mist": "#f0f4f8",
-    "--t-slide-bg-dark": "#1a1a2e",
-    "--t-text-color-light": "#ffffff",
-    "--t-text-color-dark": "#212121"
-  },
-
-  "embedFonts": [
-    {
-      "family": "Acme Sans",
-      "path": "custom/assets/fonts/AcmeSans-Medium.woff2",
-      "weight": 500,
-      "style": "normal"
-    }
-  ],
-
-  "backgroundPresets": [
-    "/custom/assets/images/backgrounds/acme-bg-1.jpg",
-    "/custom/assets/images/backgrounds/acme-bg-2.jpg"
-  ],
-
-  "slideTypes": {
-    "exclude": [],
-    "include": []
-  },
-
-  "locks": {
-    "background": "open",
-    "logo": "open"
-  }
-}
-```
-
----
-
-## Directory Structure
-
-For a complete custom setup:
-
-```
-custom/themes/
-└── acme-corp/
-    ├── theme.json
-    └── assets/
-        ├── fonts/
-        │   └── AcmeSans-Medium.woff2
-        └── images/
-            ├── acme-logo.svg
-            ├── acme-payoff.svg
-            └── backgrounds/
-                ├── acme-bg-1.jpg
-                └── acme-bg-2.jpg
-```
-
-The theme's own chrome lives in its folder. Assets that get baked into saved
-slide content (uploaded images, deck-specific photos) stay in the shared
-`custom/assets/` tree - see the note under "Theme locations" above.
-
----
-
-## AI Wizard and Themes
-
-The AI wizard is theme-aware. When analyzing presentations:
-
-1. **Theme-Specific Slides**: The AI only suggests theme-specific slide types for presentations using that theme
-2. **Slide Availability**: The AI respects `slideTypes.include` and `slideTypes.exclude` settings
-3. **Custom Slide Types**: Custom slides with AI metadata are automatically available to the AI wizard
-
-To create a custom slide type that the AI wizard can use, add an `ai` property to your slide type definition. See `docs/developer/slide-types.md` for details on AI integration.
-
-### Example: Replacing the Default Title Slide
-
-If you want the AI to use your custom title slide instead of the default:
-
-1. Create your custom slide with AI metadata:
-
-   ```javascript
-   // custom/slide-types/my-title-slide.js
-   export default {
-     themeId: 'my-theme',
-     label: 'My Title',
-     ai: {
-       category: 'structural',
-       resolveInPhase1: true,
-       description: 'Opening slide for my theme...',
-       bestFor: ['Opening slides', 'First impression'],
-       // ...
-     },
-     // ...
-   };
-   ```
-
-2. Configure your theme to use it:
-   ```json
-   {
-     "id": "my-theme",
-     "slideTypes": {
-       "exclude": ["title-slide"],
-       "include": ["my-title-slide"]
-     },
-     "defaultTitleSlide": "my-title-slide"
-   }
-   ```
-
----
-
-## See Also
-
-- `docs/developer/slide-types.md` - Custom slide types and AI integration
-- `docs/developer/architecture.md` - System architecture overview
+A `.deck` export includes a snapshot of the effective theme record and available images. Its `deck.extensions` list carries the names of installation extensions involved in its history. The names warn a receiving installation about possibly missing custom code or CSS; they do not install it. [Deck format](../reference/deck-format.md) describes this boundary.

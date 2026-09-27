@@ -57,18 +57,19 @@ under dark text). It is position-independent (a gentle full scrim).
 
 ## What a theme must define
 
-Auto-contrast keys off two theme fields (`themes/<id>.json` or
-`custom/themes/<id>/theme.json`):
+Auto-contrast keys off the theme record's `colors.textLight` and `colors.textDark` (also present in seed records):
 
 ```json
 {
-  "textColorLight": "#ffffff",
-  "textColorDark": "#212121"
+  "colors": {
+    "textLight": "#ffffff",
+    "textDark": "#212121"
+  }
 }
 ```
 
-- `textColorLight` — the colour used on dark backgrounds. Default `#ffffff`.
-- `textColorDark` — the colour used on light backgrounds. Default `#212121`.
+- `colors.textLight` — the colour used on dark backgrounds. Default `#ffffff`.
+- `colors.textDark` — the colour used on light backgrounds. Default `#212121`.
 
 These flow to the CSS custom properties `--t-text-color-light` /
 `--t-text-color-dark`, which the background text classes consume. They are the

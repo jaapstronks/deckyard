@@ -122,8 +122,7 @@ If you measure one of these, add it here rather than to a code comment.
 ## Checking your own theme
 
 There is no contact-sheet tool yet: the theme editor's live preview covers a
-DB-theme draft and a handful of slides, not a file theme in
-`custom/themes/<id>/theme.json` and not the rest of the registry. Building one
+theme-record draft and a handful of slides, not the rest of the registry. Building one
 (`npm run theme:preview <id>`, every registered type × every background the
 theme offers, plus a contrast report) is an open proposal — the pieces exist
 (`renderSlideElement`, `loadExportCssBundle`, the Puppeteer plumbing in

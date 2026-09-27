@@ -1329,7 +1329,7 @@ custom/slide-types/
 └── _helpers.js              # Underscore = private (not loaded)
 
 custom/themes/
-└── acme-corp.json           # Theme configuration
+└── acme-corp.json           # Optional shared, read-only theme seed
 
 custom/assets/
 ├── fonts/
@@ -1465,26 +1465,22 @@ export default {
 };
 ```
 
-With the theme config in `custom/themes/acme-corp.json`:
+With the `config` of an organization theme record (or a shared seed in `custom/themes/acme-corp.json`):
 
 ```json
 {
-  "id": "acme-corp",
-  "label": "Acme Corporation",
-  "assets": {
-    "logo": "/custom/assets/images/acme-logo.svg",
-    "logoAlt": "Acme Corp"
-  },
-  "cssVars": {
-    "--t-color-accent": "#0066cc"
-  },
-  "slideTypes": {
-    "exclude": ["title-slide"],
-    "include": ["acme-hero-slide"]
-  },
-  "defaultTitleSlide": "acme-hero-slide"
+  "config": {
+    "slideTypes": {
+      "exclude": ["title-slide"],
+      "include": ["acme-hero-slide"]
+    },
+    "defaultTitleSlide": "acme-hero-slide"
+  }
 }
 ```
+
+The snippet shows the relevant part of a record. A complete seed also needs `slug`, `label`, `colors` and `fonts`; see [Themes](themes.md#seeds-for-an-installation).
+Use the themes API to set a record's `config.slideTypes`; **Settings → Slide Types** separately controls organization-wide availability.
 
 This setup:
 
