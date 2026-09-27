@@ -137,6 +137,7 @@
   "common.signOut": "Wyloguj się",
   "common.theme": "Motyw",
   "common.themeCard.bodySpecimen": "Tekst podstawowy",
+  "common.themeDefault": "Domyślny dla obszaru roboczego",
   "common.toggleTheme": "Przełącz tryb ciemny/jasny",
   "common.unknown": "Nieznany",
   "common.unknownError": "Nieznany błąd",

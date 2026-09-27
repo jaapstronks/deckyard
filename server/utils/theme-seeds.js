@@ -92,9 +92,8 @@ export function validateThemeSeed(record, file) {
 
 /** Load core and optional fork seeds; reject a duplicate before any upsert. */
 export async function readThemeSeeds(root = repoRoot) {
-  // Until B438.2 removes the old file runtime, records live below themes/seeds.
   const dirs = [
-    path.join(root, 'themes', 'seeds'),
+    path.join(root, 'themes'),
     path.join(customDirFor(root), 'themes'),
   ];
   const seen = new Map();

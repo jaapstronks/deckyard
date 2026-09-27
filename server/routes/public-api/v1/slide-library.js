@@ -191,7 +191,7 @@ async function handleAddFromLibrary(ctx, presentationId) {
   // key only that organization's registry holds, so resolve in that map, not
   // the global one.
   const slideTypes = await buildMergedSlideTypes(storageScope);
-  const theme = await loadDeckTheme(repoRoot, pres.theme);
+  const theme = await loadDeckTheme(repoRoot, pres.theme, storageScope);
   let newSlideObj;
   try {
     newSlideObj = newSlide({

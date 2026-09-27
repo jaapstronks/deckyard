@@ -33,6 +33,7 @@ import crypto from 'node:crypto';
 import JSZip from 'jszip';
 import { testScope, otherOrganizationScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const SENDER = process.env.DEFAULT_ORGANIZATION_ID;
@@ -71,6 +72,7 @@ test.before(async () => {
         { id: RECEIVER, name: 'Receiver', slug: 'receiver' },
       ],
       users: userRows(OWNER),
+      themes: [await brandSeedRow()],
     }),
   );
   await initializeStorage();

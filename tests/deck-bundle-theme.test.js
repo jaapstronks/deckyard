@@ -31,6 +31,7 @@ import crypto from 'node:crypto';
 import JSZip from 'jszip';
 import { testScope, otherOrganizationScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const SENDER = process.env.DEFAULT_ORGANIZATION_ID;
@@ -44,7 +45,8 @@ const { initializeStorage, __resetStorageForTests } =
 const { createTheme, listThemes, getThemeRecord } =
   await import('../server/storage/themes.js');
 const { createFontFamily } = await import('../server/storage/font-families.js');
-const { writeAppSettings } = await import('../server/storage/settings.js');
+const { updateOrganization } =
+  await import('../server/storage/user-organizations/index.js');
 const { loadThemeAssets, customThemeConfig, clearCustomThemeCache } =
   await import('../server/utils/themes.js');
 const { curatedFontFaces } = await import('../shared/theme-fonts.js');
@@ -85,6 +87,7 @@ test.before(async () => {
         { id: RECEIVER, name: 'Receiver', slug: 'receiver' },
       ],
       users: userRows(OWNER),
+      themes: [await brandSeedRow()],
     }),
   );
   await initializeStorage();
@@ -381,7 +384,9 @@ test('a non-installed bundled theme follows a changed workspace default at rende
   assert.equal(second.ok, true);
 
   try {
-    await writeAppSettings(receiverScope(), { defaultThemeId: first.theme.id });
+    await updateOrganization(RECEIVER, {
+      settings: { defaultThemeId: first.theme.id },
+    });
     const { body } = await importInto(receiverScope(), bundle);
     assert.equal(body.theme, 'default');
     assert.equal(body.bundledTheme.themeId, 'default');
@@ -390,24 +395,23 @@ test('a non-installed bundled theme follows a changed workspace default at rende
       body.theme,
       receiverScope(),
     );
-    assert.equal(initial._customThemeId, first.theme.id);
+    assert.equal(initial.id, first.theme.id);
     assert.equal(
-      (await customThemeConfig(repoRoot, body.theme, receiverScope()))
-        ._customThemeId,
+      (await customThemeConfig(repoRoot, body.theme, receiverScope())).id,
       first.theme.id,
     );
 
-    await writeAppSettings(receiverScope(), {
-      defaultThemeId: second.theme.id,
+    await updateOrganization(RECEIVER, {
+      settings: { defaultThemeId: second.theme.id },
     });
     const changed = await loadThemeAssets(
       repoRoot,
       body.theme,
       receiverScope(),
     );
-    assert.equal(changed._customThemeId, second.theme.id);
+    assert.equal(changed.id, second.theme.id);
   } finally {
-    await writeAppSettings(receiverScope(), { defaultThemeId: '' });
+    await updateOrganization(RECEIVER, { settings: { defaultThemeId: '' } });
   }
 });
 

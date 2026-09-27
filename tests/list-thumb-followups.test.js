@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 
 import { resolveThemeThumbBg } from '../server/utils/themes.js';
 import { testScope } from './helpers/storage-scope.js';
+import { seedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -40,6 +41,7 @@ test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      themes: [await seedRow('brand'), await seedRow('amethyst')],
     }),
   );
   await initializeStorage();
@@ -51,7 +53,10 @@ test.after(() => {
 });
 
 test('resolveThemeThumbBg returns a theme background hex', async () => {
-  const bg = await resolveThemeThumbBg(repoRoot, 'amethyst');
+  const bg = await resolveThemeThumbBg(
+    repoRoot,
+    '00000000-0000-4000-8000-0000000000ba',
+  );
   assert.match(bg || '', /^#[0-9a-f]{3,6}$/i, 'a hex color for a known theme');
 });
 

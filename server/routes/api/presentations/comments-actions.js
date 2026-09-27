@@ -292,7 +292,7 @@ export async function handlePresentationCommentApply(
   // one factory every other creation route uses.
   const proposed = newSlide({
     type,
-    theme: await loadDeckTheme(repoRoot, fullPres.theme),
+    theme: await loadDeckTheme(repoRoot, fullPres.theme, storageScope),
     lang: fullPres.lang,
     presentationId: id,
     slideTypes,

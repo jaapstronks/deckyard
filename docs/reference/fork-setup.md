@@ -69,6 +69,8 @@ Render and serving paths accept an installation root so they can render against 
 
 ### Step 3: Add Your Custom Content
 
+**Theme cutover:** The file-theme instructions in this step describe the retired workflow. The runtime now uses theme records by UUID; `custom/themes/*.json` is an optional seed source, and served images belong under `/custom/assets/`. The full fork guide will be revised with the B439.2 track.
+
 1. **Add your theme** as a self-contained folder
    `custom/themes/your-org/theme.json` (recommended folder layout — see
    `docs/developer/themes.md` for the flat legacy layout and a migration
@@ -86,7 +88,7 @@ Render and serving paths accept an installation root so they can render against 
      "id": "your-org",
      "label": "Your Organization",
      "assets": {
-       "logo": "/custom/themes/your-org/assets/images/your-logo.svg",
+       "logo": "/custom/assets/images/your-logo.svg",
        "logoAlt": "Your Organization"
      },
      "cssVars": {
@@ -106,8 +108,8 @@ Render and serving paths accept an installation root so they can render against 
    ```json
    {
      "backgroundPresets": [
-       "/custom/themes/your-org/assets/images/bg-1.jpg",
-       "/custom/themes/your-org/assets/images/bg-2.jpg"
+       "/custom/assets/images/bg-1.jpg",
+       "/custom/assets/images/bg-2.jpg"
      ]
    }
    ```

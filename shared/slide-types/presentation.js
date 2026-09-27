@@ -13,7 +13,7 @@ import {
   slideBackgroundContrastClass,
 } from '../theme-slide-backgrounds.js';
 import { applyLocksToContent } from '../theme-locks.js';
-import { SLIDE_TYPES, THEMES, getSlideType } from './registry.js';
+import { SLIDE_TYPES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
@@ -487,12 +487,11 @@ export function renderSlideHtml(slide, ctx = {}) {
 
 export function validatePresentation(pres, opts = {}) {
   const errors = [];
-  // Server can override this with the runtime list of available themes.
-  // Keep a safe default for client-side validation and older callers.
-  const allowedThemes =
-    Array.isArray(opts?.allowedThemes) && opts.allowedThemes.length
-      ? opts.allowedThemes
-      : THEMES;
+  // The portable reference is either a deck-scoped default or a record UUID.
+  // A server caller can further restrict UUIDs to records visible in its scope.
+  const allowedThemes = Array.isArray(opts?.allowedThemes)
+    ? opts.allowedThemes
+    : null;
   if (!pres || typeof pres !== 'object')
     return {
       ok: false,
@@ -524,10 +523,13 @@ export function validatePresentation(pres, opts = {}) {
     errors.push(
       `Presentation.lang must be one of: ${TRANSLATION_LANGS.join(', ')}`,
     );
-  if (pres.theme && !allowedThemes.includes(pres.theme))
-    errors.push(
-      `Presentation.theme must be one of: ${allowedThemes.join(', ')}`,
-    );
+  if (
+    pres.theme &&
+    pres.theme !== 'default' &&
+    (!isUuid(pres.theme) ||
+      (allowedThemes && !allowedThemes.includes(pres.theme)))
+  )
+    errors.push('Presentation.theme must be default or a visible theme UUID');
   if (!Array.isArray(pres.slides))
     errors.push('Presentation.slides must be an array');
 

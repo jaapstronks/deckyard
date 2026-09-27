@@ -136,9 +136,9 @@ test('the swept tables gate every uuid capture, not just the first', async () =>
     ],
     [handleSlideLibrary, 'PATCH', '/api/slide-library/personal/nope'],
     // Was `([a-f0-9-]+)`: a non-hex id fell through the table entirely.
-    [handleThemes, 'GET', '/api/themes/custom/nope'],
+    [handleThemes, 'GET', '/api/themes/nope'],
     // Hex-and-dashes but not a uuid: the old pattern let this reach storage.
-    [handleThemes, 'GET', '/api/themes/custom/abc-123'],
+    [handleThemes, 'GET', '/api/themes/abc-123'],
   ];
   for (const [handler, method, pathname] of cases) {
     const ctx = await statusOf(handler, method, pathname);

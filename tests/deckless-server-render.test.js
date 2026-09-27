@@ -30,6 +30,7 @@ import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { JSDOM } from 'jsdom';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -66,8 +67,8 @@ const SERVER_TYPE = 'title-slide';
 window.__DECK_SERVER_RENDERED_TYPES__ = [SERVER_TYPE];
 
 const UUID = '2b8ff646-0a51-4bbf-9304-fbfc09903bbc';
-/** A database theme as the client holds it: slug as `id`, UUID beside it. */
-const DB_THEME = { id: 'acme', _customThemeId: UUID, cssVars: {} };
+/** A theme record has the same UUID on client and server. */
+const DB_THEME = { id: UUID, slug: 'acme', cssVars: {} };
 
 /** Answer every render request with the shared renderer's markup. */
 function installServer() {
@@ -240,9 +241,44 @@ test('renderVia: a missing or unknown kind refuses — no request, no fallback',
 
 const { handleRenderSlide } =
   await import('../server/routes/api/render-slide.js');
+const { __setTestDb } = await import('../server/db/client.js');
+const { createFakeDb } = await import('./helpers/fake-db.js');
+const seed = JSON.parse(
+  await readFile(join(repoRoot, 'themes/brand.json'), 'utf8'),
+);
+__setTestDb(
+  createFakeDb({
+    organizations: [
+      {
+        id: '00000000-0000-4000-8000-000000000001',
+        name: 'Test',
+        slug: 'test',
+        settings: {},
+      },
+    ],
+    themes: [
+      {
+        id: UUID,
+        organization_id: null,
+        seed_hash: 'fixture',
+        slug: seed.slug,
+        label: seed.label,
+        logo_url: seed.logoUrl,
+        logo_small_url: seed.logoSmallUrl,
+        colors: seed.colors,
+        fonts: seed.fonts,
+        config: seed.config,
+      },
+    ],
+  }),
+);
+test.after(() => __setTestDb(null));
 
 /** Drive `POST /api/render-slide` with `body`; resolve { status, json }. */
-async function postRender(body, { organizationId = null } = {}) {
+async function postRender(
+  body,
+  { organizationId = '00000000-0000-4000-8000-000000000001' } = {},
+) {
   const req = Readable.from([Buffer.from(JSON.stringify(body))]);
   req.method = 'POST';
   req.headers = { 'content-type': 'application/json' };
@@ -274,7 +310,7 @@ test('route: renders against the theme and language in the body', async () => {
   const out = await postRender({
     slide: { id: 's', type: 'content-slide', content: { title: 'Hi' } },
     mode: 'thumb',
-    theme: 'deckyard',
+    theme: UUID,
     lang: 'en',
   });
   assert.equal(out.status, 200);

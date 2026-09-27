@@ -40,6 +40,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 // The guest-verification mail is fire-and-forget; without a key the Brevo
@@ -71,14 +72,17 @@ const PASSWORD = 'correct horse battery';
 const DECKS = ['deck-shared', 'deck-other', 'deck-private'];
 
 let passwordHash;
+let brandSeed;
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
 
 test.before(async () => {
+  brandSeed = await brandSeedRow();
   passwordHash = await hashPassword(PASSWORD);
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      themes: [brandSeed],
     }),
   );
   await initializeStorage();
@@ -169,6 +173,7 @@ function seed() {
   resetRateLimitBuckets();
   db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+    themes: [brandSeed],
     presentations: DECKS.map(deckRow),
     presentation_share_links: [
       linkRow({ id: 'link-view', token: 'tok-view', label: 'For the client' }),

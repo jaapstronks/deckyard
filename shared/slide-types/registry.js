@@ -34,7 +34,6 @@ import cycleSlide from './types/cycle-slide.js';
 import gallerySlide from './types/gallery-slide.js';
 import customHtmlSlide from './types/custom-html-slide.js';
 import { GLOBAL_SLIDE_FIELD_KEYS, composeSlideType } from './compose.js';
-import { DEFAULT_THEME_ID } from '../constants/themes.js';
 import {
   CORE_NAMESPACE,
   SLIDE_NAME_SUFFIX,
@@ -399,19 +398,3 @@ export function canonicalSlideType(type) {
   const key = resolveSlideTypeName(type);
   return (key && SLIDE_TYPE_IDS[key]) || type;
 }
-
-// Core themes included with the OSS version.
-// Additional themes can be added via custom/themes/ directory.
-// Note: Themes are discovered dynamically at runtime from /themes/*.json and /custom/themes/*.json
-export const THEMES = [
-  DEFAULT_THEME_ID,
-  // Neutral, non-branded base themes covering the common archetypes. Every
-  // built-in other than the default is listed by id here: this array is the
-  // validation enum, so a theme missing from it is rejected on save even
-  // though `themes/<id>.json` exists on disk.
-  'amethyst',
-  'corporate',
-  'editorial',
-  'playful',
-  'midnight',
-];

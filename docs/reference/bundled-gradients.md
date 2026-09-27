@@ -59,8 +59,8 @@ npm run gen:gradients
 `tests/bundled-gradients.test.js` re-renders every item and fails if a
 committed file has drifted, so a stale asset cannot ship.
 
-A fork that drops its own theme in `themes/` and re-runs the generator gets its
-own gradients for free — no code change.
+The generator uses the six committed core seed records in `themes/`.
+Organization themes do not add gradients to this static library.
 
 ## API
 
@@ -93,8 +93,8 @@ bytes have to be brought in-house.
 
 ## Implementation status (as of 2026-08-21)
 
-- The set is derived from `themes/*.json` only. Database and per-organization
-  custom themes contribute nothing, because the bundled set has to match
+- The set is derived from the core seed records in `themes/*.json` only. Organization
+  themes contribute nothing, because the bundled set has to match
   committed files.
 - Alt seeds are English. A pick into a Dutch deck therefore seeds an English
   alt string, which the author can overwrite. Localising them would mean

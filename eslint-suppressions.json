@@ -169,7 +169,7 @@
   },
   "client/lib/theme/theme.js": {
     "no-restricted-syntax": {
-      "count": 3
+      "count": 1
     }
   },
   "client/lib/theme/ui-mode.js": {

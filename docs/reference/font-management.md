@@ -49,11 +49,11 @@ Themes store font references in a `fonts` JSONB column:
 }
 ```
 
-When `headingFamilyId` or `bodyFamilyId` is present, the system treats it as a managed font and resolves it from the database instead of the curated list. When absent, the standard curated font validation applies (backward-compatible).
+When `headingFamilyId` or `bodyFamilyId` is present, the system treats it as a managed font and resolves it from the database instead of the curated list. Without a family ID, the standard curated font validation applies.
 
 **Resolution chain:**
 
-1. Theme is loaded from DB (`server/utils/themes.js` → `loadCustomTheme()`)
+1. Theme record is loaded from DB (`server/utils/themes.js` → `loadThemeAssets()`)
 2. If theme has a familyId, `listAllFontFamiliesWithVariants()` fetches managed fonts for the org
 3. `buildThemeConfig()` receives managed fonts and produces:
    - `embedFonts` array (for uploaded fonts — URL-based variants to base64 in exports)

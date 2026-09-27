@@ -82,8 +82,7 @@ Two edges are worth knowing, because they are where the automation stops:
 A `slideBackgrounds` variant whose value is artwork, or a `--t-logo-url`, is
 supported:
 
-- a **local** path (`/uploads/`, `/assets/`, `/custom/assets/`,
-  `/custom/themes/`) is inlined as a data URL, because a root-relative path has
+- a **local** path (`/uploads/`, `/assets/`, `/custom/assets/`) is inlined as a data URL, because a root-relative path has
   nothing to resolve against under `setContent()`;
 - a **remote** `http(s)` URL goes through the SSRF guard — inlined if it
   resolves to a public address, otherwise blanked to `url('')`. It is never

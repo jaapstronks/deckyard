@@ -132,7 +132,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
       ({ content } = convertSlideToType(existingSlide, slideType, {
         slideTypes,
         lang: pres?.lang,
-        theme: await loadDeckTheme(repoRoot, pres.theme),
+        theme: await loadDeckTheme(repoRoot, pres.theme, storageScope),
       }));
     } catch (err) {
       if (!(err instanceof UnsupportedConversionError)) throw err;
@@ -243,7 +243,7 @@ async function handleCreateSlide(ctx, presentationId) {
 
   // The deck's theme supplies the background presets for types that auto-assign
   // one; without it a new title slide would come out flat.
-  const theme = await loadDeckTheme(repoRoot, pres.theme);
+  const theme = await loadDeckTheme(repoRoot, pres.theme, storageScope);
 
   // Create new slide. Caller-supplied content goes in as the factory's patch
   // rather than being assigned over the result, so the composition steps that

@@ -116,8 +116,7 @@ export async function loadCustomAiCatalog() {
           usage: clampUsage(aiDef.usage),
           // Mark as custom for potential filtering
           isCustom: true,
-          // Store themeId if present (for theme-aware AI suggestions)
-          themeId: def.themeId || null,
+          themeOnly: def.themeOnly === true,
         };
 
         // Store examples if provided
@@ -159,19 +158,16 @@ export function clearCustomAiCatalogCache() {
 }
 
 /**
- * Get custom slide types that are tied to a specific theme
- * @param {string} themeId - The theme ID to filter by
+ * Get custom slide types offered by a theme's explicit include set.
+ * @param {Object} theme - The loaded theme record
  * @returns {Promise<Object>} Filtered catalog entries
  */
-export async function getCustomAiCatalogForTheme(themeId) {
+export async function getCustomAiCatalogForTheme(theme) {
   const catalog = await loadCustomAiCatalog();
-
-  // Return all custom types that either:
-  // 1. Have no themeId (universal custom types)
-  // 2. Match the specified themeId
+  const included = new Set(theme?.slideTypes?.include || []);
   return Object.fromEntries(
     Object.entries(catalog).filter(
-      ([, def]) => !def.themeId || def.themeId === themeId,
+      ([type, def]) => !def.themeOnly || included.has(type),
     ),
   );
 }

@@ -35,14 +35,13 @@ import {
 } from '../shared/theme-config-schema.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const repoRoot = path.join(here, '..');
 const fixtures = path.join(here, 'fixtures', 'theme-records');
 const readJson = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
 
 const managedFonts = readJson(path.join(fixtures, 'managed-fonts.json'));
 
 const coreIds = fs
-  .readdirSync(path.join(repoRoot, 'themes'))
+  .readdirSync(path.join(fixtures, 'core-files'))
   .filter((f) => f.endsWith('.json'))
   .map((f) => f.replace(/\.json$/, ''))
   .sort();
@@ -54,7 +53,7 @@ const forkIds = fs
 const themes = [
   ...coreIds.map((id) => ({
     id,
-    file: readJson(path.join(repoRoot, 'themes', `${id}.json`)),
+    file: readJson(path.join(fixtures, 'core-files', `${id}.json`)),
   })),
   ...forkIds.map((id) => ({
     id,

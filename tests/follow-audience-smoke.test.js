@@ -298,7 +298,11 @@ async function fakeFetch(input, init = {}) {
         id: DECK_ID,
         title: 'Kickoff',
         theme: 'default',
-        themeConfig: { id: 'brand', label: 'Brand', cssVars: {} },
+        themeConfig: {
+          id: '00000000-0000-4000-8000-0000000000bb',
+          label: 'Forest',
+          cssVars: {},
+        },
         slides: structuredClone(SLIDES),
         // The route stamps the language of the slides it serves, so the view
         // can read it with resolveDeckLang like every other render surface

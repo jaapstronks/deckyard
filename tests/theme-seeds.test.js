@@ -108,12 +108,12 @@ test('fork seeds load from DECKYARD_CUSTOM_DIR and invalid seeds refuse the batc
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-seeds-'));
   const fork = await fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-fork-seeds-'));
   try {
-    await fs.mkdir(path.join(root, 'themes', 'seeds'), { recursive: true });
+    await fs.mkdir(path.join(root, 'themes'), { recursive: true });
     await fs.mkdir(path.join(fork, 'themes'), { recursive: true });
     const seeds = await readThemeSeeds();
     for (const { record } of seeds)
       await fs.writeFile(
-        path.join(root, 'themes/seeds', `${record.slug}.json`),
+        path.join(root, 'themes', `${record.slug}.json`),
         JSON.stringify(record),
       );
     const { record } = seeds[0];
@@ -145,7 +145,7 @@ test('fork seeds load from DECKYARD_CUSTOM_DIR and invalid seeds refuse the batc
       path.join(fork, 'themes', `${record.slug}.json`),
       JSON.stringify(record),
     );
-    assert.match(run().stderr, /themes\/seeds.*themes\/amethyst.json/);
+    assert.match(run().stderr, /themes.*themes\/amethyst.json/);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
     await fs.rm(fork, { recursive: true, force: true });
@@ -155,12 +155,12 @@ test('fork seeds load from DECKYARD_CUSTOM_DIR and invalid seeds refuse the batc
 test('duplicate core and fork slug fails before database writes and names both files', async () => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), 'deckyard-seeds-'));
   try {
-    await fs.mkdir(path.join(root, 'themes', 'seeds'), { recursive: true });
+    await fs.mkdir(path.join(root, 'themes'), { recursive: true });
     await fs.mkdir(path.join(root, 'custom', 'themes'), { recursive: true });
     const seeds = await readThemeSeeds();
     for (const { record } of seeds)
       await fs.writeFile(
-        path.join(root, 'themes/seeds', `${record.slug}.json`),
+        path.join(root, 'themes', `${record.slug}.json`),
         JSON.stringify(record),
       );
     const { record } = seeds[0];
@@ -168,7 +168,7 @@ test('duplicate core and fork slug fails before database writes and names both f
       path.join(root, 'custom/themes', `${record.slug}.json`),
       JSON.stringify(record),
     );
-    await assert.rejects(readThemeSeeds(root), /themes\/seeds.*custom\/themes/);
+    await assert.rejects(readThemeSeeds(root), /themes.*custom\/themes/);
   } finally {
     await fs.rm(root, { recursive: true, force: true });
   }

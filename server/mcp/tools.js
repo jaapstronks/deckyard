@@ -79,11 +79,11 @@ import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
 import {
-  listThemeIds,
   loadDeckTheme,
   loadThemeAssets,
   settleNewDeckTheme,
 } from '../utils/themes.js';
+import { listThemes } from '../storage/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
 import { resolveAgentSlideTypes } from '../utils/ai/slide-catalog/agent-catalog.js';
@@ -867,7 +867,11 @@ export function registerTools(
           slide = convertSlideToType(slide, type, {
             slideTypes,
             lang: pres?.lang,
-            theme: await loadDeckTheme(repoRoot, pres?.theme),
+            theme: await loadDeckTheme(
+              repoRoot,
+              pres?.theme,
+              storageScopeOf(context),
+            ),
           });
         } catch (err) {
           if (err instanceof UnsupportedConversionError) {
@@ -949,7 +953,11 @@ export function registerTools(
         type: validated.type,
         content: validated.content,
         slideTypes,
-        theme: await loadDeckTheme(repoRoot, pres?.theme),
+        theme: await loadDeckTheme(
+          repoRoot,
+          pres?.theme,
+          storageScopeOf(context),
+        ),
         lang: pres?.lang,
         presentationId,
       });
@@ -1159,25 +1167,16 @@ export function registerTools(
       type: 'object',
       properties: {},
     },
-    async () => {
-      const ids = await listThemeIds(repoRoot);
-      const themes = [];
-
-      for (const id of ids) {
-        try {
-          const theme = await loadThemeAssets(repoRoot, id);
-          themes.push({
-            id: theme.id,
-            label: theme.label || theme.id,
-            brandColors: theme.brandColors || [],
-            hasBackgroundImages: !!theme.backgroundPresets?.length,
-          });
-        } catch {
-          themes.push({ id, label: id });
-        }
-      }
-
-      return { themes };
+    async (_args, context) => {
+      const records = await listThemes(storageScopeOf(context));
+      return {
+        themes: records.map((theme) => ({
+          id: theme.id,
+          slug: theme.slug,
+          source: theme.source,
+          label: theme.label,
+        })),
+      };
     },
     { readOnly: true, permission: 'read' },
   );

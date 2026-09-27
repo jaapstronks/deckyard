@@ -1,5 +1,7 @@
 ## Themes
 
+**Runtime status (B438.2):** Presentations now resolve theme records by UUID; `themes/*.json` and `custom/themes/*.json` are seed inputs at startup, not render-time files. The folder-layout and flat-file migration recipes below describe the retired workflow and await the B439.2 documentation rewrite. Served theme images belong under `/assets/` or `/custom/assets/`.
+
 Themes control the visual identity of presentations. They are loaded at runtime (no build step).
 
 **Theme locations:**
@@ -71,18 +73,18 @@ custom/themes/your-org/
   "id": "your-org",
   "label": "Your Organization",
   "assets": {
-    "logo": "/custom/themes/your-org/assets/images/logo.svg",
+    "logo": "/custom/assets/images/logo.svg",
     "logoAlt": "Your Organization"
   },
   "cssVars": {
     "--t-color-accent": "#0066cc",
     "--t-slide-bg-lime": "#your-brand-color",
-    "--t-logo-url": "url('/custom/themes/your-org/assets/images/logo.svg')"
+    "--t-logo-url": "url('/custom/assets/images/logo.svg')"
   },
   "embedFonts": [
     {
       "family": "YourFont",
-      "path": "custom/themes/your-org/assets/fonts/YourFont-Regular.woff2",
+      "path": "custom/assets/fonts/YourFont-Regular.woff2",
       "weight": 400,
       "style": "normal"
     }
@@ -91,8 +93,8 @@ custom/themes/your-org/
 ```
 
 Asset URLs inside the JSON are absolute site-root paths under the theme
-folder: `/custom/themes/your-org/assets/...`. `embedFonts[].path` is
-repo-root-relative (no leading slash): `custom/themes/your-org/assets/...`.
+folder: `/custom/assets/...`. `embedFonts[].path` is
+repo-root-relative (no leading slash): `custom/assets/...`.
 
 2. Set as default in `.env`:
 
@@ -106,10 +108,10 @@ DEFAULT_THEME=your-org
 
 To convert an existing `custom/themes/your-org.json`:
 
-1. `mkdir -p custom/themes/your-org/assets/{images,fonts}`
+1. `mkdir -p custom/assets/{images,fonts}`
 2. `git mv custom/themes/your-org.json custom/themes/your-org/theme.json`
 3. Move the theme's **chrome** assets (logo, fonts) into
-   `custom/themes/your-org/assets/…` and rewrite those paths in `theme.json`
+   `custom/assets/…` and rewrite those paths in `theme.json`
    (`assets.logo`, `assets.payoffLogo`, `--t-logo-url`, `embedFonts[].path`).
    These are resolved at render time and are never stored in slide content, so
    moving them is safe.
@@ -290,10 +292,10 @@ lists one entry per weight still exports one copy — but writing the range is
 clearer. A truly static family (one file per weight, e.g. Poppins) keeps one
 entry per weight, because those files really are different bytes.
 
-For the built-in and database themes you never write this by hand:
+For seed and organization theme records you never write this by hand:
 `curatedEmbedFonts()` (`server/utils/curated-font-embed.js`) generates the list
-from the curated set and the font lockfile, and `tests/theme-embed-fonts.test.js`
-fails if a committed `themes/*.json` drifts from it.
+from the curated set and the font lockfile when the record is loaded. The seed
+gate in `tests/theme-seeds.test.js` checks the committed `themes/*.json` files.
 
 ---
 
@@ -322,8 +324,7 @@ picking up imagery that isn't yours. Deckyard used to ship a hardcoded list of
 four demo photos that any deck could land on regardless of its theme; that list
 is gone.
 
-The URLs may point anywhere the server serves — `custom/themes/<id>/assets/`,
-`custom/assets/`, `/uploads/`, or a CDN.
+The URLs may point anywhere the server serves — `custom/assets/`, `/uploads/`, or a CDN.
 
 ---
 
@@ -469,9 +470,9 @@ role-vocabulary consolidation and has no effect.
   "label": "Acme Corporation",
 
   "assets": {
-    "logo": "/custom/themes/acme-corp/assets/images/acme-logo.svg",
+    "logo": "/custom/assets/images/acme-logo.svg",
     "logoAlt": "Acme Corp",
-    "payoffLogo": "/custom/themes/acme-corp/assets/images/acme-payoff.svg",
+    "payoffLogo": "/custom/assets/images/acme-payoff.svg",
     "payoffAlt": "Acme Corp"
   },
 
@@ -489,15 +490,15 @@ role-vocabulary consolidation and has no effect.
   "embedFonts": [
     {
       "family": "Acme Sans",
-      "path": "custom/themes/acme-corp/assets/fonts/AcmeSans-Medium.woff2",
+      "path": "custom/assets/fonts/AcmeSans-Medium.woff2",
       "weight": 500,
       "style": "normal"
     }
   ],
 
   "backgroundPresets": [
-    "/custom/themes/acme-corp/assets/images/backgrounds/acme-bg-1.jpg",
-    "/custom/themes/acme-corp/assets/images/backgrounds/acme-bg-2.jpg"
+    "/custom/assets/images/backgrounds/acme-bg-1.jpg",
+    "/custom/assets/images/backgrounds/acme-bg-2.jpg"
   ],
 
   "slideTypes": {

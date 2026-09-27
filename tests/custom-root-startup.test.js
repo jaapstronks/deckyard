@@ -93,7 +93,6 @@ test('HTTP imports load .env before fork loaders and static mounts snapshot it',
   assert.equal(output.loaded, true);
   assert.deepEqual(output.mounts, [
     { urlPrefix: '/custom/assets/', dir: path.join(fork, 'assets') },
-    { urlPrefix: '/custom/themes/', dir: path.join(fork, 'themes') },
   ]);
 });
 

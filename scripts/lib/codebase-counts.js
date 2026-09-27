@@ -17,7 +17,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -34,7 +34,7 @@ function tracked(...pathspecs) {
     encoding: 'utf8',
   })
     .split('\n')
-    .filter(Boolean);
+    .filter((file) => file && existsSync(resolve(ROOT, file)));
 }
 
 /** @param {string} file */

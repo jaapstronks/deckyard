@@ -37,9 +37,14 @@ globalThis.ResizeObserver = class {
 
 // Every URL anything asks for, through the api client or a raw fetch.
 const requested = [];
+const THEME_ID = '00000000-0000-4000-8000-0000000000bb';
 globalThis.fetch = async (url) => {
   requested.push(String(url));
-  return new Response('{}', {
+  const body =
+    String(url) === '/api/themes'
+      ? { defaultThemeId: THEME_ID }
+      : { id: THEME_ID, slug: 'brand', label: 'Forest', cssVars: {} };
+  return new Response(JSON.stringify(body), {
     status: 200,
     headers: { 'content-type': 'application/json' },
   });

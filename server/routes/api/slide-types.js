@@ -78,10 +78,7 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // shared/slide-types/tiers.js.
       tier: slideTypeTier(key),
       fallback: slideFallback(def) || undefined,
-      themeId:
-        typeof def.themeId === 'string' && def.themeId.trim()
-          ? def.themeId.trim()
-          : undefined,
+      themeOnly: def.themeOnly === true || undefined,
       defaultsByLang:
         def.defaultsByLang && typeof def.defaultsByLang === 'object'
           ? def.defaultsByLang

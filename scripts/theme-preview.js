@@ -3,13 +3,8 @@
 // allows and every background each of those types offers.
 //
 // WHY THIS EXISTS
-// The theme editor's live preview (client/views/settings/theme-editor/preview.js)
-// is good, and it has two hard edges that hit a theme author at exactly the
-// wrong moment. It previews a DATABASE theme draft, so a *file* theme in
-// custom/themes/<id>/theme.json — how a fork versions its house style — has no
-// preview at all. And it deliberately shows a handful of slides, which is the
-// right call for a side panel and means nobody ever sees what the theme does to
-// the other thirty-odd registered types until a deck is in front of an audience.
+// The theme editor's live preview shows only a handful of slides. This sheet
+// covers every available type and background for a persisted theme record.
 //
 // The first run of this harness in a fork found two bugs inside two minutes: a
 // logo drifting to centre because `.slide` is a flex container and the wrapper
@@ -28,10 +23,10 @@
 //
 // NOT capture/: that harness navigates a RUNNING server and screenshots real
 // pages (it is for the docs screenshots). This one wants the opposite —
-// server-less, database-less, one slide straight to setContent. The anchor is
-// server/render/png.js.
+// server-less, one slide straight to setContent. The database supplies the
+// theme record. The rendering anchor is server/render/png.js.
 //
-//   npm run theme:preview <theme-id>
+//   npm run theme:preview <theme-uuid> [organization-uuid]
 //
 // Writes tmp/theme-preview/<theme-id>/: one PNG per (type × background) plus an
 // index.html that tiles them, grouped by type, with the WCAG report on top.
@@ -49,12 +44,19 @@ import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { newSlide } from '../shared/slide-types/presentation.js';
 import { isInsertableSlideType } from '../shared/slide-types/policy.js';
 import { renderSlideToPngBuffer } from '../server/render/png.js';
-import { loadThemeAssets, listThemeIds } from '../server/utils/themes.js';
+import { loadThemeAssets } from '../server/utils/themes.js';
+import { listThemes } from '../server/storage/themes.js';
+import {
+  initializeStorage,
+  closeStorage,
+} from '../server/storage/lifecycle.js';
+import { singleOrganizationScope } from '../server/storage/scope.js';
+import { initializeThemeSeeds } from '../server/utils/theme-seeds.js';
 import { closePuppeteerBrowser } from '../server/utils/puppeteer-browser.js';
 import { parseArgs } from './lib/cli-args.js';
 import { isCli } from './lib/is-cli.js';
 
-const USAGE = 'node scripts/theme-preview.js <theme-id>';
+const USAGE = 'node scripts/theme-preview.js <theme-uuid> [organization-uuid]';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -174,15 +176,16 @@ export function contrastReport(theme) {
  * Render the whole matrix and write the sheet.
  *
  * @param {string} themeId
+ * @param {import('../server/storage/scope.js').StorageScope} scope
  * @returns {Promise<number>} process exit code
  */
-async function run(themeId) {
-  const available = await listThemeIds(repoRoot);
-  if (!available.includes(themeId)) {
-    // loadThemeAssets falls back to the default theme on a miss, so a typo
-    // would otherwise produce a full, plausible sheet of the wrong theme.
+async function run(themeId, scope) {
+  const available = await listThemes(scope);
+  if (!available.some((theme) => theme.id === themeId)) {
     console.error(`Unknown theme: ${themeId}`);
-    console.error(`Available: ${available.join(', ')}`);
+    console.error(
+      `Available: ${available.map((theme) => `${theme.slug} (${theme.id})`).join(', ')}`,
+    );
     return 1;
   }
 
@@ -191,10 +194,10 @@ async function run(themeId) {
   // is meant to stand in for. The server and the MCP entry point do the same.
   await initSanitizer();
 
-  const theme = await loadThemeAssets(repoRoot, themeId);
+  const theme = await loadThemeAssets(repoRoot, themeId, scope);
   // Cleared, not merged: a tile left behind by an earlier run (a variant since
   // renamed, a type the theme now excludes) sits in the folder looking current.
-  // The id is one of `listThemeIds`, so the path cannot be steered out of tmp/.
+  // The id was looked up as a visible record, so it cannot steer the path.
   const outDir = path.join(repoRoot, 'tmp', 'theme-preview', themeId);
   await fs.rm(outDir, { recursive: true, force: true });
   await fs.mkdir(outDir, { recursive: true });
@@ -354,7 +357,7 @@ ${groups}
 if (isCli(import.meta.url)) {
   const { positional } = parseArgs(process.argv.slice(2), {
     usage: USAGE,
-    maxPositional: 1,
+    maxPositional: 2,
   });
   const themeId = String(positional[0] || '').trim();
   if (!themeId) {
@@ -362,8 +365,15 @@ if (isCli(import.meta.url)) {
     process.exit(1);
   }
   try {
-    process.exitCode = await run(themeId);
+    await initializeStorage();
+    await initializeThemeSeeds();
+    const organizationId = String(positional[1] || '').trim();
+    const scope = organizationId
+      ? { repoRoot, organizationId }
+      : singleOrganizationScope(repoRoot, 'theme:preview');
+    process.exitCode = await run(themeId, scope);
   } finally {
     await closePuppeteerBrowser();
+    await closeStorage();
   }
 }

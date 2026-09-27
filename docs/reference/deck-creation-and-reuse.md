@@ -107,12 +107,9 @@ Two organization settings govern which themes are on offer, both edited in the
 Themes settings tab and both resolved server-side:
 
 - **`defaultThemeId`** — the theme new decks start with. Precedence:
-  app setting, then the `DEFAULT_THEME` env var, then the built-in default
+  organization setting, then the `DEFAULT_THEME` env var, then the built-in default
   (`getDefaultThemeId`, `server/storage/settings.js`).
-- **`enabledThemes`** — the allowlist of themes that may be picked. Same
-  precedence shape: app setting, then the comma-separated `ENABLED_THEMES` env
-  var, then empty (`getEnabledThemeIds`). **Empty means no allowlist is
-  configured, so every theme is offered.**
+- **`enabledThemes`** — the allowlist of themes that may be picked. Precedence: organization setting, then the comma-separated `ENABLED_THEMES` env var, then empty (`getEnabledThemeIds`). **Empty means no allowlist is configured, so every theme is offered.** Deployment slugs are resolved to seed UUIDs before the picker response; stored settings and deck references use UUIDs (or `default` for a deck following its organization).
 
 The allowlist is **hard**: `GET /api/themes` does not return a theme outside it,
 so all three pickers that read the endpoint — the creation grid, the editor's

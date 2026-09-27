@@ -1,10 +1,8 @@
 /**
  * Client theme loading: which fetched theme is accepted, and invalidation.
  *
- * A database theme is requested by UUID but reports its *slug* as `id`, so the
- * "is this the theme I asked for?" guard used to reject every custom theme and
- * substitute a blank one — the theme rendered unstyled in the browser while
- * server-side exports looked correct, because they never go through this path.
+ * Every fetched theme uses its record UUID as `id`; anonymous views preload
+ * that same config through their authorized deck payload.
  *
  * Run with: node --test tests/theme-load-cache.test.js
  */
@@ -27,12 +25,10 @@ delete globalThis.BroadcastChannel;
 
 const UUID = '2b8ff646-0a51-4bbf-9304-fbfc09903bbc';
 
-/** A DB theme as `buildThemeConfig` emits it: `id` is the slug, not the UUID. */
 const dbTheme = () => ({
-  id: 'acme',
+  id: UUID,
+  slug: 'acme',
   label: 'Acme',
-  _isCustomTheme: true,
-  _customThemeId: UUID,
   cssVars: { '--t-color-accent': '#00aa55' },
   embedFonts: [{ family: 'Acme Sans', url: '/f.woff2', weight: 400 }],
   slideBackgrounds: [{ id: 'calm', label: 'Calm', value: '#e8f0ee' }],
@@ -63,13 +59,14 @@ test('default resolves the current workspace theme instead of the built-in id', 
   clearThemeCache();
   const before = fetches;
   const theme = await loadThemeById('default');
-  assert.equal(theme._customThemeId, UUID);
+  assert.equal(theme.id, UUID);
   assert.equal(fetches, before + 2, 'setting and selected theme are fetched');
 
-  currentDefault = 'brand';
-  served = { id: 'brand', label: 'Brand', cssVars: {} };
+  const seedId = '11111111-1111-4111-8111-111111111111';
+  currentDefault = seedId;
+  served = { id: seedId, slug: 'brand', label: 'Brand', cssVars: {} };
   const changed = await loadThemeById('default');
-  assert.equal(changed.id, 'brand');
+  assert.equal(changed.id, seedId);
   currentDefault = UUID;
   served = dbTheme();
 });
@@ -78,11 +75,11 @@ test('anonymous default uses the theme config in its deck payload', async () => 
   clearThemeCache();
   const before = fetches;
   const theme = await loadThemeById('default', { config: dbTheme() });
-  assert.equal(theme._customThemeId, UUID);
+  assert.equal(theme.id, UUID);
   assert.equal(fetches, before);
 });
 
-test('a database theme is accepted even though its id is the slug', async () => {
+test('a database theme is loaded through the record API', async () => {
   clearThemeCache();
   const theme = await loadThemeById(UUID);
 
@@ -107,17 +104,15 @@ test('its font and background styles are injected under the requested id', async
   );
 });
 
-test('a theme that is genuinely not the one asked for still falls back', async () => {
+test('a theme that is not the requested record is refused', async () => {
   clearThemeCache();
   served = {
-    id: 'someone-else',
+    id: '33333333-3333-4333-8333-333333333333',
     label: 'Wrong',
     cssVars: { '--t-color-accent': '#f00' },
   };
 
-  const theme = await loadThemeById(UUID);
-  assert.equal(theme.label, UUID, 'blank fallback');
-  assert.equal(theme.cssVars['--t-color-accent'], undefined);
+  await assert.rejects(loadThemeById(UUID), /was not found/);
 
   served = dbTheme();
 });
@@ -174,7 +169,7 @@ test('clearThemeCache drops every theme', async () => {
 // The preload entrance
 // ---------------------------------------------------------------------------
 //
-// `GET /api/themes/custom/:id/config` is behind the login gate, so the three
+// `GET /api/themes/:id/config` is behind the login gate, so the three
 // anonymous surfaces (share viewer, follow audience, notes companion) cannot
 // call it at all: they receive the theme with the deck payload their token
 // authorizes and hand it in here. This is one loader with a second entrance,

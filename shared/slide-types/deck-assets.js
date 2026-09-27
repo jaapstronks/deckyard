@@ -70,11 +70,10 @@ export function isBundleRef(v) {
 
 /**
  * The non-upload path prefixes this installation serves as static files: the
- * fork's shared content (`/custom/assets/`) and per-theme assets
- * (`/custom/themes/<id>/assets/`), plus the built-in `/assets/` tree. Unlike
+ * fork's shared content (`/custom/assets/`) and the built-in `/assets/` tree. Unlike
  * `/uploads/` these are nested trees, so a nested path is legitimate here.
  */
-const SERVED_PREFIXES = ['/assets/', '/custom/assets/', '/custom/themes/'];
+const SERVED_PREFIXES = ['/assets/', '/custom/assets/'];
 
 /**
  * Is `v` a reference to a file *this* installation serves — an upload, or one

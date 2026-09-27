@@ -1,6 +1,6 @@
 /**
  * Themes Tab Component
- * Manage custom organization themes with live preview editor.
+ * Manage organization themes and inspect the available seeds.
  */
 
 import { h } from '../../../lib/dom.js';
@@ -10,8 +10,8 @@ import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import {
-  fetchAppSettings,
-  updateAppSettings,
+  fetchOrgSettings,
+  updateOrgSettings,
   invalidateSettingsCache,
 } from '../../../lib/net/settings.js';
 import { createThemeEditor } from '../theme-editor/index.js';
@@ -43,13 +43,13 @@ export function createThemesTab({ user }) {
     class: 'settings-tab-description',
     text: t(
       'settings.themes.description',
-      'Create and manage custom themes for your organization. Custom themes define colors, fonts, and logos for presentations.',
+      'Choose from built-in themes or create a theme for your organization.',
     ),
   });
 
   // ============================================================
   // Workspace theme settings: default theme + picker visibility.
-  // These write app settings (defaultThemeId / enabledThemes) that govern the
+  // These write organization settings (defaultThemeId / enabledThemes) that govern the
   // creation flow's theme picker.
   // ============================================================
   const workspaceCard = h('div', {
@@ -119,7 +119,7 @@ export function createThemesTab({ user }) {
   );
 
   // State for the workspace card
-  let allThemes = []; // { id, label, type } from GET /api/themes
+  let allThemes = []; // { id, slug, label, source } from GET /api/themes
   let visibleCheckboxes = new Map(); // id -> input element
 
   /** Render the default-theme <select> and the visibility checkbox list. */
@@ -183,7 +183,7 @@ export function createThemesTab({ user }) {
       const enabledThemes =
         checkedIds.length === allThemes.length ? [] : checkedIds;
 
-      await updateAppSettings({
+      await updateOrgSettings({
         defaultThemeId: defaultSelect.value || '',
         enabledThemes,
       });
@@ -196,28 +196,28 @@ export function createThemesTab({ user }) {
     }
   });
 
-  /** Load themes + app settings into the workspace controls. */
+  /** Load themes + organization settings into the workspace controls. */
   async function loadWorkspaceControls() {
     try {
       // `?all=1` skips the allowlist filter every other picker gets: this card
       // is where the allowlist is edited, and a theme it cannot see is a theme
       // that can never be checked back on.
-      const [themesResp, app] = await Promise.all([
+      const [themesResp, org] = await Promise.all([
         api('/api/themes?all=1'),
-        fetchAppSettings(),
+        fetchOrgSettings(),
       ]);
       allThemes = Array.isArray(themesResp?.themes) ? themesResp.themes : [];
       const defaultThemeId = String(
-        app?.defaultThemeId || themesResp?.defaultThemeId || '',
+        org?.defaultThemeId || themesResp?.defaultThemeId || '',
       );
-      // The response carries the *effective* allowlist (app setting, else the
+      // The response carries the *effective* allowlist (organization setting, else the
       // ENABLED_THEMES env fallback), so the checkboxes show what is really in
       // force rather than only what this instance stored.
       renderWorkspaceControls(
         defaultThemeId,
         Array.isArray(themesResp?.enabledThemes)
           ? themesResp.enabledThemes
-          : app?.enabledThemes || [],
+          : org?.enabledThemes || [],
       );
     } catch (err) {
       toast.error(err);
@@ -232,7 +232,7 @@ export function createThemesTab({ user }) {
   });
   const listTitle = h('h3', {
     class: 'field-label',
-    text: t('settings.themes.customThemes', 'Custom Themes'),
+    text: t('settings.themes.customThemes', 'Available themes'),
   });
 
   const createBtn = h('button', {
@@ -247,10 +247,10 @@ export function createThemesTab({ user }) {
   const emptyState = createEmptyState({
     icon: null,
     className: 'empty-state-panel',
-    title: t('settings.themes.noThemes', 'No custom themes yet.'),
+    title: t('settings.themes.noThemes', 'No themes available.'),
     message: t(
       'settings.themes.noThemesHint',
-      "Create a custom theme to define your organization's brand colors and fonts.",
+      'Create a theme for your organization.',
     ),
   });
 
@@ -325,6 +325,15 @@ export function createThemesTab({ user }) {
     const name = h('span', { class: 'theme-card-name', text: theme.label });
     nameRow.append(name);
 
+    if (theme.source === 'seed') {
+      nameRow.append(
+        h('span', {
+          class: 'badge',
+          text: t('settings.themes.seed', 'Built-in'),
+        }),
+      );
+    }
+
     if (theme.isDefault) {
       const defaultBadge = h('span', {
         class: 'badge badge-primary',
@@ -341,12 +350,15 @@ export function createThemesTab({ user }) {
     // Actions
     const actions = h('div', { class: 'theme-card-actions row gap-2' });
 
-    const editBtn = h('button', {
-      class: 'btn btn-secondary btn-sm',
-      type: 'button',
-      text: t('common.edit', 'Edit'),
-      onclick: () => openEditor(theme),
-    });
+    const editBtn =
+      theme.source === 'seed'
+        ? null
+        : h('button', {
+            class: 'btn btn-secondary btn-sm',
+            type: 'button',
+            text: t('common.edit', 'Edit'),
+            onclick: () => openEditor(theme),
+          });
 
     const moreBtn = h('button', {
       class: 'btn btn-secondary btn-sm btn-icon',
@@ -356,7 +368,8 @@ export function createThemesTab({ user }) {
     });
     moreBtn.append(icon('ellipsis-vertical'));
 
-    actions.append(editBtn, moreBtn);
+    if (editBtn) actions.append(editBtn);
+    actions.append(moreBtn);
 
     card.append(preview, info, actions);
     return card;
@@ -426,17 +439,18 @@ export function createThemesTab({ user }) {
     });
     menu.append(duplicateItem);
 
-    // Delete
-    const deleteItem = h('button', {
-      class: 'dropdown-item is-danger',
-      type: 'button',
-      text: t('common.delete', 'Delete'),
-      onclick: async () => {
-        closeMenu();
-        await confirmDeleteTheme(theme);
-      },
-    });
-    menu.append(deleteItem);
+    if (theme.source !== 'seed') {
+      const deleteItem = h('button', {
+        class: 'dropdown-item is-danger',
+        type: 'button',
+        text: t('common.delete', 'Delete'),
+        onclick: async () => {
+          closeMenu();
+          await confirmDeleteTheme(theme);
+        },
+      });
+      menu.append(deleteItem);
+    }
 
     // Position menu
     const rect = e.target.getBoundingClientRect();
@@ -459,13 +473,13 @@ export function createThemesTab({ user }) {
    */
   async function setDefaultTheme(themeId) {
     try {
-      await api(`/api/themes/custom/${themeId}/set-default`, {
-        method: 'POST',
-      });
+      await updateOrgSettings({ defaultThemeId: themeId });
+      invalidateSettingsCache();
       toast.success(
         t('settings.themes.setDefaultSuccess', 'Theme set as default.'),
       );
       await loadThemes();
+      await loadWorkspaceControls();
     } catch (err) {
       toast.error(err);
     }
@@ -476,11 +490,13 @@ export function createThemesTab({ user }) {
    */
   async function clearDefaultTheme() {
     try {
-      await api('/api/themes/custom/clear-default', { method: 'POST' });
+      await updateOrgSettings({ defaultThemeId: '' });
+      invalidateSettingsCache();
       toast.success(
         t('settings.themes.clearDefaultSuccess', 'Default theme cleared.'),
       );
       await loadThemes();
+      await loadWorkspaceControls();
     } catch (err) {
       toast.error(err);
     }
@@ -492,18 +508,19 @@ export function createThemesTab({ user }) {
    */
   async function duplicateTheme(theme) {
     try {
+      const original = await api(`/api/themes/${theme.id}`);
       const newTheme = {
         label: `${theme.label} (Copy)`,
-        colors: { ...theme.colors },
-        fonts: { ...theme.fonts },
-        logoUrl: theme.logoUrl,
-        logoSmallUrl: theme.logoSmallUrl,
+        colors: { ...original.colors },
+        fonts: { ...original.fonts },
+        logoUrl: original.logoUrl,
+        logoSmallUrl: original.logoSmallUrl,
         // The whole theme, not the four colours and two fonts: a copy that
         // dropped the surfaces, variants and logos was a different theme.
-        config: theme.config,
+        config: original.config,
       };
 
-      const result = await api('/api/themes/custom', {
+      const result = await api('/api/themes', {
         method: 'POST',
         body: newTheme,
       });
@@ -538,7 +555,7 @@ export function createThemesTab({ user }) {
     if (!confirmed) return;
 
     try {
-      await api(`/api/themes/custom/${theme.id}`, { method: 'DELETE' });
+      await api(`/api/themes/${theme.id}`, { method: 'DELETE' });
       invalidateTheme(theme.id);
       toast.success(t('settings.themes.deleteSuccess', 'Theme deleted.'));
       await loadThemes();
@@ -551,7 +568,17 @@ export function createThemesTab({ user }) {
    * Open the theme editor.
    * @param {Object|null} theme - Theme to edit, or null for new theme
    */
-  function openEditor(theme = null) {
+  async function openEditor(theme = null) {
+    // The list response is a summary. Saving it as a full record would erase
+    // config and the small logo, which only the record endpoint returns.
+    if (theme?.id) {
+      try {
+        theme = await api(`/api/themes/${theme.id}`);
+      } catch (err) {
+        toast.error(err);
+        return;
+      }
+    }
     // The workspace card configures which themes appear in the picker — it is
     // about the list, not the theme being edited, and it carries its own
     // primary Save. Leaving it above an open editor puts two primary Saves on
@@ -571,7 +598,7 @@ export function createThemesTab({ user }) {
       onSave: async (themeData) => {
         if (theme?.id) {
           // Update existing
-          await api(`/api/themes/custom/${theme.id}`, {
+          await api(`/api/themes/${theme.id}`, {
             method: 'PUT',
             body: themeData,
           });
@@ -581,7 +608,7 @@ export function createThemesTab({ user }) {
           toast.success(t('settings.themes.updateSuccess', 'Theme updated.'));
         } else {
           // Create new
-          await api('/api/themes/custom', {
+          await api('/api/themes', {
             method: 'POST',
             body: themeData,
           });
@@ -617,8 +644,13 @@ export function createThemesTab({ user }) {
    */
   async function loadThemes() {
     try {
-      const result = await api('/api/themes/custom');
+      const result = await api('/api/themes?all=1');
       themes = result?.themes || [];
+      const defaultThemeId = result?.defaultThemeId;
+      themes = themes.map((theme) => ({
+        ...theme,
+        isDefault: theme.id === defaultThemeId,
+      }));
       renderThemeList();
     } catch (err) {
       toast.error(err);

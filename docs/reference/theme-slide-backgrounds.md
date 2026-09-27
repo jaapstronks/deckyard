@@ -132,7 +132,7 @@ sheet walks exactly the matrix the editor offers — see
 - Database-built custom themes express variants through their `config` column
   (`config.slideBackgrounds`, same entry shape and same `normalizeSlideBackgrounds`
   guard as a file theme). There is no UI for it yet — the Theme Studio will add
-  one — but the API accepts it on `POST`/`PUT /api/themes/custom[/:id]`.
+  one — but the API accepts it on `POST`/`PUT /api/themes[/:id]`.
 - `theme.gradient.enabled` (quote/chapter gradient) is an older, separate
   mechanism; folding it into a variant entry is a possible future cleanup.
 - Text on opaque light card surfaces (icon-card bodies, card-stack bodies)

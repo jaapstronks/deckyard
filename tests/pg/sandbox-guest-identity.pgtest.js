@@ -33,6 +33,7 @@ import {
 import { canReadPresentation } from '../../server/utils/presentation-authz/index.js';
 import { ensureSandboxUserAsync } from '../../server/auth/sandbox.js';
 import { sweepExpiredSandboxGuests } from '../../server/jobs/sandbox-cleanup.js';
+import { initializeThemeSeeds } from '../../server/utils/theme-seeds.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -78,6 +79,7 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
   beforeEach(async () => {
     await truncate(db, 'organizations');
     await seedDefaultOrganization(db);
+    await initializeThemeSeeds();
   });
 
   it('mints a cookie without a row, then gives the returning guest one stable id', async () => {

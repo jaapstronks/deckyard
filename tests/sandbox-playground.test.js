@@ -22,7 +22,6 @@ import { handlePublish } from '../server/routes/api/publish.js';
 import { uploadsDir } from '../server/config/storage-paths.js';
 import { writeUploadedFile } from '../server/storage/uploads.js';
 import { getFeatureFlags } from '../server/config/flags-snapshot.js';
-import { listThemeIds, listCoreThemeIds } from '../server/utils/themes.js';
 import { listSandboxExamples } from '../server/sandbox/examples.js';
 import { listSandboxMedia } from '../server/sandbox/media.js';
 
@@ -187,25 +186,44 @@ test('sandbox sample media is well-formed and has pickable logos', () => {
   );
 });
 
-test('sandbox theme list excludes filesystem custom (branded) themes', async () => {
-  const repoRoot = process.cwd();
-  const [core, all] = await Promise.all([
-    listCoreThemeIds(repoRoot),
-    listThemeIds(repoRoot),
-  ]);
-  // Core themes are the neutral built-ins surfaced on the public sandbox.
-  assert.ok(
-    core.includes('amethyst'),
-    'core set must include the built-in themes',
+test('sandbox theme list exposes seeds and hides organization records', async () => {
+  const { createFakeDb } = await import('./helpers/fake-db.js');
+  const { brandSeedRow } = await import('./helpers/theme-seed.js');
+  const { __setTestDb } = await import('../server/db/client.js');
+  const { initializeStorage } = await import('../server/storage/lifecycle.js');
+  const { handleThemes } = await import('../server/routes/api/themes.js');
+  const organizationId = '00000000-0000-4000-8000-0000000000aa';
+  const seed = await brandSeedRow();
+  const orgTheme = {
+    ...seed,
+    id: '00000000-0000-4000-8000-0000000000cc',
+    organization_id: organizationId,
+    seed_hash: null,
+    slug: 'private-brand',
+  };
+  __setTestDb(
+    createFakeDb({
+      organizations: [{ id: organizationId, name: 'Sandbox', slug: 'sandbox' }],
+      themes: [seed, orgTheme],
+    }),
   );
-  assert.ok(core.length > 0, 'core theme set must not be empty');
-  // Any theme present in the full list but absent from the core set is a
-  // filesystem custom (potentially branded) theme, which sandbox must not show.
-  const customOnly = all.filter((id) => !core.includes(id));
-  for (const id of customOnly) {
-    assert.ok(
-      !core.includes(id),
-      `sandbox core list must omit custom theme "${id}"`,
-    );
+  await initializeStorage();
+  try {
+    await withEnv({ SANDBOX_MODE: '1' }, async () => {
+      const res = mockRes();
+      await handleThemes({
+        repoRoot: process.cwd(),
+        storageScope: { repoRoot: process.cwd(), organizationId },
+        authedUser: { isDesigner: true },
+        req: { method: 'GET' },
+        res,
+        url: new URL('http://localhost/api/themes?all=1'),
+      });
+      assert.equal(res.status, 200);
+      const ids = JSON.parse(res.body).themes.map((theme) => theme.id);
+      assert.deepEqual(ids, [seed.id]);
+    });
+  } finally {
+    __setTestDb(null);
   }
 });

@@ -1,102 +1,64 @@
 {
-  "id": "brand",
+  "slug": "brand",
   "label": "Forest",
-  "defaultTitleSlide": "title-slide",
-  "titleLayout": "bottom",
-  "assets": {
-    "logo": "/assets/images/deckyard-mark.svg",
-    "logoAlt": "Deckyard",
-    "payoffLogo": "/assets/images/deckyard-mark.svg",
-    "payoffAlt": "Deckyard"
-  },
-  "textColorLight": "#ffffff",
-  "textColorDark": "#1c1917",
-  "backgroundLabels": {
-    "lime": {
-      "en": "Paper",
-      "nl": "Papier"
-    },
-    "mist": {
-      "en": "Sage",
-      "nl": "Salie"
+  "logoUrl": "/assets/images/deckyard-mark.svg",
+  "logoSmallUrl": null,
+  "colors": {
+    "primary": "#254d38",
+    "background": "#f5f3ef",
+    "textLight": "#ffffff",
+    "textDark": "#1c1917",
+    "brand": ["#254d38", "#8a6209", "#4f8f6b", "#c9931a"],
+    "chart": [
+      "#254d38",
+      "#8a6209",
+      "#4f8f6b",
+      "#c9931a",
+      "#1c1917",
+      "#6e675f",
+      "#44403c",
+      "#dfe8e0"
+    ],
+    "accentOnDark": "#dba323",
+    "textMuted": "rgba(68, 64, 60, 0.82)",
+    "backgrounds": {
+      "lime": "#f5f3ef",
+      "mist": "#e6efe8",
+      "dark": "#10281b"
     }
   },
-  "brandColors": ["#254d38", "#8a6209", "#4f8f6b", "#c9931a"],
-  "gradient": {
-    "enabled": false
+  "fonts": {
+    "heading": "Bricolage Grotesque",
+    "body": "Inter"
   },
-  "slideBackgrounds": [
-    {
-      "id": "calm",
-      "label": "Calm",
-      "value": "radial-gradient(circle at 62% 18%, rgba(45, 107, 74, 0.55) 0%, rgba(45, 107, 74, 0.18) 38%, rgba(0, 0, 0, 0) 72%), radial-gradient(circle at 12% 88%, rgba(184, 134, 15, 0.32) 0%, rgba(184, 134, 15, 0.08) 44%, rgba(0, 0, 0, 0) 78%), #10281b",
-      "textColor": "#ffffff",
-      "textColorMuted": "rgba(255, 255, 255, 0.72)"
+  "config": {
+    "logos": {
+      "alt": "Deckyard"
+    },
+    "gradient": {
+      "enabled": false
+    },
+    "slideBackgrounds": [
+      {
+        "id": "calm",
+        "label": "Calm",
+        "value": "radial-gradient(circle at 62% 18%, rgba(45, 107, 74, 0.55) 0%, rgba(45, 107, 74, 0.18) 38%, rgba(0, 0, 0, 0) 72%), radial-gradient(circle at 12% 88%, rgba(184, 134, 15, 0.32) 0%, rgba(184, 134, 15, 0.08) 44%, rgba(0, 0, 0, 0) 78%), #10281b",
+        "textColor": "#ffffff",
+        "textColorMuted": "rgba(255, 255, 255, 0.72)"
+      }
+    ],
+    "backgroundPresets": [
+      "/assets/images/backgrounds/demo-moss.jpg",
+      "/assets/images/backgrounds/demo-paper.jpg",
+      "/assets/images/backgrounds/demo-dusk.jpg",
+      "/assets/images/backgrounds/demo-aurora.jpg"
+    ],
+    "defaultTitleSlide": "title-slide",
+    "titleLayout": "bottom",
+    "cssVarOverrides": {
+      "--t-font-heading": "'Bricolage Grotesque', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--t-font-body": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
+      "--t-color-surface-raised": "#eef3ee"
     }
-  ],
-  "cssVars": {
-    "--t-slide-bg-lime": "#f5f3ef",
-    "--t-slide-bg-mist": "#e6efe8",
-    "--t-slide-bg-dark": "#10281b",
-    "--t-color-background": "#f5f3ef",
-    "--t-color-text": "#1c1917",
-    "--t-color-text-muted": "rgba(68, 64, 60, 0.82)",
-    "--t-color-accent": "#254d38",
-    "--t-color-accent-on-dark": "#dba323",
-    "--t-radius": "16px",
-    "--t-radius-sm": "12px",
-    "--t-radius-lg": "20px",
-    "--t-font-heading": "'Bricolage Grotesque', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
-    "--t-font-body": "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, sans-serif",
-    "--t-font-caption": "var(--t-font-body)",
-    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
-    "--t-heading-transform": "none",
-    "--t-heading-weight": "700",
-    "--t-color-surface-raised": "#eef3ee",
-    "--t-chart-0": "#254d38",
-    "--t-chart-1": "#8a6209",
-    "--t-chart-2": "#4f8f6b",
-    "--t-chart-3": "#c9931a",
-    "--t-chart-4": "#1c1917",
-    "--t-chart-5": "#6e675f",
-    "--t-chart-6": "#44403c",
-    "--t-chart-7": "#dfe8e0",
-    "--t-logo-url": "url('/assets/images/deckyard-mark.svg')"
-  },
-  "embedFonts": [
-    {
-      "family": "Bricolage Grotesque",
-      "path": "assets/fonts/google/bricolage-grotesque/bricolage-grotesque-400-latin.woff2",
-      "weight": "400 700",
-      "style": "normal",
-      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
-    },
-    {
-      "family": "Bricolage Grotesque",
-      "path": "assets/fonts/google/bricolage-grotesque/bricolage-grotesque-400-latin-ext.woff2",
-      "weight": "400 700",
-      "style": "normal",
-      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
-    },
-    {
-      "family": "Inter",
-      "path": "assets/fonts/google/inter/inter-400-latin.woff2",
-      "weight": "400 700",
-      "style": "normal",
-      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
-    },
-    {
-      "family": "Inter",
-      "path": "assets/fonts/google/inter/inter-400-latin-ext.woff2",
-      "weight": "400 700",
-      "style": "normal",
-      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
-    }
-  ],
-  "backgroundPresets": [
-    "/assets/images/backgrounds/demo-moss.jpg",
-    "/assets/images/backgrounds/demo-paper.jpg",
-    "/assets/images/backgrounds/demo-dusk.jpg",
-    "/assets/images/backgrounds/demo-aurora.jpg"
-  ]
+  }
 }

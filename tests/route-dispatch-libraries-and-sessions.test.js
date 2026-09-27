@@ -106,49 +106,36 @@ function named(routes, method, path, handlerName) {
 
 test('themes: routes resolve to their named handlers in order', () => {
   named(THEME_ROUTES, 'GET', '/api/themes', 'handleThemeList');
+  named(THEME_ROUTES, 'POST', '/api/themes', 'handleCustomThemeCreate');
   named(THEME_ROUTES, 'GET', '/api/themes/fonts', 'handleThemeFonts');
   named(
     THEME_ROUTES,
     'POST',
-    '/api/themes/custom/preview-config',
+    '/api/themes/preview-config',
     'handleThemePreviewConfig',
-  );
-  named(THEME_ROUTES, 'GET', '/api/themes/custom', 'handleCustomThemeList');
-  named(THEME_ROUTES, 'POST', '/api/themes/custom', 'handleCustomThemeCreate');
-  named(
-    THEME_ROUTES,
-    'POST',
-    '/api/themes/custom/clear-default',
-    'handleCustomThemeClearDefault',
   );
   named(
     THEME_ROUTES,
     'GET',
-    '/api/themes/custom/00000000-0000-4000-8000-000000000123',
+    '/api/themes/00000000-0000-4000-8000-000000000123',
     'handleCustomThemeGet',
   );
   named(
     THEME_ROUTES,
     'PUT',
-    '/api/themes/custom/00000000-0000-4000-8000-000000000123',
+    '/api/themes/00000000-0000-4000-8000-000000000123',
     'handleCustomThemeUpdate',
   );
   named(
     THEME_ROUTES,
     'DELETE',
-    '/api/themes/custom/00000000-0000-4000-8000-000000000123',
+    '/api/themes/00000000-0000-4000-8000-000000000123',
     'handleCustomThemeDelete',
   );
   named(
     THEME_ROUTES,
-    'POST',
-    '/api/themes/custom/00000000-0000-4000-8000-000000000123/set-default',
-    'handleCustomThemeSetDefault',
-  );
-  named(
-    THEME_ROUTES,
     'GET',
-    '/api/themes/custom/00000000-0000-4000-8000-000000000123/config',
+    '/api/themes/00000000-0000-4000-8000-000000000123/config',
     'handleCustomThemeConfig',
   );
 });
@@ -159,7 +146,7 @@ test('themes: a wrong method falls through (Form A), designer guard 403s on muta
   assert.equal(await handleThemes(wrongMethod.ctx), false);
 
   // canManage fails for a plain user → 403 before any storage call.
-  const nonDesigner = ctx('POST', '/api/themes/custom');
+  const nonDesigner = ctx('POST', '/api/themes');
   await handleThemes(nonDesigner.ctx);
   assert.equal(
     nonDesigner.res.statusCode,

@@ -17,8 +17,8 @@
  *   travel by name only, with a `fontsNotIncluded` line that says why: a bundle
  *   installs on another instance, and that is redistribution.
  *
- * A file theme (`themes/`, a fork's `custom/themes/`) is not a record: it ships
- * with the install, like a file-JS slide type, and travels by its id alone.
+ * Seed and organization themes share the same record shape; a bundle carries
+ * the record content so a receiving instance can install it under its own UUID.
  *
  * On the receiving side a bundled theme is recognised by its content, not by
  * name: {@link definitionContentHash} over the installable form, with every logo
@@ -93,7 +93,7 @@ export function portableThemeRecord(record) {
 }
 
 /**
- * The theme record behind a presentation's theme id, or null for a file theme
+ * The theme record behind a presentation's theme UUID, or null for an invalid reference
  * (or a database theme that no longer exists).
  *
  * The UUID came out of the deck being exported, which the route already

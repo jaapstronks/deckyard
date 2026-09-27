@@ -95,12 +95,7 @@ test('the bulk-export resolver accepts the class the collector produces', () => 
 test('the served-asset class is a named subset of what the server serves', () => {
   // `shared/` cannot import server config, so the prefixes are spelled there
   // too; this pins that spelling to server/config/paths.js in both directions.
-  const assetTrees = [
-    '/uploads/',
-    '/assets/',
-    '/custom/assets/',
-    '/custom/themes/',
-  ];
+  const assetTrees = ['/uploads/', '/assets/', '/custom/assets/'];
   const served = SHARED_PUBLIC_DIRS.map((d) => d.urlPrefix);
   for (const prefix of assetTrees) {
     assert.ok(served.includes(prefix), `${prefix} is no longer served`);
