@@ -97,7 +97,7 @@ async function validatePresentationAccess(data, ctx) {
     };
   }
 
-  // Check if analytics is enabled for this presentation
+  // The owner's opt-out is enforced here, not in the anonymous follow payload.
   if (presentation.settings?.analyticsEnabled === false) {
     return {
       ok: false,

@@ -225,7 +225,7 @@ const FOLLOW_NL = readFileSync(
  * @type {{
  *   status: string, capabilities: object, slideId: string, slideIndex: number,
  *   slideType: string, questions: object[], interaction: object|null,
- *   interactionState: object|null, analyticsEnabled: boolean, user: object|null,
+ *   interactionState: object|null, viewerAnalyticsEnabled: boolean, user: object|null,
  * }}
  */
 let scenario;
@@ -300,7 +300,6 @@ async function fakeFetch(input, init = {}) {
         theme: 'default',
         themeConfig: { id: 'brand', label: 'Brand', cssVars: {} },
         slides: structuredClone(SLIDES),
-        settings: { analyticsEnabled: scenario.analyticsEnabled },
         // The route stamps the language of the slides it serves, so the view
         // can read it with resolveDeckLang like every other render surface
         // (server/routes/api/follow/presentation.js).
@@ -428,13 +427,17 @@ async function mountFollow(overrides = {}) {
     interaction: null,
     interactionState: null,
     // Off by default so the request log stays about the follow API; the two
-    // analytics rows turn it on deliberately.
-    analyticsEnabled: false,
+    // analytics rows turn the viewer's own preference on deliberately.
+    viewerAnalyticsEnabled: false,
     user: null,
     // The deck the SLIDES above are written in.
     deckLang: 'nl',
     ...overrides,
   };
+  localStorage.setItem(
+    'ps.analytics.disabled',
+    scenario.viewerAnalyticsEnabled ? '0' : '1',
+  );
 
   globalThis.fetch = fakeFetch;
 
@@ -1018,8 +1021,19 @@ test('a dominant interaction hides the Q&A strip and stops its stream', async ()
 // What leaves the device besides answers
 // ---------------------------------------------------------------------------
 
+test('the viewer local opt-out prevents an analytics session without deck settings', async () => {
+  const { detach } = await mountFollow();
+  await settle();
+  assert.equal(
+    sentTo('/api/track/session/start').length,
+    0,
+    'the viewer preference prevents tracking without a settings field in the payload',
+  );
+  detach();
+});
+
 test('an anonymous viewer is tracked, and is given the control to erase it', async () => {
-  const { shell, detach } = await mountFollow({ analyticsEnabled: true });
+  const { shell, detach } = await mountFollow({ viewerAnalyticsEnabled: true });
   await waitFor(
     () => sentTo('/api/track/session/start').length > 0,
     'the tracking session',
@@ -1064,7 +1078,7 @@ test('a logged-in viewer following along is not tracked', async () => {
   // Deliberate: the audience of an internal deck is colleagues, and their
   // attention is not the presenter's to measure.
   const { shell, detach } = await mountFollow({
-    analyticsEnabled: true,
+    viewerAnalyticsEnabled: true,
     user: { id: 'u-1', email: 'collega@example.com' },
   });
   await waitFor(
