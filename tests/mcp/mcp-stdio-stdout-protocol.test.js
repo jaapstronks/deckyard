@@ -84,14 +84,23 @@ function installForkFixture() {
 /**
  * Boot the stdio server, send one initialize request, and collect both streams.
  * @param {string} customDir - Fork root the child loads customizations from
+ * @param {string} [databaseUrl] - Test database, or an unmigrated database for refusal coverage
  * @returns {Promise<{stdout: string, stderr: string}>}
  */
-function bootAndInitialize(customDir) {
+function bootAndInitialize(
+  customDir,
+  databaseUrl = process.env.DECKYARD_MCP_TEST_DATABASE_URL,
+) {
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [ENTRYPOINT], {
       cwd: REPO_ROOT,
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, DECKYARD_CUSTOM_DIR: customDir },
+      env: {
+        ...process.env,
+        DATABASE_URL: databaseUrl,
+        DECKYARD_CUSTOM_DIR: customDir,
+        DATA_DIR: path.join(customDir, 'data'),
+      },
     });
 
     let stdout = '';
@@ -126,39 +135,84 @@ function bootAndInitialize(customDir) {
 }
 
 describe('MCP stdio transport — stdout carries protocol only', () => {
-  it('boots with a fork slide type installed and writes only JSON to stdout', async () => {
-    const fixture = installForkFixture();
-    let result;
-    try {
-      result = await bootAndInitialize(fixture.dir);
-    } finally {
-      fixture.cleanup();
-    }
-
-    // Proof the noisy code path actually ran: without the guard this banner is
-    // exactly what lands in the JSON-RPC stream.
-    assert.match(
-      result.stderr,
-      /\[custom-loader\] Loaded custom slide type: fork-alpha-slide/,
-      `expected the custom loader to announce the fixture on stderr; stderr was:\n${result.stderr}`,
-    );
-
-    const lines = result.stdout.split('\n').filter((l) => l.trim() !== '');
-    assert.ok(
-      lines.length > 0,
-      `expected an initialize response on stdout; stderr was:\n${result.stderr}`,
-    );
-    const frames = lines.map((line) => {
+  it(
+    'boots with a fork slide type installed and writes only JSON to stdout',
+    { skip: !process.env.DECKYARD_MCP_TEST_DATABASE_URL },
+    async () => {
+      const fixture = installForkFixture();
+      let result;
       try {
-        return JSON.parse(line);
-      } catch {
-        assert.fail(`non-JSON line on stdout: ${JSON.stringify(line)}`);
+        result = await bootAndInitialize(fixture.dir);
+      } finally {
+        fixture.cleanup();
       }
-    });
-    const response = frames.find((f) => f.id === 1);
-    assert.ok(response, 'no JSON-RPC response for the initialize request');
-    assert.equal(response.result?.serverInfo?.name, 'deckyard');
-  });
+
+      // Proof the noisy code path actually ran: without the guard this banner is
+      // exactly what lands in the JSON-RPC stream.
+      assert.match(
+        result.stderr,
+        /\[custom-loader\] Loaded custom slide type: fork-alpha-slide/,
+        `expected the custom loader to announce the fixture on stderr; stderr was:\n${result.stderr}`,
+      );
+
+      const lines = result.stdout.split('\n').filter((l) => l.trim() !== '');
+      assert.ok(
+        lines.length > 0,
+        `expected an initialize response on stdout; stderr was:\n${result.stderr}`,
+      );
+      const frames = lines.map((line) => {
+        try {
+          return JSON.parse(line);
+        } catch {
+          assert.fail(`non-JSON line on stdout: ${JSON.stringify(line)}`);
+        }
+      });
+      const response = frames.find((f) => f.id === 1);
+      assert.ok(response, 'no JSON-RPC response for the initialize request');
+      assert.equal(response.result?.serverInfo?.name, 'deckyard');
+    },
+  );
+
+  it(
+    'refuses an invalid fork seed before the protocol starts',
+    { skip: !process.env.DECKYARD_MCP_TEST_DATABASE_URL },
+    async () => {
+      const fixture = installForkFixture();
+      try {
+        const dir = path.join(fixture.dir, 'themes');
+        mkdirSync(dir);
+        const seed = JSON.parse(
+          readFileSync(path.join(REPO_ROOT, 'themes', 'seeds', 'brand.json')),
+        );
+        seed.slug = 'fork-theme';
+        seed.config = { titleLayout: 'sideways' };
+        const { writeFileSync } = await import('node:fs');
+        writeFileSync(path.join(dir, 'fork-theme.json'), JSON.stringify(seed));
+        const result = await bootAndInitialize(fixture.dir);
+        assert.equal(result.stdout, '');
+        assert.match(result.stderr, /config.titleLayout/);
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
+
+  it(
+    'refuses an unmigrated database before the protocol starts',
+    { skip: !process.env.DECKYARD_MCP_TEST_DATABASE_URL },
+    async () => {
+      const fixture = installForkFixture();
+      try {
+        const databaseUrl = new URL(process.env.DECKYARD_MCP_TEST_DATABASE_URL);
+        databaseUrl.pathname = '/postgres';
+        const result = await bootAndInitialize(fixture.dir, databaseUrl.href);
+        assert.equal(result.stdout, '');
+        assert.match(result.stderr, /has no Deckyard schema/);
+      } finally {
+        fixture.cleanup();
+      }
+    },
+  );
 
   it('imports the stdout guard before any other module', () => {
     const source = readFileSync(ENTRYPOINT, 'utf8');
