@@ -87,7 +87,7 @@ async function editorReady(page) {
  * makes the recipe fail on the step that actually failed.
  *
  * @param {import('puppeteer-core').Page} page
- * @param {'organization'|'link'|'publish'} tab
+ * @param {'organization'|'guests'|'public'} tab
  * @returns {Promise<void>}
  */
 async function openShareTab(page, tab) {
@@ -309,7 +309,7 @@ export function commentsShot(lang) {
 }
 
 /**
- * `share-link-rules-{nl,en}` — the share dialog on its Link tab: the rules a
+ * `share-link-rules-{nl,en}` — the share dialog on its Guests tab: the rules a
  * link can carry, and one live link carrying them.
  *
  * Both halves are needed. The form alone is a set of empty controls; the list
@@ -368,9 +368,9 @@ export function shareLinkRulesShot(lang) {
         visible: true,
         timeout: 10_000,
       });
-      await openShareTab(page, 'link');
+      await openShareTab(page, 'guests');
       await page.waitForSelector(
-        '.share-tab-panel[data-tab="link"] .share-link-item',
+        '.share-tab-panel[data-tab="guests"] .share-link-item',
         {
           visible: true,
           timeout: 10_000,
