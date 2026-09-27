@@ -28,8 +28,26 @@ before(async () => {
   process.env.UPLOADS_DIR = tmpUploads;
   fs.writeFileSync(path.join(tmpUploads, 'a.png'), PNG_A);
   fs.writeFileSync(path.join(tmpUploads, 'b.png'), PNG_B);
-  ({ buildDeckBundle, readDeckBundle, DECK_MIMETYPE } =
-    await import('../server/export/deck-bundle.js'));
+  const bundle = await import('../server/export/deck-bundle.js');
+  readDeckBundle = bundle.readDeckBundle;
+  DECK_MIMETYPE = bundle.DECK_MIMETYPE;
+  buildDeckBundle = (root, deck) =>
+    bundle.buildDeckBundle(root, deck, {
+      themeRecord: {
+        slug: 'deckyard',
+        label: 'Deckyard',
+        logoUrl: null,
+        logoSmallUrl: null,
+        colors: {
+          primary: '#3B82F6',
+          background: '#ffffff',
+          textLight: '#ffffff',
+          textDark: '#1f2937',
+        },
+        fonts: { heading: 'Inter', body: 'Inter' },
+        config: {},
+      },
+    });
 });
 
 after(() => {
@@ -71,7 +89,7 @@ describe('buildDeckBundle', () => {
     const { mimetype, manifest, assets } = await readDeckBundle(buf);
     assert.equal(mimetype, DECK_MIMETYPE);
     assert.equal(manifest.format, 'deckyard.deck');
-    assert.equal(manifest.bundleVersion, 3);
+    assert.equal(manifest.bundleVersion, 4);
     // a.png (referenced twice) + b.png → 2 unique assets; gone.png is missing.
     assert.equal(manifest.assets.length, 2);
     assert.deepEqual(manifest.missingAssets, ['/uploads/gone.png']);

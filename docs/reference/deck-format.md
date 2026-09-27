@@ -4,7 +4,8 @@
 format** — the durable envelope a presentation serializes to so a second
 implementation can read, render, and round-trip it without Deckyard's server or
 storage. It is what `GET /api/presentations/:id/export/json` returns, and what
-the [`.deck` bundle](./deck-bundle-format.md) carries as its `deck.json`.
+the [`.deck` bundle](./deck-bundle-format.md) carries as its `deck.json`, except
+that bundle v4 omits `theme`: its required `theme.json` snapshot is authoritative.
 
 A deck is **data, not a rendering.** The format is intentionally readable and
 stable: no server-internal UUIDs or timestamps are required, and slides are a
@@ -45,7 +46,7 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
 | `title`        | string  | Human title of the deck, in `lang`.                                                                                                                                                       |
 | `lang`         | string  | Optional. BCP 47 tag of the language `title` and every slide's `content` and `notes` are in. A deck carries **one** base language; the others are `translations`.                         |
 | `translations` | object  | Optional. The deck title per other language: `{ "<lang>": { "title": "…" } }`. See [Languages](#languages).                                                                               |
-| `theme`        | string  | Theme id the deck was authored against (e.g. `"default"`). A reader that lacks the theme falls back to its own default; content is unaffected.                                            |
+| `theme`        | string  | Optional in the JSON envelope: the theme id the deck was authored against (e.g. `"default"`). Bundle v4 omits it and uses `theme.json` instead.                                           |
 | `slides`       | array   | Ordered list of slides, each `{ type, content }`.                                                                                                                                         |
 
 The envelope is **lenient**: unknown top-level keys are ignored by the importer,

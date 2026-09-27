@@ -24,7 +24,7 @@ import {
  * `portableThemeRecord` carries, plus nothing. An unknown field is refused by
  * name (D209) — a key the record does not know would be lost on save.
  */
-const RECORD_FIELDS = [
+export const THEME_RECORD_FIELDS = [
   'label',
   'slug',
   'logoUrl',
@@ -50,10 +50,10 @@ const FONT_FIELDS = ['heading', 'body', 'headingFamilyId', 'bodyFamilyId'];
  * @param {Object} data
  * @returns {Object|null}
  */
-function unknownRecordField(data) {
+export function checkThemeRecordFields(data, { portable = false } = {}) {
   if (!data || typeof data !== 'object') return null;
   const fieldProblem = { code: THEME_FIELD_PROBLEMS.unknown };
-  const top = Object.keys(data).find((k) => !RECORD_FIELDS.includes(k));
+  const top = Object.keys(data).find((k) => !THEME_RECORD_FIELDS.includes(k));
   if (top) {
     return {
       ok: false,
@@ -65,7 +65,9 @@ function unknownRecordField(data) {
   }
   const fonts = data.fonts;
   if (fonts && typeof fonts === 'object' && !Array.isArray(fonts)) {
-    const extra = Object.keys(fonts).find((k) => !FONT_FIELDS.includes(k));
+    const extra = Object.keys(fonts).find(
+      (k) => !(portable ? ['heading', 'body'] : FONT_FIELDS).includes(k),
+    );
     if (extra) {
       return {
         ok: false,
@@ -112,7 +114,7 @@ async function verifyFontFamilyIds(db, orgId, fonts) {
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @returns {Promise<Array>} - List of themes
  */
-export async function listThemes(scope) {
+export async function listThemes(scope, { rawConfig = false } = {}) {
   return withDbGuard([], async (db) => {
     const orgId = getOrgId(scope);
 
@@ -141,7 +143,7 @@ export async function listThemes(scope) {
       .orderBy('created_at', 'desc')
       .execute();
 
-    return rows.map(formatTheme);
+    return rows.map((row) => formatTheme(row, { rawConfig }));
   });
 }
 
@@ -182,7 +184,11 @@ export async function listSeedThemes() {
  * @param {string} themeId - The theme ID (UUID)
  * @returns {Promise<Object|null>} - Theme object or null
  */
-export async function getThemeRecord(scope, themeId) {
+export async function getThemeRecord(
+  scope,
+  themeId,
+  { rawConfig = false } = {},
+) {
   const context = toStorageContext(
     scope,
     'getThemeRecord',
@@ -226,7 +232,7 @@ export async function getThemeRecord(scope, themeId) {
 
     const row = await query.executeTakeFirst();
 
-    return row ? formatTheme(row) : null;
+    return row ? formatTheme(row, { rawConfig }) : null;
   });
 }
 
@@ -243,7 +249,7 @@ export async function getThemeRecord(scope, themeId) {
  */
 export async function createTheme(scope, data) {
   toStorageContext(scope, 'createTheme');
-  const unknown = unknownRecordField(data);
+  const unknown = checkThemeRecordFields(data);
   if (unknown) return unknown;
 
   const label = String(data?.label || '').trim();
@@ -349,7 +355,7 @@ export async function updateTheme(scope, themeId, updates) {
   if (!themeId || typeof themeId !== 'string') {
     return { ok: false, reason: 'invalid', field: 'id' };
   }
-  const unknown = unknownRecordField(updates);
+  const unknown = checkThemeRecordFields(updates);
   if (unknown) return unknown;
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -495,7 +501,7 @@ export async function deleteTheme(scope, themeId) {
  * @param {Object} row - Database row
  * @returns {Object} - Formatted theme
  */
-function formatTheme(row) {
+function formatTheme(row, { rawConfig = false } = {}) {
   const out = {
     id: row.id,
     slug: row.slug,
@@ -507,7 +513,7 @@ function formatTheme(row) {
     fonts: row.fonts || {},
     // Always a validated object, so callers never have to guard it. Rows that
     // predate the config column read as `{}`.
-    config: validateThemeConfig(row.config),
+    config: rawConfig ? (row.config ?? {}) : validateThemeConfig(row.config),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     createdBy: row.created_by,

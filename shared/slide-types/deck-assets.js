@@ -2,7 +2,7 @@
  * Deck asset references — enumeration, rewriting, and content-addressing.
  *
  * A stored/portable deck refers to its images by local upload URL
- * (`/uploads/<name>-<uuid>.<ext>`). To make a deck self-contained (the `.deck`
+ * (`/uploads/<name>-<uuid>.<ext>` and the served asset trees). To make a deck self-contained (the `.deck`
  * bundle, move 2) those refs are collected, the bytes are content-addressed by
  * hash, and the deck's refs are rewritten to bundle refs (`assets/<hash>.<ext>`)
  * with the human name kept only in the manifest — a separate name layer so hash
@@ -16,16 +16,13 @@
  * the same structural question — "which strings in this deck name a file?" —
  * and differ only in which class of file they may act on:
  *
- * - `collectAssetRefs` (the `.deck` bundle) takes the refs it *owns*: local
- *   uploads, the only class it can content-address and rewrite so the bundle
- *   stays portable to another installation.
- * - `collectServedAssetRefs` (the bulk export / backup) takes every path *this*
- *   installation serves — uploads plus the fork's `/assets/` and `/custom/…`
- *   trees, which is where a theme's `backgroundPresets` live once they are
- *   baked into a slide's `slideBgImage`.
+ * - `collectAssetRefs` remains the narrow upload collector for callers that
+ *   explicitly need uploads only.
+ * - `collectServedAssetRefs` (the bundle and bulk export) takes every path
+ *   this installation serves: uploads, `/assets/`, and `/custom/assets/`.
  *
- * The uploads rule is written once and the wider class is defined on top of it,
- * so the first set is a subset of the second by construction. Remote `http(s)`
+ * The uploads rule is written once and the wider class is defined on top of it.
+ * Remote `http(s)`
  * URLs are deliberately in neither: a bare string cannot say whether it is an
  * image or a link target (a call-to-action `url` is not an asset), and a remote
  * URL is still valid after a restore — it stays a URL in the deck JSON.
@@ -47,6 +44,8 @@ export function isUploadRef(v) {
     v.startsWith(UPLOADS_PREFIX) &&
     v.length > UPLOADS_PREFIX.length &&
     !v.includes('..') &&
+    !v.includes('\\') &&
+    !/%(?:2e|2f|5c)/i.test(v) &&
     !v.slice(UPLOADS_PREFIX.length).includes('/')
   );
 }
@@ -92,8 +91,75 @@ export function isServedAssetRef(v) {
   return (
     typeof v === 'string' &&
     !v.includes('..') &&
-    SERVED_PREFIXES.some((p) => v.startsWith(p) && v.length > p.length)
+    !v.includes('\\') &&
+    !/%(?:2e|2f|5c)/i.test(v) &&
+    SERVED_PREFIXES.some(
+      (p) =>
+        v.startsWith(p) &&
+        v.length > p.length &&
+        v
+          .slice(p.length)
+          .split('/')
+          .every((part) => part && part !== '.'),
+    )
   );
+}
+
+/** A CSS url() target, limited to the served image roots used by themes. */
+const CSS_ASSET_URL =
+  /url\(\s*(['"]?)(\/(?:uploads|assets|custom\/assets)\/[^)'"\s]+|assets\/[^)'"\s]+)\1\s*\)/gi;
+
+/** Walk theme images, including url() only in the two declared CSS fields. */
+export function rewriteThemeImageRefs(value, mapFn, isRef = isServedAssetRef) {
+  function walk(node, path = []) {
+    if (typeof node === 'string') {
+      if (isRef(node)) return mapFn(node) || node;
+      const cssValue =
+        (path[0] === 'config' && path[1] === 'cssVarOverrides') ||
+        (path[0] === 'config' &&
+          path[1] === 'slideBackgrounds' &&
+          path[3] === 'value');
+      return cssValue
+        ? node.replace(CSS_ASSET_URL, (whole, quote, ref) => {
+            if (!isRef(ref)) return whole;
+            const mapped = mapFn(ref);
+            return mapped ? `url(${quote}${mapped}${quote})` : whole;
+          })
+        : node;
+    }
+    if (Array.isArray(node)) return node.map((v, i) => walk(v, [...path, i]));
+    if (node && typeof node === 'object') {
+      return Object.fromEntries(
+        Object.entries(node).map(([key, v]) => [key, walk(v, [...path, key])]),
+      );
+    }
+    return node;
+  }
+  return walk(value);
+}
+
+/** Enumerate the exact refs rewritten by rewriteThemeImageRefs. */
+export function collectThemeImageRefs(value) {
+  const refs = new Set();
+  rewriteThemeImageRefs(value, (ref) => {
+    refs.add(ref);
+    return ref;
+  });
+  return [...refs];
+}
+
+/** Enumerate a bundled theme's image refs, including its declared CSS URLs. */
+export function collectThemeBundleRefs(value) {
+  const refs = new Set();
+  rewriteThemeImageRefs(
+    value,
+    (ref) => {
+      refs.add(ref);
+      return ref;
+    },
+    isBundleRef,
+  );
+  return [...refs];
 }
 
 /**
@@ -148,9 +214,19 @@ export function collectUploadRefsIn(value) {
   return [...seen];
 }
 
+/** Collect served image refs anywhere in a definition record. */
+export function collectServedRefsIn(value) {
+  const seen = new Set();
+  walkStrings(value, (s) => {
+    if (isServedAssetRef(s)) seen.add(s);
+  });
+  return [...seen];
+}
+
 /**
  * Collect the unique local upload refs a deck (or presentation) references, in
- * first-seen order — the assets a `.deck` bundle owns and content-addresses.
+ * first-seen order. Callers requiring all served images use
+ * `collectServedAssetRefs`.
  * @param {{ slides?: Array<{ content?: object }> }} deck
  * @returns {string[]}
  */
@@ -218,7 +294,7 @@ function rewriteRefs(deck, isRef, mapFn) {
 }
 
 /**
- * Return a new deck with every slide's upload refs rewritten via `mapFn`
+ * Return a new deck with every slide's served refs rewritten via `mapFn`
  * (e.g. `/uploads/x.png` -> `assets/<hash>.png`). The input is not mutated.
  * Used on export (the bundle builder).
  * @template {{ slides?: Array<{ content?: object }> }} T
@@ -227,7 +303,7 @@ function rewriteRefs(deck, isRef, mapFn) {
  * @returns {T}
  */
 export function rewriteAssetRefs(deck, mapFn) {
-  return rewriteRefs(deck, isUploadRef, mapFn);
+  return rewriteRefs(deck, isServedAssetRef, mapFn);
 }
 
 /**
@@ -253,6 +329,11 @@ export function rewriteBundleRefs(deck, mapFn) {
  */
 export function rewriteUploadRefsIn(value, mapFn) {
   return mapValue(value, isUploadRef, mapFn);
+}
+
+/** Rewrite served image refs anywhere in a definition record. */
+export function rewriteServedRefsIn(value, mapFn) {
+  return mapValue(value, isServedAssetRef, mapFn);
 }
 
 /**

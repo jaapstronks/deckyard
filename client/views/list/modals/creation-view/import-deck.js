@@ -208,7 +208,7 @@ export function createDeckImportPanel({ canInstall }) {
       class: 'help modal-hint',
       text: t(
         'list.deckImport.help',
-        'Import a presentation from a .deck file: every language, notes, images, and the theme and slide types it uses.',
+        'Import a current .deck file: every language, notes, images, and a snapshot of its theme and slide types.',
       ),
     }),
     fileInput,
