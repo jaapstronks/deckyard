@@ -55,8 +55,11 @@ import {
 } from '../../../../shared/slide-types.js';
 import {
   collectBundleRefsIn,
+  collectThemeBundleRefs,
   rewriteBundleRefs,
   rewriteBundleRefsIn,
+  rewriteThemeImageRefs,
+  isBundleRef,
 } from '../../../../shared/slide-types/deck-assets.js';
 import {
   DEFAULT_THEME_REF,
@@ -133,23 +136,15 @@ export async function handlePresentationsImportDeck({
     return true;
   }
   const { lang } = resolved;
-  // A bundle that carries no theme lands on the one deck.json names: checked
-  // like every create's (B486), before any bytes are written.
-  if (!bundledThemeJson) {
-    await settleNewDeckTheme(repoRoot, deck?.theme, storageScope);
-  }
-
   // What the carried theme becomes here, decided before any bytes are written
   // so a theme that is not installed leaves no logo files behind.
-  const settled = bundledThemeJson
-    ? await settleBundledTheme({
-        repoRoot,
-        scope: storageScope,
-        theme: bundledThemeJson,
-        install: asked.install.has('theme'),
-        permitted: canManage(authedUser),
-      })
-    : null;
+  const settled = await settleBundledTheme({
+    repoRoot,
+    scope: storageScope,
+    theme: bundledThemeJson,
+    install: asked.install.has('theme'),
+    permitted: canManage(authedUser),
+  });
   const settledTypes = await settleBundledSlideTypes({
     repoRoot,
     scope: storageScope,
@@ -163,11 +158,13 @@ export async function handlePresentationsImportDeck({
   const neededRefs = new Set(collectBundleRefsIn(deck));
   const definitionRefs = new Set();
   const definitions = [
-    ...(settled ? [{ status: settled.status, json: bundledThemeJson }] : []),
+    { status: settled.status, json: bundledThemeJson },
     ...settledTypes.map((t) => ({ status: t.status, json: t.definition })),
   ];
   for (const { status, json } of definitions) {
-    for (const ref of collectBundleRefsIn(json)) {
+    for (const ref of json === bundledThemeJson
+      ? collectThemeBundleRefs(json)
+      : collectBundleRefsIn(json)) {
       (status === 'install' ? neededRefs : definitionRefs).add(ref);
     }
   }
@@ -221,8 +218,10 @@ export async function handlePresentationsImportDeck({
     if (settled.status === 'existing') {
       themeId = settled.record.id;
     } else if (settled.status === 'install') {
-      const theme = rewriteBundleRefsIn(settled.theme, (ref) =>
-        refToUpload.get(ref),
+      const theme = rewriteThemeImageRefs(
+        settled.theme,
+        (ref) => refToUpload.get(ref),
+        isBundleRef,
       );
       const result = await installBundledTheme(
         storageScope,

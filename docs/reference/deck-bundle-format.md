@@ -26,19 +26,17 @@ Expert Review as the original request.
 ```
 mimetype               First entry, STORED (uncompressed). Content:
                        "application/vnd.deckyard.deck". Lets the archive be
-                       identified by magic number. The historical
-                       "application/vnd.slidecreator.deck" is still accepted on
-                       read (see deck-format.md, "Legacy sentinel").
+                       identified by magic number. Version 4 requires this
+                       exact MIME type.
 manifest.json          Bundle metadata + the asset inventory (see below).
 deck.json              The portable deck (as from presentationToDeck), with
                        every asset ref rewritten to a bundle ref.
-theme.json             The deck's database theme, when it is on one (see
-                       Theme). Absent for a file theme.
+theme.json             Required snapshot of the effective theme record.
 slide-types/<slug>.json
                        Each database slide type the deck uses (see Custom
                        slide types). Absent for core and file-JS types.
 assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
-                       content: slide images, theme logos and curated font
+                       content: slide images, theme images and curated font
                        files. Identical bytes are stored once (dedup).
 ```
 
@@ -47,7 +45,7 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 ```json
 {
   "format": "deckyard.deck",
-  "bundleVersion": 3,
+  "bundleVersion": 4,
   "mimetype": "application/vnd.deckyard.deck",
   "deck": "deck.json",
   "theme": { "ref": "theme.json", "hash": "9c1f…07ab" },
@@ -87,11 +85,9 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 }
 ```
 
-- **`bundleVersion`** — `3` since the bundle carries slide types (B251, D91);
-  `2` added the theme (B250, D90). A reader reads the versions it knows (`1`,
-  `2` and `3`: each is the one before it plus a part) and refuses any other,
-  rather than silently dropping parts it cannot see.
-- **`theme`** (optional) — where `theme.json` lives and the SHA-256 of its
+- **`bundleVersion`** is exactly `4`. The reader refuses versions 1–3 and any
+  unknown version. There is no bundle migrator.
+- **`theme`** (required) — where `theme.json` lives and the SHA-256 of its
   bytes; the reader re-hashes it like an asset and rejects a mismatch.
 - **`slideTypes`** (optional) — one entry per carried slide type: its `slug`,
   its `ref` (always `slide-types/<slug>.json`) and the SHA-256 of its bytes.
@@ -103,8 +99,8 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 - **`id`** — an SRI-shaped integrity id (`sha256-<base64>`), the stable,
   algorithm-tagged identity of the asset.
 - **`hash`** — the hex SHA-256 (the content address; matches the `ref` name).
-- **`sources`** — on a slide image or theme logo: the original `/uploads/…`
-  name(s) that mapped to this asset.
+- **`sources`** — on a slide or theme image: the original served path
+  (`/uploads/`, `/assets/` or `/custom/assets/`) that mapped to this asset.
   This is the **separate name layer**: human names stay in the manifest so hash
   churn never leaks into the readable structure. Multiple sources means the
   same bytes were referenced from several places.
@@ -123,19 +119,20 @@ assets/<sha256>.<ext>  The asset bytes, content-addressed by SHA-256 of the
 ## `deck.json`
 
 The portable deck (`presentationToDeck` output: `format`, `version`, `title`,
-`lang`, `translations`, `theme`, and `slides`, each slide's `type` in its
+`lang`, `translations`, and `slides`, each slide's `type` in its
 canonical id, with its `notes`, `duration`, `visibility` and `translations`).
 Every language version of the deck travels in it; see
 [Languages](./deck-format.md#languages). Asset refs in
-slide content are rewritten from `/uploads/x.png` to the bundle ref
+slide content are rewritten from served local paths to the bundle ref
 `assets/<hash>.<ext>`. External (`http(s)://`) image URLs are left untouched —
 they are already portable and are not fetched into the bundle.
 
 ## Theme
 
-A presentation on a **database theme** points at an organization record by id,
-and that id means nothing on another instance. The bundle therefore carries the
-record as `theme.json` — exactly the fields a theme is created from, with no
+A presentation points at a theme record by id or follows its organization's
+default. At export, the effective record is resolved in the deck's organization
+and captured in `theme.json`. Export does not change the source deck. The
+snapshot contains exactly the portable fields, with no
 id, organization, default flag, authorship or font-family id:
 
 ```json
@@ -155,9 +152,10 @@ id, organization, default flag, authorship or font-family id:
 }
 ```
 
-Its logos go through the same asset walk as slide images (a ref is a whole
-string; a `url()` inside a CSS value is not an asset ref). `deck.json` keeps the
-theme id it had.
+Its logos, presets, and local images in `config.slideBackgrounds[].value` and
+`config.cssVarOverrides` use the same content-addressed asset inventory as
+slide images. The CSS walk recognizes only `url()` targets in those fields.
+`deck.json` omits its source theme id; `theme.json` is the authority.
 
 **Fonts** come in two classes. A **curated** family (the pinned, vendored
 Google Fonts under open licences) travels as bytes: its files are assets with
@@ -166,9 +164,8 @@ font, or a Google family the instance does not vendor) travels by name, listed
 in `fontsNotIncluded`. Standalone HTML embeds uploads too; the difference is
 deliberate — an HTML export is a rendered document, a bundle installs.
 
-A **file theme** (`themes/<id>.json`, a fork's `custom/themes/<id>/`) is not a
-record: it ships with an install, like a file-JS slide type, and travels by the
-id in `deck.json` alone.
+The sender's installation may have obtained a seed record from a file, but
+that record travels as the same `theme.json` snapshot.
 
 ## Custom slide types
 
@@ -202,10 +199,9 @@ alone. The same fork resolves it; any other install imports the placeholder.
 
 ## Guarantees
 
-- **Self-contained:** all local slide assets are embedded, and so are a
-  database theme's logos and curated fonts. What is not: managed fonts
-  (`fontsNotIncluded`), a file theme, and assets referenced from inside CSS
-  values.
+- **Self-contained:** served slide and theme images from the three asset roots
+  are embedded, including theme preset refs and declared CSS `url()` values.
+  Managed fonts travel by name and appear in `fontsNotIncluded`.
 - **Content-addressed + verifiable:** each asset's bytes hash to its `ref`/`hash`;
   the reader (`readDeckBundle`) re-hashes every asset and rejects a mismatch.
 - **Deduplicated:** identical bytes are stored once regardless of how many
@@ -247,7 +243,7 @@ The flow:
    The deck's own `lang` decides the language it imports in; a bundle whose
    `lang` or `translations` name a language this install does not author in is
    refused with 400 (`deckImportLang`).
-2. **The carried theme and slide types are settled** before any bytes are
+2. **The required theme and carried slide types are settled** before any bytes are
    written — see [Installing a carried theme](#installing-a-carried-theme) and
    [Installing carried slide types](#installing-carried-slide-types).
 3. For each manifest asset, write its bytes back into `/uploads/` via
@@ -268,7 +264,8 @@ The flow:
 A bundled theme is recognised by its **content**, not its name: SHA-256 over
 the canonical JSON of `theme.json` without its slug, with this instance's fonts
 bound (below). Each of the organization's own themes is hashed the same way,
-its logos named by the hash of their bytes. Then one of three things happens,
+its served images named by the hash of their bytes. Visible seeds are checked
+first, then the organization's records. Then one of three things happens,
 reported in the response as `bundledTheme` (`slug`, `label`, `status`, and
 `themeId`, `reason`, `fontsMissing` where they apply):
 
@@ -323,7 +320,7 @@ and bundle assets are written verbatim).
   same archived-slide contract as every render surface — see
   `docs/reference/slide-type-removal.md`.
 - Local refs that were already missing at export time (`missingAssets`) keep
-  their original `/uploads/…` ref and import as dangling (harmless) references.
+  their original served ref and import as dangling (harmless) references.
 
 ## Code
 
@@ -340,18 +337,14 @@ and bundle assets are written verbatim).
   `handlePresentationsImportDeck` (route `POST /api/presentations/import/deck`).
 - Pure ref layer: `shared/slide-types/deck-assets.js`
   (`collectAssetRefs`, `rewriteAssetRefs`, `rewriteBundleRefs`, `assetRefForHash`).
-  One walk serves both exports: the bundle takes the uploads it can
-  content-address (`collectAssetRefs`), the [bulk export](./bulk-export.md)
-  takes the wider set of paths this install serves
-  (`collectServedAssetRefs`).
+  The bundle and [bulk export](./bulk-export.md) both enumerate served paths
+  (`collectServedAssetRefs`); the bundle additionally rewrites the two declared
+  theme CSS fields.
 - Export route: `GET /api/presentations/:id/export/deck.zip` (downloads
   `<title>.deck`).
 
 ## Not yet covered
 
 - External image URLs are not embedded.
-- A file theme and a file-JS slide type travel by name only: they are part of
-  an install, and a receiver without them lands on its default theme or the
-  placeholder.
-- Assets named inside CSS values (a `url()` in a theme's `slideBackgrounds` or
-  `cssVarOverrides`) are not embedded.
+- A file-JS slide type still travels by name only; a receiver without it gets
+  the placeholder.

@@ -114,7 +114,7 @@
   "list.deckImport.assetsFailed": "{count} bestand(en) konden niet worden geïmporteerd.",
   "list.deckImport.fileLabel": ".deck-bestand",
   "list.deckImport.fontsMissing": "Hier niet beschikbaar, dus een standaardlettertype gebruikt: {fonts}.",
-  "list.deckImport.help": "Importeer een presentatie vanuit een .deck-bestand: alle talen, notities, afbeeldingen, en het thema en de slide-types die erin zitten.",
+  "list.deckImport.help": "Importeer een actueel .deck-bestand: alle talen, notities, afbeeldingen en een momentopname van het thema en de slide-types.",
   "list.deckImport.importAgain": "Importeer het bestand opnieuw met het installeer-vinkje aan om ze toe te voegen.",
   "list.deckImport.install": "Het meegeleverde thema en de slide-types installeren",
   "list.deckImport.installHint": "Voegt ze voor iedereen toe aan je workspace. Wat er al is, wordt nooit overschreven.",

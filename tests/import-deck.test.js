@@ -116,6 +116,7 @@ function contentShape(deck) {
 
 const fixture = () => ({
   title: 'Round-trip deck',
+  organizationId: ORG,
   theme: 'default',
   slides: [
     {
@@ -199,6 +200,7 @@ test('unknown slide type degrades to a placeholder, not a crash', async () => {
 // the fixpoint is measured on real content-bearing slides.
 const knownFixture = () => ({
   title: 'Round-trip deck',
+  organizationId: ORG,
   theme: 'default',
   slides: [
     {
@@ -262,6 +264,7 @@ test('a two-language deck imports as two language versions (D89)', async () => {
   ];
   const stored = {
     title: 'Waarom',
+    organizationId: ORG,
     theme: 'default',
     lang: 'nl',
     slides: nl,
@@ -293,6 +296,7 @@ test('a two-language deck imports as two language versions (D89)', async () => {
 test('rejects a bundle whose deck language is not supported', async () => {
   const stored = {
     title: 'x',
+    organizationId: ORG,
     theme: 'default',
     slides: [{ id: 'a', type: 'content-slide', content: { title: 'x' } }],
   };
@@ -332,6 +336,7 @@ for (const [what, buf] of [
 test('rejects a bundle whose manifest is not JSON with the entry named', async () => {
   const stored = {
     title: 'x',
+    organizationId: ORG,
     theme: 'default',
     slides: [{ id: 'a', type: 'content-slide', content: { title: 'x' } }],
   };

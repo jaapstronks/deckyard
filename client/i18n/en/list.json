@@ -114,7 +114,7 @@
   "list.deckImport.assetsFailed": "{count} file(s) could not be imported.",
   "list.deckImport.fileLabel": ".deck file",
   "list.deckImport.fontsMissing": "Not available here, so a default font is used: {fonts}.",
-  "list.deckImport.help": "Import a presentation from a .deck file: every language, notes, images, and the theme and slide types it uses.",
+  "list.deckImport.help": "Import a current .deck file: every language, notes, images, and a snapshot of its theme and slide types.",
   "list.deckImport.importAgain": "Import the file again with the install option ticked to add them.",
   "list.deckImport.install": "Install the theme and slide types it carries",
   "list.deckImport.installHint": "Adds them to your workspace for everyone. Nothing already there is overwritten.",

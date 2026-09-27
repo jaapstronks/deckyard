@@ -14,33 +14,59 @@ import path from 'node:path';
 
 import { canonicalJson } from '../../shared/slide-fingerprint.js';
 import {
-  collectUploadRefsIn,
-  rewriteUploadRefsIn,
+  collectThemeImageRefs,
+  rewriteThemeImageRefs,
+  isServedAssetRef,
+  isUploadRef,
   assetRefForHash,
 } from '../../shared/slide-types/deck-assets.js';
 import { uploadsDir } from '../config/storage-paths.js';
+import { customDirFor } from '../../shared/custom-root.js';
 
 export function sha256Hex(buf) {
   return crypto.createHash('sha256').update(buf).digest('hex');
 }
 
 /**
- * Resolve a `/uploads/<file>` ref to an absolute path under the uploads dir,
- * or null if it would escape it. Uses the env/sandbox-aware uploadsDir.
+ * Resolve a served image ref under its permitted root, or null if it escapes.
  * @param {string} repoRoot
  * @param {string} ref
  * @returns {string|null}
  */
 function resolveUploadPath(repoRoot, ref) {
-  const base = path.resolve(uploadsDir(repoRoot));
-  const rel = decodeURIComponent(String(ref).replace(/^\/uploads\//, ''));
+  if (!isServedAssetRef(ref)) return null;
+  const upload = isUploadRef(ref);
+  const custom = ref.startsWith('/custom/assets/');
+  const base = path.resolve(
+    upload
+      ? uploadsDir(repoRoot)
+      : custom
+        ? path.join(customDirFor(repoRoot), 'assets')
+        : path.join(repoRoot, 'assets'),
+  );
+  let rel;
+  try {
+    rel = decodeURIComponent(
+      ref.slice(
+        upload
+          ? '/uploads/'.length
+          : custom
+            ? '/custom/assets/'.length
+            : '/assets/'.length,
+      ),
+    );
+  } catch {
+    return null;
+  }
+  if (rel.split(/[\\/]/).some((part) => !part || part === '.' || part === '..'))
+    return null;
   const abs = path.resolve(base, rel);
   if (abs !== base && !abs.startsWith(base + path.sep)) return null;
   return abs;
 }
 
 /**
- * Read one upload and name it by content.
+ * Read one served image and name it by content.
  * @param {string} repoRoot
  * @param {string} ref - `/uploads/<file>`
  * @returns {Promise<{buffer: Buffer, hash: string, ext: string, bundleRef: string}|null>}
@@ -51,6 +77,17 @@ export async function readUploadAsset(repoRoot, ref) {
   if (!abs) return null;
   let buffer;
   try {
+    const real = await fs.realpath(abs);
+    const upload = isUploadRef(ref);
+    const base = path.resolve(
+      upload
+        ? uploadsDir(repoRoot)
+        : ref.startsWith('/custom/assets/')
+          ? path.join(customDirFor(repoRoot), 'assets')
+          : path.join(repoRoot, 'assets'),
+    );
+    const realBase = await fs.realpath(base);
+    if (!real.startsWith(realBase + path.sep)) return null;
     buffer = await fs.readFile(abs);
   } catch {
     return null;
@@ -73,7 +110,13 @@ export async function readUploadAsset(repoRoot, ref) {
  */
 export function definitionContentHash(portable) {
   const { slug: _address, ...content } = portable || {};
-  return sha256Hex(Buffer.from(canonicalJson(content), 'utf8'));
+  // The extension belongs to a local filename, while the content address is
+  // the byte hash. The same bytes under a different filename still match.
+  const canonical = canonicalJson(content).replace(
+    /assets\/([a-f0-9]{64})\.[a-z0-9]+/g,
+    'assets/$1',
+  );
+  return sha256Hex(Buffer.from(canonical, 'utf8'));
 }
 
 /**
@@ -87,11 +130,11 @@ export function definitionContentHash(portable) {
  */
 export async function withBundleRefs(repoRoot, portable) {
   const map = new Map();
-  for (const ref of collectUploadRefsIn(portable)) {
+  for (const ref of collectThemeImageRefs(portable)) {
     const asset = await readUploadAsset(repoRoot, ref);
     if (asset) map.set(ref, asset.bundleRef);
   }
-  return rewriteUploadRefsIn(portable, (ref) => map.get(ref));
+  return rewriteThemeImageRefs(portable, (ref) => map.get(ref));
 }
 
 /** The longest slug `isValidSlug` accepts. */
