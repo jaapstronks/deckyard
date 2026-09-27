@@ -68,7 +68,7 @@ function fakeRes() {
 }
 
 async function seedLiveDeck(settings) {
-  const pres = await createPresentation(testScope(), {
+  const pres = await createPresentation(testScope(process.cwd()), {
     title: 'Streamed deck',
     ownerEmail: OWNER,
     theme: 'default',
