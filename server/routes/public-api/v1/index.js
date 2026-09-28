@@ -187,7 +187,7 @@ function handleUnknownSchema({ req, res }) {
  * this install's actual types (including any custom ones) and can never drift
  * from the code.
  *   GET /api/v1/schema/deck.json                     - full deck schema
- *   GET /api/v1/schema/slide-types/:name.json        - one type's content schema
+ *   GET /api/v1/schema/slide-types/:id.json          - one type's content schema
  */
 export const SCHEMA_ROUTES = [
   {
@@ -199,9 +199,11 @@ export const SCHEMA_ROUTES = [
     },
   },
   {
-    // A published type id, not a row id.
+    // A published type id, not a row id. One optional `<namespace>/` segment,
+    // because a fork type without a dotted authority publishes in the slash
+    // form (`custom/hero`, `acme/hero`) and that is its canonical id.
     method: 'GET',
-    pattern: /^\/api\/v1\/schema\/slide-types\/([^/]+)\.json$/,
+    pattern: /^\/api\/v1\/schema\/slide-types\/([^/]+|[^/]+\/[^/]+)\.json$/,
     captures: ['text'],
     handler: async function handleSlideTypeSchema(ctx, name) {
       const { req, res } = ctx;
@@ -215,12 +217,16 @@ export const SCHEMA_ROUTES = [
       const slideTypes = authenticated
         ? await buildMergedSlideTypes(ctx.storageScope)
         : SLIDE_TYPES;
+      // One spelling: the id the format publishes (`canonicalSlideType`).
+      // A bare registry key or a qualified form names no schema here.
       const key = resolveSlideTypeName(name, slideTypes);
-      if (!key) return v1NotFound(res, `Slide type '${name}' not found`);
+      if (!key || canonicalSlideType(key) !== name) {
+        return v1NotFound(res, `Slide type '${name}' not found`);
+      }
       serveJson(
         res,
         200,
-        slideTypeContentSchema(canonicalSlideType(key), slideTypes[key], {
+        slideTypeContentSchema(name, slideTypes[key], {
           withMeta: true,
         }),
         authenticated ? ORG_SCHEMA_CACHE : SCHEMA_CACHE,
