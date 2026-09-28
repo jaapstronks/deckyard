@@ -95,7 +95,11 @@ export function createCardRenderer({
 
     const item = h('div', {
       class: `list-item presentation-card${isTrashView ? ' is-trashed' : ''}`,
-      tabindex: '0',
+      tabindex: isTrashView ? '-1' : '0',
+      role: isTrashView ? null : 'link',
+      'aria-label': isTrashView
+        ? null
+        : t('list.openEditDeck', 'Open and edit {title}', { title: p.title }),
       'data-id': p.id,
       onclick: (e) => {
         if (e?.target?.closest?.('button,a,.presentation-card-checkbox'))
@@ -111,6 +115,9 @@ export function createCardRenderer({
         openPresentation(p.id);
       },
       onkeydown: (e) => {
+        // Key presses on the checkbox and action buttons bubble through the
+        // card. Only the focused card itself owns its keyboard shortcut.
+        if (e.target !== item) return;
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           // In selection mode, toggle selection
@@ -130,6 +137,20 @@ export function createCardRenderer({
     const updateSelectionState = () => {
       item.classList.toggle('is-selected', isSelected());
       item.classList.toggle('is-selection-mode', isSelectionMode());
+      if (!isTrashView) {
+        item.setAttribute('role', isSelectionMode() ? 'button' : 'link');
+        item.setAttribute(
+          'aria-label',
+          isSelectionMode()
+            ? t('list.selectDeck', 'Select {title}', { title: p.title })
+            : t('list.openEditDeck', 'Open and edit {title}', {
+                title: p.title,
+              }),
+        );
+        if (isSelectionMode())
+          item.setAttribute('aria-pressed', String(isSelected()));
+        else item.removeAttribute('aria-pressed');
+      }
       if (checkbox) {
         checkbox.checked = isSelected();
       }
@@ -476,14 +497,12 @@ export function createCardRenderer({
       menu.append(menuDelete);
     }
 
-    moreBtn.append(menu);
-
     // Close the menu on an outside click. The listener is attached only while
     // the menu is open (see moreBtn's onclick) and removes itself on close, so
     // a long deck list never accumulates one permanent document listener per
     // card render.
     const closeMenu = (e) => {
-      if (!moreBtn.contains(e.target)) {
+      if (!moreBtn.contains(e.target) && !menu.contains(e.target)) {
         menu.classList.remove('is-open');
         document.removeEventListener('click', closeMenu);
       }
@@ -493,16 +512,17 @@ export function createCardRenderer({
     const titleRow = h('div', { class: 'presentation-card-title-row' }, [
       h('div', { class: 'presentation-title', text: p.title }),
       moreBtn,
+      menu,
     ]);
 
-    // One-click Present affordance on the thumbnail (hover/focus reveal).
+    // One-click Present shortcut on the thumbnail.
     // The card's own onclick ignores clicks that land on a <button>, so this
     // presents without also opening the editor. Not shown in trash.
     const presentBtn = !isTrashView
       ? h(
           'button',
           {
-            class: 'presentation-card-present btn btn-primary',
+            class: 'presentation-card-present',
             type: 'button',
             title: t('list.present.title', 'Start presenting'),
             onclick: (e) => {
@@ -556,6 +576,13 @@ export function createCardRenderer({
       thumbWrapper,
       h('div', { class: 'stack is-gap-sm presentation-card-meta' }, [
         titleRow,
+        !isTrashView
+          ? h('span', {
+              class: 'presentation-card-open',
+              text: t('list.openEdit', 'Open and edit'),
+              'aria-hidden': 'true',
+            })
+          : null,
         h('div', { class: 'presentation-author-row' }, [
           avatar,
           h('div', { class: 'presentation-author-info' }, [
