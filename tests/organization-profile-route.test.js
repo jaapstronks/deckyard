@@ -345,8 +345,8 @@ test('an instance admin still needs the organization admin role to bind it', asy
   assert.equal(db.__tables.organizations[0].external_id, undefined);
 });
 
-// D243: the binding decides where another customer's next login lands, so a
-// workspace owner or admin without instance authority may not set, replace or
+// D243: the binding decides where another customer's next login lands, so an
+// organization owner or admin without instance authority may not set, replace or
 // clear it - and a mixed request is refused whole, not half-applied.
 for (const actorKey of ['owner', 'admin']) {
   test(`an organization ${actorKey} without instance admin cannot touch the external ID`, async () => {

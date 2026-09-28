@@ -252,7 +252,7 @@ missing is listed under _What is not done yet_ below.
   The binding itself is instance authority, not an organization setting (D243).
   An `external_id` decides where a stranger's next login lands, and uniqueness
   only protects IDs that are already bound: an organization owner who could set
-  one would capture another customer's first login into their own workspace.
+  one would capture another customer's first login into their own organization.
   `PATCH /api/organizations/:id` therefore refuses `externalId` (set, replace or
   clear) unless the caller is an instance admin as well as an organization
   admin, and refuses the whole request before writing, so a mixed profile edit

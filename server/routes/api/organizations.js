@@ -173,8 +173,8 @@ async function handleOrgUpdate({ req, res, userId, authedUser }, orgId) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  // The external ID routes OIDC logins across the whole instance (D243): a
-  // workspace admin binding an unclaimed IdP organization would capture
+  // The external ID routes OIDC logins across the whole instance (D243): an
+  // organization admin binding an unclaimed IdP organization would capture
   // another customer's next login. Refused before any field is written, so a
   // mixed profile + externalId request leaves the record untouched.
   if ('externalId' in body && !authedUser?.isAdmin) {
