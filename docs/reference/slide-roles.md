@@ -518,7 +518,18 @@ occurrence:
 - the `--tf-size-scale` **multiplier** of the text-style controls — the S/M/L
   factor itself (`97-text-styles.css`), not the base size it scales (that is the
   ladder-rung category above);
-- em-based micro-typography (letter-spacing-relative sizing);
+- **em-relative sizing** — a length that scales with the text it belongs to
+  (`em`, the list indent, the markdown code size, `calc(0.9em *
+var(--tf-size-scale))`). The parser recognises `em` itself, so these are not
+  marked. One case cannot use `em` and is marked instead: a fraction of a
+  local display size read from a sibling, where the size lives in a custom
+  property because `em` cannot reach it (the countdown's zero text against
+  `--cd-digits`);
+- **a currentColor-relative mute** — the text-style `muted` control
+  (`97-text-styles.css`) softens whatever colour the run already has, so it
+  reads right on a light slide and on a dark band alike. No role can say
+  "this colour, softer": `--slide-on-surface-muted` belongs to the ground, not
+  to the run. Marked in place with an `allowlist:` comment;
 - private locals as readability aliases (`--team-gap-x`) — allowed only when
   they resolve to a token; a local introducing a new literal counts as a
   literal.
@@ -549,13 +560,34 @@ only go down.
 Presenter chrome inside the slide bundle is excluded by file, with the reason
 in the test.
 
-**The gate cannot see inside `calc()`**, because a length there may be a
+The same file measures **every** declaration on the six axes (font-size,
+line-height, spacing = margin + padding, gap, border-radius, `color`) and
+asserts that none is a literal without a category. Each declaration is one of
+four kinds: a token; a category the parser recognises from the value alone
+(`0`, a keyword such as `auto` or `transparent`, `em`-relative sizing, the
+`-1` that negates a spacing step, `50%` on a radius); a literal marked with an
+`allowlist:` comment on its line or directly above it; or uncategorised, which
+fails. A half-converted composite counts as a literal. The per-axis table
+prints with
+
+    SLIDE_CSS_REPORT=1 node --test tests/slide-css-tokens.test.js
+
+The measurement reads declarations, not custom-property definitions: a
+private local that introduces a literal (a surface rebinding
+`--slide-on-surface` to a fixed colour) is still a literal by the rule above,
+but only review catches it.
+
+**The burndown gate cannot see inside `calc()`**, because a length there may be a
 multiplier, an offset or an `em` and the parser cannot tell which. So a
 `calc(<role> ± Npx)` sits off the scale without ever costing a budget point, and
 a whole tail of them survived the axis sweeps: on the font-size axis the census
 counted 12, spread over 7 types. The rule that closes the hole is a reading
 rule, not a parser one: **an arithmetic offset from a role token is a scale step
-the scale does not have yet** — write the step, or add it. `calc()` stays
+the scale does not have yet** — write the step, or add it. The adoption
+assertion closes most of it mechanically, because it does read inside `calc()`:
+a raw `20px` or `0.35` there is a literal. What it cannot catch is an offset
+between two roles (`calc(var(--slide-padding) - var(--slide-space-5))`),
+which stays a reading rule. `calc()` stays
 legitimate for the two things it cannot express otherwise, a scale multiplier
 (`--tf-size-scale`, `--quote-scale`, `--cover-scale`) and `em`-relative
 sizing, and both are

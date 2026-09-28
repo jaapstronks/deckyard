@@ -21,7 +21,7 @@
   /* The raised surface role, so cards stand off the slide background (e.g. a
      tinted body on a white slide); text stays dark — the surface stays light. */
   background: var(--slide-surface-raised);
-  color: rgba(11, 11, 11, 0.92);
+  color: var(--slide-on-light);
   padding: var(--slide-card-padding);
   min-width: 0;
   display: flex;

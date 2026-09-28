@@ -45,7 +45,7 @@
   margin: var(--slide-space-3) 0 0;
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-snug);
-  color: color-mix(in srgb, var(--slide-on-surface, #0b0b0b) 75%, transparent);
+  color: var(--slide-on-surface-muted);
   max-width: 75ch;
 }
 
@@ -125,14 +125,14 @@
   height: 100%;
   font-family: var(--font-body);
   font-size: var(--slide-text-base);
-  color: color-mix(in srgb, var(--slide-on-surface, #0b0b0b) 45%, transparent);
+  color: var(--slide-on-surface-muted);
 }
 
 .slide-logo-wall .logo-wall-empty {
   font-family: var(--font-body);
   font-size: var(--slide-text-md);
   line-height: var(--slide-leading-normal);
-  color: color-mix(in srgb, var(--slide-on-surface, #0b0b0b) 60%, transparent);
+  color: var(--slide-on-surface-muted);
   text-align: center;
   margin-top: var(--slide-space-3);
 }

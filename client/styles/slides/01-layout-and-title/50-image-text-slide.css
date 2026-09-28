@@ -101,7 +101,7 @@
   font-family: var(--font-caption);
   font-size: var(--slide-text-base);
   line-height: var(--slide-leading-compact);
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--slide-text-light);
   display: inline-block;
   width: fit-content;
   max-width: calc(100% - 36px);
@@ -133,7 +133,7 @@
     ),
     rgba(255, 255, 255, 0.28);
   /* centring comes from the shared .image-placeholder base (00-patterns.css) */
-  color: rgba(0, 0, 0, 0.55);
+  color: var(--slide-on-surface-muted);
 }
 
 /* Contain image slide needs a bounded placeholder, not full-bleed height */
@@ -161,7 +161,7 @@
       rgba(255, 255, 255, 0) 55%
     ),
     rgba(0, 0, 0, 0.12);
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--slide-text-light-muted);
 }
 
 /* The placeholder inner (icon + label) is shared across slide types —
@@ -172,7 +172,7 @@
    default), so one CSS path covers it. Cover is the base state (.media img
    above); contain adds breathing room + a white plate inside the frame. */
 .slide-image-text .media .frame.is-fit-contain {
-  padding: calc(var(--slide-space-16) * 0.35);
+  padding: var(--slide-space-6);
   box-sizing: border-box;
   background: #fff;
 }

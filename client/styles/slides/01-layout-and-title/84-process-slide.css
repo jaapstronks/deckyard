@@ -192,7 +192,7 @@
 /* On lime background, use accent color for contrast */
 .slide-process.slide-bg-lime .step-number {
   background: var(--slide-accent, #375c5d);
-  color: #fff;
+  color: var(--slide-on-accent);
 }
 
 /* ===========================================

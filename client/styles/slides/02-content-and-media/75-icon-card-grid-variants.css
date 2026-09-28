@@ -152,7 +152,7 @@
   background: transparent;
   align-items: center;
   justify-content: center;
-  padding-top: 6%;
+  padding-top: var(--slide-space-5);
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-icon-img,
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-icon-fallback {
