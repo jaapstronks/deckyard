@@ -1200,9 +1200,6 @@
   "server/utils/embed-fonts.js": {
     "no-restricted-syntax": {
       "count": 1
-    },
-    "preserve-caught-error": {
-      "count": 3
     }
   },
   "server/utils/embed-html/index.js": {

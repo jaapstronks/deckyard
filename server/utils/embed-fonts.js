@@ -1,7 +1,5 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { uploadsDir } from '../config/storage-paths.js';
-import { assertPublicHttpUrl } from './ssrf-guard.js';
 import { cssStringEscape, mergeFontFaces } from '../../shared/theme-fonts.js';
 import { getMediaProvider } from '../media/index.js';
 import { managedFontKeyFromUrl } from '../media/managed-fonts.js';
@@ -20,113 +18,30 @@ async function readFontAsDataUrl(repoRoot, relPath, mime = 'font/woff2') {
 }
 
 /**
- * Resolve a relative /uploads/ URL to a local filesystem data URL.
- * Used when the media provider stores files locally (not on an external CDN).
- */
-async function readLocalUploadAsDataUrl(repoRoot, urlPath, format = 'woff2') {
-  const mime = format === 'woff' ? 'font/woff' : 'font/woff2';
-  // Strip the /uploads/ prefix to get the filename
-  const filename = urlPath.replace(/^\/uploads\//, '');
-  const abs = path.join(uploadsDir(repoRoot), filename);
-  const buf = await fs.readFile(abs);
-  return `data:${mime};base64,${buf.toString('base64')}`;
-}
-
-/**
- * Fetch a remote URL and return its content as a base64 data URL.
- * Used for embedding uploaded (media-provider-hosted) fonts into exports.
- */
-export async function fetchFontAsDataUrl(url, format = 'woff2') {
-  const mime = format === 'woff' ? 'font/woff' : 'font/woff2';
-
-  // SSRF guard: reject non-http(s) schemes and any host resolving to a
-  // loopback/private/link-local address (incl. cloud metadata), covering the IP
-  // encodings / IPv6 / rebinding the old string blocklist missed.
-  try {
-    await assertPublicHttpUrl(url);
-  } catch (e) {
-    if (e?.code === 'SSRF_BAD_SCHEME')
-      throw new Error('Font URL must use HTTP(S)');
-    if (e?.code === 'SSRF_BLOCKED_ADDRESS')
-      throw new Error('Font URL must not point to internal addresses');
-    throw new Error('Invalid font URL');
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15000);
-  try {
-    // redirect:'error' so a public URL can't 30x-bounce into private space.
-    const resp = await fetch(url, {
-      signal: controller.signal,
-      redirect: 'error',
-    });
-    if (!resp.ok) return null;
-    // Don't embed an internal service's document/data response as a "font".
-    // Best-effort blocklist (fonts arrive as font/*, octet-stream, or with no
-    // content-type on some CDNs, so we reject the obvious non-font types rather
-    // than allowlist and risk dropping legitimate fonts).
-    const contentType = String(resp.headers.get('content-type') || '')
-      .split(';')[0]
-      .trim()
-      .toLowerCase();
-    if (
-      /^(text\/|application\/(json|xml|xhtml|javascript|ld\+json))/.test(
-        contentType,
-      )
-    ) {
-      return null;
-    }
-    const buf = Buffer.from(await resp.arrayBuffer());
-    if (buf.byteLength > 10 * 1024 * 1024) {
-      throw new Error('Font file exceeds 10MB size limit');
-    }
-    return `data:${mime};base64,${buf.toString('base64')}`;
-  } catch (e) {
-    if (e.message.includes('Font') || e.message.includes('size limit')) throw e;
-    return null;
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-/**
  * Resolve one embedFonts entry to its bytes, as a base64 data URL.
  * @returns {Promise<string|null>} data URL, or null when the source is unusable
  */
 async function resolveEmbedSource(repoRoot, { url, path: relPath, format }) {
-  const managedKey = managedFontKeyFromUrl(url);
-  if (managedKey) {
+  if (url) {
     // An uploaded font variant: a private object, read through the media
-    // provider. It has no public URL to fetch, by design.
+    // provider. It has no public URL, by design, and no other URL
+    // form is embedded (D244). A missing object costs this one font, not the
+    // export: the family's token already carries its fallback stack.
+    const managedKey = managedFontKeyFromUrl(url);
+    if (!managedKey) {
+      log.warn(`Skipping font ${url}: not a managed font URL`);
+      return null;
+    }
     const buf = await getMediaProvider().readFile(managedKey);
-    if (!buf) return null;
+    if (!buf) {
+      log.warn(`Skipping font ${url}: stored object not found`);
+      return null;
+    }
     const mime = format === 'woff' ? 'font/woff' : 'font/woff2';
     return `data:${mime};base64,${buf.toString('base64')}`;
   }
-  if (url && url.startsWith('/uploads/')) {
-    // Locally-stored uploaded font — read directly from the uploads directory
-    try {
-      return await readLocalUploadAsDataUrl(repoRoot, url, format);
-    } catch {
-      return null; // file not found
-    }
-  }
-  if (url) {
-    // URL-based font (external CDN / media provider) — fetch and base64-encode.
-    // A refused URL (not http(s), an internal address, over the size cap)
-    // costs this one font, not the export: the family's token already carries
-    // its fallback stack, so the render degrades to that. Where a variant URL
-    // is written, only the media provider's own address goes in; this is the
-    // render reading what is stored, not the place to refuse it (B508).
-    try {
-      return await fetchFontAsDataUrl(url, format);
-    } catch (err) {
-      log.warn(`Skipping font ${url}: ${err.message}`);
-      return null;
-    }
-  }
   if (relPath) {
-    // Path-based font (local curated file)
+    // A curated family: a pinned file in the repo.
     try {
       return await readFontAsDataUrl(repoRoot, relPath);
     } catch {
@@ -138,7 +53,7 @@ async function resolveEmbedSource(repoRoot, { url, path: relPath, format }) {
 
 export async function buildEmbeddedFontCss(repoRoot, theme = null) {
   // These will be inlined into export HTML so opening the exported file via
-  // `file://` still works (no network, no local-path fetches).
+  // `file://` still works (no network, no local-path requests).
   // Themes declare which fonts to embed via embedFonts (theme-builder
   // generates this for managed fonts). Without it there's nothing to embed —
   // the export falls back to the CSS font stacks.
@@ -195,7 +110,7 @@ export async function buildEmbeddedFontCss(repoRoot, theme = null) {
   const identified = [];
   for (const face of faces) {
     const dataUrl = dataUrls.get(face.sourceKey);
-    if (!dataUrl) continue; // unreadable / failed fetch — skip, as before
+    if (!dataUrl) continue; // unreadable — skip, the token keeps its fallback
     identified.push({ ...face, identity: dataUrl });
   }
 

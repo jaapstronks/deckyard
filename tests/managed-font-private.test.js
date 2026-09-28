@@ -50,6 +50,7 @@ const { SHARED_PUBLIC_DIRS } = await import('../server/config/paths.js');
 const { managedFontUrl, managedFontKeyFromUrl } =
   await import('../server/media/managed-fonts.js');
 const { loadExportCssBundle } = await import('../server/export/css-bundle.js');
+const { buildEmbeddedFontCss } = await import('../server/utils/embed-fonts.js');
 const { buildThemeConfig } = await import('../server/utils/theme-builder.js');
 const { handleMedia } = await import('../server/routes/api/media.js');
 const { privatizeFontVariants } =
@@ -314,6 +315,25 @@ test('removing a variant deletes its private object', async () => {
   );
   assert.equal(del.statusCode, 200);
   assert.equal(await getMediaProvider().readFile(variant.filename), null);
+});
+
+test('the export skips a managed variant whose object is gone, with a warning', async (t) => {
+  seed();
+  const { variant } = await uploadVariant();
+  await getMediaProvider().deleteFile(variant.filename);
+  const warn = t.mock.method(console, 'warn', () => {});
+
+  const css = await buildEmbeddedFontCss(repoRoot, {
+    embedFonts: [
+      { family: 'Licensed Sans', url: managedFontUrl(variant.filename) },
+    ],
+  });
+  assert.equal(css, '', 'the face is dropped, the export goes on');
+  assert.equal(warn.mock.callCount(), 1);
+  assert.match(
+    warn.mock.calls[0].arguments.join(' '),
+    /Skipping font \/fonts\/managed\/.+: stored object not found/,
+  );
 });
 
 test('privatize-font-variants moves a pre-B510 public variant into private storage', async () => {

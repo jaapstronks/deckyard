@@ -203,10 +203,18 @@ way any PDF embeds its fonts. Exporting requires an account on the instance.
 
 ### Exports read through the provider
 
-`server/utils/embed-fonts.js` recognizes a `/fonts/managed/` URL and reads the
-object with `getMediaProvider().readFile(key)`. There is no HTTP fetch and no
-public URL. The render document then carries the font as a data URL, so
-Chrome needs no network access either.
+`server/utils/embed-fonts.js` reads an `embedFonts` entry from exactly one of
+two sources (D244):
+
+- **a managed key**: a `/fonts/managed/` URL, read with
+  `getMediaProvider().readFile(key)`;
+- **a curated path**: a pinned file in the repo.
+
+Any other URL is skipped with a warning; the export makes no HTTP request and
+knows no public font URL. A managed object that is gone also costs only that
+font: `log.warn` names it, the face is dropped and the family's token falls
+back to its CSS stack. The render document carries each font it did read as a
+data URL, so Chrome needs no network access either.
 
 ### `.deck` bundles do not carry the file
 
