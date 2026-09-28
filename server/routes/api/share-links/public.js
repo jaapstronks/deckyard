@@ -182,7 +182,6 @@ async function shareViewerDeck(repoRoot, pres) {
     revision: Number(pres.revision) || 0,
     slides: Array.isArray(visible.slides) ? visible.slides : [],
     settings: {
-      analyticsEnabled: settings.analyticsEnabled !== false,
       autoAdvance: settings.autoAdvance ?? null,
       liveVideo: settings.liveVideo ?? null,
     },

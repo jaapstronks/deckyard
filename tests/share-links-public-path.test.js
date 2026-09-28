@@ -515,8 +515,9 @@ test('verify hands over the deck itself — the anonymous viewer has no other wa
     ['s1'],
     'a slide marked hideFromViewers never leaves the server',
   );
+  // The owner's analytics opt-out stays home: the tracking route enforces
+  // it (tests/analytics-track-owner-opt-out.test.js), the viewer never reads it.
   assert.deepEqual(Object.keys(deck.settings).sort(), [
-    'analyticsEnabled',
     'autoAdvance',
     'liveVideo',
   ]);
