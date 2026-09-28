@@ -336,6 +336,29 @@ test('the export skips a managed variant whose object is gone, with a warning', 
   );
 });
 
+test('the export skips a managed variant storage cannot read, with the reason (B539)', async (t) => {
+  seed();
+  const { variant } = await uploadVariant();
+  // Not a missing object (that is `null`): the read itself fails, as an S3
+  // read does on a permission or network error.
+  t.mock.method(getMediaProvider(), 'readFile', async () => {
+    throw new Error('AccessDenied');
+  });
+  const warn = t.mock.method(console, 'warn', () => {});
+
+  const css = await buildEmbeddedFontCss(repoRoot, {
+    embedFonts: [
+      { family: 'Licensed Sans', url: managedFontUrl(variant.filename) },
+    ],
+  });
+  assert.equal(css, '', 'the face is dropped, the export goes on');
+  assert.equal(warn.mock.callCount(), 1);
+  assert.match(
+    warn.mock.calls[0].arguments.join(' '),
+    /Skipping font \/fonts\/managed\/.+: stored object unreadable \(AccessDenied\)/,
+  );
+});
+
 test('privatize-font-variants moves a pre-B510 public variant into private storage', async () => {
   const db = seed();
   const provider = getMediaProvider();
