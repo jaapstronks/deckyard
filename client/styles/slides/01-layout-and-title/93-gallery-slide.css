@@ -235,7 +235,7 @@
   font-family: var(--font-body);
   font-size: var(--slide-text-xs);
   line-height: var(--slide-leading-compact);
-  color: #fff;
+  color: var(--slide-text-light);
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
 }
 

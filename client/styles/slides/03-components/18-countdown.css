@@ -114,10 +114,13 @@
   grid-row: 3;
   align-self: start;
   max-inline-size: 100%;
+  /* allowlist: em-relative sizing — the zero text is a sibling of the digits, so
+     `em` cannot reach their size; it reads it from --cd-digits instead. */
   padding-top: calc(var(--cd-digits) * 0.08);
   font-family: var(--font-heading);
   font-weight: var(--heading-weight, 400);
   font-synthesis: none;
+  /* allowlist: em-relative sizing — a third of the digits, see padding-top */
   font-size: calc(var(--cd-digits) * 0.33);
   line-height: var(--slide-leading-tight);
   opacity: 0;

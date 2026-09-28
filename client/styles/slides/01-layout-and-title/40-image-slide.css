@@ -83,7 +83,7 @@
   border-radius: var(--slide-radius-sm);
   font-family: var(--font-caption);
   font-size: var(--slide-text-base);
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--slide-text-light);
   display: inline-block;
   width: fit-content;
   max-width: calc(100% - 36px);
@@ -123,10 +123,10 @@
   margin: 0;
 }
 .slide-image.is-bleed .img-title {
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--slide-text-light);
 }
 .slide-image.is-bleed .subheading {
-  color: rgba(255, 255, 255, 0.86);
+  color: var(--slide-text-light-muted);
 }
 .slide-image.is-bleed .bottom-subheading {
   /* Overlay style above caption */
@@ -139,7 +139,7 @@
   border-radius: var(--slide-radius-sm);
   font-size: var(--slide-text-xl);
   line-height: var(--slide-leading-compact);
-  color: rgba(255, 255, 255, 0.92);
+  color: var(--slide-text-light);
   display: inline-block;
   width: fit-content;
   max-width: calc(100% - 36px);
@@ -154,7 +154,7 @@
 /* When bottom subheading is present, shrink the image area (except on a bleed
    frame, where it overlays) */
 .slide-image:not(.is-bleed).has-bottom-subheading {
-  padding-bottom: calc(var(--slide-padding) - 20px);
+  padding-bottom: var(--slide-space-12);
 }
 .slide-image:not(.is-bleed).has-bottom-subheading .media {
   flex: 0 1 auto;

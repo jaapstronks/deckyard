@@ -40,6 +40,7 @@
    (A former `inverse` = --t-color-background token was dropped: on text that
    sits directly on the slide background it is invisible by construction.) */
 .tf-color-muted.tf-color-muted {
+  /* allowlist: currentColor-relative mute — softens the run's own colour */
   color: color-mix(in srgb, currentColor 72%, transparent);
 }
 .tf-color-accent.tf-color-accent {

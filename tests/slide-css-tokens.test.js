@@ -33,6 +33,14 @@
  *
  *     UPDATE_SLIDE_CSS_SUPPRESSIONS=1 node --test tests/slide-css-tokens.test.js
  *
+ * A second, wider assertion closes done-gate criterion 1: every declaration
+ * on the six axes (font-size, line-height, spacing, gap, border-radius,
+ * `color`) is a token, a category the parser recognises from the value, or a
+ * literal marked with an `allowlist:` comment — never an uncategorised
+ * literal. The per-axis table:
+ *
+ *     SLIDE_CSS_REPORT=1 node --test tests/slide-css-tokens.test.js
+ *
  * Plan and phasing: docs/plans/briefs/css-role-vocabulary.md (private sibling).
  *
  * Run with: node --test tests/slide-css-tokens.test.js
@@ -393,6 +401,195 @@ const suppressions = JSON.parse(await fs.readFile(suppressionsFile, 'utf8'));
 const budgetFor = (file, category) =>
   suppressions[file]?.[category]?.count ?? 0;
 
+/**
+ * The six axes of done-gate criterion 1 (role-vocabulary brief), measured on
+ * every declaration in scope rather than only on the value-identical case the
+ * burndown above catches. Spacing is margin + padding, as in `CATEGORIES`;
+ * colour is the `color` property, the axis the 2026-08-03 census measured.
+ */
+const ADOPTION_AXES = {
+  'font-size': CATEGORIES['font-size'],
+  'line-height': CATEGORIES['line-height'],
+  spacing: CATEGORIES.spacing.filter((p) => !/gap$/.test(p)),
+  gap: ['gap', 'row-gap', 'column-gap'],
+  'border-radius': [
+    'border-radius',
+    'border-top-left-radius',
+    'border-top-right-radius',
+    'border-bottom-left-radius',
+    'border-bottom-right-radius',
+    'border-start-start-radius',
+    'border-start-end-radius',
+    'border-end-start-radius',
+    'border-end-end-radius',
+  ],
+  colour: ['color'],
+};
+
+/**
+ * Words that are not a value on any scale: they name a behaviour ("take the
+ * parent's", "no colour", "fill the rest"), so there is nothing to tokenise.
+ */
+const KEYWORDS = new Set([
+  'auto',
+  'inherit',
+  'initial',
+  'unset',
+  'none',
+  'transparent',
+  'currentcolor',
+]);
+
+/**
+ * One lexeme of the part of a value that is left once every `var(…)` is gone.
+ * Numbers come first so `-1` is one lexeme and a lone `-` is an operator.
+ */
+const LEXEME_RE =
+  /-?\d*\.?\d+(?:[a-z]+|%)?|#[0-9a-f]+|[a-z][\w-]*\(|[a-z][\w-]*|[-(),*+/]/gi;
+
+/**
+ * Sort the literal remnant of one declaration value into what it is.
+ *
+ * `structural` lexemes are categories the parser can recognise from the value
+ * alone, so they carry no comment (slide-roles.md § The allowlist: "the
+ * comment exists where a bare length would otherwise read as an unconverted
+ * literal"): a keyword, `0`, `em`-relative sizing, the `-1` that negates a
+ * spacing step, and `50%` as the circle shape on a radius. Everything else is
+ * a `literal` and has to be either a token or marked.
+ *
+ * @param {string} axis
+ * @param {string} value the declaration value, `var(…)` included
+ * @returns {{ hasToken: boolean, relative: boolean, literals: string[] }}
+ */
+function classifyValue(axis, value) {
+  const bare = value.replace(/!important/i, '');
+  const raw = stripVarExpressions(bare);
+  const inCalc = /calc\(/i.test(raw);
+  const literals = [];
+  let relative = false;
+  for (const [lexeme] of raw.matchAll(LEXEME_RE)) {
+    const lower = lexeme.toLowerCase();
+    if (/^[-(),*+/]$/.test(lexeme) || /\($/.test(lexeme)) continue;
+    if (/^\d*\.?\d+em$/.test(lower)) {
+      relative = true;
+      continue;
+    }
+    if (
+      KEYWORDS.has(lower) ||
+      /^-?0*\.?0+(?:[a-z]+|%)?$/.test(lower) ||
+      (inCalc && lower === '-1') ||
+      (axis === 'border-radius' && lower === '50%')
+    )
+      continue;
+    literals.push(lexeme);
+  }
+  return { hasToken: /var\(/.test(bare), relative, literals };
+}
+
+/**
+ * Whether a declaration carries an `allowlist:` category comment — on one of
+ * its own lines (trailing), or as the comment directly above it with nothing
+ * but whitespace in between.
+ *
+ * @param {string} source original source, comments intact
+ * @param {number} start offset of the property name
+ * @param {number} end offset just past the value
+ * @returns {boolean}
+ */
+function isMarked(source, start, end) {
+  const lineStart = source.lastIndexOf('\n', start) + 1;
+  const lineEndAt = source.indexOf('\n', end);
+  const ownLines = source.slice(
+    lineStart,
+    lineEndAt === -1 ? source.length : lineEndAt,
+  );
+  if (/\/\*\s*allowlist:/.test(ownLines)) return true;
+  const before = source.slice(0, start).replace(/\s+$/, '');
+  if (!before.endsWith('*/')) return false;
+  return /^\/\*\s*allowlist:/.test(before.slice(before.lastIndexOf('/*')));
+}
+
+/**
+ * @typedef {object} AdoptionRow
+ * @property {string} file
+ * @property {number} line
+ * @property {string} axis
+ * @property {string} prop
+ * @property {string} value
+ * @property {'token'|'structural'|'marked'|'uncategorised'} kind
+ */
+
+/**
+ * Every declaration on the six axes in one sheet, each sorted into one of
+ * four kinds. A declaration with any literal lexeme is `marked` or
+ * `uncategorised` whatever tokens sit beside it — the composite rule
+ * (slide-roles.md § Spacing roles) makes a half-converted value a literal.
+ *
+ * @param {string} source
+ * @param {string} label repo-relative path
+ * @returns {AdoptionRow[]}
+ */
+function measureAdoption(source, label) {
+  const clean = stripComments(source);
+  const out = [];
+  for (const [axis, props] of Object.entries(ADOPTION_AXES)) {
+    const declRe = new RegExp(
+      `(^|[;{])\\s*(${props.join('|')})\\s*:([^;{}]*)`,
+      'gi',
+    );
+    for (const decl of clean.matchAll(declRe)) {
+      const prop = decl[2].toLowerCase();
+      const start = decl.index + decl[0].toLowerCase().indexOf(prop);
+      const end = decl.index + decl[0].length;
+      const { hasToken, relative, literals } = classifyValue(axis, decl[3]);
+      let kind;
+      if (literals.length > 0)
+        kind = isMarked(source, start, end) ? 'marked' : 'uncategorised';
+      else kind = hasToken && !relative ? 'token' : 'structural';
+      out.push({
+        file: label,
+        line: clean.slice(0, start).split('\n').length,
+        axis,
+        prop,
+        value: decl[3].trim().replace(/\s+/g, ' '),
+        kind,
+      });
+    }
+  }
+  return out;
+}
+
+const adoption = (
+  await Promise.all(
+    files.map(async (rel) =>
+      measureAdoption(await fs.readFile(path.join(repoRoot, rel), 'utf8'), rel),
+    ),
+  )
+).flat();
+
+if (/^(1|true|yes)$/i.test(String(process.env.SLIDE_CSS_REPORT || '').trim())) {
+  const kinds = ['token', 'structural', 'marked', 'uncategorised'];
+  const rows = Object.keys(ADOPTION_AXES).map((axis) => {
+    const onAxis = adoption.filter((r) => r.axis === axis);
+    const n = (kind) => onAxis.filter((r) => r.kind === kind).length;
+    const pct = (x) => `${((100 * x) / (onAxis.length || 1)).toFixed(1)}%`;
+    return `| ${axis} | ${onAxis.length} | ${kinds.map(n).join(' | ')} | ${pct(n('token'))} | ${pct(onAxis.length - n('uncategorised'))} |`;
+  });
+  console.log(
+    [
+      `Slide CSS adoption over ${files.length} sheets (criterion 1)`,
+      '',
+      '| axis | declarations | token | category (structural) | category (marked) | uncategorised | tokenised | tokenised or categorised |',
+      '| --- | --- | --- | --- | --- | --- | --- | --- |',
+      ...rows,
+      '',
+      ...adoption
+        .filter((r) => r.kind === 'uncategorised')
+        .map((r) => `  ${r.file}:${r.line}  ${r.prop}: ${r.value}`),
+    ].join('\n'),
+  );
+}
+
 describe('slide css tokens', () => {
   it('reads the scales out of 00-tokens.css', () => {
     // If this ever comes back empty the gate would pass vacuously, which is
@@ -554,6 +751,59 @@ describe('slide css tokens', () => {
         'contract is intended, regenerate the snapshot:\n' +
         '  UPDATE_SLIDE_CSS_SUPPRESSIONS=1 node --test tests/slide-css-tokens.test.js\n' +
         'and account for it in docs/reference/slide-roles.md § The theme seam.',
+    );
+  });
+
+  it('sorts a declaration the way the allowlist reads it', () => {
+    const kinds = (css) =>
+      measureAdoption(css, 'fixture.css').map((r) => `${r.prop}:${r.kind}`);
+    assert.deepStrictEqual(
+      kinds(
+        [
+          '.a { padding: var(--slide-space-4) 0; margin: 0 auto; }',
+          '.b { color: #fff; gap: 4px var(--slide-space-2); }',
+          '.c { font-size: calc(0.9em * var(--tf-size-scale, 1)); }',
+          '.d { margin-top: calc(-1 * var(--slide-space-3)); }',
+          '.e { padding: calc(var(--slide-space-16) * 0.35); }',
+          '.f { border-radius: 50%; line-height: 1; }',
+          '.g {',
+          '  /* allowlist: single-line display glyph */',
+          '  line-height: 1;',
+          '  color: color-mix(in srgb, currentColor 72%, transparent); /* allowlist: mute */',
+          '}',
+        ].join('\n'),
+      ),
+      // measureAdoption walks axis by axis, in ADOPTION_AXES order
+      [
+        'font-size:structural',
+        'line-height:uncategorised',
+        'line-height:marked',
+        'padding:token',
+        'margin:structural',
+        'margin-top:token',
+        'padding:uncategorised',
+        'gap:uncategorised',
+        'border-radius:structural',
+        'color:uncategorised',
+        'color:marked',
+      ],
+    );
+  });
+
+  it('leaves no literal on the six axes without a category', () => {
+    // Done-gate criterion 1: every declaration on the six axes is a token or
+    // an allowlisted category. `SLIDE_CSS_REPORT=1` prints the per-axis table.
+    assert.ok(adoption.length > 1000, 'expected the six axes to be measured');
+    const uncategorised = adoption
+      .filter((r) => r.kind === 'uncategorised')
+      .map((r) => `${r.file}:${r.line}  ${r.prop}: ${r.value}`);
+    assert.deepStrictEqual(
+      uncategorised,
+      [],
+      `${uncategorised.length} literal declaration(s) without a category.\n` +
+        'Write the value as its --slide-* role, or — only when it belongs to a\n' +
+        'category in docs/reference/slide-roles.md § The allowlist — mark it\n' +
+        'with an `allowlist: <category>` comment on the line or directly above.',
     );
   });
 

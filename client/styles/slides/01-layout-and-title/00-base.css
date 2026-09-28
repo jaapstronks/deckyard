@@ -436,7 +436,7 @@
   /* These cards are light surfaces sitting on the dark background, so the
      lightened on-dark link would be low-contrast here — restore the accent. */
   --slide-link: var(--slide-accent);
-  color: rgba(11, 11, 11, 0.92);
+  color: var(--slide-on-surface);
 }
 
 /* =============================================================================

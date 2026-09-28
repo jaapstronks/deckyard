@@ -106,11 +106,6 @@
   color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
 }
 
-/* On lime bg, muted text needs different treatment */
-.slide-pyramid.slide-bg-lime .level-text {
-  color: rgba(255, 255, 255, 0.85);
-}
-
 /* ===========================================
    LEVEL COUNT SIZING (3-6 levels)
    =========================================== */
@@ -187,10 +182,6 @@
   color: var(--slide-on-accent);
 }
 
-.slide-pyramid .pyramid-level:nth-child(1) .level-text {
-  color: rgba(255, 255, 255, 0.85);
-}
-
 .slide-pyramid .pyramid-level:nth-child(2) .level-bar {
   background: color-mix(
     in srgb,
@@ -202,10 +193,6 @@
 .slide-pyramid .pyramid-level:nth-child(2) .level-label,
 .slide-pyramid .pyramid-level:nth-child(2) .level-text {
   color: var(--slide-on-accent);
-}
-
-.slide-pyramid .pyramid-level:nth-child(2) .level-text {
-  color: rgba(255, 255, 255, 0.85);
 }
 
 .slide-pyramid .pyramid-level:nth-child(3) .level-bar {
@@ -275,15 +262,12 @@
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-label,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(4) .level-label,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(5) .level-label,
-.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(6) .level-label {
-  color: var(--slide-on-accent);
-}
-
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(6) .level-label,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-text,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(4) .level-text,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(5) .level-text,
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(6) .level-text {
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--slide-on-accent);
 }
 
 /* ===========================================
