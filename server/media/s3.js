@@ -8,9 +8,12 @@
  */
 
 import crypto from 'node:crypto';
-import { MediaProvider } from './interface.js';
+import { MediaProvider, privateKey } from './interface.js';
 import { ValidationError } from '../utils/errors.js';
 import { getS3Config } from './config.js';
+import { createLogger } from '../utils/logger.js';
+
+const log = createLogger('media');
 
 // AWS SDK v3 is loaded dynamically to make it an optional dependency
 let s3Client = null;
@@ -65,6 +68,9 @@ export class S3Provider extends MediaProvider {
     super();
     this.config = getS3Config();
     this._client = null;
+    // The anonymous reachability probe in uploadPrivateBuffer; a seam so tests
+    // can answer it without a bucket.
+    this._fetch = (url, init) => globalThis.fetch(url, init);
   }
 
   async _getClient() {
@@ -179,6 +185,81 @@ export class S3Provider extends MediaProvider {
     };
   }
 
+  /**
+   * Store a private object and prove it is private.
+   *
+   * No ACL is sent: an object without one is private on every S3-compatible
+   * store, and buckets with ACLs disabled refuse the header. What makes an
+   * object public here is the *bucket policy* (or a CDN in front of it), which
+   * this code cannot see — so after the write it asks, anonymously, at every
+   * public address the object could have. Any 2xx means the bucket serves
+   * `private/` to the world: the object is deleted again and the upload is
+   * refused with an error that names the fix, never kept "for now". A probe
+   * that gets no answer at all (DNS, offline) proves nothing either way and
+   * does not block the upload.
+   */
+  async uploadPrivateBuffer({ buffer, filename, contentType, folder }) {
+    if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
+      throw new ValidationError(`Unsupported content type: ${contentType}`);
+    }
+    if (buffer.length > MAX_FILE_SIZE) {
+      throw new ValidationError('File too large (max 20MB)');
+    }
+
+    const client = await this._getClient();
+    const ext = MIME_TO_EXT[contentType] || 'bin';
+    const key = privateKey(
+      folder,
+      `${this._sanitizeFilename(filename)}-${crypto.randomUUID()}.${ext}`,
+    );
+
+    await client.send(
+      new s3Commands.PutObjectCommand({
+        Bucket: this.config.bucket,
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+        ContentLength: buffer.length,
+      }),
+    );
+
+    const exposedAt = await this._publiclyReadableAt(key);
+    if (exposedAt) {
+      await this.deleteFile(key);
+      const err = new Error(
+        `The bucket serves private objects publicly (${exposedAt} answered an ` +
+          'anonymous request). Limit the public-read bucket policy to ' +
+          '`uploads/*` so `private/*` stays private, then upload again.',
+      );
+      err.code = 'PRIVATE_OBJECT_PUBLIC';
+      throw err;
+    }
+
+    return { key, size: buffer.length, contentType };
+  }
+
+  async readFile(key) {
+    const client = await this._getClient();
+    try {
+      const result = await client.send(
+        new s3Commands.GetObjectCommand({
+          Bucket: this.config.bucket,
+          Key: key,
+        }),
+      );
+      return Buffer.from(await result.Body.transformToByteArray());
+    } catch (err) {
+      if (
+        err.name === 'NoSuchKey' ||
+        err.name === 'NotFound' ||
+        err.$metadata?.httpStatusCode === 404
+      ) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
   async uploadDataUrl({ dataUrl, filename }) {
     const { mime, base64 } = this._parseDataUrl(dataUrl);
     const buffer = Buffer.from(base64, 'base64');
@@ -252,6 +333,47 @@ export class S3Provider extends MediaProvider {
   }
 
   // Private helpers
+
+  /**
+   * The public addresses an object with this key could be reached at: the
+   * configured public base (CDN or custom domain) and the bucket's own
+   * virtual-hosted URL, when those differ.
+   * @param {string} key
+   * @returns {string[]}
+   */
+  _publicAddresses(key) {
+    const urls = new Set([this._getPublicUrl(key)]);
+    // No parsable endpoint: the public base is the only address.
+    if (URL.canParse(this.config.endpoint)) {
+      const u = new URL(this.config.endpoint);
+      urls.add(`${u.protocol}//${this.config.bucket}.${u.host}/${key}`);
+    }
+    return [...urls];
+  }
+
+  /**
+   * @param {string} key
+   * @returns {Promise<string|null>} the first address that served the object
+   *   to an anonymous request, or null when none did
+   */
+  async _publiclyReadableAt(key) {
+    for (const url of this._publicAddresses(key)) {
+      try {
+        const resp = await this._fetch(url, {
+          method: 'HEAD',
+          redirect: 'manual',
+        });
+        if (resp.ok) return url;
+      } catch (err) {
+        // No answer is not a yes: note it and try the next address.
+        log.warn(
+          `Private-object probe got no answer from ${url}`,
+          err?.message,
+        );
+      }
+    }
+    return null;
+  }
 
   _getPublicUrl(key) {
     // `publicUrl` is either S3_PUBLIC_URL (a CDN or custom domain) or the

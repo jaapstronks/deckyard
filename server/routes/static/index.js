@@ -6,6 +6,7 @@ import {
   handleStaticFiles,
 } from './static-files.js';
 import { handleEmbed } from './embed.js';
+import { handleManagedFont } from './managed-fonts.js';
 import { handlePublished } from './published.js';
 import { handleSandboxOg } from './sandbox-og.js';
 import { handleShareLink } from './share-viewer.js';
@@ -34,6 +35,7 @@ export async function handleStatic(ctx) {
   if (await handlePublished(ctx)) return;
   if (await handleSandboxOg(ctx)) return;
   if (handleCustomStyles(ctx)) return;
+  if (await handleManagedFont(ctx)) return;
   if (handleStaticFiles(ctx)) return;
   if (await handleShareLink(ctx)) return;
   if (await handleAppRoutes(ctx)) return;
