@@ -41,3 +41,16 @@ export function uploadsDir(repoRoot) {
   // Default
   return path.join(repoRoot, 'server', 'uploads');
 }
+
+/**
+ * Where the local media provider keeps *private* objects: files the app reads
+ * and serves itself, never through a public static root. It lives under the
+ * data dir, which no `SHARED_PUBLIC_DIRS` entry serves, so there is no URL that
+ * reaches it except the app route that owns the object (for font variants:
+ * `/fonts/managed/`, `server/routes/static/managed-fonts.js`).
+ * @param {string} repoRoot
+ * @returns {string}
+ */
+export function privateMediaDir(repoRoot) {
+  return path.join(dataDir(repoRoot), 'private-media');
+}

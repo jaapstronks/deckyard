@@ -7,9 +7,14 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import sharp from 'sharp';
-import { MediaProvider } from './interface.js';
+import {
+  MediaProvider,
+  PRIVATE_KEY_PREFIX,
+  isPrivateKey,
+  privateKey,
+} from './interface.js';
 import { ValidationError } from '../utils/errors.js';
-import { uploadsDir } from '../config/storage-paths.js';
+import { privateMediaDir, uploadsDir } from '../config/storage-paths.js';
 
 const MIME_TO_EXT = {
   'image/png': 'png',
@@ -28,6 +33,7 @@ export class LocalProvider extends MediaProvider {
     super();
     this.repoRoot = repoRoot;
     this.uploadsDir = uploadsDir(repoRoot);
+    this.privateDir = privateMediaDir(repoRoot);
     this.urlPrefix = '/uploads';
   }
 
@@ -86,6 +92,40 @@ export class LocalProvider extends MediaProvider {
     };
   }
 
+  /**
+   * Store a private object under the data dir, which no static root serves.
+   * Bytes are stored as given: private objects are fonts, not raster images.
+   */
+  async uploadPrivateBuffer({ buffer, filename, contentType, folder }) {
+    const ext = MIME_TO_EXT[contentType];
+    if (!ext) {
+      throw new ValidationError(`Unsupported content type: ${contentType}`);
+    }
+    if (buffer.length > MAX_FILE_SIZE) {
+      throw new ValidationError('File too large (max 10MB)');
+    }
+
+    const key = privateKey(
+      folder,
+      `${this._sanitizeFilename(filename)}-${crypto.randomUUID()}.${ext}`,
+    );
+    const absolutePath = this._resolveKeyPath(key);
+    await fs.mkdir(path.dirname(absolutePath), { recursive: true });
+    await fs.writeFile(absolutePath, buffer);
+
+    return { key, size: buffer.length, contentType };
+  }
+
+  async readFile(key) {
+    const absolutePath = this._resolveKeyPath(key);
+    if (!absolutePath) return null;
+    try {
+      return await fs.readFile(absolutePath);
+    } catch {
+      return null;
+    }
+  }
+
   async uploadDataUrl({ dataUrl, filename }) {
     const { mime, base64 } = this._parseDataUrl(dataUrl);
     const buffer = Buffer.from(base64, 'base64');
@@ -133,7 +173,8 @@ export class LocalProvider extends MediaProvider {
   // Private helpers
 
   /**
-   * Resolve a storage key to an absolute path, confined to uploadsDir.
+   * Resolve a storage key to an absolute path, confined to uploadsDir (or,
+   * for a `private/` key, to the private media dir).
    * Rejects traversal / absolute / NUL-byte keys by returning null, so callers
    * can never fs.stat / fs.unlink a path outside the uploads directory.
    * @param {string} key
@@ -143,8 +184,14 @@ export class LocalProvider extends MediaProvider {
     if (typeof key !== 'string' || key === '' || key.includes('\0')) {
       return null;
     }
-    const base = path.resolve(this.uploadsDir);
-    const abs = path.resolve(base, key);
+    // A private key lives under the private dir, everything else under
+    // uploads; each is confined to its own root.
+    const priv = isPrivateKey(key);
+    const base = path.resolve(priv ? this.privateDir : this.uploadsDir);
+    const abs = path.resolve(
+      base,
+      priv ? key.slice(PRIVATE_KEY_PREFIX.length) : key,
+    );
     if (abs !== base && !abs.startsWith(base + path.sep)) {
       return null;
     }

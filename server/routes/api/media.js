@@ -22,6 +22,7 @@ import {
   isMediaProviderInitialized,
 } from '../../media/index.js';
 import { rehostRemoteImage } from '../../media/rehost.js';
+import { isPrivateKey } from '../../media/interface.js';
 import { ValidationError } from '../../utils/errors.js';
 import { logError } from '../../utils/logger.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -97,6 +98,11 @@ async function handleMediaConfirm({ req, res, authedUser }) {
 
   if (!key) {
     return badRequest(res, 'key is required');
+  }
+  // A presign only ever hands out public upload keys. A private key here is a
+  // probe for an object this route has no business confirming (or addressing).
+  if (isPrivateKey(key)) {
+    return badRequest(res, 'key is not an upload key');
   }
 
   const provider = getMediaProvider();

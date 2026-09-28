@@ -18,6 +18,7 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
+import { managedFontUrl } from '../media/managed-fonts.js';
 import {
   NO_DISPLAY_NAMES,
   resolveNamesForAddresses,
@@ -57,7 +58,6 @@ const VARIANT_COLUMNS = [
   'weight',
   'style',
   'filename',
-  'url',
   'file_size',
   'format',
   'created_at',
@@ -416,7 +416,6 @@ export async function addFontVariant(scope, familyId, variantData) {
         filename: variantData?.filename
           ? String(variantData.filename).slice(0, 512)
           : null,
-        url: variantData?.url ? String(variantData.url).slice(0, 2048) : null,
         file_size:
           typeof variantData?.fileSize === 'number'
             ? variantData.fileSize
@@ -462,7 +461,6 @@ export async function removeFontVariant(scope, variantId) {
       )
       .select([
         'font_variants.id',
-        'font_variants.url',
         'font_variants.filename',
         'font_variants.font_family_id',
       ])
@@ -575,7 +573,9 @@ function formatVariant(row) {
     weight: row.weight,
     style: row.style,
     filename: row.filename,
-    url: row.url,
+    // Derived, never stored: an uploaded variant is a private object and this
+    // is the one address the app serves it at (media/managed-fonts.js).
+    url: managedFontUrl(row.filename),
     fileSize: row.file_size,
     format: row.format,
     createdAt: row.created_at,
