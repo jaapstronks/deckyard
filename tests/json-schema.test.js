@@ -261,6 +261,7 @@ function deckWith(slide, extra = {}) {
     format: 'deckyard.deck',
     version: 1,
     title: 'Open',
+    extensions: [],
     slides: [slide],
     ...extra,
   };

@@ -62,6 +62,7 @@ custom/ai/*
 custom/scripts/*
 !custom/scripts/.gitkeep
 custom/mcp-tools.js
+custom/extension.json
 custom/fonts.js
 custom/google-fonts.lock.json
 

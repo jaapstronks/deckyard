@@ -71,6 +71,7 @@ export async function handlePresentationsImportJson({
   const created = await createPresentation(storageScope, {
     title: parts.title,
     theme: themeId,
+    extensions: parts.extensions,
     lang,
     ownerEmail: authedUser?.email || null,
   });
@@ -98,6 +99,7 @@ export async function handlePresentationsImportJson({
     {
       title: parts.title,
       theme: themeId,
+      extensions: parts.extensions,
       lang,
       slides: parts.slides,
       i18n,

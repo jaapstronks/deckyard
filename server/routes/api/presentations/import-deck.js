@@ -47,6 +47,7 @@ import {
   settleBundledSlideTypes,
 } from '../../../export/deck-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { installationExtensionName } from '../../../export/extension-name.js';
 import { customSlideTypeKey } from '../../../../shared/slide-types/custom-type-runtime.js';
 import { canManage } from '../../../utils/route-middleware.js';
 import {
@@ -136,6 +137,10 @@ export async function handlePresentationsImportDeck({
     return true;
   }
   const { lang } = resolved;
+  const currentExtension = await installationExtensionName(repoRoot);
+  const extensionsMissing = deck.extensions.filter(
+    (name) => name !== currentExtension,
+  );
   // What the carried theme becomes here, decided before any bytes are written
   // so a theme that is not installed leaves no logo files behind.
   const settled = await settleBundledTheme({
@@ -298,6 +303,7 @@ export async function handlePresentationsImportDeck({
   const created = await createPresentation(storageScope, {
     title: parts.title,
     theme,
+    extensions: parts.extensions,
     lang,
     ownerEmail: authedUser?.email || null,
   });
@@ -323,6 +329,7 @@ export async function handlePresentationsImportDeck({
     {
       title: parts.title,
       theme,
+      extensions: parts.extensions,
       lang,
       slides: parts.slides,
       i18n,
@@ -334,6 +341,7 @@ export async function handlePresentationsImportDeck({
 
   serveJson(res, 201, {
     ...updated,
+    extensionsMissing,
     ...(failedAssets.length ? { failedAssets } : {}),
     ...(bundledTheme ? { bundledTheme } : {}),
     ...(bundledSlideTypes.length ? { bundledSlideTypes } : {}),

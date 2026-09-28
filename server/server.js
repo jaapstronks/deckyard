@@ -56,6 +56,7 @@ import { initializeQueues, closeQueues } from './jobs/queue/connection.js';
 import { initializeWorkers } from './jobs/queue/workers/index.js';
 import { handleMcpSse } from './mcp/sse-mount.js';
 import { maybeAttachCollab, shutdownCollab } from './collab/mount.js';
+import { assertExtensionDeclared } from './export/extension-name.js';
 
 const log = createLogger('server');
 
@@ -261,6 +262,7 @@ async function main() {
   }
 
   await ensureUploadsDir();
+  await assertExtensionDeclared(repoRoot);
 
   // Database check: PostgreSQL is the only storage backend, so an unreachable
   // one is a boot error and not a degraded mode. Left to bubble, it exits on an

@@ -448,7 +448,10 @@ test('canManage without install lands on the default and names the theme', async
 
 test('install without canManage lands on the default', async () => {
   const theme = await senderTheme({ label: 'Not permitted' });
-  const bundle = await buildDeckBundle(repoRoot, deckOn(theme.id));
+  const bundle = await buildDeckBundle(repoRoot, {
+    ...deckOn(theme.id),
+    extensions: ['nl.ciiic'],
+  });
   const before = (await listThemes(receiverScope())).length;
 
   const { res, body } = await importInto(receiverScope(), bundle, {
@@ -460,6 +463,8 @@ test('install without canManage lands on the default', async () => {
   assert.equal(body.bundledTheme.reason, 'not-permitted');
   assert.equal(body.bundledTheme.themeId, 'default');
   assert.equal(body.theme, 'default');
+  assert.deepEqual(body.extensionsMissing, ['nl.ciiic']);
+  assert.deepEqual(body.extensions, ['nl.ciiic']);
   assert.equal((await listThemes(receiverScope())).length, before);
 });
 

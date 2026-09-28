@@ -55,6 +55,7 @@ custom/ai/*
 !custom/ai/.gitkeep
 custom/scripts/*
 !custom/scripts/.gitkeep
+custom/extension.json
 custom/fonts.js
 custom/google-fonts.lock.json
 ```
@@ -69,50 +70,7 @@ Render and serving paths accept an installation root so they can render against 
 
 ### Step 3: Add Your Custom Content
 
-**Theme cutover:** The file-theme instructions in this step describe the retired workflow. The runtime now uses theme records by UUID; `custom/themes/*.json` is an optional seed source, and served images belong under `/custom/assets/`. The full fork guide will be revised with the B439.2 track.
-
-1. **Add your theme** as a self-contained folder
-   `custom/themes/your-org/theme.json` (recommended folder layout — see
-   `docs/developer/themes.md` for the flat legacy layout and a migration
-   recipe):
-
-   ```
-   custom/themes/your-org/
-     theme.json
-     assets/images/your-logo.svg
-     assets/fonts/YourFont-Regular.woff2
-   ```
-
-   ```json
-   {
-     "id": "your-org",
-     "label": "Your Organization",
-     "assets": {
-       "logo": "/custom/assets/images/your-logo.svg",
-       "logoAlt": "Your Organization"
-     },
-     "cssVars": {
-       "--t-color-accent": "#your-brand-color"
-     }
-   }
-   ```
-
-   Deck-content assets shared across themes (uploaded images, partner logos)
-   still live in `custom/assets/`.
-
-   Add `backgroundPresets` if you want title slides to get one of your own
-   background images automatically (on deck import, and when converting a
-   chapter-title slide). Without it they stay flat — Deckyard will never reach
-   for its own demo imagery:
-
-   ```json
-   {
-     "backgroundPresets": [
-       "/custom/assets/images/bg-1.jpg",
-       "/custom/assets/images/bg-2.jpg"
-     ]
-   }
-   ```
+1. **Create an organization theme in Settings.** Duplicate a read-only core seed, then edit the copy. Theme records use UUIDs; `default` follows the organization's chosen default. Add custom fonts through that organization's font storage. `custom/themes/*.json` is only an optional source of shared, read-only seeds, never the editable theme store. Put theme images under `/custom/assets/` or upload them through the app. A `.deck` export includes the effective theme record and its available images as a snapshot.
 
 2. **Add your assets** in `custom/assets/`:
 
@@ -133,6 +91,14 @@ Render and serving paths accept an installation root so they can render against 
 6. **Optionally add curated fonts** in `custom/fonts.js` (see below)
 
 7. **Optionally add your own scripts** in `custom/scripts/`
+
+When custom slide types, CSS, AI code, fonts or MCP tools are loaded, declare the installation extension in `custom/extension.json`:
+
+```json
+{ "name": "nl.example.deckyard" }
+```
+
+The single name travels in exported decks alongside earlier imported names. Import warns when a name is absent locally. This is provenance only: a name neither loads code nor grants permissions.
 
 ### Add your own curated fonts (`custom/fonts.js`)
 

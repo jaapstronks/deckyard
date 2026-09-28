@@ -55,6 +55,7 @@ function labelsWith(items, status) {
  * @param {Array<{slug: string, label?: string, status: string,
  *   reason?: string}>} [created.bundledSlideTypes]
  * @param {Array<{ref: string}>} [created.failedAssets]
+ * @param {string[]} [created.extensionsMissing]
  * @returns {{type: 'success'|'warning', sentences: string[]} | null}
  */
 export function deckImportOutcome(created) {
@@ -165,6 +166,19 @@ export function deckImportOutcome(created) {
         'list.deckImport.assetsFailed',
         '{count} file(s) could not be imported.',
         { count: String(failed.length) },
+      ),
+    );
+  }
+  if (
+    Array.isArray(created?.extensionsMissing) &&
+    created.extensionsMissing.length
+  ) {
+    warn = true;
+    sentences.push(
+      t(
+        'list.deckImport.extensionsMissing',
+        'Custom features may be missing here: {names}.',
+        { names: created.extensionsMissing.join(', ') },
       ),
     );
   }

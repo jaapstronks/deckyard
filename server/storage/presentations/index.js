@@ -42,6 +42,7 @@ import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { createLogger } from '../../utils/logger.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import { extensionNames } from '../../../shared/extension-provenance.js';
 const log = createLogger('presentations');
 
 // Only the single-deck read may skip the organization filter, and only for a
@@ -661,6 +662,7 @@ export function mapPresentationRow(row, lookup = NO_DISPLAY_NAMES) {
     created: row.created_at,
     modified: row.modified_at,
     theme: row.theme,
+    extensions: row.extensions || [],
     lang: row.lang,
     visibility: row.visibility,
     isViewOnly: !!row.is_view_only,
@@ -869,6 +871,7 @@ async function createPresentationRow(data, ctx) {
       title: data.title || 'Untitled',
       description: data.description || null,
       theme: data.theme || 'default',
+      extensions: jsonb(extensionNames(data.extensions ?? [])),
       lang: data.lang || DEFAULT_DECK_LANG,
       visibility: 'private',
       revision: 1,
@@ -1029,6 +1032,8 @@ async function updatePresentationRow(id, data, ctx, opts = {}) {
     updateData.updated_by_user_id = updatedByResolution?.userId ?? null;
   }
   if (data.title !== undefined) updateData.title = data.title;
+  if (data.extensions !== undefined)
+    updateData.extensions = jsonb(extensionNames(data.extensions));
   if (data.description !== undefined) updateData.description = data.description;
   if (data.settings !== undefined) updateData.settings = jsonb(data.settings);
   if (data.i18n !== undefined) updateData.i18n = jsonb(data.i18n);
@@ -1371,6 +1376,7 @@ async function duplicatePresentationRow(id, ctx) {
     id: crypto.randomUUID(),
     title: newTitle,
     theme: existing.theme,
+    extensions: existing.extensions,
     lang: existing.lang,
     settings: existing.settings,
     i18n: newI18n,

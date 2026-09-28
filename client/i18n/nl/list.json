@@ -112,6 +112,7 @@
   "list.creationView.title": "Nieuwe presentatie",
   "list.deckImport.askDesigner": "Een ontwerper in je workspace kan ze installeren door het bestand opnieuw te importeren.",
   "list.deckImport.assetsFailed": "{count} bestand(en) konden niet worden geïmporteerd.",
+  "list.deckImport.extensionsMissing": "Maatwerk kan hier ontbreken: {names}.",
   "list.deckImport.fileLabel": ".deck-bestand",
   "list.deckImport.fontsMissing": "Hier niet beschikbaar, dus een standaardlettertype gebruikt: {fonts}.",
   "list.deckImport.help": "Importeer een actueel .deck-bestand: alle talen, notities, afbeeldingen en een momentopname van het thema en de slide-types.",

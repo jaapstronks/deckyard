@@ -187,6 +187,7 @@ export async function prepareNewPresentation(
     themeConfig,
   });
   pres.lang = initialLang;
+  pres.extensions = body?.extensions ?? [];
 
   // Use provided slides if any, otherwise keep the default title slide
   if (providedSlides) {

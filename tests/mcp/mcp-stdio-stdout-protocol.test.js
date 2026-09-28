@@ -22,6 +22,7 @@ import {
   mkdtempSync,
   readFileSync,
   rmSync,
+  writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -75,6 +76,10 @@ function installForkFixture() {
   const root = mkdtempSync(path.join(tmpdir(), 'deckyard-mcp-fork-'));
   mkdirSync(path.join(root, 'slide-types'));
   copyFileSync(FIXTURE_SRC, path.join(root, 'slide-types', FIXTURE));
+  writeFileSync(
+    path.join(root, 'extension.json'),
+    JSON.stringify({ name: 'eu.deckyard.test-mcp' }),
+  );
   return {
     dir: root,
     cleanup: () => rmSync(root, { recursive: true, force: true }),
@@ -186,7 +191,6 @@ describe('MCP stdio transport — stdout carries protocol only', () => {
         );
         seed.slug = 'fork-theme';
         seed.config = { titleLayout: 'sideways' };
-        const { writeFileSync } = await import('node:fs');
         writeFileSync(path.join(dir, 'fork-theme.json'), JSON.stringify(seed));
         const result = await bootAndInitialize(fixture.dir);
         assert.equal(result.stdout, '');
