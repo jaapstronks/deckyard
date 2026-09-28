@@ -4,7 +4,11 @@
  * used by the existing presentation rendering system.
  */
 
-import { cssStringEscape, getFontFamilyCSS } from '../../shared/theme-fonts.js';
+import {
+  cssStringEscape,
+  getFontFamilyCSS,
+  isValidFont,
+} from '../../shared/theme-fonts.js';
 import { curatedEmbedFonts } from './curated-font-embed.js';
 import {
   validateThemeColors,
@@ -382,11 +386,9 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     logoUrl: dbTheme.logoUrl,
   });
 
-  // Build embed fonts array and external font links
-  const embedFonts = buildEmbedFontsArray(fonts, {
-    headingManaged,
-    bodyManaged,
-  });
+  // Uploaded fonts here; the curated ones follow from the final font tokens,
+  // once the stored config has had its say (see curatedTokenFonts).
+  const embedFonts = buildManagedEmbedFonts(headingManaged, bodyManaged);
   const externalFontLinks = buildExternalFontLinks({
     headingManaged,
     bodyManaged,
@@ -426,7 +428,9 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
   // Everything above is derived from the four colours and two fonts. The stored
   // `config` layers the richer, explicitly-authored shape on top — this is what
   // brings DB themes to parity with file themes.
-  return applyThemeConfig(theme, dbTheme.config);
+  const built = applyThemeConfig(theme, dbTheme.config);
+  built.embedFonts = [...embedFonts, ...curatedTokenFonts(built.cssVars)];
+  return built;
 }
 
 /**
@@ -512,35 +516,22 @@ function applyThemeConfig(theme, rawConfig) {
 }
 
 /**
- * Build the embedFonts array for a theme's fonts.
- * Handles both curated fonts (path-based) and managed uploaded fonts (URL-based).
- * @param {Object} fonts - Font configuration { heading, body }
- * @param {Object} [managed] - Resolved managed font objects
- * @returns {Array} - Array of font embed objects
+ * The embedFonts entries for the uploaded (managed) heading and body fonts.
+ * Only an uploaded font has files of its own; an Adobe or other hosted family
+ * loads through its external link and has nothing to embed.
+ * @param {Object|null} headingManaged
+ * @param {Object|null} bodyManaged
+ * @returns {Array} - URL-based font embed objects
  */
-function buildEmbedFontsArray(fonts, { headingManaged, bodyManaged } = {}) {
+function buildManagedEmbedFonts(headingManaged, bodyManaged) {
   const embedFonts = [];
-  const addedFonts = new Set();
-
-  const addCuratedFont = (family) => {
-    if (addedFonts.has(family)) return;
-    addedFonts.add(family);
-
-    // One entry per subset — the self-hosted files are Google's disjoint
-    // `latin` / `latin-ext` splits, so each carries the unicode-range that
-    // tells the browser which of the two holds the glyph it wants — and, for a
-    // variable family, one entry covering every weight that shares the file.
-    // See curatedEmbedFonts().
-    for (const face of curatedEmbedFonts(family)) embedFonts.push(face);
-  };
-
-  const addManagedFont = (managed) => {
-    if (!managed || addedFonts.has(managed.id)) return;
-    addedFonts.add(managed.id);
-
-    // Only uploaded fonts have embeddable files
-    if (managed.source !== 'upload' || !Array.isArray(managed.variants)) return;
-
+  const added = new Set();
+  for (const managed of [headingManaged, bodyManaged]) {
+    if (!managed || managed.source !== 'upload' || added.has(managed.id)) {
+      continue;
+    }
+    added.add(managed.id);
+    if (!Array.isArray(managed.variants)) continue;
     for (const variant of managed.variants) {
       if (!variant.url) continue;
       embedFonts.push({
@@ -551,21 +542,37 @@ function buildEmbedFontsArray(fonts, { headingManaged, bodyManaged } = {}) {
         format: variant.format || 'woff2',
       });
     }
-  };
-
-  // Add managed fonts first (uploaded), then curated fallbacks
-  if (headingManaged && headingManaged.source === 'upload') {
-    addManagedFont(headingManaged);
-  } else if (fonts.heading) {
-    addCuratedFont(fonts.heading);
   }
+  return embedFonts;
+}
 
-  if (bodyManaged && bodyManaged.source === 'upload') {
-    addManagedFont(bodyManaged);
-  } else if (fonts.body) {
-    addCuratedFont(fonts.body);
+/**
+ * The embedFonts entries for every curated family a font token names.
+ *
+ * One rule for every role: whatever `--t-font-*` the finished theme carries —
+ * heading and body from the record, `typography.mono`, a `cssVarOverrides`
+ * caption — the curated family at the head of its stack is embedded. The app loads all
+ * curated families through `fonts.css`, the export only what is listed here,
+ * so a family named in a third role and missing from this list rendered in the
+ * app and fell back to a system font in the PDF (B508).
+ * @param {Object<string, string>} cssVars - The finished theme's tokens
+ * @returns {Array} - Path-based font embed objects
+ */
+function curatedTokenFonts(cssVars) {
+  const embedFonts = [];
+  const added = new Set();
+  for (const [name, value] of Object.entries(cssVars || {})) {
+    if (!name.startsWith('--t-font-')) continue;
+    // The role's family is the head of its stack; the rest is fallback, which
+    // the render reaches only when the head fails, so it is not embedded.
+    const head = String(value).split(',')[0].trim();
+    const family = head.replace(/^(['"])(.*)\1$/, '$2');
+    if (!family || added.has(family) || !isValidFont(family)) continue;
+    added.add(family);
+    // One entry per subset, and one per file rather than per weight for a
+    // variable family: see curatedEmbedFonts().
+    for (const face of curatedEmbedFonts(family)) embedFonts.push(face);
   }
-
   return embedFonts;
 }
 

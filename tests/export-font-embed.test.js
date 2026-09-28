@@ -145,3 +145,54 @@ test('duplicate embedFonts entries collapse instead of inlining twice', async (t
   assert.equal((css.match(/@font-face/g) || []).length, 1);
   assert.match(css, /font-weight: 400 700;/);
 });
+
+// B508, point 1: a font the export cannot read costs that font, never the
+// export. The URL is refused (no fetch leaves the box), the face is dropped,
+// and the family's token keeps its fallback stack for the render.
+test('buildEmbeddedFontCss skips a refused font URL instead of failing the export', async () => {
+  const theme = {
+    embedFonts: [
+      { family: 'Forked Face', url: '/custom/assets/fonts/x.woff2' },
+      { family: 'Internal Face', url: 'http://127.0.0.1/x.woff2' },
+    ],
+  };
+  const css = await buildEmbeddedFontCss(repoRoot, theme);
+  assert.equal(css, '', 'both refused faces are skipped, nothing thrown');
+});
+
+// B508, point 2: every curated family a font token names is embedded, not only
+// heading and body — a mono role the app renders must not fall back in the PDF.
+test('buildThemeConfig embeds a curated family named in a third font role', () => {
+  const theme = buildThemeConfig({
+    id: '00000000-0000-4000-8000-0000000000ab',
+    ...amethystSeed,
+    config: {
+      ...(amethystSeed.config || {}),
+      typography: { mono: "'JetBrains Mono', monospace" },
+      cssVarOverrides: { '--t-font-caption': "'Lora', serif" },
+    },
+  });
+  const families = new Set(theme.embedFonts.map((f) => f.family));
+  assert.ok(families.has('JetBrains Mono'), 'mono role is embedded');
+  assert.ok(families.has('Lora'), 'an overridden caption role is embedded');
+  for (const f of theme.embedFonts) {
+    assert.ok(f.path || f.url, `${f.family} has a source`);
+  }
+});
+
+test('buildThemeConfig embeds each curated family once across roles', () => {
+  const theme = buildThemeConfig({
+    id: '00000000-0000-4000-8000-0000000000ac',
+    ...amethystSeed,
+    config: {
+      ...(amethystSeed.config || {}),
+      typography: {
+        mono: `'${amethystSeed.fonts?.body || 'Inter'}', monospace`,
+      },
+    },
+  });
+  const keys = theme.embedFonts.map(
+    (f) => `${f.family}|${f.weight}|${f.unicodeRange}`,
+  );
+  assert.equal(new Set(keys).size, keys.length, 'no duplicate faces');
+});
