@@ -84,8 +84,21 @@ export function closeAllOverlays(doc = document) {
 }
 
 /**
- * Whether `backdrop` is the topmost open overlay in its document.
+ * The topmost open overlay backdrop in `doc`, or null when none is open.
  * A hidden backdrop (see `hide()`) has stepped aside and is skipped.
+ * @param {Document} doc
+ * @returns {HTMLElement|null}
+ */
+function topmostOverlay(doc) {
+  const open = doc.querySelectorAll(`[${OPEN_OVERLAY_ATTR}]`);
+  for (let i = open.length - 1; i >= 0; i--) {
+    if (open[i].style.display !== 'none') return open[i];
+  }
+  return null;
+}
+
+/**
+ * Whether `backdrop` is the topmost open overlay in its document.
  * @param {HTMLElement} backdrop - The overlay backdrop element
  * @returns {boolean}
  */
@@ -93,12 +106,23 @@ function isTopmostOverlay(backdrop) {
   if (backdrop.style.display === 'none') return false;
   const doc = backdrop.ownerDocument;
   if (!doc) return true;
-  const open = doc.querySelectorAll(`[${OPEN_OVERLAY_ATTR}]`);
-  for (let i = open.length - 1; i >= 0; i--) {
-    if (open[i].style.display === 'none') continue;
-    return open[i] === backdrop;
-  }
-  return true;
+  const top = topmostOverlay(doc);
+  return !top || top === backdrop;
+}
+
+/**
+ * Whether an overlay is open over the page in `doc`.
+ *
+ * The same top-layer rule the overlays apply among themselves, for a standing
+ * surface that sits *under* every overlay (the slides drawer): while a modal
+ * is open, Escape is the modal's, whatever order the listeners registered in.
+ * `takeEscape` makes a press exclusive; it does not decide who ranks higher.
+ *
+ * @param {Document} [doc=document]
+ * @returns {boolean}
+ */
+export function hasOpenOverlay(doc = document) {
+  return topmostOverlay(doc) !== null;
 }
 
 /**

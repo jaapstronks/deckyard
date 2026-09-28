@@ -13,6 +13,33 @@ import { h } from '../../lib/dom.js';
 import { takeEscape } from '../../lib/dom/escape.js';
 
 /**
+ * The one open visibility menu, if any: its element and the teardown for every
+ * listener and timer it bound. There is a single close path
+ * (`closeVisibilityMenu`), so a closed menu can hold nothing that still hears
+ * a key or a click (B493).
+ * @type {{ menu: HTMLElement, detach: Function } | null}
+ */
+let active = null;
+
+/**
+ * Close the open visibility menu and release everything it bound.
+ *
+ * Every way out goes through here: outside click, Escape, the X, a picked
+ * preset, a newer menu replacing it and the slide list's detach.
+ *
+ * @param {HTMLElement} [menu] - Close only when this menu is the open one; a
+ *   late callback from a menu that is already gone then leaves its successor
+ *   alone. Omit to close whichever menu is open.
+ */
+export function closeVisibilityMenu(menu) {
+  if (!active || (menu && active.menu !== menu)) return;
+  const { menu: el, detach } = active;
+  active = null;
+  detach();
+  el.remove();
+}
+
+/**
  * Create a visibility preset option element.
  */
 function createPresetOption({ presetName, isActive, onClick }) {
@@ -103,10 +130,9 @@ function getPresetDisplayInfo(presetName) {
  * @param {Object} options - Configuration options
  * @param {Object} options.slide - The slide object
  * @param {Function} options.onVisibilityChange - Callback when visibility changes
- * @param {Function} options.onClose - Callback to close the menu
- * @returns {HTMLElement} The menu element
+ * @returns {HTMLElement} The menu element; show it with `showVisibilityMenuAt`
  */
-export function createVisibilityMenu({ slide, onVisibilityChange, onClose }) {
+export function createVisibilityMenu({ slide, onVisibilityChange }) {
   const currentPreset = getVisibilityPreset(slide);
 
   const menu = h('div', { class: 'visibility-menu' });
@@ -119,7 +145,7 @@ export function createVisibilityMenu({ slide, onVisibilityChange, onClose }) {
         class: 'visibility-menu-close',
         type: 'button',
         title: t('common.close', 'Close'),
-        onclick: onClose,
+        onclick: () => closeVisibilityMenu(menu),
       },
       [icon('x', { size: 16 })],
     ),
@@ -155,7 +181,7 @@ export function createVisibilityMenu({ slide, onVisibilityChange, onClose }) {
         // Apply change and close after brief delay for feedback
         applyVisibilityPreset(slide, presetName);
         onVisibilityChange?.(slide, presetName);
-        setTimeout(() => onClose?.(), 120);
+        setTimeout(() => closeVisibilityMenu(menu), 120);
       },
     });
     options.append(option);
@@ -216,16 +242,14 @@ export function createVisibilityToggle({ slide, onToggle }) {
 }
 
 /**
- * Position and show a visibility menu as a popover.
+ * Position and show a visibility menu as a popover, replacing any open one.
  * @param {Object} options - Configuration options
- * @param {HTMLElement} options.anchor - The element to anchor to
- * @param {HTMLElement} options.menu - The menu element
- * @param {HTMLElement} options.container - Container for the menu (unused, menu appends to body)
+ * @param {{ getBoundingClientRect: Function, contains: Function }} options.anchor
+ *   - The element (or rect-bearing stand-in) to anchor to
+ * @param {HTMLElement} options.menu - The menu from `createVisibilityMenu`
  */
-export function showVisibilityMenuAt({ anchor, menu, container }) {
-  // Remove any existing menu from body
-  const existing = document.body.querySelector('.visibility-menu');
-  if (existing) existing.remove();
+export function showVisibilityMenuAt({ anchor, menu }) {
+  closeVisibilityMenu();
 
   // Append to body to escape stacking context of slides panel
   document.body.appendChild(menu);
@@ -242,7 +266,7 @@ export function showVisibilityMenuAt({ anchor, menu, container }) {
   menu.style.top = `${top}px`;
 
   // Ensure menu stays within viewport bounds
-  requestAnimationFrame(() => {
+  const frame = requestAnimationFrame(() => {
     const menuRect = menu.getBoundingClientRect();
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
@@ -264,23 +288,30 @@ export function showVisibilityMenuAt({ anchor, menu, container }) {
     }
   });
 
-  // Close on outside click
   const closeOnOutsideClick = (e) => {
     if (!menu.contains(e.target) && !anchor.contains(e.target)) {
-      menu.remove();
-      document.removeEventListener('click', closeOnOutsideClick, true);
+      closeVisibilityMenu(menu);
     }
   };
-  setTimeout(() => {
+  // Deferred so the opening click does not close the menu it just opened.
+  const bindClick = setTimeout(() => {
     document.addEventListener('click', closeOnOutsideClick, true);
   }, 0);
 
-  // Close on Escape. Capture phase: the menu is a layer, so it hears the key
-  // before the surface it opened over (the slides drawer, the editor).
+  // Capture phase: the menu is a layer, so it hears the key before the
+  // surface it opened over (the slides drawer, the editor).
   const closeOnEscape = (e) => {
-    if (!takeEscape(e)) return;
-    menu.remove();
-    document.removeEventListener('keydown', closeOnEscape, true);
+    if (takeEscape(e)) closeVisibilityMenu(menu);
   };
   document.addEventListener('keydown', closeOnEscape, true);
+
+  active = {
+    menu,
+    detach: () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(bindClick);
+      document.removeEventListener('click', closeOnOutsideClick, true);
+      document.removeEventListener('keydown', closeOnEscape, true);
+    },
+  };
 }
