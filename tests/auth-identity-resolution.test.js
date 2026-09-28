@@ -434,6 +434,28 @@ test('getOrCreateSsoUser provisions and then reuses the same row', async () => {
   );
 });
 
+test('getOrCreateSsoUser writes no membership in single-organization mode', async () => {
+  const db = seedSingleOrg();
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctx,
+    { email: 'sso@example.com' },
+    { autoProvision: true },
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.membership, null);
+  assert.equal(
+    db.__tables.user_organizations.length,
+    1,
+    'only the seeded row: the session resolves from configuration here',
+  );
+  assert.ok(
+    !touchedTables(db).includes('user_organizations'),
+    'no membership lookup at all in single-organization mode',
+  );
+});
+
 test('getOrCreateSsoUser refuses an unknown identity when auto-provision is off', async () => {
   seedSingleOrg();
   const result = await ssoStore.getOrCreateSsoUser(

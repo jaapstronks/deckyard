@@ -480,3 +480,160 @@ test('inviting a genuinely new person still creates them in the current organiza
     ORG_A,
   );
 });
+
+// ---------------------------------------------------------------------------
+// SSO provisioning writes the membership a session needs (B430)
+// ---------------------------------------------------------------------------
+
+const authRoutes = await import('../server/routes/api/auth.js');
+
+/** A response double for the `/api/auth/me` route handler. */
+function makeRes() {
+  return {
+    statusCode: null,
+    headers: {},
+    body: null,
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
+    appendHeader(name, value) {
+      this.headers[name] = value;
+    },
+    writeHead(status, headers) {
+      this.statusCode = status;
+      if (headers) Object.assign(this.headers, headers);
+      return this;
+    },
+    end(payload) {
+      this.body = payload ? JSON.parse(payload) : null;
+      return this;
+    },
+  };
+}
+
+/** Ask `/api/auth/me` with the cookie `setSessionCookie` minted for `user`. */
+async function authMe(user) {
+  const req = { ...requestWithSession(user, undefined), method: 'GET' };
+  const res = makeRes();
+  await authRoutes.handleAuth({
+    repoRoot: process.cwd(),
+    req,
+    res,
+    url: new URL('http://decks.example.test/api/auth/me'),
+  });
+  return res;
+}
+
+/** A fresh multi-organization instance: one organization, nobody in it yet. */
+function seedEmptyInstance() {
+  const db = createFakeDb({
+    organizations: [{ id: ORG_A, name: 'Alpha', slug: 'alpha' }],
+    users: [],
+    user_organizations: [],
+  });
+  __setTestDb(db);
+  return db;
+}
+
+test('the first SSO login on an empty instance becomes owner and reaches /api/auth/me', async () => {
+  const db = seedEmptyInstance();
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'first@example.com', name: 'First' },
+    { autoProvision: true, defaultRole: 'user' },
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.provisioned, true);
+  assert.deepEqual(result.membership, { organizationId: ORG_A, role: 'owner' });
+  assert.equal(db.__tables.user_organizations.length, 1);
+  assert.equal(db.__tables.user_organizations[0].role, 'owner');
+  assert.equal(db.__tables.user_organizations[0].user_id, result.user.id);
+
+  // The cookie the callback mints must validate on the very next request:
+  // this is the loop back to /login the bug consisted of.
+  const res = await authMe(result.user);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.user.email, 'first@example.com');
+  assert.equal(res.body.user.organizationId, ORG_A);
+  assert.equal(res.body.user.organizationRole, 'owner');
+});
+
+test('a later SSO login on a populated organization becomes a member', async () => {
+  const db = seedMultiOrg();
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'second@example.com' },
+    { autoProvision: true },
+  );
+
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.membership, {
+    organizationId: ORG_A,
+    role: 'member',
+  });
+  const row = db.__tables.user_organizations.find(
+    (m) => m.user_id === result.user.id,
+  );
+  assert.equal(row.role, 'member', 'ownership is not handed out twice');
+
+  const res = await authMe(result.user);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.user.organizationRole, 'member');
+});
+
+test('a known person without any membership is given one in their home organization', async () => {
+  // Alice's home is ORG_B, the request lands in ORG_A: the membership follows
+  // the home organization, which is what `users.organization_id` still means.
+  const db = seedMultiOrg({ memberships: [] });
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'alice@example.com', name: 'Alice' },
+    { autoProvision: true },
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.provisioned, false, 'the row already existed');
+  assert.deepEqual(result.membership, { organizationId: ORG_B, role: 'owner' });
+  assert.equal(db.__tables.users.length, 1);
+  assert.equal(db.__tables.user_organizations.length, 1);
+
+  const res = await authMe(result.user);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.user.organizationId, ORG_B);
+});
+
+test('with auto-provisioning off, a known person without any membership is refused', async () => {
+  const db = seedMultiOrg({ memberships: [] });
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'alice@example.com' },
+    { autoProvision: false },
+  );
+
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'no_membership');
+  assert.equal(
+    db.__tables.user_organizations.length,
+    0,
+    'a removed membership stays removed',
+  );
+});
+
+test('an SSO login for a person who already holds a membership writes none', async () => {
+  const db = seedMultiOrg();
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'alice@example.com', name: 'Alice' },
+    { autoProvision: true },
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(result.membership, null);
+  assert.equal(db.__tables.user_organizations.length, 2);
+});

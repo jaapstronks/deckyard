@@ -36,6 +36,10 @@ function ssoErrorMessage(code) {
       'login.ssoErrNotProvisioned',
       'No account exists for you yet. Ask an administrator to invite you.',
     ),
+    sso_no_membership: t(
+      'login.ssoErrNoMembership',
+      'Your account is not a member of any workspace here. Ask an administrator to add you.',
+    ),
   };
   return (
     map[code] ||

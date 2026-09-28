@@ -224,7 +224,11 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
     success: true,
     ipAddress,
     userAgent,
-    metadata: { provisioned: result.provisioned, provider: 'oidc' },
+    metadata: {
+      provisioned: result.provisioned,
+      membership: result.membership,
+      provider: 'oidc',
+    },
   });
 
   return (redirect(res, safeReturnTo(stateData.returnTo)), true);
