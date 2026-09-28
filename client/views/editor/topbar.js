@@ -128,38 +128,6 @@ export function createEditorTopbar({
   );
 
   // ============================================================
-  // SAVE STATUS CHIP
-  // ============================================================
-  // Persistent indicator of whether the current work is saved. Driven by the
-  // save manager via setSaveStatus(); the text differs per state so the cue
-  // does not rely on colour alone.
-
-  const saveStatusEl = h('span', {
-    class: 'topbar-save-status topbar-fold-lg',
-    role: 'status',
-    'aria-live': 'polite',
-  });
-  const saveStatusCopy = {
-    saving: () => t('editor.saveStatus.saving', 'Saving…'),
-    saved: () => t('editor.saveStatus.saved', 'Saved'),
-    unsaved: () => t('editor.saveStatus.unsaved', 'Unsaved changes'),
-    error: () => t('editor.saveStatus.failed', 'Save failed'),
-  };
-  const setSaveStatus = (status) => {
-    const key = saveStatusCopy[status] ? status : 'idle';
-    if (key === 'idle') {
-      saveStatusEl.textContent = '';
-      saveStatusEl.className = 'topbar-save-status';
-      saveStatusEl.style.display = 'none';
-      return;
-    }
-    saveStatusEl.style.display = '';
-    saveStatusEl.className = `topbar-save-status is-${key}`;
-    saveStatusEl.textContent = saveStatusCopy[key]();
-  };
-  setSaveStatus('idle');
-
-  // ============================================================
   // LANGUAGE MODE
   // ============================================================
 
@@ -557,7 +525,6 @@ export function createEditorTopbar({
   const topbarEl = h('div', { class: 'topbar' }, [
     backBtn,
     topbarTitleEl,
-    saveStatusEl,
     authorDisplayEl,
     h('div', { class: 'topbar-spacer' }),
     presenceSlot,
@@ -603,7 +570,6 @@ export function createEditorTopbar({
     topbarTitleEl,
     presenceSlot,
     setPresenceNames,
-    setSaveStatus,
     syncLangUi: languageMode.syncLangUi,
     syncUndoButtons,
     openNotesQr,

@@ -221,65 +221,6 @@ summary.ghost-icon-btn::-webkit-details-marker {
   flex-shrink: 0;
 }
 
-/* Save-status chip: persistent Saving/Saved/Unsaved/Failed indicator.
-   Text differs per state, so the meaning does not rely on colour alone. */
-.topbar-save-status {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--ps-space-1);
-  flex: none;
-  padding: 2px var(--ps-space-2);
-  border-radius: var(--ps-radius-pill, 999px);
-  font-size: var(--ps-text-xs);
-  line-height: 1.4;
-  white-space: nowrap;
-  color: hsl(var(--app-text-secondary));
-  background: hsl(var(--app-bg-secondary) / 0.5);
-  border: 1px solid hsl(var(--app-border-subtle));
-}
-.topbar-save-status::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  flex: none;
-}
-.topbar-save-status.is-saving {
-  color: hsl(var(--app-text-secondary));
-}
-.topbar-save-status.is-saving::before {
-  animation: save-status-pulse 1s ease-in-out infinite;
-}
-.topbar-save-status.is-saved {
-  color: hsl(142 60% 38%);
-  background: hsl(142 71% 45% / 0.1);
-  border-color: hsl(142 71% 45% / 0.35);
-}
-.topbar-save-status.is-unsaved {
-  color: hsl(35 90% 40%);
-  background: hsl(38 92% 50% / 0.1);
-  border-color: hsl(38 92% 50% / 0.4);
-}
-.topbar-save-status.is-error {
-  color: hsl(0 68% 48%);
-  background: hsl(0 72% 51% / 0.1);
-  border-color: hsl(0 72% 51% / 0.45);
-}
-@keyframes save-status-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.35;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .topbar-save-status.is-saving::before {
-    animation: none;
-  }
-}
 /* Dropdown (details-based) */
 .dropdown {
   position: relative;

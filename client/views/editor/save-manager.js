@@ -28,7 +28,6 @@ export function createSaveManager({
   let dirty = false;
   let saving = false;
   let lastError = '';
-  let lastErrorToast = '';
   let everDirty = false;
   let dirtyToastShown = false;
   let autosaveTimer = null;
@@ -138,26 +137,20 @@ export function createSaveManager({
   };
 
   /**
-   * Derive the persistent save-status shown in the topbar chip.
+   * Derive the save state for the editor's persistent failure banner.
    * @returns {'saving'|'error'|'unsaved'|'saved'|'idle'}
    */
   const getStatus = () => {
-    if (saving) return 'saving';
     if (lastError) return 'error';
+    if (saving) return 'saving';
     if (dirty) return 'unsaved';
-    // 'idle' before the first edit so a freshly-opened deck shows no chip.
+    // 'idle' before the first edit avoids announcing a save that never ran.
     return everDirty ? 'saved' : 'idle';
   };
 
   const updatePills = () => {
-    if (lastError && lastError !== lastErrorToast) {
-      toast.error(lastError, { id: 'editor-error' });
-      lastErrorToast = lastError;
-    } else if (!lastError) {
-      lastErrorToast = '';
-    }
     try {
-      onStatusChange?.(getStatus());
+      onStatusChange?.(getStatus(), lastError, blockedByConflict);
     } catch {
       // ignore listener errors
     }
@@ -469,9 +462,8 @@ export function createSaveManager({
     const dirtyBefore = dirty;
     const savingVersion = editVersion;
     saving = true;
-    lastError = '';
     updatePills();
-    toast.info(t('editor.save.saving', 'Saving changes…'), {
+    const savingToast = toast.info(t('editor.save.saving', 'Saving changes…'), {
       id: 'save-status',
       durationMs: 60000,
     });
@@ -554,7 +546,9 @@ export function createSaveManager({
     try {
       await saveInFlight;
       savedVersion = Math.max(savedVersion, savingVersion);
+      lastError = '';
     } catch (e) {
+      savingToast?.dismiss?.();
       // Conflict: someone else saved a newer version. Stop autosave spam and ask user to reload.
       if (Number(e?.statusCode) === 409) {
         blockedByConflict = true;
@@ -562,7 +556,6 @@ export function createSaveManager({
           'editor.save.conflict',
           'Conflict: this presentation was changed elsewhere. Reload to continue.',
         );
-        toast.error(lastError, { id: 'save-status', durationMs: 12000 });
         try {
           onConflict?.(e);
         } catch {
@@ -583,16 +576,8 @@ export function createSaveManager({
               'editor.save.slideLocked',
               'Not saved: a slide you changed is locked by the author.',
             );
-        toast.error(lastError, { id: 'save-status', durationMs: 12000 });
       } else {
         lastError = String(e.message || e);
-        toast.error(
-          t('editor.save.failed', 'Save failed: {error}', { error: lastError }),
-          {
-            id: 'save-status',
-            durationMs: 8000,
-          },
-        );
       }
     } finally {
       saveInFlight = null;

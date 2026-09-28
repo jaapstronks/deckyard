@@ -101,6 +101,7 @@ export function createSlidesPanel({
       class: 'btn btn-secondary is-compact slides-search-clear',
       type: 'button',
       title: t('editor.slides.search.clear', 'Clear search'),
+      hidden: true,
     },
     [icon('x', { size: 14 })],
   );
@@ -114,6 +115,10 @@ export function createSlidesPanel({
     searchStatsEl,
   ]);
 
+  const syncSearchClear = () => {
+    searchClearBtn.hidden = !searchInput.value;
+  };
+
   const setSearchStats = (stats) => {
     const q = String(stats?.query ?? searchQuery ?? '').trim();
     const total = Number(stats?.total ?? (pres?.slides || []).length) || 0;
@@ -126,6 +131,7 @@ export function createSlidesPanel({
   const applySearch = (q, { autoSelect = true } = {}) => {
     searchQuery = String(q ?? '').trim();
     searchInput.value = searchQuery;
+    syncSearchClear();
     const stats = rerenderSlideList?.() || null;
     setSearchStats(stats);
 
@@ -171,7 +177,10 @@ export function createSlidesPanel({
     }, SEARCH_DEBOUNCE_MS);
   };
 
-  searchInput.addEventListener('input', applySearchDebounced);
+  searchInput.addEventListener('input', () => {
+    syncSearchClear();
+    applySearchDebounced();
+  });
   searchInput.addEventListener('keydown', (e) => {
     if (takeEscape(e)) {
       applySearchNow('', { autoSelect: false });

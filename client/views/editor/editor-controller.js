@@ -48,6 +48,7 @@ import { createEditorTopbar } from './topbar.js';
 import { createPaneTabs } from './pane-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveManager } from './save-manager.js';
+import { createSaveStatus } from './save-status.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
 import { setDocumentTitle } from '../../lib/theme/branding.js';
 import { createTranslateOpeners } from './translate-openers.js';
@@ -350,8 +351,7 @@ export async function createEditorController({
   // SAVE MANAGER
   // ============================================================
 
-  // Bridges save-state transitions to the topbar chip. Reassigned once the
-  // topbar exists (created later in this controller); a no-op until then.
+  // Bridges save failures to the banner created after the topbar.
   let setSaveStatus = () => {};
   // Re-reads the published-alt warning (B331). Reassigned once it exists; a
   // save transition or a publish/unpublish may change what it says.
@@ -364,8 +364,8 @@ export async function createEditorController({
     id,
     SLIDE_TYPES,
     normalizeLang,
-    onStatusChange: (status) => {
-      setSaveStatus(status);
+    onStatusChange: (status, detail, blocked) => {
+      setSaveStatus(status, detail, blocked);
       syncPublishedAltWarning();
     },
     getSelectedSlideId: () => selectedSlideId,
@@ -723,10 +723,10 @@ export async function createEditorController({
   syncPublishedAltWarning = publishedAltWarning.sync;
   syncPublishedAltWarning();
 
-  // Now that the topbar exists, route save-state transitions to its chip and
-  // reflect the current state (idle for a freshly-opened deck).
-  setSaveStatus = topbarApi.setSaveStatus;
-  setSaveStatus(saveManager.getStatus());
+  const saveStatus = createSaveStatus();
+  shell.append(saveStatus.el);
+  setSaveStatus = saveStatus.setStatus;
+  setSaveStatus(saveManager.getStatus(), saveManager.getLastError());
 
   // Let the undo manager drive the topbar undo/redo button states, and set the
   // initial (disabled) state now.
@@ -993,13 +993,13 @@ export async function createEditorController({
         // into a binder that will now never arrive, so edits would be lost
         // silently. Make the failure loud instead.
         if (liveEditsActive) {
-          setSaveStatus('error');
-          toast.error(
+          setSaveStatus(
+            'error',
             t(
               'editor.collab.liveEditsUnavailable',
               'Live collaboration failed to load; changes are not being saved. Reload the editor.',
             ),
-            { durationMs: 15000 },
+            true,
           );
         }
       });
