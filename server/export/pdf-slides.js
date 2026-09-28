@@ -418,7 +418,6 @@ export async function buildSlidesPdfHtml(
     })
     .join('\n');
   pagesHtml = await embedImgSrcDataUrls(repoRoot, pagesHtml, {
-    includeClient: true,
     transform: imgSrcTransform,
     embedRemote: true,
     cache: embedCache,

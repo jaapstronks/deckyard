@@ -65,7 +65,6 @@ export async function buildSlidePngHtml(
       // embedRemote: inline remote http(s) images through the SSRF guard (or
       // strip) so no user-supplied URL reaches headless Chrome. Security 2.
       cloned.content[k] = await toDataUrlIfLocal(repoRoot, cloned.content[k], {
-        includeClient: true,
         embedRemote: true,
       });
     }
@@ -81,7 +80,6 @@ export async function buildSlidePngHtml(
           lang,
         });
   slideHtml = await embedImgSrcDataUrls(repoRoot, slideHtml, {
-    includeClient: true,
     embedRemote: true,
   });
   // The deck's document language when the caller has one. A bare slide cannot

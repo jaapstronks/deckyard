@@ -495,7 +495,6 @@ export async function buildStandaloneHtml(
   // source across this pass and the rendered-HTML pass below.
   const embedCache = new Map();
   const slides = await embedSlideImages(repoRoot, pres.slides, {
-    includeClient: true,
     cache: embedCache,
   });
 
@@ -542,7 +541,6 @@ export async function buildStandaloneHtml(
     })
     .join('\n');
   slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
-    includeClient: true,
     cache: embedCache,
   });
   const title = escapeHtml(pres.title || 'Presentation');
