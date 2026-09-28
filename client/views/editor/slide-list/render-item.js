@@ -221,16 +221,8 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
           rerenderEditor?.();
           rerenderPreview?.();
         },
-        onClose: () => {
-          const existingMenu = document.body.querySelector('.visibility-menu');
-          existingMenu?.remove();
-        },
       });
-      showVisibilityMenuAt({
-        anchor: e.currentTarget,
-        menu,
-        container: document.body,
-      });
+      showVisibilityMenuAt({ anchor: e.currentTarget, menu });
     },
   });
   thumbMini.append(visibilityToggle);

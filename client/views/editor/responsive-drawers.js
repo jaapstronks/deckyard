@@ -13,6 +13,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom.js';
 import { icon } from '../../lib/dom/icons.js';
 import { takeEscape } from '../../lib/dom/escape.js';
+import { hasOpenOverlay } from '../../lib/dom/modal.js';
 
 const DRAWER_BREAKPOINT = 820;
 
@@ -71,8 +72,11 @@ export function createResponsiveDrawers({ root } = {}) {
 
   const handleKeydown = (e) => {
     // A standing surface: a layer opened inside the drawer (the slide context
-    // menu) takes the press first, and the drawer waits for the next one.
+    // menu) takes the press first, and the drawer waits for the next one. A
+    // modal sits above the drawer, so while one is open the press is the
+    // modal's, even though this listener registered first (B493).
     if (!doc.classList.contains('is-slides-drawer-open')) return;
+    if (hasOpenOverlay(document)) return;
     if (takeEscape(e)) closeSlidesDrawer();
   };
 
