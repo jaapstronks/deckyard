@@ -66,11 +66,11 @@ let count = 0;
 User-provided text MUST be escaped:
 
 ```javascript
-import { esc } from '../shared/slide-types/helpers.js';
-import { markdownToSafeHtml } from '../shared/markdown.js';
+import { escapeHtml } from '../../shared/slide-types/helpers.js';
+import { markdownToSafeHtml } from '../../shared/markdown.js';
 
 // For plain text
-`<h1>${esc(content?.title)}</h1>`
+`<h1>${escapeHtml(content?.title)}</h1>`
 // For markdown content
 `<div class="body">${markdownToSafeHtml(content?.body)}</div>`;
 ```
