@@ -1,16 +1,27 @@
 /**
- * The presenter topbar is one row, and it has one rule for how that row gives
- * way when it is tight (B324): the controls keep their own width, only the two
- * texts (deck title, shortcut hint) yield, by truncating.
+ * The presenter topbar has one rule for how it gives way when it is tight
+ * (B324, B506): the controls keep their own width, the two texts (deck title,
+ * shortcut hint) yield first by truncating, and when the controls alone do not
+ * fit, whole controls wrap onto a second row. The bar grows with them and the
+ * slide stage fits whatever is left, so nothing is pushed past the viewport.
  *
  * The defect this pins: every item in `.presenter-actions` could shrink, and
  * a flex item squeezed below its content wraps it. The NL/EN language switch
  * (a `.sb-segmented`, which wraps by design for form columns) stacked its two
  * buttons and fell out of the 56px bar on 1760px with the Dutch labels.
  *
+ * The second defect (B506): with the poll controls and the console toggle in
+ * the row, the controls alone were wider than 1760px. A row that could not
+ * wrap ran past the right edge, widened the shell, and pushed the console rail
+ * (timer, Reset, target, next slide, notes) half out of the viewport. The
+ * stage sizing subtracted a fixed 56px bar height, so letting the bar grow
+ * needed the stage to fit its container instead.
+ *
  * There is no browser in `npm test`, so this reads the rule off the
- * stylesheet. The geometry itself was checked in the browser at 1280px and
- * 1760px, NL and EN UI, with a long deck title (PR for B324).
+ * stylesheet. The geometry is checked where a browser does run: the
+ * `presenter-view-{en,nl}` capture recipes refuse to shoot at 1760×1100 when
+ * the page is wider than the viewport or the console rail is cut off
+ * (`capture/recipes/_features-shots.js`).
  *
  * Run with: node --test tests/presenter-topbar-layout.test.js
  */
@@ -25,10 +36,8 @@ const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
-const cssPath = path.join(
-  repoRoot,
-  'client/styles/slides/03-components/50-presenter-layout.css',
-);
+const componentsDir = path.join(repoRoot, 'client/styles/slides/03-components');
+const cssPath = path.join(componentsDir, '50-presenter-layout.css');
 
 /** Declarations of every rule whose selector list is exactly `selector`. */
 function declarationsOf(css, selector) {
@@ -47,7 +56,7 @@ function declarationsOf(css, selector) {
   return out;
 }
 
-describe('presenter topbar: one row, the texts yield (B324)', async () => {
+describe('presenter topbar: the texts yield, then the controls wrap (B324, B506)', async () => {
   const css = await fs.readFile(cssPath, 'utf8');
 
   it('the controls in the actions row do not shrink', () => {
@@ -77,5 +86,47 @@ describe('presenter topbar: one row, the texts yield (B324)', async () => {
     assert.equal(title['min-width'], '0');
     assert.equal(title['white-space'], 'nowrap');
     assert.equal(title['text-overflow'], 'ellipsis');
+  });
+
+  it('the controls wrap onto a second row instead of running off the edge', () => {
+    const actions = declarationsOf(css, '.presenter-actions');
+    assert.equal(actions['flex-wrap'], 'wrap');
+    const top = declarationsOf(css, '.presenter-topbar');
+    assert.equal(
+      top['min-height'],
+      'var(--presenter-topbar-height)',
+      'one row is the minimum height, not a fixed one',
+    );
+    assert.equal(top.height, undefined);
+  });
+});
+
+describe('presenter shell: the bar sizes its row, the stage fits the rest (B506)', async () => {
+  const css = await fs.readFile(cssPath, 'utf8');
+
+  it('the top bar row follows its content and the column cannot widen the shell', () => {
+    const shell = declarationsOf(css, '.presenter-shell');
+    assert.match(shell['grid-template-rows'], /^auto minmax\(0, 1fr\) /);
+    assert.equal(shell['grid-template-columns'], 'minmax(0, 1fr)');
+  });
+
+  it('the stage fits the deck box, not the viewport minus a bar constant', () => {
+    assert.equal(declarationsOf(css, '.deck')['container-type'], 'size');
+    const stage = declarationsOf(css, '.deck-stage');
+    assert.equal(stage.width, 'min(100cqw, 100cqh * 16 / 9)');
+    assert.equal(stage.height, 'min(100cqh, 100cqw * 9 / 16)');
+  });
+
+  it('no other host carries a second copy of the stage math', async () => {
+    for (const file of ['51-presenter-console.css', '53-present-window.css']) {
+      const other = await fs.readFile(path.join(componentsDir, file), 'utf8');
+      const stripped = other.replace(/\/\*[\s\S]*?\*\//g, '');
+      assert.doesNotMatch(
+        stripped,
+        /\.deck-stage\s*\{/,
+        `${file} sizes .deck-stage itself`,
+      );
+      assert.doesNotMatch(stripped, /--presenter-topbar-height/, file);
+    }
   });
 });

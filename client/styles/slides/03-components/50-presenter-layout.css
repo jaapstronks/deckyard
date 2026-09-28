@@ -5,9 +5,11 @@
   height: 100vh;
   height: 100dvh;
   display: grid;
-  grid-template-rows: var(--presenter-topbar-height) 1fr var(
-      --presenter-progress-height
-    );
+  /* The top bar's row is as tall as its content (one row of controls, or two
+     when they wrap, B506); the deck takes what is left and never widens the
+     shell past the viewport. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) var(--presenter-progress-height);
   background: hsl(var(--app-bg-base));
 }
 
@@ -109,7 +111,9 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 0 16px;
+  min-height: var(--presenter-topbar-height);
+  padding: 8px 16px;
+  box-sizing: border-box;
   background: hsl(var(--app-bg-elevated) / 0.92);
   border-bottom: 1px solid hsl(var(--app-border-default));
   backdrop-filter: blur(10px);
@@ -117,17 +121,20 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   position: relative;
   z-index: 50;
 }
-/* One row, one rule for how the row gives way (B324). Every control keeps its
+/* One rule for how the bar gives way (B324, B506). Every control keeps its
    own width: a flex item that shrinks below its content wraps it instead, which
-   is how the NL/EN language switch stacked its two buttons and fell out of the
-   56px bar. Only the two texts yield, the deck title and the shortcut hint,
-   each truncating with an ellipsis (the full text is on its title attribute).
-   The title and the actions share the squeeze in proportion to their size;
-   inside the actions the hint is the one item that absorbs it. */
+   is how the NL/EN language switch stacked its two buttons. The two texts
+   yield first, the deck title and the shortcut hint, each truncating with an
+   ellipsis (the full text is on its title attribute). When the controls alone
+   are wider than the bar, whole controls wrap onto a second row, right-aligned;
+   the bar grows with them and the stage below fits what is left, so nothing is
+   pushed past the viewport edge. */
 .presenter-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 8px 10px;
   flex: 0 1 auto;
   min-width: 0;
 }
@@ -336,28 +343,19 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   justify-content: center;
 }
 
-/* Presenter slide stage: keep a fixed 16:9 slide area and letterbox on ultrawide. */
+/* Presenter slide stage: keep a fixed 16:9 slide area and letterbox on ultrawide.
+   It fits the deck's content box, whatever the chrome around it takes: the
+   top bar's row (one or two rows of controls, 0 in fullscreen), the progress
+   row, and the console rail's padding. One rule for every host (B506). */
+.deck {
+  container-type: size;
+}
 .deck-stage {
   position: relative;
   overflow: hidden;
   background: transparent;
-  /* Fit the area the shell's chrome rows leave (both 0 in fullscreen). */
-  width: min(
-    100vw,
-    calc(
-      (
-          100dvh - var(--presenter-topbar-height) -
-            var(--presenter-progress-height)
-        ) *
-        16 / 9
-    )
-  );
-  height: min(
-    calc(
-      100dvh - var(--presenter-topbar-height) - var(--presenter-progress-height)
-    ),
-    calc(100vw * 9 / 16)
-  );
+  width: min(100cqw, 100cqh * 16 / 9);
+  height: min(100cqh, 100cqw * 9 / 16);
 }
 
 /* Presenter scaling: fixed design stage (1600×900) scaled to fit `.deck-stage`. */

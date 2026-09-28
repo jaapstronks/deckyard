@@ -3,7 +3,8 @@
    IMPORTANT: these are scoped to `.slide` so the *application UI* is not theme-branded. */
 
 :root {
-  /* Presenter (not theme-specific, but used by presenter layout) */
+  /* Presenter top bar: its height as one row of controls, and its minimum
+     when the controls wrap (not theme-specific; presenter layout only). */
   --presenter-topbar-height: 56px;
 }
 
