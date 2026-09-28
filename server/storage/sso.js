@@ -21,11 +21,7 @@ import { withDbGuard } from './utils/index.js';
 import { envStr } from '../config/utils.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { invalidateDisplayNames } from './display-identity.js';
-import {
-  addMember,
-  countOrganizationMembers,
-  listUserOrganizations,
-} from './user-organizations/index.js';
+import { listUserOrganizations } from './user-organizations/index.js';
 
 /**
  * The AUTH_ADMIN_EMAIL bootstrap admin, lowercased, or '' when unset.
@@ -38,29 +34,16 @@ function getAdminEmail() {
 /**
  * Give an SSO identity an organization to work in (multi-organization mode).
  *
- * In multi-organization mode a session only resolves through a
- * `user_organizations` row (`resolveActiveMembership`, storage/identity.js);
- * `users.organization_id` is the *home* organization, not a membership. A row
- * without one therefore logs in successfully and is refused on the very next
- * request — the browser lands on `/login` again with nothing to say (B430).
- *
- * The rule is the one `autoProvision` already states for the person: the IdP
- * decides who gets in. So a person it asserts who holds no membership at all
- * is given one in their home organization, `owner` when that organization has
- * no members yet (a fresh instance's first login must not need a database
- * edit), `member` otherwise. With `autoProvision` off the operator has said
- * "invited people only", and an invitation always carries a membership: a row
- * without one is a person whose access was removed, and it stays removed.
- *
- * Single-organization mode consults no memberships and writes none; the
- * query count of every existing installation is unchanged.
+ * The organization row lock serializes the empty-org decision and insert,
+ * including concurrent first logins. Recheck the user's memberships after
+ * acquiring it: another login may have provisioned the same person meanwhile.
  *
  * @param {object} user - Raw `users` row, after the upsert
  * @param {boolean} autoProvision - The operator's provisioning policy
  * @returns {Promise<{ ok: true, membership: { organizationId: string, role: string } | null }
  *   | { ok: false, reason: string }>}
  */
-async function ensureMembership(user, autoProvision) {
+async function ensureMembership(db, user, autoProvision) {
   if (!isMultiOrgEnabled()) return { ok: true, membership: null };
 
   const held = await listUserOrganizations(user.id);
@@ -68,11 +51,41 @@ async function ensureMembership(user, autoProvision) {
   if (!autoProvision) return { ok: false, reason: 'no_membership' };
 
   const organizationId = user.organization_id;
-  const role =
-    (await countOrganizationMembers(organizationId)) === 0 ? 'owner' : 'member';
-  const added = await addMember({ userId: user.id, organizationId, role });
-  if (!added.ok) return { ok: false, reason: added.reason };
-  return { ok: true, membership: { organizationId, role } };
+  return db.transaction().execute(async (trx) => {
+    await trx
+      .selectFrom('organizations')
+      .select('id')
+      .where('id', '=', organizationId)
+      .forUpdate()
+      .executeTakeFirstOrThrow();
+
+    const existing = await trx
+      .selectFrom('user_organizations')
+      .select('id')
+      .where('user_id', '=', user.id)
+      .executeTakeFirst();
+    if (existing) return { ok: true, membership: null };
+
+    const count = await trx
+      .selectFrom('user_organizations')
+      .select((eb) => eb.fn.countAll().as('count'))
+      .where('organization_id', '=', organizationId)
+      .executeTakeFirst();
+    const role = Number(count?.count || 0) === 0 ? 'owner' : 'member';
+    const now = nowIso();
+    await trx
+      .insertInto('user_organizations')
+      .values({
+        user_id: user.id,
+        organization_id: organizationId,
+        role,
+        joined_at: now,
+        created_at: now,
+        updated_at: now,
+      })
+      .execute();
+    return { ok: true, membership: { organizationId, role } };
+  });
 }
 
 /**
@@ -136,11 +149,13 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
           created_at: now,
           updated_at: now,
         })
+        .onConflict((oc) => oc.column('email').doNothing())
         .returningAll()
         .executeTakeFirst();
-      user = inserted;
-      provisioned = true;
-    } else {
+      user = inserted || (await getUserByEmailGlobal(email));
+      provisioned = Boolean(inserted);
+    }
+    if (!provisioned) {
       // Update on login: keep name fresh, mark the source as SSO, and grant
       // admin if the identity says so (never demote — see policy above).
       const updates = { auth_source: 'oidc', updated_at: now };
@@ -161,6 +176,7 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
     }
 
     const membershipResult = await ensureMembership(
+      db,
       user,
       !!opts?.autoProvision,
     );
