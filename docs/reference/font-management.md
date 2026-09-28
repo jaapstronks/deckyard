@@ -58,7 +58,7 @@ When `headingFamilyId` or `bodyFamilyId` is present, the system treats it as a m
 1. Theme record is loaded from DB (`server/utils/themes.js` → `loadThemeAssets()`)
 2. If theme has a familyId, `listAllFontFamiliesWithVariants()` fetches managed fonts for the org
 3. `buildThemeConfig()` receives managed fonts and produces:
-   - `embedFonts` array (for uploaded fonts — URL-based variants to base64 in exports)
+   - `embedFonts` array: the uploaded heading/body variants (URL-based, base64 in exports), plus the curated family at the head of **every** `--t-font-*` token the finished theme carries — heading, body, `typography.mono`, or a `cssVarOverrides` caption. The fallbacks after the head are not embedded. An _uploaded_ family is embedded only in the heading and body roles; the presentation view injects the same list, so a third role naming one falls back on screen and in the export alike. A source the export cannot read (a refused URL, a missing file) drops that one face with a warning in the log, and the render uses the token's fallback stack; it never fails the export (B508).
    - `externalFontLinks` array (for Adobe/Monotype/Google — `<link>` and `<script>` tags)
    - CSS custom properties (`--t-font-heading`, `--t-font-body`) with proper fallback stacks
 4. Result is cached in `customThemeCache` (invalidated on theme or font changes)

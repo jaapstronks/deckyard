@@ -5,6 +5,9 @@ import { assertPublicHttpUrl } from './ssrf-guard.js';
 import { cssStringEscape, mergeFontFaces } from '../../shared/theme-fonts.js';
 import { getMediaProvider } from '../media/index.js';
 import { managedFontKeyFromUrl } from '../media/managed-fonts.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('embed-fonts');
 
 function stripFontFaceBlocks(cssText) {
   return String(cssText || '').replace(/@font-face\s*\{[\s\S]*?\}\s*/g, '');
@@ -109,8 +112,18 @@ async function resolveEmbedSource(repoRoot, { url, path: relPath, format }) {
     }
   }
   if (url) {
-    // URL-based font (external CDN / media provider) — fetch and base64-encode
-    return await fetchFontAsDataUrl(url, format);
+    // URL-based font (external CDN / media provider) — fetch and base64-encode.
+    // A refused URL (not http(s), an internal address, over the size cap)
+    // costs this one font, not the export: the family's token already carries
+    // its fallback stack, so the render degrades to that. Where a variant URL
+    // is written, only the media provider's own address goes in; this is the
+    // render reading what is stored, not the place to refuse it (B508).
+    try {
+      return await fetchFontAsDataUrl(url, format);
+    } catch (err) {
+      log.warn(`Skipping font ${url}: ${err.message}`);
+      return null;
+    }
   }
   if (relPath) {
     // Path-based font (local curated file)
