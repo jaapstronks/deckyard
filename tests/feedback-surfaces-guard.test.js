@@ -119,12 +119,10 @@ const TOAST_SITES = [
   // --- background failures that expire in a toast (B206) ---
   { file: 'client/lib/slide-library/modals.js', total: 2, background: 2 },
   { file: 'client/views/notes/notes-editor.js', total: 1, background: 1 },
-  { file: 'client/views/editor/save-manager.js', total: 4, background: 4 },
-  { file: 'client/views/editor/editor-controller.js', total: 1, background: 1 },
 ];
 
 /** The burndown as the TODO items state it; each PR lowers both. */
-const BURNDOWN = { refusals: 0, discarded: 23, background: 10 };
+const BURNDOWN = { refusals: 0, discarded: 23, background: 5 };
 
 /**
  * `toast.error` as the whole answer of a guard clause. Every one of these is

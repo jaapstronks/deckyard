@@ -45,7 +45,7 @@ import { t } from '../../../lib/ui-i18n.js';
  * @param {Function} opts.updateSelectedSlideListItem
  * @param {HTMLElement} [opts.editorMount] - form panel root (focus guard)
  * @param {HTMLTextAreaElement} [opts.previewNotesTa]
- * @param {Function} [opts.setSaveStatus] - topbar chip
+ * @param {Function} [opts.setSaveStatus] - persistent connection failure status
  * @param {Function} [opts.onTitleChanged] - topbar title element updater
  * @param {Function} [opts.onUndoStateChanged] - topbar undo/redo buttons
  * @returns {Object} live-edits handle for the controller
@@ -247,7 +247,7 @@ export function initEditorLiveEdits({
     // Changes stream into the shared doc (persisted server-side); when the
     // socket is down they wait in the local doc and sync on reconnect.
     try {
-      setSaveStatus?.(connected ? 'saved' : 'unsaved');
+      setSaveStatus?.(connected ? 'saved' : 'disconnected');
     } catch {
       // ignore
     }

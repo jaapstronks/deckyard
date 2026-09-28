@@ -214,6 +214,17 @@
   line-height: 1;
 }
 
+.is-editor .slides-search-clear[hidden] {
+  display: none;
+}
+
+.is-editor .editor-save-failure:not([hidden]) {
+  padding: var(--ps-space-2) var(--ps-space-3);
+  color: hsl(var(--app-danger));
+  background: hsl(var(--app-danger) / 0.1);
+  border-bottom: 1px solid hsl(var(--app-danger) / 0.4);
+}
+
 .is-editor .slides-search-stats {
   flex-shrink: 0;
   text-align: right;

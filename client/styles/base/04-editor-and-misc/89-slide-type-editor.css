@@ -259,10 +259,17 @@
   gap: var(--ps-space-1);
 }
 
-.field-list-field-row-inline {
-  flex-direction: row;
+/* Boolean control: the checkbox inside its label (B495). */
+.field-list-checkbox {
+  display: flex;
+  align-self: flex-start;
   align-items: center;
   gap: var(--ps-space-2);
+  cursor: pointer;
+}
+
+.field-list-checkbox .field-label {
+  margin: 0;
 }
 
 .field-list-nested {
@@ -339,28 +346,6 @@
   width: 100%;
   height: 100%;
   border: none;
-}
-
-/* ============================================================
-   PUBLISH TOGGLE
-   ============================================================ */
-
-.slide-type-publish-toggle {
-  display: flex;
-  align-items: center;
-  gap: var(--ps-space-2);
-  padding: var(--ps-space-2) 0;
-}
-
-.slide-type-publish-toggle label {
-  font-size: var(--ps-text-sm);
-  font-weight: 500;
-  color: hsl(var(--app-text-primary));
-  cursor: pointer;
-}
-
-.slide-type-publish-toggle .help {
-  margin-top: var(--ps-space-1);
 }
 
 /* ============================================================

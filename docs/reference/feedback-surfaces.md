@@ -14,7 +14,7 @@ normative; the implementation status at the end says how far the code is.
 | **Confirmation** — it worked, nothing to do                                                            | `toast.success` / `toast.info`                                         | global stack                      | short, expires. **Not shown at all when the result is already on screen** | one sentence                                                                                                                          | never moves focus; `role="status"`, polite region                                                                            |
 | **Refusal of what the user is doing now** — a form or dialog that will not save, local or from the API | inline: `createInlineError()` under the field and/or beside the button | at the control that has to change | until the next attempt (`clear()` at the start of every attempt)          | the sentence, naming the field. Server sentence when it came from the API; translated copy on `details.reason` when the client has it | focus to the control, else to the message; `role="alert"` on the message, `aria-invalid` + `aria-describedby` on the control |
 | **Failure of an action with no form** — delete, duplicate, copy, load                                  | `toast.error`                                                          | global stack                      | longer than a confirmation, pauses on hover/focus, closes on Escape       | the server's sentence, never a generic replacement                                                                                    | `role="alert"`, assertive region; focus stays where it was                                                                   |
-| **Background failure** — autosave, poll, sync, upload, collab bootstrap                                | a persistent chip or banner carrying the state (save-chip, banner)     | at the state it describes         | until the state recovers                                                  | what did not happen and what the user can do                                                                                          | polite; repeatable, not one passing announcement                                                                             |
+| **Background failure** — autosave, poll, sync, upload, collab bootstrap                                | a persistent chip or banner carrying the state (banner)                | at the state it describes         | until the state recovers                                                  | what did not happen and what the user can do                                                                                          | polite; repeatable, not one passing announcement                                                                             |
 | **Status change from outside** — a collaborator took the slide, the service is back                    | its own carrier (presence, chip), or an `info` toast                   | at the state                      | as long as the state lasts                                                | no error colour                                                                                                                       | polite                                                                                                                       |
 
 Two rules that cut across the table:
@@ -30,7 +30,7 @@ Two rules that cut across the table:
 
 And one that decides when a toast is allowed to expire at all: **expiring is
 fine only when missing the message does no harm.** "Saved" can be missed. "Your
-last three edits were not saved" cannot, so it is a chip that stays.
+last three edits were not saved" cannot, so it is a banner that stays.
 
 ## The envelope, mirrored
 
@@ -210,7 +210,6 @@ progress indicator with a 60–120 s lifetime (4 sites) is a status chip in
 disguise, and ≥ 27 success toasts announce what is already visible on screen
 ("Theme deleted." as the row disappears) — both fold into the items above.
 
-Existing carriers for the fourth kind: the save-chip in the editor top bar
-(`aria-live="polite"`) and `client/views/shared/maintenance-banner.js`
+Existing carriers for the fourth kind: the editor save-failure banner below the top bar (`aria-live="polite"`) and `client/views/shared/maintenance-banner.js`
 (`role="alert"`). Settings has no persistent carrier yet; B206 decides whether
 it gets one.

@@ -191,9 +191,6 @@ export function showSlideContextMenu({ x, y, slide, ids, ctx }) {
             ctx.rerenderEditor?.();
             ctx.rerenderPreview?.();
           },
-          onClose: () => {
-            document.body.querySelector('.visibility-menu')?.remove();
-          },
         });
         showVisibilityMenuAt({
           anchor: { getBoundingClientRect: () => rect, contains: () => false },

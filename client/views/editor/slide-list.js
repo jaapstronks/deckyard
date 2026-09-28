@@ -22,6 +22,7 @@ import {
   showSlideContextMenu,
   closeSlideContextMenu,
 } from './slide-list/context-menu.js';
+import { closeVisibilityMenu } from './slide-visibility-menu.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { h } from '../../lib/dom.js';
 
@@ -741,6 +742,7 @@ export function setupSlideList({
     slideListEl.removeEventListener('contextmenu', onContextMenu);
     detachLongPress?.();
     closeSlideContextMenu();
+    closeVisibilityMenu();
   };
 
   return {

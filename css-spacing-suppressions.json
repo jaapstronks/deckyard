@@ -6,7 +6,7 @@
   },
   "client/styles/base/01-core/10-shell-topbar-dropdown.css": {
     "tokenisable-spacing": {
-      "count": 9
+      "count": 8
     }
   },
   "client/styles/base/01-core/20-editor-layout.css": {
@@ -31,7 +31,7 @@
   },
   "client/styles/base/01-core/32-list-cards.css": {
     "tokenisable-spacing": {
-      "count": 12
+      "count": 11
     }
   },
   "client/styles/base/01-core/40-sidebar.css": {
