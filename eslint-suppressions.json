@@ -1245,7 +1245,7 @@
   },
   "server/utils/puppeteer-browser.js": {
     "no-restricted-syntax": {
-      "count": 2
+      "count": 1
     }
   },
   "server/utils/sandbox-og-image.js": {
