@@ -40,7 +40,10 @@ const only = (present) => async (path) => present.includes(path);
 test('Google Chrome wins over the chromium-browser snap stub', async () => {
   const path = await withoutEnvOverride(() =>
     resolveChromeExecutablePath({
-      isExecutable: only(['/usr/bin/chromium-browser', '/usr/bin/google-chrome']),
+      isExecutable: only([
+        '/usr/bin/chromium-browser',
+        '/usr/bin/google-chrome',
+      ]),
     }),
   );
   assert.equal(path, '/usr/bin/google-chrome');

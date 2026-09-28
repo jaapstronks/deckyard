@@ -99,7 +99,10 @@ export async function resolveChromeExecutablePath({
   isExecutable = isExecutableFile,
 } = {}) {
   const envPath = envStr('PUPPETEER_EXECUTABLE_PATH') || envStr('CHROME_BIN');
-  return firstExecutablePath([envPath, ...CHROME_CANDIDATE_PATHS], isExecutable);
+  return firstExecutablePath(
+    [envPath, ...CHROME_CANDIDATE_PATHS],
+    isExecutable,
+  );
 }
 
 export async function getPuppeteerBrowser({ featureName = 'Export' } = {}) {
