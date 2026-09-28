@@ -93,13 +93,9 @@ test('the bulk-export resolver accepts the class the collector produces', () => 
   // The walker says which strings are assets; the resolver turns them into
   // files. Both must ride one predicate, or a prefix the walker collects can
   // be one the resolver refuses (or the reverse) without any test noticing.
-  assert.match(bulkExportSrc, /isServedAssetRef\(urlPath\)/);
-  assert.doesNotMatch(bulkExportSrc, /'\/custom\//);
-  assert.doesNotMatch(bulkExportSrc, /'\/assets\/'/);
-  // Uploads come from the env/sandbox-aware uploads dir, like the .deck bundle,
-  // not from a hardcoded server/uploads — under UPLOADS_DIR the old spelling
-  // silently backed up nothing.
-  assert.match(bulkExportSrc, /uploadsDir\(repoRoot\)/);
+  // Since B509 the class lives in the shared resolver, which gates on
+  // `isServedAssetRef`; the prefix-table seam test below pins the rest.
+  assert.match(bulkExportSrc, /resolveServedAssetPath\(repoRoot, urlPath\)/);
   assert.doesNotMatch(bulkExportSrc, /'server',\s*'uploads'/);
 });
 
@@ -169,7 +165,6 @@ test('the render embed gate reads the served-asset predicate (B261)', () => {
   // its own alternation (plus a `custom/themes` branch no root resolved), and
   // a hardcoded `server/uploads` that under UPLOADS_DIR inlined nothing.
   assert.match(htmlUtilsSrc, /isServedAssetRef\(s\) \|\| isIconUrl\(s\)/);
-  assert.match(htmlUtilsSrc, /uploadsDir\(root\)/);
   assert.doesNotMatch(htmlUtilsSrc, /'server',\s*'uploads'/);
   assert.doesNotMatch(htmlUtilsSrc, /uploads\|assets/);
   assert.doesNotMatch(htmlUtilsSrc, /includeClient/);
