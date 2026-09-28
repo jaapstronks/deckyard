@@ -23,7 +23,9 @@
  *
  * The behaviour of each collector is pinned in tests/deck-assets.test.js; this
  * file pins the seam — that bulk-export reaches for the shared collector and
- * grows no second walker of its own.
+ * grows no second walker of its own, and that the render side's embed gate
+ * (server/utils/html-utils.js) reads the same predicate instead of a third
+ * prefix list (B261).
  *
  * Run with: node --test tests/export-asset-walkers.test.js
  */
@@ -31,6 +33,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -41,12 +44,22 @@ import {
   isUploadRef,
 } from '../shared/slide-types/deck-assets.js';
 import { SHARED_PUBLIC_DIRS } from '../server/config/paths.js';
+import { uploadsDir } from '../server/config/storage-paths.js';
+import {
+  isRenderAssetRef,
+  resolveRenderAssetPath,
+  toDataUrlIfLocal,
+} from '../server/utils/html-utils.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
 
 const bulkExportSrc = fs.readFileSync(
   path.join(repoRoot, 'server/export/bulk-export.js'),
+  'utf8',
+);
+const htmlUtilsSrc = fs.readFileSync(
+  path.join(repoRoot, 'server/utils/html-utils.js'),
   'utf8',
 );
 const deckBundleSrc = fs.readFileSync(
@@ -148,5 +161,67 @@ test('both exports see the same asset set for the same deck', () => {
       refs.filter((r) => /^https?:/.test(r)),
       [],
     );
+  }
+});
+
+test('the render embed gate reads the served-asset predicate (B261)', () => {
+  // The third spelling of the class lived here: a prefix list, a regex with
+  // its own alternation (plus a `custom/themes` branch no root resolved), and
+  // a hardcoded `server/uploads` that under UPLOADS_DIR inlined nothing.
+  assert.match(htmlUtilsSrc, /isServedAssetRef\(s\) \|\| isIconUrl\(s\)/);
+  assert.match(htmlUtilsSrc, /uploadsDir\(root\)/);
+  assert.doesNotMatch(htmlUtilsSrc, /'server',\s*'uploads'/);
+  assert.doesNotMatch(htmlUtilsSrc, /uploads\|assets/);
+  assert.doesNotMatch(htmlUtilsSrc, /includeClient/);
+});
+
+test('the render class is the served-asset class plus the icon SVGs', () => {
+  for (const prefix of SHARED_PUBLIC_DIRS.map((d) => d.urlPrefix)) {
+    const ref = `${prefix}x.png`;
+    assert.equal(isRenderAssetRef(ref), isServedAssetRef(ref), prefix);
+  }
+  assert.equal(
+    isRenderAssetRef('/client/vendor/lucide-icons/activity.svg'),
+    true,
+  );
+  assert.equal(isRenderAssetRef('/client/vendor/lucide-icons/x.js'), false);
+  assert.equal(isRenderAssetRef('/custom/themes/acme/bg.jpg'), false);
+});
+
+test('every render asset resolves under the directory the server serves it from', () => {
+  const served = new Map(SHARED_PUBLIC_DIRS.map((d) => [d.urlPrefix, d.dir]));
+  const cases = [
+    ['/uploads/pic.png', uploadsDir(repoRoot)],
+    ['/assets/images/logo.svg', served.get('/assets/')],
+    ['/custom/assets/backgrounds/bg1.jpg', served.get('/custom/assets/')],
+    [
+      '/client/vendor/lucide-icons/activity.svg',
+      path.join(served.get('/client/'), 'vendor', 'lucide-icons'),
+    ],
+  ];
+  for (const [ref, dir] of cases) {
+    const abs = resolveRenderAssetPath(repoRoot, ref);
+    assert.ok(abs?.startsWith(path.resolve(dir) + path.sep), ref);
+  }
+  for (const ref of ['/css/x.png', '/shared/x.png', '/client/app.js']) {
+    assert.equal(resolveRenderAssetPath(repoRoot, ref), null, ref);
+  }
+});
+
+test('an upload under UPLOADS_DIR is inlined from there, not from server/uploads', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'dk-b261-uploads-'));
+  const prev = process.env.UPLOADS_DIR;
+  try {
+    fs.writeFileSync(path.join(dir, 'moved.png'), Buffer.from('MOVED'));
+    process.env.UPLOADS_DIR = dir;
+    const out = await toDataUrlIfLocal(repoRoot, '/uploads/moved.png');
+    assert.equal(
+      out,
+      `data:image/png;base64,${Buffer.from('MOVED').toString('base64')}`,
+    );
+  } finally {
+    if (prev === undefined) delete process.env.UPLOADS_DIR;
+    else process.env.UPLOADS_DIR = prev;
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });

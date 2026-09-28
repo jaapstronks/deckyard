@@ -92,9 +92,8 @@ export async function loadExportCssBundle(
   // Unconditional on purpose: every caller of this bundle either hands the
   // result to `setContent()` or ships it as a self-contained `.html`, and both
   // want the same answer. A flag here would only be a way to get it wrong.
-  // `includeClient` stays off — a theme var has no legitimate `/client/`
-  // target, and leaving it on would let a theme inline arbitrary client-tree
-  // bytes into every export.
+  // The local half reads `isRenderAssetRef`, the same class as the markup:
+  // deck assets plus the vendored icon SVGs, never the rest of `/client/`.
   const themeVarsCss = await embedCssUrlsForExport(
     repoRoot,
     themeVarsCssText(theme),
@@ -176,7 +175,6 @@ export function buildExportStyleContent(bundle, extraCss = []) {
  * @param {string} repoRoot - Repository root path
  * @param {Array} rawSlides - Array of slide objects
  * @param {Object} [options]
- * @param {boolean} [options.includeClient=true] - Include client directory in path resolution
  * @param {Function} [options.transform] - Optional image-bytes transform (see toDataUrlIfLocal)
  * @param {Map<string, Promise<string>>} [options.cache] - Optional per-run embed cache (see toDataUrlIfLocal)
  * @returns {Promise<Array>} Cloned slides with embedded images
@@ -184,12 +182,7 @@ export function buildExportStyleContent(bundle, extraCss = []) {
 export async function embedSlideImages(
   repoRoot,
   rawSlides,
-  {
-    includeClient = true,
-    transform = null,
-    embedRemote = false,
-    cache = null,
-  } = {},
+  { transform = null, embedRemote = false, cache = null } = {},
 ) {
   // Clone synchronously (preserves order), then collect every image field as a
   // {src, set} cell and resolve them concurrently. One slow remote image no
@@ -211,7 +204,6 @@ export async function embedSlideImages(
   await mapLimit(cells, exportEmbedConcurrency(), async (cell) => {
     cell.set(
       await toDataUrlIfLocal(repoRoot, cell.src, {
-        includeClient,
         transform,
         embedRemote,
         cache,
