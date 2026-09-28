@@ -36,6 +36,11 @@ const repoRoot = path.resolve(
 );
 const slidesDir = path.join(repoRoot, 'client', 'styles', 'slides');
 
+/** Containers that wrap a slide from outside (presenter layout), never inside. */
+const HOST_CONTAINERS = new Set(['.deck']);
+/** What sizes itself against such a host: the presenter's letterboxed stage. */
+const HOST_SIZED = new Set(['.deck-stage']);
+
 /** @param {string} css @returns {string} the same CSS with comments blanked out */
 const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
 
@@ -152,6 +157,13 @@ describe('the fluid slide type scale', () => {
           // `.slide.slide-bg-dark`. Anything with a combinator has an
           // ancestor inside the slide and would shadow it.
           if (/^\.slide[\w.-]*$/.test(trimmed)) continue;
+          // A host AROUND the slide, not inside it: the presenter's `.deck`
+          // is a size container so the stage can fit whatever the chrome
+          // leaves (B506). The slide root is itself a container, so every
+          // `cqi` inside it still resolves against the slide; only a
+          // block-axis unit on an inline-size slide would reach past it, and
+          // the one user of those (`.slide-countdown`) declares both axes.
+          if (HOST_CONTAINERS.has(trimmed)) continue;
           offenders.push(`${rel}  ${trimmed}`);
         }
       }
@@ -164,6 +176,36 @@ describe('the fluid slide type scale', () => {
         '\nIts subtree would size its type against that element instead of ' +
         'the slide.',
     );
+  });
+
+  it('uses block-axis container units only under a slide that declares both axes', () => {
+    // The slide root is an inline-size container, so a `cqb`/`cqh` inside it
+    // skips the slide and resolves against the next host container out (the
+    // presenter's `.deck`, B506) or the viewport. Only a slide root with
+    // `container-type: size` may be the answer to one.
+    const blockUnit = /\d(cqb|cqh|cqmin|cqmax)\b/;
+    const isSlideRoot = (sel) => /^\.slide[\w.-]*$/.test(sel);
+    const selectorsOf = (list) =>
+      list
+        .split(',')
+        .map((sel) => sel.trim().split('\n').pop().trim())
+        .filter(Boolean);
+    const offenders = [];
+    for (const { rel, css } of sheets) {
+      const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)];
+      const declaresSize = rules.some(
+        ([, sel, body]) =>
+          /container-type:\s*size/.test(body) &&
+          selectorsOf(sel).some(isSlideRoot),
+      );
+      for (const [, sel, body] of rules) {
+        if (!blockUnit.test(body)) continue;
+        // The presenter stage sizes against its host `.deck` on purpose.
+        if (selectorsOf(sel).every((x) => HOST_SIZED.has(x))) continue;
+        if (!declaresSize) offenders.push(`${rel}  ${selectorsOf(sel)}`);
+      }
+    }
+    assert.deepStrictEqual(offenders, []);
   });
 
   it('lets a vertical writing mode inherit its type size, never resolve it', () => {

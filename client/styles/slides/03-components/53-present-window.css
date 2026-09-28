@@ -8,21 +8,11 @@
   height: 100dvh;
   background: hsl(var(--app-bg-base));
   overflow: hidden;
-  /* The shared .deck-stage sizing math references these; there's no presenter
-     shell here, so zero them out and let the deck fill the whole window. */
-  --presenter-topbar-height: 0px;
 }
 
 .present-window .deck {
   width: 100%;
   height: 100%;
-}
-
-/* Override the presenter's letterbox math (which subtracts the shell's chrome
-   rows) so the deck uses the entire projector window. */
-.present-window .deck-stage {
-  width: min(100vw, calc(100dvh * 16 / 9));
-  height: min(100dvh, calc(100vw * 9 / 16));
 }
 
 /* One-time curtain: the click is the user gesture that unlocks fullscreen. */
