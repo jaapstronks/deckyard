@@ -173,11 +173,11 @@ card roles — `--slide-font-size-card-title`, `--slide-font-size-card-body`,
 those axes.
 
 The members, measured rather than declared: the icon-card (both layouts), the
-text block, the team card, the timeline card, the matrix cell, the KPI tile and
-the follow-invite card. Two neighbours look like members and are not, for the
-same reason: **`.comparison-side` is a column**, not a box — no surface, and
-its padding is the gutter between the two halves; **the gallery tile and the
-logo-wall cell** carry media and a caption, not a title/body pair.
+text block, the team card, the timeline card, the matrix cell and the KPI tile.
+Three neighbours look like members and are not: **`.comparison-side` is a
+column**, not a box — no surface, and its padding is the gutter between the two
+halves; **the gallery tile, the logo-wall cell and the follow-invite QR plate**
+carry media and a caption, not a title/body pair.
 
 ### The roles are contextual
 
@@ -206,8 +206,9 @@ read them —
 — which makes each rung of a density ladder **one rule that names the density**
 instead of a title rule plus a body rule that have to be kept in step by hand.
 The parts name a size exactly once, at the top. A card that has a single
-density declares nothing at all and reads the bindings from `00-tokens.css`;
-`.sfi-card` in `15-follow-invite.css` is the live case.
+density declares nothing at all and reads the bindings from `00-tokens.css`.
+(The follow-invite card was the live case until B502 replaced it with a QR
+plate and plain type; every current member has a density ladder.)
 
 `--slide-card-padding` carries the card's **whole** padding, one step or a
 shorthand of steps (`var(--slide-space-6) var(--slide-space-8)`), because a

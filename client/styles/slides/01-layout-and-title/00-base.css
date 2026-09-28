@@ -346,7 +346,8 @@
    `.on-surface-accent`. That is correct and intended: all five names are
    *author* vocabulary, written in deck content and fork stylesheets rather than
    by this repo's own markup. Three of them happen to have an in-repo user
-   (`on-surface-light` on the feedback/follow-invite/likert cards,
+   (`on-surface-light` on the feedback/follow-invite QR plate and the likert
+   cards,
    `on-surface-lime` on funnel and pyramid, `on-surface-mist` on cycle); the
    other two do not, and that says nothing about whether authors use them.
    Removing them is a vocabulary decision, not a dead-code one — see B190. The

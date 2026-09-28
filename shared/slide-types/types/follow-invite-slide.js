@@ -102,17 +102,15 @@ export default {
             </div>
 
             <div class="sfi-methods" role="group" aria-label="${escapeHtml(base.followInviteMethodsLabel)}">
-              <div class="sfi-card on-surface-light">
-                <div class="sfi-card-title">${escapeHtml(base.scanLabel)}</div>
-                <div class="sfi-qr-wrap">
-                  <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
-                    relFollow,
-                  )}" role="img" aria-label="${escapeHtml(base.qrCodeLabel)}"></canvas>
-                </div>
+              <div class="sfi-qr-plate on-surface-light">
+                <div class="sfi-method-label">${escapeHtml(base.scanLabel)}</div>
+                <canvas class="sfi-qr" data-follow-qr="1" data-follow-url="${escapeHtml(
+                  relFollow,
+                )}" role="img" aria-label="${escapeHtml(base.qrCodeLabel)}"></canvas>
               </div>
 
-              <div class="sfi-card on-surface-light">
-                <div class="sfi-card-title">${escapeHtml(base.orGoToLabel)}</div>
+              <div class="sfi-link">
+                <div class="sfi-method-label">${escapeHtml(base.orGoToLabel)}</div>
                 <div class="sfi-go" data-follow-go-url="1">${escapeHtml(
                   goHref,
                 )}</div>
