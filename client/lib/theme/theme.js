@@ -4,10 +4,11 @@ import { slideBackgroundsCssText } from '../../../shared/theme-slide-backgrounds
 import { normalizeTheme } from '../../../shared/theme-normalize.js';
 import { cssStringEscape } from '../../../shared/theme-fonts.js';
 
+// A theme reference is `default` or a record UUID in its canonical lowercase
+// spelling, exactly as the server accepts it (`resolveThemeId`, D237). No
+// case repair here: a differently spelled id is refused, not normalized.
 function safeThemeId(raw) {
-  const id = String(raw || '')
-    .trim()
-    .toLowerCase();
+  const id = String(raw || '').trim();
   if (id === 'default') return id;
   if (
     !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(id)
@@ -108,7 +109,7 @@ async function fetchThemeData(id) {
  */
 function isThemeForId(theme, id) {
   if (!theme) return false;
-  return String(theme.id || '').toLowerCase() === id;
+  return String(theme.id || '') === id;
 }
 
 /**

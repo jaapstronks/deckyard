@@ -71,6 +71,16 @@ test('default resolves the current workspace theme instead of the built-in id', 
   served = dbTheme();
 });
 
+test('a theme reference is default or a lowercase record UUID, nothing else', () => {
+  // The client mirrors the server (`resolveThemeId`): one spelling, refused
+  // rather than repaired. The uppercase form is a second spelling of the same
+  // record and used to be lowercased on the way in.
+  assert.equal(normalizeThemeId(UUID), UUID);
+  assert.throws(() => normalizeThemeId(UUID.toUpperCase()), TypeError);
+  assert.throws(() => normalizeThemeId('brand'), TypeError);
+  assert.throws(() => normalizeThemeId(''), TypeError);
+});
+
 test('anonymous default uses the theme config in its deck payload', async () => {
   clearThemeCache();
   const before = fetches;
