@@ -43,12 +43,25 @@ function envEnabledWithLegacy(name, legacyName) {
 
 /**
  * Multi-organization mode.
- * When enabled, an instance can hold several organizations that users can create and switch between (the UI labels an organization "Workspace").
+ * When enabled, an instance can hold several organizations that users switch between (the UI labels an organization "Workspace"); who may create one is `isMultiOrgUserCreateEnabled()`.
  * When disabled (default), the system operates in single-organization mode using the default organization.
  * @returns {boolean}
  */
 export function isMultiOrgEnabled() {
   return envBool('MULTI_ORG_ENABLED');
+}
+
+/**
+ * Whether any signed-in user may create an organization (B424).
+ * On (default): `POST /api/organizations` is open to every user, as before.
+ * Off: only instance admins may create one, for a pre-provisioned instance
+ * where the operator creates each customer's organization and a customer who
+ * made a second one would hold an organization outside any contract.
+ * Only meaningful with `MULTI_ORG_ENABLED`.
+ * @returns {boolean}
+ */
+export function isMultiOrgUserCreateEnabled() {
+  return envBool('MULTI_ORG_USER_CREATE_ENABLED', true);
 }
 
 /**
