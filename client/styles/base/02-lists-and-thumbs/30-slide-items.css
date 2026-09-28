@@ -10,6 +10,11 @@
   padding: var(--ps-space-1);
 }
 
+.slides-panel .slide-item.is-active {
+  border: 3px solid hsl(var(--app-accent-primary));
+  padding: calc(var(--ps-space-1) - var(--ps-space-0-5));
+}
+
 .is-editor .slides-panel .slide-item .thumb.thumb-mini {
   /* Elevation comes from the shadow on .thumb; keep the card borderless
      so the rendered slide bleeds to the rounded edge. */
