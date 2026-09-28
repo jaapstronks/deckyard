@@ -456,6 +456,15 @@ External email leaks were closed separately (PR #214).
 There is a screen for every organization-level thing a person can do, and each
 one draws the rule its route enforces rather than a wider or narrower one:
 
+- **Creating** — `POST /api/organizations` makes a new organization with the
+  caller as owner; there is no button for it in the core UI. Who may call it is
+  an operator decision, `MULTI_ORG_USER_CREATE_ENABLED`: on (default), every
+  signed-in user; off, only instance admins, and anyone else gets a 403 before
+  anything is written. Off is the setting for a pre-provisioned instance, where
+  the operator creates each customer's organization and a second one made by a
+  customer would be a workspace outside any contract. The check is the
+  instance role, not the organization role: starting a workspace is an
+  instance-level act, and the organization role only narrows the instance role.
 - **Switching** — the organizations you belong to sit in the user menu, with the
   active one marked. Switching writes the session cookie and reloads the page in
   full, because a cache that survives the switch is a cross-organization leak in

@@ -19,7 +19,10 @@ import {
   getTrimmedString,
 } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { isMultiOrgEnabled } from '../../config/features.js';
+import {
+  isMultiOrgEnabled,
+  isMultiOrgUserCreateEnabled,
+} from '../../config/features.js';
 import {
   listUserOrganizations,
   getOrganizationById,
@@ -84,7 +87,16 @@ async function handleOrgList({ res, userId }) {
 }
 
 // POST /api/organizations - Create a new organization
-async function handleOrgCreate({ req, res, userId }) {
+async function handleOrgCreate({ req, res, userId, authedUser }) {
+  // Instance admin, not organization role: starting a new workspace is an
+  // instance-level act, and the organization role only narrows the instance
+  // role (D67). Refused before the body is read, so nothing is written.
+  if (!isMultiOrgUserCreateEnabled() && !authedUser?.isAdmin) {
+    return forbidden(
+      res,
+      'Only instance admins can create an organization on this instance',
+    );
+  }
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
