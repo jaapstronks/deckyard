@@ -7,7 +7,7 @@
 import { h } from '../../../lib/dom.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
-import { createFieldListEditor } from './field-editor.js';
+import { createCheckboxRow, createFieldListEditor } from './field-editor.js';
 import { createTemplateHelp } from './template-help.js';
 import { createSlideTypePreview } from './preview.js';
 import { fieldProblemMessage } from './field-problem-copy.js';
@@ -434,25 +434,16 @@ export function createSlideTypeEditor({
     }),
   );
 
-  const publishToggle = h('div', { class: 'slide-type-publish-toggle' });
-  const publishCheckboxId = `publish-toggle-${Date.now()}`;
-  const publishCheckbox = h('input', {
-    type: 'checkbox',
-    id: publishCheckboxId,
+  const publishToggle = createCheckboxRow({
     checked: state.isPublished,
-  });
-  publishCheckbox.addEventListener('change', () => {
-    state.isPublished = publishCheckbox.checked;
-  });
-  const publishLabel = h('label', {
-    htmlFor: publishCheckboxId,
     text: t(
       'settings.slideTypes.publishLabel',
       'Make available in slide picker',
     ),
+    onChange: (checked) => {
+      state.isPublished = checked;
+    },
   });
-
-  publishToggle.append(publishCheckbox, publishLabel);
 
   const publishHint = h('div', {
     class: 'help',

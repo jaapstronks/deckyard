@@ -356,24 +356,14 @@ export function createFieldListEditor({
     );
 
     // Required
-    const reqRow = h('div', {
-      class: 'field-list-field-row field-list-field-row-inline',
-    });
-    const reqCheckbox = h('input', {
-      type: 'checkbox',
+    const reqRow = createCheckboxRow({
       checked: field.required === true,
+      text: t('settings.slideTypes.fields.required', 'Required'),
+      onChange: (checked) => {
+        field.required = checked;
+        notify();
+      },
     });
-    reqCheckbox.addEventListener('change', () => {
-      field.required = reqCheckbox.checked;
-      notify();
-    });
-    reqRow.append(
-      reqCheckbox,
-      h('label', {
-        class: 'field-label field-label-sm',
-        text: t('settings.slideTypes.fields.required', 'Required'),
-      }),
-    );
 
     body.append(keyRow, labelRow, typeRow, reqRow);
 
@@ -382,24 +372,14 @@ export function createFieldListEditor({
     // without it, which is what agents read to know what to fill. Stored the
     // way `required` is: `true`, or not at all.
     if (!nested) {
-      const essRow = h('div', {
-        class: 'field-list-field-row field-list-field-row-inline',
-      });
-      const essCheckbox = h('input', {
-        type: 'checkbox',
+      const essRow = createCheckboxRow({
         checked: field.essential === true,
+        text: t('settings.slideTypes.fields.essential', 'Essential'),
+        onChange: (checked) => {
+          field.essential = checked;
+          notify();
+        },
       });
-      essCheckbox.addEventListener('change', () => {
-        field.essential = essCheckbox.checked;
-        notify();
-      });
-      essRow.append(
-        essCheckbox,
-        h('label', {
-          class: 'field-label field-label-sm',
-          text: t('settings.slideTypes.fields.essential', 'Essential'),
-        }),
-      );
       body.append(
         essRow,
         h('p', {
@@ -490,29 +470,19 @@ export function createFieldListEditor({
     // the document projection needs the same stand-in: the reference is not
     // document text and must not be printed as if it were.
     if (field.type === 'string') {
-      const mediaRow = h('div', {
-        class: 'field-list-field-row field-list-field-row-inline',
-      });
-      const mediaToggle = h('input', {
-        type: 'checkbox',
+      const mediaRow = createCheckboxRow({
         checked: Boolean(field.mediaRef),
+        text: t(
+          'settings.slideTypes.fields.mediaRef',
+          'References media (not document text)',
+        ),
+        onChange: (checked) => {
+          if (checked) field.mediaRef = {};
+          else delete field.mediaRef;
+          notify();
+          render();
+        },
       });
-      mediaToggle.addEventListener('change', () => {
-        if (mediaToggle.checked) field.mediaRef = {};
-        else delete field.mediaRef;
-        notify();
-        render();
-      });
-      mediaRow.append(
-        mediaToggle,
-        h('label', {
-          class: 'field-label field-label-sm',
-          text: t(
-            'settings.slideTypes.fields.mediaRef',
-            'References media (not document text)',
-          ),
-        }),
-      );
       body.append(mediaRow);
 
       if (field.mediaRef) {
@@ -860,4 +830,23 @@ function createInput(value, onInput, attrs = {}) {
   const input = h('input', { type: 'text', value, ...attrs });
   input.addEventListener('input', () => onInput(input.value));
   return input;
+}
+
+/**
+ * A boolean control of the builder: the checkbox sits inside its `<label>`,
+ * so the text names it for assistive technology and a click on the text
+ * toggles it. Wrapping needs no id, so two rows can never share a link (B495).
+ *
+ * @param {{ checked: boolean, text: string, onChange: (checked: boolean) => void }} opts
+ * @returns {HTMLElement} the field row
+ */
+export function createCheckboxRow({ checked, text, onChange }) {
+  const input = h('input', { type: 'checkbox', checked });
+  input.addEventListener('change', () => onChange(input.checked));
+  return h('div', { class: 'field-list-field-row' }, [
+    h('label', { class: 'field-list-checkbox' }, [
+      input,
+      h('span', { class: 'field-label field-label-sm', text }),
+    ]),
+  ]);
 }
