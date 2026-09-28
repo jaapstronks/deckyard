@@ -3,16 +3,54 @@ import { envStr, envBool } from '../config/utils.js';
 
 let browserPromise = null;
 
-async function firstExistingPath(paths) {
+/**
+ * Well-known browser locations, in order of preference.
+ *
+ * Google Chrome comes first on Linux, and `chromium-browser` last: on Ubuntu
+ * since 19.10 that name is the transitional package's shell script, which
+ * exists and is executable but only tells you to `snap install chromium` and
+ * exits. Found first, it made every export and capture on a host that also has
+ * Chrome installed fail at launch (B499). Where `chromium-browser` is the real
+ * binary (Alpine, older Debian), the same package also installs `chromium`,
+ * which is probed before it.
+ */
+export const CHROME_CANDIDATE_PATHS = Object.freeze([
+  // Linux (Debian/Ubuntu/Alpine)
+  '/usr/bin/google-chrome',
+  '/usr/bin/google-chrome-stable',
+  '/usr/bin/chromium',
+  '/usr/bin/chromium-browser',
+  // macOS
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  // Windows (common installs)
+  'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+  'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+]);
+
+/**
+ * @param {string} path
+ * @returns {Promise<boolean>}
+ */
+async function isExecutableFile(path) {
+  try {
+    await fs.access(path, fs.constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * @param {Array<string|undefined>} paths
+ * @param {(path: string) => Promise<boolean>} isExecutable
+ * @returns {Promise<string>}
+ */
+async function firstExecutablePath(paths, isExecutable) {
   for (const p of paths) {
     const t = String(p || '').trim();
     if (!t) continue;
-    try {
-      await fs.access(t);
-      return t;
-    } catch {
-      // continue
-    }
+    if (await isExecutable(t)) return t;
   }
   return '';
 }
@@ -52,25 +90,16 @@ export function toNodeBuffer(bytes) {
  * tell "no Chrome on this machine" apart from "Chrome is there and the export
  * chain is broken".
  *
+ * @param {object} [options]
+ * @param {(path: string) => Promise<boolean>} [options.isExecutable] Test
+ *   seam: whether a candidate path is an executable file.
  * @returns {Promise<string>} Absolute path to the browser, or '' if none found.
  */
-export async function resolveChromeExecutablePath() {
+export async function resolveChromeExecutablePath({
+  isExecutable = isExecutableFile,
+} = {}) {
   const envPath = envStr('PUPPETEER_EXECUTABLE_PATH') || envStr('CHROME_BIN');
-
-  return firstExistingPath([
-    envPath,
-    // Linux (Debian/Ubuntu/Alpine)
-    '/usr/bin/chromium-browser',
-    '/usr/bin/chromium',
-    '/usr/bin/google-chrome',
-    '/usr/bin/google-chrome-stable',
-    // macOS
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-    '/Applications/Chromium.app/Contents/MacOS/Chromium',
-    // Windows (common installs)
-    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
-  ]);
+  return firstExecutablePath([envPath, ...CHROME_CANDIDATE_PATHS], isExecutable);
 }
 
 export async function getPuppeteerBrowser({ featureName = 'Export' } = {}) {
