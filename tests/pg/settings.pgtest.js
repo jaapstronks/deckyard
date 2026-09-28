@@ -33,7 +33,7 @@ import {
   defaultAppSettings,
   defaultUserSettings,
 } from '../../server/storage/settings.js';
-import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
+import { DEFAULT_THEME_SLUG } from '../../shared/constants/themes.js';
 import { initializeThemeSeeds } from '../../server/utils/theme-seeds.js';
 import { listSeedThemes } from '../../server/storage/themes.js';
 import { testScope } from '../helpers/storage-scope.js';
@@ -94,7 +94,7 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
   it('keeps theme settings on each organization and leaves the singleton clean', async () => {
     await initializeThemeSeeds();
     const seeds = await listSeedThemes();
-    const brand = seeds.find((theme) => theme.slug === DEFAULT_THEME_ID);
+    const brand = seeds.find((theme) => theme.slug === DEFAULT_THEME_SLUG);
     const amethyst = seeds.find((theme) => theme.slug === 'amethyst');
     const orgA = testScope().organizationId;
     const orgB = '22222222-2222-4222-8222-222222222222';

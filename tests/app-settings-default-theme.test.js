@@ -1,6 +1,6 @@
 /**
  * Organization theme fallback precedence when no theme settings are stored:
- * DEFAULT_THEME and ENABLED_THEMES resolve seed handles to UUIDs.
+ * DEFAULT_THEME and ENABLED_THEMES resolve seed slugs, and only slugs, to UUIDs.
  *
  * Persistence cases — round-tripping defaultThemeId/enabledThemes, refusing
  * invalid IDs, partial-write no-clobber, and the configured-setting branch — live in
@@ -22,7 +22,7 @@ const { getDefaultThemeId, getEnabledThemeIds } =
   await import('../server/storage/settings.js');
 const ORG = '33333333-3333-4333-8333-333333333333';
 const scope = { organizationId: ORG };
-const { DEFAULT_THEME_ID } = await import('../shared/constants/themes.js');
+const { DEFAULT_THEME_SLUG } = await import('../shared/constants/themes.js');
 const BRAND_ID = '11111111-1111-4111-8111-111111111111';
 const CIIIC_ID = '22222222-2222-4222-8222-222222222222';
 
@@ -34,7 +34,7 @@ before(async () => {
         {
           id: BRAND_ID,
           organization_id: null,
-          slug: DEFAULT_THEME_ID,
+          slug: DEFAULT_THEME_SLUG,
           label: 'Brand',
           colors: {},
           fonts: {},
@@ -73,6 +73,22 @@ describe('getDefaultThemeId fallback precedence (empty store)', () => {
     delete process.env.DEFAULT_THEME;
     assert.strictEqual(await getDefaultThemeId(scope), BRAND_ID);
   });
+
+  // D237: the env names a seed by slug, and only by slug. A record UUID is a
+  // second spelling for the same setting (and differs per installation); a
+  // slug that names no seed must not quietly become another theme.
+  for (const value of [CIIIC_ID, 'no-such-seed', 'CIIIC']) {
+    it(`refuses DEFAULT_THEME=${value}`, async () => {
+      process.env.DEFAULT_THEME = value;
+      try {
+        await assert.rejects(getDefaultThemeId(scope), {
+          message: `Default theme seed not found: ${value}`,
+        });
+      } finally {
+        delete process.env.DEFAULT_THEME;
+      }
+    });
+  }
 });
 
 describe('getEnabledThemeIds fallback precedence (empty store)', () => {
@@ -90,6 +106,15 @@ describe('getEnabledThemeIds fallback precedence (empty store)', () => {
 
   it('drops ids that are not theme ids at all', async () => {
     process.env.ENABLED_THEMES = 'brand,../../etc/passwd,ok-2';
+    try {
+      assert.deepStrictEqual(await getEnabledThemeIds(scope), [BRAND_ID]);
+    } finally {
+      delete process.env.ENABLED_THEMES;
+    }
+  });
+
+  it('reads seed slugs only, not record UUIDs', async () => {
+    process.env.ENABLED_THEMES = `${CIIIC_ID},brand`;
     try {
       assert.deepStrictEqual(await getEnabledThemeIds(scope), [BRAND_ID]);
     } finally {

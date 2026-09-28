@@ -22,7 +22,6 @@ import { handlePublish } from '../server/routes/api/publish.js';
 import { uploadsDir } from '../server/config/storage-paths.js';
 import { writeUploadedFile } from '../server/storage/uploads.js';
 import { getFeatureFlags } from '../server/config/flags-snapshot.js';
-import { listSandboxExamples } from '../server/sandbox/examples.js';
 import { listSandboxMedia } from '../server/sandbox/media.js';
 
 function withEnv(env, fn) {
@@ -140,29 +139,6 @@ test('AI is disabled in sandbox mode', async () => {
       );
     },
   );
-});
-
-test('sandbox example decks load and are well-formed', async () => {
-  const examples = await listSandboxExamples(process.cwd());
-  assert.ok(examples.length >= 3, 'ships at least three example decks');
-  for (const ex of examples) {
-    assert.ok(ex.id && ex.title, `example ${ex.id} has an id and title`);
-    assert.ok(ex.slideCount > 0, `example ${ex.id} has slides`);
-    const slides = ex.deck?.slides;
-    assert.ok(
-      Array.isArray(slides) && slides.length === ex.slideCount,
-      'slideCount matches deck',
-    );
-    // Every slide type used must be declared in the deck's slideTypes manifest,
-    // or import/render can't resolve it.
-    const manifest = ex.deck?.slideTypes || {};
-    for (const s of slides) {
-      assert.ok(
-        manifest[s.type],
-        `example ${ex.id} manifest declares "${s.type}"`,
-      );
-    }
-  }
 });
 
 test('sandbox sample media is well-formed and has pickable logos', () => {

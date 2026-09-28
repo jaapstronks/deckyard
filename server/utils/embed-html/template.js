@@ -1,5 +1,4 @@
 import { escapeHtml } from './helpers.js';
-import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { repoRoot as defaultRepoRoot } from '../../config/paths.js';
 import { buildCssChain } from '../css-chain.js';
 import { buildDocumentHead } from '../head-chain.js';
@@ -341,7 +340,7 @@ export function renderEmbedHtmlDocument({
   publishId = '',
   ui = 'default',
   slidesHtml = '',
-  themeId = DEFAULT_THEME_ID,
+  themeId = '',
   themeVarsCss = '',
   headHtml = '',
   externalFontHtml = '',
@@ -373,7 +372,7 @@ export function renderEmbedHtmlDocument({
     '\\u003c',
   );
 
-  const docThemeId = String(themeId || DEFAULT_THEME_ID);
+  const docThemeId = String(themeId || '');
   const themeVars = String(themeVarsCss || '');
   const extraHead = String(headHtml || '');
   const extraFontHtml = String(externalFontHtml || '');
@@ -405,7 +404,7 @@ export function renderEmbedHtmlDocument({
       : '';
   return `${buildDocumentHead({
     lang: docLang,
-    htmlAttrs: { 'data-theme': docThemeId },
+    htmlAttrs: docThemeId ? { 'data-theme': docThemeId } : {},
     title: title || 'Presentation',
     robots: 'noindex,nofollow',
     head: [

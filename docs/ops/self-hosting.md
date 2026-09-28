@@ -73,8 +73,8 @@ every option; the ones most installs want:
 | `AUTH_ADMIN_EMAIL`                                           | This user gets the admin role                                                      |
 | `OPENAI_API` / `CLAUDE_API` / `MISTRAL_API` / `DEEPSEEK_API` | Enable the AI wizard (optional; one is enough)                                     |
 | `DATABASE_*`                                                 | Override the bundled Postgres (host, credentials, SSL) — see below                 |
-| `DEFAULT_THEME`                                              | Default theme id for new decks                                                     |
-| `ENABLED_THEMES`                                             | Comma-separated allowlist of pickable theme ids (empty = all)                      |
+| `DEFAULT_THEME`                                              | Seed slug of the default theme for new decks                                       |
+| `ENABLED_THEMES`                                             | Comma-separated allowlist of pickable seed slugs (empty = all)                     |
 | `COLLAB_ENABLED` (+ `COLLAB_LIVE_EDITS`)                     | Real-time collaboration: presence, and optionally live co-editing (default off)    |
 | `BREVO_API_KEY` + `BREVO_SENDER_*`, `APP_URL`                | Outgoing notification email (optional); `APP_URL` is used for links in those mails |
 

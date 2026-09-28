@@ -25,7 +25,7 @@ import {
 import { getCategories, CATEGORY_LABELS } from './categories.js';
 import { createCurationThumbnail } from './curation-thumbnails.js';
 import { openTypePreview as openTypePreviewModal } from './type-preview-modal.js';
-import { DEFAULT_THEME_ID } from '../../../../../shared/constants/themes.js';
+import { DEFAULT_THEME_REF } from '../../../../../shared/constants/themes.js';
 import { icon } from '../../../../lib/dom/icons.js';
 
 /**
@@ -92,7 +92,7 @@ export function createSlideTypesTab({ user } = {}) {
       customTypes = customTypesRes?.customSlideTypes || [];
       const themes = Array.isArray(themesRes?.themes) ? themesRes.themes : [];
       const defaultThemeId =
-        themes.find((t) => t.isDefault)?.id || DEFAULT_THEME_ID;
+        themes.find((t) => t.isDefault)?.id || DEFAULT_THEME_REF;
       currentTheme = await loadThemeById(defaultThemeId);
 
       renderCustomTypesSection();

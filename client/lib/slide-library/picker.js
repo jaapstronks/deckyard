@@ -19,7 +19,7 @@ import { loadThemeById } from '../theme/theme.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { icon } from '../dom/icons.js';
 import { h, installDismissOnOutside } from '../dom.js';
-import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
+import { DEFAULT_THEME_REF } from '../../../shared/constants/themes.js';
 import {
   sortByPinnedThenName,
   sortByTrashedThenName,
@@ -77,7 +77,7 @@ export function createSlideLibraryPicker({
   const resolveThemeForItem = async (it) => {
     if (themeObj && typeof themeObj === 'object') return themeObj;
     const tid = cleanStr(it?.themeId || '');
-    const key = tid || themeIdNorm || DEFAULT_THEME_ID;
+    const key = tid || themeIdNorm || DEFAULT_THEME_REF;
     if (themeCache.has(key)) return themeCache.get(key);
     const loaded = await loadThemeById(key);
     themeCache.set(key, loaded);

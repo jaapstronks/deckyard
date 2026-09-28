@@ -434,5 +434,5 @@ its one-time import were both removed in 1.x — see `docs/ops/self-hosting.md`.
 
 Make sure your `.env` file on the server has:
 
-- `DEFAULT_THEME=your-org` (your theme ID)
+- `DEFAULT_THEME=your-org` (your seed theme's slug)
 - Any API keys (OpenAI, ImageKit, etc.)

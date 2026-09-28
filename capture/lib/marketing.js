@@ -23,6 +23,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { seedThemeId } from './api.js';
 
 /**
  * Create a deck that carries both language versions, and return its id.
@@ -34,8 +35,9 @@ import { randomUUID } from 'node:crypto';
  * @param {import('./api.js').ApiClient} api
  * @param {object} spec
  * @param {string} spec.title Deck title in the dominant language.
- * @param {string} spec.theme Theme id to pin (never left to the default: a
- *   marketing shot must not change colour when the default theme changes).
+ * @param {string} spec.themeSlug Seed slug of the theme to pin (never left to
+ *   the default: a marketing shot must not change colour when the default
+ *   theme changes).
  * @param {'nl'|'en-GB'} spec.dominant
  * @param {Record<string, string>} spec.titles Title per language.
  * @param {Record<string, Array<object>>} spec.versions Slides per language.
@@ -43,8 +45,9 @@ import { randomUUID } from 'node:crypto';
  */
 export async function seedBilingualDeck(
   api,
-  { title, theme, dominant, titles, versions },
+  { title, themeSlug, dominant, titles, versions },
 ) {
+  const theme = await seedThemeId(api, themeSlug);
   const created = await api.post('/api/presentations', { title, theme });
   const id = created?.id || created?.presentation?.id;
   if (!id) throw new Error(`No id returned creating deck "${title}"`);
@@ -534,14 +537,14 @@ export const MODAL_SHOT_VIEWPORT = Object.freeze({
 export const PRESENTER_SLIDE = '.deck-stage-inner .deck-slide';
 
 /**
- * Theme every marketing shot is pinned to.
+ * Seed slug of the theme every marketing shot is pinned to.
  *
- * Pinned rather than left to `DEFAULT_THEME_ID` on purpose: a marketing shot
+ * Pinned rather than left to the installation default on purpose: a marketing shot
  * must not silently change colour the day someone changes the default. When
  * the brand theme moves, this constant moves with it and every shot is
  * flagged stale by its recipe hash.
  */
-export const MARKETING_THEME = 'brand';
+export const MARKETING_THEME_SLUG = 'brand';
 
 /**
  * Language pair every marketing shot ships in.

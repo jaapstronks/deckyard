@@ -33,7 +33,7 @@ import {
 } from '../lib/api.js';
 import {
   MARKETING_LANGS,
-  MARKETING_THEME,
+  MARKETING_THEME_SLUG,
   seedBilingualDeck,
 } from '../lib/marketing.js';
 
@@ -572,7 +572,7 @@ export async function seedMarketingDeck(api, lang, { dominant } = {}) {
   const deck = marketingDeckVersions();
   const deckId = await seedBilingualDeck(api, {
     title: MARKETING_DECK_TITLE,
-    theme: MARKETING_THEME,
+    themeSlug: MARKETING_THEME_SLUG,
     dominant: dominant || deck.dominant,
     titles: deck.titles,
     versions: deck.versions,

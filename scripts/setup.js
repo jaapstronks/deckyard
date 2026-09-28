@@ -16,7 +16,7 @@ import { createInterface } from 'node:readline/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { dirname, join } from 'node:path';
 
-import { DEFAULT_THEME_ID } from '../shared/constants/themes.js';
+import { DEFAULT_THEME_SLUG } from '../shared/constants/themes.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ENV_PATH = join(ROOT, '.env');
@@ -212,7 +212,7 @@ export function flagUpdates(flags = {}) {
   if (flags['app-url']) updates.APP_URL = flags['app-url'];
   else if (!authOn) updates.APP_URL = `http://localhost:${port}`;
 
-  if (flags.theme && flags.theme !== DEFAULT_THEME_ID)
+  if (flags.theme && flags.theme !== DEFAULT_THEME_SLUG)
     updates.DEFAULT_THEME = flags.theme;
 
   return updates;
@@ -285,8 +285,8 @@ async function runWizard() {
     }
 
     // --- theme ---
-    const theme = await ask('\nDefault theme id', DEFAULT_THEME_ID);
-    if (theme && theme !== DEFAULT_THEME_ID) updates.DEFAULT_THEME = theme;
+    const theme = await ask('\nDefault theme (seed slug)', DEFAULT_THEME_SLUG);
+    if (theme && theme !== DEFAULT_THEME_SLUG) updates.DEFAULT_THEME = theme;
   } finally {
     rl.close();
   }

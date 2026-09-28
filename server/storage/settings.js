@@ -52,7 +52,7 @@ import {
   DEFAULT_SUPPORTED_DECK_LANGS,
   normalizeLang,
 } from '../../shared/i18n-utils.js';
-import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
+import { DEFAULT_THEME_SLUG } from '../../shared/constants/themes.js';
 import { getThemeRecord, listSeedThemes } from './themes.js';
 import { UUID_RE } from '../utils/uuid.js';
 import { SUBSCRIPTION_LEVELS } from './presentations/subscriptions.js';
@@ -265,13 +265,6 @@ function seedRetentionDefaults() {
       90,
     ),
   };
-}
-
-function normalizeThemeId(v) {
-  const s = String(v || '').trim();
-  if (!s) return '';
-  // Short slugs (system/custom folder themes) or UUIDs (DB custom themes).
-  return /^[a-z0-9-]{1,64}$/i.test(s) ? s.toLowerCase() : '';
 }
 
 function normalizeProviderUrl(v) {
@@ -1203,13 +1196,37 @@ async function themeOrganizationSettings(scope, operation) {
   return row.settings && typeof row.settings === 'object' ? row.settings : {};
 }
 
-/** Resolve a deployment seed handle to its canonical UUID. */
-async function seedThemeId(handle) {
-  const normalized = normalizeThemeId(handle);
-  const seed = (await listSeedThemes()).find(
-    (theme) => theme.slug === normalized || theme.id === normalized,
-  );
+/**
+ * The record UUID of the seed a deployment setting names, or null.
+ *
+ * Deployment config (`DEFAULT_THEME`, `ENABLED_THEMES`,
+ * `SANDBOX_DEFAULT_THEME`, the sandbox example decks) names a seed by its
+ * slug, and only by its slug (D237): a record UUID differs per installation,
+ * so it can never be written into an env file ahead of time. This is the one
+ * place that spelling is resolved; nothing past it sees a slug.
+ * @param {string} slug
+ * @returns {Promise<string|null>}
+ */
+export async function resolveSeedThemeSlug(slug) {
+  const handle = String(slug || '').trim();
+  if (!handle) return null;
+  const seed = (await listSeedThemes()).find((theme) => theme.slug === handle);
   return seed?.id || null;
+}
+
+/**
+ * The record UUID of the installation default: the seed `DEFAULT_THEME`
+ * names, else the core default seed. A `DEFAULT_THEME` that names no seed is a
+ * configuration error and refuses, rather than quietly rendering every
+ * default deck in another theme.
+ * @returns {Promise<string>}
+ * @throws {Error} when the configured (or core) seed does not exist
+ */
+export async function installationDefaultThemeId() {
+  const slug = envStr('DEFAULT_THEME') || DEFAULT_THEME_SLUG;
+  const id = await resolveSeedThemeSlug(slug);
+  if (!id) throw new Error(`Default theme seed not found: ${slug}`);
+  return id;
 }
 
 /** Resolve the default theme of the deck organization. */
@@ -1223,11 +1240,7 @@ export async function getDefaultThemeId(scope) {
     const record = await getThemeRecord(scope, configured);
     if (record) return record.id;
   }
-  const fallback =
-    (await seedThemeId(envStr('DEFAULT_THEME'))) ||
-    (await seedThemeId(DEFAULT_THEME_ID));
-  if (!fallback) throw new Error('Default theme seed not found');
-  return fallback;
+  return installationDefaultThemeId();
 }
 
 /** Resolve the organization's canonical picker allowlist. Empty means all. */
@@ -1242,7 +1255,7 @@ export async function getEnabledThemeIds(scope) {
         typeof id === 'string' && UUID_RE.test(id) && id === id.toLowerCase(),
     );
   const handles = envStr('ENABLED_THEMES').split(',');
-  const ids = await Promise.all(handles.map(seedThemeId));
+  const ids = await Promise.all(handles.map(resolveSeedThemeSlug));
   return [...new Set(ids.filter(Boolean))];
 }
 

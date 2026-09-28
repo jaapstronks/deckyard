@@ -1,4 +1,4 @@
-import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
+import { DEFAULT_THEME_REF } from '../../shared/constants/themes.js';
 import {
   getThemeRecord,
   listThemes,
@@ -7,28 +7,23 @@ import {
 import { crossOrganizationScope } from '../storage/scope.js';
 import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';
 import { buildThemeConfig } from './theme-builder.js';
-import { envStr } from '../config/utils.js';
 import { slideBackgroundsCssText } from '../../shared/theme-slide-backgrounds.js';
 import { normalizeTheme } from '../../shared/theme-normalize.js';
 import { createLogger } from './logger.js';
 import { UUID_RE } from './uuid.js';
 import { AppError } from './errors.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../config/sandbox.js';
-import { getDefaultThemeId } from '../storage/settings.js';
+import {
+  getDefaultThemeId,
+  installationDefaultThemeId,
+  resolveSeedThemeSlug,
+} from '../storage/settings.js';
 
 const log = createLogger('themes');
 
 const customThemeCache = new Map(); // uuid -> { theme, organizationId }
 
-// Default theme for OSS version (can be overridden via DEFAULT_THEME env var)
-const DEFAULT_THEME = envStr('DEFAULT_THEME', DEFAULT_THEME_ID);
-
-/**
- * The theme value that means "this installation's default" (D232). A deck
- * created without a theme stores it; it is resolved per render, never frozen
- * into the id the default happens to be today.
- */
-export const DEFAULT_THEME_REF = 'default';
+export { DEFAULT_THEME_REF };
 
 export function resolveThemeId(raw) {
   if (raw === DEFAULT_THEME_REF || raw == null || raw === '')
@@ -40,21 +35,11 @@ export function resolveThemeId(raw) {
     : null;
 }
 
-/** Resolve the configured seed through the record table, including legacy env defaults. */
+/** The installation default seed, loaded (`installationDefaultThemeId`). */
 async function installationDefault(repoRoot, ctx) {
   const scope = ctx?.organizationId ? ctx : null;
-  const records = await listSeedThemes();
-  const configured = DEFAULT_THEME;
-  const record =
-    records.find(
-      (item) =>
-        item.id === configured ||
-        (item.source === 'seed' && item.slug === configured),
-    ) ||
-    records.find(
-      (item) => item.source === 'seed' && item.slug === DEFAULT_THEME_ID,
-    );
-  return record ? loadCustomThemeRecord(record.id, scope, repoRoot) : null;
+  const id = await installationDefaultThemeId();
+  return loadCustomThemeRecord(id, scope, repoRoot);
 }
 
 /**
@@ -126,13 +111,11 @@ export async function settleNewDeckTheme(repoRoot, requested, ctx = null) {
   if (requested === undefined || requested === null) {
     if (sandboxEnabled()) {
       const handle = sandboxDefaultThemeId();
-      const seed = (await listSeedThemes()).find(
-        (record) => record.slug === handle || record.id === handle,
-      );
-      if (!seed) throw new Error(`Sandbox theme seed not found: ${handle}`);
+      const seedId = await resolveSeedThemeSlug(handle);
+      if (!seedId) throw new Error(`Sandbox theme seed not found: ${handle}`);
       return {
-        themeId: seed.id,
-        theme: await loadThemeAssets(repoRoot, seed.id, ctx),
+        themeId: seedId,
+        theme: await loadThemeAssets(repoRoot, seedId, ctx),
       };
     }
     return {

@@ -11,7 +11,7 @@
 import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { downloadBlob } from '../../../lib/dom/download.js';
-import { DEFAULT_THEME_ID } from '../../../../shared/constants/themes.js';
+import { DEFAULT_THEME_REF } from '../../../../shared/constants/themes.js';
 import { h } from '../../../lib/dom.js';
 
 /**
@@ -316,7 +316,7 @@ export async function analyzeAndApplyThemeChange({
   // Skip if same theme. `theme` is the deck's own spelling on the wire and
   // everywhere else on the client; `themeId` was a name nothing writes, so this
   // guard compared against the default instead of the deck's actual theme.
-  const currentThemeId = String(pres.theme || DEFAULT_THEME_ID).trim();
+  const currentThemeId = String(pres.theme || DEFAULT_THEME_REF).trim();
   if (currentThemeId === newThemeId) {
     return { ok: false, reason: 'same_theme' };
   }
