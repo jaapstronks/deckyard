@@ -4,10 +4,12 @@
  * render-png.js, export-png-slides.js, and export-print.js
  */
 
-import { customDirFor } from '../../shared/custom-root.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { isServedAssetRef } from '../../shared/slide-types/deck-assets.js';
+import { isIconUrl } from '../../shared/icon-names.js';
+import { resolveServedPath } from './served-asset-path.js';
 import { isRemoteHttpUrl, safeFetchRemoteImage } from './ssrf-guard.js';
 import { mapLimit, exportEmbedConcurrency } from './map-limit.js';
 import { createLogger } from './logger.js';
@@ -61,44 +63,33 @@ export function mimeFromExt(ext) {
 }
 
 /**
- * Map an allowed local-image prefix to the function that gives its on-disk
- * root for an installation root. The fork prefixes resolve through
- * {@link customDirFor}, so an installation whose fork root is elsewhere
- * inlines its own images rather than the checkout's.
- * @type {Array<[string, (repoRoot: string) => string]>}
+ * Is `s` a local file the render side inlines into a self-contained export?
+ *
+ * Exactly the deck-asset class — {@link isServedAssetRef}, the one spelling of
+ * "a path this installation serves as an asset" (D99) — plus the icon SVGs the
+ * renderer emits itself ({@link isIconUrl}). Nothing else under `/client/`:
+ * the client tree is code, not content, and slide text that names
+ * `/client/lib/…` has no business being read into an export.
+ * @param {unknown} s
+ * @returns {boolean}
  */
-const LOCAL_IMAGE_ROOTS = [
-  ['/uploads/', (root) => path.join(root, 'server', 'uploads')],
-  ['/assets/', (root) => path.join(root, 'assets')],
-  ['/custom/assets/', (root) => path.join(customDirFor(root), 'assets')],
-  ['/client/', (root) => path.join(root, 'client')],
-];
+export function isRenderAssetRef(s) {
+  return isServedAssetRef(s) || isIconUrl(s);
+}
 
 /**
- * Resolve a user-controlled local image path to an absolute path, contained to
- * the root directory implied by its prefix. Returns null when the prefix is
- * unknown or the resolved path escapes that root (path traversal). This is the
- * security boundary for {@link computeDataUrlIfLocal}: `s` comes from slide
- * content, so `..`/absolute segments must never reach `fs.readFile`.
- * @param {string} repoRoot - Repository root path
- * @param {string} s - Already-stringified URL or path (e.g. `/assets/x.png`)
- * @param {boolean} isUpload - Whether `s` matched the `/uploads/` prefix
- * @returns {string|null} Contained absolute path, or null if out of bounds
+ * Resolve a render asset ref to an absolute path contained in the directory
+ * the server serves it from, or null when `s` is outside
+ * {@link isRenderAssetRef} or escapes that directory. The prefix → root table
+ * is the served one ({@link resolveServedPath}), so an installation that moved
+ * its uploads or fork root inlines its own files rather than the checkout's.
+ * @param {string} repoRoot - Installation root
+ * @param {string} s - A root-relative URL path (e.g. `/assets/x.png`)
+ * @returns {string|null} Contained absolute path, or null
  */
-function resolveContainedPath(repoRoot, s, isUpload) {
-  // Prefer the /uploads/ root when the caller already classified it as one;
-  // otherwise pick the first matching prefix (assets/custom/client).
-  const entry = isUpload
-    ? LOCAL_IMAGE_ROOTS[0]
-    : LOCAL_IMAGE_ROOTS.find(([prefix]) => s.startsWith(prefix));
-  if (!entry) return null;
-
-  const [prefix, rootFor] = entry;
-  const rootAbs = path.resolve(rootFor(repoRoot));
-  const rel = s.slice(prefix.length).replace(/^\/+/, '');
-  const abs = path.resolve(rootAbs, rel);
-  if (abs !== rootAbs && !abs.startsWith(rootAbs + path.sep)) return null;
-  return abs;
+export function resolveRenderAssetPath(repoRoot, s) {
+  if (!isRenderAssetRef(s)) return null;
+  return resolveServedPath(repoRoot, s)?.path ?? null;
 }
 
 /**
@@ -106,7 +97,6 @@ function resolveContainedPath(repoRoot, s, isUpload) {
  * @param {string} repoRoot - Repository root path
  * @param {string} urlOrPath - URL or path to convert
  * @param {Object} options - Options
- * @param {boolean} options.includeClient - Also convert /client/ paths (default: false)
  * @param {(buf: Buffer, ext: string, mime: string, url?: string) => Promise<{buf: Buffer, mime: string}>} [options.transform]
  *   Optional async transform applied to the image bytes before base64-encoding
  *   (e.g. downsample/recompress for PDF). Receives the source URL/path so a
@@ -147,15 +137,9 @@ export function toDataUrlIfLocal(repoRoot, urlOrPath, options = {}) {
 async function computeDataUrlIfLocal(
   repoRoot,
   s,
-  { includeClient = false, transform = null, embedRemote = false } = {},
+  { transform = null, embedRemote = false } = {},
 ) {
-  const isUpload = s.startsWith('/uploads/');
-  const isAsset = s.startsWith('/assets/');
-  const isClient = s.startsWith('/client/');
-  // Fork assets live under /custom/assets/.
-  const isCustom = s.startsWith('/custom/assets/');
-
-  if (!isUpload && !isAsset && !isCustom && !(includeClient && isClient)) {
+  if (!isRenderAssetRef(s)) {
     // Remote http(s) images: on export/render paths, inline through the SSRF
     // guard or strip. Everything else (data: URIs, other schemes) is untouched.
     if (embedRemote && isRemoteHttpUrl(s)) {
@@ -176,12 +160,7 @@ async function computeDataUrlIfLocal(
     return s;
   }
 
-  // Resolve the request against the intended root for its prefix, then reject
-  // anything that escapes that root via `..`/absolute segments. Without this a
-  // user-controlled image field (e.g. `/assets/../../.env`) would read
-  // arbitrary server files and inline their bytes into the export. Same
-  // resolve-then-`startsWith(root)` containment as static.js / embed-fonts.js.
-  const abs = resolveContainedPath(repoRoot, s, isUpload);
+  const abs = resolveRenderAssetPath(repoRoot, s);
   if (!abs) return s;
 
   try {
@@ -206,7 +185,6 @@ async function computeDataUrlIfLocal(
  * @param {string} repoRoot - Repository root path
  * @param {string} html - HTML string
  * @param {Object} options - Options
- * @param {boolean} options.includeClient - Also convert /client/ paths (default: false)
  * @param {Function} [options.transform] - Optional image-bytes transform (see toDataUrlIfLocal)
  * @param {Map<string, Promise<string>>} [options.cache] - Optional per-run embed cache (see toDataUrlIfLocal)
  * @returns {Promise<string>} HTML with embedded images
@@ -214,20 +192,13 @@ async function computeDataUrlIfLocal(
 export async function embedImgSrcDataUrls(
   repoRoot,
   html,
-  {
-    includeClient = false,
-    transform = null,
-    embedRemote = false,
-    cache = null,
-  } = {},
+  { transform = null, embedRemote = false, cache = null } = {},
 ) {
   const s = String(html || '');
-  const localPattern = includeClient
-    ? /\ssrc="(\/(?:uploads|assets|client|custom\/assets|custom\/themes)\/[^"]+)"/g
-    : /\ssrc="(\/(?:uploads|assets|custom\/assets|custom\/themes)\/[^"]+)"/g;
-
   const uniq = new Map();
-  for (const m of s.matchAll(localPattern)) uniq.set(m[1], true);
+  for (const m of s.matchAll(LOCAL_SRC_RE)) {
+    if (isRenderAssetRef(m[1])) uniq.set(m[1], true);
+  }
   // Safety net: when inlining remote images, also catch raw remote <img src>
   // (e.g. from custom HTML) so no http(s) src reaches headless Chrome.
   if (embedRemote) {
@@ -243,7 +214,6 @@ export async function embedImgSrcDataUrls(
     const srcs = [...uniq.keys()];
     const datas = await mapLimit(srcs, exportEmbedConcurrency(), (src) =>
       toDataUrlIfLocal(repoRoot, src, {
-        includeClient,
         transform,
         embedRemote,
         cache,
@@ -282,11 +252,7 @@ export async function embedImgSrcDataUrls(
   // install. Runs on the same paths as the <img src> pass above, because it has
   // the same reason to exist: the document has no base URL once it reaches
   // headless Chrome.
-  out = await embedLocalCssUrls(repoRoot, out, {
-    includeClient,
-    transform,
-    cache,
-  });
+  out = await embedLocalCssUrls(repoRoot, out, { transform, cache });
 
   return out;
 }
@@ -295,9 +261,11 @@ export async function embedImgSrcDataUrls(
  *  optional matching quote and the URL. */
 const REMOTE_CSS_URL_RE = /url\(\s*(['"]?)(https?:\/\/[^)'"]+)\1\s*\)/gi;
 
-/** Match a CSS `url(...)` pointing at one of the local asset roots. */
-const LOCAL_CSS_URL_RE =
-  /url\(\s*(['"]?)(\/(?:uploads|assets|client|custom\/assets|custom\/themes)\/[^)'"]+)\1\s*\)/gi;
+/** Match a root-relative `src="…"`; {@link isRenderAssetRef} decides. */
+const LOCAL_SRC_RE = /\ssrc="(\/[^"]+)"/g;
+
+/** Match a root-relative CSS `url(...)`; {@link isRenderAssetRef} decides. */
+const LOCAL_CSS_URL_RE = /url\(\s*(['"]?)(\/[^)'"]+)\1\s*\)/gi;
 
 /**
  * Inline local `url(...)` targets — in a stylesheet or in a `style` attribute —
@@ -312,13 +280,12 @@ const LOCAL_CSS_URL_RE =
  * and the chip rendered as the bare `background-color` — a solid dark square
  * where the icon should be, in every PDF and PNG export.
  *
- * Same allow-list and containment check as the `<img src>` pass, so this widens
+ * Same predicate and containment check as the `<img src>` pass, so this widens
  * *where* a local asset may be referenced from, not *which* files can be read.
  *
  * @param {string} repoRoot
  * @param {string} html
  * @param {Object} [opts]
- * @param {boolean} [opts.includeClient] - Also inline `/client/` paths.
  * @param {Function} [opts.transform] - Optional image-bytes transform.
  * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed cache.
  * @returns {Promise<string>}
@@ -326,19 +293,18 @@ const LOCAL_CSS_URL_RE =
 export async function embedLocalCssUrls(
   repoRoot,
   html,
-  { includeClient = false, transform = null, cache = null } = {},
+  { transform = null, cache = null } = {},
 ) {
   const s = String(html || '');
   const uniq = new Set();
   for (const m of s.matchAll(LOCAL_CSS_URL_RE)) {
-    if (!includeClient && m[2].startsWith('/client/')) continue;
-    uniq.add(m[2]);
+    if (isRenderAssetRef(m[2])) uniq.add(m[2]);
   }
   if (!uniq.size) return s;
 
   const urls = [...uniq];
   const datas = await mapLimit(urls, exportEmbedConcurrency(), (url) =>
-    toDataUrlIfLocal(repoRoot, url, { includeClient, transform, cache }),
+    toDataUrlIfLocal(repoRoot, url, { transform, cache }),
   );
   const map = new Map(urls.map((u, i) => [u, datas[i]]));
 
@@ -378,7 +344,6 @@ export async function embedLocalCssUrls(
  * @param {string} repoRoot
  * @param {string} cssText
  * @param {Object} [opts]
- * @param {boolean} [opts.includeClient] - Also inline `/client/` paths.
  * @param {Function} [opts.transform] - Optional image-bytes transform.
  * @param {Map<string, Promise<string>>} [opts.cache] - Shared per-run embed cache.
  * @returns {Promise<string>}
@@ -386,17 +351,13 @@ export async function embedLocalCssUrls(
 export async function embedCssUrlsForExport(
   repoRoot,
   cssText,
-  { includeClient = false, transform = null, cache = null } = {},
+  { transform = null, cache = null } = {},
 ) {
   const remoteEmbedded = await embedRemoteCssUrls(repoRoot, cssText, {
     transform,
     cache,
   });
-  return embedLocalCssUrls(repoRoot, remoteEmbedded, {
-    includeClient,
-    transform,
-    cache,
-  });
+  return embedLocalCssUrls(repoRoot, remoteEmbedded, { transform, cache });
 }
 
 async function embedRemoteCssUrls(

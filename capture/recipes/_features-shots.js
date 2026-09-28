@@ -107,6 +107,39 @@ async function openShareTab(page, tab) {
 }
 
 /**
+ * Refuse the presenter shot when the layout does not fit its viewport (B506).
+ *
+ * The screenshot clips to the viewport, so a top bar that runs past the right
+ * edge still produces a clean-looking PNG, with the console rail cut in half.
+ * That shipped in two website refreshes before anyone saw it. Failing here
+ * turns the regression into a failed recipe instead of a published image.
+ *
+ * @param {import('puppeteer-core').Page} page
+ * @returns {Promise<void>}
+ */
+async function assertPresenterFitsViewport(page) {
+  const overflow = await page.evaluate(() => {
+    const vw = document.documentElement.clientWidth;
+    const out = [];
+    if (document.documentElement.scrollWidth > vw) {
+      out.push(`page is ${document.documentElement.scrollWidth}px wide`);
+    }
+    for (const sel of ['.presenter-topbar', '.presenter-console']) {
+      const el = document.querySelector(sel);
+      const r = el?.getBoundingClientRect();
+      if (!r) out.push(`${sel} missing`);
+      else if (r.right > vw + 0.5) out.push(`${sel} ends at ${r.right}px`);
+    }
+    return { vw, out };
+  });
+  if (overflow.out.length) {
+    throw new Error(
+      `Presenter does not fit a ${overflow.vw}px viewport: ${overflow.out.join('; ')}`,
+    );
+  }
+}
+
+/**
  * `presenter-view-{nl,en}` — the presenter's own screen during a talk: the
  * stage on the left, the console beside it with the timer, the next slide and
  * the speaker notes for the slide that is up.
@@ -210,6 +243,7 @@ export function presenterViewShot(lang) {
       // page.click scrolls its target into view; if anything overflowed after
       // all, that scroll would crop the frame. Pin the origin before the shot.
       await page.evaluate(() => window.scrollTo(0, 0));
+      await assertPresenterFitsViewport(page);
       // The poll slide on stage prints the session's two follow codes, which
       // are minted per run. Pin them last, like the stopwatch above: this shot
       // is a photograph, and everything in it has to be the same twice.

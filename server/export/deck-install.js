@@ -16,53 +16,12 @@ import { canonicalJson } from '../../shared/slide-fingerprint.js';
 import {
   collectThemeImageRefs,
   rewriteThemeImageRefs,
-  isServedAssetRef,
-  isUploadRef,
   assetRefForHash,
 } from '../../shared/slide-types/deck-assets.js';
-import { uploadsDir } from '../config/storage-paths.js';
-import { customDirFor } from '../../shared/custom-root.js';
+import { resolveServedAssetPath } from '../utils/served-asset-path.js';
 
 export function sha256Hex(buf) {
   return crypto.createHash('sha256').update(buf).digest('hex');
-}
-
-/**
- * Resolve a served image ref under its permitted root, or null if it escapes.
- * @param {string} repoRoot
- * @param {string} ref
- * @returns {string|null}
- */
-function resolveUploadPath(repoRoot, ref) {
-  if (!isServedAssetRef(ref)) return null;
-  const upload = isUploadRef(ref);
-  const custom = ref.startsWith('/custom/assets/');
-  const base = path.resolve(
-    upload
-      ? uploadsDir(repoRoot)
-      : custom
-        ? path.join(customDirFor(repoRoot), 'assets')
-        : path.join(repoRoot, 'assets'),
-  );
-  let rel;
-  try {
-    rel = decodeURIComponent(
-      ref.slice(
-        upload
-          ? '/uploads/'.length
-          : custom
-            ? '/custom/assets/'.length
-            : '/assets/'.length,
-      ),
-    );
-  } catch {
-    return null;
-  }
-  if (rel.split(/[\\/]/).some((part) => !part || part === '.' || part === '..'))
-    return null;
-  const abs = path.resolve(base, rel);
-  if (abs !== base && !abs.startsWith(base + path.sep)) return null;
-  return abs;
 }
 
 /**
@@ -73,20 +32,15 @@ function resolveUploadPath(repoRoot, ref) {
  *   null when the file is outside the uploads dir or unreadable
  */
 export async function readUploadAsset(repoRoot, ref) {
-  const abs = resolveUploadPath(repoRoot, ref);
-  if (!abs) return null;
+  const resolved = resolveServedAssetPath(repoRoot, ref);
+  if (!resolved) return null;
+  const abs = resolved.path;
   let buffer;
   try {
+    // The lexical check holds for the ref; this one holds for a symlink in
+    // the served tree that points out of it.
     const real = await fs.realpath(abs);
-    const upload = isUploadRef(ref);
-    const base = path.resolve(
-      upload
-        ? uploadsDir(repoRoot)
-        : ref.startsWith('/custom/assets/')
-          ? path.join(customDirFor(repoRoot), 'assets')
-          : path.join(repoRoot, 'assets'),
-    );
-    const realBase = await fs.realpath(base);
+    const realBase = await fs.realpath(resolved.dir);
     if (!real.startsWith(realBase + path.sep)) return null;
     buffer = await fs.readFile(abs);
   } catch {

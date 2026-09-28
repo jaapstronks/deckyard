@@ -100,7 +100,6 @@ test('embedImgSrcDataUrls replaces every unique local src once', async () => {
   ].join('\n');
   const cache = new Map();
   const out = await embedImgSrcDataUrls(repoRoot, html, {
-    includeClient: true,
     cache,
   });
   assert.ok(

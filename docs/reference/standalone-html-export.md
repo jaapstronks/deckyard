@@ -71,7 +71,7 @@ Everything the page needs is embedded into the one HTML file:
 | Asset                                                        | How                                   | Where                                                             |
 | ------------------------------------------------------------ | ------------------------------------- | ----------------------------------------------------------------- |
 | Slide images / uploads                                       | base64 data URLs                      | `embedSlideImages`, `embedImgSrcDataUrls` (`html-utils.js`)       |
-| Lucide icon SVGs / client assets                             | base64 data URLs                      | same image-embed pass (`includeClient: true`)                     |
+| Lucide icon SVGs                                             | base64 data URLs                      | same image-embed pass (`isRenderAssetRef`)                        |
 | Theme fonts (curated + uploaded)                             | base64 `@font-face` data URLs         | `buildEmbeddedFontCss` from `theme.embedFonts` (`embed-fonts.js`) |
 | Any other `/assets/...` font a bundled stylesheet references | base64 data URLs, in place            | `inlineLocalFontUrls` (`embed-fonts.js`)                          |
 | Viewer chrome + slide CSS                                    | inlined `<style>` (imports flattened) | `readCssWithImports`, `loadExportCssBundle`                       |

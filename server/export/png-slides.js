@@ -227,7 +227,6 @@ export async function buildSlidesPngExportHtml(
 
   // Embed any remaining <img src="/uploads|/assets|/client/..."> into data URLs.
   slidesHtml = await embedImgSrcDataUrls(repoRoot, slidesHtml, {
-    includeClient: true,
     cache: embedCache,
   });
 

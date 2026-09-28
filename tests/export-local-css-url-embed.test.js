@@ -69,40 +69,34 @@ test('a local url() outside the asset roots is left alone', async () => {
   // Widening *where* an asset may be referenced from must not widen *which*
   // files can be read: the roots are the same allow-list as the <img src> pass.
   const html = `<span style="--x:url(/etc/passwd)"></span>`;
-  const out = await embedLocalCssUrls(repoRoot, html, { includeClient: true });
+  const out = await embedLocalCssUrls(repoRoot, html);
   assert.equal(out, html);
 });
 
 test('a local url() traversing out of an asset root is left alone', async () => {
   const html = `<span style="--x:url(/assets/../../../etc/passwd)"></span>`;
-  const out = await embedLocalCssUrls(repoRoot, html, { includeClient: true });
+  const out = await embedLocalCssUrls(repoRoot, html);
   assert.equal(out, html);
 });
 
-test('/client/ urls only inline when the caller asks for them', async () => {
-  // The standalone HTML export ships alongside the client, so it keeps its
-  // references; PDF and PNG have no base URL and pass includeClient.
-  const html = `<span style="--icg-icon-url:url(/client/vendor/lucide-icons/activity.svg)"></span>`;
+test('under /client/ only the vendored icon SVGs inline (B261)', async () => {
+  // The renderer emits icon URLs itself, so every export carries them; the
+  // rest of the client tree is code, and a url() naming it stays as written.
+  const icon = `<span style="--icg-icon-url:url(/client/vendor/lucide-icons/activity.svg)"></span>`;
+  const inlined = await embedLocalCssUrls(repoRoot, icon);
+  assert.ok(inlined.includes('data:image/svg+xml;base64,'));
 
-  const withoutClient = await embedLocalCssUrls(repoRoot, html, {
-    includeClient: false,
-  });
-  assert.equal(withoutClient, html);
-
-  const withClient = await embedLocalCssUrls(repoRoot, html, {
-    includeClient: true,
-  });
-  assert.ok(withClient.includes('data:image/svg+xml;base64,'));
+  const code = `<span style="--x:url(/client/lib/dom.js)"></span>`;
+  assert.equal(await embedLocalCssUrls(repoRoot, code), code);
+  const img = `<img src="/client/lib/dom.js">`;
+  assert.equal(await embedImgSrcDataUrls(repoRoot, img), img);
 });
 
 test('a remote image that cannot be fetched becomes a blank pixel, not a dead src', async () => {
   // 169.254.169.254 is refused by the SSRF guard, which is the same code path a
   // 404 takes: the embed comes back empty.
   const html = '<img src="http://169.254.169.254/gone.jpg" alt="Someone">';
-  const out = await embedImgSrcDataUrls(repoRoot, html, {
-    includeClient: true,
-    embedRemote: true,
-  });
+  const out = await embedImgSrcDataUrls(repoRoot, html, { embedRemote: true });
 
   assert.ok(!out.includes('169.254.169.254'), 'the dead URL must not survive');
   assert.ok(

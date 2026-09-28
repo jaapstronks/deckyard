@@ -4,6 +4,45 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.47.0](https://github.com/jaapstronks/deckyard/compare/v1.46.0...v1.47.0) (2026-09-28)
+
+
+### Added
+
+* store uploaded font variants privately and serve them from the app (B510) ([#1349](https://github.com/jaapstronks/deckyard/issues/1349)) ([04a113e](https://github.com/jaapstronks/deckyard/commit/04a113e8eb3c54da1b97843303425b1e8850ed33))
+
+
+### Fixed
+
+* **export:** an unreadable font costs that font, and every font role embeds its curated family (B508) ([#1353](https://github.com/jaapstronks/deckyard/issues/1353)) ([d2300bb](https://github.com/jaapstronks/deckyard/commit/d2300bb0965c5eabb54e9009d59a1f0f0014b099))
+* **share-viewer:** read the analytics preference the way follow does (B503) ([#1350](https://github.com/jaapstronks/deckyard/issues/1350)) ([87e309b](https://github.com/jaapstronks/deckyard/commit/87e309b388a7b762bc0698ed44a0a641d1c13454))
+
+## [1.46.0](https://github.com/jaapstronks/deckyard/compare/v1.45.0...v1.46.0) (2026-09-28)
+
+
+### ⚠ BREAKING CHANGES
+
+* **slide-types:** the slide-type CSS classes `.sfi-card` and `.sfi-card-title` (feedback-slide, follow-invite-slide) are replaced by `.sfi-qr-plate`, `.sfi-link` and `.sfi-method-label`, and the `.sfi-qr-wrap` wrapper is gone. Deckyard's own stylesheet moves with them, so core themes are unaffected; a fork that styles these names against its own copy of the slide types must rename the rules.
+
+### Added
+
+* route OIDC logins by organization claim ([af1fdac](https://github.com/jaapstronks/deckyard/commit/af1fdacc6b3571813d75b73881bfaa105e8ec21a))
+* unify theme records and portable deck styling (B332) ([#1336](https://github.com/jaapstronks/deckyard/issues/1336)) ([98ae9cc](https://github.com/jaapstronks/deckyard/commit/98ae9cc2f97edc3501190f1d29abf5cfc7c70be4))
+
+
+### Fixed
+
+* **auth:** SSO provisioning writes the membership a multi-org session needs (B430) ([#1343](https://github.com/jaapstronks/deckyard/issues/1343)) ([d52fbb3](https://github.com/jaapstronks/deckyard/commit/d52fbb3930763e7f0c23ecf201f87b9561fd9f78))
+* **capture:** prefer Google Chrome over the chromium-browser snap stub (B499) ([#1345](https://github.com/jaapstronks/deckyard/issues/1345)) ([f5a46af](https://github.com/jaapstronks/deckyard/commit/f5a46af7304614e4c2faab1a154cc862f32ed01b))
+* **editor:** Escape goes to the topmost live surface (B493) ([#1340](https://github.com/jaapstronks/deckyard/issues/1340)) ([0c07124](https://github.com/jaapstronks/deckyard/commit/0c07124cfa6cee89a1fceeb42fc48bf70d2cd3e6))
+* **presenter:** the top bar wraps and the stage fits what is left (B506) ([#1347](https://github.com/jaapstronks/deckyard/issues/1347)) ([2925fa0](https://github.com/jaapstronks/deckyard/commit/2925fa0abaac058be5d6d22090d3bb58bb520111))
+* **slide-types:** give the follow-invite slide a QR plate, not two cards (B502) ([#1342](https://github.com/jaapstronks/deckyard/issues/1342)) ([f9f90d6](https://github.com/jaapstronks/deckyard/commit/f9f90d646d0b5524b5262efe9120682643545dc9))
+
+
+### Changed
+
+* keep the next release in 1.x during beta ([b1aa902](https://github.com/jaapstronks/deckyard/commit/b1aa9021b8ec382aa515ede3d2642fd906fee0ad))
+
 ## [1.45.0](https://github.com/jaapstronks/deckyard/compare/v1.44.0...v1.45.0) (2026-09-28)
 
 

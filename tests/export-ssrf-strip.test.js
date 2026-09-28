@@ -43,7 +43,6 @@ test('embedImgSrcDataUrls safety net strips a raw remote <img> metadata src', as
   // With embedRemote, a metadata-IP src must be removed so Chrome can't fetch.
   const html = '<div><img src="http://169.254.169.254/x.png" alt="a"></div>';
   const out = await embedImgSrcDataUrls('/repo', html, {
-    includeClient: true,
     embedRemote: true,
   });
   assert.ok(!out.includes('169.254.169.254'), 'metadata src must be stripped');
@@ -51,7 +50,7 @@ test('embedImgSrcDataUrls safety net strips a raw remote <img> metadata src', as
 
 test('embedImgSrcDataUrls without embedRemote leaves remote <img> untouched', async () => {
   const html = '<img src="https://cdn.example.com/logo.png">';
-  const out = await embedImgSrcDataUrls('/repo', html, { includeClient: true });
+  const out = await embedImgSrcDataUrls('/repo', html);
   assert.equal(out, html);
 });
 
@@ -62,7 +61,6 @@ test('embedImgSrcDataUrls safety net blanks a remote CSS background-image url()'
   const html =
     '<div class="slide-bg-layer" style="background-image:url(\'http://169.254.169.254/x.png\')"></div>';
   const out = await embedImgSrcDataUrls('/repo', html, {
-    includeClient: true,
     embedRemote: true,
   });
   assert.ok(
@@ -75,6 +73,6 @@ test('embedImgSrcDataUrls safety net blanks a remote CSS background-image url()'
 test('embedImgSrcDataUrls without embedRemote leaves a remote background url() untouched', async () => {
   const html =
     '<div style="background-image:url(\'https://cdn.example.com/bg.png\')"></div>';
-  const out = await embedImgSrcDataUrls('/repo', html, { includeClient: true });
+  const out = await embedImgSrcDataUrls('/repo', html);
   assert.equal(out, html);
 });

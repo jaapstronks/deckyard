@@ -22,6 +22,7 @@ import {
   unauthorized,
   withErrorHandler,
   forbidden,
+  serverError,
 } from '../../utils/http.js';
 import { getTrimmedString } from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -36,6 +37,7 @@ import {
   removeFontVariant,
 } from '../../storage/font-families.js';
 import { getMediaProvider } from '../../media/index.js';
+import { MANAGED_FONT_FOLDER } from '../../media/managed-fonts.js';
 import { canManage } from '../../utils/route-middleware.js';
 
 const ERROR_MESSAGES = {
@@ -242,24 +244,31 @@ async function handleFontFamilyUploadVariant(
   const contentType = format === 'woff' ? 'font/woff' : 'font/woff2';
   const displayName = `${family.slug}-${weight}-${style}`;
 
+  // Always a private object: the app serves it at /fonts/managed/, never a
+  // public bucket or /uploads/ URL (media/managed-fonts.js).
   let uploadResult;
   try {
     const mediaProvider = getMediaProvider();
-    uploadResult = await mediaProvider.uploadBuffer({
+    uploadResult = await mediaProvider.uploadPrivateBuffer({
       buffer: buf,
       filename: displayName,
       contentType,
+      folder: MANAGED_FONT_FOLDER,
     });
   } catch (err) {
+    // A bucket that serves private objects publicly is the operator's to fix;
+    // say so instead of the generic failure.
+    if (err?.code === 'PRIVATE_OBJECT_PUBLIC') {
+      return serverError(res, err.message);
+    }
     return badRequest(res, 'Failed to upload font file.');
   }
 
-  // Create variant record — store the storage key in filename for cleanup
+  // The storage key is the variant's only address; its URL derives from it.
   const result = await addFontVariant(storageScope, familyId, {
     weight,
     style,
     filename: uploadResult.key,
-    url: uploadResult.publicUrl,
     fileSize: buf.length,
     format,
   });

@@ -12,28 +12,11 @@
   --presenter-console-width: 360px;
 }
 
-/* Make room for the rail: shrink the stage's available width and shift the
-   letterboxed slide into the remaining space. */
+/* Make room for the rail: the deck's padding shrinks its content box, and the
+   stage fits that box (50-presenter-layout.css), so the letterboxed slide
+   shifts into the remaining space. */
 .presenter-shell.is-console .deck {
   padding-right: var(--presenter-console-width);
-}
-.presenter-shell.is-console .deck-stage {
-  width: min(
-    calc(100vw - var(--presenter-console-width)),
-    calc(
-      (
-          100dvh - var(--presenter-topbar-height) -
-            var(--presenter-progress-height)
-        ) *
-        16 / 9
-    )
-  );
-  height: min(
-    calc(
-      100dvh - var(--presenter-topbar-height) - var(--presenter-progress-height)
-    ),
-    calc((100vw - var(--presenter-console-width)) * 9 / 16)
-  );
 }
 
 .presenter-shell.is-console .presenter-console {
@@ -44,6 +27,9 @@
   top: 0;
   right: 0;
   bottom: 0;
+  /* The rail is exactly the room the deck's padding makes for it; with the
+     padding and border outside the width it covered the slide's edge. */
+  box-sizing: border-box;
   width: var(--presenter-console-width);
   padding: 16px;
   background: hsl(var(--app-bg-elevated) / 0.96);
@@ -59,24 +45,6 @@ html.is-fullscreen .presenter-console {
 }
 html.is-fullscreen .presenter-shell.is-console .deck {
   padding-right: 0;
-}
-html.is-fullscreen .presenter-shell.is-console .deck-stage {
-  width: min(
-    100vw,
-    calc(
-      (
-          100dvh - var(--presenter-topbar-height) -
-            var(--presenter-progress-height)
-        ) *
-        16 / 9
-    )
-  );
-  height: min(
-    calc(
-      100dvh - var(--presenter-topbar-height) - var(--presenter-progress-height)
-    ),
-    calc(100vw * 9 / 16)
-  );
 }
 
 /* --- Timer block --------------------------------------------------------- */

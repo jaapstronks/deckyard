@@ -7,15 +7,12 @@ import { sandboxEnabled } from '../../../config/sandbox.js';
 import { listThemes } from '../../../storage/themes.js';
 import { getDefaultThemeId } from '../../../storage/settings.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types.js';
-import { newSlide } from '../../../../shared/slide-types/presentation.js';
-import { resolveTypeDefaults } from '../../../../shared/slide-types/type-defaults.js';
 import {
   requirePermission,
   dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
   apiSuccess,
-  apiError,
 } from './middleware.js';
 import { parsePaginationParams } from '../../../utils/request-validators.js';
 
@@ -85,84 +82,6 @@ async function handleSlideTypes(ctx) {
   await apiSuccess(ctx, {
     slideTypes,
     count: Object.keys(slideTypes).length,
-  });
-  return true;
-}
-
-/** The language the schema endpoint's `defaults` and `example` describe. */
-const SCHEMA_LANG = 'en-GB';
-
-/**
- * GET /api/v1/slide-types/:slideType/schema - Get detailed schema for a slide type.
- * Returns fields with full metadata, defaults, and an example slide structure.
- */
-async function handleSlideTypeSchema(ctx, slideType) {
-  if (!requirePermission(ctx, 'read')) return true;
-
-  const def = SLIDE_TYPES[slideType];
-  if (!def) {
-    await apiError(ctx, 404, `Slide type '${slideType}' not found`);
-    return true;
-  }
-
-  // Build detailed field information
-  const fields = (def.fields || []).map((field) => {
-    const fieldInfo = {
-      key: field.key,
-      label: field.label || field.key,
-      type: field.type,
-      required: field.required === true,
-      // Beside `required`, not a second meaning of it (D211).
-      essential: field.essential === true,
-    };
-
-    // Add optional metadata
-    if (field.maxLength) fieldInfo.maxLength = field.maxLength;
-    if (field.placeholder) fieldInfo.placeholder = field.placeholder;
-    if (field.helpText) fieldInfo.helpText = field.helpText;
-
-    // Add options for enum types
-    if (field.type === 'enum' && Array.isArray(field.options)) {
-      fieldInfo.options = field.options.map((opt) => {
-        if (typeof opt === 'string') return { value: opt, label: opt };
-        if (opt && typeof opt === 'object') {
-          return {
-            value: opt.value ?? opt.label,
-            label: opt.label || opt.value,
-          };
-        }
-        return { value: String(opt), label: String(opt) };
-      });
-    }
-
-    return fieldInfo;
-  });
-
-  // One language answers both halves of "what does a new slide of this type
-  // contain": `defaults` is what the registry resolves for en-GB, and the
-  // example is what the factory makes from that same resolution in an en-GB
-  // deck without a theme. Only the slide id is fixed; instance keys (a
-  // poll's question and option ids) are minted per call like any new slide.
-  // This endpoint describes the core registry, so that is the one it
-  // composes from.
-  const defaults = resolveTypeDefaults(def, SCHEMA_LANG);
-  const example = {
-    ...newSlide({
-      type: slideType,
-      theme: null,
-      lang: SCHEMA_LANG,
-      slideTypes: SLIDE_TYPES,
-    }),
-    id: 'example-uuid-00000000',
-  };
-
-  await apiSuccess(ctx, {
-    slideType,
-    label: def.label || slideType,
-    fields,
-    defaults,
-    defaultsByLang: def.defaultsByLang || undefined,
-    example,
   });
   return true;
 }
@@ -240,18 +159,6 @@ export const ROUTES = [
   { method: 'GET', pattern: '/api/v1/slide-types', handler: handleSlideTypes },
   {
     pattern: '/api/v1/slide-types',
-    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
-  },
-  {
-    // A slide-type name, not a row id.
-    method: 'GET',
-    pattern: /^\/api\/v1\/slide-types\/([^/]+)\/schema$/,
-    captures: ['text'],
-    handler: handleSlideTypeSchema,
-  },
-  {
-    pattern: /^\/api\/v1\/slide-types\/([^/]+)\/schema$/,
-    captures: ['text'],
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
   },
   {

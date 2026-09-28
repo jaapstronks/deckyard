@@ -1,6 +1,6 @@
 /**
  * Contract tests for the public API v1 resources module (B40 PR 5+):
- * GET /api/v1/themes, /api/v1/slide-types, /api/v1/slide-types/:type/schema
+ * GET /api/v1/themes, /api/v1/slide-types
  * and /api/v1/image-library.
  *
  * The surface these pin, per docs/openapi.yaml: status codes, the documented
@@ -286,52 +286,11 @@ test('GET /slide-types without the read permission is refused with 403', async (
   assert.equal(ctx.res.statusCode, 403);
 });
 
-// ---------------------------------------------------------------------------
-// GET /api/v1/slide-types/:type/schema
-// ---------------------------------------------------------------------------
-
-test('GET /slide-types/:type/schema describes fields and an example slide', async () => {
+test('the catalogue has no per-type schema route (B504)', async () => {
+  // One schema route: /api/v1/schema/slide-types/{id}.json (index.js).
   await installDb();
   const ctx = makeCtx('GET', '/api/v1/slide-types/title-slide/schema');
-  assert.equal(await handleResources(ctx), true);
-
-  assert.equal(ctx.res.statusCode, 200);
-  const body = ctx.res.body;
-  assert.equal(body.slideType, 'title-slide');
-  assert.ok(body.label);
-  assert.ok(Array.isArray(body.fields) && body.fields.length > 0);
-  for (const field of body.fields) {
-    assert.ok(field.key, 'every field carries its key');
-    assert.equal(typeof field.required, 'boolean');
-    assert.equal(typeof field.essential, 'boolean');
-  }
-  // D211: essential beside required, not folded into it.
-  const title = body.fields.find((f) => f.key === 'title');
-  assert.equal(title.essential, true);
-  assert.equal(body.example.type, 'title-slide');
-  assert.ok(body.example.content && typeof body.example.content === 'object');
-});
-
-test('GET /slide-types/:type/schema: the example contains the defaults it reports', async () => {
-  // quote-slide is one of the types whose en-GB defaults differ from its
-  // language-less ones, so a mismatch between the two halves shows here.
-  await installDb();
-  const ctx = makeCtx('GET', '/api/v1/slide-types/quote-slide/schema');
-  await handleResources(ctx);
-
-  assert.equal(ctx.res.statusCode, 200);
-  const { defaults, example } = ctx.res.body;
-  assert.ok(Object.keys(defaults).length > 0);
-  for (const [key, value] of Object.entries(defaults)) {
-    assert.deepEqual(example.content[key], value, `example.content.${key}`);
-  }
-});
-
-test('GET /slide-types/:type/schema for an unknown type answers 404', async () => {
-  await installDb();
-  const ctx = makeCtx('GET', '/api/v1/slide-types/never-a-slide-type/schema');
-  await handleResources(ctx);
-  assert.equal(ctx.res.statusCode, 404);
+  assert.equal(await handleResources(ctx), false);
 });
 
 // ---------------------------------------------------------------------------

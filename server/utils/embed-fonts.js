@@ -3,6 +3,11 @@ import path from 'node:path';
 import { uploadsDir } from '../config/storage-paths.js';
 import { assertPublicHttpUrl } from './ssrf-guard.js';
 import { cssStringEscape, mergeFontFaces } from '../../shared/theme-fonts.js';
+import { getMediaProvider } from '../media/index.js';
+import { managedFontKeyFromUrl } from '../media/managed-fonts.js';
+import { createLogger } from './logger.js';
+
+const log = createLogger('embed-fonts');
 
 function stripFontFaceBlocks(cssText) {
   return String(cssText || '').replace(/@font-face\s*\{[\s\S]*?\}\s*/g, '');
@@ -89,6 +94,15 @@ export async function fetchFontAsDataUrl(url, format = 'woff2') {
  * @returns {Promise<string|null>} data URL, or null when the source is unusable
  */
 async function resolveEmbedSource(repoRoot, { url, path: relPath, format }) {
+  const managedKey = managedFontKeyFromUrl(url);
+  if (managedKey) {
+    // An uploaded font variant: a private object, read through the media
+    // provider. It has no public URL to fetch, by design.
+    const buf = await getMediaProvider().readFile(managedKey);
+    if (!buf) return null;
+    const mime = format === 'woff' ? 'font/woff' : 'font/woff2';
+    return `data:${mime};base64,${buf.toString('base64')}`;
+  }
   if (url && url.startsWith('/uploads/')) {
     // Locally-stored uploaded font — read directly from the uploads directory
     try {
@@ -98,8 +112,18 @@ async function resolveEmbedSource(repoRoot, { url, path: relPath, format }) {
     }
   }
   if (url) {
-    // URL-based font (external CDN / media provider) — fetch and base64-encode
-    return await fetchFontAsDataUrl(url, format);
+    // URL-based font (external CDN / media provider) — fetch and base64-encode.
+    // A refused URL (not http(s), an internal address, over the size cap)
+    // costs this one font, not the export: the family's token already carries
+    // its fallback stack, so the render degrades to that. Where a variant URL
+    // is written, only the media provider's own address goes in; this is the
+    // render reading what is stored, not the place to refuse it (B508).
+    try {
+      return await fetchFontAsDataUrl(url, format);
+    } catch (err) {
+      log.warn(`Skipping font ${url}: ${err.message}`);
+      return null;
+    }
   }
   if (relPath) {
     // Path-based font (local curated file)

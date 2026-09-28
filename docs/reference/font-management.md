@@ -20,8 +20,10 @@ Two PostgreSQL tables (migration `037_font_management.js`), both org-scoped:
 
 - `weight`: 100–900 in 100 increments
 - `style`: `normal` | `italic`
-- `filename`: media provider storage key (not original filename)
-- `url`: resolved URL from media provider
+- `filename`: media provider storage key (not original filename). For an
+  uploaded variant always a private key, `private/fonts/<file>`.
+- The variant's `url` in API responses is **derived** from that key
+  (`/fonts/managed/<file>`), never stored: migration 088 dropped the column.
 - `format`: `woff2` | `woff`
 - Unique constraint on `(font_family_id, weight, style)`
 
@@ -31,7 +33,7 @@ Families cascade-delete their variants. Variants for uploaded fonts have stored 
 
 | Source       | How fonts load                              | What's stored                                            | Export strategy                    |
 | ------------ | ------------------------------------------- | -------------------------------------------------------- | ---------------------------------- |
-| **Upload**   | `@font-face` rules with variant URLs        | woff2/woff files via media provider                      | Base64-embedded in HTML exports    |
+| **Upload**   | `@font-face` → `/fonts/managed/<file>`      | woff2/woff as private media objects                      | Read via provider, base64-embedded |
 | **Adobe**    | `<link>` to Typekit CSS (`use.typekit.net`) | Project ID in `sourceConfig`                             | External `<link>` tag in exports   |
 | **Monotype** | `<script>` from `fast.fonts.net`            | Project ID + version in `sourceConfig`                   | External `<script>` tag in exports |
 | **Google**   | `<link>` to Google Fonts CSS2 API           | Spec string (e.g. `"Raleway:400,700"`) in `sourceConfig` | External `<link>` tag in exports   |
@@ -56,7 +58,7 @@ When `headingFamilyId` or `bodyFamilyId` is present, the system treats it as a m
 1. Theme record is loaded from DB (`server/utils/themes.js` → `loadThemeAssets()`)
 2. If theme has a familyId, `listAllFontFamiliesWithVariants()` fetches managed fonts for the org
 3. `buildThemeConfig()` receives managed fonts and produces:
-   - `embedFonts` array (for uploaded fonts — URL-based variants to base64 in exports)
+   - `embedFonts` array: the uploaded heading/body variants (URL-based, base64 in exports), plus the curated family at the head of **every** `--t-font-*` token the finished theme carries — heading, body, `typography.mono`, or a `cssVarOverrides` caption. The fallbacks after the head are not embedded. An _uploaded_ family is embedded only in the heading and body roles; the presentation view injects the same list, so a third role naming one falls back on screen and in the export alike. A source the export cannot read (a refused URL, a missing file) drops that one face with a warning in the log, and the render uses the token's fallback stack; it never fails the export (B508).
    - `externalFontLinks` array (for Adobe/Monotype/Google — `<link>` and `<script>` tags)
    - CSS custom properties (`--t-font-heading`, `--t-font-body`) with proper fallback stacks
 4. Result is cached in `customThemeCache` (invalidated on theme or font changes)
@@ -147,6 +149,87 @@ Body fonts need regular (400) and bold (700) weights to work properly in slide c
 
 Upload endpoint validates magic bytes (woff2: `wOF2`, woff: `wOFF`) and enforces a 5MB size limit.
 
+`GET /fonts/managed/<file>` (no `/api/`, no session) serves an uploaded variant
+to the browser; see _Private font variants_ below for who may ask and why.
+
+## Private font variants
+
+Uploaded fonts are licensed files (a fork's GT America, say), and a public
+bucket or CDN URL is an open download for anyone who finds it. Since B510 every
+uploaded variant is a **private media object**, on every installation. There is
+no flag and no per-variant choice, because a second, public form would need its
+own URL spelling and its own rules for the same concept.
+
+### Where the bytes live
+
+- **S3 mode**: key `private/fonts/<slug>-<weight>-<style>-<uuid>.woff2` in the
+  same bucket. No ACL is sent, and an object without one is private on every
+  S3-compatible store. What can still make it public is the **bucket policy**
+  (or a CDN in front of the bucket). So after every write the provider sends an
+  anonymous `HEAD` to each public address the object could have: the
+  `S3_PUBLIC_URL` base and the bucket's own URL. If either answers 2xx, the
+  object is deleted again and the upload is refused with an error naming the
+  fix. **Operator rule: public read may cover `uploads/*` only, never the whole
+  bucket.** A probe that gets no answer at all (DNS, offline) proves nothing
+  either way and does not block the upload.
+- **Local mode**: `<DATA_DIR>/private-media/fonts/<file>`. The data dir is not
+  one of the served static roots, so `/uploads/…` cannot reach it.
+
+### Who can fetch the file
+
+This is a hard limit: a font the browser renders is a font the browser has
+downloaded. Share links and embeds show decks to anonymous viewers, so
+"protected" cannot mean that viewers never get the file. What it does mean:
+
+1. **No open CDN or bucket.** The app serves the file itself at
+   `/fonts/managed/<file>`, reading it privately through the media provider.
+   There is no public object address to leak, index or hotlink.
+2. **No session needed.** Anyone who can render a deck that uses the font can
+   fetch it, including share-link and embed viewers. The file name holds a
+   random UUID and only ever appears in the theme CSS of a deck that uses it.
+3. **This site only.** The response carries no `Access-Control-Allow-Origin`,
+   and a cross-origin `@font-face` needs one, so another site cannot use the
+   font. It also carries `Cross-Origin-Resource-Policy: same-origin`, and a
+   browser request marked `Sec-Fetch-Site: cross-site` gets a 403. Embeds are
+   iframes on this origin, so they keep working.
+4. **No shared caches, no indexing.** The response carries `Cache-Control:
+private` (immutable: the UUID makes each URL's bytes permanent) and
+   `X-Robots-Tag: noindex, nofollow`.
+
+Not promised: that someone who can view a deck cannot save the font (a
+non-browser client can ask the route like any viewer can), or that exported
+files leave the font out. PDF, PNG and standalone-HTML exports embed it, the
+way any PDF embeds its fonts. Exporting requires an account on the instance.
+
+### Exports read through the provider
+
+`server/utils/embed-fonts.js` recognizes a `/fonts/managed/` URL and reads the
+object with `getMediaProvider().readFile(key)`. There is no HTTP fetch and no
+public URL. The render document then carries the font as a data URL, so
+Chrome needs no network access either.
+
+### `.deck` bundles do not carry the file
+
+A managed font travels **by name** (D142a, restated in D239). The bundle holds
+no font bytes: licence terms are the owning organization's, not the
+recipient's. An import that references a family the receiving instance lacks
+reports it through the existing `fontsMissing` outcome. B510 changes nothing
+here.
+
+### Variants uploaded before B510
+
+Migration 088 drops the stored public URL. A variant whose `filename` still
+holds a public key (`uploads/…` in a bucket, or a bare `/uploads/` file name)
+gets no URL, so it renders in its CSS fallback until it is moved:
+
+```sh
+node scripts/privatize-font-variants.js --check   # lists what is left, exit 1 if any
+node scripts/privatize-font-variants.js --apply   # copy → private, repoint row, delete public copy
+```
+
+A variant whose old file is missing is reported and left alone; re-upload it.
+A second `--apply` does nothing.
+
 ### Key Server Files
 
 | File                                          | Purpose                                                                                         |
@@ -159,6 +242,9 @@ Upload endpoint validates magic bytes (woff2: `wOF2`, woff: `wOFF`) and enforces
 | `server/storage/themes.js`                    | Theme CRUD with `validateFonts()` and `verifyFontFamilyIds()`                                   |
 | `server/utils/curated-font-embed.js`          | `curatedEmbedFonts()` — a curated family's `embedFonts` entries, merged by pinned file identity |
 | `server/utils/embed-fonts.js`                 | Base64-embeds font files for offline HTML exports                                               |
+| `server/media/managed-fonts.js`               | Uploaded variants: private key ↔ `/fonts/managed/` URL                                          |
+| `server/routes/static/managed-fonts.js`       | `GET /fonts/managed/<file>` — serves a private variant                                          |
+| `scripts/privatize-font-variants.js`          | One-time move of pre-B510 public variants into private storage                                  |
 | `server/export/html.js`                       | Standalone HTML export (injects external font tags)                                             |
 | `server/utils/embed-html/index.js`            | Embed HTML builder (injects external font tags)                                                 |
 | `server/utils/embed-html/template.js`         | Embed HTML template (renders external font HTML in `<head>`)                                    |
@@ -182,17 +268,18 @@ Upload endpoint validates magic bytes (woff2: `wOF2`, woff: `wOFF`) and enforces
 
 **Standalone HTML** (`server/export/html.js`):
 
-- Uploaded fonts: fetched from URLs, base64-encoded into `@font-face` rules (via `embed-fonts.js`)
+- Uploaded fonts: read through the media provider, base64-encoded into `@font-face` rules (via `embed-fonts.js`)
 - External fonts: `<link>` and `<script>` tags injected into `<head>` with URL safety checks
 
 **Embed HTML** (`server/utils/embed-html/`):
 
 - External fonts: same `<link>`/`<script>` injection as standalone
-- Uploaded fonts: served from URLs (embeds load from the server, not offline)
+- Uploaded fonts: served by `/fonts/managed/` on the same origin (embeds load from the server, not offline)
 
 **PDF/PNG** (Puppeteer):
 
-- Works via network access — Puppeteer loads URLs and external CSS/JS normally
+- Uploaded fonts are inlined as data URLs (read through the provider), like the HTML export
+- External (Adobe/Monotype/Google) fonts: Puppeteer loads their CSS/JS over the network
 
 ### Cache Invalidation
 

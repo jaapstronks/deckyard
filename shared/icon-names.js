@@ -155,6 +155,24 @@ export function resolveIconName(name) {
   return LEGACY_PHOSPHOR_MAP[n] || n;
 }
 
+/** The URL prefix the vendored Lucide icon SVGs are served under. */
+export const ICON_URL_PREFIX = '/client/vendor/lucide-icons/';
+
+/**
+ * Is `v` a URL {@link iconUrl} produces — a vendored icon SVG? The renderer
+ * emits these itself (the icon-card-grid mask), so a self-contained export has
+ * to carry them inline next to the deck's own assets.
+ * @param {unknown} v
+ * @returns {boolean}
+ */
+export function isIconUrl(v) {
+  return (
+    typeof v === 'string' &&
+    v.startsWith(ICON_URL_PREFIX) &&
+    /^[a-z0-9-]+\.svg$/.test(v.slice(ICON_URL_PREFIX.length))
+  );
+}
+
 /**
  * Return the URL for a vendored Lucide icon SVG.
  * @param {string} name - Icon name (legacy Phosphor names are resolved automatically)
@@ -164,5 +182,5 @@ export function iconUrl(name) {
   const resolved = resolveIconName(name);
   if (!resolved) return '';
   if (!/^[a-z0-9-]+$/.test(resolved)) return '';
-  return `/client/vendor/lucide-icons/${resolved}.svg`;
+  return `${ICON_URL_PREFIX}${resolved}.svg`;
 }
