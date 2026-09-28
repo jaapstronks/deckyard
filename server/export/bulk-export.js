@@ -17,13 +17,8 @@ import {
   listOrganizationLibrary,
 } from '../storage/slide-library.js';
 import { listThemes } from '../storage/themes.js';
-import {
-  UPLOADS_PREFIX,
-  collectServedAssetRefs,
-  isServedAssetRef,
-  isUploadRef,
-} from '../../shared/slide-types/deck-assets.js';
-import { uploadsDir } from '../config/storage-paths.js';
+import { collectServedAssetRefs } from '../../shared/slide-types/deck-assets.js';
+import { resolveServedAssetPath } from '../utils/served-asset-path.js';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
@@ -142,34 +137,19 @@ async function downloadImage(url, timeout = 30000) {
 /**
  * Resolve a local image from disk.
  *
- * Accepts exactly the class the collector produces — `isServedAssetRef`, the
- * one spelling of "a path this installation serves as an asset" — so the
- * walker and the resolver cannot drift apart. Uploads live in the
- * env/sandbox-aware `uploadsDir` (the same root the `.deck` bundle reads), the
- * other served trees under the repo root.
+ * Reads exactly the class the collector produces through the one served-ref
+ * resolver, so the walker and the resolver cannot drift apart and a moved
+ * uploads dir or fork root backs up its own files, not the checkout's.
  * @param {string} repoRoot - Repository root path
  * @param {string} urlPath - Local URL path (e.g. /uploads/abc.png)
  * @returns {Promise<{buffer: Buffer, ext: string}|null>}
  */
 async function resolveLocalImage(repoRoot, urlPath) {
+  const resolved = resolveServedAssetPath(repoRoot, urlPath);
+  if (!resolved) return null;
   try {
-    if (!isServedAssetRef(urlPath)) return null;
-
-    const base = path.resolve(
-      isUploadRef(urlPath) ? uploadsDir(repoRoot) : repoRoot,
-    );
-    const rel = isUploadRef(urlPath)
-      ? urlPath.slice(UPLOADS_PREFIX.length)
-      : urlPath.slice(1);
-    const resolved = path.resolve(base, rel);
-
-    // Guard against path traversal (e.g. /uploads/../../etc/passwd); the
-    // predicate already refuses `..`, this keeps the resolved path inside
-    // its own root regardless.
-    if (!resolved.startsWith(base + path.sep)) return null;
-
-    const buffer = await fs.readFile(resolved);
-    const ext = path.extname(resolved).toLowerCase() || '.bin';
+    const buffer = await fs.readFile(resolved.path);
+    const ext = path.extname(resolved.path).toLowerCase() || '.bin';
     return { buffer, ext };
   } catch {
     return null;

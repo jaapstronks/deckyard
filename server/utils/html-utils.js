@@ -4,16 +4,12 @@
  * render-png.js, export-png-slides.js, and export-print.js
  */
 
-import { customDirFor } from '../../shared/custom-root.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
-import {
-  UPLOADS_PREFIX,
-  isServedAssetRef,
-} from '../../shared/slide-types/deck-assets.js';
-import { ICON_URL_PREFIX, isIconUrl } from '../../shared/icon-names.js';
-import { uploadsDir } from '../config/storage-paths.js';
+import { isServedAssetRef } from '../../shared/slide-types/deck-assets.js';
+import { isIconUrl } from '../../shared/icon-names.js';
+import { resolveServedPath } from './served-asset-path.js';
 import { isRemoteHttpUrl, safeFetchRemoteImage } from './ssrf-guard.js';
 import { mapLimit, exportEmbedConcurrency } from './map-limit.js';
 import { createLogger } from './logger.js';
@@ -82,42 +78,18 @@ export function isRenderAssetRef(s) {
 }
 
 /**
- * The on-disk root per render-asset prefix, for an installation root. Uploads
- * come from the env/sandbox-aware {@link uploadsDir}, the fork tree through
- * {@link customDirFor}, so an installation that moved either inlines its own
- * files rather than the checkout's.
- * @type {Array<[string, (repoRoot: string) => string]>}
- */
-const RENDER_ASSET_ROOTS = [
-  [UPLOADS_PREFIX, (root) => uploadsDir(root)],
-  ['/custom/assets/', (root) => path.join(customDirFor(root), 'assets')],
-  ['/assets/', (root) => path.join(root, 'assets')],
-  [
-    ICON_URL_PREFIX,
-    (root) => path.join(root, 'client', 'vendor', 'lucide-icons'),
-  ],
-];
-
-/**
- * Resolve a render asset ref to an absolute path contained in its root, or
- * null when `s` is outside {@link isRenderAssetRef} or escapes that root. This
- * is the security boundary for {@link toDataUrlIfLocal}: `s` comes from slide
- * content, so `..`/absolute segments must never reach `fs.readFile`. The
- * predicate already refuses traversal shapes; the containment check holds
- * regardless.
+ * Resolve a render asset ref to an absolute path contained in the directory
+ * the server serves it from, or null when `s` is outside
+ * {@link isRenderAssetRef} or escapes that directory. The prefix → root table
+ * is the served one ({@link resolveServedPath}), so an installation that moved
+ * its uploads or fork root inlines its own files rather than the checkout's.
  * @param {string} repoRoot - Installation root
  * @param {string} s - A root-relative URL path (e.g. `/assets/x.png`)
  * @returns {string|null} Contained absolute path, or null
  */
 export function resolveRenderAssetPath(repoRoot, s) {
   if (!isRenderAssetRef(s)) return null;
-  const entry = RENDER_ASSET_ROOTS.find(([prefix]) => s.startsWith(prefix));
-  if (!entry) return null;
-  const [prefix, rootFor] = entry;
-  const rootAbs = path.resolve(rootFor(repoRoot));
-  const abs = path.resolve(rootAbs, s.slice(prefix.length));
-  if (!abs.startsWith(rootAbs + path.sep)) return null;
-  return abs;
+  return resolveServedPath(repoRoot, s)?.path ?? null;
 }
 
 /**
