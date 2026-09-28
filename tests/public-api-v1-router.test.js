@@ -218,7 +218,7 @@ test('GET /api/v1/schema/deck.json serves the generated deck schema', async () =
   }
 });
 
-test('GET /api/v1/schema/slide-types/:name.json serves one content schema, 404 unknown', async () => {
+test('GET /api/v1/schema/slide-types/:id.json serves one content schema, 404 unknown', async () => {
   await installDb();
   const known = makeCtx(
     'GET',
@@ -235,6 +235,19 @@ test('GET /api/v1/schema/slide-types/:name.json serves one content schema, 404 u
   );
   await handlePublicApiV1(unknown);
   assertV1Error(unknown.res, 404, 'not_found');
+
+  // B504: one spelling, one route. The bare registry key, a qualified form
+  // and the retired descriptor route name no schema.
+  for (const pathname of [
+    '/api/v1/schema/slide-types/content-slide.json',
+    '/api/v1/schema/slide-types/core/content-slide.json',
+    '/api/v1/slide-types/content-slide/schema',
+    '/api/v1/slide-types/eu.deckyard.slide.content/schema',
+  ]) {
+    const ctx = makeCtx('GET', pathname, { bearer: VALID_KEY });
+    await handlePublicApiV1(ctx);
+    assertV1Error(ctx.res, 404, 'not_found');
+  }
 
   const junk = makeCtx('GET', '/api/v1/schema/otherwise');
   await handlePublicApiV1(junk);
