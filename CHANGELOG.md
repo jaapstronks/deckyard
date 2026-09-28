@@ -4,6 +4,27 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.45.0](https://github.com/jaapstronks/deckyard/compare/v1.44.0...v1.45.0) (2026-09-28)
+
+
+### Added
+
+* make deck card editor action primary (B490) ([648a1cb](https://github.com/jaapstronks/deckyard/commit/648a1cbeba54ac669b80ddf55940841a14affd9c))
+
+
+### Fixed
+
+* **api:** one form for a theme on v1 — library `theme`, `default` as its own value (B449) ([#1326](https://github.com/jaapstronks/deckyard/issues/1326)) ([a2365a9](https://github.com/jaapstronks/deckyard/commit/a2365a9d54ad78cad8f140e72ca59c52efdcca94))
+* **follow:** the live-video overlay reaches the follow audience (B187) ([#1314](https://github.com/jaapstronks/deckyard/issues/1314)) ([b35c084](https://github.com/jaapstronks/deckyard/commit/b35c084fa114ed817bca372f128c255b28e86871))
+* **import:** keep uninstalled bundle theme as default ([#1328](https://github.com/jaapstronks/deckyard/issues/1328)) ([4af8fb9](https://github.com/jaapstronks/deckyard/commit/4af8fb9e2394e3d41378180f429bf5ec3f38be27))
+* resolve v1 slide type schemas against canonical and org types ([#1331](https://github.com/jaapstronks/deckyard/issues/1331)) ([d838645](https://github.com/jaapstronks/deckyard/commit/d838645398f9d16ba191e721429918bb7ec63571))
+* **settings:** label the type builder's boolean controls (B495) ([#1339](https://github.com/jaapstronks/deckyard/issues/1339)) ([2466bcb](https://github.com/jaapstronks/deckyard/commit/2466bcbf6ef8fc8ff8f8ad65d025638ac39776c5))
+* simplify editor save feedback and selection (B498) ([#1337](https://github.com/jaapstronks/deckyard/issues/1337)) ([946eec4](https://github.com/jaapstronks/deckyard/commit/946eec40a35e22cbcaf1d693ea4a5fc6f08533eb))
+* **storage:** every create path checks the theme the way v1 does (B486) ([#1327](https://github.com/jaapstronks/deckyard/issues/1327)) ([dec17e1](https://github.com/jaapstronks/deckyard/commit/dec17e11ad1ca1e1a63bb8ef069aac2a8d192b11))
+* **storage:** the create factory refuses a contentByLang that is not an object map (B485) ([#1323](https://github.com/jaapstronks/deckyard/issues/1323)) ([97200d9](https://github.com/jaapstronks/deckyard/commit/97200d96eb00fd105ed028a43fb3bb07108dba11))
+* update share link capture recipes for Guests tab ([078435d](https://github.com/jaapstronks/deckyard/commit/078435d5efd9f5da77a7bbeb39d52dccddc6ee14))
+* use viewer analytics preference in follow view ([2e4352b](https://github.com/jaapstronks/deckyard/commit/2e4352bed55475ab40d8419bdf11264ccfb6676f))
+
 ## [1.44.0](https://github.com/jaapstronks/deckyard/compare/v1.43.0...v1.44.0) (2026-09-26)
 
 
