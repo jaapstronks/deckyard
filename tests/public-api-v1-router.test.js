@@ -46,6 +46,7 @@ const { hashToken } = await import('../server/utils/secure-tokens.js');
 const { handlePublicApiV1 } =
   await import('../server/routes/public-api/v1/index.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
+const { SLIDE_TYPE_IDS } = await import('../shared/slide-types/registry.js');
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -252,6 +253,19 @@ test('GET /api/v1/schema/slide-types/:id.json serves one content schema, 404 unk
   const junk = makeCtx('GET', '/api/v1/schema/otherwise');
   await handlePublicApiV1(junk);
   assertV1Error(junk.res, 404, 'not_found');
+});
+
+test('every registered type serves its schema at its published id', async () => {
+  // The route's contract is "the id `slides[].type` carries", so every id the
+  // registry publishes must reach it, the slash form included (`custom/hero`,
+  // a fork type without a dotted authority). The fork CI run exercises that
+  // form; here it is core only.
+  await installDb();
+  for (const [key, id] of Object.entries(SLIDE_TYPE_IDS)) {
+    const ctx = makeCtx('GET', `/api/v1/schema/slide-types/${id}.json`);
+    await handlePublicApiV1(ctx);
+    assert.equal(ctx.res.statusCode, 200, `${key} at ${id}`);
+  }
 });
 
 test('a published organization type schema belongs only to its API key organization', async () => {

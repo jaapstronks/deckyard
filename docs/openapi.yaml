@@ -217,7 +217,7 @@ paths:
         - name: type
           in: path
           required: true
-          description: Published slide type id (e.g. eu.deckyard.slide.content; an organization type publishes as its key, e.g. custom-partner-wall)
+          description: Published slide type id (e.g. eu.deckyard.slide.content; a fork type without a dotted authority keeps the slash form, e.g. custom/hero, sent as two path segments; an organization type publishes as its key, e.g. custom-partner-wall)
           schema:
             type: string
       responses:

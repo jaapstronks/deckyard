@@ -199,9 +199,11 @@ export const SCHEMA_ROUTES = [
     },
   },
   {
-    // A published type id (`eu.deckyard.slide.content`), not a row id.
+    // A published type id, not a row id. One optional `<namespace>/` segment,
+    // because a fork type without a dotted authority publishes in the slash
+    // form (`custom/hero`, `acme/hero`) and that is its canonical id.
     method: 'GET',
-    pattern: /^\/api\/v1\/schema\/slide-types\/([^/]+)\.json$/,
+    pattern: /^\/api\/v1\/schema\/slide-types\/([^/]+|[^/]+\/[^/]+)\.json$/,
     captures: ['text'],
     handler: async function handleSlideTypeSchema(ctx, name) {
       const { req, res } = ctx;
