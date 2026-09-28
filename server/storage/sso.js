@@ -38,7 +38,8 @@ function getAdminEmail() {
  * including concurrent first logins. Recheck the user's memberships after
  * acquiring it: another login may have provisioned the same person meanwhile.
  *
- * @param {object} user - Raw `users` row, after the upsert
+ * @param {object} user - Raw `users` row: freshly inserted, or as found
+ *   before this login's update (a refusal must not have written it)
  * @param {boolean} autoProvision - The operator's provisioning policy
  * @param {string | null} targetOrgId - Organization matched from an OIDC claim
  * @param {'admin' | 'member'} role - Role for a new claimed membership
@@ -188,6 +189,18 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
       user = inserted || (await getUserByEmailGlobal(email));
       provisioned = Boolean(inserted);
     }
+    // Membership first: a refused login (no_membership) must leave the
+    // existing user row untouched - no rename, no admin grant, no
+    // auth_source flip. The membership does not depend on the update below.
+    const membershipResult = await ensureMembership(
+      db,
+      user,
+      !!opts?.autoProvision,
+      identity.externalOrgId ? orgId : null,
+      grantsAdmin || defaultRole === 'admin' ? 'admin' : 'member',
+    );
+    if (!membershipResult.ok) return membershipResult;
+
     if (!provisioned) {
       // Update on login: keep name fresh, mark the source as SSO, and grant
       // admin if the identity says so (never demote — see policy above).
@@ -207,15 +220,6 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
       // within the TTL.
       if (updates.name) invalidateDisplayNames();
     }
-
-    const membershipResult = await ensureMembership(
-      db,
-      user,
-      !!opts?.autoProvision,
-      identity.externalOrgId ? orgId : null,
-      grantsAdmin || defaultRole === 'admin' ? 'admin' : 'member',
-    );
-    if (!membershipResult.ok) return membershipResult;
 
     const adminEmail = getAdminEmail();
     const role =

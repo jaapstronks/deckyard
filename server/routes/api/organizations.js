@@ -159,7 +159,7 @@ async function handleOrgGet({ res, userId }, orgId) {
 }
 
 // PATCH /api/organizations/:id - Update organization
-async function handleOrgUpdate({ req, res, userId }, orgId) {
+async function handleOrgUpdate({ req, res, userId, authedUser }, orgId) {
   // Check membership and admin permission
   const membership = await getMembership(userId, orgId);
   if (!membership) {
@@ -173,6 +173,13 @@ async function handleOrgUpdate({ req, res, userId }, orgId) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // The external ID routes OIDC logins across the whole instance (D243): a
+  // workspace admin binding an unclaimed IdP organization would capture
+  // another customer's next login. Refused before any field is written, so a
+  // mixed profile + externalId request leaves the record untouched.
+  if ('externalId' in body && !authedUser?.isAdmin) {
+    return forbidden(res, 'Instance admin access required to set external ID');
+  }
   const updates = {};
 
   if ('name' in body) {

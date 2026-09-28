@@ -731,3 +731,54 @@ test('a claimed organization does not regrant a removed membership when auto-pro
   assert.equal(result.reason, 'no_membership');
   assert.equal(db.__tables.user_organizations.length, 0);
 });
+
+// Review #1344 P2: the refusal used to land after the login update, so a
+// refused claim still renamed the person, flipped auth_source and granted
+// instance admin. A refusal is side-effect-free: every row as it was.
+test('a claim refused for want of membership leaves the user and memberships untouched', async () => {
+  const db = seedMultiOrg({
+    memberships: [
+      {
+        id: 'membership-a',
+        user_id: 'user-alice',
+        organization_id: ORG_A,
+        role: 'member',
+        is_designer: false,
+        joined_at: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+  });
+  db.__tables.organizations[1].external_id = 'idp-beta';
+  const usersBefore = structuredClone(db.__tables.users);
+  const membershipsBefore = structuredClone(db.__tables.user_organizations);
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    {
+      email: 'alice@example.com',
+      name: 'Mallory Renamed',
+      externalOrgId: 'idp-beta',
+      isAdmin: true,
+    },
+    { autoProvision: false, defaultRole: 'user' },
+  );
+
+  assert.deepEqual(result, { ok: false, reason: 'no_membership' });
+  assert.deepEqual(db.__tables.users, usersBefore);
+  assert.deepEqual(db.__tables.user_organizations, membershipsBefore);
+});
+
+test('a login without a claim refused for want of any membership leaves the user untouched', async () => {
+  const db = seedMultiOrg({ memberships: [] });
+  const usersBefore = structuredClone(db.__tables.users);
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'alice@example.com', name: 'Renamed', isAdmin: true },
+    { autoProvision: false },
+  );
+
+  assert.deepEqual(result, { ok: false, reason: 'no_membership' });
+  assert.deepEqual(db.__tables.users, usersBefore);
+  assert.equal(db.__tables.user_organizations.length, 0);
+});

@@ -157,12 +157,14 @@ function fakeExchange(method, body) {
  * @param {string} [options.organizationId=ORG] - Organization in the path.
  * @param {string} [options.email] - Override the actor's email.
  * @param {Object} [options.body] - Request body.
+ * @param {boolean} [options.isAdmin=false] - Whether the actor is an instance
+ *   admin (`users.role = 'admin'`), independent of the organization role.
  * @returns {Promise<{status: number, body: Object|null}>}
  */
 async function callOrganizations(
   method,
   actorKey,
-  { organizationId = ORG, email, body } = {},
+  { organizationId = ORG, email, body, isAdmin = false } = {},
 ) {
   const actor = PEOPLE.find((p) => p.key === actorKey);
   const path = `/api/organizations/${organizationId}`;
@@ -174,7 +176,7 @@ async function callOrganizations(
     url: new URL(`http://localhost${path}`),
     authedUser: {
       email: email || actor.email,
-      isAdmin: false,
+      isAdmin,
       organizationId,
       organizationRole: actor.role,
     },
@@ -292,9 +294,10 @@ test('a one-character name is refused, so the form checks the same thing', async
   assert.equal(res.status, 400);
 });
 
-test('an organization admin can set a unique external ID and clear it', async () => {
+test('an instance admin who administers the organization sets, replaces and clears its external ID', async () => {
   const db = seed();
   const set = await callOrganizations('PATCH', 'admin', {
+    isAdmin: true,
     body: { externalId: ' idp-beta ' },
   });
   assert.equal(set.status, 200);
@@ -302,6 +305,7 @@ test('an organization admin can set a unique external ID and clear it', async ()
   assert.equal(db.__tables.organizations[0].external_id, 'idp-beta');
 
   const invalid = await callOrganizations('PATCH', 'admin', {
+    isAdmin: true,
     body: { externalId: 123 },
   });
   assert.equal(invalid.status, 400);
@@ -310,22 +314,66 @@ test('an organization admin can set a unique external ID and clear it', async ()
   const duplicate = await callOrganizations('PATCH', 'owner', {
     organizationId: DEFAULT_ORG,
     email: 'owner-aa@example.com',
+    isAdmin: true,
     body: { externalId: 'idp-beta' },
   });
   assert.equal(duplicate.status, 409);
   assert.equal(db.__tables.organizations[1].external_id, undefined);
 
-  const denied = await callOrganizations('PATCH', 'member', {
-    body: { externalId: 'other' },
+  const replaced = await callOrganizations('PATCH', 'owner', {
+    isAdmin: true,
+    body: { externalId: 'idp-beta-2' },
   });
-  assert.equal(denied.status, 403);
+  assert.equal(replaced.status, 200);
+  assert.equal(db.__tables.organizations[0].external_id, 'idp-beta-2');
 
   const cleared = await callOrganizations('PATCH', 'owner', {
+    isAdmin: true,
     body: { externalId: null },
   });
   assert.equal(cleared.status, 200);
   assert.equal(cleared.body.organization.externalId, null);
 });
+
+test('an instance admin still needs the organization admin role to bind it', async () => {
+  const db = seed();
+  const res = await callOrganizations('PATCH', 'member', {
+    isAdmin: true,
+    body: { externalId: 'idp-beta' },
+  });
+  assert.equal(res.status, 403);
+  assert.equal(db.__tables.organizations[0].external_id, undefined);
+});
+
+// D243: the binding decides where another customer's next login lands, so a
+// workspace owner or admin without instance authority may not set, replace or
+// clear it - and a mixed request is refused whole, not half-applied.
+for (const actorKey of ['owner', 'admin']) {
+  test(`an organization ${actorKey} without instance admin cannot touch the external ID`, async () => {
+    const db = seed();
+    const before = structuredClone(db.__tables.organizations[0]);
+    for (const externalId of ['victim-idp-org', null]) {
+      const res = await callOrganizations('PATCH', actorKey, {
+        body: { name: 'Renamed', description: 'Changed', externalId },
+      });
+      assert.equal(res.status, 403);
+      assert.deepEqual(db.__tables.organizations[0], before);
+    }
+
+    db.__tables.organizations[0].external_id = 'bound-by-operator';
+    const replace = await callOrganizations('PATCH', actorKey, {
+      body: { externalId: 'victim-idp-org' },
+    });
+    assert.equal(replace.status, 403);
+    assert.equal(db.__tables.organizations[0].external_id, 'bound-by-operator');
+
+    const profileOnly = await callOrganizations('PATCH', actorKey, {
+      body: { name: 'Renamed' },
+    });
+    assert.equal(profileOnly.status, 200, 'ordinary profile edits keep D105');
+    assert.equal(db.__tables.organizations[0].name, 'Renamed');
+  });
+}
 
 test('only the fields that are sent are touched', async () => {
   const db = seed();
