@@ -27,6 +27,7 @@ import {
 } from '../server/render/deck-thumbnail.js';
 import { dataDir } from '../server/config/storage-paths.js';
 import { loadThemeAssets } from '../server/utils/themes.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 import { handlePresentationThumbnail } from '../server/routes/api/presentations/thumbnail.js';
 import { testScope } from './helpers/storage-scope.js';
 import { sessionFor, userRows } from './helpers/identity-fixtures.js';
@@ -51,6 +52,7 @@ test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      themes: [await brandSeedRow()],
       // The owner needs a `users` row: a deck's `owner_user_id` is resolved
       // from the address at create, and ownership is decided on that id alone
       // (shared/identity-match.js).

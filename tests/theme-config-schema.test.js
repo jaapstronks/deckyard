@@ -308,6 +308,19 @@ test('checkThemeConfig refuses each unknown field with its path', () => {
   });
 });
 
+test('checkThemeConfig refuses JSON prototype keys before normalization', () => {
+  for (const key of ['__proto__', 'constructor', 'toString']) {
+    for (const value of [{}, { inserted: true }]) {
+      const input = JSON.parse(`{"${key}":${JSON.stringify(value)}}`);
+      assert.deepEqual(checkThemeConfig(input), {
+        ok: false,
+        path: `config.${key}`,
+        code: 'unknown_field',
+      });
+    }
+  }
+});
+
 test('checkThemeConfig passes a known config through the normalizer', () => {
   assert.deepEqual(checkThemeConfig(undefined), { ok: true, config: {} });
   const out = checkThemeConfig({
@@ -321,6 +334,26 @@ test('checkThemeConfig passes a known config through the normalizer', () => {
     payoff: '/uploads/p.png',
     dark: '/uploads/d.svg',
   });
+});
+
+test('checkThemeConfig refuses known fields that normalization would change', () => {
+  for (const [input, path] of [
+    [{ titleLayout: 'sideways' }, 'config.titleLayout'],
+    [{ logos: [] }, 'config.logos'],
+    [{ slideTypes: { include: 'bad-shape' } }, 'config.slideTypes.include'],
+    [{ surfaces: { radius: 'enormous' } }, 'config.surfaces.radius'],
+    [{ gradient: { enabled: 'false' } }, 'config.gradient.enabled'],
+    [
+      { cssVarOverrides: { '--t-radius': '1px; color: red' } },
+      'config.cssVarOverrides.--t-radius',
+    ],
+  ]) {
+    assert.deepEqual(checkThemeConfig(input), {
+      ok: false,
+      path,
+      code: 'invalid_value',
+    });
+  }
 });
 
 test('a cssVarOverrides value may be as long as a layered gradient', () => {
@@ -401,5 +434,35 @@ test('validateThemeColors refuses an unknown or invalid field by name', () => {
     ok: false,
     path: 'colors',
     code: invalid,
+  });
+});
+
+test('present invalid base colors and prototype names are refused, omissions default', () => {
+  for (const role of Object.keys(DEFAULT_THEME_COLORS)) {
+    for (const value of [false, 0, null, '']) {
+      assert.deepEqual(validateThemeColors({ [role]: value }), {
+        ok: false,
+        path: `colors.${role}`,
+        code: 'invalid_value',
+      });
+    }
+  }
+  for (const key of ['constructor', 'toString', '__proto__']) {
+    assert.deepEqual(validateThemeColors({ [key]: '#123456' }), {
+      ok: false,
+      path: `colors.${key}`,
+      code: 'unknown_field',
+    });
+  }
+  assert.deepEqual(validateThemeColors({}).colors, DEFAULT_THEME_COLORS);
+  assert.deepEqual(validateThemeColors(null), {
+    ok: false,
+    path: 'colors',
+    code: 'invalid_value',
+  });
+  assert.deepEqual(validateThemeColors({ primary: ' #123456 ' }), {
+    ok: false,
+    path: 'colors.primary',
+    code: 'invalid_value',
   });
 });

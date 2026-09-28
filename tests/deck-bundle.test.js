@@ -14,6 +14,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import JSZip from 'jszip';
+import { assertExtensionDeclared } from '../server/export/extension-name.js';
+import { readCustomStylesCss } from '../server/utils/css-chain.js';
 
 let tmpUploads;
 let buildDeckBundle;
@@ -28,8 +31,26 @@ before(async () => {
   process.env.UPLOADS_DIR = tmpUploads;
   fs.writeFileSync(path.join(tmpUploads, 'a.png'), PNG_A);
   fs.writeFileSync(path.join(tmpUploads, 'b.png'), PNG_B);
-  ({ buildDeckBundle, readDeckBundle, DECK_MIMETYPE } =
-    await import('../server/export/deck-bundle.js'));
+  const bundle = await import('../server/export/deck-bundle.js');
+  readDeckBundle = bundle.readDeckBundle;
+  DECK_MIMETYPE = bundle.DECK_MIMETYPE;
+  buildDeckBundle = (root, deck) =>
+    bundle.buildDeckBundle(root, deck, {
+      themeRecord: {
+        slug: 'deckyard',
+        label: 'Deckyard',
+        logoUrl: null,
+        logoSmallUrl: null,
+        colors: {
+          primary: '#3B82F6',
+          background: '#ffffff',
+          textLight: '#ffffff',
+          textDark: '#1f2937',
+        },
+        fonts: { heading: 'Inter', body: 'Inter' },
+        config: {},
+      },
+    });
 });
 
 after(() => {
@@ -65,13 +86,67 @@ const pres = () => ({
 });
 
 describe('buildDeckBundle', () => {
+  it('requires a declaration for every stylesheet the CSS loader accepts', async () => {
+    for (const name of ['_brand.css', '.brand.css', 'brand.CSS']) {
+      const root = fs.mkdtempSync(
+        path.join(os.tmpdir(), 'deckyard-css-extension-'),
+      );
+      try {
+        const custom = path.join(root, 'custom');
+        fs.mkdirSync(path.join(custom, 'styles'), { recursive: true });
+        fs.writeFileSync(
+          path.join(custom, 'styles', name),
+          '.slide { color: red; }',
+        );
+        assert.match(readCustomStylesCss(root), /color: red/);
+        await assert.rejects(assertExtensionDeclared(root), /extension.json/);
+        fs.writeFileSync(
+          path.join(custom, 'extension.json'),
+          JSON.stringify({ name: 'nl.example' }),
+        );
+        assert.equal(await assertExtensionDeclared(root), 'nl.example');
+        const { deck } = await readDeckBundle(
+          await buildDeckBundle(root, pres()),
+        );
+        assert.deepEqual(deck.extensions, ['nl.example']);
+      } finally {
+        fs.rmSync(root, { recursive: true, force: true });
+      }
+    }
+  });
+
+  it('writes core provenance as an empty list and refuses ambiguous wire lists', async () => {
+    const buf = await buildDeckBundle('/repo', pres());
+    const parsed = await readDeckBundle(buf);
+    assert.deepEqual(parsed.deck.extensions, []);
+    const zip = await JSZip.loadAsync(buf);
+    for (const extensions of [undefined, ['b', 'a'], ['a', 'a'], ['']]) {
+      const deck = { ...parsed.deck };
+      if (extensions === undefined) delete deck.extensions;
+      else deck.extensions = extensions;
+      zip.file('deck.json', JSON.stringify(deck));
+      await assert.rejects(
+        readDeckBundle(await zip.generateAsync({ type: 'nodebuffer' })),
+        /extensions must be a sorted unique list/,
+      );
+    }
+    zip.file('deck.json', JSON.stringify(parsed.deck));
+    zip.file(
+      'manifest.json',
+      JSON.stringify({ ...parsed.manifest, extensions: [] }),
+    );
+    await assert.rejects(
+      readDeckBundle(await zip.generateAsync({ type: 'nodebuffer' })),
+      /manifest.json must not name extensions/,
+    );
+  });
   it('produces a readable bundle with a mimetype sentinel', async () => {
     const buf = await buildDeckBundle('/repo', pres());
     assert.ok(Buffer.isBuffer(buf) && buf.length > 0);
     const { mimetype, manifest, assets } = await readDeckBundle(buf);
     assert.equal(mimetype, DECK_MIMETYPE);
     assert.equal(manifest.format, 'deckyard.deck');
-    assert.equal(manifest.bundleVersion, 3);
+    assert.equal(manifest.bundleVersion, 4);
     // a.png (referenced twice) + b.png → 2 unique assets; gone.png is missing.
     assert.equal(manifest.assets.length, 2);
     assert.deepEqual(manifest.missingAssets, ['/uploads/gone.png']);
@@ -117,6 +192,21 @@ describe('buildDeckBundle', () => {
     const aRef = manifest.assets.find((x) => x.hash === aHash).ref;
     assert.ok(assets.get(aRef).equals(PNG_A));
   });
+
+  it('round-trips CSS examples in body text and local paths in notes as prose', async () => {
+    const body = "Use url('/assets/example.png') for a background.";
+    const notes = '/assets/example.png';
+    const source = {
+      title: 'Asset path lesson',
+      slides: [{ id: '1', type: 'content-slide', content: { body }, notes }],
+    };
+    const { deck, manifest } = await readDeckBundle(
+      await buildDeckBundle('/repo', source),
+    );
+    assert.equal(deck.slides[0].content.body, body);
+    assert.equal(deck.slides[0].notes, notes);
+    assert.equal(manifest.missingAssets, undefined);
+  });
 });
 
 describe('readDeckBundle validation', () => {
@@ -128,10 +218,7 @@ describe('readDeckBundle validation', () => {
     await assert.rejects(() => readDeckBundle(bad), /mimetype sentinel/);
   });
 
-  it('accepts a bundle carrying the historical mimetype sentinel', async () => {
-    // `application/vnd.slidecreator.deck` was written by every version before
-    // the format took its publisher's name. Bundles with it exist; the reader
-    // keeps accepting them. See shared/slide-types/deck-format-id.js.
+  it('rejects the historical mimetype sentinel at the v4 bundle boundary', async () => {
     const buf = await buildDeckBundle('/repo', pres());
     const JSZip = (await import('jszip')).default;
     const zip = await JSZip.loadAsync(buf);
@@ -139,10 +226,7 @@ describe('readDeckBundle validation', () => {
       compression: 'STORE',
     });
     const legacy = await zip.generateAsync({ type: 'nodebuffer' });
-
-    const { mimetype, manifest } = await readDeckBundle(legacy);
-    assert.equal(mimetype, 'application/vnd.slidecreator.deck');
-    assert.equal(manifest.assets.length, 2);
+    await assert.rejects(() => readDeckBundle(legacy), /mimetype sentinel/);
   });
 
   it('rejects a foreign mimetype sentinel', async () => {
@@ -152,6 +236,25 @@ describe('readDeckBundle validation', () => {
     zip.file('mimetype', 'application/vnd.acme.deck', { compression: 'STORE' });
     const foreign = await zip.generateAsync({ type: 'nodebuffer' });
     await assert.rejects(() => readDeckBundle(foreign), /mimetype sentinel/);
+  });
+
+  it('refuses escaped and unlisted refs in slide content', async () => {
+    const buf = await buildDeckBundle('/repo', pres());
+    const JSZip = (await import('jszip')).default;
+    for (const ref of [
+      '/assets/../private.png',
+      'assets/ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff.png',
+    ]) {
+      const zip = await JSZip.loadAsync(buf);
+      const deck = JSON.parse(await zip.file('deck.json').async('string'));
+      deck.slides[0].content.image = ref;
+      zip.file('deck.json', JSON.stringify(deck));
+      const changed = await zip.generateAsync({ type: 'nodebuffer' });
+      await assert.rejects(
+        () => readDeckBundle(changed),
+        /invalid local asset path|unlisted asset/,
+      );
+    }
   });
 
   it('rejects a tampered asset (integrity check)', async () => {

@@ -138,6 +138,7 @@
   "common.signOut": "Cerrar sesión",
   "common.theme": "Tema",
   "common.themeCard.bodySpecimen": "Texto de cuerpo",
+  "common.themeDefault": "Predeterminado del espacio de trabajo",
   "common.toggleTheme": "Cambiar entre modo oscuro y claro",
   "common.unknown": "Desconocido",
   "common.unknownError": "Error desconocido",

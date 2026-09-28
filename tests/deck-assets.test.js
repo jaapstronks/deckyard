@@ -69,10 +69,7 @@ describe('isServedAssetRef', () => {
     assert.equal(isServedAssetRef('/uploads/photo-abc.png'), true);
     assert.equal(isServedAssetRef('/assets/logo.svg'), true);
     assert.equal(isServedAssetRef('/custom/assets/images/bg1.jpg'), true);
-    assert.equal(
-      isServedAssetRef('/custom/themes/acme/assets/images/bg.jpg'),
-      true,
-    );
+    assert.equal(isServedAssetRef('/custom/themes/acme/assets/bg.jpg'), false);
   });
   it('rejects remote URLs, other paths, traversal and non-strings', () => {
     // A remote URL is not an asset this install holds — and a bare string

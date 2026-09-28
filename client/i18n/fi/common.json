@@ -137,6 +137,7 @@
   "common.signOut": "Kirjaudu ulos",
   "common.theme": "Teema",
   "common.themeCard.bodySpecimen": "Leipäteksti",
+  "common.themeDefault": "Työtilan oletus",
   "common.toggleTheme": "Vaihda tumman ja vaalean tilan välillä",
   "common.unknown": "Tuntematon",
   "common.unknownError": "Tuntematon virhe",

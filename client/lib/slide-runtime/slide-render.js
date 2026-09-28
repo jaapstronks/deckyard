@@ -172,15 +172,13 @@ function needsServerRender(type) {
 }
 
 /**
- * The id the server resolves a loaded theme by. A database theme reports its
- * slug as `id` and carries the UUID in `_customThemeId` (see `isThemeForId` in
- * `client/lib/theme/theme.js`); the server loads it by the UUID.
+ * The record UUID the server resolves a loaded theme by.
  *
  * @param {object|null|undefined} theme
  * @returns {string|null}
  */
 function serverThemeId(theme) {
-  return theme?._customThemeId || theme?.id || null;
+  return theme?.id || null;
 }
 
 /**

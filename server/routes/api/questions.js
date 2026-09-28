@@ -202,7 +202,7 @@ async function handleQuestionPromote(
 
   // One slide per language version, each composed for its own language. They
   // share one id so the versions stay aligned slide for slide.
-  const theme = await loadDeckTheme(repoRoot, pres.theme);
+  const theme = await loadDeckTheme(repoRoot, pres.theme, storageScope);
   const slideTypes = await buildMergedSlideTypes(storageScope);
   const makeSlide = (lang) => {
     const slide = newSlide({

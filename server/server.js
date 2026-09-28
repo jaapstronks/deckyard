@@ -30,6 +30,7 @@ import { scheduleLiveSessionCleanup } from './jobs/live-session-cleanup.js';
 import { scheduleMcpSessionSweep } from './jobs/mcp-session-sweep.js';
 import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/lifecycle.js';
+import { initializeThemeSeeds } from './utils/theme-seeds.js';
 import {
   pendingMigrationsError,
   strandedFileDataError,
@@ -55,6 +56,7 @@ import { initializeQueues, closeQueues } from './jobs/queue/connection.js';
 import { initializeWorkers } from './jobs/queue/workers/index.js';
 import { handleMcpSse } from './mcp/sse-mount.js';
 import { maybeAttachCollab, shutdownCollab } from './collab/mount.js';
+import { assertExtensionDeclared } from './export/extension-name.js';
 
 const log = createLogger('server');
 
@@ -260,6 +262,7 @@ async function main() {
   }
 
   await ensureUploadsDir();
+  await assertExtensionDeclared(repoRoot);
 
   // Database check: PostgreSQL is the only storage backend, so an unreachable
   // one is a boot error and not a degraded mode. Left to bubble, it exits on an
@@ -287,6 +290,8 @@ async function main() {
       process.exit(1);
     }
   }
+
+  await initializeThemeSeeds();
 
   // Data check: an empty database next to a populated file-storage data
   // directory means this install predates the Postgres default and has not been

@@ -56,6 +56,7 @@ const { createStorageScope } = await import('../server/utils/context.js');
 const { handleThemes } = await import('../server/routes/api/themes.js');
 const { handleFontFamilies } =
   await import('../server/routes/api/font-families.js');
+const { brandSeedRow } = await import('./helpers/theme-seed.js');
 
 /** @typedef {{email: string, name: string, organizationId: string, isDesigner?: boolean}} Actor */
 
@@ -75,8 +76,10 @@ const ACTORS = {
 
 /** @type {ReturnType<typeof createFakeDb>} */
 let db;
+let brandSeed;
 
 test.before(async () => {
+  brandSeed = await brandSeedRow();
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
@@ -106,7 +109,7 @@ function seed() {
         updated_at: '2026-01-01T00:00:00.000Z',
       },
     ],
-    themes: [],
+    themes: [structuredClone(brandSeed)],
     font_families: [],
     font_variants: [],
     app_settings: [],
@@ -197,18 +200,46 @@ test('any authed user can list themes and the curated font catalog', async () =>
   assert.ok(Array.isArray(fonts.res.body.fonts));
 });
 
-test('any authed user can list custom themes', async () => {
+test('any authed user can list the installed seed', async () => {
   seed();
-  const { res } = await call(handleThemes, 'GET', '/api/themes/custom', {
+  const { res } = await call(handleThemes, 'GET', '/api/themes', {
     as: ACTORS.member,
   });
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body.themes, []);
+  assert.equal(res.body.themes.length, 1);
+  assert.equal(res.body.themes[0].id, brandSeed.id);
+  assert.equal(res.body.themes[0].source, 'seed');
+});
+
+test('a seed is visible by UUID and cannot be edited or deleted', async () => {
+  seed();
+  const id = brandSeed.id;
+
+  const list = await call(handleThemes, 'GET', '/api/themes', {
+    as: ACTORS.member,
+  });
+  assert.equal(
+    list.res.body.themes.find((theme) => theme.id === id)?.source,
+    'seed',
+  );
+  const read = await call(handleThemes, 'GET', `/api/themes/${id}`, {
+    as: ACTORS.member,
+  });
+  assert.equal(read.res.body.slug, 'brand');
+  const update = await call(handleThemes, 'PUT', `/api/themes/${id}`, {
+    as: ACTORS.designer,
+    body: { label: 'Changed' },
+  });
+  assert.equal(update.res.statusCode, 404);
+  const del = await call(handleThemes, 'DELETE', `/api/themes/${id}`, {
+    as: ACTORS.designer,
+  });
+  assert.equal(del.res.statusCode, 404);
 });
 
 test('a designer can create a custom theme; a plain member gets a 403', async () => {
   seed();
-  const denied = await call(handleThemes, 'POST', '/api/themes/custom', {
+  const denied = await call(handleThemes, 'POST', '/api/themes', {
     as: ACTORS.member,
     body: { label: 'Brand One' },
   });
@@ -219,7 +250,7 @@ test('a designer can create a custom theme; a plain member gets a 403', async ()
   );
   assert.equal(denied.res.body.error, 'forbidden');
 
-  const created = await call(handleThemes, 'POST', '/api/themes/custom', {
+  const created = await call(handleThemes, 'POST', '/api/themes', {
     as: ACTORS.designer,
     body: { label: 'Brand One' },
   });
@@ -230,7 +261,7 @@ test('a designer can create a custom theme; a plain member gets a 403', async ()
 
 test('create rejects an empty label with a 400', async () => {
   seed();
-  const { res } = await call(handleThemes, 'POST', '/api/themes/custom', {
+  const { res } = await call(handleThemes, 'POST', '/api/themes', {
     as: ACTORS.designer,
     body: { label: '' },
   });
@@ -267,7 +298,7 @@ test('a theme field the record does not know is a 400 that names it (D209)', asy
     ],
   ];
   for (const [body, field, reason, where] of cases) {
-    const { res } = await call(handleThemes, 'POST', '/api/themes/custom', {
+    const { res } = await call(handleThemes, 'POST', '/api/themes', {
       as: ACTORS.designer,
       body,
     });
@@ -276,10 +307,14 @@ test('a theme field the record does not know is a 400 that names it (D209)', asy
     assert.deepEqual(res.body.details, { field, reason }, where);
     assert.ok(res.body.message.includes(where), where);
   }
-  const list = await call(handleThemes, 'GET', '/api/themes/custom', {
+  const list = await call(handleThemes, 'GET', '/api/themes', {
     as: ACTORS.designer,
   });
-  assert.deepEqual(list.res.body.themes, [], 'nothing was written');
+  assert.deepEqual(
+    list.res.body.themes.filter((theme) => theme.source === 'organization'),
+    [],
+    'no organization theme was written',
+  );
 });
 
 test('a record stores every explicit colour and logo field it is given (B437)', async () => {
@@ -296,7 +331,7 @@ test('a record stores every explicit colour and logo field it is given (B437)', 
     backgrounds: { lime: '#e2fe52', mist: '#e0e6e2', dark: '#385c5c' },
   };
   const logos = { alt: 'Brand', payoff: '/uploads/payoff.png' };
-  const created = await call(handleThemes, 'POST', '/api/themes/custom', {
+  const created = await call(handleThemes, 'POST', '/api/themes', {
     as: ACTORS.designer,
     body: { label: 'Brand Three', colors, config: { logos } },
   });
@@ -304,7 +339,7 @@ test('a record stores every explicit colour and logo field it is given (B437)', 
   const read = await call(
     handleThemes,
     'GET',
-    `/api/themes/custom/${created.res.body.id}`,
+    `/api/themes/${created.res.body.id}`,
     { as: ACTORS.member },
   );
   assert.deepEqual(read.res.body.colors, colors);
@@ -316,7 +351,7 @@ test('a designer can preview a draft config; a member cannot', async () => {
   const denied = await call(
     handleThemes,
     'POST',
-    '/api/themes/custom/preview-config',
+    '/api/themes/preview-config',
     {
       as: ACTORS.member,
       body: { label: 'Draft' },
@@ -324,29 +359,24 @@ test('a designer can preview a draft config; a member cannot', async () => {
   );
   assert.equal(denied.res.statusCode, 403);
 
-  const ok = await call(
-    handleThemes,
-    'POST',
-    '/api/themes/custom/preview-config',
-    {
-      as: ACTORS.designer,
-      body: { label: 'Draft' },
-    },
-  );
+  const ok = await call(handleThemes, 'POST', '/api/themes/preview-config', {
+    as: ACTORS.designer,
+    body: { label: 'Draft' },
+  });
   assert.equal(ok.res.statusCode, 200);
   assert.ok(ok.res.body.theme, 'a built theme config comes back');
 });
 
-test('reading, updating, deleting and defaulting a custom theme by id', async () => {
+test('reading, updating and deleting an organization theme by id', async () => {
   seed();
-  const created = await call(handleThemes, 'POST', '/api/themes/custom', {
+  const created = await call(handleThemes, 'POST', '/api/themes', {
     as: ACTORS.designer,
     body: { label: 'Brand Two' },
   });
   const id = created.res.body.id;
 
   // Read: open to any authed user.
-  const read = await call(handleThemes, 'GET', `/api/themes/custom/${id}`, {
+  const read = await call(handleThemes, 'GET', `/api/themes/${id}`, {
     as: ACTORS.member,
   });
   assert.equal(read.res.statusCode, 200);
@@ -356,99 +386,39 @@ test('reading, updating, deleting and defaulting a custom theme by id', async ()
   const missing = await call(
     handleThemes,
     'GET',
-    '/api/themes/custom/00000000-0000-4000-8000-0000deadbeef',
+    '/api/themes/00000000-0000-4000-8000-0000deadbeef',
     { as: ACTORS.member },
   );
   assert.equal(missing.res.statusCode, 404);
 
   // Update: designer only.
-  const memberUpdate = await call(
-    handleThemes,
-    'PUT',
-    `/api/themes/custom/${id}`,
-    {
-      as: ACTORS.member,
-      body: { label: 'Renamed' },
-    },
-  );
+  const memberUpdate = await call(handleThemes, 'PUT', `/api/themes/${id}`, {
+    as: ACTORS.member,
+    body: { label: 'Renamed' },
+  });
   assert.equal(memberUpdate.res.statusCode, 403);
 
-  const update = await call(handleThemes, 'PUT', `/api/themes/custom/${id}`, {
+  const update = await call(handleThemes, 'PUT', `/api/themes/${id}`, {
     as: ACTORS.designer,
     body: { label: 'Renamed' },
   });
   assert.equal(update.res.statusCode, 200);
   assert.equal(update.res.body.label, 'Renamed');
 
-  // Set default: designer only.
-  const memberDefault = await call(
-    handleThemes,
-    'POST',
-    `/api/themes/custom/${id}/set-default`,
-    {
-      as: ACTORS.member,
-    },
-  );
-  assert.equal(memberDefault.res.statusCode, 403);
-  const setDefault = await call(
-    handleThemes,
-    'POST',
-    `/api/themes/custom/${id}/set-default`,
-    {
-      as: ACTORS.designer,
-    },
-  );
-  assert.equal(setDefault.res.statusCode, 200);
-
   // Delete: designer only, then it is gone.
-  const memberDelete = await call(
-    handleThemes,
-    'DELETE',
-    `/api/themes/custom/${id}`,
-    { as: ACTORS.member },
-  );
+  const memberDelete = await call(handleThemes, 'DELETE', `/api/themes/${id}`, {
+    as: ACTORS.member,
+  });
   assert.equal(memberDelete.res.statusCode, 403);
-  const del = await call(handleThemes, 'DELETE', `/api/themes/custom/${id}`, {
+  const del = await call(handleThemes, 'DELETE', `/api/themes/${id}`, {
     as: ACTORS.designer,
   });
   assert.equal(del.res.statusCode, 200);
 
-  const gone = await call(handleThemes, 'GET', `/api/themes/custom/${id}`, {
+  const gone = await call(handleThemes, 'GET', `/api/themes/${id}`, {
     as: ACTORS.member,
   });
   assert.equal(gone.res.statusCode, 404);
-});
-
-test('clearing the org default needs the designer capability', async () => {
-  seed();
-  const denied = await call(
-    handleThemes,
-    'POST',
-    '/api/themes/custom/clear-default',
-    { as: ACTORS.member },
-  );
-  assert.equal(denied.res.statusCode, 403);
-
-  const ok = await call(
-    handleThemes,
-    'POST',
-    '/api/themes/custom/clear-default',
-    { as: ACTORS.designer },
-  );
-  assert.equal(ok.res.statusCode, 200);
-});
-
-test('setting a default on a missing theme is a 404', async () => {
-  seed();
-  const { res } = await call(
-    handleThemes,
-    'POST',
-    '/api/themes/custom/00000000-0000-4000-8000-0000deadbeef/set-default',
-    {
-      as: ACTORS.designer,
-    },
-  );
-  assert.equal(res.statusCode, 404);
 });
 
 // ===========================================================================

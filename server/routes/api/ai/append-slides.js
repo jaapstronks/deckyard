@@ -21,7 +21,13 @@ import { loadSlideTypeContext } from './shared.js';
  * presentation (editor flow).
  * @param {import('./shared.js').AiContext} ctx
  */
-export async function handleAiAppendSlides({ repoRoot, req, res, authedUser }) {
+export async function handleAiAppendSlides({
+  repoRoot,
+  req,
+  res,
+  authedUser,
+  storageScope,
+}) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -66,7 +72,11 @@ export async function handleAiAppendSlides({ repoRoot, req, res, authedUser }) {
   // Against the theme of the deck the slides are being appended to, so a
   // generated slide composes the way an inserted one does.
   const parts = deckToPresentationParts(generatedSlides, {
-    theme: await loadDeckTheme(repoRoot, deckThemeId(existingDeck)),
+    theme: await loadDeckTheme(
+      repoRoot,
+      deckThemeId(existingDeck),
+      storageScope,
+    ),
     lang: lang || existingDeck?.lang,
   });
   let slides = Array.isArray(parts?.slides) ? parts.slides : [];

@@ -5,10 +5,6 @@
  */
 
 import { t } from '../ui-i18n.js';
-import {
-  DEFAULT_THEME_ID,
-  DEFAULT_THEME_NAME,
-} from '../../../shared/constants/themes.js';
 import { loadThemeById } from './theme.js';
 import { cssStringEscape } from '../../../shared/theme-fonts.js';
 import { h } from '../dom.js';
@@ -39,7 +35,7 @@ function themeListUrl(currentTheme) {
  * @returns {Object} { wrap, select, getTheme, setTheme }
  */
 function createThemeSelect({
-  initialTheme = DEFAULT_THEME_ID,
+  initialTheme = 'default',
   onChange,
   className = 'modal-field-narrow',
 } = {}) {
@@ -54,13 +50,15 @@ function createThemeSelect({
 
   // Default options
   select.append(
-    h('option', { value: DEFAULT_THEME_ID, text: DEFAULT_THEME_NAME }),
-    h('option', { value: 'clicknl', text: 'ClickNL' }),
+    h('option', {
+      value: 'default',
+      text: t('common.themeDefault', 'Workspace default'),
+    }),
   );
   select.value = themeId;
 
   select.addEventListener('change', () => {
-    themeId = String(select.value || DEFAULT_THEME_ID) || DEFAULT_THEME_ID;
+    themeId = String(select.value || 'default');
     onChange?.(themeId);
   });
 
@@ -90,7 +88,7 @@ function createThemeSelect({
 async function populateThemes({
   api,
   select,
-  currentTheme = DEFAULT_THEME_ID,
+  currentTheme = 'default',
   onPopulated,
 } = {}) {
   try {
@@ -103,6 +101,12 @@ async function populateThemes({
     }
 
     select.innerHTML = '';
+    select.append(
+      h('option', {
+        value: 'default',
+        text: t('common.themeDefault', 'Workspace default'),
+      }),
+    );
     for (const theme of themes) {
       const id = String(theme?.id || '').trim();
       if (!id) continue;
@@ -116,8 +120,7 @@ async function populateThemes({
     );
     const resolvedTheme = hasWanted
       ? wanted
-      : String(select.options?.[0]?.value || DEFAULT_THEME_ID) ||
-        DEFAULT_THEME_ID;
+      : String(select.options?.[0]?.value || 'default');
 
     select.value = resolvedTheme;
     onPopulated?.(resolvedTheme);
@@ -142,7 +145,7 @@ async function populateThemes({
  */
 export function createAndPopulateThemeSelect({
   api,
-  initialTheme = DEFAULT_THEME_ID,
+  initialTheme = 'default',
   onChange,
   className,
 } = {}) {
@@ -189,7 +192,7 @@ export function createVisualThemePicker({
   // An explicit initial theme overrides the workspace default; null means
   // "adopt whatever the server reports as the default".
   const explicitInitial = initialTheme ? String(initialTheme) : null;
-  let themeId = explicitInitial;
+  let themeId = explicitInitial || 'default';
 
   const wrap = h('div', { class: 'stack is-field theme-picker-wrap' });
   const label = h('div', {
@@ -415,18 +418,26 @@ export function createVisualThemePicker({
       const themes = Array.isArray(resp?.themes) ? resp.themes : [];
       if (!themes.length) return themeId;
 
-      const serverDefault = String(resp?.defaultThemeId || DEFAULT_THEME_ID);
+      const serverDefault = String(resp?.defaultThemeId || '');
+      const defaultRecord = themes.find((th) => th.id === serverDefault);
+      const choices = defaultRecord
+        ? [
+            {
+              ...defaultRecord,
+              id: 'default',
+              label: t('common.themeDefault', 'Workspace default'),
+            },
+            ...themes,
+          ]
+        : themes;
 
       // Resolve the selected theme: explicit initial wins, else the workspace
       // default, else the first available theme.
-      if (!themeId) themeId = serverDefault;
-      if (!themes.some((th) => th.id === themeId)) {
-        themeId = themes.some((th) => th.id === serverDefault)
-          ? serverDefault
-          : String(themes[0]?.id || DEFAULT_THEME_ID);
+      if (!choices.some((th) => th.id === themeId)) {
+        themeId = String(choices[0]?.id || 'default');
       }
 
-      const enriched = await Promise.all(themes.map(resolvePreviewData));
+      const enriched = await Promise.all(choices.map(resolvePreviewData));
       preloadFonts(enriched);
 
       for (const theme of enriched) {

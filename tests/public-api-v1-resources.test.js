@@ -47,10 +47,25 @@ const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 async function installDb() {
   const db = createFakeDb({
     organizations: [
-      { id: ORG, name: 'Default', slug: 'default' },
-      { id: OTHER_ORG, name: 'Other', slug: 'other' },
+      {
+        id: ORG,
+        name: 'Default',
+        slug: 'default',
+        settings: { defaultThemeId: '11111111-1111-4111-8111-111111111111' },
+      },
+      {
+        id: OTHER_ORG,
+        name: 'Other',
+        slug: 'other',
+        settings: { defaultThemeId: '11111111-1111-4111-8111-111111111111' },
+      },
     ],
     themes: [
+      themeRow({
+        id: '11111111-1111-4111-8111-111111111111',
+        organization_id: null,
+        label: 'Amethyst',
+      }),
       themeRow({
         id: 'theme-own',
         organization_id: ORG,
@@ -183,7 +198,7 @@ function makeCtx(method, pathname, { permissions = ['read'] } = {}) {
 // GET /api/v1/themes
 // ---------------------------------------------------------------------------
 
-test('GET /themes returns system and own custom themes, custom first', async () => {
+test('GET /themes returns seed and own organization records, organization first', async () => {
   await installDb();
   const ctx = makeCtx('GET', '/api/v1/themes');
   assert.equal(await handleResources(ctx), true);
@@ -192,24 +207,28 @@ test('GET /themes returns system and own custom themes, custom first', async () 
   const { themes, count } = ctx.res.body;
   assert.equal(count, themes.length);
 
-  const custom = themes.filter((t) => t.type === 'custom');
-  const system = themes.filter((t) => t.type === 'system');
+  const custom = themes.filter((t) => t.source === 'organization');
+  const system = themes.filter((t) => t.source === 'seed');
   assert.equal(
     custom.length + system.length,
     themes.length,
-    'only two theme types exist',
+    'only two record sources exist',
   );
-  assert.ok(system.length > 0, 'the repo ships system themes');
-  assert.ok(system.some((t) => t.id === 'amethyst'));
+  assert.equal(system.length, 1);
+  assert.ok(
+    system.some((t) => t.id === '11111111-1111-4111-8111-111111111111'),
+  );
+  assert.equal(system[0].isDefault, true);
   assert.deepEqual(
     custom.map((t) => t.id),
     ['theme-own'],
   );
   assert.equal(custom[0].label, 'Own custom theme');
 
-  // Custom themes sort before system themes.
-  const firstSystemIndex = themes.findIndex((t) => t.type === 'system');
-  const lastCustomIndex = themes.map((t) => t.type).lastIndexOf('custom');
+  const firstSystemIndex = themes.findIndex((t) => t.source === 'seed');
+  const lastCustomIndex = themes
+    .map((t) => t.source)
+    .lastIndexOf('organization');
   assert.ok(lastCustomIndex < firstSystemIndex);
 });
 

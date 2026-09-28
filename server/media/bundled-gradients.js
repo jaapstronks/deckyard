@@ -10,11 +10,10 @@
  * ship, served as static SVG from `/assets/gradients/`. No external request, no
  * attribution, no rate limit, no approval — and nothing to re-negotiate later.
  *
- * The set is *derived, not authored*. `paletteFromTheme()` reads a theme's
- * `brandColors` and background tokens; `GRADIENT_COMPOSITIONS` are the recipes
- * those colours are poured into. Themes × compositions is the whole library, so
- * a fork that drops its own theme in `themes/` and re-runs
- * `npm run gen:gradients` gets its own gradients for free.
+ * The set is *derived, not authored*. The built-in seed records project to
+ * render tokens, then `paletteFromTheme()` reads their brand and background
+ * colors. `GRADIENT_COMPOSITIONS` supply the recipes. Seeds × compositions
+ * is the whole library.
  *
  * The SVG files are generated ahead of time and committed, for one reason: an
  * asset under `/assets/` is inlined by `toDataUrlIfLocal()`, so a gradient
@@ -24,6 +23,7 @@
  */
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { buildThemeConfig } from '../utils/theme-builder.js';
 
 /** Intrinsic size of a generated gradient (matches the 16:9 slide stage). */
 export const GRADIENT_WIDTH = 1600;
@@ -369,9 +369,8 @@ export function buildGradientItems(themes) {
 }
 
 /**
- * Load the built-in themes the library is derived from. Only `themes/` — the
- * bundled set has to match committed files, and a DB or per-organization custom
- * theme has nothing rendered on disk.
+ * Load the built-in seed records and project their render tokens. The bundled
+ * set matches committed seed files; organization themes do not generate assets.
  *
  * @param {string} repoRoot
  * @returns {Promise<Object[]>}
@@ -387,7 +386,10 @@ export async function loadBundledGradientThemes(repoRoot) {
   const out = [];
   for (const name of names) {
     try {
-      out.push(JSON.parse(await fs.readFile(path.join(dir, name), 'utf8')));
+      const record = JSON.parse(
+        await fs.readFile(path.join(dir, name), 'utf8'),
+      );
+      out.push(buildThemeConfig({ ...record, id: record.slug }));
     } catch {
       // A theme that does not parse simply contributes no gradients.
     }

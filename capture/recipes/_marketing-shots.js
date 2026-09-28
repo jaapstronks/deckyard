@@ -22,7 +22,7 @@ import { DEFAULT_VIEWPORT } from '../lib/browser.js';
 import {
   MARKETING_LANGS,
   MARKETING_PUBLIC_ORIGIN,
-  MARKETING_THEME,
+  MARKETING_THEME_SLUG,
   MARKETING_VIEWPORT,
   PRESENTER_SLIDE,
   dismissPresenterStartGate,
@@ -75,7 +75,7 @@ export function editorFormShot(lang) {
       const deck = marketingDeckVersions();
       const deckId = await seedDeck(api, {
         title: deck.titles[deckLang],
-        theme: MARKETING_THEME,
+        themeSlug: MARKETING_THEME_SLUG,
         slides: deck.versions[deckLang],
       });
       return { deckId, slideId: deck.slideIds.funnel };
@@ -144,7 +144,7 @@ export function editorCanvasShot(lang) {
       );
       const deckId = await seedBilingualDeck(api, {
         title: deck.titles[deckLang],
-        theme: MARKETING_THEME,
+        themeSlug: MARKETING_THEME_SLUG,
         dominant: deckLang,
         titles: { [deckLang]: deck.titles[deckLang] },
         versions: { [deckLang]: slides },

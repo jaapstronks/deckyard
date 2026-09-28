@@ -17,8 +17,8 @@
  *   travel by name only, with a `fontsNotIncluded` line that says why: a bundle
  *   installs on another instance, and that is redistribution.
  *
- * A file theme (`themes/`, a fork's `custom/themes/`) is not a record: it ships
- * with the install, like a file-JS slide type, and travels by its id alone.
+ * Seed and organization themes share the same record shape; a bundle carries
+ * the record content so a receiving instance can install it under its own UUID.
  *
  * On the receiving side a bundled theme is recognised by its content, not by
  * name: {@link definitionContentHash} over the installable form, with every logo
@@ -35,10 +35,23 @@ import {
   DEFAULT_HEADING_FONT,
   DEFAULT_BODY_FONT,
 } from '../../shared/theme-fonts.js';
-import { validateThemeConfig } from '../../shared/theme-config-schema.js';
+import {
+  checkThemeConfig,
+  validateThemeColors,
+} from '../../shared/theme-config-schema.js';
 import { UUID_RE } from '../utils/uuid.js';
 import { crossOrganizationScope } from '../storage/scope.js';
-import { createTheme, getThemeRecord, listThemes } from '../storage/themes.js';
+import {
+  createTheme,
+  getThemeRecord,
+  listThemes,
+  listSeedThemes,
+  checkThemeRecordFields,
+  THEME_RECORD_FIELDS,
+} from '../storage/themes.js';
+import { isValidSlug } from '../storage/utils/index.js';
+import { getDefaultThemeId } from '../storage/settings.js';
+import { DEFAULT_THEME_REF } from '../utils/themes.js';
 import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';
 import {
   definitionContentHash,
@@ -88,12 +101,66 @@ export function portableThemeRecord(record) {
       heading: fonts.heading || DEFAULT_HEADING_FONT,
       body: fonts.body || DEFAULT_BODY_FONT,
     },
-    config: validateThemeConfig(record?.config),
+    config: record?.config || {},
   };
 }
 
+/** Refuse a portable record before projection, matching, or a write. */
+export function validatePortableTheme(theme) {
+  if (!theme || typeof theme !== 'object' || Array.isArray(theme))
+    throw new Error('theme.json must be an object');
+  const missing = THEME_RECORD_FIELDS.find((key) => !Object.hasOwn(theme, key));
+  if (missing) throw new Error(`theme.json is missing ${missing}`);
+  const unknown = checkThemeRecordFields(theme, { portable: true });
+  if (unknown)
+    throw new Error(`theme.json has an unknown field: ${unknown.where}`);
+  if (typeof theme.slug !== 'string' || !isValidSlug(theme.slug))
+    throw new Error('theme.json has an invalid slug');
+  if (
+    typeof theme.label !== 'string' ||
+    !theme.label.trim() ||
+    theme.label.length > 255
+  )
+    throw new Error('theme.json has an invalid label');
+  for (const key of ['logoUrl', 'logoSmallUrl']) {
+    if (
+      theme[key] !== null &&
+      theme[key] !== undefined &&
+      typeof theme[key] !== 'string'
+    )
+      throw new Error(`theme.json has an invalid ${key}`);
+  }
+  const colors = validateThemeColors(theme.colors);
+  if (!colors.ok) throw new Error(`theme.json has an invalid ${colors.path}`);
+  if (
+    !theme.fonts ||
+    typeof theme.fonts !== 'object' ||
+    Array.isArray(theme.fonts)
+  )
+    throw new Error('theme.json has invalid fonts');
+  if (
+    ['heading', 'body'].some(
+      (key) => typeof theme.fonts[key] !== 'string' || !theme.fonts[key].trim(),
+    )
+  )
+    throw new Error('theme.json has invalid fonts');
+  const config = checkThemeConfig(theme.config);
+  if (!config.ok) throw new Error(`theme.json has an invalid ${config.path}`);
+  return theme;
+}
+
+function validateStoredThemeForBundle(record) {
+  const unknown = checkThemeRecordFields({ fonts: record.fonts });
+  if (unknown)
+    throw new Error(`theme record has an unknown field: ${unknown.where}`);
+  const config = checkThemeConfig(record.config);
+  if (!config.ok) throw new Error(`theme record has an invalid ${config.path}`);
+  const colors = validateThemeColors(record.colors);
+  if (!colors.ok) throw new Error(`theme record has an invalid ${colors.path}`);
+}
+
 /**
- * The theme record behind a presentation's theme id, or null for a file theme
+ * The theme record behind a presentation's theme UUID, or null for an invalid reference
  * (or a database theme that no longer exists).
  *
  * The UUID came out of the deck being exported, which the route already
@@ -103,18 +170,37 @@ export function portableThemeRecord(record) {
  * @param {string} rawThemeId - `presentation.theme` as stored
  * @returns {Promise<Object|null>}
  */
-export async function loadBundleableTheme(repoRoot, rawThemeId) {
-  const id = String(rawThemeId || '')
+export async function loadBundleableTheme(
+  repoRoot,
+  rawThemeId,
+  organizationId,
+) {
+  let id = String(rawThemeId || DEFAULT_THEME_REF)
     .trim()
     .toLowerCase();
-  if (!UUID_RE.test(id)) return null;
-  return getThemeRecord(
+  if (id === DEFAULT_THEME_REF) {
+    id = organizationId
+      ? await getDefaultThemeId({ repoRoot, organizationId })
+      : (await listSeedThemes())[0]?.id;
+  }
+  if (!UUID_RE.test(id || ''))
+    throw new Error(`Theme not found for bundle export: ${rawThemeId}`);
+  const record = await getThemeRecord(
     crossOrganizationScope(
       repoRoot ?? null,
       'theme UUID resolved from the deck being exported; export paths carry no session',
     ),
     id,
+    { rawConfig: true },
   );
+  if (
+    !record ||
+    (record.organizationId && record.organizationId !== organizationId)
+  )
+    throw new Error(`Theme not found for bundle export: ${rawThemeId}`);
+  validateStoredThemeForBundle(record);
+  validatePortableTheme(portableThemeRecord(record));
+  return record;
 }
 
 /**
@@ -161,6 +247,7 @@ export async function bundleThemeFonts(repoRoot, record) {
     const read = [];
     for (const face of curated) {
       try {
+        if (!repoRoot) throw new Error('no repository root for font files');
         const buffer = await fs.readFile(path.join(repoRoot, face.path));
         read.push({
           family: face.family,
@@ -198,7 +285,15 @@ export async function bundleThemeFonts(repoRoot, record) {
  * @returns {Promise<Object|null>} the theme record
  */
 async function findThemeByContent(repoRoot, scope, hash) {
-  for (const record of await listThemes(scope)) {
+  for (const record of (await listThemes(scope, { rawConfig: true })).sort(
+    (a, b) => (a.source === 'seed' ? -1 : 1) - (b.source === 'seed' ? -1 : 1),
+  )) {
+    try {
+      validateStoredThemeForBundle(record);
+      validatePortableTheme(portableThemeRecord(record));
+    } catch {
+      continue;
+    }
     const hashable = await withBundleRefs(
       repoRoot,
       portableThemeRecord(record),
@@ -283,6 +378,7 @@ export async function settleBundledTheme({
   install,
   permitted,
 }) {
+  validatePortableTheme(theme);
   const resolved = await resolveBundledThemeFonts(theme, scope);
   const record = await findThemeByContent(
     repoRoot,

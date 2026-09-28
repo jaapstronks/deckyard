@@ -33,6 +33,7 @@ import crypto from 'node:crypto';
 import JSZip from 'jszip';
 import { testScope, otherOrganizationScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const SENDER = process.env.DEFAULT_ORGANIZATION_ID;
@@ -71,6 +72,7 @@ test.before(async () => {
         { id: RECEIVER, name: 'Receiver', slug: 'receiver' },
       ],
       users: userRows(OWNER),
+      themes: [await brandSeedRow()],
     }),
   );
   await initializeStorage();
@@ -136,7 +138,7 @@ const deckWith = (type) => ({
 });
 
 async function bundleFor(type) {
-  return buildDeckBundle(null, deckWith(`custom-${type.slug}`), {
+  return buildDeckBundle(process.cwd(), deckWith(`custom-${type.slug}`), {
     slideTypes: await buildMergedSlideTypes(senderScope()),
   });
 }
@@ -195,7 +197,7 @@ test('export: each database type the deck uses is its record without ids', async
   const bundle = await bundleFor(type);
   const { manifest, deck, slideTypes, assets } = await readDeckBundle(bundle);
 
-  assert.equal(manifest.bundleVersion, 3);
+  assert.equal(manifest.bundleVersion, 4);
   const ref = `slide-types/${type.slug}.json`;
   assert.equal(manifest.slideTypes.length, 1);
   assert.equal(manifest.slideTypes[0].slug, type.slug);
@@ -230,7 +232,10 @@ test('export: each database type the deck uses is its record without ids', async
 });
 
 test('export: a core type carries no definition', async () => {
-  const bundle = await buildDeckBundle(null, deckWith('content-slide'));
+  const bundle = await buildDeckBundle(
+    process.cwd(),
+    deckWith('content-slide'),
+  );
   const { manifest, slideTypes } = await readDeckBundle(bundle);
   assert.equal(manifest.slideTypes, undefined);
   assert.deepEqual(slideTypes, []);
@@ -365,7 +370,7 @@ test('a same-instance import lands on the type it came from', async () => {
 });
 
 test('a file-JS type travels by name: the same fork resolves it', async () => {
-  const bundle = await buildDeckBundle(null, deckWith('acme-hero'));
+  const bundle = await buildDeckBundle(process.cwd(), deckWith('acme-hero'));
   const { manifest, deck } = await readDeckBundle(bundle);
   assert.equal(manifest.slideTypes, undefined, 'code carries no definition');
   assert.equal(deck.slides[0].type, 'acme-hero');
@@ -418,9 +423,9 @@ test('reading refuses a tampered definition and a mismatched slug', async () => 
   await assert.rejects(readDeckBundle(moved), /unexpected path/);
 });
 
-test('a version-2 bundle without slide types still reads', async () => {
+test('a version-2 bundle is refused', async () => {
   const bundle = await rezip(
-    await buildDeckBundle(null, deckWith('content-slide')),
+    await buildDeckBundle(process.cwd(), deckWith('content-slide')),
     async (zip) => {
       const manifest = JSON.parse(
         await zip.file('manifest.json').async('string'),
@@ -431,9 +436,5 @@ test('a version-2 bundle without slide types still reads', async () => {
       );
     },
   );
-  const read = await readDeckBundle(bundle);
-  assert.equal(read.manifest.bundleVersion, 2);
-  assert.deepEqual(read.slideTypes, []);
-  const { res } = await importInto(receiverScope(), bundle);
-  assert.equal(res.statusCode, 201, res.body);
+  await assert.rejects(readDeckBundle(bundle), /bundleVersion 2/);
 });

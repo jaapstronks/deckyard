@@ -25,6 +25,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -61,8 +62,10 @@ const LOUD_ANALYTICS = {
 };
 
 const saved = {};
+let brandSeed;
 
 test.before(async () => {
+  brandSeed = await brandSeedRow();
   for (const [k, v] of Object.entries(LOUD_ANALYTICS)) {
     saved[k] = process.env[k];
     process.env[k] = v;
@@ -70,6 +73,7 @@ test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      themes: [brandSeed],
     }),
   );
   await initializeStorage();
@@ -88,6 +92,7 @@ function seed() {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      themes: [brandSeed],
       presentations: [
         {
           id: 'deck-pub',

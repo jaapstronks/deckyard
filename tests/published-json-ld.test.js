@@ -20,6 +20,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -35,12 +36,14 @@ const { toIsoOrNull } = await import('../server/utils/normalize.js');
 const PUBLISH_ID = 'abcd1234';
 const SLUG = 'my-deck';
 const CREATED = '2026-02-01T09:30:00.000Z';
+let brandSeed;
 
 /** Seed one published deck whose `created_at` is `createdAt`. */
 function seed(createdAt) {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      themes: [brandSeed],
       presentations: [
         {
           id: 'deck-pub',
@@ -116,6 +119,7 @@ async function jsonLdFromPublishedPage() {
 }
 
 test.before(async () => {
+  brandSeed = await brandSeedRow();
   seed(CREATED);
   await initializeStorage();
 });

@@ -98,7 +98,7 @@ vocabulary and the defaults already right. Useful flags:
 | `--label "Acme hero"`                     | the name shown in the picker           |
 | `--fields "heading:string,body:markdown"` | the initial field list                 |
 | `--fields "status:enum(draft\|live)"`     | an enum spells its options inline      |
-| `--theme-id acme-corp`                    | bind the type to a theme               |
+| `--theme-only`                            | require explicit inclusion by a theme  |
 | `--namespace acme`                        | claim a fork namespace for the type id |
 | `--no-css`                                | skip the stylesheet stub               |
 | `--yes`                                   | never prompt (scripts, CI)             |
@@ -113,7 +113,7 @@ Create `custom/slide-types/my-title-slide.js`:
 import { bgClass, escapeHtml } from '../../shared/slide-types/helpers.js';
 
 export default {
-  themeId: 'my-theme', // Optional: tie to a specific theme
+  themeOnly: true, // Optional: require explicit inclusion by a theme
   label: 'My Title Slide',
 
   // Optional: which field to use as the slide label in the panel
@@ -304,7 +304,7 @@ Add an `ai` property to your slide type definition:
 ```javascript
 export default {
   label: 'Product Feature Cards',
-  themeId: 'my-theme', // Optional: tie to a specific theme
+  themeOnly: true, // Optional: require explicit inclusion by a theme
 
   // ... fields, defaults, renderHtml ...
 
@@ -416,7 +416,7 @@ field. Full contract: `docs/reference/mcp-server.md`.
 1. **Prompt Construction**: The AI system builds prompts that include your slide type's description, best-for scenarios, and the schema derived from its `fields`
 2. **Slide Selection**: When analyzing presentations, the AI considers your custom slides alongside core slides
 3. **Content Generation**: When suggesting changes, the AI uses your examples and that same derived schema to generate valid content
-4. **Theme Awareness**: If your slide has a `themeId`, the AI only suggests it for presentations using that theme
+4. **Theme Awareness**: If your slide has `themeOnly: true`, the AI only suggests it when the active theme includes the type
 
 ### Withholding a type from agents
 
@@ -580,11 +580,11 @@ The option value travels as `data-kind` on the `<aside>`, and its `copyKey` word
 
 To create a slide type that only appears for a specific theme:
 
-### 1. Set `themeId` in your slide type definition
+### 1. Set `themeOnly` in your slide type definition
 
 ```javascript
 export default {
-  themeId: 'acme-corp', // Must match a theme ID
+  themeOnly: true, // Available only when included by the active theme
   label: 'Acme Hero Slide',
   // ...
 };
@@ -592,12 +592,10 @@ export default {
 
 ### 2. Include it in your theme configuration
 
-In `custom/themes/acme-corp.json`:
+In the Acme theme record’s `config`:
 
 ```json
 {
-  "id": "acme-corp",
-  "label": "Acme Corporation",
   "slideTypes": {
     "include": ["acme-hero-slide"]
   }
@@ -1046,7 +1044,7 @@ subset is what the fold measures against.
 
 | Property               | Type    | Description                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `themeId`              | string  | Tie this slide type to a specific theme                                                                                                                                                                                                                                                                                                                                                                                         |
+| `themeOnly`            | boolean | Require explicit inclusion in the active theme config                                                                                                                                                                                                                                                                                                                                                                           |
 | `labelField`           | string  | Which content field to use as the slide label (default: checks for `title`)                                                                                                                                                                                                                                                                                                                                                     |
 | `autoBackgroundPreset` | boolean | Seed `slideBgImage` from `theme.backgroundPresets` when a slide of this type is created                                                                                                                                                                                                                                                                                                                                         |
 | `sampleContent`        | object  | Sample content for the slide type picker thumbnail                                                                                                                                                                                                                                                                                                                                                                              |
@@ -1331,7 +1329,7 @@ custom/slide-types/
 └── _helpers.js              # Underscore = private (not loaded)
 
 custom/themes/
-└── acme-corp.json           # Theme configuration
+└── acme-corp.json           # Optional shared, read-only theme seed
 
 custom/assets/
 ├── fonts/
@@ -1355,8 +1353,8 @@ import { bgClass, escapeHtml } from '../../shared/slide-types/helpers.js';
 import { markdownToSafeHtml } from '../../shared/markdown.js';
 
 export default {
-  // Tie to Acme theme
-  themeId: 'acme-corp',
+  // Require explicit inclusion by the active theme
+  themeOnly: true,
   label: 'Acme Hero',
   labelField: 'headline',
   autoBackgroundPreset: true,
@@ -1467,26 +1465,22 @@ export default {
 };
 ```
 
-With the theme config in `custom/themes/acme-corp.json`:
+With the `config` of an organization theme record (or a shared seed in `custom/themes/acme-corp.json`):
 
 ```json
 {
-  "id": "acme-corp",
-  "label": "Acme Corporation",
-  "assets": {
-    "logo": "/custom/assets/images/acme-logo.svg",
-    "logoAlt": "Acme Corp"
-  },
-  "cssVars": {
-    "--t-color-accent": "#0066cc"
-  },
-  "slideTypes": {
-    "exclude": ["title-slide"],
-    "include": ["acme-hero-slide"]
-  },
-  "defaultTitleSlide": "acme-hero-slide"
+  "config": {
+    "slideTypes": {
+      "exclude": ["title-slide"],
+      "include": ["acme-hero-slide"]
+    },
+    "defaultTitleSlide": "acme-hero-slide"
+  }
 }
 ```
+
+The snippet shows the relevant part of a record. A complete seed also needs `slug`, `label`, `colors` and `fonts`; see [Themes](themes.md#seeds-for-an-installation).
+Use the themes API to set a record's `config.slideTypes`; **Settings → Slide Types** separately controls organization-wide availability.
 
 This setup:
 

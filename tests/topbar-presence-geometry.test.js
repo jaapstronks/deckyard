@@ -90,6 +90,7 @@ before(async () => {
   if (skip) return;
 
   const { createFakeDb } = await import('./helpers/fake-db.js');
+  const { brandSeedRow } = await import('./helpers/theme-seed.js');
   const { __setTestDb } = await import('../server/db/client.js');
   const { initializeStorage, __resetStorageForTests } =
     await import('../server/storage/lifecycle.js');
@@ -106,6 +107,7 @@ before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      themes: [await brandSeedRow()],
     }),
   );
   await initializeStorage();

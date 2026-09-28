@@ -47,7 +47,7 @@ import { renderSlideToPngBuffer } from '../server/render/png.js';
 import { buildPptxBuffer } from '../server/export/pptx.js';
 import { renderSandboxOgImagePng } from '../server/utils/sandbox-og-image.js';
 import { parsePdf } from '../server/utils/convert-file/pdf-parser.js';
-import { loadThemeAssets } from '../server/utils/themes.js';
+import { seedThemeConfig } from './helpers/theme-seed.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -145,7 +145,7 @@ test(
 );
 
 test('PDF export produces a real, non-blank PDF', { skip }, async () => {
-  const theme = await loadThemeAssets(repoRoot, 'default');
+  const theme = await seedThemeConfig('brand');
   const buf = await renderSlidesToPdfBuffer(repoRoot, smokeDeck(), { theme });
 
   assert.ok(
@@ -186,7 +186,7 @@ test(
   'PNG export produces a correctly sized, non-blank image',
   { skip },
   async () => {
-    const theme = await loadThemeAssets(repoRoot, 'default');
+    const theme = await seedThemeConfig('brand');
     const buf = await renderSlideToPngBuffer(repoRoot, smokeSlide(), {
       scale: 2,
       theme,
@@ -233,7 +233,7 @@ test(
   'PPTX export embeds the Chrome-rendered slide image',
   { skip },
   async () => {
-    const theme = await loadThemeAssets(repoRoot, 'default');
+    const theme = await seedThemeConfig('brand');
     const { buffer } = await buildPptxBuffer(repoRoot, notesDeck(), {
       scale: 1,
       theme,

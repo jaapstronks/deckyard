@@ -9,6 +9,7 @@ import {
 } from '../server/utils/embed-fonts.js';
 import { buildStandaloneHtml } from '../server/export/html.js';
 import { curatedFontPath } from '../shared/theme-fonts.js';
+import { buildThemeConfig } from '../server/utils/theme-builder.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -32,9 +33,13 @@ const localFont = await (async () => {
   }
 })();
 
-const amethystTheme = JSON.parse(
+const amethystSeed = JSON.parse(
   await fs.readFile(path.join(repoRoot, 'themes', 'amethyst.json'), 'utf8'),
 );
+const amethystTheme = buildThemeConfig({
+  id: '00000000-0000-4000-8000-0000000000aa',
+  ...amethystSeed,
+});
 
 test('inlineLocalFontUrls embeds a referenced local woff2 as a data URL', async (t) => {
   if (!localFont) return t.skip('fonts not downloaded in this checkout');

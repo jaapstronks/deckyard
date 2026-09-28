@@ -6,11 +6,11 @@
  *   mimetype              first entry, STORED (uncompressed) — magic-number sniff
  *   manifest.json         bundle meta + asset inventory ({hash, id, mime, bytes})
  *   deck.json             the portable deck; asset refs rewritten to bundle refs
- *   theme.json            the deck's database theme, when it has one (D90)
+ *   theme.json            required snapshot of the deck's effective theme
  *   slide-types/<slug>.json
  *                         each database slide type the deck uses (D91)
  *   assets/<sha256>.<ext> the asset bytes, content-addressed (dedup + integrity):
- *                         slide images, theme logos, curated font files
+ *                         slide and theme images, curated font files
  *
  * The human upload name is kept only in the manifest's `sources`, a separate
  * name layer so hash churn never leaks into the readable structure. Refs inside
@@ -27,22 +27,26 @@ import { LocalProvider } from '../media/local.js';
 import { ValidationError } from '../utils/errors.js';
 import { presentationToDeck } from '../../shared/slide-types/deck.js';
 import {
-  collectAssetRefs,
   rewriteAssetRefs,
-  collectUploadRefsIn,
-  rewriteUploadRefsIn,
+  collectServedRefsIn,
+  rewriteServedRefsIn,
+  collectServedAssetRefs,
+  collectThemeImageRefs,
+  rewriteThemeImageRefs,
+  isBundleRef,
+  isServedAssetRef,
   assetRefForHash,
 } from '../../shared/slide-types/deck-assets.js';
 import {
   DECK_FORMAT_ID,
   DECK_MIMETYPE,
-  isDeckMimetype,
 } from '../../shared/slide-types/deck-format-id.js';
 import {
   THEME_ENTRY,
   bundleThemeFonts,
   loadBundleableTheme,
   portableThemeRecord,
+  validatePortableTheme,
 } from './deck-theme.js';
 import {
   loadBundleableSlideTypes,
@@ -50,25 +54,19 @@ import {
   slideTypeEntryRef,
 } from './deck-slide-types.js';
 import { readUploadAsset, sha256Hex } from './deck-install.js';
+import { assertExtensionDeclared } from './extension-name.js';
+import {
+  extensionNames,
+  validExtensions,
+} from '../../shared/extension-provenance.js';
 
-// Re-exported so bundle callers keep one import for the whole bundle surface;
-// the values themselves (and the historical ones a reader still accepts) live
-// in shared/slide-types/deck-format-id.js.
+// Re-exported so bundle callers keep one import for the whole bundle surface.
 export { DECK_MIMETYPE };
 
 /**
- * The bundle version this build writes. 2 added the carried theme and its
- * font files (D90); 3 added the carried slide types (D91).
+ * The sole bundle version this build writes and reads.
  */
-export const DECK_BUNDLE_VERSION = 3;
-
-/**
- * The bundle versions this build reads. Each version is the one before it plus
- * a part — a version-1 bundle has no theme, a version-2 bundle no slide types —
- * so an older bundle reads unchanged; a version this build does not know may
- * carry parts it would silently drop, so it is refused.
- */
-const READABLE_BUNDLE_VERSIONS = Object.freeze([1, 2, 3]);
+export const DECK_BUNDLE_VERSION = 4;
 
 /** SRI-shaped integrity id (`sha256-<base64>`) from a hex digest. */
 function sriFromSha256Hex(hex) {
@@ -82,12 +80,12 @@ function sriFromSha256Hex(hex) {
 function createInventory() {
   const byHash = new Map(); // hash -> { meta, buffer }
 
-  /** Add a slide image or theme logo read from `/uploads/`. */
+  /** Add a served slide or theme image. */
   function addUpload(ref, { buffer, hash, ext, bundleRef }) {
     const entry = byHash.get(hash);
     if (entry) {
       if (!entry.meta.sources.includes(ref)) entry.meta.sources.push(ref);
-      return bundleRef;
+      return entry.meta.ref;
     }
     byHash.set(hash, {
       buffer,
@@ -139,12 +137,16 @@ function createInventory() {
  *   the translation walk
  * @returns {Promise<Buffer>} the ZIP bytes
  */
-export async function buildDeckBundle(repoRoot, pres, { slideTypes } = {}) {
+export async function buildDeckBundle(
+  repoRoot,
+  pres,
+  { slideTypes, themeRecord } = {},
+) {
   const deck = presentationToDeck(pres, { slideTypes });
   const inventory = createInventory();
   const missing = [];
 
-  /** Content-address a set of upload refs; returns ref -> bundle ref. */
+  /** Content-address a set of served refs; returns ref -> bundle ref. */
   async function addUploads(refs) {
     const map = new Map();
     for (const ref of refs) {
@@ -159,18 +161,24 @@ export async function buildDeckBundle(repoRoot, pres, { slideTypes } = {}) {
   }
 
   // Rewrite the deck's asset refs to the content-addressed bundle refs.
-  const slideRefs = await addUploads(collectAssetRefs(deck));
+  const slideRefs = await addUploads(collectServedAssetRefs(deck));
   const portableDeck = rewriteAssetRefs(deck, (ref) => slideRefs.get(ref));
+  delete portableDeck.theme;
+  portableDeck.extensions = extensionNames(
+    portableDeck.extensions,
+    await assertExtensionDeclared(repoRoot),
+  );
 
-  // The database theme the deck is on, as an installable record (D90). A file
-  // theme has no record and travels by the id already in deck.json.
-  let themeJson = null;
-  let fontsNotIncluded = [];
-  const record = await loadBundleableTheme(repoRoot, pres?.theme);
-  if (record) {
-    const portable = portableThemeRecord(record);
-    const themeRefs = await addUploads(collectUploadRefsIn(portable));
-    const bundledTheme = rewriteUploadRefsIn(portable, (ref) =>
+  // Capture the effective theme in the deck's organization (D239).
+  let themeJson;
+  let fontsNotIncluded;
+  const record =
+    themeRecord ||
+    (await loadBundleableTheme(repoRoot, pres?.theme, pres?.organizationId));
+  {
+    const portable = validatePortableTheme(portableThemeRecord(record));
+    const themeRefs = await addUploads(collectThemeImageRefs(portable));
+    const bundledTheme = rewriteThemeImageRefs(portable, (ref) =>
       themeRefs.get(ref),
     );
     const fonts = await bundleThemeFonts(repoRoot, record);
@@ -187,9 +195,9 @@ export async function buildDeckBundle(repoRoot, pres, { slideTypes } = {}) {
     portableDeck,
   )) {
     const portable = portableSlideTypeRecord(record);
-    const typeRefs = await addUploads(collectUploadRefsIn(portable));
+    const typeRefs = await addUploads(collectServedRefsIn(portable));
     const json = JSON.stringify(
-      rewriteUploadRefsIn(portable, (ref) => typeRefs.get(ref)),
+      rewriteServedRefsIn(portable, (ref) => typeRefs.get(ref)),
       null,
       2,
     );
@@ -206,14 +214,10 @@ export async function buildDeckBundle(repoRoot, pres, { slideTypes } = {}) {
     bundleVersion: DECK_BUNDLE_VERSION,
     mimetype: DECK_MIMETYPE,
     deck: 'deck.json',
-    ...(themeJson
-      ? {
-          theme: {
-            ref: THEME_ENTRY,
-            hash: sha256Hex(Buffer.from(themeJson, 'utf8')),
-          },
-        }
-      : {}),
+    theme: {
+      ref: THEME_ENTRY,
+      hash: sha256Hex(Buffer.from(themeJson, 'utf8')),
+    },
     ...(typeEntries.length
       ? {
           slideTypes: typeEntries.map(({ slug, ref, hash }) => ({
@@ -235,7 +239,7 @@ export async function buildDeckBundle(repoRoot, pres, { slideTypes } = {}) {
   zip.file('mimetype', DECK_MIMETYPE, { compression: 'STORE' });
   zip.file('manifest.json', JSON.stringify(manifest, null, 2));
   zip.file('deck.json', JSON.stringify(portableDeck, null, 2));
-  if (themeJson) zip.file(THEME_ENTRY, themeJson);
+  zip.file(THEME_ENTRY, themeJson);
   for (const { ref, json } of typeEntries) zip.file(ref, json);
   for (const { meta, buffer } of inventory.byHash.values()) {
     zip.file(meta.ref, buffer);
@@ -299,6 +303,50 @@ function entryJson(text, name) {
   }
 }
 
+/** Refuse escaped local paths and references to absent inventory entries. */
+function checkPortableRefs(value, assets, missing, label, kind) {
+  const isLocalPath = (ref) =>
+    /^(?:\/(?:uploads|assets|custom\/assets)\/|assets\/)/.test(ref);
+  const inspect = (ref) => {
+    if (isBundleRef(ref)) {
+      if (!assets.has(ref))
+        throw new Error(`${label} names an unlisted asset: ${ref}`);
+    } else if (
+      !isServedAssetRef(ref) ||
+      !missing.has(ref) ||
+      /%(?:2e|2f|5c)/i.test(ref) ||
+      ref.includes('\\')
+    ) {
+      throw new Error(`${label} has an invalid local asset path: ${ref}`);
+    }
+  };
+  if (kind === 'deck') {
+    for (const slide of Array.isArray(value?.slides) ? value.slides : []) {
+      checkPortableRefs(slide?.content, assets, missing, label, 'record');
+    }
+  } else if (kind === 'theme') {
+    rewriteThemeImageRefs(
+      value,
+      (ref) => {
+        inspect(ref);
+        return ref;
+      },
+      isLocalPath,
+    );
+  } else {
+    const walk = (node) => {
+      if (typeof node === 'string') {
+        if (isLocalPath(node)) inspect(node);
+      } else if (Array.isArray(node)) {
+        node.forEach(walk);
+      } else if (node && typeof node === 'object') {
+        Object.values(node).forEach(walk);
+      }
+    };
+    walk(value);
+  }
+}
+
 /**
  * Read + validate a `.deck` bundle. Verifies the mimetype sentinel and each
  * asset's content hash (integrity), then returns the deck plus the asset bytes
@@ -320,9 +368,7 @@ export async function readDeckBundle(buffer) {
 
   const mtEntry = zip.file('mimetype');
   const mimetype = mtEntry ? (await mtEntry.async('string')).trim() : '';
-  // Accepts the historical `vnd.slidecreator.deck` too: bundles already in the
-  // wild carry it, and a published format does not stop reading its own past.
-  if (!isDeckMimetype(mimetype)) {
+  if (mimetype !== DECK_MIMETYPE) {
     throw new Error('mimetype sentinel missing or mismatched');
   }
 
@@ -335,16 +381,31 @@ export async function readDeckBundle(buffer) {
     await manifestEntry.async('string'),
     'manifest.json',
   );
-  if (!READABLE_BUNDLE_VERSIONS.includes(manifest?.bundleVersion)) {
+  if (Object.hasOwn(manifest ?? {}, 'extensions')) {
+    throw new Error('manifest.json must not name extensions');
+  }
+  if (manifest?.bundleVersion !== DECK_BUNDLE_VERSION) {
     throw new Error(
-      `bundleVersion ${JSON.stringify(manifest?.bundleVersion)} is not one this install reads (${READABLE_BUNDLE_VERSIONS.join(', ')})`,
+      `unsupported bundleVersion ${JSON.stringify(manifest?.bundleVersion)} (expected ${DECK_BUNDLE_VERSION})`,
     );
   }
   const deck = entryJson(await deckEntry.async('string'), 'deck.json');
+  if (Object.hasOwn(deck, 'theme'))
+    throw new Error('deck.json must not name a theme');
+  if (!validExtensions(deck.extensions))
+    throw new Error(
+      'deck.json extensions must be a sorted unique list of names',
+    );
 
   // The carried theme is verified like an asset: the manifest names its hash.
-  let theme = null;
-  if (manifest.theme) {
+  let theme;
+  if (
+    !manifest.theme ||
+    manifest.theme.ref !== THEME_ENTRY ||
+    !/^[a-f0-9]{64}$/.test(manifest.theme.hash || '')
+  )
+    throw new Error('the manifest must name theme.json and its hash');
+  {
     const themeEntry = zip.file(String(manifest.theme.ref || ''));
     if (!themeEntry) {
       throw new Error(
@@ -356,6 +417,7 @@ export async function readDeckBundle(buffer) {
       throw new Error('the theme failed its integrity check');
     }
     theme = entryJson(buf.toString('utf8'), manifest.theme.ref);
+    validatePortableTheme(theme);
   }
 
   // Each carried slide type the same way. The entry's ref is derived from its
@@ -391,6 +453,13 @@ export async function readDeckBundle(buffer) {
 
   const assets = new Map();
   for (const a of Array.isArray(manifest?.assets) ? manifest.assets : []) {
+    if (
+      !isBundleRef(a.ref) ||
+      !/^assets\/[a-f0-9]{64}(?:\.[a-z0-9]+)?$/.test(a.ref) ||
+      !/^[a-f0-9]{64}$/.test(a.hash || '') ||
+      !a.ref.startsWith(`assets/${a.hash}`)
+    )
+      throw new Error(`invalid asset path: ${a.ref}`);
     const entry = zip.file(a.ref);
     if (!entry) {
       throw new Error(`the manifest lists a missing asset: ${a.ref}`);
@@ -401,6 +470,14 @@ export async function readDeckBundle(buffer) {
     }
     assets.set(a.ref, buf);
   }
+
+  const missing = new Set(
+    Array.isArray(manifest.missingAssets) ? manifest.missingAssets : [],
+  );
+  checkPortableRefs(deck, assets, missing, 'deck.json', 'deck');
+  checkPortableRefs(theme, assets, missing, 'theme.json', 'theme');
+  for (const definition of slideTypes)
+    checkPortableRefs(definition, assets, missing, 'slide type', 'record');
 
   return { mimetype, manifest, deck, theme, slideTypes, assets };
 }

@@ -1,72 +1,45 @@
-import { customDirFor } from '../../shared/custom-root.js';
-import fs from 'node:fs/promises';
-import { existsSync } from 'node:fs';
-import path from 'node:path';
-import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
-import { getThemeRecord as getCustomTheme } from '../storage/themes.js';
+import { DEFAULT_THEME_REF } from '../../shared/constants/themes.js';
+import {
+  getThemeRecord,
+  listThemes,
+  listSeedThemes,
+} from '../storage/themes.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';
 import { buildThemeConfig } from './theme-builder.js';
-import { envStr } from '../config/utils.js';
 import { slideBackgroundsCssText } from '../../shared/theme-slide-backgrounds.js';
 import { normalizeTheme } from '../../shared/theme-normalize.js';
 import { createLogger } from './logger.js';
 import { UUID_RE } from './uuid.js';
 import { AppError } from './errors.js';
 import { sandboxDefaultThemeId, sandboxEnabled } from '../config/sandbox.js';
-import { getDefaultThemeId } from '../storage/settings.js';
+import {
+  getDefaultThemeId,
+  installationDefaultThemeId,
+  resolveSeedThemeSlug,
+} from '../storage/settings.js';
 
 const log = createLogger('themes');
 
-const THEME_ID_RE = /^[a-z0-9-]{1,32}$/i;
-const cache = new Map(); // id -> theme object
 const customThemeCache = new Map(); // uuid -> { theme, organizationId }
 
-// Default theme for OSS version (can be overridden via DEFAULT_THEME env var)
-const DEFAULT_THEME = envStr('DEFAULT_THEME', DEFAULT_THEME_ID);
-
-/**
- * The theme value that means "this installation's default" (D232). A deck
- * created without a theme stores it; it is resolved per render, never frozen
- * into the id the default happens to be today.
- */
-export const DEFAULT_THEME_REF = 'default';
+export { DEFAULT_THEME_REF };
 
 export function resolveThemeId(raw) {
-  const s = String(raw || '').trim();
-  if (!s) return DEFAULT_THEME;
-  // `default` is a value of its own, not a spelling of an id (D232): a deck
-  // that carries it follows this installation's default theme, resolved at
-  // render time, so it moves along when `DEFAULT_THEME` changes.
-  if (s === DEFAULT_THEME_REF) return DEFAULT_THEME;
-  // Accept UUIDs for custom themes (36 characters with hyphens)
-  if (UUID_RE.test(s)) return s.toLowerCase();
-  // Accept short theme IDs for system themes (up to 32 characters)
-  if (!THEME_ID_RE.test(s)) return DEFAULT_THEME;
-  return s.toLowerCase();
+  if (raw === DEFAULT_THEME_REF || raw == null || raw === '')
+    return DEFAULT_THEME_REF;
+  return typeof raw === 'string' &&
+    UUID_RE.test(raw) &&
+    raw === raw.toLowerCase()
+    ? raw
+    : null;
 }
 
-/**
- * Find theme file path, checking both custom/themes/ and themes/ directories.
- * Custom themes take precedence over core themes.
- */
-function findThemeFile(repoRoot, themeId) {
-  // Custom (fork-specific) themes take precedence over core themes.
-  // Preferred layout: a self-contained folder that co-locates the theme's own
-  // assets (logo, fonts, background presets) under custom/themes/<id>/assets/.
-  const customThemes = path.join(customDirFor(repoRoot), 'themes');
-  const customFolder = path.join(customThemes, themeId, 'theme.json');
-  if (existsSync(customFolder)) return customFolder;
-
-  // Legacy flat layout: custom/themes/<id>.json (still supported).
-  const customFlat = path.join(customThemes, `${themeId}.json`);
-  if (existsSync(customFlat)) return customFlat;
-
-  // Fall back to core themes/ (built-ins are always flat <id>.json).
-  const corePath = path.join(repoRoot, 'themes', `${themeId}.json`);
-  if (existsSync(corePath)) return corePath;
-
-  return null;
+/** The installation default seed, loaded (`installationDefaultThemeId`). */
+async function installationDefault(repoRoot, ctx) {
+  const scope = ctx?.organizationId ? ctx : null;
+  const id = await installationDefaultThemeId();
+  return loadCustomThemeRecord(id, scope, repoRoot);
 }
 
 /**
@@ -80,7 +53,7 @@ function findThemeFile(repoRoot, themeId) {
  * fell back to "no theme" for a theme that exists.
  *
  * @param {string} repoRoot
- * @param {string} [rawThemeId] - the deck's theme id, in any accepted spelling
+ * @param {string} [rawThemeId] - the deck's theme UUID or `default`
  * @param {Object} [ctx] - storage context, for a DB-backed custom theme
  * @returns {Promise<Object|null>} the loaded theme, or null when it cannot be
  *   loaded
@@ -96,30 +69,22 @@ export async function loadDeckTheme(repoRoot, rawThemeId, ctx = null) {
 /**
  * The theme a caller named, or `null` when this instance has no such theme.
  *
- * `loadThemeAssets` answers a miss with the default theme, because a render
- * needs *some* theme to draw with. A write that sets a deck's theme needs the
- * miss itself: an unknown name must be refused, not stored and then quietly
- * drawn as the default (B446).
+ * A write that sets a deck's theme must refuse an unknown UUID before it can
+ * be stored (B446).
  *
  * @param {string} repoRoot
- * @param {string} rawThemeId - a built-in or custom theme id, a custom
- *   theme's UUID (lower-case), or `default`
+ * @param {string} rawThemeId - a lower-case theme UUID or `default`
  * @param {Object} [ctx] - storage scope; a custom theme must belong to its
  *   organization
  * @returns {Promise<Object|null>} the loaded theme, or null
  */
 export async function findTheme(repoRoot, rawThemeId, ctx = null) {
   if (typeof rawThemeId !== 'string' || !rawThemeId) return null;
-  // One spelling per theme (D232): the id exactly as the theme list names it.
-  // resolveThemeId trims, lower-cases and maps a malformed id onto the
-  // default, which is right for a render and wrong for a write: ` Deckyard`
-  // used to be accepted here and stored as `deckyard`.
-  const id = resolveThemeId(rawThemeId);
-  if (rawThemeId !== DEFAULT_THEME_REF && id !== rawThemeId) return null;
-  if (UUID_RE.test(id)) return loadCustomThemeRecord(id, ctx, repoRoot);
-  const theme = await loadThemeAssets(repoRoot, rawThemeId, ctx);
-  if (rawThemeId === DEFAULT_THEME_REF) return theme;
-  return theme?.id === id ? theme : null;
+  if (rawThemeId === DEFAULT_THEME_REF)
+    return loadThemeAssets(repoRoot, rawThemeId, ctx);
+  if (!UUID_RE.test(rawThemeId) || rawThemeId !== rawThemeId.toLowerCase())
+    return null;
+  return loadCustomThemeRecord(rawThemeId, ctx, repoRoot);
 }
 
 /**
@@ -144,10 +109,19 @@ export async function findTheme(repoRoot, rawThemeId, ctx = null) {
  */
 export async function settleNewDeckTheme(repoRoot, requested, ctx = null) {
   if (requested === undefined || requested === null) {
-    const themeId = sandboxEnabled()
-      ? sandboxDefaultThemeId()
-      : DEFAULT_THEME_REF;
-    return { themeId, theme: await loadDeckTheme(repoRoot, themeId, ctx) };
+    if (sandboxEnabled()) {
+      const handle = sandboxDefaultThemeId();
+      const seedId = await resolveSeedThemeSlug(handle);
+      if (!seedId) throw new Error(`Sandbox theme seed not found: ${handle}`);
+      return {
+        themeId: seedId,
+        theme: await loadThemeAssets(repoRoot, seedId, ctx),
+      };
+    }
+    return {
+      themeId: DEFAULT_THEME_REF,
+      theme: await loadDeckTheme(repoRoot, DEFAULT_THEME_REF, ctx),
+    };
   }
   const theme = await findTheme(repoRoot, requested, ctx);
   if (!theme) {
@@ -162,83 +136,47 @@ export async function settleNewDeckTheme(repoRoot, requested, ctx = null) {
 }
 
 export async function loadThemeAssets(repoRoot, rawThemeId, ctx = null) {
-  const rawId = String(rawThemeId || '').trim();
-
-  // A stored `default` follows the current setting whenever the caller knows
-  // the deck's scope. Keep the no-scope fallback for file-only renderers.
+  const rawId =
+    rawThemeId == null || rawThemeId === ''
+      ? DEFAULT_THEME_REF
+      : String(rawThemeId);
   if (rawId === DEFAULT_THEME_REF && ctx?.organizationId) {
     const configured = await getDefaultThemeId(ctx);
-    return loadThemeAssets(
-      repoRoot,
-      configured === DEFAULT_THEME_REF ? DEFAULT_THEME : configured,
-      ctx,
-    );
-  }
-
-  // Check if this is a custom theme UUID
-  if (UUID_RE.test(rawId)) {
-    return loadCustomTheme(rawId, ctx, repoRoot);
-  }
-
-  const id = resolveThemeId(rawId);
-  if (cache.has(id)) return cache.get(id);
-
-  const themePath = findThemeFile(repoRoot, id);
-
-  if (themePath) {
-    try {
-      const txt = await fs.readFile(themePath, 'utf8');
-      const parsed = JSON.parse(txt);
-      const theme = parsed && typeof parsed === 'object' ? parsed : null;
-      if (!theme || theme.id !== id) throw new Error('Invalid theme');
-      const normalized = normalizeTheme(theme);
-      cache.set(id, normalized);
-      return normalized;
-    } catch (err) {
-      log.warn(`Error loading theme ${id}:`, err.message);
+    if (UUID_RE.test(configured)) {
+      const theme = await loadCustomThemeRecord(configured, ctx, repoRoot);
+      if (theme) return theme;
     }
   }
-
-  // Theme not found, try falling back to default theme
-  if (id !== DEFAULT_THEME) {
-    return loadThemeAssets(repoRoot, DEFAULT_THEME);
+  if (UUID_RE.test(rawId)) {
+    const theme = await loadCustomThemeRecord(rawId, ctx, repoRoot);
+    if (theme) return theme;
+    throw new AppError(
+      `Theme not found: ${rawId}`,
+      404,
+      { field: 'theme' },
+      'not_found',
+    );
   }
-
-  // Final fallback: a minimal in-memory theme.
-  const fallback = {
-    id: DEFAULT_THEME,
-    label: 'Default',
-    assets: { logo: '/assets/images/deckyard-mark.svg', logoAlt: 'Deckyard' },
-    cssVars: {},
-    embedFonts: [],
-  };
-  const normalized = normalizeTheme(fallback);
-  cache.set(DEFAULT_THEME, normalized);
-  return normalized;
-}
-
-/**
- * Load a custom theme from the database.
- * @param {string} themeId - UUID of the custom theme
- * @param {Object} ctx - Context object (for org ID)
- * @param {string} repoRoot - Repository root for fallback
- * @returns {Promise<Object>} Theme configuration
- */
-async function loadCustomTheme(themeId, ctx, repoRoot) {
-  const theme = await loadCustomThemeRecord(themeId, ctx, repoRoot);
+  if (rawId !== DEFAULT_THEME_REF) {
+    throw new AppError(
+      `Invalid theme ID: ${rawId}`,
+      400,
+      { field: 'theme' },
+      'invalid',
+    );
+  }
+  const theme = await installationDefault(repoRoot, ctx);
   if (theme) return theme;
-
-  // Fall back to default theme
-  return loadThemeAssets(repoRoot, DEFAULT_THEME);
+  throw new AppError(
+    'Default theme seed not found',
+    503,
+    { field: 'theme' },
+    'unavailable',
+  );
 }
 
 /**
- * The database theme itself, or null when there is none.
- *
- * Split out of `loadCustomTheme` because the two callers want opposite things
- * from a miss: a render path needs *some* theme to draw with (the default),
- * while `customThemeConfig` below has to be able to say "this deck has no
- * database theme" so the client keeps its own built-in loading path.
+ * The visible theme record as a render config, or null when there is none.
  *
  * @param {string} themeId - UUID of the custom theme
  * @param {Object|null} ctx - Context object (for org ID)
@@ -276,7 +214,7 @@ async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
           repoRoot ?? null,
           'theme UUID resolved from the deck being rendered; render/export paths carry no session',
         );
-    const dbTheme = await getCustomTheme(scope, themeId);
+    const dbTheme = await getThemeRecord(scope, themeId);
     if (dbTheme) {
       // Fetch managed fonts if the theme references any familyId
       let managedFonts;
@@ -315,7 +253,7 @@ async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
  *
  * A deck on a **database** theme rendered unbranded for every anonymous
  * viewer: the client resolves a UUID theme through
- * `GET /api/themes/custom/:id/config`, which sits behind the login gate, so
+ * `GET /api/themes/:id/config`, which sits behind the login gate, so
  * the share viewer, the follow-along audience and the notes companion all
  * caught a 401 and silently fell back to a blank theme.
  *
@@ -326,9 +264,8 @@ async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
  * exactly the pattern those endpoints were built to remove — a UUID being
  * hard to guess is not an authorization story.
  *
- * Explicit built-in themes return null: the client can load their static files.
- * `default` carries its resolved config, because anonymous clients cannot read
- * the workspace setting and may need a database theme.
+ * Every visible UUID resolves to a record config. `default` carries its
+ * resolved config because anonymous clients cannot read the workspace setting.
  *
  * What goes over the wire is `buildThemeConfig`'s projection — the same
  * derived render config the authenticated route serves, not the stored row —
@@ -337,7 +274,7 @@ async function loadCustomThemeRecord(themeId, ctx, repoRoot) {
  * @param {string|null} repoRoot
  * @param {string} rawThemeId - `presentation.theme` as stored
  * @param {Object|null} [scope] - The deck's organization scope for `default`
- * @returns {Promise<Object|null>} Theme config, or null for an explicit built-in theme
+ * @returns {Promise<Object|null>} Theme config, or null for an invalid reference
  */
 export async function customThemeConfig(repoRoot, rawThemeId, scope = null) {
   const id = String(rawThemeId || '')
@@ -347,7 +284,7 @@ export async function customThemeConfig(repoRoot, rawThemeId, scope = null) {
     return loadThemeAssets(repoRoot, id, scope);
   }
   if (!UUID_RE.test(id)) return null;
-  return loadCustomThemeRecord(id, null, repoRoot);
+  return loadCustomThemeRecord(id, scope, repoRoot);
 }
 
 /**
@@ -388,89 +325,20 @@ export async function resolveThemeThumbBg(repoRoot, rawThemeId, ctx = null) {
   }
 }
 
-export async function listThemeIds(repoRoot) {
-  const coreDir = path.join(repoRoot, 'themes');
-  const customDir = path.join(customDirFor(repoRoot), 'themes');
-
-  // Core themes are always flat <id>.json files.
-  const readFlatThemeDir = async (dir) => {
-    try {
-      const files = await fs.readdir(dir);
-      return files
-        .filter((f) => String(f).toLowerCase().endsWith('.json'))
-        .map((f) => f.replace(/\.json$/i, ''))
-        .filter(Boolean);
-    } catch {
-      return [];
-    }
-  };
-
-  // Custom themes may be folder-based (<id>/theme.json) or legacy flat
-  // (<id>.json). Enumerate both so the selector lists either layout.
-  const readCustomThemeDir = async (dir) => {
-    try {
-      const entries = await fs.readdir(dir, { withFileTypes: true });
-      const ids = [];
-      for (const e of entries) {
-        if (e.isDirectory()) {
-          if (existsSync(path.join(dir, e.name, 'theme.json')))
-            ids.push(e.name);
-        } else if (String(e.name).toLowerCase().endsWith('.json')) {
-          ids.push(e.name.replace(/\.json$/i, ''));
-        }
-      }
-      return ids.filter(Boolean);
-    } catch {
-      return [];
-    }
-  };
-
-  const [coreThemes, customThemes] = await Promise.all([
-    readFlatThemeDir(coreDir),
-    readCustomThemeDir(customDir),
-  ]);
-
-  // Combine and dedupe (custom themes can override core with same ID)
-  const seen = new Set();
-  const result = [];
-
-  // Add custom themes first (they take precedence in UI ordering)
-  for (const id of customThemes) {
-    if (!seen.has(id)) {
-      seen.add(id);
-      result.push(id);
-    }
-  }
-
-  // Add core themes
-  for (const id of coreThemes) {
-    if (!seen.has(id)) {
-      seen.add(id);
-      result.push(id);
-    }
-  }
-
-  return result;
+export async function listThemeIds(repoRoot, ctx = null) {
+  const records = ctx?.organizationId
+    ? await listThemes(ctx)
+    : await listSeedThemes();
+  return records.map((theme) => theme.id);
 }
 
 /**
- * List only the core, built-in theme ids (the flat `themes/<id>.json` set),
- * excluding filesystem custom themes under `custom/themes/`. These are the
- * neutral, non-branded themes safe to surface on a public sandbox.
+ * List globally visible seed record IDs, excluding organization records.
  * @param {string} repoRoot
  * @returns {Promise<string[]>}
  */
 export async function listCoreThemeIds(repoRoot) {
-  const coreDir = path.join(repoRoot, 'themes');
-  try {
-    const files = await fs.readdir(coreDir);
-    return files
-      .filter((f) => String(f).toLowerCase().endsWith('.json'))
-      .map((f) => f.replace(/\.json$/i, ''))
-      .filter(Boolean);
-  } catch {
-    return [];
-  }
+  return (await listSeedThemes()).map((theme) => theme.id);
 }
 
 /**

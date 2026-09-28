@@ -53,7 +53,16 @@ const { buildThemeSection } =
  * @param {string[]} [options.all] - Every theme that exists
  * @returns {{api: Function, paths: string[]}}
  */
-function fakeThemesApi({ allowed, all = ['brand', 'editorial', 'midnight'] }) {
+const BRAND = '11111111-1111-4111-8111-111111111111';
+const EDITORIAL = '22222222-2222-4222-8222-222222222222';
+const MIDNIGHT = '33333333-3333-4333-8333-333333333333';
+const LABELS = {
+  [BRAND]: 'Forest',
+  [EDITORIAL]: 'Editorial',
+  [MIDNIGHT]: 'Midnight',
+};
+
+function fakeThemesApi({ allowed, all = [BRAND, EDITORIAL, MIDNIGHT] }) {
   const paths = [];
   const api = async (path) => {
     paths.push(path);
@@ -62,8 +71,8 @@ function fakeThemesApi({ allowed, all = ['brand', 'editorial', 'midnight'] }) {
     );
     const offered = all.filter((id) => allowed.includes(id) || id === current);
     return {
-      themes: offered.map((id) => ({ id, label: id, type: 'custom' })),
-      defaultThemeId: allowed[0] || 'brand',
+      themes: offered.map((id) => ({ id, label: LABELS[id], source: 'seed' })),
+      defaultThemeId: allowed[0] || BRAND,
       enabledThemes: allowed,
     };
   };
@@ -71,8 +80,8 @@ function fakeThemesApi({ allowed, all = ['brand', 'editorial', 'midnight'] }) {
 }
 
 test('the visual picker renders one grid, with no "show all" escape hatch', async () => {
-  const { api } = fakeThemesApi({ allowed: ['brand', 'editorial'] });
-  const picker = createVisualThemePicker({ api, initialTheme: 'brand' });
+  const { api } = fakeThemesApi({ allowed: [BRAND, EDITORIAL] });
+  const picker = createVisualThemePicker({ api, initialTheme: BRAND });
   await picker.populated;
 
   const grids = picker.wrap.querySelectorAll('.theme-picker-grid');
@@ -91,61 +100,61 @@ test('the visual picker renders one grid, with no "show all" escape hatch', asyn
   const labels = [...grids[0].querySelectorAll('.theme-card-label')].map(
     (el) => el.textContent,
   );
-  assert.deepEqual(labels, ['brand', 'editorial']);
+  assert.deepEqual(labels, ['Workspace default', 'Forest', 'Editorial']);
 });
 
 test('the visual picker asks for the deck theme it was opened on', async () => {
-  const { api, paths } = fakeThemesApi({ allowed: ['brand'] });
-  const picker = createVisualThemePicker({ api, initialTheme: 'midnight' });
+  const { api, paths } = fakeThemesApi({ allowed: [BRAND] });
+  const picker = createVisualThemePicker({ api, initialTheme: MIDNIGHT });
   await picker.populated;
 
-  assert.deepEqual(paths, ['/api/themes?current=midnight']);
+  assert.deepEqual(paths, [`/api/themes?current=${MIDNIGHT}`]);
   const labels = [...picker.wrap.querySelectorAll('.theme-card-label')].map(
     (el) => el.textContent,
   );
   assert.deepEqual(
     labels,
-    ['brand', 'midnight'],
+    ['Workspace default', 'Forest', 'Midnight'],
     'the withdrawn theme is offered here, and only here',
   );
 });
 
 test('the visual picker omits the parameter when no theme is chosen yet', async () => {
-  const { api, paths } = fakeThemesApi({ allowed: ['brand', 'editorial'] });
+  const { api, paths } = fakeThemesApi({ allowed: [BRAND, EDITORIAL] });
   const picker = createVisualThemePicker({ api });
   await picker.populated;
 
   assert.deepEqual(paths, ['/api/themes']);
-  assert.equal(picker.getTheme(), 'brand', 'adopts the workspace default');
+  assert.equal(picker.getTheme(), 'default', 'preserves the default reference');
 });
 
 test('the deck-settings select offers the response, and asks for the deck theme', async () => {
-  const { api, paths } = fakeThemesApi({ allowed: ['brand', 'editorial'] });
+  const { api, paths } = fakeThemesApi({ allowed: [BRAND, EDITORIAL] });
   const selector = createAndPopulateThemeSelect({
     api,
-    initialTheme: 'midnight',
+    initialTheme: MIDNIGHT,
   });
   await selector.populated;
 
-  assert.deepEqual(paths, ['/api/themes?current=midnight']);
+  assert.deepEqual(paths, [`/api/themes?current=${MIDNIGHT}`]);
   const values = [...selector.select.options].map((o) => o.value);
-  assert.deepEqual(values, ['brand', 'editorial', 'midnight']);
+  assert.deepEqual(values, ['default', BRAND, EDITORIAL, MIDNIGHT]);
   assert.equal(
     selector.select.value,
-    'midnight',
+    MIDNIGHT,
     'the deck keeps showing its own theme',
   );
 });
 
 test('the deck-settings select drops a theme the workspace withdrew', async () => {
-  const { api } = fakeThemesApi({ allowed: ['brand'] });
-  const selector = createAndPopulateThemeSelect({ api, initialTheme: 'brand' });
+  const { api } = fakeThemesApi({ allowed: [BRAND] });
+  const selector = createAndPopulateThemeSelect({ api, initialTheme: BRAND });
   await selector.populated;
 
   const values = [...selector.select.options].map((o) => o.value);
   assert.deepEqual(
     values,
-    ['brand'],
+    ['default', BRAND],
     'editorial and midnight are not selectable anywhere',
   );
 });
@@ -155,10 +164,10 @@ test('the deck-settings section reads the deck theme under its real name', async
   // (`save-manager.js`). This section read `themeId`, a name nothing writes, so
   // it silently pre-selected the default. That was cosmetic while every theme
   // was listed; with the allowlist enforced it costs the deck its own theme.
-  const { api, paths } = fakeThemesApi({ allowed: ['brand'] });
+  const { api, paths } = fakeThemesApi({ allowed: [BRAND] });
   const section = buildThemeSection({
     root: document.body,
-    pres: { id: 'deck-1', theme: 'midnight' },
+    pres: { id: 'deck-1', theme: MIDNIGHT },
     api,
     modal: { close() {} },
   });
@@ -166,7 +175,7 @@ test('the deck-settings section reads the deck theme under its real name', async
   // the fake api, which never touches the network.
   await new Promise((resolve) => setTimeout(resolve, 0));
 
-  assert.deepEqual(paths, ['/api/themes?current=midnight']);
+  assert.deepEqual(paths, [`/api/themes?current=${MIDNIGHT}`]);
   const select = section.el.querySelector('select');
-  assert.equal(select.value, 'midnight', 'the deck keeps its own theme');
+  assert.equal(select.value, MIDNIGHT, 'the deck keeps its own theme');
 });

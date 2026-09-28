@@ -52,7 +52,9 @@ import {
   DEFAULT_SUPPORTED_DECK_LANGS,
   normalizeLang,
 } from '../../shared/i18n-utils.js';
-import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
+import { DEFAULT_THEME_SLUG } from '../../shared/constants/themes.js';
+import { getThemeRecord, listSeedThemes } from './themes.js';
+import { UUID_RE } from '../utils/uuid.js';
 import { SUBSCRIPTION_LEVELS } from './presentations/subscriptions.js';
 import {
   isEmbeddableUrl,
@@ -157,13 +159,6 @@ export function defaultAppSettings() {
     },
     // Session duration in days (falls back to 30 if not set)
     sessionDurationDays: 30,
-    // Enabled theme IDs (empty = fall back to the ENABLED_THEMES env var, then
-    // "all themes enabled"). The allowlist is hard: a theme outside it is not
-    // offered by any picker. Resolve via getEnabledThemeIds().
-    enabledThemes: [],
-    // Organization default theme ID (empty = fall back to the DEFAULT_THEME env
-    // var, then the built-in default). Resolve via getDefaultThemeId().
-    defaultThemeId: '',
     // Engagement insights (analytics) settings
     analytics: {
       enabled: true, // Master switch for all analytics — the only tracking toggle
@@ -270,21 +265,6 @@ function seedRetentionDefaults() {
       90,
     ),
   };
-}
-
-function normalizeThemeId(v) {
-  const s = String(v || '').trim();
-  if (!s) return '';
-  // Short slugs (system/custom folder themes) or UUIDs (DB custom themes).
-  return /^[a-z0-9-]{1,64}$/i.test(s) ? s.toLowerCase() : '';
-}
-
-function normalizeStringArray(arr, maxLen = 50) {
-  if (!Array.isArray(arr)) return [];
-  return arr
-    .map((v) => normalizeString(v, 64))
-    .filter(Boolean)
-    .slice(0, maxLen);
 }
 
 function normalizeProviderUrl(v) {
@@ -446,12 +426,6 @@ export async function getAppSettings(scope) {
     365,
   );
 
-  // Enabled themes (empty = all enabled)
-  const enabledThemes = normalizeStringArray(obj?.enabledThemes);
-
-  // Organization default theme (empty = resolve via env/built-in default)
-  const defaultThemeId = normalizeThemeId(obj?.defaultThemeId);
-
   // Analytics settings. Any legacy team/external-analytics keys in the stored
   // bag are ignored here (store-raw / normalize-on-read), so they never reach
   // a caller and drop out on the next write — see PR "drop the dead
@@ -522,8 +496,6 @@ export async function getAppSettings(scope) {
     aiAssistant,
     emailSender,
     sessionDurationDays,
-    enabledThemes,
-    defaultThemeId,
     analytics,
     stockMedia,
   };
@@ -609,18 +581,6 @@ export async function writeAppSettings(scope, next) {
         )
       : null;
 
-  // Enabled themes
-  const enabledThemes =
-    next?.enabledThemes !== undefined
-      ? normalizeStringArray(next.enabledThemes)
-      : null;
-
-  // Organization default theme
-  const defaultThemeId =
-    next?.defaultThemeId !== undefined
-      ? normalizeThemeId(next.defaultThemeId)
-      : null;
-
   // Analytics settings
   const nextAnalytics =
     next?.analytics && typeof next.analytics === 'object'
@@ -696,8 +656,6 @@ export async function writeAppSettings(scope, next) {
     ...(aiAssistant ? { aiAssistant } : null),
     ...(emailSender ? { emailSender } : null),
     ...(sessionDurationDays !== null ? { sessionDurationDays } : null),
-    ...(enabledThemes !== null ? { enabledThemes } : null),
-    ...(defaultThemeId !== null ? { defaultThemeId } : null),
     ...(analytics ? { analytics } : null),
     ...(stockMedia ? { stockMedia } : null),
   };
@@ -1224,55 +1182,81 @@ export async function getEmailSender(scope) {
   };
 }
 
-/**
- * Resolve the organization default theme ID.
- *
- * Precedence: the admin-configured `defaultThemeId` app setting, then the
- * `DEFAULT_THEME` env var (fork seam, e.g. CIIIC), then the built-in default.
- * @param {import('./scope.js').StorageScope} scope
- * @returns {Promise<string>}
- */
-export async function getDefaultThemeId(scope) {
-  toStorageContext(
-    scope,
-    'getDefaultThemeId',
-    {},
-    { allowCrossOrganization: true },
+/** Read theme settings only from the organization named by the scope. */
+async function themeOrganizationSettings(scope, operation) {
+  const { organizationId } = toStorageContext(scope, operation);
+  const row = await withDbGuard(null, (db) =>
+    db
+      .selectFrom('organizations')
+      .select('settings')
+      .where('id', '=', organizationId)
+      .executeTakeFirst(),
   );
-  const settings = await getAppSettings(scope);
-  return (
-    settings.defaultThemeId ||
-    normalizeThemeId(envStr('DEFAULT_THEME')) ||
-    DEFAULT_THEME_ID
-  );
+  if (!row) throw new Error(`Organization ${organizationId} not found`);
+  return row.settings && typeof row.settings === 'object' ? row.settings : {};
 }
 
 /**
- * Resolve the organization theme allowlist.
+ * The record UUID of the seed a deployment setting names, or null.
  *
- * Precedence mirrors {@link getDefaultThemeId}: the admin-configured
- * `enabledThemes` app setting wins, then the `ENABLED_THEMES` env var
- * (comma-separated fork seam), then an empty list. Empty means "no allowlist
- * configured", which is the same thing as "every theme is allowed" — a
- * configured allowlist is hard, so an empty one has to mean all rather than
- * none, or a fresh install would offer no themes at all.
- *
- * @param {import('./scope.js').StorageScope} scope
- * @returns {Promise<string[]>} Lowercased theme IDs; empty = no allowlist.
+ * Deployment config (`DEFAULT_THEME`, `ENABLED_THEMES`,
+ * `SANDBOX_DEFAULT_THEME`, the sandbox example decks) names a seed by its
+ * slug, and only by its slug (D237): a record UUID differs per installation,
+ * so it can never be written into an env file ahead of time. This is the one
+ * place that spelling is resolved; nothing past it sees a slug.
+ * @param {string} slug
+ * @returns {Promise<string|null>}
  */
+export async function resolveSeedThemeSlug(slug) {
+  const handle = String(slug || '').trim();
+  if (!handle) return null;
+  const seed = (await listSeedThemes()).find((theme) => theme.slug === handle);
+  return seed?.id || null;
+}
+
+/**
+ * The record UUID of the installation default: the seed `DEFAULT_THEME`
+ * names, else the core default seed. A `DEFAULT_THEME` that names no seed is a
+ * configuration error and refuses, rather than quietly rendering every
+ * default deck in another theme.
+ * @returns {Promise<string>}
+ * @throws {Error} when the configured (or core) seed does not exist
+ */
+export async function installationDefaultThemeId() {
+  const slug = envStr('DEFAULT_THEME') || DEFAULT_THEME_SLUG;
+  const id = await resolveSeedThemeSlug(slug);
+  if (!id) throw new Error(`Default theme seed not found: ${slug}`);
+  return id;
+}
+
+/** Resolve the default theme of the deck organization. */
+export async function getDefaultThemeId(scope) {
+  const settings = await themeOrganizationSettings(scope, 'getDefaultThemeId');
+  const configured = settings.defaultThemeId;
+  if (
+    UUID_RE.test(configured || '') &&
+    configured === configured.toLowerCase()
+  ) {
+    const record = await getThemeRecord(scope, configured);
+    if (record) return record.id;
+  }
+  return installationDefaultThemeId();
+}
+
+/** Resolve the organization's canonical picker allowlist. Empty means all. */
 export async function getEnabledThemeIds(scope) {
-  toStorageContext(
-    scope,
-    'getEnabledThemeIds',
-    {},
-    { allowCrossOrganization: true },
-  );
-  const settings = await getAppSettings(scope);
+  const settings = await themeOrganizationSettings(scope, 'getEnabledThemeIds');
   const stored = Array.isArray(settings.enabledThemes)
     ? settings.enabledThemes
     : [];
-  const source = stored.length ? stored : envStr('ENABLED_THEMES').split(',');
-  return [...new Set(source.map(normalizeThemeId).filter(Boolean))];
+  if (stored.length)
+    return stored.filter(
+      (id) =>
+        typeof id === 'string' && UUID_RE.test(id) && id === id.toLowerCase(),
+    );
+  const handles = envStr('ENABLED_THEMES').split(',');
+  const ids = await Promise.all(handles.map(resolveSeedThemeSlug));
+  return [...new Set(ids.filter(Boolean))];
 }
 
 /**

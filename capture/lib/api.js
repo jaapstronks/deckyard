@@ -7,7 +7,7 @@
  * auth headers are needed.
  */
 
-import { DEFAULT_THEME_ID } from '../../shared/constants/themes.js';
+import { DEFAULT_THEME_REF } from '../../shared/constants/themes.js';
 
 /**
  * @typedef {object} ApiClient
@@ -201,16 +201,37 @@ export async function createShareLink(
 }
 
 /**
+ * The record UUID of the seed theme with this slug on the running instance.
+ *
+ * A recipe pins a theme by seed slug (`brand`), because a record UUID differs
+ * per installation; the API takes only the UUID (D237), so the slug is
+ * resolved here, against the instance's own theme list.
+ * @param {ApiClient} api
+ * @param {string} slug
+ * @returns {Promise<string>}
+ * @throws {Error} when the instance has no seed with that slug
+ */
+export async function seedThemeId(api, slug) {
+  const res = await api.get('/api/themes');
+  const seed = (res?.themes || []).find(
+    (theme) => theme.source === 'seed' && theme.slug === slug,
+  );
+  if (!seed) throw new Error(`No seed theme "${slug}" on ${api.base}`);
+  return seed.id;
+}
+
+/**
  * Create a presentation and overwrite its slides, returning the deck id.
  * Mirrors the create-then-PUT flow used by scripts/seed-bg-contrast-demo.js.
  * @param {ApiClient} api
- * @param {{title: string, theme?: string, slides?: unknown[]}} spec
+ * @param {{title: string, themeSlug?: string, slides?: unknown[]}} spec -
+ *   without `themeSlug` the deck follows the installation default
  * @returns {Promise<string>} deck id
  */
-export async function seedDeck(
-  api,
-  { title, theme = DEFAULT_THEME_ID, slides = [] },
-) {
+export async function seedDeck(api, { title, themeSlug, slides = [] }) {
+  const theme = themeSlug
+    ? await seedThemeId(api, themeSlug)
+    : DEFAULT_THEME_REF;
   const created = await api.post('/api/presentations', { title, theme });
   const id = created?.id || created?.presentation?.id;
   if (!id) throw new Error(`No id returned creating deck "${title}"`);

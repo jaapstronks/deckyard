@@ -31,6 +31,7 @@ import crypto from 'node:crypto';
 import JSZip from 'jszip';
 import { testScope, otherOrganizationScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const SENDER = process.env.DEFAULT_ORGANIZATION_ID;
@@ -44,7 +45,8 @@ const { initializeStorage, __resetStorageForTests } =
 const { createTheme, listThemes, getThemeRecord } =
   await import('../server/storage/themes.js');
 const { createFontFamily } = await import('../server/storage/font-families.js');
-const { writeAppSettings } = await import('../server/storage/settings.js');
+const { updateOrganization } =
+  await import('../server/storage/user-organizations/index.js');
 const { loadThemeAssets, customThemeConfig, clearCustomThemeCache } =
   await import('../server/utils/themes.js');
 const { curatedFontFaces } = await import('../shared/theme-fonts.js');
@@ -85,6 +87,7 @@ test.before(async () => {
         { id: RECEIVER, name: 'Receiver', slug: 'receiver' },
       ],
       users: userRows(OWNER),
+      themes: [await brandSeedRow()],
     }),
   );
   await initializeStorage();
@@ -123,6 +126,7 @@ async function senderTheme(overrides = {}) {
 }
 
 const deckOn = (themeId) => ({
+  organizationId: SENDER,
   title: 'Themed deck',
   theme: themeId,
   slides: [
@@ -206,7 +210,7 @@ test('export: theme.json is the record without ids, fonts by class', async () =>
   const bundle = await buildDeckBundle(repoRoot, deckOn(theme.id));
   const { manifest, theme: carried, assets } = await readDeckBundle(bundle);
 
-  assert.equal(manifest.bundleVersion, 3);
+  assert.equal(manifest.bundleVersion, 4);
   assert.equal(manifest.theme.ref, 'theme.json');
   assert.deepEqual(Object.keys(carried).sort(), [
     'colors',
@@ -249,14 +253,109 @@ test('export: theme.json is the record without ids, fonts by class', async () =>
   ]);
 });
 
-test('export: a file theme travels by id, without theme.json', async () => {
+test('export: a default deck carries its effective theme record', async () => {
   const bundle = await buildDeckBundle(repoRoot, deckOn('default'));
   const { manifest, deck, theme } = await readDeckBundle(bundle);
-  assert.equal(manifest.theme, undefined);
-  assert.equal(theme, null);
-  assert.equal(deck.theme, 'default');
+  assert.equal(manifest.theme.ref, 'theme.json');
+  assert.ok(theme.slug);
+  assert.equal(deck.theme, undefined);
   const zip = await JSZip.loadAsync(bundle);
-  assert.equal(zip.file('theme.json'), null);
+  assert.ok(zip.file('theme.json'));
+});
+
+test('two organizations export their own effective default without changing the deck', async () => {
+  const first = await senderTheme({ label: 'Sender default' });
+  const second = await createTheme(receiverScope(), {
+    label: 'Receiver default',
+    slug: 'receiver-export-default',
+    colors: { primary: '#119955' },
+  });
+  assert.equal(second.ok, true);
+  await updateOrganization(SENDER, { settings: { defaultThemeId: first.id } });
+  await updateOrganization(RECEIVER, {
+    settings: { defaultThemeId: second.theme.id },
+  });
+  try {
+    const source = deckOn('default');
+    const sender = await readDeckBundle(
+      await buildDeckBundle(repoRoot, source),
+    );
+    const receiver = await readDeckBundle(
+      await buildDeckBundle(repoRoot, { ...source, organizationId: RECEIVER }),
+    );
+    assert.equal(sender.theme.slug, first.slug);
+    assert.equal(receiver.theme.slug, second.theme.slug);
+    assert.equal(source.theme, 'default');
+    assert.equal(sender.deck.theme, undefined);
+  } finally {
+    await updateOrganization(SENDER, { settings: { defaultThemeId: '' } });
+    await updateOrganization(RECEIVER, { settings: { defaultThemeId: '' } });
+  }
+});
+
+test('served logos, presets and CSS URLs survive after source files are removed', async () => {
+  const rootAssets = path.join(repoRoot, 'assets', 'brand');
+  const customAssets = path.join(repoRoot, 'custom', 'assets', 'images');
+  fs.mkdirSync(rootAssets, { recursive: true });
+  fs.mkdirSync(customAssets, { recursive: true });
+  const logo = path.join(customAssets, 'logo.svg');
+  const preset = path.join(rootAssets, 'preset.png');
+  const background = path.join(customAssets, 'background.png');
+  fs.writeFileSync(logo, LOGO);
+  fs.writeFileSync(preset, PNG_SLIDE);
+  fs.writeFileSync(background, Buffer.from('background image'));
+  const created = await senderTheme({
+    logoUrl: '/custom/assets/images/logo.svg',
+    config: {
+      backgroundPresets: ['/assets/brand/preset.png'],
+      slideBackgrounds: [
+        {
+          id: 'picture',
+          label: 'Picture',
+          value: "url('/custom/assets/images/background.png')",
+        },
+      ],
+      cssVarOverrides: {
+        '--t-slide-background-image': "url('/assets/brand/preset.png')",
+      },
+    },
+  });
+  const bundle = await buildDeckBundle(repoRoot, {
+    ...deckOn(created.id),
+    slides: [
+      {
+        id: '1',
+        type: 'image-slide',
+        content: { image: '/assets/brand/preset.png' },
+      },
+    ],
+  });
+  fs.rmSync(logo);
+  fs.rmSync(preset);
+  fs.rmSync(background);
+  const { res, body } = await importInto(receiverScope(), bundle, {
+    install: 'theme',
+  });
+  assert.equal(res.statusCode, 201, res.body);
+  assert.equal(body.bundledTheme.status, 'installed');
+  const installed = await getThemeRecord(receiverScope(), body.theme);
+  assert.ok(uploadedBytes(installed.logoUrl).equals(LOGO));
+  assert.ok(installed.config.backgroundPresets[0].startsWith('/uploads/'));
+  assert.match(installed.config.slideBackgrounds[0].value, /url\('\/uploads\//);
+  assert.match(
+    installed.config.cssVarOverrides['--t-slide-background-image'],
+    /url\('\/uploads\//,
+  );
+  const again = await importInto(receiverScope(), bundle, { install: 'theme' });
+  assert.equal(again.body.bundledTheme.status, 'existing');
+  const reexport = await readDeckBundle(
+    await buildDeckBundle(repoRoot, { ...body, organizationId: RECEIVER }),
+  );
+  assert.ok(
+    reexport.manifest.assets.some((asset) =>
+      asset.sources?.some((ref) => ref.startsWith('/uploads/')),
+    ),
+  );
 });
 
 test('import with canManage + install=theme installs it and renders with it', async () => {
@@ -349,7 +448,10 @@ test('canManage without install lands on the default and names the theme', async
 
 test('install without canManage lands on the default', async () => {
   const theme = await senderTheme({ label: 'Not permitted' });
-  const bundle = await buildDeckBundle(repoRoot, deckOn(theme.id));
+  const bundle = await buildDeckBundle(repoRoot, {
+    ...deckOn(theme.id),
+    extensions: ['nl.ciiic'],
+  });
   const before = (await listThemes(receiverScope())).length;
 
   const { res, body } = await importInto(receiverScope(), bundle, {
@@ -361,6 +463,8 @@ test('install without canManage lands on the default', async () => {
   assert.equal(body.bundledTheme.reason, 'not-permitted');
   assert.equal(body.bundledTheme.themeId, 'default');
   assert.equal(body.theme, 'default');
+  assert.deepEqual(body.extensionsMissing, ['nl.ciiic']);
+  assert.deepEqual(body.extensions, ['nl.ciiic']);
   assert.equal((await listThemes(receiverScope())).length, before);
 });
 
@@ -381,7 +485,9 @@ test('a non-installed bundled theme follows a changed workspace default at rende
   assert.equal(second.ok, true);
 
   try {
-    await writeAppSettings(receiverScope(), { defaultThemeId: first.theme.id });
+    await updateOrganization(RECEIVER, {
+      settings: { defaultThemeId: first.theme.id },
+    });
     const { body } = await importInto(receiverScope(), bundle);
     assert.equal(body.theme, 'default');
     assert.equal(body.bundledTheme.themeId, 'default');
@@ -390,24 +496,23 @@ test('a non-installed bundled theme follows a changed workspace default at rende
       body.theme,
       receiverScope(),
     );
-    assert.equal(initial._customThemeId, first.theme.id);
+    assert.equal(initial.id, first.theme.id);
     assert.equal(
-      (await customThemeConfig(repoRoot, body.theme, receiverScope()))
-        ._customThemeId,
+      (await customThemeConfig(repoRoot, body.theme, receiverScope())).id,
       first.theme.id,
     );
 
-    await writeAppSettings(receiverScope(), {
-      defaultThemeId: second.theme.id,
+    await updateOrganization(RECEIVER, {
+      settings: { defaultThemeId: second.theme.id },
     });
     const changed = await loadThemeAssets(
       repoRoot,
       body.theme,
       receiverScope(),
     );
-    assert.equal(changed._customThemeId, second.theme.id);
+    assert.equal(changed.id, second.theme.id);
   } finally {
-    await writeAppSettings(receiverScope(), { defaultThemeId: '' });
+    await updateOrganization(RECEIVER, { settings: { defaultThemeId: '' } });
   }
 });
 
@@ -509,11 +614,11 @@ test('reading refuses an unknown bundleVersion and a tampered theme', async () =
   );
   future.file(
     'manifest.json',
-    JSON.stringify({ ...manifest, bundleVersion: 4 }),
+    JSON.stringify({ ...manifest, bundleVersion: 5 }),
   );
   await assert.rejects(
     readDeckBundle(await future.generateAsync({ type: 'nodebuffer' })),
-    /bundleVersion 4/,
+    /bundleVersion 5/,
   );
 
   const tampered = await JSZip.loadAsync(bundle);
@@ -524,14 +629,70 @@ test('reading refuses an unknown bundleVersion and a tampered theme', async () =
   );
 });
 
-test('a version-1 bundle still reads', async () => {
+test('a version-1 bundle is refused', async () => {
   const bundle = await buildDeckBundle(repoRoot, deckOn('default'));
   const zip = await JSZip.loadAsync(bundle);
   const manifest = JSON.parse(await zip.file('manifest.json').async('string'));
   zip.file('manifest.json', JSON.stringify({ ...manifest, bundleVersion: 1 }));
-  const read = await readDeckBundle(
-    await zip.generateAsync({ type: 'nodebuffer' }),
+  await assert.rejects(
+    readDeckBundle(await zip.generateAsync({ type: 'nodebuffer' })),
+    /bundleVersion 1/,
   );
-  assert.equal(read.manifest.bundleVersion, 1);
-  assert.equal(read.theme, null);
+});
+
+test('v3 and unknown theme fields or escaped paths refuse before uploads and theme writes', async () => {
+  const source = await senderTheme();
+  const bundle = await buildDeckBundle(repoRoot, deckOn(source.id));
+  const v3 = await JSZip.loadAsync(bundle);
+  const originalManifest = JSON.parse(
+    await v3.file('manifest.json').async('string'),
+  );
+  v3.file(
+    'manifest.json',
+    JSON.stringify({ ...originalManifest, bundleVersion: 3 }),
+  );
+  assert.equal(
+    (
+      await importInto(
+        receiverScope(),
+        await v3.generateAsync({ type: 'nodebuffer' }),
+      )
+    ).res.statusCode,
+    400,
+  );
+
+  for (const change of [
+    (theme) => {
+      theme.fonts.extra = 'bad';
+    },
+    (theme) => {
+      theme.config.extra = true;
+    },
+    (theme) => {
+      theme.logoUrl = '/custom/assets/../secret.svg';
+    },
+  ]) {
+    const zip = await JSZip.loadAsync(bundle);
+    const theme = JSON.parse(await zip.file('theme.json').async('string'));
+    change(theme);
+    const bytes = JSON.stringify(theme);
+    zip.file('theme.json', bytes);
+    zip.file(
+      'manifest.json',
+      JSON.stringify({
+        ...originalManifest,
+        theme: { ref: 'theme.json', hash: sha(Buffer.from(bytes)) },
+      }),
+    );
+    const beforeThemes = (await listThemes(receiverScope())).length;
+    const beforeUploads = fs.readdirSync(tmpUploads).length;
+    const { res } = await importInto(
+      receiverScope(),
+      await zip.generateAsync({ type: 'nodebuffer' }),
+      { install: 'theme' },
+    );
+    assert.equal(res.statusCode, 400, res.body);
+    assert.equal((await listThemes(receiverScope())).length, beforeThemes);
+    assert.equal(fs.readdirSync(tmpUploads).length, beforeUploads);
+  }
 });

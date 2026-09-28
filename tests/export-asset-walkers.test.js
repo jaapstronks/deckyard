@@ -4,8 +4,8 @@
  * Deckyard has two exports that enumerate a deck's images, and until this test
  * they answered the question with two different pieces of code:
  *
- *  - the `.deck` bundle (server/export/deck-bundle.js) via `collectAssetRefs`,
- *    a deep, key-agnostic walk for `/uploads/…` strings;
+ *  - the `.deck` bundle (server/export/deck-bundle.js) via
+ *    `collectServedAssetRefs`, a deep, key-agnostic walk for served paths;
  *  - the bulk export / backup (server/export/bulk-export.js) via a private
  *    `extractImageUrls`, which checked eight hardcoded field keys.
  *
@@ -17,11 +17,9 @@
  * joined the first list and not the second.
  *
  * Both now ride the one walk in shared/slide-types/deck-assets.js. They still
- * ask different questions of it, and that difference is deliberate: a bundle
- * must be portable, so it takes only the uploads it can content-address; a
- * backup is of *this* installation, so it takes every path this install serves
- * (a theme's `backgroundPresets` live under `/custom/…` and are baked into
- * `slideBgImage`). The two sets are one subset relation, not two walks.
+ * both take every served path. The bundle content-addresses the bytes and
+ * rewrites the refs; the backup preserves the original paths. A theme's
+ * `backgroundPresets` also live under `/custom/…`.
  *
  * The behaviour of each collector is pinned in tests/deck-assets.test.js; this
  * file pins the seam — that bulk-export reaches for the shared collector and
@@ -65,7 +63,7 @@ test('bulk export takes its deck refs from the shared collector', () => {
 });
 
 test('the .deck bundle takes its refs from the same module', () => {
-  assert.match(deckBundleSrc, /collectAssetRefs/);
+  assert.match(deckBundleSrc, /collectServedAssetRefs\(deck\)/);
   assert.match(deckBundleSrc, /shared\/slide-types\/deck-assets\.js/);
 });
 
@@ -95,12 +93,7 @@ test('the bulk-export resolver accepts the class the collector produces', () => 
 test('the served-asset class is a named subset of what the server serves', () => {
   // `shared/` cannot import server config, so the prefixes are spelled there
   // too; this pins that spelling to server/config/paths.js in both directions.
-  const assetTrees = [
-    '/uploads/',
-    '/assets/',
-    '/custom/assets/',
-    '/custom/themes/',
-  ];
+  const assetTrees = ['/uploads/', '/assets/', '/custom/assets/'];
   const served = SHARED_PUBLIC_DIRS.map((d) => d.urlPrefix);
   for (const prefix of assetTrees) {
     assert.ok(served.includes(prefix), `${prefix} is no longer served`);

@@ -18,6 +18,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { testScope } from './helpers/storage-scope.js';
+import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -48,6 +49,7 @@ test.before(async () => {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
+      themes: [await brandSeedRow()],
     }),
   );
   await initializeStorage();
@@ -114,6 +116,7 @@ function contentShape(deck) {
 
 const fixture = () => ({
   title: 'Round-trip deck',
+  organizationId: ORG,
   theme: 'default',
   slides: [
     {
@@ -197,6 +200,7 @@ test('unknown slide type degrades to a placeholder, not a crash', async () => {
 // the fixpoint is measured on real content-bearing slides.
 const knownFixture = () => ({
   title: 'Round-trip deck',
+  organizationId: ORG,
   theme: 'default',
   slides: [
     {
@@ -240,6 +244,53 @@ test('export→import→export is content-stable (round-trip fixpoint)', async (
   );
 });
 
+test('extension provenance survives import, save, duplicate and re-export without loading code', async () => {
+  const custom = path.join(repoRoot, 'custom');
+  fs.mkdirSync(custom, { recursive: true });
+  fs.writeFileSync(
+    path.join(custom, 'extension.json'),
+    JSON.stringify({ name: 'nl.ciiic' }),
+  );
+  const bundle = await buildDeckBundle(repoRoot, {
+    ...fixture(),
+    extensions: ['old.extension'],
+  });
+  const exported = await readDeckBundle(bundle);
+  assert.deepEqual(exported.deck.extensions, ['nl.ciiic', 'old.extension']);
+  assert.equal(Object.hasOwn(exported.manifest, 'extensions'), false);
+  fs.rmSync(path.join(custom, 'extension.json'));
+
+  const { body } = await importBundle(bundle);
+  assert.deepEqual(body.extensionsMissing, ['nl.ciiic', 'old.extension']);
+  assert.deepEqual(body.extensions, exported.deck.extensions);
+  assert.equal(body.slides.at(-1).type, 'content-slide');
+
+  const {
+    updatePresentation,
+    duplicatePresentation,
+    createPresentationVersion,
+  } = await import('../server/storage/presentations/index.js');
+  const saved = await updatePresentation(testScope(), body.id, {
+    title: 'Saved',
+  });
+  assert.deepEqual(saved.extensions, exported.deck.extensions);
+  const version = await createPresentationVersion(testScope(), body.id, saved);
+  assert.deepEqual(version.presentation.extensions, exported.deck.extensions);
+  await updatePresentation(testScope(), body.id, { extensions: [] });
+  const restored = await updatePresentation(
+    testScope(),
+    body.id,
+    version.presentation,
+  );
+  assert.deepEqual(restored.extensions, exported.deck.extensions);
+  const copy = await duplicatePresentation(testScope(), body.id);
+  assert.deepEqual(copy.presentation.extensions, exported.deck.extensions);
+  const reexport = await readDeckBundle(
+    await buildDeckBundle(repoRoot, copy.presentation),
+  );
+  assert.deepEqual(reexport.deck.extensions, exported.deck.extensions);
+});
+
 test('a two-language deck imports as two language versions (D89)', async () => {
   const nl = [
     {
@@ -260,6 +311,7 @@ test('a two-language deck imports as two language versions (D89)', async () => {
   ];
   const stored = {
     title: 'Waarom',
+    organizationId: ORG,
     theme: 'default',
     lang: 'nl',
     slides: nl,
@@ -291,6 +343,7 @@ test('a two-language deck imports as two language versions (D89)', async () => {
 test('rejects a bundle whose deck language is not supported', async () => {
   const stored = {
     title: 'x',
+    organizationId: ORG,
     theme: 'default',
     slides: [{ id: 'a', type: 'content-slide', content: { title: 'x' } }],
   };
@@ -330,6 +383,7 @@ for (const [what, buf] of [
 test('rejects a bundle whose manifest is not JSON with the entry named', async () => {
   const stored = {
     title: 'x',
+    organizationId: ORG,
     theme: 'default',
     slides: [{ id: 'a', type: 'content-slide', content: { title: 'x' } }],
   };

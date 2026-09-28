@@ -23,13 +23,13 @@ import {
   resolveThemeMaster,
   themeLayoutDefinitions,
 } from '../server/export/pptx-theme.js';
-import { loadDeckTheme } from '../server/utils/themes.js';
+import { seedThemeConfig } from './helpers/theme-seed.js';
 
 const repoRoot = '.';
 
 /** `midnight`: a dark ground, so a text colour that failed to land is visible. */
 async function midnightZip() {
-  const theme = await loadDeckTheme(repoRoot, 'midnight');
+  const theme = await seedThemeConfig('midnight');
   const buffer = await buildThemeTemplateBuffer(repoRoot, theme);
   return { theme, zip: await JSZip.loadAsync(Buffer.from(buffer)) };
 }
@@ -236,7 +236,7 @@ test('the boxes of a layout keep clear of each other and of the logo', async () 
   // definitions carry inches, so the check needs no package. Two marks are
   // tried: the theme's real one, and the largest `rasterThemeLogo` can hand
   // back — the full 150x44 reference-pixel corner box.
-  const theme = await loadDeckTheme(repoRoot, 'midnight');
+  const theme = await seedThemeConfig('midnight');
   const spec = resolveThemeMaster(theme);
   const real = await rasterThemeLogo(repoRoot, spec.logoUrl);
   assert.ok(real, 'midnight ships a local mark');

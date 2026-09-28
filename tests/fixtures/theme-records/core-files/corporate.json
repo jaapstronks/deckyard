@@ -1,0 +1,87 @@
+{
+  "id": "corporate",
+  "label": "Boardroom",
+  "defaultTitleSlide": "title-slide",
+  "titleLayout": "bottom",
+  "assets": {
+    "logo": "/assets/images/logo-placeholder.svg",
+    "logoAlt": "Your logo",
+    "payoffLogo": "/assets/images/logo-placeholder.svg",
+    "payoffAlt": "Your logo"
+  },
+  "textColorLight": "#ffffff",
+  "textColorDark": "#0f172a",
+  "backgroundLabels": {
+    "lime": {
+      "en": "White",
+      "nl": "Wit"
+    },
+    "mist": {
+      "en": "Sky",
+      "nl": "Lucht"
+    }
+  },
+  "brandColors": ["#1e3a8a", "#1d4ed8", "#3b82f6", "#60a5fa"],
+  "gradient": {
+    "enabled": false
+  },
+  "cssVars": {
+    "--t-slide-bg-lime": "#ffffff",
+    "--t-slide-bg-mist": "#eff6ff",
+    "--t-slide-bg-dark": "#0f172a",
+    "--t-color-background": "#ffffff",
+    "--t-color-text": "#0f172a",
+    "--t-color-text-muted": "rgba(15, 23, 42, 0.64)",
+    "--t-color-accent": "#2563eb",
+    "--t-color-accent-on-dark": "#60a5fa",
+    "--t-radius": "6px",
+    "--t-radius-sm": "4px",
+    "--t-radius-lg": "10px",
+    "--t-font-heading": "'Archivo', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-body": "'Manrope', ui-sans-serif, system-ui, -apple-system, sans-serif",
+    "--t-font-caption": "var(--t-font-body)",
+    "--t-font-mono": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace",
+    "--t-heading-transform": "none",
+    "--t-heading-weight": "700",
+    "--t-color-surface-raised": "#f8fafc",
+    "--t-chart-0": "#1e3a8a",
+    "--t-chart-1": "#1d4ed8",
+    "--t-chart-2": "#3b82f6",
+    "--t-chart-3": "#60a5fa",
+    "--t-chart-4": "#0f172a",
+    "--t-chart-5": "#64748b",
+    "--t-chart-6": "#334155",
+    "--t-chart-7": "#93c5fd",
+    "--t-logo-url": "url('/assets/images/logo-placeholder.svg')"
+  },
+  "embedFonts": [
+    {
+      "family": "Archivo",
+      "path": "assets/fonts/google/archivo/archivo-400-latin.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "family": "Archivo",
+      "path": "assets/fonts/google/archivo/archivo-400-latin-ext.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    },
+    {
+      "family": "Manrope",
+      "path": "assets/fonts/google/manrope/manrope-400-latin.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD"
+    },
+    {
+      "family": "Manrope",
+      "path": "assets/fonts/google/manrope/manrope-400-latin-ext.woff2",
+      "weight": "400 700",
+      "style": "normal",
+      "unicodeRange": "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF"
+    }
+  ]
+}

@@ -43,7 +43,21 @@ const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handleThemes } = await import('../server/routes/api/themes.js');
-const { DEFAULT_THEME_ID } = await import('../shared/constants/themes.js');
+const IDS = {
+  brand: '11111111-1111-4111-8111-111111111111',
+  editorial: '22222222-2222-4222-8222-222222222222',
+  midnight: '33333333-3333-4333-8333-333333333333',
+  playful: '44444444-4444-4444-8444-444444444444',
+};
+const rows = Object.entries(IDS).map(([slug, id]) => ({
+  id,
+  organization_id: null,
+  slug,
+  label: slug,
+  colors: {},
+  fonts: {},
+  config: {},
+}));
 
 const DESIGNER = {
   email: 'designer@example.com',
@@ -64,9 +78,17 @@ const MEMBER = {
 function seed(enabledThemes) {
   __setTestDb(
     createFakeDb({
-      organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
-      themes: [],
-      app_settings: [{ id: true, settings: { enabledThemes } }],
+      organizations: [
+        {
+          id: ORG,
+          name: 'Default',
+          slug: 'default',
+          settings: {
+            enabledThemes: enabledThemes.map((slug) => IDS[slug] || slug),
+          },
+        },
+      ],
+      themes: rows,
     }),
   );
 }
@@ -125,7 +147,7 @@ test('an empty allowlist offers every theme', async () => {
   assert.equal(statusCode, 200);
   assert.deepEqual(enabledThemes, [], 'nothing configured');
   // Not an exhaustive list — the point is that the non-default ones survive.
-  for (const id of [DEFAULT_THEME_ID, 'editorial', 'midnight', 'playful']) {
+  for (const id of Object.values(IDS)) {
     assert.ok(ids.includes(id), `${id} is offered`);
   }
 });
@@ -133,14 +155,14 @@ test('an empty allowlist offers every theme', async () => {
 test('a configured allowlist removes the rest from the response', async () => {
   seed(['editorial']);
   const { ids, enabledThemes } = await listThemes('/api/themes');
-  assert.deepEqual(enabledThemes, ['editorial']);
-  assert.ok(ids.includes('editorial'), 'the allowlisted theme is offered');
+  assert.deepEqual(enabledThemes, [IDS.editorial]);
+  assert.ok(ids.includes(IDS.editorial), 'the allowlisted theme is offered');
   assert.ok(
-    !ids.includes('midnight'),
+    !ids.includes(IDS.midnight),
     'a theme outside the allowlist is absent, not annotated',
   );
   assert.ok(
-    !ids.includes('playful'),
+    !ids.includes(IDS.playful),
     'a theme outside the allowlist is absent, not annotated',
   );
 });
@@ -149,7 +171,7 @@ test('the default theme is offered even when it is not allowlisted', async () =>
   seed(['editorial']);
   const { ids } = await listThemes('/api/themes');
   assert.ok(
-    ids.includes(DEFAULT_THEME_ID),
+    ids.includes(IDS.brand),
     'the workspace cannot allowlist itself out of its own default',
   );
 });
@@ -175,10 +197,10 @@ test('no theme carries an `enabled` flag any more', async () => {
 
 test('?current= keeps a deck on a withdrawn theme showing its own selection', async () => {
   seed(['editorial']);
-  const { ids } = await listThemes('/api/themes?current=midnight');
-  assert.ok(ids.includes('midnight'), 'the named theme is back in the list');
+  const { ids } = await listThemes(`/api/themes?current=${IDS.midnight}`);
+  assert.ok(ids.includes(IDS.midnight), 'the named theme is back in the list');
   assert.ok(
-    !ids.includes('playful'),
+    !ids.includes(IDS.playful),
     'and only that one — the allowlist still holds for everything else',
   );
 });
@@ -186,15 +208,15 @@ test('?current= keeps a deck on a withdrawn theme showing its own selection', as
 test('?current= with an unknown id widens nothing', async () => {
   seed(['editorial']);
   const { ids } = await listThemes('/api/themes?current=no-such-theme');
-  assert.ok(!ids.includes('midnight'));
-  assert.ok(!ids.includes('playful'));
+  assert.ok(!ids.includes(IDS.midnight));
+  assert.ok(!ids.includes(IDS.playful));
 });
 
 test('?all=1 skips the filter for a theme manager', async () => {
   seed(['editorial']);
   const { ids } = await listThemes('/api/themes?all=1', DESIGNER);
   assert.ok(
-    ids.includes('midnight') && ids.includes('playful'),
+    ids.includes(IDS.midnight) && ids.includes(IDS.playful),
     'the settings tab can see what it has to offer a checkbox for',
   );
 });
@@ -203,7 +225,7 @@ test('?all=1 is ignored for a user who may not manage themes', async () => {
   seed(['editorial']);
   const { ids } = await listThemes('/api/themes?all=1', MEMBER);
   assert.ok(
-    !ids.includes('midnight'),
+    !ids.includes(IDS.midnight),
     'the escape hatch is not a way around the allowlist',
   );
 });

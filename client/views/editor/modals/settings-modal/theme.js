@@ -1,7 +1,7 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { createAndPopulateThemeSelect } from '../../../../lib/theme/theme-select.js';
 import { analyzeAndApplyThemeChange } from '../change-theme-modal.js';
-import { DEFAULT_THEME_ID } from '../../../../../shared/constants/themes.js';
+import { DEFAULT_THEME_REF } from '../../../../../shared/constants/themes.js';
 import { h } from '../../../../lib/dom.js';
 
 /**
@@ -55,7 +55,7 @@ export function buildThemeSection({
   // and the select pre-selected the wrong theme. Harmless while every theme was
   // listed; with the allowlist enforced it would drop a deck's own theme from
   // its own picker.
-  const currentTheme = String(pres.theme || DEFAULT_THEME_ID).trim();
+  const currentTheme = String(pres.theme || DEFAULT_THEME_REF).trim();
   const themeSelector = createAndPopulateThemeSelect({
     api,
     initialTheme: currentTheme,
@@ -86,7 +86,7 @@ export function buildThemeSection({
 
       // If cancelled or same theme, reset selector to current value
       if (!result?.ok) {
-        themeSelector.setTheme(pres.theme || DEFAULT_THEME_ID);
+        themeSelector.setTheme(pres.theme || DEFAULT_THEME_REF);
       }
     },
   });

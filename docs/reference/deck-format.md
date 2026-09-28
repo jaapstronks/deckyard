@@ -4,7 +4,8 @@
 format** — the durable envelope a presentation serializes to so a second
 implementation can read, render, and round-trip it without Deckyard's server or
 storage. It is what `GET /api/presentations/:id/export/json` returns, and what
-the [`.deck` bundle](./deck-bundle-format.md) carries as its `deck.json`.
+the [`.deck` bundle](./deck-bundle-format.md) carries as its `deck.json`, except
+that bundle v4 omits `theme`: its required `theme.json` snapshot is authoritative.
 
 A deck is **data, not a rendering.** The format is intentionally readable and
 stable: no server-internal UUIDs or timestamps are required, and slides are a
@@ -25,6 +26,7 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
   "lang": "nl",
   "translations": { "en-GB": { "title": "My deck (EN)" } },
   "theme": "default",
+  "extensions": [],
   "slides": [
     {
       "type": "eu.deckyard.slide.title",
@@ -45,7 +47,8 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
 | `title`        | string  | Human title of the deck, in `lang`.                                                                                                                                                       |
 | `lang`         | string  | Optional. BCP 47 tag of the language `title` and every slide's `content` and `notes` are in. A deck carries **one** base language; the others are `translations`.                         |
 | `translations` | object  | Optional. The deck title per other language: `{ "<lang>": { "title": "…" } }`. See [Languages](#languages).                                                                               |
-| `theme`        | string  | Theme id the deck was authored against (e.g. `"default"`). A reader that lacks the theme falls back to its own default; content is unaffected.                                            |
+| `theme`        | string  | Optional in the JSON envelope: the theme id the deck was authored against (e.g. `"default"`). Bundle v4 omits it and uses `theme.json` instead.                                           |
+| `extensions`   | array   | Sorted unique installation extension names retained as provenance. Core exports `[]`. Names do not grant rights or load code.                                                             |
 | `slides`       | array   | Ordered list of slides, each `{ type, content }`.                                                                                                                                         |
 
 The envelope is **lenient**: unknown top-level keys are ignored by the importer,
@@ -303,23 +306,15 @@ When the badge comes off, the window closes and the rule binds absolutely.
 
 ## Legacy sentinel
 
-Before the format took its publisher's name it was written as
-`"slidecreator.deck"`, and the bundle mimetype as
-`application/vnd.slidecreator.deck`. That name predates the product: it was
-invented in the commit that first added JSON export, when the package was still
-called `presentation-system`.
+Before the format took its publisher's name, the JSON/Markdown envelope used
+`"slidecreator.deck"`. That name predates the product: it was invented when the
+package was still called `presentation-system`. The JSON/Markdown importer
+continues to accept that envelope id and re-export stamps the current one.
 
-Decks and bundles carrying the old sentinel exist only in pre-release history,
-so **Deckyard's own importer keeps accepting it**; a second implementation only
-ever needs the current sentinel. Re-exporting a legacy deck stamps it with the
-current one.
-
-Both values, current and historical, live in
-`shared/slide-types/deck-format-id.js` (`DECK_FORMAT_ID`, `DECK_MIMETYPE`,
-`LEGACY_DECK_FORMAT_IDS`, `LEGACY_DECK_MIMETYPES`, plus the `isDeckFormatId()` /
-`isDeckMimetype()` predicates). The **file extension is unaffected**: a bundle
-has always downloaded as `<title>.deck` and still does. The namespace lives
-before the dot, never in the filename.
+The v4 `.deck` bundle has one MIME sentinel:
+`application/vnd.deckyard.deck`. Earlier bundle versions and the historical
+`application/vnd.slidecreator.deck` MIME are refused. The **file extension is
+unaffected**: a bundle downloads as `<title>.deck`.
 
 ## Producing and consuming a deck
 

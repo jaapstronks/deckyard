@@ -16,6 +16,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { testScope } from './helpers/storage-scope.js';
+import { seedRow } from './helpers/theme-seed.js';
 import {
   sessionFor,
   userIdFor,
@@ -30,6 +31,8 @@ process.env.STORAGE_MODE = 'postgres';
 delete process.env.SANDBOX_MODE;
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OWNER = 'owner@example.com';
+const MIDNIGHT = (await seedRow('midnight')).id;
+const AMETHYST = (await seedRow('amethyst')).id;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -47,6 +50,11 @@ test.before(async () => {
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
       users: userRows(OWNER),
+      themes: [
+        await seedRow('brand'),
+        await seedRow('midnight'),
+        await seedRow('amethyst'),
+      ],
     }),
   );
   await initializeStorage();
@@ -108,7 +116,14 @@ async function deckCount() {
 }
 
 /** A theme this instance does not have, and two other spellings of one it does. */
-const REFUSED = ['no-such-theme', 'Midnight', ' midnight', 'midnight ', ''];
+const REFUSED = [
+  'no-such-theme',
+  'Midnight',
+  ' midnight',
+  'midnight ',
+  'midnight',
+  '',
+];
 
 for (const theme of REFUSED) {
   test(`app create refuses theme ${JSON.stringify(theme)} and writes nothing`, async () => {
@@ -125,10 +140,10 @@ for (const theme of REFUSED) {
 test('app create stores a known theme as named', async () => {
   const res = await appPost('/api/presentations', {
     title: 'Dek',
-    theme: 'midnight',
+    theme: MIDNIGHT,
   });
   assert.equal(res.statusCode, 201, JSON.stringify(res.body));
-  assert.equal(res.body.theme, 'midnight');
+  assert.equal(res.body.theme, MIDNIGHT);
 });
 
 test('app create without a theme, or with `default`, stores `default` (D232)', async () => {
@@ -159,12 +174,12 @@ test('MCP create refuses an unknown or respelled theme and writes nothing', asyn
 });
 
 test('MCP create stores a known theme, and `default` when none is named', async () => {
-  const named = await mcpCreate({ theme: 'amethyst' });
+  const named = await mcpCreate({ theme: AMETHYST });
   const unnamed = await mcpCreate({});
   const byId = new Map(
     (await listPresentations(testScope(process.cwd()))).map((p) => [p.id, p]),
   );
-  assert.equal(byId.get(named.id).theme, 'amethyst');
+  assert.equal(byId.get(named.id).theme, AMETHYST);
   assert.equal(byId.get(unnamed.id).theme, 'default');
 });
 
@@ -196,8 +211,8 @@ test('a markdown import checks the request theme, then the front matter', async 
   const named = await appPost('/api/presentations/import/markdown', {
     markdown: '---\ntheme: no-such-theme\n---\n\n# Hoi\n',
     lang: 'nl',
-    theme: 'midnight',
+    theme: MIDNIGHT,
   });
   assert.equal(named.statusCode, 201, JSON.stringify(named.body));
-  assert.equal(named.body.theme, 'midnight');
+  assert.equal(named.body.theme, MIDNIGHT);
 });

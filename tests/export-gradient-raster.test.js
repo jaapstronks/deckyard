@@ -40,7 +40,7 @@ import {
 } from '../server/export/pdf-slides.js';
 import { loadExportCssBundle } from '../server/export/css-bundle.js';
 import { renderSlideHtml } from '../server/utils/render-slide.js';
-import { loadThemeAssets } from '../server/utils/themes.js';
+import { seedThemeConfig } from './helpers/theme-seed.js';
 import {
   findGradientBgVars,
   rasterizeGradientBackgrounds,
@@ -99,7 +99,7 @@ test(
   'a gradient slide background leaves the PDF export as a bitmap',
   { skip },
   async () => {
-    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const theme = await seedThemeConfig('amethyst');
     const html = await buildSlidesPdfHtml(repoRoot, calmDeck(3), { theme });
 
     const decls = slideBgDeclarations(html);
@@ -128,7 +128,7 @@ test(
     // `background-color` (00-base.css) and as a `color`
     // (32-markdown-and-actions.css). A `url()` in there is invalid at
     // computed-value time, and an image-text slide then prints white on white.
-    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const theme = await seedThemeConfig('amethyst');
     const html = await buildSlidesPdfHtml(repoRoot, calmDeck(3), { theme });
 
     for (const value of slideBgDeclarations(html)) {
@@ -148,7 +148,7 @@ test(
   'one background shared by many slides is rasterized once',
   { skip },
   async () => {
-    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const theme = await seedThemeConfig('amethyst');
     const html = await buildSlidesPdfHtml(repoRoot, calmDeck(6), { theme });
 
     const dataUrls = new Set(
@@ -539,7 +539,7 @@ test(
     // for exactly that wrong reason until `themeVarsCssText()` started declaring
     // `--t-slide-gradient-bg` on the slide root, because before that `midnight`'s
     // generated gradient was guaranteed-invalid and painted nothing at all.
-    const theme = await loadThemeAssets(repoRoot, 'amethyst');
+    const theme = await seedThemeConfig('amethyst');
     const html = await buildSlidesPdfHtml(repoRoot, calmDeck(2), { theme });
     assert.equal(
       /grad-px-\d+/.test(html),
@@ -551,7 +551,7 @@ test(
     // the probe never runs. `midnight` is the shipped theme that switches the layers
     // on, so it is the one that actually walks the probe and lands on the opacity
     // test.
-    const gradientTheme = await loadThemeAssets(repoRoot, 'midnight');
+    const gradientTheme = await seedThemeConfig('midnight');
     const layerDeck = {
       title: 'Pseudo-element layers',
       theme: 'midnight',

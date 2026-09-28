@@ -353,8 +353,8 @@ const CONFIG_FIELDS = {
  */
 function unknownConfigField(raw) {
   for (const [key, value] of Object.entries(raw)) {
+    if (!Object.hasOwn(CONFIG_FIELDS, key)) return `config.${key}`;
     const known = CONFIG_FIELDS[key];
-    if (!known) return `config.${key}`;
     if (Array.isArray(known) && isPlainObject(value)) {
       const extra = Object.keys(value).find((k) => !known.includes(k));
       if (extra) return `config.${key}.${extra}`;
@@ -400,6 +400,46 @@ export const THEME_FIELD_PROBLEMS = Object.freeze({
 
 const refuse = (path, code) => ({ ok: false, path, code });
 
+// A write must survive the read normalizer unchanged. Otherwise a known field
+// with a bad value (or shape) is accepted and silently disappears on read.
+function changedThemeValue(input, normalized, path = 'config') {
+  if (Array.isArray(input)) {
+    if (!Array.isArray(normalized) || input.length !== normalized.length)
+      return path;
+    for (const [index, value] of input.entries()) {
+      const changed = changedThemeValue(
+        value,
+        normalized[index],
+        `${path}.${index}`,
+      );
+      if (changed) return changed;
+    }
+    return null;
+  }
+  if (isPlainObject(input)) {
+    if (!isPlainObject(normalized)) {
+      if (!Object.keys(input).length) return path;
+      normalized = {};
+    }
+    for (const [key, value] of Object.entries(input)) {
+      if (
+        path === 'config' &&
+        key === 'version' &&
+        value === THEME_CONFIG_VERSION
+      )
+        continue;
+      const changed = changedThemeValue(
+        value,
+        Object.hasOwn(normalized, key) ? normalized[key] : undefined,
+        `${path}.${key}`,
+      );
+      if (changed) return changed;
+    }
+    return null;
+  }
+  return Object.is(input, normalized) ? null : path;
+}
+
 /**
  * The write gate for a theme config: refuse an unknown field by name, else
  * normalize. Storage calls this on create and update; `.deck` installs go
@@ -422,7 +462,10 @@ export function checkThemeConfig(raw) {
       : THEME_FIELD_PROBLEMS.unknown;
     return refuse(path, code);
   }
-  return { ok: true, config: validateThemeConfig(raw) };
+  const config = validateThemeConfig(raw);
+  const changed = changedThemeValue(raw, config);
+  if (changed) return refuse(changed, THEME_FIELD_PROBLEMS.invalid);
+  return { ok: true, config };
 }
 
 // ============================================================
@@ -501,7 +544,7 @@ const OPTIONAL_COLOR_FIELDS = {
  * @returns {{ok: true, colors: Object} | {ok: false, path: string, code: string}}
  */
 export function validateThemeColors(raw) {
-  if (raw === undefined || raw === null) {
+  if (raw === undefined) {
     return { ok: true, colors: { ...DEFAULT_THEME_COLORS } };
   }
   if (!isPlainObject(raw))
@@ -509,7 +552,7 @@ export function validateThemeColors(raw) {
 
   const colors = {};
   for (const [key, fallback] of Object.entries(DEFAULT_THEME_COLORS)) {
-    if (!raw[key]) {
+    if (!Object.hasOwn(raw, key)) {
       colors[key] = fallback;
       continue;
     }
@@ -519,9 +562,10 @@ export function validateThemeColors(raw) {
   }
 
   for (const [key, value] of Object.entries(raw)) {
-    if (key in DEFAULT_THEME_COLORS) continue;
+    if (Object.hasOwn(DEFAULT_THEME_COLORS, key)) continue;
+    if (!Object.hasOwn(OPTIONAL_COLOR_FIELDS, key))
+      return refuse(`colors.${key}`, THEME_FIELD_PROBLEMS.unknown);
     const valid = OPTIONAL_COLOR_FIELDS[key];
-    if (!valid) return refuse(`colors.${key}`, THEME_FIELD_PROBLEMS.unknown);
     if (key === 'backgrounds' && isPlainObject(value)) {
       const extra = Object.keys(value).find(
         (k) => !THEME_BACKGROUND_SLOTS.includes(k),
@@ -542,5 +586,7 @@ export function validateThemeColors(raw) {
           )
         : value.trim();
   }
+  const changed = changedThemeValue(raw, colors, 'colors');
+  if (changed) return refuse(changed, THEME_FIELD_PROBLEMS.invalid);
   return { ok: true, colors };
 }

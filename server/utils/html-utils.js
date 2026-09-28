@@ -71,7 +71,6 @@ const LOCAL_IMAGE_ROOTS = [
   ['/uploads/', (root) => path.join(root, 'server', 'uploads')],
   ['/assets/', (root) => path.join(root, 'assets')],
   ['/custom/assets/', (root) => path.join(customDirFor(root), 'assets')],
-  ['/custom/themes/', (root) => path.join(customDirFor(root), 'themes')],
   ['/client/', (root) => path.join(root, 'client')],
 ];
 
@@ -153,10 +152,8 @@ async function computeDataUrlIfLocal(
   const isUpload = s.startsWith('/uploads/');
   const isAsset = s.startsWith('/assets/');
   const isClient = s.startsWith('/client/');
-  // Fork assets: shared content under /custom/assets/, and per-theme assets
-  // co-located under /custom/themes/<id>/assets/.
-  const isCustom =
-    s.startsWith('/custom/assets/') || s.startsWith('/custom/themes/');
+  // Fork assets live under /custom/assets/.
+  const isCustom = s.startsWith('/custom/assets/');
 
   if (!isUpload && !isAsset && !isCustom && !(includeClient && isClient)) {
     // Remote http(s) images: on export/render paths, inline through the SSRF

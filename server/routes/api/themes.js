@@ -1,18 +1,16 @@
 /**
  * Themes API routes.
  *
- * GET /api/themes - List the themes this workspace offers (system + custom),
+ * GET /api/themes - List the visible theme records,
  *   filtered by the `enabledThemes` allowlist. `?current=<id>` keeps a deck's
  *   own theme in the list; `?all=1` (managers only) skips the filter.
  * GET /api/themes/fonts - List available fonts for custom themes
- * GET /api/themes/custom - List custom themes only
- * POST /api/themes/custom/preview-config - Build a theme from an unsaved draft
- * GET /api/themes/custom/:id - Get a custom theme
- * POST /api/themes/custom - Create a custom theme (admin only)
- * PUT /api/themes/custom/:id - Update a custom theme (admin only)
- * DELETE /api/themes/custom/:id - Delete a custom theme (admin only)
- * POST /api/themes/custom/:id/set-default - Set as org default (admin only)
- * POST /api/themes/custom/clear-default - Clear org default (admin only)
+ * POST /api/themes/preview-config - Build a theme from an unsaved draft
+ * GET /api/themes/:id - Get a visible theme record
+ * POST /api/themes - Create an organization theme (designer only)
+ * PUT /api/themes/:id - Update an organization theme (designer only)
+ * DELETE /api/themes/:id - Delete an organization theme (designer only)
+ * GET /api/themes/:id/config - Build the render configuration
  */
 
 import {
@@ -23,12 +21,7 @@ import {
   storageError,
   withErrorHandler,
 } from '../../utils/http.js';
-import {
-  listThemeIds,
-  listCoreThemeIds,
-  loadThemeAssets,
-  clearCustomThemeCache,
-} from '../../utils/themes.js';
+import { clearCustomThemeCache } from '../../utils/themes.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { canManage } from '../../utils/route-middleware.js';
@@ -38,7 +31,6 @@ import {
   createTheme,
   updateTheme,
   deleteTheme,
-  setDefaultTheme,
 } from '../../storage/themes.js';
 import {
   CURATED_FONTS,
@@ -136,57 +128,22 @@ async function handleThemeList({
   res,
   authedUser,
 }) {
-  // Load system themes from filesystem. Sandbox is a public, neutral
-  // playground, so it lists only the built-in core themes (never filesystem
-  // custom/branded ones under custom/themes) — and, when present, narrows to
-  // a curated `sandbox-*` subset an operator can drop in. Falls back to the
-  // full core set when no `sandbox-*` themes exist, so the picker is never
-  // empty and guests can always choose a theme.
-  const systemThemeIds = sandboxEnabled()
-    ? await listCoreThemeIds(repoRoot)
-    : await listThemeIds(repoRoot);
-  let filteredSystemIds = systemThemeIds;
-  if (sandboxEnabled()) {
-    const curated = systemThemeIds.filter((id) =>
-      String(id).startsWith('sandbox-'),
-    );
-    filteredSystemIds = curated.length ? curated : systemThemeIds;
-  }
-
-  const systemThemes = [];
-  for (const id of filteredSystemIds) {
-    try {
-      const t = await loadThemeAssets(repoRoot, id);
-      systemThemes.push({
-        id: String(t?.id || id),
-        label: String(t?.label || t?.id || id),
-        type: 'system',
-      });
-    } catch {
-      systemThemes.push({ id: String(id), label: String(id), type: 'system' });
-    }
-  }
-
-  // Load custom themes from database. Sandbox is a public, neutral
-  // playground, so it deliberately hides organization custom themes (which may
-  // carry a customer's branding) and shows only the built-in system themes.
-  const customThemes = sandboxEnabled() ? [] : await listThemes(storageScope);
-  const customThemeList = customThemes.map((t) => ({
+  const records = await listThemes(storageScope);
+  const visible = sandboxEnabled()
+    ? records.filter((theme) => theme.source === 'seed')
+    : records;
+  const themesBySource = visible.map((t) => ({
     id: t.id,
     slug: t.slug,
+    source: t.source,
     label: t.label,
     logoUrl: t.logoUrl,
     colors: t.colors,
     fonts: t.fonts,
-    isDefault: t.isDefault,
-    type: 'custom',
   }));
-
-  // Combine and sort
-  const allThemes = [...customThemeList, ...systemThemes];
+  const allThemes = themesBySource;
   allThemes.sort((a, b) => {
-    // Custom themes first, then system themes
-    if (a.type !== b.type) return a.type === 'custom' ? -1 : 1;
+    if (a.source !== b.source) return a.source === 'organization' ? -1 : 1;
     return String(a.label).localeCompare(String(b.label));
   });
 
@@ -227,6 +184,7 @@ async function handleThemeList({
       : allThemes.filter((theme) =>
           allowSet.has(String(theme.id).toLowerCase()),
         );
+  for (const theme of themes) theme.isDefault = theme.id === defaultThemeId;
 
   serveJson(res, 200, {
     themes,
@@ -246,7 +204,7 @@ function handleThemeFonts({ res }) {
   return true;
 }
 
-// POST /api/themes/custom/preview-config - Build a theme from an unsaved draft.
+// POST /api/themes/preview-config - Build a theme from an unsaved draft.
 // The theme editor needs to render real slides against settings that have not
 // been saved yet. Deriving the tokens client-side would be a second copy of
 // the colour maths, which is exactly the drift #118 removed — so the draft is
@@ -299,14 +257,7 @@ async function handleThemePreviewConfig({
   return true;
 }
 
-// GET /api/themes/custom - List custom themes only
-async function handleCustomThemeList({ storageScope, res, authedUser }) {
-  const themes = await listThemes(storageScope);
-  serveJson(res, 200, { themes });
-  return true;
-}
-
-// POST /api/themes/custom - Create a custom theme (admin only)
+// POST /api/themes - Create an organization theme (designer only)
 async function handleCustomThemeCreate({ storageScope, req, res, authedUser }) {
   if (!canManageThemes(authedUser)) {
     return forbidden(res, 'Admin access required');
@@ -325,27 +276,7 @@ async function handleCustomThemeCreate({ storageScope, req, res, authedUser }) {
   return true;
 }
 
-// POST /api/themes/custom/clear-default - Clear org default
-async function handleCustomThemeClearDefault({
-  storageScope,
-  res,
-  authedUser,
-}) {
-  if (!canManageThemes(authedUser)) {
-    return forbidden(res, 'Admin access required');
-  }
-
-  const result = await setDefaultTheme(storageScope, null);
-
-  if (!result.ok) {
-    return themeError(res, result);
-  }
-
-  serveJson(res, 200, { success: true });
-  return true;
-}
-
-// GET /api/themes/custom/:id - Get a custom theme
+// GET /api/themes/:id - Get a visible theme record
 async function handleCustomThemeGet(
   { storageScope, res, authedUser },
   themeId,
@@ -354,11 +285,12 @@ async function handleCustomThemeGet(
   if (!theme) {
     return notFound(res, 'Theme not found');
   }
-  serveJson(res, 200, theme);
+  const defaultThemeId = await getDefaultThemeId(storageScope);
+  serveJson(res, 200, { ...theme, isDefault: theme.id === defaultThemeId });
   return true;
 }
 
-// PUT /api/themes/custom/:id - Update a custom theme (admin only)
+// PUT /api/themes/:id - Update an organization theme (designer only)
 async function handleCustomThemeUpdate(
   { storageScope, req, res, authedUser },
   themeId,
@@ -380,7 +312,7 @@ async function handleCustomThemeUpdate(
   return true;
 }
 
-// DELETE /api/themes/custom/:id - Delete a custom theme (admin only)
+// DELETE /api/themes/:id - Delete an organization theme (designer only)
 async function handleCustomThemeDelete(
   { storageScope, res, authedUser },
   themeId,
@@ -400,26 +332,7 @@ async function handleCustomThemeDelete(
   return true;
 }
 
-// POST /api/themes/custom/:id/set-default - Set as org default (admin only)
-async function handleCustomThemeSetDefault(
-  { storageScope, res, authedUser },
-  themeId,
-) {
-  if (!canManageThemes(authedUser)) {
-    return forbidden(res, 'Admin access required');
-  }
-
-  const result = await setDefaultTheme(storageScope, themeId);
-
-  if (!result.ok) {
-    return themeError(res, result);
-  }
-
-  serveJson(res, 200, { success: true });
-  return true;
-}
-
-// GET /api/themes/custom/:id/config - Get theme config for rendering
+// GET /api/themes/:id/config - Get theme config for rendering
 async function handleCustomThemeConfig(
   { storageScope, res, authedUser },
   themeId,
@@ -447,11 +360,8 @@ async function handleCustomThemeConfig(
 
 /**
  * Declarative route table for `/api/themes*` (A7.19 C8). Order matches the
- * previous if-chain — the exact `custom/preview-config` and
- * `custom/clear-default` paths come before the `custom/:id` rows, as they did
- * as if-branches. Every path fell through on a method mismatch (Form A), so
- * there are no 405 catch-all rows. Per-route designer guards
- * (`canManageThemes`) live in the handlers, where the original ran them.
+ * previous if-chain: exact paths precede the UUID capture. Mutations require
+ * the designer capability in their handlers.
  *
  * @type {import('../../utils/router.js').Route[]}
  */
@@ -460,51 +370,35 @@ export const ROUTES = [
   { method: 'GET', pattern: '/api/themes/fonts', handler: handleThemeFonts },
   {
     method: 'POST',
-    pattern: '/api/themes/custom/preview-config',
+    pattern: '/api/themes/preview-config',
     handler: handleThemePreviewConfig,
   },
   {
-    method: 'GET',
-    pattern: '/api/themes/custom',
-    handler: handleCustomThemeList,
-  },
-  {
     method: 'POST',
-    pattern: '/api/themes/custom',
+    pattern: '/api/themes',
     handler: handleCustomThemeCreate,
   },
   {
-    method: 'POST',
-    pattern: '/api/themes/custom/clear-default',
-    handler: handleCustomThemeClearDefault,
-  },
-  {
     method: 'GET',
-    pattern: /^\/api\/themes\/custom\/([^/]+)$/,
+    pattern: /^\/api\/themes\/([^/]+)$/,
     captures: ['uuid'],
     handler: handleCustomThemeGet,
   },
   {
     method: 'PUT',
-    pattern: /^\/api\/themes\/custom\/([^/]+)$/,
+    pattern: /^\/api\/themes\/([^/]+)$/,
     captures: ['uuid'],
     handler: handleCustomThemeUpdate,
   },
   {
     method: 'DELETE',
-    pattern: /^\/api\/themes\/custom\/([^/]+)$/,
+    pattern: /^\/api\/themes\/([^/]+)$/,
     captures: ['uuid'],
     handler: handleCustomThemeDelete,
   },
   {
-    method: 'POST',
-    pattern: /^\/api\/themes\/custom\/([^/]+)\/set-default$/,
-    captures: ['uuid'],
-    handler: handleCustomThemeSetDefault,
-  },
-  {
     method: 'GET',
-    pattern: /^\/api\/themes\/custom\/([^/]+)\/config$/,
+    pattern: /^\/api\/themes\/([^/]+)\/config$/,
     captures: ['uuid'],
     handler: handleCustomThemeConfig,
   },

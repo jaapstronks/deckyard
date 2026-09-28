@@ -82,8 +82,7 @@ Two edges are worth knowing, because they are where the automation stops:
 A `slideBackgrounds` variant whose value is artwork, or a `--t-logo-url`, is
 supported:
 
-- a **local** path (`/uploads/`, `/assets/`, `/custom/assets/`,
-  `/custom/themes/`) is inlined as a data URL, because a root-relative path has
+- a **local** path (`/uploads/`, `/assets/`, `/custom/assets/`) is inlined as a data URL, because a root-relative path has
   nothing to resolve against under `setContent()`;
 - a **remote** `http(s)` URL goes through the SSRF guard — inlined if it
   resolves to a public address, otherwise blanked to `url('')`. It is never
@@ -101,10 +100,7 @@ artwork rendered blank and a remote address went straight to Chrome. Fixed
 
 ## No third-party origins
 
-A rendered document loads nothing from someone else's host: no CDN script, no
-web font, no remote stylesheet. Fonts come from the repo or from `embedFonts`
-in the theme. This is a separate, gated rule with its own page —
-[`no-third-party-origins.md`](no-third-party-origins.md).
+A rendered document loads nothing from someone else's host: no CDN script, no web font, no remote stylesheet. Fonts come from managed or curated local files, or from the fork's local `custom/styles/` CSS. This is a separate, gated rule with its own page: [`no-third-party-origins.md`](no-third-party-origins.md).
 
 ## What has not been measured
 
@@ -123,8 +119,7 @@ If you measure one of these, add it here rather than to a code comment.
 ## Checking your own theme
 
 There is no contact-sheet tool yet: the theme editor's live preview covers a
-DB-theme draft and a handful of slides, not a file theme in
-`custom/themes/<id>/theme.json` and not the rest of the registry. Building one
+theme-record draft and a handful of slides, not the rest of the registry. Building one
 (`npm run theme:preview <id>`, every registered type × every background the
 theme offers, plus a contrast report) is an open proposal — the pieces exist
 (`renderSlideElement`, `loadExportCssBundle`, the Puppeteer plumbing in

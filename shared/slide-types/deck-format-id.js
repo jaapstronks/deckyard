@@ -17,9 +17,8 @@
  *
  * A published format is named after its publisher (compare
  * `application/vnd.oasis.opendocument.presentation`), so the current identity
- * is `deckyard.deck`. The legacy values are not deleted: a conforming reader
- * accepts them forever, which is what `isDeckFormatId` / `isDeckMimetype` are
- * for. Only the writers move.
+ * is `deckyard.deck`. The JSON/Markdown envelope still accepts its historical
+ * format id; the v4 bundle requires the current MIME type.
  *
  * The **file extension is unaffected**. A downloaded bundle has always been
  * `<title>.deck` and stays that way; the namespace lives before the dot, never
@@ -46,11 +45,6 @@ export const LEGACY_DECK_FORMAT_IDS = Object.freeze(['slidecreator.deck']);
  */
 export const DECK_MIMETYPE = 'application/vnd.deckyard.deck';
 
-/** Bundle MIME types written by earlier versions. Accepted on read, never written. */
-export const LEGACY_DECK_MIMETYPES = Object.freeze([
-  'application/vnd.slidecreator.deck',
-]);
-
 /**
  * Is this the `format` sentinel of a deck envelope, current or historical?
  * @param {unknown} value
@@ -60,15 +54,4 @@ export function isDeckFormatId(value) {
   if (typeof value !== 'string') return false;
   const v = value.trim();
   return v === DECK_FORMAT_ID || LEGACY_DECK_FORMAT_IDS.includes(v);
-}
-
-/**
- * Is this the mimetype sentinel of a `.deck` bundle, current or historical?
- * @param {unknown} value
- * @returns {boolean}
- */
-export function isDeckMimetype(value) {
-  if (typeof value !== 'string') return false;
-  const v = value.trim();
-  return v === DECK_MIMETYPE || LEGACY_DECK_MIMETYPES.includes(v);
 }

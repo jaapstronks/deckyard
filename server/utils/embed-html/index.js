@@ -14,7 +14,6 @@ import {
   sandboxWatermarkEnabled,
   sandboxWatermarkHtml,
 } from '../sandbox-watermark.js';
-import { DEFAULT_THEME_ID } from '../../../shared/constants/themes.js';
 import { resolveDocLangFromPresentation } from '../doc-lang.js';
 import { normalizeLang, resolveDeckLang } from '../../../shared/i18n-utils.js';
 
@@ -39,7 +38,7 @@ export function buildEmbedHtml(
   } = {},
 ) {
   pres = filterForPublished(pres);
-  const themeId = String(theme?.id || DEFAULT_THEME_ID);
+  const themeId = theme?.id ? String(theme.id) : '';
   const themeVarsCss = themeVarsCssText(theme);
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   const title = pres?.title || 'Presentation';

@@ -18,6 +18,20 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: deckyard
+          POSTGRES_PASSWORD: deckyard
+          POSTGRES_DB: deckyard_mcp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -25,6 +39,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Migrate MCP protocol test database
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_mcp_test
       # The export chain (PDF, PNG, PPTX, deck thumbnails, sandbox OG image)
       # drives headless Chrome, and puppeteer-core deliberately ships without a
       # browser — which is exactly why that chain went untested for so long.
@@ -46,6 +64,8 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm test
+        env:
+          DECKYARD_MCP_TEST_DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_mcp_test
 
   # Second run of the SAME suite, with a fork slide type dropped into
   # custom/slide-types/ before it starts. That tree is gitignored, so upstream CI
@@ -62,6 +82,20 @@ jobs:
   # in, so a local `npm test` (no copy) still runs the pure core suite.
   test-fork:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: deckyard
+          POSTGRES_PASSWORD: deckyard
+          POSTGRES_DB: deckyard_mcp_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -69,6 +103,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Migrate MCP protocol test database
+        run: npm run db:migrate
+        env:
+          DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_mcp_test
       # Same Chrome provisioning as `test`: the fork run is the whole suite, and
       # the export smoke test refuses to skip under CI (see
       # tests/export-chrome-smoke.test.js). Kept in step with the block above.
@@ -82,8 +120,12 @@ jobs:
           test -x "$CHROME_PATH"
           echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
       - name: Load fork slide types into custom/slide-types/
-        run: cp tests/fixtures/fork-slide-types/*.js custom/slide-types/
+        run: |
+          cp tests/fixtures/fork-slide-types/*.js custom/slide-types/
+          printf '{"name":"eu.deckyard.test-fork"}\n' > custom/extension.json
       - run: npm test
+        env:
+          DECKYARD_MCP_TEST_DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_mcp_test
 
   # The committed client/vendor/ tree, against what the vendor scripts produce
   # from the lockfile. The browser loads the *committed* copies, so a dependency

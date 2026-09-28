@@ -16,7 +16,7 @@
  * Run with: node --test tests/new-deck-slide-rekey.test.js
  */
 
-import { describe, it } from 'node:test';
+import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,20 @@ import { fileURLToPath } from 'node:url';
 import { buildSlidesFromLibraryItems } from '../client/lib/slide-library/compose.js';
 import { prepareNewPresentation } from '../server/storage/presentations/crud/factory.js';
 import { rekeyNewDeckSlides } from '../server/storage/presentations/crud/rekey-new-deck.js';
+import { createFakeDb } from './helpers/fake-db.js';
+import { seedRow } from './helpers/theme-seed.js';
+import { __setTestDb } from '../server/db/client.js';
+
+const AMETHYST = (await seedRow('amethyst')).id;
+
+before(async () =>
+  __setTestDb(
+    createFakeDb({
+      themes: [await seedRow('brand'), await seedRow('amethyst')],
+    }),
+  ),
+);
+after(() => __setTestDb(null));
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -50,7 +64,7 @@ describe('composing a deck from library items', () => {
     const pres = await prepareNewPresentation(repoRoot, {
       title: 'Composed deck',
       slides,
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     });
 
@@ -76,7 +90,7 @@ describe('composing a deck from library items', () => {
     const body = {
       title: 'Composed deck',
       slides: buildSlidesFromLibraryItems(items),
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     };
     const first = await prepareNewPresentation(repoRoot, body);
@@ -96,7 +110,7 @@ describe('composing a deck from library items', () => {
       slides: buildSlidesFromLibraryItems([
         { slideType: 'content-slide', content: { title: 'Solo' } },
       ]),
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     });
     assert.deepEqual(pres.slides[0].content, { title: 'Solo' });
@@ -113,7 +127,7 @@ describe('posting slides straight to the create path', () => {
           content: { presentationId: 'some-other-deck' },
         },
       ],
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     });
     assert.equal(pres.slides[0].content.presentationId, pres.id);
@@ -131,7 +145,7 @@ describe('posting slides straight to the create path', () => {
           content: { title: 'C' },
         },
       ],
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     });
     const [parent, child] = pres.slides;
@@ -146,7 +160,7 @@ describe('posting slides straight to the create path', () => {
       slides: [
         { id: 'c', parentId: 'elsewhere', type: 'content-slide', content: {} },
       ],
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     });
     assert.equal(
@@ -164,7 +178,7 @@ describe('posting slides straight to the create path', () => {
         { id: 'dup', type: 'poll-slide', content: { pollId: 'x' } },
         { id: 'c', parentId: 'dup', type: 'content-slide', content: {} },
       ],
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     });
     const [first, second, child] = pres.slides;
@@ -186,7 +200,7 @@ describe('posting slides straight to the create path', () => {
     await prepareNewPresentation(repoRoot, {
       title: 'Agent deck',
       slides: posted,
-      theme: 'amethyst',
+      theme: AMETHYST,
       lang: 'nl',
     });
     assert.equal(posted[0].content.pollId, 'caller-owns');

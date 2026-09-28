@@ -34,7 +34,12 @@ import { registerPrompts } from './prompts.js';
 import { helpText } from './help.js';
 import { initializeStorage } from '../storage/lifecycle.js';
 import { initSanitizer } from '../../shared/sanitize.js';
-import { strandedFileDataError } from '../storage/boot-check.js';
+import {
+  pendingMigrationsError,
+  strandedFileDataError,
+} from '../storage/boot-check.js';
+import { initializeThemeSeeds } from '../utils/theme-seeds.js';
+import { assertExtensionDeclared } from '../export/extension-name.js';
 import { storageModeError } from '../config/database.js';
 import { repoRoot } from '../config/paths.js';
 import { envStr } from '../config/utils.js';
@@ -64,6 +69,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 
 // Initialize
 async function main() {
+  await assertExtensionDeclared(repoRoot);
   // Same storage guards as the HTTP server (server/server.js): an unknown
   // STORAGE_MODE, or an empty database next to a populated file-storage data
   // directory, is a stop — an agent silently authoring into an empty organization
@@ -79,11 +85,12 @@ async function main() {
   // Initialize storage (DB connection)
   try {
     await initializeStorage();
+    const schemaErr = await pendingMigrationsError();
+    if (schemaErr) throw new Error(schemaErr);
+    await initializeThemeSeeds();
   } catch (err) {
     process.stderr.write(`[MCP] Storage init failed: ${err.message}\n`);
-    process.stderr.write(
-      '[MCP] Continuing with limited functionality (no DB-backed features)\n',
-    );
+    process.exit(1);
   }
 
   {

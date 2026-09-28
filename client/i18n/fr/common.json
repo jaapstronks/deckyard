@@ -135,6 +135,7 @@
   "common.signOut": "Se déconnecter",
   "common.theme": "Thème",
   "common.themeCard.bodySpecimen": "Texte courant",
+  "common.themeDefault": "Par défaut de l’espace de travail",
   "common.toggleTheme": "Basculer entre le mode sombre et clair",
   "common.unknown": "Inconnu",
   "common.unknownError": "Erreur inconnue",

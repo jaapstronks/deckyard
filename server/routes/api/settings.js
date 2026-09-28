@@ -5,6 +5,7 @@ import {
   requireJsonBody,
   withErrorHandler,
   forbidden,
+  badRequest,
 } from '../../utils/http.js';
 import { getStringArray } from '../../utils/request-validators.js';
 import {
@@ -22,7 +23,14 @@ import { hasOrganizationRole } from '../../../shared/organization-role.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { canManage } from '../../utils/route-middleware.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
+import { getThemeRecord } from '../../storage/themes.js';
+import { UUID_RE } from '../../utils/uuid.js';
 import { dispatchRoutes } from '../../utils/router.js';
+
+/** Organization theme settings store one lowercase UUID spelling. */
+function isCanonicalThemeId(id) {
+  return typeof id === 'string' && UUID_RE.test(id) && id === id.toLowerCase();
+}
 
 /**
  * Whether this user may write the organization-level admin settings keys.
@@ -74,6 +82,8 @@ async function handleAppSettingsPut({ storageScope, req, res, authedUser }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  if ('defaultThemeId' in body || 'enabledThemes' in body)
+    return badRequest(res, 'Theme settings belong to the organization');
   const settings = await writeAppSettings(storageScope, body);
   serveJson(res, 200, { settings });
   return true;
@@ -99,7 +109,7 @@ async function handleOrgSettingsGet({ res, authedUser }) {
 }
 
 // PATCH /api/settings/organization — disabledSlideTypes by designers, other keys admin
-async function handleOrgSettingsPatch({ req, res, authedUser }) {
+async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
   const orgId = authedUser?.organizationId;
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -131,14 +141,43 @@ async function handleOrgSettingsPatch({ req, res, authedUser }) {
   const currentSettings = getOrgSettings(org);
 
   // Merge only allowed keys
-  const allowedKeys = ['adminsAreDesigners', 'disabledSlideTypes', 'rss'];
+  const allowedKeys = [
+    'adminsAreDesigners',
+    'disabledSlideTypes',
+    'rss',
+    'defaultThemeId',
+    'enabledThemes',
+  ];
   const merged = { ...currentSettings };
+  if ('defaultThemeId' in body) {
+    const id = body.defaultThemeId;
+    if (
+      id !== '' &&
+      (!isCanonicalThemeId(id) || !(await getThemeRecord(storageScope, id)))
+    )
+      return badRequest(res, 'Invalid default theme');
+  }
+  if ('enabledThemes' in body) {
+    const ids = body.enabledThemes;
+    if (
+      !Array.isArray(ids) ||
+      ids.length > 50 ||
+      ids.some((id) => !isCanonicalThemeId(id))
+    )
+      return badRequest(res, 'Invalid enabled themes');
+    for (const id of ids) {
+      if (!(await getThemeRecord(storageScope, id)))
+        return badRequest(res, 'Invalid enabled themes');
+    }
+  }
   for (const key of allowedKeys) {
     if (key in body) {
       if (key === 'adminsAreDesigners') {
         merged[key] = body[key] === true;
       } else if (key === 'disabledSlideTypes') {
         merged[key] = getStringArray(body, key, { trim: true });
+      } else if (key === 'enabledThemes') {
+        merged[key] = [...new Set(body[key])];
       } else if (key === 'rss') {
         const rss = body[key];
         if (rss && typeof rss === 'object') {

@@ -135,7 +135,7 @@ export async function handleFollowPresentation(
       // the audience — anonymous by definition — saw a 401 and followed along
       // on an unbranded deck. The theme rides on the payload the follow code
       // already authorizes (server/utils/themes.js § customThemeConfig);
-      // null for a built-in, which the client loads from /themes/ itself.
+      // Includes the resolved record config for seed and organization themes.
       themeConfig: await customThemeConfig(repoRoot, picked.theme, {
         repoRoot,
         organizationId: picked.organizationId,

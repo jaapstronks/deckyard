@@ -63,16 +63,15 @@ test('a warm cache does not hand another organization its theme', async () => {
 
   // A deck render: unscoped, and it warms the cache.
   const viaDeck = await loadThemeAssets(repoRoot, uuid);
-  assert.equal(viaDeck._customThemeId, uuid);
+  assert.equal(viaDeck.id, uuid);
 
   const own = await loadThemeAssets(repoRoot, uuid, testScope());
-  assert.equal(own._customThemeId, uuid, 'the owning organization gets it');
+  assert.equal(own.id, uuid, 'the owning organization gets it');
 
-  const other = await loadThemeAssets(repoRoot, uuid, otherOrganizationScope());
-  assert.notEqual(
-    other?._customThemeId,
-    uuid,
-    'another organization gets the default theme, not this one',
+  await assert.rejects(
+    loadThemeAssets(repoRoot, uuid, otherOrganizationScope()),
+    /Theme not found/,
+    'another organization cannot resolve this record, even from cache',
   );
 });
 
@@ -90,10 +89,14 @@ test('a session scope without an organization gets no database theme', async () 
   // scope, but no organization. Neither a cold nor a warm cache may fall
   // through to the unscoped read render paths use.
   const orphan = { repoRoot: null, organizationId: null };
-  const cold = await loadThemeAssets(repoRoot, uuid, orphan);
-  assert.notEqual(cold?._customThemeId, uuid, 'cold cache: default theme');
+  await assert.rejects(
+    loadThemeAssets(repoRoot, uuid, orphan),
+    /Theme not found/,
+  );
 
   await loadThemeAssets(repoRoot, uuid);
-  const warm = await loadThemeAssets(repoRoot, uuid, orphan);
-  assert.notEqual(warm?._customThemeId, uuid, 'warm cache: default theme');
+  await assert.rejects(
+    loadThemeAssets(repoRoot, uuid, orphan),
+    /Theme not found/,
+  );
 });

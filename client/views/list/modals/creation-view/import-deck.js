@@ -55,6 +55,7 @@ function labelsWith(items, status) {
  * @param {Array<{slug: string, label?: string, status: string,
  *   reason?: string}>} [created.bundledSlideTypes]
  * @param {Array<{ref: string}>} [created.failedAssets]
+ * @param {string[]} [created.extensionsMissing]
  * @returns {{type: 'success'|'warning', sentences: string[]} | null}
  */
 export function deckImportOutcome(created) {
@@ -168,6 +169,19 @@ export function deckImportOutcome(created) {
       ),
     );
   }
+  if (
+    Array.isArray(created?.extensionsMissing) &&
+    created.extensionsMissing.length
+  ) {
+    warn = true;
+    sentences.push(
+      t(
+        'list.deckImport.extensionsMissing',
+        'Custom features may be missing here: {names}.',
+        { names: created.extensionsMissing.join(', ') },
+      ),
+    );
+  }
 
   if (!sentences.length) return null;
   return { type: warn ? 'warning' : 'success', sentences };
@@ -208,7 +222,7 @@ export function createDeckImportPanel({ canInstall }) {
       class: 'help modal-hint',
       text: t(
         'list.deckImport.help',
-        'Import a presentation from a .deck file: every language, notes, images, and the theme and slide types it uses.',
+        'Import a current .deck file: every language, notes, images, and a snapshot of its theme and slide types.',
       ),
     }),
     fileInput,

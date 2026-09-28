@@ -70,14 +70,10 @@ export function isInsertableSlideType({
   const { exclude, include } = getThemeSlideTypeConfig(theme);
   if (exclude.has(t)) return false;
 
-  // Theme-specific slide types are opt-in via theme.slideTypes.include.
-  // (Universal slide types have no `themeId` and are available by default.)
-  const themeId = cleanStr(def?.themeId);
-  if (themeId) {
-    const activeThemeId = cleanStr(theme?.id);
-    if (themeId !== activeThemeId) return false;
-    if (!include.has(t)) return false;
-  }
+  // A theme-only type is declared on the type, while the active theme opts it
+  // in by name. Copying a theme preserves that declaration without binding the
+  // type to a particular record UUID or slug.
+  if (def.themeOnly === true && !include.has(t)) return false;
 
   return true;
 }

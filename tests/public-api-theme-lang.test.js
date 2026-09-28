@@ -28,6 +28,8 @@ process.env.STORAGE_MODE = 'postgres';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OWNER = 'owner@example.com';
+const MIDNIGHT = '11111111-1111-4111-8111-111111111111';
+const AMETHYST = '22222222-2222-4222-8222-222222222222';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -40,6 +42,35 @@ async function installDb() {
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
     users: userRows(OWNER),
+    themes: [
+      {
+        id: '33333333-3333-4333-8333-333333333333',
+        organization_id: null,
+        slug: 'brand',
+        label: 'Brand',
+        colors: {},
+        fonts: {},
+        config: {},
+      },
+      {
+        id: MIDNIGHT,
+        organization_id: null,
+        slug: 'midnight',
+        label: 'Midnight',
+        colors: {},
+        fonts: {},
+        config: {},
+      },
+      {
+        id: AMETHYST,
+        organization_id: null,
+        slug: 'amethyst',
+        label: 'Amethyst',
+        colors: {},
+        fonts: {},
+        config: {},
+      },
+    ],
   });
   __setTestDb(db);
   await initializeStorage(process.cwd());
@@ -123,16 +154,16 @@ test('create with theme + lang stores both and answers them', async () => {
   const db = await installDb();
   const pres = await create({
     title: 'Q1',
-    theme: 'midnight',
+    theme: MIDNIGHT,
     lang: 'en-GB',
   });
 
   const row = storedDeck(db, pres.id);
-  assert.equal(row.theme, 'midnight');
+  assert.equal(row.theme, MIDNIGHT);
   assert.equal(row.lang, 'en-GB');
   assert.equal(row.i18n.dominant, 'en-GB');
 
-  assert.equal(pres.theme, 'midnight');
+  assert.equal(pres.theme, MIDNIGHT);
   assert.equal(pres.lang, 'en-GB');
   assert.ok(!('themeId' in pres), 'the retired name is not published');
   assert.ok(!('language' in pres), 'the retired name is not published');
@@ -140,37 +171,37 @@ test('create with theme + lang stores both and answers them', async () => {
 
 test('GET answers the real theme and language, per deck', async () => {
   await installDb();
-  const en = await create({ title: 'EN', theme: 'midnight', lang: 'en-GB' });
-  const nl = await create({ title: 'NL', theme: 'amethyst', lang: 'nl' });
+  const en = await create({ title: 'EN', theme: MIDNIGHT, lang: 'en-GB' });
+  const nl = await create({ title: 'NL', theme: AMETHYST, lang: 'nl' });
 
   const gotEn = await call('GET', `/api/v1/presentations/${en.id}`);
   assert.equal(gotEn.statusCode, 200);
-  assert.equal(gotEn.body.presentation.theme, 'midnight');
+  assert.equal(gotEn.body.presentation.theme, MIDNIGHT);
   assert.equal(gotEn.body.presentation.lang, 'en-GB');
 
   const gotNl = await call('GET', `/api/v1/presentations/${nl.id}`);
-  assert.equal(gotNl.body.presentation.theme, 'amethyst');
+  assert.equal(gotNl.body.presentation.theme, AMETHYST);
   assert.equal(gotNl.body.presentation.lang, 'nl');
 
   const list = await call('GET', '/api/v1/presentations');
   const byId = new Map(list.body.presentations.map((p) => [p.id, p]));
   assert.equal(byId.get(en.id).lang, 'en-GB');
-  assert.equal(byId.get(nl.id).theme, 'amethyst');
+  assert.equal(byId.get(nl.id).theme, AMETHYST);
 });
 
 test('PUT with another theme switches it; the slides stay', async () => {
   const db = await installDb();
-  const pres = await create({ title: 'Switch', theme: 'midnight', lang: 'nl' });
+  const pres = await create({ title: 'Switch', theme: MIDNIGHT, lang: 'nl' });
   const slidesBefore = storedDeck(db, pres.id).slides;
 
   const res = await call('PUT', `/api/v1/presentations/${pres.id}`, {
-    theme: 'amethyst',
+    theme: AMETHYST,
   });
   assert.equal(res.statusCode, 200, JSON.stringify(res.body));
-  assert.equal(res.body.presentation.theme, 'amethyst');
+  assert.equal(res.body.presentation.theme, AMETHYST);
 
   const row = storedDeck(db, pres.id);
-  assert.equal(row.theme, 'amethyst');
+  assert.equal(row.theme, AMETHYST);
   assert.deepEqual(
     row.slides,
     slidesBefore,
@@ -180,7 +211,7 @@ test('PUT with another theme switches it; the slides stay', async () => {
 
 test('a GET echoed back through PUT is a plain save', async () => {
   const db = await installDb();
-  const pres = await create({ title: 'Echo', theme: 'midnight', lang: 'nl' });
+  const pres = await create({ title: 'Echo', theme: MIDNIGHT, lang: 'nl' });
   const got = await call('GET', `/api/v1/presentations/${pres.id}`);
 
   const { title, theme, lang } = got.body.presentation;
@@ -192,7 +223,7 @@ test('a GET echoed back through PUT is a plain save', async () => {
   assert.equal(res.statusCode, 200, JSON.stringify(res.body));
   const row = storedDeck(db, pres.id);
   assert.equal(row.title, 'Echo!');
-  assert.equal(row.theme, 'midnight');
+  assert.equal(row.theme, MIDNIGHT);
   assert.equal(row.lang, 'nl');
 });
 
@@ -204,7 +235,7 @@ test('the retired spellings are refused with the name to use', async () => {
   ]) {
     const res = await call('POST', '/api/v1/presentations', {
       title: 'Retired',
-      [field]: field === 'language' ? 'en-GB' : 'midnight',
+      [field]: field === 'language' ? 'en-GB' : MIDNIGHT,
     });
     assert.equal(res.statusCode, 400, `${field} on create`);
     assert.equal(res.body.details.field, field);
@@ -217,13 +248,13 @@ test('the retired spellings are refused with the name to use', async () => {
     'nothing was created',
   );
 
-  const pres = await create({ title: 'Deck', theme: 'midnight' });
+  const pres = await create({ title: 'Deck', theme: MIDNIGHT });
   const res = await call('PUT', `/api/v1/presentations/${pres.id}`, {
-    themeId: 'amethyst',
+    themeId: AMETHYST,
   });
   assert.equal(res.statusCode, 400, 'themeId on update');
   assert.equal(res.body.details.use, 'theme');
-  assert.equal(storedDeck(db, pres.id).theme, 'midnight');
+  assert.equal(storedDeck(db, pres.id).theme, MIDNIGHT);
 });
 
 test('an unknown theme or unsupported lang is refused, not defaulted', async () => {
@@ -243,13 +274,13 @@ test('an unknown theme or unsupported lang is refused, not defaulted', async () 
   assert.equal(badLang.body.details.field, 'lang');
   assert.equal((db.__tables.presentations || []).length, 0);
 
-  const pres = await create({ title: 'Deck', theme: 'midnight', lang: 'nl' });
+  const pres = await create({ title: 'Deck', theme: MIDNIGHT, lang: 'nl' });
   const switchBad = await call('PUT', `/api/v1/presentations/${pres.id}`, {
     theme: 'no-such-theme',
   });
   assert.equal(switchBad.statusCode, 400);
   assert.equal(switchBad.body.details.field, 'theme');
-  assert.equal(storedDeck(db, pres.id).theme, 'midnight');
+  assert.equal(storedDeck(db, pres.id).theme, MIDNIGHT);
 
   const langChange = await call('PUT', `/api/v1/presentations/${pres.id}`, {
     lang: 'en-GB',
@@ -276,10 +307,10 @@ test('`default` is its own value: stored as-is, echoed back, and a switch to it 
   assert.equal(echo.statusCode, 200, 'the echoed `default` is a plain save');
 
   const pinned = await call('PUT', `/api/v1/presentations/${pres.id}`, {
-    theme: 'midnight',
+    theme: MIDNIGHT,
   });
   assert.equal(pinned.statusCode, 200);
-  assert.equal(storedDeck(db, pres.id).theme, 'midnight');
+  assert.equal(storedDeck(db, pres.id).theme, MIDNIGHT);
 
   // Back to following the installation's default. This used to store the
   // id the default happened to be, so the deck stopped following it.
@@ -302,10 +333,10 @@ test('another spelling of a known theme is refused, not repaired', async () => {
   }
   assert.equal((db.__tables.presentations || []).length, 0);
 
-  const pres = await create({ title: 'Deck', theme: 'amethyst' });
+  const pres = await create({ title: 'Deck', theme: AMETHYST });
   const res = await call('PUT', `/api/v1/presentations/${pres.id}`, {
     theme: 'Midnight',
   });
   assert.equal(res.statusCode, 400);
-  assert.equal(storedDeck(db, pres.id).theme, 'amethyst');
+  assert.equal(storedDeck(db, pres.id).theme, AMETHYST);
 });

@@ -397,7 +397,9 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
   const titleLogo = dbTheme.logoSmallUrl || mainLogo;
 
   const theme = {
-    id: dbTheme.slug || dbTheme.id,
+    id: dbTheme.id,
+    slug: dbTheme.slug,
+    source: dbTheme.organizationId ? 'organization' : 'seed',
     label: dbTheme.label,
     defaultTitleSlide: 'title-slide',
     assets: {
@@ -419,9 +421,6 @@ export function buildThemeConfig(dbTheme, { managedFonts } = {}) {
     embedFonts,
     externalFontLinks,
     backgroundPresets: [],
-    // Mark as custom theme for the system
-    _isCustomTheme: true,
-    _customThemeId: dbTheme.id,
   };
 
   // Everything above is derived from the four colours and two fonts. The stored

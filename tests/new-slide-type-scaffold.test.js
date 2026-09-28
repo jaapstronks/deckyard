@@ -60,7 +60,7 @@ test('the default scaffold validates clean and renders', async () => {
       name: 'acme-hero-slide',
       label: 'Acme hero',
       fields,
-      themeId: null,
+      themeOnly: false,
       namespace: null,
     }),
   );
@@ -85,7 +85,7 @@ test('the scaffold escapes content rather than interpolating it raw', async () =
       name: 'esc-slide',
       label: 'Esc',
       fields,
-      themeId: null,
+      themeOnly: false,
       namespace: null,
     }),
   );
@@ -129,7 +129,7 @@ test('every scaffoldable field type produces a valid definition', async () => {
       name: 'wide-slide',
       label: 'Wide',
       fields,
-      themeId: 'acme-theme',
+      themeOnly: true,
       namespace: 'acme',
     }),
   );
@@ -138,7 +138,7 @@ test('every scaffoldable field type produces a valid definition', async () => {
   });
   assert.deepEqual(report.errors, []);
   assert.deepEqual(report.warnings, []);
-  assert.equal(def.themeId, 'acme-theme');
+  assert.equal(def.themeOnly, true);
   assert.equal(def.namespace, 'acme');
   // A number default must be 0, not '' — an empty string fails number validation.
   assert.equal(def.defaults[keyFor('number')], 0);
@@ -159,7 +159,7 @@ test('an enum renders through the shared badge partial', async () => {
     name: 'chip-slide',
     label: 'Chip',
     fields,
-    themeId: null,
+    themeOnly: false,
     namespace: null,
   });
   assert.match(
