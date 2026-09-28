@@ -27,47 +27,51 @@
   opacity: 0.92;
 }
 
+/* Two ways in, side by side: the QR on its own plate, the /go address and
+   code as plain type on the slide. Only the QR gets a surface - it is the one
+   method that needs one - so there is no second card to leave half empty. */
 .slide-follow-invite .sfi-methods {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--slide-space-6);
-  align-items: stretch;
+  grid-template-columns: auto 1fr;
+  gap: var(--slide-space-12);
+  align-items: center;
 }
 
-/* The one card that sits on the default card anchors: it has a single density,
-   so it re-declares nothing and reads --slide-card-padding /
-   --slide-font-size-card-title straight from 00-tokens.css
-   (slide-roles.md § The card pattern). */
-.slide-follow-invite .sfi-card {
-  background: rgba(255, 255, 255, 0.92);
-  border: 2px solid rgba(0, 0, 0, 0.1);
+/* The one fixed colour on this slide, on purpose: a phone camera needs dark
+   modules on a light quiet zone, whatever the theme's surfaces are. The plate
+   hugs the code; no border and no shadow, so it reads as part of the slide
+   rather than a widget stuck on it (B502). `on-surface-light` in the markup
+   gives its label the matching text colour (nested-surfaces.md). It is not a
+   card: a label over media, like a gallery tile, so it speaks plain steps
+   rather than the card roles (slide-roles.md § The card pattern). */
+.slide-follow-invite .sfi-qr-plate {
+  background: #ffffff;
   border-radius: var(--slide-radius-md);
-  padding: var(--slide-card-padding);
+  padding: var(--slide-space-6);
   display: grid;
-  grid-template-rows: auto 1fr;
   gap: var(--slide-space-3);
-  box-shadow: var(--slide-shadow-lg);
 }
 
-.slide-follow-invite .sfi-card-title {
-  font-size: var(--slide-font-size-card-title);
+.slide-follow-invite .sfi-method-label {
+  font-size: var(--slide-text-md);
   font-weight: 900;
   letter-spacing: -0.01em;
   opacity: 0.88;
 }
 
-.slide-follow-invite .sfi-qr-wrap {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  padding: var(--slide-space-3);
-}
-
 .slide-follow-invite .sfi-qr {
-  width: min(380px, 100%);
+  width: 400px;
+  max-width: 100%;
   height: auto;
   display: block;
+}
+
+/* No surface of its own: the text column sits on the slide and takes the
+   slide's text colour, on every background variant. */
+.slide-follow-invite .sfi-link {
+  display: grid;
+  align-content: center;
+  gap: var(--slide-space-5);
 }
 
 .slide-follow-invite .sfi-code-row {
@@ -89,7 +93,6 @@
   font-size: var(--slide-text-2xl);
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: rgba(0, 0, 0, 0.88);
   text-decoration: underline;
   text-decoration-thickness: 4px;
   text-underline-offset: 6px;
