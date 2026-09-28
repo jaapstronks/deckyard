@@ -8,7 +8,8 @@
  *      intentional sub-500 errors surface a message; unexpected errors don't.
  * L5 — weak custom-type CSS filter. Now shares filterCssText with the custom-html
  *      slide (strips @import / expression() / javascript: / </style>).
- * L6 — SSRF in font embedding. fetchFontAsDataUrl now uses the shared SSRF guard.
+ * L6 — SSRF in font embedding. Retired with the fetch itself: the export no
+ *      longer requests a font URL at all (D244, B511).
  * L7 — SSRF in outbound webhooks. postJson now uses the shared SSRF guard.
  * L8 — public analytics report checked the dead `settings.visibility` field
  *      instead of `scope`; source-verified below.
@@ -24,7 +25,6 @@ import { fileURLToPath } from 'node:url';
 import { buildTopLevelErrorBody } from '../server/utils/error-response.js';
 import { filterCssText } from '../shared/css-filter.js';
 import { redactSecret } from '../server/utils/log-redact.js';
-import { fetchFontAsDataUrl } from '../server/utils/embed-fonts.js';
 import { postJson } from '../server/utils/webhooks.js';
 
 const readSrc = (rel) =>
@@ -120,41 +120,6 @@ test('L5: the custom-type runtime and custom-html slide share one filter', async
     slide,
     /from '\.\.\/\.\.\/css-filter\.js'/,
     'slide imports the shared filter',
-  );
-});
-
-// ============================================================================
-// L6 — font-embed SSRF guard
-// ============================================================================
-
-test('L6: fetchFontAsDataUrl rejects loopback/private/metadata/IPv6 literals', async () => {
-  const blocked = [
-    'http://127.0.0.1/f.woff2',
-    'http://169.254.169.254/f.woff2',
-    'http://[::1]/f.woff2',
-    'http://[::ffff:169.254.169.254]/f.woff2',
-  ];
-  for (const url of blocked) {
-    await assert.rejects(
-      () => fetchFontAsDataUrl(url),
-      /internal addresses/,
-      url,
-    );
-  }
-});
-
-test('L6: fetchFontAsDataUrl rejects non-http schemes and malformed URLs', async () => {
-  await assert.rejects(
-    () => fetchFontAsDataUrl('ftp://example.com/f.woff2'),
-    /HTTP\(S\)/,
-  );
-  await assert.rejects(
-    () => fetchFontAsDataUrl('file:///etc/passwd'),
-    /HTTP\(S\)/,
-  );
-  await assert.rejects(
-    () => fetchFontAsDataUrl('not-a-url'),
-    /Invalid font URL/,
   );
 });
 

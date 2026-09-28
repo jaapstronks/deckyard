@@ -146,18 +146,25 @@ test('duplicate embedFonts entries collapse instead of inlining twice', async (t
   assert.match(css, /font-weight: 400 700;/);
 });
 
-// B508, point 1: a font the export cannot read costs that font, never the
-// export. The URL is refused (no fetch leaves the box), the face is dropped,
-// and the family's token keeps its fallback stack for the render.
-test('buildEmbeddedFontCss skips a refused font URL instead of failing the export', async () => {
+// B508, point 1 + D244: a font the export cannot read costs that font, never
+// the export. A URL that is not a managed-font route is no source at all (no
+// request leaves the box): the face is dropped with a warning, and the
+// family's token keeps its fallback stack for the render.
+test('buildEmbeddedFontCss skips a non-managed font URL with a warning', async (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
   const theme = {
     embedFonts: [
       { family: 'Forked Face', url: '/custom/assets/fonts/x.woff2' },
-      { family: 'Internal Face', url: 'http://127.0.0.1/x.woff2' },
+      { family: 'Legacy Upload', url: '/uploads/x.woff2' },
+      { family: 'Remote Face', url: 'https://cdn.example.com/x.woff2' },
     ],
   };
   const css = await buildEmbeddedFontCss(repoRoot, theme);
-  assert.equal(css, '', 'both refused faces are skipped, nothing thrown');
+  assert.equal(css, '', 'every non-managed face is skipped, nothing thrown');
+  assert.equal(warn.mock.callCount(), 3);
+  for (const call of warn.mock.calls) {
+    assert.match(call.arguments.join(' '), /not a managed font URL/);
+  }
 });
 
 // B508, point 2: every curated family a font token names is embedded, not only
