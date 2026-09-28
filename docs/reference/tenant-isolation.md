@@ -239,7 +239,11 @@ missing is listed under _What is not done yet_ below.
   falls back to the person's oldest remaining membership; someone with no
   membership at all is refused. `users.organization_id` survives as the _home_
   organization — where a person lands without a session organization, and where
-  newly created rows go — not as the authority on where they may work.
+  newly created rows go — not as the authority on where they may work. The one
+  login path that creates people without an inviter, SSO JIT provisioning,
+  therefore also writes their first membership in that home organization
+  (`server/storage/sso.js`, see `sso-oidc.md`); a row without a membership
+  would otherwise log in and be refused on the next request.
 
   Lookups that ask "who is this?" are organization-independent; lookups that ask
   "who is in this organization?" (`server/storage/users.js`, the member lists,

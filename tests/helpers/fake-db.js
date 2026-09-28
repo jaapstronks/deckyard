@@ -784,6 +784,16 @@ export function createFakeDb(seed = {}) {
         state.offset = n;
         return builder;
       },
+      // Row locks are a PostgreSQL concern; the real concurrency test covers
+      // their effect. The double keeps the query shape usable for unit tests.
+      forUpdate() {
+        return builder;
+      },
+      async executeTakeFirstOrThrow() {
+        const row = await builder.executeTakeFirst();
+        if (!row) throw new Error('No result');
+        return row;
+      },
       async execute() {
         const list = contexts();
         if (state.aggregates.length && state.groupBy.length) {

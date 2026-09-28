@@ -128,6 +128,7 @@ export const REASONS = Object.freeze(
     forbidden: { status: 403, kind: 'caller' },
     not_invited: { status: 403, kind: 'caller' },
     not_member: { status: 403, kind: 'caller' },
+    no_membership: { status: 403, kind: 'caller' }, // SSO, access removed
     not_owner: { status: 403, kind: 'caller' },
     not_provisioned: { status: 403, kind: 'caller' }, // SSO, auto-provision off
     // Not a state conflict that could resolve: the default organization is

@@ -34,6 +34,15 @@ that same object:
    ID-token signature / issuer / audience, and extracts the claims.
 4. The user is provisioned or updated just-in-time (JIT) with
    `auth_source = 'oidc'`, and a normal Deckyard session cookie is minted.
+   With `MULTI_ORG_ENABLED=true` a session only resolves through an
+   organization membership, so a person who holds none is given one in their
+   home organization (`users.organization_id`) when `OIDC_AUTO_PROVISION` is
+   on: `owner` when that organization has no members yet, so the first login
+   on a fresh instance works without a database edit, `member` otherwise. With
+   auto-provisioning off, a known person without any membership is refused
+   (`?error=sso_no_membership`) rather than re-admitted: an invitation always
+   carries a membership, so a row without one is someone whose access was
+   removed.
 5. The browser is redirected to the app (or the original `returnTo` path).
 
 ## Configuration
