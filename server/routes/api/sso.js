@@ -214,7 +214,9 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
     return (redirect(res, `/login?error=sso_${result.reason}`), true);
   }
 
-  setSessionCookie(req, res, result.user);
+  setSessionCookie(req, res, result.user, {
+    organizationId: result.organizationId,
+  });
   // setSessionCookie replaces the Set-Cookie header, so re-clear the
   // one-time state cookie alongside the new session cookie.
   res.appendHeader('Set-Cookie', stateCookieHeader(req, '', 0));

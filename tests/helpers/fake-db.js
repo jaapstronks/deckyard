@@ -57,7 +57,7 @@ import crypto from 'node:crypto';
 export const UNIQUE_CONSTRAINTS = {
   users: [['email']],
   user_organizations: [['user_id', 'organization_id']],
-  organizations: [['slug']],
+  organizations: [['slug'], ['external_id']],
   // slide_locks unique is on (presentation_id, slide_id) only — organization_id
   // is NOT part of it (migration 023_slide_locks.js). Matching the real columns
   // is what lets the acquire-race test exercise the ON CONFLICT path.

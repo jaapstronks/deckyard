@@ -118,3 +118,26 @@ test('no admin groups configured → never admin from claims', () => {
   );
   assert.equal(id.isAdmin, false);
 });
+
+test('configured organization claim must be a non-empty string', () => {
+  const cfg = { ...BASE, orgClaim: 'urn:example:organization' };
+  const claims = { email: 'a@example.com', email_verified: true };
+  assert.throws(
+    () => mapClaimsToIdentity(claims, cfg),
+    (e) => e instanceof OidcError && e.reason === 'org_claim_missing',
+  );
+  assert.throws(
+    () =>
+      mapClaimsToIdentity(
+        { ...claims, 'urn:example:organization': ['alpha'] },
+        cfg,
+      ),
+    (e) => e instanceof OidcError && e.reason === 'org_claim_missing',
+  );
+  const identity = mapClaimsToIdentity(
+    { ...claims, 'urn:example:organization': ' alpha ' },
+    cfg,
+  );
+  assert.equal(identity.externalOrgId, 'alpha');
+  assert.equal(mapClaimsToIdentity(claims, BASE).externalOrgId, null);
+});

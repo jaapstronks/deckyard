@@ -16,6 +16,7 @@ const ORG_COLUMNS = [
   'id',
   'name',
   'slug',
+  'external_id',
   'logo_url',
   'display_name',
   'description',
@@ -122,6 +123,19 @@ export async function updateOrganization(organizationId, updates) {
     if ('displayName' in updates) updateData.display_name = updates.displayName;
     if ('description' in updates) updateData.description = updates.description;
     if ('logoUrl' in updates) updateData.logo_url = updates.logoUrl;
+    if ('externalId' in updates) {
+      if (updates.externalId) {
+        const conflict = await db
+          .selectFrom('organizations')
+          .select('id')
+          .where('external_id', '=', updates.externalId)
+          .executeTakeFirst();
+        if (conflict && conflict.id !== organizationId) {
+          return { ok: false, reason: 'external_id_exists' };
+        }
+      }
+      updateData.external_id = updates.externalId;
+    }
     if ('settings' in updates)
       updateData.settings = JSON.stringify(updates.settings);
 
@@ -197,6 +211,7 @@ function formatOrganization(row) {
     id: row.id,
     name: row.name,
     slug: row.slug,
+    externalId: row.external_id,
     logoUrl: row.logo_url,
     displayName: row.display_name,
     description: row.description,
