@@ -317,3 +317,29 @@ test('a top-level row offers Essential beside Required; an item row does not (D2
   const cleared = validateCustomFieldDefinitions(again.seen.fields);
   assert.equal('essential' in cleared.fields[0], false);
 });
+
+test('every boolean control is named by its label, and a click on the text toggles only its own row (B495)', () => {
+  const view = mount([
+    { key: 'title', type: 'string', label: 'Title' },
+    { key: 'body', type: 'string', label: 'Body' },
+  ]);
+  const boxes = [...view.el.querySelectorAll('input[type="checkbox"]')];
+  assert.ok(boxes.length >= 6, 'Required, Essential and media on both rows');
+  for (const box of boxes) {
+    assert.equal(box.labels.length, 1, 'each checkbox has exactly one label');
+    assert.ok(box.labels[0].textContent.trim(), 'and that label has a name');
+  }
+
+  for (const [text, property] of [
+    ['Required', 'required'],
+    ['Essential', 'essential'],
+  ]) {
+    const [first, second] = rows(view.el).map((row) => control(row, text));
+    assert.equal(first.labels[0].textContent.trim(), text);
+    first.labels[0].querySelector('span').click();
+    assert.equal(first.checked, true, `a click on "${text}" toggles its box`);
+    assert.equal(second.checked, false, 'and not the one in the other row');
+    assert.equal(view.seen.fields[0][property], true);
+    assert.equal(property in view.seen.fields[1], false);
+  }
+});
