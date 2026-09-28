@@ -111,7 +111,13 @@ test('the clear button renders immediately, without waiting for a timer', (t) =>
   const { input, clearBtn, getRebuilds, detach } = mount();
 
   typeChar(input, 'w'); // queue a debounced render
+  assert.equal(
+    clearBtn.hidden,
+    false,
+    'clear is visible as soon as text is entered',
+  );
   clearBtn.dispatchEvent(new dom.window.Event('click', { bubbles: true }));
+  assert.equal(clearBtn.hidden, true, 'clear is hidden after clicking it');
 
   assert.equal(getRebuilds(), 1, 'clear rebuilds synchronously');
 
@@ -119,6 +125,27 @@ test('the clear button renders immediately, without waiting for a timer', (t) =>
   t.mock.timers.tick(500);
   assert.equal(getRebuilds(), 1, 'the cancelled keystroke render never fires');
 
+  detach();
+});
+
+test('clear button follows input and programmatic resets', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const { panel, input, clearBtn, detach } = mount();
+  assert.equal(
+    clearBtn.hidden,
+    true,
+    'empty search has no focusable clear button',
+  );
+  typeChar(input, 'slide');
+  assert.equal(clearBtn.hidden, false, 'typing reveals clear before debounce');
+  input.dispatchEvent(
+    new dom.window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+  );
+  assert.equal(clearBtn.hidden, true, 'Escape hides clear');
+  panel.setSearchQuery('another');
+  assert.equal(clearBtn.hidden, false, 'programmatic query reveals clear');
+  panel.setSearchQuery('');
+  assert.equal(clearBtn.hidden, true, 'programmatic reset hides clear');
   detach();
 });
 
