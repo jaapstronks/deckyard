@@ -20,10 +20,9 @@ lands, treat the setting as "SSO-first", not "SSO-only".
 
 ## How it works
 
-Authentication is the only thing that changes; **authorization is unchanged**.
-Every route resolves identity to `{ email, role, isAdmin, ... }` and keys all
-access control on the (verified) email address. An OIDC login simply produces
-that same object:
+OIDC resolves the same verified email identity as the other login methods.
+With an organization claim configured, it also selects the organization for
+the session and grants a membership there when provisioning is enabled:
 
 1. `GET /api/auth/oidc/login` builds an OIDC authorization URL (PKCE + `state` +
    `nonce`), stores those in a short-lived signed cookie, and redirects to the
@@ -31,38 +30,51 @@ that same object:
 2. The IdP authenticates the user and redirects back to
    `GET /api/auth/oidc/callback`.
 3. The callback verifies `state`/`nonce`, exchanges the code, validates the
-   ID-token signature / issuer / audience, and extracts the claims.
+   ID-token issuer / audience / time claims, and extracts the claims. The ID
+   token comes straight from the token endpoint over TLS, so `openid-client`
+   does not verify its signature (OIDC Core 3.1.3.7 lets the TLS server check
+   stand in for it).
 4. The user is provisioned or updated just-in-time (JIT) with
    `auth_source = 'oidc'`, and a normal Deckyard session cookie is minted.
    With `MULTI_ORG_ENABLED=true` a session only resolves through an
-   organization membership, so a person who holds none is given one in their
-   home organization (`users.organization_id`) when `OIDC_AUTO_PROVISION` is
-   on: `owner` when that organization has no members yet, so the first login
-   on a fresh instance works without a database edit, `member` otherwise. With
-   auto-provisioning off, a known person without any membership is refused
-   (`?error=sso_no_membership`) rather than re-admitted: an invitation always
-   carries a membership, so a row without one is someone whose access was
-   removed.
+   organization membership. Without `OIDC_ORG_CLAIM`, a person who holds none
+   is given one in their home organization (`users.organization_id`) when
+   `OIDC_AUTO_PROVISION` is on: `owner` when that organization has no members
+   yet, so the first login on a fresh instance works without a database edit,
+   `member` otherwise. When `OIDC_ORG_CLAIM` is set, its verified ID-token
+   value must match a pre-existing `organizations.external_id`. The user gets a
+   membership there, and the session opens in that organization even if the
+   user belongs to other organizations. The new membership is `admin` for an
+   admin identity or `OIDC_DEFAULT_ROLE=admin`, otherwise `member`; an existing
+   membership keeps its role. No organization is created at login. A missing
+   claim or unknown external ID refuses login before creating a user, with a
+   message on the login page. With auto-provisioning off, a known person
+   without any membership (or, with a claim, without one in the claimed
+   organization) is refused (`?error=sso_no_membership`) rather than
+   re-admitted: an invitation always carries a membership, so a row without one
+   is someone whose access was removed. Every refusal happens before the user
+   row is touched: no name refresh, no admin grant, no session.
 5. The browser is redirected to the app (or the original `returnTo` path).
 
 ## Configuration
 
 Set these in `.env` (see `.env.example` for the annotated block):
 
-| Variable               | Required | Meaning                                                                                                                                                                                      |
-| ---------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SSO_ENABLED`          | yes      | `true` to turn SSO on.                                                                                                                                                                       |
-| `SSO_PROVIDER`         | yes      | `oidc` (only value supported today).                                                                                                                                                         |
-| `OIDC_ISSUER_URL`      | yes      | Issuer base URL; discovery uses `/.well-known/openid-configuration`.                                                                                                                         |
-| `OIDC_CLIENT_ID`       | yes      | Client ID from the IdP app registration.                                                                                                                                                     |
-| `OIDC_CLIENT_SECRET`   | yes      | Client secret (keep out of version control).                                                                                                                                                 |
-| `OIDC_REDIRECT_URI`    | yes      | Must exactly match the redirect URI registered at the IdP, e.g. `https://deck.example.com/api/auth/oidc/callback`.                                                                           |
-| `OIDC_ALLOWED_DOMAINS` | no       | Comma-separated email domains allowed to log in (hosted-domain guard).                                                                                                                       |
-| `OIDC_AUTO_PROVISION`  | no       | JIT-create unknown users on first login. Default `true`. Set `false` to require users be invited first.                                                                                      |
-| `OIDC_DEFAULT_ROLE`    | no       | Role for newly provisioned users: `user` (default) or `admin`.                                                                                                                               |
-| `OIDC_ADMIN_GROUPS`    | no       | Comma-separated IdP group/role claim values that map to the Deckyard `admin` role.                                                                                                           |
-| `SSO_ENFORCE`          | no       | `true` hides the password + magic-link forms on the login screen. Default `false`. Does **not** yet refuse those endpoints — see the status note above.                                      |
-| `SSO_BUTTON_LABEL`     | no       | The words on the SSO button, e.g. `Sign in with Acme ID`. The invite report that tells an inviter how a new member gets in names the same words. Default: the translated "Sign in with SSO". |
+| Variable               | Required | Meaning                                                                                                                                                                                                                                                                         |
+| ---------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SSO_ENABLED`          | yes      | `true` to turn SSO on.                                                                                                                                                                                                                                                          |
+| `SSO_PROVIDER`         | yes      | `oidc` (only value supported today).                                                                                                                                                                                                                                            |
+| `OIDC_ISSUER_URL`      | yes      | Issuer base URL; discovery uses `/.well-known/openid-configuration`.                                                                                                                                                                                                            |
+| `OIDC_CLIENT_ID`       | yes      | Client ID from the IdP app registration.                                                                                                                                                                                                                                        |
+| `OIDC_CLIENT_SECRET`   | yes      | Client secret (keep out of version control).                                                                                                                                                                                                                                    |
+| `OIDC_REDIRECT_URI`    | yes      | Must exactly match the redirect URI registered at the IdP, e.g. `https://deck.example.com/api/auth/oidc/callback`.                                                                                                                                                              |
+| `OIDC_ALLOWED_DOMAINS` | no       | Comma-separated email domains allowed to log in (hosted-domain guard).                                                                                                                                                                                                          |
+| `OIDC_AUTO_PROVISION`  | no       | JIT-create unknown users on first login. Default `true`. Set `false` to require users be invited first.                                                                                                                                                                         |
+| `OIDC_DEFAULT_ROLE`    | no       | Role for newly provisioned users: `user` (default) or `admin`.                                                                                                                                                                                                                  |
+| `OIDC_ADMIN_GROUPS`    | no       | Comma-separated IdP group/role claim values that map to the Deckyard `admin` role.                                                                                                                                                                                              |
+| `OIDC_ORG_CLAIM`       | no       | Exact ID-token claim name whose string value matches `organizations.external_id`. Set that value on an existing organization through `PATCH /api/organizations/:id` as an instance admin who also administers that organization (D243). Missing or unknown values refuse login. |
+| `SSO_ENFORCE`          | no       | `true` hides the password + magic-link forms on the login screen. Default `false`. Does **not** yet refuse those endpoints — see the status note above.                                                                                                                         |
+| `SSO_BUTTON_LABEL`     | no       | The words on the SSO button, e.g. `Sign in with Acme ID`. The invite report that tells an inviter how a new member gets in names the same words. Default: the translated "Sign in with SSO".                                                                                    |
 
 The sign-in card can carry the instance logo too: that is `APP_LOGO_URL`,
 the same logo the overview topbar shows (see `.env.example`, Branding).
@@ -93,6 +105,9 @@ rather than at first login.
 - An SSO login can **grant** admin but never auto-**demotes** — a transient
   missing group claim must not lock out every admin. Remove admin through the
   admin-users UI.
+- Instance `users.role` and organization membership roles are separate. A
+  claim-directed login opens the matched organization; it does not change
+  existing organization roles or grant ownership.
 
 ## Provider notes
 

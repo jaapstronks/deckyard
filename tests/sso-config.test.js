@@ -27,6 +27,7 @@ const SSO_KEYS = [
   'OIDC_AUTO_PROVISION',
   'OIDC_DEFAULT_ROLE',
   'OIDC_ADMIN_GROUPS',
+  'OIDC_ORG_CLAIM',
   'SSO_BUTTON_LABEL',
 ];
 
@@ -115,6 +116,7 @@ test('getOidcConfig parses lists, role, and auto-provision default', () => {
       OIDC_ALLOWED_DOMAINS: 'Example.com, other.org',
       OIDC_ADMIN_GROUPS: 'Deckyard-Admins,ops',
       OIDC_DEFAULT_ROLE: 'admin',
+      OIDC_ORG_CLAIM: 'urn:zitadel:iam:user:resourceowner:id',
     },
     () => {
       const c = getOidcConfig();
@@ -122,6 +124,7 @@ test('getOidcConfig parses lists, role, and auto-provision default', () => {
       assert.deepEqual(c.adminGroups, ['deckyard-admins', 'ops']);
       assert.equal(c.defaultRole, 'admin');
       assert.equal(c.autoProvision, true); // default when unset
+      assert.equal(c.orgClaim, 'urn:zitadel:iam:user:resourceowner:id');
     },
   );
   withEnv({ ...FULL, OIDC_AUTO_PROVISION: 'false' }, () => {
@@ -130,6 +133,23 @@ test('getOidcConfig parses lists, role, and auto-provision default', () => {
   withEnv({ ...FULL, OIDC_DEFAULT_ROLE: 'weird' }, () => {
     assert.equal(getOidcConfig().defaultRole, 'user'); // falls back to user
   });
+});
+
+test('organization claim remains active when SSO_ENFORCE is true', () => {
+  withEnv(
+    {
+      ...FULL,
+      SSO_ENFORCE: 'true',
+      OIDC_ORG_CLAIM: 'urn:zitadel:iam:user:resourceowner:id',
+    },
+    () => {
+      assert.equal(isSsoEnforced(), true);
+      assert.equal(
+        getOidcConfig().orgClaim,
+        'urn:zitadel:iam:user:resourceowner:id',
+      );
+    },
+  );
 });
 
 test('getSsoPublicConfig exposes no secret', () => {

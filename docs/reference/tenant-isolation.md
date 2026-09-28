@@ -241,9 +241,23 @@ missing is listed under _What is not done yet_ below.
   organization — where a person lands without a session organization, and where
   newly created rows go — not as the authority on where they may work. The one
   login path that creates people without an inviter, SSO JIT provisioning,
-  therefore also writes their first membership in that home organization
-  (`server/storage/sso.js`, see `sso-oidc.md`); a row without a membership
+  therefore also writes their first membership in that home organization by
+  default. With `OIDC_ORG_CLAIM` configured, the verified claim must match a
+  pre-existing, unique `organizations.external_id`; SSO writes a membership
+  there and pins the session to that organization. Missing and unknown claims
+  refuse login without creating an organization or user (`server/storage/sso.js`,
+  see `sso-oidc.md`); a row without a membership
   would otherwise log in and be refused on the next request.
+
+  The binding itself is instance authority, not an organization setting (D243).
+  An `external_id` decides where a stranger's next login lands, and uniqueness
+  only protects IDs that are already bound: an organization owner who could set
+  one would capture another customer's first login into their own organization.
+  `PATCH /api/organizations/:id` therefore refuses `externalId` (set, replace or
+  clear) unless the caller is an instance admin as well as an organization
+  admin, and refuses the whole request before writing, so a mixed profile edit
+  is not half-applied. The other profile fields keep the organization-admin
+  check.
 
   Lookups that ask "who is this?" are organization-independent; lookups that ask
   "who is in this organization?" (`server/storage/users.js`, the member lists,

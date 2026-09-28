@@ -512,8 +512,8 @@ function makeRes() {
 }
 
 /** Ask `/api/auth/me` with the cookie `setSessionCookie` minted for `user`. */
-async function authMe(user) {
-  const req = { ...requestWithSession(user, undefined), method: 'GET' };
+async function authMe(user, organizationId) {
+  const req = { ...requestWithSession(user, organizationId), method: 'GET' };
   const res = makeRes();
   await authRoutes.handleAuth({
     repoRoot: process.cwd(),
@@ -636,4 +636,149 @@ test('an SSO login for a person who already holds a membership writes none', asy
   assert.equal(result.ok, true);
   assert.equal(result.membership, null);
   assert.equal(db.__tables.user_organizations.length, 2);
+});
+
+test('an organization claim creates membership in its matching organization and pins the session', async () => {
+  const db = seedEmptyInstance();
+  db.__tables.organizations.push({
+    id: ORG_B,
+    name: 'Beta',
+    slug: 'beta',
+    external_id: 'idp-beta',
+  });
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'claim@example.com', externalOrgId: 'idp-beta' },
+    { autoProvision: true, defaultRole: 'user' },
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.organizationId, ORG_B);
+  assert.deepEqual(result.membership, {
+    organizationId: ORG_B,
+    role: 'member',
+  });
+  assert.equal(db.__tables.users[0].organization_id, ORG_B);
+  assert.equal(db.__tables.user_organizations[0].organization_id, ORG_B);
+  const res = await authMe(result.user, result.organizationId);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.user.organizationId, ORG_B);
+});
+
+test('an unknown organization claim refuses login before creating a user or membership', async () => {
+  const db = seedEmptyInstance();
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'unknown@example.com', externalOrgId: 'missing' },
+    { autoProvision: true },
+  );
+  assert.deepEqual(result, { ok: false, reason: 'org_not_found' });
+  assert.equal(db.__tables.users.length, 0);
+  assert.equal(db.__tables.user_organizations.length, 0);
+  assert.equal(db.__tables.organizations.length, 1);
+});
+
+test('an existing membership in the claimed organization keeps its role', async () => {
+  const db = seedMultiOrg();
+  db.__tables.organizations[1].external_id = 'idp-beta';
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'alice@example.com', externalOrgId: 'idp-beta', isAdmin: true },
+    { autoProvision: true },
+  );
+  assert.equal(result.ok, true);
+  assert.equal(result.organizationId, ORG_B);
+  assert.equal(result.membership, null);
+  assert.equal(db.__tables.user_organizations.length, 2);
+  assert.equal(db.__tables.user_organizations[1].role, 'owner');
+});
+
+test('a claim adds the target organization to a person with other memberships', async () => {
+  const db = seedMultiOrg({
+    memberships: [
+      {
+        id: 'membership-a',
+        user_id: 'user-alice',
+        organization_id: ORG_A,
+        role: 'member',
+        joined_at: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+  });
+  db.__tables.organizations[1].external_id = 'idp-beta';
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'alice@example.com', externalOrgId: 'idp-beta', isAdmin: true },
+    { autoProvision: true },
+  );
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.membership, { organizationId: ORG_B, role: 'admin' });
+  assert.equal(db.__tables.user_organizations.length, 2);
+  assert.equal(db.__tables.user_organizations[0].role, 'member');
+  const res = await authMe(result.user, result.organizationId);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.user.organizationId, ORG_B);
+  assert.equal(res.body.user.organizationRole, 'admin');
+});
+
+test('a claimed organization does not regrant a removed membership when auto-provisioning is off', async () => {
+  const db = seedMultiOrg({ memberships: [] });
+  db.__tables.organizations[1].external_id = 'idp-beta';
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'alice@example.com', externalOrgId: 'idp-beta' },
+    { autoProvision: false },
+  );
+  assert.equal(result.reason, 'no_membership');
+  assert.equal(db.__tables.user_organizations.length, 0);
+});
+
+// Review #1344 P2: the refusal used to land after the login update, so a
+// refused claim still renamed the person, flipped auth_source and granted
+// instance admin. A refusal is side-effect-free: every row as it was.
+test('a claim refused for want of membership leaves the user and memberships untouched', async () => {
+  const db = seedMultiOrg({
+    memberships: [
+      {
+        id: 'membership-a',
+        user_id: 'user-alice',
+        organization_id: ORG_A,
+        role: 'member',
+        is_designer: false,
+        joined_at: '2026-01-01T00:00:00.000Z',
+      },
+    ],
+  });
+  db.__tables.organizations[1].external_id = 'idp-beta';
+  const usersBefore = structuredClone(db.__tables.users);
+  const membershipsBefore = structuredClone(db.__tables.user_organizations);
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    {
+      email: 'alice@example.com',
+      name: 'Mallory Renamed',
+      externalOrgId: 'idp-beta',
+      isAdmin: true,
+    },
+    { autoProvision: false, defaultRole: 'user' },
+  );
+
+  assert.deepEqual(result, { ok: false, reason: 'no_membership' });
+  assert.deepEqual(db.__tables.users, usersBefore);
+  assert.deepEqual(db.__tables.user_organizations, membershipsBefore);
+});
+
+test('a login without a claim refused for want of any membership leaves the user untouched', async () => {
+  const db = seedMultiOrg({ memberships: [] });
+  const usersBefore = structuredClone(db.__tables.users);
+
+  const result = await ssoStore.getOrCreateSsoUser(
+    ctxIn(ORG_A),
+    { email: 'alice@example.com', name: 'Renamed', isAdmin: true },
+    { autoProvision: false },
+  );
+
+  assert.deepEqual(result, { ok: false, reason: 'no_membership' });
+  assert.deepEqual(db.__tables.users, usersBefore);
+  assert.equal(db.__tables.user_organizations.length, 0);
 });

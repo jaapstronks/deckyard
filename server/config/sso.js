@@ -79,6 +79,7 @@ export function getOidcConfig() {
     autoProvision: envBool('OIDC_AUTO_PROVISION', true),
     defaultRole,
     adminGroups: envList('OIDC_ADMIN_GROUPS'),
+    orgClaim: envStr('OIDC_ORG_CLAIM'),
   };
 }
 

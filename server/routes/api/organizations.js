@@ -14,7 +14,10 @@ import {
   unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
-import { getTrimmedString } from '../../utils/request-validators.js';
+import {
+  getOptionalString,
+  getTrimmedString,
+} from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import {
@@ -38,6 +41,7 @@ import { getUserByEmailGlobal } from '../../storage/identity.js';
  */
 const ORGANIZATION_FAILURE_MESSAGES = {
   slug_exists: 'An organization with this slug already exists',
+  external_id_exists: 'An organization with this external ID already exists',
   cannot_delete_default: 'The default organization cannot be deleted',
 };
 
@@ -155,7 +159,7 @@ async function handleOrgGet({ res, userId }, orgId) {
 }
 
 // PATCH /api/organizations/:id - Update organization
-async function handleOrgUpdate({ req, res, userId }, orgId) {
+async function handleOrgUpdate({ req, res, userId, authedUser }, orgId) {
   // Check membership and admin permission
   const membership = await getMembership(userId, orgId);
   if (!membership) {
@@ -169,6 +173,13 @@ async function handleOrgUpdate({ req, res, userId }, orgId) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // The external ID routes OIDC logins across the whole instance (D243): an
+  // organization admin binding an unclaimed IdP organization would capture
+  // another customer's next login. Refused before any field is written, so a
+  // mixed profile + externalId request leaves the record untouched.
+  if ('externalId' in body && !authedUser?.isAdmin) {
+    return forbidden(res, 'Instance admin access required to set external ID');
+  }
   const updates = {};
 
   if ('name' in body) {
@@ -193,6 +204,18 @@ async function handleOrgUpdate({ req, res, userId }, orgId) {
 
   if ('logoUrl' in body) {
     updates.logoUrl = body.logoUrl ? String(body.logoUrl).trim() : null;
+  }
+
+  if ('externalId' in body) {
+    const rawExternalId = getOptionalString(body, 'externalId');
+    if (body.externalId !== null && rawExternalId === null) {
+      return badRequest(res, 'External ID must be a string or null');
+    }
+    const externalId = rawExternalId?.trim() || null;
+    if (externalId && externalId.length > 255) {
+      return badRequest(res, 'External ID must be at most 255 characters');
+    }
+    updates.externalId = externalId;
   }
 
   if (Object.keys(updates).length === 0) {

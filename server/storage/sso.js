@@ -38,19 +38,32 @@ function getAdminEmail() {
  * including concurrent first logins. Recheck the user's memberships after
  * acquiring it: another login may have provisioned the same person meanwhile.
  *
- * @param {object} user - Raw `users` row, after the upsert
+ * @param {object} user - Raw `users` row: freshly inserted, or as found
+ *   before this login's update (a refusal must not have written it)
  * @param {boolean} autoProvision - The operator's provisioning policy
+ * @param {string | null} targetOrgId - Organization matched from an OIDC claim
+ * @param {'admin' | 'member'} role - Role for a new claimed membership
  * @returns {Promise<{ ok: true, membership: { organizationId: string, role: string } | null }
  *   | { ok: false, reason: string }>}
  */
-async function ensureMembership(db, user, autoProvision) {
+async function ensureMembership(db, user, autoProvision, targetOrgId, role) {
   if (!isMultiOrgEnabled()) return { ok: true, membership: null };
 
-  const held = await listUserOrganizations(user.id);
-  if (held.length) return { ok: true, membership: null };
+  if (targetOrgId) {
+    const existing = await db
+      .selectFrom('user_organizations')
+      .select('id')
+      .where('user_id', '=', user.id)
+      .where('organization_id', '=', targetOrgId)
+      .executeTakeFirst();
+    if (existing) return { ok: true, membership: null };
+  } else {
+    const held = await listUserOrganizations(user.id);
+    if (held.length) return { ok: true, membership: null };
+  }
   if (!autoProvision) return { ok: false, reason: 'no_membership' };
 
-  const organizationId = user.organization_id;
+  const organizationId = targetOrgId || user.organization_id;
   return db.transaction().execute(async (trx) => {
     await trx
       .selectFrom('organizations')
@@ -59,11 +72,18 @@ async function ensureMembership(db, user, autoProvision) {
       .forUpdate()
       .executeTakeFirstOrThrow();
 
-    const existing = await trx
+    let membershipQuery = trx
       .selectFrom('user_organizations')
       .select('id')
-      .where('user_id', '=', user.id)
-      .executeTakeFirst();
+      .where('user_id', '=', user.id);
+    if (targetOrgId) {
+      membershipQuery = membershipQuery.where(
+        'organization_id',
+        '=',
+        organizationId,
+      );
+    }
+    const existing = await membershipQuery.executeTakeFirst();
     if (existing) return { ok: true, membership: null };
 
     const count = await trx
@@ -71,20 +91,24 @@ async function ensureMembership(db, user, autoProvision) {
       .select((eb) => eb.fn.countAll().as('count'))
       .where('organization_id', '=', organizationId)
       .executeTakeFirst();
-    const role = Number(count?.count || 0) === 0 ? 'owner' : 'member';
+    const membershipRole = targetOrgId
+      ? role
+      : Number(count?.count || 0) === 0
+        ? 'owner'
+        : 'member';
     const now = nowIso();
     await trx
       .insertInto('user_organizations')
       .values({
         user_id: user.id,
         organization_id: organizationId,
-        role,
+        role: membershipRole,
         joined_at: now,
         created_at: now,
         updated_at: now,
       })
       .execute();
-    return { ok: true, membership: { organizationId, role } };
+    return { ok: true, membership: { organizationId, role: membershipRole } };
   });
 }
 
@@ -101,7 +125,7 @@ async function ensureMembership(db, user, autoProvision) {
  * see {@link ensureMembership} for when one is written and which role it gets.
  *
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
- * @param {{ email: string, name?: string, isAdmin?: boolean }} identity - From
+ * @param {{ email: string, name?: string, isAdmin?: boolean, externalOrgId?: string | null }} identity - From
  *   {@link mapClaimsToIdentity}.
  * @param {object} opts
  * @param {boolean} opts.autoProvision - When false, unknown users are rejected
@@ -109,6 +133,7 @@ async function ensureMembership(db, user, autoProvision) {
  *   rather than given one.
  * @param {string} opts.defaultRole - Role for newly provisioned users ('user'|'admin').
  * @returns {Promise<{ ok: true, user: object, provisioned: boolean,
+ *   organizationId: string | null,
  *   membership: { organizationId: string, role: string } | null }
  *   | { ok: false, reason: string }>} `membership` names the organization
  *   membership this login created, or null when none was needed.
@@ -125,7 +150,16 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
   const defaultRole = opts?.defaultRole === 'admin' ? 'admin' : 'user';
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(scope);
+    let orgId = getOrgId(scope);
+    if (identity.externalOrgId) {
+      const organization = await db
+        .selectFrom('organizations')
+        .select('id')
+        .where('external_id', '=', identity.externalOrgId)
+        .executeTakeFirst();
+      if (!organization) return { ok: false, reason: 'org_not_found' };
+      orgId = organization.id;
+    }
     const now = nowIso();
 
     // Resolved across organizations: the IdP asserts an email, and that email
@@ -155,6 +189,18 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
       user = inserted || (await getUserByEmailGlobal(email));
       provisioned = Boolean(inserted);
     }
+    // Membership first: a refused login (no_membership) must leave the
+    // existing user row untouched - no rename, no admin grant, no
+    // auth_source flip. The membership does not depend on the update below.
+    const membershipResult = await ensureMembership(
+      db,
+      user,
+      !!opts?.autoProvision,
+      identity.externalOrgId ? orgId : null,
+      grantsAdmin || defaultRole === 'admin' ? 'admin' : 'member',
+    );
+    if (!membershipResult.ok) return membershipResult;
+
     if (!provisioned) {
       // Update on login: keep name fresh, mark the source as SSO, and grant
       // admin if the identity says so (never demote — see policy above).
@@ -175,13 +221,6 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
       if (updates.name) invalidateDisplayNames();
     }
 
-    const membershipResult = await ensureMembership(
-      db,
-      user,
-      !!opts?.autoProvision,
-    );
-    if (!membershipResult.ok) return membershipResult;
-
     const adminEmail = getAdminEmail();
     const role =
       user.role === 'admin' || email === adminEmail ? 'admin' : 'user';
@@ -190,6 +229,7 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
       ok: true,
       provisioned,
       membership: membershipResult.membership,
+      organizationId: identity.externalOrgId ? orgId : null,
       user: {
         id: user.id,
         email: user.email,
