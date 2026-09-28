@@ -4,6 +4,19 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.47.0](https://github.com/jaapstronks/deckyard/compare/v1.46.0...v1.47.0) (2026-09-28)
+
+
+### Added
+
+* store uploaded font variants privately and serve them from the app (B510) ([#1349](https://github.com/jaapstronks/deckyard/issues/1349)) ([04a113e](https://github.com/jaapstronks/deckyard/commit/04a113e8eb3c54da1b97843303425b1e8850ed33))
+
+
+### Fixed
+
+* **export:** an unreadable font costs that font, and every font role embeds its curated family (B508) ([#1353](https://github.com/jaapstronks/deckyard/issues/1353)) ([d2300bb](https://github.com/jaapstronks/deckyard/commit/d2300bb0965c5eabb54e9009d59a1f0f0014b099))
+* **share-viewer:** read the analytics preference the way follow does (B503) ([#1350](https://github.com/jaapstronks/deckyard/issues/1350)) ([87e309b](https://github.com/jaapstronks/deckyard/commit/87e309b388a7b762bc0698ed44a0a641d1c13454))
+
 ## [1.46.0](https://github.com/jaapstronks/deckyard/compare/v1.45.0...v1.46.0) (2026-09-28)
 
 
