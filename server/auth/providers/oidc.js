@@ -178,7 +178,7 @@ function extractName(claims) {
  *
  * @param {object} claims - Verified ID-token claims.
  * @param {object} [oidc] - Config from {@link getOidcConfig}.
- * @returns {{ email: string, name: string, isAdmin: boolean, groups: string[] }}
+ * @returns {{ email: string, name: string, isAdmin: boolean, groups: string[], externalOrgId: string | null }}
  */
 export function mapClaimsToIdentity(claims, oidc = getOidcConfig()) {
   const email = normalizeEmail(claims?.email);
@@ -216,7 +216,19 @@ export function mapClaimsToIdentity(claims, oidc = getOidcConfig()) {
     ? oidc.adminGroups.some((g) => groups.includes(g))
     : false;
 
-  return { email, name: extractName(claims), isAdmin, groups };
+  let externalOrgId = null;
+  if (oidc.orgClaim) {
+    const value = claims?.[oidc.orgClaim];
+    if (typeof value !== 'string' || !value.trim()) {
+      throw new OidcError(
+        'org_claim_missing',
+        'ID token has no organization claim',
+      );
+    }
+    externalOrgId = value.trim();
+  }
+
+  return { email, name: extractName(claims), isAdmin, groups, externalOrgId };
 }
 
 /** Best-effort log of a discovery failure without leaking secrets. */

@@ -86,6 +86,7 @@ export const REASONS = Object.freeze(
     already_member: { status: 409, kind: 'caller' },
     already_voted: { status: 409, kind: 'caller' },
     slug_exists: { status: 409, kind: 'caller' },
+    external_id_exists: { status: 409, kind: 'caller' },
     closed: { status: 409, kind: 'caller' },
     disabled: { status: 409, kind: 'caller' },
     held: { status: 409, kind: 'caller' },
@@ -129,6 +130,7 @@ export const REASONS = Object.freeze(
     not_invited: { status: 403, kind: 'caller' },
     not_member: { status: 403, kind: 'caller' },
     no_membership: { status: 403, kind: 'caller' }, // SSO, access removed
+    org_not_found: { status: 403, kind: 'caller' }, // SSO claim has no configured organization
     not_owner: { status: 403, kind: 'caller' },
     not_provisioned: { status: 403, kind: 'caller' }, // SSO, auto-provision off
     // Not a state conflict that could resolve: the default organization is

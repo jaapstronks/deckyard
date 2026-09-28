@@ -38,6 +38,7 @@ import { getUserByEmailGlobal } from '../../storage/identity.js';
  */
 const ORGANIZATION_FAILURE_MESSAGES = {
   slug_exists: 'An organization with this slug already exists',
+  external_id_exists: 'An organization with this external ID already exists',
   cannot_delete_default: 'The default organization cannot be deleted',
 };
 
@@ -193,6 +194,17 @@ async function handleOrgUpdate({ req, res, userId }, orgId) {
 
   if ('logoUrl' in body) {
     updates.logoUrl = body.logoUrl ? String(body.logoUrl).trim() : null;
+  }
+
+  if ('externalId' in body) {
+    if (body.externalId !== null && typeof body.externalId !== 'string') {
+      return badRequest(res, 'External ID must be a string or null');
+    }
+    const externalId = body.externalId?.trim() || null;
+    if (externalId && externalId.length > 255) {
+      return badRequest(res, 'External ID must be at most 255 characters');
+    }
+    updates.externalId = externalId;
   }
 
   if (Object.keys(updates).length === 0) {

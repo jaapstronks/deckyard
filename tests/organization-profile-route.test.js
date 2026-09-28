@@ -292,6 +292,35 @@ test('a one-character name is refused, so the form checks the same thing', async
   assert.equal(res.status, 400);
 });
 
+test('an organization admin can set a unique external ID and clear it', async () => {
+  const db = seed();
+  const set = await callOrganizations('PATCH', 'admin', {
+    body: { externalId: ' idp-beta ' },
+  });
+  assert.equal(set.status, 200);
+  assert.equal(set.body.organization.externalId, 'idp-beta');
+  assert.equal(db.__tables.organizations[0].external_id, 'idp-beta');
+
+  const duplicate = await callOrganizations('PATCH', 'owner', {
+    organizationId: DEFAULT_ORG,
+    email: 'owner-aa@example.com',
+    body: { externalId: 'idp-beta' },
+  });
+  assert.equal(duplicate.status, 409);
+  assert.equal(db.__tables.organizations[1].external_id, undefined);
+
+  const denied = await callOrganizations('PATCH', 'member', {
+    body: { externalId: 'other' },
+  });
+  assert.equal(denied.status, 403);
+
+  const cleared = await callOrganizations('PATCH', 'owner', {
+    body: { externalId: null },
+  });
+  assert.equal(cleared.status, 200);
+  assert.equal(cleared.body.organization.externalId, null);
+});
+
 test('only the fields that are sent are touched', async () => {
   const db = seed();
   await callOrganizations('PATCH', 'owner', {

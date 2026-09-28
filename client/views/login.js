@@ -40,6 +40,14 @@ function ssoErrorMessage(code) {
       'login.ssoErrNoMembership',
       'Your account is not a member of any workspace here. Ask an administrator to add you.',
     ),
+    sso_org_claim_missing: t(
+      'login.ssoErrOrgClaimMissing',
+      'Your identity provider did not send a workspace ID. Ask an administrator to check its configuration.',
+    ),
+    sso_org_not_found: t(
+      'login.ssoErrOrgNotFound',
+      'This workspace is not configured here. Ask an administrator to check its external ID.',
+    ),
   };
   return (
     map[code] ||

@@ -241,8 +241,12 @@ missing is listed under _What is not done yet_ below.
   organization — where a person lands without a session organization, and where
   newly created rows go — not as the authority on where they may work. The one
   login path that creates people without an inviter, SSO JIT provisioning,
-  therefore also writes their first membership in that home organization
-  (`server/storage/sso.js`, see `sso-oidc.md`); a row without a membership
+  therefore also writes their first membership in that home organization by
+  default. With `OIDC_ORG_CLAIM` configured, the verified claim must match a
+  pre-existing, unique `organizations.external_id`; SSO writes a membership
+  there and pins the session to that organization. Missing and unknown claims
+  refuse login without creating an organization or user (`server/storage/sso.js`,
+  see `sso-oidc.md`); a row without a membership
   would otherwise log in and be refused on the next request.
 
   Lookups that ask "who is this?" are organization-independent; lookups that ask
