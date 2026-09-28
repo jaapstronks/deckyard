@@ -95,6 +95,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--ps-space-2);
+  position: relative;
 }
 
 .presentation-card-title-row .presentation-title {
@@ -132,6 +133,23 @@
 
 .presentation-card-meta .small {
   color: hsl(var(--app-text-secondary));
+}
+
+.presentation-card-open {
+  align-self: flex-start;
+  color: hsl(var(--app-accent-text));
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+}
+
+.presentation-card:hover .presentation-card-open,
+.presentation-card:focus-visible .presentation-card-open {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.presentation-card.is-selection-mode .presentation-card-open {
+  display: none;
 }
 
 .presentation-author-row {
@@ -349,48 +367,39 @@
   -webkit-box-orient: vertical;
 }
 
-/* One-click Present button, centered over the thumbnail on hover/focus. */
+/* Present stays available on touch and keyboard, away from the main action. */
 .presentation-card-present {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%) scale(0.96);
+  top: 8px;
+  right: 8px;
   z-index: 10;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: var(--ps-text-sm);
-  padding: 8px 16px;
-  opacity: 0;
-  pointer-events: none;
-  box-shadow: var(--app-shadow-lg);
-  transition:
-    opacity var(--ps-transition-fast),
-    transform var(--ps-transition-fast);
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  box-shadow: var(--app-shadow-sm);
+  cursor: pointer;
 }
 
-.presentation-card:hover .presentation-card-present,
-.presentation-card:focus-within .presentation-card-present {
-  opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
-  pointer-events: auto;
+.presentation-card-present:hover {
+  background: hsl(var(--app-bg-hover));
+}
+
+.presentation-card-present:focus-visible {
+  outline: 2px solid hsl(var(--app-border-focus));
+  outline-offset: 2px;
 }
 
 /* In selection mode the card toggles selection, so hide the Present shortcut. */
 .presentation-card.is-selection-mode .presentation-card-present,
 .presentation-card.is-selected .presentation-card-present {
   display: none;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .presentation-card-present {
-    transition: opacity var(--ps-transition-fast);
-    transform: translate(-50%, -50%);
-  }
-  .presentation-card:hover .presentation-card-present,
-  .presentation-card:focus-within .presentation-card-present {
-    transform: translate(-50%, -50%);
-  }
 }
 
 /* ============================================================
