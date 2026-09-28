@@ -25,14 +25,23 @@ async function resolveEmbedSource(repoRoot, { url, path: relPath, format }) {
   if (url) {
     // An uploaded font variant: a private object, read through the media
     // provider. It has no public URL, by design, and no other URL
-    // form is embedded (D244). A missing object costs this one font, not the
-    // export: the family's token already carries its fallback stack.
+    // form is embedded (D244). An object that is missing or that storage
+    // cannot read (permissions, network) costs this one font, not the export:
+    // the family's token already carries its fallback stack (B508, B539).
     const managedKey = managedFontKeyFromUrl(url);
     if (!managedKey) {
       log.warn(`Skipping font ${url}: not a managed font URL`);
       return null;
     }
-    const buf = await getMediaProvider().readFile(managedKey);
+    let buf;
+    try {
+      buf = await getMediaProvider().readFile(managedKey);
+    } catch (err) {
+      log.warn(
+        `Skipping font ${url}: stored object unreadable (${err?.message || err})`,
+      );
+      return null;
+    }
     if (!buf) {
       log.warn(`Skipping font ${url}: stored object not found`);
       return null;
