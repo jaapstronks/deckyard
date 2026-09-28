@@ -177,8 +177,9 @@ export async function renderShareViewer(root, token) {
         config: presentation.themeConfig,
       });
 
-      // Initialize analytics tracking
-      if (isAnalyticsEnabled(presentation)) {
+      // The viewer's local preference is the only client-side check, as in
+      // follow; the owner's opt-out is enforced by the tracking route.
+      if (isAnalyticsEnabled()) {
         analyticsTracker = createAnalyticsTracker({
           presentationId: presentation.id,
           sourceType: 'share_link',

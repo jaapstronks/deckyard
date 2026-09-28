@@ -394,21 +394,12 @@ export function createAnalyticsTracker({
 }
 
 /**
- * Check if analytics tracking is enabled.
- * Can be disabled via presentation settings or user preferences.
- * @param {Object} [presentation] - Presentation object with settings
+ * Whether this viewer allows tracking: the local opt-out preference only.
+ * The owner's per-deck opt-out is not read here; the server refuses a
+ * session for such a deck (server/routes/api/analytics-track.js, D234), so
+ * there is one authority for that rule.
  * @returns {boolean}
  */
-export function isAnalyticsEnabled(presentation = null) {
-  // Check presentation settings
-  if (presentation?.settings?.analyticsEnabled === false) {
-    return false;
-  }
-
-  // Check user preference (localStorage)
-  if (storage.getBool('ps.analytics.disabled', false)) {
-    return false;
-  }
-
-  return true;
+export function isAnalyticsEnabled() {
+  return !storage.getBool('ps.analytics.disabled', false);
 }
