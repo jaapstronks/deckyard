@@ -144,6 +144,52 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
     assert.equal(app.enabledThemes, undefined);
   });
 
+  it('resolves the instance values for an organization that sets nothing, beside one that does', async () => {
+    await initializeThemeSeeds();
+    const seeds = await listSeedThemes();
+    const brand = seeds.find((theme) => theme.slug === DEFAULT_THEME_SLUG);
+    const amethyst = seeds.find((theme) => theme.slug === 'amethyst');
+    const orgA = testScope().organizationId;
+    const orgB = '22222222-2222-4222-8222-222222222222';
+    await db
+      .insertInto('organizations')
+      .values({ id: orgB, name: 'Bare', slug: 'bare-settings', settings: '{}' })
+      .execute();
+    await db
+      .updateTable('organizations')
+      .set({
+        settings: JSON.stringify({
+          defaultThemeId: brand.id,
+          enabledThemes: [brand.id],
+        }),
+      })
+      .where('id', '=', orgA)
+      .execute();
+    const previous = {
+      DEFAULT_THEME: process.env.DEFAULT_THEME,
+      ENABLED_THEMES: process.env.ENABLED_THEMES,
+    };
+    process.env.DEFAULT_THEME = 'amethyst';
+    process.env.ENABLED_THEMES = `amethyst,${DEFAULT_THEME_SLUG}`;
+    try {
+      assert.equal(
+        await getDefaultThemeId({ organizationId: orgB }),
+        amethyst.id,
+      );
+      assert.deepEqual(await getEnabledThemeIds({ organizationId: orgB }), [
+        amethyst.id,
+        brand.id,
+      ]);
+      assert.equal(await getDefaultThemeId(testScope()), brand.id);
+      assert.deepEqual(await getEnabledThemeIds(testScope()), [brand.id]);
+    } finally {
+      for (const [name, value] of Object.entries(previous)) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+      }
+    }
+  });
+
   it('drops a third-party analytics id that is not spelled like an id', async () => {
     // These land in the <head> of every published deck and embed, part of it
     // inside <script> — so the write path validates the charset instead of
