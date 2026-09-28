@@ -301,6 +301,12 @@ test('an organization admin can set a unique external ID and clear it', async ()
   assert.equal(set.body.organization.externalId, 'idp-beta');
   assert.equal(db.__tables.organizations[0].external_id, 'idp-beta');
 
+  const invalid = await callOrganizations('PATCH', 'admin', {
+    body: { externalId: 123 },
+  });
+  assert.equal(invalid.status, 400);
+  assert.equal(db.__tables.organizations[0].external_id, 'idp-beta');
+
   const duplicate = await callOrganizations('PATCH', 'owner', {
     organizationId: DEFAULT_ORG,
     email: 'owner-aa@example.com',

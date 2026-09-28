@@ -14,7 +14,10 @@ import {
   unauthorized,
   withErrorHandler,
 } from '../../utils/http.js';
-import { getTrimmedString } from '../../utils/request-validators.js';
+import {
+  getOptionalString,
+  getTrimmedString,
+} from '../../utils/request-validators.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import {
@@ -197,10 +200,11 @@ async function handleOrgUpdate({ req, res, userId }, orgId) {
   }
 
   if ('externalId' in body) {
-    if (body.externalId !== null && typeof body.externalId !== 'string') {
+    const rawExternalId = getOptionalString(body, 'externalId');
+    if (body.externalId !== null && rawExternalId === null) {
       return badRequest(res, 'External ID must be a string or null');
     }
-    const externalId = body.externalId?.trim() || null;
+    const externalId = rawExternalId?.trim() || null;
     if (externalId && externalId.length > 255) {
       return badRequest(res, 'External ID must be at most 255 characters');
     }
