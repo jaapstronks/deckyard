@@ -462,8 +462,8 @@ one draws the rule its route enforces rather than a wider or narrower one:
   signed-in user; off, only instance admins, and anyone else gets a 403 before
   anything is written. Off is the setting for a pre-provisioned instance, where
   the operator creates each customer's organization and a second one made by a
-  customer would be a workspace outside any contract. The check is the
-  instance role, not the organization role: starting a workspace is an
+  customer would be an organization outside any contract. The check is the
+  instance role, not the organization role: starting an organization is an
   instance-level act, and the organization role only narrows the instance role.
 - **Switching** — the organizations you belong to sit in the user menu, with the
   active one marked. Switching writes the session cookie and reloads the page in

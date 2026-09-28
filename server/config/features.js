@@ -56,7 +56,7 @@ export function isMultiOrgEnabled() {
  * On (default): `POST /api/organizations` is open to every user, as before.
  * Off: only instance admins may create one, for a pre-provisioned instance
  * where the operator creates each customer's organization and a customer who
- * made a second one would hold a workspace outside any contract.
+ * made a second one would hold an organization outside any contract.
  * Only meaningful with `MULTI_ORG_ENABLED`.
  * @returns {boolean}
  */

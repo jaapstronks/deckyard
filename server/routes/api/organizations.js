@@ -88,7 +88,7 @@ async function handleOrgList({ res, userId }) {
 
 // POST /api/organizations - Create a new organization
 async function handleOrgCreate({ req, res, userId, authedUser }) {
-  // Instance admin, not organization role: starting a new workspace is an
+  // Instance admin, not organization role: starting a new organization is an
   // instance-level act, and the organization role only narrows the instance
   // role (D67). Refused before the body is read, so nothing is written.
   if (!isMultiOrgUserCreateEnabled() && !authedUser?.isAdmin) {
