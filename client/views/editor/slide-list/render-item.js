@@ -180,12 +180,12 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
     // ignore render errors in list
   }
 
-  // Slide number overlay
-  const numOverlay = h('div', {
-    class: 'slide-num-overlay',
+  // Slide number in its own gutter beside the thumbnail, so it never covers
+  // slide content
+  const num = h('div', {
+    class: 'slide-num',
     text: String(Number(originalIdx) + 1),
   });
-  thumbMini.append(numOverlay);
 
   // Comment indicator
   const commentCount = getSlideCommentCount?.(s.id) || 0;
@@ -306,7 +306,10 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
     }
   }
 
-  item.append(numCollapsed, thumbMini);
+  item.append(
+    numCollapsed,
+    h('div', { class: 'slide-thumb-row' }, [num, thumbMini]),
+  );
   if (searchMeta) item.append(searchMeta);
 
   return { item, originalIdx, isChild };
