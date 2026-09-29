@@ -161,7 +161,15 @@ export async function closeDatabase() {
   if (db) {
     await db.destroy();
     db = null;
-    pool = null; // Pool is closed by db.destroy()
+    // `db.destroy()` ends the pool only when Kysely has initialized its driver,
+    // which happens lazily on the first query. A process that opened storage
+    // and then refused before querying (a CLI script's early exit) still holds
+    // the idle client from the connection test above, and stays alive on that
+    // socket. The pool is ours, so close it ourselves when Kysely did not.
+    if (pool && !pool.ending) {
+      await pool.end();
+    }
+    pool = null;
     log.info('Database connections closed');
   }
 }

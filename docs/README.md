@@ -200,6 +200,7 @@ nothing is discoverable only by `ls`.
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | [`../ops/self-hosting.md`](ops/self-hosting.md)                  | VPS deploy guide                                                                                                           |
 | [`../ops/agent-install.md`](ops/agent-install.md)                | Install Deckyard with an AI agent                                                                                          |
+| [`../ops/multi-organization.md`](ops/multi-organization.md)      | Run several organizations on one instance (runbook)                                                                        |
 | [`fork-setup.md`](reference/fork-setup.md)                       | Setting up a fork                                                                                                          |
 | [`storage-layer.md`](reference/storage-layer.md)                 | The `server/storage/` module map, Postgres adapter seam, and scope-based tenancy                                           |
 | [`tenant-isolation.md`](reference/tenant-isolation.md)           | Organizations and isolation shapes                                                                                         |
