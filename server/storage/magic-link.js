@@ -19,6 +19,7 @@ import {
   isValidEmail,
 } from '../utils/secure-tokens.js';
 import { withDbGuard } from './utils/index.js';
+import { ensureMembership } from './login-membership.js';
 
 // ============================================================
 // CONSTANTS
@@ -201,7 +202,9 @@ export async function consumeMagicToken(rawToken) {
 
 /**
  * Get or create a user for magic link login.
- * If user doesn't exist, create them with magic_link auth source.
+ * If user doesn't exist, create them with magic_link auth source. In
+ * multi-organization mode a person without any membership is given one, the
+ * same way an SSO login is ({@link ensureMembership}).
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} email - The user's email
  * @returns {Promise<Object>} - User object with session version
@@ -237,6 +240,20 @@ export async function getOrCreateMagicLinkUser(scope, email) {
         .executeTakeFirst();
       user = inserted;
     }
+
+    // A token is only issued for an existing `users` row (the request route),
+    // so whoever created that row already admitted the person: provisioning is
+    // always on here, and the role argument only applies to a claimed org.
+    // Without this, a user holding no membership would be signed in and
+    // bounced straight back to /login under MULTI_ORG_ENABLED (B507).
+    const membershipResult = await ensureMembership(
+      db,
+      user,
+      true,
+      null,
+      'member',
+    );
+    if (!membershipResult.ok) return membershipResult;
 
     // Session version, derived exactly as the request validator recomputes it.
     const v = sessionVersion(user);

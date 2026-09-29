@@ -782,3 +782,59 @@ test('a login without a claim refused for want of any membership leaves the user
   assert.deepEqual(db.__tables.users, usersBefore);
   assert.equal(db.__tables.user_organizations.length, 0);
 });
+
+// ---------------------------------------------------------------------------
+// Magic-link login writes the membership a session needs too (B507)
+// ---------------------------------------------------------------------------
+
+test('a first magic-link login on an empty instance becomes owner and reaches /api/auth/me', async () => {
+  const db = seedEmptyInstance();
+
+  const result = await magicLinkStore.getOrCreateMagicLinkUser(
+    ctxIn(ORG_A),
+    'first@example.com',
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(db.__tables.user_organizations.length, 1);
+  assert.equal(db.__tables.user_organizations[0].user_id, result.user.id);
+  assert.equal(db.__tables.user_organizations[0].organization_id, ORG_A);
+  assert.equal(db.__tables.user_organizations[0].role, 'owner');
+
+  // Without the membership this is the loop back to /login of B430, reached
+  // through the magic-link route instead.
+  const res = await authMe(result.user);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.user.email, 'first@example.com');
+  assert.equal(res.body.user.organizationId, ORG_A);
+});
+
+test('a magic-link login for a known person without any membership gives one in their home organization', async () => {
+  const db = seedMultiOrg({ memberships: [] });
+
+  const result = await magicLinkStore.getOrCreateMagicLinkUser(
+    ctxIn(ORG_A),
+    'alice@example.com',
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(db.__tables.users.length, 1);
+  assert.equal(db.__tables.user_organizations.length, 1);
+  assert.equal(db.__tables.user_organizations[0].organization_id, ORG_B);
+
+  const res = await authMe(result.user);
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.user.organizationId, ORG_B);
+});
+
+test('a magic-link login for a person who already holds a membership writes none', async () => {
+  const db = seedMultiOrg();
+
+  const result = await magicLinkStore.getOrCreateMagicLinkUser(
+    ctxIn(ORG_A),
+    'alice@example.com',
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(db.__tables.user_organizations.length, 2, 'only the seeded two');
+});
