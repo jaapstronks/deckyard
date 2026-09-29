@@ -21,19 +21,21 @@
  * Run with: node --test tests/export-theme-var-assets.test.js
  */
 
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { loadExportCssBundle } from '../server/export/css-bundle.js';
 import { normalizeTheme } from '../shared/theme-normalize.js';
 import { themeVarsCssText } from '../server/utils/themes.js';
+import { createCoreFixtureRoot } from './helpers/core-fixture-root.js';
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..',
+// Core only: since B554 the fork seam's `url()`s share the cache and the
+// transform with the theme vars, so in a fork checkout `custom/styles/*.css`
+// would add to every count below (B556).
+const { root: repoRoot, remove: removeRepoRoot } = createCoreFixtureRoot(
+  'deckyard-theme-var-assets-',
 );
+after(removeRepoRoot);
 
 /** A real repo asset, so the embed pass has something to actually read. */
 const LOCAL_ASSET = '/assets/images/deckyard-mark.svg';
