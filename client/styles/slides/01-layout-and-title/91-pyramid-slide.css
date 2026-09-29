@@ -63,14 +63,6 @@
   transition: width 0.3s ease;
 }
 
-/* See the funnel note: the bar swaps surface on a lime slide, so it swaps the
-   text colour on the same selector. The gradient below does the same per
-   level, so label and text only ever read the role. */
-.slide-pyramid.slide-bg-lime .level-bar {
-  background: var(--slide-accent, #375c5d);
-  --surface-text: var(--slide-on-accent);
-}
-
 /* Level content (label + text) */
 .slide-pyramid .level-content {
   display: flex;
@@ -206,17 +198,27 @@
   );
 }
 
-/* On a lime slide the gradient inverts: lime at the top, accent from level 5
-   (the lime-slide bar rule above). */
+/* On a lime slide the gradient inverts: three lime-led mixes, then the
+   accent from level 4. See the funnel note: a bar that swaps surface swaps
+   the text colour on the same selector. It starts at 70%
+   lime, not pure lime: a bar in the slide's own colour has no edge and the
+   top of the pyramid vanishes. There is no mix between 40% lime and the
+   accent: on the shipped themes neither text pole reaches 4.5:1 there
+   (the white-lime themes drop to 3.3:1), so the step goes straight to the
+   accent's own pair. */
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(1) .level-bar {
-  background: var(--slide-bg-lime, #e2fe52);
+  background: color-mix(
+    in srgb,
+    var(--slide-bg-lime, #e2fe52) 70%,
+    var(--slide-accent, #375c5d)
+  );
   --surface-text: var(--slide-on-lime);
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-bar {
   background: color-mix(
     in srgb,
-    var(--slide-bg-lime, #e2fe52) 75%,
+    var(--slide-bg-lime, #e2fe52) 55%,
     var(--slide-accent, #375c5d)
   );
   --surface-text: var(--slide-on-lime);
@@ -225,18 +227,15 @@
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-bar {
   background: color-mix(
     in srgb,
-    var(--slide-bg-lime, #e2fe52) 50%,
+    var(--slide-bg-lime, #e2fe52) 40%,
     var(--slide-accent, #375c5d)
   );
   --surface-text: var(--slide-on-lime);
 }
 
-.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(4) .level-bar {
-  background: color-mix(
-    in srgb,
-    var(--slide-bg-lime, #e2fe52) 25%,
-    var(--slide-accent, #375c5d)
-  );
+.slide-pyramid.slide-bg-lime .pyramid-level:nth-child(n + 4) .level-bar {
+  background: var(--slide-accent, #375c5d);
+  --surface-text: var(--slide-on-accent);
 }
 
 /* ===========================================
