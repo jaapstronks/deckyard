@@ -45,7 +45,7 @@ const { initializeStorage, __resetStorageForTests } =
 const { createPresentation } =
   await import('../server/storage/presentations/index.js');
 const { createTheme } = await import('../server/storage/themes.js');
-const { readThemeSeeds } = await import('../server/utils/theme-seeds.js');
+const { readCoreThemeSeeds } = await import('../server/utils/theme-seeds.js');
 const { createShareLink } =
   await import('../server/storage/share-links/index.js');
 const { createLiveSession, updateLiveSessionState } =
@@ -60,7 +60,7 @@ const { clearCustomThemeCache } = await import('../server/utils/themes.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 
 test.before(async () => {
-  const { record: brand } = (await readThemeSeeds()).find(
+  const { record: brand } = (await readCoreThemeSeeds()).find(
     ({ record }) => record.slug === 'brand',
   );
   __setTestDb(

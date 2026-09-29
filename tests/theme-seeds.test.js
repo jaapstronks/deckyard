@@ -4,6 +4,7 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
+  readCoreThemeSeeds,
   readThemeSeeds,
   validateThemeSeed,
 } from '../server/utils/theme-seeds.js';
@@ -11,13 +12,13 @@ import { createTheme } from '../server/storage/themes.js';
 import { testScope } from './helpers/storage-scope.js';
 
 test('six core records pass the strict seed gate', async () => {
-  const seeds = await readThemeSeeds();
+  const seeds = await readCoreThemeSeeds();
   assert.equal(seeds.length, 6);
   assert.equal(new Set(seeds.map(({ record }) => record.slug)).size, 6);
 });
 
 test('unknown fields, family ids and non-curated fonts fail by path', async () => {
-  const [{ record }] = await readThemeSeeds();
+  const [{ record }] = await readCoreThemeSeeds();
   for (const [change, field] of [
     [{ extra: true }, 'extra'],
     [
@@ -40,7 +41,7 @@ test('unknown fields, family ids and non-curated fonts fail by path', async () =
 });
 
 test('seed and API create gates refuse JSON prototype config keys', async () => {
-  const [{ record }] = await readThemeSeeds();
+  const [{ record }] = await readCoreThemeSeeds();
   for (const key of ['__proto__', 'constructor', 'toString']) {
     for (const value of [{}, { inserted: true }]) {
       const config = JSON.parse(`{"${key}":${JSON.stringify(value)}}`);
@@ -61,7 +62,7 @@ test('seed and API create gates refuse JSON prototype config keys', async () => 
 });
 
 test('seed gate refuses invalid base colors and prototype field names', async () => {
-  const [{ record }] = await readThemeSeeds();
+  const [{ record }] = await readCoreThemeSeeds();
   for (const role of ['primary', 'background', 'textLight', 'textDark']) {
     for (const value of [false, 0, null, '']) {
       assert.throws(
@@ -110,7 +111,7 @@ test('fork seeds load from DECKYARD_CUSTOM_DIR and invalid seeds refuse the batc
   try {
     await fs.mkdir(path.join(root, 'themes'), { recursive: true });
     await fs.mkdir(path.join(fork, 'themes'), { recursive: true });
-    const seeds = await readThemeSeeds();
+    const seeds = await readCoreThemeSeeds();
     for (const { record } of seeds)
       await fs.writeFile(
         path.join(root, 'themes', `${record.slug}.json`),
@@ -157,7 +158,7 @@ test('duplicate core and fork slug fails before database writes and names both f
   try {
     await fs.mkdir(path.join(root, 'themes'), { recursive: true });
     await fs.mkdir(path.join(root, 'custom', 'themes'), { recursive: true });
-    const seeds = await readThemeSeeds();
+    const seeds = await readCoreThemeSeeds();
     for (const { record } of seeds)
       await fs.writeFile(
         path.join(root, 'themes', `${record.slug}.json`),
