@@ -1,6 +1,6 @@
 import { t } from '../ui-i18n.js';
 import { iconUrl } from '../../../shared/icon-names.js';
-import { h } from '../dom.js';
+import { h } from './index.js';
 
 /**
  * Reusable empty-state block: icon + title + one-line message + a primary CTA

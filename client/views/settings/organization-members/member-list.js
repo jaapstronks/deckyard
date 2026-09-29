@@ -14,7 +14,7 @@
  * is the same tab, showing the same kind of row, in a different mode.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import {

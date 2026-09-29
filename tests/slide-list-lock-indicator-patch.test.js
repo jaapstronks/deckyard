@@ -32,7 +32,7 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 globalThis.CustomEvent = dom.window.CustomEvent;
 
-const { h } = await import('../client/lib/dom.js');
+const { h } = await import('../client/lib/dom/index.js');
 const { setupSlideList } = await import('../client/views/editor/slide-list.js');
 
 const SLIDES = [

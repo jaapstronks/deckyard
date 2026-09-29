@@ -8,7 +8,7 @@ import {
   createFieldWrap,
   createAltLangInputs,
 } from './utils.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { formatDateTime } from '../../../lib/format/format.js';
 import { imageUploadAccept } from '../../../../shared/constants/image-uploads.js';
 import { isOrganizationAdmin } from '../../../../shared/organization-role.js';

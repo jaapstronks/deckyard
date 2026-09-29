@@ -22,7 +22,7 @@
  * different recipe and is not built here.
  */
 
-import { h } from '../dom.js';
+import { h } from './index.js';
 
 /**
  * Build a labeled checkbox.

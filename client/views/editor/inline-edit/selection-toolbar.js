@@ -26,7 +26,7 @@ import {
   computeToolbarPlacement,
   emphasisDisables,
 } from './selection-toolbar-logic.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * @param {Object} opts

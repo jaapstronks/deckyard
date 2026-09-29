@@ -1,6 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { storage } from '../../../lib/storage.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { icon } from '../../../lib/dom/icons.js';
 
 /**

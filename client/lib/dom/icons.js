@@ -24,7 +24,7 @@
  * (A7.16 cluster 5).
  */
 
-import { h } from '../dom.js';
+import { h } from './index.js';
 import { iconUrl } from '../../../shared/icon-names.js';
 
 /**

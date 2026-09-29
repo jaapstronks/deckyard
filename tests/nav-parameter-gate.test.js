@@ -79,7 +79,7 @@ test('gate: whole-token — `navigator` and `navUrl` are untouched', async () =>
 
 test('gate: a local `<nav>` element named `nav` stays legal', async () => {
   const messages = await lintProbe(
-    "import { h } from '../../lib/dom.js';\n" +
+    "import { h } from '../../lib/dom/index.js';\n" +
       "export const f = () => {\n  const nav = h('nav', { class: 'sidebar-nav' });\n  return nav;\n};\n",
     PROBE,
   );

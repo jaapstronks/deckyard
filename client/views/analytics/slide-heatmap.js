@@ -5,7 +5,7 @@
 import { t } from '../../lib/ui-i18n.js';
 import { formatTimeShort as formatTime } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { icon } from '../../lib/dom/icons.js';
 
 /**

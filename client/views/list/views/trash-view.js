@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { getFeatures } from '../../../lib/state/features.js';
 

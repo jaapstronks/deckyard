@@ -16,7 +16,7 @@ import { openDescriptionModal } from './modals/description-modal.js';
 import { openExportModal } from './export-modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { handleNotionPublish } from './share-dropdown/share-actions.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 export function setupShareDropdown({
   api,

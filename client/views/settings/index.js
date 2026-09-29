@@ -3,7 +3,7 @@
  * Main settings page with tabbed navigation
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createSettingsSidebar } from './settings-sidebar.js';
 import {

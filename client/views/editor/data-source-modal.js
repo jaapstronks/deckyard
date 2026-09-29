@@ -12,7 +12,7 @@ import {
   PROVIDER_LABELS,
   validateDataSource,
 } from '../../../shared/data-source.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { icon } from '../../lib/dom/icons.js';
 
 // `hintKey`/`labelKey` carry the i18n key and the sibling string the English

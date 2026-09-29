@@ -13,7 +13,7 @@ import {
 } from '../../../lib/slide-authoring/slide-diff.js';
 import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { aiEnabled } from '../../../lib/state/features.js';
 import { icon } from '../../../lib/dom/icons.js';
 

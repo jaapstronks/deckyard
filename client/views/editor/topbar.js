@@ -24,7 +24,7 @@ import { displayNameFromEmail } from '../../lib/user/user-format.js';
 import { createUserMenu } from '../../lib/user/user-menu.js';
 import { createNotificationBell } from '../../lib/user/notification-bell.js';
 import { icon } from '../../lib/dom/icons.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { nav } from '../../lib/state/router.js';
 
 export function createEditorTopbar({

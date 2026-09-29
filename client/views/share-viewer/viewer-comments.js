@@ -9,7 +9,7 @@ import { isGuestCommentAuthor } from '../../lib/comments/comment-authz.js';
 import { renderCommentBodyNodes } from '../../lib/comments/comment-body.js';
 import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
 import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
 import { icon } from '../../lib/dom/icons.js';
 

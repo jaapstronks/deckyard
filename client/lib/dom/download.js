@@ -8,7 +8,7 @@
  * `URL.createObjectURL` call sites out of `client/` beyond this module.
  */
 
-import { h } from '../dom.js';
+import { h } from './index.js';
 
 /**
  * Save a blob to disk via a transient anchor. Filename derivation stays with

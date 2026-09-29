@@ -24,7 +24,7 @@ import {
 } from './slide-list/context-menu.js';
 import { closeVisibilityMenu } from './slide-visibility-menu.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 export function setupSlideList({
   slideListEl,

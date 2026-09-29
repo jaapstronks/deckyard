@@ -3,7 +3,7 @@ import { createCsvGridEditor } from './fields/csv-grid.js';
 import { mountSlideInto } from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
 import { t } from '../../lib/ui-i18n.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Chart-data editor as its own roomy surface (editing-surfaces §4.3): a wide

@@ -24,7 +24,7 @@
  * live region announce it again on the next attempt.
  */
 
-import { h } from '../dom.js';
+import { h } from './index.js';
 import { reportMisuse } from '../util/dev-runtime.js';
 
 let seq = 0;

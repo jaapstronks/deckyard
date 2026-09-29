@@ -12,7 +12,7 @@
  */
 
 import { api } from '../../lib/api.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { closeAllOverlays } from '../../lib/dom/modal.js';
 import {
   readLangMode,

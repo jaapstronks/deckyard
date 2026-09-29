@@ -21,7 +21,7 @@
  */
 import { t } from '../../../../lib/ui-i18n.js';
 import { fieldCardLink } from '../../fields/card-link-field.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * Collapsible group for a bulky widget block, styled like the

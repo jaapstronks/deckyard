@@ -24,7 +24,7 @@
  * an unhandled rejection.
  */
 
-import { h } from '../dom.js';
+import { h } from './index.js';
 
 /** @type {Map<string, Promise<void>>} one promise per element id, for load-awaiting assets */
 const pending = new Map();

@@ -3,7 +3,7 @@
  * General admin settings: supported languages, themes, AI identity, email sender, session, etc.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { getAppName } from '../../../lib/theme/branding.js';
 import { t } from '../../../lib/ui-i18n.js';

@@ -15,7 +15,7 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,

@@ -9,7 +9,7 @@ import {
   addNamedTr,
   buildDocTag,
 } from './imagekit-picker/transform-utils.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { aiAltTextEnabled } from '../../lib/state/features.js';
 import { defaultLang } from '../../lib/format/i18n.js';
 import { getLangDisplayName } from '../../../shared/i18n-utils.js';

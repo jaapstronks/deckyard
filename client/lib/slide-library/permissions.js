@@ -11,7 +11,7 @@
 
 import { t } from '../ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 
 /**
  * Whether the caller may change `item`: its content, name, description, or

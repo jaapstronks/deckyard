@@ -50,7 +50,7 @@ const { renderSlideElement, NO_DECK_LANG } =
   await import('../client/lib/slide-runtime/slide-render.js');
 const { createInlineEditor } =
   await import('../client/views/editor/inline-edit/inline-editor.js');
-const { installDismissOnOutside } = await import('../client/lib/dom.js');
+const { installDismissOnOutside } = await import('../client/lib/dom/index.js');
 
 /** Mount the inline editor with a controller-like selection it mirrors. */
 function mount(slide) {

@@ -50,7 +50,7 @@ const { createRenderField } =
   await import('../client/views/editor/editor-form/render-field.js');
 const { renderFollowInviteForm } =
   await import('../client/views/editor/editor-form/slide-forms/follow-invite.js');
-const { h } = await import('../client/lib/dom.js');
+const { h } = await import('../client/lib/dom/index.js');
 
 const SLIDE_TYPES = {
   'title-slide': {

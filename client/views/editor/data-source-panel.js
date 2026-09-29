@@ -12,7 +12,7 @@ import {
   PROVIDER_LABELS,
   normalizeDataSource,
 } from '../../../shared/data-source.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 const MODE_LABELS = {
   frozen: 'Snapshot',

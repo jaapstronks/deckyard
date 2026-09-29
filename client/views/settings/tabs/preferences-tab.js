@@ -3,7 +3,7 @@
  * UI locale + language mode + user notifications
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';

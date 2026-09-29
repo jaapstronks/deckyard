@@ -1,4 +1,4 @@
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { storage } from '../storage.js';
 
 const STORAGE_KEY = 'ps-ui-mode'; // 'system' | 'light' | 'dark'

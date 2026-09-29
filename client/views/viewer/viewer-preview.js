@@ -11,7 +11,7 @@ import {
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { icon } from '../../lib/dom/icons.js';
 
 export function createViewerPreview({

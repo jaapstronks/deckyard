@@ -7,7 +7,7 @@
  */
 import { debugLog } from '../../../lib/util/debug.js';
 import { duplicateSlides } from '../slide-list/slide-actions.js';
-import { h, installDismissOnOutside } from '../../../lib/dom.js';
+import { h, installDismissOnOutside } from '../../../lib/dom/index.js';
 import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';

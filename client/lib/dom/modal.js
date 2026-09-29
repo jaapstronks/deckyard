@@ -1,5 +1,5 @@
 import { t } from '../ui-i18n.js';
-import { h, createFocusTrap } from '../dom.js';
+import { h, createFocusTrap } from './index.js';
 import { icon } from './icons.js';
 import { takeEscape } from './escape.js';
 export { createBusyManager } from './busy.js';

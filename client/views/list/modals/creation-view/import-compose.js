@@ -30,7 +30,7 @@ import {
   handleImportMarkdown,
   handlePasteMarkdown,
 } from '../new-presentation/handlers.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { nav } from '../../../../lib/state/router.js';
 import { createDeckImportPanel } from './import-deck.js';

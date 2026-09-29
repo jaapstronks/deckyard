@@ -8,7 +8,7 @@
  */
 
 import { t } from '../ui-i18n.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { confirmModal } from '../dom/modal.js';
 import { toast } from '../dom/toast.js';
 import { createCollectionsApi } from './api.js';

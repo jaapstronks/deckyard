@@ -11,7 +11,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { openModal } from '../../lib/dom/modal.js';
 import { openAiBatchReviewModal } from './modals/ai-batch-review-modal.js';
 import { highlightAiInsertedSlides } from './ai-added-highlight.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import {
   DEFAULT_DECK_LANG,
   getLangDisplayName,

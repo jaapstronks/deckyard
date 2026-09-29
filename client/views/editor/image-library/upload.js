@@ -9,7 +9,7 @@ import {
   createFieldWrap,
   createAltLangInputs,
 } from './utils.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import {
   imageUploadAccept,
   imageUploadFormatList,

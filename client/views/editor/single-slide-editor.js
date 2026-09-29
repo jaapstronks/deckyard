@@ -29,7 +29,7 @@ import {
   RENDER_VIA_THEME,
 } from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 const SLIDE_ID = 'single-slide';
 

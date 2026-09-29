@@ -18,7 +18,7 @@ import {
 import { loadThemeById } from '../theme/theme.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { icon } from '../dom/icons.js';
-import { h, installDismissOnOutside } from '../dom.js';
+import { h, installDismissOnOutside } from '../dom/index.js';
 import { DEFAULT_THEME_REF } from '../../../shared/constants/themes.js';
 import {
   sortByPinnedThenName,

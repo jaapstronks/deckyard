@@ -15,7 +15,7 @@ import { buildTagsSection } from './settings-modal/tags.js';
 import { buildAnalyticsSection } from './settings-modal/analytics.js';
 import { buildLiveVideoSection } from './settings-modal/live-video.js';
 import { buildAutoAdvanceSection } from './settings-modal/auto-advance.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Open the deck settings modal. Assembles the form from independent section

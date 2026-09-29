@@ -13,7 +13,7 @@
 
 import { api } from '../../lib/api.js';
 import { toast } from '../../lib/dom/toast.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import {
   attachThumbScale,
   attachThumbScaleContain,

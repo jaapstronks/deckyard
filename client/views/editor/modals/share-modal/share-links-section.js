@@ -13,7 +13,7 @@ import {
   openRevokeMessageModal,
   REVOKE_CONTEXT,
 } from '../revoke-message-modal.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * Create the share links section component.

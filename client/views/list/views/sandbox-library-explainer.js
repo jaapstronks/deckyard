@@ -1,7 +1,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { iconUrl } from '../../../../shared/icon-names.js';
 import { icon } from '../../../lib/dom/icons.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Sandbox stand-in for the slide library.

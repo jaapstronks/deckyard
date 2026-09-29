@@ -16,7 +16,7 @@ import {
 } from '../../../shared/video-stream-providers.js';
 import { ensureHlsJs } from './ensure-hls.js';
 import { t } from '../ui-i18n.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 
 /**
  * @param {Object} opts

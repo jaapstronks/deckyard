@@ -112,11 +112,11 @@ test('gate: the exemption is exactly one file, and it is not stale', async () =>
     (
       await lintProbe(
         'export const f = () => ({ destroy() {} });\n',
-        'client/lib/dom.js',
+        'client/lib/dom/index.js',
       )
     ).length,
     1,
-    'client/lib/dom.js must not be exempt from the teardown gate',
+    'client/lib/dom/index.js must not be exempt from the teardown gate',
   );
   // An exemption for a key that no longer exists is dead config.
   const sdk = fs.readFileSync(path.join(repoRoot, EXEMPT), 'utf8');

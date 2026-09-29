@@ -156,10 +156,10 @@ positives and no burndown.
 Scoped to `client/**`, this rule rejects `h` arriving as a **parameter**, as a
 **destructured property** (in a parameter or out of a context object), or as a
 **shorthand `{ h }`** handed to someone else. The only accepted form is
-`import { h } from '…/lib/dom.js'`.
+`import { h } from '…/lib/dom/index.js'`.
 
 `h()` has exactly one implementation —
-[`client/lib/dom.js`](../../client/lib/dom.js) — and no shadow implementations.
+[`client/lib/dom/index.js`](../../client/lib/dom/index.js) — and no shadow implementations.
 Even so it used to reach the rest of the client in three spellings at once:
 positional (`createModal(h, opts)`, 153 call sites), an opt-in option with a
 default (`h = defaultH`, 7 helpers), and ~400 lines of `{ h, … }` pass-through
@@ -167,7 +167,7 @@ across 167 of 503 client modules. Canonical form and injected form sat at
 parity, so every new modal-shaped helper had to pick which of the three to copy
 (A7.33).
 
-The **allowlist is empty**, `client/lib/dom.js` included: the factory is a
+The **allowlist is empty**, `client/lib/dom/index.js` included: the factory is a
 function _declaration_ there, never a parameter. Whole-token by construction
 (`[name='h']` / `[key.name='h']`), so `hue`, `height` and `hsl` are untouched,
 and a geometry `{ h: rowH }` — a value property, not a shorthand — stays legal.
@@ -189,7 +189,7 @@ are built with `h()`; head assets — a `<style>`, `<link rel=stylesheet>` or
 font providers through
 [`client/lib/theme/font-assets.js`](../../client/lib/theme/font-assets.js).
 
-`h()` from `client/lib/dom.js` is the first frontend rule in `AGENTS.md` and was
+`h()` from `client/lib/dom/index.js` is the first frontend rule in `AGENTS.md` and was
 the last one with no mechanical backing: `h` imported in 302 files against 26
 surviving `document.createElement` sites in 14 (B150). The survivors were
 largely **one recipe written five times** — create the tag, set a property or
@@ -208,7 +208,7 @@ SVG tags, and `client/lib/slide-runtime/likert.js` builds SVG through a local
 `svgEl()` helper for the shape attributes `h()` does not model.
 
 Two files are exempt, each with its own re-statement block in the config:
-[`client/lib/dom.js`](../../client/lib/dom.js), where the factory is
+[`client/lib/dom/index.js`](../../client/lib/dom/index.js), where the factory is
 implemented, and [`client/embed-sdk.js`](../../client/embed-sdk.js), the
 standalone IIFE served to third-party pages — it has no imports at all, by
 design.
@@ -254,7 +254,7 @@ handle it returns is a public contract, and its `destroy()` sits beside
 `next()`, `prev()`, `goToSlide()` and `getState()` in an embed-SDK vocabulary
 an external page wrote against. Renaming it would break every embedder to make
 one file agree with an internal convention it does not participate in. That
-exemption is a separate config block, so `client/lib/dom.js` — its neighbour in
+exemption is a separate config block, so `client/lib/dom/index.js` — its neighbour in
 the `createElement` exemption — does not inherit it.
 
 [`tests/teardown-vocabulary-gate.test.js`](../../tests/teardown-vocabulary-gate.test.js)

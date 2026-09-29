@@ -6,7 +6,7 @@
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { t } from '../../lib/ui-i18n.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { nav } from '../../lib/state/router.js';
 import { normalizeLang } from '../../../shared/i18n-utils.js';
 import { icon } from '../../lib/dom/icons.js';

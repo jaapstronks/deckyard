@@ -4,7 +4,7 @@
  */
 
 import { icon as uiIcon } from '../../lib/dom/icons.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Creates comment markers component for a slide preview.

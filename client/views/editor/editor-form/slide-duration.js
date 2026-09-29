@@ -11,7 +11,7 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../../shared/slide-timing.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { surfaceCapabilities } from './surfaces.js';
 
 /**

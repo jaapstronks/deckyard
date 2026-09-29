@@ -52,7 +52,7 @@
 //   { split: <pct> } | { corner: <pct> } | { duo: <pct> } |
 //   { row: 'top'|'bottom' } | { cols: <n> } | { textCols: <n> } | {}
 
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 
 /**
  * Build a schematic mini-diagram element for a slide layout/type.

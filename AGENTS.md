@@ -159,7 +159,7 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
 
 - **Safety: HTML escaping and markdown**
   - Any user-provided text rendered into HTML must be escaped (`escapeHtml()` from `shared/slide-types/helpers.js`) or passed through `markdownToSafeHtml()` (`shared/markdown.js`). For XML sinks (PPTX parts, SVG) the escaper is `escapeXml()` (`shared/xml.js`). Do not hand-roll a third copy — `tests/no-escape-markdown-aliases.test.js` measures function bodies, not just imports.
-  - Don’t introduce raw/unsafe HTML insertion. For data-driven markup use `h()` (`client/lib/dom.js`) rather than an `innerHTML` template.
+  - Don’t introduce raw/unsafe HTML insertion. For data-driven markup use `h()` (`client/lib/dom/index.js`) rather than an `innerHTML` template.
   - The safe categories for an existing/new `innerHTML` write, and why every current client `innerHTML` site is safe, are catalogued in **`docs/reference/html-escaping.md`** — a new write is safe only if it falls into one of them.
 
 - **Lifecycle & cleanup (critical in this codebase)**
@@ -365,7 +365,7 @@ If the slide is an audience interaction:
 
 ## Frontend patterns (use these, don't invent parallels)
 
-- **DOM**: `h()` from `client/lib/dom.js` — no raw `document.createElement`.
+- **DOM**: `h()` from `client/lib/dom/index.js` — no raw `document.createElement`.
 - **Strings**: `t(key, fallback)` from `client/lib/ui-i18n.js` for all
   user-facing copy; translations in `client/i18n/<locale>/<component>.json`.
 - **Feedback**: the kind of event decides the carrier —

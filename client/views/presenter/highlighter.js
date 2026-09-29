@@ -12,7 +12,7 @@
  *   - Escape: Disable highlighter (handled in presenter.js)
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 const DEFAULT_LASER_RADIUS = 12;
 const LASER_TRAIL_LENGTH = 12;

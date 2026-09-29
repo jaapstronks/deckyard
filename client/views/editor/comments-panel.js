@@ -26,7 +26,7 @@ import {
   threadWaitsFor,
   collectUnreadThreadIds,
 } from './comments-read-state.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Creates a comments panel component for the editor.

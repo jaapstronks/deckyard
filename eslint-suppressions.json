@@ -52,7 +52,7 @@
       "count": 1
     }
   },
-  "client/lib/dom.js": {
+  "client/lib/dom/index.js": {
     "no-restricted-syntax": {
       "count": 3
     }

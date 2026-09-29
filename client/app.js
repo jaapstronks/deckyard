@@ -1,4 +1,4 @@
-import { $ } from './lib/dom.js';
+import { $ } from './lib/dom/index.js';
 
 // Ensure DOMPurify is available globally for the shared sanitize module.
 // DOMPurify is loaded via script tag in index.html before this module runs.

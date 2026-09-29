@@ -7,7 +7,7 @@
 import { t } from '../ui-i18n.js';
 import { loadThemeById } from './theme.js';
 import { cssStringEscape } from '../../../shared/theme-fonts.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 
 /**
  * Build the `GET /api/themes` URL for a picker.

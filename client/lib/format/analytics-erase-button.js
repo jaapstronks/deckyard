@@ -13,7 +13,7 @@
  * tracker, no button, no surface.
  */
 
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { confirmModal } from '../dom/modal.js';
 import { toast } from '../dom/toast.js';
 

@@ -70,7 +70,7 @@ import {
 } from './thumbnails.js';
 import { openTypePeek } from './peek.js';
 import { mountLibraryStrip } from './library-strip.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
 
 export function createSlideTypePicker({

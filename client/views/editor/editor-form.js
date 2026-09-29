@@ -34,7 +34,7 @@ import {
   buildAiWarningsPanel,
 } from './editor-form/ai-slide-notes.js';
 import { buildAiIteratePanel } from './editor-form/ai-iterate-panel.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { surfaceCapabilities } from './editor-form/surfaces.js';
 import { aiEnabled } from '../../lib/state/features.js';
 

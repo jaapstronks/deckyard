@@ -7,7 +7,7 @@ import {
   liveInteractionKind,
   liveScale,
 } from '../../../shared/slide-types/runtime.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 function safeObj(v) {
   return v && typeof v === 'object' ? v : null;

@@ -62,7 +62,7 @@ import { createFocusDrag } from './focus-drag.js';
 import { autoformatListOnEnter } from './list-autoformat.js';
 import { createMarkdownEditModal } from './markdown-modal.js';
 import { createReorderDrag } from './reorder-drag.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { slideRendered } from '../../../lib/slide-runtime/slide-render.js';
 import { debugLog } from '../../../lib/util/debug.js';
 import { icon } from '../../../lib/dom/icons.js';

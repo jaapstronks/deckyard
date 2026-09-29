@@ -37,7 +37,7 @@ globalThis.getComputedStyle = dom.window.getComputedStyle;
 globalThis.requestAnimationFrame = (cb) => setTimeout(cb, 0);
 globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
 
-const { h } = await import('../client/lib/dom.js');
+const { h } = await import('../client/lib/dom/index.js');
 const { createOverlay } = await import('../client/lib/dom/modal.js');
 const { createDropdown } = await import('../client/lib/dom/dropdown.js');
 const { createResponsiveDrawers } =

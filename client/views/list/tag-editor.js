@@ -1,4 +1,4 @@
-import { h, installDismissOnOutside } from '../../lib/dom.js';
+import { h, installDismissOnOutside } from '../../lib/dom/index.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
 import { t } from '../../lib/ui-i18n.js';
 import { checkTagName, TAG_NAME_MESSAGES } from '../../../shared/tag-name.js';

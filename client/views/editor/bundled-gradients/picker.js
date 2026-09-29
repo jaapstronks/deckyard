@@ -15,7 +15,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { openModal } from '../../../lib/dom/modal.js';
 import { fetchBundledGradients } from '../../../lib/net/stock-media.js';
 import { lockDocumentScroll } from '../editor-utils.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /** @type {Array<Object>|null} Manifest is immutable per deploy; fetch once. */
 let manifestCache = null;

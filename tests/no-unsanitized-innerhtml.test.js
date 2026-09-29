@@ -21,7 +21,7 @@
  * so both need an entry. That is the point — indirection is exactly where an
  * unsafe value hides, so each one is written down and re-argued when it moves.
  *
- * Adding a site? Prefer `h()` from `client/lib/dom.js` and you need no entry at
+ * Adding a site? Prefer `h()` from `client/lib/dom/index.js` and you need no entry at
  * all. If it must be `innerHTML`, route the value through `escapeHtml()`,
  * `markdownToSafeHtml()` or `sanitizeHtml()` and add an entry with the verdict.
  * An entry without a reason is the tolerance-creep this test exists to prevent.
@@ -449,7 +449,7 @@ test('every innerHTML write in client/ is a static literal or a documented excep
     violations.length,
     0,
     'innerHTML assignment(s) with non-static content and no verdict. Build the ' +
-      'markup with h() from client/lib/dom.js instead, or route the value ' +
+      'markup with h() from client/lib/dom/index.js instead, or route the value ' +
       'through escapeHtml() / markdownToSafeHtml() / sanitizeHtml() and add an ' +
       'entry with a reason to the allowlist in this file. See ' +
       'docs/reference/html-escaping.md § "The gate".\n' +

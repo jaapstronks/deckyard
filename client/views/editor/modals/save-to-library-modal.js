@@ -3,7 +3,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createTagEditor } from '../../list/tag-editor.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { sharingEnabled } from '../../../lib/state/features.js';
 import { createSharingOffNote } from '../../shared/sharing-off.js';
 import {
