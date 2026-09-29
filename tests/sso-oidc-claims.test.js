@@ -13,6 +13,7 @@ import {
 const BASE = {
   allowedDomains: [],
   adminGroups: [],
+  groupsClaims: ['groups', 'roles'],
   autoProvision: true,
   defaultRole: 'user',
   issuerUrl: 'https://idp.example.com',
@@ -140,4 +141,93 @@ test('configured organization claim must be a non-empty string', () => {
   );
   assert.equal(identity.externalOrgId, 'alpha');
   assert.equal(mapClaimsToIdentity(claims, BASE).externalOrgId, null);
+});
+
+// OIDC_GROUPS_CLAIM: the three IdP shapes the briefing names (B427).
+
+test('ZITADEL: project roles as an object, role names are its keys', () => {
+  const cfg = {
+    ...BASE,
+    adminGroups: ['deckyard-admin'],
+    groupsClaims: ['urn:zitadel:iam:org:project:roles'],
+  };
+  const id = mapClaimsToIdentity(
+    {
+      email: 'a@example.com',
+      email_verified: true,
+      'urn:zitadel:iam:org:project:roles': {
+        'deckyard-admin': { 123456789: 'acme.zitadel.cloud' },
+        editor: { 123456789: 'acme.zitadel.cloud' },
+      },
+    },
+    cfg,
+  );
+  assert.deepEqual(id.groups, ['deckyard-admin', 'editor']);
+  assert.equal(id.isAdmin, true);
+});
+
+test('Keycloak: a nested array reached through a dot path', () => {
+  const cfg = {
+    ...BASE,
+    adminGroups: ['deckyard-admin'],
+    groupsClaims: ['realm_access.roles'],
+  };
+  const id = mapClaimsToIdentity(
+    {
+      email: 'a@example.com',
+      email_verified: true,
+      realm_access: { roles: ['offline_access', 'Deckyard-Admin'] },
+    },
+    cfg,
+  );
+  assert.equal(id.isAdmin, true);
+  // The path stops at a missing segment instead of throwing.
+  const none = mapClaimsToIdentity(
+    { email: 'b@example.com', email_verified: true, realm_access: {} },
+    cfg,
+  );
+  assert.deepEqual(none.groups, []);
+});
+
+test('Entra: the default groups,roles reads an app-role array', () => {
+  const cfg = { ...BASE, adminGroups: ['deckyard.admin'] };
+  const id = mapClaimsToIdentity(
+    {
+      email: 'a@example.com',
+      email_verified: true,
+      roles: ['Deckyard.Admin'],
+    },
+    cfg,
+  );
+  assert.equal(id.isAdmin, true);
+});
+
+test('a claim whose name contains dots wins over the dot path', () => {
+  const cfg = {
+    ...BASE,
+    adminGroups: ['ops'],
+    groupsClaims: ['https://deck.example.com/roles'],
+  };
+  const id = mapClaimsToIdentity(
+    {
+      email: 'a@example.com',
+      email_verified: true,
+      'https://deck.example.com/roles': ['ops'],
+    },
+    cfg,
+  );
+  assert.equal(id.isAdmin, true);
+});
+
+test('only the configured claims count; the defaults are not added', () => {
+  const cfg = {
+    ...BASE,
+    adminGroups: ['admins'],
+    groupsClaims: ['realm_access.roles'],
+  };
+  const id = mapClaimsToIdentity(
+    { email: 'a@example.com', email_verified: true, groups: ['admins'] },
+    cfg,
+  );
+  assert.equal(id.isAdmin, false);
 });

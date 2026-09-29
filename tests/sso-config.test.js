@@ -7,6 +7,9 @@ import {
   getSsoProvider,
   getOidcConfig,
   getSsoPublicConfig,
+  parseGroupsClaims,
+  checkOidcRedirectUri,
+  ssoConfigWarnings,
 } from '../server/config/sso.js';
 
 /**
@@ -28,7 +31,10 @@ const SSO_KEYS = [
   'OIDC_DEFAULT_ROLE',
   'OIDC_ADMIN_GROUPS',
   'OIDC_ORG_CLAIM',
+  'OIDC_GROUPS_CLAIM',
   'SSO_BUTTON_LABEL',
+  'APP_URL',
+  'DOMAIN',
 ];
 
 function withEnv(env, fn) {
@@ -176,5 +182,101 @@ test('getSsoPublicConfig carries the instance SSO button label (B432)', () => {
       null,
       'no SSO, no button to label',
     );
+  });
+});
+
+// OIDC_GROUPS_CLAIM (B427)
+
+test('OIDC_GROUPS_CLAIM defaults to groups,roles and keeps case', () => {
+  withEnv(FULL, () => {
+    assert.deepEqual(getOidcConfig().groupsClaims, ['groups', 'roles']);
+  });
+  withEnv(
+    {
+      ...FULL,
+      OIDC_GROUPS_CLAIM:
+        'urn:zitadel:iam:org:project:roles, realm_access.roles',
+    },
+    () => {
+      assert.deepEqual(getOidcConfig().groupsClaims, [
+        'urn:zitadel:iam:org:project:roles',
+        'realm_access.roles',
+      ]);
+    },
+  );
+  assert.deepEqual(parseGroupsClaims('Groups').claims, ['Groups']);
+});
+
+test('an OIDC_GROUPS_CLAIM with an empty path segment refuses boot', () => {
+  for (const bad of ['realm_access..roles', '.roles', 'roles.']) {
+    withEnv({ ...FULL, OIDC_GROUPS_CLAIM: bad }, () => {
+      assert.match(ssoConfigError(), /OIDC_GROUPS_CLAIM/);
+      assert.equal(isSsoEnabled(), false);
+    });
+  }
+});
+
+// Redirect-URI check (B427): a warning, with the expected URI verbatim.
+
+test('redirect URI on the served path and APP_URL origin passes', () => {
+  const r = checkOidcRedirectUri({
+    redirectUri: 'https://deck.example.com/api/auth/oidc/callback',
+    appBaseUrl: 'https://deck.example.com/',
+  });
+  assert.equal(r.ok, true);
+  assert.equal(r.message, null);
+});
+
+test('a wrong callback path warns with the expected URI in the message', () => {
+  const r = checkOidcRedirectUri({
+    redirectUri: 'https://deck.example.com/callback',
+    appBaseUrl: 'https://deck.example.com',
+  });
+  assert.equal(r.ok, false);
+  assert.equal(r.expected, 'https://deck.example.com/api/auth/oidc/callback');
+  assert.ok(r.message.includes(r.expected));
+  assert.match(r.message, /path/);
+});
+
+test('a redirect URI on another origin than APP_URL warns', () => {
+  const r = checkOidcRedirectUri({
+    redirectUri: 'http://localhost:4177/api/auth/oidc/callback',
+    appBaseUrl: 'https://deck.example.com',
+  });
+  assert.equal(r.ok, false);
+  assert.equal(r.expected, 'https://deck.example.com/api/auth/oidc/callback');
+  assert.match(r.message, /origin/);
+});
+
+test('without APP_URL only the path is checked', () => {
+  const r = checkOidcRedirectUri({
+    redirectUri: 'https://anywhere.example.org/api/auth/oidc/callback',
+    appBaseUrl: '',
+  });
+  assert.equal(r.ok, true);
+});
+
+test('ssoConfigWarnings reads the env and stays quiet when SSO is off', () => {
+  withEnv({ OIDC_REDIRECT_URI: 'https://x.example/callback' }, () => {
+    assert.deepEqual(ssoConfigWarnings(), []);
+  });
+  withEnv(
+    {
+      ...FULL,
+      OIDC_REDIRECT_URI: 'https://deck.example.com/callback',
+      APP_URL: 'https://deck.example.com',
+    },
+    () => {
+      // The boot warning is the check's own message, verbatim.
+      assert.deepEqual(ssoConfigWarnings(), [
+        checkOidcRedirectUri({
+          redirectUri: 'https://deck.example.com/callback',
+          appBaseUrl: 'https://deck.example.com',
+        }).message,
+      ]);
+    },
+  );
+  withEnv({ ...FULL, APP_URL: 'https://deck.example.com' }, () => {
+    assert.deepEqual(ssoConfigWarnings(), []);
   });
 });

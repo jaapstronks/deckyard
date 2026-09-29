@@ -138,21 +138,43 @@ export class OidcError extends Error {
 }
 
 /**
- * Collect group/role claim values into a lowercased list. IdPs vary: some emit
- * `groups`, some `roles`, as a string or an array.
+ * Resolve one `OIDC_GROUPS_CLAIM` entry against the claims. A claim whose name
+ * is the whole entry wins (namespaced claims such as
+ * `https://example.com/roles` contain dots); otherwise the entry is walked as
+ * a dot path (`realm_access.roles`).
  * @param {object} claims
+ * @param {string} entry
+ * @returns {unknown}
+ */
+function resolveClaim(claims, entry) {
+  if (claims && Object.hasOwn(claims, entry)) return claims[entry];
+  let v = claims;
+  for (const seg of entry.split('.')) {
+    if (!v || typeof v !== 'object' || !Object.hasOwn(v, seg)) return undefined;
+    v = v[seg];
+  }
+  return v;
+}
+
+/**
+ * Collect group/role values from the configured claims into a lowercased list.
+ * IdPs vary in where and how: a string or an array under `groups`/`roles`
+ * (Entra, Okta, Google), an array nested under `realm_access.roles`
+ * (Keycloak), or an object whose keys are the role names
+ * (`urn:zitadel:iam:org:project:roles` in ZITADEL).
+ * @param {object} claims
+ * @param {string[]} groupsClaims - From {@link getOidcConfig}.
  * @returns {string[]}
  */
-function extractGroups(claims) {
+function extractGroups(claims, groupsClaims) {
   const out = [];
-  for (const key of ['groups', 'roles']) {
-    const v = claims?.[key];
-    if (Array.isArray(v)) out.push(...v);
-    else if (typeof v === 'string' && v) out.push(...v.split(/[\s,]+/));
+  for (const entry of groupsClaims) {
+    const v = resolveClaim(claims, entry);
+    if (Array.isArray(v)) out.push(...v.filter((x) => typeof x === 'string'));
+    else if (typeof v === 'string') out.push(...v.split(/[\s,]+/));
+    else if (v && typeof v === 'object') out.push(...Object.keys(v));
   }
-  return [
-    ...new Set(out.map((s) => String(s).trim().toLowerCase()).filter(Boolean)),
-  ];
+  return [...new Set(out.map((s) => s.trim().toLowerCase()).filter(Boolean))];
 }
 
 /**
@@ -211,7 +233,7 @@ export function mapClaimsToIdentity(claims, oidc = getOidcConfig()) {
     }
   }
 
-  const groups = extractGroups(claims);
+  const groups = extractGroups(claims, oidc.groupsClaims);
   const isAdmin = oidc.adminGroups.length
     ? oidc.adminGroups.some((g) => groups.includes(g))
     : false;

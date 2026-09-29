@@ -18,7 +18,12 @@
 
 import { setSessionCookie } from '../../auth/auth.js';
 import { readSignedPayload, signPayload } from '../../utils/signed-payload.js';
-import { isSsoEnabled, getOidcConfig } from '../../config/sso.js';
+import {
+  isSsoEnabled,
+  getOidcConfig,
+  OIDC_LOGIN_PATH,
+  OIDC_CALLBACK_PATH,
+} from '../../config/sso.js';
 import { getOrCreateSsoUser } from '../../storage/sso.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';
@@ -238,10 +243,10 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
 
 /** @type {import('../../utils/router.js').Route[]} */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/auth/oidc/login', handler: handleOidcLogin },
+  { method: 'GET', pattern: OIDC_LOGIN_PATH, handler: handleOidcLogin },
   {
     method: 'GET',
-    pattern: '/api/auth/oidc/callback',
+    pattern: OIDC_CALLBACK_PATH,
     handler: handleOidcCallback,
   },
 ];
