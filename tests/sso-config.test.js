@@ -267,9 +267,13 @@ test('ssoConfigWarnings reads the env and stays quiet when SSO is off', () => {
       APP_URL: 'https://deck.example.com',
     },
     () => {
-      const [w, ...rest] = ssoConfigWarnings();
-      assert.equal(rest.length, 0);
-      assert.ok(w.includes('https://deck.example.com/api/auth/oidc/callback'));
+      // The boot warning is the check's own message, verbatim.
+      assert.deepEqual(ssoConfigWarnings(), [
+        checkOidcRedirectUri({
+          redirectUri: 'https://deck.example.com/callback',
+          appBaseUrl: 'https://deck.example.com',
+        }).message,
+      ]);
     },
   );
   withEnv({ ...FULL, APP_URL: 'https://deck.example.com' }, () => {

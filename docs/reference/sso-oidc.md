@@ -178,10 +178,12 @@ redirect URI or clock; the server log has the IdP's answer).
   application has _User roles inside ID Token_ on:
   `OIDC_GROUPS_CLAIM=urn:zitadel:iam:org:project:roles`. The user's
   organization is `urn:zitadel:iam:user:resourceowner:id`, the value to put in
-  `OIDC_ORG_CLAIM` and in the organization's `--external-id`. ZITADEL documents
-  that claim for the reserved scope `urn:zitadel:iam:user:resourceowner`, while
-  Deckyard requests `openid email profile`; check that your first login carries
-  it (a missing claim refuses login with `org_claim_missing`).
+  `OIDC_ORG_CLAIM` and in the organization's `--external-id`. ZITADEL adds that
+  claim only when the reserved scope `urn:zitadel:iam:user:resourceowner` is
+  requested, and Deckyard requests `openid email profile` and nothing else yet,
+  so a ZITADEL login with `OIDC_ORG_CLAIM` set is refused with
+  `org_claim_missing` until Deckyard can request extra scopes (planned; until
+  then, a ZITADEL action that sets the claim is the workaround).
 
 ## Not included (Track 1)
 
