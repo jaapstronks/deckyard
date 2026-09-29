@@ -5,7 +5,11 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { CLIENT_DIR, SHARED_PUBLIC_DIRS, repoRoot } from './config/paths.js';
-import { authConfigError, authConfigWarnings } from './auth/auth.js';
+import {
+  authConfigError,
+  authConfigWarnings,
+  devBypassProductionError,
+} from './auth/auth.js';
 import { deprecatedFlagWarnings } from './config/features.js';
 import { mediaConfigWarnings } from './media/config.js';
 import { brandingConfigWarnings } from './config/branding.js';
@@ -15,7 +19,7 @@ import {
   databaseConnectionError,
   isDatabaseConnectionError,
 } from './config/database.js';
-import { publicUrlWarnings, envStr, envBool, envInt } from './config/utils.js';
+import { publicUrlWarnings, envStr, envInt } from './config/utils.js';
 import { handleApi } from './routes/api/index.js';
 import { handleStatic } from './routes/static/index.js';
 import { getFeatureFlags } from './config/flags-snapshot.js';
@@ -204,13 +208,11 @@ export function buildServer() {
 async function main() {
   const server = buildServer();
 
-  // Security check: warn if AUTH_DEV_BYPASS is enabled in production
-  if (process.env.NODE_ENV === 'production') {
-    if (envBool('AUTH_DEV_BYPASS')) {
-      console.error(
-        '\n⚠️  SECURITY WARNING: AUTH_DEV_BYPASS is enabled in production!\n' +
-          '   This allows passwordless admin access. Set AUTH_DEV_BYPASS=false immediately.\n',
-      );
+  // Security check: refuse a leftover AUTH_DEV_BYPASS in production.
+  {
+    const bypassErr = devBypassProductionError();
+    if (bypassErr) {
+      console.error(`\n⚠️  SECURITY: ${bypassErr}\n`);
       process.exit(1);
     }
   }

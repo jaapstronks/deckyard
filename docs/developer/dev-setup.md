@@ -247,10 +247,10 @@ fresh dev database needs nothing.
 If you see this error:
 
 ```
-SECURITY WARNING: AUTH_DEV_BYPASS is enabled in production!
+SECURITY: AUTH_DEV_BYPASS is enabled in production. It allows passwordless admin access. Set AUTH_DEV_BYPASS=false immediately.
 ```
 
-Remove or set `AUTH_DEV_BYPASS=false` in production.
+Remove or set `AUTH_DEV_BYPASS=false` in production. `npm run doctor` reports it too.
 
 ### Postinstall Script Fails
 

@@ -78,7 +78,9 @@ every option; the ones most installs want:
 | `COLLAB_ENABLED` (+ `COLLAB_LIVE_EDITS`)                     | Real-time collaboration: presence, and optionally live co-editing (default off)    |
 | `BREVO_API_KEY` + `BREVO_SENDER_*`, `APP_URL`                | Outgoing notification email (optional); `APP_URL` is used for links in those mails |
 
-After editing: `docker compose up -d` to apply.
+After editing: `docker compose up -d` to apply, then check the result with
+`docker compose exec app node scripts/doctor.js`: one line per check, and the
+fix for each red one ([doctor.md](doctor.md)).
 
 ### Storage: the bundled database
 
