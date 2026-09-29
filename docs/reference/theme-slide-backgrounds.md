@@ -73,8 +73,9 @@ Three rules keep it honest:
 
 Per-slide-type CSS does still select on `.slide-bg-lime`, and that is correct:
 those rules are about the lime **colour**, not about luminance. A step
-indicator, a funnel bar and a pyramid level all paint `var(--slide-bg-lime)`,
-so on a lime slide they would vanish into the ground and swap to the accent;
+indicator and a funnel bar paint `var(--slide-bg-lime)` and a pyramid level
+mixes it with the accent, so on a lime slide they would vanish into the ground
+and swap to the accent (the pyramid inverts its mix);
 the hairline nudges (track, connector, divider, cycle ring) are tuned to that
 one tint. Read `.slide-bg-lime` as "the ground is that colour" and every one of
 them says what it means.

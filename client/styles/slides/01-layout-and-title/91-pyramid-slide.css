@@ -55,8 +55,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Use lime as primary pyramid color */
-  background: var(--slide-bg-lime, #e2fe52);
   /* Trapezoid shape using clip-path */
   clip-path: polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%);
   padding: var(--slide-space-3) var(--slide-space-8);
@@ -163,11 +161,20 @@
    COLOR GRADIENT FOR VISUAL HIERARCHY
    =========================================== */
 
-/* Top (accent) to bottom (lime). Each level states its surface once:
-   `background` and `--surface-text` on the same selector, so the text colour
-   follows the bar it sits on and `.level-label` / `.level-text` never name a
-   level. A mix reads the text of the end it leans to: from 75% accent the
-   accent's text, otherwise the lime's (the bar's `on-surface-lime` default). */
+/* Top (accent) to bottom (lime-led mixes). Each level states its surface
+   once: `background` and `--surface-text` on the same selector, so the text
+   colour follows the bar it sits on and `.level-label` / `.level-text` never
+   name a level. Every level has a rule, so `.level-bar` itself paints nothing.
+
+   This is the lime-slide gradient below turned upside down, with the same two
+   limits. No bar is pure lime: lime is the page surface, so on a default slide
+   a lime bar has no edge (1:1), and on a mist slide it barely has one (1.06:1
+   on `brand`). The lightest step stops at 60% lime, because the mist slide is
+   the tighter ground: at 70% `playful` drops to 1.24:1 there. And there is no
+   mix between the accent and 40% lime: at 75% accent the white-lime themes
+   fall to 3.3:1 on either text pole, so the step goes straight from the
+   accent's own pair to the lime-led mixes. Levels from 4 share the 60% bar,
+   as a lime slide's levels from 4 share the accent. */
 .slide-pyramid .pyramid-level:nth-child(1) .level-bar {
   background: var(--slide-accent, #375c5d);
   --surface-text: var(--slide-on-accent);
@@ -176,26 +183,28 @@
 .slide-pyramid .pyramid-level:nth-child(2) .level-bar {
   background: color-mix(
     in srgb,
-    var(--slide-accent, #375c5d) 75%,
-    var(--slide-bg-lime, #e2fe52)
+    var(--slide-bg-lime, #e2fe52) 40%,
+    var(--slide-accent, #375c5d)
   );
-  --surface-text: var(--slide-on-accent);
+  --surface-text: var(--slide-on-lime);
 }
 
 .slide-pyramid .pyramid-level:nth-child(3) .level-bar {
   background: color-mix(
     in srgb,
-    var(--slide-accent, #375c5d) 50%,
-    var(--slide-bg-lime, #e2fe52)
+    var(--slide-bg-lime, #e2fe52) 50%,
+    var(--slide-accent, #375c5d)
   );
+  --surface-text: var(--slide-on-lime);
 }
 
-.slide-pyramid .pyramid-level:nth-child(4) .level-bar {
+.slide-pyramid .pyramid-level:nth-child(n + 4) .level-bar {
   background: color-mix(
     in srgb,
-    var(--slide-accent, #375c5d) 25%,
-    var(--slide-bg-lime, #e2fe52)
+    var(--slide-bg-lime, #e2fe52) 60%,
+    var(--slide-accent, #375c5d)
   );
+  --surface-text: var(--slide-on-lime);
 }
 
 /* On a lime slide the gradient inverts: three lime-led mixes, then the
