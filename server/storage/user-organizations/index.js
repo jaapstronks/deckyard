@@ -27,6 +27,8 @@ export {
 
 export {
   getOrganizationById,
+  getOrganizationBySlug,
+  isValidOrganizationSlug,
   createOrganization,
   updateOrganization,
   deleteOrganization,

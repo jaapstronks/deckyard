@@ -43,13 +43,49 @@ export async function getOrganizationById(organizationId) {
 }
 
 /**
+ * Get an organization by its slug (already lowercased by the caller).
+ * @param {string} slug - Organization slug
+ * @returns {Promise<Object|null>}
+ */
+export async function getOrganizationBySlug(slug) {
+  return withDbGuard(null, async (db) => {
+    const row = await db
+      .selectFrom('organizations')
+      .select(ORG_COLUMNS)
+      .where('slug', '=', slug)
+      .executeTakeFirst();
+
+    return row ? formatOrganization(row) : null;
+  });
+}
+
+/**
+ * Whether a slug has the one shape an organization slug may take: 2-63
+ * characters, lowercase alphanumeric, hyphens allowed but not at start or end.
+ * Shared by the HTTP route and `scripts/org-create.js`, so the two entry
+ * points cannot accept different slugs.
+ *
+ * @param {string} slug
+ * @returns {boolean}
+ */
+export function isValidOrganizationSlug(slug) {
+  if (!slug || typeof slug !== 'string') return false;
+  return /^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$|^[a-z0-9]{1,2}$/.test(slug);
+}
+
+/**
  * Create a new organization.
  * @param {Object} data - Organization data
  * @param {string} data.name - Organization name
  * @param {string} data.slug - Unique slug
  * @param {string} [data.displayName] - Display name, may differ from `name`
  * @param {string} [data.description] - Organization description
- * @param {string} data.ownerId - User ID of the owner
+ * @param {string|null} [data.externalId] - IdP organization claim that routes
+ *   OIDC logins here (B269); unique across the instance
+ * @param {string|null} [data.ownerId] - User ID of the owner. Omitted, the
+ *   organization starts without members: the operator path
+ *   (`scripts/org-create.js`) creates the organization before its owner has a
+ *   `users` row in it.
  * @returns {Promise<Object>}
  */
 export async function createOrganization(data) {
@@ -73,12 +109,25 @@ export async function createOrganization(data) {
       return { ok: false, reason: 'slug_exists' };
     }
 
+    const externalId = data.externalId || null;
+    if (externalId) {
+      const existingExternalId = await db
+        .selectFrom('organizations')
+        .select('id')
+        .where('external_id', '=', externalId)
+        .executeTakeFirst();
+      if (existingExternalId) {
+        return { ok: false, reason: 'external_id_exists' };
+      }
+    }
+
     const now = nowIso();
     const org = await db
       .insertInto('organizations')
       .values({
         name: data.name,
         slug,
+        external_id: externalId,
         display_name: data.displayName || null,
         description: data.description || null,
         created_at: now,
@@ -88,17 +137,19 @@ export async function createOrganization(data) {
       .executeTakeFirst();
 
     // Add the creator as owner
-    await db
-      .insertInto('user_organizations')
-      .values({
-        user_id: data.ownerId,
-        organization_id: org.id,
-        role: 'owner',
-        joined_at: now,
-        created_at: now,
-        updated_at: now,
-      })
-      .execute();
+    if (data.ownerId) {
+      await db
+        .insertInto('user_organizations')
+        .values({
+          user_id: data.ownerId,
+          organization_id: org.id,
+          role: 'owner',
+          joined_at: now,
+          created_at: now,
+          updated_at: now,
+        })
+        .execute();
+    }
 
     return {
       ok: true,

@@ -41,6 +41,7 @@
     "i18n:sync:apply": "node scripts/i18n-sync.js --apply",
     "start": "node server/server.js",
     "setup": "node scripts/setup.js",
+    "org:create": "node scripts/org-create.js",
     "seed:bg-demo": "node scripts/seed-bg-contrast-demo.js",
     "theme:preview": "node scripts/theme-preview.js",
     "capture": "node capture/run.js",

@@ -31,6 +31,7 @@ import {
   deleteOrganization,
   getMembership,
   isDefaultOrganization,
+  isValidOrganizationSlug,
 } from '../../storage/user-organizations/index.js';
 import { hasOrganizationRole } from '../../../shared/organization-role.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
@@ -61,22 +62,6 @@ function organizationError(res, result) {
     result,
     ORGANIZATION_FAILURE_MESSAGES[result.reason],
   );
-}
-
-// ============================================================
-// HELPERS
-// ============================================================
-
-/**
- * Validate slug format.
- * Slug must be 2-63 characters, lowercase alphanumeric with hyphens.
- * @param {string} slug
- * @returns {boolean}
- */
-function isValidSlug(slug) {
-  if (!slug || typeof slug !== 'string') return false;
-  // 2-63 chars, lowercase alphanumeric, hyphens allowed but not at start/end
-  return /^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$|^[a-z0-9]{1,2}$/.test(slug);
 }
 
 // GET /api/organizations - List user's organizations
@@ -113,7 +98,7 @@ async function handleOrgCreate({ req, res, userId, authedUser }) {
     return badRequest(res, 'Organization name must be at least 2 characters');
   }
 
-  if (!isValidSlug(slug)) {
+  if (!isValidOrganizationSlug(slug)) {
     return badRequest(
       res,
       'Slug must be 2-63 characters, lowercase alphanumeric with optional hyphens',

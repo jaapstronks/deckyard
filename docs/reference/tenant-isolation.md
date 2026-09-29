@@ -221,6 +221,11 @@ read-only curated seed set.
 
 ## In development: shape 4 (multiple organizations on one instance)
 
+_Operating it — turning it on, creating organizations (`npm run org:create`),
+what stays instance-global — is the runbook
+[`../ops/multi-organization.md`](../ops/multi-organization.md). This section is
+the reference behind it._
+
 _(This section replaced an "out of scope, parked" note on 2026-07-25. That note
 said the identity and org-filtering work belonged to a future SaaS track. That is
 no longer true: the work is active, and it is not for a SaaS.)_
@@ -457,7 +462,9 @@ There is a screen for every organization-level thing a person can do, and each
 one draws the rule its route enforces rather than a wider or narrower one:
 
 - **Creating** — `POST /api/organizations` makes a new organization with the
-  caller as owner; there is no button for it in the core UI. Who may call it is
+  caller as owner; there is no button for it in the core UI. The operator's
+  route is `npm run org:create` (`scripts/org-create.js`), which goes through
+  the same `createOrganization()` and needs no session. Who may call it is
   an operator decision, `MULTI_ORG_USER_CREATE_ENABLED`: on (default), every
   signed-in user; off, only instance admins, and anyone else gets a 403 before
   anything is written. Off is the setting for a pre-provisioned instance, where
