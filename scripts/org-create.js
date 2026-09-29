@@ -239,14 +239,8 @@ async function main() {
 }
 
 if (isCli(import.meta.url)) {
-  // Exit explicitly: after closeStorage() the process still does not end on
-  // its own (a handle opened during storage initialization stays live), and a
-  // provisioning script that hangs reads as one still working.
-  main().then(
-    () => process.exit(process.exitCode ?? 0),
-    (err) => {
-      console.error('Error:', err.message);
-      process.exit(1);
-    },
-  );
+  main().catch((err) => {
+    console.error('Error:', err.message);
+    process.exit(1);
+  });
 }
