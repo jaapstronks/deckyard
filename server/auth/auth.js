@@ -152,6 +152,23 @@ export function authConfigError() {
 }
 
 /**
+ * Refuse the development auth bypass in production. `devAuthBypassEnabled()`
+ * already ignores it outside NODE_ENV=development, so this is not a hole; it
+ * is a leftover the operator must remove, and boot says so loudly.
+ * @returns {string|null} an error message when set in production, else null.
+ * @see docs/reference/security-posture.md § Dev auth bypass is development-only
+ */
+export function devBypassProductionError() {
+  if (envStr('NODE_ENV') !== 'production' || !envBool('AUTH_DEV_BYPASS')) {
+    return null;
+  }
+  return (
+    'AUTH_DEV_BYPASS is enabled in production. It allows passwordless admin ' +
+    'access. Set AUTH_DEV_BYPASS=false immediately.'
+  );
+}
+
+/**
  * Non-fatal auth configuration warnings surfaced at startup. Unlike
  * authConfigError() (which blocks boot on a fail-open misconfiguration or a
  * sub-floor secret), these flag settings that work but are weak enough to

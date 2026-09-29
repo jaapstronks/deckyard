@@ -52,6 +52,13 @@ USER node
 
 EXPOSE 4177
 
+# An orchestrator (Docker, Coolify, compose `depends_on: service_healthy`)
+# learns from this when the container serves, without its own configuration.
+# `/health` answers before auth and touches no database. Node's own fetch,
+# because the image ships no curl or wget; PORT is the one the server binds.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || 4177) + '/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+
 # The entrypoint applies pending database migrations and then execs the CMD, so
 # a compose deploy needs no manual `db:migrate` step. PostgreSQL is the only
 # storage backend, so this is unconditional. `docker compose exec` bypasses
