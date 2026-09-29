@@ -17,6 +17,12 @@
  *   entry router in `index.js` before key auth, outside any table, so those
  *   three stable GET-only routes are pinned explicitly below.
  *
+ * The two sides also agree on the operation's **name** (B515, D247): every
+ * spec operation carries an `operationId`, every router row with a `method`
+ * carries the same string as `id`, and a method-less row carries none. The
+ * meta endpoints have no row, so their ids are pinned below with the
+ * operations. That id is the `api_v1:<id>` key the dispatcher counts.
+ *
  * Paths are compared structurally: every `{param}` (spec) and every capture
  * group (router regex) is normalized to `{}`, so `/presentations/{id}` and
  * `/presentations/([^/]+)` match. Method + normalized-path is the operation key.
@@ -60,11 +66,18 @@ const ROUTE_TABLES = [
 ];
 
 /**
- * Meta endpoints answered by the entry router in index.js, outside any table.
- * Stable GET-only routes, pinned here by hand. A change to this set is a
- * deliberate edit.
+ * Meta endpoints answered by the entry router in index.js, outside any table,
+ * with their `operationId`s. Stable GET-only routes, pinned here by hand. A
+ * change to this set is a deliberate edit.
  */
-const META_OPERATIONS = ['GET /', 'GET /docs', 'GET /openapi.yaml'];
+const META_OPERATIONS = new Map([
+  ['GET /', 'getApiInfo'],
+  ['GET /docs', 'getApiDocs'],
+  ['GET /openapi.yaml', 'getOpenApiSpec'],
+]);
+
+/** One spelling for an operation name: lowerCamelCase, letters and digits. */
+const OPERATION_ID = /^[a-z][a-zA-Z0-9]*$/;
 
 /** Collapse any `{name}` or capture group to a bare `{}` for structural compare. */
 function normalizePath(p) {
@@ -90,15 +103,19 @@ function stripPrefix(p) {
 // Spec side
 // ---------------------------------------------------------------------------
 
+/** @returns {Map<string, string|undefined>} operation key → its `operationId` */
 function specOperations() {
   const spec = parseYaml(
     fs.readFileSync(path.join(repoRoot, 'docs/openapi.yaml'), 'utf8'),
   );
-  const ops = new Set();
+  const ops = new Map();
   for (const [p, methods] of Object.entries(spec.paths || {})) {
-    for (const method of Object.keys(methods)) {
+    for (const [method, operation] of Object.entries(methods)) {
       if (!HTTP_METHODS.has(method.toLowerCase())) continue;
-      ops.add(`${method.toUpperCase()} ${normalizePath(p)}`);
+      ops.set(
+        `${method.toUpperCase()} ${normalizePath(p)}`,
+        operation.operationId,
+      );
     }
   }
   return ops;
@@ -116,8 +133,9 @@ const tables = await Promise.all(
   }),
 );
 
+/** @returns {Map<string, string|undefined>} operation key → the row's `id` */
 function routerOperations() {
-  const ops = new Set();
+  const ops = new Map();
   for (const routes of tables) {
     for (const route of routes) {
       if (!route.method) continue;
@@ -125,11 +143,11 @@ function routerOperations() {
         typeof route.pattern === 'string'
           ? route.pattern
           : regexToPath(route.pattern.source);
-      ops.add(`${route.method} ${normalizePath(stripPrefix(p))}`);
+      ops.set(`${route.method} ${normalizePath(stripPrefix(p))}`, route.id);
     }
   }
   // META_OPERATIONS are already written with normalized (`{}`) paths.
-  for (const op of META_OPERATIONS) ops.add(op);
+  for (const [op, id] of META_OPERATIONS) ops.set(op, id);
   return ops;
 }
 
@@ -141,8 +159,12 @@ test('docs/openapi.yaml and the v1 router describe the same operations', () => {
   const spec = specOperations();
   const router = routerOperations();
 
-  const missingFromSpec = [...router].filter((op) => !spec.has(op)).sort();
-  const missingFromRouter = [...spec].filter((op) => !router.has(op)).sort();
+  const missingFromSpec = [...router.keys()]
+    .filter((op) => !spec.has(op))
+    .sort();
+  const missingFromRouter = [...spec.keys()]
+    .filter((op) => !router.has(op))
+    .sort();
 
   assert.deepEqual(
     { missingFromSpec, missingFromRouter },
@@ -157,4 +179,32 @@ test('the operation sets are non-trivial (extraction sanity)', () => {
   // Guards against a silently-empty parse making the diff vacuously pass.
   assert.ok(specOperations().size >= 30, 'expected ≥30 spec operations');
   assert.ok(routerOperations().size >= 30, 'expected ≥30 router operations');
+});
+
+test('every operation carries one operationId, the same on both sides', () => {
+  const spec = specOperations();
+  const router = routerOperations();
+
+  const mismatched = [...spec]
+    .filter(([op, id]) => router.get(op) !== id)
+    .map(([op, id]) => `${op}: spec ${id} ≠ router ${router.get(op)}`);
+  assert.deepEqual(
+    mismatched,
+    [],
+    'operationId drifted between spec and router',
+  );
+
+  const ids = [...spec.values()];
+  const malformed = ids.filter((id) => !OPERATION_ID.test(id ?? ''));
+  assert.deepEqual(malformed, [], 'every operationId is lowerCamelCase');
+  const duplicated = ids.filter((id, i) => ids.indexOf(id) !== i);
+  assert.deepEqual(duplicated, [], 'every operationId is unique');
+});
+
+test('a method-less row is a 405 answer, not an operation, and carries no id', () => {
+  const named = tables
+    .flat()
+    .filter((route) => !route.method && 'id' in route)
+    .map((route) => String(route.pattern));
+  assert.deepEqual(named, []);
 });

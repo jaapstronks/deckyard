@@ -192,6 +192,7 @@ function handleUnknownSchema({ req, res }) {
 export const SCHEMA_ROUTES = [
   {
     method: 'GET',
+    id: 'getDeckSchema',
     pattern: '/api/v1/schema/deck.json',
     handler: function handleDeckSchema({ res }) {
       serveJson(res, 200, deckJsonSchema(SLIDE_TYPES), SCHEMA_CACHE);
@@ -203,6 +204,7 @@ export const SCHEMA_ROUTES = [
     // because a fork type without a dotted authority publishes in the slash
     // form (`custom/hero`, `acme/hero`) and that is its canonical id.
     method: 'GET',
+    id: 'getSlideTypeSchema',
     pattern: /^\/api\/v1\/schema\/slide-types\/([^/]+|[^/]+\/[^/]+)\.json$/,
     captures: ['text'],
     handler: async function handleSlideTypeSchema(ctx, name) {

@@ -478,6 +478,7 @@ async function handleReorderSlides(ctx, presentationId) {
 export const ROUTES = [
   {
     method: 'POST',
+    id: 'reorderSlides',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/reorder$/,
     captures: ['uuid'],
     handler: handleReorderSlides,
@@ -489,18 +490,21 @@ export const ROUTES = [
   },
   {
     method: 'GET',
+    id: 'getSlide',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/,
     captures: ['uuid', 'text'],
     handler: handleGetSlide,
   },
   {
     method: 'PUT',
+    id: 'updateSlide',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/,
     captures: ['uuid', 'text'],
     handler: handleUpdateSlide,
   },
   {
     method: 'DELETE',
+    id: 'deleteSlide',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/([^/]+)$/,
     captures: ['uuid', 'text'],
     handler: handleDeleteSlide,
@@ -512,6 +516,7 @@ export const ROUTES = [
   },
   {
     method: 'POST',
+    id: 'createSlide',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides$/,
     captures: ['uuid'],
     handler: handleCreateSlide,

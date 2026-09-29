@@ -12,6 +12,8 @@
  */
 
 import { getFeatureFlags } from '../config/flags-snapshot.js';
+import { recordInstanceHealth } from '../storage/instance-health.js';
+import { fireAndForget } from './fire-and-forget.js';
 import { notFound } from './http.js';
 import { isUuid } from './uuid.js';
 
@@ -57,6 +59,13 @@ import { isUuid } from './uuid.js';
  *
  *   The list is checked against the pattern on every dispatch — a wrong length
  *   throws rather than silently gating the wrong segment.
+ * @property {string} [id] - The row's operation name: its `operationId` in
+ *   `docs/openapi.yaml` (B515, D247). Only an operation carries one — a row
+ *   with a `method` on a measured surface — and a matched row with an `id` is
+ *   counted on that surface's axis (`options.axis`). A method-less row (a 405
+ *   answer) is not an operation and carries none. An `id` on a surface that
+ *   declares no axis throws: a name that nothing counts is a mistake, not a
+ *   silent default.
  * @property {(ctx: object, ...params: string[]) => unknown} handler
  * @property {boolean} [ai] - The route spends LLM tokens. With `enableAi` off
  *   (`AI_ENABLED=false`, demo mode, sandbox) it is not mounted: a match
@@ -98,6 +107,9 @@ function capturesSatisfyDeclaration(captures, params, pattern) {
  *   - A matched `ai` route answers 404 instead while `enableAi` is off.
  *   - A matched row whose `captures` declaration is not satisfied answers 404
  *     instead: a segment declared `'uuid'` that cannot be one names no row.
+ *   - A matched row with an `id` that passes both gates is counted once on
+ *     `options.axis` (`recordInstanceHealth`, fire-and-forget) before its
+ *     handler runs — what the handler then answers does not change the count.
  *
  * **Order is significant** for RegExp/overlapping tables (`/search` before
  * `/:id`): the table author owns the order, and this walks it top to bottom.
@@ -115,12 +127,15 @@ function capturesSatisfyDeclaration(captures, params, pattern) {
  *   route, an unsatisfied `captures`). Defaults to the internal `/api`
  *   envelope; the public v1 API passes its own, so one table form serves
  *   both wire contracts.
+ * @param {string} [options.axis] - The instance-health axis this surface's
+ *   operations are counted on (`'api_v1'` for the public API). Required as
+ *   soon as a row carries an `id`.
  * @returns {Promise<unknown>|unknown} The handler's result, or `false`.
  */
 export function dispatchRoutes(
   routes,
   ctx,
-  { notFound: answerNotFound = notFound } = {},
+  { notFound: answerNotFound = notFound, axis } = {},
 ) {
   const { req, url } = ctx;
 
@@ -143,6 +158,17 @@ export function dispatchRoutes(
       !capturesSatisfyDeclaration(route.captures, params, route.pattern)
     )
       return answerNotFound(ctx.res);
+    if (route.id) {
+      if (!axis) {
+        throw new TypeError(
+          `route ${route.pattern} carries id '${route.id}' but its surface declares no axis`,
+        );
+      }
+      fireAndForget(
+        recordInstanceHealth([{ axis, key: route.id }]),
+        'instance health',
+      );
+    }
     return route.handler(ctx, ...params);
   }
 
