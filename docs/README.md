@@ -57,6 +57,7 @@ ships:
 | The full list of built-in slide types                         | `docs/reference/slide-type-inventory.md` (generated)                       |
 | Whether something is a new type or a variant                  | `docs/reference/slide-type-structure.md`                                   |
 | Which types we promise, and what a second implementation owes | `docs/reference/slide-type-tiers.md`, `docs/reference/deck-conformance.md` |
+| Adding a new slide type, end to end                           | `docs/reference/slide-type-pipeline.md`                                    |
 | What a new slide type owes elsewhere                          | `docs/reference/slide-type-companions.md`                                  |
 | Removing a slide type                                         | `docs/reference/slide-type-removal.md`                                     |
 | CSS design tokens (spacing, z-index)                          | `docs/reference/css-tokens.md`                                             |
@@ -99,6 +100,7 @@ nothing is discoverable only by `ls`.
 
 | Doc                                                                          | What it covers                                                    |
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [`slide-type-pipeline.md`](reference/slide-type-pipeline.md)                 | How a type flows to every surface, and the new-type checklist     |
 | [`slide-type-inventory.md`](reference/slide-type-inventory.md)               | The built-in types (generated from the registry)                  |
 | [`slide-type-directory.md`](reference/slide-type-directory.md)               | The directory form a type ships in                                |
 | [`slide-type-structure.md`](reference/slide-type-structure.md)               | The `structure` facet, and type vs variant                        |

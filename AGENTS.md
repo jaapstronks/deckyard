@@ -1,8 +1,6 @@
 ## AGENTS README (LLM + human maintainers)
 
-This repository is intentionally **simple, dependency-light, and modular**: plain Node.js + vanilla ESM on both server and client, **no bundler**, and a strong preference for **separation of concerns** so new features don’t create long-term maintenance debt.
-
-If you are an LLM agent working on this repo: optimize for **maintainability, extendability, and DRY**, and resist the temptation to “just patch it in place”. Follow the existing organization patterns; when in doubt, copy the _structure_ of an existing feature (not the text/styles).
+Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ESM on server and client, **no bundler**, strict **separation of concerns**. Optimize for **maintainability, extendability and DRY**; don't “just patch it in place”. When in doubt, copy the _structure_ of an existing feature (not its text or styles).
 
 ---
 
@@ -12,14 +10,11 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - **Slide types are the canonical source of truth** (schema/fields/defaults/HTML rendering).
   - `shared/markdown.js`: safe markdown subset used by slide types.
 - **`client/`**: browser UI (no build step).
-  - `client/views/`: features — screens (editor, presenter, follow-along, …) and route-less feature folders (`viewer/`, `analytics/`); a module that fetches a feature's records and renders them is a view, wherever it is used.
-  - `client/lib/`: a layer that owns no product feature — DOM primitives (`dom/`), transport (`net/`, `api.js`), state and routing, formatting, the theme runtime, the slide pipeline. It never imports from `views/` (see _Client layers_ below).
+  - `client/views/`: features (screens and route-less feature folders); `client/lib/`: the layer that owns no feature. See _Client layers_ below.
   - `client/styles/`: CSS split into app chrome vs slide styling; themes are CSS variables.
 - **`server/`**: Node server; persistence lives in Postgres behind `server/storage/`.
   - `server/routes/`: HTTP handlers (API + static).
-  - `server/storage/`: the storage layer — facades over the database adapter,
-    plus uploads on disk. Every storage function takes a `StorageScope` as its
-    first parameter (see `docs/reference/storage-scope.md`).
+  - `server/storage/`: facades over the database adapter plus uploads on disk; every function takes a `StorageScope` first (`docs/reference/storage-scope.md`).
   - `server/utils/`: exports (HTML/PDF/PNG/PPTX/print), rendering helpers, openai helpers, etc.
 - **`themes/`**: theme JSON files resolved at runtime into CSS variables (don’t brand the app chrome).
 - **`assets/`**: fonts/images used by slides and UI.
@@ -34,96 +29,31 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - The editor fetches slide type metadata from the server (`GET /api/slide-types`) to stay in sync.
 
 - **No bundler; keep it readable**
-  - Prefer small modules in `client/lib/*`, `client/views/**`, `server/utils/**`, `server/storage/**`.
-  - Avoid adding dependencies unless there is a strong reason (this project works great without them).
+  - Small modules in `client/lib/*`, `client/views/**`, `server/utils/**`, `server/storage/**`; no new dependency without a strong reason.
 
 - **Formatting is Prettier's job, not a review topic**
-  - The whole repo is formatted with [Prettier](https://prettier.io) on its
-    defaults plus `singleQuote: true` (the one option in `.prettierrc` — it was
-    already the codebase's spelling; measured as the smallest diff). `npm run
-format` writes, `npm run format:check` gates in CI next to `npm run lint`.
-    No editor hooks, no lint-staged: CI is the gate. Generators that emit
-    committed source (`scripts/generate-slide-*.js`) run their output through
-    `scripts/lib/format-generated.js` so the byte-gates and the formatter agree.
-  - The repo-wide reformat is one commit, listed in `.git-blame-ignore-revs`;
-    run `git config blame.ignoreRevsFile .git-blame-ignore-revs` once per clone
-    so `git blame` skips it. Don't hand-format, don't argue style: if Prettier
-    output is unreadable in one spot, a `// prettier-ignore` with a reason is
-    the exception, not a second style.
+  - Prettier on its defaults plus `singleQuote: true`: `npm run format` writes,
+    `npm run format:check` gates in CI next to `npm run lint`. Don't hand-format,
+    don't argue style; a `// prettier-ignore` needs a reason. Generators, the
+    blame-ignore commit (`git config blame.ignoreRevsFile .git-blame-ignore-revs`
+    once per clone): `docs/developer/linting.md` § Formatting.
 
 - **Optional dependencies match how the code loads them**
-  - A package that is only reached through a gated `await import()` — behind a
-    feature flag or with graceful "not installed" handling — lives in
-    `optionalDependencies`, not `dependencies`, so a minimal install can omit it
-    (`npm install --omit=optional`) and a failed install doesn't break the rest.
-    Current set: `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` (S3
-    media), `puppeteer-core` (Chrome exports), `pptxgenjs` (PPTX export),
-    `pdf-parse` (PDF import), `bullmq` + `ioredis` (Redis job queue),
-    `@hocuspocus/server` + `crossws` (live collaboration). A package that is
-    _statically_ imported (e.g. `openid-client`) stays a hard `dependency` even
-    if its feature is off, because loading the module pulls it in regardless.
-  - **`ciiic-translation-rules` is fork-only** and deliberately **not declared**
-    in `package.json`: it's a private package that ships only in the CIIIC fork,
-    loaded through an optional `await import()` in
-    `server/utils/openai/translate.js` that falls back to empty rules when it's
-    absent. Adding it to `package.json` would break `npm install` for the OSS
-    repo, so it stays undeclared by design.
+  - A package reached only through a gated `await import()` lives in
+    `optionalDependencies`; a statically imported one stays a hard `dependency`
+    even if its feature is off. `ciiic-translation-rules` is fork-only and
+    deliberately undeclared. Current set and rationale:
+    `docs/reference/dynamic-imports.md` § Which packages are optional.
 
 - **Module layout: one folder = one seam**
-  - When a unit is decomposed into concern modules, it lives as a **folder `X/`
-    whose `index.js` is the sole public seam** (a barrel re-exporting the public
-    API); the concern modules sit inside as plain siblings. Consumers import
-    `X/index.js`, never the concern files.
-  - **Don't** put an eponymous wrapper file _beside_ the folder (`X.js` next to
-    `X/`, or a `foo-panel.js` re-export next to `foo-panel/`) — the folder's
-    `index.js` already is the seam, so the wrapper is redundant indirection.
-    Likewise don't suffix the folder with its role (`email-templates/`, not
-    `email-templates-panel/`).
-  - **Re-export shim at a moved path: no, with one bounded exception.** When a
-    module moves or a file decomposes into `X/index.js`, the default is **no
-    shim at the old path** — a re-export is a second canonical form for one
-    module, exactly the tolerance-creep the beta stance forbids (see the
-    eponymous-wrapper rule above; #348 _removed_ such a wrapper). Forks sync on
-    tags, not `main`, so the move is a release-notes moment, not a mid-stream
-    surprise. A temporary shim is allowed **only** when all three hold: (1) it
-    lives **one release, then is deleted** — never longer; (2) the moved thing is
-    a **broadly-imported public seam** (the kind a forker imports, not an
-    internal concern file); (3) the **removal date is stated in the same release
-    notes** that ship the move. Absent all three, move the path and list it under
-    breaking changes. This is the beta stance applied to module moves
-    (`docs/reference/versioning.md` § _The beta stance: purity over
-    compatibility_).
-  - A module that is _not_ decomposed stays a single file — it is itself a
-    concern module of its parent folder (e.g. each `settings/tabs/*-tab.js` is a
-    concern of `tabs/`, whose `index.js` is the barrel). A tab that grows its own
-    sub-concerns becomes `tabs/<name>-tab/` with an `index.js` seam, exactly like
-    `settings/` decomposes into `tabs/`.
-  - Canonical example: `client/views/settings/` — every panel is a folder with an
-    `index.js` barrel (`api-keys/`, `admin-users/`, `theme-editor/`, …), no
-    wrappers, no role suffixes.
-  - **`server/storage/` applies this literally.** A bare `X.js` is an
-    _undecomposed_ single-concern store (`feedback.js`, `settings.js`). The
-    moment a store splits into more than one module it becomes a folder `X/`
-    whose `index.js` is the facade/seam — consumers import
-    `server/storage/X/index.js`, never a concern file. So reading a storage
-    import tells you the shape: `X.js` = one module; `X/index.js` = a seam
-    over concern modules (`X/list.js`, `X/crud.js`, …). All of it reads and
-    writes Postgres through the adapter; the call convention (scope-first,
-    validated) is pinned in `docs/reference/storage-scope.md` and enforced by
-    `tests/storage-call-convention.test.js`. The _shape_ is enforced too:
-    `tests/module-layout.test.js` fails on a folder holding nothing but
-    an `index.js`, and on a multi-file folder without one — no allowlist. The
-    same file enforces the eponymous-wrapper rule above across all of
-    `server/`: no `P/X.js` beside a folder `P/X/`.
-  - **`client/` follows the same rule.** No `P/X.js` beside a folder `P/X/`
-    anywhere under `client/` (`client/vendor/` excepted, third-party code):
-    a real module becomes its folder's `index.js` (`lib/dom/index.js`,
-    `views/editor/index.js`), a re-export shim is deleted and its importers
-    point at the folder. `tests/module-layout.test.js` enforces it, no
-    allowlist (D262). The two storage-shape rules do **not** apply to the
-    client: `lib/<area>/` and `views/editor/` are _groups_ whose members are
-    imported by path, and there is no duty to add an `index.js` barrel to a
-    folder that is not a seam.
+  - A decomposed unit is a folder `X/` whose `index.js` is the sole public
+    seam; consumers import `X/index.js`, never a concern file. No eponymous
+    wrapper beside the folder (`X.js` next to `X/`), no role suffix on the
+    folder, and no re-export shim at a moved path (one bounded exception). In
+    `server/storage/` a bare `X.js` is one module, `X/index.js` a seam.
+    `tests/module-layout.test.js` enforces it, no allowlist. The full rule, the
+    shim exception and the client/storage specifics:
+    `docs/developer/architecture.md` § One folder = one seam.
 
 - **Client layers: `lib/` is a layer, `views/` is a feature** (D263, D264)
   - `client/lib/` holds what owns no product feature: the DOM primitives
@@ -157,12 +87,10 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
   - Theme variables are scoped to `.slide` to keep **application UI** theme-independent (`client/styles/theme.css`).
   - Slide styling lives under `client/styles/slides/*` and is included via `client/styles/slides.css`.
   - Don’t hardcode brand colors/fonts inside slide templates. Prefer CSS vars (`--t-*` theme vars → `.slide` vars → component CSS).
-  - Width-based `@media` queries must sit on the shared breakpoint ladder (480/640/768/1024/1280, `min-width` counterparts one pixel up, plus the ultra-wide 1400/1600/1800). See **`docs/reference/css-breakpoints.md`**; enforced by `tests/css-breakpoints.test.js`.
+  - Width-based `@media` queries sit on the shared breakpoint ladder (**`docs/reference/css-breakpoints.md`**, `tests/css-breakpoints.test.js`).
 
 - **Avoid hardcoded copy scattered across templates**
-  - UI copy belongs in view-specific modules (e.g. follow-along uses `client/views/follow/i18n.js`, whose `createFollowCopy(lang)` resolves `client/i18n/<locale>/follow.json` against the _deck_ language).
-  - Slide-specific “static” copy should be centralized in a small per-slide `COPY` map keyed by language if needed (see `follow-invite-slide`).
-  - Don’t sprinkle ad-hoc strings across unrelated modules.
+  - UI copy lives in view-specific modules (follow-along: `createFollowCopy(lang)` in `client/views/follow/i18n.js`, resolved against the _deck_ language); slide-specific static copy in a per-slide `COPY` map keyed by language (see `follow-invite-slide`). No ad-hoc strings across unrelated modules.
 
 - **API error envelope (internal `/api/*`)**
   - One shape: `{ ok:false, error:'<machine_code>', message?:'<human>', details?:… }`.
@@ -173,213 +101,38 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
     from `api()`. See **`docs/reference/api-error-format.md`**; covered by
     `tests/api-error-envelope.test.js`. The public `/api/v1/*` surface keeps its
     own openapi-documented schema.
-  - **Where an error is shown is decided by its kind**, not per call site:
-    a refusal of the form on screen is inline (`createInlineError()`,
-    `client/lib/dom/inline-error.js`, marking `details.field`), an action
-    without a form toasts the caught error itself, a background failure
-    lives in a chip or banner. **`docs/reference/feedback-surfaces.md`**;
-    guarded by `tests/feedback-surfaces-guard.test.js`.
-  - **SSE `error` events are not the envelope.** They carry
-    `{ message:'<human>' }` (plus endpoint-specific extras like `report`) — no
-    `ok`, and no `error` key. The `event: error` line is already the
-    discriminator, so `ok:false` would duplicate the routing in the payload, and
-    `error` stays reserved for the machine code it means on the HTTP side rather
-    than being re-used for prose. This also matches `status` events, which
-    already use `message` for human text. Should a client ever need to branch on
-    the cause, add `error:'<snake_case_code>'` alongside `message` — additive,
-    with exactly the HTTP meaning, never a rename.
+  - Where an error is shown is decided by its kind (see _Feedback_ under
+    Frontend patterns). SSE `error` events are not the envelope: they carry
+    `{ message }`, no `ok`, no `error` key (`docs/reference/api-error-format.md`
+    § SSE error events).
 
 - **Safety: HTML escaping and markdown**
-  - Any user-provided text rendered into HTML must be escaped (`escapeHtml()` from `shared/slide-types/helpers.js`) or passed through `markdownToSafeHtml()` (`shared/markdown.js`). For XML sinks (PPTX parts, SVG) the escaper is `escapeXml()` (`shared/xml.js`). Do not hand-roll a third copy — `tests/no-escape-markdown-aliases.test.js` measures function bodies, not just imports.
-  - Don’t introduce raw/unsafe HTML insertion. For data-driven markup use `h()` (`client/lib/dom/index.js`) rather than an `innerHTML` template.
-  - The safe categories for an existing/new `innerHTML` write, and why every current client `innerHTML` site is safe, are catalogued in **`docs/reference/html-escaping.md`** — a new write is safe only if it falls into one of them.
+  - User text into HTML goes through `escapeHtml()` (`shared/slide-types/helpers.js`)
+    or `markdownToSafeHtml()` (`shared/markdown.js`); XML sinks (PPTX, SVG) use
+    `escapeXml()` (`shared/xml.js`). No third copy
+    (`tests/no-escape-markdown-aliases.test.js`). Data-driven markup uses `h()`,
+    not an `innerHTML` template; a new `innerHTML` write must fit a safe category
+    in **`docs/reference/html-escaping.md`**.
 
 - **Lifecycle & cleanup (critical in this codebase)**
-  - Slides can have runtime behavior. The slide mounting pipeline (`client/lib/slide-runtime/slide-render.js`) supports cleanup via `__sbCleanup`.
-  - If you add any runtime side-effects (EventSource, timers, window listeners, observers), you must return a cleanup function and ensure it’s called when slide DOM is replaced.
-  - Teardown is best-effort: run disposal handles through `disposeAll([...])` from `client/lib/dom/disposal.js` instead of per-handle `try { x?.(); } catch {}` — one broken handle must not abort the rest, and failures are recorded via `debugLog` (B150).
-  - A client factory returns **`{ el, detach }`** — the node it built and the function that unwires it. `destroy` / `teardown` / `cleanup` and `element` are retired spellings, gated in `eslint.config.js` (B150). `close` and `stop` still mean what they say: a user action on a modal, and halting a stream or timer.
+  - Any runtime side-effect (EventSource, timers, window listeners, observers)
+    returns a cleanup function that runs when the slide DOM is replaced
+    (`__sbCleanup` in `client/lib/slide-runtime/slide-render.js`). A client
+    factory returns **`{ el, detach }`**; disposal goes through `disposeAll()`
+    (`client/lib/dom/disposal.js`). Retired spellings and the rationale:
+    `docs/developer/architecture.md` § Critical Convention: Lifecycle & Cleanup.
 
 ---
 
-## “How slide types work” (the end-to-end pipeline)
+## Slide types
 
-### Where slide types live
-
-- **Registry**: `shared/slide-types/registry.js` exports `SLIDE_TYPES` mapping `type -> def`.
-- **Definition**: `shared/slide-types/types/<type>.js` exports a `def`:
-  - `label`: human label for the editor UI
-  - `fields`: schema describing editable fields (drives editor UI + validation + translation)
-  - `defaults`: default content object for new slides
-  - `renderHtml(content, slide, ctx)`: returns the `.slide` markup string
-- **Companions**: every type also has a `shared/slide-types/types/<type>/`
-  directory holding the per-type facets other subsystems read (`authoring.js`,
-  `inline-edit.js`, …). A definition is _not_ complete without the companions
-  its features need — a missing one fails open and silently, which is why they
-  have their own map. Read
-  [`docs/reference/slide-type-directory.md`](docs/reference/slide-type-directory.md)
-  (layout + the aggregator-seam rule) and
-  [`docs/reference/slide-type-companions.md`](docs/reference/slide-type-companions.md)
-  (what each companion is and what breaks without it) before adding or moving a
-  type.
-- **Two shapes coexist.** The A7.1 rollout is converting definitions from the
-  flat `types/<type>.js` into `types/<type>/index.js`, one type at a time, so
-  both forms are live and the registry imports both. Anything that counts or
-  globs type files must accept `<name>.js` **and** `<name>/index.js`; a bare
-  `grep '\.js$'` over that directory counts companions as types.
-- **Identity**: the registry key (`title-slide`) is the internal lookup key;
-  the _published_ id is reverse-DNS (`eu.deckyard.slide.title`, suffix dropped)
-  and is the format's **only** spelling. Export and the read APIs emit it via
-  `canonicalSlideType()`; imports and every write path fold any spelling back to
-  the key via `resolveSlideTypeName()` — both live in `registry.js` and are the
-  single place that knows the legacy mapping. Do not re-derive it anywhere else,
-  and never add a surface that accepts a non-canonical spelling without
-  normalizing through it, nor one that emits the bare key across the boundary.
-  Stored `slides[].type` still holds the bare key until the v3→v4 migration
-  lands (see `docs/plans/briefs/one-spelling.md`). See
-  [`docs/reference/deck-format.md`](docs/reference/deck-format.md) and the beta
-  stance in [`docs/reference/versioning.md`](docs/reference/versioning.md).
-
-### Rendering
-
-- Shared renderer: `renderSlideHtml()` in `shared/slide-types/presentation.js` calls `def.renderHtml(...)`.
-- Client mounting: `client/lib/slide-runtime/slide-render.js`:
-  - renders HTML → element
-  - applies theme vars to the slide element (scoped)
-  - initializes known slide runtimes (e.g. follow-invite QR, video embeds)
-  - provides cleanup via `__sbCleanup` when slides are replaced
-
-### Editor fields + layout
-
-- The editor pulls `fields/defaults/label` from `GET /api/slide-types` (`server/routes/api/slide-types.js`).
-- Most slide forms are generated from `fields[]`.
-- Some slide types have **custom form layout** modules under `client/views/editor/editor-form/slide-forms/*` and are wired in `client/views/editor/editor-form/index.js`.
-  - Add a custom form only when the generic rendering is insufficient (grouping, custom UX, derived fields).
-
-### Presenter stepping (“Tekst stap voor stap”)
-
-- Step mode is DOM-driven in `client/views/presenter/step.js`.
-- If you want a new slide type to be step-able, follow existing DOM conventions (preferred) instead of one-off hacks:
-  - Body stepping looks for `.slide-content .body` or `.slide-image-text .copy .body`
-  - Card stepping looks for known card containers
-  - Chart stepping looks for `.slide-chart .chart-frag`
-  - If you introduce a new stepping structure, extend `step.js` in a generic way.
-
-### Follow-along mode + interactions
-
-- Follow view is modular: `client/views/follow/index.js` composes:
-  - SSE controller (`client/views/follow/sse.js`)
-  - Q&A controller (`client/views/follow/qa.js`)
-  - Interactions controller (`client/views/follow/interactions/index.js`)
-  - Slide rendering uses `mountSlideInto(..., { mode: 'follow' })`
-- Interaction slides typically “opt in” via predictable slide types/markup (e.g. `data-interaction="likert"`).
-  - If you add a new interaction type, keep the same separation:
-    - **Slide markup** in the slide type module
-    - **Follow UI/runtime** in `client/views/follow/*`
-    - **Server endpoints/state** in `server/routes/api/follow/*` + storage layer
-
-### Public outputs / exports
-
-- Exports share slide HTML rendering via `shared/slide-types.js` (server utils re-export).
-- Live-only slides are stripped from public output (`server/utils/public-output.js`).
-  - If you introduce another “live-only” concept, ensure exports/publishing filter it in one place (don’t duplicate filtering logic).
-
----
-
-## Adding a new slide type (checklist that matches this repo)
-
-### 1) Add the shared slide type module (canonical)
-
-- Create `shared/slide-types/types/<your-slide>.js` (or `<your-slide>/index.js` —
-  both shapes are live, see _Where slide types live_)
-- Export `default { label, fields, defaults, renderHtml }`
-- **Add the companions too**, in `shared/slide-types/types/<your-slide>/`. The
-  checklist of which ones a type needs, and what silently degrades when one is
-  missing, is [`docs/reference/slide-type-companions.md`](docs/reference/slide-type-companions.md).
-  Skipping this is the single most common way a new type ships half-wired.
-- Requirements:
-  - `renderHtml()` must return a single root `.slide` element with a `.slide-inner` child.
-  - Use `esc()` for string fields; use `markdownToSafeHtml()` for markdown fields.
-  - Prefer semantic class naming: `slide-<name>` and predictable child classes.
-    Modifiers use the BEM double-dash: `.slide-badge--danger`, `.slide-action--primary`
-    (not flat `.slide-action-primary`). The block/element stays single-dash
-    (`.slide-action`), variants get `--`.
-  - Keep `renderHtml()` **pure**: no DOM reads/writes, no network, no timers.
-
-### 2) Register the type
-
-- Add an import + entry to `shared/slide-types/registry.js`.
-- This automatically enables:
-  - validation (`validateSlide`)
-  - default content creation (`newSlide`)
-  - rendering across editor preview, presenter, follow-along, and exports
-  - server-provided editor metadata (`GET /api/slide-types`)
-
-### 3) Style it in the right CSS layer
-
-- Add a CSS file under `client/styles/slides/` in the appropriate bundle:
-  - layout/title-ish slides: `client/styles/slides/01-layout-and-title/*`
-  - components/interactive/presenter helpers: `client/styles/slides/03-components/*`
-- Import it from the corresponding aggregator file (`client/styles/slides/01-layout-and-title.css` or `03-components.css`).
-- Use theme variables via `.slide { --... }` indirection (see `client/styles/theme.css`).
-  - Don’t hardcode brand colors/fonts inside the slide CSS.
-- **Don’t reach for the app-chrome tokens (`--ps-*`, `--z-*`) inside
-  `client/styles/slides/**`.** `slides.css` doesn’t import `ui-tokens.css`, and
-  the MCP preview bundles it alone — so the token resolves in the browser but
-  silently resolves to nothing there. Details and the spacing/z-index scales:
-  `docs/reference/css-tokens.md`.
-- **The class names a type emits are a public contract.** Every one must resolve
-  to a CSS rule (`tests/slide-type-css-contract.test.js`), and a _rename_ goes in
-  the release notes under the breaking-changes heading — a fork styling its own
-  slide types against core CSS has no other way to learn a name moved. This is
-  the breakage that reached production in v1.8.0 with 2151 green tests behind it.
-  `docs/reference/slide-type-css-contract.md`.
-
-- If your type carries a content key that identifies **this slide instance** to
-  something outside the deck (an interaction id, a cached deck id), declare it
-  with `instanceKeys` so every copy path (duplicate, paste, library insert)
-  re-derives it. Vocabulary: `shared/slide-types/instance-keys.js`.
-
-### 4) Ensure the editor UX fits the patterns
-
-- If generic field rendering is enough: you’re done.
-- If you need a special layout/grouping:
-  - Add a module under `client/views/editor/editor-form/slide-forms/<your-slide>.js`
-  - Wire it into `client/views/editor/editor-form/index.js` similarly to `chart-slide` or `follow-invite-slide`
-  - Do **not** create a one-off editor UI that redefines schema; the schema stays in `shared/`.
-
-### 5) If the slide needs runtime behavior, add it cleanly
-
-Preferred pattern:
-
-- **Markup**: add `data-*` attributes/classes in `renderHtml()` that the runtime can target.
-- **Runtime**: implement in `client/lib/<feature>.js` or a view module, returning a cleanup function.
-- **Mount**: call the runtime from `client/lib/slide-runtime/slide-render.js` (or the relevant view controller) and register cleanup via `__sbCleanup`.
-
-Avoid:
-
-- Starting runtimes inside `renderHtml()`
-- Attaching global listeners without cleanup
-- Hiding complexity in “random” views
-
-### 6) Follow-along / interactions (only if relevant)
-
-If the slide is an audience interaction:
-
-- Decide whether it’s:
-  - **dominant interaction UI** (follow view hides slide and shows interaction card), or
-  - **slide shows results while audience interacts**
-- Implement consistent server endpoints under `server/routes/api/follow/*` and keep state in `server/storage/*`.
-- Make sure the follow view can refresh without SSE (there’s a polling safety net).
-
-### 7) Publishing/exports compatibility
-
-- Verify the slide renders correctly in:
-  - editor preview
-  - presenter
-  - follow-along (if applicable)
-  - exported HTML/print/PDF/PNG/PPTX (if applicable)
-- If it should **not** appear in public outputs, add a single centralized filter (see `stripLiveOnlySlidesFromPresentation()`).
+How a type flows from `shared/slide-types/` into the editor, presenter,
+follow-along and exports, and the checklist for adding one (companions,
+registration, the CSS class contract, runtime cleanup, public-output filtering),
+are in **`docs/reference/slide-type-pipeline.md`**. Read it before adding or
+moving a type. The registry key is internal; the reverse-DNS id is the only
+published spelling, folded through `resolveSlideTypeName()` /
+`canonicalSlideType()` in `registry.js` and re-derived nowhere else.
 
 ---
 
@@ -388,10 +141,9 @@ If the slide is an audience interaction:
 - **Do**: add small modules where the codebase already expects them (`shared/slide-types/types`, `client/views/*`, `client/lib/*`, `server/routes/*`, `server/storage/*`).
 - **Do**: reuse shared helpers instead of duplicating validation/escaping/URL logic.
 - **Do**: keep i18n in mind—prose is detected by field type (`string`, `markdown`, `csv`) through `shared/slide-types/text-fields.js`, and for a content key no type declares, by the stored value (a string is prose). Ask that module, never a predicate of your own.
-- **Do**: test storage/identity/auth behaviour without a live database via the in-memory Kysely double (`tests/helpers/fake-db.js` + `__setTestDb()` from `server/db/client.js`) — it enforces UNIQUE constraints and logs every table touched so you can assert what was _not_ queried. See **`docs/developer/dev-setup.md` → Testing storage behaviour without PostgreSQL**.
-- **Don’t**: let a core test read the fork root of the checkout. A fork runs core's suite with its own `custom/` in place, so a test counts core fixtures through a core-only reader (`readCoreThemeSeeds()`) or builds its own fixture root (`docs/reference/fork-setup.md` § _After the merge, run the suite_).
+- **Do**: test storage/identity/auth without a live database via the in-memory Kysely double (`tests/helpers/fake-db.js` + `__setTestDb()`); see `docs/developer/dev-setup.md` → Testing storage behaviour without PostgreSQL.
+- **Don’t**: let a core test read the fork root of the checkout: use a core-only reader (`readCoreThemeSeeds()`) or its own fixture root (`docs/reference/fork-setup.md` § _After the merge, run the suite_).
 - **Don’t**: paste large blocks of CSS into JS templates; keep styling in CSS files.
-- **Don’t**: hardcode user-facing copy in multiple places; centralize it.
 - **Don’t**: special-case new behavior in many files; create one reusable abstraction/module and call it.
 
 ---
@@ -401,17 +153,12 @@ If the slide is an audience interaction:
 - **DOM**: `h()` from `client/lib/dom/index.js` — no raw `document.createElement`.
 - **Strings**: `t(key, fallback)` from `client/lib/ui-i18n.js` for all
   user-facing copy; translations in `client/i18n/<locale>/<component>.json`.
-- **Feedback**: the kind of event decides the carrier —
-  `docs/reference/feedback-surfaces.md` is the doctrine (five kinds: place,
-  lifetime, content, focus). `toast` from `client/lib/dom/toast.js` for a
-  _passing_ message: a confirmation, or the failure of an action that has no
-  form on screen. A refusal of the form the user is filling in is a state of
-  that form: `createInlineError()` from `client/lib/dom/inline-error.js`,
-  beside the control or the Save button, cleared at the start of the next
-  attempt, naming the field (`err.details.field`), never toasted alongside.
-  No `alert()`, no hand-rolled `*-error` class (the guard is
-  `tests/feedback-surfaces-guard.test.js`). Worked example:
-  `client/views/settings/slide-type-editor/`.
+- **Feedback**: the kind of event decides the carrier
+  (`docs/reference/feedback-surfaces.md`). `toast` (`client/lib/dom/toast.js`)
+  for a passing message; a refusal of the form on screen is inline via
+  `createInlineError()` (`client/lib/dom/inline-error.js`), naming
+  `err.details.field`, never toasted alongside. No `alert()`, no hand-rolled
+  `*-error` class (`tests/feedback-surfaces-guard.test.js`).
 - **Confirmations**: `confirmModal` / `createTextInput` from
   `client/lib/dom/modal.js`. No native `confirm()`/`prompt()` in new code.
 - **Modals**: follow the `client/lib/dom/modal.js` helpers (focus trap and
@@ -422,8 +169,6 @@ If the slide is an audience interaction:
   entry and no re-route), build a destination with `urlWithQuery(patch)` and
   name the current page with `currentUrl()`. No `new URL(location.href)` or
   `location.search` anywhere else — a guard test pins it.
-- **Lifecycle**: a factory returns `{ el, detach }` — not `destroy`/`teardown`/
-  `cleanup`, not `element`. Run disposal through `disposeAll()`.
 - **CSS**: reuse `.editor-card`, `.field-label`, `.help`, `.btn`/`.btn-primary`/
   `.btn-danger`, `.row`/`.stack`, `.is-between` — check existing views before
   adding classes.
