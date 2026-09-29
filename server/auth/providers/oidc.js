@@ -23,9 +23,6 @@ const log = createLogger('sso-oidc');
 /** Tolerance (seconds) for ID-token iat/exp/nbf clock-skew checks. */
 const CLOCK_TOLERANCE_SECONDS = 60;
 
-/** OIDC scopes requested. `email` is the ACL key; `profile` gives us `name`. */
-const SCOPE = 'openid email profile';
-
 /**
  * Discovery is network I/O and its result (endpoints + JWKS handle) is stable
  * for the lifetime of a process, so we memoize the Configuration per
@@ -83,7 +80,7 @@ export async function buildLoginRequest(oidc = getOidcConfig()) {
 
   const url = client.buildAuthorizationUrl(config, {
     redirect_uri: oidc.redirectUri,
-    scope: SCOPE,
+    scope: oidc.scopes.join(' '),
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
     state,

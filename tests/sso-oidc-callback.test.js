@@ -60,7 +60,7 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { signPayload } = await import('../server/utils/signed-payload.js');
 const { isSsoEnforced } = await import('../server/config/sso.js');
-const { resetOidcClientConfigCache } =
+const { resetOidcClientConfigCache, buildLoginRequest } =
   await import('../server/auth/providers/oidc.js');
 const { handleSso } = await import('../server/routes/api/sso.js');
 const auth = await import('../server/auth/auth.js');
@@ -245,6 +245,39 @@ function seed({ users = [], memberships = [] } = {}) {
 
 test('enforcement is on for every case in this file', () => {
   assert.equal(isSsoEnforced(), true);
+});
+
+// The authorization request (B552, D277): the base scopes always, plus
+// OIDC_EXTRA_SCOPES, which is how ZITADEL's organization claim is asked for.
+
+/** The `scope` parameter of the next authorization URL, with this env value. */
+async function requestedScope(extraScopes) {
+  const before = process.env.OIDC_EXTRA_SCOPES;
+  if (extraScopes === undefined) delete process.env.OIDC_EXTRA_SCOPES;
+  else process.env.OIDC_EXTRA_SCOPES = extraScopes;
+  try {
+    const { url } = await buildLoginRequest();
+    return new URL(url).searchParams.get('scope');
+  } finally {
+    if (before === undefined) delete process.env.OIDC_EXTRA_SCOPES;
+    else process.env.OIDC_EXTRA_SCOPES = before;
+  }
+}
+
+test('the authorization URL asks for openid, email and profile', async () => {
+  assert.equal(await requestedScope(undefined), 'openid email profile');
+});
+
+test('the authorization URL carries OIDC_EXTRA_SCOPES after the base three', async () => {
+  assert.equal(
+    await requestedScope(' urn:zitadel:iam:user:resourceowner  groups '),
+    'openid email profile urn:zitadel:iam:user:resourceowner groups',
+  );
+  // Listing a base scope again adds nothing and drops nothing.
+  assert.equal(
+    await requestedScope('email offline_access'),
+    'openid email profile offline_access',
+  );
 });
 
 test('a matched organization claim lands in the minted session', async () => {

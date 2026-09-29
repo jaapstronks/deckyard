@@ -8,6 +8,8 @@ import {
   getOidcConfig,
   getSsoPublicConfig,
   parseGroupsClaims,
+  parseExtraScopes,
+  OIDC_BASE_SCOPES,
   checkOidcRedirectUri,
   ssoConfigWarnings,
 } from '../server/config/sso.js';
@@ -32,6 +34,7 @@ const SSO_KEYS = [
   'OIDC_ADMIN_GROUPS',
   'OIDC_ORG_CLAIM',
   'OIDC_GROUPS_CLAIM',
+  'OIDC_EXTRA_SCOPES',
   'SSO_BUTTON_LABEL',
   'APP_URL',
   'DOMAIN',
@@ -211,6 +214,45 @@ test('an OIDC_GROUPS_CLAIM with an empty path segment refuses boot', () => {
   for (const bad of ['realm_access..roles', '.roles', 'roles.']) {
     withEnv({ ...FULL, OIDC_GROUPS_CLAIM: bad }, () => {
       assert.match(ssoConfigError(), /OIDC_GROUPS_CLAIM/);
+      assert.equal(isSsoEnabled(), false);
+    });
+  }
+});
+
+// OIDC_EXTRA_SCOPES (B552, D277): added to the base scopes, never replacing.
+
+test('OIDC_EXTRA_SCOPES unset → only the base scopes', () => {
+  withEnv(FULL, () => {
+    assert.deepEqual(getOidcConfig().scopes, ['openid', 'email', 'profile']);
+  });
+  assert.deepEqual(parseExtraScopes('').scopes, [...OIDC_BASE_SCOPES]);
+});
+
+test('OIDC_EXTRA_SCOPES is whitespace-separated and a set', () => {
+  const { scopes, error } = parseExtraScopes(
+    'urn:zitadel:iam:user:resourceowner\tgroups  groups openid',
+  );
+  assert.equal(error, null);
+  assert.deepEqual(scopes, [
+    'openid',
+    'email',
+    'profile',
+    'urn:zitadel:iam:user:resourceowner',
+    'groups',
+  ]);
+});
+
+test('an OIDC_EXTRA_SCOPES entry that is not a scope-token refuses boot', () => {
+  for (const bad of [
+    'a,b',
+    'groups, roles',
+    'say"hi"',
+    'back\\slash',
+    'café',
+  ]) {
+    assert.match(parseExtraScopes(bad).error, /OIDC_EXTRA_SCOPES/);
+    withEnv({ ...FULL, OIDC_EXTRA_SCOPES: bad }, () => {
+      assert.match(ssoConfigError(), /OIDC_EXTRA_SCOPES/);
       assert.equal(isSsoEnabled(), false);
     });
   }

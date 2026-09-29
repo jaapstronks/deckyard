@@ -32,6 +32,16 @@ export const OIDC_CALLBACK_PATH = '/api/auth/oidc/callback';
  */
 const DEFAULT_GROUPS_CLAIMS = ['groups', 'roles'];
 
+/**
+ * The scopes every login requests: `openid` is the protocol, `email` the ACL
+ * key, `profile` gives the display name. `OIDC_EXTRA_SCOPES` adds to these
+ * and never replaces them (D277), so a login cannot lose its email claim.
+ */
+export const OIDC_BASE_SCOPES = Object.freeze(['openid', 'email', 'profile']);
+
+/** An RFC 6749 §3.3 scope-token: printable ASCII except space, double quote and backslash. */
+const SCOPE_TOKEN = /^[\x21\x23-\x5B\x5D-\x7E]+$/;
+
 /** Role assigned to JIT-provisioned users unless a group maps them to admin. */
 const DEFAULT_PROVISION_ROLE = 'user';
 
@@ -79,6 +89,7 @@ export function isSsoEnforced() {
  *   adminGroups: string[],
  *   groupsClaims: string[],
  *   orgClaim: string,
+ *   scopes: string[],
  * }}
  */
 export function getOidcConfig() {
@@ -98,6 +109,7 @@ export function getOidcConfig() {
     adminGroups: envList('OIDC_ADMIN_GROUPS'),
     groupsClaims: parseGroupsClaims(envStr('OIDC_GROUPS_CLAIM')).claims,
     orgClaim: envStr('OIDC_ORG_CLAIM'),
+    scopes: parseExtraScopes(envStr('OIDC_EXTRA_SCOPES')).scopes,
   };
 }
 
@@ -144,8 +156,12 @@ export function ssoConfigError() {
     }
   }
 
-  const { error } = parseGroupsClaims(envStr('OIDC_GROUPS_CLAIM'));
-  if (error) return error;
+  for (const { error } of [
+    parseGroupsClaims(envStr('OIDC_GROUPS_CLAIM')),
+    parseExtraScopes(envStr('OIDC_EXTRA_SCOPES')),
+  ]) {
+    if (error) return error;
+  }
 
   return null;
 }
@@ -179,6 +195,39 @@ export function parseGroupsClaims(raw) {
     };
   }
   return { claims: [...new Set(entries)], error: null };
+}
+
+/**
+ * Parse `OIDC_EXTRA_SCOPES`: scopes requested on top of
+ * {@link OIDC_BASE_SCOPES}, separated by whitespace like the OAuth `scope`
+ * parameter itself (ZITADEL's organization claim needs
+ * `urn:zitadel:iam:user:resourceowner`). A scope list is a set, so repeats
+ * and a base scope listed again collapse. A comma is refused rather than
+ * split on: it is the separator of every other list env, and sent verbatim it
+ * would ask for one scope nobody means. Reported at boot by
+ * {@link ssoConfigError}.
+ *
+ * @param {string} raw - The env value.
+ * @returns {{ scopes: string[], error: string|null }} `scopes` is the full
+ *   list to request, base scopes first.
+ */
+export function parseExtraScopes(raw) {
+  const tokens = String(raw || '')
+    .split(/\s+/)
+    .filter(Boolean);
+  const bad = tokens.find((t) => t.includes(',') || !SCOPE_TOKEN.test(t));
+  if (bad) {
+    return {
+      scopes: [...OIDC_BASE_SCOPES],
+      error:
+        `OIDC_EXTRA_SCOPES entry "${bad}" is not a valid scope. ` +
+        'Separate scopes with spaces, not commas.',
+    };
+  }
+  return {
+    scopes: [...new Set([...OIDC_BASE_SCOPES, ...tokens])],
+    error: null,
+  };
 }
 
 /**

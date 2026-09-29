@@ -60,30 +60,31 @@ the session and grants a membership there when provisioning is enabled:
 
 Set these in `.env` (see `.env.example` for the annotated block):
 
-| Variable               | Required | Meaning                                                                                                                                                                                                                                                                         |
-| ---------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `SSO_ENABLED`          | yes      | `true` to turn SSO on.                                                                                                                                                                                                                                                          |
-| `SSO_PROVIDER`         | yes      | `oidc` (only value supported today).                                                                                                                                                                                                                                            |
-| `OIDC_ISSUER_URL`      | yes      | Issuer base URL; discovery uses `/.well-known/openid-configuration`.                                                                                                                                                                                                            |
-| `OIDC_CLIENT_ID`       | yes      | Client ID from the IdP app registration.                                                                                                                                                                                                                                        |
-| `OIDC_CLIENT_SECRET`   | yes      | Client secret (keep out of version control).                                                                                                                                                                                                                                    |
-| `OIDC_REDIRECT_URI`    | yes      | `<APP_URL>/api/auth/oidc/callback`, and registered at the IdP exactly so. Boot warns, with the expected URI in the message, when the path or the origin differs.                                                                                                                |
-| `OIDC_ALLOWED_DOMAINS` | no       | Comma-separated email domains allowed to log in (hosted-domain guard).                                                                                                                                                                                                          |
-| `OIDC_AUTO_PROVISION`  | no       | JIT-create unknown users on first login. Default `true`. Set `false` to require users be invited first.                                                                                                                                                                         |
-| `OIDC_DEFAULT_ROLE`    | no       | Role for newly provisioned users: `user` (default) or `admin`.                                                                                                                                                                                                                  |
-| `OIDC_ADMIN_GROUPS`    | no       | Comma-separated IdP group/role claim values that map to the Deckyard `admin` role.                                                                                                                                                                                              |
-| `OIDC_GROUPS_CLAIM`    | no       | Comma-separated claims the group/role values are read from; each a claim name or a dot path (`realm_access.roles`). Default `groups,roles`. See [Role mapping](#role-mapping).                                                                                                  |
-| `OIDC_ORG_CLAIM`       | no       | Exact ID-token claim name whose string value matches `organizations.external_id`. Set that value on an existing organization through `PATCH /api/organizations/:id` as an instance admin who also administers that organization (D243). Missing or unknown values refuse login. |
-| `SSO_ENFORCE`          | no       | `true` hides the password + magic-link forms on the login screen. Default `false`. Does **not** yet refuse those endpoints — see the status note above.                                                                                                                         |
-| `SSO_BUTTON_LABEL`     | no       | The words on the SSO button, e.g. `Sign in with Acme ID`. The invite report that tells an inviter how a new member gets in names the same words. Default: the translated "Sign in with SSO".                                                                                    |
+| Variable               | Required | Meaning                                                                                                                                                                                                                                                                                             |
+| ---------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `SSO_ENABLED`          | yes      | `true` to turn SSO on.                                                                                                                                                                                                                                                                              |
+| `SSO_PROVIDER`         | yes      | `oidc` (only value supported today).                                                                                                                                                                                                                                                                |
+| `OIDC_ISSUER_URL`      | yes      | Issuer base URL; discovery uses `/.well-known/openid-configuration`.                                                                                                                                                                                                                                |
+| `OIDC_CLIENT_ID`       | yes      | Client ID from the IdP app registration.                                                                                                                                                                                                                                                            |
+| `OIDC_CLIENT_SECRET`   | yes      | Client secret (keep out of version control).                                                                                                                                                                                                                                                        |
+| `OIDC_REDIRECT_URI`    | yes      | `<APP_URL>/api/auth/oidc/callback`, and registered at the IdP exactly so. Boot warns, with the expected URI in the message, when the path or the origin differs.                                                                                                                                    |
+| `OIDC_ALLOWED_DOMAINS` | no       | Comma-separated email domains allowed to log in (hosted-domain guard).                                                                                                                                                                                                                              |
+| `OIDC_AUTO_PROVISION`  | no       | JIT-create unknown users on first login. Default `true`. Set `false` to require users be invited first.                                                                                                                                                                                             |
+| `OIDC_DEFAULT_ROLE`    | no       | Role for newly provisioned users: `user` (default) or `admin`.                                                                                                                                                                                                                                      |
+| `OIDC_ADMIN_GROUPS`    | no       | Comma-separated IdP group/role claim values that map to the Deckyard `admin` role.                                                                                                                                                                                                                  |
+| `OIDC_GROUPS_CLAIM`    | no       | Comma-separated claims the group/role values are read from; each a claim name or a dot path (`realm_access.roles`). Default `groups,roles`. See [Role mapping](#role-mapping).                                                                                                                      |
+| `OIDC_ORG_CLAIM`       | no       | Exact ID-token claim name whose string value matches `organizations.external_id`. Set that value on an existing organization through `PATCH /api/organizations/:id` as an instance admin who also administers that organization (D243). Missing or unknown values refuse login.                     |
+| `OIDC_EXTRA_SCOPES`    | no       | Space-separated scopes requested on top of `openid email profile`, which are always requested. Needed when the IdP sends a claim only for its own scope, e.g. `urn:zitadel:iam:user:resourceowner` for ZITADEL's organization claim. A comma or another character a scope cannot hold refuses boot. |
+| `SSO_ENFORCE`          | no       | `true` hides the password + magic-link forms on the login screen. Default `false`. Does **not** yet refuse those endpoints — see the status note above.                                                                                                                                             |
+| `SSO_BUTTON_LABEL`     | no       | The words on the SSO button, e.g. `Sign in with Acme ID`. The invite report that tells an inviter how a new member gets in names the same words. Default: the translated "Sign in with SSO".                                                                                                        |
 
 The sign-in card can carry the instance logo too: that is `APP_LOGO_URL`,
 the same logo the overview topbar shows (see `.env.example`, Branding).
 
 The server **refuses to boot** when `SSO_ENABLED=true` but a required OIDC
-setting is missing, an URL is malformed, or an `OIDC_GROUPS_CLAIM` entry has an
-empty path segment — a half-configured SSO fails loudly rather than at first
-login.
+setting is missing, an URL is malformed, an `OIDC_GROUPS_CLAIM` entry has an
+empty path segment, or an `OIDC_EXTRA_SCOPES` entry is not a valid scope — a
+half-configured SSO fails loudly rather than at first login.
 
 It **warns at boot** when `OIDC_REDIRECT_URI` is not the callback this
 instance serves: a path other than `/api/auth/oidc/callback`, or an origin
@@ -180,10 +181,10 @@ redirect URI or clock; the server log has the IdP's answer).
   organization is `urn:zitadel:iam:user:resourceowner:id`, the value to put in
   `OIDC_ORG_CLAIM` and in the organization's `--external-id`. ZITADEL adds that
   claim only when the reserved scope `urn:zitadel:iam:user:resourceowner` is
-  requested, and Deckyard requests `openid email profile` and nothing else yet,
-  so a ZITADEL login with `OIDC_ORG_CLAIM` set is refused with
-  `org_claim_missing` until Deckyard can request extra scopes (planned; until
-  then, a ZITADEL action that sets the claim is the workaround).
+  requested, so set the claim and the scope side by side:
+  `OIDC_ORG_CLAIM=urn:zitadel:iam:user:resourceowner:id` and
+  `OIDC_EXTRA_SCOPES=urn:zitadel:iam:user:resourceowner`. With the claim alone,
+  every login is refused with `org_claim_missing`.
 
 ## Not included (Track 1)
 
