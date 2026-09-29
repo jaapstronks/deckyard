@@ -518,6 +518,14 @@ merge time:
 - **`npm run lint`** — the same check (`import-x/no-unresolved`) across the core
   trees, in case your merge left one half-applied.
 
+The rest of the suite is core's, and it must pass unchanged on your checkout:
+**a core test never counts the fork root**. It reads core fixtures (the six
+seeds in `themes/`, core slide types) through a reader that sees only core,
+or it builds its own fixture root; it never lets your `custom/` content change
+its expected numbers. A core test that fails only because your `custom/` holds
+your own themes, types or assets is an upstream bug: report it rather than
+patching the test in your fork.
+
 ### Merge round checklist
 
 One release per round, on a branch, through your own PR:
