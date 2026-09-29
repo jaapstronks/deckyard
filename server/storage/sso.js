@@ -19,9 +19,8 @@ import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
 import { withDbGuard } from './utils/index.js';
 import { envStr } from '../config/utils.js';
-import { isMultiOrgEnabled } from '../config/features.js';
 import { invalidateDisplayNames } from './display-identity.js';
-import { listUserOrganizations } from './user-organizations/index.js';
+import { ensureMembership } from './login-membership.js';
 
 /**
  * The AUTH_ADMIN_EMAIL bootstrap admin, lowercased, or '' when unset.
@@ -29,87 +28,6 @@ import { listUserOrganizations } from './user-organizations/index.js';
  */
 function getAdminEmail() {
   return envStr('AUTH_ADMIN_EMAIL').toLowerCase();
-}
-
-/**
- * Give an SSO identity an organization to work in (multi-organization mode).
- *
- * The organization row lock serializes the empty-org decision and insert,
- * including concurrent first logins. Recheck the user's memberships after
- * acquiring it: another login may have provisioned the same person meanwhile.
- *
- * @param {object} user - Raw `users` row: freshly inserted, or as found
- *   before this login's update (a refusal must not have written it)
- * @param {boolean} autoProvision - The operator's provisioning policy
- * @param {string | null} targetOrgId - Organization matched from an OIDC claim
- * @param {'admin' | 'member'} role - Role for a new claimed membership
- * @returns {Promise<{ ok: true, membership: { organizationId: string, role: string } | null }
- *   | { ok: false, reason: string }>}
- */
-async function ensureMembership(db, user, autoProvision, targetOrgId, role) {
-  if (!isMultiOrgEnabled()) return { ok: true, membership: null };
-
-  if (targetOrgId) {
-    const existing = await db
-      .selectFrom('user_organizations')
-      .select('id')
-      .where('user_id', '=', user.id)
-      .where('organization_id', '=', targetOrgId)
-      .executeTakeFirst();
-    if (existing) return { ok: true, membership: null };
-  } else {
-    const held = await listUserOrganizations(user.id);
-    if (held.length) return { ok: true, membership: null };
-  }
-  if (!autoProvision) return { ok: false, reason: 'no_membership' };
-
-  const organizationId = targetOrgId || user.organization_id;
-  return db.transaction().execute(async (trx) => {
-    await trx
-      .selectFrom('organizations')
-      .select('id')
-      .where('id', '=', organizationId)
-      .forUpdate()
-      .executeTakeFirstOrThrow();
-
-    let membershipQuery = trx
-      .selectFrom('user_organizations')
-      .select('id')
-      .where('user_id', '=', user.id);
-    if (targetOrgId) {
-      membershipQuery = membershipQuery.where(
-        'organization_id',
-        '=',
-        organizationId,
-      );
-    }
-    const existing = await membershipQuery.executeTakeFirst();
-    if (existing) return { ok: true, membership: null };
-
-    const count = await trx
-      .selectFrom('user_organizations')
-      .select((eb) => eb.fn.countAll().as('count'))
-      .where('organization_id', '=', organizationId)
-      .executeTakeFirst();
-    const membershipRole = targetOrgId
-      ? role
-      : Number(count?.count || 0) === 0
-        ? 'owner'
-        : 'member';
-    const now = nowIso();
-    await trx
-      .insertInto('user_organizations')
-      .values({
-        user_id: user.id,
-        organization_id: organizationId,
-        role: membershipRole,
-        joined_at: now,
-        created_at: now,
-        updated_at: now,
-      })
-      .execute();
-    return { ok: true, membership: { organizationId, role: membershipRole } };
-  });
 }
 
 /**

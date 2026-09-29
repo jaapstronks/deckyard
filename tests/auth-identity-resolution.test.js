@@ -403,6 +403,22 @@ test('getOrCreateMagicLinkUser provisions a new user in the context organization
   assert.equal(created.auth_source, 'magic_link');
 });
 
+test('getOrCreateMagicLinkUser writes no membership in single-organization mode', async () => {
+  const db = seedSingleOrg();
+
+  const result = await magicLinkStore.getOrCreateMagicLinkUser(
+    ctx,
+    'newcomer@example.com',
+  );
+
+  assert.equal(result.ok, true);
+  assert.equal(db.__tables.user_organizations.length, 1, 'only the seeded row');
+  assert.ok(
+    !touchedTables(db).includes('user_organizations'),
+    'no membership lookup at all in single-organization mode',
+  );
+});
+
 test('getOrCreateSsoUser provisions and then reuses the same row', async () => {
   const db = seedSingleOrg();
 
