@@ -90,58 +90,78 @@ export function validateThemeSeed(record, file) {
   return record;
 }
 
-/** Load core and optional fork seeds; reject a duplicate before any upsert. */
-export async function readThemeSeeds(root = repoRoot) {
-  const dirs = [
-    path.join(root, 'themes'),
-    path.join(customDirFor(root), 'themes'),
-  ];
-  const seen = new Map();
+/** Validate one seed directory; the core directory must hold exactly six. */
+async function readSeedDir(dir, { core }) {
+  let files;
+  try {
+    files = (await fs.readdir(dir))
+      .filter((name) => name.endsWith('.json'))
+      .sort();
+  } catch (error) {
+    if (error.code === 'ENOENT' && !core) return [];
+    throw error;
+  }
+  if (core && files.length !== 6)
+    throw new Error(
+      `Expected six core theme seeds in ${dir}, found ${files.length}`,
+    );
   const seeds = [];
-  for (const [index, dir] of dirs.entries()) {
-    let files;
-    try {
-      files = (await fs.readdir(dir))
-        .filter((name) => name.endsWith('.json'))
-        .sort();
-    } catch (error) {
-      if (error.code === 'ENOENT' && index === 1) continue;
-      throw error;
-    }
-    if (index === 0 && files.length !== 6)
-      throw new Error(
-        `Expected six core theme seeds in ${dir}, found ${files.length}`,
-      );
-    for (const name of files) {
-      const file = path.join(dir, name);
-      const record = validateThemeSeed(
-        JSON.parse(await fs.readFile(file, 'utf8')),
-        file,
-      );
-      for (const role of FONT_FIELDS) {
-        for (const face of curatedFontFaces(record.fonts[role])) {
-          try {
-            await fs.access(path.join(repoRoot, face.path));
-          } catch {
-            refuse(file, `fonts.${role} (${face.path} missing)`);
-          }
+  for (const name of files) {
+    const file = path.join(dir, name);
+    const record = validateThemeSeed(
+      JSON.parse(await fs.readFile(file, 'utf8')),
+      file,
+    );
+    for (const role of FONT_FIELDS) {
+      for (const face of curatedFontFaces(record.fonts[role])) {
+        try {
+          await fs.access(path.join(repoRoot, face.path));
+        } catch {
+          refuse(file, `fonts.${role} (${face.path} missing)`);
         }
       }
-      const previous = seen.get(record.slug);
-      if (previous)
-        throw new Error(
-          `Theme seed slug ${record.slug} appears in ${previous} and ${file}`,
-        );
-      seen.set(record.slug, file);
-      seeds.push({
-        record,
-        hash: createHash('sha256')
-          .update(JSON.stringify(canonicalJson(record)))
-          .digest('hex'),
-      });
     }
+    seeds.push({
+      file,
+      record,
+      hash: createHash('sha256')
+        .update(JSON.stringify(canonicalJson(record)))
+        .digest('hex'),
+    });
   }
   return seeds;
+}
+
+const withoutFile = ({ record, hash }) => ({ record, hash });
+
+/**
+ * Load only the six core seeds under `<root>/themes/`, never the fork root.
+ * Core tests read seeds through this, so a fork's own seeds cannot change them.
+ */
+export async function readCoreThemeSeeds(root = repoRoot) {
+  return (await readSeedDir(path.join(root, 'themes'), { core: true })).map(
+    withoutFile,
+  );
+}
+
+/** Load core and optional fork seeds; reject a duplicate before any upsert. */
+export async function readThemeSeeds(root = repoRoot) {
+  const seeds = [
+    ...(await readSeedDir(path.join(root, 'themes'), { core: true })),
+    ...(await readSeedDir(path.join(customDirFor(root), 'themes'), {
+      core: false,
+    })),
+  ];
+  const seen = new Map();
+  for (const { record, file } of seeds) {
+    const previous = seen.get(record.slug);
+    if (previous)
+      throw new Error(
+        `Theme seed slug ${record.slug} appears in ${previous} and ${file}`,
+      );
+    seen.set(record.slug, file);
+  }
+  return seeds.map(withoutFile);
 }
 
 /** Refresh all seeds in one transaction, preserving IDs and skipping unchanged rows. */

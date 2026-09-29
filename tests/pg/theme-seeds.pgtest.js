@@ -15,6 +15,7 @@ import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope, otherOrganizationScope } from '../helpers/storage-scope.js';
 import {
   initializeThemeSeeds,
+  readCoreThemeSeeds,
   readThemeSeeds,
   upsertThemeSeeds,
 } from '../../server/utils/theme-seeds.js';
@@ -47,14 +48,16 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
     await closeTestDb(db);
   });
 
-  it('boots six seeds, keeps UUIDs and updates a changed seed in place', async () => {
+  it('boots the installed seeds, keeps UUIDs and updates a changed seed in place', async () => {
+    // Installed = the six core seeds plus whatever the fork root holds.
+    const installed = (await readThemeSeeds()).length;
     await initializeThemeSeeds();
     const first = await db
       .selectFrom('themes')
       .selectAll()
       .where('organization_id', 'is', null)
       .execute();
-    assert.equal(first.length, 6);
+    assert.equal(first.length, installed);
     await initializeThemeSeeds();
     const second = await db
       .selectFrom('themes')
@@ -65,7 +68,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
       second.map((r) => r.id).sort(),
       first.map((r) => r.id).sort(),
     );
-    const seeds = await readThemeSeeds();
+    const seeds = await readCoreThemeSeeds();
     const changed = {
       ...seeds[0],
       record: { ...seeds[0].record, label: 'Changed label' },
@@ -97,7 +100,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
     try {
       const dir = path.join(root, 'themes');
       await fs.mkdir(dir, { recursive: true });
-      const seeds = await readThemeSeeds();
+      const seeds = await readCoreThemeSeeds();
       for (const { record } of seeds) {
         const changed =
           record.slug === seeds[0].record.slug
@@ -139,7 +142,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
     try {
       const dir = path.join(root, 'themes');
       await fs.mkdir(dir, { recursive: true });
-      const seeds = await readThemeSeeds();
+      const seeds = await readCoreThemeSeeds();
       for (const { record } of seeds) {
         const changed =
           record.slug === seeds[0].record.slug
@@ -171,7 +174,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
   });
 
   it('keeps seed and org scope distinct at the database boundary', async () => {
-    const seed = (await readThemeSeeds())[0].record;
+    const seed = (await readCoreThemeSeeds())[0].record;
     await assert.rejects(
       db
         .insertInto('themes')
@@ -202,7 +205,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
       await sql`SELECT COUNT(*)::int AS count FROM themes WHERE organization_id IS NULL`.execute(
         db,
       );
-    assert.equal(rows.rows[0].count, 6);
+    assert.equal(rows.rows[0].count, (await readThemeSeeds()).length);
   });
 
   it('shows seeds to both organizations but only own records; seeds are read-only', async () => {
@@ -220,13 +223,14 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
     });
     // The public create accepts only the portable fields, not the read shape.
     assert.equal(copyA.ok, false);
-    const record = (await readThemeSeeds())[0].record;
+    const record = (await readCoreThemeSeeds())[0].record;
     const a = await createTheme(scopeA, { ...record, slug: 'org-a-copy' });
     const b = await createTheme(scopeB, { ...record, slug: 'org-b-copy' });
     assert.equal(a.ok, true);
     assert.equal(b.ok, true);
-    assert.equal((await listThemes(scopeA)).length, 7);
-    assert.equal((await listThemes(scopeB)).length, 7);
+    const installed = (await readThemeSeeds()).length;
+    assert.equal((await listThemes(scopeA)).length, installed + 1);
+    assert.equal((await listThemes(scopeB)).length, installed + 1);
     assert.equal(await getThemeRecord(scopeB, a.theme.id), null);
     assert.ok(await getThemeRecord(scopeB, seed.id));
     assert.deepEqual(
@@ -237,7 +241,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
   });
 
   it('refuses malformed colors at create and update gates without writes', async () => {
-    const record = (await readThemeSeeds())[0].record;
+    const record = (await readCoreThemeSeeds())[0].record;
     const created = await createTheme(scopeA, {
       ...record,
       slug: 'color-gate-check',
@@ -273,7 +277,7 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
   });
 
   it('refuses JSON prototype config keys on create and update without writes', async () => {
-    const record = (await readThemeSeeds())[0].record;
+    const record = (await readCoreThemeSeeds())[0].record;
     const created = await createTheme(scopeA, {
       ...record,
       slug: 'config-gate-check',
