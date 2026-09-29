@@ -56,7 +56,7 @@ test('displayCap: a small display size yields a small cap, clamped both ends', (
   assert.equal(displayCap(0, cfg, 2), cfg.maxPx);
 });
 
-/** Run `fn` with PDF_EXPORT_* env vars set (undefined = unset). */
+/** Run `fn` with EXPORT_* env vars set (undefined = unset). */
 function withEnv(env, fn) {
   const keys = ['EXPORT_IMAGE_RETINA_SCALE', 'EXPORT_IMAGE_COMPRESSION'];
   const saved = {};

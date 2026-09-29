@@ -46,7 +46,7 @@ async function bigTransparentPng(px = 3000) {
     .toBuffer();
 }
 
-/** Run `fn` with the given PDF_EXPORT_* vars set (undefined = unset). */
+/** Run `fn` with the given EXPORT_* vars set (undefined = unset). */
 function withEnv(env, fn) {
   const keys = [
     'EXPORT_IMAGE_COMPRESSION',
