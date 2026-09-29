@@ -415,12 +415,14 @@ async function handleCommentStatus(ctx, commentId) {
 export const ROUTES = [
   {
     method: 'GET',
+    id: 'listComments',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/comments$/,
     captures: ['uuid'],
     handler: handleListComments,
   },
   {
     method: 'POST',
+    id: 'createComment',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/comments$/,
     captures: ['uuid'],
     handler: handleCreateComment,
@@ -432,6 +434,7 @@ export const ROUTES = [
   },
   {
     method: 'POST',
+    id: 'setCommentStatus',
     pattern: /^\/api\/v1\/comments\/([^/]+)\/status$/,
     captures: ['uuid'],
     handler: handleCommentStatus,

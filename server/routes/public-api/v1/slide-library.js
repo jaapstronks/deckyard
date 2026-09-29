@@ -258,6 +258,7 @@ async function handleAddFromLibrary(ctx, presentationId) {
 export const ROUTES = [
   {
     method: 'POST',
+    id: 'insertSlidesFromLibrary',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/slides\/from-library$/,
     captures: ['uuid'],
     handler: handleAddFromLibrary,
@@ -269,6 +270,7 @@ export const ROUTES = [
   },
   {
     method: 'GET',
+    id: 'getSlideLibraryItem',
     pattern: /^\/api\/v1\/slide-library\/([^/]+)$/,
     captures: ['uuid'],
     handler: handleGet,
@@ -278,7 +280,12 @@ export const ROUTES = [
     captures: ['uuid'],
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
   },
-  { method: 'GET', pattern: '/api/v1/slide-library', handler: handleList },
+  {
+    method: 'GET',
+    id: 'listSlideLibraryItems',
+    pattern: '/api/v1/slide-library',
+    handler: handleList,
+  },
   {
     pattern: '/api/v1/slide-library',
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),

@@ -124,6 +124,7 @@ tags:
 paths:
   /:
     get:
+      operationId: getApiInfo
       tags:
         - Meta
       summary: API info
@@ -153,6 +154,7 @@ paths:
 
   /docs:
     get:
+      operationId: getApiDocs
       tags:
         - Meta
       summary: API documentation (Swagger UI)
@@ -168,6 +170,7 @@ paths:
 
   /openapi.yaml:
     get:
+      operationId: getOpenApiSpec
       tags:
         - Meta
       summary: OpenAPI specification
@@ -183,6 +186,7 @@ paths:
 
   /schema/deck.json:
     get:
+      operationId: getDeckSchema
       tags:
         - Meta
       summary: Deck format JSON Schema
@@ -202,6 +206,7 @@ paths:
 
   /schema/slide-types/{type}.json:
     get:
+      operationId: getSlideTypeSchema
       tags:
         - Meta
       summary: Slide-type content JSON Schema
@@ -236,6 +241,7 @@ paths:
 
   /presentations:
     get:
+      operationId: listPresentations
       tags:
         - Presentations
       summary: List presentations
@@ -284,6 +290,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
     post:
+      operationId: createPresentation
       tags:
         - Presentations
       summary: Create a presentation
@@ -372,6 +379,7 @@ paths:
 
   /presentations/{id}:
     get:
+      operationId: getPresentation
       tags:
         - Presentations
       summary: Get a presentation
@@ -404,6 +412,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
     put:
+      operationId: updatePresentation
       tags:
         - Presentations
       summary: Update a presentation
@@ -473,6 +482,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
     delete:
+      operationId: deletePresentation
       tags:
         - Presentations
       summary: Delete a presentation
@@ -507,6 +517,7 @@ paths:
 
   /presentations/{id}/duplicate:
     post:
+      operationId: duplicatePresentation
       tags:
         - Presentations
       summary: Duplicate a presentation
@@ -540,6 +551,7 @@ paths:
 
   /presentations/{id}/slides:
     post:
+      operationId: createSlide
       tags:
         - Slides
       summary: Create a slide
@@ -625,6 +637,7 @@ paths:
 
   /presentations/{id}/slides/{slideId}:
     get:
+      operationId: getSlide
       tags:
         - Slides
       summary: Get a slide
@@ -666,6 +679,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
     put:
+      operationId: updateSlide
       tags:
         - Slides
       summary: Update a slide
@@ -762,6 +776,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
     delete:
+      operationId: deleteSlide
       tags:
         - Slides
       summary: Delete a slide
@@ -815,6 +830,7 @@ paths:
 
   /presentations/{id}/slides/reorder:
     post:
+      operationId: reorderSlides
       tags:
         - Slides
       summary: Reorder slides
@@ -880,6 +896,7 @@ paths:
 
   /presentations/{id}/slides/from-library:
     post:
+      operationId: insertSlidesFromLibrary
       tags:
         - Slides
       summary: Add slide from library
@@ -951,6 +968,7 @@ paths:
 
   /presentations/{id}/publish:
     get:
+      operationId: getPublication
       tags:
         - Publishing
       summary: Get publish status
@@ -994,6 +1012,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
     post:
+      operationId: publishPresentation
       tags:
         - Publishing
       summary: Publish presentation
@@ -1045,6 +1064,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
     delete:
+      operationId: unpublishPresentation
       tags:
         - Publishing
       summary: Unpublish presentation
@@ -1078,6 +1098,7 @@ paths:
 
   /presentations/{id}/translate:
     post:
+      operationId: translatePresentation
       tags:
         - Translation
       summary: Translate presentation
@@ -1152,6 +1173,7 @@ paths:
 
   /translate/languages:
     get:
+      operationId: listTranslationLanguages
       tags:
         - Translation
       summary: List supported languages
@@ -1182,6 +1204,7 @@ paths:
 
   /slide-library:
     get:
+      operationId: listSlideLibraryItems
       tags:
         - Slide Library
       summary: List library items
@@ -1231,6 +1254,7 @@ paths:
 
   /slide-library/{itemId}:
     get:
+      operationId: getSlideLibraryItem
       tags:
         - Slide Library
       summary: Get library item
@@ -1264,6 +1288,7 @@ paths:
 
   /presentations/{id}/export/json:
     get:
+      operationId: exportPresentationJson
       tags:
         - Exports
       summary: Export as JSON
@@ -1297,6 +1322,7 @@ paths:
 
   /presentations/{id}/export/html:
     get:
+      operationId: exportPresentationHtml
       tags:
         - Exports
       summary: Export as HTML
@@ -1331,6 +1357,7 @@ paths:
 
   /presentations/{id}/export/pptx:
     get:
+      operationId: exportPresentationPptx
       tags:
         - Exports
       summary: Export as PowerPoint
@@ -1374,6 +1401,7 @@ paths:
 
   /presentations/{id}/export/pdf:
     get:
+      operationId: exportPresentationPdf
       tags:
         - Exports
       summary: Export as PDF
@@ -1410,6 +1438,7 @@ paths:
 
   /ai/vendors:
     get:
+      operationId: listAiVendors
       tags:
         - AI
       summary: Get available AI vendors
@@ -1453,6 +1482,7 @@ paths:
 
   /ai/wizard:
     post:
+      operationId: generatePresentationWithAi
       tags:
         - AI
       summary: Generate a presentation
@@ -1525,6 +1555,7 @@ paths:
 
   /ai/append-slides:
     post:
+      operationId: appendSlidesWithAi
       tags:
         - AI
       summary: Generate slides to append
@@ -1584,6 +1615,7 @@ paths:
 
   /themes:
     get:
+      operationId: listThemes
       tags:
         - Resources
       summary: List available themes
@@ -1611,6 +1643,7 @@ paths:
 
   /slide-types:
     get:
+      operationId: listSlideTypes
       tags:
         - Resources
       summary: List slide types
@@ -1638,6 +1671,7 @@ paths:
 
   /image-library:
     get:
+      operationId: listImageLibraryItems
       tags:
         - Resources
       summary: Search image library
@@ -1717,6 +1751,7 @@ paths:
 
   /presentations/{id}/comments:
     get:
+      operationId: listComments
       tags:
         - Comments
       summary: List comments
@@ -1787,6 +1822,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
     post:
+      operationId: createComment
       tags:
         - Comments
       summary: Create a comment or reply
@@ -1851,6 +1887,7 @@ paths:
 
   /comments/{commentId}/status:
     post:
+      operationId: setCommentStatus
       tags:
         - Comments
       summary: Change comment status

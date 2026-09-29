@@ -363,6 +363,7 @@ async function handleDuplicate(ctx, id) {
 export const ROUTES = [
   {
     method: 'POST',
+    id: 'duplicatePresentation',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/duplicate$/,
     captures: ['uuid'],
     handler: handleDuplicate,
@@ -374,18 +375,21 @@ export const ROUTES = [
   },
   {
     method: 'GET',
+    id: 'getPresentation',
     pattern: /^\/api\/v1\/presentations\/([^/]+)$/,
     captures: ['uuid'],
     handler: handleGet,
   },
   {
     method: 'PUT',
+    id: 'updatePresentation',
     pattern: /^\/api\/v1\/presentations\/([^/]+)$/,
     captures: ['uuid'],
     handler: handleUpdate,
   },
   {
     method: 'DELETE',
+    id: 'deletePresentation',
     pattern: /^\/api\/v1\/presentations\/([^/]+)$/,
     captures: ['uuid'],
     handler: handleDelete,
@@ -395,8 +399,18 @@ export const ROUTES = [
     captures: ['uuid'],
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET', 'PUT', 'DELETE']),
   },
-  { method: 'GET', pattern: '/api/v1/presentations', handler: handleList },
-  { method: 'POST', pattern: '/api/v1/presentations', handler: handleCreate },
+  {
+    method: 'GET',
+    id: 'listPresentations',
+    pattern: '/api/v1/presentations',
+    handler: handleList,
+  },
+  {
+    method: 'POST',
+    id: 'createPresentation',
+    pattern: '/api/v1/presentations',
+    handler: handleCreate,
+  },
   {
     pattern: '/api/v1/presentations',
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET', 'POST']),
