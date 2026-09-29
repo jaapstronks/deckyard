@@ -286,7 +286,8 @@ Upstream's maintainer steps around a release, moved out of `docs/developer/maint
 - **Release → release notes on `deckyard-website`** is a hub → spoke recipe
   (this repo is the hub of `deckyard-website`, `deckyard-planning`,
   `deckyard-cloud` and `deckyard-video`; rules and the test question in
-  `../../_meta/workspace-CLAUDE.md` § Cross-repo, `hub:` in `../../_meta/REPOS.yaml`).
+  the multi-repo protocol in `../../_meta/` § Cross-repo, `hub:` in
+  `../../_meta/REPOS.yaml`).
   After a Release PR merges, write the note in
   `../deckyard-website/src/content/releases/{en,nl}/X.Y.Z.md` from the
   `CHANGELOG.md` section (selection criterion: what a user notices, not the
