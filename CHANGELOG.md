@@ -4,6 +4,24 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.50.0](https://github.com/jaapstronks/deckyard/compare/v1.49.0...v1.50.0) (2026-09-29)
+
+
+### Added
+
+* **capture:** recipes for the slide editors and the editor family (B548) ([#1390](https://github.com/jaapstronks/deckyard/issues/1390)) ([fca9daf](https://github.com/jaapstronks/deckyard/commit/fca9daf62f694d97d6ff14b4b1d17a9036d50549))
+* **ops:** npm run doctor and a Dockerfile HEALTHCHECK (B428 PR 1) ([#1383](https://github.com/jaapstronks/deckyard/issues/1383)) ([04cc0e6](https://github.com/jaapstronks/deckyard/commit/04cc0e602df4d1b24fe779c79118c313e877c111))
+* **ops:** production profile, PaaS deploy and back-up pages (B428 PR 2) ([#1384](https://github.com/jaapstronks/deckyard/issues/1384)) ([429ae85](https://github.com/jaapstronks/deckyard/commit/429ae856c0e776a3f58f9b73e66431645bd75b62))
+
+
+### Fixed
+
+* **auth:** space the refused sign-in callout from the card below it (B558) ([#1386](https://github.com/jaapstronks/deckyard/issues/1386)) ([fab0fe8](https://github.com/jaapstronks/deckyard/commit/fab0fe83c52c6155c7a6daa3ef84f4ad0c8e1a9d))
+* **ci:** retry a font download that gets no answer, then fail the install (B559) ([#1389](https://github.com/jaapstronks/deckyard/issues/1389)) ([5ad93d3](https://github.com/jaapstronks/deckyard/commit/5ad93d332cc3fa82f9ed88db85a3f746adbc83b5))
+* **export:** inline a fork seam image only when the export can draw it (B557) ([#1387](https://github.com/jaapstronks/deckyard/issues/1387)) ([5ee6189](https://github.com/jaapstronks/deckyard/commit/5ee618959779b8f1dffd8c31409449af1c6adee6))
+* **export:** shutting down Chrome releases its stdio pipes (B549) ([#1378](https://github.com/jaapstronks/deckyard/issues/1378)) ([c327a87](https://github.com/jaapstronks/deckyard/commit/c327a875b979a1566fde9077f40d77edb81e9503))
+* **render:** PNG export waits for load and embeds display-sized images (B302) ([#1388](https://github.com/jaapstronks/deckyard/issues/1388)) ([39c2ea5](https://github.com/jaapstronks/deckyard/commit/39c2ea5cf2d06135dff6a02d5321be7b3e884137))
+
 ## [1.49.0](https://github.com/jaapstronks/deckyard/compare/v1.48.0...v1.49.0) (2026-09-29)
 
 
