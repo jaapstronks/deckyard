@@ -21,4 +21,11 @@ server/uploads
 docs
 marketing
 
-
+# Development-only trees: tests, fixtures, scratch output, agent config
+tests
+test-suite
+tmp
+capture
+.claude
+.scratch
+coverage
