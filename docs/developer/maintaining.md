@@ -177,6 +177,16 @@ Apply it at the recurring moments:
   PR or plan touching those pages, or the note needs a positioning call rather
   than a rewrite. The other way round never: `deckyard-website` does not change
   this repo.
+- **Release → sandbox on the tag.** `sandbox.deckyard.eu` runs a release tag,
+  never `main`, and whoever merges the Release PR moves it to the new tag in the
+  same session. On the box, in the sandbox checkout: dump the database first,
+  then `git fetch --tags origin && git checkout <tag>`, then bring up only
+  `app` and `postgres` with both compose files (the base file plus the
+  override; the base file alone starts a Caddy that collides with the host's
+  and runs the app without its env). Verify on the box and in the browser
+  (open an example deck from the sandbox Home). Host, key and file names live
+  in the private runbook, `deckyard-website` `internal/ops/hetzner-sandbox-vps.md`
+  § Updates; they do not belong in this public repo.
 - **After merging a delegated PR** (a "review en merge" hand-off you completed):
   run the **`merge-housekeeping`** skill as the tail of the flow, before you
   stop. It cleans up the branch, ticks the shipped item off `docs/plans/TODO.md`,
