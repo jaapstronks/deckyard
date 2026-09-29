@@ -80,15 +80,17 @@ Without the pin, `assets/fonts/google/` was a function of Google's release
 schedule rather than of this repository, and no rendering baseline could mean
 anything (`docs/plans/briefs/export-structural-metrics.md`).
 
-**Which install failures are fatal.** A pinned URL that answers with an HTTP
+**Every install failure is fatal.** A pinned URL that answers with an HTTP
 error, or answers with bytes whose checksum does not match, is a _repository_
-problem: the lock points at something that is no longer there, and installing
-anyway leaves a checkout with silently missing fonts. Those abort `postinstall`
-with a non-zero exit and a `--update-lock` instruction. A request that never
-gets an answer at all (DNS, timeout, offline, proxy) is an _environment_
-problem: these assets are optional at runtime, every consumer falls back to the
-system stack, and failing `npm install` over a flaky connection would be worse.
-Those warn and continue.
+problem: the lock points at something that is no longer there. Those abort
+`postinstall` with a non-zero exit and a `--update-lock` instruction. A request
+that never gets an answer at all (DNS, timeout, offline, proxy) is an
+_environment_ problem: it is retried twice with a short backoff, and when the
+third attempt fails too, `postinstall` aborts with the network cause. The fonts
+are not optional: the core theme seeds refuse to load when a curated face is
+missing on disk (`server/utils/theme-seeds.js`), so skipping a file would only
+move the failure to the first boot or test that seeds themes, under a message
+that blames the seed instead of the network (B559).
 
 Each weight ships as **two files**, Google's disjoint `latin` and `latin-ext`
 subsets, named `<slug>-<weight>-<subset>.woff2`. Both are needed: `latin` holds
