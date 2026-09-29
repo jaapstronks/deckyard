@@ -21,7 +21,7 @@ import {
   buildExportStyleContent,
   embedSlideImages,
 } from './css-bundle.js';
-import { pdfImageEmbedTransform } from './image-compress.js';
+import { exportImageEmbedTransform } from './image-compress.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import {
   measureImageDisplayPx,
@@ -333,7 +333,7 @@ export async function buildSlidesPdfHtml(
   // This flat-cap transform stays on the field-value pass below (top-level images
   // are near full-bleed, so the flat cap already fits) and on video posters; the
   // <img src> pass gets a display-aware transform once the layout is measured.
-  const imageTransform = pdfImageEmbedTransform();
+  const imageTransform = exportImageEmbedTransform();
 
   // One embed cache for the whole export run: an image referenced both as a
   // field value (pass 1 below) and in the rendered <img src> (pass 2) is

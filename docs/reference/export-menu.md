@@ -52,7 +52,7 @@ render fails or times out.
   rather than a `202` job hand-off that would need polling. The blob is saved
   with the filename from the `Content-Disposition` header.
 - A client-side timeout (`PDF_FETCH_TIMEOUT_MS`, 90s; the server's own cap is
-  `PDF_EXPORT_TIMEOUT_MS`, 120s) aborts a stuck render.
+  `EXPORT_RENDER_TIMEOUT_MS`, 120s) aborts a stuck render.
 - On error or timeout, an inline fallback appears under the PDF row: a short
   message plus a button that opens the browser-print page (`pdf-slides`, the
   same 16:9 slide HTML) in a new tab, where the user does Cmd/Ctrl-P → Save as

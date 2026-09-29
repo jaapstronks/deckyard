@@ -58,10 +58,7 @@ test('displayCap: a small display size yields a small cap, clamped both ends', (
 
 /** Run `fn` with PDF_EXPORT_* env vars set (undefined = unset). */
 function withEnv(env, fn) {
-  const keys = [
-    'PDF_EXPORT_IMAGE_RETINA_SCALE',
-    'PDF_EXPORT_IMAGE_COMPRESSION',
-  ];
+  const keys = ['EXPORT_IMAGE_RETINA_SCALE', 'EXPORT_IMAGE_COMPRESSION'];
   const saved = {};
   for (const k of keys) {
     saved[k] = process.env[k];
@@ -82,18 +79,18 @@ function withEnv(env, fn) {
 
 test('retinaScale: default 2, valid override in [1, 4], else fallback', () => {
   withEnv({}, () => assert.equal(retinaScale(), DEFAULT_RETINA_SCALE));
-  withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: '3' }, () =>
+  withEnv({ EXPORT_IMAGE_RETINA_SCALE: '3' }, () =>
     assert.equal(retinaScale(), 3),
   );
   // Out-of-range and garbage fall back to the default (envInt contract; the
   // pre-family parser clamped 100 → 4 instead).
-  withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: '100' }, () =>
+  withEnv({ EXPORT_IMAGE_RETINA_SCALE: '100' }, () =>
     assert.equal(retinaScale(), DEFAULT_RETINA_SCALE),
   );
-  withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: '0' }, () =>
+  withEnv({ EXPORT_IMAGE_RETINA_SCALE: '0' }, () =>
     assert.equal(retinaScale(), DEFAULT_RETINA_SCALE),
   );
-  withEnv({ PDF_EXPORT_IMAGE_RETINA_SCALE: 'nope' }, () =>
+  withEnv({ EXPORT_IMAGE_RETINA_SCALE: 'nope' }, () =>
     assert.equal(retinaScale(), DEFAULT_RETINA_SCALE),
   );
 });
@@ -120,7 +117,7 @@ test('hasMeasurableImages: only local <img src> counts', () => {
 });
 
 test('displayAwareEmbedTransform: null when compression is off', () => {
-  withEnv({ PDF_EXPORT_IMAGE_COMPRESSION: 'off' }, () =>
+  withEnv({ EXPORT_IMAGE_COMPRESSION: 'off' }, () =>
     assert.equal(displayAwareEmbedTransform(new Map()), null),
   );
 });

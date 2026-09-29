@@ -107,11 +107,11 @@ test('PDF export still applies image compression to embedded slide images', asyn
 });
 
 test('compression can be switched off for the PDF export', async () => {
-  const prev = process.env.PDF_EXPORT_IMAGE_COMPRESSION;
+  const prev = process.env.EXPORT_IMAGE_COMPRESSION;
   const raw = await bigOpaquePng(1200);
   const [url, cleanup] = await withUpload(raw);
   try {
-    process.env.PDF_EXPORT_IMAGE_COMPRESSION = 'off';
+    process.env.EXPORT_IMAGE_COMPRESSION = 'off';
     const pres = {
       id: 'compress-off',
       title: 'Compression off',
@@ -131,8 +131,8 @@ test('compression can be switched off for the PDF export', async () => {
       'with compression off the original PNG bytes should be embedded as-is',
     );
   } finally {
-    if (prev === undefined) delete process.env.PDF_EXPORT_IMAGE_COMPRESSION;
-    else process.env.PDF_EXPORT_IMAGE_COMPRESSION = prev;
+    if (prev === undefined) delete process.env.EXPORT_IMAGE_COMPRESSION;
+    else process.env.EXPORT_IMAGE_COMPRESSION = prev;
     await cleanup();
   }
 });

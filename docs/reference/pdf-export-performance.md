@@ -8,7 +8,7 @@ treat them as ratios, not absolutes.
 ## The one thing that matters: image compression must stay wired in
 
 `server/export/image-compress.js` downsamples every embedded raster to
-`PDF_EXPORT_IMAGE_MAX_PX` (default 2600) and re-encodes it (JPEG when opaque, PNG
+`EXPORT_IMAGE_MAX_PX` (default 2600) and re-encodes it (JPEG when opaque, PNG
 when transparency must survive). Without it, `toDataUrlIfLocal` inlines each image
 at its original resolution.
 
@@ -29,7 +29,7 @@ the PDF. `tests/export-pdf-image-compression-wired.test.js` guards that seam;
 
 ## The cap is display-aware on the `<img src>` pass
 
-`PDF_EXPORT_IMAGE_MAX_PX` is a _flat_ ceiling: it looks at the source resolution,
+`EXPORT_IMAGE_MAX_PX` is a _flat_ ceiling: it looks at the source resolution,
 never at how big the image is drawn. A portrait shown ~150 px wide in a 24-up
 grid therefore embedded at the same 2600 px as a full-bleed photo, roughly
 1000 ppi for a 2.5-inch box. On the deck measured above, 50.7% of the image
@@ -39,8 +39,8 @@ bytes sat above 400 ppi, all of it in that category.
 pass, the export loads the assembled document once more in the headless Chrome it
 already uses for the gradient probe and reads the largest
 `getBoundingClientRect()` of every local `<img>`. Each image is then capped at
-`ceil(displayPx * PDF_EXPORT_IMAGE_RETINA_SCALE)`, clamped down by
-`PDF_EXPORT_IMAGE_MAX_PX` and up by a 256 px floor. The measure page is offline
+`ceil(displayPx * EXPORT_IMAGE_RETINA_SCALE)`, clamped down by
+`EXPORT_IMAGE_MAX_PX` and up by a 256 px floor. The measure page is offline
 (every request except `data:` is aborted), which is safe because the boxes are
 CSS-driven: a slide image is `width/height: 100%` inside a fixed-size container,
 so it measures correctly even though `/uploads/...` never resolves under
@@ -65,6 +65,23 @@ Consequences worth knowing:
 browser and asserts the end-to-end split (grid item shrinks, full-bleed does not)
 behind a Chrome gate.
 
+## The PNG route shares the transform and the load wait
+
+`server/render/png.js` (PNG, PNG zip, PPTX "every slide as an image", thumbnails)
+embeds its images through the same two passes: the flat cap on theme assets and
+slide fields, the display-aware cap on `<img src>`. Its canvas is 1600×900 at a
+`deviceScaleFactor` of at most 3, which the retina margin already covers.
+
+Both routes load their document through `loadExportDocument()`
+(`server/render/load-export-document.js`), which waits for `load`, never
+`networkidle0`. Data-URL images are not network, so Chrome's idle timer can fire
+while the parser is still writing a large document, before that document's
+`init`; Puppeteer then waits for a `networkIdle` that never comes and the render
+dies on the timeout. A 3200 px upload used twice in an image-set made a 14.6 MB
+document that did exactly that on a 2-vCPU box (B302). `load` fires after every
+image has decoded, and `settleRenderedPage()` covers fonts and frames.
+`tests/export-png-image-embed.test.js` pins both.
+
 ## What does _not_ cost render time
 
 Measured, so nobody re-litigates these:
@@ -79,7 +96,7 @@ Measured, so nobody re-litigates these:
   still names `system-ui`/`-apple-system`, so text falls through to the variable
   system font that Skia can only emit as Type 3. Ugly, and it leaks app-chrome
   tokens into slide rendering, but it costs no measurable render time.
-- **Lowering `PDF_EXPORT_IMAGE_MAX_PX` below the default.** It buys bytes
+- **Lowering `EXPORT_IMAGE_MAX_PX` below the default.** It buys bytes
   (2600 → 1600 halves the file) but not speed, and it is not monotonic: pages
   with a full-bleed background photo get _slower_ at 1100 px because the viewer
   has to upscale.
@@ -110,13 +127,13 @@ render all pages in one process.
 
 ## Knobs
 
-| Env var                         | Default | Effect                                                                             |
-| ------------------------------- | ------- | ---------------------------------------------------------------------------------- |
-| `PDF_EXPORT_IMAGE_COMPRESSION`  | on      | `0`/`off`/`false`/`no` disables the transform entirely                             |
-| `PDF_EXPORT_IMAGE_MAX_PX`       | 2600    | Flat longest-edge ceiling; `0` disables                                            |
-| `PDF_EXPORT_IMAGE_RETINA_SCALE` | 2       | Margin over the measured display size on the `<img src>` pass; clamped to `[1, 4]` |
-| `PDF_EXPORT_IMAGE_QUALITY`      | 80      | JPEG quality (mozjpeg)                                                             |
-| `PDF_EXPORT_TIMEOUT_MS`         | 120000  | Puppeteer `setContent` + `pdf` cap; `0` disables                                   |
+| Env var                     | Default | Effect                                                                             |
+| --------------------------- | ------- | ---------------------------------------------------------------------------------- |
+| `EXPORT_IMAGE_COMPRESSION`  | on      | `0`/`off`/`false`/`no` disables the transform entirely                             |
+| `EXPORT_IMAGE_MAX_PX`       | 2600    | Flat longest-edge ceiling; `0` disables                                            |
+| `EXPORT_IMAGE_RETINA_SCALE` | 2       | Margin over the measured display size on the `<img src>` pass; clamped to `[1, 4]` |
+| `EXPORT_IMAGE_QUALITY`      | 80      | JPEG quality (mozjpeg)                                                             |
+| `EXPORT_RENDER_TIMEOUT_MS`  | 120000  | `setContent` + capture cap, PDF and PNG; `0` disables                              |
 
 ## Known open edge
 
