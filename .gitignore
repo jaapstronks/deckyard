@@ -63,6 +63,7 @@ custom/scripts/*
 !custom/scripts/.gitkeep
 custom/mcp-tools.js
 custom/extension.json
+custom/fork.json
 custom/fonts.js
 custom/google-fonts.lock.json
 
@@ -73,7 +74,7 @@ custom/google-fonts.lock.json
 /*.png
 
 # Working plans / briefings — a symlink to the private `deckyard-planning`
-# sibling repo (see CLAUDE.md). No trailing slash so the symlink is ignored too.
+# sibling repo (see docs/developer/maintaining.md). No trailing slash so the symlink is ignored too.
 docs/plans
 
 # Personal correspondence, never commit

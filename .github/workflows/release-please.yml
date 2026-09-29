@@ -22,6 +22,12 @@ concurrency:
 
 jobs:
   release-please:
+    # Upstream only. A fork takes its versions from upstream's tags in a merge
+    # round and must not cut releases of its own; this keeps the workflow file
+    # identical in every fork, so switching it off is no seam. Dependabot has
+    # no such condition: a fork turns it off in its repo settings
+    # (docs/reference/fork-setup.md, Step 1).
+    if: github.repository == 'jaapstronks/deckyard'
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v5

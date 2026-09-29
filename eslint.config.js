@@ -396,7 +396,7 @@ const instanceAdminRestriction = {
     'are a plain member (B144, docs/developer/linting.md).',
 };
 
-// `h()` from client/lib/dom.js is CLAUDE.md's first frontend rule, and the one
+// `h()` from client/lib/dom.js is AGENTS.md's first frontend rule, and the one
 // client convention that had no mechanical backing: `h` was imported in 302
 // files while `document.createElement` survived in 14, mostly as one
 // head-asset recipe written five times over (B150). Where the gate is missing,

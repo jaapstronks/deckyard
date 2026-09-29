@@ -189,7 +189,7 @@ are built with `h()`; head assets — a `<style>`, `<link rel=stylesheet>` or
 font providers through
 [`client/lib/theme/font-assets.js`](../../client/lib/theme/font-assets.js).
 
-`h()` from `client/lib/dom.js` is the first frontend rule in `CLAUDE.md` and was
+`h()` from `client/lib/dom.js` is the first frontend rule in `AGENTS.md` and was
 the last one with no mechanical backing: `h` imported in 302 files against 26
 surviving `document.createElement` sites in 14 (B150). The survivors were
 largely **one recipe written five times** — create the tag, set a property or
@@ -711,7 +711,7 @@ rules. The repo is formatted with [Prettier](https://prettier.io) on its
 defaults plus `singleQuote: true` (`.prettierrc`); `.prettierignore` mirrors the
 ESLint ignore list and adds the tool-written files (`CHANGELOG.md`,
 `package-lock.json`, the generated baselines under `tests/fixtures/export-metrics/`)
-and the gitignored planning symlink (see `CLAUDE.md`).
+and the gitignored planning symlink (see `docs/developer/maintaining.md`).
 
 - `npm run format` writes, `npm run format:check` gates in CI. There are no
   editor hooks and no lint-staged: CI is the gate.

@@ -42,6 +42,7 @@
     "start": "node server/server.js",
     "setup": "node scripts/setup.js",
     "org:create": "node scripts/org-create.js",
+    "fork:seams": "node scripts/fork-seams.js",
     "seed:bg-demo": "node scripts/seed-bg-contrast-demo.js",
     "theme:preview": "node scripts/theme-preview.js",
     "capture": "node capture/run.js",

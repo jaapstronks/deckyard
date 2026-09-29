@@ -8,7 +8,7 @@
  * names, so the single ambiguous name must never come back, and none of the
  * three replacements may be redefined elsewhere.
  *
- * One name for three outputs is the core of this drift (CLAUDE.md § beta
+ * One name for three outputs is the core of this drift (maintaining.md § beta
  * doctrine); this gate fails if `formatNumber` reappears or a replacement is
  * duplicated. Client-scoped: the number formatters live in the client tree.
  *

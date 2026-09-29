@@ -78,21 +78,22 @@ nothing is discoverable only by `ls`.
 
 **Contributor guides** (`docs/developer/`)
 
-| Doc                                                                      | What it covers                                                                                                      |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| [`architecture.md`](developer/architecture.md)                           | Directory structure, handler chain, render pipeline                                                                 |
-| [`dev-setup.md`](developer/dev-setup.md)                                 | Local development environment                                                                                       |
-| [`contributing.md`](developer/contributing.md)                           | Contribution workflow and conventions                                                                               |
-| [`slide-types.md`](developer/slide-types.md)                             | Adding a custom slide type + AI integration                                                                         |
-| [`themes.md`](developer/themes.md)                                       | Adding custom themes                                                                                                |
-| [`i18n.md`](developer/i18n.md)                                           | Internationalization                                                                                                |
-| [`api.md`](developer/api.md)                                             | Public API developer guide                                                                                          |
-| [`linting.md`](developer/linting.md)                                     | Lint setup and the suppressions burndown                                                                            |
-| [`export-smoke-test.md`](developer/export-smoke-test.md)                 | Export smoke test                                                                                                   |
-| [`migration-smoke-test.md`](developer/migration-smoke-test.md)           | The `migrations` CI job — every migration up/down/up, and the test double held against the resulting schema         |
-| [`pg-test-suite.md`](developer/pg-test-suite.md)                         | The `test-postgres` CI job — the storage layer's `onConflict` paths against a real PostgreSQL                       |
-| [`test-runner-ipc-flake.md`](developer/test-runner-ipc-flake.md)         | The `npm test` "Unable to deserialize cloned data" flake (B50) — Node-core root cause and the keep-tests-quiet rule |
-| [`live-data-sources-testing.md`](developer/live-data-sources-testing.md) | Live data sources testing checklist                                                                                 |
+| Doc                                                                      | What it covers                                                                                                          |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| [`architecture.md`](developer/architecture.md)                           | Directory structure, handler chain, render pipeline                                                                     |
+| [`dev-setup.md`](developer/dev-setup.md)                                 | Local development environment                                                                                           |
+| [`contributing.md`](developer/contributing.md)                           | Contribution workflow and conventions                                                                                   |
+| [`maintaining.md`](developer/maintaining.md)                             | Upstream's maintainer workflow for agents: planning, handoff, beta doctrine, git and releases (imported by `CLAUDE.md`) |
+| [`slide-types.md`](developer/slide-types.md)                             | Adding a custom slide type + AI integration                                                                             |
+| [`themes.md`](developer/themes.md)                                       | Adding custom themes                                                                                                    |
+| [`i18n.md`](developer/i18n.md)                                           | Internationalization                                                                                                    |
+| [`api.md`](developer/api.md)                                             | Public API developer guide                                                                                              |
+| [`linting.md`](developer/linting.md)                                     | Lint setup and the suppressions burndown                                                                                |
+| [`export-smoke-test.md`](developer/export-smoke-test.md)                 | Export smoke test                                                                                                       |
+| [`migration-smoke-test.md`](developer/migration-smoke-test.md)           | The `migrations` CI job — every migration up/down/up, and the test double held against the resulting schema             |
+| [`pg-test-suite.md`](developer/pg-test-suite.md)                         | The `test-postgres` CI job — the storage layer's `onConflict` paths against a real PostgreSQL                           |
+| [`test-runner-ipc-flake.md`](developer/test-runner-ipc-flake.md)         | The `npm test` "Unable to deserialize cloned data" flake (B50) — Node-core root cause and the keep-tests-quiet rule     |
+| [`live-data-sources-testing.md`](developer/live-data-sources-testing.md) | Live data sources testing checklist                                                                                     |
 
 **Slide types**
 

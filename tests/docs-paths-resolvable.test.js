@@ -5,9 +5,9 @@
  * `client/lib/x.js` into `client/lib/y/x.js` is green in CI and leaves every doc
  * that named the old path pointing at nothing. The 2026-07-27 docs audit found 21
  * such dead paths — the `client/lib/` split into sub-folders and the storage seam
- * of #408 — and `AGENTS.md` and `CLAUDE.md` were among the offenders, the very
- * files a session reads before structural work. The audit repaired them; this is
- * the gate that stops it coming back.
+ * of #408 — and `AGENTS.md` and the then-full `CLAUDE.md` were among the
+ * offenders, the very files a session reads before structural work. The audit
+ * repaired them; this is the gate that stops it coming back.
  *
  * It mirrors `tests/removed-slide-types.test.js` and its two-way honesty: no dead
  * path survives unexplained, and no allowlist entry outlives the reference it
@@ -22,6 +22,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+
+import { isForkOwned, readForkManifest } from '../scripts/lib/fork-manifest.js';
 
 const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -63,43 +65,54 @@ const GITIGNORED_RUNTIME_ROOTS = [
  * `docs/plans/` is upstream's own: a gitignored symlink to the private planning
  * repo, absent on a fresh clone, so scanning it would fail everywhere and citing
  * into it must not fail here.
+ */
+const UPSTREAM_PRIVATE_TREES = ['docs/plans/'];
+
+/**
+ * A fork's own files, declared in `custom/fork.json` (`owned`), plus the two
+ * every fork owns without declaring: `custom/` and `CLAUDE.md`. They are not
+ * upstream's docs, so this gate neither reads them nor requires links into them.
  *
- * **A fork adds its own private tree to this list.** That is the whole reason it
- * is a constant. Upstream hardcoded `docs/plans/` in three places, so a fork with
- * a `docs/internal/` failed this gate on every item in it and had to patch the
- * test itself — a patch that then had to be re-defended at every merge. One list,
- * one line to add. (Fork-upgrade finding B6.)
+ * This used to be a constant a fork had to edit: `fork-setup.md` prescribed one
+ * extra line in this file for a fork's `docs/internal/`, a kernel patch every
+ * fork carried and re-merged whenever upstream touched the line (B6, then B426).
+ * Now the fork declares the tree in its own manifest and no core file changes.
+ * `CLAUDE.md` is left out for the same reason: upstream's is two import lines
+ * (the content lives in `AGENTS.md` and `docs/developer/maintaining.md`, both
+ * scanned), and a fork's own may name sibling-repo paths that resolve nowhere
+ * in this tree.
  *
- * A prefix here means three things at once, and they belong together: the tree is
- * not scanned for citations, citations *into* it are skipped, and its docs are
- * not required to be linked from elsewhere.
+ * An excluded prefix means three things at once, and they belong together: the
+ * tree is not scanned for citations, citations *into* it are skipped, and its
+ * docs are not required to be linked from elsewhere.
  *
  * That third consequence has a sharp edge worth knowing before you document an
  * example: because citations into an excluded tree are skipped, a *literal*
  * example path like `docs/internal/` disappears from {@link citedPaths} the
- * moment a fork excludes that tree — and an allowlist entry for it would then
- * fail the "cannot rot" test as uncited. So docs name an excluded tree as a
- * placeholder pattern (`docs/<your-tree>/`), which is filtered as a pattern in
- * either state and needs no allowlist entry at all.
+ * moment a fork owns that tree — and an allowlist entry for it would then fail
+ * the "cannot rot" test as uncited. So docs name a fork's tree as a placeholder
+ * pattern (`docs/<your-tree>/`), which is filtered as a pattern in either state
+ * and needs no allowlist entry at all.
  */
-const EXCLUDED_DOC_TREES = ['docs/plans/'];
+const FORK_MANIFEST = readForkManifest(REPO_ROOT);
 
 /**
  * @param {string} rel repo-relative path
  * @returns {boolean} whether it sits in a tree this gate ignores
  */
 const isExcludedDocPath = (rel) =>
-  EXCLUDED_DOC_TREES.some((d) => rel.startsWith(d));
+  UPSTREAM_PRIVATE_TREES.some((d) => rel.startsWith(d)) ||
+  isForkOwned(FORK_MANIFEST, rel);
 
 /**
- * Docs the gate reads. Prose that ships with the repo, minus the private trees in
- * {@link EXCLUDED_DOC_TREES}: `docs/**` outside those, plus the four anchor files
- * at the root.
+ * Docs the gate reads. Prose that ships with the repo, minus upstream's private
+ * tree and the fork's own files: `docs/**` plus the anchor files at the root.
  */
 const isDocFile = (rel) =>
   rel.endsWith('.md') &&
-  (['AGENTS.md', 'CLAUDE.md', 'README.md', 'ROADMAP.md'].includes(rel) ||
-    (rel.startsWith('docs/') && !isExcludedDocPath(rel)));
+  !isExcludedDocPath(rel) &&
+  (['AGENTS.md', 'README.md', 'ROADMAP.md'].includes(rel) ||
+    rel.startsWith('docs/'));
 
 /**
  * Cited paths that resolve to nothing yet are correct as written.
@@ -212,9 +225,10 @@ function pathResolves(rel) {
  *
  * Skipped as "not a literal path to resolve":
  * - glob / angle-bracket / brace templates (`client/lib/*`, `<type>.js`, `{en,nl}`);
- * - anything under {@link EXCLUDED_DOC_TREES} — upstream's `docs/plans/` is a
- *   gitignored symlink to the private planning repo, absent on a fresh clone,
- *   and a fork adds its own private tree there;
+ * - anything under {@link UPSTREAM_PRIVATE_TREES} or owned by the fork
+ *   ({@link FORK_MANIFEST}) — upstream's `docs/plans/` is a gitignored symlink
+ *   to the private planning repo, absent on a fresh clone, and a fork's own
+ *   trees are not upstream's to check;
  * - `client/i18n/**` — generated translation payloads, gitignored (the same
  *   exclusion `removed-slide-types.test.js` makes);
  * - the gitignored runtime roots above — absent in CI and on a fresh clone by
@@ -257,6 +271,10 @@ test('the scan actually sees the docs', () => {
   assert.ok(
     pathResolves('client/lib/dom.js'),
     'sanity: a known-live path resolves',
+  );
+  assert.ok(
+    !DOC_FILES.includes('CLAUDE.md') && DOC_FILES.includes('AGENTS.md'),
+    "CLAUDE.md is the installation's file and is not scanned; AGENTS.md is",
   );
 });
 

@@ -1,0 +1,187 @@
+# Maintaining upstream Deckyard — agent instructions
+
+This is **upstream's** maintainer guide: how work is planned, handed off,
+reviewed, merged and released in `jaapstronks/deckyard`. The repo-root
+`CLAUDE.md` imports it together with `AGENTS.md`, so a Claude Code session in
+upstream loads both. A fork does not use it: a fork writes its own `CLAUDE.md`
+and imports `AGENTS.md`, which holds the conventions of the code itself (see
+[fork-setup.md](../reference/fork-setup.md) § Your own CLAUDE.md). Relative
+paths below are from the repo root.
+
+Deckyard is a self-hosted presentation engine for humans and AI agents:
+vanilla JS ESM on client and server, no framework, no bundler. Deep
+conventions (module layout, slide-type system, theming, escaping, lifecycle
+cleanup, frontend patterns) live in **`AGENTS.md`** — read it before
+structural work.
+
+## Where to start
+
+Three planning horizons, three files:
+
+- **`docs/plans/TODO.md`** — _now_: the operational worklist (in progress / queue
+  / done). When asked to "pick up the next thing" or plan work, read this file
+  first, not the whole plans folder.
+- **`docs/plans/STRATEGY.md`** — _internal longer-term_: directional tracks with
+  rationale and "done when", not yet public. Elaborated briefings live in
+  `docs/plans/briefs/<slug>.md` (the three anchors — `TODO.md`, `STRATEGY.md`,
+  `README.md` — sit at the `docs/plans/` root, the per-item briefings one level
+  down in `briefs/`). (Private; in the `deckyard-planning` sibling.)
+- **`ROADMAP.md`** — _public commitment_: the coarse, public-facing overview,
+  one line per project. This is the only one of the three that ships in the OSS
+  repo.
+
+> **Where the plans actually live.** `docs/plans/` is a **symlink** to the
+> private `deckyard-planning` sibling repo (kept out of this OSS repo on
+> purpose). Read/edit `docs/plans/*` as normal — the paths resolve — but
+> **commit those changes in `deckyard-planning`, not here**. On a fresh machine
+> the symlink is absent (it's gitignored): clone `deckyard-planning` as a
+> sibling and run its `setup-symlink.sh`. Repo:
+> `github.com/jaapstronks/deckyard-planning` (private).
+
+## Werkwijze en handoff
+
+Deze repo volgt de universele werkwijze (skill `werkwijze` in `~/.claude`);
+de drie planning-horizonnen hierboven zijn er de deckyard-instantie van.
+
+- **Handoff**: `/handoff` leest het lane-bestand van deze machine —
+  `docs/plans/handoff/dev.md` (dev-server) of `handoff/mbp.md` (MacBook) —
+  en voert 'm uit als sessie-opdracht; het gedeelde doorgeefblok +
+  terugkeer-check staan in `handoff/queue.md`. Elke werk-afrondende sessie
+  **overschrijft het eigen lane-bestand** met de volgende opdracht en sluit
+  het antwoord af met de sluitregel (`/handoff` + sessiesoort + model).
+  Cross-machine doorgeven gaat via `queue.md` met een lane-tag (`→ mbp` /
+  `→ dev`). Volledige regels: `docs/plans/handoff-systematiek.md` § Lanes.
+- **Rollen**: `stuur` brieft, beslist en reviewt; `uitvoer` bouwt één item/PR
+  per sessie en merget nooit de eigen PR. De tier van het item bepaalt welk
+  model bouwt en reviewt, ook wanneer de workhorse in Codex draait. Los de
+  modelnaam op via het actieve modelprofiel en `werkwijze` § Modelkeuze per
+  sessie; leg geen vaste modelnaam in de handoff vast.
+- **Ritmes**: `merge-housekeeping` (repo-eigen skill) per gedelegeerde merge;
+  `reorg-audit` bij de drift-drempel; `tighten-scan` (repo-eigen skill) op
+  aanvraag.
+
+Afwijkingen van de universele werkwijze: plans leven in de private
+`deckyard-planning`-sibling (OSS-repo), en de repo-eigen `merge-housekeeping`
+en `tighten-scan` shadowen de generieke skills — bewust.
+
+## The course: beta doctrine (apply at every ritual)
+
+Deckyard is in beta with a near-zero installed base (one fork, ours). The
+standing direction of the current work is **tightening**: one canonical form
+per concept, drift reduced, a spec/API/slide-type system that is consistent,
+understandable and elegant. The canonical statement is
+`docs/reference/versioning.md` § _The beta stance: purity over compatibility_.
+Apply it at the recurring moments:
+
+- **Picking up work** ("check TODO.md", "geef een prompt om verder te gaan"):
+  frame the item against the course — prefer the structural fix over the
+  tolerant patch, and say so in the prompt or plan you produce.
+- **Reviewing a PR**: tolerance-creep is a _blocking_ finding, not a style
+  nit — a second accepted shape/spelling for one meaning, an "accepts both"
+  without a normalize-and-remove story, a "valid forever" promise while the
+  beta badge is up. Breaking-but-clean beats compatible-but-cluttered during
+  beta.
+- **Writing docs**: state the normative target plus an honest
+  implementation-status note; never promise eternal compatibility during beta.
+- **Weighing a design**: "the code already accepts X" is never an argument —
+  current behaviour describes the codebase, it does not justify the contract.
+  When surfaces disagree, the inconsistency is the defect, not the precedent.
+- **Meeting a form question mid-build**: decide it on the doctrine side
+  (declaration over a branch on a name, one shape, refuse over silently
+  repair) and state the decision in the PR body for the reviewer to test.
+  "Behaviour preserved, minted as a B-number, test pins the disagreement" is
+  not an option — that parks tolerance with a label on it (D92, 2026-09-09).
+  Only a _product_ question (does Jaap want X at all) is parked, with an
+  advice, in the terugkeer-check of `docs/plans/handoff/queue.md`.
+- **Reviewing for parked tolerance**: a PR that _leaves_ an existing second
+  form standing and mints a number for it is the same blocking finding as a
+  PR that adds one. Decide it in the review (a D-number) or send it back.
+
+## Docs discipline (maintain this in every session)
+
+- **New docs go in the right folder, never loose in `docs/`**:
+  plan for future work → `docs/plans/briefs/<slug>.md` + a line in
+  `docs/plans/TODO.md` and `ROADMAP.md`; how something works → `docs/reference/`;
+  contributor how-to →
+  `docs/developer/`; deploy/server notes → `docs/ops/`. Exception:
+  `docs/openapi.yaml` stays put (served at `/api/v1/openapi.yaml`).
+- **`TODO.md` is a worklist, not a research report.** An entry there is **max
+  ~1.000 characters** (one paragraph is one line in the planning docs, so the
+  unit is characters, not lines): title, status, one sentence on why it matters,
+  and a link. Diagnosis, code locations, option space, measurements and
+  step-checklists go in `docs/plans/briefs/<slug>.md` — including sub-items that
+  get ticked off individually. Writing the whole investigation into `TODO.md` is
+  how it reached 2.468 lines by 2026-07-27; the folding rules and the file budget
+  (≤ 100 items, ≤ 100 KB) live in `docs/plans/LEESWIJZER.md`, and
+  `merge-housekeeping` measures it every merge.
+- **Starting a plan**: move its entry to _In progress_ in `docs/plans/TODO.md`.
+- **Finishing a plan**: move the entry to _Recently done_ (dated), then delete
+  the plan file or convert its durable parts to `docs/reference/`, and remove
+  the `ROADMAP.md` line. Don't leave shipped plans lying around as if open —
+  that's how the docs rotted last time.
+- **Plans describe change, reference describes what is.** If a doc mixes both,
+  split it. Keep status headers truthful (a "not merged" banner on merged work
+  is worse than no banner).
+- `docs/plans/` is gitignored (local working docs); everything else in `docs/`
+  is public — no client PII or personal notes outside `docs/plans/`.
+
+## Git workflow
+
+- **Docs-only changes** (`docs/`, `ROADMAP.md`, `README.md`, `CLAUDE.md`,
+  `AGENTS.md`, `.gitignore`) may be committed and pushed **directly on
+  `main`** — no branch or PR needed.
+- **Code changes** go via a feature branch and a **PR** — and there the
+  work-agent stops. Open the PR, hand it off with `claude-notify-pr`, and let a
+  _different_ actor review and merge (Jaap, or the reviewer assigned by the
+  item's tier).
+  **Do not self-merge code to `main`**, even when it's green and tested. The
+  only exception is an explicit "review en merge" hand-off — then you're in the
+  reviewing role, so merge and run `merge-housekeeping` as the tail (see below).
+  This is the global rule (author ≠ merger), not a deckyard-specific one.
+- **Long-running feature tracks** use an integration branch: sub-PRs target
+  that branch (not `main`), which gets one umbrella PR to `main` when the
+  whole track is accepted. **No integration branch is active right now** —
+  the `collab` track (ADR 001) shipped to `main` and its branch is gone, so
+  everything currently bases on `main`. When a track _does_ open one:
+  **the base branch is set at PR creation** and GitHub defaults to `main`,
+  so always pass it explicitly (`gh pr create --base <track> …`) and
+  double-check the "wants to merge into" line before finishing up.
+- **Commit / PR titles** use [Conventional Commits](https://www.conventionalcommits.org/)
+  (`feat:`, `fix:`, `security:`, `feat!:` for breaking, …) — release-please reads
+  the **squash-merge PR title** to compute the next version and changelog. Full
+  prefix→bump table in `docs/reference/versioning.md`.
+- **No MAJOR bumps while Deckyard is in beta.** The version stays in `1.x` until
+  the beta badge comes off; `2.0.0` is reserved for leaving beta, not for a
+  tidy-up that happens to break something. `BREAKING CHANGE:` / `!` still force a
+  MAJOR automatically, so if the Release PR proposes a `2.x`, override it down
+  with a `Release-As: 1.<next>.0` trailer before merging. Retiring an unused
+  slide type and moving internal modules are explicitly **not** breaking —
+  rationale and procedure in `docs/reference/versioning.md`.
+- **Releases are automated** via `release-please`: it keeps one open Release PR
+  (`chore(main): release X.Y.Z`) up to date on every push to `main`. Cutting a
+  release = **merging that Release PR** (bumps `package.json`, finalizes
+  `CHANGELOG.md`, tags `vX.Y.Z`, publishes a GitHub Release). You never bump the
+  number by hand. Merges to `main` are internal CI; a release is the deliberate
+  outward signal — the two are decoupled. Forks sync on tags, not `main`.
+  Details + one-time PAT setup: `docs/reference/versioning.md`.
+- **Release → release notes on `deckyard-website`** is a hub → spoke recipe
+  (this repo is the hub of `deckyard-website`, `deckyard-planning`,
+  `deckyard-cloud` and `deckyard-video`; rules and the test question in
+  `../../_meta/workspace-CLAUDE.md` § Cross-repo, `hub:` in `../../_meta/REPOS.yaml`).
+  After a Release PR merges, write the note in
+  `../deckyard-website/src/content/releases/{en,nl}/X.Y.Z.md` from the
+  `CHANGELOG.md` section (selection criterion: what a user notices, not the
+  commit prefix; bump `SLIDE_TYPE_COUNT` in its `src/lib/facts.ts` if the count
+  changed), run its `npm run verify`, commit and push there with the tag in the
+  message. No briefing. A briefing stays the route when the website has an open
+  PR or plan touching those pages, or the note needs a positioning call rather
+  than a rewrite. The other way round never: `deckyard-website` does not change
+  this repo.
+- **After merging a delegated PR** (a "review en merge" hand-off you completed):
+  run the **`merge-housekeeping`** skill as the tail of the flow, before you
+  stop. It cleans up the branch, ticks the shipped item off `docs/plans/TODO.md`,
+  and runs a shallow TODO/roadmap consistency scan that logs drift and, when the
+  threshold is met, makes your closing hand-off the reorg-audit assignment
+  instead of the next uitvoersessie (no phone nudge for that — the hand-off
+  schedules it). It is part of the merge, not a proposed "next step". Skip it
+  for PRs you only opened (Jaap merges those).

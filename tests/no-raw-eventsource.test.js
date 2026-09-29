@@ -7,7 +7,7 @@
  * kills is a reopen timer that outlives the view that owns it.
  *
  * The single allowlisted exception is documented below. A new bare
- * `new EventSource` anywhere else in client/ is tolerance-creep (CLAUDE.md
+ * `new EventSource` anywhere else in client/ is tolerance-creep (maintaining.md
  * § beta doctrine) and fails this test.
  *
  * Run with: node --test tests/no-raw-eventsource.test.js

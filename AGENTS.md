@@ -360,3 +360,46 @@ If the slide is an audience interaction:
 - **Don’t**: paste large blocks of CSS into JS templates; keep styling in CSS files.
 - **Don’t**: hardcode user-facing copy in multiple places; centralize it.
 - **Don’t**: special-case new behavior in many files; create one reusable abstraction/module and call it.
+
+---
+
+## Frontend patterns (use these, don't invent parallels)
+
+- **DOM**: `h()` from `client/lib/dom.js` — no raw `document.createElement`.
+- **Strings**: `t(key, fallback)` from `client/lib/ui-i18n.js` for all
+  user-facing copy; translations in `client/i18n/<locale>/<component>.json`.
+- **Feedback**: the kind of event decides the carrier —
+  `docs/reference/feedback-surfaces.md` is the doctrine (five kinds: place,
+  lifetime, content, focus). `toast` from `client/lib/dom/toast.js` for a
+  _passing_ message: a confirmation, or the failure of an action that has no
+  form on screen. A refusal of the form the user is filling in is a state of
+  that form: `createInlineError()` from `client/lib/dom/inline-error.js`,
+  beside the control or the Save button, cleared at the start of the next
+  attempt, naming the field (`err.details.field`), never toasted alongside.
+  No `alert()`, no hand-rolled `*-error` class (the guard is
+  `tests/feedback-surfaces-guard.test.js`). Worked example:
+  `client/views/settings/slide-type-editor/`.
+- **Confirmations**: `confirmModal` / `createTextInput` from
+  `client/lib/dom/modal.js`. No native `confirm()`/`prompt()` in new code.
+- **Modals**: follow the `client/lib/dom/modal.js` helpers (focus trap and
+  aria wiring come free).
+- **URL state**: `client/lib/state/router.js` owns the whole current URL.
+  Read query params with `queryParam(key)` / `queryString()`, write them with
+  `setQueryParams({ key: value })` (`null` deletes; replaces, so no history
+  entry and no re-route), build a destination with `urlWithQuery(patch)` and
+  name the current page with `currentUrl()`. No `new URL(location.href)` or
+  `location.search` anywhere else — a guard test pins it.
+- **Lifecycle**: a factory returns `{ el, detach }` — not `destroy`/`teardown`/
+  `cleanup`, not `element`. Run disposal through `disposeAll()`.
+- **CSS**: reuse `.editor-card`, `.field-label`, `.help`, `.btn`/`.btn-primary`/
+  `.btn-danger`, `.row`/`.stack`, `.is-between` — check existing views before
+  adding classes.
+- JSDoc on exports; small modules; match the structure of a neighboring
+  feature (e.g. `client/views/settings/api-keys/` for a settings panel).
+
+## Verifying work
+
+- `npm test` runs the node test suite.
+- `npm run start` serves on http://localhost:4177 (config in `.env`;
+  `AUTH_DEV_BYPASS=true` gives auto-login in dev).
+- For UI changes, actually drive the flow in a browser before calling it done.

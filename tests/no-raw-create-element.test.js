@@ -1,6 +1,6 @@
 /**
  * Guard: UI nodes in `client/` are built with `h()` from `client/lib/dom.js`,
- * not raw `document.createElement` (the CLAUDE.md h()-rule, A7.16 cluster 8).
+ * not raw `document.createElement` (the AGENTS.md h()-rule, A7.16 cluster 8).
  *
  * Two kinds of exceptions exist, both deliberate:
  *
@@ -118,7 +118,7 @@ test('UI nodes in client/ are built with h(), not document.createElement', () =>
     violations.length,
     0,
     'Build UI nodes with h() from client/lib/dom.js instead of raw ' +
-      'document.createElement (see CLAUDE.md § Frontend patterns). Non-UI ' +
+      'document.createElement (see AGENTS.md § Frontend patterns). Non-UI ' +
       'tags (script/link/style/meta/canvas) are allowed with a literal tag; ' +
       `anything else needs an allowlist entry with a reason in this test:\n  ${violations.join('\n  ')}`,
   );
