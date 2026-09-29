@@ -1,6 +1,6 @@
 # Deploy on a PaaS (Coolify, Railway, Fly, Render)
 
-A PaaS builds the repo's `Dockerfile`, runs the container behind its own TLS proxy and gives it a database. This page is the contract the image offers any platform, then the one platform-specific section we run ourselves (Coolify). For a bare VPS with the bundled compose stack, see [self-hosting.md](self-hosting.md) instead.
+A PaaS builds the repo's `Dockerfile`, runs the container behind its own TLS proxy and gives it a database. This page is the contract the image offers any platform, then the one platform-specific section we run ourselves (Coolify). For a bare VPS with the bundled compose stack, see [self-hosting.md](self-hosting.md) instead. For an agent doing the deploy, [agent-deploy.md](agent-deploy.md) walks this page and its neighbours in order.
 
 ## The contract
 

@@ -82,6 +82,8 @@ in one go. Paste the prompt from
 [`docs/ops/agent-install.md`](docs/ops/agent-install.md) to your agent — it
 follows that same doc as a stable procedure. The non-interactive setup takes
 flags for exactly this: `npm run setup -- --yes --ai=claude --ai-key=… --auth=off`.
+For a production deploy on a PaaS, the same shape of procedure is
+[`docs/ops/agent-deploy.md`](docs/ops/agent-deploy.md).
 
 ## MCP Server — AI Agent Integration
 
