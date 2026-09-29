@@ -120,18 +120,21 @@ async function handleUnpublish(ctx, id) {
 export const ROUTES = [
   {
     method: 'POST',
+    id: 'publishPresentation',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/publish$/,
     captures: ['uuid'],
     handler: handlePublish,
   },
   {
     method: 'GET',
+    id: 'getPublication',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/publish$/,
     captures: ['uuid'],
     handler: handleGetPublishStatus,
   },
   {
     method: 'DELETE',
+    id: 'unpublishPresentation',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/publish$/,
     captures: ['uuid'],
     handler: handleUnpublish,

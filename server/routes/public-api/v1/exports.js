@@ -279,24 +279,28 @@ async function handlePptxExport(ctx, id) {
 export const ROUTES = [
   {
     method: 'GET',
+    id: 'exportPresentationJson',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/export\/json$/,
     captures: ['uuid'],
     handler: handleJsonExport,
   },
   {
     method: 'GET',
+    id: 'exportPresentationHtml',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/export\/html$/,
     captures: ['uuid'],
     handler: handleHtmlExport,
   },
   {
     method: 'GET',
+    id: 'exportPresentationPdf',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/export\/pdf$/,
     captures: ['uuid'],
     handler: handlePdfExport,
   },
   {
     method: 'GET',
+    id: 'exportPresentationPptx',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/export\/pptx$/,
     captures: ['uuid'],
     handler: handlePptxExport,

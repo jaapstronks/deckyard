@@ -212,6 +212,7 @@ async function handleListLanguages(ctx) {
 export const ROUTES = [
   {
     method: 'GET',
+    id: 'listTranslationLanguages',
     pattern: '/api/v1/translate/languages',
     handler: handleListLanguages,
   },
@@ -221,6 +222,7 @@ export const ROUTES = [
   },
   {
     method: 'POST',
+    id: 'translatePresentation',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/translate$/,
     captures: ['uuid'],
     ai: true,

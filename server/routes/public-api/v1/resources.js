@@ -151,18 +151,29 @@ async function handleImageLibrary(ctx) {
 
 /** Read-only catalogue routes; any other method answers 405. */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/v1/themes', handler: handleThemes },
+  {
+    method: 'GET',
+    id: 'listThemes',
+    pattern: '/api/v1/themes',
+    handler: handleThemes,
+  },
   {
     pattern: '/api/v1/themes',
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
   },
-  { method: 'GET', pattern: '/api/v1/slide-types', handler: handleSlideTypes },
+  {
+    method: 'GET',
+    id: 'listSlideTypes',
+    pattern: '/api/v1/slide-types',
+    handler: handleSlideTypes,
+  },
   {
     pattern: '/api/v1/slide-types',
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
   },
   {
     method: 'GET',
+    id: 'listImageLibraryItems',
     pattern: '/api/v1/image-library',
     handler: handleImageLibrary,
   },

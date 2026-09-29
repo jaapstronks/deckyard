@@ -535,14 +535,15 @@ export function v1NotFound(res, message = 'Not found') {
 /**
  * Walk a v1 `ROUTES` table: the shared dispatcher (`utils/router.js`), with
  * its own 404s — a `captures: ['uuid']` segment that cannot be one, an
- * unmounted `ai` row — answered in the v1 envelope.
+ * unmounted `ai` row — answered in the v1 envelope, and every matched
+ * operation counted as `api_v1:<operationId>` (B515).
  *
  * @param {import('../../../utils/router.js').Route[]} routes
  * @param {object} ctx - The request context.
  * @returns {Promise<unknown>|unknown} The handler's result, or `false`.
  */
 export function dispatchV1Routes(routes, ctx) {
-  return dispatchRoutes(routes, ctx, { notFound: v1NotFound });
+  return dispatchRoutes(routes, ctx, { notFound: v1NotFound, axis: 'api_v1' });
 }
 
 /**

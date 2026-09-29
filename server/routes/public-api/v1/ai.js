@@ -284,18 +284,29 @@ async function handleAppendSlides(ctx) {
  * rows need no `ai` flag of their own.
  */
 export const ROUTES = [
-  { method: 'GET', pattern: '/api/v1/ai/vendors', handler: handleVendors },
+  {
+    method: 'GET',
+    id: 'listAiVendors',
+    pattern: '/api/v1/ai/vendors',
+    handler: handleVendors,
+  },
   {
     pattern: '/api/v1/ai/vendors',
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
   },
-  { method: 'POST', pattern: '/api/v1/ai/wizard', handler: handleWizard },
+  {
+    method: 'POST',
+    id: 'generatePresentationWithAi',
+    pattern: '/api/v1/ai/wizard',
+    handler: handleWizard,
+  },
   {
     pattern: '/api/v1/ai/wizard',
     handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
   },
   {
     method: 'POST',
+    id: 'appendSlidesWithAi',
     pattern: '/api/v1/ai/append-slides',
     handler: handleAppendSlides,
   },
