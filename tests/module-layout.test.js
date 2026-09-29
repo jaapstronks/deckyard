@@ -1,7 +1,8 @@
 /**
- * Server module layout: one folder = one seam (A7.36, D57).
+ * Module layout: one folder = one seam (A7.36, D57; client since B526, D262).
  *
- * Two rules scope to `server/storage/`, one to `server/` as a whole.
+ * Two rules scope to `server/storage/`, one to `server/` and `client/` as a
+ * whole.
  *
  * `AGENTS.md` § _Module layout: one folder = one seam_ has said this since
  * before the tree drifted away from it, and § _`server/storage/` applies this
@@ -37,6 +38,19 @@
  * tables (`ai`, `follow`, `notion`, `presentations`, `static`) into their
  * folder's `index.js`.
  *
+ * B526 (D262) widened the third rule to **`client/`** (minus `client/vendor/`,
+ * third-party code). The client was never in scope, so it had grown 19 pairs of
+ * its own: seven route shims (`views/editor.js`, `follow.js`, `list.js`,
+ * `notes.js`, `presenter.js`, `settings.js`, `share-viewer.js`), three small
+ * re-export shims (`editor/fields/images.js`, `editor/modals/share-modal.js`,
+ * `editor/slide-type-picker.js`) and nine real modules beside their concerns
+ * (`lib/dom.js`, `editor/editor-form.js`, `slide-list.js`, `topbar.js`,
+ * `imagekit-picker.js`, `share-dropdown.js`, `fields.js`,
+ * `modals/settings-modal.js`, `follow/interactions.js`). The shims are gone;
+ * each real module is now its folder's `index.js`. The storage rules stay
+ * storage-only: client folders like `lib/<area>/` and `views/editor/` are
+ * groups that import by path, and a barrel duty there would be ceremony.
+ *
  * **There is no allowlist** on any of the three, on purpose. The previous scan
  * found four of these and they were still here at the next one; a burndown list
  * would have carried them a third time.
@@ -46,7 +60,7 @@
  * a folder around an undecomposed module — but the brief states the rule as
  * "only an `index.js`", and widening it is a decision, not a lint fix.
  *
- * Run with: node --test tests/server-module-layout.test.js
+ * Run with: node --test tests/module-layout.test.js
  */
 
 import test from 'node:test';
@@ -108,18 +122,19 @@ test('every multi-file folder under server/storage/ has an index.js seam', () =>
 });
 
 /**
- * Every tracked path under `server/`, repo-relative with `/` separators.
+ * Every tracked path under `dir`, repo-relative with `/` separators.
  *
  * Prefers `git ls-files`, so a scratch file someone left in the tree can never
  * fail somebody else's run. Falls back to a walk when git is unavailable (a
  * tarball deploy); the guard below refuses a zero-file scan either way, so a
  * broken collector fails loudly instead of passing vacuously.
  *
+ * @param {string} dir repo-relative top-level folder
  * @returns {string[]}
  */
-function serverFiles() {
+function trackedFiles(dir) {
   try {
-    const tracked = execFileSync('git', ['ls-files', '-z', 'server'], {
+    const tracked = execFileSync('git', ['ls-files', '-z', dir], {
       cwd: repoRoot,
       encoding: 'utf8',
       maxBuffer: 32 * 1024 * 1024,
@@ -139,7 +154,7 @@ function serverFiles() {
       else if (entry.isFile()) out.push(child);
     }
   };
-  walk('server');
+  walk(dir);
   return out;
 }
 
@@ -161,22 +176,34 @@ function eponymousPairs(files) {
     .sort();
 }
 
-test('server file list is non-empty (guards against a vacuous scan)', () => {
-  assert.ok(
-    serverFiles().length > 100,
-    'collected almost nothing under server/ — the collector is broken, not the tree',
+/** Tracked client files, minus the third-party code in `client/vendor/`. */
+function clientFiles() {
+  return trackedFiles('client').filter(
+    (rel) => !rel.startsWith('client/vendor/'),
   );
-});
+}
 
-test('no file under server/ sits beside an eponymous folder', () => {
-  const offenders = eponymousPairs(serverFiles());
+for (const [dir, collect] of [
+  ['server', () => trackedFiles('server')],
+  ['client', clientFiles],
+]) {
+  test(`${dir} file list is non-empty (guards against a vacuous scan)`, () => {
+    assert.ok(
+      collect().length > 100,
+      `collected almost nothing under ${dir}/ — the collector is broken, not the tree`,
+    );
+  });
 
-  assert.deepEqual(
-    offenders,
-    [],
-    `An eponymous wrapper beside its folder is redundant indirection — move ` +
-      `its contents into the folder's index.js seam and repoint importers ` +
-      `(AGENTS.md § Module layout):\n  ` +
-      offenders.join('\n  '),
-  );
-});
+  test(`no file under ${dir}/ sits beside an eponymous folder`, () => {
+    const offenders = eponymousPairs(collect());
+
+    assert.deepEqual(
+      offenders,
+      [],
+      `An eponymous wrapper beside its folder is redundant indirection — move ` +
+        `its contents into the folder's index.js seam and repoint importers ` +
+        `(AGENTS.md § Module layout):\n  ` +
+        offenders.join('\n  '),
+    );
+  });
+}

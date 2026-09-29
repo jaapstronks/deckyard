@@ -425,6 +425,14 @@ the domain, it does not force everything through one re-export barrel. What is
 ruled out is a **flat re-export shim next to the folder** that forwards into the
 folder's `index.js` (two barrels for one thing); collapse those into one.
 
+`tests/module-layout.test.js` enforces that last rule — no `P/X.js` beside a
+folder `P/X/` — across both `server/` and `client/` (`client/vendor/`
+excepted), with no allowlist (A7.36 for the server, B526/D262 for the client).
+Its two other rules (no index-only folder, no multi-file folder without an
+`index.js`) stay scoped to the store level of `server/storage/`: client
+folders such as `lib/<area>/` and `views/editor/` are groups imported by path,
+not seams.
+
 ### Config accessors live only in `server/config/`
 
 Anything that reads environment or derives configuration (an accessor, a parsed
