@@ -36,7 +36,7 @@ const {
   setMaintenanceState,
 } = await import('../client/lib/state/maintenance.js');
 const { startMaintenanceBanner, syncMaintenanceBanner } =
-  await import('../client/views/shared/maintenance-banner.js');
+  await import('../client/lib/dom/maintenance-banner.js');
 
 function banner() {
   return document.querySelector('.maintenance-banner');

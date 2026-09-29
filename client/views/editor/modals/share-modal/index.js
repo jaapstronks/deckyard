@@ -25,7 +25,7 @@ import { h } from '../../../../lib/dom/index.js';
 import {
   createSharingOffNote,
   createSharingOffFieldset,
-} from '../../../shared/sharing-off.js';
+} from '../../../../lib/dom/sharing-off.js';
 
 /**
  * Open the unified share dialog.

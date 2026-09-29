@@ -22,7 +22,7 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
   `sharingEnabled` declaration (off in sandbox, D181).
 - `server/sandbox/sharing.js` — `assertSharingEnabled()`, the one refusal
   every sharing route calls (`SharingDisabledError`, a 403 `forbidden`).
-- `client/views/shared/sharing-off.js` — the greyed-out treatment of a
+- `client/lib/dom/sharing-off.js` — the greyed-out treatment of a
   sharing entry: the one-sentence note (`sandbox.sharing.off`) and the
   disabled fieldset.
 - `server/auth/sandbox.js` — the throwaway guest identity (`ensureSandboxUser`,

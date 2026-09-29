@@ -210,6 +210,6 @@ progress indicator with a 60–120 s lifetime (4 sites) is a status chip in
 disguise, and ≥ 27 success toasts announce what is already visible on screen
 ("Theme deleted." as the row disappears) — both fold into the items above.
 
-Existing carriers for the fourth kind: the editor save-failure banner below the top bar (`aria-live="polite"`) and `client/views/shared/maintenance-banner.js`
+Existing carriers for the fourth kind: the editor save-failure banner below the top bar (`aria-live="polite"`) and `client/lib/dom/maintenance-banner.js`
 (`role="alert"`). Settings has no persistent carrier yet; B206 decides whether
 it gets one.

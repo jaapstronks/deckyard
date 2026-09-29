@@ -53,7 +53,7 @@ globalThis.fetch = async (url) => {
 const { setFeatures } = await import('../client/lib/state/features.js');
 const { setUiLocale } = await import('../client/lib/ui-i18n.js');
 const { syncSandboxBanner } =
-  await import('../client/views/shared/sandbox-banner.js');
+  await import('../client/lib/dom/sandbox-banner.js');
 
 function withEnv(env, fn) {
   const saved = {};

@@ -1,11 +1,11 @@
-import { api } from '../lib/api.js';
-import { h } from '../lib/dom/index.js';
-import { t } from '../lib/ui-i18n.js';
-import { me } from '../lib/user/auth.js';
-import { spinner } from '../lib/dom/spinner.js';
-import { authShell } from './auth-shell.js';
-import { nav, queryParam } from '../lib/state/router.js';
-import { icon } from '../lib/dom/icons.js';
+import { api } from '../../lib/api.js';
+import { h } from '../../lib/dom/index.js';
+import { t } from '../../lib/ui-i18n.js';
+import { me } from '../../lib/user/auth.js';
+import { spinner } from '../../lib/dom/spinner.js';
+import { authShell } from './shell.js';
+import { nav, queryParam } from '../../lib/state/router.js';
+import { icon } from '../../lib/dom/icons.js';
 
 export async function renderMagicLogin(root) {
   const returnToRaw = queryParam('returnTo') || '';

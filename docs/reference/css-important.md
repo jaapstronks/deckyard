@@ -18,7 +18,7 @@ sits on its own line; if one ever carries two, a line-based count under-reports.
 
 Out of scope on purpose: `client/vendor/**` (katex ships one) and the four
 `!important`s that `server/export/print.js`, `server/export/pdf-slides.js` and
-`server/render/png.js` inject as export-only print CSS. `client/go.css` has none.
+`server/render/png.js` inject as export-only print CSS. `client/styles/go.css` has none.
 
 ## The split: 40 unavoidable, 29 candidates
 

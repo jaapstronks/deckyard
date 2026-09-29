@@ -12,12 +12,12 @@
  * place that says so.
  */
 
-import { h } from '../../lib/dom/index.js';
-import { t } from '../../lib/ui-i18n.js';
+import { h } from './index.js';
+import { t } from '../ui-i18n.js';
 import {
   isMaintenanceActive,
   onMaintenanceChange,
-} from '../../lib/state/maintenance.js';
+} from '../state/maintenance.js';
 
 let bannerEl = null;
 let unsubscribe = null;

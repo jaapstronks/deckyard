@@ -56,7 +56,7 @@ it lands in the `Retry-After` header of every refused write.
   deliberately _not_ driven by failed requests: a 503 tells you a write was
   refused, only the announcement tells you it will come back, and guessing from
   error codes is how a transient blip becomes a scary banner.
-- `client/views/shared/maintenance-banner.js` mounts on `document.body`, outside
+- `client/lib/dom/maintenance-banner.js` mounts on `document.body`, outside
   the SPA view root, so it survives navigation. Same pattern as the sandbox
   banner.
 - `client/views/editor/read-only-controller.js` owns the editor's read-only

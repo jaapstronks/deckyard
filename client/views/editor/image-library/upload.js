@@ -6,10 +6,10 @@ import {
   readFileAsDataUrl,
   getAllTags,
   installTagsAutocomplete,
-  createFieldWrap,
   createAltLangInputs,
 } from './utils.js';
 import { h } from '../../../lib/dom/index.js';
+import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
 import {
   imageUploadAccept,
   imageUploadFormatList,

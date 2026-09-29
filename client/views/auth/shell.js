@@ -12,9 +12,9 @@
  * card shows no logo.
  */
 
-import { h } from '../lib/dom/index.js';
-import { authConfig } from '../lib/user/auth.js';
-import { debugLog } from '../lib/util/debug.js';
+import { h } from '../../lib/dom/index.js';
+import { authConfig } from '../../lib/user/auth.js';
+import { debugLog } from '../../lib/util/debug.js';
 
 /**
  * Build the auth-view scaffolding: shell, card and header with title/subtitle.
