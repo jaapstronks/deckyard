@@ -48,6 +48,8 @@ import {
 import { handleCustomStyles } from '../server/routes/static/static-files.js';
 import { loadExportCssBundle } from '../server/export/css-bundle.js';
 import { buildAllRenderPaths } from '../server/render-paths.js';
+import { buildSlidesPdfHtml } from '../server/export/pdf-slides.js';
+import { renderSlideToPngBuffer } from '../server/render/png.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -425,3 +427,73 @@ test('a fork @font-face survives into self-contained exports', async () => {
     await rm(fontRoot, { recursive: true, force: true });
   }
 });
+
+test(
+  'a fork image url() in the seam survives into PDF and PNG exports',
+  { skip },
+  async () => {
+    // The other half of the seam's only CSS form (D271, B554): a fork that
+    // moves a slide type's CSS into custom/styles/ takes its background images
+    // along. Under setContent a `/custom/assets/…` path has no origin, so the
+    // seam has to be inlined for images exactly as for fonts — otherwise the
+    // image drops out of every PDF and PNG without an error. Pinned on the
+    // pixel, not the string: the PNG is what the fork ships.
+    const imageRoot = mkdtempSync(path.join(tmpdir(), 'deckyard-seam-image-'));
+    for (const dir of ['client', 'assets', 'shared', 'themes']) {
+      symlinkSync(path.join(repoRoot, dir), path.join(imageRoot, dir), 'dir');
+    }
+    mkdirSync(path.join(imageRoot, 'custom', 'styles'), { recursive: true });
+    mkdirSync(path.join(imageRoot, 'custom', 'assets'), { recursive: true });
+    const { default: sharp } = await import('sharp');
+    const probe = { r: 12, g: 200, b: 34 };
+    writeFileSync(
+      path.join(imageRoot, 'custom', 'assets', 'seam-probe.png'),
+      await sharp({
+        create: { width: 8, height: 8, channels: 3, background: probe },
+      })
+        .png()
+        .toBuffer(),
+    );
+    writeFileSync(
+      path.join(imageRoot, 'custom', 'styles', '10-image.css'),
+      `.slide::after {
+         content: '';
+         position: absolute;
+         inset: 0;
+         z-index: 9999;
+         background: url('/custom/assets/seam-probe.png') center / cover no-repeat;
+       }`,
+      'utf8',
+    );
+    try {
+      const pdfHtml = await buildSlidesPdfHtml(imageRoot, DECK);
+      assert.match(
+        pdfHtml,
+        /url\('data:image\/png;base64,/,
+        'a local image URL in the seam must be inlined in the PDF document',
+      );
+      assert.doesNotMatch(
+        pdfHtml,
+        /url\('\/custom\/assets\/seam-probe\.png'\)/,
+      );
+
+      const png = await renderSlideToPngBuffer(imageRoot, SLIDE, { scale: 1 });
+      const { data, info } = await sharp(png)
+        .removeAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+      const at =
+        (Math.floor(info.height / 2) * info.width +
+          Math.floor(info.width / 2)) *
+        3;
+      assert.deepEqual(
+        { r: data[at], g: data[at + 1], b: data[at + 2] },
+        probe,
+        'the PNG export does not draw the seam image — a root-relative ' +
+          'url() in custom/styles/ resolved against nothing',
+      );
+    } finally {
+      await rm(imageRoot, { recursive: true, force: true });
+    }
+  },
+);

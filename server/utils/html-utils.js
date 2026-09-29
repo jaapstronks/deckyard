@@ -57,6 +57,10 @@ export function mimeFromExt(ext) {
       return 'image/svg+xml';
     case 'avif':
       return 'image/avif';
+    case 'woff2':
+      return 'font/woff2';
+    case 'woff':
+      return 'font/woff';
     default:
       return 'application/octet-stream';
   }
