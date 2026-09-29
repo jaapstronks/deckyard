@@ -50,6 +50,20 @@ test('a request that gets no answer once is retried and succeeds', async (t) => 
   assert.equal(calls.length, 2);
 });
 
+test('a body that breaks off mid-stream is retried like a lost request', async (t) => {
+  const broken = new Response(
+    new ReadableStream({
+      start(controller) {
+        controller.error(networkError());
+      },
+    }),
+  );
+  const calls = stubFetch(t, broken, new Response('woff2-bytes'));
+  const bytes = await fetchBytes(URL, FAST);
+  assert.equal(bytes.toString(), 'woff2-bytes');
+  assert.equal(calls.length, 2);
+});
+
 test('a network failure on every attempt rejects with the network cause', async (t) => {
   const calls = stubFetch(t, networkError());
   await assert.rejects(fetchBytes(URL, FAST), (err) => {

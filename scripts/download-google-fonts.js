@@ -199,6 +199,9 @@ export async function fetchBytes(
       response = await fetch(url, {
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
       });
+      // The body is part of the answer: a connection that drops mid-stream
+      // is the same blip as one that never connects, so it is retried too.
+      if (response.ok) return Buffer.from(await response.arrayBuffer());
       break;
     } catch (err) {
       const cause = err?.cause?.code || err?.name;
@@ -214,14 +217,11 @@ export async function fetchBytes(
       await sleep(backoffMs * attempt);
     }
   }
-  if (!response.ok) {
-    throw new Error(
-      `Failed to download font: ${response.status} ${response.statusText}\n` +
-        `      ${url}\n` +
-        '      the pinned URL is gone; re-run with --update-lock and review the diff',
-    );
-  }
-  return Buffer.from(await response.arrayBuffer());
+  throw new Error(
+    `Failed to download font: ${response.status} ${response.statusText}\n` +
+      `      ${url}\n` +
+      '      the pinned URL is gone; re-run with --update-lock and review the diff',
+  );
 }
 
 /**
