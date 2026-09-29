@@ -311,12 +311,19 @@ export async function embedLocalCssUrls(
     toDataUrlIfLocal(repoRoot, url, { transform, cache }),
   );
   const map = new Map(urls.map((u, i) => [u, datas[i]]));
+  // An asset that could not be read keeps its original url(): unresolvable is
+  // better than silently rewritten, and it shows up in the export as the same
+  // missing-asset it already was. Not silently, though: a warning names the
+  // path, the same refusal form as an unreadable font (B542, D278).
+  for (const url of urls) {
+    const data = map.get(url);
+    if (!data || data === url) {
+      log.warn(`Not inlining ${url}: local asset unresolvable or unreadable`);
+    }
+  }
 
   return s.replace(LOCAL_CSS_URL_RE, (whole, _q, url) => {
     const data = map.get(url);
-    // An asset that could not be read keeps its original url(): unresolvable is
-    // better than silently rewritten, and it shows up in the export as the same
-    // missing-asset it already was.
     return data && data !== url ? `url('${data}')` : whole;
   });
 }
