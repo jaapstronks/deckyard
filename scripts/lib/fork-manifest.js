@@ -74,7 +74,11 @@ function assertRepoPath(p, where) {
       `${FORK_MANIFEST_PATH}: ${where} "${p}" must be repo-relative, without ./, .. or backslashes`,
     );
   }
-  if (ALWAYS_OWNED.some((o) => (o.endsWith('/') ? p.startsWith(o) : p === o))) {
+  if (
+    ALWAYS_OWNED.some((o) =>
+      o.endsWith('/') ? p.startsWith(o) || p === o.slice(0, -1) : p === o,
+    )
+  ) {
     throw new Error(
       `${FORK_MANIFEST_PATH}: ${where} "${p}" is fork-owned already (${ALWAYS_OWNED.join(', ')}); drop it`,
     );
@@ -106,6 +110,16 @@ export function parseForkManifest(raw) {
   owned.forEach((p) => assertRepoPath(p, 'owned'));
   if (new Set(owned).size !== owned.length) {
     throw new Error(`${FORK_MANIFEST_PATH}: "owned" lists a path twice`);
+  }
+  for (const p of owned) {
+    const tree = owned.find(
+      (o) => o !== p && o.endsWith('/') && p.startsWith(o),
+    );
+    if (tree) {
+      throw new Error(
+        `${FORK_MANIFEST_PATH}: owned "${p}" is inside owned "${tree}" already; drop it`,
+      );
+    }
   }
 
   const deviations = raw.deviations ?? {};
@@ -158,7 +172,25 @@ export function readForkManifest(repoRoot) {
       cause: err,
     });
   }
-  return parseForkManifest(raw);
+  const manifest = parseForkManifest(raw);
+  // A tree is spelled with its trailing `/`. Without it the entry would match
+  // only a file of that name and own nothing under the directory: refused,
+  // not read as the tree it probably means.
+  for (const p of manifest.owned) {
+    if (p.endsWith('/')) continue;
+    let stat = null;
+    try {
+      stat = fs.statSync(path.join(repoRoot, p));
+    } catch {
+      // an owned file that does not exist yet is fine
+    }
+    if (stat?.isDirectory()) {
+      throw new Error(
+        `${FORK_MANIFEST_PATH}: owned "${p}" is a directory; write it as "${p}/"`,
+      );
+    }
+  }
+  return manifest;
 }
 
 /**

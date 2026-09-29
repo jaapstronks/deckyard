@@ -80,7 +80,10 @@ export function roundStart(cwd, ref) {
     return git(cwd, ['merge-base', 'HEAD', target]);
   }
   // Already merged: step back along the fork's own line to before the merge.
+  // Reaching the ref itself on that line means HEAD descends from it without a
+  // merge: upstream, or a fork that only fast-forwarded.
   for (const c of lines(git(cwd, ['rev-list', '--first-parent', 'HEAD']))) {
+    if (c === target) break;
     if (!isAncestor(cwd, target, c)) return git(cwd, ['merge-base', c, target]);
   }
   throw new Error(

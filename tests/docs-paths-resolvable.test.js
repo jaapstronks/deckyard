@@ -6,8 +6,8 @@
  * that named the old path pointing at nothing. The 2026-07-27 docs audit found 21
  * such dead paths — the `client/lib/` split into sub-folders and the storage seam
  * of #408 — and `AGENTS.md` and the then-full `CLAUDE.md` were among the
- * offenders, the very files a session reads before structural work. The audit repaired them; this is
- * the gate that stops it coming back.
+ * offenders, the very files a session reads before structural work. The audit
+ * repaired them; this is the gate that stops it coming back.
  *
  * It mirrors `tests/removed-slide-types.test.js` and its two-way honesty: no dead
  * path survives unexplained, and no allowlist entry outlives the reference it

@@ -60,6 +60,12 @@ for (const [name, raw, pattern] of [
   ['a .. path', { owned: ['docs/../x'] }, /repo-relative/],
   ['a path under custom/', { owned: ['custom/themes/'] }, /fork-owned already/],
   ['CLAUDE.md listed', { owned: ['CLAUDE.md'] }, /fork-owned already/],
+  ['custom without its slash', { owned: ['custom'] }, /fork-owned already/],
+  [
+    'a path inside an owned tree',
+    { owned: ['docs/x/', 'docs/x/a.md'] },
+    /inside owned "docs\/x\/"/,
+  ],
   ['a duplicate', { owned: ['docs/x/', 'docs/x/'] }, /twice/],
   ['deviations as an array', { deviations: [] }, /must map/],
   [
@@ -93,5 +99,19 @@ test('invalid JSON is refused with the file named', () => {
   assert.throws(
     () => readForkManifest(dir),
     /custom\/fork\.json is not valid JSON/,
+  );
+});
+
+test('an owned directory without its trailing slash is refused', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'fork-manifest-'));
+  fs.mkdirSync(path.join(dir, 'custom'));
+  fs.mkdirSync(path.join(dir, 'docs/internal'), { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'custom/fork.json'),
+    JSON.stringify({ owned: ['docs/internal'] }),
+  );
+  assert.throws(
+    () => readForkManifest(dir),
+    /owned "docs\/internal" is a directory; write it as "docs\/internal\/"/,
   );
 });

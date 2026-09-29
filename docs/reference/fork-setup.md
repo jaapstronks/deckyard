@@ -119,8 +119,9 @@ and tools read them, so you do not keep the list only in prose:
 a private doc tree, a fork-only test file. `deviations` lists the core files
 your fork patches on purpose, each with its reason. Both are optional; a
 missing file means "only the two rules above". The file is read strictly: an
-unknown field, a path under `custom/`, a path listed twice or a deviation
-without a reason fails instead of being ignored. It describes the repository,
+unknown field, a path under `custom/`, a path listed twice or inside an owned
+tree, a directory written without its trailing `/` or a deviation without a
+reason fails instead of being ignored. It describes the repository,
 so it stays at `custom/fork.json` in the checkout even when
 `DECKYARD_CUSTOM_DIR` moves the runtime fork root (next section).
 

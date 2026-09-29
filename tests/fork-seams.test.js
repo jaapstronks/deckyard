@@ -154,6 +154,13 @@ test('after the merge: the same crossing, found by stepping back along the fork 
   );
 });
 
+test('an upstream checkout is refused, not measured as a one-commit round', () => {
+  const { dir, git } = makeRepo();
+  git('switch', '-q', 'upstream');
+  assert.throws(() => forkSeams(dir, 'v2'), /this checkout is upstream/);
+  assert.doesNotThrow(() => forkSeams(dir, 'v2', { from: 'v1' }));
+});
+
 test('the CLI exits 1 on an undeclared hit and 0 once it is declared', () => {
   const { dir, write, commit } = makeRepo();
   const run = () => {
