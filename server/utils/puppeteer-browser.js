@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import { once } from 'node:events';
 import { envStr, envBool } from '../config/utils.js';
+import { debugLog } from './debug-log.js';
 
 let browserPromise = null;
 
@@ -173,7 +174,8 @@ export const BROWSER_CLOSE_TIMEOUT_MS = 5000;
  * holds the other end can no longer hold us.
  *
  * The close itself is bounded too: a Chrome that has not exited after
- * `timeoutMs` (the same macOS case took over ten seconds) is killed.
+ * `timeoutMs` (the same macOS case took over ten seconds), or whose close
+ * rejected, is killed.
  *
  * @param {import('puppeteer-core').Browser} browser
  * @param {object} [options]
@@ -187,15 +189,15 @@ export async function shutDownBrowser(
   const proc = browser.process();
   let timer;
   const timedOut = new Promise((resolve) => {
-    timer = setTimeout(() => resolve(true), timeoutMs);
+    timer = setTimeout(resolve, timeoutMs);
   });
   try {
-    const closed = browser.close().then(
-      () => false,
-      () => false,
-    );
-    const late = await Promise.race([closed, timedOut]);
-    if (late && proc && proc.exitCode === null && proc.signalCode === null) {
+    // A rejecting close is no error here: whatever is left gets killed below.
+    const closed = browser.close().catch((err) => {
+      debugLog('[puppeteer] browser.close() rejected', err);
+    });
+    await Promise.race([closed, timedOut]);
+    if (proc && proc.exitCode === null && proc.signalCode === null) {
       proc.kill('SIGKILL');
     }
   } finally {
