@@ -4,6 +4,32 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.49.0](https://github.com/jaapstronks/deckyard/compare/v1.48.0...v1.49.0) (2026-09-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* **client:** client module paths moved (no shims). `client/lib/dom.js` is now `client/lib/dom/index.js`. The view entry shims `client/views/{editor,follow,list,notes,presenter,settings,share-viewer}.js` are gone: import `client/views/<x>/index.js` (the editor entry is `views/editor/index.js`, formerly `views/editor/render-editor.js`; settings exports `renderSettings`, `renderSettingsPage` is gone). `views/editor/{editor-form,slide-list,topbar,imagekit-picker,share-dropdown,fields}.js`, `views/editor/modals/settings-modal.js` and `views/follow/interactions.js` are now `<name>/index.js`; the shims `views/editor/slide-type-picker.js`, `views/editor/fields/images.js` and `views/editor/modals/share-modal.js` are gone (import the folder's `index.js`).
+
+### Added
+
+* **auth:** instance admins see the claims of recent SSO logins (B551) ([#1374](https://github.com/jaapstronks/deckyard/issues/1374)) ([9b9eb60](https://github.com/jaapstronks/deckyard/commit/9b9eb600e60aba6e34dad28f5ab8e40e4b1d330e))
+* **auth:** OIDC_EXTRA_SCOPES for claims behind their own scope (B552) ([#1373](https://github.com/jaapstronks/deckyard/issues/1373)) ([1eb42a1](https://github.com/jaapstronks/deckyard/commit/1eb42a14c99054dbeaac570323279f7564885a17))
+* **auth:** SSO onboarding - redirect-URI check, first login, OIDC_GROUPS_CLAIM (B427) ([#1372](https://github.com/jaapstronks/deckyard/issues/1372)) ([b78d928](https://github.com/jaapstronks/deckyard/commit/b78d928137f344569b264f1d2a85df380ed6c23f))
+* **fork:** a fork declares what it owns; fork:seams and a stable CLAUDE.md (B426) ([#1370](https://github.com/jaapstronks/deckyard/issues/1370)) ([852ac64](https://github.com/jaapstronks/deckyard/commit/852ac646e59e8c02ba3bdf1a8de0807a08b2164f))
+* **ops:** multi-org operator runbook and npm run org:create (B425) ([#1368](https://github.com/jaapstronks/deckyard/issues/1368)) ([c2b8885](https://github.com/jaapstronks/deckyard/commit/c2b88854d9efaef984a6cc96440dd2fcf8528588))
+
+
+### Fixed
+
+* **export:** inline image url()s from the fork CSS seam (B554) ([#1375](https://github.com/jaapstronks/deckyard/issues/1375)) ([5080079](https://github.com/jaapstronks/deckyard/commit/5080079490bb021ae6a9129efb12f12d8ce580b1))
+
+
+### Changed
+
+* **client:** no eponymous file beside a folder under client/ (B526) ([#1371](https://github.com/jaapstronks/deckyard/issues/1371)) ([ac19263](https://github.com/jaapstronks/deckyard/commit/ac1926309ae3c3dca1fcd55581a58322b83dc41a))
+* keep the next release in 1.x during beta ([bcfa526](https://github.com/jaapstronks/deckyard/commit/bcfa5268619c29c63e215258bb9bad76d40215de))
+
 ## [1.48.0](https://github.com/jaapstronks/deckyard/compare/v1.47.0...v1.48.0) (2026-09-29)
 
 
