@@ -403,7 +403,9 @@ test('a fork @font-face survives into self-contained exports', async () => {
     'utf8',
   );
   try {
-    const bundle = await loadExportCssBundle(fontRoot, null, null);
+    const bundle = await loadExportCssBundle(fontRoot, null, null, {
+      slides: [],
+    });
     const style = buildCssChain(fontRoot, ['a { color: red; }'], {
       customCss: bundle.customCss,
     });

@@ -450,7 +450,10 @@ export async function buildStandaloneHtml(
         ? pres.description
         : ''
   ).trim();
-  const css = await loadExportCssBundle(repoRoot, theme, watermark);
+  const css = await loadExportCssBundle(repoRoot, theme, watermark, {
+    slides: pres.slides || [],
+    slideTypes,
+  });
 
   // Inline any root-relative local font file a bundled stylesheet still
   // references (a custom theme's own face) as a data URL, so a downloaded

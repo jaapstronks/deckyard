@@ -583,7 +583,9 @@ test(
     // and one bitmap *per slide*, because `gradientVarsForSlide()` puts each slide's
     // blobs somewhere else and #491 dedupes on the resolved value, not the declared
     // one. A single shared bitmap here would mean the per-slide jitter is dead again.
-    const css = await loadExportCssBundle(repoRoot, gradientTheme, null);
+    const css = await loadExportCssBundle(repoRoot, gradientTheme, null, {
+      slides: [],
+    });
     const slidesHtml = layerDeck.slides.map((s) =>
       renderSlideHtml(s, { theme: gradientTheme, stripEditorAttrs: true }),
     );

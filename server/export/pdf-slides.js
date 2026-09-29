@@ -346,6 +346,8 @@ export async function buildSlidesPdfHtml(
   // background is full-bleed and is otherwise the single largest thing on the
   // slide, and it would have been the one image embedded at full resolution.
   const css = await loadExportCssBundle(repoRoot, theme, watermark, {
+    slides: pres.slides || [],
+    slideTypes,
     transform: imageTransform,
     cache: embedCache,
   });

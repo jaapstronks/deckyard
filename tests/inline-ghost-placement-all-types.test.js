@@ -88,7 +88,7 @@ function contentWith(def, emptied) {
 }
 
 async function renderDocument(slide) {
-  const css = await loadExportCssBundle(repoRoot, null, null);
+  const css = await loadExportCssBundle(repoRoot, null, null, { slides: [] });
   const html = renderSlideHtml(slide, { mode: 'edit' });
   return `<!doctype html><html><head><meta charset="utf-8"><style>${buildExportStyleContent(
     css,

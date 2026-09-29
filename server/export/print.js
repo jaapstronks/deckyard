@@ -200,7 +200,10 @@ export async function buildPrintHtml(
 ) {
   pres = stripLiveOnlySlidesFromPresentation(pres);
   const docLang = resolveDocLangFromPresentation(pres);
-  const css = await loadExportCssBundle(repoRoot, theme, watermark);
+  const css = await loadExportCssBundle(repoRoot, theme, watermark, {
+    slides: pres.slides || [],
+    slideTypes,
+  });
   const registry =
     slideTypes && typeof slideTypes === 'object' ? slideTypes : SLIDE_TYPES;
 
