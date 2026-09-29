@@ -1,6 +1,25 @@
-FROM node:22-alpine
+# Two stages keep the npm cache and the install's scratch files out of the
+# image: `deps` installs the production dependencies (and runs the postinstall
+# vendoring), the runtime stage copies the finished tree in once, already owned
+# by `node`. A `chown -R` in a layer of its own would store the whole app a
+# second time (~500 MB).
+FROM node:22-alpine AS deps
 
 WORKDIR /app
+
+# App source first: `npm ci` runs a `postinstall` (vendor-lucide +
+# download-google-fonts) that reads several source files, so the full tree
+# must be present before installing.
+COPY . .
+
+# Production dependencies exactly as locked. `optionalDependencies` stay in:
+# puppeteer-core (PNG/PDF export), pptxgenjs, pdf-parse and the rest are loaded
+# through gated imports and belong to a full image.
+RUN npm ci --omit=dev \
+  && mkdir -p /app/data /app/uploads \
+  && chmod +x /app/scripts/docker-entrypoint.sh
+
+FROM node:22-alpine
 
 # PNG/PDF export (server-side): install chromium runtime for puppeteer-core.
 # `chromium-chromedriver` is not needed; `chromium` ships the sandbox helper so
@@ -16,21 +35,13 @@ RUN apk add --no-cache \
   ttf-freefont \
   font-noto-emoji
 
-# App source first: `npm install` runs a `postinstall` (vendor-lucide +
-# download-google-fonts) that reads several source files, so the full tree
-# must be present before installing.
-COPY . .
-
-# Install only production deps.
-RUN npm install --omit=dev || npm install
-
 # Run as a non-root user. The `node` image ships an unprivileged `node`
-# user (uid 1000); give it ownership of the app dir so runtime writes
-# (uploads, data/) succeed. A renderer compromise then lands as `node`,
-# not root. See docs/plans/security-hardening.md item 1.
-RUN mkdir -p /app/data /app/uploads \
-  && chmod +x /app/scripts/docker-entrypoint.sh \
-  && chown -R node:node /app
+# user (uid 1000); it owns the app dir so runtime writes (uploads, data/)
+# succeed. A renderer compromise then lands as `node`, not root.
+# The COPY creates /app itself, so the directory is `node`'s too; a WORKDIR
+# before it would leave /app owned by root.
+COPY --from=deps --chown=node:node /app /app
+WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=4177
