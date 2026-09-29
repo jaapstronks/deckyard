@@ -12,10 +12,25 @@
  * @see docs/reference/sso-oidc.md
  */
 
-import { envBool, envStr, envList } from './utils.js';
+import { envBool, envStr, envList, getAppBaseUrl } from './utils.js';
 
 /** Only provider supported in Track 1. SAML (1b) is added on demand. */
 const SUPPORTED_PROVIDERS = ['oidc'];
+
+/** Where the browser starts an OIDC login. */
+export const OIDC_LOGIN_PATH = '/api/auth/oidc/login';
+
+/**
+ * The path the IdP redirects back to. `OIDC_REDIRECT_URI` must end in exactly
+ * this; the route table serves it from this constant too.
+ */
+export const OIDC_CALLBACK_PATH = '/api/auth/oidc/callback';
+
+/**
+ * The claims read for group/role values when `OIDC_GROUPS_CLAIM` is unset:
+ * the two names most IdPs use at the top level of the ID token.
+ */
+const DEFAULT_GROUPS_CLAIMS = ['groups', 'roles'];
 
 /** Role assigned to JIT-provisioned users unless a group maps them to admin. */
 const DEFAULT_PROVISION_ROLE = 'user';
@@ -62,6 +77,8 @@ export function isSsoEnforced() {
  *   autoProvision: boolean,
  *   defaultRole: string,
  *   adminGroups: string[],
+ *   groupsClaims: string[],
+ *   orgClaim: string,
  * }}
  */
 export function getOidcConfig() {
@@ -79,6 +96,7 @@ export function getOidcConfig() {
     autoProvision: envBool('OIDC_AUTO_PROVISION', true),
     defaultRole,
     adminGroups: envList('OIDC_ADMIN_GROUPS'),
+    groupsClaims: parseGroupsClaims(envStr('OIDC_GROUPS_CLAIM')).claims,
     orgClaim: envStr('OIDC_ORG_CLAIM'),
   };
 }
@@ -126,7 +144,107 @@ export function ssoConfigError() {
     }
   }
 
+  const { error } = parseGroupsClaims(envStr('OIDC_GROUPS_CLAIM'));
+  if (error) return error;
+
   return null;
+}
+
+/**
+ * Parse `OIDC_GROUPS_CLAIM`: a comma-separated list of claims to read group
+ * and role values from. Each entry is a claim name, or a dot path into a
+ * nested claim (`realm_access.roles`). Claim names are case-sensitive, so the
+ * entries are not lowercased. Unset or blank → the default `groups,roles`.
+ *
+ * An entry with an empty segment (`a..b`, `.roles`) cannot name a claim; it is
+ * an error, reported at boot by {@link ssoConfigError} rather than turning
+ * into an admin mapping that silently never matches.
+ *
+ * @param {string} raw - The env value.
+ * @returns {{ claims: string[], error: string|null }}
+ */
+export function parseGroupsClaims(raw) {
+  const entries = String(raw || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!entries.length) return { claims: DEFAULT_GROUPS_CLAIMS, error: null };
+  const bad = entries.find((e) => e.split('.').some((seg) => !seg));
+  if (bad) {
+    return {
+      claims: [],
+      error:
+        `OIDC_GROUPS_CLAIM entry "${bad}" has an empty path segment. ` +
+        'Use a claim name or a dot path such as realm_access.roles.',
+    };
+  }
+  return { claims: [...new Set(entries)], error: null };
+}
+
+/**
+ * Check that a redirect URI is the one this instance serves: the path must be
+ * {@link OIDC_CALLBACK_PATH} and, when a public base URL is known, the origin
+ * must be that of `APP_URL`/`DOMAIN`. A mismatch is the most common SSO
+ * mistake and otherwise only shows at the first failed login.
+ *
+ * This is a warning, not a refusal: a reverse proxy may legitimately rewrite
+ * the host or path. The message carries the expected URI verbatim so it can be
+ * pasted into the IdP. Pure, so boot and a doctor can both call it.
+ *
+ * @param {{ redirectUri?: string, appBaseUrl?: string }} [input] - Defaults to
+ *   `OIDC_REDIRECT_URI` and {@link getAppBaseUrl}.
+ * @returns {{ ok: boolean, expected: string, message: string|null }}
+ *   `expected` is '' when the redirect URI is not a valid URL.
+ */
+export function checkOidcRedirectUri({
+  redirectUri = envStr('OIDC_REDIRECT_URI'),
+  appBaseUrl = getAppBaseUrl(),
+} = {}) {
+  let actual;
+  try {
+    actual = new URL(redirectUri);
+  } catch {
+    return {
+      ok: false,
+      expected: '',
+      message: `OIDC_REDIRECT_URI="${redirectUri}" is not a valid absolute URL.`,
+    };
+  }
+  // An unparseable APP_URL is not this check's finding; compare paths only.
+  const origin =
+    appBaseUrl && URL.canParse(appBaseUrl)
+      ? new URL(appBaseUrl).origin
+      : actual.origin;
+  const expected = `${origin}${OIDC_CALLBACK_PATH}`;
+  if (actual.href === expected) return { ok: true, expected, message: null };
+
+  const why = [];
+  if (actual.pathname !== OIDC_CALLBACK_PATH) {
+    why.push(`its path is not ${OIDC_CALLBACK_PATH}`);
+  }
+  if (actual.origin !== origin) {
+    why.push(`its origin is not that of APP_URL (${origin})`);
+  }
+  if (!why.length) why.push('it carries a query or fragment');
+  return {
+    ok: false,
+    expected,
+    message:
+      `OIDC_REDIRECT_URI="${redirectUri}" does not match this instance: ` +
+      `${why.join(' and ')}. Set it, and register it at the IdP, as ` +
+      `${expected} (ignore this if a reverse proxy rewrites the callback).`,
+  };
+}
+
+/**
+ * Non-fatal SSO warnings for boot. Only checks a config that
+ * {@link ssoConfigError} accepted; a broken one never reaches boot.
+ * @returns {string[]}
+ */
+export function ssoConfigWarnings() {
+  if (!envBool('SSO_ENABLED') || ssoConfigError()) return [];
+  const { message } = checkOidcRedirectUri();
+  return message ? [message] : [];
 }
 
 /**
@@ -141,7 +259,7 @@ export function getSsoPublicConfig() {
     enabled,
     enforce: enabled && envBool('SSO_ENFORCE'),
     provider: enabled ? getSsoProvider() : null,
-    loginPath: '/api/auth/oidc/login',
+    loginPath: OIDC_LOGIN_PATH,
     // The words on the SSO button (SSO_BUTTON_LABEL), e.g. "Sign in with
     // Acme ID"; null = the client's own translated "Sign in with SSO".
     buttonLabel: (enabled && envStr('SSO_BUTTON_LABEL')) || null,

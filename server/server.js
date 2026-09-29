@@ -9,7 +9,7 @@ import { authConfigError, authConfigWarnings } from './auth/auth.js';
 import { deprecatedFlagWarnings } from './config/features.js';
 import { mediaConfigWarnings } from './media/config.js';
 import { brandingConfigWarnings } from './config/branding.js';
-import { ssoConfigError } from './config/sso.js';
+import { ssoConfigError, ssoConfigWarnings } from './config/sso.js';
 import {
   storageModeError,
   databaseConnectionError,
@@ -254,6 +254,7 @@ async function main() {
   for (const w of [
     ...authConfigWarnings(),
     ...publicUrlWarnings(),
+    ...ssoConfigWarnings(),
     ...deprecatedFlagWarnings(),
     ...mediaConfigWarnings(),
     ...brandingConfigWarnings(),
