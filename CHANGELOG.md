@@ -4,6 +4,26 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.48.0](https://github.com/jaapstronks/deckyard/compare/v1.47.0...v1.48.0) (2026-09-29)
+
+
+### Added
+
+* **api:** v1 operations carry an operationId and the dispatcher counts them (B515) ([#1365](https://github.com/jaapstronks/deckyard/issues/1365)) ([39e08d6](https://github.com/jaapstronks/deckyard/commit/39e08d6febe910162a47f087624615fbb4495f64))
+* **organizations:** an operator can restrict organization creation to instance admins (B424) ([#1358](https://github.com/jaapstronks/deckyard/issues/1358)) ([05a85d4](https://github.com/jaapstronks/deckyard/commit/05a85d422d6c4c0e2d6d4d01be17eca845679eaf))
+
+
+### Fixed
+
+* **api:** the slide-type schema has one route and one spelling (B504) ([#1354](https://github.com/jaapstronks/deckyard/issues/1354)) ([d45b0e6](https://github.com/jaapstronks/deckyard/commit/d45b0e62aeb66548ef63fc51da7b87e319f0c4e9))
+* **auth:** a magic-link login under multi-org writes a membership too (B507) ([#1367](https://github.com/jaapstronks/deckyard/issues/1367)) ([44a038a](https://github.com/jaapstronks/deckyard/commit/44a038a921d64ecbc38b97019cfc46d065421477))
+* **export:** an unreadable curated font is skipped with a warning, like a managed one (B538) ([#1361](https://github.com/jaapstronks/deckyard/issues/1361)) ([6db25fb](https://github.com/jaapstronks/deckyard/commit/6db25fbea050122f2c22398fe5fe929866fbddf7))
+* **export:** an unreadable local font drops its face with a warning (B542) ([#1363](https://github.com/jaapstronks/deckyard/issues/1363)) ([f3d7a04](https://github.com/jaapstronks/deckyard/commit/f3d7a049d25caf3b92b0fcba2e3a0b27dd2e7404))
+* **export:** an unreadable managed font costs that font, not the export (B539) ([#1359](https://github.com/jaapstronks/deckyard/issues/1359)) ([fa2e053](https://github.com/jaapstronks/deckyard/commit/fa2e053d0674e988c3ac1bacdf6694cbabe1ca28))
+* **slides:** a pyramid bar's text follows the surface it sits on (B540) ([#1360](https://github.com/jaapstronks/deckyard/issues/1360)) ([e9d4eba](https://github.com/jaapstronks/deckyard/commit/e9d4eba40f23f0ee71ce61fe12a32cd95bdc8701))
+* **slides:** every pyramid level is a visible surface on mist (B543) ([#1364](https://github.com/jaapstronks/deckyard/issues/1364)) ([0118b69](https://github.com/jaapstronks/deckyard/commit/0118b69ab9163d360d3cd78c5c9459d06b86133b))
+* **slides:** the top of a lime pyramid is a visible surface (B541) ([#1362](https://github.com/jaapstronks/deckyard/issues/1362)) ([c9a900a](https://github.com/jaapstronks/deckyard/commit/c9a900a29f8f7773ed053fe2752e299ed349958c))
+
 ## [1.47.0](https://github.com/jaapstronks/deckyard/compare/v1.46.0...v1.47.0) (2026-09-28)
 
 
