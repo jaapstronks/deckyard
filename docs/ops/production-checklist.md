@@ -40,14 +40,14 @@ Then fill the empty values and run the doctor: every empty required value is a r
 
 ### Uploads (required: one of the two)
 
-| Variable        | Why          | What to set                                                                                                    |
-| --------------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `UPLOADS_DIR`   | volume       | `server/uploads` (in the image: `/app/server/uploads`). Mount a persistent volume there, writable by uid 1000. |
-| `S3_ENDPOINT`   | object-store | Or store media in any S3-compatible bucket instead of a volume: all four of `S3_ENDPOINT`, `S3_BUCKET`, …      |
-| `S3_BUCKET`     | object-store | … `S3_ACCESS_KEY` and `S3_SECRET_KEY` make S3 the store (`MEDIA_STORAGE_MODE=auto`).                           |
-| `S3_REGION`     | object-store | As your provider names it.                                                                                     |
-| `S3_ACCESS_KEY` | object-store | A key that may put, get and delete objects.                                                                    |
-| `S3_SECRET_KEY` | object-store | Its secret.                                                                                                    |
+| Variable        | Why          | What to set                                                                                                     |
+| --------------- | ------------ | --------------------------------------------------------------------------------------------------------------- |
+| `UPLOADS_DIR`   | volume       | `server/uploads/` (in the image: `/app/server/uploads`). Mount a persistent volume there, writable by uid 1000. |
+| `S3_ENDPOINT`   | object-store | Or store media in any S3-compatible bucket instead of a volume: all four of `S3_ENDPOINT`, `S3_BUCKET`, …       |
+| `S3_BUCKET`     | object-store | … `S3_ACCESS_KEY` and `S3_SECRET_KEY` make S3 the store (`MEDIA_STORAGE_MODE=auto`).                            |
+| `S3_REGION`     | object-store | As your provider names it.                                                                                      |
+| `S3_ACCESS_KEY` | object-store | A key that may put, get and delete objects.                                                                     |
+| `S3_SECRET_KEY` | object-store | Its secret.                                                                                                     |
 
 The bucket serves `uploads/*` publicly and must keep `private/*` private; the doctor's upload probe refuses a bucket that serves both.
 

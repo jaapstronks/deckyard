@@ -367,13 +367,17 @@ export function productionEnvBlock(flags = {}) {
  */
 async function writeProductionProfile(flags) {
   const out = resolve(ROOT, flags.out || '.env');
-  if (await exists(out)) {
+  try {
+    // `wx` refuses an existing file in the same call that creates it.
+    await writeFile(out, productionEnvBlock(flags), { flag: 'wx' });
+  } catch (err) {
+    if (err?.code !== 'EEXIST') throw err;
     throw new Error(
       `${out} already exists; the production profile writes a fresh file. ` +
         'Move it aside, or pass --out <new file> (e.g. --out .env.production).',
+      { cause: err },
     );
   }
-  await writeFile(out, productionEnvBlock(flags), 'utf8');
   return out;
 }
 
