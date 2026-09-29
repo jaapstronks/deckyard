@@ -190,7 +190,10 @@ export async function buildSlidesPngExportHtml(
 ) {
   pres = stripLiveOnlySlidesFromPresentation(pres);
   const docLang = resolveDocLangFromPresentation(pres);
-  const css = await loadExportCssBundle(repoRoot, theme, watermark);
+  const css = await loadExportCssBundle(repoRoot, theme, watermark, {
+    slides: pres.slides || [],
+    slideTypes,
+  });
 
   const titleRaw = pres.title || 'Presentation';
   const title = escapeHtml(titleRaw);

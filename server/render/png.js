@@ -56,7 +56,10 @@ export async function buildSlidePngHtml(
   slide,
   { theme = null, slideTypes = null, lang = null, docLang = '' } = {},
 ) {
-  const css = await loadExportCssBundle(repoRoot, theme, null);
+  const css = await loadExportCssBundle(repoRoot, theme, null, {
+    slides: [slide],
+    slideTypes,
+  });
 
   const cloned = structuredClone(slide);
   const imgKeys = imageFieldKeysForType(cloned?.type);

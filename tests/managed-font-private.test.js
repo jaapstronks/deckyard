@@ -294,7 +294,9 @@ test('the export CSS embeds a private variant read through the provider', async 
   const entry = theme.embedFonts.find((f) => f.family === 'Licensed Sans');
   assert.match(entry.url, /^\/fonts\/managed\//, 'the theme names the route');
 
-  const bundle = await loadExportCssBundle(repoRoot, theme, null);
+  const bundle = await loadExportCssBundle(repoRoot, theme, null, {
+    slides: [],
+  });
   const css = JSON.stringify(bundle);
   assert.ok(
     css.includes(`data:font/woff2;base64,${FONT_BYTES.toString('base64')}`),

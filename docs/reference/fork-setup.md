@@ -347,6 +347,14 @@ HTML) by the same pass as the fonts: every local `url()` under `/assets/` or
 type's artwork belongs in its stylesheet, not in a `style="…"` attribute on the
 markup. A remote `url()` is left as written.
 
+Only where the export can draw it, though: a rule whose every selector needs
+the root class of a slide type the deck does not use (`.slide-acme-hero …`,
+see [Add CSS](../developer/slide-types.md#2-add-css-optional)) keeps its
+`url()` as written, so a deck without your title slide does not carry its
+artwork. Scope a type's
+images under its root class and they cost nothing elsewhere; `@font-face`
+sources and unscoped rules are always inlined (`server/export/seam-css.js`).
+
 Two things the seam does not do: it does not resolve `@import` (add another
 file to the folder instead), and it is read once at boot — restart the server
 after editing, like `custom/slide-types/`.

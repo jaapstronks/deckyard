@@ -28,7 +28,9 @@ const repoRoot = path.resolve(
  */
 
 test('the export bundle anchors .slide to the theme body font', async () => {
-  const bundle = await loadExportCssBundle(repoRoot, null, null);
+  const bundle = await loadExportCssBundle(repoRoot, null, null, {
+    slides: [],
+  });
   const style = buildExportStyleContent(bundle);
   assert.match(
     style,
@@ -40,7 +42,9 @@ test('the export bundle anchors .slide to the theme body font', async () => {
 });
 
 test('the slide font anchor is ordered after the stripped slide CSS', async () => {
-  const bundle = await loadExportCssBundle(repoRoot, null, null);
+  const bundle = await loadExportCssBundle(repoRoot, null, null, {
+    slides: [],
+  });
   const style = buildExportStyleContent(bundle);
 
   const anchorAt = style.indexOf('.slide { font-family: var(--font-body); }');

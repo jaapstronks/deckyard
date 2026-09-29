@@ -175,7 +175,8 @@ named by absolute URL (`url('/custom/assets/acme-hero-ground.png')`). Exports
 are self-contained, so every local `url()` in the seam — a background image or
 an `@font-face` source alike — is inlined as a data URL in PDF, PNG and
 downloaded HTML; the artwork does not need to move into a `style` attribute on
-the markup to reach an export.
+the markup to reach an export. A rule scoped under the type's root class is
+inlined only in exports of decks that use the type, so nest its images there.
 
 Do **not** add a file under `client/styles/slides/`: that tree is core-owned,
 its aggregators are generated, and a fork-added file there is a merge conflict
