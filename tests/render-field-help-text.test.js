@@ -30,7 +30,7 @@ globalThis.Element = dom.window.Element;
 const { createRenderField } =
   await import('../client/views/editor/editor-form/render-field.js');
 const { createFieldRenderers } =
-  await import('../client/views/editor/fields.js');
+  await import('../client/views/editor/fields/index.js');
 
 const GENERIC_MARKDOWN_HINT =
   'Supports paragraphs, lists, bold/italic, links, code, math, and markdown tables.';

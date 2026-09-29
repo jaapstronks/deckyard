@@ -1,28 +1,27 @@
-import { createModal } from '../../../lib/dom/modal.js';
-import { t } from '../../../lib/ui-i18n.js';
+import { createModal } from '../../../../lib/dom/modal.js';
+import { t } from '../../../../lib/ui-i18n.js';
 import {
   buildQaSection,
   buildBuildsSection,
   buildAuthorPreviewSection,
   buildRssFeedSection,
-} from './settings-modal/toggles.js';
-import { buildRevealStyleSection } from './settings-modal/reveal-style.js';
-import { buildThemeSection } from './settings-modal/theme.js';
-import { buildTransitionsSection } from './settings-modal/transitions.js';
-import { buildLanguageSection } from './settings-modal/language.js';
-import { buildDescriptionSection } from './settings-modal/description.js';
-import { buildTagsSection } from './settings-modal/tags.js';
-import { buildAnalyticsSection } from './settings-modal/analytics.js';
-import { buildLiveVideoSection } from './settings-modal/live-video.js';
-import { buildAutoAdvanceSection } from './settings-modal/auto-advance.js';
-import { h } from '../../../lib/dom/index.js';
+} from './toggles.js';
+import { buildRevealStyleSection } from './reveal-style.js';
+import { buildThemeSection } from './theme.js';
+import { buildTransitionsSection } from './transitions.js';
+import { buildLanguageSection } from './language.js';
+import { buildDescriptionSection } from './description.js';
+import { buildTagsSection } from './tags.js';
+import { buildAnalyticsSection } from './analytics.js';
+import { buildLiveVideoSection } from './live-video.js';
+import { buildAutoAdvanceSection } from './auto-advance.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * Open the deck settings modal. Assembles the form from independent section
- * builders (in ./settings-modal/), each of which normalizes its own slice of
- * `pres.settings`, builds its DOM, and wires change handlers to
- * markDirty/requestSave. Kept as the module entry point so importers are
- * unaffected by the internal split.
+ * builders (the sibling modules in this folder), each of which normalizes its
+ * own slice of `pres.settings`, builds its DOM, and wires change handlers to
+ * markDirty/requestSave. This index is the folder's seam.
  */
 export function openSettingsModal({
   root,

@@ -87,7 +87,7 @@ Client surfaces:
 
 - `client/views/list/modals/new-presentation/handlers.js` — the import flow
   (streaming, with a non-streaming fallback).
-- `client/views/editor/share-dropdown.js` +
+- `client/views/editor/share-dropdown/index.js` +
   `client/views/editor/share-dropdown/share-actions.js` — the "publish to
   Notion" action, shown only when status reports the integration is on.
 - `client/views/list/modals/creation-view/content-compose.js` — reads status

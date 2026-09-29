@@ -1,6 +1,6 @@
 /**
  * Slide header actions menu — the "More options" dropdown and lock toggle that
- * sit in the inspector form header. Split out of `editor-form.js` as a
+ * sit in the inspector form header. Split out of `index.js` as a
  * behaviour-preserving concern module (B10). `buildHeaderActions` is fully
  * parameterised: every dependency arrives through its options object or the
  * module imports below, so it holds no state from the editor-form closure.

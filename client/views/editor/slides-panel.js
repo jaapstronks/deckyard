@@ -1,7 +1,7 @@
 import { openSlideTypeModal as openSlideTypeModalImpl } from './modals/slide-type-modal.js';
 import { openSlideLibraryModal as openSlideLibraryModalImpl } from './modals/slide-library-modal.js';
 import { openFollowInviteSuggestModal } from './modals/follow-invite-suggest-modal.js';
-import { createSlideTypePicker } from './slide-type-picker.js';
+import { createSlideTypePicker } from './slide-type-picker/index.js';
 import { deepClone } from './editor-utils.js';
 import { newSlide } from '../../../shared/slide-types/presentation.js';
 import { migrateLibraryItem } from '../../../shared/slide-types/schema-version.js';
@@ -148,7 +148,7 @@ export function createSlidesPanel({
   };
 
   // Debounce only the per-keystroke input path. Each `rerenderSlideList()`
-  // rebuilds every thumbnail from scratch (`slide-list.js:305`,
+  // rebuilds every thumbnail from scratch (`slide-list/index.js`,
   // `slideListEl.innerHTML = ''`), so typing an 8-char query used to trigger 8
   // full rebuilds — ~137 ms of blocked main thread on an 80-slide deck. The
   // timer resets on each keystroke, so a word typed at fluent cadence

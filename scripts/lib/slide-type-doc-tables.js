@@ -40,7 +40,7 @@ import {
 /**
  * Field keys the shared Background/Accessibility surfaces own, on every type.
  * Listed once in the docs' preamble instead of in all N rows. Mirrors
- * `isBackgroundFieldKey()` + the a11y pair routed by `editor-form.js`.
+ * `isBackgroundFieldKey()` + the a11y pair routed by `editor-form/index.js`.
  */
 const SHARED_SURFACE_KEYS = new Set([
   'background',
@@ -109,7 +109,7 @@ function codeList(keys) {
 
 /**
  * The schema fields that reach an editing surface at all: `hidden` fields are
- * carried data and `deprecated` ones are legacy mirrors, and `editor-form.js`
+ * carried data and `deprecated` ones are legacy mirrors, and `editor-form/index.js`
  * renders neither. Shared Background/Accessibility keys are dropped here too —
  * they are stated once in the docs' preamble.
  *
@@ -214,7 +214,7 @@ function layoutChipKeys(def) {
  * renders every surfaced field by construction, so a field *relies* on it
  * exactly when nothing else claims it — not the canvas (`formText`, the
  * descriptor's element knobs, the Layout chip) and not the inspector keep-list.
- * An inactive legacy alias collection is skipped the way `editor-form.js` skips
+ * An inactive legacy alias collection is skipped the way `editor-form/index.js` skips
  * it: the renderer reads one of the two keys, never both.
  *
  * @param {string} type

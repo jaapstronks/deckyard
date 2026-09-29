@@ -20,7 +20,7 @@ import { h } from '../../../lib/dom/index.js';
 /**
  * Add, update or remove the concurrent-lock affordances on one slide row.
  *
- * Shared by the full render and by the in-place patch in slide-list.js, so the
+ * Shared by the full render and by the in-place patch in index.js, so the
  * markup a lock produces is defined once. Both indicators are absolutely
  * positioned overlays, so append order carries no meaning.
  *

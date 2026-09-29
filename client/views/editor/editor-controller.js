@@ -29,9 +29,9 @@ import { lockDocumentScroll } from './editor-utils.js';
 import { openAiAppendWizard as openAiAppendWizardModal } from './ai-append.js';
 import { readFileAsDataUrl } from './image-library-picker.js';
 import { createImagePickers } from './image-pickers.js';
-import { createFieldRenderers } from './fields.js';
-import { setupSlideList } from './slide-list.js';
-import { createRerenderEditor } from './editor-form.js';
+import { createFieldRenderers } from './fields/index.js';
+import { setupSlideList } from './slide-list/index.js';
+import { createRerenderEditor } from './editor-form/index.js';
 import { closeAllOverlays } from '../../lib/dom/modal.js';
 import { createBulkEditModal } from './bulk-edit-modal.js';
 import { createNotesStrip } from './notes-strip.js';
@@ -44,7 +44,7 @@ import {
   canConvertSlideTo,
   convertSlideWithConfirm,
 } from './convert-slide-action.js';
-import { createEditorTopbar } from './topbar.js';
+import { createEditorTopbar } from './topbar/index.js';
 import { createPaneTabs } from './pane-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
 import { createSaveManager } from './save-manager.js';

@@ -9,7 +9,7 @@
  *
  * Pure builder: returns the panel element (or null when unavailable), holding
  * its own in-flight state and AbortController. It closes over nothing in the
- * editor's render loop, so it can live beside `editor-form.js` rather than
+ * editor's render loop, so it can live beside `index.js` rather than
  * inside its closure.
  */
 

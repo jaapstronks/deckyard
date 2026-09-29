@@ -1,6 +1,6 @@
 /**
  * Selection-aware inspector element tab — the pure decision + label helpers
- * behind the "[This element | Slide]" tab bar. Split out of `editor-form.js` as
+ * behind the "[This element | Slide]" tab bar. Split out of `index.js` as
  * a behaviour-preserving concern module (B10). Both functions are pure: they
  * take the current slide and selection ({kind, idx, fieldKey}) explicitly and
  * hold no state from the editor-form closure. The tab-bar rendering stays in

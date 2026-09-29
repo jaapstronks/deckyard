@@ -9,7 +9,7 @@ deck there" possible.
 
 ## Roles
 
-- **Master** — the normal presenter view (`/present/:id`, `client/views/presenter.js`).
+- **Master** — the normal presenter view (`/present/:id`, `client/views/presenter/index.js`).
   Owns keyboard nav, the console rail, the elapsed timer, the highlighter, and
   the SSE live-session. It is the single source of truth.
 - **Projector** — a lightweight follower view (`/present/:id/window`,

@@ -45,9 +45,9 @@ Settings tab (`client/views/settings/tabs/slide-types-tab/`):
 
 Editor integration (`client/views/editor/`):
 
-- `client/views/editor/slide-type-picker.js` — a "Custom" group between
+- `client/views/editor/slide-type-picker/index.js` — a "Custom" group between
   "Interaction" and "Other" for types flagged `isCustom` or keyed `custom-…`.
-- `client/views/editor/editor-form.js` — the blue "Custom type" badge with a
+- `client/views/editor/editor-form/index.js` — the blue "Custom type" badge with a
   "Based on: X" tooltip.
 - `client/views/editor/editor-form/slide-form-router.js` — routes a custom type
   through its default case, rendering all declared fields in order.

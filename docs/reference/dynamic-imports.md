@@ -96,7 +96,7 @@ untangling as a design change, never as a find-and-replace.
 
 - `client/views/editor/editor-controller.js` → `./live-edits/index.js`,
   `./presence/index.js` — collab-only editor surfaces.
-- `client/views/editor/render-editor.js` → `../viewer/viewer-controller.js`.
+- `client/views/editor/index.js` → `../viewer/viewer-controller.js`.
 - `client/views/editor/data-source-panel.js` → `./data-source-modal.js`.
 - `server/routes/api/*` and `server/jobs/queue/workers/*` carry a few
   request-path lazy loads of the same shape.

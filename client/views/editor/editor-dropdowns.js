@@ -3,7 +3,7 @@
  * Sets up share and export dropdowns for the editor topbar
  */
 
-import { setupShareDropdown } from './share-dropdown.js';
+import { setupShareDropdown } from './share-dropdown/index.js';
 import { setupExportDropdown } from './export-dropdown.js';
 import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 

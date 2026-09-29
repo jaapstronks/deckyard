@@ -39,7 +39,7 @@ export function createViewerTopbar({
     title: pres?.title || 'Presentation',
   });
 
-  // Permission badge. render-editor.js only mounts this viewer for 'view' and
+  // Permission badge. editor/index.js only mounts this viewer for 'view' and
   // 'comment' — 'edit' gets the editor — so those are the only two labels that
   // can appear here.
   const permissionBadge = h('div', {

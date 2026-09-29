@@ -221,7 +221,7 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
 
 - The editor pulls `fields/defaults/label` from `GET /api/slide-types` (`server/routes/api/slide-types.js`).
 - Most slide forms are generated from `fields[]`.
-- Some slide types have **custom form layout** modules under `client/views/editor/editor-form/slide-forms/*` and are wired in `client/views/editor/editor-form.js`.
+- Some slide types have **custom form layout** modules under `client/views/editor/editor-form/slide-forms/*` and are wired in `client/views/editor/editor-form/index.js`.
   - Add a custom form only when the generic rendering is insufficient (grouping, custom UX, derived fields).
 
 ### Presenter stepping (“Tekst stap voor stap”)
@@ -235,10 +235,10 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
 
 ### Follow-along mode + interactions
 
-- Follow view is modular: `client/views/follow.js` composes:
+- Follow view is modular: `client/views/follow/index.js` composes:
   - SSE controller (`client/views/follow/sse.js`)
   - Q&A controller (`client/views/follow/qa.js`)
-  - Interactions controller (`client/views/follow/interactions.js`)
+  - Interactions controller (`client/views/follow/interactions/index.js`)
   - Slide rendering uses `mountSlideInto(..., { mode: 'follow' })`
 - Interaction slides typically “opt in” via predictable slide types/markup (e.g. `data-interaction="likert"`).
   - If you add a new interaction type, keep the same separation:
@@ -313,7 +313,7 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
 - If generic field rendering is enough: you’re done.
 - If you need a special layout/grouping:
   - Add a module under `client/views/editor/editor-form/slide-forms/<your-slide>.js`
-  - Wire it into `client/views/editor/editor-form.js` similarly to `chart-slide` or `follow-invite-slide`
+  - Wire it into `client/views/editor/editor-form/index.js` similarly to `chart-slide` or `follow-invite-slide`
   - Do **not** create a one-off editor UI that redefines schema; the schema stays in `shared/`.
 
 ### 5) If the slide needs runtime behavior, add it cleanly

@@ -1,9 +1,9 @@
-import { createBasicFields } from './fields/basic.js';
-import { createBackgroundFields } from './fields/background.js';
-import { createColorFields } from './fields/color.js';
-import { createEnumFields } from './fields/enum.js';
-import { createIconFields } from './fields/icons.js';
-import { createImageFields } from './fields/images.js';
+import { createBasicFields } from './basic.js';
+import { createBackgroundFields } from './background.js';
+import { createColorFields } from './color.js';
+import { createEnumFields } from './enum.js';
+import { createIconFields } from './icons.js';
+import { createImageFields } from './images/index.js';
 
 export function createFieldRenderers(deps = {}) {
   const {

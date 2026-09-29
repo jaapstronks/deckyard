@@ -1,13 +1,13 @@
-import { debugLog } from '../../lib/util/debug.js';
-import { createFollowInteractionStorage } from './interactions/storage.js';
-import { createFollowInteractionLocalCache } from './interactions/local-cache.js';
-import { renderLikertSliderUi } from './interactions/likert-slider-ui.js';
+import { debugLog } from '../../../lib/util/debug.js';
+import { createFollowInteractionStorage } from './storage.js';
+import { createFollowInteractionLocalCache } from './local-cache.js';
+import { renderLikertSliderUi } from './likert-slider-ui.js';
 import {
   isLiveSlideType,
   liveInteractionKind,
   liveScale,
-} from '../../../shared/slide-types/runtime.js';
-import { h } from '../../lib/dom/index.js';
+} from '../../../../shared/slide-types/runtime.js';
+import { h } from '../../../lib/dom/index.js';
 
 function safeObj(v) {
   return v && typeof v === 'object' ? v : null;

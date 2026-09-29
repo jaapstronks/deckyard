@@ -1,5 +1,5 @@
 import { openImageLibraryPicker } from './image-library-picker.js';
-import { openImageKitPicker } from './imagekit-picker.js';
+import { openImageKitPicker } from './imagekit-picker/index.js';
 import { openBundledGradientPicker } from './bundled-gradients/picker.js';
 import { createImagePickerSeam } from './media/picker-provider.js';
 import {

@@ -268,7 +268,7 @@
       "count": 24
     }
   },
-  "client/views/editor/editor-form.js": {
+  "client/views/editor/editor-form/index.js": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -334,7 +334,7 @@
       "count": 3
     }
   },
-  "client/views/editor/imagekit-picker.js": {
+  "client/views/editor/imagekit-picker/index.js": {
     "no-restricted-syntax": {
       "count": 3
     }
@@ -449,12 +449,12 @@
       "count": 3
     }
   },
-  "client/views/editor/share-dropdown.js": {
+  "client/views/editor/share-dropdown/index.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "client/views/editor/slide-list.js": {
+  "client/views/editor/slide-list/index.js": {
     "no-restricted-syntax": {
       "count": 3
     }
@@ -527,7 +527,7 @@
       "count": 2
     }
   },
-  "client/views/editor/topbar.js": {
+  "client/views/editor/topbar/index.js": {
     "no-restricted-syntax": {
       "count": 7
     }
@@ -547,7 +547,7 @@
       "count": 6
     }
   },
-  "client/views/follow/interactions.js": {
+  "client/views/follow/interactions/index.js": {
     "no-restricted-syntax": {
       "count": 4
     }
