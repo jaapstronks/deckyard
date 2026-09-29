@@ -125,6 +125,30 @@ gate: `email_unverified` (the IdP does not assert `email_verified`),
 cookie expired or was blocked) and `token_exchange_failed` (client secret,
 redirect URI or clock; the server log has the IdP's answer).
 
+## Inspecting the claims of a login
+
+Which claim carries the groups, and whether the organization claim arrived at
+all, differs per IdP and per app registration. An instance admin sees what the
+IdP actually sent under **Settings → Admin → SSO: claims of recent logins**
+(`GET /api/admin/sso/logins`): the last ten logins of the past 24 hours, each
+with its time, email, outcome (`ok` or the refusal reason above) and the
+verified ID-token claims. A refused login is listed too, as long as the token
+exchange succeeded, so `org_claim_missing` shows the claims that did arrive.
+Sign in through SSO in a second browser, reload the settings page, and read the
+names off for `OIDC_GROUPS_CLAIM`, `OIDC_ADMIN_GROUPS` and `OIDC_ORG_CLAIM`.
+
+What it keeps, and why that is the safe form:
+
+- **Claims, never tokens.** The raw ID, access and refresh tokens never reach
+  the list; the replay-binding claims (`nonce`, `at_hash`, `c_hash`) and the
+  IdP session id (`sid`) are dropped too.
+- **Memory only.** Nothing is written to the database, disk or the server log;
+  a restart clears the list, and each instance of a multi-instance deployment
+  has its own.
+- **Instance admins only** (`users.role = admin`); an organization admin
+  without the instance role gets a 403, because the list holds logins from
+  every organization. The card stays hidden when SSO is off.
+
 ## Security model
 
 - **PKCE** (S256) on every authorization request.

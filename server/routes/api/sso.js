@@ -25,6 +25,7 @@ import {
   OIDC_CALLBACK_PATH,
 } from '../../config/sso.js';
 import { getOrCreateSsoUser } from '../../storage/sso.js';
+import { recordSsoLogin } from '../../auth/sso-recent-logins.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
 import { getClientIp, createStorageScope } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -174,9 +175,12 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
   const currentUrl = new URL(oidc.redirectUri);
   for (const [k, v] of url.searchParams) currentUrl.searchParams.set(k, v);
 
+  // Verified claims, once the exchange succeeded. Every outcome after that
+  // point is remembered with them for the admin claims view (B551).
+  let claims = null;
   let identity;
   try {
-    const claims = await completeLogin(
+    claims = await completeLogin(
       currentUrl,
       {
         codeVerifier: stateData.codeVerifier,
@@ -190,6 +194,7 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
     const reason =
       err instanceof OidcError ? err.reason : 'token_exchange_failed';
     if (!(err instanceof OidcError)) logDiscoveryFailure(err);
+    if (claims) recordSsoLogin(claims, reason);
     await logAuthEvent({
       type: 'sso_login',
       email: null,
@@ -206,6 +211,8 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
     autoProvision: oidc.autoProvision,
     defaultRole: oidc.defaultRole,
   });
+
+  recordSsoLogin(claims, result.ok ? 'ok' : result.reason);
 
   if (!result.ok) {
     await logAuthEvent({
