@@ -174,3 +174,5 @@ slide catalogue with example content) and then `create_presentation_from_slides`
 
 Give the user the local URL (`http://localhost:4177`) and, for anything you
 create, the edit and present links returned by the MCP tools.
+
+Going to production next: [agent-deploy.md](agent-deploy.md) is the same kind of procedure for a PaaS deploy with PostgreSQL and SSO, ending with the doctor.

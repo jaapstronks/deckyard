@@ -205,6 +205,7 @@ nothing is discoverable only by `ls`.
 | [`../ops/doctor.md`](ops/doctor.md)                              | `npm run doctor`: check an installation before the first user                                                              |
 | [`../ops/backup-restore.md`](ops/backup-restore.md)              | Back up and restore, with a rehearsed restore recipe                                                                       |
 | [`../ops/agent-install.md`](ops/agent-install.md)                | Install Deckyard with an AI agent                                                                                          |
+| [`../ops/agent-deploy.md`](ops/agent-deploy.md)                  | Deploy Deckyard to production with an AI agent, ending with the doctor                                                     |
 | [`../ops/multi-organization.md`](ops/multi-organization.md)      | Run several organizations on one instance (runbook)                                                                        |
 | [`fork-setup.md`](reference/fork-setup.md)                       | Setting up a fork                                                                                                          |
 | [`storage-layer.md`](reference/storage-layer.md)                 | The `server/storage/` module map, Postgres adapter seam, and scope-based tenancy                                           |
