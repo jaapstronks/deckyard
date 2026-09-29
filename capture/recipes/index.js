@@ -11,6 +11,17 @@ import advancedImportDialog from './advanced-import-dialog.js';
 import slideTypePickerNew from './slide-type-picker-new.js';
 import themeEditorFull from './theme-editor-full.js';
 
+// Docs shots of the editor family and of one slide editor per data/interaction
+// type. The five slide editors share `_slide-editor-shots.js`.
+import editorOverview from './editor-overview.js';
+import slidesPanel from './slides-panel.js';
+import deckSettings from './deck-settings.js';
+import chartSlideEditor from './chart-slide-editor.js';
+import tableSlideEditor from './table-slide-editor.js';
+import kpiSlideEditor from './kpi-slide-editor.js';
+import likertSlideEditor from './likert-slide-editor.js';
+import processSlideEditor from './process-slide-editor.js';
+
 // Marketing shots — deckyard-website public/images/marketing/, one pair per
 // shot. See capture/README.md § Marketing shots for how they differ from the
 // docs screenshots above (viewport, pinned theme, UI locale, live session).
@@ -45,6 +56,14 @@ export const RECIPES = [
   advancedImportDialog,
   slideTypePickerNew,
   themeEditorFull,
+  editorOverview,
+  slidesPanel,
+  deckSettings,
+  chartSlideEditor,
+  tableSlideEditor,
+  kpiSlideEditor,
+  likertSlideEditor,
+  processSlideEditor,
   editorFormNl,
   editorFormEn,
   editorCanvasNl,

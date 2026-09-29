@@ -224,15 +224,23 @@ export async function seedThemeId(api, slug) {
  * Create a presentation and overwrite its slides, returning the deck id.
  * Mirrors the create-then-PUT flow used by scripts/seed-bg-contrast-demo.js.
  * @param {ApiClient} api
- * @param {{title: string, themeSlug?: string, slides?: unknown[]}} spec -
- *   without `themeSlug` the deck follows the installation default
+ * @param {{title: string, themeSlug?: string, lang?: string, slides?: unknown[]}} spec -
+ *   without `themeSlug` the deck follows the installation default theme, and
+ *   without `lang` (`nl` / `en-GB`) the installation default deck language
  * @returns {Promise<string>} deck id
  */
-export async function seedDeck(api, { title, themeSlug, slides = [] }) {
+export async function seedDeck(api, { title, themeSlug, lang, slides = [] }) {
   const theme = themeSlug
     ? await seedThemeId(api, themeSlug)
     : DEFAULT_THEME_REF;
-  const created = await api.post('/api/presentations', { title, theme });
+  // The deck language is set at creation, where the server builds the `i18n`
+  // envelope around it; without it the installation default applies, and slide
+  // copy (a live type's "Live results" label, say) follows the deck, not the UI.
+  const created = await api.post('/api/presentations', {
+    title,
+    theme,
+    ...(lang ? { lang } : {}),
+  });
   const id = created?.id || created?.presentation?.id;
   if (!id) throw new Error(`No id returned creating deck "${title}"`);
   const full = await api.get(`/api/presentations/${id}`);
