@@ -9,6 +9,7 @@ import { getAppName } from '../../../lib/theme/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { createSsoLoginsCard } from '../sso-logins.js';
 import {
   fetchAppSettings,
   updateAppSettings,
@@ -453,6 +454,15 @@ export function createAdminTab({ user }) {
 
   container.append(title, description, cards, saveError.el, actions);
 
+  // Read-only and instance-wide, so it sits below Save. It asks the server
+  // and hides itself when SSO is off or the caller is no instance admin (B551).
+  const ssoLogins = createSsoLoginsCard();
+  container.append(
+    h('div', { class: 'settings-admin-cards settings-admin-cards--readonly' }, [
+      ssoLogins.el,
+    ]),
+  );
+
   let busy = false;
   let loaded = false;
 
@@ -481,6 +491,7 @@ export function createAdminTab({ user }) {
   const load = async () => {
     if (loaded) return;
     loaded = true;
+    ssoLogins.load();
 
     try {
       const app = await fetchAppSettings();

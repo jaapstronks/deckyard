@@ -63,6 +63,8 @@ const { isSsoEnforced } = await import('../server/config/sso.js');
 const { resetOidcClientConfigCache, buildLoginRequest } =
   await import('../server/auth/providers/oidc.js');
 const { handleSso } = await import('../server/routes/api/sso.js');
+const { listRecentSsoLogins, resetRecentSsoLogins } =
+  await import('../server/auth/sso-recent-logins.js');
 const auth = await import('../server/auth/auth.js');
 
 // ---------------------------------------------------------------------------
@@ -148,6 +150,7 @@ test.after(() => {
 test.afterEach(() => {
   __setTestDb(null);
   resetOidcClientConfigCache();
+  resetRecentSsoLogins();
 });
 
 // ---------------------------------------------------------------------------
@@ -356,4 +359,31 @@ test('a claim for an organization the person may not join refuses without touchi
   assert.equal(res.session(), null);
   assert.deepEqual(db.__tables.users, usersBefore);
   assert.deepEqual(db.__tables.user_organizations, membershipsBefore);
+});
+
+// The admin claims view (B551): every login that got as far as verified
+// claims is remembered with its outcome, refused ones included, without the
+// replay-binding nonce.
+
+test('a login and a refusal both land in the recent-logins list', async () => {
+  seed();
+  await callback({ email: 'new@example.com', org_id: 'idp-beta' });
+  await callback({ email: 'lost@example.com', org_id: 'missing' });
+
+  const [refused, ok] = listRecentSsoLogins();
+  assert.equal(ok.email, 'new@example.com');
+  assert.equal(ok.outcome, 'ok');
+  assert.equal(ok.claims.org_id, 'idp-beta');
+  assert.equal(ok.claims.iss, ISSUER);
+  assert.equal('nonce' in ok.claims, false);
+  assert.equal(refused.email, 'lost@example.com');
+  assert.equal(refused.outcome, 'org_not_found');
+});
+
+test('a claim-mapping refusal is remembered with its reason', async () => {
+  seed();
+  await callback({ email: 'new@example.com' });
+  const [login] = listRecentSsoLogins();
+  assert.equal(login.outcome, 'org_claim_missing');
+  assert.equal(login.email, 'new@example.com');
 });

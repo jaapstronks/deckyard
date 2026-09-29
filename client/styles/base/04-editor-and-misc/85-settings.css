@@ -222,6 +222,27 @@
   gap: var(--ps-space-4);
 }
 
+/* Read-only admin cards below Save (the SSO logins card, B551) */
+.settings-admin-cards--readonly {
+  margin-top: var(--ps-space-6);
+}
+
+.sso-login summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.sso-login-claims {
+  margin: var(--ps-space-2) 0 0;
+  padding: var(--ps-space-3);
+  max-height: 24rem;
+  overflow: auto;
+  font-family: var(--ps-font-mono);
+  font-size: 0.8125rem;
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-md);
+}
+
 /* Admin checkbox list */
 .admin-checkbox-list {
   display: flex;
