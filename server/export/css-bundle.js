@@ -1,7 +1,6 @@
 import path from 'node:path';
 import {
   buildEmbeddedFontCss,
-  inlineLocalFontUrls,
   stripFontFacesFromCss,
 } from '../utils/embed-fonts.js';
 import { readCssWithImports } from '../utils/read-css-with-imports.js';
@@ -14,6 +13,7 @@ import {
 } from '../utils/sandbox-watermark.js';
 import {
   embedCssUrlsForExport,
+  embedLocalCssUrls,
   readTextIfExists,
   toDataUrlIfLocal,
   imageFieldKeysForType,
@@ -61,16 +61,23 @@ export async function loadExportCssBundle(
     buildEmbeddedFontCss(repoRoot, theme),
   ]);
 
-  // The fork seam, with any local font file it references inlined as a data
-  // URL. Export documents are self-contained (Puppeteer `setContent`, or a
-  // downloaded .html): a fork `@font-face` pointing at `/custom/assets/...`
-  // has no origin to resolve against there, and would silently fall back to a
-  // system font — screen/export drift of exactly the kind this seam removes.
+  // The fork seam, with every local `url()` it references inlined as a data
+  // URL: a fork `@font-face` source and a `background: url(/custom/assets/…)`
+  // alike. Export documents are self-contained (Puppeteer `setContent`, or a
+  // downloaded .html), so a root-relative path has no origin to resolve
+  // against there and would silently drop out — a system font instead of the
+  // fork's face, no image where the fork drew one. One pass for every local
+  // `url()`, the same one the theme vars take below, because the seam is the
+  // only CSS form a fork has (D271) and a font-only pass left the other half
+  // of that form broken (B554). Local only: the seam is the operator's own
+  // file, not user input, so it takes the allowlist (`isRenderAssetRef`) but
+  // not the SSRF half.
   // The seam is deliberately *not* run through `stripFontFacesFromCss`: a
   // fork's own faces are the point (see docs/reference/fork-setup.md).
-  const customCss = await inlineLocalFontUrls(
+  const customCss = await embedLocalCssUrls(
     repoRoot,
     readCustomStylesCss(repoRoot),
+    { transform, cache },
   );
 
   // Theme vars take the same `url()` pass as the page markup. The export
