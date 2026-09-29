@@ -11,8 +11,8 @@ change history.
   (`openSlideTypeModal`). Renders the header, the compact insert-position row,
   and the tab toggle (Slide types / Slide library / Import from file). Delegates
   each tab body to an injected renderer.
-- **Type picker** — `client/views/editor/slide-type-picker/` behind the
-  `slide-type-picker.js` re-export shim. `index.js` (`createSlideTypePicker` →
+- **Type picker** — `client/views/editor/slide-type-picker/`. Its
+  `index.js` (`createSlideTypePicker` →
   `renderSlideTypePicker`) is the seam: it owns render orchestration and the
   mutable per-render state (view mode, preview surface, observers, the peek
   handle) and composes `data.js` (curated presets + tuning constants),

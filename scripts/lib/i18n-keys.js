@@ -61,7 +61,7 @@ const DYNAMIC_KEY_PREFIXES = ['slideType.'];
  */
 export const DYNAMIC_KEY_PATTERNS = [
   /^slideType\./, // deck-grid.js, ai-review-annotations.js, slide-library/controls.js
-  /^editor\.slideTypeDesc\./, // slide-type-picker.js
+  /^editor\.slideTypeDesc\./, // slide-type-picker/
   /^editor\.layoutVariant\./, // layout-switcher.js (+ labelKey in shared/slide-types/)
   /^editor\.textStyle\.(color|align|size)\./, // editor-form/text-element-card.js
   /^editor\.textBlocks\.row\d+$/, // editor-form/slide-forms/text-blocks.js

@@ -11,7 +11,7 @@ import { icon } from '../../../lib/dom/icons.js';
 import { ifMatchRevision } from '../if-match-revision.js';
 import { openVersionPreviewModal } from './versions-preview.js';
 import { openVersionCompareModal } from './versions-compare.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Opens a modal to prompt for an optional save point label.

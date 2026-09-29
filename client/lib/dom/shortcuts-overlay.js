@@ -1,4 +1,4 @@
-import { h } from '../dom.js';
+import { h } from './index.js';
 import { t } from '../ui-i18n.js';
 import { openModal } from './modal.js';
 

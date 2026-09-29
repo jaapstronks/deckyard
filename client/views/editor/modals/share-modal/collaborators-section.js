@@ -15,7 +15,7 @@ import {
   getPermissionLabel,
   getPermissionDescription,
 } from '../../../../lib/permission-labels.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 import { ALL_PERMISSIONS } from '../../../../../shared/constants/permissions.js';
 
 /**

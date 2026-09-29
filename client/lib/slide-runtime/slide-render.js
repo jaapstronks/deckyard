@@ -8,7 +8,7 @@ import { initTeamCardsJustify } from './team-cards-justify.js';
 import { initLogoWallBalance } from './logo-wall-balance.js';
 import { applyThemeVarsToElement } from '../theme/theme.js';
 import { api as defaultApi } from '../api.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { ensurePrism, ensureKatex } from './prism-katex-loader.js';
 import { ensureScript } from '../dom/head-assets.js';
 

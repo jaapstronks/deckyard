@@ -5,11 +5,11 @@
  *
  * Both are pure builders that read `slide._ai*` fields and return a DOM node
  * (or null when there is nothing to show). They hold no state and touch
- * nothing in the editor's render loop, so they live beside `editor-form.js`.
+ * nothing in the editor's render loop, so they live beside `index.js`.
  */
 
 import { t } from '../../../lib/ui-i18n.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { icon } from '../../../lib/dom/icons.js';
 
 /**

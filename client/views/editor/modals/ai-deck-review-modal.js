@@ -16,7 +16,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createDeckGridView } from '../deck-grid.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { createAiReviewAnnotations } from '../ai-review-annotations.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
 
 /**

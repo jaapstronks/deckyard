@@ -14,8 +14,8 @@
  * (tests/single-slide-editor.test.js pins that on the source).
  */
 
-import { createRerenderEditor } from './editor-form.js';
-import { createFieldRenderers } from './fields.js';
+import { createRerenderEditor } from './editor-form/index.js';
+import { createFieldRenderers } from './fields/index.js';
 import { createImagePickers } from './image-pickers.js';
 import { readFileAsDataUrl } from './image-library-picker.js';
 import { loadEditorAssets } from './bootstrap.js';
@@ -29,7 +29,7 @@ import {
   RENDER_VIA_THEME,
 } from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScaleContain } from '../../lib/slide-runtime/thumb-scale.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 const SLIDE_ID = 'single-slide';
 

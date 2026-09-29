@@ -24,7 +24,7 @@
  * the same panel, asked the same question, about a weaker role.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { renderMembersList } from './member-list.js';
 import { canInvite } from './permissions.js';

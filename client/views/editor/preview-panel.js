@@ -2,7 +2,7 @@ import { createPreviewLightbox } from './modals/preview-lightbox.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createCommentMarkers } from './comment-markers.js';
 import { icon } from '../../lib/dom/icons.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 export function createPreviewPanel({
   root,

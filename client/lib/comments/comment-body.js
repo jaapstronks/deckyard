@@ -11,7 +11,7 @@
  */
 
 import { splitCommentSegments } from '../../../shared/comment-mentions.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 
 /**
  * Build DOM nodes for a comment body: mention markers become chips, the rest

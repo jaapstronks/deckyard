@@ -113,7 +113,7 @@ const TOAST_SITES = [
     total: 1,
     discarded: 1,
   },
-  { file: 'client/views/editor/topbar.js', total: 2, discarded: 1 },
+  { file: 'client/views/editor/topbar/index.js', total: 2, discarded: 1 },
   { file: 'client/views/editor/topbar/more-menu.js', total: 3, discarded: 1 },
   { file: 'client/views/editor/export-modal.js', total: 1, discarded: 1 },
   // --- background failures that expire in a toast (B206) ---
@@ -138,7 +138,7 @@ const REFUSE_AND_RETURN = [
   { file: 'client/lib/slide-library/edit-modal.js', hits: 1 },
   { file: 'client/views/editor/inline-edit/inline-editor.js', hits: 1 },
   { file: 'client/views/editor/modals/json-debug-modal.js', hits: 1 },
-  { file: 'client/views/editor/topbar.js', hits: 1 },
+  { file: 'client/views/editor/topbar/index.js', hits: 1 },
   { file: 'client/views/editor/topbar/more-menu.js', hits: 1 },
   { file: 'client/views/settings/tabs/slide-types-tab/index.js', hits: 1 },
 ];

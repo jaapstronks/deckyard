@@ -12,8 +12,8 @@ If you are an LLM agent working on this repo: optimize for **maintainability, ex
   - **Slide types are the canonical source of truth** (schema/fields/defaults/HTML rendering).
   - `shared/markdown.js`: safe markdown subset used by slide types.
 - **`client/`**: browser UI (no build step).
-  - `client/views/`: “screens” (editor, presenter, follow-along, etc).
-  - `client/lib/`: shared browser utilities (API, DOM helpers, slide mounting/cleanup, runtime helpers).
+  - `client/views/`: features — screens (editor, presenter, follow-along, …) and route-less feature folders (`viewer/`, `analytics/`); a module that fetches a feature's records and renders them is a view, wherever it is used.
+  - `client/lib/`: a layer that owns no product feature — DOM primitives (`dom/`), transport (`net/`, `api.js`), state and routing, formatting, the theme runtime, the slide pipeline. It never imports from `views/` (see _Client layers_ below).
   - `client/styles/`: CSS split into app chrome vs slide styling; themes are CSS variables.
 - **`server/`**: Node server; persistence lives in Postgres behind `server/storage/`.
   - `server/routes/`: HTTP handlers (API + static).
@@ -111,10 +111,42 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
     writes Postgres through the adapter; the call convention (scope-first,
     validated) is pinned in `docs/reference/storage-scope.md` and enforced by
     `tests/storage-call-convention.test.js`. The _shape_ is enforced too:
-    `tests/server-module-layout.test.js` fails on a folder holding nothing but
+    `tests/module-layout.test.js` fails on a folder holding nothing but
     an `index.js`, and on a multi-file folder without one — no allowlist. The
     same file enforces the eponymous-wrapper rule above across all of
     `server/`: no `P/X.js` beside a folder `P/X/`.
+  - **`client/` follows the same rule.** No `P/X.js` beside a folder `P/X/`
+    anywhere under `client/` (`client/vendor/` excepted, third-party code):
+    a real module becomes its folder's `index.js` (`lib/dom/index.js`,
+    `views/editor/index.js`), a re-export shim is deleted and its importers
+    point at the folder. `tests/module-layout.test.js` enforces it, no
+    allowlist (D262). The two storage-shape rules do **not** apply to the
+    client: `lib/<area>/` and `views/editor/` are _groups_ whose members are
+    imported by path, and there is no duty to add an `index.js` barrel to a
+    folder that is not a seam.
+
+- **Client layers: `lib/` is a layer, `views/` is a feature** (D263, D264)
+  - `client/lib/` holds what owns no product feature: the DOM primitives
+    (`dom/`, with `h()`), transport (`net/`, `api.js`), state and routing
+    (`state/`), formatting and i18n (`format/`), the theme runtime (`theme/`),
+    the slide pipeline (`slide-runtime/`, `slide-authoring/`) and a
+    client-side service layer without DOM (`qa/`: model + feed + mutations,
+    the views render).
+  - Feature UI lives under `client/views/`: a module that **fetches a
+    feature's records and renders them is a view**, however many pages use
+    it. One owner → it lives inside that view; two or more → its own
+    `views/<feature>/` with an `index.js` seam and no route (the shape
+    `views/viewer/` and `views/analytics/` already have).
+  - The direction is one way: **`lib/` never imports from `views/`.**
+  - Feature-less shared UI has **one address: `lib/dom/`** — banners,
+    empty states, a field wrapper. No `views/shared/`, no
+    components or features folder, no third place.
+  - _Status:_ the rule is normative now; the tree is catching up. B527 moves
+    `views/shared/` into `lib/dom/`, B528 moves the feature UI still in `lib/`
+    (`slide-library/`, `comments/`, `slide-collections/`, `user/`, the
+    analytics tracker, `theme-select`) into `views/` and adds the guard that
+    pins the direction. Don't add to what those
+    items move out.
 
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).
@@ -159,7 +191,7 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
 
 - **Safety: HTML escaping and markdown**
   - Any user-provided text rendered into HTML must be escaped (`escapeHtml()` from `shared/slide-types/helpers.js`) or passed through `markdownToSafeHtml()` (`shared/markdown.js`). For XML sinks (PPTX parts, SVG) the escaper is `escapeXml()` (`shared/xml.js`). Do not hand-roll a third copy — `tests/no-escape-markdown-aliases.test.js` measures function bodies, not just imports.
-  - Don’t introduce raw/unsafe HTML insertion. For data-driven markup use `h()` (`client/lib/dom.js`) rather than an `innerHTML` template.
+  - Don’t introduce raw/unsafe HTML insertion. For data-driven markup use `h()` (`client/lib/dom/index.js`) rather than an `innerHTML` template.
   - The safe categories for an existing/new `innerHTML` write, and why every current client `innerHTML` site is safe, are catalogued in **`docs/reference/html-escaping.md`** — a new write is safe only if it falls into one of them.
 
 - **Lifecycle & cleanup (critical in this codebase)**
@@ -221,7 +253,7 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
 
 - The editor pulls `fields/defaults/label` from `GET /api/slide-types` (`server/routes/api/slide-types.js`).
 - Most slide forms are generated from `fields[]`.
-- Some slide types have **custom form layout** modules under `client/views/editor/editor-form/slide-forms/*` and are wired in `client/views/editor/editor-form.js`.
+- Some slide types have **custom form layout** modules under `client/views/editor/editor-form/slide-forms/*` and are wired in `client/views/editor/editor-form/index.js`.
   - Add a custom form only when the generic rendering is insufficient (grouping, custom UX, derived fields).
 
 ### Presenter stepping (“Tekst stap voor stap”)
@@ -235,10 +267,10 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
 
 ### Follow-along mode + interactions
 
-- Follow view is modular: `client/views/follow.js` composes:
+- Follow view is modular: `client/views/follow/index.js` composes:
   - SSE controller (`client/views/follow/sse.js`)
   - Q&A controller (`client/views/follow/qa.js`)
-  - Interactions controller (`client/views/follow/interactions.js`)
+  - Interactions controller (`client/views/follow/interactions/index.js`)
   - Slide rendering uses `mountSlideInto(..., { mode: 'follow' })`
 - Interaction slides typically “opt in” via predictable slide types/markup (e.g. `data-interaction="likert"`).
   - If you add a new interaction type, keep the same separation:
@@ -313,7 +345,7 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
 - If generic field rendering is enough: you’re done.
 - If you need a special layout/grouping:
   - Add a module under `client/views/editor/editor-form/slide-forms/<your-slide>.js`
-  - Wire it into `client/views/editor/editor-form.js` similarly to `chart-slide` or `follow-invite-slide`
+  - Wire it into `client/views/editor/editor-form/index.js` similarly to `chart-slide` or `follow-invite-slide`
   - Do **not** create a one-off editor UI that redefines schema; the schema stays in `shared/`.
 
 ### 5) If the slide needs runtime behavior, add it cleanly
@@ -365,7 +397,7 @@ If the slide is an audience interaction:
 
 ## Frontend patterns (use these, don't invent parallels)
 
-- **DOM**: `h()` from `client/lib/dom.js` — no raw `document.createElement`.
+- **DOM**: `h()` from `client/lib/dom/index.js` — no raw `document.createElement`.
 - **Strings**: `t(key, fallback)` from `client/lib/ui-i18n.js` for all
   user-facing copy; translations in `client/i18n/<locale>/<component>.json`.
 - **Feedback**: the kind of event decides the carrier —

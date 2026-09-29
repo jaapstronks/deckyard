@@ -1,4 +1,4 @@
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Create the remaining-build indicator renderer (the row of dots that shows how

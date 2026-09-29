@@ -11,7 +11,7 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
 import { ifMatchRevision } from '../../if-match-revision.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * Create the visibility section (private vs organization-wide; the UI says "Workspace").

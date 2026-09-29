@@ -1,6 +1,6 @@
 import { toast } from '../../lib/dom/toast.js';
 import { t } from '../../lib/ui-i18n.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * The presenter's remote-control switch: flips the server-side gate that lets

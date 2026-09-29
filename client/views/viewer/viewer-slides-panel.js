@@ -7,7 +7,7 @@ import { renderSlideElement } from '../../lib/slide-runtime/slide-render.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { t } from '../../lib/ui-i18n.js';
 import { isDraftSlide } from '../../../shared/slide-visibility.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 export function createViewerSlidesPanel({
   pres,

@@ -11,7 +11,7 @@
 import { createAvatar } from '../../../lib/user/avatar.js';
 import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 const MAX_STACK_AVATARS = 5;
 

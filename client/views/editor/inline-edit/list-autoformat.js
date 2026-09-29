@@ -11,7 +11,7 @@
  * on a line that isn't in a list yet.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 // The same two marker kinds the dialect parses (shared/markdown.js
 // LIST_ITEM_RE), unindented: a typed line has no nesting to express.

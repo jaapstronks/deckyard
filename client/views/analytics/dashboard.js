@@ -2,7 +2,7 @@
  * Combined Analytics Dashboard - Aggregate insights across all user presentations.
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { icon } from '../../lib/dom/icons.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { api } from '../../lib/api.js';

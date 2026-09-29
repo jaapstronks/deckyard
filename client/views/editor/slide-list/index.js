@@ -1,8 +1,8 @@
-import { oneLine, slideLabel, slidePrimaryLabel } from './editor-utils.js';
-import { attachSlideListKeyNavigation } from './slide-list/keyboard-nav.js';
-import { createInsertRow } from './slide-list/insert-row.js';
-import { t } from '../../lib/ui-i18n.js';
-import { findFirstMatchInSlide, normalizeQuery } from './slide-list/search.js';
+import { oneLine, slideLabel, slidePrimaryLabel } from '../editor-utils.js';
+import { attachSlideListKeyNavigation } from './keyboard-nav.js';
+import { createInsertRow } from './insert-row.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { findFirstMatchInSlide, normalizeQuery } from './search.js';
 import {
   buildChildrenMap,
   getDescendantIds,
@@ -10,21 +10,15 @@ import {
   isParentSlide,
   getCollapsedState,
   saveCollapsedState,
-} from './slide-list/nested-helpers.js';
-import {
-  createSlideItem,
-  applySlideLockIndicator,
-} from './slide-list/render-item.js';
-import { attachDragHandlers } from './slide-list/drag-handlers.js';
-import { attachLongPress } from '../../lib/dom/long-press.js';
-import { attachClickHandler } from './slide-list/click-handlers.js';
-import {
-  showSlideContextMenu,
-  closeSlideContextMenu,
-} from './slide-list/context-menu.js';
-import { closeVisibilityMenu } from './slide-visibility-menu.js';
-import { resolveDeckLang } from '../../../shared/i18n-utils.js';
-import { h } from '../../lib/dom.js';
+} from './nested-helpers.js';
+import { createSlideItem, applySlideLockIndicator } from './render-item.js';
+import { attachDragHandlers } from './drag-handlers.js';
+import { attachLongPress } from '../../../lib/dom/long-press.js';
+import { attachClickHandler } from './click-handlers.js';
+import { showSlideContextMenu, closeSlideContextMenu } from './context-menu.js';
+import { closeVisibilityMenu } from '../slide-visibility-menu.js';
+import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
+import { h } from '../../../lib/dom/index.js';
 
 export function setupSlideList({
   slideListEl,

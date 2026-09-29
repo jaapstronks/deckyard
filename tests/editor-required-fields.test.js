@@ -22,7 +22,7 @@ globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 
-const { h } = await import('../client/lib/dom.js');
+const { h } = await import('../client/lib/dom/index.js');
 const { createBasicFields } =
   await import('../client/views/editor/fields/basic.js');
 const { emptyRequiredFields } =

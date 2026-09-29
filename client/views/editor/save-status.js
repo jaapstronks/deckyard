@@ -1,4 +1,4 @@
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 
 /** Keep background save failures visible until storage or sync recovers. */

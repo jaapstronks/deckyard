@@ -2,7 +2,7 @@
  * Analytics dashboard view for presentation metrics.
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createOverviewPanel } from './overview-panel.js';

@@ -13,7 +13,7 @@
 
 import { contentLang } from '../../../lib/slide-library/search.js';
 import { THUMB_SOURCE_LIBRARY } from './thumbnails.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 const LIBRARY_STRIP_TOTAL = 8;

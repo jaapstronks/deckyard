@@ -4,7 +4,7 @@
  * Displays a user avatar that opens a dropdown with Settings and Sign out options.
  */
 
-import { h, installDismissOnOutside } from '../dom.js';
+import { h, installDismissOnOutside } from '../dom/index.js';
 import { createAvatar, updateAvatar } from './avatar.js';
 import { getUserProfileAsync } from './user-profiles.js';
 import { displayNameFromEmail } from './user-format.js';

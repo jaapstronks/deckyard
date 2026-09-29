@@ -16,7 +16,7 @@
  * composer and end up in the serialised body.
  */
 
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import {
   splitCommentSegments,
   mentionMarkup,

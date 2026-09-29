@@ -15,7 +15,7 @@ import {
   renderSlideElement,
   cleanupSlideRuntimes,
 } from '../../lib/slide-runtime/slide-render.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 const SLIDE_CANVAS_WIDTH = 1600;
 const SLIDE_CANVAS_HEIGHT = 900;

@@ -9,7 +9,7 @@
  */
 
 import { api } from '../../lib/api.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { aiEnabled } from '../../lib/state/features.js';
 import {
   activateVideoEmbeds,

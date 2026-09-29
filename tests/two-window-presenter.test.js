@@ -173,7 +173,7 @@ describe('deck-controller two-window hooks', () => {
 
   // Lazily import after globals are set (dom.js/h use `document`).
   async function makeController() {
-    const { h } = await import('../client/lib/dom.js');
+    const { h } = await import('../client/lib/dom/index.js');
     const { createPresenterDeckController } =
       await import('../client/views/presenter/deck-controller.js');
     const stage = h('div', { class: 'deck-stage-inner' });

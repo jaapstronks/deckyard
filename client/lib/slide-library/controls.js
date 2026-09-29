@@ -5,7 +5,7 @@
 
 import { t } from '../ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { getSupportedLangs } from '../format/i18n.js';
 import { getLangShortLabel } from '../format/lang-selector.js';
 

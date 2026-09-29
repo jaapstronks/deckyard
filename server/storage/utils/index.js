@@ -9,7 +9,7 @@
  *
  * Consumers import this barrel, not `./db-guard.js` or `./helpers.js`
  * (`AGENTS.md` § _Module layout: one folder = one seam_), which is what
- * `tests/server-module-layout.test.js` pins.
+ * `tests/module-layout.test.js` pins.
  */
 
 export { withDbGuard } from './db-guard.js';

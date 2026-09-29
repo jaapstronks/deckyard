@@ -31,7 +31,7 @@ globalThis.getComputedStyle = dom.window.getComputedStyle;
 // skips them entirely), so we deliberately don't polyfill those.
 globalThis.requestAnimationFrame = () => 0;
 
-const { h } = await import('../client/lib/dom.js');
+const { h } = await import('../client/lib/dom/index.js');
 const data = await import('../client/views/editor/slide-type-picker/data.js');
 const companions =
   await import('../shared/slide-types/authoring-companions.js');

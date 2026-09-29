@@ -31,7 +31,7 @@ import { loadThemeById } from '../../lib/theme/theme.js';
 import { createFollowQaController } from './qa.js';
 import { createFollowSse } from './sse.js';
 import { renderFollowLangButtons } from './lang.js';
-import { createFollowInteractionController } from './interactions.js';
+import { createFollowInteractionController } from './interactions/index.js';
 import { createFollowCopy } from './i18n.js';
 import { createTranslatingPoll } from './translating-poll.js';
 import { applyCapabilitiesToStage, showFollowMessage } from './stage-ui.js';

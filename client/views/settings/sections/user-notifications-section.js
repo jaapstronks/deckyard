@@ -7,7 +7,7 @@
 
 import { t } from '../../../lib/ui-i18n.js';
 import { disableForSandbox } from '../sandbox-disable.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 const LEVEL_OPTIONS = [
   {

@@ -1,4 +1,4 @@
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 export function createPresenterStageScaffold({ pres } = {}) {
   const deck = h('div', {
     id: 'deck',

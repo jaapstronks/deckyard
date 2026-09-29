@@ -9,7 +9,7 @@ import {
   formatPercent,
 } from '../../lib/format/analytics-format.js';
 import { icon as uiIcon } from '../../lib/dom/icons.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Create an overview panel with metric cards.

@@ -1,42 +1,39 @@
-import { createRenderField } from './editor-form/render-field.js';
-import { renderSlideFormByType } from './editor-form/slide-form-router.js';
-import { buildDeckSlideOptions } from './fields/card-link-field.js';
-import { t } from '../../lib/ui-i18n.js';
-import { toast as defaultToast } from '../../lib/dom/toast.js';
-import { isOrgDisabledSlideType } from '../../../shared/slide-types/policy.js';
-import { buildDataSourceIndicator } from './data-source-panel.js';
-import { icon } from '../../lib/dom/icons.js';
-import { buildHeaderActions } from './editor-form/header-actions.js';
-import { createLayoutSwitcherChip } from './layout-switcher.js';
+import { createRenderField } from './render-field.js';
+import { renderSlideFormByType } from './slide-form-router.js';
+import { buildDeckSlideOptions } from '../fields/card-link-field.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { toast as defaultToast } from '../../../lib/dom/toast.js';
+import { isOrgDisabledSlideType } from '../../../../shared/slide-types/policy.js';
+import { buildDataSourceIndicator } from '../data-source-panel.js';
+import { icon } from '../../../lib/dom/icons.js';
+import { buildHeaderActions } from './header-actions.js';
+import { createLayoutSwitcherChip } from '../layout-switcher.js';
 import {
   getInspectorKeepKeys,
   renderInspectorExtrasByType,
-} from './editor-form/inspector-form.js';
-import { renderTextElementCard } from './editor-form/text-element-card.js';
-import { fieldFormRows } from '../../../shared/slide-types/form-layout.js';
-import { normalizeSlideContent } from '../../../shared/slide-types/normalize-content.js';
+} from './inspector-form.js';
+import { renderTextElementCard } from './text-element-card.js';
+import { fieldFormRows } from '../../../../shared/slide-types/form-layout.js';
+import { normalizeSlideContent } from '../../../../shared/slide-types/normalize-content.js';
 import {
   describeUnresolvedType,
   unresolvedNotes,
-} from '../../../shared/slide-types/unresolved.js';
-import { ensureSlideBgImage } from '../../../shared/slide-types/legacy-bg-image.js';
-import {
-  elementAppliesToSlide,
-  elementTabLabel,
-} from './editor-form/element-tab.js';
+} from '../../../../shared/slide-types/unresolved.js';
+import { ensureSlideBgImage } from '../../../../shared/slide-types/legacy-bg-image.js';
+import { elementAppliesToSlide, elementTabLabel } from './element-tab.js';
 import {
   buildBackgroundControls,
   isBackgroundFieldKey,
-} from './editor-form/background-section.js';
-import { buildSlideDurationControl } from './editor-form/slide-duration.js';
+} from './background-section.js';
+import { buildSlideDurationControl } from './slide-duration.js';
 import {
   buildAiReasoningPanel,
   buildAiWarningsPanel,
-} from './editor-form/ai-slide-notes.js';
-import { buildAiIteratePanel } from './editor-form/ai-iterate-panel.js';
-import { h } from '../../lib/dom.js';
-import { surfaceCapabilities } from './editor-form/surfaces.js';
-import { aiEnabled } from '../../lib/state/features.js';
+} from './ai-slide-notes.js';
+import { buildAiIteratePanel } from './ai-iterate-panel.js';
+import { h } from '../../../lib/dom/index.js';
+import { surfaceCapabilities } from './surfaces.js';
+import { aiEnabled } from '../../../lib/state/features.js';
 
 export function createRerenderEditor({
   editorMount,

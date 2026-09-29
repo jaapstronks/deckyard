@@ -2,14 +2,14 @@
  * The `h`-parameter gate (A7.33).
  *
  * `h()` — the hyperscript element factory — has exactly one implementation,
- * `client/lib/dom.js`. It used to reach the rest of the client as a
+ * `client/lib/dom/index.js`. It used to reach the rest of the client as a
  * hand-threaded parameter in three spellings at once: positional
  * (`createModal(h, opts)`), an opt-in option with a default (`h = defaultH`),
  * and ~400 lines of `{ h, … }` pass-through across 167 modules. Every module
  * now imports it directly; this file pins the ESLint rule that keeps the
  * fourth spelling from starting.
  *
- * The allowlist is empty on purpose — including for `client/lib/dom.js`
+ * The allowlist is empty on purpose — including for `client/lib/dom/index.js`
  * itself, where the factory is a function *declaration*, never a parameter.
  *
  * Run with: node --test tests/h-parameter-gate.test.js
@@ -22,7 +22,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const H_MESSAGE = /Import `h` from client\/lib\/dom\.js/;
+const H_MESSAGE = /Import `h` from client\/lib\/dom\/index\.js/;
 
 async function lintProbe(code, relPath) {
   const { ESLint } = await import('eslint');
@@ -50,7 +50,7 @@ const RESTRICTED = [
   ],
   [
     'a shorthand property handed to someone else',
-    "import { h } from '../../lib/dom.js';\nexport const f = () => ({ h });\n",
+    "import { h } from '../../lib/dom/index.js';\nexport const f = () => ({ h });\n",
   ],
 ];
 
@@ -82,7 +82,7 @@ test('gate: a geometry `{ h: rowH }` stays legal', async () => {
 });
 
 test('gate: no allowlist — it is in force inside lib/dom itself', async () => {
-  for (const file of ['client/lib/dom.js', 'client/lib/dom/modal.js']) {
+  for (const file of ['client/lib/dom/index.js', 'client/lib/dom/modal.js']) {
     const messages = await lintProbe(
       'export const f = ({ h }) => h("div");\n',
       file,

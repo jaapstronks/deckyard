@@ -1,7 +1,7 @@
 import { createQrDataUrl, renderQrToCanvas } from './poll.js';
 import { t } from '../ui-i18n.js';
 import { api } from '../api.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 
 const followCodeCache = new Map();
 

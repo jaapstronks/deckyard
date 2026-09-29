@@ -19,7 +19,7 @@ import {
   contrastRatioFromLuminance,
 } from '../theme/color-utils.js';
 import { WCAG_THRESHOLDS } from '../../../shared/contrast.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 
 const SAMPLE_SIZE = 32; // downscaled sampling canvas edge, px
 // Per-pixel pass threshold. Titles over a background image are large text, so

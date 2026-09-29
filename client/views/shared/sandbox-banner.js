@@ -7,7 +7,7 @@
  * route render) and kept in sync with the `sandboxMode` feature flag.
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { getFeatures } from '../../lib/state/features.js';
 

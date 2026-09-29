@@ -53,7 +53,7 @@ globalThis.requestAnimationFrame =
 globalThis.cancelAnimationFrame =
   dom.window.cancelAnimationFrame || clearTimeout;
 
-const { h } = await import('../client/lib/dom.js');
+const { h } = await import('../client/lib/dom/index.js');
 const { createOverlay, createModal, registerOverlayCloser, closeAllOverlays } =
   await import('../client/lib/dom/modal.js');
 

@@ -2,7 +2,7 @@ import { isSlideVisibleIn } from '../../../shared/slide-visibility.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { morphTransition } from './morph-engine.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
 import { debugLog } from '../../lib/util/debug.js';
 

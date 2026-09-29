@@ -9,7 +9,7 @@ import {
   getVisibilityPreset,
   applyVisibilityPreset,
 } from '../../../shared/slide-visibility.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { takeEscape } from '../../lib/dom/escape.js';
 
 /**

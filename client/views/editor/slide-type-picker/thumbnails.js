@@ -12,7 +12,7 @@ import { icon } from '../../../lib/dom/icons.js';
 import { renderSlideSchematic } from '../../../lib/slide-authoring/slide-schematic.js';
 import { schematicFor } from '../slide-type-schematics.js';
 import { SLIDE_CANVAS_WIDTH } from './data.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 // Where a tile's thumbnail content comes from, stamped on the wrap as
 // `data-thumb-source`. A `type` tile shows its type's sample (or a schematic,

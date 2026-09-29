@@ -1,6 +1,6 @@
 import { getLangShortLabel } from '../../lib/format/lang-selector.js';
 import { spinner } from '../../lib/dom/spinner.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { getLangDisplayName } from '../../../shared/i18n-utils.js';
 
 /**

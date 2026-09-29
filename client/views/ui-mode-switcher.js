@@ -5,7 +5,7 @@ import {
 } from '../lib/theme/ui-mode.js';
 import { icon } from '../lib/dom/icons.js';
 import { t } from '../lib/ui-i18n.js';
-import { h } from '../lib/dom.js';
+import { h } from '../lib/dom/index.js';
 
 function prefLabel(p) {
   if (p === 'light') return t('appearance.light', 'Light');

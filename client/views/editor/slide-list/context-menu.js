@@ -7,7 +7,7 @@
  * implementation of each action across the keyboard, the row controls and here.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { promptModal } from '../../../lib/dom/modal.js';
 import { duplicateSlides, deleteSlides } from './slide-actions.js';

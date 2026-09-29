@@ -27,7 +27,7 @@ import { createLibraryCompose } from './library-compose.js';
 import { createContentCompose } from './content-compose.js';
 import { createImportCompose } from './import-compose.js';
 import { handleEmpty } from '../new-presentation/handlers.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,

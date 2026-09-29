@@ -1,5 +1,5 @@
 import { api } from '../../lib/api.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
 import {

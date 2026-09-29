@@ -1,5 +1,5 @@
 import { t } from '../../../../lib/ui-i18n.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * Build the shared "checkbox + title + help" callout row used by several

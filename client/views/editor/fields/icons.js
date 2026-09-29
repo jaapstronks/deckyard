@@ -1,7 +1,7 @@
 import { iconUrl, resolveIconName } from '../../../../shared/icon-names.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { openIconPicker } from './icon-picker-modal.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 export function createIconFields() {
   /**

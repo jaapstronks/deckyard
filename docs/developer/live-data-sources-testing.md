@@ -139,5 +139,5 @@ curl -b cookies.txt -X POST http://localhost:4177/api/data-sources/refresh \
 | Migration       | `server/db/migrations/036_live_data_sources.js`                                 |
 | Slide storage   | `server/storage/presentations/slides.js` (normalizeSlides preserves dataSource) |
 | Editor UI       | `client/views/editor/data-source-panel.js`, `data-source-modal.js`              |
-| Editor form     | `client/views/editor/editor-form.js` (wires in the indicator)                   |
+| Editor form     | `client/views/editor/editor-form/index.js` (wires in the indicator)             |
 | CSS             | `client/styles/base/04-editor-and-misc/103-data-source.css`                     |

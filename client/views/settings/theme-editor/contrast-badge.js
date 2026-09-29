@@ -14,7 +14,7 @@
  * opinion. See `shared/contrast.js` for why both.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { assessContrast } from '../../../../shared/contrast.js';
 

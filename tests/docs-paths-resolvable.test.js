@@ -269,7 +269,7 @@ test('the scan actually sees the docs', () => {
     `expected the docs to cite many paths, got ${CITATIONS.length}`,
   );
   assert.ok(
-    pathResolves('client/lib/dom.js'),
+    pathResolves('client/lib/dom/index.js'),
     'sanity: a known-live path resolves',
   );
   assert.ok(

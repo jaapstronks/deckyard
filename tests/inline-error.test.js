@@ -23,7 +23,7 @@ globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 
-const { h } = await import('../client/lib/dom.js');
+const { h } = await import('../client/lib/dom/index.js');
 const { createInlineError } = await import('../client/lib/dom/inline-error.js');
 const { isDevRuntime } = await import('../client/lib/util/dev-runtime.js');
 

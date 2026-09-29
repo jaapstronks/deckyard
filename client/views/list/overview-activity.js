@@ -7,7 +7,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { icon } from '../../lib/dom/icons.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { nav } from '../../lib/state/router.js';
 
 /**

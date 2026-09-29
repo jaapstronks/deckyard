@@ -4,7 +4,7 @@ import {
   POSITION_PRESET_LABELS,
   MOBILE_POSITIONS,
 } from '../../../../../shared/video-stream-providers.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * Live Video overlay: enable toggle plus stream URL, provider detection, and

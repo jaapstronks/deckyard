@@ -9,13 +9,13 @@
  *
  * Pure builder: returns the panel element (or null when unavailable), holding
  * its own in-flight state and AbortController. It closes over nothing in the
- * editor's render loop, so it can live beside `editor-form.js` rather than
+ * editor's render loop, so it can live beside `index.js` rather than
  * inside its closure.
  */
 
 import { t } from '../../../lib/ui-i18n.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,

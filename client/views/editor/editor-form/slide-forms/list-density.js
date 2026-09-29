@@ -18,7 +18,7 @@
  */
 import { t } from '../../../../lib/ui-i18n.js';
 import { resolveListLayout } from '../../../../../shared/slide-types/types/list-slide.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * Render the density field with a contextual note when the renderer's

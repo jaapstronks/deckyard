@@ -1,6 +1,6 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { icon as uiIcon } from '../../../lib/dom/icons.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Build a section header with icon, title, count badge, and optional "View all" button

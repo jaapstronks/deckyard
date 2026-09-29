@@ -37,7 +37,7 @@ Deck-wide config lives at `presentation.settings.liveVideo` (defaults from
 - `mobilePosition` — `bottom` | `top` | `hidden` | `pip`.
 
 Configured in the editor under **Deck settings → Live Video**
-(`client/views/editor/modals/settings-modal.js`): enable-toggle, URL input with
+(`client/views/editor/modals/settings-modal/index.js`): enable-toggle, URL input with
 live provider-detection hint, position select, mobile-position select.
 
 ## Per-slide override
@@ -123,10 +123,10 @@ The layer is mounted by three views via `createVideoLayer({ containerEl,
 getCurrentSlide })`, with `setConfig(pres.settings.liveVideo)` on load and
 `updatePosition()` on every slide render:
 
-- **Presenter view** (`client/views/presenter.js`) — on the presenter's stage.
-- **Follow view** (`client/views/follow.js`) — the main audience surface;
+- **Presenter view** (`client/views/presenter/index.js`) — on the presenter's stage.
+- **Follow view** (`client/views/follow/index.js`) — the main audience surface;
   `setConfig` re-runs on each presentation (re)fetch.
-- **Share viewer** (`client/views/share-viewer.js`) — only created when
+- **Share viewer** (`client/views/share-viewer/index.js`) — only created when
   `liveVideo.enabled && streamUrl`.
 
 The **present window** (`client/views/present-window.js`, the projection
@@ -135,15 +135,15 @@ shows no video.
 
 ## Files involved
 
-| File                                                                                  | Role                                                                                                                      |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `shared/video-stream-providers.js`                                                    | Provider detection, embed-URL builders, position presets, `resolvePosition` (shared, but currently client-only consumers) |
-| `client/lib/slide-runtime/video-layer.js`                                             | `createVideoLayer` factory: DOM scaffold, player build/teardown, unmute, positioning                                      |
-| `client/lib/slide-runtime/ensure-hls.js`                                              | Lazy loader for the vendored hls.js (`client/vendor/hls/`)                                                                |
-| `client/styles/base/04-editor-and-misc/72-video-layer.css`                            | Layer positioning, transitions, mobile docks, error/unmute styling                                                        |
-| `shared/slide-types/presentation.js`                                                  | `settings.liveVideo` defaults on new presentations                                                                        |
-| `client/views/editor/modals/settings-modal.js`                                        | Settings normalization + "Live Video" section UI                                                                          |
-| `client/views/presenter.js`, `client/views/follow.js`, `client/views/share-viewer.js` | Mount points                                                                                                              |
+| File                                                                                                    | Role                                                                                                                      |
+| ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `shared/video-stream-providers.js`                                                                      | Provider detection, embed-URL builders, position presets, `resolvePosition` (shared, but currently client-only consumers) |
+| `client/lib/slide-runtime/video-layer.js`                                                               | `createVideoLayer` factory: DOM scaffold, player build/teardown, unmute, positioning                                      |
+| `client/lib/slide-runtime/ensure-hls.js`                                                                | Lazy loader for the vendored hls.js (`client/vendor/hls/`)                                                                |
+| `client/styles/base/04-editor-and-misc/72-video-layer.css`                                              | Layer positioning, transitions, mobile docks, error/unmute styling                                                        |
+| `shared/slide-types/presentation.js`                                                                    | `settings.liveVideo` defaults on new presentations                                                                        |
+| `client/views/editor/modals/settings-modal/index.js`                                                    | Settings normalization + "Live Video" section UI                                                                          |
+| `client/views/presenter/index.js`, `client/views/follow/index.js`, `client/views/share-viewer/index.js` | Mount points                                                                                                              |
 
 ## Not built (boundary notes)
 

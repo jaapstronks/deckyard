@@ -3,7 +3,7 @@
  * Color input with hex text input.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import {
   isValidHexColor,
   normalizeHex,

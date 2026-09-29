@@ -1,4 +1,4 @@
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 
 /**

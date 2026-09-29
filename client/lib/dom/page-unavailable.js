@@ -1,4 +1,4 @@
-import { h } from '../dom.js';
+import { h } from './index.js';
 import { icon as uiIcon } from './icons.js';
 
 /**

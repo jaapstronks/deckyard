@@ -51,7 +51,7 @@ const AI_ENTRIES = [
   {
     entry: 'Inspector: refine this slide (iterate panel)',
     calls: ['client/views/editor/editor-form/ai-iterate-panel.js'],
-    gate: 'client/views/editor/editor-form.js',
+    gate: 'client/views/editor/editor-form/index.js',
   },
   {
     entry: 'Slide menu: AI Convert…',
@@ -105,8 +105,8 @@ const AI_ENTRIES = [
   },
   {
     entry: 'ImageKit picker: Generate ALT',
-    calls: ['client/views/editor/imagekit-picker.js'],
-    gate: 'client/views/editor/imagekit-picker.js',
+    calls: ['client/views/editor/imagekit-picker/index.js'],
+    gate: 'client/views/editor/imagekit-picker/index.js',
   },
   {
     entry: 'Image library: generate alt text',

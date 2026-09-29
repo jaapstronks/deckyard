@@ -65,7 +65,7 @@ export function renderSlideFormByType(ctx) {
 
   // Default: every field in definition order, with a run of consecutive
   // `formLayout: 'pair'` fields on one row. The loop itself lives in
-  // editor-form.js because the inspector's remaining-keeps pass renders through
+  // index.js because the inspector's remaining-keeps pass renders through
   // exactly the same one — a type declares its form layout once and both
   // surfaces obey it.
   ctx.renderFieldRows(ctx.def?.fields || []);

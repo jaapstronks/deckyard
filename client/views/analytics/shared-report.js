@@ -3,7 +3,7 @@
  */
 
 import { api } from '../../lib/api.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { spinner } from '../../lib/dom/spinner.js';
 import { createPageUnavailable } from '../../lib/dom/page-unavailable.js';
 import { t } from '../../lib/ui-i18n.js';

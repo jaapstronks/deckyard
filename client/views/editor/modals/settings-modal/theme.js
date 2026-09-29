@@ -2,7 +2,7 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { createAndPopulateThemeSelect } from '../../../../lib/theme/theme-select.js';
 import { analyzeAndApplyThemeChange } from '../change-theme-modal.js';
 import { DEFAULT_THEME_REF } from '../../../../../shared/constants/themes.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * Theme selector. Changing theme runs the analyze-and-apply flow, which may

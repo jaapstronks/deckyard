@@ -1,4 +1,4 @@
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { toast } from '../../lib/dom/toast.js';
 import { confirmModal } from '../../lib/dom/modal.js';

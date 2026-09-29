@@ -9,7 +9,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { createPageUnavailable } from '../../lib/dom/page-unavailable.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Render an error state.

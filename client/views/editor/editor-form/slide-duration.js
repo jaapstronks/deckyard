@@ -6,12 +6,12 @@
  * Pure builder: returns the wrapper element (or null when auto-advance is off
  * or on a surface without deck tools). It writes `slide.duration` directly and calls
  * `markDirty`/`requestSave`, but holds no render-loop state, so it lives beside
- * `editor-form.js`.
+ * `index.js`.
  */
 
 import { t } from '../../../lib/ui-i18n.js';
 import { DEFAULT_ADVANCE_INTERVAL_SECONDS } from '../../../../shared/slide-timing.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { surfaceCapabilities } from './surfaces.js';
 
 /**

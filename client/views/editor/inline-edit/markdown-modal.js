@@ -24,7 +24,7 @@
  */
 
 import { getByPath, setByPath, fieldLabel } from './field-path.js';
-import { h, installDismissOnOutside } from '../../../lib/dom.js';
+import { h, installDismissOnOutside } from '../../../lib/dom/index.js';
 import { createOverlay } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { icon } from '../../../lib/dom/icons.js';

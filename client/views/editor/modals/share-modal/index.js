@@ -21,7 +21,7 @@ import { createCollaboratorsSection } from './collaborators-section.js';
 import { createShareLinksSection } from './share-links-section.js';
 import { createVisibilitySection } from './visibility-section.js';
 import { createPublishSection } from './publish-section.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 import {
   createSharingOffNote,
   createSharingOffFieldset,

@@ -17,7 +17,7 @@
  * helpers, so the focus trap and aria wiring are unchanged.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createModal } from '../../../lib/dom/modal.js';

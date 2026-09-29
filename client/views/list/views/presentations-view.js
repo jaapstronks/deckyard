@@ -2,7 +2,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { createTagFilter, filterPresentationsByTags } from '../tag-filter.js';
 import { createNoPresentationsEmptyState } from '../../../lib/dom/empty-state.js';
 import { storage } from '../../../lib/storage.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Unified "Presentations" view — one filterable surface that replaces the

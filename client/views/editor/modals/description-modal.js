@@ -3,7 +3,7 @@ import {
   createBusyManager,
 } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { aiEnabled } from '../../../lib/state/features.js';
 
 function countSentences(text) {

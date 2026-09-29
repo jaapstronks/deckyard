@@ -1,6 +1,6 @@
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Modal to suggest adding a follow-invite slide when the user adds an interactive slide.

@@ -1,4 +1,4 @@
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import qrcode from '../../vendor/qrcode-generator.js';
 import { newId } from '../util/id.js';
 import { storage } from '../storage.js';

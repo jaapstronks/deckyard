@@ -1,4 +1,4 @@
-import { h } from '../lib/dom.js';
+import { h } from '../lib/dom/index.js';
 import qrcode from '../vendor/qrcode-generator.js';
 import { t } from '../lib/ui-i18n.js';
 import { copyToClipboardWithPromptFallback } from '../lib/util/clipboard.js';

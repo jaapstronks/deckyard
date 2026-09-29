@@ -14,7 +14,7 @@
  * implementation detail (which renderer) with a user choice.
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { openModal } from '../../lib/dom/modal.js';
 import { toast } from '../../lib/dom/toast.js';
