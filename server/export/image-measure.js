@@ -49,7 +49,7 @@ import { debugLog } from '../utils/debug-log.js';
 import { ignoreRejection } from '../utils/fire-and-forget.js';
 import { envInt } from '../config/utils.js';
 import {
-  pdfImageCompressionConfig,
+  exportImageCompressionConfig,
   compressImageForEmbed,
 } from './image-compress.js';
 
@@ -72,7 +72,7 @@ export const MIN_DISPLAY_CAP = 256;
  * @returns {number}
  */
 export function retinaScale() {
-  return envInt('PDF_EXPORT_IMAGE_RETINA_SCALE', DEFAULT_RETINA_SCALE, {
+  return envInt('EXPORT_IMAGE_RETINA_SCALE', DEFAULT_RETINA_SCALE, {
     min: 1,
     max: 4,
   });
@@ -230,7 +230,7 @@ export async function measureImageDisplayPx({ slidesHtml, styleContent }) {
  * @returns {((buf: Buffer, ext: string, mime: string, url?: string) => Promise<{buf: Buffer, mime: string}>) | null}
  */
 export function displayAwareEmbedTransform(displayPx) {
-  const config = pdfImageCompressionConfig();
+  const config = exportImageCompressionConfig();
   if (!config) return null;
   const scale = retinaScale();
   const map = displayPx instanceof Map ? displayPx : new Map();

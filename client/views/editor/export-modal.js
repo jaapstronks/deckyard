@@ -30,7 +30,7 @@ import { getFeatures } from '../../lib/state/features.js';
 const LUCIDE = (name) => `/client/vendor/lucide-icons/${name}.svg`;
 
 // Client-side ceiling for the synchronous PDF render before we offer the
-// browser-print fallback. The server's own cap is PDF_EXPORT_TIMEOUT_MS (120s);
+// browser-print fallback. The server's own cap is EXPORT_RENDER_TIMEOUT_MS (120s);
 // we bail a little sooner so the user isn't left staring at a dead spinner.
 const PDF_FETCH_TIMEOUT_MS = 90_000;
 

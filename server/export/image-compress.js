@@ -26,23 +26,23 @@ const DEFAULT_QUALITY = 80;
 
 /**
  * Read the PDF-export image-compression config from the environment.
- * Disabled entirely when `PDF_EXPORT_IMAGE_COMPRESSION` is an explicit falsy
- * token ("0"/"off"/"false"/"no") or when `PDF_EXPORT_IMAGE_MAX_PX` is set to
+ * Disabled entirely when `EXPORT_IMAGE_COMPRESSION` is an explicit falsy
+ * token ("0"/"off"/"false"/"no") or when `EXPORT_IMAGE_MAX_PX` is set to
  * 0; any unrecognized toggle value leaves compression on (envBool fallback).
  * Out-of-range numbers fall back to the defaults per the envInt contract.
  *
  * @returns {{ maxPx: number, quality: number } | null} null when disabled.
  */
-export function pdfImageCompressionConfig() {
-  if (!envBool('PDF_EXPORT_IMAGE_COMPRESSION', true)) return null;
+export function exportImageCompressionConfig() {
+  if (!envBool('EXPORT_IMAGE_COMPRESSION', true)) return null;
 
-  const maxPx = envInt('PDF_EXPORT_IMAGE_MAX_PX', DEFAULT_MAX_PX, {
+  const maxPx = envInt('EXPORT_IMAGE_MAX_PX', DEFAULT_MAX_PX, {
     min: 0,
     max: 20000,
   });
   if (maxPx === 0) return null;
 
-  const quality = envInt('PDF_EXPORT_IMAGE_QUALITY', DEFAULT_QUALITY, {
+  const quality = envInt('EXPORT_IMAGE_QUALITY', DEFAULT_QUALITY, {
     min: 1,
     max: 100,
   });
@@ -121,8 +121,8 @@ export async function compressImageForEmbed(buf, ext, mime, config) {
  *
  * @returns {((buf: Buffer, ext: string, mime: string) => Promise<{buf: Buffer, mime: string}>) | null}
  */
-export function pdfImageEmbedTransform() {
-  const config = pdfImageCompressionConfig();
+export function exportImageEmbedTransform() {
+  const config = exportImageCompressionConfig();
   if (!config) return null;
   return (buf, ext, mime) => compressImageForEmbed(buf, ext, mime, config);
 }
