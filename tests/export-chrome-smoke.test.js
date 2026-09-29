@@ -40,6 +40,7 @@ import sharp from 'sharp';
 
 import {
   resolveChromeExecutablePath,
+  getPuppeteerBrowser,
   closePuppeteerBrowser,
 } from '../server/utils/puppeteer-browser.js';
 import { renderSlidesToPdfBuffer } from '../server/render/pdf.js';
@@ -314,6 +315,27 @@ test(
     assert.ok(
       dominantShare < 0.98,
       `OG image should not be a single colour (most common: ${(dominantShare * 100).toFixed(2)}%)`,
+    );
+  },
+);
+
+test(
+  'closing the shared browser leaves no process or pipe of it behind',
+  { skip },
+  async () => {
+    // Runs last: the renders above launched the shared browser. On macOS
+    // with Google Chrome its stdio pipes used to outlive the close and keep
+    // this very test process from ending (B549).
+    const proc = (await getPuppeteerBrowser()).process();
+    await closePuppeteerBrowser();
+
+    assert.ok(
+      proc.exitCode !== null || proc.signalCode !== null,
+      'the Chrome process has exited',
+    );
+    assert.ok(
+      proc.stdio.every((stream) => !stream || stream.closed),
+      'every stdio pipe to Chrome is closed',
     );
   },
 );

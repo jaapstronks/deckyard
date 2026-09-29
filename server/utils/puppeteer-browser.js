@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { once } from 'node:events';
 import { envStr, envBool } from '../config/utils.js';
 
 let browserPromise = null;
@@ -155,12 +156,68 @@ export async function getPuppeteerBrowser({ featureName = 'Export' } = {}) {
   return browserPromise;
 }
 
+/** How long {@link shutDownBrowser} waits for a clean close before killing. */
+export const BROWSER_CLOSE_TIMEOUT_MS = 5000;
+
+/**
+ * Close a launched browser so that nothing of it keeps the Node process alive.
+ *
+ * `browser.close()` alone does not promise that. Puppeteer resolves it on the
+ * `exit` event of the Chrome process, but spawns that process with three
+ * piped stdio streams, and a pipe stays open for as long as *any* process
+ * holds its other end. A helper Chrome forks off (crashpad, an updater) that
+ * inherited stdout/stderr and outlives the main process keeps those pipes -
+ * and with them the event loop - alive. On macOS with Google Chrome that left
+ * four `PipeWrap` handles behind and a test process that never ended (B549).
+ * So after the close this drops our end of every stdio stream: whatever still
+ * holds the other end can no longer hold us.
+ *
+ * The close itself is bounded too: a Chrome that has not exited after
+ * `timeoutMs` (the same macOS case took over ten seconds) is killed.
+ *
+ * @param {import('puppeteer-core').Browser} browser
+ * @param {object} [options]
+ * @param {number} [options.timeoutMs]
+ * @returns {Promise<void>}
+ */
+export async function shutDownBrowser(
+  browser,
+  { timeoutMs = BROWSER_CLOSE_TIMEOUT_MS } = {},
+) {
+  const proc = browser.process();
+  let timer;
+  const timedOut = new Promise((resolve) => {
+    timer = setTimeout(() => resolve(true), timeoutMs);
+  });
+  try {
+    const closed = browser.close().then(
+      () => false,
+      () => false,
+    );
+    const late = await Promise.race([closed, timedOut]);
+    if (late && proc && proc.exitCode === null && proc.signalCode === null) {
+      proc.kill('SIGKILL');
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+  await Promise.all(
+    (proc?.stdio ?? []).map((stream) => {
+      if (!stream || stream.closed) return undefined;
+      const gone = once(stream, 'close');
+      stream.destroy();
+      return gone;
+    }),
+  );
+}
+
 /**
  * Close the shared browser and drop the cached launch promise.
  *
  * The long-lived server never calls this — the browser is reused for the
  * process lifetime on purpose. It exists so short-lived processes (tests,
- * one-shot scripts) can exit instead of hanging on a live Chrome child.
+ * one-shot scripts) can exit instead of hanging on a live Chrome child; see
+ * {@link shutDownBrowser} for why that takes more than `browser.close()`.
  *
  * @returns {Promise<void>}
  */
@@ -168,10 +225,12 @@ export async function closePuppeteerBrowser() {
   const pending = browserPromise;
   browserPromise = null;
   if (!pending) return;
+  let browser;
   try {
-    const browser = await pending;
-    await browser.close();
+    browser = await pending;
   } catch {
-    // A browser that never launched (or already died) needs no closing.
+    // A browser that never launched needs no closing.
+    return;
   }
+  await shutDownBrowser(browser);
 }
