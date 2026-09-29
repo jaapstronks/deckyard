@@ -4,7 +4,7 @@
  */
 
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
-import { normalizeLang } from '../format/i18n.js';
+import { normalizeLang } from '../../lib/format/i18n.js';
 
 /**
  * Create state management for the slide library picker

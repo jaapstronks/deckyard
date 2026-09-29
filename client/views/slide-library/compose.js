@@ -20,7 +20,7 @@
  * posts `slides[]` straight to the API.
  */
 
-import { copySlides } from '../slide-authoring/slide-clipboard.js';
+import { copySlides } from '../../lib/slide-authoring/slide-clipboard.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,

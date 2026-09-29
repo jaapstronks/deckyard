@@ -7,17 +7,17 @@
  * host wires that to `openAddTo(item)` here so the chooser stays in one place.
  */
 
-import { t } from '../ui-i18n.js';
-import { h } from '../dom/index.js';
-import { confirmModal } from '../dom/modal.js';
-import { toast } from '../dom/toast.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom/index.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
+import { toast } from '../../../lib/dom/toast.js';
 import { createCollectionsApi } from './api.js';
 import {
   openCollectionEditModal,
   openManageMembersModal,
   openAddToCollectionModal,
 } from './collection-modals.js';
-import { icon } from '../dom/icons.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 /**
  * @param {object} opts

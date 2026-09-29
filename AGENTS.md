@@ -142,11 +142,12 @@ format` writes, `npm run format:check` gates in CI next to `npm run lint`.
     empty states, a field wrapper. No `views/shared/`, no
     components or features folder, no third place.
   - _Status:_ the rule is normative now; the tree is catching up. Shared UI
-    is on its one address since B527 (`views/shared/` is gone). B528 moves the
-    feature UI still in `lib/` (`slide-library/`, `comments/`,
-    `slide-collections/`, `user/`, the analytics tracker, `theme-select`) into
-    `views/` and adds the guard that pins the direction. Don't add to what
-    that item moves out.
+    is on its one address since B527 (`views/shared/` is gone), and the slide
+    library, comments and collections are views since B528 PR 3a
+    (`views/slide-library/`, `views/comments/`, `views/list/collections/`).
+    B528 PR 3b moves what is still in `lib/` (`user/`, the analytics tracker,
+    `theme-select`) and adds the guard that pins the direction. Don't add to
+    what that item moves out.
 
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).

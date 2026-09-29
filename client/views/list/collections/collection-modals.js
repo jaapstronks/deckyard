@@ -6,13 +6,13 @@
  * drag-to-reorder pattern the creation view's compose tray uses.
  */
 
-import { t } from '../ui-i18n.js';
-import { h } from '../dom/index.js';
-import { createModal } from '../dom/modal.js';
-import { toast } from '../dom/toast.js';
-import { sharingEnabled } from '../state/features.js';
-import { createSharingOffNote } from '../dom/sharing-off.js';
-import { icon } from '../dom/icons.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { h } from '../../../lib/dom/index.js';
+import { createModal } from '../../../lib/dom/modal.js';
+import { toast } from '../../../lib/dom/toast.js';
+import { sharingEnabled } from '../../../lib/state/features.js';
+import { createSharingOffNote } from '../../../lib/dom/sharing-off.js';
+import { icon } from '../../../lib/dom/icons.js';
 
 const SHELVES = ['personal', 'organization'];
 

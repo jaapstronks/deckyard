@@ -37,7 +37,7 @@ globalThis.cancelAnimationFrame =
   dom.window.cancelAnimationFrame || clearTimeout;
 
 const { createSlideLibraryApi } =
-  await import('../client/lib/slide-library/api.js');
+  await import('../client/views/slide-library/api.js');
 
 /** A personal slide with everything an item can carry. */
 function richItem() {
@@ -240,10 +240,10 @@ describe('one tag shape in the client (B402)', () => {
   // server/storage/slide-library.js). A reader that also accepts a bare string
   // is a branch for zero producers: a second shape for one meaning.
   const readers = [
-    'client/lib/slide-library/api.js',
-    'client/lib/slide-library/controls.js',
-    'client/lib/slide-library/picker.js',
-    'client/lib/slide-library/modals.js',
+    'client/views/slide-library/api.js',
+    'client/views/slide-library/controls.js',
+    'client/views/slide-library/picker.js',
+    'client/views/slide-library/modals.js',
     'client/views/list/tag-filter.js',
     'client/views/list/presentation-card.js',
     'client/views/editor/modals/settings-modal/tags.js',

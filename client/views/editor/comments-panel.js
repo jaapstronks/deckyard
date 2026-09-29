@@ -12,12 +12,12 @@ import { formatRelativeTime } from '../../lib/format/format-time.js';
 import {
   isCommentOwner,
   isCommentAuthor,
-} from '../../lib/comments/comment-authz.js';
+  attachMentionAutocomplete,
+  createRichCommentInput,
+  createCommentLinkButton,
+} from '../comments/index.js';
 import { storage } from '../../lib/storage.js';
 import { confirmModal } from '../../lib/dom/modal.js';
-import { attachMentionAutocomplete } from '../../lib/comments/mention-autocomplete.js';
-import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
-import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
 import { createCommentRenderers } from './comments-panel-renderers.js';
 import { createCommentActions } from './comments-panel-actions.js';

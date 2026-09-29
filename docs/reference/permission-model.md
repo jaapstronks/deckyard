@@ -76,7 +76,7 @@ Enforcement seam and the routes that hand grants out:
 - `server/routes/api/share-links/management.js` — the link-based grants.
 
 The client's advisory mirrors — which affordance to show, never whether an
-operation is allowed — are `client/lib/comments/comment-authz.js`,
+operation is allowed — are `client/views/comments/comment-authz.js`,
 `client/lib/slide-authoring/slide-lock-authz.js` and the owner gate of
 `client/views/editor/modals/share-modal/index.js`.
 

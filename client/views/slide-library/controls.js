@@ -3,11 +3,11 @@
  * Renders shelf, view, language, search, and filter controls
  */
 
-import { t } from '../ui-i18n.js';
+import { t } from '../../lib/ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { h } from '../dom/index.js';
-import { getSupportedLangs } from '../format/i18n.js';
-import { getLangShortLabel } from '../format/lang-selector.js';
+import { h } from '../../lib/dom/index.js';
+import { getSupportedLangs } from '../../lib/format/i18n.js';
+import { getLangShortLabel } from '../../lib/format/lang-selector.js';
 
 /**
  * Create UI control renderers for the slide library

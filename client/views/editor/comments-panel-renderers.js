@@ -4,9 +4,11 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { renderCommentBodyNodes } from '../../lib/comments/comment-body.js';
-import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
-import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
+import {
+  renderCommentBodyNodes,
+  createRichCommentInput,
+  createCommentLinkButton,
+} from '../comments/index.js';
 import { h } from '../../lib/dom/index.js';
 
 /**

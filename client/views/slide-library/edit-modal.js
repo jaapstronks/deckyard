@@ -9,17 +9,17 @@
  * server keeps the other language versions in step.
  */
 
-import { t } from '../ui-i18n.js';
-import { toast } from '../dom/toast.js';
-import { createInlineError } from '../dom/inline-error.js';
-import { createModal } from '../dom/modal.js';
+import { t } from '../../lib/ui-i18n.js';
+import { toast } from '../../lib/dom/toast.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
+import { createModal } from '../../lib/dom/modal.js';
 import { contentLang } from './search.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-schemas.js';
-import { createSingleSlideEditor } from '../../views/editor/single-slide-editor.js';
-import { loadSlideTypes } from '../../views/editor/bootstrap.js';
-import { meWithMeta } from '../user/auth.js';
-import { h } from '../dom/index.js';
+import { createSingleSlideEditor } from '../editor/single-slide-editor.js';
+import { loadSlideTypes } from '../editor/bootstrap.js';
+import { meWithMeta } from '../../lib/user/auth.js';
+import { h } from '../../lib/dom/index.js';
 import { editRefusalText } from './permissions.js';
 
 /**

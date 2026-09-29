@@ -21,7 +21,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildSlidesFromLibraryItems } from '../client/lib/slide-library/compose.js';
+import { buildSlidesFromLibraryItems } from '../client/views/slide-library/compose.js';
 import { prepareNewPresentation } from '../server/storage/presentations/crud/factory.js';
 import { rekeyNewDeckSlides } from '../server/storage/presentations/crud/rekey-new-deck.js';
 import { createFakeDb } from './helpers/fake-db.js';
