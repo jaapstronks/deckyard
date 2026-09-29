@@ -3,6 +3,8 @@
 //
 //   npm run setup            # ask a few questions, write .env
 //   npm run setup -- --yes   # non-interactive: safe local defaults, no prompts
+//   npm run setup -- --profile production [--out .env.production]
+//                            # a fresh minimal production env, never over a file
 //
 // The wizard never regenerates .env from a hardcoded schema — it upserts the
 // handful of keys it asks about on top of your existing .env (or a fresh copy
@@ -14,7 +16,7 @@ import { realpathSync } from 'node:fs';
 import { constants, randomBytes } from 'node:crypto';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import { DEFAULT_THEME_SLUG } from '../shared/constants/themes.js';
 
@@ -218,6 +220,163 @@ export function flagUpdates(flags = {}) {
   return updates;
 }
 
+/**
+ * The minimal production environment, one entry per variable with the one word
+ * of why. `docs/ops/production-checklist.md` tables these entries and
+ * `tests/setup-env.test.js` keeps the two in step, so there is one list.
+ *
+ * `value` is what the profile writes: a string, a function of the flags, or
+ * absent for a value only the operator knows (written empty, so `npm run
+ * doctor` names it). `optional` entries are written commented out: they are
+ * part of a production install only when the operator wants that feature.
+ *
+ * @typedef {object} ProductionEnvEntry
+ * @property {string} group
+ * @property {string} key
+ * @property {string} why
+ * @property {string|((flags: Record<string,string>) => string)} [value]
+ * @property {boolean} [optional]
+ * @type {readonly ProductionEnvEntry[]}
+ */
+export const PRODUCTION_ENV = Object.freeze([
+  { group: 'Core', key: 'NODE_ENV', value: 'production', why: 'strictness' },
+  { group: 'Core', key: 'HOST', value: '0.0.0.0', why: 'reachability' },
+  {
+    group: 'Core',
+    key: 'APP_URL',
+    value: (flags) => (flags['app-url'] || '').replace(/\/+$/, ''),
+    why: 'links',
+  },
+  { group: 'Core', key: 'TRUST_PROXY', value: 'true', why: 'client-IP' },
+  {
+    group: 'Auth',
+    key: 'AUTH_SECRET',
+    value: () => generateSecret(),
+    why: 'sessions',
+  },
+  {
+    group: 'Auth',
+    key: 'AUTH_ADMIN_EMAIL',
+    value: (flags) => flags['admin-email'] || '',
+    why: 'admin',
+  },
+  { group: 'Database', key: 'DATABASE_URL', why: 'storage' },
+  { group: 'Database', key: 'DATABASE_SSL', why: 'transport' },
+  {
+    group: 'Uploads',
+    key: 'UPLOADS_DIR',
+    value: 'server/uploads',
+    why: 'volume',
+  },
+  { group: 'Uploads', key: 'S3_ENDPOINT', optional: true, why: 'object-store' },
+  { group: 'Uploads', key: 'S3_BUCKET', optional: true, why: 'object-store' },
+  { group: 'Uploads', key: 'S3_REGION', optional: true, why: 'object-store' },
+  {
+    group: 'Uploads',
+    key: 'S3_ACCESS_KEY',
+    optional: true,
+    why: 'object-store',
+  },
+  {
+    group: 'Uploads',
+    key: 'S3_SECRET_KEY',
+    optional: true,
+    why: 'object-store',
+  },
+  { group: 'Mail', key: 'BREVO_API_KEY', why: 'delivery' },
+  { group: 'Mail', key: 'BREVO_SENDER_EMAIL', why: 'sender' },
+  {
+    group: 'SSO',
+    key: 'SSO_ENABLED',
+    optional: true,
+    value: 'true',
+    why: 'switch',
+  },
+  { group: 'SSO', key: 'OIDC_ISSUER_URL', optional: true, why: 'identity' },
+  { group: 'SSO', key: 'OIDC_CLIENT_ID', optional: true, why: 'client' },
+  { group: 'SSO', key: 'OIDC_CLIENT_SECRET', optional: true, why: 'client' },
+  {
+    group: 'SSO',
+    key: 'OIDC_REDIRECT_URI',
+    optional: true,
+    value: (flags) =>
+      flags['app-url']
+        ? `${flags['app-url'].replace(/\/+$/, '')}/api/auth/oidc/callback`
+        : '',
+    why: 'callback',
+  },
+  {
+    group: 'Themes',
+    key: 'DEFAULT_THEME',
+    optional: true,
+    value: (flags) => flags.theme || DEFAULT_THEME_SLUG,
+    why: 'default',
+  },
+  { group: 'Themes', key: 'ENABLED_THEMES', optional: true, why: 'picker' },
+  { group: 'Themes', key: 'DECKYARD_CUSTOM_DIR', optional: true, why: 'fork' },
+  { group: 'AI', key: 'OPENAI_API', optional: true, why: 'generation' },
+  { group: 'AI', key: 'CLAUDE_API', optional: true, why: 'generation' },
+]);
+
+/** One line of context per group, above its variables. */
+const PRODUCTION_GROUP_NOTES = Object.freeze({
+  Core: 'The public https origin; the PaaS proxy terminates TLS.',
+  Auth: 'Generated here; keep it stable, a new one signs everyone out.',
+  Database:
+    'postgres://user:password@host:5432/db. DATABASE_SSL=false on a private network, empty (on) for a managed database.',
+  Uploads:
+    'A persistent volume on UPLOADS_DIR, or all four S3_* keys (then no volume).',
+  Mail: 'Magic links, invitations and password resets. Empty = no mail.',
+  SSO: 'Only with an identity provider: docs/reference/sso-oidc.md.',
+  Themes: 'Seed slugs; a fork points DECKYARD_CUSTOM_DIR at its directory.',
+  AI: 'AI features only when you set a key; one provider is enough.',
+});
+
+/**
+ * Render the production env block: grouped under a one-line note, optional
+ * variables commented out. The per-variable why lives in the checklist.
+ * @param {Record<string,string>} [flags] - `--app-url`, `--admin-email`, `--theme`
+ * @returns {string}
+ */
+export function productionEnvBlock(flags = {}) {
+  const lines = [
+    '# Deckyard production environment (npm run setup -- --profile production).',
+    '# Fill the empty values, then check with `npm run doctor`.',
+    '# Checklist and reasons: docs/ops/production-checklist.md',
+  ];
+  let group = '';
+  for (const entry of PRODUCTION_ENV) {
+    if (entry.group !== group) {
+      group = entry.group;
+      lines.push('', `# --- ${group}: ${PRODUCTION_GROUP_NOTES[group]}`);
+    }
+    const value =
+      typeof entry.value === 'function'
+        ? entry.value(flags)
+        : entry.value || '';
+    lines.push(`${entry.optional ? '# ' : ''}${entry.key}=${value}`);
+  }
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * Write the production block to a fresh file. Refuses an existing one: this
+ * profile is a starting point, not a merge into someone's configuration.
+ * @param {Record<string,string>} flags
+ * @returns {Promise<string>} the path written
+ */
+async function writeProductionProfile(flags) {
+  const out = resolve(ROOT, flags.out || '.env');
+  if (await exists(out)) {
+    throw new Error(
+      `${out} already exists; the production profile writes a fresh file. ` +
+        'Move it aside, or pass --out <new file> (e.g. --out .env.production).',
+    );
+  }
+  await writeFile(out, productionEnvBlock(flags), 'utf8');
+  return out;
+}
+
 async function runWizard() {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const ask = async (q, def) => {
@@ -294,14 +453,25 @@ async function runWizard() {
 }
 
 async function main() {
+  const flags = parseFlags(process.argv.slice(2));
+  if (flags.profile) {
+    if (flags.profile !== 'production') {
+      throw new Error(
+        `Unknown profile "${flags.profile}"; the one profile is production.`,
+      );
+    }
+    const out = await writeProductionProfile(flags);
+    console.log(`\n✓ Wrote ${out} (production profile)`);
+    console.log('  Fill the empty values, then run: npm run doctor');
+    return;
+  }
+
   const nonInteractive =
     process.argv.includes('--yes') ||
     process.argv.includes('-y') ||
     !process.stdin.isTTY;
 
-  const updates = nonInteractive
-    ? flagUpdates(parseFlags(process.argv.slice(2)))
-    : await runWizard();
+  const updates = nonInteractive ? flagUpdates(flags) : await runWizard();
   const content = upsertEnv(await baseContent(), updates);
   await writeFile(ENV_PATH, content, 'utf8');
 
@@ -333,7 +503,7 @@ function invokedDirectly() {
 
 if (invokedDirectly()) {
   main().catch((err) => {
-    console.error(err);
+    console.error(err?.message || err);
     process.exit(1);
   });
 }

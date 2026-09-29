@@ -345,7 +345,8 @@ deckyard/
 - [MCP Server reference](docs/reference/mcp-server.md) — All 27 tools, 7 prompts, transport options
 - [Developer docs](docs/developer/README.md) — Architecture and extending
 - [Theme reference](docs/developer/themes.md) — Theming system
-- [Self-hosting guide](docs/ops/self-hosting.md) — VPS bootstrap, updates, backups
+- [Self-hosting guide](docs/ops/self-hosting.md) — VPS bootstrap, updates
+- [Deploy on a PaaS](docs/ops/deploy-paas.md) — Coolify and friends; the [production checklist](docs/ops/production-checklist.md), [`npm run doctor`](docs/ops/doctor.md) and [back-up and restore](docs/ops/backup-restore.md)
 - [ROADMAP](ROADMAP.md) — Where Deckyard is headed
 
 ## Contributing
