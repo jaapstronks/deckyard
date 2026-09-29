@@ -10,7 +10,7 @@
  *
  * Each formatter now has exactly one definition in one canonical module; the
  * `fmt*` spelling is retired. A second accepted spelling or a same-named local
- * copy is tolerance-creep (CLAUDE.md § beta doctrine), so this gate fails if
+ * copy is tolerance-creep (maintaining.md § beta doctrine), so this gate fails if
  * one is reintroduced.
  *
  * Scope is the client tree only: the server and shared trees carry their own,

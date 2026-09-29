@@ -94,7 +94,7 @@ tolerated them — the exact reasoning rule 4 forbids). Rule 5 was added
 July 2026 "until consent is wired" was still parked in August, still carrying a
 GDPR self-service page, a retention job, a webhook event and two runtimes for
 something no deck had ever used. This section is the anchor other docs,
-`CLAUDE.md` rituals and review checklists point at.
+`docs/developer/maintaining.md` rituals and review checklists point at.
 
 ## Merges are not releases
 

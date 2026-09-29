@@ -1,7 +1,7 @@
 /**
  * The `document.createElement` gate (B150).
  *
- * `h()` from `client/lib/dom.js` is CLAUDE.md's first frontend rule and was the
+ * `h()` from `client/lib/dom.js` is AGENTS.md's first frontend rule and was the
  * one client convention without mechanical backing: `h` imported in 302 files,
  * `document.createElement` alive in 14 — mostly one head-asset recipe written
  * five times, whose copies had drifted on the `id` the dedupe hangs on. This

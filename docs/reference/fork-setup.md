@@ -25,6 +25,11 @@ This ensures the OSS repo only contains `.gitkeep` placeholder files in the cust
 
 ### Step 1: Fork the Repository
 
+A GitHub "Fork" of a public repository is public too, and cannot be made
+private. Pick the form before you start:
+
+**A public fork.**
+
 1. Go to https://github.com/jaapstronks/deckyard
 2. Click "Fork" to create your own copy
 3. Clone your fork locally:
@@ -32,6 +37,35 @@ This ensures the OSS repo only contains `.gitkeep` placeholder files in the cust
    git clone https://github.com/YOUR-ORG/YOUR-FORK.git
    cd YOUR-FORK
    ```
+
+**A private fork** (what a fork with client content usually wants): a plain
+clone with upstream as a second remote, pushed to an empty private repository.
+
+```bash
+# Create an empty private repository first (no README, no licence), then:
+git clone https://github.com/jaapstronks/deckyard.git YOUR-FORK
+cd YOUR-FORK
+git remote rename origin upstream
+git remote add origin https://github.com/YOUR-ORG/YOUR-FORK.git
+git fetch upstream --tags
+git checkout -B main v1.49.0   # start on a release tag, not on upstream's tip
+git push -u origin main --tags
+```
+
+Either way, `upstream` is the remote you merge releases from (Step 6).
+
+**Upstream's bots stay upstream's.** A fork takes its versions and dependency
+bumps from upstream, through a merge round; it should not cut releases or open
+bump PRs of its own.
+
+- `.github/workflows/release-please.yml` only runs in `jaapstronks/deckyard`
+  (a condition on its job), so in a fork it does nothing. Leave the file as it
+  is; editing it would make a seam.
+- `.github/dependabot.yml` cannot carry such a condition. Turn it off in your
+  repository instead: Settings → Code security → "Dependabot version updates"
+  off. Security alerts can stay on.
+- `.github/workflows/ci.yml` does run, and should: it is your fork's own gate on
+  every PR.
 
 ### Step 2: Enable Custom Content Tracking
 
@@ -56,9 +90,82 @@ custom/ai/*
 custom/scripts/*
 !custom/scripts/.gitkeep
 custom/extension.json
+custom/fork.json
 custom/fonts.js
 custom/google-fonts.lock.json
 ```
+
+### What the fork owns
+
+A fork is upstream's tree plus your own files. Three rules say which is which,
+and tools read them, so you do not keep the list only in prose:
+
+- **`custom/` is yours.** Everything under it, always.
+- **`CLAUDE.md` is yours.** Upstream's is two import lines that do not change
+  (see _Your own CLAUDE.md_ below), so you replace it without a seam.
+- **Everything else is core**, unless you declare otherwise in
+  `custom/fork.json`:
+
+```json
+{
+  "owned": ["docs/<your-tree>/", "tests/<your-fork-test>.test.js"],
+  "deviations": {
+    "server/<patched-file>.js": "why the fork patches this core file, and whether it is briefed upstream"
+  }
+}
+```
+
+`owned` lists further paths that are the fork's (a trailing `/` marks a tree):
+a private doc tree, a fork-only test file. `deviations` lists the core files
+your fork patches on purpose, each with its reason. Both are optional; a
+missing file means "only the two rules above". The file is read strictly: an
+unknown field, a path under `custom/`, a path listed twice or a deviation
+without a reason fails instead of being ignored. It describes the repository,
+so it stays at `custom/fork.json` in the checkout even when
+`DECKYARD_CUSTOM_DIR` moves the runtime fork root (next section).
+
+Two tools read it:
+
+- **The doc gate** (`tests/docs-paths-resolvable.test.js`) does not scan your
+  owned paths or `CLAUDE.md`, and does not require links into them. A private
+  doc tree or a `CLAUDE.md` that names paths in sibling repositories keeps
+  `npm test` green without a change to the test.
+- **`npm run fork:seams`** classifies every core file you diverge on against
+  this list (see _Merge round checklist_).
+
+A difference in any other core file is either a deviation you declare here or
+drift. Prefer the upstream route: if another forker would want the change,
+propose it upstream, and the deviation goes away at the next merge round.
+
+### Your own CLAUDE.md
+
+Claude Code loads `CLAUDE.md` automatically. Upstream's holds no instructions,
+only two imports:
+
+```markdown
+@AGENTS.md
+@docs/developer/maintaining.md
+```
+
+`AGENTS.md` carries the conventions of the code (module layout, slide-type
+system, frontend patterns, how to verify work) and is as true in your fork as
+upstream. `docs/developer/maintaining.md` is upstream's own workflow (its
+planning, releases and review rules) and is not yours. So a fork writes its own
+`CLAUDE.md`, imports `AGENTS.md`, and adds its own rules:
+
+```markdown
+# Our Deckyard fork
+
+@AGENTS.md
+
+## How we work here
+
+- ...
+```
+
+Because upstream's file does not change, git keeps yours at every merge
+without a conflict. Keep `AGENTS.md` itself untouched: it is core, and your
+agents want upstream's latest version of it.
 
 ### Where the fork root lives
 
@@ -358,7 +465,7 @@ git remote add upstream https://github.com/jaapstronks/deckyard.git
 git fetch upstream --tags
 ```
 
-Because your customizations live in `custom/` directories that the upstream doesn't modify, merges should be conflict-free.
+Because your customizations live in paths upstream does not modify (`custom/`, `CLAUDE.md` and what `custom/fork.json` declares as owned), merges conflict only where you patch core. `npm run fork:seams` shows where that is (see _Merge round checklist_).
 
 ---
 
@@ -403,22 +510,30 @@ merge time:
 - **`npm run lint`** — the same check (`import-x/no-unresolved`) across the core
   trees, in case your merge left one half-applied.
 
-### If the doc gate fails on your own docs
+### Merge round checklist
 
-`tests/docs-paths-resolvable.test.js` reads every doc that ships with the repo
-and requires each cited path to resolve and each doc to be linked. A fork with
-its own private doc tree (`docs/<your-tree>/`) will fail on every item in it.
+One release per round, on a branch, through your own PR:
 
-Add the tree to one constant at the top of that test, rather than patching the
-test's logic:
-
-```js
-const EXCLUDED_DOC_TREES = ['docs/plans/', 'docs/<your-tree>/'];
-```
-
-Upstream's own `docs/plans/` is already in that list. One line, and it survives
-the next merge as an ordinary conflict on a data line instead of a patch you
-re-defend every time.
+1. **Read the release notes** (`CHANGELOG.md` at the tag) for anything that
+   touches your fork.
+2. **Merge the tag** on a branch: `git switch -c chore/upstream-v1.49.0 && git merge v1.49.0`.
+   Resolve a conflict by keeping your deliberate deviation and taking every
+   upstream line that is not that deviation.
+3. **Cross the seams**: `npm run fork:seams -- v1.49.0`. It lists the files
+   upstream changed in this round that your fork also changes outside what it
+   owns, each marked as a documented seam (`.gitignore`), a declared deviation
+   (from `custom/fork.json`, with its reason) or **undeclared**: a new core patch
+   or drift. For each undeclared file, propose the change upstream or declare it
+   as a deviation; the command exits 1 while one remains. It also lists quieter
+   divergence in files upstream did not touch this round. It works before and
+   after the merge; `--from <ref>` sets the start of the round by hand, `--json`
+   prints machine output.
+4. **Run the gates**, in this order: `npm test` (it includes
+   `tests/custom-imports-resolvable.test.js`, see above), `npm run lint`,
+   `npm run format:check`, `npm run i18n:sync` (reports missing keys;
+   `npm run i18n:sync:apply` writes them), and start the app once to see your
+   themes and slide types load.
+5. **Open the PR**, merge it after review, and deploy.
 
 ## Deployment
 

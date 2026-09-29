@@ -16,7 +16,7 @@
  * The third check therefore measures *bodies* — any `.replace(/&/g, '&amp;')`
  * chain outside the three canonical modules (B101).
  *
- * A second accepted spelling for one meaning is tolerance-creep (CLAUDE.md
+ * A second accepted spelling for one meaning is tolerance-creep (maintaining.md
  * § beta doctrine); this keeps the surface at one name.
  *
  * Run with: node --test tests/no-escape-markdown-aliases.test.js
