@@ -56,7 +56,7 @@ delete process.env.AUTH_ENABLED;
 delete process.env.AUTH_SECRET;
 delete process.env.AUTH_DEV_BYPASS;
 
-const { resolveChromeExecutablePath } =
+const { resolveChromeExecutablePath, shutDownBrowser } =
   await import('../server/utils/puppeteer-browser.js');
 
 const chromePath = await resolveChromeExecutablePath();
@@ -212,7 +212,7 @@ before(async () => {
 
 after(async () => {
   if (!ctx) return;
-  await ctx.browser.close().catch(() => {});
+  await shutDownBrowser(ctx.browser);
   await new Promise((resolve) => ctx.server.close(resolve));
   ctx.__resetStorageForTests();
   ctx.__setTestDb(null);

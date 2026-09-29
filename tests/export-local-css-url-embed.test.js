@@ -79,6 +79,19 @@ test('a local url() traversing out of an asset root is left alone', async () => 
   assert.equal(out, html);
 });
 
+test('an allowed local url() that cannot be read stays as written, with a warning (D278)', async (t) => {
+  // Same refusal form as an unreadable font (B542): the url() is not rewritten,
+  // and the operator hears which path fell out of the export.
+  const warn = t.mock.method(console, 'warn', () => {});
+  const css = `.x { background: url('/custom/assets/does-not-exist.png'); }`;
+  assert.equal(await embedLocalCssUrls(repoRoot, css), css);
+  assert.equal(warn.mock.callCount(), 1);
+  assert.match(
+    warn.mock.calls[0].arguments.join(' '),
+    /\/custom\/assets\/does-not-exist\.png/,
+  );
+});
+
 test('under /client/ only the vendored icon SVGs inline (B261)', async () => {
   // The renderer emits icon URLs itself, so every export carries them; the
   // rest of the client tree is code, and a url() naming it stays as written.

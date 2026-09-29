@@ -340,6 +340,13 @@ exports inline those font files as data URLs so a downloaded HTML or PDF still
 renders in your typeface. (The font _picker_ in the theme editor still reads
 the core `CURATED_FONTS` list — adding a family there is a separate change.)
 
+**Images** work the same way. A `background: url('/custom/assets/…png')` in
+the seam is inlined in every self-contained export (PDF, PNG, downloaded
+HTML) by the same pass as the fonts: every local `url()` under `/assets/` or
+`/custom/assets/` in `custom/styles/` becomes a data URL there. So a slide
+type's artwork belongs in its stylesheet, not in a `style="…"` attribute on the
+markup. A remote `url()` is left as written.
+
 Two things the seam does not do: it does not resolve `@import` (add another
 file to the folder instead), and it is read once at boot — restart the server
 after editing, like `custom/slide-types/`.

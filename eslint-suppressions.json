@@ -1235,11 +1235,6 @@
       "count": 1
     }
   },
-  "server/utils/puppeteer-browser.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "server/utils/sandbox-og-image.js": {
     "no-restricted-syntax": {
       "count": 1
