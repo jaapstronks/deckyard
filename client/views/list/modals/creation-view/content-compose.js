@@ -21,7 +21,7 @@ import {
   handleConvertFile,
   handleNotion,
 } from '../new-presentation/handlers.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * @param {object} opts

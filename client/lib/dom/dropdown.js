@@ -10,7 +10,7 @@
  * `.dropdown-menu`), so there is no visual change versus the hand-built form.
  */
 
-import { h, installDismissOnOutside } from '../dom.js';
+import { h, installDismissOnOutside } from './index.js';
 import { makeDropdownCaret } from './icons.js';
 
 /**

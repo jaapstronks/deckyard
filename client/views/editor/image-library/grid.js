@@ -1,7 +1,7 @@
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { matchesSearch, getAllTags } from './utils.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Creates the image library grid component

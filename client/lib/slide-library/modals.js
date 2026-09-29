@@ -16,7 +16,7 @@ import { createTagEditor } from '../../views/list/tag-editor.js';
 import { getContentForLang } from './search.js';
 import { openEditModal } from './edit-modal.js';
 import { createInlineError } from '../dom/inline-error.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { canEditLibraryItem, refuseEdit } from './permissions.js';
 
 /**

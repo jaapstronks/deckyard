@@ -1,5 +1,5 @@
 import { getUiLocale, t } from '../../../lib/ui-i18n.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { mergeBackgroundOptions } from '../../../../shared/theme-slide-backgrounds.js';
 import { optionCopy } from './option-copy.js';
 import { takeEscape } from '../../../lib/dom/escape.js';

@@ -98,7 +98,7 @@ export function cloneSlidesForInsert(
  * forward while the cursor is still inside that block is the whole rule. It is
  * recursive by construction: a grandchild's parent has already joined the block,
  * so it extends it too. The editor caps nesting at one level
- * (`slide-list.js`, `moveSlide`), but a deck built through the API or an import
+ * (`slide-list/index.js`, `moveSlide`), but a deck built through the API or an import
  * is not bound by that, and this must not care.
  *
  * @param {Array<Object>} slides - deck slides, in order

@@ -24,7 +24,7 @@ import {
   isFieldVisible,
   visibilityDriverKeys,
 } from '../../../../shared/slide-types/field-visibility.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * The source-language value for a field, or '' when that version doesn't exist

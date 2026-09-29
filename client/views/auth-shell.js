@@ -12,7 +12,7 @@
  * card shows no logo.
  */
 
-import { h } from '../lib/dom.js';
+import { h } from '../lib/dom/index.js';
 import { authConfig } from '../lib/user/auth.js';
 import { debugLog } from '../lib/util/debug.js';
 

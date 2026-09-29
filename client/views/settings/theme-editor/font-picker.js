@@ -3,7 +3,7 @@
  * Dropdown for selecting from curated fonts and managed (custom) fonts with live preview.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import {
   ensureGoogleFontPreview,

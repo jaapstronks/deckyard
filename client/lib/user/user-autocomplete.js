@@ -3,7 +3,7 @@
  * Searches users by email or name with debounced input.
  */
 
-import { h, installDismissOnOutside } from '../dom.js';
+import { h, installDismissOnOutside } from '../dom/index.js';
 import { t } from '../ui-i18n.js';
 import { icon } from '../dom/icons.js';
 import { takeEscape } from '../dom/escape.js';

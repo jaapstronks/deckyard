@@ -1,4 +1,4 @@
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 export function makeDragGhost({ num, title, typeLabel }) {
   // Build with h() so the slide title/type label — user-authored content —

@@ -15,7 +15,7 @@
  * See docs/reference/theme-config.md.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createSegmented } from '../../../lib/dom/segmented.js';
 import {

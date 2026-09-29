@@ -11,7 +11,7 @@
  * visit, and the template textarea it sits under is the point of the screen.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**

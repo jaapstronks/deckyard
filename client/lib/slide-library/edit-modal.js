@@ -19,7 +19,7 @@ import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-schemas.
 import { createSingleSlideEditor } from '../../views/editor/single-slide-editor.js';
 import { loadSlideTypes } from '../../views/editor/bootstrap.js';
 import { meWithMeta } from '../user/auth.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { editRefusalText } from './permissions.js';
 
 /**

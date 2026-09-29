@@ -14,7 +14,7 @@ import {
   fieldFormLayout,
   fieldFormRows,
 } from '../../../../shared/slide-types/form-layout.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * The generic collection editor: ONE add/remove/reorder/collapse machine for

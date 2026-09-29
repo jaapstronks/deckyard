@@ -1,13 +1,13 @@
 /**
  * The `document.createElement` gate (B150).
  *
- * `h()` from `client/lib/dom.js` is AGENTS.md's first frontend rule and was the
+ * `h()` from `client/lib/dom/index.js` is AGENTS.md's first frontend rule and was the
  * one client convention without mechanical backing: `h` imported in 302 files,
  * `document.createElement` alive in 14 — mostly one head-asset recipe written
  * five times, whose copies had drifted on the `id` the dedupe hangs on. This
  * file pins the ESLint rule that keeps the second form from growing back.
  *
- * Two files are exempt: `client/lib/dom.js`, where the factory is implemented,
+ * Two files are exempt: `client/lib/dom/index.js`, where the factory is implemented,
  * and `client/embed-sdk.js`, the standalone IIFE served to third-party pages,
  * which has no module graph to import from.
  *
@@ -21,7 +21,7 @@ import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-const MESSAGE = /Build elements with h\(\) from client\/lib\/dom\.js/;
+const MESSAGE = /Build elements with h\(\) from client\/lib\/dom\/index\.js/;
 
 async function lintProbe(code, relPath) {
   const { ESLint } = await import('eslint');
@@ -80,7 +80,7 @@ test('gate: a `createElement` on something that is not `document` is untouched',
 
 test('gate: exactly two files are exempt', async () => {
   const code = "export const f = () => document.createElement('div');\n";
-  for (const file of ['client/lib/dom.js', 'client/embed-sdk.js']) {
+  for (const file of ['client/lib/dom/index.js', 'client/embed-sdk.js']) {
     assert.deepEqual(await lintProbe(code, file), [], `${file} must be exempt`);
   }
   for (const file of [

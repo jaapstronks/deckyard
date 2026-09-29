@@ -17,7 +17,7 @@
  * in the source.
  */
 
-import { h, installDismissOnOutside } from '../dom.js';
+import { h, installDismissOnOutside } from '../dom/index.js';
 import { t } from '../ui-i18n.js';
 import { mentionMarkup } from '../../../shared/comment-mentions.js';
 import { takeEscape } from '../dom/escape.js';

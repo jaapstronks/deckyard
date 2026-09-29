@@ -3,7 +3,7 @@
  * Main settings page with tabbed navigation
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createSettingsSidebar } from './settings-sidebar.js';
 import {
@@ -111,7 +111,7 @@ function setTabHash(tab) {
  * @param {Object} options.user - Current user
  * @returns {Function|null} Cleanup function
  */
-export async function renderSettingsPage(root, { user } = {}) {
+export async function renderSettings(root, { user } = {}) {
   // Admin tabs follow the role held in the *active* organization, not the
   // instance-wide flag: switching to an organization where you are a plain
   // member must take the admin surfaces with it. See shared/organization-role.js.

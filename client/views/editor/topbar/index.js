@@ -6,26 +6,26 @@
  * - topbar/more-menu.js - More menu dropdown
  */
 
-import { createDropdown } from '../../lib/dom/dropdown.js';
-import { openSettingsModal as openSettingsModalImpl } from './modals/settings-modal.js';
-import { openVersionsModal as openVersionsModalImpl } from './modals/versions-modal.js';
+import { createDropdown } from '../../../lib/dom/dropdown.js';
+import { openSettingsModal as openSettingsModalImpl } from '../modals/settings-modal/index.js';
+import { openVersionsModal as openVersionsModalImpl } from '../modals/versions-modal.js';
 import {
   getUiModePreference,
   setUiModePreference,
-} from '../../lib/theme/ui-mode.js';
-import { logout } from '../../lib/user/auth.js';
-import { createEditorTopbarMoreMenu } from './topbar/more-menu.js';
-import { openSubscriptionModal } from './modals/subscription-modal.js';
-import { createLanguageMode } from './topbar/language-mode.js';
-import { t } from '../../lib/ui-i18n.js';
-import { createAvatar, updateAvatar } from '../../lib/user/avatar.js';
-import { getUserProfileAsync } from '../../lib/user/user-profiles.js';
-import { displayNameFromEmail } from '../../lib/user/user-format.js';
-import { createUserMenu } from '../../lib/user/user-menu.js';
-import { createNotificationBell } from '../../lib/user/notification-bell.js';
-import { icon } from '../../lib/dom/icons.js';
-import { h } from '../../lib/dom.js';
-import { nav } from '../../lib/state/router.js';
+} from '../../../lib/theme/ui-mode.js';
+import { logout } from '../../../lib/user/auth.js';
+import { createEditorTopbarMoreMenu } from './more-menu.js';
+import { openSubscriptionModal } from '../modals/subscription-modal.js';
+import { createLanguageMode } from './language-mode.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
+import { getUserProfileAsync } from '../../../lib/user/user-profiles.js';
+import { displayNameFromEmail } from '../../../lib/user/user-format.js';
+import { createUserMenu } from '../../../lib/user/user-menu.js';
+import { createNotificationBell } from '../../../lib/user/notification-bell.js';
+import { icon } from '../../../lib/dom/icons.js';
+import { h } from '../../../lib/dom/index.js';
+import { nav } from '../../../lib/state/router.js';
 
 export function createEditorTopbar({
   api,

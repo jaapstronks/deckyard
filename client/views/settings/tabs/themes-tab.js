@@ -3,7 +3,7 @@
  * Manage organization themes and inspect the available seeds.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';

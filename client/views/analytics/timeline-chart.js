@@ -5,7 +5,7 @@
 import { t } from '../../lib/ui-i18n.js';
 import { formatDate } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Format date for chart display (short format: M/D).

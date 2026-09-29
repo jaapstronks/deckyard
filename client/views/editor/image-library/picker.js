@@ -12,7 +12,7 @@ import {
   fetchStockMediaStatus,
   isStockSourceAvailable,
 } from '../../../lib/net/stock-media.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { aiAltTextEnabled } from '../../../lib/state/features.js';
 
 // Re-export for backward compatibility

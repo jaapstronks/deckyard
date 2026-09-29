@@ -1,4 +1,4 @@
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 import { icon } from '../../../../lib/dom/icons.js';
 import {
   NO_DECK_LANG,

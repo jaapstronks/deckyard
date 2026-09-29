@@ -12,7 +12,7 @@ import {
   iconUrl,
   resolveIconName,
 } from '../../../../shared/icon-names.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { openModal } from '../../../lib/dom/modal.js';
 

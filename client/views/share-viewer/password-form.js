@@ -4,7 +4,7 @@
 
 import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
 
 /**

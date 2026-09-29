@@ -9,7 +9,7 @@ import { icon } from '../../lib/dom/icons.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { createNotificationBell } from '../../lib/user/notification-bell.js';
 import { createUserMenu } from '../../lib/user/user-menu.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { takeEscape } from '../../lib/dom/escape.js';
 
 /**

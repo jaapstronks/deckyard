@@ -14,7 +14,7 @@
  * scaffold, hand back the element plus the handful of controls a caller needs.
  */
 
-import { h } from '../dom.js';
+import { h } from './index.js';
 
 /**
  * @typedef {Object} SegmentSpec

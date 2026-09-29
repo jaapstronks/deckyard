@@ -6,7 +6,7 @@
  * the deck language, which the UI-locale dictionary does not track.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * The slider over a type's declared scale. `scale` is the type's

@@ -3,7 +3,7 @@
  * Shows a grid of weight x style slots for uploading font variants.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
 import { formatFileSize } from '../../../lib/format/format.js';

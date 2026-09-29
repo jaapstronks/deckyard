@@ -28,7 +28,7 @@ import {
   resolveGroupAlign,
 } from '../../../../shared/slide-types/field-groups.js';
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 // Alignment has no module-level default any more: it is per field, resolved by
 // fieldAlignAffordance(), because a type may centre in its own slide CSS.

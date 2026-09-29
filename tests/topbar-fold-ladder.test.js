@@ -28,7 +28,7 @@ import { join } from 'node:path';
 
 const CSS_FILE = 'client/styles/base/01-core/10-shell-topbar-dropdown.css';
 const JS_ROOTS = ['client/views/editor'];
-const TOPBAR_FILE = 'client/views/editor/topbar.js';
+const TOPBAR_FILE = 'client/views/editor/topbar/index.js';
 
 /** The rung → `max-width` it folds at. Must stay on the documented ladder. */
 const RUNGS = { xl: 1280, lg: 1024, md: 768, sm: 640 };

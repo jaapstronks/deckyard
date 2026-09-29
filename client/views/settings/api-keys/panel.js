@@ -3,7 +3,7 @@
  * Main panel for managing API keys with list, create, and revoke functionality.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { fetchApiKeys } from './actions.js';
 import { renderKeyList } from './key-list.js';

@@ -1,5 +1,5 @@
 import { oneLine } from '../editor-utils.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 function norm(s) {
   return String(s || '').toLowerCase();

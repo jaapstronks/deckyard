@@ -23,7 +23,7 @@ import { loadThemeById } from '../../../lib/theme/theme.js';
 import { detectBgTextContrast } from '../../../lib/slide-authoring/bg-contrast.js';
 import { isLocked } from '../../../../shared/theme-locks.js';
 import { renderFocusGridField } from './focus-picker.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /** Field keys the colour group owns. */
 const BG_COLOR_KEYS = new Set(['background', 'bgCustomColor']);

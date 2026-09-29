@@ -41,9 +41,9 @@ globalThis.ResizeObserver =
   };
 
 const { createFieldRenderers } =
-  await import('../client/views/editor/fields.js');
+  await import('../client/views/editor/fields/index.js');
 const { createRerenderEditor } =
-  await import('../client/views/editor/editor-form.js');
+  await import('../client/views/editor/editor-form/index.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 const { normalizeSlideContent } =
   await import('../shared/slide-types/normalize-content.js');

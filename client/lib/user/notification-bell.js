@@ -3,7 +3,7 @@
  * Shows unread count badge and dropdown with notification list.
  */
 
-import { h, installDismissOnOutside } from '../dom.js';
+import { h, installDismissOnOutside } from '../dom/index.js';
 import { icon } from '../dom/icons.js';
 import {
   createSSEConnection,

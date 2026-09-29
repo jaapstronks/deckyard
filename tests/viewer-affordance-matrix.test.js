@@ -3,7 +3,7 @@
  *
  * `client/views/viewer/` is the surface that decides what a `view`- or
  * `comment`-permission collaborator gets to see, and it is reachable from
- * exactly one place: `client/views/editor/render-editor.js`, which routes on
+ * exactly one place: `client/views/editor/index.js`, which routes on
  * `pres._userPermission`. This file drives that real entry — `renderEditor`,
  * not the viewer factories in isolation — so the routing decision and the
  * affordances it produces are pinned together.
@@ -164,8 +164,7 @@ async function mountAs(permission) {
   const root = document.createElement('div');
   document.body.append(root);
 
-  const { renderEditor } =
-    await import('../client/views/editor/render-editor.js');
+  const { renderEditor } = await import('../client/views/editor/index.js');
   const detach = await renderEditor(root, DECK_ID, {
     user: { id: 'user-1', email: 'viewer@example.com' },
   });

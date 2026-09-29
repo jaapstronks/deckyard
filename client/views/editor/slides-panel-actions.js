@@ -7,7 +7,7 @@ import {
   getClipboardCount,
 } from '../../lib/slide-authoring/slide-clipboard.js';
 import { icon } from '../../lib/dom/icons.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Expand selection to include children of any selected parents

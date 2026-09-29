@@ -13,7 +13,7 @@ import { openModal } from '../../../lib/dom/modal.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createDeckGridView } from '../deck-grid.js';
 import { createAiReviewAnnotations } from '../ai-review-annotations.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * @param {Object} options

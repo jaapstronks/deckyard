@@ -2,7 +2,7 @@ import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { markFieldRequired } from './required.js';
 import { markLinkField } from './link-field.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 export function createBasicFields() {
   const fieldText = (label, value, onChange, opts = {}) => {

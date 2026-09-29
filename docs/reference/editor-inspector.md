@@ -257,7 +257,7 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   controller state rather than from focus, it survives the edit's blur and the
   preview remount a sidebar change (alignment, colour) triggers - the user can
   see which field the "This text" tab is acting on.
-- **Rendering** (`editor-form.js`): when the selection applies to the slide
+- **Rendering** (`editor-form/index.js`): when the selection applies to the slide
   (`elementAppliesToSlide`), per-element widgets render into `elementForm`
   ("This element" tab) and the rest into `form` ("Slide" tab). The active tab
   persists across rerenders and resets to the element on a fresh selection.
@@ -405,7 +405,7 @@ Not repeated per row, because they are the same for all
 (Background image section), `a11yTitle`/`a11ySummary` (Accessibility) and the
 per-type `background`/`bgCustomColor` colour field - all **inspector**
 surfaces. `hidden` schema fields are omitted too: they are carried data, and
-`editor-form.js` does not render them.
+`editor-form/index.js` does not render them.
 Numbered legacy aliases are condensed to their family (`col{n}Block{m}Body`),
 and an inactive alias collection (`steps`, `stages`) follows its array field
 rather than getting a home of its own.

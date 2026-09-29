@@ -12,7 +12,7 @@
  * inline pseudo-element ring from `client/styles/app/components.css`.
  */
 
-import { h } from '../dom.js';
+import { h } from './index.js';
 
 /** @type {Set<string>} the size modifiers defined in 06-spinner.css */
 const SIZES = new Set(['sm', 'md', 'lg', 'xl', 'xxl']);

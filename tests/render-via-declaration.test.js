@@ -251,9 +251,9 @@ test('no anonymous view renders through a route behind the login gate', () => {
 test('the gate guard reaches the anonymous surfaces it was written for', () => {
   const anon = anonymousViewModules().map((f) => relative(repoRoot, f));
   for (const view of [
-    'client/views/share-viewer.js',
-    'client/views/follow.js',
-    'client/views/notes.js',
+    'client/views/share-viewer/index.js',
+    'client/views/follow/index.js',
+    'client/views/notes/index.js',
   ]) {
     assert.ok(anon.includes(view), `${view} is found as an anonymous view`);
   }

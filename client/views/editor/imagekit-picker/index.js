@@ -1,18 +1,18 @@
-import { lockDocumentScroll } from './editor-utils.js';
-import { t } from '../../lib/ui-i18n.js';
-import { confirmModal, createModal } from '../../lib/dom/modal.js';
-import { createInlineError } from '../../lib/dom/inline-error.js';
+import { lockDocumentScroll } from '../editor-utils.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { confirmModal, createModal } from '../../../lib/dom/modal.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import {
   cleanStr,
   uniq,
   addTr,
   addNamedTr,
   buildDocTag,
-} from './imagekit-picker/transform-utils.js';
-import { h } from '../../lib/dom.js';
-import { aiAltTextEnabled } from '../../lib/state/features.js';
-import { defaultLang } from '../../lib/format/i18n.js';
-import { getLangDisplayName } from '../../../shared/i18n-utils.js';
+} from './transform-utils.js';
+import { h } from '../../../lib/dom/index.js';
+import { aiAltTextEnabled } from '../../../lib/state/features.js';
+import { defaultLang } from '../../../lib/format/i18n.js';
+import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 
 export function openImageKitPicker({
   title = t('imagekit.title', 'ImageKit'),

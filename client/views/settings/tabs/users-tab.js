@@ -10,7 +10,7 @@
  * membership.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { renderAdminUsersPanel } from '../admin-users/index.js';
 import { renderOrganizationMembersPanel } from '../organization-members/index.js';

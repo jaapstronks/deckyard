@@ -120,7 +120,7 @@ neighbouring question a tenth way.
 | Module                                           | What it hard-coded                                                         | What it asks now                              |
 | ------------------------------------------------ | -------------------------------------------------------------------------- | --------------------------------------------- |
 | `client/views/editor/slides-panel.js`            | the four, to decide which insert needs a follow-invite slide               | `isLiveSlideType()`                           |
-| `client/views/follow/interactions.js`            | the four, to decide whether to show a widget, plus feedback-vs-choice      | `isLiveSlideType()` + `liveInteractionKind()` |
+| `client/views/follow/interactions/index.js`      | the four, to decide whether to show a widget, plus feedback-vs-choice      | `isLiveSlideType()` + `liveInteractionKind()` |
 | `client/views/presenter/interaction-controls.js` | the four, twice: the guard and the kind                                    | both helpers                                  |
 | `server/utils/interaction-helpers.js`            | `isInteractiveSlideType()`, the closest thing to a home the capability had | deleted; callers use the facet                |
 | `server/routes/api/follow/helpers.js`            | the four, computing the audience's capabilities                            | `liveInteractionKind()`                       |

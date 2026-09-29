@@ -4,7 +4,7 @@ import {
 } from '../../lib/slide-runtime/slide-render.js';
 import { slideByIdOrIndex } from './slides.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { applyStepVisibilityForMode } from '../presenter/step.js';
 
 export function renderFollowSlide({

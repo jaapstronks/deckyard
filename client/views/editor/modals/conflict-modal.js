@@ -5,7 +5,7 @@ import {
   showCopyFallbackModal,
 } from '../../../lib/util/clipboard.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 function safeString(v) {
   if (v == null) return '';

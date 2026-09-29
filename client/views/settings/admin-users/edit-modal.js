@@ -2,7 +2,7 @@
  * Edit user modal with profile image upload.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createModal, createModalActions } from '../../../lib/dom/modal.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';

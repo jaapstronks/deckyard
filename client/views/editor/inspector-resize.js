@@ -1,5 +1,5 @@
 import { storage } from '../../lib/storage.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 const MIN_WIDTH = 320;
 const BASE_MAX_WIDTH = 640;

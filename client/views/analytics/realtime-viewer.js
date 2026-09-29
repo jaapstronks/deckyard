@@ -4,7 +4,7 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { createSSEConnection } from '../../lib/net/sse-connection.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Create real-time viewer count component.

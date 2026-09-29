@@ -31,7 +31,7 @@ globalThis.cancelAnimationFrame =
   dom.window.cancelAnimationFrame || clearTimeout;
 
 const { openSettingsModal } =
-  await import('../client/views/editor/modals/settings-modal.js');
+  await import('../client/views/editor/modals/settings-modal/index.js');
 
 function messyPres() {
   return {

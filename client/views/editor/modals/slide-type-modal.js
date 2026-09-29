@@ -2,7 +2,7 @@ import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { storage } from '../../../lib/storage.js';
 import { createImportSlidesTab } from './import-slides-tab.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 // Remember which tab was last used so reopening the modal feels continuous.
 const LAST_TAB_KEY = 'ps-slide-modal-tab';

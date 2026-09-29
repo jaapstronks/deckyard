@@ -4,7 +4,7 @@
  */
 
 import { createModal, createTextArea } from '../dom/modal.js';
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { t } from '../ui-i18n.js';
 
 /**

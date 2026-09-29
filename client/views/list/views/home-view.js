@@ -12,7 +12,7 @@ import { createCollectionsApi } from '../../../lib/slide-collections/api.js';
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
 
 /**

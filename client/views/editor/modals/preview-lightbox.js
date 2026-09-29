@@ -3,7 +3,7 @@ import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createCommentMarkers } from '../comment-markers.js';
 import { renderCommentBodyNodes } from '../../../lib/comments/comment-body.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
 
 export function createPreviewLightbox({

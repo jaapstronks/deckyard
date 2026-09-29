@@ -12,7 +12,7 @@ import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { downloadBlob } from '../../../lib/dom/download.js';
 import { DEFAULT_THEME_REF } from '../../../../shared/constants/themes.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Open the change theme warning modal.

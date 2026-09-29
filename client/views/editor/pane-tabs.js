@@ -16,7 +16,7 @@
 import { t } from '../../lib/ui-i18n.js';
 import { icon } from '../../lib/dom/icons.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * @param {Object} options

@@ -7,16 +7,16 @@
  * button just opens it and keeps its published-state indicator in sync.
  */
 
-import { lockDocumentScroll } from './editor-utils.js';
-import { copyToClipboard } from './publish-export/clipboard.js';
-import { openPreviewAddressModal } from './publish-export/preview-address-modal.js';
-import { doPublish } from './publish-export/publish.js';
-import { openShareModal } from './modals/share-modal.js';
-import { openDescriptionModal } from './modals/description-modal.js';
-import { openExportModal } from './export-modal.js';
-import { t } from '../../lib/ui-i18n.js';
-import { handleNotionPublish } from './share-dropdown/share-actions.js';
-import { h } from '../../lib/dom.js';
+import { lockDocumentScroll } from '../editor-utils.js';
+import { copyToClipboard } from '../publish-export/clipboard.js';
+import { openPreviewAddressModal } from '../publish-export/preview-address-modal.js';
+import { doPublish } from '../publish-export/publish.js';
+import { openShareModal } from '../modals/share-modal/index.js';
+import { openDescriptionModal } from '../modals/description-modal.js';
+import { openExportModal } from '../export-modal.js';
+import { t } from '../../../lib/ui-i18n.js';
+import { handleNotionPublish } from './share-actions.js';
+import { h } from '../../../lib/dom/index.js';
 
 export function setupShareDropdown({
   api,

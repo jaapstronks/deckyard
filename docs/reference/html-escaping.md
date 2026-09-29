@@ -18,7 +18,7 @@ the **sanitizer** — never interpolated raw into an HTML sink (`innerHTML`,
 - **`markdownToSafeHtml()`** — `shared/markdown.js`. Renders markdown and runs
   the result through `sanitizeHtmlSync()` (`shared/sanitize.js`). This is the
   only sanctioned path for rich text.
-- **`h()`** — `client/lib/dom.js`. Builds DOM from data; text passed as
+- **`h()`** — `client/lib/dom/index.js`. Builds DOM from data; text passed as
   `{ text }` or children becomes text nodes, never markup. Prefer this over an
   `innerHTML` template when the content is data-driven.
 

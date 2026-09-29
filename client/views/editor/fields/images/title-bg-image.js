@@ -5,7 +5,7 @@ import { t } from '../../../../lib/ui-i18n.js';
 import { getBackgroundPresets } from '../../../../lib/theme/theme.js';
 import { createAltSetter } from './alt-utils.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 import {
   DEFAULT_DECK_LANG,
   translationSourceFor,

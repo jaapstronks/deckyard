@@ -114,8 +114,7 @@ is **MAJOR** only if it breaks one of these for an existing install:
 3. **The on-disk deck JSON format** — an existing deck that no longer loads after upgrade.
 4. **Config** (`.env` keys, Docker setup) — a required new variable with no default, or a renamed key.
 
-Everything else — internal modules, UI microcopy, most refactors — is MINOR or
-PATCH. When in doubt, if a fork or self-hoster has to change something on upgrade,
+Everything else — internal refactors, UI microcopy — is MINOR or PATCH. When in doubt, if a fork or self-hoster has to change something on upgrade,
 it's MAJOR (during beta: MINOR with a breaking note — see above).
 
 Two things this list deliberately does _not_ make breaking:
@@ -127,10 +126,17 @@ Two things this list deliberately does _not_ make breaking:
   load failure, and `scripts/scan-slide-type.js` is how you check the deck
   population before removing. This is what the `freeform-slide` removal (#377)
   was, and it should not have carried a `BREAKING CHANGE:` trailer.
-- **Moving or splitting an internal module.** Deckyard has no published JS package
-  surface; `client/` and `server/` internals are not a contract. A fork that
-  patched a specific file has to reconcile — that is what forking costs, and it is
-  not a version signal.
+- **Splitting a module behind an unchanged import path.** A file that becomes
+  concern modules behind the same seam changes nothing a fork imports. A fork
+  that patched the file's _contents_ has to reconcile — that is what forking
+  costs, and it is not a version signal.
+
+A module whose **import path moves** is the opposite case: a fork imports core
+modules by path (`tests/custom-imports-resolvable.test.js` is how it finds out),
+so the move is something it has to change on upgrade. It carries a breaking note
+(`!` plus a `BREAKING CHANGE:` footer listing the old and new paths), with no
+shim at the old path (`AGENTS.md` § _Module layout_), and during beta the Release
+PR gets the `Release-As: 1.<next>.0` override below (D276).
 
 ### Wire changes are never titled `refactor:`
 

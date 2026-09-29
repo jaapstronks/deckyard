@@ -3,7 +3,7 @@
  * Provides a read-only presentation viewer with optional commenting capability.
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import { createViewerTopbar } from './viewer-topbar.js';
 import { createViewerSlidesPanel } from './viewer-slides-panel.js';

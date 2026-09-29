@@ -33,7 +33,7 @@ const ICONS_MODULE = 'client/lib/dom/icons.js';
 // Real drawings and the DOM primitive: these construct SVG geometry, not a
 // glyph from the icon set, so they never become an icon() call.
 const PERMANENT = {
-  'client/lib/dom.js':
+  'client/lib/dom/index.js':
     'the h() primitive itself — it routes SVG tag names through createElementNS',
   'client/lib/slide-runtime/likert.js':
     'draws the likert scale (axis, ticks, markers), not an icon',

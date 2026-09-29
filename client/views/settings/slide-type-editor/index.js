@@ -4,7 +4,7 @@
  * Follows the theme-editor layout pattern.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createCheckboxRow, createFieldListEditor } from './field-editor.js';

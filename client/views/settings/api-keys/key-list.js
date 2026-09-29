@@ -2,7 +2,7 @@
  * API Keys list component - renders the table of API keys.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createEmptyState } from '../../../lib/dom/empty-state.js';
 

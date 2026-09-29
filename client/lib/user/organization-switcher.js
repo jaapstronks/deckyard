@@ -14,7 +14,7 @@
  *   the UI.
  */
 
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { api } from '../api.js';
 import { toast } from '../dom/toast.js';
 import { t } from '../ui-i18n.js';

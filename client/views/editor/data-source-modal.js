@@ -12,13 +12,13 @@ import {
   PROVIDER_LABELS,
   validateDataSource,
 } from '../../../shared/data-source.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { icon } from '../../lib/dom/icons.js';
 
 // `hintKey`/`labelKey` carry the i18n key and the sibling string the English
 // fallback: this table is built at import time, before the dictionary loads, so
 // the strings are resolved through t() at render time (same pattern as
-// SLIDE_TYPE_PRESETS in slide-type-picker.js).
+// SLIDE_TYPE_PRESETS in slide-type-picker/data.js).
 const PROVIDER_OPTIONS = [
   {
     value: 'notion-database',

@@ -8,7 +8,7 @@ import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 
 /**
  * Opens a modal showing slide thumbnails for a version.

@@ -272,14 +272,14 @@ const clientRestrictedSyntax = [
       'cluster 10, docs/developer/linting.md).',
   },
   // `h()` — the hyperscript element factory — has exactly one implementation,
-  // `client/lib/dom.js`. It used to travel the client as a hand-threaded
+  // `client/lib/dom/index.js`. It used to travel the client as a hand-threaded
   // parameter in three spellings at once: positional (`createModal(h, opts)`),
   // an opt-in option with a default (`h = defaultH`), and ~400 lines of
   // `{ h, … }` pass-through. Every module now imports it, so `h` arriving as
   // an argument is the fourth spelling starting over (A7.33).
   //
   // Whole-token by construction (`[name='h']` / `[key.name='h']`), so `height`,
-  // `hue` and `hsl` are untouched, and the allowlist is empty: `client/lib/dom.js`
+  // `hue` and `hsl` are untouched, and the allowlist is empty: `client/lib/dom/index.js`
   // needs no exemption because the factory is a function *declaration* there,
   // never a parameter. A geometry `{ h: rowH }` stays legal — only the
   // shorthand `{ h }`, which can mean nothing but the factory, is restricted.
@@ -291,8 +291,8 @@ const clientRestrictedSyntax = [
       "VariableDeclarator > ObjectPattern.id > Property[key.name='h']," +
       "ObjectExpression > Property[key.name='h'][shorthand=true]",
     message:
-      'Import `h` from client/lib/dom.js instead of taking or passing it: ' +
-      "`import { h } from '…/lib/dom.js'`. It has one implementation and " +
+      'Import `h` from client/lib/dom/index.js instead of taking or passing it: ' +
+      "`import { h } from '…/lib/dom/index.js'`. It has one implementation and " +
       'threading it by hand is what A7.33 removed from ~200 files.',
   },
   // Same shape, same singleton: `nav` is one exported function in
@@ -396,7 +396,7 @@ const instanceAdminRestriction = {
     'are a plain member (B144, docs/developer/linting.md).',
 };
 
-// `h()` from client/lib/dom.js is AGENTS.md's first frontend rule, and the one
+// `h()` from client/lib/dom/index.js is AGENTS.md's first frontend rule, and the one
 // client convention that had no mechanical backing: `h` was imported in 302
 // files while `document.createElement` survived in 14, mostly as one
 // head-asset recipe written five times over (B150). Where the gate is missing,
@@ -413,7 +413,7 @@ const instanceAdminRestriction = {
 // Boundary: `document.createElementNS` is untouched. `h()` itself calls it for
 // SVG tags, and slide-runtime/likert.js builds SVG through a local `svgEl()`
 // helper for the shape attributes h() does not model. Exempt files (each with
-// its own re-statement block below): client/lib/dom.js, where the factory
+// its own re-statement block below): client/lib/dom/index.js, where the factory
 // lives, and client/embed-sdk.js, the standalone IIFE served to third-party
 // pages, which has no module graph to import from.
 // One teardown word and one element word (B150). A client factory hands back a
@@ -456,7 +456,7 @@ const createElementRestriction = {
     "CallExpression[callee.object.name='document']" +
     "[callee.property.name='createElement']",
   message:
-    'Build elements with h() from client/lib/dom.js. Head assets ' +
+    'Build elements with h() from client/lib/dom/index.js. Head assets ' +
     '(<style>/<link>/<script> in document.head) go through ensureStyle/' +
     'ensureStylesheet/ensureScript in client/lib/dom/head-assets.js, and the ' +
     'three font providers through client/lib/theme/font-assets.js (B150, ' +
@@ -624,7 +624,7 @@ export default [
   // `document.createElement`. Every other client restriction stays in force
   // (rule entries replace per rule name, hence the re-statement).
   {
-    files: ['client/lib/dom.js'],
+    files: ['client/lib/dom/index.js'],
     rules: {
       'no-restricted-syntax': [
         'error',

@@ -448,7 +448,7 @@ async function mountFollow(overrides = {}) {
   const root = document.createElement('div');
   document.body.append(root);
 
-  const { renderFollow } = await import('../client/views/follow.js');
+  const { renderFollow } = await import('../client/views/follow/index.js');
   const teardown = await renderFollow(root, DECK_ID);
   // Idempotent, and registered for the safety net below: a row that fails its
   // assertion never reaches its own `detach()`, and a follow view left mounted

@@ -11,7 +11,7 @@
  * could opt out) needs no changes.
  */
 
-import { h } from '../dom.js';
+import { h } from '../dom/index.js';
 import { t } from '../ui-i18n.js';
 import { promptModal } from '../dom/modal.js';
 import { safeLinkUrl } from '../../../shared/comment-mentions.js';

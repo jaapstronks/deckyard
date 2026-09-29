@@ -29,7 +29,7 @@
  * to the generic line rather than earning copy that cannot show.
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { icon as uiIcon } from '../../lib/dom/icons.js';
 import { t } from '../../lib/ui-i18n.js';
 

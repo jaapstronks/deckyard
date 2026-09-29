@@ -6,7 +6,7 @@
  */
 
 import { spinner } from './spinner.js';
-import { h } from '../dom.js';
+import { h } from './index.js';
 
 /**
  * Create and show a loading modal

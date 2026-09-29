@@ -4,7 +4,7 @@ import {
   DEFAULT_REVEAL_STYLE,
   normalizeRevealStyle,
 } from '../../../../../shared/reveal-style.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 /**
  * Reveal style for builds: how each body fragment (bullet/paragraph) appears.

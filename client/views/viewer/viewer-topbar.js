@@ -6,7 +6,7 @@
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
 import { t } from '../../lib/ui-i18n.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { nav } from '../../lib/state/router.js';
 import { normalizeLang } from '../../../shared/i18n-utils.js';
 import { icon } from '../../lib/dom/icons.js';
@@ -39,7 +39,7 @@ export function createViewerTopbar({
     title: pres?.title || 'Presentation',
   });
 
-  // Permission badge. render-editor.js only mounts this viewer for 'view' and
+  // Permission badge. editor/index.js only mounts this viewer for 'view' and
   // 'comment' — 'edit' gets the editor — so those are the only two labels that
   // can appear here.
   const permissionBadge = h('div', {

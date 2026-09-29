@@ -12,7 +12,7 @@ import {
   renderSlideElement,
 } from '../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { newSlide } from '../../../shared/slide-types/presentation.js';
 
 /**

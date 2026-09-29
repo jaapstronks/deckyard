@@ -13,7 +13,7 @@
  * inline (`dom/inline-error.js`).
  */
 
-import { h } from '../dom.js';
+import { h } from './index.js';
 
 /**
  * Mark a field as required.

@@ -2,7 +2,7 @@
  * Top performing presentations table component.
  */
 
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { formatDuration } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';

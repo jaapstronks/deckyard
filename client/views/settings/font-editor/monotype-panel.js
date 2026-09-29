@@ -3,7 +3,7 @@
  * Allows configuring a fonts.com project for font loading.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 
 /**

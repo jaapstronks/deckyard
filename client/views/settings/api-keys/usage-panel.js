@@ -2,7 +2,7 @@
  * API Key Usage Panel - displays usage statistics for an API key.
  */
 
-import { h } from '../../../lib/dom.js';
+import { h } from '../../../lib/dom/index.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { fetchKeyUsage } from './actions.js';

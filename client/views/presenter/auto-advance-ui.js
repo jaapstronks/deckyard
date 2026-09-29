@@ -22,7 +22,7 @@ import {
   getSlideEffectiveDuration,
   DEFAULT_ADVANCE_INTERVAL_SECONDS,
 } from '../../../shared/slide-timing.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * @param {object} ctx

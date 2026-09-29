@@ -4,7 +4,7 @@ import {
   getLangDisplayName,
   resolveDeckLang,
 } from '../../../../../shared/i18n-utils.js';
-import { h } from '../../../../lib/dom.js';
+import { h } from '../../../../lib/dom/index.js';
 
 export function renderFollowInviteForm({
   form,

@@ -1,6 +1,6 @@
 import { debugLog } from '../../lib/util/debug.js';
 import { t } from '../../lib/ui-i18n.js';
-import { h } from '../../lib/dom.js';
+import { h } from '../../lib/dom/index.js';
 import {
   createQuestionsFeed,
   fetchModerationCapabilities,
