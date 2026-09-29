@@ -50,11 +50,16 @@ async function resolveEmbedSource(repoRoot, { url, path: relPath, format }) {
     return `data:${mime};base64,${buf.toString('base64')}`;
   }
   if (relPath) {
-    // A curated family: a pinned file in the repo.
+    // A curated family: a pinned file in the repo. A file that is missing
+    // (postinstall download skipped) or unreadable costs this one font, with
+    // the same warning as a managed object (B538).
     try {
       return await readFontAsDataUrl(repoRoot, relPath);
-    } catch {
-      return null; // e.g. postinstall download skipped
+    } catch (err) {
+      log.warn(
+        `Skipping font ${relPath}: curated file unreadable (${err?.message || err})`,
+      );
+      return null;
     }
   }
   return null;

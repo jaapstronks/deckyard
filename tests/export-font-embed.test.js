@@ -167,6 +167,23 @@ test('buildEmbeddedFontCss skips a non-managed font URL with a warning', async (
   }
 });
 
+// B538: a curated file the export cannot read is refused in the same form as
+// a managed object - one warning naming the path and the reason, then `null` -
+// so a skipped postinstall download leaves a trace instead of a silent fallback.
+test('buildEmbeddedFontCss skips an unreadable curated path with the reason', async (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  const rel = 'assets/fonts/google/missing/does-not-exist.woff2';
+  const css = await buildEmbeddedFontCss(repoRoot, {
+    embedFonts: [{ family: 'Missing Face', path: rel, weight: 400 }],
+  });
+  assert.equal(css, '', 'the unreadable face is skipped, nothing thrown');
+  assert.equal(warn.mock.callCount(), 1);
+  assert.match(
+    warn.mock.calls[0].arguments.join(' '),
+    /Skipping font assets\/fonts\/google\/missing\/does-not-exist\.woff2: curated file unreadable \(ENOENT/,
+  );
+});
+
 // B508, point 2: every curated family a font token names is embedded, not only
 // heading and body — a mono role the app renders must not fall back in the PDF.
 test('buildThemeConfig embeds a curated family named in a third font role', () => {
