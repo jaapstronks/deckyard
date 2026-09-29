@@ -62,10 +62,37 @@ test('inlineLocalFontUrls embeds a referenced local woff2 as a data URL', async 
   assert.ok(out.includes('font-weight: 700'));
 });
 
-test('inlineLocalFontUrls leaves an unreadable font path untouched', async () => {
-  const css = `src: url('/assets/fonts/does-not-exist-xyz.woff2') format('woff2');`;
+// B542: a local font the export cannot read is refused in the same form as
+// buildEmbeddedFontCss refuses one (B538) - a warning naming the path and the
+// reason - and its face is dropped, so no `/assets/` source survives.
+test('inlineLocalFontUrls drops the face of an unreadable font with the reason', async (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  const css = `@font-face {
+  font-family: 'Missing Face';
+  src: url('/assets/fonts/does-not-exist-xyz.woff2') format('woff2');
+}
+.deck { color: red; }`;
   const out = await inlineLocalFontUrls(repoRoot, css);
-  assert.equal(out, css, 'a missing font file should be left as-is');
+  assert.ok(!out.includes('/assets/'), 'no /assets/ font URL survives');
+  assert.ok(!out.includes('@font-face'), 'the unreadable face is dropped');
+  assert.ok(out.includes('.deck { color: red; }'), 'other rules are kept');
+  assert.equal(warn.mock.callCount(), 1);
+  assert.match(
+    warn.mock.calls[0].arguments.join(' '),
+    /Skipping font \/assets\/fonts\/does-not-exist-xyz\.woff2: local file unreadable \(ENOENT/,
+  );
+});
+
+test('inlineLocalFontUrls refuses a font path outside the repo', async (t) => {
+  const warn = t.mock.method(console, 'warn', () => {});
+  const css = `@font-face { font-family: 'Escape'; src: url('/../outside.woff2'); }`;
+  const out = await inlineLocalFontUrls(repoRoot, css);
+  assert.equal(out, '', 'the face is dropped');
+  assert.equal(warn.mock.callCount(), 1);
+  assert.match(
+    warn.mock.calls[0].arguments.join(' '),
+    /Skipping font \/\.\.\/outside\.woff2: resolves outside the repo/,
+  );
 });
 
 test('inlineLocalFontUrls ignores remote and data URLs', async () => {

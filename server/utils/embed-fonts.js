@@ -7,8 +7,10 @@ import { createLogger } from './logger.js';
 
 const log = createLogger('embed-fonts');
 
+const FONT_FACE_BLOCK_RE = /@font-face\s*\{[\s\S]*?\}\s*/g;
+
 function stripFontFaceBlocks(cssText) {
-  return String(cssText || '').replace(/@font-face\s*\{[\s\S]*?\}\s*/g, '');
+  return String(cssText || '').replace(FONT_FACE_BLOCK_RE, '');
 }
 
 async function readFontAsDataUrl(repoRoot, relPath, mime = 'font/woff2') {
@@ -157,14 +159,18 @@ const LOCAL_FONT_URL_RE = /url\(\s*(['"]?)(\/[^'")]+\.woff2?)\1\s*\)/gi;
  * `/assets/...` paths.
  *
  * Only URLs that actually appear in the CSS are embedded, never the whole
- * pinned font library (~2.7 MB across all curated families). Files that
- * resolve outside the repo, or can't be read, are left untouched.
+ * pinned font library (~2.7 MB across all curated families). A file that
+ * resolves outside the repo or can't be read is refused in the same form as
+ * {@link buildEmbeddedFontCss} refuses one: a warning naming the path and the
+ * reason, and the `@font-face` that references it is dropped, so the family
+ * falls back to its token's font stack (B542).
  *
  * Theme fonts are embedded separately via {@link buildEmbeddedFontCss}. No
  * built-in stylesheet declares an @font-face any more, so in practice this is
  * the safety net for a *custom* theme that ships its own face in a stylesheet
- * the export bundle picks up — and the thing that guarantees no
- * `/assets/...woff2` reference survives into a downloaded file.
+ * the export bundle picks up — and the thing that guarantees no `@font-face`
+ * with an `/assets/...woff2` source survives into a downloaded file. (A font
+ * URL outside an `@font-face` loads nothing and is not touched.)
  *
  * @param {string} repoRoot - Repository root path
  * @param {string} cssText - CSS source text
@@ -180,25 +186,37 @@ export async function inlineLocalFontUrls(repoRoot, cssText) {
   const dataUrls = new Map();
   await Promise.all(
     [...paths].map(async (urlPath) => {
-      try {
-        const abs = path.resolve(rootAbs, urlPath.replace(/^\/+/, ''));
-        // Stay inside the repo — the CSS is our own, but never read arbitrary
-        // paths if a `..` ever slips into a bundled stylesheet.
-        if (abs !== rootAbs && !abs.startsWith(rootAbs + path.sep)) return;
-        const buf = await fs.readFile(abs);
-        const mime = urlPath.toLowerCase().endsWith('.woff')
-          ? 'font/woff'
-          : 'font/woff2';
-        dataUrls.set(urlPath, `data:${mime};base64,${buf.toString('base64')}`);
-      } catch {
-        // Leave the original URL in place if the file can't be read
-        // (e.g. a curated font whose postinstall download was skipped).
+      const abs = path.resolve(rootAbs, urlPath.replace(/^\/+/, ''));
+      // Stay inside the repo — the CSS is our own, but never read arbitrary
+      // paths if a `..` ever slips into a bundled stylesheet.
+      if (abs !== rootAbs && !abs.startsWith(rootAbs + path.sep)) {
+        log.warn(`Skipping font ${urlPath}: resolves outside the repo`);
+        return;
       }
+      let buf;
+      try {
+        buf = await fs.readFile(abs);
+      } catch (err) {
+        log.warn(
+          `Skipping font ${urlPath}: local file unreadable (${err?.message || err})`,
+        );
+        return;
+      }
+      const mime = urlPath.toLowerCase().endsWith('.woff')
+        ? 'font/woff'
+        : 'font/woff2';
+      dataUrls.set(urlPath, `data:${mime};base64,${buf.toString('base64')}`);
     }),
   );
 
-  return css.replace(LOCAL_FONT_URL_RE, (full, _q, urlPath) => {
-    const dataUrl = dataUrls.get(urlPath);
-    return dataUrl ? `url('${dataUrl}')` : full;
-  });
+  // A face with a source that did not resolve is dropped whole: one refused
+  // source costs that face, never a half-rewritten `src` list.
+  const unresolved = (text) =>
+    [...text.matchAll(LOCAL_FONT_URL_RE)].some((m) => !dataUrls.has(m[2]));
+  return css
+    .replace(FONT_FACE_BLOCK_RE, (block) => (unresolved(block) ? '' : block))
+    .replace(LOCAL_FONT_URL_RE, (full, _q, urlPath) => {
+      const dataUrl = dataUrls.get(urlPath);
+      return dataUrl ? `url('${dataUrl}')` : full;
+    });
 }
