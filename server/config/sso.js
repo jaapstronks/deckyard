@@ -39,7 +39,7 @@ const DEFAULT_GROUPS_CLAIMS = ['groups', 'roles'];
  */
 export const OIDC_BASE_SCOPES = Object.freeze(['openid', 'email', 'profile']);
 
-/** An RFC 6749 §3.3 scope-token: printable ASCII except space, `"` and `\`. */
+/** An RFC 6749 §3.3 scope-token: printable ASCII except space, double quote and backslash. */
 const SCOPE_TOKEN = /^[\x21\x23-\x5B\x5D-\x7E]+$/;
 
 /** Role assigned to JIT-provisioned users unless a group maps them to admin. */
