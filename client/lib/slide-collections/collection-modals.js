@@ -11,7 +11,7 @@ import { h } from '../dom/index.js';
 import { createModal } from '../dom/modal.js';
 import { toast } from '../dom/toast.js';
 import { sharingEnabled } from '../state/features.js';
-import { createSharingOffNote } from '../../views/shared/sharing-off.js';
+import { createSharingOffNote } from '../dom/sharing-off.js';
 import { icon } from '../dom/icons.js';
 
 const SHELVES = ['personal', 'organization'];

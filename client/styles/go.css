@@ -39,7 +39,7 @@ body {
   min-height: 100%;
   display: grid;
   place-items: center;
-  padding: 24px;
+  padding: var(--ps-space-6);
 }
 
 .go-card {
@@ -47,7 +47,7 @@ body {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 18px;
-  padding: 20px;
+  padding: var(--ps-space-5);
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
 }
 
@@ -56,18 +56,18 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   opacity: 0.75;
-  margin-bottom: 10px;
+  margin-bottom: var(--ps-space-2-5);
 }
 
 .go-title {
-  margin: 0 0 14px;
+  margin: 0 0 var(--ps-space-3-5);
   font-size: 26px;
   line-height: 1.15;
 }
 
 .go-form {
   display: grid;
-  gap: 10px;
+  gap: var(--ps-space-2-5);
 }
 
 .go-label {
@@ -77,7 +77,7 @@ body {
 
 .go-input {
   width: 100%;
-  padding: 14px 14px;
+  padding: var(--ps-space-3-5) var(--ps-space-3-5);
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   background: rgba(0, 0, 0, 0.28);
@@ -97,7 +97,7 @@ body {
 }
 
 .go-btn {
-  padding: 12px 14px;
+  padding: var(--ps-space-3) var(--ps-space-3-5);
   border-radius: 14px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   background: rgba(255, 255, 255, 0.12);
@@ -122,8 +122,8 @@ body {
 }
 
 .go-help {
-  margin-top: 14px;
-  padding-top: 14px;
+  margin-top: var(--ps-space-3-5);
+  padding-top: var(--ps-space-3-5);
   border-top: 1px solid rgba(255, 255, 255, 0.12);
   font-size: 13px;
   opacity: 0.78;

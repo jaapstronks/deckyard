@@ -15,21 +15,23 @@ import {
 } from './lib/state/router.js';
 import { meWithMeta } from './lib/user/auth.js';
 import { setFeatures } from './lib/state/features.js';
-import { syncSandboxBanner } from './views/shared/sandbox-banner.js';
+import { syncSandboxBanner } from './lib/dom/sandbox-banner.js';
 import {
   startMaintenanceBanner,
   syncMaintenanceBanner,
-} from './views/shared/maintenance-banner.js';
+} from './lib/dom/maintenance-banner.js';
 import { refreshMaintenanceState } from './lib/state/maintenance.js';
 import { setDocumentTitle } from './lib/theme/branding.js';
 import { renderList } from './views/list/index.js';
 import { renderEditor } from './views/editor/index.js';
 import { renderPresenter } from './views/presenter/index.js';
 import { renderPresentWindow } from './views/present-window.js';
-import { renderLogin } from './views/login.js';
-import { renderForgotPassword } from './views/forgot-password.js';
-import { renderResetPassword } from './views/reset-password.js';
-import { renderMagicLogin } from './views/magic-login.js';
+import {
+  renderLogin,
+  renderForgotPassword,
+  renderResetPassword,
+  renderMagicLogin,
+} from './views/auth/index.js';
 import { renderNotes } from './views/notes/index.js';
 import { renderNotesJoin } from './views/notes-join.js';
 import { renderFollow } from './views/follow/index.js';

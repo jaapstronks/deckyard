@@ -635,12 +635,12 @@
       "count": 1
     }
   },
-  "client/views/login.js": {
+  "client/views/auth/login.js": {
     "no-restricted-syntax": {
       "count": 6
     }
   },
-  "client/views/magic-login.js": {
+  "client/views/auth/magic-login.js": {
     "no-restricted-syntax": {
       "count": 1
     }

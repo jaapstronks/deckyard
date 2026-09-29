@@ -7,9 +7,9 @@
  * route render) and kept in sync with the `sandboxMode` feature flag.
  */
 
-import { h } from '../../lib/dom/index.js';
-import { t } from '../../lib/ui-i18n.js';
-import { getFeatures } from '../../lib/state/features.js';
+import { h } from './index.js';
+import { t } from '../ui-i18n.js';
+import { getFeatures } from '../state/features.js';
 
 let bannerEl = null;
 

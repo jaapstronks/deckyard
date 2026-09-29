@@ -1,5 +1,5 @@
-import { h } from '../../lib/dom/index.js';
-import { t } from '../../lib/ui-i18n.js';
+import { h } from './index.js';
+import { t } from '../ui-i18n.js';
 
 /**
  * The one sentence every sharing entry shows where sharing is off (D181,

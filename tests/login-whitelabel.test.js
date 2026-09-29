@@ -56,8 +56,8 @@ globalThis.fetch = async (input) => {
   return json(404, { error: 'Not found' });
 };
 
-const { renderLogin } = await import('../client/views/login.js');
-const { authLogo } = await import('../client/views/auth-shell.js');
+const { renderLogin } = await import('../client/views/auth/index.js');
+const { authLogo } = await import('../client/views/auth/shell.js');
 const { ssoButtonLabel } = await import('../client/lib/user/auth.js');
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));

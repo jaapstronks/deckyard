@@ -1,4 +1,5 @@
 import { h } from '../../../lib/dom/index.js';
+import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { getSupportedLangs } from '../../../lib/format/i18n.js';
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
@@ -154,22 +155,6 @@ export function installTagsAutocomplete(inputEl, datalistEl, getTagsFn) {
   inputEl.addEventListener('input', update);
   update();
   return () => inputEl.removeEventListener('input', update);
-}
-
-/**
- * Create a wrapped field label + input
- * @param {string} label - Field label
- * @param {HTMLElement} control - Input control
- * @param {Object} opts - Options
- * @returns {HTMLElement} Field wrapper
- */
-export function createFieldWrap(label, control, opts = {}) {
-  const helpText = typeof opts?.helpText === 'string' ? opts.helpText : '';
-  return h('label', { class: 'stack is-field' }, [
-    h('div', { class: 'field-label', text: label }),
-    control,
-    helpText ? h('div', { class: 'help', text: helpText }) : null,
-  ]);
 }
 
 /**
