@@ -121,6 +121,20 @@ placed it there on purpose. The net result is one doctrine on both paths:
 whether a call arrives scope-first through `resolveScope()` or reaches
 `getOrgId()` directly, an absent organization is refused, never guessed.
 
+## Instance telemetry takes no scope
+
+Two tables are counters about the instance itself, keyed by nothing an
+organization could own: `api_usage_daily` (quota per API key, rate limits)
+and `instance_health` (which surfaces the install uses, D246 — no
+organization, person or deck in the row). Their facades, `api-usage.js` and
+`instance-health.js`, take **no** `StorageScope`. That is not a fourth
+cross-organization category: a cross-organization scope is for _reading_
+organization-owned rows without a filter, and writes may never run
+cross-organization. Here there is no organization to state or to skip, so a
+scope parameter would be ceremony that validates nothing. A new table joins
+this pair only when it, too, has no organization column and no per-person
+key; anything else takes a scope.
+
 ## Enforcement and implementation status (as of 2026-08-21)
 
 The convention is enforced by `tests/storage-call-convention.test.js`, which

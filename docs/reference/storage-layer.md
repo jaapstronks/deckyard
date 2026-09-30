@@ -64,7 +64,9 @@ each path resolves.
 
 **Top-level facades** cover the remaining domains: auth/account
 (`users.js`, `sso.js`, `magic-link.js`, `password-reset.js`, `api-keys.js`,
-`api-usage.js`, `access-attempts.js`), presentation-adjacent
+`api-usage.js`, `access-attempts.js`), instance telemetry
+(`instance-health.js`, the one writer of `instance_health` —
+[`instance-health.md`](instance-health.md)), presentation-adjacent
 (`slide-locks.js`), collaboration/live (`collaborators.js`, `notifications.js`,
 `activity-events.js`, `feedback.js`, `leads.js`, `questions.js`,
 `interactions.js`, `follow-codes.js`), content
@@ -395,6 +397,12 @@ fallback._ The entry points:
   `isMultiOrgEnabled()` is false; otherwise it throws.
 - `jobScope(jobData, operation)` — background jobs carry `organizationId` in the
   payload, else fall back to `singleOrganizationScope`.
+
+Two facades hold per-instance tables with no organization column and take no
+scope: `api-usage.js` (quota per API key) and `instance-health.js` (surface
+counters, D246). A scope would state an organization their queries have
+nothing to bind to; see [`storage-scope.md`](storage-scope.md) § _Instance
+telemetry takes no scope_.
 
 The full isolation model (hosting shapes, `MULTI_ORG_ENABLED`, rules
 R1–R3) is in [`tenant-isolation.md`](tenant-isolation.md); it is not repeated

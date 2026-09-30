@@ -25,6 +25,7 @@ import { sql } from 'kysely';
 import { notifyLiveSessionInteractionState } from './live-sessions/index.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
+import { countInstanceHealth } from './instance-health.js';
 import { repoRootOf, toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/index.js';
 import {
@@ -272,6 +273,7 @@ export async function submitFeedback(
     }),
     'interaction.feedback_submitted webhook',
   );
+  countInstanceHealth([{ axis: 'interaction', key: 'feedback_submitted' }]);
 
   return { ok: true, aggregate: aggForDevice };
 }

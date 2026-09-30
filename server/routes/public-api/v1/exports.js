@@ -27,6 +27,7 @@ import {
 } from './middleware.js';
 import { canActorAccessPresentation } from '../../../utils/presentation-authz/index.js';
 import { getRateLimitHeaders } from '../../../storage/api-usage.js';
+import { countInstanceHealth } from '../../../storage/instance-health.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -41,11 +42,13 @@ function getLangSuffix(exportLang) {
 
 /**
  * Prepare export context with presentation loading and language projection.
+ * A context that passes the access check counts one export of `format` on
+ * the instance-health `export` axis, as the app's pipeline does (D247).
  */
 async function prepareExportContext(
   ctx,
   presentationId,
-  { allLanguages = false } = {},
+  { format, allLanguages = false },
 ) {
   const { repoRoot, storageScope, url, apiKey } = ctx;
   // The JSON deck carries every language version (D89), so it skips the
@@ -66,6 +69,7 @@ async function prepareExportContext(
       error: 'Access denied to this presentation',
     };
   }
+  countInstanceHealth([{ axis: 'export', key: format }]);
 
   const projected = exportLang
     ? projectPresentationForLang(pres, exportLang)
@@ -131,6 +135,7 @@ async function handleJsonExport(ctx, id) {
   if (!(await checkExportLimit(ctx))) return true;
 
   const exportCtx = await prepareExportContext(ctx, id, {
+    format: 'json',
     allLanguages: true,
   });
   if (!exportCtx.ok) {
@@ -165,7 +170,7 @@ async function handleHtmlExport(ctx, id) {
   if (!(await checkExportLimit(ctx))) return true;
 
   const { repoRoot } = ctx;
-  const exportCtx = await prepareExportContext(ctx, id);
+  const exportCtx = await prepareExportContext(ctx, id, { format: 'html' });
   if (!exportCtx.ok) {
     await apiError(ctx, exportCtx.status, exportCtx.error);
     return true;
@@ -202,7 +207,7 @@ async function handlePdfExport(ctx, id) {
   if (!(await checkExportLimit(ctx))) return true;
 
   const { repoRoot } = ctx;
-  const exportCtx = await prepareExportContext(ctx, id);
+  const exportCtx = await prepareExportContext(ctx, id, { format: 'pdf' });
   if (!exportCtx.ok) {
     await apiError(ctx, exportCtx.status, exportCtx.error);
     return true;
@@ -238,7 +243,7 @@ async function handlePptxExport(ctx, id) {
   if (!(await checkExportLimit(ctx))) return true;
 
   const { repoRoot, url } = ctx;
-  const exportCtx = await prepareExportContext(ctx, id);
+  const exportCtx = await prepareExportContext(ctx, id, { format: 'pptx' });
   if (!exportCtx.ok) {
     await apiError(ctx, exportCtx.status, exportCtx.error);
     return true;

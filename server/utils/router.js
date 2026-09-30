@@ -12,8 +12,7 @@
  */
 
 import { getFeatureFlags } from '../config/flags-snapshot.js';
-import { recordInstanceHealth } from '../storage/instance-health.js';
-import { fireAndForget } from './fire-and-forget.js';
+import { countInstanceHealth } from '../storage/instance-health.js';
 import { notFound } from './http.js';
 import { isUuid } from './uuid.js';
 
@@ -108,7 +107,7 @@ function capturesSatisfyDeclaration(captures, params, pattern) {
  *   - A matched row whose `captures` declaration is not satisfied answers 404
  *     instead: a segment declared `'uuid'` that cannot be one names no row.
  *   - A matched row with an `id` that passes both gates is counted once on
- *     `options.axis` (`recordInstanceHealth`, fire-and-forget) before its
+ *     `options.axis` (`countInstanceHealth`, fire-and-forget) before its
  *     handler runs — what the handler then answers does not change the count.
  *
  * **Order is significant** for RegExp/overlapping tables (`/search` before
@@ -164,10 +163,7 @@ export function dispatchRoutes(
           `route ${route.pattern} carries id '${route.id}' but its surface declares no axis`,
         );
       }
-      fireAndForget(
-        recordInstanceHealth([{ axis, key: route.id }]),
-        'instance health',
-      );
+      countInstanceHealth([{ axis, key: route.id }]);
     }
     return route.handler(ctx, ...params);
   }

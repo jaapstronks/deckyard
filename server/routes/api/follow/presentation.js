@@ -1,6 +1,7 @@
 import { notFound, methodNotAllowed, serveJson } from '../../../utils/http.js';
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
+import { countDeckView } from '../../../storage/instance-health.js';
 import {
   computeMissingTranslation,
   pickVersion,
@@ -113,6 +114,7 @@ export async function handleFollowPresentation(
   }
 
   const picked = pickPresentationForLang(pres, lang);
+  countDeckView('follow', pres);
   serveJson(res, 200, {
     ...state,
     lang: lang || null,

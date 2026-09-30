@@ -30,6 +30,7 @@ import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/index.js';
 import { UUID_RE } from '../utils/uuid.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
+import { countInstanceHealth } from './instance-health.js';
 
 // Note: questions are not auto-translated (explicit translation may be added later).
 
@@ -332,6 +333,7 @@ export async function createQuestion(
   if (!row) return { ok: false, reason: 'not_found' };
 
   broadcastQuestions(scope, sid);
+  countInstanceHealth([{ axis: 'interaction', key: 'question_created' }]);
   return { ok: true, question: publicQuestion(rowToQuestion(row)) };
 }
 

@@ -36,6 +36,7 @@ import { stripIdentityForSnapshot } from './snapshot-identity.js';
 import { recordSlideLevelMerge } from '../../services/activity-events.js';
 import { validatePresentationSize } from '../../utils/presentation-limits.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
+import { countInstanceHealth, slideTypeEntries } from '../instance-health.js';
 import { invalidatePresentationCache } from './cache.js';
 import { migratePresentation } from '../../../shared/slide-types/schema-version.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
@@ -206,6 +207,11 @@ export async function updatePresentation(storageScope, id, body, opts) {
   // Any successful mutation (editor save, public API, MCP tool) refreshes
   // live presenting clients. Fire-and-forget: a no-op without a live session.
   if (result && result.ok !== false) {
+    // A write that carried slides authored the types it stored (D247); one
+    // that only renamed or re-shared the deck authored nothing.
+    if (body?.slides !== undefined || body?.i18n) {
+      countInstanceHealth(slideTypeEntries('slide_type.authored', result));
+    }
     fireAndForget(
       import('../live-sessions/sse.js').then((m) =>
         m.notifyDeckUpdatedForPresentation(storageScope, id),
@@ -886,7 +892,11 @@ async function createPresentationRow(data, ctx) {
     .returningAll()
     .executeTakeFirst();
 
-  return mapPresentationRow(row, await displayNamesFor(row));
+  const created = mapPresentationRow(row, await displayNamesFor(row));
+  // Every new deck — a create, an import, a duplicate — is written here, so
+  // this is where a new deck's types are counted as authored (D247).
+  countInstanceHealth(slideTypeEntries('slide_type.authored', created));
+  return created;
 }
 
 /**

@@ -14,6 +14,7 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
+import { countInstanceHealth } from '../../storage/instance-health.js';
 import { addJob, QUEUE_NAMES } from '../../jobs/queue/connection.js';
 import {
   hasActiveBulkExport,
@@ -48,6 +49,7 @@ async function handleBulkExportStart({ res, req, repoRoot, authedUser }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
 
+  countInstanceHealth([{ axis: 'export', key: 'bulk' }]);
   const options = {
     includeVersions: Boolean(parsed.body?.includeVersions),
     includeImageLibrary: Boolean(parsed.body?.includeImageLibrary),

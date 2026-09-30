@@ -4,6 +4,7 @@ import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published.js';
+import { countDeckView } from '../../storage/instance-health.js';
 import { loadThemeAssets } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import {
@@ -65,6 +66,7 @@ async function serveEmbed({ repoRoot, res, url }, publishId, slugSegment) {
     return true;
   }
 
+  countDeckView('embed', pres);
   const opts = parseEmbedOptionsFromUrl(url);
   const theme = await loadThemeAssets(repoRoot, pres?.theme, {
     repoRoot,

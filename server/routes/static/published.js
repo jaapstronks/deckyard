@@ -3,6 +3,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published.js';
+import { countDeckView } from '../../storage/instance-health.js';
 import { buildStandaloneHtml } from '../../export/html.js';
 import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { buildReaderHtml } from '../../export/reader.js';
@@ -68,6 +69,7 @@ async function servePublishedReader(
     return true;
   }
 
+  countDeckView('published', pres);
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
   const projected = projectPresentationForLang(pres, modeLang);
   const orgId = pres?.organizationId;
@@ -144,6 +146,7 @@ async function servePublishedPage(
     return true;
   }
 
+  countDeckView('published', pres);
   const proto =
     (req.headers['x-forwarded-proto'] &&
       String(req.headers['x-forwarded-proto']).split(',')[0].trim()) ||
