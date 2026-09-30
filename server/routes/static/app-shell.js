@@ -16,6 +16,8 @@ import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { OVERRIDDEN_CORE_SLIDE_TYPE_NAMES } from '../../../shared/slide-types.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
+import { getAppName } from '../../config/branding.js';
+import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
 /**
  * Inline-script fragment naming the core slide types a fork has overridden by
@@ -35,6 +37,26 @@ function serverRenderedTypesHeadHtml() {
   )};</script>`;
 }
 
+/**
+ * Put the configured `APP_NAME` into the shell's `<title>` and its
+ * `<meta name="application-name">`. The meta is where the client reads the name
+ * (`client/lib/theme/branding.js`), so a page that never fetches `/me` (the
+ * sign-in screens) still titles its tab with it; the `<title>` is what a link
+ * preview or a slow client shows before any script runs. Both are rewritten,
+ * never added: `client/index.html` carries each exactly once.
+ * @param {string} html
+ * @returns {string}
+ */
+export function injectAppName(html) {
+  const name = escapeHtml(getAppName());
+  return html
+    .replace(/<title>[^<]*<\/title>/, `<title>${name}</title>`)
+    .replace(
+      /<meta name="application-name" content="[^"]*" \/>/,
+      `<meta name="application-name" content="${name}" />`,
+    );
+}
+
 /** Read the SPA shell (client/index.html). */
 export async function readIndexHtml(clientDir) {
   const htmlPath = path.join(clientDir, 'index.html');
@@ -42,8 +64,8 @@ export async function readIndexHtml(clientDir) {
 }
 
 /**
- * Inject the head fragments common to every app-shell response: sandbox SEO/OG
- * tags, the client debug flag, and analytics. Shared by the app index and the
+ * Inject the head fragments common to every app-shell response: the app name,
+ * sandbox SEO/OG tags, the client debug flag, and analytics. Shared by the app index and the
  * share-link viewer so both stay in sync.
  *
  * Returns the shell's CSP header value alongside the HTML, because the two
@@ -57,6 +79,7 @@ export async function readIndexHtml(clientDir) {
  * @returns {Promise<{ html: string, csp: string }>}
  */
 export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
+  html = injectAppName(html);
   // Sandbox SEO + OG tags (root indexed, internal SPA routes noindex).
   const seo = sandboxAppSeoHeadHtml(req, { path: url?.pathname || '/' });
   if (seo) {
