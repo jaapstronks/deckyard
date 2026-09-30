@@ -159,7 +159,7 @@
 .items-reorder-list.is-sorting .card-group.is-sort-dragging {
   transition: none;
   z-index: 10;
-  box-shadow: var(--ps-shadow-lg, 0 8px 24px rgb(0 0 0 / 0.18));
+  box-shadow: var(--app-shadow-lg);
   opacity: 0.95;
 }
 
@@ -358,7 +358,9 @@
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  background: var(--sb-swatch);
+  /* Hook: set inline by `views/editor/fields/enum.js` and
+     `views/editor/editor-form/text-element-card.js`. */
+  background: var(--swatch, transparent);
   box-shadow: 0 0 0 1px hsl(var(--app-border-default));
 }
 
@@ -737,7 +739,7 @@
   gap: var(--ps-space-1);
   padding: var(--ps-space-1);
   margin-bottom: var(--ps-space-3);
-  background: hsl(var(--app-bg-subtle, var(--app-bg-muted, 220 14% 96%)));
+  background: hsl(var(--app-bg-sunken));
   border: 1px solid hsl(var(--app-border-subtle));
   border-radius: var(--ps-radius-md, 8px);
 }

@@ -85,6 +85,7 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
 
 - **Theming & styling boundaries**
   - Theme variables are scoped to `.slide` to keep **application UI** theme-independent (`client/styles/theme.css`).
+  - App tokens: `--ps-*` (scale), `--app-*` (mode-bound role), `--z-*` (stack), all defined only in `client/styles/shared/ui-tokens.css`; anything else is component-local and named after its component (**`docs/reference/css-tokens.md`** § The namespace rule, `tests/app-css-tokens.test.js`).
   - Slide styling lives under `client/styles/slides/*` and is included via `client/styles/slides.css`.
   - Don’t hardcode brand colors/fonts inside slide templates. Prefer CSS vars (`--t-*` theme vars → `.slide` vars → component CSS).
   - Width-based `@media` queries sit on the shared breakpoint ladder (**`docs/reference/css-breakpoints.md`**, `tests/css-breakpoints.test.js`).

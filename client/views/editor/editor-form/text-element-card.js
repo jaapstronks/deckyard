@@ -131,7 +131,7 @@ function renderColorControl({ slide, fieldKey, theme, current, commit }) {
           })
         : h('span', {
             class: 'sb-swatch',
-            style: `--sb-swatch:${col}`,
+            style: `--swatch:${col}`,
             'aria-hidden': 'true',
           });
     btn.append(sw, h('span', { class: 'sb-swatch-label', text: label }));

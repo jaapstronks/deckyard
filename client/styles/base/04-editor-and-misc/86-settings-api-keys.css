@@ -29,7 +29,7 @@
 }
 
 .api-key-row:hover:not(.api-key-header) {
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
 }
 
 .api-key-row.is-revoked {
@@ -40,7 +40,7 @@
   font-weight: 600;
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
   border-radius: var(--ps-radius-md) var(--ps-radius-md) 0 0;
 }
 
@@ -105,7 +105,7 @@
     monospace;
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
   padding: 2px 6px;
   border-radius: var(--ps-radius-sm);
 }
@@ -180,7 +180,7 @@
 }
 
 .api-key-permission-checkbox:hover {
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
   border-color: hsl(var(--app-border-default));
 }
 
@@ -257,7 +257,7 @@
 .api-key-full-display {
   padding: var(--ps-space-3);
   border-radius: var(--ps-radius-md);
-  background: hsl(var(--app-bg-secondary));
+  background: hsl(var(--app-bg-sunken));
   overflow-x: auto;
 }
 
@@ -285,7 +285,7 @@
   align-items: center;
   gap: var(--ps-space-2);
   padding: var(--ps-space-2) var(--ps-space-3);
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
   border-radius: var(--ps-radius-md);
 }
 
@@ -334,7 +334,7 @@
 .api-key-stat-card {
   padding: var(--ps-space-3);
   text-align: center;
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
   border-radius: var(--ps-radius-md);
 }
 
@@ -366,7 +366,7 @@
 .api-key-usage-table th {
   font-weight: 600;
   color: hsl(var(--app-text-secondary));
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
 }
 
 .api-key-usage-table tr:last-child td {

@@ -12,7 +12,7 @@
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background: var(--color-surface-2, #e5e5e5);
+  background: hsl(var(--app-bg-active));
   vertical-align: middle;
 }
 
@@ -71,24 +71,4 @@
   letter-spacing: 0.02em;
   user-select: none;
   line-height: 1;
-}
-
-/* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-  .avatar {
-    background: var(--color-surface-3, #333);
-  }
-
-  .avatar-initials {
-    color: rgba(255, 255, 255, 0.95);
-  }
-}
-
-/* Force dark mode when body has dark class */
-body.is-dark .avatar {
-  background: var(--color-surface-3, #333);
-}
-
-body.is-dark .avatar-initials {
-  color: rgba(255, 255, 255, 0.95);
 }

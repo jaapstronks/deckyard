@@ -24,7 +24,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: hsl(var(--app-text-muted));
+  color: hsl(var(--app-text-secondary));
   margin: var(--ps-space-3-5) 0 var(--ps-space-1-5);
 }
 
@@ -75,7 +75,7 @@
 /* Cross-reference from the HTML export to its hosted twin (Publish). */
 .export-format-hint {
   font-size: 12px;
-  color: hsl(var(--app-text-muted));
+  color: hsl(var(--app-text-secondary));
   padding: 2px 12px 4px 58px;
 }
 
@@ -121,7 +121,7 @@
 
 .export-format-desc {
   font-size: 12px;
-  color: hsl(var(--app-text-muted));
+  color: hsl(var(--app-text-secondary));
 }
 
 .export-format-actions {

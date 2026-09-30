@@ -83,7 +83,7 @@
 }
 
 .media-lib-nav-item:hover {
-  background: hsl(var(--app-bg-raised));
+  background: hsl(var(--app-bg-elevated));
   color: hsl(var(--app-text-primary));
 }
 
@@ -117,7 +117,7 @@
 .media-lib-tag-count {
   font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-tertiary));
-  background: hsl(var(--app-bg-raised));
+  background: hsl(var(--app-bg-elevated));
   padding: 1px 6px;
   border-radius: 999px;
   min-width: 20px;
@@ -253,7 +253,7 @@
   height: 28px;
   border-radius: 50%;
   border: none;
-  background: hsl(var(--app-bg-default) / 0.9);
+  background: hsl(var(--app-bg-base) / 0.9);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -272,7 +272,7 @@
 }
 
 .image-lib-favorite-btn:hover {
-  background: hsl(var(--app-bg-raised));
+  background: hsl(var(--app-bg-elevated));
   color: hsl(var(--app-text-primary));
   transform: scale(1.1);
 }
@@ -484,7 +484,7 @@
 
 .image-lib-dropzone:hover {
   border-color: hsl(var(--app-border-focus));
-  background: hsl(var(--app-bg-raised));
+  background: hsl(var(--app-bg-elevated));
 }
 
 .image-lib-dropzone.is-dragover {

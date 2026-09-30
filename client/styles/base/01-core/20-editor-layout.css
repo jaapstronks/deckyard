@@ -275,7 +275,7 @@
   gap: var(--ps-space-2);
   padding: var(--ps-space-2) var(--ps-space-3);
   background: hsl(var(--app-bg-elevated));
-  border-bottom: 1px solid hsl(var(--app-border-primary));
+  border-bottom: 1px solid hsl(var(--app-border-default));
 }
 
 .is-editor .slides-paste-bar[hidden] {

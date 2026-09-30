@@ -3,11 +3,6 @@
    PowerPoint-style sidebar for overview page navigation
    ============================================================ */
 
-:root {
-  --ps-sidebar-width: 220px;
-  --ps-sidebar-collapsed-width: 64px;
-}
-
 /* Main layout with sidebar */
 .app-shell.has-sidebar {
   display: flex;

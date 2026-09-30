@@ -175,7 +175,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
   border: 1px solid hsl(var(--app-border-subtle));
   border-radius: var(--ps-radius-md);
   overflow: hidden;
@@ -205,7 +205,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--ps-space-2);
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   border: 2px dashed hsl(var(--app-border-subtle));
   border-radius: var(--ps-radius-md);
   cursor: pointer;
@@ -487,7 +487,7 @@
 .theme-font-picker-preview {
   margin-top: var(--ps-space-2);
   padding: var(--ps-space-2) var(--ps-space-3);
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
   border-radius: var(--ps-radius-sm);
   font-size: var(--ps-text-base);
   color: hsl(var(--app-text-primary));
@@ -503,7 +503,7 @@
 .theme-preview-container {
   width: 100%;
   min-width: 0;
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   border-radius: var(--ps-radius-lg);
   padding: var(--ps-space-4);
   border: 1px solid hsl(var(--app-border-subtle));
@@ -523,7 +523,7 @@
   overflow: hidden;
   border-radius: var(--ps-radius-md);
   border: 1px solid hsl(var(--app-border-subtle));
-  background: hsl(var(--app-bg-primary));
+  background: hsl(var(--app-bg-base));
 }
 
 .theme-preview-thumb {

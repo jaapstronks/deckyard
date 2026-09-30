@@ -619,7 +619,7 @@
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid hsl(var(--app-border-default));
-  background: hsl(var(--app-bg-surface, var(--app-bg-elevated)));
+  background: hsl(var(--app-bg-elevated));
 }
 
 .ps-type-embed-bar {

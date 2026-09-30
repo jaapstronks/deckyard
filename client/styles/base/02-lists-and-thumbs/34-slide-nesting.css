@@ -70,7 +70,7 @@
   height: 22px;
   padding: 0;
   border: 1.5px solid hsl(var(--app-border-default));
-  background: hsl(var(--app-bg-surface));
+  background: hsl(var(--app-bg-elevated));
   border-radius: var(--ps-radius-full);
   cursor: pointer;
   display: flex;
@@ -171,7 +171,7 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: hsl(var(--app-bg-surface));
+  background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-subtle));
   z-index: -1;
   pointer-events: none;
@@ -341,7 +341,7 @@
   border-radius: var(--ps-radius-full);
   z-index: 10;
   box-shadow: 0 1px 3px hsl(0 0% 0% / 0.2);
-  border: 2px solid hsl(var(--app-bg-surface));
+  border: 2px solid hsl(var(--app-bg-elevated));
 }
 
 /* Hide children count when expanded */

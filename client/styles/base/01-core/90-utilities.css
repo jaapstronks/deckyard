@@ -57,7 +57,7 @@
   top: -40px;
   left: 0;
   background: hsl(var(--app-accent-primary));
-  color: hsl(var(--app-bg-primary));
+  color: hsl(var(--app-text-on-solid));
   padding: var(--ps-space-3) var(--ps-space-4);
   z-index: var(--z-skip-link);
   font-weight: 500;

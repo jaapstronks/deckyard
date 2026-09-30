@@ -288,7 +288,7 @@
 .home-activity-thumb.thumb {
   width: 96px;
   margin-top: var(--ps-space-2);
-  box-shadow: var(--app-shadow-xs, var(--app-shadow-sm));
+  box-shadow: var(--app-shadow-sm);
 }
 
 .home-activity-actor {

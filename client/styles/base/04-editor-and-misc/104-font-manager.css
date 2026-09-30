@@ -57,7 +57,7 @@
 }
 
 .font-source-badge[data-source='upload'] {
-  background: hsl(var(--app-bg-secondary));
+  background: hsl(var(--app-bg-sunken));
   color: hsl(var(--app-text-secondary));
 }
 
@@ -79,7 +79,7 @@
 /* Preview text rendered in the font */
 .font-preview-text {
   padding: var(--ps-space-2) var(--ps-space-3);
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   border-radius: var(--ps-radius-sm);
   font-size: var(--ps-text-base);
   color: hsl(var(--app-text-primary));
@@ -150,7 +150,7 @@
 }
 
 .font-source-option:hover {
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
 }
 
 .font-source-option.is-selected {
@@ -211,11 +211,11 @@
   align-items: center;
   padding: var(--ps-space-2);
   border-radius: var(--ps-radius-sm);
-  background: hsl(var(--app-bg-secondary) / 0.2);
+  background: hsl(var(--app-bg-sunken) / 0.2);
 }
 
 .font-variant-row:hover {
-  background: hsl(var(--app-bg-secondary) / 0.4);
+  background: hsl(var(--app-bg-sunken) / 0.4);
 }
 
 .font-variant-weight {
@@ -259,7 +259,7 @@
   justify-content: space-between;
   padding: var(--ps-space-2) var(--ps-space-3);
   border-radius: var(--ps-radius-sm);
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
 }
 
 .font-discover-family-info {
