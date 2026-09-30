@@ -66,7 +66,10 @@ function stripComments(source) {
 /**
  * The text scale in order, read from `00-tokens.css` so the gate cannot drift
  * from the scale it enforces: each `--slide-text-<step>` that is a multiple of
- * the reference unit, sorted by that multiple.
+ * the reference unit and named as a text step (`xs`, `sm`, `base`, `md`, `lg`,
+ * `xl`, `<n>xl`), sorted by that multiple. The display sizes (`kpi-*`) are
+ * multiples of the unit too, but they are not rungs: a card pair on them is
+ * refused like a raw length.
  *
  * @param {string} source
  * @returns {string[]} step names, smallest first (`xs`, `sm`, `base`, …)
@@ -74,7 +77,7 @@ function stripComments(source) {
 function readTextScale(source) {
   const steps = [
     ...stripComments(source).matchAll(
-      /--slide-text-([\w-]+)\s*:\s*calc\(\s*([\d.]+)\s*\*\s*var\(\s*--slide-text-unit\s*\)\s*\)\s*;/g,
+      /--slide-text-(xs|sm|base|md|lg|\d*xl)\s*:\s*calc\(\s*([\d.]+)\s*\*\s*var\(\s*--slide-text-unit\s*\)\s*\)\s*;/g,
     ),
   ].map((m) => ({ step: m[1], px: Number(m[2]) }));
   return steps.sort((a, b) => a.px - b.px).map((s) => s.step);
@@ -139,7 +142,18 @@ const sheets = [
 ];
 
 test('the text scale reads in order from 00-tokens.css', () => {
-  assert.deepEqual(scale.slice(0, 6), ['xs', 'sm', 'base', 'md', 'lg', 'xl']);
+  assert.deepEqual(scale, [
+    'xs',
+    'sm',
+    'base',
+    'md',
+    'lg',
+    'xl',
+    '2xl',
+    '3xl',
+    '4xl',
+    '5xl',
+  ]);
 });
 
 test('every card rung sets both roles, one step apart or xs / xs', async () => {
@@ -174,13 +188,15 @@ test('the gate refuses what the ladder forbids', () => {
       }`),
     [true, true, true],
   );
-  // Off it: a two-step gap, a zero gap, one role alone, a raw length.
+  // Off it: a two-step gap, a zero gap, one role alone, a raw length, and a
+  // pair of display sizes that sit next to each other but are no text steps.
   assert.deepEqual(
     rungsOf(`
       .a { ${TITLE}: var(--slide-text-xl); ${BODY}: var(--slide-text-md); }
       .b { ${TITLE}: var(--slide-text-md); ${BODY}: var(--slide-text-md); }
       .c { ${BODY}: var(--slide-text-sm); }
-      .d { ${TITLE}: 28px; ${BODY}: var(--slide-text-md); }`),
-    [false, false, false, false],
+      .d { ${TITLE}: 28px; ${BODY}: var(--slide-text-md); }
+      .e { ${TITLE}: var(--slide-text-kpi-md); ${BODY}: var(--slide-text-kpi-sm); }`),
+    [false, false, false, false, false],
   );
 });

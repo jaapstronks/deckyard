@@ -225,10 +225,11 @@
   margin-top: var(--slide-space-1);
 }
 
-/* Step title */
+/* Step title and text read the card roles; each count rung below sets both
+   (slide-roles.md § The card ladder). */
 .slide-process .step-title {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-lg);
+  font-size: var(--slide-font-size-card-title);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -240,7 +241,7 @@
 /* Step text/description */
 .slide-process .step-text {
   font-family: var(--font-body);
-  font-size: var(--slide-text-base);
+  font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-normal);
   color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
   margin: 0;
@@ -311,15 +312,12 @@
   font-size: var(--slide-text-xl);
 }
 
-/* Restates the base rule since the tie-break moved both onto `lg`, but it is
-   not a fossil: it also outranks the responsive tier below, which is a later
-   rule of lower specificity (slide-roles.md). */
-.slide-process .process-container[data-count='3'] .step-title {
-  font-size: var(--slide-text-lg);
-}
-
-.slide-process .process-container[data-count='3'] .step-text {
-  font-size: var(--slide-text-md);
+/* Every count has its own rung, so the rungs also hold at 1024px: there is
+   no responsive text tier to fall back to. The same goes for `.step-number`:
+   each count sizes the badge, so the media query below leaves it alone. */
+.slide-process .process-container[data-count='3'] .process-step {
+  --slide-font-size-card-title: var(--slide-text-lg);
+  --slide-font-size-card-body: var(--slide-text-md);
 }
 
 /* 4 items: slightly smaller */
@@ -329,13 +327,9 @@
   font-size: var(--slide-text-lg);
 }
 
-/* Same as the 3-item rung above: a restatement that still decides the cascade. */
-.slide-process .process-container[data-count='4'] .step-title {
-  font-size: var(--slide-text-lg);
-}
-
-.slide-process .process-container[data-count='4'] .step-text {
-  font-size: var(--slide-text-base);
+.slide-process .process-container[data-count='4'] .process-step {
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-base);
 }
 
 /* 5-6 items: medium elements */
@@ -346,15 +340,10 @@
   font-size: var(--slide-text-md);
 }
 
-.slide-process .process-container[data-count='5'] .step-title,
-.slide-process .process-container[data-count='6'] .step-title {
-  font-size: var(--slide-text-md);
-}
-
-.slide-process .process-container[data-count='5'] .step-text,
-.slide-process .process-container[data-count='6'] .step-text {
-  /* ladder rung: stays under the 4-item rung (base) */
-  font-size: var(--slide-text-sm);
+.slide-process .process-container[data-count='5'] .process-step,
+.slide-process .process-container[data-count='6'] .process-step {
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 
 /* 7 items: smaller elements */
@@ -364,13 +353,9 @@
   font-size: var(--slide-text-base);
 }
 
-.slide-process .process-container[data-count='7'] .step-title {
-  /* ladder rung: stays under the 5-6 item rung (md) */
-  font-size: var(--slide-text-base);
-}
-
-.slide-process .process-container[data-count='7'] .step-text {
-  font-size: var(--slide-text-sm);
+.slide-process .process-container[data-count='7'] .process-step {
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 
 /* ===========================================
@@ -418,20 +403,6 @@
 @media (max-width: 1024px) {
   .slide-process .process-container {
     gap: var(--slide-space-3);
-  }
-
-  .slide-process .step-number {
-    width: var(--slide-step-size-sm);
-    height: var(--slide-step-size-sm);
-    font-size: var(--slide-text-md);
-  }
-
-  .slide-process .step-title {
-    font-size: var(--slide-text-md);
-  }
-
-  .slide-process .step-text {
-    font-size: var(--slide-text-sm);
   }
 
   .slide-process
