@@ -236,7 +236,8 @@ it.
 
 Renaming a class a type emits is a contract change — see
 [`slide-type-css-contract.md`](../reference/slide-type-css-contract.md), the
-gate that keeps core's half honest.
+gate that holds every class a type emits, core or yours, against
+`client/styles/**` plus `custom/styles/**`.
 
 Styles that must travel with the type even outside this install (a type you
 ship elsewhere) still belong inline in `renderHtml`, in a `<style>` element

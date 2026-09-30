@@ -19,13 +19,17 @@
  * is what makes that statement checkable. It also protects upstream from its own
  * dead classes, which is how the thirteen entries in {@link UNSTYLED} got found.
  *
- * **It reads `CORE_SLIDE_TYPE_DEFS`, never `SLIDE_TYPES`.** A fork may override a
- * core name with `override: true`, and that type's classes are styled by the
- * fork's own CSS, which upstream does not have — asserting against them would
- * make this the very thing the briefing warns about: an upstream test that
- * assumes something a fork replaces by definition. `ctx.slideTypes` is how the
- * core definition is rendered even when an override is installed. A fork wanting
- * this check on its own types writes its own, over its own stylesheets.
+ * **It sweeps both halves of the registry, each against its own definitions.**
+ * The core types render from `CORE_SLIDE_TYPE_DEFS`, so an installed override
+ * never hides a core class that moved. The types a fork adds or overrides
+ * (`CUSTOM_SLIDE_TYPE_NAMES`) render from `SLIDE_TYPES`, the definition that
+ * actually runs. Both are held against one corpus: `client/styles/**` plus the
+ * fork's `custom/styles/**`, which loads last in every render path. That corpus
+ * is what lets the gate see a fork without a fork allowlist: the fork's classes
+ * are styled by the fork's own stylesheets, and those are in the corpus. In
+ * upstream's own `test` job `custom/` is empty and the fork half sweeps
+ * nothing; the `test-fork` job loads three fixture types plus their stylesheet
+ * and runs it for real.
  *
  * See `docs/reference/slide-type-css-contract.md`.
  */
@@ -33,13 +37,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
   CORE_SLIDE_TYPE_DEFS,
   CORE_SLIDE_TYPE_NAMES,
+  CUSTOM_SLIDE_TYPE_NAMES,
+  SLIDE_TYPES,
 } from '../shared/slide-types/registry.js';
+import { customDirFor } from '../shared/custom-root.js';
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
 import { resolveItemDefaults } from '../shared/slide-types/item-defaults.js';
 import { extractCssClasses } from '../scripts/lint-dead-css.js';
@@ -48,7 +56,15 @@ const REPO_ROOT = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
-const STYLES_DIR = path.join(REPO_ROOT, 'client', 'styles');
+/**
+ * Where a rule may live: core's stylesheets and the fork seam. Pinned by a test
+ * below, because dropping the second entry would turn the fork half back into
+ * an assertion no fork can pass.
+ */
+const CSS_CORPUS = [
+  path.join(REPO_ROOT, 'client', 'styles'),
+  path.join(customDirFor(REPO_ROOT), 'styles'),
+];
 
 /**
  * Classes a type emits that have no CSS rule, and are allowed not to have one.
@@ -108,12 +124,14 @@ const UNSTYLED = {
 };
 
 /**
- * Every `.css` file under `client/styles/`, absolute.
+ * Every `.css` file under `dir`, absolute; none when the directory is absent
+ * (a checkout without `custom/styles/`).
  * @param {string} dir
  * @returns {string[]}
  */
 function cssFilesUnder(dir) {
   const out = [];
+  if (!fs.existsSync(dir)) return out;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) out.push(...cssFilesUnder(full));
@@ -123,12 +141,13 @@ function cssFilesUnder(dir) {
 }
 
 /**
- * Class names that have at least one rule in the app stylesheets.
+ * Class names that have at least one rule in the corpus.
+ * @param {string[]} [roots]
  * @returns {Set<string>}
  */
-function definedClasses() {
+function definedClasses(roots = CSS_CORPUS) {
   const out = new Set();
-  for (const file of cssFilesUnder(STYLES_DIR)) {
+  for (const file of roots.flatMap(cssFilesUnder)) {
     for (const rec of extractCssClasses(fs.readFileSync(file, 'utf8'), file))
       out.add(rec.name);
   }
@@ -261,33 +280,84 @@ function classesIn(html) {
   return { emitted, selfStyled };
 }
 
-/** @type {Map<string, Set<string>>} class name → the types that emit it */
-const EMITTED = new Map();
-/** @type {Set<string>} classes a type styles through its own inline <style> */
-const SELF_STYLED = new Set();
-
-for (const type of CORE_SLIDE_TYPE_NAMES) {
-  const def = CORE_SLIDE_TYPE_DEFS[type];
-  for (const content of contentVariants(def)) {
-    let html;
-    try {
-      html = renderSlideHtml(
-        { type, content },
-        { lang: 'nl', slideTypes: CORE_SLIDE_TYPE_DEFS },
-      );
-    } catch {
-      // A variant a type rejects is not this test's business; the defaults
-      // render is asserted separately below.
-      continue;
+/**
+ * Render every content variant of `names` against `defs` and collect what they
+ * emit.
+ * @param {readonly string[]} names
+ * @param {Record<string, object>} defs - the definitions to render with
+ * @returns {{ emitted: Map<string, Set<string>>, selfStyled: Set<string> }}
+ *   class name → the types that emit it, plus the classes a type styles
+ *   through its own inline `<style>`
+ */
+function sweep(names, defs) {
+  const emitted = new Map();
+  const selfStyled = new Set();
+  for (const type of names) {
+    for (const content of contentVariants(defs[type])) {
+      let html;
+      try {
+        html = renderSlideHtml(
+          { type, content },
+          { lang: 'nl', slideTypes: defs },
+        );
+      } catch {
+        // A variant a type rejects is not this test's business; the defaults
+        // render is asserted separately below.
+        continue;
+      }
+      const found = classesIn(html);
+      for (const name of found.emitted) {
+        if (!emitted.has(name)) emitted.set(name, new Set());
+        emitted.get(name).add(type);
+      }
+      for (const name of found.selfStyled) selfStyled.add(name);
     }
-    const { emitted, selfStyled } = classesIn(html);
-    for (const name of emitted) {
-      if (!EMITTED.has(name)) EMITTED.set(name, new Set());
-      EMITTED.get(name).add(type);
-    }
-    for (const name of selfStyled) SELF_STYLED.add(name);
   }
+  return { emitted, selfStyled };
 }
+
+/**
+ * The emitted classes with no rule in `defined`, no inline `<style>` of their
+ * own and no `UNSTYLED` excuse, sorted.
+ * @param {{ emitted: Map<string, Set<string>>, selfStyled: Set<string> }} swept
+ * @param {Set<string>} defined
+ * @returns {string[]}
+ */
+function orphansOf(swept, defined) {
+  return [...swept.emitted.keys()]
+    .filter((name) => !defined.has(name))
+    .filter((name) => !swept.selfStyled.has(name))
+    .filter((name) => !Object.hasOwn(UNSTYLED, name))
+    .sort();
+}
+
+/**
+ * The assertion message for a non-empty orphan list.
+ * @param {string[]} orphans
+ * @param {Map<string, Set<string>>} emitted
+ * @param {string} advice - what the author of this half should do
+ * @returns {string}
+ */
+function orphanReport(orphans, emitted, advice) {
+  return (
+    'these classes are rendered but have no CSS rule anywhere:\n' +
+    orphans
+      .map((n) => `  .${n}  (from ${[...emitted.get(n)].join(', ')})`)
+      .join('\n') +
+    '\n\nA class with no rule renders as bare document flow — valid HTML, green ' +
+    `tests, wrong page. ${advice}`
+  );
+}
+
+const CORE = sweep(CORE_SLIDE_TYPE_NAMES, CORE_SLIDE_TYPE_DEFS);
+const FORK = sweep(CUSTOM_SLIDE_TYPE_NAMES, SLIDE_TYPES);
+const EMITTED = CORE.emitted;
+
+const forkSkip = CUSTOM_SLIDE_TYPE_NAMES.length
+  ? false
+  : 'no custom slide types loaded — this half runs in the `test-fork` CI job, ' +
+    'which copies tests/fixtures/fork-slide-types/ into custom/slide-types/ ' +
+    'and tests/fixtures/fork-styles/ into custom/styles/';
 
 test('the scan actually renders the registry', () => {
   // A silently empty render would make the assertion below vacuously true.
@@ -315,25 +385,93 @@ test('every class a slide type emits resolves to a CSS rule', () => {
     `expected the stylesheets to define many classes, got ${defined.size}`,
   );
 
-  const orphans = [...EMITTED.keys()]
-    .filter((name) => !defined.has(name))
-    .filter((name) => !SELF_STYLED.has(name))
-    .filter((name) => !Object.hasOwn(UNSTYLED, name))
-    .sort();
-
+  const orphans = orphansOf(CORE, defined);
   assert.deepEqual(
     orphans,
     [],
-    'these classes are rendered but have no CSS rule anywhere:\n' +
-      orphans
-        .map((n) => `  .${n}  (from ${[...EMITTED.get(n)].join(', ')})`)
-        .join('\n') +
-      '\n\nA class with no rule renders as bare document flow — valid HTML, green ' +
-      'tests, wrong page. If you renamed a class, rename it in the stylesheet too ' +
-      'and put the rename in the release notes (docs/reference/versioning.md ' +
-      '§ Renamed slide-type classes). If the class is a selector hook or a known ' +
-      'leftover, add it to UNSTYLED in this file with a reason.',
+    orphanReport(
+      orphans,
+      CORE.emitted,
+      'If you renamed a class, rename it in the stylesheet too ' +
+        'and put the rename in the release notes (docs/reference/versioning.md ' +
+        '§ Renamed slide-type classes). If the class is a selector hook or a known ' +
+        'leftover, add it to UNSTYLED in this file with a reason.',
+    ),
   );
+});
+
+test('the rule corpus is client/styles plus the fork seam custom/styles', () => {
+  // The seam goes through customDirFor(), so a fork that moves its root with
+  // DECKYARD_CUSTOM_DIR is swept against its own styles, not a stale path.
+  assert.deepEqual(CSS_CORPUS, [
+    path.join(REPO_ROOT, 'client', 'styles'),
+    path.join(customDirFor(REPO_ROOT), 'styles'),
+  ]);
+});
+
+test(
+  'every class a fork slide type emits resolves to a CSS rule',
+  { skip: forkSkip },
+  () => {
+    for (const type of CUSTOM_SLIDE_TYPE_NAMES) {
+      assert.ok(
+        [...FORK.emitted.values()].some((types) => types.has(type)),
+        `${type} rendered no classes at all`,
+      );
+    }
+    const orphans = orphansOf(FORK, definedClasses());
+    assert.deepEqual(
+      orphans,
+      [],
+      orphanReport(
+        orphans,
+        FORK.emitted,
+        'Style it in custom/styles/ (the fork seam, loaded last in every render ' +
+          'path) or stop emitting it. If a core class your type borrows moved, ' +
+          'the release notes name the new one.',
+      ),
+    );
+  },
+);
+
+test('a fork type emitting an unstyled class fails the gate', () => {
+  // The fork half is only as good as its failure mode, and in upstream's own
+  // job it sweeps nothing. This synthetic type proves the same sweep and the
+  // same corpus turn an unstyled fork class into an orphan, and a rule in a
+  // custom/styles/ file clears it.
+  const type = 'probe-fork-slide';
+  const defs = {
+    [type]: {
+      label: 'Probe',
+      fields: [],
+      defaults: {},
+      renderHtml: () =>
+        '<div class="slide slide-probe-fork"><p class="probe-fork-unstyled"></p></div>',
+    },
+  };
+  const swept = sweep([type], defs);
+  const coreOnly = definedClasses([CSS_CORPUS[0]]);
+  assert.deepEqual(orphansOf(swept, coreOnly), [
+    'probe-fork-unstyled',
+    'slide-probe-fork',
+  ]);
+
+  const forkRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'css-contract-'));
+  try {
+    const stylesDir = path.join(forkRoot, 'custom', 'styles');
+    fs.mkdirSync(stylesDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(stylesDir, '10-probe.css'),
+      '.slide-probe-fork .probe-fork-unstyled { color: inherit; }\n',
+    );
+    assert.deepEqual(
+      orphansOf(swept, definedClasses([CSS_CORPUS[0], stylesDir])),
+      [],
+      'a rule in custom/styles/ must clear the fork class',
+    );
+  } finally {
+    fs.rmSync(forkRoot, { recursive: true, force: true });
+  }
 });
 
 test('no UNSTYLED entry outlives the class it excuses', () => {

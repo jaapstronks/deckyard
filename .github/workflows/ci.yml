@@ -119,9 +119,12 @@ jobs:
           CHROME_PATH="$(printf '%s\n' "$INSTALL_LOG" | tail -n1 | cut -d' ' -f2-)"
           test -x "$CHROME_PATH"
           echo "PUPPETEER_EXECUTABLE_PATH=$CHROME_PATH" >> "$GITHUB_ENV"
-      - name: Load fork slide types into custom/slide-types/
+      # The stylesheet rides along: the slide-type CSS contract sweeps the fork
+      # types against client/styles/** + custom/styles/**, as a real fork would.
+      - name: Load fork slide types into custom/slide-types/ and their CSS into custom/styles/
         run: |
           cp tests/fixtures/fork-slide-types/*.js custom/slide-types/
+          cp tests/fixtures/fork-styles/*.css custom/styles/
           printf '{"name":"eu.deckyard.test-fork"}\n' > custom/extension.json
       - run: npm test
         env:
