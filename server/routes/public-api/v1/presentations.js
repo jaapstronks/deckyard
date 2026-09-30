@@ -5,7 +5,6 @@
 
 import {
   listPresentations,
-  getPresentation,
   createPresentation,
   updatePresentation,
   deletePresentation,
@@ -15,7 +14,6 @@ import {
   getTagsForPresentations,
   getTagsForPresentation,
 } from '../../../storage/tags.js';
-import { normalizeEmail } from '../../../utils/normalize.js';
 import { canonicalSlideType } from '../../../../shared/slide-types.js';
 import {
   requirePermission,
@@ -300,19 +298,10 @@ async function handleDelete(ctx, id) {
 
   if (!requirePermission(ctx, 'write')) return true;
 
-  const existing = await getPresentation(storageScope, id);
-  if (!existing) {
-    await apiError(ctx, 404, 'Presentation not found');
-    return true;
-  }
-
-  // Only owner can delete
-  const owner = normalizeEmail(existing?.ownerEmail);
-  const apiOwner = normalizeEmail(apiKey.ownerEmail);
-  if (owner && owner !== apiOwner) {
-    await apiError(ctx, 403, 'Only the presentation owner can delete it');
-    return true;
-  }
+  const { ok } = await getPresentationWithAccess(ctx, id, {
+    access: 'delete',
+  });
+  if (!ok) return true;
 
   const deleted = await deletePresentation(storageScope, id, {
     actorEmail: apiKey.ownerEmail,

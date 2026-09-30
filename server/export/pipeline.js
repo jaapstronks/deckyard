@@ -1,13 +1,11 @@
 import { safeFilename } from '../utils/filename.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
-import { jsonError, notFound, serveJson, forbidden } from '../utils/http.js';
+import { jsonError, serveJson } from '../utils/http.js';
 import { isAppError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
-import { getPresentation } from '../storage/presentations/index.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
 import { loadThemeAssets } from '../utils/themes.js';
-import { canReadPresentation } from '../utils/presentation-authz/index.js';
-import { getCollaboratorPermission } from '../storage/collaborators.js';
+import { withPresentationAuth } from '../utils/route-middleware.js';
 import {
   addJob,
   isQueueAvailable,
@@ -82,22 +80,13 @@ export async function prepareExportContext({
     ? null
     : normalizeLang(url?.searchParams?.get('lang'));
 
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) {
-    notFound(res);
-    return null;
-  }
-
-  const collaboratorPermission = authedUser?.email
-    ? await getCollaboratorPermission(presentationId, authedUser.email)
-    : null;
-
-  if (
-    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    forbidden(res);
-    return null;
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+  });
+  if (!pres) return null;
   countInstanceHealth([{ axis: 'export', key: format }]);
 
   const projected = exportLang
@@ -376,22 +365,13 @@ export function createAsyncExportRoute(config) {
       // If queue is available and not forcing sync, queue the job
       if (!forceSync && isQueueAvailable()) {
         // Quick auth check
-        const pres = await getPresentation(storageScope, presentationId);
-        if (!pres) {
-          return notFound(res);
-        }
-        const collaboratorPermission = authedUser?.email
-          ? await getCollaboratorPermission(presentationId, authedUser.email)
-          : null;
-        if (
-          !canReadPresentation({
-            user: authedUser,
-            pres,
-            collaboratorPermission,
-          })
-        ) {
-          return forbidden(res);
-        }
+        const pres = await withPresentationAuth({
+          storageScope,
+          id: presentationId,
+          authedUser,
+          res,
+        });
+        if (!pres) return true;
 
         // Queue the job
         const exportLang = normalizeLang(url.searchParams.get('lang'));

@@ -404,6 +404,15 @@ counters, D246). A scope would state an organization their queries have
 nothing to bind to; see [`storage-scope.md`](storage-scope.md) § _Instance
 telemetry takes no scope_.
 
+The scope says _which organization_; it does not say _who may do what_. That
+is not the facade's (D252): a by-id deck load for a person goes through
+`loadPresentationForActor(scope, identity, id, { access })` in
+`server/services/presentations.js`, which loads through the facade, asks the
+deciders and throws `NotFoundError` (no row in this scope) or `ForbiddenError`
+(the row is there, the right is not; D255). Every contract's adapter
+(`withPresentationAuth`, v1 `getPresentationWithAccess`, MCP
+`loadPresentationChecked`) calls it and only renders the refusal (B519).
+
 The full isolation model (hosting shapes, `MULTI_ORG_ENABLED`, rules
 R1–R3) is in [`tenant-isolation.md`](tenant-isolation.md); it is not repeated
 here.

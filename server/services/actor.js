@@ -35,8 +35,9 @@
  * @property {string|null} [organizationId] - The organization the session or
  *   key acts in.
  * @property {string} [name] - Display name, when the contract knows one.
- * @property {true} [unrestricted] - The auth-off local operator
- *   (`server/auth/auth.js`); only the internal contract carries it.
+ * @property {true} [unrestricted] - The single trusted local operator: the
+ *   auth-off user (`server/auth/auth.js`, internal contract) or an MCP stdio
+ *   session without a configured owner (`server/mcp/presentation-access.js`).
  */
 
 /**

@@ -976,6 +976,8 @@ const NOT_PINNED_HERE = {
     'async and storage-backed (identity resolution + a collaborator lookup); its pure core checkActorAccess delegates to canRead/canWritePresentation, which are pinned above. The wrapper needs a database double, so it belongs in a route or pg test — tests/pg/collaborator-authz-resolution.pgtest.js covers the resolution half.',
   canActorDeletePresentation:
     'async and storage-backed; delegates to canDeletePresentation, pinned above. The wrapper — identity resolution included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
+  canActorManageCollaborators:
+    'async and storage-backed (identity resolution + a collaborator lookup); delegates to canManageCollaborators, pinned above. The wrapper — the admin-collaborator row included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
   canActorResolveComment:
     'async and storage-backed; delegates to canResolveComment, pinned above. The wrapper — identity resolution included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
   canActorCommentOnPresentation:

@@ -17,10 +17,8 @@ import {
   updateUserEventRead,
 } from '../../storage/activity-events.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { getPresentation } from '../../storage/presentations/index.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
-import { canReadPresentation } from '../../utils/presentation-authz/index.js';
-import { getCollaboratorPermission } from '../../storage/collaborators.js';
+import { loadPresentationForActor } from '../../services/presentations.js';
 
 // GET /api/activity - List activity events
 async function handleActivityList({ storageScope, res, url, authedUser }) {
@@ -179,28 +177,13 @@ export async function getEnrichedActivity({ storageScope, authedUser, opts }) {
  */
 async function getReadablePresentation(pid, storageScope, authedUser) {
   try {
-    const pres = await getPresentation(storageScope, pid);
-    if (!pres) return null;
-
-    let collaboratorPermission = null;
-    try {
-      collaboratorPermission = await getCollaboratorPermission(
-        pid,
-        authedUser?.email,
-      );
-    } catch {
-      // Ignore - no collaborator access
-    }
-
-    const hasAccess = canReadPresentation({
-      user: authedUser,
-      pres,
-      collaboratorPermission,
-    });
-
-    return hasAccess ? pres : null;
+    return await loadPresentationForActor(
+      storageScope,
+      { actor: authedUser },
+      pid,
+    );
   } catch {
-    // Presentation may have been deleted
+    // Deleted since the event, or not readable by this user: leave it out.
     return null;
   }
 }

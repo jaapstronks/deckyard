@@ -9,31 +9,24 @@
  *   GET    /api/presentations/shared-with-me          - List presentations shared with current user
  */
 
-import {
-  getPresentation,
-  getFirstSlidesForIds,
-} from '../../storage/presentations/index.js';
+import { getFirstSlidesForIds } from '../../storage/presentations/index.js';
 import {
   addCollaborator,
   listCollaborators,
   removeCollaborator,
   updateCollaboratorPermission,
   listPresentationsSharedWithUser,
-  getCollaboratorPermission,
 } from '../../storage/collaborators.js';
 import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
-import { canManageCollaborators } from '../../utils/presentation-authz/index.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   badRequest,
-  notFound,
   requireJsonBody,
   serveJson,
   storageError,
   unauthorized,
   withErrorHandler,
-  forbidden,
 } from '../../utils/http.js';
 import { validatePermission } from '../../utils/request-validators.js';
 import { assertSharingEnabled } from '../../sandbox/sharing.js';
@@ -51,6 +44,7 @@ import { normalizeEmail } from '../../utils/normalize.js';
 import { createLogger } from '../../utils/logger.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 import { withDeckCardFields } from '../../utils/deck-card-fields.js';
+import { withPresentationAuth } from '../../utils/route-middleware.js';
 const log = createLogger('collaborators');
 
 /**
@@ -120,17 +114,14 @@ async function handleCollaboratorAdd(
 ) {
   // Inviting someone onto a deck is sharing it (D181).
   assertSharingEnabled();
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollaboratorPermission(
-    presentationId,
-    authedUser?.email,
-  );
-  if (
-    !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'manage',
+  });
+  if (!pres) return true;
 
   const jsonResult = await requireJsonBody(req, res);
   if (!jsonResult.ok) return true;
@@ -354,17 +345,14 @@ async function handleCollaboratorList(
   { storageScope, res, authedUser },
   presentationId,
 ) {
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollaboratorPermission(
-    presentationId,
-    authedUser?.email,
-  );
-  if (
-    !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'manage',
+  });
+  if (!pres) return true;
 
   const collaborators = await listCollaborators(presentationId);
 
@@ -392,17 +380,14 @@ async function handleCollaboratorRemove(
 ) {
   const email = decodeURIComponent(rawEmail);
 
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollaboratorPermission(
-    presentationId,
-    authedUser?.email,
-  );
-  if (
-    !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'manage',
+  });
+  if (!pres) return true;
 
   // Parse optional message from request body
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
@@ -459,17 +444,14 @@ async function handleCollaboratorUpdate(
 ) {
   const email = decodeURIComponent(rawEmail);
 
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollaboratorPermission(
-    presentationId,
-    authedUser?.email,
-  );
-  if (
-    !canManageCollaborators({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'manage',
+  });
+  if (!pres) return true;
 
   const jsonResult = await requireJsonBody(req, res);
   if (!jsonResult.ok) return true;

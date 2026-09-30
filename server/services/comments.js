@@ -14,8 +14,9 @@
  *
  * The service owns:
  *
- *   - **who may comment** — an actor through `canActorCommentOnPresentation`, a
- *     share-link guest through `canGuestComment`;
+ *   - **who may comment** — decided by `loadPresentationForActor` with
+ *     `access: 'comment'` (an actor through the collaborator-aware deciders, a
+ *     share-link guest through `canGuestComment`);
  *   - **what a comment is** — a non-empty body of at most
  *     {@link MAX_COMMENT_LENGTH} characters, a slide anchor that names a slide
  *     of the deck (and is stored with a snapshot of it), a parent on the same
@@ -30,7 +31,6 @@
  * @module server/services/comments
  */
 
-import { getPresentation } from '../storage/presentations/index.js';
 import {
   getComment,
   createComment as storeComment,
@@ -38,21 +38,13 @@ import {
   getCommentCountsBySlide,
 } from '../storage/presentations/comments.js';
 import { repoRootOf } from '../storage/scope.js';
-import {
-  canActorCommentOnPresentation,
-  canGuestComment,
-} from '../utils/presentation-authz/index.js';
-import {
-  ForbiddenError,
-  NotFoundError,
-  ValidationError,
-  throwStorageFailure,
-} from '../utils/errors.js';
+import { ValidationError, throwStorageFailure } from '../utils/errors.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import { createLogger } from '../utils/logger.js';
 import { buildSlideSnapshot } from './comment-slide-context.js';
 import { notifyCommentCreated } from './comment-notifications.js';
 import { recordCommentCreated } from './activity-events.js';
+import { loadPresentationForActor } from './presentations.js';
 import {
   broadcastToPresentation,
   CommentEventTypes,
@@ -97,10 +89,10 @@ export async function createComment(
     positionY,
   },
 ) {
-  const pres = await getPresentation(scope, presentationId);
-  if (!pres) throw new NotFoundError('Presentation not found');
-
-  const author = await authorizeCommenter(pres, identity);
+  const pres = await loadPresentationForActor(scope, identity, presentationId, {
+    access: 'comment',
+  });
+  const author = authorOf(identity);
 
   const text = typeof body === 'string' ? body.trim() : '';
   if (!text) throw new ValidationError('Comment body is required');
@@ -163,19 +155,15 @@ export async function broadcastCommentCounts(presentationId, scope) {
 }
 
 /**
- * Decide the comment right and name the author.
+ * Name the author of a comment the identity may write (the right is decided in
+ * {@link loadPresentationForActor}).
  *
- * @param {Object} pres
  * @param {ServiceIdentity} identity
- * @returns {Promise<{ email: string, name: string|undefined, guestId: string|null, isGuest: boolean }>}
- * @throws {ForbiddenError}
+ * @returns {{ email: string, name: string|undefined, guestId: string|null, isGuest: boolean }}
  */
-async function authorizeCommenter(pres, identity) {
+function authorOf(identity) {
   if ('guest' in identity) {
-    const { guest, shareLink } = identity;
-    if (!canGuestComment({ guest, shareLink, presentationId: pres.id })) {
-      throw new ForbiddenError('You may not comment on this presentation');
-    }
+    const { guest } = identity;
     return {
       email: guest.email,
       name: guest.name,
@@ -183,11 +171,7 @@ async function authorizeCommenter(pres, identity) {
       isGuest: true,
     };
   }
-
   const { actor } = identity;
-  if (!(await canActorCommentOnPresentation(pres, actor))) {
-    throw new ForbiddenError('You may not comment on this presentation');
-  }
   return {
     email: actor.email,
     name: actor.name,

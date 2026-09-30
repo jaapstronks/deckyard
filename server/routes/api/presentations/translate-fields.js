@@ -1,23 +1,19 @@
-import { getPresentation } from '../../../storage/presentations/index.js';
-import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { translateFieldMap } from '../../../utils/openai/translate.js';
 import {
   badRequest,
   methodNotAllowed,
-  notFound,
   serveJson,
   requireJsonBody,
-  forbidden,
 } from '../../../utils/http.js';
 import {
   getOptionalString,
   getOptionalObject,
 } from '../../../utils/request-validators.js';
-import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../../shared/i18n-utils.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 export async function handlePresentationTranslateFields(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -29,20 +25,13 @@ export async function handlePresentationTranslateFields(
   if (!parsed.ok) return true;
   const body = parsed.body;
   const vendor = getOptionalString(body, 'vendor');
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Fetch collaborator permission for ACL check
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission }))
-    return forbidden(res);
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
 
   const from =
     normalizeLang(body?.from) ||

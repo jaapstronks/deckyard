@@ -3,14 +3,7 @@
  * Analyzes presentations and creates improvement suggestions as comments.
  */
 
-import { getPresentation } from '../../../storage/presentations/index.js';
-import {
-  methodNotAllowed,
-  notFound,
-  requireJsonBody,
-  forbidden,
-} from '../../../utils/http.js';
-import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
+import { methodNotAllowed, requireJsonBody } from '../../../utils/http.js';
 import { createComment } from '../../../storage/presentations/comments.js';
 import {
   analyzePresentation,
@@ -23,6 +16,7 @@ import {
 import { getAiIdentity } from '../../../storage/settings.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 const log = createLogger('analyze');
 
 /**
@@ -52,13 +46,14 @@ export async function handlePresentationAnalyze(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Only users with edit permission can trigger analysis
-  if (!canWritePresentation({ user: authedUser, pres })) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   // Optional category filter. An absent body means "analyze everything"; a
   // malformed or oversized one is answered before the SSE stream opens, since

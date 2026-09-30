@@ -3,23 +3,17 @@
  *
  * Reuses the exact same primitives as the REST routes: the sb_session cookie
  * (which the browser sends on a same-origin WebSocket upgrade) resolves to a
- * user via auth.js, and per-document access uses the canonical
- * getCollaboratorPermission + canRead/canWritePresentation pair.
+ * user via auth.js, and per-document access is the presentation service's
+ * (`server/services/presentations.js`): read to connect, write to edit.
  */
 
 import { getUserFromRequestAsync } from '../auth/auth.js';
-import { getPresentation } from '../storage/presentations/index.js';
-import { getCollaboratorPermission } from '../storage/collaborators.js';
 import { createStorageScope } from '../utils/context.js';
 import {
-  canReadPresentation,
-  canWritePresentation,
-} from '../utils/presentation-authz/index.js';
-import {
-  ForbiddenError,
-  NotFoundError,
-  UnauthorizedError,
-} from '../utils/errors.js';
+  loadPresentationForActor,
+  mayOnPresentation,
+} from '../services/presentations.js';
+import { NotFoundError, UnauthorizedError } from '../utils/errors.js';
 
 /** Collab document names are `presentation:<id>` — one room per deck. */
 export const COLLAB_DOC_PREFIX = 'presentation:';
@@ -75,24 +69,12 @@ export async function authorizeDocument({ repoRoot, documentName, user }) {
   if (!presentationId) throw new NotFoundError('Unknown collab document');
   if (!user?.email) throw new UnauthorizedError();
 
-  const pres = await getPresentation(
+  const pres = await loadPresentationForActor(
     createStorageScope(user, { repoRoot }),
+    { actor: user },
     presentationId,
   );
-  if (!pres) throw new NotFoundError('Presentation not found');
-
-  const collaboratorPermission = await getCollaboratorPermission(
-    presentationId,
-    user.email,
-  );
-  if (!canReadPresentation({ user, pres, collaboratorPermission }))
-    throw new ForbiddenError();
-
-  const readOnly = !canWritePresentation({
-    user,
-    pres,
-    collaboratorPermission,
-  });
+  const readOnly = !(await mayOnPresentation(pres, { actor: user }, 'write'));
   // The document's organization, so the persistence hooks — which run outside
   // any request — can write back into the organization the deck actually lives
   // in instead of the instance default.

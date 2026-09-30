@@ -1,13 +1,9 @@
-import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   methodNotAllowed,
-  notFound,
   serveJson,
   requireJsonBody,
-  forbidden,
 } from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';
-import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 import {
   mapItemTexts,
   perLanguageKeys,
@@ -20,6 +16,7 @@ import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../../shared/i18n-utils.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 function normalizeLangHint(v) {
   return normalizeLang(v) || DEFAULT_DECK_LANG;
@@ -93,9 +90,13 @@ export async function handlePresentationDescriptionGenerate(
   const body = parsed.body;
   const vendor = getOptionalString(body, 'vendor');
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-  if (!canReadPresentation({ user: authedUser, pres })) return forbidden(res);
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
 
   const lang = normalizeLangHint(
     (pres?.i18n && typeof pres.i18n === 'object' && pres.i18n.active) ||

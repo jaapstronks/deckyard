@@ -6,10 +6,8 @@ import { translatePresentationStringsFillMissing } from '../../../utils/openai/t
 import {
   badRequest,
   methodNotAllowed,
-  notFound,
   serveJson,
   requireJsonBody,
-  forbidden,
 } from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';
 import {
@@ -17,11 +15,11 @@ import {
   computeMissingTranslation,
   pickVersion,
 } from '../../../../shared/i18n-progress.js';
-import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../../shared/i18n-utils.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 // In-process translation job lock (prevents double-spending tokens)
 const missingTranslationJobs = new Map();
@@ -36,9 +34,14 @@ export async function handlePresentationTranslateMissing(
   if (!parsed.ok) return true;
   const body = parsed.body;
   const vendor = getOptionalString(body, 'vendor');
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-  if (!canWritePresentation({ user: authedUser, pres })) return forbidden(res);
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
   pres.i18n.versions =

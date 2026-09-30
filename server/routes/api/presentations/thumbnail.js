@@ -21,10 +21,7 @@
  * the saves that leave slide 1 (and therefore the raster) untouched.
  */
 
-import { getPresentation } from '../../../storage/presentations/index.js';
-import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { loadThemeAssets } from '../../../utils/themes.js';
-import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   thumbCacheKey,
@@ -34,11 +31,10 @@ import {
 } from '../../../render/deck-thumbnail.js';
 import {
   methodNotAllowed,
-  notFound,
-  forbidden,
   matchesIfNoneMatch,
   notModified,
 } from '../../../utils/http.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 /** Cache directive for every raster this route serves. See the module note. */
 const THUMB_CACHE_CONTROL = 'private, no-cache';
@@ -51,18 +47,13 @@ export async function handlePresentationThumbnail(
     return methodNotAllowed(res, ['GET']);
   }
 
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-
-  const collaboratorPermission = await getCollaboratorPermission(
-    presentationId,
-    authedUser?.email,
-  );
-  if (
-    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
 
   const theme = await loadThemeAssets(repoRoot, pres?.theme, storageScope);
   const { filename, prefix } = thumbCacheKey(pres, theme);

@@ -15,12 +15,12 @@ import {
   forbidden,
   storageError,
 } from '../../../utils/http.js';
-import { canDeletePresentation } from '../../../utils/presentation-authz/index.js';
 import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
 import {
   isOwnerOrCreator,
   matchesIdentity,
 } from '../../../../shared/identity-match.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 /**
  * Human copy per failure the permanent-delete seam can report. A map rather
@@ -129,20 +129,15 @@ export async function handlePresentationPermanentDelete(
     return methodNotAllowed(res, ['DELETE']);
   }
 
-  // First check if the presentation exists
-  const existing = await getPresentation(storageScope, id);
-  if (!existing) {
-    return notFound(res);
-  }
-
-  // Check authorization using existing canDeletePresentation helper
-  // This checks: owner, creator, or admin
-  if (!canDeletePresentation({ user: authedUser, pres: existing })) {
-    return forbidden(
-      res,
-      'You do not have permission to permanently delete this presentation',
-    );
-  }
+  // Permanent deletion is the owner's, as moving to the trash is (D49).
+  const existing = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'delete',
+  });
+  if (!existing) return true;
 
   const deleted = await permanentlyDeletePresentation({
     repoRoot,
