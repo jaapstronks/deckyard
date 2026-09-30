@@ -29,12 +29,13 @@ const ORIGINAL = process.env.APP_NAME;
 afterEach(() => {
   if (ORIGINAL === undefined) delete process.env.APP_NAME;
   else process.env.APP_NAME = ORIGINAL;
+  delete globalThis.document;
 });
 
 /**
  * The shell as `/login` serves it, loaded into a DOM with no session and no
  * feature flags, then titled the way the router titles every route.
- * @returns {Promise<Document>}
+ * @returns {Promise<{ served: string, titled: string }>}
  */
 async function loginPage() {
   const html = injectAppName(await readIndexHtml(clientDir));
@@ -67,6 +68,18 @@ test('without APP_NAME the tab stays "Deckyard"', async () => {
   const { served, titled } = await loginPage();
   assert.equal(served, 'Deckyard');
   assert.equal(titled, 'Deckyard');
+});
+
+test('a $ in the name is text, not a replacement pattern', () => {
+  process.env.APP_NAME = "$& $1 $' Slides";
+  const html = injectAppName(
+    '<title>Deckyard</title>\n<meta name="application-name" content="Deckyard" />',
+  );
+  assert.equal(
+    html,
+    '<title>$&amp; $1 $&#039; Slides</title>\n' +
+      '<meta name="application-name" content="$&amp; $1 $&#039; Slides" />',
+  );
 });
 
 test('the name is escaped into the head', () => {

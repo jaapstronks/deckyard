@@ -43,17 +43,18 @@ function serverRenderedTypesHeadHtml() {
  * (`client/lib/theme/branding.js`), so a page that never fetches `/me` (the
  * sign-in screens) still titles its tab with it; the `<title>` is what a link
  * preview or a slow client shows before any script runs. Both are rewritten,
- * never added: `client/index.html` carries each exactly once.
+ * never added: `client/index.html` carries each exactly once. The replacements
+ * are functions, so a `$` in the name is text, not a replacement pattern.
  * @param {string} html
  * @returns {string}
  */
 export function injectAppName(html) {
   const name = escapeHtml(getAppName());
   return html
-    .replace(/<title>[^<]*<\/title>/, `<title>${name}</title>`)
+    .replace(/<title>[^<]*<\/title>/, () => `<title>${name}</title>`)
     .replace(
       /<meta name="application-name" content="[^"]*" \/>/,
-      `<meta name="application-name" content="${name}" />`,
+      () => `<meta name="application-name" content="${name}" />`,
     );
 }
 
@@ -65,8 +66,8 @@ export async function readIndexHtml(clientDir) {
 
 /**
  * Inject the head fragments common to every app-shell response: the app name,
- * sandbox SEO/OG tags, the client debug flag, and analytics. Shared by the app index and the
- * share-link viewer so both stay in sync.
+ * sandbox SEO/OG tags, the client debug flag, and analytics. Shared by the app
+ * index and the share-link viewer so both stay in sync.
  *
  * Returns the shell's CSP header value alongside the HTML, because the two
  * are coupled here: the analytics fragment this function injects loads its
