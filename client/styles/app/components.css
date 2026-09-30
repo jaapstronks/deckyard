@@ -225,7 +225,7 @@
 .csv-grid-scroll {
   overflow-x: auto;
   border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
 }
 
 table.csv-grid {
@@ -248,7 +248,7 @@ table.csv-grid {
 }
 
 .csv-grid thead th {
-  background: hsl(var(--app-bg-sunken, 0 0% 96%) / 0.6);
+  background: hsl(var(--app-bg-sunken) / 0.6);
   position: relative;
 }
 
@@ -321,8 +321,8 @@ table.csv-grid {
 
 .csv-grid-rowremove:hover,
 .csv-grid-colremove:hover {
-  color: hsl(var(--app-danger, 0 70% 50%));
-  background: hsl(var(--app-danger, 0 70% 50%) / 0.12);
+  color: hsl(var(--app-danger));
+  background: hsl(var(--app-danger) / 0.12);
 }
 
 .csv-grid-th-actions {
@@ -389,7 +389,7 @@ table.csv-grid {
   align-items: center;
   justify-content: center;
   border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
   background: hsl(var(--app-bg-sunken) / 0.5);
   overflow: hidden;
 }
@@ -553,7 +553,7 @@ table.csv-grid {
   width: 28px;
   height: 28px;
   display: block;
-  border-radius: var(--ps-radius-sm, 6px);
+  border-radius: var(--ps-radius-sm);
   background: hsl(var(--app-surface-white));
   border: 1px solid hsl(var(--app-border-default));
   padding: 5px;
@@ -563,7 +563,7 @@ table.csv-grid {
 .icon-picker-preview-fallback {
   width: 28px;
   height: 28px;
-  border-radius: var(--ps-radius-sm, 6px);
+  border-radius: var(--ps-radius-sm);
   background: hsl(var(--app-surface-white));
   border: 1px dashed hsl(var(--app-border-default));
   box-sizing: border-box;
@@ -576,7 +576,7 @@ table.csv-grid {
   align-items: center;
   gap: var(--ps-space-2);
   width: 100%;
-  padding: var(--ps-space-1, 0.25rem) var(--ps-space-3);
+  padding: var(--ps-space-1) var(--ps-space-3);
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
@@ -674,7 +674,7 @@ table.csv-grid {
   align-items: center;
   justify-content: center;
   aspect-ratio: 1 / 1;
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
   border: 1px solid transparent;
   background: hsl(var(--app-bg-sunken));
   cursor: pointer;
@@ -699,7 +699,7 @@ table.csv-grid {
   height: 24px;
   display: block;
   /* Lucide SVGs are loaded as <img> (black stroke); adapt to dark UI mode. */
-  filter: var(--app-icon-filter, none);
+  filter: var(--app-icon-filter);
 }
 /* Table editor (custom slide form) */
 .table-editor-labelrow {
@@ -843,7 +843,7 @@ table.csv-grid {
   background: #f5f5f5;
   border: 1px solid #d0d0d0;
   border-bottom: none;
-  border-radius: var(--ps-radius-md, 6px) var(--ps-radius-md, 6px) 0 0;
+  border-radius: var(--ps-radius-md) var(--ps-radius-md) 0 0;
 }
 
 .md-toolbar + .form-input {
@@ -859,7 +859,7 @@ table.csv-grid {
   height: 28px;
   padding: 0;
   border: 1px solid #c0c0c0;
-  border-radius: var(--ps-radius-sm, 4px);
+  border-radius: var(--ps-radius-sm);
   background: #ffffff;
   color: #333333;
   cursor: pointer;

@@ -14,7 +14,7 @@
   /* Namespaced keyframes: the analytics view defines its own
      skeleton-shimmer; both stylesheets load in one page. */
   animation: editor-skeleton-shimmer 1.5s ease-in-out infinite;
-  border-radius: var(--ps-radius-sm, 4px);
+  border-radius: var(--ps-radius-sm);
 }
 
 @keyframes editor-skeleton-shimmer {
@@ -98,7 +98,7 @@
   flex: 1;
   min-width: 0;
   aspect-ratio: 16 / 9;
-  border-radius: var(--ps-radius-md, 6px);
+  border-radius: var(--ps-radius-md);
 }
 
 /* Form column */
@@ -126,7 +126,7 @@
 .editor-loading-skeleton .skeleton-canvas {
   aspect-ratio: 16 / 9;
   width: 100%;
-  border-radius: var(--ps-radius-md, 6px);
+  border-radius: var(--ps-radius-md);
   border: 1px solid hsl(var(--app-border-subtle));
   background: hsl(var(--app-bg-elevated));
   display: flex;

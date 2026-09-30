@@ -48,7 +48,7 @@
   gap: var(--ps-space-3);
   padding: var(--ps-space-2-5) var(--ps-space-3);
   border: 1px solid hsl(var(--app-border-subtle));
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
   background: transparent;
   transition:
     background 0.15s ease,

@@ -67,7 +67,10 @@ background: var(--swatch, transparent);
 token defined outside `ui-tokens.css` fails, a light `--app-*` without a dark
 counterpart or marker fails, and a `var(--name)` in app chrome (everything
 outside `client/styles/slides/**`) that no stylesheet and no JS setter
-(`setProperty('--…')`, an inline `style: '--…:'`) defines fails.
+(`setProperty('--…')`, an inline `style: '--…:'`) defines fails. It also
+enforces the no-fallback form: a `var(--ps-…|--app-…|--z-…, …)` in app chrome
+fails, because the token always resolves and a fallback is a second value that
+can only drift from it (D279); a hook keeps its fallback.
 
 ## Spacing — two resolutions
 

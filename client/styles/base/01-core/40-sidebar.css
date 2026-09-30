@@ -20,7 +20,7 @@
 
 .app-shell.has-sidebar > .app-sidebar {
   position: fixed;
-  top: var(--ps-topbar-height, 60px);
+  top: var(--ps-topbar-height);
   left: 0;
   bottom: 0;
   width: var(--ps-sidebar-width);
@@ -29,8 +29,8 @@
 
 .app-shell.has-sidebar > .presentation-grid-content {
   margin-left: var(--ps-sidebar-width);
-  margin-top: var(--ps-topbar-height, 60px);
-  min-height: calc(100vh - var(--ps-topbar-height, 60px));
+  margin-top: var(--ps-topbar-height);
+  min-height: calc(100vh - var(--ps-topbar-height));
   overflow-x: hidden; /* Prevent horizontal scrollbar */
 }
 

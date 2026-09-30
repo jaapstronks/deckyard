@@ -243,7 +243,7 @@
   padding: var(--ps-space-3);
   background: hsl(var(--app-success) / 0.08);
   border: 1px solid hsl(var(--app-success) / 0.3);
-  border-radius: var(--ps-radius-md, 0.375rem);
+  border-radius: var(--ps-radius-md);
 }
 
 .share-created-link-title {

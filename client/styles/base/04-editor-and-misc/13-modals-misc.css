@@ -826,7 +826,7 @@
 }
 
 .change-theme-reason-theme_specific {
-  color: hsl(var(--app-warning-text, 45 80% 30%));
+  color: hsl(var(--app-warning-text));
   background: hsl(var(--app-warning-soft));
 }
 

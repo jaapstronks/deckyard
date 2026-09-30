@@ -54,8 +54,8 @@
 
 .comments-filter-item.is-selected {
   font-weight: 600;
-  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
-  background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.1));
+  color: hsl(var(--app-accent-text));
+  background: hsl(var(--app-accent-soft));
 }
 
 .comments-panel-list {
@@ -83,13 +83,13 @@
   margin-right: -8px;
   padding-left: var(--ps-space-2);
   padding-right: var(--ps-space-2);
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .comment-thread.is-jumpable:hover {
-  background: hsl(var(--app-bg-hover, 220 14% 94%));
+  background: hsl(var(--app-bg-hover));
 }
 
 /* Mentions: chip in the body, inline autocomplete popover */
@@ -212,17 +212,17 @@
   padding: 1px 6px;
   font-size: 10px;
   font-weight: 500;
-  color: hsl(var(--app-accent-primary, 210 70% 50%));
-  background: hsl(var(--app-accent-soft, 210 70% 95%));
-  border: 1px solid hsl(var(--app-accent-primary, 210 70% 50%) / 0.25);
+  color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-soft));
+  border: 1px solid hsl(var(--app-accent-primary) / 0.25);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 .comment-slide-link:hover {
-  background: hsl(var(--app-accent-primary, 210 70% 50%) / 0.15);
-  border-color: hsl(var(--app-accent-primary, 210 70% 50%) / 0.4);
+  background: hsl(var(--app-accent-primary) / 0.15);
+  border-color: hsl(var(--app-accent-primary) / 0.4);
 }
 
 .comment-body {
@@ -328,7 +328,7 @@
 /* Links look the same while you type them and after you post, which is the
    whole point of showing them as links rather than as `[text](url)` markup. */
 .comment-body-link {
-  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  color: hsl(var(--app-accent-text));
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -356,7 +356,7 @@
 }
 
 .comment-toolbar-btn:hover {
-  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  color: hsl(var(--app-accent-text));
   border-color: hsl(var(--app-accent-primary) / 0.6);
 }
 
@@ -506,7 +506,7 @@
 /* Marker-click highlight: flash the targeted thread in the pane list. */
 .comment-thread.is-highlighted {
   background: hsl(var(--app-accent-primary) / 0.1);
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
   transition: background 0.4s ease;
 }
 
@@ -538,7 +538,7 @@
   padding: 0;
   border: 2px solid hsl(0 0% 100%);
   border-radius: 50% 50% 50% 2px;
-  background: hsl(var(--app-accent-primary, 210 70% 50%));
+  background: hsl(var(--app-accent-primary));
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   pointer-events: auto;
@@ -552,12 +552,12 @@
 }
 
 .comment-marker:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary, 210 70% 50%));
+  outline: 2px solid hsl(var(--app-accent-primary));
   outline-offset: 2px;
 }
 
 .comment-marker.is-resolved {
-  background: hsl(var(--app-text-secondary, 220 9% 46%));
+  background: hsl(var(--app-text-secondary));
   opacity: 0.7;
 }
 
@@ -572,7 +572,7 @@
   min-width: 15px;
   height: 15px;
   padding: 0 3px;
-  background: hsl(var(--app-danger, 4 65% 48%));
+  background: hsl(var(--app-danger));
   color: #fff;
   font-size: 9px;
   font-weight: 700;
@@ -602,8 +602,8 @@
   padding: var(--ps-space-2-5);
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md, 8px);
-  box-shadow: var(--app-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.22));
+  border-radius: var(--ps-radius-md);
+  box-shadow: var(--app-shadow-lg);
   /* Offset down-right from the click point so the cursor doesn't cover it. */
   transform: translate(14px, 14px);
 }
@@ -628,7 +628,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: hsl(var(--app-accent-primary, 210 70% 50%));
+  background: hsl(var(--app-accent-primary));
   border: 2px solid hsl(var(--app-bg-elevated));
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }

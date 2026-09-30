@@ -741,7 +741,7 @@
   margin-bottom: var(--ps-space-3);
   background: hsl(var(--app-bg-sunken));
   border: 1px solid hsl(var(--app-border-subtle));
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
 }
 .inspector-tab {
   flex: 1;
@@ -751,7 +751,7 @@
   color: hsl(var(--app-text-secondary));
   background: transparent;
   border: 0;
-  border-radius: var(--ps-radius-sm, 6px);
+  border-radius: var(--ps-radius-sm);
   cursor: pointer;
   transition:
     background-color 0.12s ease,
@@ -762,7 +762,7 @@
 }
 .inspector-tab.is-active {
   color: hsl(var(--app-text-primary));
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  background: hsl(var(--app-bg-elevated));
   box-shadow: 0 1px 2px hsl(0 0% 0% / 0.08);
 }
 .inspector-tab:focus-visible {
@@ -986,7 +986,7 @@
 
 .color-hex-input {
   width: 100px;
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
   text-transform: uppercase;
 }
 

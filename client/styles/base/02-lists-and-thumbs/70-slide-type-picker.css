@@ -120,7 +120,7 @@
 }
 
 .ps-type-group-toggle:hover {
-  color: hsl(var(--app-accent-text, var(--app-text-primary)));
+  color: hsl(var(--app-accent-text));
 }
 
 .ps-type-group-toggle:focus-visible {
