@@ -14,6 +14,7 @@ import {
   customDirCheck,
   publicUrlCheck,
   storageModeCheck,
+  trustProxyCheck,
 } from './config.js';
 import { databaseCheck, migrationsCheck } from './database.js';
 import { oidcDiscoveryCheck, ssoConfigCheck } from './sso.js';
@@ -28,6 +29,7 @@ import { chromiumCheck, mailCheck, uploadsCheck } from './runtime.js';
 export const DOCTOR_CHECKS = Object.freeze([
   authCheck,
   publicUrlCheck,
+  trustProxyCheck,
   storageModeCheck,
   databaseCheck,
   migrationsCheck,

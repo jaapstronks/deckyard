@@ -11,7 +11,7 @@
 import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -29,6 +29,7 @@ import {
   customDirCheck,
   publicUrlCheck,
   storageModeCheck,
+  trustProxyCheck,
 } from '../server/doctor/config.js';
 import { databaseCheck, migrationsCheck } from '../server/doctor/database.js';
 import { oidcDiscoveryCheck, ssoConfigCheck } from '../server/doctor/sso.js';
@@ -38,6 +39,7 @@ import {
   mailCheck,
   uploadsCheck,
 } from '../server/doctor/runtime.js';
+import { LocalProvider } from '../server/media/local.js';
 import { createCoreFixtureRoot } from './helpers/core-fixture-root.js';
 
 const repoRoot = path.resolve(
@@ -76,6 +78,9 @@ const BASE = Object.freeze({
   DISABLE_UPLOADS: undefined,
   MEDIA_STORAGE_MODE: undefined,
   BREVO_API_KEY: undefined,
+  TRUST_PROXY: undefined,
+  UPLOADS_DIR: undefined,
+  DATA_DIR: undefined,
 });
 
 const SSO = Object.freeze({
@@ -103,6 +108,28 @@ async function run(check, vars = {}, ctx = {}) {
   }
   try {
     return await check.run({ repoRoot, results: new Map(), ...ctx });
+  } finally {
+    for (const [k, v] of Object.entries(saved)) {
+      if (v === undefined) delete process.env[k];
+      else process.env[k] = v;
+    }
+  }
+}
+
+/**
+ * Call `fn` with `vars` set, then restore the env.
+ * @template T
+ * @param {Record<string, string>} vars
+ * @param {() => T} fn
+ * @returns {T}
+ */
+function withEnv(vars, fn) {
+  const saved = Object.fromEntries(
+    Object.keys(vars).map((k) => [k, process.env[k]]),
+  );
+  Object.assign(process.env, vars);
+  try {
+    return fn();
   } finally {
     for (const [k, v] of Object.entries(saved)) {
       if (v === undefined) delete process.env[k];
@@ -167,6 +194,30 @@ test('public-url: red when APP_URL and DOMAIN name different hosts', async () =>
   assert.match(red.message, /different hosts/);
   const green = await run(publicUrlCheck, { DOMAIN: 'slides.example.com' });
   assert.equal(green.status, 'ok');
+});
+
+// ── trust-proxy ─────────────────────────────────────────────────────────────
+
+test('trust-proxy: an https origin without TRUST_PROXY warns, with it passes', async () => {
+  const found = await run(trustProxyCheck);
+  assert.equal(found.status, 'warn');
+  assert.match(found.message, /TRUST_PROXY is not set/);
+  assert.match(found.fix, /TRUST_PROXY=true/);
+  assert.equal(
+    (await run(trustProxyCheck, { TRUST_PROXY: 'true' })).status,
+    'ok',
+  );
+});
+
+test('trust-proxy: skipped without an https origin', async () => {
+  const found = await run(trustProxyCheck, {
+    APP_URL: 'http://localhost:4177',
+  });
+  assert.equal(found.status, 'skip');
+  assert.equal(
+    (await run(trustProxyCheck, { APP_URL: undefined })).status,
+    'skip',
+  );
 });
 
 // ── storage-mode ────────────────────────────────────────────────────────────
@@ -435,17 +486,26 @@ test('chromium: a configured path that is not there warns about the fallback', a
 
 // ── uploads ─────────────────────────────────────────────────────────────────
 
-/** An in-memory provider; `fail` names the method that throws. */
+/**
+ * An in-memory provider. `fail` names the probe whose write throws (`public`,
+ * `private`); `corrupt` reads back other bytes.
+ */
 function fakeProvider({ fail = '', corrupt = false } = {}) {
   const files = new Map();
   const deleted = [];
+  const put = (key, buffer) => {
+    files.set(key, corrupt ? Buffer.from('x') : buffer);
+    return { key, size: buffer.length, contentType: 'image/png' };
+  };
   return {
     deleted,
+    async uploadBuffer({ buffer }) {
+      if (fail === 'public') throw new Error('EACCES: permission denied');
+      return put('probe.png', buffer);
+    },
     async uploadPrivateBuffer({ buffer, folder }) {
-      if (fail === 'upload') throw new Error('EACCES: permission denied');
-      const key = `private/${folder}/probe.png`;
-      files.set(key, corrupt ? Buffer.from('x') : buffer);
-      return { key, size: buffer.length, contentType: 'image/png' };
+      if (fail === 'private') throw new Error('EACCES: permission denied');
+      return put(`private/${folder}/probe.png`, buffer);
     },
     async readFile(key) {
       return files.get(key) ?? null;
@@ -457,26 +517,32 @@ function fakeProvider({ fail = '', corrupt = false } = {}) {
   };
 }
 
-test('uploads: red when the probe cannot be written, green on a round trip that cleans up', async () => {
-  const red = await run(
-    uploadsCheck,
-    {},
-    { provider: fakeProvider({ fail: 'upload' }) },
-  );
-  assert.equal(red.status, 'fail');
-  assert.match(red.message, /EACCES/);
-  assert.match(red.fix, /writable/);
+test('uploads: red when either probe cannot be written, green on two round trips that clean up', async () => {
+  for (const [side, dir] of [
+    ['public', /uploads \(/],
+    ['private', /private media \(/],
+  ]) {
+    const red = await run(
+      uploadsCheck,
+      {},
+      { provider: fakeProvider({ fail: side }) },
+    );
+    assert.equal(red.status, 'fail', side);
+    assert.match(red.message, /EACCES/);
+    assert.match(red.message, dir);
+    assert.match(red.fix, /writable/);
+  }
   const provider = fakeProvider();
   const green = await run(uploadsCheck, {}, { provider });
   assert.equal(green.status, 'ok');
-  assert.deepEqual(provider.deleted, ['private/doctor/probe.png']);
+  assert.deepEqual(provider.deleted, ['probe.png', 'private/doctor/probe.png']);
 });
 
 test('uploads: red when the probe reads back different bytes, and it is still deleted', async () => {
   const provider = fakeProvider({ corrupt: true });
   const red = await run(uploadsCheck, {}, { provider });
   assert.equal(red.status, 'fail');
-  assert.deepEqual(provider.deleted, ['private/doctor/probe.png']);
+  assert.deepEqual(provider.deleted, ['probe.png']);
 });
 
 test('uploads: red when the probe cannot be deleted, naming the key', async () => {
@@ -486,8 +552,40 @@ test('uploads: red when the probe cannot be deleted, naming the key', async () =
   };
   const red = await run(uploadsCheck, {}, { provider });
   assert.equal(red.status, 'fail');
-  assert.match(red.message, /private\/doctor\/probe\.png: AccessDenied/);
+  assert.match(red.message, /probe\.png: AccessDenied/);
 });
+
+// A root-owned mount point (what Docker makes of a volume path the image does
+// not have) is a directory the server user cannot write. Root writes anyway,
+// so the case means nothing when the suite runs as root.
+test(
+  'uploads: the local provider is red on an unwritable uploads dir, even with a writable data dir',
+  { skip: process.getuid?.() === 0 && 'running as root' },
+  async () => {
+    const root = mkdtempSync(path.join(tmpdir(), 'doctor-uploads-'));
+    const uploads = path.join(root, 'uploads');
+    const data = path.join(root, 'data');
+    mkdirSync(uploads, { mode: 0o555 });
+    mkdirSync(data);
+    const vars = { UPLOADS_DIR: uploads, DATA_DIR: data };
+    try {
+      const provider = await withEnv(vars, () => new LocalProvider(repoRoot));
+      const red = await run(uploadsCheck, vars, { provider });
+      assert.equal(red.status, 'fail');
+      assert.match(red.message, /^local: could not write a probe to uploads/);
+      assert.ok(red.fix.includes(uploads), red.fix);
+
+      chmodSync(uploads, 0o755);
+      const green = await run(uploadsCheck, vars, { provider });
+      assert.equal(green.status, 'ok', green.message);
+      assert.ok(green.message.includes(uploads), green.message);
+      assert.ok(green.message.includes(path.join(data, 'private-media')));
+    } finally {
+      chmodSync(uploads, 0o755);
+      await rm(root, { recursive: true, force: true });
+    }
+  },
+);
 
 test('uploads: skipped when uploads are disabled', async () => {
   const found = await run(

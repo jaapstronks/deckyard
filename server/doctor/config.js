@@ -77,6 +77,29 @@ export const publicUrlCheck = {
 };
 
 /** @type {import('./finding.js').DoctorCheck} */
+export const trustProxyCheck = {
+  id: 'trust-proxy',
+  label: 'Client address',
+  run() {
+    if (envBool('TRUST_PROXY')) {
+      return ok('TRUST_PROXY: the client address comes from X-Forwarded-For');
+    }
+    // The server speaks no TLS itself, so an https origin means a proxy in
+    // front; without TRUST_PROXY every request carries the proxy's address and
+    // the login throttle and audit log see one client. A warning, not a
+    // failure: the app works, and only the operator knows the proxy is theirs.
+    const base = getAppBaseUrl();
+    if (!base || !URL.canParse(base) || new URL(base).protocol !== 'https:') {
+      return skip('no https origin, so no proxy in front to trust');
+    }
+    return warn(
+      `${new URL(base).origin} is served over https, so through a proxy, but TRUST_PROXY is not set: the login throttle and the audit log see the proxy's address for every user.`,
+      'Set TRUST_PROXY=true when the proxy in front is yours and the app port is reachable only through it.',
+    );
+  },
+};
+
+/** @type {import('./finding.js').DoctorCheck} */
 export const storageModeCheck = {
   id: 'storage-mode',
   label: 'Storage mode',

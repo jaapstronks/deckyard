@@ -6,6 +6,7 @@
 import { envBool, envStr } from '../config/utils.js';
 import { isUploadsEnabled } from '../config/features.js';
 import { isSsoEnforced } from '../config/sso.js';
+import { privateMediaDir, uploadsDir } from '../config/storage-paths.js';
 import {
   getEffectiveMediaProvider,
   mediaConfigWarnings,
@@ -65,6 +66,89 @@ const PROBE_PNG = Buffer.from(
 );
 
 /**
+ * The two places a provider writes, each probed on its own: on the local
+ * provider they are two directories (`uploadsDir()` for images every deck
+ * links, `<DATA_DIR>/private-media` for font variants), so a writable volume
+ * on one says nothing about the other. The public probe is one transparent
+ * pixel at an unguessable key, deleted again straight after.
+ * @type {readonly { name: string, dir: (repoRoot: string) => string,
+ *   write: (provider: import('../media/interface.js').MediaProvider) => Promise<{ key: string }> }[]}
+ */
+const UPLOAD_PROBES = Object.freeze([
+  {
+    name: 'uploads',
+    dir: uploadsDir,
+    write: (provider) =>
+      provider.uploadBuffer({
+        buffer: PROBE_PNG,
+        filename: 'doctor-probe',
+        contentType: 'image/png',
+        optimize: false,
+      }),
+  },
+  {
+    name: 'private media',
+    dir: privateMediaDir,
+    write: (provider) =>
+      provider.uploadPrivateBuffer({
+        buffer: PROBE_PNG,
+        filename: 'doctor-probe',
+        contentType: 'image/png',
+        folder: 'doctor',
+      }),
+  },
+]);
+
+/**
+ * Write, read back and delete one probe.
+ * @param {(typeof UPLOAD_PROBES)[number]} probe
+ * @param {import('../media/interface.js').MediaProvider} provider
+ * @param {string} mode
+ * @param {string} repoRoot
+ * @returns {Promise<import('./finding.js').DoctorFinding|null>} null when it round-trips
+ */
+async function runUploadProbe(probe, provider, mode, repoRoot) {
+  const where =
+    mode === 's3' ? probe.name : `${probe.name} (${probe.dir(repoRoot)})`;
+  const writable =
+    mode === 's3'
+      ? 'Check S3_ENDPOINT, S3_BUCKET and that the key may put, get and delete objects.'
+      : `Make ${probe.dir(repoRoot)} writable by the server user (a persistent volume in a container).`;
+  let key = '';
+  /** @type {import('./finding.js').DoctorFinding|null} */
+  let failed = null;
+  try {
+    ({ key } = await probe.write(provider));
+    const back = await provider.readFile(key);
+    if (!back?.equals(PROBE_PNG)) {
+      failed = fail(
+        `${mode}: wrote a probe to ${where} but read back something else.`,
+      );
+    }
+  } catch (err) {
+    failed = fail(
+      `${mode}: could not write a probe to ${where}: ${err?.message || err}.`,
+      writable,
+    );
+  }
+  const removed = key
+    ? await provider.deleteFile(key).catch((err) => err)
+    : true;
+  if (failed) return failed;
+  if (removed !== true) {
+    return fail(
+      `${mode}: wrote and read a probe but could not delete ${key}${
+        removed instanceof Error ? `: ${removed.message}` : ''
+      }; replacing and removing media will fail.`,
+      mode === 's3'
+        ? 'Give the key permission to delete objects, then remove the probe by hand.'
+        : `Make ${probe.dir(repoRoot)} writable by the server user, then remove the probe by hand.`,
+    );
+  }
+  return null;
+}
+
+/**
  * @typedef {import('./finding.js').DoctorContext & {
  *   provider?: import('../media/interface.js').MediaProvider,
  * }} UploadsContext
@@ -85,46 +169,16 @@ export const uploadsCheck = {
       await initializeMediaProvider(repoRoot);
       provider = getMediaProvider();
     }
-    // A private object: never reachable over a public URL, even for the
-    // moment it exists.
-    let key = '';
-    /** @type {import('./finding.js').DoctorFinding|null} */
-    let failed = null;
-    try {
-      ({ key } = await provider.uploadPrivateBuffer({
-        buffer: PROBE_PNG,
-        filename: 'doctor-probe',
-        contentType: 'image/png',
-        folder: 'doctor',
-      }));
-      const back = await provider.readFile(key);
-      if (!back?.equals(PROBE_PNG)) {
-        failed = fail(`${mode}: wrote a probe but read back something else.`);
-      }
-    } catch (err) {
-      failed = fail(
-        `${mode}: could not write a probe object: ${err?.message || err}.`,
-        mode === 's3'
-          ? 'Check S3_ENDPOINT, S3_BUCKET and that the key may put, get and delete objects.'
-          : 'Make the uploads directory writable by the server user (a persistent volume in a container).',
-      );
-    }
-    const removed = key
-      ? await provider.deleteFile(key).catch((err) => err)
-      : true;
-    if (failed) return failed;
-    if (removed !== true) {
-      return fail(
-        `${mode}: wrote and read a probe but could not delete ${key}${
-          removed instanceof Error ? `: ${removed.message}` : ''
-        }; replacing and removing media will fail.`,
-        mode === 's3'
-          ? 'Give the key permission to delete objects, then remove the probe by hand.'
-          : 'Make the uploads directory writable by the server user, then remove the probe by hand.',
-      );
+    for (const probe of UPLOAD_PROBES) {
+      const failed = await runUploadProbe(probe, provider, mode, repoRoot);
+      if (failed) return failed;
     }
     if (configWarning) return warn(configWarning);
-    return ok(`${mode}: write, read and delete work`);
+    return ok(
+      mode === 's3'
+        ? 's3: write, read and delete work for uploads and private media'
+        : `${mode}: write, read and delete work in ${UPLOAD_PROBES.map((p) => p.dir(repoRoot)).join(' and ')}`,
+    );
   },
 };
 
