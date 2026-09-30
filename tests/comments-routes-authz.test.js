@@ -432,7 +432,8 @@ test('someone in another organization cannot comment — the deck is absent to t
 // The anonymous cells pin the wiring of the permission check itself: the
 // cross-org 404 above is produced by storage scoping alone, so without these
 // the create/edit/delete/resolve handlers would stay green with their
-// `withPresentationCommentAuth` checks short-circuited to allow.
+// permission checks (the comment service for create, the route wrappers for
+// the rest) short-circuited to allow.
 test('an anonymous visitor cannot comment', async () => {
   await seed();
   const { res } = await call(handlePresentationCommentsCreate, 'POST', {

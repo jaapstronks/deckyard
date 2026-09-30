@@ -17,7 +17,6 @@ import {
   canWritePresentation,
   canDeletePresentation,
   canManageCollaborators,
-  canCommentOnPresentation,
 } from './presentation-authz/index.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getGuestBySessionToken } from '../storage/share-links/index.js';
@@ -170,47 +169,6 @@ export async function checkPresentationReadAccess({ req, authedUser, pres }) {
 }
 
 /**
- * Check if a request has comment access to a presentation.
- * Checks both authenticated user and guest session.
- *
- * @param {Object} options
- * @param {Object} options.req - HTTP request
- * @param {Object|null} options.authedUser - Authenticated user (may be null)
- * @param {Object} options.pres - Presentation object
- * @returns {Promise<{canComment: boolean, guestInfo: Object|null, collaboratorPermission: string|null}>}
- */
-export async function checkPresentationCommentAccess({
-  req,
-  authedUser,
-  pres,
-}) {
-  // Fetch collaborator permission if the user is authenticated
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  // Check authenticated user first (with collaborator permission)
-  if (
-    canCommentOnPresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return { canComment: true, guestInfo: null, collaboratorPermission };
-  }
-
-  // Fall back to guest session (handled separately in comments routes)
-  const guestInfo = await getGuestFromRequest(req);
-  if (guestInfo && guestInfo.shareLink.presentationId === pres.id) {
-    // Guest comment permission is checked via canGuestComment in the routes
-    return { canComment: true, guestInfo, collaboratorPermission: null };
-  }
-
-  return { canComment: false, guestInfo: null, collaboratorPermission: null };
-}
-
-/**
  * Permission check function map.
  * Maps permission names to their corresponding check functions.
  */
@@ -325,43 +283,6 @@ export async function withPresentationReadAuth({
   const { canRead, guestInfo, collaboratorPermission } =
     await checkPresentationReadAccess({ req, authedUser, pres });
   if (!canRead) {
-    forbidden(res);
-    return { pres: null, guestInfo: null, collaboratorPermission: null };
-  }
-
-  return { pres, guestInfo, collaboratorPermission };
-}
-
-/**
- * Load a presentation and check comment authorization (including guest access).
- * Sends appropriate error response if the check fails.
- *
- * Suitable for endpoints that allow guest commenters via share links.
- *
- * @param {Object} options
- * @param {import('../storage/scope.js').StorageScope} options.storageScope - The request's storage scope
- * @param {Object} options.req - HTTP request object
- * @param {string} options.id - Presentation ID
- * @param {Object} options.authedUser - Authenticated user object
- * @param {Object} options.res - HTTP response object
- * @returns {Promise<{pres: Object|null, guestInfo: Object|null, collaboratorPermission: string|null}>}
- */
-export async function withPresentationCommentAuth({
-  storageScope,
-  req,
-  id,
-  authedUser,
-  res,
-}) {
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) {
-    notFound(res);
-    return { pres: null, guestInfo: null, collaboratorPermission: null };
-  }
-
-  const { canComment, guestInfo, collaboratorPermission } =
-    await checkPresentationCommentAccess({ req, authedUser, pres });
-  if (!canComment) {
     forbidden(res);
     return { pres: null, guestInfo: null, collaboratorPermission: null };
   }
