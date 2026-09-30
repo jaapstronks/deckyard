@@ -132,6 +132,9 @@
   padding: var(--slide-space-4) var(--slide-space-8);
 }
 
+/* Restates the 4-stage base rung, but it is not a fossil: it outranks the
+   ≤1024px fit tier below, which is a later rule of lower specificity, so a
+   3-stage funnel keeps this rung at every width (it fits). */
 .slide-funnel .funnel-container[data-count='3'] .funnel-stage {
   --slide-font-size-card-title: var(--slide-text-md);
   --slide-font-size-card-body: var(--slide-text-base);

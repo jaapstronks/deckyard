@@ -313,7 +313,8 @@
 }
 
 /* Every count has its own rung, so the rungs also hold at 1024px: there is
-   no responsive text tier to fall back to. */
+   no responsive text tier to fall back to. The same goes for `.step-number`:
+   each count sizes the badge, so the media query below leaves it alone. */
 .slide-process .process-container[data-count='3'] .process-step {
   --slide-font-size-card-title: var(--slide-text-lg);
   --slide-font-size-card-body: var(--slide-text-md);
@@ -402,12 +403,6 @@
 @media (max-width: 1024px) {
   .slide-process .process-container {
     gap: var(--slide-space-3);
-  }
-
-  .slide-process .step-number {
-    width: var(--slide-step-size-sm);
-    height: var(--slide-step-size-sm);
-    font-size: var(--slide-text-md);
   }
 
   .slide-process
