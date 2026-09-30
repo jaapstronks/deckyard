@@ -156,7 +156,7 @@
   },
   "client/styles/base/04-editor-and-misc/12-modals-share.css": {
     "tokenisable-spacing": {
-      "count": 11
+      "count": 9
     }
   },
   "client/styles/base/04-editor-and-misc/13-modals-misc.css": {
@@ -231,7 +231,7 @@
   },
   "client/styles/base/04-editor-and-misc/85-settings.css": {
     "tokenisable-spacing": {
-      "count": 10
+      "count": 2
     }
   },
   "client/styles/base/04-editor-and-misc/86-admin-users.css": {
@@ -256,12 +256,12 @@
   },
   "client/styles/base/04-editor-and-misc/88-theme-editor.css": {
     "tokenisable-spacing": {
-      "count": 5
+      "count": 3
     }
   },
   "client/styles/base/04-editor-and-misc/89-slide-type-editor.css": {
     "tokenisable-spacing": {
-      "count": 10
+      "count": 8
     }
   },
   "client/styles/base/04-editor-and-misc/90-public-poll.css": {
@@ -271,7 +271,7 @@
   },
   "client/styles/base/04-editor-and-misc/92-comments-panel.css": {
     "tokenisable-spacing": {
-      "count": 4
+      "count": 3
     }
   },
   "client/styles/base/04-editor-and-misc/93-read-only-mode.css": {
@@ -296,17 +296,12 @@
   },
   "client/styles/base/04-editor-and-misc/98-user-autocomplete.css": {
     "tokenisable-spacing": {
-      "count": 12
+      "count": 9
     }
   },
   "client/styles/base/04-editor-and-misc/99-notification-bell.css": {
     "tokenisable-spacing": {
       "count": 1
-    }
-  },
-  "client/styles/embed.css": {
-    "tokenisable-spacing": {
-      "count": 4
     }
   }
 }

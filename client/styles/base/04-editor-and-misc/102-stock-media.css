@@ -146,6 +146,7 @@
 .stock-media-status {
   margin-left: var(--ps-space-2);
   font-size: var(--ps-text-xs);
+  font-weight: normal;
 }
 
 .stock-media-status.is-warning {

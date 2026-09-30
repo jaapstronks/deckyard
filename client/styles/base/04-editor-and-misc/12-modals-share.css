@@ -18,6 +18,7 @@
    screen. `min()` hands short viewports back to 80vh, so nothing is pushed off
    screen there. The body below keeps doing the scrolling, as it already did. */
 .share-modal {
+  width: min(520px, 90vw);
   height: min(80vh, 664px);
   overflow: hidden;
 }
@@ -29,7 +30,7 @@
 }
 
 .share-modal-help {
-  margin-bottom: var(--ps-space-4);
+  margin-bottom: var(--ps-space-5);
 }
 
 /* ---- Tabs + scrollable body (unified Share dialog) ---- */
@@ -205,31 +206,27 @@
 .share-create-section {
   padding: var(--ps-space-4);
   background: hsl(var(--app-bg-sunken));
-  border-radius: var(--ps-radius-lg);
-  margin-bottom: var(--ps-space-4);
+  border-radius: 14px;
+  margin-bottom: var(--ps-space-5);
+  border: 1px solid hsl(var(--app-border-default));
 }
 
 .share-create-form {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--ps-space-3);
 }
 
 .share-form-row {
-  display: flex;
+  display: grid;
   align-items: center;
   gap: var(--ps-space-3);
+  grid-template-columns: 100px 1fr;
 }
 
 .share-form-label {
   width: 90px;
-  flex-shrink: 0;
   font-size: var(--ps-text-sm);
-  font-weight: 500;
-}
-
-.share-form-row .form-input {
-  flex: 1;
+  font-weight: 600;
 }
 
 .share-form-actions {
@@ -274,12 +271,13 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  margin-bottom: var(--ps-space-3);
 }
 
 .share-links-list {
   display: flex;
   flex-direction: column;
-  gap: var(--ps-space-2);
+  gap: var(--ps-space-2-5);
 }
 
 /* A list that could not load says so in place: the shared `inline-error`
@@ -290,10 +288,14 @@
 }
 
 .share-link-item {
-  padding: var(--ps-space-3);
+  padding: var(--ps-space-3) var(--ps-space-3-5);
   border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md);
+  border-radius: 12px;
   background: hsl(var(--app-bg-elevated));
+  display: flex;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+  align-items: center;
 }
 
 .share-link-item > .share-link-info,
@@ -316,40 +318,53 @@
 .share-link-label {
   font-weight: 600;
   font-size: var(--ps-text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .share-link-meta {
   display: flex;
   gap: var(--ps-space-2);
   flex-wrap: wrap;
-  font-size: var(--ps-text-xs);
+  font-size: 12px;
+  align-items: center;
+  margin-top: var(--ps-space-1);
+  opacity: 0.85;
 }
 
 .share-link-permission {
-  padding: 2px 6px;
-  border-radius: 4px;
+  padding: var(--ps-space-0-5) var(--ps-space-2);
+  border-radius: 999px;
   font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.02em;
 }
 
 .share-link-permission--view {
-  background: hsl(210 60% 90%);
+  background: hsl(var(--app-bg-sunken));
   color: hsl(210 60% 30%);
+  border: 1px solid hsl(var(--app-border-default));
 }
 
 .share-link-permission--comment {
-  background: hsl(150 60% 90%);
-  color: hsl(150 60% 25%);
+  background: hsl(210 70% 50% / 0.12);
+  color: hsl(210 70% 50%);
+  border: 1px solid hsl(210 70% 50% / 0.25);
 }
 
 .share-link-permission--edit {
-  background: hsl(280 60% 90%);
-  color: hsl(280 60% 30%);
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
+  border: 1px solid hsl(var(--app-accent-primary) / 0.25);
 }
 
 .share-link-badge {
   padding: 2px 6px;
   border-radius: 4px;
   background: hsl(var(--app-bg-hover));
+  font-size: 12px;
 }
 
 .share-link-badge.icon {
@@ -365,6 +380,36 @@
 .share-link-expires,
 .share-link-uses {
   opacity: 0.7;
+  color: hsl(var(--app-text-secondary));
+}
+
+.share-link-info {
+  min-width: 0;
+  flex: 1;
+}
+.share-link-actions {
+  display: flex;
+  gap: var(--ps-space-2);
+  flex-shrink: 0;
+}
+.share-link-actions .btn-sm {
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
+  font-size: 12px;
+}
+
+@media (max-width: 480px) {
+  .share-form-row {
+    grid-template-columns: 1fr;
+    gap: var(--ps-space-1-5);
+  }
+  .share-link-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .share-link-actions {
+    justify-content: flex-end;
+    margin-top: var(--ps-space-2);
+  }
 }
 
 /* ============================================
@@ -581,9 +626,12 @@
 /* Progress indicator for batch invites */
 .share-collaborator-progress {
   font-size: var(--ps-text-sm);
-  color: hsl(var(--app-text-secondary));
+  color: hsl(var(--app-accent-text));
   margin-top: var(--ps-space-2);
   display: none;
+  padding: var(--ps-space-1-5) var(--ps-space-2);
+  background: hsl(var(--app-accent-soft));
+  border-radius: var(--ps-radius-sm);
 }
 
 .share-collaborator-progress.is-visible {

@@ -28,7 +28,8 @@ agent's preview — none of which share the app's chrome.
 >
 > This is the only such consumer: the HTML/PNG/PDF export goes through
 > `client/styles/export.css` (`server/export/css-bundle.js`), which imports
-> `ui-tokens.css` directly — as does the embed shell's `embed.css`.
+> `ui-tokens.css` and `client/styles/shared/primitives.css` directly — as does the embed
+> shell's `embed.css`.
 >
 > So: **do not put `--ps-*` or `--z-*` inside `client/styles/slides/**`.** If you
 > need to, fix the bundle first (import `ui-tokens.css` from `slides.css`, or add

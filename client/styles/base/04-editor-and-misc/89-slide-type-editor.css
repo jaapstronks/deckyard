@@ -282,9 +282,6 @@
 /* Reorder buttons */
 .field-list-reorder {
   font-size: 12px;
-  min-width: 22px;
-  min-height: 22px;
-  padding: 0;
 }
 
 /* Code textarea (monospace for template/CSS/JSON) */
@@ -295,20 +292,6 @@
   tab-size: 2;
   white-space: pre;
   resize: vertical;
-}
-
-/* Button sizes */
-.btn-xs {
-  font-size: var(--ps-text-xs);
-  padding: 2px 6px;
-  min-height: 22px;
-  min-width: 22px;
-}
-
-.field-label-sm {
-  font-size: var(--ps-text-xs);
-  font-weight: 500;
-  color: hsl(var(--app-text-secondary));
 }
 
 .font-mono {

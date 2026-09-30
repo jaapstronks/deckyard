@@ -43,11 +43,6 @@
    (`.sb-segmented.is-outlined`, see `03-controls-and-forms.css`). The
    `.comments-scope` / `.comments-scope-btn` classes stay as selector hooks. */
 
-.comments-filter-trigger {
-  padding: 3px 8px;
-  font-size: var(--ps-text-xs);
-}
-
 .comments-filter-menu {
   min-width: 150px;
 }
@@ -349,8 +344,6 @@
 }
 
 .comment-toolbar-btn {
-  padding: var(--ps-space-1) var(--ps-space-2-5);
-  font-size: 12px;
   color: hsl(var(--app-text-secondary));
   background: transparent;
   border: 1px solid hsl(var(--app-border-default));
@@ -491,17 +484,6 @@
 /* In collapsed mode, the .slide-num-collapsed needs position:relative for indicator positioning */
 .slide-num-collapsed {
   position: relative;
-}
-
-/* Button size variants */
-.btn-xs {
-  padding: var(--ps-space-0-5) var(--ps-space-2);
-  font-size: 12px;
-}
-
-.btn-sm {
-  padding: var(--ps-space-1) var(--ps-space-3);
-  font-size: var(--ps-text-sm);
 }
 
 /* Marker-click highlight: flash the targeted thread in the pane list. */
