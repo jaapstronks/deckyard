@@ -72,7 +72,8 @@ The details a reader of the numbers needs:
   `pdf-slides`; the PNG preview and a single-slide PNG share `png`. The v1
   print export is `pdf`, like the app's print preview.
 - **An interaction is counted when it happens.** `*_opened` on every ensure of
-  a poll or likert (the presenter reaching the slide), `*_vote` on an
+  a poll or likert (the presenter reaching the slide, and an audience member
+  loading it, both go through the same ensure), `*_vote` on an
   accepted vote, `live_session` when a session is started or resumed,
   `follow_code` when an audience member resolves a code (minting one is part
   of `live_session`, not a separate use).
