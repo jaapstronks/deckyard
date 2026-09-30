@@ -40,7 +40,12 @@
    INDIVIDUAL LEVEL STYLING
    =========================================== */
 
+/* Label and text read the card roles; this is the 5-level rung
+   (clampInt(levels, 3, 6, 5), no rule of its own), and each other count sets
+   both below (slide-roles.md § The card ladder). */
 .slide-pyramid .pyramid-level {
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
   width: 100%;
   max-width: 900px;
   display: flex;
@@ -75,9 +80,7 @@
 
 .slide-pyramid .level-label {
   font-family: var(--font-heading);
-  /* ladder rung: this base rule is the 5-level rung (clampInt(levels, 3, 6, 5))
-     and stays under the 4-level rung (md) */
-  font-size: var(--slide-text-base);
+  font-size: var(--slide-font-size-card-title);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -87,7 +90,7 @@
 
 .slide-pyramid .level-text {
   font-family: var(--font-body);
-  font-size: var(--slide-text-sm);
+  font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-compact);
   /* Full-strength, not the muted role: every bar is a coloured surface, and on
      the mid-tone mixes the muted text drops under 4.5:1. Size and face carry
@@ -109,12 +112,9 @@
   padding: var(--slide-space-4) var(--slide-space-10);
 }
 
-.slide-pyramid .pyramid-container[data-count='3'] .level-label {
-  font-size: var(--slide-text-lg);
-}
-
-.slide-pyramid .pyramid-container[data-count='3'] .level-text {
-  font-size: var(--slide-text-base);
+.slide-pyramid .pyramid-container[data-count='3'] .pyramid-level {
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-base);
 }
 
 /* 4 levels */
@@ -127,13 +127,9 @@
   padding: var(--slide-space-4) var(--slide-space-10);
 }
 
-.slide-pyramid .pyramid-container[data-count='4'] .level-label {
-  font-size: var(--slide-text-md);
-}
-
-.slide-pyramid .pyramid-container[data-count='4'] .level-text {
-  /* ladder rung: stays under the 3-level rung (base) */
-  font-size: var(--slide-text-sm);
+.slide-pyramid .pyramid-container[data-count='4'] .pyramid-level {
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 
 /* 5 levels: default sizing (defined above) */
@@ -148,13 +144,9 @@
   padding: var(--slide-space-2) var(--slide-space-6);
 }
 
-.slide-pyramid .pyramid-container[data-count='6'] .level-label {
-  /* ladder rung: stays under the 5-level rung, which is the base rule (base) */
-  font-size: var(--slide-text-sm);
-}
-
-.slide-pyramid .pyramid-container[data-count='6'] .level-text {
-  font-size: var(--slide-text-xs);
+.slide-pyramid .pyramid-container[data-count='6'] .pyramid-level {
+  --slide-font-size-card-title: var(--slide-text-sm);
+  --slide-font-size-card-body: var(--slide-text-xs);
 }
 
 /* ===========================================
@@ -261,12 +253,11 @@
     padding: var(--slide-space-2) var(--slide-space-5);
   }
 
-  .slide-pyramid .level-label {
-    font-size: var(--slide-text-sm);
-  }
-
-  .slide-pyramid .level-text {
-    font-size: var(--slide-text-xs);
+  /* Wins only for the 5-level base rung; every other count has a rule of
+     higher specificity. */
+  .slide-pyramid .pyramid-level {
+    --slide-font-size-card-title: var(--slide-text-sm);
+    --slide-font-size-card-body: var(--slide-text-xs);
   }
 }
 

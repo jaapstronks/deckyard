@@ -129,7 +129,12 @@
    INDIVIDUAL STAGE STYLING
    =========================================== */
 
+/* Label and text read the card roles; this is the 4-stage rung
+   (clampInt(stages, 3, 6, 4), no rule of its own), and each other count sets
+   both below (slide-roles.md § The card ladder). */
 .slide-cycle .cycle-stage {
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-base);
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -178,9 +183,7 @@
 
 .slide-cycle .cycle-label {
   font-family: var(--font-heading);
-  /* ladder rung: this base rule is the 4-stage rung (clampInt(stages, 3, 6, 4))
-     and stays under the 3-stage rung (lg) */
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-font-size-card-title);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -190,7 +193,7 @@
 
 .slide-cycle .cycle-text {
   font-family: var(--font-body);
-  font-size: var(--slide-text-base);
+  font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-compact);
   color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
 }
@@ -320,15 +323,9 @@
   font-size: var(--slide-text-lg);
 }
 
-.slide-cycle .cycle-container[data-count='3'] .cycle-label {
-  font-size: var(--slide-text-lg);
-}
-
-.slide-cycle .cycle-container[data-count='3'] .cycle-text {
-  font-size: var(--slide-text-md);
-}
-
 .slide-cycle .cycle-container[data-count='3'] .cycle-stage {
+  --slide-font-size-card-title: var(--slide-text-lg);
+  --slide-font-size-card-body: var(--slide-text-md);
   width: 200px;
 }
 
@@ -339,6 +336,8 @@
 /* 5-6 stages: smaller elements */
 .slide-cycle .cycle-container[data-count='5'] .cycle-stage,
 .slide-cycle .cycle-container[data-count='6'] .cycle-stage {
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
   width: 160px;
 }
 
@@ -351,17 +350,6 @@
 .slide-cycle .cycle-container[data-count='5'] .stage-number,
 .slide-cycle .cycle-container[data-count='6'] .stage-number {
   font-size: var(--slide-text-base);
-}
-
-.slide-cycle .cycle-container[data-count='5'] .cycle-label,
-.slide-cycle .cycle-container[data-count='6'] .cycle-label {
-  /* ladder rung: stays under the 4-stage rung, which is the base rule (md) */
-  font-size: var(--slide-text-base);
-}
-
-.slide-cycle .cycle-container[data-count='5'] .cycle-text,
-.slide-cycle .cycle-container[data-count='6'] .cycle-text {
-  font-size: var(--slide-text-sm);
 }
 
 .slide-cycle .cycle-container[data-count='5'] .cycle-ring,

@@ -40,7 +40,12 @@
    INDIVIDUAL STAGE STYLING
    =========================================== */
 
+/* Label and text read the card roles; this is the 4-stage rung (count 4 has
+   no rule of its own), and each other count sets both below
+   (slide-roles.md § The card ladder). */
 .slide-funnel .funnel-stage {
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-base);
   width: 100%;
   max-width: 900px;
   display: flex;
@@ -85,7 +90,7 @@
 
 .slide-funnel .stage-label {
   font-family: var(--font-heading);
-  font-size: var(--slide-text-md);
+  font-size: var(--slide-font-size-card-title);
   line-height: var(--slide-leading-snug);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -104,7 +109,7 @@
 /* Description text below each stage */
 .slide-funnel .stage-text {
   font-family: var(--font-body);
-  font-size: var(--slide-text-base);
+  font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-compact);
   color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
   text-align: center;
@@ -127,16 +132,13 @@
   padding: var(--slide-space-4) var(--slide-space-8);
 }
 
-.slide-funnel .funnel-container[data-count='3'] .stage-label {
-  font-size: var(--slide-text-lg);
+.slide-funnel .funnel-container[data-count='3'] .funnel-stage {
+  --slide-font-size-card-title: var(--slide-text-md);
+  --slide-font-size-card-body: var(--slide-text-base);
 }
 
 .slide-funnel .funnel-container[data-count='3'] .stage-value {
   font-size: var(--slide-text-xl);
-}
-
-.slide-funnel .funnel-container[data-count='3'] .stage-text {
-  font-size: var(--slide-text-base);
 }
 
 /* 4 stages: default sizing (defined above) */
@@ -151,18 +153,14 @@
   padding: var(--slide-space-3) var(--slide-space-5);
 }
 
-.slide-funnel .funnel-container[data-count='5'] .stage-label {
-  /* ladder rung: stays under the 4-stage rung, which is the base rule (md) */
-  font-size: var(--slide-text-base);
+.slide-funnel .funnel-container[data-count='5'] .funnel-stage {
+  --slide-font-size-card-title: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 
 .slide-funnel .funnel-container[data-count='5'] .stage-value {
   /* ladder rung: stays under the 4-stage rung, which is the base rule (lg) */
   font-size: var(--slide-text-md);
-}
-
-.slide-funnel .funnel-container[data-count='5'] .stage-text {
-  font-size: var(--slide-text-sm);
 }
 
 /* 6 stages: smallest */
@@ -175,17 +173,14 @@
   padding: var(--slide-space-2) var(--slide-space-4);
 }
 
-.slide-funnel .funnel-container[data-count='6'] .stage-label {
-  font-size: var(--slide-text-base);
+.slide-funnel .funnel-container[data-count='6'] .funnel-stage {
+  --slide-font-size-card-title: var(--slide-text-sm);
+  --slide-font-size-card-body: var(--slide-text-xs);
 }
 
 .slide-funnel .funnel-container[data-count='6'] .stage-value {
   /* ladder rung: stays under the 5-stage rung (md) */
   font-size: var(--slide-text-base);
-}
-
-.slide-funnel .funnel-container[data-count='6'] .stage-text {
-  font-size: var(--slide-text-xs);
 }
 
 /* ===========================================
@@ -223,20 +218,17 @@
     padding: var(--slide-space-3) var(--slide-space-4);
   }
 
-  .slide-funnel .stage-label {
+  .slide-funnel .funnel-stage {
     /* overflow: this tier is what makes a 4-stage funnel fit at 1024px wide —
        it is the one responsive block here that still wins (count 4 has no rung
        of its own), and the ratio-larger step measures as a stage-bar escape */
-    font-size: var(--slide-text-sm);
+    --slide-font-size-card-title: var(--slide-text-sm);
+    --slide-font-size-card-body: var(--slide-text-xs);
   }
 
   .slide-funnel .stage-value {
     /* overflow: same tier, same measured escape */
     font-size: var(--slide-text-base);
-  }
-
-  .slide-funnel .stage-text {
-    font-size: var(--slide-text-xs);
   }
 
   .slide-funnel .stage-content {

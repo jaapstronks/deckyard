@@ -173,7 +173,11 @@ card roles — `--slide-font-size-card-title`, `--slide-font-size-card-body`,
 those axes.
 
 The members, measured rather than declared: the icon-card (both layouts), the
-text block, the team card, the timeline card, the matrix cell and the KPI tile.
+text block, the team card, the timeline card, the matrix cell, the KPI tile, and
+the item of each diagram family (process step, funnel stage, pyramid level,
+cycle stage). A diagram item has no box of its own, but its title and text size
+together on a count ladder all the same, so it sets the two text roles and
+nothing else.
 Three neighbours look like members and are not: **`.comparison-side` is a
 column**, not a box — no surface, and its padding is the gutter between the two
 halves; **the gallery tile, the logo-wall cell and the follow-invite QR plate**
@@ -234,14 +238,14 @@ The ordering is tighter than "title ≥ body": **every rung of every card sits o
 one shared ladder**, where the title is exactly one step above the body on the
 text scale, and `xs / xs` is the floor (D15, D250).
 
-| Rung | title / body  | carried by                                                                                                             |
-| ---- | ------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| R0   | `xl` / `lg`   | text-blocks, 1 block                                                                                                   |
-| R1   | `lg` / `md`   | the `00-tokens.css` default, text-blocks base, team-cards 4, KPI tile, matrix cell, icon-card                          |
-| R2   | `md` / `base` | text-blocks 3, team-cards base, matrix ≤1024px, icon-card tiles                                                        |
-| R3   | `base` / `sm` | text-blocks 4–6 and 3 rows ∧ 1–2 blocks, team-cards 6, timeline card, icon-card tiles 5–6                              |
-| R4   | `sm` / `xs`   | text-blocks 3 rows ∧ 3+ blocks and 4 rows ∧ 1–3 blocks, team-cards 18 and 6 with a bottom subheading, timeline ≤1024px |
-| R5   | `xs` / `xs`   | text-blocks 4 rows ∧ 4+ blocks, team-cards 25                                                                          |
+| Rung | title / body  | carried by                                                                                                                                                              |
+| ---- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R0   | `xl` / `lg`   | text-blocks, 1 block                                                                                                                                                    |
+| R1   | `lg` / `md`   | the `00-tokens.css` default, text-blocks base, team-cards 4, KPI tile, matrix cell, icon-card, process 3, cycle 3                                                       |
+| R2   | `md` / `base` | text-blocks 3, team-cards base, matrix ≤1024px, icon-card tiles, process 4, funnel 3–4, pyramid 3, cycle 4                                                              |
+| R3   | `base` / `sm` | text-blocks 4–6 and 3 rows ∧ 1–2 blocks, team-cards 6, timeline card, icon-card tiles 5–6, process 5–7, funnel 5, pyramid 4–5, cycle 5–6                                |
+| R4   | `sm` / `xs`   | text-blocks 3 rows ∧ 3+ blocks and 4 rows ∧ 1–3 blocks, team-cards 18 and 6 with a bottom subheading, timeline ≤1024px, funnel 6 and 4 ≤1024px, pyramid 6 and 5 ≤1024px |
+| R5   | `xs` / `xs`   | text-blocks 4 rows ∧ 4+ blocks, team-cards 25                                                                                                                           |
 
 What is shared is the **series of rungs**, not the count → rung mapping: that
 stays per pattern, because the box geometry differs too much (a matrix quadrant
@@ -266,11 +270,6 @@ one step apart or `xs / xs`. A fork card that sets the roles is on the same
 ladder.
 
 ### What this does not settle
-
-The diagram families (process, funnel, pyramid, cycle) present the same
-title/body-on-a-count-ladder shape and are deliberately left out: their ladders
-were just ratified value-by-value under the tie-break, and folding them in means
-re-opening that record rather than reading it.
 
 There is no shared card base — each card pattern owns its own box. A
 `.slide-card` once stood in `00-patterns.css` claiming to be one, but nothing
