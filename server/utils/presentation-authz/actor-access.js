@@ -1,10 +1,11 @@
 /**
  * Actor-based presentation access checks.
  *
- * Shared by machine-client surfaces (public API, MCP tools) where the acting
- * party is an API key or an MCP session rather than a browser session. Wraps the
- * canonical canRead/canWrite checks with collaborator-permission lookup so
- * machine clients follow the exact same rules as the editor routes.
+ * The deciders a service asks (`server/services/`, D253): whichever contract
+ * the actor came in on — a browser session, an API key, an MCP session — the
+ * same check answers. Wraps the canonical canRead/canWrite checks with the
+ * collaborator-permission lookup so every surface follows the exact same
+ * rules.
  *
  * ## An actor is an identity *and* an organization
  *
@@ -45,11 +46,10 @@ import {
 import { canResolveComment } from './comments.js';
 
 /**
- * The acting machine client.
+ * The acting person — one type on all three contracts (D253); its home and the
+ * guest counterpart are in `server/services/actor.js`.
  *
- * @typedef {Object} Actor
- * @property {string} email - The identity: API key owner / MCP session owner.
- * @property {string|null} [organizationId] - The organization the key or session acts in.
+ * @typedef {import('../../services/actor.js').Actor} Actor
  */
 
 /**
@@ -82,13 +82,16 @@ export function checkActorAccess({
  *
  * @param {Actor} [actor]
  * @param {string|null} [actorUserId]
- * @returns {{id: string|null, email: string|undefined, organizationId: string|null}}
+ * @returns {{id: string|null, email: string|undefined, organizationId: string|null, unrestricted?: true}}
  */
 function actorUser(actor, actorUserId = null) {
   return {
     id: actorUserId || null,
     email: actor?.email,
     organizationId: actor?.organizationId || null,
+    // The auth-off operator (internal contract only) passes every decider;
+    // dropping the flag here would lock them out of their own instance.
+    ...(actor?.unrestricted === true ? { unrestricted: true } : {}),
   };
 }
 

@@ -49,7 +49,7 @@ const URLS = {
   interactionFeedbackSubmittedUrl: 'http://203.0.114.7/feedback',
 };
 
-const REQ = { headers: { host: 'decks.example.test' } };
+const ORIGIN = 'http://decks.example.test';
 // `id` is the stable users.id the async auth path carries; the payload keys
 // actor identity on it (B81), the email travels beside it as a contact value.
 const ACTOR = {
@@ -103,7 +103,7 @@ afterEach(() => {
 
 describe('the delivered request', () => {
   it('carries x-sb-event, JSON content-type, the webhook user-agent, and refuses redirects', async () => {
-    await maybeFireWebhook(REPO_ROOT, REQ, {
+    await maybeFireWebhook(REPO_ROOT, ORIGIN, {
       event: 'presentation.published',
       pres: { id: 'pres-1', title: 'T' },
       authedUser: ACTOR,
@@ -132,7 +132,7 @@ describe('the delivered request', () => {
     await writeAppSettings(testScope(REPO_ROOT), {
       webhooks: { ...URLS, commentCreatedUrl: '' },
     });
-    await maybeFireWebhook(REPO_ROOT, REQ, {
+    await maybeFireWebhook(REPO_ROOT, ORIGIN, {
       event: 'comment.created',
       pres: { id: 'pres-1', title: 'T' },
       authedUser: ACTOR,
@@ -147,7 +147,7 @@ describe('the delivered request', () => {
 
 describe('common payload shape', () => {
   it('presentation.published: exact shape, lowercased actor, published block and links', async () => {
-    await maybeFireWebhook(REPO_ROOT, REQ, {
+    await maybeFireWebhook(REPO_ROOT, ORIGIN, {
       event: 'presentation.published',
       pres: {
         id: 'pres-1',
@@ -203,7 +203,7 @@ describe('common payload shape', () => {
   });
 
   it('an unpublished deck nulls the published block and public links', async () => {
-    await maybeFireWebhook(REPO_ROOT, REQ, {
+    await maybeFireWebhook(REPO_ROOT, ORIGIN, {
       event: 'presentation.moved_to_organization',
       pres: { id: 'pres-2', title: 'Draft' },
       authedUser: { email: 'user@example.com', name: 'U', isAdmin: false },
@@ -228,7 +228,7 @@ describe('common payload shape', () => {
   });
 
   it('comment.created forwards the fire site extra block verbatim', async () => {
-    await maybeFireWebhook(REPO_ROOT, REQ, {
+    await maybeFireWebhook(REPO_ROOT, ORIGIN, {
       event: 'comment.created',
       pres: { id: 'pres-3', title: 'T' },
       authedUser: ACTOR,
@@ -254,7 +254,7 @@ describe('common payload shape', () => {
 
 describe('slide.added_to_organization_library payload shape', () => {
   it('carries the slide block and library links instead of a presentation', async () => {
-    await maybeFireWebhook(REPO_ROOT, REQ, {
+    await maybeFireWebhook(REPO_ROOT, ORIGIN, {
       event: 'slide.added_to_organization_library',
       slideItem: {
         id: 'sl-9',
@@ -351,7 +351,7 @@ describe('best-effort fire', () => {
   it('a refusing receiver (500) never rejects the maybeFire call', async () => {
     stubFetch(() => ({ ok: false, status: 500 }));
     await assert.doesNotReject(
-      maybeFireWebhook(REPO_ROOT, REQ, {
+      maybeFireWebhook(REPO_ROOT, ORIGIN, {
         event: 'presentation.published',
         pres: { id: 'pres-1', title: 'T' },
         authedUser: ACTOR,
@@ -389,7 +389,7 @@ describe('best-effort fire', () => {
       webhooks: { ...URLS, presentationPublishedUrl: 'http://127.0.0.1/hook' },
     });
     await assert.doesNotReject(
-      maybeFireWebhook(REPO_ROOT, REQ, {
+      maybeFireWebhook(REPO_ROOT, ORIGIN, {
         event: 'presentation.published',
         pres: { id: 'pres-1', title: 'T' },
         authedUser: ACTOR,
@@ -412,7 +412,7 @@ describe('HMAC signing', () => {
   });
 
   it('no signature header when no secret is configured', async () => {
-    await maybeFireWebhook(REPO_ROOT, REQ, {
+    await maybeFireWebhook(REPO_ROOT, ORIGIN, {
       event: 'presentation.published',
       pres: { id: 'pres-1', title: 'T' },
       authedUser: ACTOR,
@@ -427,7 +427,7 @@ describe('HMAC signing', () => {
       webhooks: { ...URLS, signingSecret: SECRET },
     });
     stubFetch();
-    await maybeFireWebhook(REPO_ROOT, REQ, {
+    await maybeFireWebhook(REPO_ROOT, ORIGIN, {
       event: 'presentation.published',
       pres: { id: 'pres-1', title: 'T' },
       authedUser: ACTOR,

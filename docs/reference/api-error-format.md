@@ -125,6 +125,7 @@ reason. Spreading the result by hand
 (`jsonError(res, getErrorStatus(result.reason), result.reason)`) drops all of
 that, so `tests/storage-reason-vocabulary.test.js` refuses that form under
 `server/routes/**`.
+A service in `server/services/` answers no response of its own: it throws the same result through **`throwStorageFailure(result, message?)`** in `server/utils/errors.js` (D254), which reads the register the same way and carries `details.field` the same way, as an `AppError`; the contract's own error handler (`withErrorHandler`, `withV1ErrorHandler`, the MCP `toolError`) renders it, so no adapter translates a reason a second time.
 `getErrorStatus` reads the closed `REASONS` register in
 [`server/storage/reasons.js`](../../server/storage/reasons.js), which states one
 status and one `kind` (`'caller'` 4xx / `'ours'` 5xx) per code. It takes **no**

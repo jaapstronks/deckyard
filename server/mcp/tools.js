@@ -23,17 +23,12 @@ import {
   listRecentCommentsForOwner,
   listAccessiblePresentationRefs,
   getComment,
-  createComment,
   resolveComment,
   reopenComment,
   dismissComment,
 } from '../storage/presentations/comments.js';
+import { canActorResolveComment } from '../utils/presentation-authz/index.js';
 import {
-  canActorCommentOnPresentation,
-  canActorResolveComment,
-} from '../utils/presentation-authz/index.js';
-import {
-  buildSlideSnapshot,
   enrichCommentsWithSlideContext,
   slideContextFor,
 } from '../services/comment-slide-context.js';
@@ -42,15 +37,10 @@ import {
   CommentEventTypes,
 } from '../services/comment-events.js';
 import {
-  recordCommentCreated,
   recordCommentResolved,
   recordCommentReopened,
 } from '../services/activity-events.js';
-import { notifyCommentCreatedInApp } from '../services/comment-notifications.js';
-import {
-  broadcastCommentCounts,
-  MAX_COMMENT_LENGTH,
-} from '../routes/api/presentations/comments-shared.js';
+import { createComment, broadcastCommentCounts } from '../services/comments.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   convertSlideToType,
@@ -1971,92 +1961,27 @@ export function registerTools(
   }
 
   /**
-   * Shared create path for add_comment and reply_to_comment.
+   * Shared create path for add_comment and reply_to_comment. The flow is
+   * `services/comments.js`; this adapter names the actor and shapes the tool
+   * result.
    */
   async function createCommentAsActor(
     { presentationId, body, slideId = null, parentId = null },
     context,
   ) {
-    const owner = requireCommentActor(context);
-    const pres = await getCheckedPresentation(presentationId, context);
-
-    if (!(await canActorCommentOnPresentation(pres, actorOf(context)))) {
-      throw new Error(
-        'You do not have comment permission on this presentation',
-      );
-    }
-
-    const text = typeof body === 'string' ? body.trim() : '';
-    if (!text) throw new Error('Comment body is required');
-    if (text.length > MAX_COMMENT_LENGTH) {
-      throw new Error(
-        `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
-      );
-    }
-
-    let slideSnapshot = null;
-    if (slideId) {
-      const slide = (pres.slides || []).find((s) => s?.id === slideId);
-      if (!slide)
-        throw new Error(`Slide not found in this presentation: ${slideId}`);
-      slideSnapshot = buildSlideSnapshot(slide);
-    }
-
-    const ctx = storageScopeOf(context);
-    const result = await createComment(ctx, presentationId, {
-      email: owner,
-      body: text,
-      slideId,
-      parentId,
-      slideSnapshot,
-    });
-
-    if (!result.ok) {
-      throw new Error(
-        `Could not create comment: ${result.reason} (comments require the DB storage backend)`,
-      );
-    }
-
-    // Same side effects as the app routes so the editor UI updates live.
-    // The parent lookup rides inside the voided task: the tool response
-    // must not wait on notification plumbing.
-    fireAndForget(
-      (async () => {
-        const parentComment = parentId ? await getComment(ctx, parentId) : null;
-        await notifyCommentCreatedInApp({
-          presentation: pres,
-          comment: result.comment,
-          parentComment,
-          actor: { email: owner },
-          scope: ctx,
-        });
-      })(),
-      'MCP comment-created in-app notification',
+    requireCommentActor(context);
+    const { comment, presentation } = await createComment(
+      storageScopeOf(context),
+      { actor: actorOf(context) },
+      { presentationId, body, slideId, parentId },
     );
-    fireAndForget(
-      recordCommentCreated({
-        comment: result.comment,
-        presentation: pres,
-        actor: { email: owner },
-        scope: ctx,
-      }),
-      'record comment-created activity',
-    );
-    broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
-      comment: result.comment,
-    });
-    fireAndForget(
-      broadcastCommentCounts(presentationId, ctx),
-      'broadcast comment counts',
-    );
-
     return {
       ok: true,
       comment: {
-        ...result.comment,
-        slide: slideContextFor(pres, result.comment.slideId),
+        ...comment,
+        slide: slideContextFor(presentation, comment.slideId),
         editUrl: presentationUrl(presentationId, 'edit', {
-          slideId: result.comment.slideId,
+          slideId: comment.slideId,
         }),
       },
     };
@@ -2113,20 +2038,11 @@ export function registerTools(
       },
       required: ['presentationId', 'commentId', 'body'],
     },
-    async ({ presentationId, commentId, body }, context) => {
-      requireCommentActor(context); // writes need an attributable actor
-      const ctx = storageScopeOf(context);
-
-      const parent = await getComment(ctx, commentId);
-      if (!parent || parent.presentationId !== presentationId) {
-        throw new Error(`Comment not found on this presentation: ${commentId}`);
-      }
-
-      // Threads are one level deep: replying to a reply joins its thread.
-      const parentId = parent.parentId || parent.id;
-
-      return createCommentAsActor({ presentationId, body, parentId }, context);
-    },
+    async ({ presentationId, commentId, body }, context) =>
+      createCommentAsActor(
+        { presentationId, body, parentId: commentId },
+        context,
+      ),
     { permission: 'comments:write' },
   );
 

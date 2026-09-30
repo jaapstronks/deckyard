@@ -13,22 +13,16 @@ import { getAppBaseUrl } from '../../../config/utils.js';
 import {
   listComments,
   getComment,
-  createComment,
   resolveComment,
   reopenComment,
   dismissComment,
 } from '../../../storage/presentations/comments.js';
+import { canResolveComment } from '../../../utils/presentation-authz/index.js';
 import {
-  canActorCommentOnPresentation,
-  canResolveComment,
-} from '../../../utils/presentation-authz/index.js';
-import {
-  buildSlideSnapshot,
   enrichCommentsWithSlideContext,
   slideContextFor,
 } from '../../../services/comment-slide-context.js';
 import {
-  recordCommentCreated,
   recordCommentResolved,
   recordCommentReopened,
 } from '../../../services/activity-events.js';
@@ -36,13 +30,10 @@ import {
   broadcastToPresentation,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
-import { notifyCommentCreated } from '../../../services/comment-notifications.js';
-import { getTrimmedString } from '../../../utils/request-validators.js';
-import { getErrorStatus } from '../../../utils/http.js';
 import {
+  createComment,
   broadcastCommentCounts,
-  MAX_COMMENT_LENGTH,
-} from '../../api/presentations/comments-shared.js';
+} from '../../../services/comments.js';
 import {
   requirePermission,
   dispatchV1Routes,
@@ -175,123 +166,35 @@ async function handleListComments(ctx, presentationId) {
 
 /**
  * POST /api/v1/presentations/:id/comments - Create a comment or reply.
- * Body: { body, slideId?, parentId? }. Author = the API key owner.
+ * Body: { body, slideId?, parentId? }. Author = the API key owner. The flow —
+ * comment right, validation, snapshot, notifications — is
+ * `services/comments.js`; a refusal is thrown and `withV1ErrorHandler`
+ * renders it.
  */
 async function handleCreateComment(ctx, presentationId) {
-  const { repoRoot, req, apiKey, authedUser } = ctx;
+  const { req, authedUser } = ctx;
 
   if (!requirePermission(ctx, 'comments:write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
-  if (!ok) return true;
-
-  // Commenting needs comment permission (owner/creator, organization user, or
-  // collaborator with comment rights or higher) — not full write access.
-  if (!(await canActorCommentOnPresentation(pres, authedUser))) {
-    await apiError(
-      ctx,
-      403,
-      'API key owner may not comment on this presentation',
-    );
-    return true;
-  }
-
-  const text = getTrimmedString(body, 'body');
-  if (!text) {
-    await apiError(ctx, 400, 'Comment body is required');
-    return true;
-  }
-  if (text.length > MAX_COMMENT_LENGTH) {
-    await apiError(
-      ctx,
-      400,
-      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
-    );
-    return true;
-  }
-
-  const slideId = body?.slideId || null;
-  let slideSnapshot = null;
-  if (slideId) {
-    const slide = (pres.slides || []).find((s) => s?.id === slideId);
-    if (!slide) {
-      await apiError(ctx, 400, 'slideId does not exist in this presentation');
-      return true;
-    }
-    slideSnapshot = buildSlideSnapshot(slide);
-  }
-
-  const sctx = ctx.storageScope;
-
-  // For replies: fetch the parent (notification recipient + 404 mapping).
-  let parentComment = null;
-  if (body?.parentId) {
-    parentComment = await getComment(sctx, body.parentId);
-    if (!parentComment || parentComment.presentationId !== presentationId) {
-      await apiError(ctx, 404, 'Parent comment not found on this presentation');
-      return true;
-    }
-  }
-
-  const result = await createComment(sctx, presentationId, {
-    email: apiKey.ownerEmail,
-    body: text,
-    slideId,
-    parentId: body?.parentId || null,
-    slideSnapshot,
-  });
-
-  if (!result.ok) {
-    // The status comes from the reason register, not from a ladder here (D52).
-    // The envelope stays `sendV1Error` via `apiError` — this route answers the
-    // public v1 shape, not the internal one — but which status a reason means
-    // is decided in one place for every surface.
-    await apiError(
-      ctx,
-      getErrorStatus(result.reason),
-      `Could not create comment: ${result.reason}`,
-    );
-    return true;
-  }
-
-  const actor = { email: apiKey.ownerEmail };
-
-  // Same side effects as the internal route: notify, record, broadcast.
-  fireAndForget(
-    notifyCommentCreated(repoRoot, req, {
-      presentation: pres,
-      comment: result.comment,
-      parentComment,
-      actor,
-      scope: sctx,
-    }),
-    'comment-created notification fan-out',
-  );
-  fireAndForget(
-    recordCommentCreated({
-      comment: result.comment,
-      presentation: pres,
-      actor,
-      scope: sctx,
-    }),
-    'record comment-created activity',
-  );
-  broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
-    comment: result.comment,
-  });
-  fireAndForget(
-    broadcastCommentCounts(presentationId, sctx),
-    'broadcast comment counts',
+  const { comment, presentation } = await createComment(
+    ctx.storageScope,
+    { actor: authedUser },
+    {
+      presentationId,
+      body: body?.body,
+      slideId: body?.slideId || null,
+      parentId: body?.parentId || null,
+    },
   );
 
   await apiCreated(ctx, {
     ok: true,
     comment: {
-      ...sanitizeComment(result.comment, pres),
-      slide: slideContextFor(pres, result.comment.slideId),
+      ...sanitizeComment(comment, presentation),
+      slide: slideContextFor(presentation, comment.slideId),
     },
   });
   return true;

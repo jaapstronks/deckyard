@@ -2,7 +2,8 @@
  * Standardized error classes for consistent error handling.
  */
 
-import { assertErrorDetails } from './error-details.js';
+import { assertErrorDetails, locateDetails } from './error-details.js';
+import { reasonEntry } from '../storage/reasons.js';
 
 /**
  * Default machine-code per HTTP status, for the canonical error envelope
@@ -217,4 +218,43 @@ export function errorToResponse(err) {
     error: codeForStatus(status),
     message: err?.message || 'Unknown error',
   };
+}
+
+/**
+ * Throw a failed storage result as an {@link AppError} — the service-side twin
+ * of `storageError()` (`server/utils/http.js`), and the one place a service
+ * turns `{ ok: false, reason, field }` into an exception (D254).
+ *
+ * The reason is the machine code and its `REASONS` entry
+ * (`server/storage/reasons.js`) the status, exactly as `storageError()` puts
+ * them on the wire, so a refusal reads the same whether a route answered it or
+ * a service threw it; `field` rides along as `details.field`. Each contract's
+ * own error handler renders the result in its envelope (`withErrorHandler`,
+ * `withV1ErrorHandler`, the MCP `toolError`), so no adapter translates a
+ * reason again.
+ *
+ * A reason the register does not know is our vocabulary failing, not the
+ * caller's request: it throws a plain `Error`, which every handler answers
+ * as a 500.
+ *
+ * @param {{reason: string, field?: string, fieldProblem?: Object}} result - A storage `{ ok: false, … }` result.
+ * @param {string} [message] - Human-readable text for display; defaults to the reason.
+ * @returns {never}
+ * @throws {AppError}
+ */
+export function throwStorageFailure(result, message) {
+  const reason = result?.reason;
+  const entry = reasonEntry(reason);
+  if (!entry) {
+    throw new Error(
+      `Unknown storage reason ${JSON.stringify(reason)} — add it to REASONS ` +
+        'in server/storage/reasons.js.',
+    );
+  }
+  throw new AppError(
+    message || reason,
+    entry.status,
+    locateDetails(result) || null,
+    reason,
+  );
 }

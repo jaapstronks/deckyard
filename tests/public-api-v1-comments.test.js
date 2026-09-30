@@ -49,8 +49,7 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { handleComments } =
   await import('../server/routes/public-api/v1/comments.js');
-const { MAX_COMMENT_LENGTH } =
-  await import('../server/routes/api/presentations/comments-shared.js');
+const { MAX_COMMENT_LENGTH } = await import('../server/services/comments.js');
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -483,13 +482,15 @@ test('POST /comments validates the body text', async () => {
   assert.equal(tooLong.res.statusCode, 400);
 });
 
-test('POST /comments with a slideId that is not in the deck answers 400', async () => {
+// An absent anchor answers like an absent parent: 404 with the register's code
+// (`slide_not_found`, beside `parent_not_found`), on every contract (B518).
+test('POST /comments with a slideId that is not in the deck answers 404', async () => {
   await installDb();
   const ctx = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/comments`, {
     body: { body: 'Anchored nowhere', slideId: 'never-a-slide' },
   });
   await handleComments(ctx);
-  assert.equal(ctx.res.statusCode, 400);
+  assert.equal(ctx.res.statusCode, 404);
 });
 
 test('POST /comments without the comments:write permission is refused with 403', async () => {

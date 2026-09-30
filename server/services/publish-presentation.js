@@ -33,6 +33,7 @@ import { generateAndSaveOgPreview } from '../render/preview-image.js';
 import { isMediaProviderInitialized } from '../media/index.js';
 import { sandboxEnabled } from '../config/sandbox.js';
 import { maybeFireWebhook } from '../utils/webhooks.js';
+import { getRequestOrigin } from '../utils/request-url.js';
 import { warmDeckThumbnail } from '../render/deck-thumbnail-warm.js';
 import { ForbiddenError } from '../utils/errors.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
@@ -227,7 +228,7 @@ export async function publishPresentation({
 
   const path = `/p/${entry.publishId}-${entry.slug}`;
 
-  await maybeFireWebhook(repoRoot, req, {
+  await maybeFireWebhook(repoRoot, getRequestOrigin(req), {
     event: 'presentation.published',
     pres: nextPres,
     authedUser: actor,

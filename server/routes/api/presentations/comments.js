@@ -6,7 +6,9 @@
  * - comments-list.js: Read operations (list, get, counts, events)
  * - comments-write.js: Write operations (create, update, delete)
  * - comments-actions.js: State change operations (resolve, reopen, dismiss, apply)
- * - comments-shared.js: Shared utilities
+ *
+ * Creating a comment is a service (`server/services/comments.js`), shared
+ * with the public API and MCP.
  */
 
 // Re-export list/read handlers
@@ -32,9 +34,3 @@ export {
   handlePresentationCommentApply,
   handlePresentationCommentsMarkRead,
 } from './comments-actions.js';
-
-// Re-export shared utilities (in case other modules need them)
-export {
-  MAX_COMMENT_LENGTH,
-  broadcastCommentCounts,
-} from './comments-shared.js';

@@ -1829,7 +1829,10 @@ paths:
       description: |
         Creates a comment (or a reply when `parentId` is given) authored by
         the API key owner. When `slideId` is given, a snapshot of that slide
-        is stored with the comment. Requires the `comments:write` permission and
+        is stored with the comment. A `slideId` that names no slide of the
+        deck, or a `parentId` that names no comment on it, answers 404
+        (`slide_not_found` / `parent_not_found`); a reply to a reply joins
+        the top of its thread. Requires the `comments:write` permission and
         comment permission on the presentation (owner/creator, organization
         member, or collaborator with comment rights).
       parameters:

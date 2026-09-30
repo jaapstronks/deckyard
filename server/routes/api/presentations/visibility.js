@@ -17,6 +17,7 @@ import {
   isPresentationAuthor,
 } from '../../../utils/presentation-authz/index.js';
 import { maybeFireWebhook } from '../../../utils/webhooks.js';
+import { getRequestOrigin } from '../../../utils/request-url.js';
 import { parseIfMatchRevision } from './helpers.js';
 import { getOptionalBoolean } from '../../../utils/request-validators.js';
 import { assertSharingEnabled } from '../../../sandbox/sharing.js';
@@ -99,7 +100,7 @@ export async function handlePresentationVisibility(
     existing?.visibility !== 'organization' &&
     updated?.visibility === 'organization'
   ) {
-    await maybeFireWebhook(repoRoot, req, {
+    await maybeFireWebhook(repoRoot, getRequestOrigin(req), {
       event: 'presentation.moved_to_organization',
       pres: updated,
       authedUser,

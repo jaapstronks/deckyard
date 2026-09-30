@@ -8,9 +8,8 @@
 import { getAppSettings, getUserSettings } from '../storage/settings.js';
 import { maybeFireWebhook } from '../utils/webhooks.js';
 import { sendCommentNotification } from '../integrations/brevo.js';
-import { getRequestOrigin } from '../utils/request-url.js';
 import { normalizeEmail } from '../utils/normalize.js';
-import { envStr } from '../config/utils.js';
+import { envStr, getAppBaseUrl } from '../config/utils.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import {
   parseMentions,
@@ -37,12 +36,15 @@ import { createLogger } from '../utils/logger.js';
 const log = createLogger('comment-notifications');
 
 /**
- * Send notifications for a newly created comment.
- * Fires webhook (for Slack/Discord) and sends email via Brevo.
- * Respects user notification preferences.
+ * Send notifications for a newly created comment: in-app (bell + SSE), the
+ * Slack/Discord webhook and e-mail via Brevo, whichever contract the comment
+ * came in on. Respects user notification preferences.
  *
- * @param {string} repoRoot - Repository root path
- * @param {Object} req - HTTP request object (for building URLs)
+ * Takes no request: the links it sends are built on the configured public
+ * base URL (`getAppBaseUrl()`), so a comment from the public API or an MCP
+ * session notifies exactly like one from the editor (B518).
+ *
+ * @param {string|null} repoRoot - Repository root path
  * @param {Object} options - Notification options
  * @param {Object} options.presentation - The presentation object
  * @param {Object} options.comment - The created comment
@@ -52,7 +54,6 @@ const log = createLogger('comment-notifications');
  */
 export async function notifyCommentCreated(
   repoRoot,
-  req,
   { presentation, comment, parentComment, actor, scope },
 ) {
   const ownerEmail = normalizeEmail(presentation?.ownerEmail);
@@ -105,9 +106,7 @@ export async function notifyCommentCreated(
       'comment notification fan-out: e-mail switch is instance-level',
     ),
   );
-  const origin = getRequestOrigin(req);
-  const editUrl =
-    origin && presentation?.id ? `${origin}/app/${presentation.id}` : null;
+  const editUrl = deckEditUrl(presentation);
 
   // In-app notifications (bell + live SSE push)
   await createInAppNotifications({
@@ -138,7 +137,7 @@ export async function notifyCommentCreated(
   );
 
   // Fire Slack/Discord webhook
-  await fireCommentWebhook(repoRoot, req, {
+  await fireCommentWebhook(repoRoot, {
     settings,
     presentation,
     comment,
@@ -163,6 +162,17 @@ export async function notifyCommentCreated(
     commenterEmail,
     editUrl,
   });
+}
+
+/**
+ * The editor link a notification sends: the deck on the configured public
+ * base URL, or `null` when the instance has none (the startup check warns).
+ * @param {Object} presentation
+ * @returns {string|null}
+ */
+function deckEditUrl(presentation) {
+  const base = getAppBaseUrl();
+  return base && presentation?.id ? `${base}/app/${presentation.id}` : null;
 }
 
 /**
@@ -197,60 +207,12 @@ function commentMentions(comment) {
 }
 
 /**
- * In-app-only variant for callers without an HTTP request (MCP stdio):
- * bell notifications + SSE, no webhook or email.
- *
- * @param {Object} options
- * @param {Object} options.presentation - The presentation object
- * @param {Object} options.comment - The created comment
- * @param {Object} [options.parentComment] - Parent comment if this is a reply
- * @param {Object} options.actor - The user/agent who created the comment
- * @param {import('../storage/scope.js').StorageScope} options.scope - the caller's storage scope
- */
-export async function notifyCommentCreatedInApp({
-  presentation,
-  comment,
-  parentComment,
-  actor,
-  scope,
-}) {
-  const parentAuthorEmail = parentComment?.id
-    ? await getCommentAuthorEmail(scope, parentComment.id)
-    : '';
-  const recipients = await resolveCommentRecipients({
-    presentation,
-    comment,
-    parentComment,
-    actor,
-    scope,
-  });
-  await createInAppNotifications({
-    presentation,
-    comment,
-    parentComment,
-    parentAuthorEmail,
-    actor,
-    recipients,
-    scope,
-  });
-  // Your own reply archives your open inbox items for this thread.
-  await autoArchiveOnOwnReply({
-    presentation,
-    comment,
-    parentComment,
-    actor,
-    scope,
-  });
-}
-
-/**
  * Notify users newly @mentioned by an edit. Diffs the stored mention list
  * against the pre-edit one, so re-saving an unchanged body never
  * re-notifies. Mentions always deliver (no subscription filtering), but
  * only to existing accounts — same gate as the create path.
  *
- * @param {string} repoRoot - Repository root path
- * @param {Object} req - HTTP request object (for building URLs)
+ * @param {string|null} repoRoot - Repository root path
  * @param {Object} options
  * @param {Object} options.presentation
  * @param {Object} options.comment - The updated comment (stored mentions)
@@ -262,7 +224,6 @@ export async function notifyCommentCreatedInApp({
  */
 export async function notifyMentionsAdded(
   repoRoot,
-  req,
   { presentation, comment, previousMentions, parentComment, actor, scope },
 ) {
   const before = new Set(
@@ -307,9 +268,7 @@ export async function notifyMentionsAdded(
       'comment notification fan-out: e-mail switch is instance-level',
     ),
   );
-  const origin = getRequestOrigin(req);
-  const editUrl =
-    origin && presentation?.id ? `${origin}/app/${presentation.id}` : null;
+  const editUrl = deckEditUrl(presentation);
   const recipientPrefs = new Map();
   await Promise.all(
     recipients.map(async ({ email }) => {
@@ -506,7 +465,6 @@ async function createInAppNotifications({
  */
 async function fireCommentWebhook(
   repoRoot,
-  req,
   {
     settings,
     presentation,
@@ -527,7 +485,7 @@ async function fireCommentWebhook(
   // Only fire if webhook URL is configured and there are recipients
   if (settings.webhooks?.commentCreatedUrl && slackRecipients.length > 0) {
     fireAndForget(
-      maybeFireWebhook(repoRoot, req, {
+      maybeFireWebhook(repoRoot, getAppBaseUrl() || null, {
         event: 'comment.created',
         pres: presentation,
         authedUser: actor,

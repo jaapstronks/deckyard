@@ -326,7 +326,7 @@ in `server/utils/http.js`. A route that spread the result by hand would drop
 `details.field`, so the gate refuses `jsonError(res, getErrorStatus(…), …)` under
 `server/routes/**`. The share-access validators in `routes/api/analytics-track.js`
 answered `{ ok: false, code, message }` until then; they say `reason` now, since
-one meaning gets one field name.
+one meaning gets one field name. The service layer has the emitter's twin: `throwStorageFailure(result, message?)` in `server/utils/errors.js` turns the same result into an `AppError` for the contract's error handler to render (D254), so the facade's `{ ok, reason }` contract stays as it is and the service boundary is where a result becomes an exception.
 
 ### Implementation status: failure shapes (as of 2026-08-21)
 
