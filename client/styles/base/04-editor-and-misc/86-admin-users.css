@@ -129,7 +129,7 @@
 }
 
 .admin-user-dot.is-muted {
-  background-color: hsl(var(--app-text-tertiary, 0 0% 60%));
+  background-color: hsl(var(--app-text-tertiary));
   opacity: 0.4;
 }
 

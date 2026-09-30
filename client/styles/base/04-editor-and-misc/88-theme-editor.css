@@ -582,7 +582,7 @@
 /* A preset whose file has gone missing stays visible so it can be removed. */
 .theme-bg-preset.is-broken {
   border-style: dashed;
-  border-color: hsl(var(--app-danger, 0 70% 50%));
+  border-color: hsl(var(--app-danger));
 }
 .theme-bg-preset.is-broken .theme-bg-preset-img {
   display: none;

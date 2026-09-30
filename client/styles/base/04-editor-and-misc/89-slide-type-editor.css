@@ -47,7 +47,7 @@
 
 .custom-type-card-slug {
   font-size: var(--ps-text-xs);
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
   color: hsl(var(--app-text-tertiary));
 }
 
@@ -234,7 +234,7 @@
 
 .field-list-item-key {
   font-size: var(--ps-text-xs);
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
   color: hsl(var(--app-text-tertiary));
 }
 
@@ -289,7 +289,7 @@
 
 /* Code textarea (monospace for template/CSS/JSON) */
 .code-textarea {
-  font-family: var(--ps-font-mono, 'Menlo', 'Consolas', monospace) !important;
+  font-family: var(--ps-font-mono) !important;
   font-size: 13px !important;
   line-height: 1.5 !important;
   tab-size: 2;
@@ -312,7 +312,7 @@
 }
 
 .font-mono {
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
 }
 
 /* ============================================================
@@ -411,7 +411,7 @@
 
 .template-help code,
 .template-help-field-list code {
-  font-family: var(--ps-font-mono, 'Menlo', 'Consolas', monospace);
+  font-family: var(--ps-font-mono);
   font-size: 12px;
   padding: 1px 5px;
   border-radius: 4px;

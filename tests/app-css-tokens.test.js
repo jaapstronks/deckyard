@@ -12,7 +12,7 @@
  * All three live in one file, `client/styles/shared/ui-tokens.css`. Any other
  * custom property is component-local and carries its component's name.
  *
- * Three assertions, no allowlist:
+ * Four assertions, no allowlist:
  *
  *   1. every `--ps-`/`--app-`/`--z-` definition under `client/styles/**` is in
  *      `shared/ui-tokens.css`;
@@ -21,7 +21,11 @@
  *   3. every `var(--name)` in an app-chrome sheet (everything outside
  *      `slides/**`) resolves to a definition in CSS or a JS setter
  *      (`setProperty('--…')`, an inline `style: '--…:'`) - a name that exists
- *      nowhere fails, because it renders its fallback in both modes.
+ *      nowhere fails, because it renders its fallback in both modes;
+ *   4. no app-chrome read of a `--ps-`/`--app-`/`--z-` token carries a
+ *      fallback (D279): the token always resolves, so a fallback is a second
+ *      value that can only drift from it. A component-local hook
+ *      (`var(--swatch, transparent)`) keeps its fallback.
  *
  * The rule, the families and the hook form: docs/reference/css-tokens.md
  * § The namespace rule.
@@ -46,6 +50,7 @@ const tokensFile = path.join(stylesDir, 'shared', 'ui-tokens.css');
 const APP_FAMILY = /^--(ps|app|z)-/;
 const DEFINITION = /(?<![\w-])(--[a-zA-Z][\w-]*)\s*:/g;
 const READ = /var\(\s*(--[a-zA-Z][\w-]*)/g;
+const APP_READ_WITH_FALLBACK = /var\(\s*(--(?:ps|app|z)-[\w-]*)\s*,/g;
 /** A JS setter: `setProperty('--x', …)`, or `--x:` / `'--x':` inside a string or style object. */
 const JS_SETTER =
   /setProperty(?:\?\.)?\(\s*['"`](--[a-zA-Z][\w-]*)|['"`;{\s](--[a-zA-Z][\w-]*)['"`]?\s*:/g;
@@ -181,6 +186,21 @@ describe('app CSS token namespace (D265)', () => {
       offenders,
       [],
       `var() reads of a name defined nowhere (they render their fallback in both modes) - use the --app-/--ps- role:\n  ${offenders.join('\n  ')}`,
+    );
+  });
+
+  it('reads --ps-, --app- and --z- tokens without a fallback (D279)', async () => {
+    const sheets = await loadCss();
+    const offenders = [];
+    for (const { file, code } of sheets) {
+      if (isSlideSheet(file)) continue;
+      for (const m of code.matchAll(APP_READ_WITH_FALLBACK))
+        offenders.push(`${rel(file)}:${lineOf(code, m.index)} ${m[1]}`);
+    }
+    assert.deepStrictEqual(
+      offenders,
+      [],
+      `App tokens read with a fallback - the token always resolves, drop the fallback:\n  ${offenders.join('\n  ')}`,
     );
   });
 });

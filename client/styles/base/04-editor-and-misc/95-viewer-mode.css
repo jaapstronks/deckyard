@@ -239,7 +239,7 @@
 }
 
 .viewer-counter {
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
   font-size: var(--ps-text-base);
   opacity: 0.85;
   min-width: 60px;

@@ -217,7 +217,7 @@
 
 .slide-type-preview-key {
   font-size: var(--ps-text-xs);
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
   color: hsl(var(--app-text-tertiary));
 }
 

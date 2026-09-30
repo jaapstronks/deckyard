@@ -101,8 +101,8 @@
 }
 
 .ghost-icon-btn.is-active {
-  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
-  background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.12));
+  color: hsl(var(--app-accent-text));
+  background: hsl(var(--app-accent-soft));
 }
 
 /* details/summary ghost trigger: hide the disclosure marker */
