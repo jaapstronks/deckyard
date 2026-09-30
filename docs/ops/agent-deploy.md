@@ -33,7 +33,7 @@ Ask the operator for what only they know, before touching the platform:
 | Public URL (`https://…`) | `APP_URL`, the platform's domain, and the SSO callback                                       |
 | Admin email              | `AUTH_ADMIN_EMAIL`: this address gets the admin role on first sign-in                        |
 | Repository and ref       | The fork or `jaapstronks/deckyard`, at a release tag (a fork deploys tags, not `main`)       |
-| Media                    | A persistent volume at `/app/server/uploads`, or an S3-compatible bucket (`S3_*`)            |
+| Media                    | Persistent volumes at `/app/server/uploads` and `/app/server/data`, or an S3 bucket (`S3_*`) |
 | Mail                     | A Brevo key and a verified sender, or a decision to run without mail (SSO-only sign-in)      |
 | SSO (optional)           | The provider's issuer URL, client id and secret; see [sso-oidc.md](../reference/sso-oidc.md) |
 | AI (optional)            | A provider key. No key means no AI features, and nothing is sent to a model provider         |
@@ -60,7 +60,7 @@ Follow [deploy-paas.md](deploy-paas.md): the contract for any platform, then the
 1. A PostgreSQL resource (14+). Use its **internal** URL as `DATABASE_URL`, with `DATABASE_SSL=false` on the platform's private network.
 2. An application built from the repo's `Dockerfile` (not a buildpack), internal port `4177`, the operator's domain on it. TLS is the platform's job.
 3. The environment block from step 2 pasted into the platform's environment settings.
-4. Media: a persistent volume at `/app/server/uploads` writable by uid 1000, or the `S3_*` values and no volume.
+4. Media: persistent volumes at `/app/server/uploads` and `/app/server/data` (the image owns both paths, so a new volume there is writable by uid 1000), or the `S3_*` values and no volume.
 5. Deploy. The entrypoint applies migrations before the server starts; there is no release command to configure and no `db:migrate` to run.
 
 Wait until the platform reports the container **healthy**. The image carries its own `HEALTHCHECK` on `GET /health`, so the platform needs no health-check configuration. If it never turns healthy, read the container log first: a refused boot names its cause (`DATABASE_HOST=localhost`, a short `AUTH_SECRET`, an incomplete SSO config).

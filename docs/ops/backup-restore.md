@@ -5,7 +5,8 @@ A Deckyard installation keeps its state in two places. Back up both, and rehears
 | Where                                                  | What                                                                                                                  | Back up? |
 | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- | -------- |
 | PostgreSQL                                             | Everything but media bytes: decks, versions, themes, users, organizations, settings, comments, analytics, live state. | Yes      |
-| Uploads: `server/uploads/` (a volume) or the S3 bucket | Uploaded images, fonts and files. The database refers to them by key.                                                 | Yes      |
+| Uploads: `server/uploads/` (a volume) or the S3 bucket | Uploaded images and files. The database refers to them by key.                                                        | Yes      |
+| `server/data/private-media/` (a volume) or the bucket  | Uploaded font variants (local mode; in S3 mode they are under `private/` in the bucket). The database refers to them. | Yes      |
 | `server/data/deck-thumbs/`                             | Deck thumbnails, a cache rebuilt on demand.                                                                           | No       |
 | The container image                                    | Rebuilt from the repo at the tag you run.                                                                             | No       |
 
@@ -26,7 +27,7 @@ Against any other PostgreSQL, run `pg_dump -Fc --no-owner --no-acl "$DATABASE_UR
 **The uploads**, at the same moment:
 
 ```bash
-tar czf deckyard-uploads-$(date +%F).tgz server/uploads     # a volume or bind mount
+tar czf deckyard-uploads-$(date +%F).tgz server/uploads server/data/private-media   # volumes or bind mounts
 aws s3 sync s3://<bucket> ./deckyard-media-$(date +%F)      # S3 mode, or your provider's own tool
 ```
 
@@ -43,7 +44,7 @@ docker compose exec -T postgres sh -c \
 docker compose exec -T postgres sh -c \
   'pg_restore --no-owner --no-acl -U "$POSTGRES_USER" -d "$POSTGRES_DB"' \
   < deckyard-2026-09-29.dump
-tar xzf deckyard-uploads-2026-09-29.tgz && sudo chown -R 1000:1000 server/uploads
+tar xzf deckyard-uploads-2026-09-29.tgz && sudo chown -R 1000:1000 server/uploads server/data
 docker compose start app                      # the entrypoint applies pending migrations
 docker compose exec app node scripts/doctor.js
 ```
@@ -68,7 +69,7 @@ The doctor should show `Database` and `Migrations` green and the deck count shou
 
 ## On a PaaS
 
-- **Coolify** can schedule dumps of a PostgreSQL resource (the database's back-up settings), kept on the server or sent to an S3 destination. That covers the database; a media volume is not in it, so copy it separately or use S3 for media.
+- **Coolify** can schedule dumps of a PostgreSQL resource (the database's back-up settings), kept on the server or sent to an S3 destination. That covers the database; the media volumes are not in it, so copy them separately or use S3 for media.
 - **Managed PostgreSQL** (Railway, Render, Fly, a cloud provider) takes its own snapshots. Check the retention, and still take an occasional `pg_dump`: a snapshot restores only on that provider, a dump restores anywhere.
 - **Volumes** are rarely in the platform's back-up. Media in S3 with bucket versioning is the simpler guarantee on a PaaS.
 

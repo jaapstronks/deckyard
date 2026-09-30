@@ -262,12 +262,6 @@ export const PRODUCTION_ENV = Object.freeze([
   },
   { group: 'Database', key: 'DATABASE_URL', why: 'storage' },
   { group: 'Database', key: 'DATABASE_SSL', why: 'transport' },
-  {
-    group: 'Uploads',
-    key: 'UPLOADS_DIR',
-    value: 'server/uploads',
-    why: 'volume',
-  },
   { group: 'Uploads', key: 'S3_ENDPOINT', optional: true, why: 'object-store' },
   { group: 'Uploads', key: 'S3_BUCKET', optional: true, why: 'object-store' },
   { group: 'Uploads', key: 'S3_REGION', optional: true, why: 'object-store' },
@@ -325,7 +319,7 @@ const PRODUCTION_GROUP_NOTES = Object.freeze({
   Database:
     'postgres://user:password@host:5432/db. DATABASE_SSL=false on a private network, empty (on) for a managed database.',
   Uploads:
-    'A persistent volume on UPLOADS_DIR, or all four S3_* keys (then no volume).',
+    'All four S3_* keys, or none: then media is on disk in server/uploads and server/data (in a container: a volume on each, no variable).',
   Mail: 'Magic links, invitations and password resets. Empty = no mail.',
   SSO: 'Only with an identity provider: docs/reference/sso-oidc.md.',
   Themes: 'Seed slugs; a fork points DECKYARD_CUSTOM_DIR at its directory.',

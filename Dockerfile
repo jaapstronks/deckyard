@@ -15,8 +15,14 @@ COPY . .
 # Production dependencies exactly as locked. `optionalDependencies` stay in:
 # puppeteer-core (PNG/PDF export), pptxgenjs, pdf-parse and the rest are loaded
 # through gated imports and belong to a full image.
+#
+# The two directories the server writes, at the paths it uses without
+# UPLOADS_DIR or DATA_DIR (`server/config/storage-paths.js`). `.dockerignore`
+# keeps the checkout's copies out, so they are made here: a volume mounted on a
+# path the image has takes the image's owner (`node`), one on a path it lacks
+# is created root-owned and unwritable for the server.
 RUN npm ci --omit=dev \
-  && mkdir -p /app/data /app/uploads \
+  && mkdir -p /app/server/data /app/server/uploads \
   && chmod +x /app/scripts/docker-entrypoint.sh
 
 FROM node:22-alpine
@@ -54,8 +60,9 @@ EXPOSE 4177
 
 # An orchestrator (Docker, Coolify, compose `depends_on: service_healthy`)
 # learns from this when the container serves, without its own configuration.
-# `/health` answers before auth and touches no database. Node's own fetch,
-# because the image ships no curl or wget; PORT is the one the server binds.
+# `/health` answers before auth and touches no database. Node's own fetch, so
+# the check needs nothing beyond the runtime (busybox `wget` is there too, and
+# platform checks like Coolify's use it); PORT is the one the server binds.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || 4177) + '/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
 

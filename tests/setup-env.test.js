@@ -173,6 +173,13 @@ test('productionEnvBlock writes required keys live and optional ones commented',
   assert.match(block, /^DATABASE_URL=$/m, 'operator-only values stay empty');
 });
 
+// The disk paths are the code's defaults (`server/config/storage-paths.js`),
+// which the image and every ops doc name. A profile line for them would be a
+// second spelling of the default (B565).
+test('productionEnvBlock names no storage directory', () => {
+  assert.doesNotMatch(productionEnvBlock(), /^#? ?(UPLOADS_DIR|DATA_DIR)=/m);
+});
+
 test('productionEnvBlock generates a fresh AUTH_SECRET per call', () => {
   const secret = (block) => block.match(/^AUTH_SECRET=(.*)$/m)[1];
   const a = secret(productionEnvBlock());
