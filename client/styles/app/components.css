@@ -262,7 +262,7 @@ table.csv-grid {
   box-sizing: border-box;
   border: none;
   background: transparent;
-  color: hsl(var(--app-text-default, 0 0% 12%));
+  color: hsl(var(--app-text-primary));
   font: inherit;
 }
 
@@ -288,7 +288,7 @@ table.csv-grid {
   padding: 0;
   font-size: 15px;
   line-height: 1;
-  color: hsl(var(--app-text-muted, 0 0% 45%));
+  color: hsl(var(--app-text-secondary));
   background: transparent;
   border: none;
   border-radius: 5px;
@@ -597,7 +597,7 @@ table.csv-grid {
 .icon-picker-trigger-name {
   flex: 1 1 auto;
   min-width: 0;
-  font-family: var(--font-mono, ui-monospace, monospace);
+  font-family: var(--ps-font-mono);
   font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-primary));
   overflow: hidden;
@@ -971,7 +971,7 @@ table.csv-grid {
 .empty-state-panel {
   max-width: none;
   padding: var(--ps-space-6) var(--ps-space-4);
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   border-radius: var(--ps-radius-lg);
   border: 2px dashed hsl(var(--app-border-subtle));
 }

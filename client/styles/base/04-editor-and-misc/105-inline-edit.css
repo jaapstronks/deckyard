@@ -170,7 +170,7 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  color: hsl(var(--app-text-default));
+  color: hsl(var(--app-text-primary));
   background: transparent;
   border: 0;
   border-radius: 5px;
@@ -187,7 +187,7 @@
 }
 
 .ie-sel-toolbar .ie-sel-btn:disabled {
-  color: hsl(var(--app-text-muted));
+  color: hsl(var(--app-text-secondary));
   opacity: 0.45;
   cursor: default;
   background: transparent;
@@ -520,7 +520,7 @@
 .ie-md-modal .ie-md-mode {
   font-weight: 600;
   font-size: var(--ps-text-base);
-  color: hsl(var(--app-text-default, 0 0% 10%));
+  color: hsl(var(--app-text-primary));
 }
 
 .ie-md-modal .ie-md-close {
@@ -532,7 +532,7 @@
   padding: 0;
   font-size: 20px;
   line-height: 1;
-  color: hsl(var(--app-text-muted, 0 0% 40%));
+  color: hsl(var(--app-text-secondary));
   background: transparent;
   border: none;
   border-radius: 6px;
@@ -577,8 +577,8 @@
   max-width: calc(100% - 32px);
   padding: 8px 8px 8px 14px;
   background: hsl(var(--app-accent-primary));
-  color: hsl(var(--app-text-on-accent, 0 0% 100%));
-  border-radius: var(--ps-radius-pill, 999px);
+  color: hsl(var(--app-text-on-solid));
+  border-radius: var(--ps-radius-full);
   box-shadow: 0 8px 24px hsl(0 0% 0% / 0.28);
   font-size: var(--ps-text-sm);
   font-weight: 500;

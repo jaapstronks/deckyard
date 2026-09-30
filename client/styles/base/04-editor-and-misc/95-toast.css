@@ -81,7 +81,7 @@
   appearance: none;
   cursor: pointer;
   border: 1px solid hsl(var(--app-border-default));
-  background: hsl(var(--app-bg-secondary) / 0.6);
+  background: hsl(var(--app-bg-sunken) / 0.6);
   color: hsl(var(--app-text-primary));
   font: inherit;
   font-size: var(--ps-text-xs);

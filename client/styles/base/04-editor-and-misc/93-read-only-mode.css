@@ -64,8 +64,8 @@
   top: 8px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--warning-bg, #fff3cd);
-  color: var(--warning-color, #856404);
+  background: hsl(var(--app-warning-soft));
+  color: hsl(var(--app-warning-text));
   padding: 4px 12px;
   border-radius: 4px;
   font-size: 12px;
@@ -114,7 +114,7 @@
   top: 8px;
   left: 50%;
   transform: translateX(-50%);
-  background: hsl(var(--app-status-warning, 45 100% 50%) / 0.2);
+  background: hsl(var(--app-warning) / 0.2);
   color: hsl(var(--app-text-primary));
   padding: 4px 12px;
   border-radius: 4px;

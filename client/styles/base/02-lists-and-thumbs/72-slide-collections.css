@@ -39,7 +39,7 @@
   align-items: stretch;
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
-  background: hsl(var(--app-bg-surface));
+  background: hsl(var(--app-bg-elevated));
   overflow: hidden;
   transition: border-color var(--ps-transition-fast);
 }
@@ -144,7 +144,7 @@
   padding: 8px 10px;
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
-  background: hsl(var(--app-bg-surface));
+  background: hsl(var(--app-bg-elevated));
   cursor: grab;
 }
 
@@ -212,7 +212,7 @@
   padding: 10px 12px;
   font: inherit;
   text-align: left;
-  background: hsl(var(--app-bg-surface));
+  background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
   cursor: pointer;

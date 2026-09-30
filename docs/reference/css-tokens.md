@@ -2,9 +2,10 @@
 
 Deckyard's app UI is built on a small set of named scales in
 **`client/styles/shared/ui-tokens.css`**: spacing, z-index, typography, radius,
-transitions, and the `--app-*` colour tokens. This document covers the two that
-have a rule attached — **spacing** and **z-index** — and the one trap that makes
-a token silently resolve to nothing.
+transitions, and the `--app-*` colour tokens. This document covers the rules
+attached to them — the **namespace** (which prefix means what, and where it is
+defined), **spacing** and **z-index** — and the one trap that makes a token
+silently resolve to nothing.
 
 For the breakpoint ladder, see [CSS breakpoints](css-breakpoints.md). For slide
 _theme_ variables (`--t-*`), see [Theme config](theme-config.md) — those are a
@@ -32,6 +33,41 @@ agent's preview — none of which share the app's chrome.
 > So: **do not put `--ps-*` or `--z-*` inside `client/styles/slides/**`.** If you
 > need to, fix the bundle first (import `ui-tokens.css` from `slides.css`, or add
 > it to the preview bundle), then migrate. One fix unblocks both scales.
+
+## The namespace rule
+
+A token's prefix says **who may change its value** (D265):
+
+| Prefix    | Family                                                                                                                       | Changed by                                      |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `--ps-*`  | the mode-independent scale: type, spacing, radius, transition, layout constants (`--ps-topbar-height`, `--ps-sidebar-width`) | nobody                                          |
+| `--app-*` | the mode-bound role: colour, shadow, filter                                                                                  | the ui-mode, under `:root[data-ui-mode='dark']` |
+| `--z-*`   | the stacking scale                                                                                                           | nobody                                          |
+
+**All three are defined in one file, `client/styles/shared/ui-tokens.css`.**
+Every `--app-*` in the light `:root` block has a dark counterpart, or carries
+`/* mode-invariant */` on its line and then has none (`--app-surface-white`,
+`--app-text-on-solid`). There is no fourth app family: a name like
+`--color-border` or `--app-bg-secondary` is not a token, it is a typo that
+renders its fallback in both modes. Pick the `--app-*` role the value stands
+for, in the no-fallback form.
+
+Any other custom property in app chrome is **component-local**: its prefix is
+the component's name (`--thumb-scale`, `--fmt-h`, `--sd-fill`,
+`--field-basis`), and it is defined in that component's stylesheet or JS
+module. When a different file reads it, that read is a **hook**: it carries a
+fallback and a comment at the read site naming the setter, e.g.
+
+```css
+/* Hook: set inline by `views/editor/fields/enum.js`. */
+background: var(--swatch, transparent);
+```
+
+`tests/app-css-tokens.test.js` holds the rule, with no allowlist: an app
+token defined outside `ui-tokens.css` fails, a light `--app-*` without a dark
+counterpart or marker fails, and a `var(--name)` in app chrome (everything
+outside `client/styles/slides/**`) that no stylesheet and no JS setter
+(`setProperty('--…')`, an inline `style: '--…:'`) defines fails.
 
 ## Spacing — two resolutions
 

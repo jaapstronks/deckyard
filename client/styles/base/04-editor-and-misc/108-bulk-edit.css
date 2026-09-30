@@ -28,7 +28,7 @@
   margin: 0 0 10px;
   padding: 4px 12px;
   border-radius: 4px;
-  background: hsl(var(--app-status-warning, 45 100% 50%) / 0.2);
+  background: hsl(var(--app-warning) / 0.2);
   color: hsl(var(--app-text-primary));
   font-size: 12px;
   font-weight: 500;
@@ -59,7 +59,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: hsl(var(--app-bg-subtle, 0 0% 96%));
+  background: hsl(var(--app-bg-sunken));
   border-radius: 10px;
   overflow: hidden;
 }

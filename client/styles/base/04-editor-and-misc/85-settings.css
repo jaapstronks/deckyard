@@ -433,7 +433,7 @@
 /* Password status */
 .password-status {
   min-height: 18px;
-  color: hsl(var(--app-text-error, 0 70% 50%));
+  color: hsl(var(--app-danger));
 }
 
 /* Settings modal two-column grid */
@@ -656,7 +656,7 @@
   margin-top: var(--ps-space-3);
   padding: var(--ps-space-3);
   padding-left: calc(18px + var(--ps-space-3) + var(--ps-space-3));
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   border-radius: var(--ps-radius-md);
   display: none;
 }
@@ -800,7 +800,7 @@
   border: 1px solid hsl(var(--app-border-subtle));
   background: hsl(var(--app-bg-sunken));
   color: hsl(var(--app-text-primary));
-  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-family: var(--ps-font-mono);
   font-size: var(--ps-text-xs);
   line-height: 1.5;
   white-space: pre;

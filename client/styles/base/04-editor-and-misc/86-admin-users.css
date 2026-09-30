@@ -14,13 +14,13 @@
 .admin-user-card {
   padding: var(--ps-space-3);
   border-radius: var(--ps-radius-md);
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   border: 1px solid hsl(var(--app-border-subtle));
   transition: background-color 0.15s ease;
 }
 
 .admin-user-card:hover {
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
 }
 
 .admin-user-main {
@@ -65,7 +65,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  background: hsl(var(--app-bg-secondary));
+  background: hsl(var(--app-bg-sunken));
   color: hsl(var(--app-text-secondary));
   flex-shrink: 0;
 }

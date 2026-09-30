@@ -25,7 +25,7 @@
 
 .tag-filter-btn:hover {
   background: hsl(var(--app-bg-hover));
-  border-color: hsl(var(--app-border-hover));
+  border-color: hsl(var(--app-border-strong));
   color: hsl(var(--app-text-primary));
 }
 
@@ -61,7 +61,7 @@
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-lg);
-  box-shadow: var(--ps-shadow-lg);
+  box-shadow: var(--app-shadow-lg);
   z-index: 100;
   opacity: 0;
   visibility: hidden;
@@ -254,7 +254,7 @@
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
-  box-shadow: var(--ps-shadow-lg);
+  box-shadow: var(--app-shadow-lg);
   max-height: 200px;
   overflow-y: auto;
   z-index: 100;
