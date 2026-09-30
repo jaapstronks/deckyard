@@ -401,10 +401,12 @@ test('every class a slide type emits resolves to a CSS rule', () => {
 });
 
 test('the rule corpus is client/styles plus the fork seam custom/styles', () => {
-  assert.deepEqual(
-    CSS_CORPUS.map((dir) => path.relative(REPO_ROOT, dir)),
-    [path.join('client', 'styles'), path.join('custom', 'styles')],
-  );
+  // The seam goes through customDirFor(), so a fork that moves its root with
+  // DECKYARD_CUSTOM_DIR is swept against its own styles, not a stale path.
+  assert.deepEqual(CSS_CORPUS, [
+    path.join(REPO_ROOT, 'client', 'styles'),
+    path.join(customDirFor(REPO_ROOT), 'styles'),
+  ]);
 });
 
 test(
