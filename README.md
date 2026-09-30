@@ -312,7 +312,8 @@ node server/server.js
 Decks live in PostgreSQL: `STORAGE_MODE` defaults to `postgres`, and the
 compose stack ships its own database. Back up the `pg_data` volume
 (`docker compose exec postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql`)
-together with `server/uploads/`, which is where uploaded media stays.
+together with `server/uploads/` and `server/data/private-media/`, which is
+where uploaded media stays (images and files, and font variants).
 
 The old `file` backend (JSON in `server/data/`) was removed in 1.x, and the
 one-time import that moved such a data directory into PostgreSQL was retired

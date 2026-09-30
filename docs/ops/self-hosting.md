@@ -143,7 +143,8 @@ unset or set to `postgres`, and there is no third spelling:
 ### Backups
 
 The `pg_data` volume holds everything except uploaded media, which lives in
-`server/uploads/`. The dump-and-restore pair, what to keep and what not, and a
+`server/uploads/` (images and files) and `server/data/private-media/` (font
+variants). The dump-and-restore pair, what to keep and what not, and a
 restore you can rehearse without touching production:
 [backup-restore.md](backup-restore.md).
 
@@ -165,7 +166,8 @@ import moved into the database. Those files are dead copies, but do not delete
 them by hand: the boot-time guard uses `server/data/presentations/` to detect
 an install whose decks never reached the database, so removing it in the wrong
 order disarms that guard.
-What stays alive in that directory is exactly one thing: `deck-thumbs/`, the
+What stays alive in that directory is two things: `private-media/`, the
+uploaded font variants the database refers to, and `deck-thumbs/`, the
 thumbnail cache. `server/uploads/` is unrelated and always stays.
 
 Do this in order (on a compose stack, prefix the npm commands with

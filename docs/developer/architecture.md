@@ -177,12 +177,15 @@ backend either has a query path or the call is a bug.
 ### On-disk state
 
 - Uploads: `/server/uploads/{filename}`
+- Private media: `/server/data/private-media/` — uploaded font variants, which
+  the database refers to by key and no static root serves (local provider; in
+  S3 mode they are `private/*` in the bucket).
 - Deck thumbnails: `/server/data/deck-thumbs/` — a derived, regenerable cache.
 - No domain data is written to `/server/data/` as JSON any more. Settings, email
   templates, image-library usage, present sessions, follow codes, questions,
   interactions and feedback all persist in PostgreSQL. What remains under
-  `/server/data/` is the thumbnail cache plus the import source the migration
-  chain reads from on an upgrading install.
+  `/server/data/` is the private media, the thumbnail cache and the import
+  source the migration chain reads from on an upgrading install.
 
 ### PostgreSQL Storage
 

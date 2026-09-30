@@ -40,14 +40,15 @@ Then fill the empty values and run the doctor: every empty required value is a r
 
 ### Uploads (required: one of the two)
 
-| Variable        | Why          | What to set                                                                                                  |
-| --------------- | ------------ | ------------------------------------------------------------------------------------------------------------ |
-| `UPLOADS_DIR`   | volume       | Leave unset in the image: mount a persistent volume on `/app/server/uploads`, and one on `/app/server/data`. |
-| `S3_ENDPOINT`   | object-store | Or store media in any S3-compatible bucket instead of a volume: all four of `S3_ENDPOINT`, `S3_BUCKET`, …    |
-| `S3_BUCKET`     | object-store | … `S3_ACCESS_KEY` and `S3_SECRET_KEY` make S3 the store (`MEDIA_STORAGE_MODE=auto`).                         |
-| `S3_REGION`     | object-store | As your provider names it.                                                                                   |
-| `S3_ACCESS_KEY` | object-store | A key that may put, get and delete objects.                                                                  |
-| `S3_SECRET_KEY` | object-store | Its secret.                                                                                                  |
+Media is on disk unless S3 is configured, and the disk case has no variable: the server writes `server/uploads/` and `server/data/`, in the image `/app/server/uploads` and `/app/server/data`. In a container, mount a persistent volume on each ([deploy-paas.md](deploy-paas.md) says what each holds). `UPLOADS_DIR` and `DATA_DIR` exist for a checkout that keeps them elsewhere; the image needs neither.
+
+| Variable        | Why          | What to set                                                                                              |
+| --------------- | ------------ | -------------------------------------------------------------------------------------------------------- |
+| `S3_ENDPOINT`   | object-store | Store media in any S3-compatible bucket instead of on volumes: all four of `S3_ENDPOINT`, `S3_BUCKET`, … |
+| `S3_BUCKET`     | object-store | … `S3_ACCESS_KEY` and `S3_SECRET_KEY` make S3 the store (`MEDIA_STORAGE_MODE=auto`).                     |
+| `S3_REGION`     | object-store | As your provider names it.                                                                               |
+| `S3_ACCESS_KEY` | object-store | A key that may put, get and delete objects.                                                              |
+| `S3_SECRET_KEY` | object-store | Its secret.                                                                                              |
 
 The bucket serves `uploads/*` publicly and must keep `private/*` private; the doctor's upload probe refuses a bucket that serves both.
 
