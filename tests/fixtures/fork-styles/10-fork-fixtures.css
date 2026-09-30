@@ -1,0 +1,25 @@
+/*
+ * Fork fixture stylesheet — the `custom/styles/` half of the three fixtures in
+ * `tests/fixtures/fork-slide-types/`.
+ *
+ * The `test-fork` CI job copies it into `custom/styles/` beside the fixture
+ * types, which is where a real fork keeps the CSS for its own slide types. The
+ * slide-type CSS contract (`tests/slide-type-css-contract.test.js`) sweeps the
+ * fork types against `client/styles/**` plus `custom/styles/**`, so every class
+ * a fixture emits needs a rule here or in core. Delete a rule and the fork lane
+ * goes red; that is the gate working.
+ */
+
+.slide-fork-alpha,
+.slide-fork-beta {
+  display: flex;
+}
+
+/* Fixture C keeps core's `.slide-payoff` root; the marker scopes under it. */
+.slide-payoff.fork-payoff {
+  text-align: center;
+}
+
+.slide-payoff .fork-payoff-mark {
+  font-weight: 600;
+}

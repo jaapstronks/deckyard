@@ -183,10 +183,13 @@ release notes, under the same heading as breaking changes.** One line per rename
 A fork styling its own slide types against core CSS is relying on those names,
 and the release notes are the only place it can learn they moved.
 
-`tests/slide-type-css-contract.test.js` enforces the upstream half — every class
-a core type emits must resolve to a CSS rule — so a rename cannot silently leave
-one side behind. It cannot see a fork's types, which is why the release-notes
-line matters. Details: `docs/reference/slide-type-css-contract.md`.
+`tests/slide-type-css-contract.test.js` enforces it on both halves: every class
+a core type emits must resolve to a CSS rule, and in a fork's checkout every
+class a fork type emits must resolve to one in core's or the fork's
+`custom/styles/`. So a rename cannot silently leave one side behind; the fork's
+suite goes red on the merge of the tag. What it cannot say is what the new name
+is, which is why the release-notes line matters. Details:
+`docs/reference/slide-type-css-contract.md`.
 
 ## Commit conventions
 
