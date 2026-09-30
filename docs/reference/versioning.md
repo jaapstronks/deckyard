@@ -151,6 +151,12 @@ MCP parameter, a response status, an export artifact's shape — is titled
 when the diff is internally refactor-shaped.** `refactor:` is reserved for
 changes with no observable effect on any of the surfaces above.
 
+**What a slide renders counts as observable.** A change to the rendered output
+of an existing slide type (a size, a spacing step, a colour) shows in every
+existing deck and export, so it is titled `fix:` or `feat:` as well, however
+refactor-shaped the diff (D281). #1400 moved four card types onto one ladder
+under a `refactor(css):` title and was retitled at the merge.
+
 This was learned the expensive way: the webhook rename (#829), the MCP
 `scope` → `ownership` argument (#798), the shelf-axis rename in the bulk-export
 ZIP (#806/#827), two retracted wizard endpoints (#835) and the follow-API's
