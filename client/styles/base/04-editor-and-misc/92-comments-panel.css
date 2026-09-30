@@ -276,6 +276,7 @@
 
 .comments-input-textarea {
   width: 100%;
+  box-sizing: border-box;
   padding: var(--ps-space-2) var(--ps-space-2-5);
   font-size: var(--ps-text-sm);
   border: 1px solid hsl(var(--app-border-default));
