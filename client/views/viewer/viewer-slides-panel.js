@@ -68,12 +68,8 @@ export function createViewerSlidesPanel({
         // ignore render errors
       }
 
-      // Slide number overlay inside thumbnail (top-left corner)
-      const numOverlay = h('div', {
-        class: 'slide-num-overlay',
-        text: String(index + 1),
-      });
-      thumbMini.append(numOverlay);
+      // Slide number in its own gutter beside the thumbnail
+      const num = h('div', { class: 'slide-num', text: String(index + 1) });
 
       // Comment indicator (if has comments)
       const commentCount = getSlideCommentCount?.(slide.id) || 0;
@@ -101,7 +97,10 @@ export function createViewerSlidesPanel({
         thumbMini.append(draftBadge);
       }
 
-      item.append(numCollapsed, thumbMini);
+      item.append(
+        numCollapsed,
+        h('div', { class: 'slide-thumb-row' }, [num, thumbMini]),
+      );
 
       // Click to select (no dragging, no multi-select)
       item.addEventListener('click', () => {
