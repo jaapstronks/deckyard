@@ -224,25 +224,21 @@
   margin-top: var(--slide-space-5);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block {
+  /* overflow: the 3-row tier exists to make three rows fit, so on the card
+     ladder its body drops a step instead of its title rising */
   --slide-card-padding: var(--slide-space-5) var(--slide-space-6);
   --slide-font-size-card-title: var(--slide-text-base);
-  --slide-font-size-card-body: var(--slide-text-base);
+  --slide-font-size-card-body: var(--slide-text-sm);
 }
 .slide-text-blocks .text-blocks-content[data-rows='3'] .text-block-title {
   margin-bottom: var(--slide-space-2);
 }
 
-/* Compact mode + 3 blocks per row */
+/* Compact mode + 3 or more blocks per row */
 .slide-text-blocks
   .text-blocks-content[data-rows='3']
   .text-blocks-row[data-count='3']
-  .text-block {
-  /* ladder rung: the title stays under the 3-row block title (base) */
-  --slide-font-size-card-title: var(--slide-text-sm);
-  --slide-font-size-card-body: var(--slide-text-sm);
-}
-
-/* Compact mode + 4 or more blocks per row */
+  .text-block,
 .slide-text-blocks
   .text-blocks-content[data-rows='3']
   .text-blocks-row[data-count='4']
@@ -255,7 +251,7 @@
   .text-blocks-content[data-rows='3']
   .text-blocks-row[data-count='6']
   .text-block {
-  /* ladder rung: the body stays under the 3-row 3-block rung (sm) */
+  /* ladder rung + overflow: both stay under the 3-row tier (base / sm) */
   --slide-font-size-card-title: var(--slide-text-sm);
   --slide-font-size-card-body: var(--slide-text-xs);
 }
@@ -295,11 +291,11 @@
   margin-top: var(--slide-space-3);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block {
-  /* ladder rung + overflow: both stay under the 3-row tier (base), and the
-     4-row tier exists to make four rows fit */
+  /* ladder rung + overflow: both stay under the 3-row tier (base / sm), and
+     the 4-row tier exists to make four rows fit */
   --slide-card-padding: var(--slide-space-3) var(--slide-space-4);
   --slide-font-size-card-title: var(--slide-text-sm);
-  --slide-font-size-card-body: var(--slide-text-sm);
+  --slide-font-size-card-body: var(--slide-text-xs);
 }
 .slide-text-blocks .text-blocks-content[data-rows='4'] .text-block-title {
   margin-bottom: var(--slide-space-1);
@@ -309,7 +305,7 @@
 }
 
 /* The 4-row + 3-block rung is gone: it restated the 4-row tier it sits in
-   (sm/sm), and with it deleted a 3-block row in a 4-row slide still resolves
+   (then sm/sm), and with it deleted a 3-block row in a 4-row slide still resolves
    to that tier — the 3-block rung it would otherwise fall back to loses the
    specificity tie to it (slide-roles.md § Snapping a value to the scale). */
 

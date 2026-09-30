@@ -197,7 +197,7 @@
    § The card pattern). */
 .slide-icon-card-grid[data-layout='tiles'] .icon-card {
   --slide-card-padding: 0 var(--slide-space-4) var(--slide-space-6);
-  --slide-font-size-card-title: var(--slide-text-lg);
+  --slide-font-size-card-title: var(--slide-text-md);
   --slide-font-size-card-body: var(--slide-text-base);
 }
 .slide-icon-card-grid[data-layout='tiles'] .icon-card-body {
@@ -232,7 +232,8 @@
 .slide-icon-card-grid[data-layout='tiles']
   .icon-card-grid[data-card-count='6']
   .icon-card {
-  /* ladder rung: the body stays under the tile base (base) */
+  /* ladder rung: both stay under the tile base (md / base) */
+  --slide-font-size-card-title: var(--slide-text-base);
   --slide-font-size-card-body: var(--slide-text-sm);
 }
 .slide-icon-card-grid[data-layout='tiles']

@@ -92,9 +92,9 @@
   ); /* kickers, eyebrows, axis labels */
   /* The card pattern. Unlike the roles above, these two are *contextual*: a
      card sets them for its own density and its parts read them, so the values
-     here are the default a card inherits when it sets nothing. See
-     docs/reference/slide-roles.md § The card pattern. */
-  --slide-font-size-card-title: var(--slide-text-md);
+     here are the default a card inherits when it sets nothing — rung R1 of the
+     card ladder. See docs/reference/slide-roles.md § The card pattern. */
+  --slide-font-size-card-title: var(--slide-text-lg);
   --slide-font-size-card-body: var(--slide-text-md);
 
   /* KPI/metric display sizes */
