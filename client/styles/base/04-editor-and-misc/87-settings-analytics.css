@@ -18,10 +18,6 @@
 }
 
 /* Analytics sections */
-.analytics-section {
-  margin-bottom: var(--ps-space-4);
-}
-
 .analytics-section-title {
   font-size: var(--ps-text-base);
   font-weight: 600;

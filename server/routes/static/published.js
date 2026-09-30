@@ -227,7 +227,7 @@ async function servePublishedPage(
   const switchHtml =
     versionLangs.length > 1
       ? `
-            <div class="sb-segmented" role="group" aria-label="Language">
+            <div class="sb-segmented is-lang-switch" role="group" aria-label="Language">
               ${versionLangs
                 .map(
                   (lang) =>

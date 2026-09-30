@@ -391,7 +391,7 @@ export function renderEmbedHtmlDocument({
   // runtime still hides what is here unless `langSwitch` is on.
   const langSwitchHtml =
     safeBoot.versionLangs.length > 1
-      ? `<div class="sb-segmented" aria-label="Language">
+      ? `<div class="sb-segmented is-lang-switch" aria-label="Language">
             ${safeBoot.versionLangs
               .map(
                 (l) =>

@@ -73,6 +73,7 @@
   border-radius: 12px;
   padding: var(--ps-space-5);
   border: 1px solid hsl(var(--app-border-default));
+  margin-bottom: var(--ps-space-4);
 }
 
 .analytics-section-header {

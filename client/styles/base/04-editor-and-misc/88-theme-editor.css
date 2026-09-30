@@ -26,12 +26,42 @@
   display: none;
 }
 
-/* Theme card */
+/* Theme card. The settings list and the theme picker
+   (client/lib/theme/theme-select.js) render the same card root, so its rules
+   live here once (D269); the picker's inner parts stay in 13-modals-misc.css. */
 .theme-card {
   display: flex;
   flex-direction: column;
   gap: var(--ps-space-3);
   padding: var(--ps-space-3);
+  width: 140px;
+  flex-shrink: 0;
+  border: 2px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-elevated));
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    transform 0.15s,
+    box-shadow 0.2s;
+  overflow: hidden;
+  text-align: center;
+}
+
+.theme-card:hover {
+  border-color: hsl(var(--app-accent-primary));
+  transform: scale(1.03);
+}
+
+.theme-card.is-selected {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.3);
+}
+
+@media (max-width: 640px) {
+  .theme-card {
+    width: 110px;
+  }
 }
 
 .theme-card-preview {
@@ -43,6 +73,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 16 / 9;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  padding: var(--ps-space-2);
 }
 
 .theme-card-logo {
@@ -593,7 +627,6 @@
   top: 2px;
   right: 2px;
   line-height: 1;
-  padding: 2px 6px;
   opacity: 0;
   transition: opacity 0.12s ease;
 }
@@ -631,11 +664,3 @@
 }
 
 /* Stock media status helper */
-.stock-media-status {
-  font-weight: normal;
-  margin-left: var(--ps-space-1);
-}
-
-.stock-media-status.is-warning {
-  color: hsl(var(--app-warning));
-}

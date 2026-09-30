@@ -173,17 +173,3 @@
   width: auto;
   flex-shrink: 0;
 }
-
-.share-collaborator-progress {
-  display: none;
-  margin-top: 0.5rem;
-  padding: 0.375rem 0.5rem;
-  background: hsl(var(--app-accent-soft));
-  color: hsl(var(--app-accent-text));
-  border-radius: 0.25rem;
-  font-size: var(--ps-text-sm);
-}
-
-.share-collaborator-progress.is-visible {
-  display: block;
-}
