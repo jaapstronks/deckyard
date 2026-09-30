@@ -36,7 +36,7 @@ import {
   withPresentationAuth,
   withPresentationReadAuth,
 } from '../../../utils/route-middleware.js';
-import { broadcastCommentCounts } from './comments-shared.js';
+import { broadcastCommentCounts } from '../../../services/comments.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';

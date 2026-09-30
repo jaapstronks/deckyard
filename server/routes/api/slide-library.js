@@ -28,6 +28,7 @@ import {
   recordSlideLibraryUsage,
 } from '../../storage/slide-library-usage.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
+import { getRequestOrigin } from '../../utils/request-url.js';
 import { loadThemeAssets } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
@@ -361,7 +362,7 @@ async function handleOrganizationCreate({
 
   // Fire webhook for organization-library addition (reuses organization share webhook URL)
   fireAndForget(
-    maybeFireWebhook(repoRoot, req, {
+    maybeFireWebhook(repoRoot, getRequestOrigin(req), {
       event: 'slide.added_to_organization_library',
       slideItem: { ...r.item, previewUrl },
       authedUser,

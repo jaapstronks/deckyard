@@ -4,7 +4,7 @@ import { envInt } from '../config/utils.js';
 import { isAppError, getStatusCode, errorToResponse } from './errors.js';
 import { logError } from './logger.js';
 import { reasonEntry } from '../storage/reasons.js';
-import { assertErrorDetails } from './error-details.js';
+import { assertErrorDetails, locateDetails } from './error-details.js';
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -340,32 +340,6 @@ export function storageError(res, result, message, { headers } = {}) {
     details: locateDetails(result),
     headers,
   });
-}
-
-/**
- * The `details` a storage result puts on the wire: which input was bad
- * (`field`), and — when the input is a list the storage layer inspected
- * entry by entry — where in it (`index`, `itemIndex`) and why (`reason`, a
- * snake_case sub-code a client can translate). `message` still carries the
- * English sentence; `details` is what lets a client point at the row without
- * parsing it. Shape and meaning: docs/reference/api-error-format.md.
- * @param {{field?: string, fieldProblem?: {code?: string, index?: number|null, itemIndex?: number|null}}|null|undefined} result
- * @returns {Object|undefined} `undefined` when the result names no field.
- */
-function locateDetails(result) {
-  if (!result?.field) return undefined;
-  const details = { field: result.field };
-  const problem = result.fieldProblem;
-  if (!problem) return details;
-  if (typeof problem.index === 'number') details.index = problem.index;
-  if (typeof problem.itemIndex === 'number') {
-    details.itemIndex = problem.itemIndex;
-  }
-  // The finding calls this `code`; the wire keeps `reason`, because the error
-  // envelope already spends `code` on the storage reason and two `code`s one
-  // level apart would name two different vocabularies.
-  if (typeof problem.code === 'string') details.reason = problem.code;
-  return details;
 }
 
 export function methodNotAllowed(res, allowed) {

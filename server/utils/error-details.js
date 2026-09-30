@@ -45,8 +45,8 @@
 import { reasonEntry } from '../storage/reasons.js';
 
 /**
- * The keys a storage refusal may put on the wire — see `locateDetails()` in
- * `server/utils/http.js`, which is the only producer. Allowed for every code
+ * The keys a storage refusal may put on the wire — see `locateDetails()` below,
+ * which is the only producer. Allowed for every code
  * in the `REASONS` register, and only for those.
  * @type {readonly string[]}
  */
@@ -161,4 +161,34 @@ function describeViolation(code, details) {
     );
   }
   return null;
+}
+
+/**
+ * The `details` a storage result puts on the wire: which input was bad
+ * (`field`), and — when the input is a list the storage layer inspected
+ * entry by entry — where in it (`index`, `itemIndex`) and why (`reason`, a
+ * snake_case sub-code a client can translate). `message` still carries the
+ * English sentence; `details` is what lets a client point at the row without
+ * parsing it. Shape and meaning: docs/reference/api-error-format.md.
+ *
+ * Read by both places a storage refusal becomes an error: `storageError()`
+ * (`server/utils/http.js`) for a route that answers it directly, and
+ * `throwStorageFailure()` (`server/utils/errors.js`) for a service that throws.
+ * @param {{field?: string, fieldProblem?: {code?: string, index?: number|null, itemIndex?: number|null}}|null|undefined} result
+ * @returns {Object|undefined} `undefined` when the result names no field.
+ */
+export function locateDetails(result) {
+  if (!result?.field) return undefined;
+  const details = { field: result.field };
+  const problem = result.fieldProblem;
+  if (!problem) return details;
+  if (typeof problem.index === 'number') details.index = problem.index;
+  if (typeof problem.itemIndex === 'number') {
+    details.itemIndex = problem.itemIndex;
+  }
+  // The finding calls this `code`; the wire keeps `reason`, because the error
+  // envelope already spends `code` on the storage reason and two `code`s one
+  // level apart would name two different vocabularies.
+  if (typeof problem.code === 'string') details.reason = problem.code;
+  return details;
 }
