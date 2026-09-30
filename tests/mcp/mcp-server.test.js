@@ -12,6 +12,9 @@ import {
   jsonRpcError,
   ErrorCodes,
 } from '../../server/mcp/protocol.js';
+import { createFakeDb } from '../helpers/fake-db.js';
+import { healthKeys } from '../helpers/instance-health.js';
+import { __setTestDb } from '../../server/db/client.js';
 
 // ============================================================================
 // Unit Tests: JSON-RPC Response Helpers
@@ -176,6 +179,49 @@ describe('McpServer', () => {
       );
 
       assert.deepStrictEqual(resp.result.tools[0].inputSchema, schema);
+    });
+  });
+
+  describe('tools/call counts on the instance-health mcp axis (B514)', () => {
+    /** Run `fn` against a fresh double; answer the `mcp:` keys it counted. */
+    async function counted(fn) {
+      const db = createFakeDb();
+      __setTestDb(db);
+      try {
+        await fn();
+        return await healthKeys(db, 'mcp');
+      } finally {
+        __setTestDb(null);
+      }
+    }
+
+    function call(server, name) {
+      return server.handleMessage({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name, arguments: {} },
+      });
+    }
+
+    it('a call that reaches the tool counts its name, whatever it answers', async () => {
+      const server = new McpServer();
+      server.tool('echo', 'Echo', { type: 'object' }, async (p) => p);
+      server.tool('boom', 'Throws', { type: 'object' }, async () => {
+        throw new Error('nope');
+      });
+      assert.deepStrictEqual(
+        await counted(async () => {
+          await call(server, 'echo');
+          await call(server, 'boom');
+        }),
+        ['mcp:boom', 'mcp:echo'],
+      );
+    });
+
+    it('an unknown tool counts nothing', async () => {
+      const server = new McpServer();
+      assert.deepStrictEqual(await counted(() => call(server, 'nope')), []);
     });
   });
 

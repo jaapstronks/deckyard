@@ -50,6 +50,11 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
         request_count: 5,
       },
     ],
+    // instance_health: 400-day window (D248), keyed by the day column.
+    instance_health: [
+      { axis: 'surface', key: 'share', day: daysAgoDate(410), count: 1 },
+      { axis: 'surface', key: 'share', day: daysAgoDate(10), count: 3 },
+    ],
     // Share links: expired + not-yet-revoked flips to revoked; future stays;
     // already-revoked expired is left alone.
     presentation_share_links: [
@@ -134,6 +139,7 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
 
   assert.deepEqual(result, {
     usage: 1,
+    instanceHealth: 1,
     shareLinks: 1,
     activityEvents: 2,
     slideLocks: 2,
@@ -144,6 +150,12 @@ test('runRetentionCleanup trims old rows and keeps recent ones', async () => {
   assert.deepEqual(
     db.__tables.api_usage_daily.map((r) => r.id),
     ['u-new'],
+  );
+
+  // instance_health: only the row inside the 400-day window survives.
+  assert.deepEqual(
+    db.__tables.instance_health.map((r) => r.day),
+    [daysAgoDate(10)],
   );
 
   // Share links: the expired one is revoked by the system marker, the future

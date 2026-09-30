@@ -4,9 +4,8 @@
  * writer of the instance-health counters. The public v1 API dispatches on
  * axis `api_v1`, so one v1 call leaves one `api_v1` entry behind.
  *
- * The counters' table arrives with B514; until then the facade's test
- * recorder observes what would have been written. When B514 lands, these
- * assertions move to the rows the fake database holds.
+ * The count is fire-and-forget, so each assertion reads the rows the
+ * database double holds once the pending writes have landed.
  *
  * Run with: node --test tests/router-instance-health.test.js
  */
@@ -15,23 +14,22 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 
+import { createFakeDb } from './helpers/fake-db.js';
+import { healthKeys } from './helpers/instance-health.js';
+import { __setTestDb } from '../server/db/client.js';
 import { dispatchRoutes } from '../server/utils/router.js';
-import {
-  __setInstanceHealthRecorderForTest,
-  recordInstanceHealth,
-} from '../server/storage/instance-health.js';
 
 const { handlePublicApiV1 } =
   await import('../server/routes/public-api/v1/index.js');
 
 const UUID = '00000000-0000-4000-8000-000000000001';
 
-/** Collect what the dispatcher records for the duration of one test. */
+/** A fresh database double for the duration of one test. */
 function recordings(t) {
-  const seen = [];
-  __setInstanceHealthRecorderForTest((entries) => seen.push(...entries));
-  t.after(() => __setInstanceHealthRecorderForTest(null));
-  return seen;
+  const db = createFakeDb();
+  __setTestDb(db);
+  t.after(() => __setTestDb(null));
+  return db;
 }
 
 /** A context carrying just what the dispatcher reads. */
@@ -55,17 +53,17 @@ const ROUTES = [
   { method: 'GET', pattern: '/api/unnamed', handler: () => 'unnamed' },
 ];
 
-test('a matched row with an id is counted once on the axis', (t) => {
-  const seen = recordings(t);
+test('a matched row with an id is counted once on the axis', async (t) => {
+  const db = recordings(t);
   const result = dispatchRoutes(ROUTES, ctx('GET', `/api/things/${UUID}`), {
     axis: 'api_v1',
   });
   assert.equal(result, 'got');
-  assert.deepEqual(seen, [{ axis: 'api_v1', key: 'getThing' }]);
+  assert.deepEqual(await healthKeys(db), ['api_v1:getThing']);
 });
 
-test('a row without an id, a 405 row and a refused capture are not counted', (t) => {
-  const seen = recordings(t);
+test('a row without an id, a 405 row and a refused capture are not counted', async (t) => {
+  const db = recordings(t);
   const options = { axis: 'api_v1', notFound: () => 'not found' };
   dispatchRoutes(ROUTES, ctx('GET', '/api/unnamed'), options);
   dispatchRoutes(ROUTES, ctx('POST', `/api/things/${UUID}`), options);
@@ -73,24 +71,13 @@ test('a row without an id, a 405 row and a refused capture are not counted', (t)
     dispatchRoutes(ROUTES, ctx('GET', '/api/things/not-a-uuid'), options),
     'not found',
   );
-  assert.deepEqual(seen, []);
+  assert.deepEqual(await healthKeys(db), []);
 });
 
 test('an id on a surface that declares no axis is refused', () => {
   assert.throws(
     () => dispatchRoutes(ROUTES, ctx('GET', `/api/things/${UUID}`)),
     /carries id 'getThing' but its surface declares no axis/,
-  );
-});
-
-test('the facade refuses an axis outside the vocabulary and an empty key', async () => {
-  await assert.rejects(
-    recordInstanceHealth([{ axis: 'api_v2', key: 'x' }]),
-    /unknown axis 'api_v2'/,
-  );
-  await assert.rejects(
-    recordInstanceHealth([{ axis: 'api_v1', key: '' }]),
-    /empty key/,
   );
 });
 
@@ -120,17 +107,17 @@ function v1Ctx(pathname) {
 }
 
 test('one v1 call leaves one api_v1 entry named by its operationId', async (t) => {
-  const seen = recordings(t);
+  const db = recordings(t);
   const c = v1Ctx('/api/v1/schema/deck.json');
   assert.equal(await handlePublicApiV1(c), true);
   assert.equal(c.res.statusCode, 200);
-  assert.deepEqual(seen, [{ axis: 'api_v1', key: 'getDeckSchema' }]);
+  assert.deepEqual(await healthKeys(db), ['api_v1:getDeckSchema']);
 });
 
 test('the meta endpoints answer outside the tables and are not counted', async (t) => {
-  const seen = recordings(t);
+  const db = recordings(t);
   const c = v1Ctx('/api/v1/openapi.yaml');
   assert.equal(await handlePublicApiV1(c), true);
   assert.equal(c.res.statusCode, 200);
-  assert.deepEqual(seen, []);
+  assert.deepEqual(await healthKeys(db), []);
 });

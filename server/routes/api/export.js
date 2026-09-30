@@ -32,6 +32,7 @@ import {
 const exportRoutes = [
   // JSON export
   createExportRoute({
+    format: 'json',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/json$/,
     allLanguages: true,
     contentType: 'application/json; charset=utf-8',
@@ -48,6 +49,7 @@ const exportRoutes = [
   // .deck bundle: self-contained portable deck (deck.json + content-addressed
   // assets + manifest inventory). Renders/round-trips without the server.
   createExportRoute({
+    format: 'deck',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/deck\.zip$/,
     allLanguages: true,
     contentType: DECK_MIMETYPE,
@@ -59,6 +61,7 @@ const exportRoutes = [
 
   // HTML export (download)
   createExportRoute({
+    format: 'html',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/html$/,
     contentType: 'text/html; charset=utf-8',
     extension: '.html',
@@ -71,6 +74,7 @@ const exportRoutes = [
 
   // PDF preview (browser render, then print-to-PDF)
   createHtmlPreviewRoute({
+    format: 'pdf',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf$/,
     buildHtml: async (ctx, { repoRoot }) =>
       buildPrintHtml(repoRoot, ctx.filteredPres, {
@@ -81,6 +85,7 @@ const exportRoutes = [
 
   // PDF slides preview
   createHtmlPreviewRoute({
+    format: 'pdf-slides',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf-slides$/,
     buildHtml: async (ctx, { repoRoot }) =>
       buildSlidesPdfHtml(repoRoot, ctx.filteredPres, {
@@ -92,6 +97,7 @@ const exportRoutes = [
   // Server-rendered PDF download (deterministic across browsers/OS).
   // Pattern does not clash with the pdf-slides$ preview route thanks to the $ anchors.
   createAsyncExportRoute({
+    format: 'pdf-slides',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf-slides\.pdf$/,
     contentType: 'application/pdf',
     extension: '.pdf',
@@ -105,6 +111,7 @@ const exportRoutes = [
 
   // PNG slides preview
   createHtmlPreviewRoute({
+    format: 'png',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/png$/,
     buildHtml: async (ctx, { repoRoot }) =>
       buildSlidesPngExportHtml(repoRoot, ctx.filteredPres, {
@@ -115,6 +122,7 @@ const exportRoutes = [
 
   // PNG slides bundled as a single ZIP ("Download all PNGs")
   createExportRoute({
+    format: 'png-zip',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/png\.zip$/,
     contentType: 'application/zip',
     extension: '-png.zip',
@@ -130,6 +138,7 @@ const exportRoutes = [
 
   // PPTX export (supports async via queue)
   createAsyncExportRoute({
+    format: 'pptx',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx$/,
     contentType:
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -154,6 +163,7 @@ const exportRoutes = [
   // format. It still hangs off the deck, because the deck is what names the
   // theme.
   createExportRoute({
+    format: 'pptx-template',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx-template$/,
     contentType:
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -164,6 +174,7 @@ const exportRoutes = [
 
   // Handoff ZIP export (supports async via queue)
   createAsyncExportRoute({
+    format: 'handoff',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/handoff\.zip$/,
     contentType: 'application/zip',
     extension: '-handoff.zip',
@@ -181,6 +192,7 @@ const exportRoutes = [
 
   // Notes Markdown export
   createExportRoute({
+    format: 'notes-md',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/notes\.md$/,
     contentType: 'text/markdown; charset=utf-8',
     extension: '-notes.md',
@@ -190,6 +202,7 @@ const exportRoutes = [
 
   // Notes DOCX export
   createExportRoute({
+    format: 'notes-docx',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/notes\.docx$/,
     contentType:
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -211,6 +224,7 @@ async function handlePngSlideExport(
   const slideNum = Number(slideNumRaw || 0) || 0; // 1-based
 
   const ctx = await prepareExportContext({
+    format: 'png',
     repoRoot,
     res,
     url,

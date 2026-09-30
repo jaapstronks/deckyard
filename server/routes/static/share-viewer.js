@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { getPresentation } from '../../storage/presentations/index.js';
+import { countDeckView } from '../../storage/instance-health.js';
 import { getShareLinkByToken } from '../../storage/share-links/index.js';
 import { getAppName } from '../../config/branding.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
@@ -37,6 +38,7 @@ async function serveShareLink({ repoRoot, req, res, url, clientDir }, token) {
         shareLink.presentationId,
       );
       if (pres) {
+        countDeckView('share', pres);
         const proto =
           (req.headers['x-forwarded-proto'] &&
             String(req.headers['x-forwarded-proto']).split(',')[0].trim()) ||

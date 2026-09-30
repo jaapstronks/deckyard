@@ -27,6 +27,7 @@ import assert from 'node:assert/strict';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { Readable } from 'node:stream';
 import { seedRow } from './helpers/theme-seed.js';
+import { healthKeys } from './helpers/instance-health.js';
 
 process.env.AUTH_SECRET = ['amethyst', 'test', 'auth']
   .join('-')
@@ -346,6 +347,33 @@ test('exports answer 429 with limit details when the daily export budget is spen
   assert.equal(body.details.used, 50);
   assert.ok(body.details.resetAt, 'the details name the reset moment');
   assert.equal(ctx.res.headers['X-RateLimit-Remaining'], '0');
+});
+
+test('each v1 export counts its format on the instance-health export axis', async () => {
+  const db = await installDb();
+  for (const format of ['json', 'html', 'pdf']) {
+    await handleExports(
+      makeCtx('GET', `/api/v1/presentations/${DECK_ID}/export/${format}`),
+    );
+  }
+  assert.deepEqual(await healthKeys(db, 'export'), [
+    'export:html',
+    'export:json',
+    'export:pdf',
+  ]);
+});
+
+test('a refused v1 export counts no format', async () => {
+  const db = await installDb();
+  await handleExports(
+    makeCtx('GET', `/api/v1/presentations/${FOREIGN_DECK_ID}/export/json`),
+  );
+  await handleExports(
+    makeCtx('GET', `/api/v1/presentations/${DECK_ID}/export/json`, {
+      permissions: ['read'],
+    }),
+  );
+  assert.deepEqual(await healthKeys(db, 'export'), []);
 });
 
 test("exporting someone else's private deck is refused with 403", async () => {

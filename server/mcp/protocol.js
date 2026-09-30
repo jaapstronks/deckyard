@@ -14,6 +14,7 @@ import {
   isToolMounted,
   isToolVisible,
 } from './authorization.js';
+import { countInstanceHealth } from '../storage/instance-health.js';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const SERVER_NAME = 'deckyard';
@@ -317,6 +318,10 @@ export class McpServer {
         );
       }
     }
+
+    // Counted once the call is allowed through, whatever the tool answers —
+    // the same rule the HTTP dispatcher follows for an operation (D247).
+    countInstanceHealth([{ axis: 'mcp', key: tool.name }]);
 
     try {
       const result = await tool.handler(args || {}, context);

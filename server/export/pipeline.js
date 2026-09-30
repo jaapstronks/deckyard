@@ -14,6 +14,10 @@ import {
   QUEUE_NAMES,
 } from '../jobs/queue/connection.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
+import {
+  countInstanceHealth,
+  INSTANCE_HEALTH_KEYS,
+} from '../storage/instance-health.js';
 
 const log = createLogger('export');
 
@@ -49,12 +53,19 @@ function buildExportHeaders({
  * Common export context preparation - handles auth, loading, projection.
  * `storageScope` is the request's scope, passed down from the route context —
  * this module never builds one itself.
+ * A context that passes the read check counts one export of `format` on the
+ * instance-health `export` axis (D247): an export that was refused was not
+ * one, one whose build then failed was still asked for.
+ *
  * @param {Object} options - Context options
+ * @param {string} options.format - The export's format id (the `export` axis
+ *   vocabulary in `server/storage/instance-health.js`)
  * @param {boolean} [options.allLanguages] - skip the `?lang=` projection, for
  *   a format that carries every language version itself
  * @returns {Object} Export context or null if request should be rejected
  */
 export async function prepareExportContext({
+  format,
   repoRoot,
   res,
   url,
@@ -87,6 +98,7 @@ export async function prepareExportContext({
     forbidden(res);
     return null;
   }
+  countInstanceHealth([{ axis: 'export', key: format }]);
 
   const projected = exportLang
     ? projectPresentationForLang(pres, exportLang)
@@ -198,12 +210,31 @@ function exportRow(method, pattern, handler) {
 }
 
 /**
+ * Refuse a factory config without a known format id when the table is built,
+ * not when the first export is counted: a row the `export` axis cannot name
+ * would count nothing, or throw on every request.
+ *
+ * @param {unknown} format
+ * @param {RegExp} pattern
+ * @returns {void}
+ * @throws {TypeError}
+ */
+function assertExportFormat(format, pattern) {
+  if (!INSTANCE_HEALTH_KEYS.export.includes(/** @type {string} */ (format))) {
+    throw new TypeError(
+      `export route ${pattern} declares no known format (got '${format}')`,
+    );
+  }
+}
+
+/**
  * Create an export route with common boilerplate.
  * @param {Object} config - Route configuration
  * @returns {import('../utils/router.js').Route}
  */
 export function createExportRoute(config) {
   const {
+    format,
     pattern,
     method = 'GET',
     contentType,
@@ -213,6 +244,7 @@ export function createExportRoute(config) {
     buildContent,
     getFilename = (ctx) => ctx.title,
   } = config;
+  assertExportFormat(format, pattern);
 
   return exportRow(
     method,
@@ -222,6 +254,7 @@ export function createExportRoute(config) {
       presentationId,
     ) {
       const ctx = await prepareExportContext({
+        format,
         repoRoot,
         res,
         url,
@@ -260,7 +293,14 @@ export function createExportRoute(config) {
  * @returns {import('../utils/router.js').Route}
  */
 export function createHtmlPreviewRoute(config) {
-  const { pattern, method = 'GET', stripLiveOnly = true, buildHtml } = config;
+  const {
+    format,
+    pattern,
+    method = 'GET',
+    stripLiveOnly = true,
+    buildHtml,
+  } = config;
+  assertExportFormat(format, pattern);
 
   return exportRow(
     method,
@@ -270,6 +310,7 @@ export function createHtmlPreviewRoute(config) {
       presentationId,
     ) {
       const ctx = await prepareExportContext({
+        format,
         repoRoot,
         res,
         url,
@@ -310,6 +351,7 @@ export function stripLiveOnlySlides(pres) {
  */
 export function createAsyncExportRoute(config) {
   const {
+    format,
     pattern,
     method = 'GET',
     contentType,
@@ -319,6 +361,7 @@ export function createAsyncExportRoute(config) {
     buildContent, // Fallback sync builder
     getFilename = (ctx) => ctx.title,
   } = config;
+  assertExportFormat(format, pattern);
 
   return exportRow(
     method,
@@ -371,6 +414,7 @@ export function createAsyncExportRoute(config) {
         });
 
         if (queued) {
+          countInstanceHealth([{ axis: 'export', key: format }]);
           return serveJson(res, 202, {
             queued: true,
             jobId: `export-${jobId}`,
@@ -382,6 +426,7 @@ export function createAsyncExportRoute(config) {
 
       // Fallback to synchronous export
       const ctx = await prepareExportContext({
+        format,
         repoRoot,
         res,
         url,

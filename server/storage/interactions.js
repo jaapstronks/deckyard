@@ -28,6 +28,7 @@ import { sql } from 'kysely';
 import { notifyLiveSessionInteractionState } from './live-sessions/index.js';
 import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
+import { countInstanceHealth } from './instance-health.js';
 import { repoRootOf, toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/index.js';
 import {
@@ -267,14 +268,16 @@ async function ensureInteractionForSlide(
   sessionId,
   { type = 'poll', slideId = '', optionCount = 0, defaultStatus = 'open' } = {},
 ) {
+  const kind = normalizeInteractionType(type);
   const ensured = await ensureInteractionSlide({
     sessionId,
     slideId,
-    type: normalizeInteractionType(type),
+    type: kind,
     optionCount,
     defaultStatus,
   });
   if (!ensured.ok) return ensured;
+  countInstanceHealth([{ axis: 'interaction', key: `${kind}_opened` }]);
   const slide = ensured.slide;
   await pruneOutOfRangeVotes(slide.id, slide.optionCount);
 
@@ -411,6 +414,9 @@ async function voteInteraction(
 
   const agg = await aggregateForDevice(touched, did);
   scheduleInteractionBroadcast(scope, sessionId, sid);
+  countInstanceHealth([
+    { axis: 'interaction', key: `${normalizeInteractionType(type)}_vote` },
+  ]);
   return { ok: true, aggregate: agg };
 }
 
