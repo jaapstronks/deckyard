@@ -145,11 +145,16 @@ describe('MCP Tool Schemas', () => {
     assert.ok(tool.inputSchema.required.includes('content'));
   });
 
-  it('create_presentation accepts ownerEmail', async () => {
+  it('the create tools take no ownerEmail: the session owner owns the deck (B521)', async () => {
     const server = new McpServer();
     registerTools(server, {});
-    const tool = server.tools.get('create_presentation');
-    assert.ok('ownerEmail' in tool.inputSchema.properties);
+    for (const name of [
+      'create_presentation',
+      'create_presentation_from_slides',
+    ]) {
+      const tool = server.tools.get(name);
+      assert.ok(!('ownerEmail' in tool.inputSchema.properties), name);
+    }
   });
 
   it('get_presentation accepts id and presentationId (alias)', async () => {

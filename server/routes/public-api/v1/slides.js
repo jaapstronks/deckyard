@@ -4,7 +4,7 @@
  */
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { presentationTimestamps } from './deck-fields.js';
+import { publicDeckTimestamps } from '../../../services/presentations.js';
 import {
   newSlide,
   validateSlide,
@@ -207,7 +207,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
     presentation: {
       id: updated.id,
       revision: updated.revision || 0,
-      updatedAt: presentationTimestamps(updated).updatedAt,
+      updatedAt: publicDeckTimestamps(updated).updatedAt,
     },
   });
   return true;

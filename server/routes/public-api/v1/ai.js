@@ -3,10 +3,12 @@
  * Handles AI generation features via API key authentication.
  */
 
+import { updatePresentation } from '../../../storage/presentations/index.js';
 import {
+  assertCreatableDeckInput,
   createPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+  publicDeckTimestamps,
+} from '../../../services/presentations.js';
 import { generateDeckJsonFromRawContent } from '../../../utils/openai/deck.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { getLlmStatus } from '../../../utils/llm/config.js';
@@ -39,10 +41,6 @@ import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../../shared/i18n-utils.js';
-import {
-  presentationTimestamps,
-  refuseRetiredDeckFields,
-} from './deck-fields.js';
 
 // ============================================================
 // VALIDATION HELPERS
@@ -91,7 +89,8 @@ async function handleWizard(ctx) {
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
-  if (body && (await refuseRetiredDeckFields(ctx, body))) return true;
+  // Refused before the generation, so a refused body costs no LLM call.
+  assertCreatableDeckInput(body);
 
   const { raw, vendor, lang, theme } = getAiParams(body);
 
@@ -128,12 +127,11 @@ async function handleWizard(ctx) {
 
     const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
 
-    const created = await createPresentation(storageScope, {
-      title: parts.title,
-      theme: effectiveTheme,
-      ownerEmail: apiKey.ownerEmail,
-      lang: lang || undefined,
-    });
+    const created = await createPresentation(
+      storageScope,
+      { actor: ctx.authedUser },
+      { title: parts.title, theme: effectiveTheme, lang: lang || undefined },
+    );
 
     // Build i18n structure for the active language
     const activeLang =
@@ -167,7 +165,7 @@ async function handleWizard(ctx) {
         slideCount: Array.isArray(updated.slides) ? updated.slides.length : 0,
         theme: updated.theme,
         lang: updated.lang || activeLang,
-        ...presentationTimestamps(updated),
+        ...publicDeckTimestamps(updated),
       },
     });
     return true;

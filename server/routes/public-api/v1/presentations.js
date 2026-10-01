@@ -5,7 +5,6 @@
 
 import {
   listPresentations,
-  createPresentation,
   updatePresentation,
   deletePresentation,
   duplicatePresentation,
@@ -31,10 +30,10 @@ import { parsePaginationParams } from '../../../utils/request-validators.js';
 import { changePresentationTheme } from '../../../storage/presentations/change-theme.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
+  createPresentation,
   refuseRetiredDeckFields,
-  refuseUnsupportedLang,
-  presentationTimestamps,
-} from './deck-fields.js';
+  publicDeckTimestamps,
+} from '../../../services/presentations.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -103,7 +102,7 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     })),
     i18n: pres.i18n || null,
     revision: pres.revision || 0,
-    ...presentationTimestamps(pres),
+    ...publicDeckTimestamps(pres),
     tags,
   };
 }
@@ -186,14 +185,14 @@ async function handleCreate(ctx) {
     requireObject: true,
   });
   if (!bodyOk) return true;
-  if (await refuseRetiredDeckFields(ctx, body)) return true;
-  if (await refuseUnsupportedLang(ctx, body)) return true;
 
-  // Create presentation with API key owner as the owner
-  const created = await createPresentation(storageScope, {
-    ...body,
-    ownerEmail: apiKey.ownerEmail,
-  });
+  // The key owner creates the deck; a refusal is answered in the v1 envelope
+  // by the mount-level withV1ErrorHandler wrap.
+  const created = await createPresentation(
+    storageScope,
+    { actor: ctx.authedUser },
+    body,
+  );
 
   const tags = await getTagsForPresentation(storageScope, created.id);
   await apiCreated(ctx, {
@@ -235,7 +234,7 @@ async function handleUpdate(ctx, id) {
     requireObject: true,
   });
   if (!bodyOk) return true;
-  if (await refuseRetiredDeckFields(ctx, body)) return true;
+  refuseRetiredDeckFields(body);
 
   // Don't allow changing ownership via API
   delete body.ownerEmail;

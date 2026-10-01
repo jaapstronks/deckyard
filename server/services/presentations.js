@@ -1,6 +1,6 @@
 /**
- * Presentations — the one place a deck is loaded for someone, on every contract
- * (A7.4, B519).
+ * Presentations — the one place a deck is loaded for someone, and the one place
+ * a deck is made, on every contract (A7.4, B519, B521).
  *
  * Every by-id deck route used to load and decide on its own: the internal
  * `withPresentationAuth` family with the session user, the public v1
@@ -21,10 +21,21 @@
  *   - **403** (`ForbiddenError`) — the deck is there and the caller may not
  *     read it, or may read it but lacks the right the handling asks for.
  *
+ * A deck is created in one place too ({@link createPresentation}, B521). The
+ * internal route used to hand its body to storage as it came, v1 refused the
+ * retired field names and an unknown `lang` on its own, MCP did neither, and
+ * only the internal route left an activity row. Now what one contract refuses,
+ * every contract refuses, and every create leaves the same trail.
+ *
  * @module server/services/presentations
  */
 
-import { getPresentation } from '../storage/presentations/index.js';
+import {
+  getPresentation,
+  createPresentation as storeNewPresentation,
+} from '../storage/presentations/index.js';
+import { recordSlideLibraryUsage } from '../storage/slide-library-usage.js';
+import { normalizeLang } from '../../shared/i18n-utils.js';
 import {
   canActorAccessPresentation,
   canActorDeletePresentation,
@@ -32,7 +43,14 @@ import {
   canActorCommentOnPresentation,
   canGuestComment,
 } from '../utils/presentation-authz/index.js';
-import { ForbiddenError, NotFoundError } from '../utils/errors.js';
+import {
+  AppError,
+  ForbiddenError,
+  NotFoundError,
+  throwStorageFailure,
+} from '../utils/errors.js';
+import { fireAndForget } from '../utils/fire-and-forget.js';
+import { recordPresentationCreated } from './activity-events.js';
 
 /**
  * @typedef {import('./actor.js').Actor} Actor
@@ -163,4 +181,180 @@ export async function loadPresentationForActor(
 export async function mayOnPresentation(pres, identity, access = 'read') {
   if (!pres || typeof pres !== 'object') return false;
   return (await refusal(pres, identity, access)) === null;
+}
+
+/** Retired spelling → the one name the deck field has (B446). */
+const RETIRED_DECK_FIELDS = Object.freeze({
+  themeId: 'theme',
+  language: 'lang',
+});
+
+/**
+ * Refuse input that names a deck field by a retired spelling: `theme` and
+ * `lang` are the names on every surface (B446), and the old ones are refused
+ * with the name to use, never accepted beside it.
+ *
+ * @param {Object} input - The parsed request body or tool arguments.
+ * @throws {AppError} 400 `invalid`, `details` = `{ field, use }`.
+ */
+export function refuseRetiredDeckFields(input) {
+  for (const [retired, canonical] of Object.entries(RETIRED_DECK_FIELDS)) {
+    if (input && Object.hasOwn(input, retired)) {
+      throw new AppError(
+        `Unknown field "${retired}": use "${canonical}"`,
+        400,
+        { field: retired, use: canonical },
+        'invalid',
+      );
+    }
+  }
+}
+
+/**
+ * Refuse a `lang` that is not a supported deck language. An unsupported tag
+ * used to fall back to the default language without a word.
+ *
+ * @param {Object} input
+ * @throws {AppError} 400 `invalid`, `details.field` = `lang`.
+ */
+function refuseUnsupportedLang(input) {
+  if (input?.lang === undefined || normalizeLang(input.lang)) return;
+  throw new AppError(
+    `Unsupported lang: ${JSON.stringify(input.lang)}`,
+    400,
+    { field: 'lang' },
+    'invalid',
+  );
+}
+
+/**
+ * Refuse an `ownerEmail` in a create: the owner of a new deck is the actor who
+ * makes it, on every contract. v1 and the internal route overwrote the field
+ * without a word; MCP let a session hand its deck to any address.
+ *
+ * @param {Object} input
+ * @throws {AppError} 400 `invalid`, `details.field` = `ownerEmail`.
+ */
+function refuseOwnerOverride(input) {
+  if (input && Object.hasOwn(input, 'ownerEmail')) {
+    throw new AppError(
+      'Unknown field "ownerEmail": a new deck is owned by whoever creates it',
+      400,
+      { field: 'ownerEmail' },
+      'invalid',
+    );
+  }
+}
+
+/**
+ * Refuse what a create may not carry: a retired field name, an unsupported
+ * `lang`, an `ownerEmail`. {@link createPresentation} runs it first; an
+ * adapter that does expensive work before the create (an AI generation) runs
+ * it before that work, so a refused body costs nothing.
+ *
+ * @param {Object|null|undefined} input
+ * @throws {AppError} 400 `invalid`, naming the field.
+ */
+export function assertCreatableDeckInput(input) {
+  if (!input) return;
+  refuseRetiredDeckFields(input);
+  refuseUnsupportedLang(input);
+  refuseOwnerOverride(input);
+}
+
+/**
+ * The slide-library usage a compose-from-library create carries: each source
+ * slide id plus (when the deck started from a saved collection) the collection
+ * id. Both become "used by you", clearing the Home shelf's "new to you" badge.
+ *
+ * @param {Object} input
+ * @returns {Array<{ type: 'slide'|'collection', id: string }>}
+ */
+function usageRefsOf(input) {
+  const refs = [];
+  const ids = Array.isArray(input?.sourceLibraryItemIds)
+    ? input.sourceLibraryItemIds
+    : [];
+  for (const raw of ids) {
+    const id = String(raw || '').trim();
+    if (id) refs.push({ type: 'slide', id });
+  }
+  const collectionId =
+    typeof input?.sourceCollectionId === 'string'
+      ? input.sourceCollectionId.trim()
+      : '';
+  if (collectionId) refs.push({ type: 'collection', id: collectionId });
+  return refs;
+}
+
+/**
+ * Create a deck for an actor, on every contract.
+ *
+ * The rules of the handling live here, once: the retired field names, an
+ * unsupported `lang` and an `ownerEmail` are refused; the actor owns the deck;
+ * the storage result goes through {@link throwStorageFailure} (D254); and the
+ * activity row and the slide-library usage are recorded whoever asked. What
+ * holds for *every* writer (theme check, slide normalization, sandbox quota,
+ * size limits) stays in the storage facade (D252). Validating an agent's slide
+ * payload strictly or with fixes is an MCP input step before this call, not a
+ * rule of the handling.
+ *
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {{ actor: Actor }} identity - The creating actor (D253).
+ * @param {Object} input - The deck to create: `title`, `theme`, `lang`,
+ *   `slides`, `settings`, … as storage's factory reads them, plus
+ *   `sourceLibraryItemIds` / `sourceCollectionId` for a compose from the
+ *   slide library.
+ * @returns {Promise<Object>} The created presentation.
+ * @throws {AppError} 400 `invalid`: a refused field.
+ * @throws {AppError} A storage refusal (theme, quota, size).
+ */
+export async function createPresentation(scope, { actor }, input = {}) {
+  assertCreatableDeckInput(input);
+
+  const { sourceLibraryItemIds, sourceCollectionId, ...deck } = input;
+  const created = await storeNewPresentation(scope, {
+    ...deck,
+    ownerEmail: actor?.email || null,
+  });
+  if (created?.ok === false) {
+    throwStorageFailure(
+      created,
+      created.errors?.map((e) => e.message).join(' ') || undefined,
+    );
+  }
+
+  if (actor?.email) {
+    fireAndForget(
+      recordPresentationCreated({ presentation: created, actor, scope }),
+      'record presentation-created activity',
+    );
+    // Badge tracking must never fail a create.
+    const usageRefs = usageRefsOf({ sourceLibraryItemIds, sourceCollectionId });
+    if (usageRefs.length) {
+      fireAndForget(
+        recordSlideLibraryUsage(scope, actor.email, usageRefs),
+        'slide-library usage tracking',
+      );
+    }
+  }
+  return created;
+}
+
+/**
+ * A deck's two timestamps under their published names. Storage projects the
+ * columns as `created`/`modified`; v1 and MCP publish `createdAt`/`updatedAt`,
+ * the names `openapi.yaml` promises and every other v1 resource uses (B448).
+ * The rename happens here, once, for both machine contracts, so no response
+ * carries both spellings or reads the published name off a storage object
+ * that never had it.
+ *
+ * @param {{created?: string|Date, modified?: string|Date}} pres
+ * @returns {{createdAt: string|Date|null, updatedAt: string|Date|null}}
+ */
+export function publicDeckTimestamps(pres) {
+  return {
+    createdAt: pres?.created || null,
+    updatedAt: pres?.modified || null,
+  };
 }

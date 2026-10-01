@@ -16,10 +16,8 @@ import {
 } from '../../../utils/request-validators.js';
 import { extractPageId, notionEnabled } from '../../../utils/notion/index.js';
 import { convertNotionPage } from '../../../utils/convert-notion.js';
-import {
-  createPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
+import { createPresentation } from '../../../services/presentations.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { handleNotionError, refuseNotionUnconfigured } from './utils.js';
@@ -104,17 +102,20 @@ export async function handleNotionImport({
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();
 
-    const created = await createPresentation(storageScope, {
-      title: parts.title || deck.title || 'Imported from Notion',
-      theme,
-      ownerEmail: authedUser?.email || null,
-      lang: effectiveLang,
-      notionSourcePageId: normalizedPageId, // Store for "Publish to Notion" feature
-      settings: {
-        stepParagraphs: true,
-        transitions: { preset: 'fade' },
+    const created = await createPresentation(
+      storageScope,
+      { actor: authedUser },
+      {
+        title: parts.title || deck.title || 'Imported from Notion',
+        theme,
+        lang: effectiveLang,
+        notionSourcePageId: normalizedPageId, // Store for "Publish to Notion" feature
+        settings: {
+          stepParagraphs: true,
+          transitions: { preset: 'fade' },
+        },
       },
-    });
+    );
 
     const updated = await updatePresentation(
       storageScope,
@@ -313,17 +314,20 @@ export async function handleNotionImportStream({
       lang: effectiveLang,
     });
 
-    const created = await createPresentation(storageScope, {
-      title: parts.title || deck.title || 'Imported from Notion',
-      theme,
-      ownerEmail: authedUser?.email || null,
-      lang: effectiveLang,
-      notionSourcePageId: normalizedPageId,
-      settings: {
-        stepParagraphs: true,
-        transitions: { preset: 'fade' },
+    const created = await createPresentation(
+      storageScope,
+      { actor: authedUser },
+      {
+        title: parts.title || deck.title || 'Imported from Notion',
+        theme,
+        lang: effectiveLang,
+        notionSourcePageId: normalizedPageId,
+        settings: {
+          stepParagraphs: true,
+          transitions: { preset: 'fade' },
+        },
       },
-    });
+    );
 
     const updated = await updatePresentation(
       storageScope,
