@@ -71,11 +71,8 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
   - Feature-less shared UI has **one address: `lib/dom/`** — banners,
     empty states, a field wrapper. No `views/shared/`, no
     components or features folder, no third place.
-  - _Status:_ the rule is normative now; the tree is catching up. B528 moves the
-    feature UI still in `lib/` (`slide-library/`, `comments/`,
-    `slide-collections/`, `user/`, the analytics tracker, `theme-select`) into
-    `views/` and adds the guard that pins the direction. Don't add to what
-    that item moves out.
+  - _Status:_ normative now; B528 is still moving the last feature UI out of
+    `lib/` and adds the guard. Don't add to what it moves out.
 
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).
