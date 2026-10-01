@@ -430,6 +430,9 @@ test('a link without a password verifies, is counted, and is logged', async () =
       presentationId: 'deck-shared',
       permission: 'view',
       token: 'tok-view',
+      // The installation's analytics cluster, for an audience without a
+      // feature snapshot (D260); on by default.
+      tracking: true,
       presentation: undefined,
       renderGrant: undefined,
     },
@@ -460,6 +463,7 @@ test('the right password opens the link; the response carries no hash', async ()
     'presentationId',
     'renderGrant',
     'token',
+    'tracking',
   ]);
   assert.equal(link('tok-password').use_count, 1);
 });

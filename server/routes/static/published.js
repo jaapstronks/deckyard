@@ -18,6 +18,7 @@ import {
 import { getLangDisplayName } from '../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { generateTrackingScriptHtml } from '../../analytics/tracking-script.js';
+import { isFeatureEnabled } from '../../config/flags-snapshot.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { toIsoOrNull } from '../../utils/normalize.js';
 
@@ -257,12 +258,15 @@ async function servePublishedPage(
     organizationId: pres.organizationId,
   });
 
-  // Add analytics tracking script for published pages
-  const trackingScript = generateTrackingScriptHtml({
-    presentationId: entry.presentationId,
-    sourceType: 'published',
-    sourceId: publishId,
-  });
+  // The tracking script posts to /api/track/*, which is not mounted on an
+  // installation without the analytics cluster (D260): no script at all then.
+  const trackingScript = isFeatureEnabled('analytics')
+    ? generateTrackingScriptHtml({
+        presentationId: entry.presentationId,
+        sourceType: 'published',
+        sourceId: publishId,
+      })
+    : '';
 
   const orgId = pres?.organizationId;
   const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });

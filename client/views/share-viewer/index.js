@@ -177,9 +177,11 @@ export async function renderShareViewer(root, token) {
         config: presentation.themeConfig,
       });
 
-      // The viewer's local preference is the only client-side check, as in
-      // follow; the owner's opt-out is enforced by the tracking route.
-      if (isAnalyticsEnabled()) {
+      // `tracking` is the installation's analytics cluster (D260), carried by
+      // `verify` because this viewer has no feature snapshot; then the
+      // viewer's local preference. The owner's opt-out is enforced by the
+      // tracking route.
+      if (shareLink?.tracking === true && isAnalyticsEnabled()) {
         analyticsTracker = createAnalyticsTracker({
           presentationId: presentation.id,
           sourceType: 'share_link',

@@ -23,6 +23,7 @@ export {
   getViewSessionsForPresentation,
   getActiveViewerCount,
   deleteOldViewSessions,
+  countAnalyticsRows,
 } from './view-sessions.js';
 
 // GDPR paths over those sessions (right to access, right to erasure, IP retention).

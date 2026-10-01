@@ -56,6 +56,7 @@ import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
 import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
+import { isFeatureEnabled } from '../../../config/flags-snapshot.js';
 import { customThemeConfig } from '../../../utils/themes.js';
 import {
   readSignedPayload,
@@ -246,6 +247,10 @@ async function handleShareVerify({ repoRoot, req, res }, token) {
     permission: result.shareLink.permission,
     token: result.shareLink.token,
     renderGrant: mintRenderGrant(result.shareLink),
+    // Whether this installation has the analytics cluster (D260). The viewer
+    // is anonymous and has no feature snapshot, so the payload carries the
+    // answer; the owner's opt-out stays the tracking route's (D234).
+    tracking: isFeatureEnabled('analytics'),
     presentation: await shareViewerDeck(repoRoot, pres),
   });
   return true;

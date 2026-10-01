@@ -272,17 +272,19 @@ function firstClassLiteral(fragment) {
 
 /**
  * The class list a `const <name> = h(…)` declares, or null when `name` is not
- * declared that way (a factory's `.el`, for instance).
+ * declared that way (a factory's `.el`, for instance). A control that exists
+ * only with its cluster (`const <name> = hasX ? h(…) : null`, D260) counts:
+ * where it exists, it spends the same width.
  *
  * @param {string} text
  * @param {string} name
  * @returns {string|null}
  */
 function declaredClasses(text, name) {
-  const head = `const ${name} = h(`;
-  const at = text.indexOf(head);
-  if (at === -1) return null;
-  const call = balanced(text, at + head.length - 1);
+  const head = new RegExp(`const ${name} = (?:\\w+\\s*\\?\\s*)?h\\(`);
+  const m = head.exec(text);
+  if (!m) return null;
+  const call = balanced(text, m.index + m[0].length - 1);
   return call ? firstClassLiteral(call) : null;
 }
 

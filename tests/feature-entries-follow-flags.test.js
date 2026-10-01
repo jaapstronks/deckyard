@@ -23,8 +23,10 @@
  *     module reads the `enable<Key>` flag itself: one question, one place
  *     that answers it.
  *
- * A cluster joins this file when it gets a client entry (B581 uploads; B523
- * analytics, B524 live, B525 stock media and the public API add theirs).
+ * A cluster joins this file when it gets a client entry (B581 uploads, B523
+ * analytics; B524 live, B525 stock media and the public API add theirs). An
+ * entry an anonymous page reaches has no snapshot to ask, so its gate is the
+ * server's answer: a payload field or a page the app shell does not serve.
  *
  * A source scan cannot prove the gate wraps the right element; the DOM tests
  * at the bottom pin that for the menu, the description modal and the
@@ -187,6 +189,41 @@ const ENTRIES = {
       gate: 'client/views/settings/theme-editor/backgrounds-section.js',
     },
   ],
+  // The in-app entries ask the snapshot. The audience (share link, follow)
+  // and the shared report are anonymous and have no snapshot, so the server
+  // answers for them: the audience payload carries `tracking`, and the app
+  // shell does not serve `/reports/:token` (nor the other two pages).
+  analytics: [
+    {
+      entry: 'Overview sidebar: Insights (/insights)',
+      calls: ['client/views/analytics/dashboard.js'],
+      gate: 'client/views/list/sidebar.js',
+    },
+    {
+      entry: 'Editor: Analytics button + ⋯ entry (/analytics/:id)',
+      calls: [
+        'client/views/analytics/index.js',
+        'client/views/analytics/realtime-viewer.js',
+        'client/views/analytics/report-modal.js',
+      ],
+      gate: 'client/views/editor/topbar/index.js',
+    },
+    {
+      entry: 'Shared report page (/reports/:token)',
+      calls: ['client/views/analytics/shared-report.js'],
+      gate: 'server/routes/static/app-shell.js',
+    },
+    {
+      entry: 'Share viewer: view tracking',
+      calls: ['client/lib/format/analytics-tracker.js'],
+      gate: 'client/views/share-viewer/index.js',
+    },
+    {
+      entry: 'Follow-along: view tracking',
+      calls: ['client/lib/format/analytics-tracker.js'],
+      gate: 'client/views/follow/index.js',
+    },
+  ],
 };
 
 /** The predicate an entry's gate must ask, per cluster. */
@@ -194,14 +231,17 @@ const GATE = {
   ai: /\bfeatureEnabled\('ai'\)|\baiAltTextEnabled\(\)/,
   notion: /\bfeatureEnabled\('notion'\)/,
   uploads: /\bfeatureEnabled\('uploads'\)/,
+  analytics:
+    /\b(?:featureEnabled|isFeatureEnabled)\('analytics'\)|\btracking === true\b/,
 };
 
 /** The snapshot keys only `client/lib/state/features.js` may read. */
-const FLAG_READ = /\.(enableAi|aiAltText|enableNotion|enableUploads)\b/;
+const FLAG_READ =
+  /\.(enableAi|aiAltText|enableNotion|enableUploads|enableAnalytics)\b/;
 
 // ------------------------------------------------------------ the server side
 
-const { MOUNTS } = await import('../server/routes/api/index.js');
+const { PUBLIC_MOUNTS, MOUNTS } = await import('../server/routes/api/index.js');
 const { ROUTES: presentationRoutes } =
   await import('../server/routes/api/presentations/index.js');
 const { ROUTES: imageLibraryRoutes } =
@@ -214,6 +254,12 @@ const { ROUTES: notionRoutes, handleNotion } =
   await import('../server/routes/api/notion/index.js');
 const { ROUTES: uploadRoutes, handleUploads } =
   await import('../server/routes/api/uploads.js');
+const { ROUTES: trackRoutes, handleAnalyticsTrack } =
+  await import('../server/routes/api/analytics-track.js');
+const { ROUTES: analyticsRoutes, handleAnalytics } =
+  await import('../server/routes/api/analytics/index.js');
+const { ROUTES: reportPublicRoutes, handleAnalyticsReportPublic } =
+  await import('../server/routes/api/analytics/public.js');
 
 /**
  * Each mount handle under a cluster, with the table it dispatches. A mount
@@ -226,6 +272,11 @@ const MOUNT_TABLES = {
   ],
   notion: [[handleNotion, notionRoutes]],
   uploads: [[handleUploads, uploadRoutes]],
+  analytics: [
+    [handleAnalyticsTrack, trackRoutes],
+    [handleAnalyticsReportPublic, reportPublicRoutes],
+    [handleAnalytics, analyticsRoutes],
+  ],
 };
 
 /** Tables whose rows may carry a `feature` of their own. */
@@ -244,7 +295,9 @@ function clusterPatterns(key) {
 test('the mounted tables are exactly the mounts that carry the feature', () => {
   for (const key of Object.keys(ENTRIES)) {
     assert.deepEqual(
-      MOUNTS.filter((m) => m.feature === key).map((m) => m.handle),
+      [...PUBLIC_MOUNTS, ...MOUNTS]
+        .filter((m) => m.feature === key)
+        .map((m) => m.handle),
       MOUNT_TABLES[key].map(([handle]) => handle),
       `MOUNTS under '${key}' disagree with MOUNT_TABLES`,
     );
@@ -314,7 +367,10 @@ for (const [key, entries] of Object.entries(ENTRIES)) {
 
   test(`${key}: every entry is gated on the one predicate`, () => {
     for (const { entry, gate } of entries) {
-      assert.ok(clientFiles.includes(gate), `${entry}: ${gate} does not exist`);
+      assert.ok(
+        fs.existsSync(path.join(repoRoot, gate)),
+        `${entry}: ${gate} does not exist`,
+      );
       assert.match(
         read(gate),
         GATE[key],

@@ -14,6 +14,7 @@ import {
   isMultiOrgEnabled,
   isLiveDataEnabled,
   isRssFeedEnabled,
+  isAnalyticsEnabled,
   isCollabEnabled,
   isCollabLiveEditsEnabled,
   isDemoMode,
@@ -69,6 +70,7 @@ export function getFeatureFlags() {
     multiOrganization: isMultiOrgEnabled(),
     enableLiveData: isLiveDataEnabled(),
     enableRssFeed: isRssFeedEnabled(),
+    enableAnalytics: isAnalyticsEnabled(),
     collab: isCollabEnabled(),
     collabLiveEdits: isCollabLiveEditsEnabled(),
     // The trash hint states this number, so the copy and the sweep that acts on

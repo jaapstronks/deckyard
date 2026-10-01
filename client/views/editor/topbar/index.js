@@ -26,6 +26,7 @@ import { createNotificationBell } from '../../../lib/user/notification-bell.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 
 export function createEditorTopbar({
   api,
@@ -244,6 +245,7 @@ export function createEditorTopbar({
   // MORE MENU
   // ============================================================
 
+  const hasAnalytics = featureEnabled('analytics');
   const moreMenu = createEditorTopbarMoreMenu({
     root,
     toast,
@@ -274,7 +276,7 @@ export function createEditorTopbar({
     // Demoted from their own topbar icons (2026-07-16 chrome re-org): the
     // bar keeps deck-level actions; utilities live here.
     onAnalyze,
-    onOpenAnalytics: () => nav(`/analytics/${id}`),
+    onOpenAnalytics: hasAnalytics ? () => nav(`/analytics/${id}`) : null,
     onShowShortcuts: () => onShowShortcuts?.(),
     onOpenSettings: () => openSettings(),
     onSubscription: () =>
@@ -288,14 +290,18 @@ export function createEditorTopbar({
   // ANALYTICS BUTTON
   // ============================================================
 
-  const btnAnalytics = h('button', {
-    class: 'ghost-icon-btn topbar-analytics-btn topbar-fold-lg',
-    type: 'button',
-    title: t('editor.analytics', 'Analytics'),
-    'aria-label': t('editor.analytics', 'Analytics'),
-    onclick: () => nav(`/analytics/${id}`),
-  });
-  btnAnalytics.append(icon('chart-column', { size: 16 }));
+  // Absent, not hidden, where the installation has no analytics cluster
+  // (D260): no button, no ⋯ entry, no share-link probe for one.
+  const btnAnalytics = hasAnalytics
+    ? h('button', {
+        class: 'ghost-icon-btn topbar-analytics-btn topbar-fold-lg',
+        type: 'button',
+        title: t('editor.analytics', 'Analytics'),
+        'aria-label': t('editor.analytics', 'Analytics'),
+        onclick: () => nav(`/analytics/${id}`),
+      })
+    : null;
+  btnAnalytics?.append(icon('chart-column', { size: 16 }));
 
   /**
    * Analytics is a control with two conditions, not one: the fold ladder says
@@ -317,7 +323,9 @@ export function createEditorTopbar({
   };
 
   const isPublished = !!pres?.published?.id;
-  if (isPublished) {
+  if (!hasAnalytics) {
+    // No cluster, no control to show or hide.
+  } else if (isPublished) {
     setAnalyticsAvailable(true);
   } else {
     // Not published: the deck may still have an audience through a share link.

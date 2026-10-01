@@ -4,6 +4,7 @@
  */
 
 import { h } from '../../../lib/dom/index.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -175,6 +176,11 @@ export function createPreferencesTab({ user }) {
 
   // User notification preferences
   const userNotifications = createUserNotificationsSection();
+
+  // The privacy and digest cards are about analytics only: absent on an
+  // installation without the cluster (D260), and their stored values are then
+  // neither shown nor saved.
+  const hasAnalytics = featureEnabled('analytics');
 
   // Privacy settings card
   const privacyCard = h('div', { class: 'stack editor-card' });
@@ -408,8 +414,8 @@ export function createPreferencesTab({ user }) {
     uiLocaleCard,
     langCard,
     userNotifications.el,
-    privacyCard,
-    digestCard,
+    hasAnalytics ? privacyCard : null,
+    hasAnalytics ? digestCard : null,
     highlighterCard,
   ]);
 
@@ -608,14 +614,16 @@ export function createPreferencesTab({ user }) {
         uiLocale,
         uiLang: langMode,
         notifications: userNotifValues,
-        privacy: {
-          allowViewAttribution: allowAttributionCheck.checked,
-          disableAllTracking: disableTrackingCheck.checked,
-        },
-        digest: {
-          enabled: digestEnabledCheck.checked,
-          dayOfWeek: Number(digestDaySelect.value),
-        },
+        ...(hasAnalytics && {
+          privacy: {
+            allowViewAttribution: allowAttributionCheck.checked,
+            disableAllTracking: disableTrackingCheck.checked,
+          },
+          digest: {
+            enabled: digestEnabledCheck.checked,
+            dayOfWeek: Number(digestDaySelect.value),
+          },
+        }),
         highlighter: {
           color: highlighterColorPicker.getValue(),
           thickness: parseInt(thicknessSlider.value, 10) || 4,
