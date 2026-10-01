@@ -4,6 +4,22 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.52.0](https://github.com/jaapstronks/deckyard/compare/v1.51.0...v1.52.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* NOTION_FEATURE is renamed NOTION_ENABLED and now gates the whole /api/notion/* module (default off); an install that set only NOTION_SECRET must also set NOTION_ENABLED=true. DISABLE_ANALYTICS is renamed EXTERNAL_ANALYTICS_ENABLED (inverted). Both legacy names are honoured with a boot warning until the first release after 2026-11-01 (D259). With LIVE_DATA_ENABLED off, /api/data-sources/* answers 404 instead of 403; with RSS_FEED_ENABLED off, /feed/* answers the static 404 instead of a text/plain one.
+
+### Added
+
+* one feature field on mount, row and MCP tool (B522) ([#1416](https://github.com/jaapstronks/deckyard/issues/1416)) ([117f13c](https://github.com/jaapstronks/deckyard/commit/117f13c0bbd687b9595e2b3009fef7cd857792b6))
+
+
+### Changed
+
+* keep the next release in 1.x during beta ([832c23b](https://github.com/jaapstronks/deckyard/commit/832c23b9c5474524e913910f9fbf4a41d913571c))
+
 ## [1.51.0](https://github.com/jaapstronks/deckyard/compare/v1.50.0...v1.51.0) (2026-10-01)
 
 
