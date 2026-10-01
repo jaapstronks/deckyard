@@ -63,8 +63,9 @@ instead of being borrowed from image-slide.
 
 A class passes if it has a rule in the corpus, `client/styles/**` plus the fork
 seam `custom/styles/**` (loaded last in every render path; see
-`server/utils/css-chain.js`), or if the rendered markup styles it in its own
-inline `<style>` block, or if it is listed in `UNSTYLED` with a reason. There is
+`server/utils/css-chain.js`), or if it is listed in `UNSTYLED` with a reason. (A
+file-JS type cannot style itself through an inline `<style>` block: the
+definition validator refuses one, so its rules are always in the corpus.) There is
 no fork allowlist: a fork's classes are styled by the fork's stylesheets, and
 those are in the corpus. A test pins the corpus to exactly those two roots.
 

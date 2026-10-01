@@ -178,6 +178,35 @@ test('every core slide type carries its canonical root class', () => {
   );
 });
 
+/**
+ * A file-JS type has one place for its CSS: `custom/styles/`, loaded after core
+ * on every render path and read by the CSS contract gate. An inline `<style>`
+ * in the render was a second place neither sees, so it is refused (B536).
+ */
+test('a definition that renders an inline <style> is refused, naming custom/styles/', () => {
+  const report = validateSlideTypeDefinition(
+    validDef({
+      renderHtml: () =>
+        '<div class="slide slide-fixture"><style>.slide-fixture h2 { color: red; }</style></div>',
+    }),
+    'fixture-slide',
+  );
+  assert.equal(report.errors.length, 1);
+  assert.match(report.errors[0], /<style> block/);
+  assert.match(report.errors[0], /custom\/styles\/<nn>-fixture\.css/);
+});
+
+test('no core slide type renders an inline <style>', () => {
+  const offenders = Object.entries(CORE_SLIDE_TYPE_DEFS)
+    .filter(([name, def]) =>
+      validateSlideTypeDefinition(def, name).errors.some((e) =>
+        e.includes('<style> block'),
+      ),
+    )
+    .map(([name]) => name);
+  assert.deepEqual(offenders, []);
+});
+
 test('a well-formed definition reports nothing', () => {
   const report = validateSlideTypeDefinition(validDef(), 'fixture-slide', {
     globalFieldKeys: GLOBAL_SLIDE_FIELD_KEYS,
