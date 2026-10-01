@@ -1,4 +1,4 @@
-import { escapeHtml } from '../helpers.js';
+import { escapeHtml, followPath } from '../helpers.js';
 import { normalizeLang, DEFAULT_DECK_LANG } from '../../i18n-utils.js';
 import { getSlideCopy } from '../slide-copy.js';
 
@@ -80,9 +80,7 @@ export default {
       body: customBody || base.followInviteBody,
     };
 
-    const relFollow = presId
-      ? `/follow/${encodeURIComponent(presId)}?lang=${encodeURIComponent(lang)}`
-      : '';
+    const relFollow = followPath(presId, lang);
 
     // Get follow codes from context (when available during presentations).
     // Keyed by deck language, one per version the deck has (B182/D72 #6), so

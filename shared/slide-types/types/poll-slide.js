@@ -1,13 +1,18 @@
 import {
   bgClass,
   escapeHtml,
+  followPath,
   liveInteractionOptions,
   BACKGROUND_FIELD,
   ON_CLOSE_FIELD,
   ON_CLOSE_TARGET_FIELD,
 } from '../helpers.js';
-import { getSlideCopy } from '../slide-copy.js';
-import { getLangDisplayName } from '../../i18n-utils.js';
+import { fillCopy, getSlideCopy } from '../slide-copy.js';
+import {
+  DEFAULT_DECK_LANG,
+  getLangDisplayName,
+  normalizeLang,
+} from '../../i18n-utils.js';
 
 function letterForIdx(i) {
   return ['A', 'B', 'C', 'D'][i] || '?';
@@ -109,9 +114,20 @@ export default {
     const codeRows = Object.entries(followCodes || {}).filter(
       ([, code]) => code,
     );
+    // Without codes (every export, thumbnail and share view) the line names
+    // the follow URL for the version on screen, the same one feedback's QR
+    // encodes; without a deck id there is no URL to name, so no line.
+    const presId =
+      ctx && typeof ctx === 'object'
+        ? String(ctx.presentationId || '').trim()
+        : '';
+    const lang = normalizeLang(ctx?.lang) || DEFAULT_DECK_LANG;
+    const relFollow = followPath(presId, lang);
     const joinHelp = codeRows.length
       ? copy.pollJoinHelpWithCodes
-      : copy.pollJoinHelpWithoutCodes;
+      : relFollow
+        ? fillCopy(copy.pollJoinHelpWithoutCodes, { url: relFollow })
+        : '';
 
     const optsHtml = options
       .map(
@@ -181,7 +197,7 @@ export default {
             <div class="poll-right">
               <div class="poll-scan on-surface-light">
                 <div class="poll-scan-title">${escapeHtml(copy.pollJoinTitle)}</div>
-                <div class="help">${escapeHtml(joinHelp)}</div>
+                ${joinHelp ? `<div class="help">${escapeHtml(joinHelp)}</div>` : ''}
                 ${codesHtml}
               </div>
             </div>
