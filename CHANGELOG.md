@@ -4,6 +4,15 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.53.0](https://github.com/jaapstronks/deckyard/compare/v1.52.0...v1.53.0) (2026-10-01)
+
+
+### Added
+
+* analytics is a cluster an installation can leave out (B523) ([#1421](https://github.com/jaapstronks/deckyard/issues/1421)) ([12ddbe3](https://github.com/jaapstronks/deckyard/commit/12ddbe38b9fd829ba930d9ed962fae3d8336b492))
+* **client:** uploads entries are absent where the install has none (B581) ([#1420](https://github.com/jaapstronks/deckyard/issues/1420)) ([333fe18](https://github.com/jaapstronks/deckyard/commit/333fe18e14d45cae024f6d4afce3e6d6145a242d))
+* **editor:** single-image upload flow without scrolling (B579) ([#1418](https://github.com/jaapstronks/deckyard/issues/1418)) ([4ed9a84](https://github.com/jaapstronks/deckyard/commit/4ed9a8425ca44ad110541bb18fde4839ffb0e01b))
+
 ## [1.52.0](https://github.com/jaapstronks/deckyard/compare/v1.51.0...v1.52.0) (2026-10-01)
 
 
