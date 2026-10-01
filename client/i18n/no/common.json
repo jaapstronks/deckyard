@@ -137,6 +137,7 @@
   "common.theme": "Tema",
   "common.themeCard.bodySpecimen": "Brødtekst",
   "common.themeDefault": "Standard for arbeidsområdet",
+  "common.themeDefaultNamed": "Standard for arbeidsområdet ({name})",
   "common.toggleTheme": "Bytt mellom mørk og lys modus",
   "common.unknown": "Ukjent",
   "common.unknownError": "Ukjent feil",

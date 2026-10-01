@@ -138,6 +138,7 @@
   "common.theme": "Teema",
   "common.themeCard.bodySpecimen": "Leipäteksti",
   "common.themeDefault": "Työtilan oletus",
+  "common.themeDefaultNamed": "Työtilan oletus ({name})",
   "common.toggleTheme": "Vaihda tumman ja vaalean tilan välillä",
   "common.unknown": "Tuntematon",
   "common.unknownError": "Tuntematon virhe",
