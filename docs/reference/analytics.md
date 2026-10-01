@@ -176,17 +176,26 @@ sourceType, sourceId?, deviceId?, viewerType?, viewerEmail?}`. The handler
 
 ## Config & flags
 
-| Name                                 | Default   | Purpose                                                                                                  |
-| ------------------------------------ | --------- | -------------------------------------------------------------------------------------------------------- |
-| `ANALYTICS_HEARTBEAT_INTERVAL_MS`    | 30 000    | Client heartbeat cadence.                                                                                |
-| `ANALYTICS_ACTIVE_THRESHOLD_SECONDS` | 60        | Window that counts a session as "active now".                                                            |
-| `ANALYTICS_SSE_TIMEOUT_MS`           | 3 600 000 | Absolute lifetime of a realtime stream.                                                                  |
-| `ANALYTICS_SSE_UPDATE_INTERVAL_MS`   | 5 000     | Realtime push cadence.                                                                                   |
-| `ANALYTICS_MAX_USER_AGENT_LENGTH`    | 500       | Truncation ceiling.                                                                                      |
-| `ANALYTICS_MAX_SLIDE_INDEX`          | 1 000     | Sanity bound on a reported slide index.                                                                  |
-| `ANALYTICS_RETENTION_DAYS`           | 90        | **Seeds** the default raw-row deletion age; `settings.analytics.retention.sessionDataDays` overrides it. |
-| `ANALYTICS_IP_ANONYMIZATION_DAYS`    | 7         | **Seeds** the default IP-nulling age; `settings.analytics.retention.ipAnonymizationDays` overrides it.   |
-| `AUTH_SECRET`                        | —         | Keys the per-deck device label HMAC.                                                                     |
+The installation can leave the whole subsystem out with `ANALYTICS_ENABLED=false`
+(D258, D260): the three mounts answer 404, published pages carry no tracking
+script, the share and follow payloads say `tracking: false`, the app shell does
+not serve the three pages, and the weekly digest is not scheduled. Retention
+keeps running and the boot log counts the rows still held (D261). The
+organization's `analytics.enabled` and a deck's `analyticsEnabled` sit under
+the flag unchanged; with it off their controls are absent.
+
+| Name                                 | Default   | Purpose                                                                                                                      |
+| ------------------------------------ | --------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `ANALYTICS_ENABLED`                  | on        | The cluster itself: off unmounts every route above and every client entry ([feature-flags.md](feature-flags.md) § Clusters). |
+| `ANALYTICS_HEARTBEAT_INTERVAL_MS`    | 30 000    | Client heartbeat cadence.                                                                                                    |
+| `ANALYTICS_ACTIVE_THRESHOLD_SECONDS` | 60        | Window that counts a session as "active now".                                                                                |
+| `ANALYTICS_SSE_TIMEOUT_MS`           | 3 600 000 | Absolute lifetime of a realtime stream.                                                                                      |
+| `ANALYTICS_SSE_UPDATE_INTERVAL_MS`   | 5 000     | Realtime push cadence.                                                                                                       |
+| `ANALYTICS_MAX_USER_AGENT_LENGTH`    | 500       | Truncation ceiling.                                                                                                          |
+| `ANALYTICS_MAX_SLIDE_INDEX`          | 1 000     | Sanity bound on a reported slide index.                                                                                      |
+| `ANALYTICS_RETENTION_DAYS`           | 90        | **Seeds** the default raw-row deletion age; `settings.analytics.retention.sessionDataDays` overrides it.                     |
+| `ANALYTICS_IP_ANONYMIZATION_DAYS`    | 7         | **Seeds** the default IP-nulling age; `settings.analytics.retention.ipAnonymizationDays` overrides it.                       |
+| `AUTH_SECRET`                        | —         | Keys the per-deck device label HMAC.                                                                                         |
 
 Third-party head snippet (`analytics/head.js`), separate from the above and
 app-shell-only: `EXTERNAL_ANALYTICS_ENABLED`, `ANALYTICS_ALLOW_IN_SANDBOX`,

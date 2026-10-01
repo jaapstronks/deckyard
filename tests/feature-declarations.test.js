@@ -115,7 +115,16 @@ test('the scan sees the declarations at all', () => {
   assert.ok(declarations.length >= 20, `found ${declarations.length}`);
   const count = (prefix) =>
     declarations.filter(([w]) => w.startsWith(prefix)).length;
-  assert.equal(count('MOUNTS['), 6, 'six feature mounts behind the login gate');
+  assert.equal(
+    count('MOUNTS['),
+    7,
+    'seven feature mounts behind the login gate',
+  );
+  assert.equal(
+    count('PUBLIC_MOUNTS['),
+    2,
+    'the analytics tracker and public report',
+  );
   assert.equal(count('V1_MOUNTS['), 1, 'v1 /ai');
   assert.equal(count('STATIC_MOUNTS['), 1, 'the feeds');
   assert.equal(count('mcp:'), 6, 'six AI tools');

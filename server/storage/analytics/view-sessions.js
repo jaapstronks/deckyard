@@ -6,6 +6,7 @@
 import crypto from 'node:crypto';
 import { norm, nowIso, durationSinceSeconds } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/index.js';
+import { toStorageContext } from '../scope.js';
 import { ANALYTICS_CONFIG, applyDateFilters } from '../../analytics/helpers.js';
 
 // ============================================================
@@ -291,6 +292,36 @@ export async function deleteOldViewSessions(olderThan) {
       .executeTakeFirst();
 
     return { deleted: Number(result.numDeletedRows) || 0 };
+  });
+}
+
+/**
+ * How many rows the analytics tables hold across the instance: view sessions
+ * (their slide views hang off them) and saved reports. Read once at boot when
+ * the cluster is off, so the operator learns the data is still there (D261).
+ *
+ * @param {import('../scope.js').StorageScope} scope - Cross-organization.
+ * @returns {Promise<{sessions: number, reports: number}>} Zeros without a database.
+ */
+export async function countAnalyticsRows(scope) {
+  toStorageContext(
+    scope,
+    'countAnalyticsRows',
+    {},
+    { allowCrossOrganization: true },
+  );
+  return withDbGuard({ sessions: 0, reports: 0 }, async (db) => {
+    const count = async (table) => {
+      const row = await db
+        .selectFrom(table)
+        .select((eb) => eb.fn.countAll().as('n'))
+        .executeTakeFirst();
+      return Number(row?.n) || 0;
+    };
+    return {
+      sessions: await count('view_sessions'),
+      reports: await count('analytics_reports'),
+    };
   });
 }
 

@@ -294,6 +294,7 @@ async function fakeFetch(input, init = {}) {
     if (scenario.status !== 'live') return json({ status: scenario.status });
     return json({
       status: 'live',
+      tracking: true,
       presentation: {
         id: DECK_ID,
         title: 'Kickoff',

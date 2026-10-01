@@ -6,9 +6,12 @@
 import { t } from '../../lib/ui-i18n.js';
 import { icon as uiIcon } from '../../lib/dom/icons.js';
 import { h } from '../../lib/dom/index.js';
+import { featureEnabled } from '../../lib/state/features.js';
 
 /**
- * Sidebar view configuration.
+ * Sidebar view configuration. A view with `available` exists only where that
+ * returns true: Insights is absent on an installation without the analytics
+ * cluster (D260), not hidden.
  */
 const SIDEBAR_VIEWS = [
   { key: 'home', icon: 'house', label: () => t('list.nav.home', 'Home') },
@@ -28,6 +31,7 @@ const SIDEBAR_VIEWS = [
     label: () => t('list.nav.insights', 'Insights'),
     action: true,
     href: '/insights',
+    available: () => featureEnabled('analytics'),
   },
   {
     key: 'activity',
@@ -80,6 +84,7 @@ export function createSidebar({
 
   // Build navigation items
   for (const view of SIDEBAR_VIEWS) {
+    if (view.available && !view.available()) continue;
     const item = h('button', {
       class: `sidebar-nav-item${activeView === view.key && !view.action ? ' is-active' : ''}`,
       type: 'button',

@@ -120,6 +120,18 @@ export function isRssFeedEnabled() {
 }
 
 /**
+ * The first-party analytics cluster: view tracking, the dashboards and reports,
+ * the weekly digest (`ANALYTICS_ENABLED=false` switches it off; D258). Default:
+ * on. An installation flag, not the organization's `analytics.enabled` setting
+ * or a deck's `analyticsEnabled`, which stay what an organization uses; and not
+ * {@link isExternalAnalyticsEnabled}, the provider scripts in the app shell.
+ * @returns {boolean}
+ */
+export function isAnalyticsEnabled() {
+  return envBool('ANALYTICS_ENABLED', true);
+}
+
+/**
  * Demo mode: a read-mostly showcase install (sample decks, no AI, no
  * uploads). @returns {boolean}
  */

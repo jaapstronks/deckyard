@@ -22,7 +22,7 @@ import {
 import { publicUrlWarnings, envStr, envInt } from './config/utils.js';
 import { handleApi } from './routes/api/index.js';
 import { handleStatic } from './routes/static/index.js';
-import { getFeatureFlags } from './config/flags-snapshot.js';
+import { getFeatureFlags, isFeatureEnabled } from './config/flags-snapshot.js';
 import { allowRequest, getClientIp } from './utils/rate-limit.js';
 import { rateLimited } from './utils/http.js';
 import { REQUEST_LIMITS } from './config/rate-limits.js';
@@ -52,7 +52,10 @@ import {
 import { announceMaintenance } from './services/maintenance.js';
 import { scheduleAuthCleanup } from './jobs/auth-cleanup.js';
 import { scheduleDigestEmailJob } from './jobs/digest-email.js';
-import { scheduleAnalyticsCleanup } from './jobs/analytics-cleanup.js';
+import {
+  scheduleAnalyticsCleanup,
+  warnAnalyticsRowsWhileOff,
+} from './jobs/analytics-cleanup.js';
 import { scheduleRetentionCleanup } from './jobs/retention-cleanup.js';
 import { initSanitizer } from '../shared/sanitize.js';
 import { closeRedis } from './utils/redis-client.js';
@@ -323,7 +326,11 @@ async function main() {
     scheduleLiveSessionCleanup(), // TTL sweep for live sessions + follow codes
     scheduleMcpSessionSweep(), // TTL sweep for expired MCP SSE sessions
     scheduleAuthCleanup(), // Clean expired tokens hourly
-    scheduleDigestEmailJob({ repoRoot }), // Weekly digest emails
+    // The digest acts on analytics; with the cluster off it is not scheduled.
+    // The cleanup only lets data expire, so it runs either way (D261).
+    ...(isFeatureEnabled('analytics')
+      ? [scheduleDigestEmailJob({ repoRoot })] // Weekly digest emails
+      : []),
     scheduleAnalyticsCleanup(), // Clean old analytics daily
     scheduleRetentionCleanup(), // Trim usage/share-links/activity/slide-locks daily
     { stop: stopCommentHeartbeat },
@@ -331,6 +338,7 @@ async function main() {
   ];
 
   // Initialize background job queue (Redis-based, with fallback)
+  if (!isFeatureEnabled('analytics')) await warnAnalyticsRowsWhileOff();
   await initializeQueues();
   await initializeWorkers();
 

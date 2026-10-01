@@ -13,6 +13,7 @@ import {
   deleteOldViewSessions,
   anonymizeOldIpAddresses,
   deleteOldSlideViews,
+  countAnalyticsRows,
 } from '../storage/analytics/index.js';
 import { getAnalyticsRetention } from '../storage/settings.js';
 import { crossOrganizationScope } from '../storage/scope.js';
@@ -108,6 +109,24 @@ export function scheduleAnalyticsCleanup({
 
   // Run immediately on start, then every intervalMs.
   return createIntervalJob(runJob, { intervalMs, immediate: true });
+}
+
+/**
+ * The one boot line for an analytics cluster that is off while its tables
+ * still hold rows (D261): nothing reads them now, the cleanup above still lets
+ * them expire, and switching the cluster back on shows them again.
+ * @returns {Promise<void>}
+ */
+export async function warnAnalyticsRowsWhileOff() {
+  const { sessions, reports } = await countAnalyticsRows(
+    crossOrganizationScope(null, 'analytics boot line: instance-wide count'),
+  );
+  if (sessions === 0 && reports === 0) return;
+  log.warn(
+    `ANALYTICS_ENABLED=false, but the analytics tables still hold ` +
+      `${sessions} view session(s) and ${reports} report(s). Nothing is ` +
+      `deleted; the retention cleanup keeps expiring old sessions.`,
+  );
 }
 
 // CLI support: run directly with `node analytics-cleanup.js`

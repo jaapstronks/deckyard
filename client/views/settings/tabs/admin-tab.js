@@ -4,6 +4,7 @@
  */
 
 import { h } from '../../../lib/dom/index.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { getAppName } from '../../../lib/theme/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -238,7 +239,10 @@ export function createAdminTab({ user }) {
   // Theme configuration (default theme + picker visibility) lives in the
   // Themes settings tab.
 
-  // Engagement Insights (Analytics) card
+  // Engagement Insights (Analytics) card. Absent on an installation without
+  // the analytics cluster (D260); the stored `analytics` setting is then left
+  // as it is, neither shown nor saved (D258).
+  const hasAnalytics = featureEnabled('analytics');
   const analyticsCard = h('div', { class: 'stack editor-card' });
   analyticsCard.append(
     h('div', {
@@ -442,7 +446,7 @@ export function createAdminTab({ user }) {
     aiCard,
     senderCard,
     sessionCard,
-    analyticsCard,
+    hasAnalytics ? analyticsCard : null,
     stockMediaCard,
   ]);
 
@@ -593,13 +597,15 @@ export function createAdminTab({ user }) {
           name: senderNameInput.value.trim(),
         },
         sessionDurationDays: parseInt(sessionSelect.value, 10) || 30,
-        analytics: {
-          enabled: analyticsEnabledCheck.checked,
-          retention: {
-            sessionDataDays: parseInt(retentionSessionSelect.value, 10) || 90,
-            ipAnonymizationDays: parseInt(retentionIpSelect.value, 10) || 7,
+        ...(hasAnalytics && {
+          analytics: {
+            enabled: analyticsEnabledCheck.checked,
+            retention: {
+              sessionDataDays: parseInt(retentionSessionSelect.value, 10) || 90,
+              ipAnonymizationDays: parseInt(retentionIpSelect.value, 10) || 7,
+            },
           },
-        },
+        }),
         stockMedia: {
           bundled: { enabled: bundledEnabledCheck.checked },
           unsplash: { enabled: unsplashEnabledCheck.checked },

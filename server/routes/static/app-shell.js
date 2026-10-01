@@ -7,6 +7,7 @@ import {
   analyticsHeadHtml,
   analyticsScriptOrigins,
 } from '../../analytics/head.js';
+import { isFeatureEnabled } from '../../config/flags-snapshot.js';
 import { buildAppShellCspHeader } from '../../utils/document-csp.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';
@@ -226,10 +227,19 @@ export async function handleAppRoutes(ctx) {
     p.startsWith('/present') ||
     p.startsWith('/notes') ||
     p.startsWith('/notes-join') ||
-    p.startsWith('/follow') ||
-    p.startsWith('/analytics') ||
-    p.startsWith('/reports') ||
-    p.startsWith('/insights')
+    p.startsWith('/follow')
+  ) {
+    await serveAppIndex(ctx);
+    return true;
+  }
+  // The analytics pages exist only with the analytics cluster (D260): without
+  // it the shell is not served, so `/insights`, `/analytics/:id` and the
+  // anonymous `/reports/:token` answer the static 404 like their API does.
+  if (
+    isFeatureEnabled('analytics') &&
+    (p.startsWith('/analytics') ||
+      p.startsWith('/reports') ||
+      p.startsWith('/insights'))
   ) {
     await serveAppIndex(ctx);
     return true;

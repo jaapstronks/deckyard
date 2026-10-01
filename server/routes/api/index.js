@@ -126,8 +126,8 @@ export const PUBLIC_MOUNTS = [
   // same session stay behind deck-write, in MOUNTS.
   { handle: handleLiveSessionsPublic },
   { handle: handleSharePublic },
-  { handle: handleAnalyticsTrack },
-  { handle: handleAnalyticsReportPublic },
+  { handle: handleAnalyticsTrack, feature: 'analytics' },
+  { handle: handleAnalyticsReportPublic, feature: 'analytics' },
 ];
 
 /**
@@ -170,7 +170,7 @@ export const MOUNTS = [
   { handle: handleSlideCollections },
   { handle: handleDataSources, feature: 'liveData' },
   { handle: handleActivity },
-  { handle: handleAnalytics },
+  { handle: handleAnalytics, feature: 'analytics' },
   { handle: handleTags },
   { handle: handleStockMedia },
   { handle: handleJobs },
