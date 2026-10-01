@@ -1899,7 +1899,8 @@ paths:
       summary: Change comment status
       description: |
         Resolve, reopen or dismiss a comment. Allowed transitions follow the
-        app: open→resolved, open→dismissed, resolved→open (409 otherwise).
+        app: open→resolved, open→dismissed, resolved→open; any other answers
+        400 with the transition's reason code.
         Requires the `comments:write` permission; only the presentation
         owner/creator may change status.
       parameters:
@@ -1940,8 +1941,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          description: Transition not allowed from the comment's current status
         '429':
           $ref: '#/components/responses/RateLimited'
 

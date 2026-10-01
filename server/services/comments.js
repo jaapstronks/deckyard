@@ -1,5 +1,6 @@
 /**
- * Comments — the one place a comment is created, on every contract (A7.4, B518).
+ * Comments — the one place a comment is created, and the one place its status
+ * changes, on every contract (A7.4, B518, B569).
  *
  * The internal `/api` route (`routes/api/presentations/comments-write.js`), the
  * public v1 route (`routes/public-api/v1/comments.js`) and the MCP tools
@@ -25,6 +26,12 @@
  *     resolver decides who hears, whichever contract asked), the activity row
  *     and the live broadcast, all fire-and-forget.
  *
+ * A comment's status changes in one place too ({@link setCommentStatus}, B569).
+ * The internal resolve/reopen/dismiss routes, v1 `POST /comments/:id/status`
+ * and MCP `set_comment_status` each loaded, decided and announced on their own:
+ * the internal route decided on the session user, the other two on the actor,
+ * and each answered a status the comment was not in with its own status code.
+ *
  * Failures are thrown as `AppError`s (D254); each contract's error handler
  * renders them. Absent deck → 404, no comment right → 403 (D255).
  *
@@ -34,16 +41,28 @@
 import {
   getComment,
   createComment as storeComment,
+  resolveComment,
+  reopenComment,
+  dismissComment,
   getOpenCommentCount,
   getCommentCountsBySlide,
 } from '../storage/presentations/comments.js';
 import { repoRootOf } from '../storage/scope.js';
-import { ValidationError, throwStorageFailure } from '../utils/errors.js';
+import {
+  AppError,
+  NotFoundError,
+  ValidationError,
+  throwStorageFailure,
+} from '../utils/errors.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import { createLogger } from '../utils/logger.js';
 import { buildSlideSnapshot } from './comment-slide-context.js';
 import { notifyCommentCreated } from './comment-notifications.js';
-import { recordCommentCreated } from './activity-events.js';
+import {
+  recordCommentCreated,
+  recordCommentResolved,
+  recordCommentReopened,
+} from './activity-events.js';
 import { loadPresentationForActor } from './presentations.js';
 import {
   broadcastToPresentation,
@@ -133,6 +152,121 @@ export async function createComment(
 }
 
 /**
+ * What each status a comment can be moved to means: the storage transition
+ * that moves it there (the transition also refuses a comment not in the state
+ * it leaves), the activity it leaves, and the live event the deck hears.
+ * Dismissing is resolving an AI suggestion without acting on it: clients see
+ * it leave the open list, the activity feed does not record it.
+ */
+const STATUS_CHANGES = Object.freeze({
+  resolved: {
+    store: (scope, id, actor) =>
+      resolveComment(scope, id, { email: actor.email }),
+    record: recordCommentResolved,
+    event: CommentEventTypes.RESOLVED,
+  },
+  open: {
+    store: (scope, id) => reopenComment(scope, id),
+    record: recordCommentReopened,
+    event: CommentEventTypes.REOPENED,
+  },
+  dismissed: {
+    store: (scope, id, actor) =>
+      dismissComment(scope, id, { email: actor.email }),
+    record: null,
+    event: CommentEventTypes.RESOLVED,
+  },
+});
+
+/** The statuses {@link setCommentStatus} moves a comment to. */
+export const COMMENT_STATUSES = Object.freeze(Object.keys(STATUS_CHANGES));
+
+/**
+ * Move a comment to a new status: resolve it, reopen it, or dismiss it.
+ *
+ * Moderation is the deck's owner or creator, or an organization admin acting in
+ * a session (`access: 'moderate'`). The transitions are open→resolved,
+ * open→dismissed and resolved→open; any other is refused by the storage
+ * transition with its reason code (400), on every contract.
+ *
+ * The comment is addressed under its deck where the contract addresses it that
+ * way (internal, MCP): the deck is loaded and decided first, so a deck the
+ * caller may not moderate betrays none of its comment ids, and a comment on
+ * another deck is absent. v1 addresses the comment alone (`/comments/:id/status`)
+ * and leaves `presentationId` out; the comment then names its deck.
+ *
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {{ actor: import('./actor.js').Actor }} identity - Only an actor
+ *   moderates; a share-link guest never does.
+ * @param {Object} input
+ * @param {string} input.commentId
+ * @param {*} input.status - One of {@link COMMENT_STATUSES}.
+ * @param {string|null} [input.presentationId] - The deck the contract
+ *   addressed the comment under.
+ * @returns {Promise<{ comment: Object, presentation: Object }>}
+ * @throws {import('../utils/errors.js').AppError}
+ */
+export async function setCommentStatus(
+  scope,
+  identity,
+  { commentId, status, presentationId = null },
+) {
+  const change = Object.hasOwn(STATUS_CHANGES, status)
+    ? STATUS_CHANGES[status]
+    : null;
+  if (!change) {
+    throw new AppError(
+      `Invalid status (${COMMENT_STATUSES.join('|')})`,
+      400,
+      { field: 'status' },
+      'invalid',
+    );
+  }
+
+  let pres;
+  let comment;
+  if (presentationId) {
+    pres = await loadPresentationForActor(scope, identity, presentationId, {
+      access: 'moderate',
+    });
+    comment = await commentOn(scope, pres.id, commentId);
+  } else {
+    comment = await commentOn(scope, null, commentId);
+    pres = await loadPresentationForActor(
+      scope,
+      identity,
+      comment.presentationId,
+      { access: 'moderate' },
+    );
+  }
+
+  const { actor } = identity;
+  const result = await change.store(scope, comment.id, actor);
+  if (!result.ok) {
+    throwStorageFailure(result, `Could not change status: ${result.reason}`);
+  }
+
+  if (change.record) {
+    fireAndForget(
+      change.record({
+        comment: result.comment,
+        presentation: pres,
+        actor,
+        scope,
+      }),
+      `record comment-${status} activity`,
+    );
+  }
+  broadcastToPresentation(pres.id, change.event, { comment: result.comment });
+  fireAndForget(
+    broadcastCommentCounts(pres.id, scope),
+    'broadcast comment counts',
+  );
+
+  return { comment: result.comment, presentation: pres };
+}
+
+/**
  * Broadcast the current comment counts to every client on the deck. Called
  * after any comment mutation (create/update/delete/resolve/reopen/dismiss).
  *
@@ -178,6 +312,26 @@ function authorOf(identity) {
     guestId: null,
     isGuest: false,
   };
+}
+
+/**
+ * The comment with this id, on this deck when one is named; absent otherwise.
+ *
+ * @param {StorageScope} scope
+ * @param {string|null} presentationId
+ * @param {string} commentId
+ * @returns {Promise<Object>}
+ * @throws {NotFoundError}
+ */
+async function commentOn(scope, presentationId, commentId) {
+  const comment = commentId ? await getComment(scope, commentId) : null;
+  if (
+    !comment ||
+    (presentationId && comment.presentationId !== presentationId)
+  ) {
+    throw new NotFoundError('Comment not found');
+  }
+  return comment;
 }
 
 /**

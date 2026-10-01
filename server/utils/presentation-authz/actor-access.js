@@ -83,13 +83,19 @@ export function checkActorAccess({
  *
  * @param {Actor} [actor]
  * @param {string|null} [actorUserId]
- * @returns {{id: string|null, email: string|undefined, organizationId: string|null, unrestricted?: true}}
+ * @returns {{id: string|null, email: string|undefined, organizationId: string|null, isAdmin?: true, organizationRole?: string|null, unrestricted?: true}}
  */
 function actorUser(actor, actorUserId = null) {
   return {
     id: actorUserId || null,
     email: actor?.email,
     organizationId: actor?.organizationId || null,
+    // An admin session (internal contract only) moderates every deck of its
+    // organization (`isOrganizationAdmin`); an API key or MCP session never
+    // carries the flag, so it never gains the role here.
+    ...(actor?.isAdmin === true
+      ? { isAdmin: true, organizationRole: actor.organizationRole ?? null }
+      : {}),
     // The auth-off operator (internal contract only) passes every decider;
     // dropping the flag here would lock them out of their own instance.
     ...(actor?.unrestricted === true ? { unrestricted: true } : {}),
@@ -182,8 +188,9 @@ export async function canActorManageCollaborators(pres, actor) {
 /**
  * Async check: may an actor moderate a comment — resolve, dismiss or reopen it?
  *
- * Deck-ownership-only, like the editor route's canResolveComment, with the
- * actor's identity resolved to a `users.id` first.
+ * The deck's owner or creator, or an organization admin acting in a session
+ * ({@link canResolveComment}), with the actor's identity resolved to a
+ * `users.id` first.
  *
  * @param {Object} pres - The presentation the comment lives on
  * @param {Actor} actor - The acting machine client
