@@ -851,7 +851,16 @@ export async function createEditorController({
   // PREVIEW PANEL
   // ============================================================
 
-  const commentsApi = createCommentsApi({ api, presentationId: id });
+  // One comments client for the whole editor. It stores the pending save
+  // before every create: the service refuses a `slideId` the stored deck does
+  // not hold yet (D287). With live edits on, the save manager holds nothing
+  // and the Y.Doc persists on the server's debounce; the panel then names
+  // the refusal instead (B567).
+  const commentsApi = createCommentsApi({
+    api,
+    presentationId: id,
+    beforeCreate: saveManager.flush,
+  });
 
   // Pane tabs (Inspector / Comments / Notes) at the far right of the slide
   // toolbar, directly above the rail. The panes are slide-scoped, so the
@@ -1028,6 +1037,7 @@ export async function createEditorController({
 
   commentsPanel = createCommentsPanel({
     api,
+    commentsApi,
     toast,
     presentationId: id,
     pres,

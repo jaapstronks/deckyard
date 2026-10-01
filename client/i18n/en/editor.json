@@ -30,6 +30,7 @@
   "comments.error.reopenFailed": "Failed to reopen comment",
   "comments.error.replyFailed": "Failed to post reply",
   "comments.error.resolveFailed": "Failed to resolve comment",
+  "comments.error.slideNotSaved": "This slide is not saved yet. Wait a moment and post again.",
   "comments.filter.ai": "AI",
   "comments.filter.all": "All",
   "comments.filter.allTypes": "All",

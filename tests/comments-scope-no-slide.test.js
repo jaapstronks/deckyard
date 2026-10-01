@@ -32,6 +32,8 @@ globalThis.EventSource = class {
 
 const { createCommentsPanel } =
   await import('../client/views/editor/comments-panel.js');
+const { createCommentsApi } =
+  await import('../client/views/editor/comments-api.js');
 
 const DECK_COMMENTS = [
   {
@@ -72,6 +74,7 @@ function makePanel({ selectedSlideId = null, slides = [] } = {}) {
   };
   const panel = createCommentsPanel({
     api,
+    commentsApi: createCommentsApi({ api, presentationId: 'p1' }),
     toast: { error: () => {} },
     presentationId: 'p1',
     pres: { id: 'p1', slides },

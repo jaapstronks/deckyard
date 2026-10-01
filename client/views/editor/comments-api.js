@@ -8,9 +8,12 @@
  * @param {Object} options - Configuration options
  * @param {Function} options.api - API function for making requests
  * @param {string} options.presentationId - The presentation ID to manage comments for
+ * @param {() => Promise<void>} [options.beforeCreate] - Awaited before every
+ *   create. The editor stores its pending edits here, so a comment on a slide
+ *   added a moment ago names a slide the stored deck already holds (B567).
  * @returns {Object} API methods for comment operations
  */
-export function createCommentsApi({ api, presentationId }) {
+export function createCommentsApi({ api, presentationId, beforeCreate }) {
   const pid = presentationId;
 
   const listComments = async (opts = {}) => {
@@ -52,6 +55,7 @@ export function createCommentsApi({ api, presentationId }) {
       payload.positionX = positionX;
       payload.positionY = positionY;
     }
+    await beforeCreate?.();
     const resp = await api(`/api/presentations/${pid}/comments`, {
       method: 'POST',
       body: payload,

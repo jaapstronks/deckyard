@@ -604,6 +604,32 @@ export function createSaveManager({
     }
   };
 
+  /**
+   * Store the pending local edits now instead of after the autosave debounce,
+   * and resolve once nothing is pending or in flight any more. For a request
+   * that names what the stored deck must already hold (a comment on a slide
+   * added a second ago: the service refuses an unknown `slideId`, D287).
+   * Resolves without throwing: a save that fails keeps its own banner, and
+   * the request that waited reports its own refusal. Bounded, so a save that
+   * keeps failing cannot hold the caller.
+   * @returns {Promise<void>}
+   */
+  const flush = async () => {
+    if (autosaveTimer) clearTimeout(autosaveTimer);
+    autosaveTimer = null;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      if (saveInFlight) {
+        // The save's own failure banner reports it; the flush only waits.
+        await saveInFlight.catch((err) =>
+          debugLog('[save-manager] flush waited on a failed save', err),
+        );
+        continue;
+      }
+      if (!dirty || blockedByConflict) return;
+      await requestSave();
+    }
+  };
+
   const cancelAutosave = () => {
     if (autosaveTimer) clearTimeout(autosaveTimer);
     autosaveTimer = null;
@@ -629,6 +655,7 @@ export function createSaveManager({
   return {
     markDirty,
     requestSave,
+    flush,
     updatePills,
     setLastError,
     cancelAutosave,
