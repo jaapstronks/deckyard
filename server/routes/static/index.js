@@ -26,7 +26,8 @@ import { handleAppRoutes } from './app-shell.js';
 export const STATIC_MOUNTS = [
   // RSS/Atom/JSON feed routes (public, no auth)
   { handle: handleFeed, feature: 'rssFeed' },
-  { handle: handleGo },
+  // The audience's join-code page belongs to the live cluster.
+  { handle: handleGo, feature: 'live' },
   { handle: handleEmbed },
   { handle: handlePublished },
   { handle: handleSandboxOg },

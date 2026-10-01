@@ -49,6 +49,10 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // insertion policy hides them from the picker + AI. The client needs
       // the flag to enforce that, so it travels in the metadata.
       deprecated: def.deprecated === true ? true : undefined,
+      // The installation cluster the type needs (D260). The editor counts a
+      // type whose cluster is off as org-disabled, through
+      // `clusterOffSlideTypes()` in shared/slide-types/policy.js.
+      feature: typeof def.feature === 'string' ? def.feature : undefined,
       // `library: false` withholds the type from the slide library. The
       // editor's Save-to-library action reads it off this response, so a fork
       // type declaring it is only heard if the flag travels. See

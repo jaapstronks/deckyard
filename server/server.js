@@ -30,7 +30,10 @@ import { applySecurityHeaders } from './utils/security-headers.js';
 import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { createLogger } from './utils/logger.js';
 import { scheduleSandboxCleanup } from './jobs/sandbox-cleanup.js';
-import { scheduleLiveSessionCleanup } from './jobs/live-session-cleanup.js';
+import {
+  scheduleLiveSessionCleanup,
+  warnLiveSessionsWhileOff,
+} from './jobs/live-session-cleanup.js';
 import {
   scheduleMcpSessionSweep,
   warnApiKeysWhileOff,
@@ -352,6 +355,7 @@ async function main() {
   // Initialize background job queue (Redis-based, with fallback)
   if (!isFeatureEnabled('analytics')) await warnAnalyticsRowsWhileOff();
   if (!isFeatureEnabled('publicApi')) await warnApiKeysWhileOff();
+  if (!isFeatureEnabled('live')) await warnLiveSessionsWhileOff();
   await initializeQueues();
   await initializeWorkers();
 

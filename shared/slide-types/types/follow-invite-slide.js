@@ -15,6 +15,9 @@ export default {
   // `static`: the join code it renders is a render input the session hands
   // over (ctx.followCodes), not state the session keeps for this slide.
   runtime: 'static',
+  // The installation cluster this type needs (D260): with `LIVE_ENABLED=false`
+  // it counts as org-disabled and an existing slide renders its static form.
+  feature: 'live',
   fidelity: { pptx: 'raster' },
   // `presentationId` caches which deck this slide invites people into (the QR
   // code is built from it), so a copy into another deck has to re-point it.

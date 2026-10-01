@@ -132,6 +132,18 @@ export function isAnalyticsEnabled() {
 }
 
 /**
+ * The live cluster: follow-along, live sessions (the notes companion and the
+ * presenter's audience controls), audience questions and the live
+ * interactions (`LIVE_ENABLED=false` switches it off; D258). Default: on.
+ * With it off the live slide types count as org-disabled and an existing one
+ * renders its static form (D260).
+ * @returns {boolean}
+ */
+export function isLiveEnabled() {
+  return envBool('LIVE_ENABLED', true);
+}
+
+/**
  * The stock media cluster: the image sources beside the native library
  * (bundled gradients, Unsplash, Giphy; `STOCK_MEDIA_ENABLED=false` switches it
  * off; D258). Default: on. An installation flag; the organization's

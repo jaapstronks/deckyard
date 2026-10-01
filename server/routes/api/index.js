@@ -133,13 +133,13 @@ export const PUBLIC_MOUNTS = [
   // OIDC single sign-on routes (login redirect + IdP callback)
   { handle: handleSso },
   // Audience devices.
-  { handle: handleFollowPublic },
+  { handle: handleFollowPublic, feature: 'live' },
   // Follow code resolution (GET) is public; creation (POST) is in MOUNTS.
-  { handle: handleFollowCodesPublic },
+  { handle: handleFollowCodesPublic, feature: 'live' },
   // Present-session companion: the session id in the join link is the
   // authorization (see live-session-audience.js). Presenter actions on the
   // same session stay behind deck-write, in MOUNTS.
-  { handle: handleLiveSessionsPublic },
+  { handle: handleLiveSessionsPublic, feature: 'live' },
   { handle: handleSharePublic },
   { handle: handleAnalyticsTrack, feature: 'analytics' },
   { handle: handleAnalyticsReportPublic, feature: 'analytics' },
@@ -154,7 +154,7 @@ export const PUBLIC_MOUNTS = [
  * @type {import('../../utils/router.js').Mount[]}
  */
 export const MOUNTS = [
-  { handle: handleLiveSessions },
+  { handle: handleLiveSessions, feature: 'live' },
   { handle: handleAssets },
   { handle: handleSlideTypes },
   { handle: handleRenderSlide },
@@ -178,7 +178,7 @@ export const MOUNTS = [
   { handle: handleUsers },
   { handle: handleProfile },
   { handle: handleNotifications },
-  { handle: handleQuestions },
+  { handle: handleQuestions, feature: 'live' },
   { handle: handleSettings },
   { handle: handleApiKeys, feature: 'publicApi' },
   { handle: handleSlideLibrary },
@@ -193,7 +193,7 @@ export const MOUNTS = [
   { handle: handleOrganizations },
   { handle: handleOrganizationMembers },
   // Follow code creation (POST) requires auth
-  { handle: handleFollowCodes },
+  { handle: handleFollowCodes, feature: 'live' },
   { handle: handleAdminUsers },
   { handle: handleAdminAiLogs },
   { handle: handleAdminSso },

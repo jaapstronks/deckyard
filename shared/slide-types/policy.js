@@ -79,6 +79,30 @@ export function isInsertableSlideType({
 }
 
 /**
+ * The types this installation does not have: each declares the cluster it
+ * needs (`feature: '<key>'`, D260) and that cluster is off. They count as
+ * org-disabled — every caller unions this with the organization's
+ * `disabledSlideTypes` before asking {@link isInsertableSlideType} — so they
+ * leave the picker, the AI catalogue and `get_slide_types`, while an existing
+ * slide keeps rendering (rendering does not go through the policy).
+ *
+ * The answer comes from the caller, so the server asks its snapshot
+ * (`isFeatureEnabled`) and the client its copy (`featureEnabled`); the rule
+ * is here once.
+ *
+ * @param {Record<string, { feature?: string }>} types - Type key → definition or wire metadata
+ * @param {(key: string) => boolean} isEnabled - Is cluster `key` on?
+ * @returns {string[]} The type keys whose cluster is off
+ */
+export function clusterOffSlideTypes(types, isEnabled) {
+  return Object.entries(types || {})
+    .filter(
+      ([, def]) => typeof def?.feature === 'string' && !isEnabled(def.feature),
+    )
+    .map(([type]) => type);
+}
+
+/**
  * Check if a slide type is disabled at the org level (for showing retired badges).
  * @param {string} type - Slide type key
  * @param {Array} [disabledSlideTypes] - Org-level disabled types
