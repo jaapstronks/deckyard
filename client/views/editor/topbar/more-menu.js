@@ -292,15 +292,18 @@ export function createEditorTopbarMoreMenu({
   // the Companion (a phone remote for a live talk), and on a phone its 36px
   // are what the bar cannot carry once its icon buttons are 44px touch
   // targets. Present itself stays in the bar.
-  const btnCompanion = menuItem({
-    class: 'dropdown-item topbar-fold-sm',
-    text: t('editor.companion', 'Companion'),
-    title: t(
-      'editor.companion.title',
-      'Open speaker notes companion on your phone (QR code).',
-    ),
-    onclick: () => run(onOpenCompanion),
-  });
+  // Absent where the installation has no live cluster (D260).
+  const btnCompanion = onOpenCompanion
+    ? menuItem({
+        class: 'dropdown-item topbar-fold-sm',
+        text: t('editor.companion', 'Companion'),
+        title: t(
+          'editor.companion.title',
+          'Open speaker notes companion on your phone (QR code).',
+        ),
+        onclick: () => run(onOpenCompanion),
+      })
+    : null;
 
   // The ⋯ half of the collab avatar stack, which folds at sm: the stack's
   // avatars cost more than a phone's bar can carry, and on a phone the slide
@@ -349,7 +352,8 @@ export function createEditorTopbarMoreMenu({
     ariaLabel: t('common.moreOptions', 'More options'),
     menuClass: 'dropdown-menu-right',
     // `btnAnalyze` and `btnTranslateOther` are null where AI is off,
-    // `btnAnalytics` where analytics is; `append` would print that.
+    // `btnAnalytics` where analytics is, `btnCompanion` where live is;
+    // `append` would print that.
     items: [
       presenceEntry,
       btnCompanion,

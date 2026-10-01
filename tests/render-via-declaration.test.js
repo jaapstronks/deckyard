@@ -114,9 +114,12 @@ function preGateTables() {
     ['handleFollowPublic', handleFollowPublic, FOLLOW_ROUTES],
     ['handleLiveSessionsPublic', handleLiveSessionsPublic, SESSION_ROUTES],
   ];
+  // A `feature` on the mount (follow and the session audience are the live
+  // cluster, D260) decides whether it exists, not which side of the gate it is
+  // on.
   for (const [name, handle] of tables) {
     assert.ok(
-      PUBLIC_MOUNTS.some((m) => m.handle === handle && !m.feature),
+      PUBLIC_MOUNTS.some((m) => m.handle === handle),
       `${name} is mounted before the login gate`,
     );
   }

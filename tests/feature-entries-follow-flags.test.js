@@ -24,7 +24,7 @@
  *     that answers it.
  *
  * A cluster joins this file when it gets a client entry (B581 uploads, B523
- * analytics, B525 stock media and the public API; B524 live adds its own). An
+ * analytics, B525 stock media and the public API, B524 live). An
  * entry an anonymous page reaches has no snapshot to ask, so its gate is the
  * server's answer: a payload field or a page the app shell does not serve.
  *
@@ -238,6 +238,55 @@ const ENTRIES = {
       gate: 'client/lib/net/stock-media.js',
     },
   ],
+  // The audience pages (follow-along, the notes companion, `/go`) are
+  // anonymous and have no snapshot, so their gate is the server's: the app
+  // shell does not serve them and the static chain does not mount `/go`. The
+  // in-app entries ask the snapshot.
+  live: [
+    {
+      entry: 'Follow-along page (/follow/:id) with its Q&A',
+      calls: [
+        'client/views/follow/index.js',
+        'client/views/follow/sse.js',
+        'client/lib/qa/questions-feed.js',
+      ],
+      gate: 'server/routes/static/app-shell.js',
+    },
+    {
+      entry: 'Notes companion (/notes/:session, /notes-join/:session)',
+      calls: [
+        'client/views/notes/index.js',
+        'client/views/notes/controls.js',
+        'client/views/notes/notes-editor.js',
+        'client/views/notes/session-sse.js',
+        'client/lib/qa/mutations.js',
+      ],
+      gate: 'server/routes/static/app-shell.js',
+    },
+    {
+      entry: 'Join-code page (/go)',
+      calls: ['client/go.js'],
+      gate: 'server/routes/static/index.js',
+    },
+    {
+      entry: 'Editor: Present caret + ⋯ Companion, the warmed notes session',
+      calls: ['client/views/editor/bootstrap.js'],
+      gate: 'client/views/editor/topbar/index.js',
+    },
+    {
+      entry: 'Presenter: the session, its tools, remote control, interactions',
+      calls: [
+        'client/views/presenter/session.js',
+        'client/views/presenter/session-state.js',
+      ],
+      gate: 'client/views/presenter/index.js',
+    },
+    {
+      entry: 'Follow-invite slide: the join code it mints',
+      calls: ['client/lib/slide-runtime/follow-invite-runtime.js'],
+      gate: 'client/lib/slide-runtime/slide-render.js',
+    },
+  ],
   publicApi: [
     {
       entry: 'Settings: the API keys tab (keys, MCP connect card)',
@@ -261,11 +310,12 @@ const GATE = {
     /\b(?:featureEnabled|isFeatureEnabled)\('analytics'\)|\btracking === true\b/,
   stockMedia: /\bfeatureEnabled\('stockMedia'\)/,
   publicApi: /\bfeatureEnabled\('publicApi'\)/,
+  live: /\b(?:featureEnabled|isFeatureEnabled)\('live'\)|\bfeature: 'live'/,
 };
 
 /** The snapshot keys only `client/lib/state/features.js` may read. */
 const FLAG_READ =
-  /\.(enableAi|aiAltText|enableNotion|enableUploads|enableAnalytics|enableStockMedia|enablePublicApi)\b/;
+  /\.(enableAi|aiAltText|enableNotion|enableUploads|enableAnalytics|enableStockMedia|enablePublicApi|enableLive)\b/;
 
 // ------------------------------------------------------------ the server side
 
@@ -295,6 +345,20 @@ const {
 } = await import('../server/routes/api/stock-media.js');
 const { ROUTES: apiKeyRoutes, handleApiKeys } =
   await import('../server/routes/api/api-keys.js');
+const { ROUTES: followRoutes, handleFollowPublic } =
+  await import('../server/routes/api/follow/index.js');
+const {
+  ROUTES: followCodeRoutes,
+  PUBLIC_ROUTES: followCodePublicRoutes,
+  handleFollowCodes,
+  handleFollowCodesPublic,
+} = await import('../server/routes/api/follow-codes.js');
+const { ROUTES: audienceRoutes, handleLiveSessionsPublic } =
+  await import('../server/routes/api/live-session-audience.js');
+const { ROUTES: liveSessionRoutes, handleLiveSessions } =
+  await import('../server/routes/api/live-sessions.js');
+const { ROUTES: questionRoutes, handleQuestions } =
+  await import('../server/routes/api/questions.js');
 
 /**
  * Each mount handle under a cluster, with the table it dispatches. A mount
@@ -316,6 +380,14 @@ const MOUNT_TABLES = {
     [handleStockMedia, [...stockPublicRoutes, ...stockAuthedRoutes]],
   ],
   publicApi: [[handleApiKeys, apiKeyRoutes]],
+  live: [
+    [handleFollowPublic, followRoutes],
+    [handleFollowCodesPublic, followCodePublicRoutes],
+    [handleLiveSessionsPublic, audienceRoutes],
+    [handleLiveSessions, liveSessionRoutes],
+    [handleQuestions, questionRoutes],
+    [handleFollowCodes, followCodeRoutes],
+  ],
 };
 
 /** Tables whose rows may carry a `feature` of their own. */
@@ -465,24 +537,24 @@ test('More menu: without onTranslateOther there is no Translate item', () => {
   }
 });
 
-test('presenter topbar: a null translate pill leaves no trace', () => {
+test('presenter topbar: null translate and live controls leave no trace', () => {
   const { top } = buildPresenterTopbar({
     pres: { title: 'Deck' },
     langSeg: null,
     translatePill: null,
     interactionPill: null,
     toolsWrap: null,
+    controlToggle: null,
     autoAdvanceBtn: null,
     laserBtn: null,
     drawBtn: null,
     consoleToggle: null,
-    api: async () => ({}),
-    getSessionId: () => null,
     onOpenProjector() {},
     onEdit() {},
     onToggleFullscreen() {},
   });
   assert.ok(!top.textContent.includes('null'));
+  assert.equal(top.querySelector('.presenter-toggle'), null, 'no RC toggle');
 });
 
 test('description modal: Generate with AI exists only where AI does', async () => {

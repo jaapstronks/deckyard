@@ -9,6 +9,7 @@ import { initLogoWallBalance } from './logo-wall-balance.js';
 import { applyThemeVarsToElement } from '../theme/theme.js';
 import { api as defaultApi } from '../api.js';
 import { h } from '../dom/index.js';
+import { featureEnabled } from '../state/features.js';
 import { ensurePrism, ensureKatex } from './prism-katex-loader.js';
 import { ensureScript } from '../dom/head-assets.js';
 
@@ -480,7 +481,12 @@ const MARKUP_RUNTIMES = Object.freeze([
   {
     // Follow-invite slides look blank without QR rendering. Thumbnails render
     // once without the resize handler, so many of them can't leak listeners.
+    // The invite mints a join code, so it runs only with the live cluster
+    // (D260); without it the slide keeps its static markup. The follow page
+    // is served only with the cluster, and its anonymous audience has no
+    // snapshot to ask.
     name: 'follow-invite',
+    runsIn: (mode) => mode === 'follow' || featureEnabled('live'),
     run: (el, mode) =>
       initFollowInviteSlides(
         el,

@@ -10,6 +10,9 @@ export default {
   structure: 'singleton',
   fallback: 'content-slide',
   runtime: 'live',
+  // The installation cluster this type needs (D260): with `LIVE_ENABLED=false`
+  // it counts as org-disabled and an existing slide renders its static form.
+  feature: 'live',
   fidelity: { pptx: 'raster' },
   interaction: 'feedback',
   label: 'Feedback',
