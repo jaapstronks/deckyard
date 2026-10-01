@@ -154,10 +154,14 @@ test('npm run mcp stops at start with one line when the cluster is off', () => {
     timeout: 30_000,
   });
   assert.equal(run.status, 1);
-  assert.equal(
-    run.stderr.trim(),
+  // Only the server's own lines: on a fork checkout the custom-type loader
+  // logs its types on import, before main() runs.
+  const mcpLines = run.stderr
+    .split('\n')
+    .filter((line) => line.startsWith('[MCP]'));
+  assert.deepEqual(mcpLines, [
     '[MCP] PUBLIC_API_ENABLED=false: this installation has no MCP server.',
-  );
+  ]);
 });
 
 test('boot: the MCP session sweep runs either way; one boot line while off (D261)', () => {
