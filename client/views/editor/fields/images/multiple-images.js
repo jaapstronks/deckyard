@@ -15,8 +15,8 @@
  * sub-field, which is what logo-wall and gallery now do.
  */
 import { t } from '../../../../lib/ui-i18n.js';
-import { toast } from '../../../../lib/dom/toast.js';
 import { h } from '../../../../lib/dom/index.js';
+import { featureEnabled, getFeatures } from '../../../../lib/state/features.js';
 
 /**
  * Create a multiple images field renderer
@@ -24,10 +24,8 @@ import { h } from '../../../../lib/dom/index.js';
  * @returns {Function} Field renderer function
  */
 export function createFieldImages(ctx) {
-  const { api, openImagePicker, readFileAsDataUrl, features, pres } = ctx;
+  const { openImagePicker, pres } = ctx;
 
-  const flags = features && typeof features === 'object' ? features : {};
-  const uploadsDisabled = !flags.enableUploads;
   const hasPicker =
     typeof openImagePicker === 'function' &&
     (openImagePicker.providers?.length || 0) > 0;
@@ -180,9 +178,44 @@ export function createFieldImages(ctx) {
 
     renderSelected();
 
-    // Add from the image picker (one seam over all configured providers)
+    // Add from the image picker (one seam over all configured providers),
+    // plus its direct upload route where this installation takes uploads
+    // (B579). One set of options for both.
+    const pickerOpts = () => ({
+      title: t('editor.images.libraryTitle', 'Images'),
+      docId: pres?.id || '',
+      allowCaptionCredit: false,
+      context: {
+        presentationTitle: typeof pres?.title === 'string' ? pres.title : '',
+        slideId: slide?.id || '',
+        slideType: slide?.type || '',
+      },
+      onPick: (picked) => {
+        const url = typeof picked?.url === 'string' ? picked.url.trim() : '';
+        if (!url) return;
+        commit(withUrl(readValue(), url));
+      },
+    });
     if (hasPicker) {
       const addFromPicker = h('div', { class: 'stack is-field' });
+      const buttons = h('div', { class: 'row is-wrap' }, [
+        h('button', {
+          class: 'btn btn-secondary',
+          type: 'button',
+          text: t('editor.images.addFromLibrary', 'Add from library…'),
+          onclick: () => openImagePicker(pickerOpts()),
+        }),
+      ]);
+      if (typeof openImagePicker.upload === 'function') {
+        buttons.append(
+          h('button', {
+            class: 'btn btn-secondary',
+            type: 'button',
+            text: t('editor.image.uploadFromComputer', 'Upload from computer'),
+            onclick: () => openImagePicker.upload(pickerOpts()),
+          }),
+        );
+      }
       addFromPicker.append(
         h('div', {
           class: 'help',
@@ -191,78 +224,25 @@ export function createFieldImages(ctx) {
             'Add from the shared library',
           ),
         }),
-        h('button', {
-          class: 'btn btn-secondary',
-          text: t('editor.images.addFromLibrary', 'Add from library…'),
-          onclick: () => {
-            openImagePicker({
-              title: t('editor.images.libraryTitle', 'Images'),
-              docId: pres?.id || '',
-              allowCaptionCredit: false,
-              context: {
-                presentationTitle:
-                  typeof pres?.title === 'string' ? pres.title : '',
-                slideId: slide?.id || '',
-                slideType: slide?.type || '',
-              },
-              onPick: (picked) => {
-                const url =
-                  typeof picked?.url === 'string' ? picked.url.trim() : '';
-                if (!url) return;
-                commit(withUrl(readValue(), url));
-              },
-            });
-          },
-        }),
+        buttons,
       );
       wrap.append(addFromPicker);
     }
 
-    // Upload an image of your own
-    const up = h('div', { class: 'stack is-field' });
-    up.append(
-      h('div', {
-        class: 'help',
-        text: uploadsDisabled
-          ? flags.sandboxMode
-            ? t(
-                'editor.images.uploadsSandbox',
-                'Uploads are off in the sandbox; use the library, Unsplash or Giphy.',
-              )
-            : t(
-                'editor.images.uploadsDisabled',
-                'Uploads are disabled; use the library.',
-              )
-          : t('editor.images.uploadCustom', 'Upload an image'),
-      }),
-    );
-    if (!uploadsDisabled && api && typeof readFileAsDataUrl === 'function') {
-      const input = h('input', {
-        type: 'file',
-        accept: 'image/png,image/jpeg,image/svg+xml,image/webp,image/avif',
-        onchange: async () => {
-          const file = input.files?.[0];
-          if (!file) return;
-          try {
-            const dataUrl = await readFileAsDataUrl(file);
-            const uploaded = await api('/api/images/upload', {
-              method: 'POST',
-              body: { dataUrl, filename: file.name },
-            });
-            const url =
-              typeof uploaded?.url === 'string' ? uploaded.url.trim() : '';
-            if (!url) throw new Error('Upload failed');
-            commit(withUrl(readValue(), url));
-          } catch (e) {
-            toast.error(e);
-          } finally {
-            input.value = '';
-          }
-        },
-      });
-      up.append(input);
+    // D295: without uploads the field names them only in the sandbox, which
+    // withholds a production feature (D181); an installation that has none
+    // builds nothing.
+    if (!featureEnabled('uploads') && getFeatures()?.sandboxMode) {
+      wrap.append(
+        h('div', {
+          class: 'help',
+          text: t(
+            'editor.images.uploadsSandbox',
+            'Uploads are off in the sandbox; use the library, Unsplash or Giphy.',
+          ),
+        }),
+      );
     }
-    wrap.append(up);
 
     return wrap;
   };

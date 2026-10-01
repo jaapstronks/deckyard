@@ -1,11 +1,17 @@
 /**
  * Logo Uploader Component
  * Drag-and-drop or URL input for theme logos.
+ *
+ * D295: the file route exists where uploads do. Without them the URL input is
+ * the whole component; the sandbox keeps the dropzone on screen, greyed out
+ * with one sentence (D181).
  */
 
 import { icon } from '../../../lib/dom/icons.js';
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { featureEnabled } from '../../../lib/state/features.js';
+import { disableForSandbox } from '../sandbox-disable.js';
 import { uploadImage } from './upload-image.js';
 
 /**
@@ -17,6 +23,7 @@ import { uploadImage } from './upload-image.js';
  */
 export function createLogoUploader({ value, onChange }) {
   const container = h('div', { class: 'theme-logo-uploader' });
+  const canUpload = featureEnabled('uploads');
 
   let currentUrl = value || '';
   let uploading = false;
@@ -71,7 +78,7 @@ export function createLogoUploader({ value, onChange }) {
       onChange?.('');
     },
   });
-  actions.append(changeBtn, removeBtn);
+  actions.append(...(canUpload ? [changeBtn] : []), removeBtn);
 
   // URL input (alternative)
   const urlToggle = h('button', {
@@ -79,7 +86,10 @@ export function createLogoUploader({ value, onChange }) {
     type: 'button',
     text: t('settings.themes.useUrl', 'Or use URL'),
   });
-  const urlSection = h('div', { class: 'theme-logo-url-section is-hidden' });
+  // Without the file route the URL is the way in, so it is open from the start.
+  const urlSection = h('div', {
+    class: `theme-logo-url-section${canUpload ? ' is-hidden' : ''}`,
+  });
   const urlInput = h('input', {
     class: 'form-input',
     type: 'text',
@@ -169,43 +179,47 @@ export function createLogoUploader({ value, onChange }) {
     }
   }
 
-  // File input change
-  fileInput.addEventListener('change', () => {
-    const file = fileInput.files?.[0];
-    if (file) handleFile(file);
-  });
+  // The file route: input, click and drag-and-drop, only where it exists.
+  if (canUpload) {
+    // File input change
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (file) handleFile(file);
+    });
 
-  // Dropzone click
-  dropzone.addEventListener('click', () => fileInput.click());
+    // Dropzone click
+    dropzone.addEventListener('click', () => fileInput.click());
 
-  // Drag and drop
-  dropzone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropzone.classList.add('is-dragover');
-  });
-  dropzone.addEventListener('dragleave', () => {
-    dropzone.classList.remove('is-dragover');
-  });
-  dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropzone.classList.remove('is-dragover');
-    const file = e.dataTransfer?.files?.[0];
-    if (
-      file &&
-      (file.type.startsWith('image/') || file.name.endsWith('.svg'))
-    ) {
-      handleFile(file);
-    }
-  });
+    // Drag and drop
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('is-dragover');
+    });
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('is-dragover');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('is-dragover');
+      const file = e.dataTransfer?.files?.[0];
+      if (
+        file &&
+        (file.type.startsWith('image/') || file.name.endsWith('.svg'))
+      ) {
+        handleFile(file);
+      }
+    });
+  }
 
   // Assemble
-  previewArea.append(preview, dropzone);
+  const showDropzone = canUpload || disableForSandbox({ content: dropzone });
+  previewArea.append(preview, ...(showDropzone ? [dropzone] : []));
   container.append(
-    fileInput,
+    ...(canUpload ? [fileInput] : []),
     previewArea,
     status,
     actions,
-    urlToggle,
+    ...(canUpload ? [urlToggle] : []),
     urlSection,
   );
 

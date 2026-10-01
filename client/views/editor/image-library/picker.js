@@ -13,7 +13,10 @@ import {
   isStockSourceAvailable,
 } from '../../../lib/net/stock-media.js';
 import { h } from '../../../lib/dom/index.js';
-import { aiAltTextEnabled } from '../../../lib/state/features.js';
+import {
+  aiAltTextEnabled,
+  featureEnabled,
+} from '../../../lib/state/features.js';
 
 // Re-export for backward compatibility
 export { readFileAsDataUrl } from './utils.js';
@@ -125,12 +128,10 @@ function openLibraryModal({
   user,
   api,
   root,
-  features,
   context = null,
   file = null,
 } = {}) {
-  const flags = features && typeof features === 'object' ? features : {};
-  const uploadsDisabled = !flags.enableUploads;
+  const uploadsEnabled = featureEnabled('uploads');
   const canAiAlt = aiAltTextEnabled();
 
   const unlockScroll = lockDocumentScroll();
@@ -293,7 +294,7 @@ function openLibraryModal({
     items: () => items,
     canAiAlt,
     context,
-    uploadsDisabled,
+    uploadsEnabled,
     onPick,
     onClose: close,
     onItemCreated: (created) => {

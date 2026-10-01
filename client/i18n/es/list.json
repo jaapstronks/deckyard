@@ -37,7 +37,6 @@
   "imageLibrary.photographer.label": "Fotógrafo/a",
   "imageLibrary.photographerEmpty": "Fotógrafo: —",
   "imageLibrary.photographerField": "Nombre del fotógrafo o la fotógrafa (opcional)",
-  "imageLibrary.readOnly": "Las subidas están desactivadas. La biblioteca es de solo lectura.",
   "imageLibrary.readOnlySandbox": "Las subidas están desactivadas en el entorno de pruebas. Use Unsplash o Giphy para añadir imágenes.",
   "imageLibrary.replace": "Sustituir el archivo…",
   "imageLibrary.replace.done": "Sustituido. Las diapositivas existentes siguen funcionando (la URL no cambia).",

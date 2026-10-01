@@ -37,7 +37,6 @@
   "imageLibrary.photographer.label": "Fotograf",
   "imageLibrary.photographerEmpty": "Fotograf: —",
   "imageLibrary.photographerField": "Fotografens namn (valfritt)",
-  "imageLibrary.readOnly": "Uppladdning är avstängd. Biblioteket är skrivskyddat.",
   "imageLibrary.readOnlySandbox": "Uppladdning är avstängd i sandlådan. Använd Unsplash eller Giphy för att lägga till bilder.",
   "imageLibrary.replace": "Ersätt filen…",
   "imageLibrary.replace.done": "Ersatt. Befintliga slides fungerar vidare (URL:en är oförändrad).",

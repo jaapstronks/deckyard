@@ -37,7 +37,6 @@
   "imageLibrary.photographer.label": "Fotograf/in",
   "imageLibrary.photographerEmpty": "Fotograf: —",
   "imageLibrary.photographerField": "Name des Fotografen / der Fotografin (optional)",
-  "imageLibrary.readOnly": "Uploads sind deaktiviert. Die Bibliothek ist schreibgeschützt.",
   "imageLibrary.readOnlySandbox": "Uploads sind in der Sandbox deaktiviert. Nutzen Sie Unsplash oder Giphy, um Bilder hinzuzufügen.",
   "imageLibrary.replace": "Datei ersetzen…",
   "imageLibrary.replace.done": "Ersetzt. Bestehende Folien funktionieren weiter (URL unverändert).",

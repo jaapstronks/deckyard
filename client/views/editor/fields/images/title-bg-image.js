@@ -7,6 +7,7 @@ import { createAltSetter } from './alt-utils.js';
 import { createImagePickerButtons } from './picker-buttons.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom/index.js';
+import { featureEnabled, getFeatures } from '../../../../lib/state/features.js';
 import {
   DEFAULT_DECK_LANG,
   translationSourceFor,
@@ -20,7 +21,6 @@ import {
 export function createFieldTitleBgImage(ctx) {
   const {
     openImagePicker,
-    features,
     theme,
     pres,
     normalizeLang,
@@ -28,9 +28,6 @@ export function createFieldTitleBgImage(ctx) {
     scheduleUiRefresh,
     rerenderEditor,
   } = ctx;
-
-  const flags = features && typeof features === 'object' ? features : {};
-  const uploadsDisabled = !flags.enableUploads;
 
   return function fieldTitleBgImage(slide, field, onUploadedUrl) {
     const wrap = h('div', { class: 'stack is-field' });
@@ -118,25 +115,21 @@ export function createFieldTitleBgImage(ctx) {
     controls.append(...createImagePickerButtons(openImagePicker, pickerOpts));
 
     wrap.append(controls);
-    wrap.append(
-      h('div', {
-        class: 'help',
-        text: uploadsDisabled
-          ? flags.sandboxMode
-            ? t(
-                'editor.image.bgHelp.uploadsSandbox',
-                'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.',
-              )
-            : t(
-                'editor.image.bgHelp.uploadsDisabled',
-                'Choose an existing image from the library. Uploads are disabled.',
-              )
-          : t(
-              'editor.image.bgHelp.withUploads',
-              'Choose an existing image from the library, or upload your own image for this slide only.',
-            ),
-      }),
-    );
+    // D295: the upload copy exists where uploads do; the sandbox greys them
+    // out with one sentence (D181); an installation without uploads names
+    // them nowhere.
+    const help = featureEnabled('uploads')
+      ? t(
+          'editor.image.bgHelp.withUploads',
+          'Choose an existing image from the library, or upload your own image for this slide only.',
+        )
+      : getFeatures()?.sandboxMode
+        ? t(
+            'editor.image.bgHelp.uploadsSandbox',
+            'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.',
+          )
+        : '';
+    if (help) wrap.append(h('div', { class: 'help', text: help }));
 
     // Small preview
     if (current) {

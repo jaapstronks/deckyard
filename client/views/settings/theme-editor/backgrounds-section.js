@@ -16,6 +16,8 @@ import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { featureEnabled } from '../../../lib/state/features.js';
+import { disableForSandbox } from '../sandbox-disable.js';
 import { uploadImage } from './upload-image.js';
 import { icon } from '../../../lib/dom/icons.js';
 
@@ -166,13 +168,14 @@ export function createBackgroundsSection({ config, onChange }) {
     onclick: () => fileInput.click(),
   });
 
+  // D295: the add route exists where uploads do; the sandbox greys it out
+  // with one sentence (D181), an installation without uploads builds none.
+  const addRow = h('div', { class: 'row is-gap-2' }, [addBtn, fileInput]);
+  const showAdd =
+    featureEnabled('uploads') || disableForSandbox({ content: addRow });
+
   render();
-  el.append(
-    grid,
-    h('div', { class: 'row is-gap-2' }, [addBtn, fileInput]),
-    addError.el,
-    status,
-  );
+  el.append(grid, ...(showAdd ? [addRow] : []), addError.el, status);
 
   return { el };
 }

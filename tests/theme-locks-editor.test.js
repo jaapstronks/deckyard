@@ -40,6 +40,11 @@ const { createFieldRenderers } =
 const { createRerenderEditor } =
   await import('../client/views/editor/editor-form/index.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
+const { setFeatures } = await import('../client/lib/state/features.js');
+
+// The image body is recognised by its upload help line, which exists only
+// where uploads do (D295).
+setFeatures({ enableUploads: true });
 
 function renderForm({ theme = null } = {}) {
   const editorMount = document.createElement('div');

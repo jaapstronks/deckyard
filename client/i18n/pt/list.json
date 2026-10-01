@@ -37,7 +37,6 @@
   "imageLibrary.photographer.label": "Fotógrafo/a",
   "imageLibrary.photographerEmpty": "Fotógrafo: —",
   "imageLibrary.photographerField": "Nome do fotógrafo ou da fotógrafa (opcional)",
-  "imageLibrary.readOnly": "Os carregamentos estão desativados. A biblioteca é só de leitura.",
   "imageLibrary.readOnlySandbox": "Os carregamentos estão desativados no ambiente de testes. Use o Unsplash ou o Giphy para adicionar imagens.",
   "imageLibrary.replace": "Substituir o ficheiro…",
   "imageLibrary.replace.done": "Substituído. Os diapositivos existentes continuam a funcionar (o URL não muda).",
