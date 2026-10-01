@@ -41,6 +41,7 @@ import {
   canActorDeletePresentation,
   canActorManageCollaborators,
   canActorCommentOnPresentation,
+  canActorResolveComment,
   canGuestComment,
 } from '../utils/presentation-authz/index.js';
 import {
@@ -56,7 +57,7 @@ import { recordPresentationCreated } from './activity-events.js';
  * @typedef {import('./actor.js').Actor} Actor
  * @typedef {import('./actor.js').ServiceIdentity} ServiceIdentity
  * @typedef {import('../storage/scope.js').StorageScope} StorageScope
- * @typedef {'read'|'write'|'delete'|'manage'|'comment'} PresentationAccess
+ * @typedef {'read'|'write'|'delete'|'manage'|'comment'|'moderate'} PresentationAccess
  */
 
 /**
@@ -87,12 +88,17 @@ const ACTOR_RIGHTS = {
     allows: canActorCommentOnPresentation,
     refusal: 'You may not comment on this presentation',
   },
+  // Resolve, reopen or dismiss a comment (B569).
+  moderate: {
+    allows: canActorResolveComment,
+    refusal: 'Only the presentation owner can change comment status',
+  },
 };
 
 /**
  * What a share-link guest may do with a deck: read the deck their link names,
  * and comment when the link grants it. Nothing else — a guest never writes,
- * deletes or manages.
+ * deletes, manages or moderates.
  *
  * @param {Object} pres
  * @param {import('./actor.js').GuestIdentity} identity

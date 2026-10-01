@@ -10,30 +10,12 @@
  */
 
 import { getAppBaseUrl } from '../../../config/utils.js';
-import {
-  listComments,
-  getComment,
-  resolveComment,
-  reopenComment,
-  dismissComment,
-} from '../../../storage/presentations/comments.js';
-import { canResolveComment } from '../../../utils/presentation-authz/index.js';
+import { listComments } from '../../../storage/presentations/comments.js';
 import {
   enrichCommentsWithSlideContext,
   slideContextFor,
 } from '../../../services/comment-slide-context.js';
-import {
-  recordCommentResolved,
-  recordCommentReopened,
-} from '../../../services/activity-events.js';
-import {
-  broadcastToPresentation,
-  CommentEventTypes,
-} from '../../../services/comment-events.js';
-import {
-  createComment,
-  broadcastCommentCounts,
-} from '../../../services/comments.js';
+import { createComment, setCommentStatus } from '../../../services/comments.js';
 import {
   requirePermission,
   dispatchV1Routes,
@@ -45,7 +27,6 @@ import {
   apiCreated,
   apiError,
 } from './middleware.js';
-import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 /**
  * Editor deep link for a comment: /app/:id, anchored to the commented
@@ -202,109 +183,29 @@ async function handleCreateComment(ctx, presentationId) {
 
 /**
  * POST /api/v1/comments/:commentId/status - Change a comment's status.
- * Body: { status: 'resolved' | 'open' | 'dismissed' }.
- * Allowed transitions follow the app: open→resolved, open→dismissed,
- * resolved→open. Only the presentation owner/creator may change status.
+ * Body: { status: 'resolved' | 'open' | 'dismissed' }. Who may moderate and
+ * which transition is allowed is `setCommentStatus` (`services/comments.js`);
+ * a refusal is thrown and `withV1ErrorHandler` renders it.
  */
 async function handleCommentStatus(ctx, commentId) {
-  const { req, apiKey, authedUser } = ctx;
+  const { req, authedUser } = ctx;
 
   if (!requirePermission(ctx, 'comments:write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
-  const status = body?.status;
-  if (!['resolved', 'open', 'dismissed'].includes(status)) {
-    await apiError(ctx, 400, 'Invalid status (resolved|open|dismissed)');
-    return true;
-  }
-
-  const sctx = ctx.storageScope;
-  const comment = await getComment(sctx, commentId);
-  if (!comment) {
-    await apiError(ctx, 404, 'Comment not found');
-    return true;
-  }
-
-  const { ok, pres } = await getPresentationWithAccess(
-    ctx,
-    comment.presentationId,
-  );
-  if (!ok) return true;
-
-  // Same rule as the app: only the presentation owner/creator moderates. The
-  // context's authed user carries the API-key owner's resolved `users.id`, so
-  // this decides on the stable key like every other ownership check.
-  if (!canResolveComment({ user: authedUser, pres, comment })) {
-    await apiError(
-      ctx,
-      403,
-      'Only the presentation owner can change comment status',
-    );
-    return true;
-  }
-
-  let result;
-  if (status === 'resolved') {
-    result = await resolveComment(sctx, commentId, {
-      email: apiKey.ownerEmail,
-    });
-  } else if (status === 'dismissed') {
-    result = await dismissComment(sctx, commentId, {
-      email: apiKey.ownerEmail,
-    });
-  } else {
-    result = await reopenComment(sctx, commentId);
-  }
-
-  if (!result.ok) {
-    await apiError(ctx, 409, `Could not change status: ${result.reason}`);
-    return true;
-  }
-
-  const actor = { email: apiKey.ownerEmail };
-  if (status === 'resolved') {
-    fireAndForget(
-      recordCommentResolved({
-        comment: result.comment,
-        presentation: pres,
-        actor,
-        scope: sctx,
-      }),
-      'record comment-resolved activity',
-    );
-    broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
-      comment: result.comment,
-    });
-  } else if (status === 'open') {
-    fireAndForget(
-      recordCommentReopened({
-        comment: result.comment,
-        presentation: pres,
-        actor,
-        scope: sctx,
-      }),
-      'record comment-reopened activity',
-    );
-    broadcastToPresentation(pres.id, CommentEventTypes.REOPENED, {
-      comment: result.comment,
-    });
-  } else {
-    broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
-      comment: result.comment,
-    });
-  }
-  fireAndForget(
-    broadcastCommentCounts(pres.id, sctx),
-    'broadcast comment counts',
+  const { comment, presentation } = await setCommentStatus(
+    ctx.storageScope,
+    { actor: authedUser },
+    { commentId, status: body?.status },
   );
 
   await apiSuccess(ctx, {
     ok: true,
     comment: {
-      ...sanitizeComment(result.comment, pres),
-      slide: slideContextFor(pres, result.comment.slideId),
+      ...sanitizeComment(comment, presentation),
+      slide: slideContextFor(presentation, comment.slideId),
     },
   });
   return true;

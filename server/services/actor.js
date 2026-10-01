@@ -35,6 +35,11 @@
  * @property {string|null} [organizationId] - The organization the session or
  *   key acts in.
  * @property {string} [name] - Display name, when the contract knows one.
+ * @property {true} [isAdmin] - An instance admin session (internal contract
+ *   only); with `organizationRole` it makes an organization admin, who
+ *   moderates comments on every deck of the organization.
+ * @property {string|null} [organizationRole] - The session's role in its
+ *   active organization (internal contract only).
  * @property {true} [unrestricted] - The single trusted local operator: the
  *   auth-off user (`server/auth/auth.js`, internal contract) or an MCP stdio
  *   session without a configured owner (`server/mcp/presentation-access.js`).

@@ -85,9 +85,12 @@ Semantics:
   same deck.
 - **Status** (`POST /comments/:id/status`) — body `{ "status": "resolved" |
 "open" | "dismissed" }`. Transitions follow the app: `open→resolved`,
-  `open→dismissed`, `resolved→open`; anything else is a `409`. Only the
-  presentation owner/creator may change status (same `canResolveComment`
-  rule as the editor UI).
+  `open→dismissed`, `resolved→open`; anything else is a `400` with the
+  transition's reason code (`not_found_or_already_resolved`, …), the same
+  answer as the internal routes and MCP. Only the presentation owner/creator
+  may change status; an organization admin may too, but only in a signed-in
+  session, never through a key. One flow on all three contracts:
+  `setCommentStatus` in `server/services/comments.js` (B569).
 
 Mutations fire the same side effects as in-app comments: activity events,
 notifications (on create: owner gets `comment_created`, parent author

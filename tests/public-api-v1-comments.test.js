@@ -6,7 +6,7 @@
  * The surface these pin, per docs/openapi.yaml: the comment listing with
  * nested replies, slide context, create-time snapshot and editUrl deep link;
  * comment/reply creation as the key owner; the status transitions
- * (open→resolved, open→dismissed, resolved→open, 409 otherwise); and the
+ * (open→resolved, open→dismissed, resolved→open, 400 otherwise); and the
  * gates — `comments:read`/`comments:write` permissions, deck access, and the
  * owner-only moderation rule.
  *
@@ -545,7 +545,9 @@ test('POST /status resolves, dismisses and reopens along the allowed transitions
   assert.equal(dismiss.res.body.comment.status, 'dismissed');
 });
 
-test('POST /status answers 409 for a transition the app does not allow', async () => {
+// The reason's status is the register's (`server/storage/reasons.js`), the
+// same on every contract since B569; v1 used to pick 409 by hand.
+test('POST /status answers 400 for a transition the app does not allow', async () => {
   await installDb();
   // RESOLVED_COMMENT_ID is already resolved; resolving it again is not a transition.
   const ctx = makeCtx(
@@ -556,7 +558,8 @@ test('POST /status answers 409 for a transition the app does not allow', async (
     },
   );
   await handleComments(ctx);
-  assert.equal(ctx.res.statusCode, 409);
+  assert.equal(ctx.res.statusCode, 400);
+  assert.equal(ctx.res.body.error, 'not_found_or_already_resolved');
 });
 
 test('POST /status validates the status value', async () => {

@@ -20,25 +20,12 @@ import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
   listComments,
   listRecentCommentsForOwner,
-  getComment,
-  resolveComment,
-  reopenComment,
-  dismissComment,
 } from '../storage/presentations/comments.js';
-import { canActorResolveComment } from '../utils/presentation-authz/index.js';
 import {
   enrichCommentsWithSlideContext,
   slideContextFor,
 } from '../services/comment-slide-context.js';
-import {
-  broadcastToPresentation,
-  CommentEventTypes,
-} from '../services/comment-events.js';
-import {
-  recordCommentResolved,
-  recordCommentReopened,
-} from '../services/activity-events.js';
-import { createComment, broadcastCommentCounts } from '../services/comments.js';
+import { createComment, setCommentStatus } from '../services/comments.js';
 import {
   assertCreatableDeckInput,
   createPresentation,
@@ -94,7 +81,6 @@ import {
   TRANSLATION_LANGS,
 } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
-import { fireAndForget } from '../utils/fire-and-forget.js';
 
 /**
  * Get the best display title for a slide, regardless of type.
@@ -2036,72 +2022,13 @@ export function registerTools(
       required: ['presentationId', 'commentId', 'status'],
     },
     async ({ presentationId, commentId, status }, context) => {
-      const owner = requireCommentActor(context);
-      const ctx = storageScopeOf(context);
-
-      const comment = await getComment(ctx, commentId);
-      if (!comment || comment.presentationId !== presentationId) {
-        throw new Error(`Comment not found on this presentation: ${commentId}`);
-      }
-
-      const pres = await getCheckedPresentation(presentationId, context);
-      if (!(await canActorResolveComment(pres, actorOf(context)))) {
-        throw new Error(
-          'Only the presentation owner can change comment status',
-        );
-      }
-
-      let result;
-      if (status === 'resolved') {
-        result = await resolveComment(ctx, commentId, { email: owner });
-      } else if (status === 'dismissed') {
-        result = await dismissComment(ctx, commentId, { email: owner });
-      } else {
-        result = await reopenComment(ctx, commentId);
-      }
-
-      if (!result.ok) {
-        throw new Error(`Could not change status: ${result.reason}`);
-      }
-
-      const actor = { email: owner };
-      if (status === 'resolved') {
-        fireAndForget(
-          recordCommentResolved({
-            comment: result.comment,
-            presentation: pres,
-            actor,
-            scope: ctx,
-          }),
-          'record comment-resolved activity',
-        );
-        broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, {
-          comment: result.comment,
-        });
-      } else if (status === 'open') {
-        fireAndForget(
-          recordCommentReopened({
-            comment: result.comment,
-            presentation: pres,
-            actor,
-            scope: ctx,
-          }),
-          'record comment-reopened activity',
-        );
-        broadcastToPresentation(presentationId, CommentEventTypes.REOPENED, {
-          comment: result.comment,
-        });
-      } else {
-        broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, {
-          comment: result.comment,
-        });
-      }
-      fireAndForget(
-        broadcastCommentCounts(presentationId, ctx),
-        'broadcast comment counts',
+      requireCommentActor(context);
+      const { comment } = await setCommentStatus(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { presentationId, commentId, status },
       );
-
-      return { ok: true, comment: result.comment };
+      return { ok: true, comment };
     },
     { permission: 'comments:write' },
   );
