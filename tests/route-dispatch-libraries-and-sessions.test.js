@@ -7,8 +7,8 @@
  * trailing catch-alls (Form B); `font-families` mixes Form B (collection,
  * `/:id`) with Form A (Adobe + variant paths); `stock-media` splits a public
  * status row from the authed rows across two tables, all Form B;
- * `image-library` keeps its flag-before-method paths as single no-method
- * handlers; `jobs` is GET-only Form A; `live-sessions` is Form A on purpose
+ * `image-library` is Form B since B522 (its flag moved to the mount, so no
+ * guard precedes the method any more); `jobs` is GET-only Form A; `live-sessions` is Form A on purpose
  * (the GET counterparts are public capability routes) with `/state` as a
  * guard-before-method single handler.
  *
@@ -407,10 +407,16 @@ test('stock-media: a wrong method 405s with the pinned Allow list (authed)', asy
   }
 });
 
-// ─── image-library (flag-before-method single handlers; order load-bearing) ───
+// ─── image-library (Form B; order load-bearing) ───
 
 test('image-library: routes resolve to their named handlers in order', () => {
-  named(IL_ROUTES, 'GET', '/api/image-library', 'handleImageLibraryCollection');
+  named(IL_ROUTES, 'GET', '/api/image-library', 'handleListImageLibrary');
+  named(
+    IL_ROUTES,
+    'POST',
+    '/api/image-library',
+    'handleCreateImageLibraryItem',
+  );
   named(
     IL_ROUTES,
     'POST',
@@ -445,14 +451,42 @@ test('image-library: routes resolve to their named handlers in order', () => {
     IL_ROUTES,
     'GET',
     '/api/image-library/00000000-0000-4000-8000-0000000000a1',
-    'handleImageItem',
+    'handleGetImageItem',
   );
+  named(
+    IL_ROUTES,
+    'PUT',
+    '/api/image-library/00000000-0000-4000-8000-0000000000a1',
+    'handleUpdateImageItem',
+  );
+  named(
+    IL_ROUTES,
+    'DELETE',
+    '/api/image-library/00000000-0000-4000-8000-0000000000a1',
+    'handleDeleteImageItem',
+  );
+});
+
+test('image-library: a wrong method on each path is its catch-all 405', async () => {
+  const id = '00000000-0000-4000-8000-0000000000a1';
+  for (const [method, path, allow] of [
+    ['DELETE', '/api/image-library', 'GET, POST'],
+    ['POST', `/api/image-library/${id}/usage`, 'GET'],
+    ['GET', `/api/image-library/${id}/replace-upload`, 'POST'],
+    ['GET', `/api/image-library/${id}/favorite`, 'POST'],
+    ['POST', `/api/image-library/${id}`, 'GET, PUT, DELETE'],
+  ]) {
+    const { ctx: c, res } = ctx(method, path);
+    await handleImageLibrary(c);
+    assert.equal(res.statusCode, 405, `${method} ${path}`);
+    assert.equal(res.headers.Allow, allow, `${method} ${path} → Allow`);
+  }
 });
 
 test('image-library: the exact /generate-alts rows shadow the /:id regex (first-match order)', () => {
   // Without the exact rows first, the `[^/]+` item pattern would swallow
   // `/generate-alts` as an image id. A non-POST hits the exact catch-all
-  // (405), never handleImageItem.
+  // (405), never an item handler.
   named(
     IL_ROUTES,
     'POST',
@@ -467,7 +501,7 @@ test('image-library: the exact /generate-alts rows shadow the /:id regex (first-
   assert.ok(wrongMethod, 'GET generate-alts matches the catch-all row');
   assert.notEqual(
     wrongMethod.handler.name,
-    'handleImageItem',
+    'handleGetImageItem',
     'the /:id row never sees it',
   );
 });

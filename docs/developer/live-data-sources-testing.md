@@ -8,7 +8,7 @@
    LIVE_DATA_ENABLED=true
    ```
 
-   If testing with Notion, also ensure `NOTION_SECRET` and `NOTION_FEATURE=true` are set.
+   If testing with Notion, also ensure `NOTION_SECRET` and `NOTION_ENABLED=true` are set.
 
 2. Run the migration (if using PostgreSQL):
 

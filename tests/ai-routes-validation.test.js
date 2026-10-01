@@ -14,8 +14,8 @@
  * assert. These handlers carry **no per-handler authorization**: authentication
  * is enforced once at the dispatch site (`server/routes/api/index.js` refuses an
  * unauthenticated non-guest before `handleAi` is reached) and the `AI_ENABLED=false`
- * kill-switch is likewise a single upstream mount gate (`flags.enableAi &&
- * handleAi(ctx)`), not a per-route check — the internal surface has one gate
+ * kill-switch is likewise a single upstream mount gate (the `/api/ai` mount's
+ * `feature: 'ai'`), not a per-route check — the internal surface has one gate
  * for all of its routes and none of the handlers re-check it (the other AI
  * entries follow the same rule since B337: `tests/ai-kill-switch.test.js`). There is therefore no
  * handler-level authz-negative to pin here; the contract that *is* the

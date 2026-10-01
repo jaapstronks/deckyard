@@ -205,7 +205,7 @@ async function handleListLanguages(ctx) {
 // ============================================================
 
 /**
- * Translation routes. The translate rows are `ai`: with AI off they are not
+ * Translation routes. The translate rows carry `feature: 'ai'`: with AI off they are not
  * mounted and answer the v1 404, like /ai/* does (./index.js), before the
  * permission or AI quota.
  */
@@ -225,13 +225,13 @@ export const ROUTES = [
     id: 'translatePresentation',
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/translate$/,
     captures: ['uuid'],
-    ai: true,
+    feature: 'ai',
     handler: handleTranslate,
   },
   {
     pattern: /^\/api\/v1\/presentations\/([^/]+)\/translate$/,
     captures: ['uuid'],
-    ai: true,
+    feature: 'ai',
     handler: ({ res }) => v1MethodNotAllowed(res, ['POST']),
   },
 ];

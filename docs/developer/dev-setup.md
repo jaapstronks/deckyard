@@ -75,8 +75,8 @@ IMAGEKIT_PUBLIC_KEY=...
 IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/youraccount
 
 # Notion Integration (optional)
+NOTION_ENABLED=true
 NOTION_SECRET=...
-NOTION_FEATURE=true
 ```
 
 ---

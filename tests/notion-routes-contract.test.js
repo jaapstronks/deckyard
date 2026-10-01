@@ -40,6 +40,7 @@ import assert from 'node:assert/strict';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.NOTION_SECRET;
+delete process.env.NOTION_ENABLED;
 delete process.env.NOTION_FEATURE;
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -295,8 +296,7 @@ test('notion status reports disabled when no secret is set', async () => {
   const { res } = await call(handleNotion, 'GET', '/api/notion/status');
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.enabled, false);
-  assert.equal(res.body.fullFeatures, false);
+  assert.deepEqual(res.body, { enabled: false });
 });
 
 test('notion fetch is a 501 when Notion is not configured', async () => {
@@ -333,29 +333,9 @@ test('the 501 says what to do in `message`, and carries no `details`', async () 
   }
 });
 
-test('a gated notion route (compose) is unreachable while the feature flag is off', async () => {
-  await seed();
-  process.env.NOTION_SECRET = 'secret_test_value';
-  try {
-    const { handled, res } = await call(
-      handleNotion,
-      'POST',
-      '/api/notion/compose',
-      {
-        body: { keyword: 'strategy' },
-      },
-    );
-
-    assert.equal(
-      handled,
-      false,
-      'the gated table is not dispatched without NOTION_FEATURE',
-    );
-    assert.equal(res.statusCode, null);
-  } finally {
-    delete process.env.NOTION_SECRET;
-  }
-});
+// Whether the module is mounted at all (`NOTION_ENABLED`) is the mount's
+// `feature`, pinned with the other clusters in tests/ai-kill-switch.test.js;
+// this file calls the module directly, as a mounted installation reaches it.
 
 // With a secret present the 501 gate opens and the body/id validation ladder
 // becomes reachable — proving the 501s above are non-vacuous (flip the secret and
@@ -415,13 +395,11 @@ test('with a secret, notion import validates the url before the conversion pipel
   }
 });
 
-test('with the feature flag and a secret on, a gated route validates before the API', async () => {
+test('with a secret, compose validates before the API', async () => {
   await seed();
   process.env.NOTION_SECRET = 'secret_test_value';
-  process.env.NOTION_FEATURE = 'true';
   try {
-    // compose with neither a pageId nor a usable keyword is a 400, reached only
-    // because the gated table is now dispatched.
+    // compose with neither a pageId nor a usable keyword is a 400.
     const { res } = await call(handleNotion, 'POST', '/api/notion/compose', {
       body: {},
     });
@@ -430,6 +408,5 @@ test('with the feature flag and a secret on, a gated route validates before the 
     assert.match(res.body.message, /Expected \{ pageId \} or \{ keyword \}/);
   } finally {
     delete process.env.NOTION_SECRET;
-    delete process.env.NOTION_FEATURE;
   }
 });

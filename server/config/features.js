@@ -12,33 +12,44 @@
 import { envBool, envStr } from './utils.js';
 
 /**
- * Legacy disable-form spellings of the three kill switches, recognized (with
- * a boot warning — see {@link deprecatedFlagWarnings}) until the removal
+ * Legacy spellings of flags that were renamed to the enable form, recognized
+ * (with a boot warning — see {@link deprecatedFlagWarnings}) until the removal
  * date. Removed in the first release after 2026-11-01; after that only the
- * enable-form vars exist. Maps old var → canonical `*_ENABLED` var.
+ * canonical `*_ENABLED` vars exist.
+ *
+ * Maps old var → `{ name, inverted }`: the canonical var, and whether the old
+ * one meant the opposite (`DISABLE_AI=true` is `AI_ENABLED=false`). The three
+ * `DISABLE_*` kill switches came with B68; `NOTION_FEATURE` (same polarity,
+ * wrong form) and `DISABLE_ANALYTICS` (which switches the external provider
+ * scripts, not the analytics cluster) ride the same date (D259).
  */
-const LEGACY_DISABLE_VARS = Object.freeze({
-  DISABLE_AI: 'AI_ENABLED',
-  DISABLE_UPLOADS: 'UPLOADS_ENABLED',
-  DISABLE_IMAGE_LIBRARY: 'IMAGE_LIBRARY_ENABLED',
+const LEGACY_VARS = Object.freeze({
+  DISABLE_AI: { name: 'AI_ENABLED', inverted: true },
+  DISABLE_UPLOADS: { name: 'UPLOADS_ENABLED', inverted: true },
+  DISABLE_IMAGE_LIBRARY: { name: 'IMAGE_LIBRARY_ENABLED', inverted: true },
+  DISABLE_ANALYTICS: { name: 'EXTERNAL_ANALYTICS_ENABLED', inverted: true },
+  NOTION_FEATURE: { name: 'NOTION_ENABLED', inverted: false },
 });
 
-/** Date after which the legacy `DISABLE_*` spellings stop being recognized. */
-const LEGACY_DISABLE_REMOVAL_DATE = '2026-11-01';
+/** Date after which the legacy spellings stop being recognized. */
+const LEGACY_REMOVAL_DATE = '2026-11-01';
 
 /**
- * Read an enable-form flag that still honors its legacy disable-form
- * spelling. Precedence: the canonical `*_ENABLED` var wins when set; else a
- * set legacy `DISABLE_*` var is respected (inverted); else the feature
- * defaults to on.
+ * Read an enable-form flag that still honors its legacy spelling.
+ * Precedence: the canonical `*_ENABLED` var wins when set; else a set legacy
+ * var is respected (inverted where it meant the opposite); else the default.
  * @param {string} name - Canonical enable-form env var
- * @param {string} legacyName - Deprecated disable-form env var
+ * @param {boolean} defaultValue - The resting state
  * @returns {boolean}
  */
-function envEnabledWithLegacy(name, legacyName) {
-  if (envStr(name)) return envBool(name, true);
-  if (envStr(legacyName)) return !envBool(legacyName);
-  return true;
+function envEnabledWithLegacy(name, defaultValue) {
+  if (envStr(name)) return envBool(name, defaultValue);
+  const legacy = Object.entries(LEGACY_VARS).find(([, v]) => v.name === name);
+  if (legacy && envStr(legacy[0])) {
+    const value = envBool(legacy[0]);
+    return legacy[1].inverted ? !value : value;
+  }
+  return defaultValue;
 }
 
 /**
@@ -131,7 +142,7 @@ export function isImagekitOnly() {
  * @returns {boolean}
  */
 export function isAiEnabled() {
-  return envEnabledWithLegacy('AI_ENABLED', 'DISABLE_AI');
+  return envEnabledWithLegacy('AI_ENABLED', true);
 }
 
 /**
@@ -139,7 +150,7 @@ export function isAiEnabled() {
  * (`UPLOADS_ENABLED=false`). @returns {boolean}
  */
 export function isUploadsEnabled() {
-  return envEnabledWithLegacy('UPLOADS_ENABLED', 'DISABLE_UPLOADS');
+  return envEnabledWithLegacy('UPLOADS_ENABLED', true);
 }
 
 /**
@@ -147,35 +158,49 @@ export function isUploadsEnabled() {
  * (`IMAGE_LIBRARY_ENABLED=false`). @returns {boolean}
  */
 export function isImageLibraryEnabled() {
-  return envEnabledWithLegacy('IMAGE_LIBRARY_ENABLED', 'DISABLE_IMAGE_LIBRARY');
+  return envEnabledWithLegacy('IMAGE_LIBRARY_ENABLED', true);
 }
 
 /**
- * Non-fatal boot warnings for legacy `DISABLE_*` kill-switch spellings.
- * The old vars are still respected (see {@link envEnabledWithLegacy}), but
- * every set one gets a warning naming the canonical `*_ENABLED` replacement
- * and the removal date. Returns [] when no legacy var is set.
+ * Non-fatal boot warnings for legacy flag spellings. The old vars are still
+ * respected (see {@link envEnabledWithLegacy}), but every set one gets a
+ * warning naming the canonical `*_ENABLED` replacement and the removal date.
+ * Returns [] when no legacy var is set.
  * @returns {string[]}
  */
 export function deprecatedFlagWarnings() {
   const warnings = [];
-  for (const [legacyName, name] of Object.entries(LEGACY_DISABLE_VARS)) {
+  for (const [legacyName, { name, inverted }] of Object.entries(LEGACY_VARS)) {
     if (!envStr(legacyName)) continue;
-    const replacement = `${name}=${envBool(legacyName) ? 'false' : 'true'}`;
+    const enabled = inverted ? !envBool(legacyName) : envBool(legacyName);
+    const replacement = `${name}=${enabled ? 'true' : 'false'}`;
     const overridden = envStr(name)
       ? ` (${name} is also set and takes precedence)`
       : '';
     warnings.push(
       `${legacyName} is deprecated and will be removed in the first release ` +
-        `after ${LEGACY_DISABLE_REMOVAL_DATE}; set ${replacement} instead${overridden}.`,
+        `after ${LEGACY_REMOVAL_DATE}; set ${replacement} instead${overridden}.`,
     );
   }
   return warnings;
 }
 
 /**
- * Notion import/export integration. Default: off. @returns {boolean}
+ * The Notion integration: import, publish, fetch, status and the wizard's
+ * subject picker — the whole `/api/notion/*` module. Default: off
+ * (`NOTION_ENABLED=true` turns it on; `NOTION_SECRET` then says whether it is
+ * configured). @returns {boolean}
  */
-export function isNotionFeatureEnabled() {
-  return envBool('NOTION_FEATURE');
+export function isNotionEnabled() {
+  return envEnabledWithLegacy('NOTION_ENABLED', false);
+}
+
+/**
+ * External analytics provider scripts in the app shell (Plausible, GA, a
+ * custom snippet — `server/analytics/head.js`). Default: on; the providers
+ * still need configuring. Not the first-party analytics cluster.
+ * @returns {boolean}
+ */
+export function isExternalAnalyticsEnabled() {
+  return envEnabledWithLegacy('EXTERNAL_ANALYTICS_ENABLED', true);
 }

@@ -8,8 +8,8 @@ people mean by "the Notion integration":
 
 1. **Import** — read a page, run it through the AI pipeline, get a deck. Plus
    the return trip: append an embed of the deck to the page it came from.
-2. **The AI wizard's subject picker** — a feature-gated shortcut that offers
-   recent Notion pages as raw input for deck generation.
+2. **The AI wizard's subject picker** — a shortcut that offers recent Notion
+   pages as raw input for deck generation.
 3. **Data-source bindings** — `notion-database` and `notion-block` providers
    that fill slide fields from live Notion data, on the same low-level client.
 
@@ -61,9 +61,11 @@ The conversion step:
 The routes (`server/routes/api/notion/`, 7 modules, ~770 lines) behind one
 dispatcher:
 
-- `server/routes/api/notion/index.js` — the dispatcher: status, fetch and publish
-  always; import and stream-import always; subjects, compose and suggest only
-  when the `enableNotion` flag is on.
+- `server/routes/api/notion/index.js` — the dispatcher: one table of eight
+  rows, all behind the mount's `feature: 'notion'` (`NOTION_ENABLED`); the two
+  import rows also carry `feature: 'ai'`. The data-source providers (3.) are
+  not in this module: they ride the `liveData` mount and need only
+  `NOTION_SECRET`.
 - `server/routes/api/notion/status.js` — `GET /api/notion/status`.
 - `server/routes/api/notion/fetch.js` — `POST /api/notion/fetch` and
   `POST /api/notion/publish`.
@@ -166,9 +168,7 @@ the deck carries a `notionSourcePageId`.
 plain text, depth 3, 600 blocks, with no AI involved. Available whenever Notion
 is configured.
 
-### 4. The flagged wizard shortcut
-
-Only reachable with `NOTION_FEATURE` on:
+### 4. The wizard shortcut
 
 - `POST /api/notion/subjects` — search (or list recent) pages, walk at most 20
   of them, fetch a cheap preview of each, and return the first three that pass
@@ -213,15 +213,15 @@ code included) and anything else as a fixed `500 notion_error`.
 
 ## Config & flags
 
-| Variable                  | Effect                                                                                                                                                                                  |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `NOTION_SECRET`           | The internal integration token. Unset → `notionEnabled()` is false and every Notion route answers **501** `notion_not_configured`. This is the only switch import and publish need.     |
-| `NOTION_FEATURE`          | Turns on the flagged wizard endpoints (`subjects`, `compose`, `suggest`) via `enableNotion` in `server/config/flags-snapshot.js`. Forced off in demo mode.                              |
-| `IMAGEKIT_*`              | When configured, imported images are re-hosted through ImageKit. See [`media-library.md`](media-library.md).                                                                            |
-| `enableAi` (feature flag) | Does **not** gate the Notion routes — the dispatcher runs before the AI gate — but the import path calls the AI pipeline, so an install with AI off has an import that cannot complete. |
+| Variable                  | Effect                                                                                                                                                                                                                                                                 |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NOTION_ENABLED`          | Mounts the whole `/api/notion/*` module (all eight routes) via `feature: 'notion'` (`enableNotion`). Default off; forced off in demo mode. Off → every route answers the `/api` **404**. Replaces `NOTION_FEATURE` (honored until the first release after 2026-11-01). |
+| `NOTION_SECRET`           | The internal integration token. Unset → `notionEnabled()` is false and every Notion route except `status` answers **501** `notion_not_configured`.                                                                                                                     |
+| `IMAGEKIT_*`              | When configured, imported images are re-hosted through ImageKit. See [`media-library.md`](media-library.md).                                                                                                                                                           |
+| `enableAi` (feature flag) | The two import rows carry `feature: 'ai'` on top of the mount's `notion`: the import runs the AI pipeline, so with AI off they answer 404 while fetch, publish and the wizard's picker stay.                                                                           |
 
-`GET /api/notion/status` reports both switches to the client as `enabled`
-(token present) and `fullFeatures` (token present _and_ flag on), so the UI
+`GET /api/notion/status` reports `enabled` (token present); the client asks
+it only when `featureEnabled('notion')`, so the UI
 never offers a button that can only 501.
 
 ## Authz & tenancy

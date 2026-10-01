@@ -20,7 +20,7 @@ import { convertSlideWithConfirm } from '../convert-slide-action.js';
 import { openJsonDebugModal } from '../modals/json-debug-modal.js';
 import { openSaveToLibraryModal } from '../modals/save-to-library-modal.js';
 import { readPreferredLlmVendor } from '../../../lib/net/llm-vendor.js';
-import { aiEnabled } from '../../../lib/state/features.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 import { isLibrarySlideType } from '../../../../shared/slide-types/policy.js';
 import { icon } from '../../../lib/dom/icons.js';
@@ -152,7 +152,7 @@ export function buildHeaderActions({
   // from the same typeLabel() the deterministic Convert submenu uses, so the
   // menu holds no type knowledge. Absent where AI is off (D179): the server
   // does not mount /api/ai/convert-slide there.
-  const aiConvertTargets = aiEnabled()
+  const aiConvertTargets = featureEnabled('ai')
     ? getAiConvertibleSlideTypes(slide, { slideTypes: SLIDE_TYPES })
     : [];
   let aiConvertDetails = null;

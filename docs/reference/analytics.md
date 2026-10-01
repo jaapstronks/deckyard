@@ -189,7 +189,7 @@ sourceType, sourceId?, deviceId?, viewerType?, viewerEmail?}`. The handler
 | `AUTH_SECRET`                        | —         | Keys the per-deck device label HMAC.                                                                     |
 
 Third-party head snippet (`analytics/head.js`), separate from the above and
-app-shell-only: `DISABLE_ANALYTICS`, `ANALYTICS_ALLOW_IN_SANDBOX`,
+app-shell-only: `EXTERNAL_ANALYTICS_ENABLED`, `ANALYTICS_ALLOW_IN_SANDBOX`,
 `ANALYTICS_HEAD_HTML` / `ANALYTICS_HEAD_HTML_B64`, `GTM_CONTAINER_ID`,
 `PLAUSIBLE_DOMAIN`/`PLAUSIBLE_URL`, `UMAMI_WEBSITE_ID`/`UMAMI_URL`. Umami, Plausible, Matomo and Google Analytics
 are also configurable from the settings UI

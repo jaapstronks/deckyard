@@ -41,6 +41,7 @@ const HOSTILE = [
 
 /** Every env var analyticsHeadHtml reads, so the test starts from a clean slate. */
 const ANALYTICS_ENV = [
+  'EXTERNAL_ANALYTICS_ENABLED',
   'DISABLE_ANALYTICS',
   'ANALYTICS_ALLOW_IN_SANDBOX',
   'ANALYTICS_HEAD_HTML',

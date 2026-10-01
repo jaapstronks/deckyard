@@ -528,7 +528,7 @@ export function v1NotFound(res, message = 'Not found') {
 /**
  * Walk a v1 `ROUTES` table: the shared dispatcher (`utils/router.js`), with
  * its own 404s — a `captures: ['uuid']` segment that cannot be one, an
- * unmounted `ai` row — answered in the v1 envelope, and every matched
+ * row whose `feature` is off — answered in the v1 envelope, and every matched
  * operation counted as `api_v1:<operationId>` (B515).
  *
  * @param {import('../../../utils/router.js').Route[]} routes

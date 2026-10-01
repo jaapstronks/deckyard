@@ -1,19 +1,22 @@
 /**
  * Notion API route handlers: the seam over `server/routes/api/notion/`.
  *
- * Two declarative tables (always-available and feature-gated) dispatched
- * through the shared {@link dispatchRoutes}; the concern modules underneath
- * are reached only from here:
+ * One declarative table dispatched through the shared {@link dispatchRoutes};
+ * the concern modules underneath are reached only from here:
  * - `status.js` - Status/capability detection
  * - `fetch.js` - Fetch and publish endpoints
  * - `import.js` - Import and stream-import endpoints
- * - `subjects.js` - Subjects and compose endpoints (feature-gated)
- * - `suggest.js` - Suggest endpoint (feature-gated)
+ * - `subjects.js` - Subjects and compose endpoints (the wizard's picker)
+ * - `suggest.js` - Suggest endpoint
  * - `utils.js` - Shared utility functions
+ *
+ * Whether the module exists is its mount's `feature: 'notion'`
+ * (`NOTION_ENABLED`, `routes/api/index.js`): with it off all eight rows answer
+ * the `/api` 404. Whether Notion is *configured* (`NOTION_SECRET`) is the
+ * handlers' own `notionEnabled()` check, answered with a 501.
  */
 import { dispatchRoutes } from '../../../utils/router.js';
 import { withErrorHandler } from '../../../utils/http.js';
-import { getFeatureFlags } from '../../../config/flags-snapshot.js';
 import { handleNotionStatus } from './status.js';
 import { handleNotionFetch, handleNotionPublish } from './fetch.js';
 import { handleNotionImport, handleNotionImportStream } from './import.js';
@@ -21,10 +24,11 @@ import { handleNotionSubjects, handleNotionCompose } from './subjects.js';
 import { handleNotionSuggest } from './suggest.js';
 
 /**
- * Always-available Notion routes (A7.19 C8). Status is unconditional; the
- * fetch/publish/import handlers each self-gate on `notionEnabled()` (Notion is
- * *configured*) and 501 when it is not. Order mirrors the previous delegating
- * chain exactly; method mismatch falls through (the chain had no 405).
+ * The Notion routes (A7.19 C8). The two import rows also carry
+ * `feature: 'ai'`: an import runs the AI refinement pipeline
+ * (`utils/convert-notion.js`), so with AI off it is not mounted either.
+ * Subjects, compose and suggest only read Notion. Method mismatch falls
+ * through (the chain had no 405).
  *
  * @type {import('../../../utils/router.js').Route[]}
  */
@@ -40,24 +44,14 @@ export const ROUTES = [
     method: 'POST',
     pattern: '/api/notion/import',
     handler: handleNotionImport,
+    feature: 'ai',
   },
   {
     method: 'POST',
     pattern: '/api/notion/import/stream',
     handler: handleNotionImportStream,
+    feature: 'ai',
   },
-];
-
-/**
- * Feature-gated Notion routes: reached only when the `enableNotion` feature
- * flag is on. Kept in a second table so the flag check stays a single
- * module-wide guard in the entry function (route-dispatch.md § module-wide
- * guards belong in the entry function), exactly where the old chain returned
- * early before trying subjects/compose/suggest.
- *
- * @type {import('../../../utils/router.js').Route[]}
- */
-export const GATED_ROUTES = [
   {
     method: 'POST',
     pattern: '/api/notion/subjects',
@@ -80,13 +74,6 @@ export const GATED_ROUTES = [
  * @param {import('../../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>} true if a route handled the request.
  */
-export const handleNotion = withErrorHandler('notion', async (ctx) => {
-  const handled = await dispatchRoutes(ROUTES, ctx);
-  if (handled) return true;
-
-  // Feature-gated endpoints: keep code shipped, but disabled unless explicitly enabled.
-  const flags = getFeatureFlags();
-  if (!flags?.enableNotion) return false;
-
-  return dispatchRoutes(GATED_ROUTES, ctx);
-});
+export const handleNotion = withErrorHandler('notion', (ctx) =>
+  dispatchRoutes(ROUTES, ctx),
+);

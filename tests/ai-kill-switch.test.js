@@ -11,9 +11,14 @@
  * `tests/digest-generation.test.js`.
  *
  * The HTTP half is declared, not re-checked per handler: a route carries
- * `ai: true` in its table and `dispatchRoutes` answers for it. So this file
+ * `feature: 'ai'` in its table (D257) and `dispatchRoutes` answers for it. So this file
  * pins both the mechanism and the declarations — every presentation route that
  * spends tokens, including `/analyze`, whose missing check was the finding.
+ *
+ * The same house model pins the second cluster whose whole module is behind
+ * a mount `feature`: Notion (`NOTION_ENABLED`, default off) — all eight rows
+ * reach the `/api` 404 while it is off, and its two import rows also follow
+ * AI.
  *
  * House shape: the exported route module is called with a req/res double. No
  * database is installed — the gate answers before any storage call, and a
@@ -32,8 +37,13 @@ delete process.env.AI_ENABLED;
 delete process.env.DISABLE_AI;
 delete process.env.DEMO_MODE;
 delete process.env.SANDBOX_MODE;
+delete process.env.NOTION_ENABLED;
+delete process.env.NOTION_FEATURE;
+delete process.env.NOTION_SECRET;
 
-const { dispatchRoutes } = await import('../server/utils/router.js');
+const { dispatchMounts, dispatchRoutes } =
+  await import('../server/utils/router.js');
+const { MOUNTS } = await import('../server/routes/api/index.js');
 const { handlePresentations } =
   await import('../server/routes/api/presentations/index.js');
 const { handleImageLibrary } =
@@ -43,6 +53,7 @@ const { registerTools } = await import('../server/mcp/tools.js');
 
 afterEach(() => {
   delete process.env.AI_ENABLED;
+  delete process.env.NOTION_ENABLED;
 });
 
 /** A response double capturing what the http helpers write. */
@@ -88,7 +99,7 @@ function ctx(method, pathname) {
   };
 }
 
-describe('dispatchRoutes — the `ai` declaration', () => {
+describe("dispatchRoutes — the `feature: 'ai'` declaration", () => {
   const routes = (seen) => [
     {
       pattern: /^\/api\/x\/([^/]+)\/think$/,
@@ -96,7 +107,7 @@ describe('dispatchRoutes — the `ai` declaration', () => {
         seen.push(id);
         return true;
       },
-      ai: true,
+      feature: 'ai',
     },
   ];
 
@@ -185,7 +196,7 @@ describe('alt-text generation follows the same switch', () => {
   }
 });
 
-describe('MCP — an `ai` tool does not exist with AI_ENABLED=false', () => {
+describe('MCP — an AI tool does not exist with AI_ENABLED=false', () => {
   function server() {
     const s = new McpServer();
     registerTools(s, { defaultOwnerEmail: 'owner@example.com' });
@@ -193,7 +204,7 @@ describe('MCP — an `ai` tool does not exist with AI_ENABLED=false', () => {
   }
   const aiTools = (s) =>
     [...s.tools.values()]
-      .filter((tool) => tool.permission === 'ai')
+      .filter((tool) => tool.feature === 'ai')
       .map((tool) => tool.name);
 
   async function listed(s, context) {
@@ -206,6 +217,17 @@ describe('MCP — an `ai` tool does not exist with AI_ENABLED=false', () => {
 
   it('analyze_presentation is one of the ai tools', () => {
     assert.ok(aiTools(server()).includes('analyze_presentation'));
+  });
+
+  it('the ai feature and the ai permission mark the same six tools', () => {
+    // Two concepts that coincide for AI (D257): the feature says whether the
+    // tool exists, the permission which key scope may call it.
+    const s = server();
+    const byPermission = [...s.tools.values()]
+      .filter((tool) => tool.permission === 'ai')
+      .map((tool) => tool.name);
+    assert.deepEqual(aiTools(s), byPermission);
+    assert.equal(byPermission.length, 6);
   });
 
   it('tools/list leaves every ai tool out, with or without a key', async () => {
@@ -246,4 +268,55 @@ describe('MCP — an `ai` tool does not exist with AI_ENABLED=false', () => {
     assert.equal(msg.error?.code, -32601);
     assert.match(msg.error.message, /Unknown tool: analyze_presentation/);
   });
+});
+
+describe('Notion — the whole module follows NOTION_ENABLED', () => {
+  const NOTION_ROWS = [
+    ['GET', '/api/notion/status'],
+    ['POST', '/api/notion/fetch'],
+    ['POST', '/api/notion/publish'],
+    ['POST', '/api/notion/import'],
+    ['POST', '/api/notion/import/stream'],
+    ['POST', '/api/notion/subjects'],
+    ['POST', '/api/notion/compose'],
+    ['POST', '/api/notion/suggest'],
+  ];
+
+  for (const [method, path] of NOTION_ROWS) {
+    it(`${method} ${path}: no mount answers while NOTION_ENABLED is unset (→ the /api 404)`, async () => {
+      const c = ctx(method, path);
+      assert.equal(await dispatchMounts(MOUNTS, c), false);
+      assert.equal(c.res.statusCode, null, 'nothing may write a response');
+    });
+  }
+
+  it('with NOTION_ENABLED=true the module is mounted (status speaks, unconfigured)', async () => {
+    process.env.NOTION_ENABLED = 'true';
+    const c = ctx('GET', '/api/notion/status');
+    assert.equal(await dispatchMounts(MOUNTS, c), true);
+    assert.equal(c.res.statusCode, 200);
+    assert.deepEqual(c.res.body, { enabled: false });
+  });
+
+  it('the legacy NOTION_FEATURE spelling still mounts it until its removal date', async () => {
+    process.env.NOTION_FEATURE = 'true';
+    try {
+      const c = ctx('GET', '/api/notion/status');
+      assert.equal(await dispatchMounts(MOUNTS, c), true);
+      assert.equal(c.res.statusCode, 200);
+    } finally {
+      delete process.env.NOTION_FEATURE;
+    }
+  });
+
+  for (const path of ['/api/notion/import', '/api/notion/import/stream']) {
+    it(`POST ${path} with Notion on but AI off → 404 before the handler`, async () => {
+      process.env.NOTION_ENABLED = 'true';
+      process.env.AI_ENABLED = 'false';
+      const c = ctx('POST', path);
+      await dispatchMounts(MOUNTS, c);
+      assert.equal(c.res.statusCode, 404);
+      assert.equal(c.res.body?.error, 'not_found');
+    });
+  }
 });

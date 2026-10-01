@@ -189,28 +189,28 @@ export const ROUTES = [
     pattern: /^\/api\/presentations\/([^/]+)\/translate\/fields$/,
     captures: ['uuid'],
     handler: handlePresentationTranslateFields,
-    ai: true,
+    feature: 'ai',
   },
   // Translate only missing (empty) fields into the other language (safe for manual edits).
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate\/missing$/,
     captures: ['uuid'],
     handler: handlePresentationTranslateMissing,
-    ai: true,
+    feature: 'ai',
   },
   // Translate a presentation into the other supported language and store as an i18n version.
   {
     pattern: /^\/api\/presentations\/([^/]+)\/translate$/,
     captures: ['uuid'],
     handler: handlePresentationTranslate,
-    ai: true,
+    feature: 'ai',
   },
 
   {
     pattern: /^\/api\/presentations\/([^/]+)\/description\/generate$/,
     captures: ['uuid'],
     handler: handlePresentationDescriptionGenerate,
-    ai: true,
+    feature: 'ai',
   },
 
   {
@@ -289,7 +289,7 @@ export const ROUTES = [
     pattern: /^\/api\/presentations\/([^/]+)\/versions\/([^/]+)\/compare-ai$/,
     captures: ['uuid', 'uuid'],
     handler: handlePresentationVersionCompareAi,
-    ai: true,
+    feature: 'ai',
   },
   // Single version retrieval (for preview/comparison)
   {
@@ -361,7 +361,7 @@ export const ROUTES = [
     pattern: /^\/api\/presentations\/([^/]+)\/analyze$/,
     captures: ['uuid'],
     handler: handlePresentationAnalyze,
-    ai: true,
+    feature: 'ai',
   },
 
   // ============================================================

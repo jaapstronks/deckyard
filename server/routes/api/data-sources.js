@@ -12,11 +12,9 @@ import {
   methodNotAllowed,
   serveJson,
   unauthorized,
-  forbidden,
   requireJsonBody,
   withErrorHandler,
 } from '../../utils/http.js';
-import { isLiveDataEnabled } from '../../config/features.js';
 import {
   validateDataSource,
   DATA_SOURCE_PROVIDERS,
@@ -123,8 +121,10 @@ export const ROUTES = [
 ];
 
 /**
- * Handle live data-source endpoints. The module-wide guards (prefix, auth,
- * feature flag) run before dispatch, exactly as the original chain did.
+ * Handle live data-source endpoints. The module-wide guards (prefix, auth)
+ * run before dispatch; whether the module exists is the mount's
+ * `feature: 'liveData'` (`routes/api/index.js`), so with it off these paths
+ * answer the `/api` 404 rather than a refusal of their own.
  *
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.
@@ -132,11 +132,6 @@ export const ROUTES = [
 export const handleDataSources = withErrorHandler('data-sources', (ctx) => {
   if (!ctx.url.pathname.startsWith('/api/data-sources')) return false;
   if (!ctx.authedUser) return unauthorized(ctx.res);
-
-  if (!isLiveDataEnabled()) {
-    forbidden(ctx.res, 'Live data sources are not enabled');
-    return true;
-  }
 
   return dispatchRoutes(ROUTES, ctx);
 });
