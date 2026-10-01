@@ -32,7 +32,6 @@
   "imageLibrary.empty": "Inga objekt i biblioteket ännu.",
   "imageLibrary.favorite": "Lägg till bland favoriter",
   "imageLibrary.loading": "Laddar bibliotek…",
-  "imageLibrary.metadata": "Bildinformation (valfri)",
   "imageLibrary.noResults": "Inga resultat.",
   "imageLibrary.photographer": "Fotograf: {name}",
   "imageLibrary.photographer.label": "Fotograf",

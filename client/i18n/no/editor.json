@@ -352,7 +352,6 @@
   "editor.image.bgHelp.uploadsSandbox": "Opplasting er slått av i sandkassen. Velg fra biblioteket, Unsplash eller Giphy.",
   "editor.image.bgHelp.withUploads": "Velg et eksisterende bilde fra biblioteket, eller last opp ditt eget bilde kun for dette lysbildet.",
   "editor.image.bgLibraryTitle": "Bibliotek: velg et bakgrunnsbilde",
-  "editor.image.chooseOrUpload": "Velg / last opp…",
   "editor.image.fieldLabel": "Bilde",
   "editor.image.focusGridHelp": "Dra punktet på bildet, eller velg en plassering her.",
   "editor.image.help.storage": "Bilder lagres lokalt i /server/uploads og brukes via URL.",

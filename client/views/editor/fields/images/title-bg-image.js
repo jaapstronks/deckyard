@@ -4,6 +4,7 @@
 import { t } from '../../../../lib/ui-i18n.js';
 import { getBackgroundPresets } from '../../../../lib/theme/theme.js';
 import { createAltSetter } from './alt-utils.js';
+import { createImagePickerButtons } from './picker-buttons.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom/index.js';
 import {
@@ -30,9 +31,6 @@ export function createFieldTitleBgImage(ctx) {
 
   const flags = features && typeof features === 'object' ? features : {};
   const uploadsDisabled = !flags.enableUploads;
-  const hasPicker =
-    typeof openImagePicker === 'function' &&
-    (openImagePicker.providers?.length || 0) > 0;
 
   return function fieldTitleBgImage(slide, field, onUploadedUrl) {
     const wrap = h('div', { class: 'stack is-field' });
@@ -56,79 +54,68 @@ export function createFieldTitleBgImage(ctx) {
       );
     }
 
-    // Image picker button (one seam over all configured providers)
-    if (hasPicker) {
-      controls.append(
-        h('button', {
-          class: 'btn btn-secondary',
-          text: t('editor.image.chooseOrUpload', 'Choose / upload…'),
-          onclick: () => {
-            const activeLang =
-              normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-            // The version this one is translated from, so a picked alt text
-            // seeds the source buffer too. `otherLang()` had no answer once the
-            // deck left the NL/EN pair, and silently seeded nothing (B182).
-            const sourceLang = translationSourceFor(pres, activeLang);
-            const setBgAltForLang = createAltSetter({
-              slide,
-              pres,
-              normalizeLang,
-              activeLang,
-              fieldKey: 'bgAlt',
-            });
+    // Built per click, so the active language is current (B579: shared by
+    // "Choose image…" and "Upload from computer").
+    const pickerOpts = () => {
+      const activeLang =
+        normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
+      // The version this one is translated from, so a picked alt text
+      // seeds the source buffer too. `otherLang()` had no answer once the
+      // deck left the NL/EN pair, and silently seeded nothing (B182).
+      const sourceLang = translationSourceFor(pres, activeLang);
+      const setBgAltForLang = createAltSetter({
+        slide,
+        pres,
+        normalizeLang,
+        activeLang,
+        fieldKey: 'bgAlt',
+      });
 
-            openImagePicker({
-              title: t(
-                'editor.image.bgLibraryTitle',
-                'Library: choose a background image',
-              ),
-              hint: t(
-                'editor.image.bgHint',
-                'For the background of this slide',
-              ),
-              docId: pres?.id || '',
-              allowCaptionCredit: false,
-              context: {
-                presentationTitle:
-                  typeof pres?.title === 'string' ? pres.title : '',
-                slideId: slide?.id || '',
-                slideType: slide?.type || '',
-                slideTitle:
-                  slide?.content &&
-                  typeof slide.content === 'object' &&
-                  typeof slide.content.title === 'string'
-                    ? slide.content.title
-                    : '',
-              },
-              onPick: (picked) => {
-                const url =
-                  typeof picked?.url === 'string' ? picked.url.trim() : '';
-                if (!url) return;
-                onUploadedUrl(url);
-                slide.content =
-                  slide.content && typeof slide.content === 'object'
-                    ? slide.content
-                    : {};
-                applyAltFromPick({
-                  picked,
-                  activeLang,
-                  sourceLang,
-                  setAltForLang: setBgAltForLang,
-                });
-                applyPickMeta({
-                  picked,
-                  content: slide.content,
-                  providerIdKey: 'bgImagekitFileId',
-                });
-                markDirty?.();
-                rerenderEditor?.();
-                scheduleUiRefresh?.();
-              },
-            });
-          },
-        }),
-      );
-    }
+      return {
+        title: t(
+          'editor.image.bgLibraryTitle',
+          'Library: choose a background image',
+        ),
+        hint: t('editor.image.bgHint', 'For the background of this slide'),
+        docId: pres?.id || '',
+        allowCaptionCredit: false,
+        context: {
+          presentationTitle: typeof pres?.title === 'string' ? pres.title : '',
+          slideId: slide?.id || '',
+          slideType: slide?.type || '',
+          slideTitle:
+            slide?.content &&
+            typeof slide.content === 'object' &&
+            typeof slide.content.title === 'string'
+              ? slide.content.title
+              : '',
+        },
+        onPick: (picked) => {
+          const url = typeof picked?.url === 'string' ? picked.url.trim() : '';
+          if (!url) return;
+          onUploadedUrl(url);
+          slide.content =
+            slide.content && typeof slide.content === 'object'
+              ? slide.content
+              : {};
+          applyAltFromPick({
+            picked,
+            activeLang,
+            sourceLang,
+            setAltForLang: setBgAltForLang,
+          });
+          applyPickMeta({
+            picked,
+            content: slide.content,
+            providerIdKey: 'bgImagekitFileId',
+          });
+          markDirty?.();
+          rerenderEditor?.();
+          scheduleUiRefresh?.();
+        },
+      };
+    };
+    controls.append(...createImagePickerButtons(openImagePicker, pickerOpts));
 
     wrap.append(controls);
     wrap.append(

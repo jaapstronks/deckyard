@@ -352,7 +352,6 @@
   "editor.image.bgHelp.uploadsSandbox": "Las subidas están desactivadas en el entorno de pruebas. Elija de la biblioteca, de Unsplash o de Giphy.",
   "editor.image.bgHelp.withUploads": "Elija una imagen existente de la biblioteca, o suba su propia imagen solo para esta diapositiva.",
   "editor.image.bgLibraryTitle": "Biblioteca: elegir imagen de fondo",
-  "editor.image.chooseOrUpload": "Elegir / subir…",
   "editor.image.fieldLabel": "Imagen",
   "editor.image.focusGridHelp": "Arrastre el punto sobre la imagen o elija aquí una posición.",
   "editor.image.help.storage": "Las imágenes se almacenan localmente en /server/uploads y se usan vía URL.",

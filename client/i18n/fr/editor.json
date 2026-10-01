@@ -349,7 +349,6 @@
   "editor.image.bgHelp.uploadsSandbox": "Les téléversements sont désactivés dans le bac à sable. Choisissez dans la bibliothèque, sur Unsplash ou Giphy.",
   "editor.image.bgHelp.withUploads": "Choisissez une image existante de la bibliothèque, ou téléversez votre propre image pour cette diapositive uniquement.",
   "editor.image.bgLibraryTitle": "Bibliothèque : choisir une image d'arrière-plan",
-  "editor.image.chooseOrUpload": "Choisir / téléverser…",
   "editor.image.focusGridHelp": "Faites glisser le point sur l'image, ou choisissez une position ici.",
   "editor.image.help.storage": "Les images sont stockées localement dans /server/uploads et utilisées via URL.",
   "editor.image.help.uploadsDisabled": "Choisir dans la bibliothèque (recommandé). Les téléversements sont désactivés.",

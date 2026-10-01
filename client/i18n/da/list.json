@@ -32,7 +32,6 @@
   "imageLibrary.empty": "Ingen elementer i biblioteket endnu.",
   "imageLibrary.favorite": "Tilføj til favoritter",
   "imageLibrary.loading": "Indlæser bibliotek…",
-  "imageLibrary.metadata": "Billedoplysninger (valgfrit)",
   "imageLibrary.noResults": "Ingen resultater.",
   "imageLibrary.photographer": "Fotograf: {name}",
   "imageLibrary.photographer.label": "Fotograf",

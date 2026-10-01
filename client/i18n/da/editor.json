@@ -348,7 +348,6 @@
   "editor.image.bgHelp.uploadsSandbox": "Upload er slået fra i sandkassen. Vælg fra biblioteket, Unsplash eller Giphy.",
   "editor.image.bgHelp.withUploads": "Vælg et eksisterende billede fra biblioteket, eller upload dit eget billede kun til denne slide.",
   "editor.image.bgLibraryTitle": "Bibliotek: vælg et baggrundsbillede",
-  "editor.image.chooseOrUpload": "Vælg / upload…",
   "editor.image.fieldLabel": "Billede",
   "editor.image.focusGridHelp": "Træk punktet på billedet, eller vælg en placering her.",
   "editor.image.help.storage": "Billeder gemmes lokalt i /server/uploads og bruges via URL.",

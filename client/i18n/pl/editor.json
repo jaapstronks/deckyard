@@ -353,7 +353,6 @@
   "editor.image.bgHelp.uploadsSandbox": "Przesyłanie plików jest wyłączone w piaskownicy. Wybierz obraz z biblioteki, Unsplash lub Giphy.",
   "editor.image.bgHelp.withUploads": "Wybierz istniejący obraz z biblioteki lub prześlij własny obraz tylko dla tego slajdu.",
   "editor.image.bgLibraryTitle": "Biblioteka: wybierz obraz tła",
-  "editor.image.chooseOrUpload": "Wybierz / prześlij…",
   "editor.image.fieldLabel": "Obraz",
   "editor.image.focusGridHelp": "Przeciągnij punkt na obrazie albo wybierz pozycję tutaj.",
   "editor.image.help.storage": "Obrazy są przechowywane lokalnie w /server/uploads i używane przez URL.",

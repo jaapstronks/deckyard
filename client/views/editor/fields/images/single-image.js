@@ -3,6 +3,7 @@
  */
 import { t } from '../../../../lib/ui-i18n.js';
 import { createAltSetter } from './alt-utils.js';
+import { createImagePickerButtons } from './picker-buttons.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom/index.js';
 import {
@@ -29,9 +30,6 @@ export function createFieldImage(ctx) {
 
   const flags = features && typeof features === 'object' ? features : {};
   const uploadsDisabled = !flags.enableUploads;
-  const hasPicker =
-    typeof openImagePicker === 'function' &&
-    (openImagePicker.providers?.length || 0) > 0;
 
   const normalizeUrl = (x) => {
     if (typeof x === 'string') return x.trim();
@@ -84,70 +82,64 @@ export function createFieldImage(ctx) {
       );
     }
 
-    // Image picker button (one seam over all configured providers)
-    if (hasPicker) {
-      row.append(
-        h('button', {
-          class: 'btn btn-secondary',
-          text: t('editor.image.chooseOrUpload', 'Choose / upload…'),
-          onclick: () => {
-            const activeLang =
-              normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-            // The version this one is translated from, so a picked alt text
-            // seeds the source buffer too. `otherLang()` had no answer once the
-            // deck left the NL/EN pair, and silently seeded nothing (B182).
-            const sourceLang = translationSourceFor(pres, activeLang);
-            const setAltForLang = createAltSetter({
-              slide,
-              pres,
-              normalizeLang,
-              activeLang,
-              fieldKey: altFieldKey,
-            });
+    // One set of picker options for both entry points: the seam decides the
+    // source, the direct upload goes straight to the file dialog (B579).
+    const pickerOpts = () => {
+      const activeLang =
+        normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
+      // The version this one is translated from, so a picked alt text
+      // seeds the source buffer too. `otherLang()` had no answer once the
+      // deck left the NL/EN pair, and silently seeded nothing (B182).
+      const sourceLang = translationSourceFor(pres, activeLang);
+      const setAltForLang = createAltSetter({
+        slide,
+        pres,
+        normalizeLang,
+        activeLang,
+        fieldKey: altFieldKey,
+      });
 
-            openImagePicker({
-              title: t('editor.image.libraryTitle', 'Library: choose an image'),
-              docId: pres?.id || '',
-              allowCaptionCredit: 'caption' in (slide?.content || {}),
-              context: {
-                presentationTitle:
-                  typeof pres?.title === 'string' ? pres.title : '',
-                slideId: slide?.id || '',
-                slideType: slide?.type || '',
-                slideTitle:
-                  slide?.content &&
-                  typeof slide.content === 'object' &&
-                  typeof slide.content.title === 'string'
-                    ? slide.content.title
-                    : '',
-              },
-              onPick: (picked) => {
-                onUploadedUrl(picked?.url || '');
-                slide.content =
-                  slide.content && typeof slide.content === 'object'
-                    ? slide.content
-                    : {};
-                applyAltFromPick({
-                  picked,
-                  activeLang,
-                  sourceLang,
-                  setAltForLang,
-                });
-                applyPickMeta({
-                  picked,
-                  content: slide.content,
-                  providerIdKey: 'imagekitFileId',
-                  allowCaption: 'caption' in slide.content,
-                });
-                markDirty?.();
-                rerenderEditor?.();
-                scheduleUiRefresh?.();
-              },
-            });
-          },
-        }),
-      );
-    }
+      return {
+        title: t('editor.image.libraryTitle', 'Library: choose an image'),
+        docId: pres?.id || '',
+        allowCaptionCredit: 'caption' in (slide?.content || {}),
+        context: {
+          presentationTitle: typeof pres?.title === 'string' ? pres.title : '',
+          slideId: slide?.id || '',
+          slideType: slide?.type || '',
+          slideTitle:
+            slide?.content &&
+            typeof slide.content === 'object' &&
+            typeof slide.content.title === 'string'
+              ? slide.content.title
+              : '',
+        },
+        onPick: (picked) => {
+          onUploadedUrl(picked?.url || '');
+          slide.content =
+            slide.content && typeof slide.content === 'object'
+              ? slide.content
+              : {};
+          applyAltFromPick({
+            picked,
+            activeLang,
+            sourceLang,
+            setAltForLang,
+          });
+          applyPickMeta({
+            picked,
+            content: slide.content,
+            providerIdKey: 'imagekitFileId',
+            allowCaption: 'caption' in slide.content,
+          });
+          markDirty?.();
+          rerenderEditor?.();
+          scheduleUiRefresh?.();
+        },
+      };
+    };
+
+    row.append(...createImagePickerButtons(openImagePicker, pickerOpts));
     wrap.append(row);
 
     // Preset images
