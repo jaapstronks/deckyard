@@ -208,7 +208,9 @@ export function createThemesTab({ user }) {
       ]);
       allThemes = Array.isArray(themesResp?.themes) ? themesResp.themes : [];
       const defaultThemeId = String(
-        org?.defaultThemeId || themesResp?.defaultThemeId || '',
+        org?.defaultThemeId ||
+          allThemes.find((theme) => theme?.isDefault)?.id ||
+          '',
       );
       // The response carries the *effective* allowlist (organization setting, else the
       // ENABLED_THEMES env fallback), so the checkboxes show what is really in
@@ -646,11 +648,6 @@ export function createThemesTab({ user }) {
     try {
       const result = await api('/api/themes?all=1');
       themes = result?.themes || [];
-      const defaultThemeId = result?.defaultThemeId;
-      themes = themes.map((theme) => ({
-        ...theme,
-        isDefault: theme.id === defaultThemeId,
-      }));
       renderThemeList();
     } catch (err) {
       toast.error(err);

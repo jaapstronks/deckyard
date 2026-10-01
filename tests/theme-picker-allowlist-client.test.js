@@ -78,7 +78,6 @@ function fakeThemesApi({ allowed, all = [BRAND, EDITORIAL, MIDNIGHT] }) {
         source: 'seed',
         isDefault: id === defaultThemeId,
       })),
-      defaultThemeId,
       enabledThemes: allowed,
     };
   };

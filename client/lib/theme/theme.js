@@ -135,8 +135,8 @@ export async function loadThemeById(rawThemeId, { config = null } = {}) {
     if (config) {
       return loadThemeById(config.id, { config });
     }
-    const { defaultThemeId } = await api('/api/themes');
-    return loadThemeById(defaultThemeId);
+    const { themes = [] } = await api('/api/themes');
+    return loadThemeById(themes.find((theme) => theme?.isDefault)?.id);
   }
   const id = safeThemeId(rawThemeId);
   if (themeCache.has(id)) return themeCache.get(id);
