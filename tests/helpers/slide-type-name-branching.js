@@ -45,8 +45,8 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
  * inventory entry.
  *
  * Not a silent cap — the number is the whole judgement, so it is here in the
- * open. One or two names is how *type-specific behaviour* reads: the custom-HTML
- * guard exists for `custom-html-slide`, the chart data modal for `chart-slide`,
+ * open. One or two names is how *type-specific behaviour* reads: the chart data
+ * modal exists for `chart-slide`,
  * and no future type will ever be "missing" from them. Three or more is where a
  * module stops being about a type and starts being a table *of* types, and a
  * table is a thing a new type can fall out of. 94 modules name a type; 46 branch

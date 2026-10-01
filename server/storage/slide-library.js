@@ -401,9 +401,6 @@ function favoritesWith(email, on) {
  * @param {number|null} [opts.expectedRevision] - Required when the patch has an `EDIT_KEYS` key
  * @param {(item: object) => boolean|Promise<boolean>} [opts.allowEdit] - The
  *   organization-shelf guard; an organization edit or trash without one is refused
- * @param {(item: object, nextContent: object) => string|null} [opts.contentGuard] -
- *   Returns a refusal message for content the actor may not write; a content
- *   patch without one is refused
  * @param {string|null} [opts.trashedBy] - Who a trash toggle is attributed to
  * @returns {Promise<{ok: true, item: object}|{ok: false, reason: string, field?: string, message?: string}>}
  * @throws {ConflictError} When `expectedRevision` is not the stored revision
@@ -431,15 +428,6 @@ async function patchLibraryItem(ctx, target, patch, opts = {}) {
   if (edits && existing.revision !== expectedRevision) {
     throw conflictError(existing);
   }
-  if ('content' in patch) {
-    // Fail closed, like `allowEdit` (D172): the raw-HTML/CSS capability is the
-    // caller's to know, so a writer that brings no gate may not write content.
-    if (typeof opts.contentGuard !== 'function')
-      return { ok: false, reason: 'forbidden' };
-    const message = opts.contentGuard(existing, patch.content);
-    if (message) return { ok: false, reason: 'forbidden', message };
-  }
-
   const updateData = {};
   if ('name' in patch) updateData.name = patch.name.trim();
   if ('description' in patch) updateData.description = patch.description;
@@ -556,7 +544,7 @@ export async function updatePersonalLibraryItem(
   userEmail,
   id,
   patch,
-  { actorEmail, expectedRevision = null, contentGuard } = {},
+  { actorEmail, expectedRevision = null } = {},
 ) {
   const ctx = toStorageContext(storageScope, 'updatePersonalLibraryItem', {
     userEmail,
@@ -566,7 +554,7 @@ export async function updatePersonalLibraryItem(
     ctx,
     { id, shelf: 'personal', ownerEmail: userEmail },
     patch,
-    { expectedRevision, contentGuard, trashedBy: actorEmail || userEmail },
+    { expectedRevision, trashedBy: actorEmail || userEmail },
   );
 }
 
@@ -646,7 +634,7 @@ export async function updateOrganizationLibraryItem(
   storageScope,
   id,
   patch,
-  { actorEmail, expectedRevision = null, allowEdit, contentGuard } = {},
+  { actorEmail, expectedRevision = null, allowEdit } = {},
 ) {
   const ctx = toStorageContext(storageScope, 'updateOrganizationLibraryItem', {
     actorEmail,
@@ -654,7 +642,6 @@ export async function updateOrganizationLibraryItem(
   return patchLibraryItem(ctx, { id, shelf: 'organization' }, patch, {
     expectedRevision,
     allowEdit,
-    contentGuard,
     trashedBy: actorEmail || null,
   });
 }

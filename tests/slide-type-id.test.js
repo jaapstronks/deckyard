@@ -113,7 +113,7 @@ describe('parseTypeId', () => {
 describe('canonicalTypeName', () => {
   it('drops the historical -slide suffix, and is idempotent', () => {
     assert.equal(canonicalTypeName('title-slide'), 'title');
-    assert.equal(canonicalTypeName('custom-html-slide'), 'custom-html');
+    assert.equal(canonicalTypeName('icon-card-grid-slide'), 'icon-card-grid');
     assert.equal(canonicalTypeName('title'), 'title');
     assert.equal(canonicalTypeName(canonicalTypeName('end-slide')), 'end');
   });

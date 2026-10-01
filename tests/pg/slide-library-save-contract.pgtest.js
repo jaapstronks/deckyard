@@ -170,7 +170,7 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
     });
   });
 
-  it('lets an actor the guard accepts change organization content, and raises the revision', async () => {
+  it('lets an actor allowEdit accepts change organization content, and raises the revision', async () => {
     const r = await updateOrganizationLibraryItem(
       storageScope,
       orgItem.id,
@@ -179,7 +179,6 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
         actorEmail: ALICE,
         expectedRevision: 0,
         allowEdit: () => true,
-        contentGuard: () => null,
       },
     );
     assert.equal(r.ok, true);
@@ -249,42 +248,6 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
     assert.equal(row.revision, 1);
   });
 
-  it('refuses content the contentGuard rejects, with its message, and writes nothing', async () => {
-    const r = await updatePersonalLibraryItem(
-      storageScope,
-      ALICE,
-      alicePersonal.id,
-      { content: { title: 'Nope' } },
-      {
-        actorEmail: ALICE,
-        expectedRevision: 0,
-        contentGuard: () => 'no markup for you',
-      },
-    );
-    assert.deepEqual(r, {
-      ok: false,
-      reason: 'forbidden',
-      message: 'no markup for you',
-    });
-    assert.deepEqual((await readRow(db, alicePersonal.id)).content, {
-      title: 'Hallo',
-    });
-  });
-
-  it('refuses a content patch from a caller that brings no contentGuard', async () => {
-    const r = await updatePersonalLibraryItem(
-      storageScope,
-      ALICE,
-      alicePersonal.id,
-      { content: { title: 'Ongepoort' } },
-      { actorEmail: ALICE, expectedRevision: 0 },
-    );
-    assert.deepEqual(r, { ok: false, reason: 'forbidden' });
-    assert.deepEqual((await readRow(db, alicePersonal.id)).content, {
-      title: 'Hallo',
-    });
-  });
-
   it('does not raise the revision for a trash toggle', async () => {
     const r = await updatePersonalLibraryItem(
       storageScope,
@@ -321,7 +284,7 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
       ALICE,
       created.item.id,
       { content: { title: 'Dag', body: 'Tekst' } },
-      { actorEmail: ALICE, expectedRevision: 0, contentGuard: () => null },
+      { actorEmail: ALICE, expectedRevision: 0 },
     );
     assert.equal(r.ok, true);
     assert.deepEqual(r.item.i18n.versions.nl.content, {

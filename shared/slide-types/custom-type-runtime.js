@@ -86,14 +86,13 @@ export function createTemplateSlideRenderer({ template, css, rootClass }) {
     // authored by lower-privilege editors / AI / imports and gets no HTML
     // validation on write — so an innocent-looking {{raw description}} would
     // otherwise be stored XSS reaching present mode, follow-along, the public
-    // /p/ viewer and the server-side Puppeteer export. Mirrors the custom-html
-    // slide (security-audit H5; also closes the {{markdown}} javascript: sink,
-    // M1).
+    // /p/ viewer and the server-side Puppeteer export (security-audit H5; also
+    // closes the {{markdown}} javascript: sink, M1).
     const html = sanitizeSlideHtmlSync(render(content || {}));
-    // Author CSS gets the security filter *and* the containment pass, the same
-    // pair the custom-html slide runs. Scoping happens after sanitizing because
-    // sanitizeSlideHtmlSync strips <style>, and the scope root has to exist on
-    // the markup before the block can name it (B189).
+    // Author CSS gets the security filter *and* the containment pass. Scoping
+    // happens after sanitizing because sanitizeSlideHtmlSync strips <style>,
+    // and the scope root has to exist on the markup before the block can name
+    // it (B189).
     styleBlock ??= buildStyleBlock(css, rootClass);
     return withScopeRoot(html, rootClass, styleBlock);
   };

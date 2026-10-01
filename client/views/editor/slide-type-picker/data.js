@@ -47,7 +47,7 @@ export const FREQUENT_MIN_TOTAL = 3;
 // The picker has no curated `other` shelf: a type declaring `group: 'other'`
 // lands in the computed "Other" group at the bottom, alongside anything else
 // uncurated. That is deliberate — "Other" is a real home for the long tail
-// (payoff, end, custom-html), not a gap.
+// (payoff, end), not a gap.
 //
 // Layouts absorbs what the settings tab used to call "Process": process and
 // timeline are structured layouts, not different enough to warrant a section of

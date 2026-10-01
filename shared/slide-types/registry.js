@@ -32,7 +32,6 @@ import funnelSlide from './types/funnel-slide.js';
 import pyramidSlide from './types/pyramid-slide.js';
 import cycleSlide from './types/cycle-slide.js';
 import gallerySlide from './types/gallery-slide.js';
-import customHtmlSlide from './types/custom-html-slide.js';
 import { GLOBAL_SLIDE_FIELD_KEYS, composeSlideType } from './compose.js';
 import {
   CORE_NAMESPACE,
@@ -97,7 +96,6 @@ const CORE_SLIDE_TYPES = {
   'pyramid-slide': pyramidSlide,
   'cycle-slide': cycleSlide,
   'gallery-slide': gallerySlide,
-  'custom-html-slide': customHtmlSlide,
   'end-slide': endSlide,
 };
 

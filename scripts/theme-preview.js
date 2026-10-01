@@ -206,14 +206,11 @@ async function run(themeId, scope) {
   // The theme's own visibility policy, not the raw registry: a theme-scoped
   // type (`def.themeId`) rendered under a different theme, or a type the theme
   // excludes, is a tile of something no deck on this theme can contain.
-  // `canEditCustomHtml` is true here because the sheet asks what the theme can
-  // produce, not what one user may author.
   const types = allTypes.filter((type) =>
     isInsertableSlideType({
       type,
       def: SLIDE_TYPES[type],
       theme,
-      canEditCustomHtml: true,
     }),
   );
   const hidden = allTypes.length - types.length;

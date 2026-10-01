@@ -153,7 +153,7 @@ export const DECLARED_SLIDE_TYPES = Object.freeze({
     structure: 'singleton',
     why:
       'A code / monospace slide is genuinely missing. Without it the options are ' +
-      'custom-html-slide or a text slide, and in both cases the semantics are ' +
+      'a fork-local type or a text slide, and in both cases the semantics are ' +
       'gone: nothing says "this is source, render it monospaced, do not reflow ' +
       'it, do not smarten the quotes". The fallback loses the monospacing, not ' +
       'the code.',

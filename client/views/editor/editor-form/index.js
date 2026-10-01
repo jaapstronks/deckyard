@@ -98,10 +98,6 @@ export function createRerenderEditor({
     fieldImages,
   } = fieldRenderers || {};
 
-  // Whether this user may author raw HTML/CSS (custom-html-slide). The server
-  // enforces the same gate on write; this drives the read-only UI state.
-  const canEditCustomHtml = Boolean(user?.canEditCustomHtml);
-
   // Track detachers for cleanup between re-renders. The header's actions
   // dropdown installs document-level pointerdown/keydown handlers, so the
   // *last* render's pair needs detaching on unmount too, not just the
@@ -482,7 +478,6 @@ export function createRerenderEditor({
       scheduleUiRefresh,
       updateSelectedSlideListItem,
       onTranslateField,
-      canEditCustomHtml,
       // Deck tools only: the csv-grid widget renders an "Edit data…" entry
       // point into the bottom-panel Data tab; a surface without that panel
       // keeps the inline grid.
