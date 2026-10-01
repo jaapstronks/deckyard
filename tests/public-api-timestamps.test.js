@@ -10,7 +10,8 @@
  * other presentation projection said `created`/`modified`, and the MCP deck
  * list read both. These tests pin the one shape: storage says
  * `created`/`modified`, v1 renames it once at its boundary, and no response
- * carries both spellings.
+ * carries both spellings. MCP's deck list renames through the same
+ * projection (B521).
  *
  * Runs against the in-memory database double (tests/helpers/fake-db.js).
  *
@@ -39,8 +40,8 @@ const { handlePresentations } =
   await import('../server/routes/public-api/v1/presentations.js');
 const { handleSlides } =
   await import('../server/routes/public-api/v1/slides.js');
-const { presentationTimestamps } =
-  await import('../server/routes/public-api/v1/deck-fields.js');
+const { publicDeckTimestamps } =
+  await import('../server/services/presentations.js');
 
 /** A fresh, empty database double behind the storage facade. */
 async function installDb() {
@@ -204,7 +205,7 @@ test('a slide update answers the deck updatedAt', async () => {
 // builds the timestamps with this same projection, so pinning the projection
 // covers the rename it does.
 test('the projection renames storage fields once, and only publishes the v1 names', () => {
-  const stamps = presentationTimestamps({
+  const stamps = publicDeckTimestamps({
     created: '2026-01-01T00:00:00.000Z',
     modified: '2026-02-01T00:00:00.000Z',
     createdAt: 'stale',
@@ -214,7 +215,7 @@ test('the projection renames storage fields once, and only publishes the v1 name
     createdAt: '2026-01-01T00:00:00.000Z',
     updatedAt: '2026-02-01T00:00:00.000Z',
   });
-  assert.deepEqual(presentationTimestamps({}), {
+  assert.deepEqual(publicDeckTimestamps({}), {
     createdAt: null,
     updatedAt: null,
   });

@@ -10,7 +10,6 @@ import { getAppBaseUrl } from '../config/utils.js';
 import {
   listPresentations,
   getPresentation,
-  createPresentation,
   updatePresentation,
   deletePresentation,
   duplicatePresentation,
@@ -40,6 +39,11 @@ import {
   recordCommentReopened,
 } from '../services/activity-events.js';
 import { createComment, broadcastCommentCounts } from '../services/comments.js';
+import {
+  assertCreatableDeckInput,
+  createPresentation,
+  publicDeckTimestamps,
+} from '../services/presentations.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   convertSlideToType,
@@ -415,8 +419,7 @@ export function registerTools(
           id: p.id,
           title: p.title || 'Untitled',
           theme: p.theme || 'default',
-          createdAt: p.created,
-          updatedAt: p.modified,
+          ...publicDeckTimestamps(p),
         };
         if (slideCount !== null) item.slideCount = slideCount;
         // Present on shared decks; marks how the caller has access.
@@ -504,11 +507,6 @@ export function registerTools(
           type: 'string',
           description: 'Speaker name for the title slide',
         },
-        ownerEmail: {
-          type: 'string',
-          description:
-            'Email of the presentation owner (for access control). If not provided, uses the server default.',
-        },
         vendor: {
           type: 'string',
           description:
@@ -517,19 +515,19 @@ export function registerTools(
       },
       required: ['content'],
     },
-    async (
-      {
+    async (args, context) => {
+      const {
         content,
         title,
         theme: requestedTheme,
         lang,
         speaker = '',
-        ownerEmail,
         vendor,
-      },
-      context,
-    ) => {
-      const effectiveOwner = ownerEmail || getOwner(context);
+      } = args;
+      // Refused before the generation, so a refused call costs no LLM call;
+      // the deck is the session owner's (B521).
+      assertCreatableDeckInput(args);
+      const effectiveOwner = getOwner(context);
       // Checked before the generation, so an unknown theme costs no LLM call.
       const { themeId: theme, theme: themeObj } = await settleNewDeckTheme(
         repoRoot,
@@ -551,12 +549,11 @@ export function registerTools(
       const parts = deckToPresentationParts(deck, { theme: themeObj, lang });
       if (title) parts.title = title;
 
-      const created = await createPresentation(storageScopeOf(context), {
-        title: parts.title,
-        theme,
-        lang: lang || undefined,
-        ownerEmail: effectiveOwner,
-      });
+      const created = await createPresentation(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { title: parts.title, theme, lang: lang || undefined },
+      );
 
       const updated = await updatePresentation(
         storageScopeOf(context),
@@ -637,11 +634,6 @@ export function registerTools(
           description: `Language, one of ${TRANSLATION_LANGS.join(', ')} (default: ${DEFAULT_DECK_LANG})`,
           enum: [...TRANSLATION_LANGS],
         },
-        ownerEmail: {
-          type: 'string',
-          description:
-            'Email of the presentation owner. Defaults to the session/server owner.',
-        },
         validation: {
           type: 'string',
           description:
@@ -656,23 +648,21 @@ export function registerTools(
       },
       required: ['title', 'slides'],
     },
-    async (
-      {
+    async (args, context) => {
+      const {
         title,
         slides,
         theme: requestedTheme,
         lang = 'nl',
-        ownerEmail,
         validation = 'strict',
         auto_prepend_title = false,
-      },
-      context,
-    ) => {
+      } = args;
       if (!Array.isArray(slides) || slides.length === 0) {
         throw new Error('"slides" must be a non-empty array');
       }
+      assertCreatableDeckInput(args);
 
-      const effectiveOwner = ownerEmail || getOwner(context);
+      const effectiveOwner = getOwner(context);
 
       // Strip incoming `id` fields so storage assigns fresh UUIDs; preserve type/content/notes.
       let inputSlides = slides.map((s) => ({
@@ -733,17 +723,11 @@ export function registerTools(
       }
 
       // Create stub row, then write the slide payload in one update.
-      const created = await createPresentation(storageScopeOf(context), {
-        title,
-        theme,
-        lang,
-        ownerEmail: effectiveOwner,
-      });
-      if (created?.ok === false) {
-        throw new Error(
-          `createPresentation failed: ${created.reason || 'unknown'}`,
-        );
-      }
+      const created = await createPresentation(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { title, theme, lang },
+      );
 
       const updated = await updatePresentation(
         storageScopeOf(context),

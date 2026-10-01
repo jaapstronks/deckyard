@@ -258,6 +258,7 @@ test('errorText order is message > error, then fallback', async () => {
 test('every registered code passes with exactly its keys', () => {
   const samples = {
     held: { lock: { slideId: 's1' } },
+    invalid: { field: 'themeId', use: 'theme' },
     conflict: { id: 'p1', revision: 4, modified: 'now', updatedBy: 'a@b.c' },
     locked: { slideId: 's1', lockKind: 'author', holder: null },
     conversion_failed: { report: { errors: [] } },

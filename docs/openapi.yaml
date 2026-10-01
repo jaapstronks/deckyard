@@ -298,7 +298,10 @@ paths:
         Creates a new presentation with the specified properties. A deck's
         theme and language are named `theme` and `lang` everywhere; the retired
         spellings `themeId` and `language` are refused with a 400 whose
-        `details` name the field to use instead.
+        `details` name the field to use instead. The deck is owned by the
+        key's owner; an `ownerEmail` in the body is refused with a 400, as
+        is a `lang` outside the enum. A create is recorded in the deck's
+        activity feed like one made in the app.
       requestBody:
         required: true
         content:
