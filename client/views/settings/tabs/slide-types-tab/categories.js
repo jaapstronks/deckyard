@@ -27,7 +27,7 @@ export const CATEGORY_LABELS = {
  * That split fixes a real defect. This table and the picker's used to be two
  * hand-written memberships, and they disagreed about five types: process and
  * timeline sat under their own "Process" heading here but under Layouts in the
- * picker; payoff, end and custom-html were spelled out here but merely fell
+ * picker; payoff and end were spelled out here but merely fell
  * through to "Other" there. Both surfaces also folded an unknown type into
  * "Other" without complaining, so the drift stayed invisible. A type can now
  * only be on one shelf, and a deprecated type is on none.
@@ -94,7 +94,7 @@ export const CATEGORY_ORDER = [
   },
   {
     key: 'other',
-    types: ['payoff-slide', 'end-slide', 'custom-html-slide'],
+    types: ['payoff-slide', 'end-slide'],
   },
 ];
 

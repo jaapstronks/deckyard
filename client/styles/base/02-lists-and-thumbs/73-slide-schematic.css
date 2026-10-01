@@ -265,7 +265,7 @@
   fill: var(--sd-strong, hsl(var(--app-border-strong)));
 }
 
-/* Custom HTML / code: a big centred `</>` glyph. */
+/* Code: a big centred `</>` glyph. */
 .layout-tile-schematic.is-code {
   align-items: center;
   justify-content: center;

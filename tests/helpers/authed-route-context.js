@@ -15,7 +15,6 @@
 
 import { getUserFromRequestAsync } from '../../server/auth/auth.js';
 import { resolveDesignerCapability } from '../../server/utils/designer.js';
-import { canEditCustomHtml } from '../../server/utils/route-middleware.js';
 import { createStorageScope } from '../../server/utils/context.js';
 
 /**
@@ -29,10 +28,6 @@ export async function authedRouteContext({ repoRoot, req, res, url }) {
     try {
       const isDesigner = await resolveDesignerCapability(authedUser);
       authedUser = { ...authedUser, isDesigner };
-      authedUser = {
-        ...authedUser,
-        canEditCustomHtml: canEditCustomHtml(authedUser),
-      };
     } catch {
       // Fail open — do not block on designer resolution, as index.js does.
     }

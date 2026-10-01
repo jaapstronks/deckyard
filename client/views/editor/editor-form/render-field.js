@@ -116,7 +116,6 @@ export function createRenderField({
   scheduleUiRefresh,
   updateSelectedSlideListItem,
   onTranslateField,
-  canEditCustomHtml = false,
   // Inspector only: opens the bottom-panel Data tab for the csv-grid widget.
   // When set, the widget renders an "Edit data…" entry point instead of the
   // inline grid (the grid belongs on a wide surface, editing-surfaces §4.3).
@@ -356,21 +355,11 @@ export function createRenderField({
 
     if (field.type === 'code') {
       if (!fieldCode) return null;
-      // Capability-gated fields (e.g. raw HTML/CSS) are read-only unless the
-      // user holds the capability. The server enforces the same rule on write;
-      // this is the UI half so non-capable users see but can't edit the markup.
-      const gated = field.capability === 'customHtml';
-      const readOnly = gated && !canEditCustomHtml;
       const helpText = declaredHelpText(field);
       return fieldCode(
         t(field.labelKey || field.key, field.label || field.key),
         slide.content[field.key] || '',
-        readOnly
-          ? t(
-              'editor.code.readOnly',
-              'Read-only. You do not have permission to edit raw HTML/CSS.',
-            )
-          : helpText,
+        helpText,
         (v) => {
           slide.content[field.key] = v;
           markDirty?.();
@@ -379,7 +368,6 @@ export function createRenderField({
         {
           maxLength: field.maxLength,
           required: !!field.required,
-          readOnly,
         },
       );
     }

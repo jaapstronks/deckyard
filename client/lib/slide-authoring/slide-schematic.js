@@ -20,7 +20,7 @@
 //   { kind: 'quote' }            big centred quote + attribution
 //   { kind: 'statement' }        one big centred line (payoff)
 //   { kind: 'image' }            single full-bleed image (duotone landscape)
-//   { kind: 'code' }             centred `</>` glyph (custom HTML/code)
+//   { kind: 'code' }             centred `</>` glyph (source code)
 //   { kind: 'gallery', cells }   grid of image cells
 //   { kind: 'cards', cells }     grid of image-over-label cards
 //   { kind: 'logos', cells }     grid of rounded logo chips

@@ -313,8 +313,6 @@ export function createSlidesPanel({
     });
   };
 
-  const canEditCustomHtml = Boolean(user?.canEditCustomHtml);
-
   const insertSlide = (
     type,
     { afterSlideId, parentId = null, contentOverrides = null } = {},
@@ -325,7 +323,6 @@ export function createSlidesPanel({
         def: SLIDE_TYPES?.[type],
         theme,
         disabledSlideTypes,
-        canEditCustomHtml,
       })
     ) {
       toast?.error?.('This slide type is not available for the active theme.');
@@ -365,7 +362,6 @@ export function createSlidesPanel({
             def: SLIDE_TYPES?.[type],
             theme,
             disabledSlideTypes,
-            canEditCustomHtml,
           })
         );
       });
@@ -390,7 +386,6 @@ export function createSlidesPanel({
     theme,
     insertSlide,
     disabledSlideTypes,
-    canEditCustomHtml,
     // Escape hatch: when a search finds no matching type, offer to build it with
     // AI, seeded with the query. Lazy arrow — openAiAppendWizard is defined below
     // and only invoked at click time. Null where AI is off: the picker then
@@ -438,7 +433,6 @@ export function createSlidesPanel({
         def: SLIDE_TYPES?.[type],
         theme,
         disabledSlideTypes,
-        canEditCustomHtml,
       })
     ) {
       toast?.error?.('This slide type is not available for the active theme.');

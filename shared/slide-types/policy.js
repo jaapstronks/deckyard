@@ -38,7 +38,6 @@ export function getThemeSlideTypeConfig(theme) {
  * @param {Object} options.def - Slide type definition
  * @param {Object} [options.theme] - Active theme
  * @param {Array} [options.disabledSlideTypes] - Org-level disabled types
- * @param {boolean} [options.canEditCustomHtml] - Whether the user may author raw HTML/CSS
  * @returns {boolean}
  */
 export function isInsertableSlideType({
@@ -46,7 +45,6 @@ export function isInsertableSlideType({
   def,
   theme,
   disabledSlideTypes,
-  canEditCustomHtml = false,
 } = {}) {
   const t = cleanStr(type);
   if (!t) return false;
@@ -57,10 +55,6 @@ export function isInsertableSlideType({
   // gate. Rung 1 of the deprecation ladder; no core type sits there right now
   // (docs/reference/slide-type-removal.md).
   if (def.deprecated) return false;
-
-  // The raw-HTML escape-hatch slide is only insertable by capability holders.
-  // Everyone else can still view/present/export existing ones (read-only).
-  if (t === 'custom-html-slide' && !canEditCustomHtml) return false;
 
   // Org-level curation check (most restrictive, checked first)
   if (Array.isArray(disabledSlideTypes) && disabledSlideTypes.includes(t)) {

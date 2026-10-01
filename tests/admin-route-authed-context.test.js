@@ -75,7 +75,6 @@ test('an admin route trusts the enriched user on the context, without a fresh lo
     email: 'admin@example.com',
     isAdmin: true,
     isDesigner: true,
-    canEditCustomHtml: true,
     organizationId: 'org-under-test',
   });
 
@@ -94,7 +93,6 @@ test('the admin capability is read off the context: a non-admin user is refused'
     email: 'designer@example.com',
     isAdmin: false,
     isDesigner: true,
-    canEditCustomHtml: true,
     organizationId: 'org-under-test',
   });
 

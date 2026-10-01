@@ -1,9 +1,8 @@
 /**
- * Author CSS is contained to its own slide — both custom-CSS paths (B189).
+ * Author CSS is contained to its own slide (B189).
  *
- * Two surfaces let a human paste a stylesheet into a deck: the custom-html
- * slide and the Settings > Slide Types builder. Until B189 only the first one
- * scoped it; the DB path ran `filterCssText` (a *security* filter — no
+ * The Settings > Slide Types builder lets a human paste a stylesheet into a
+ * deck. Until B189 it was not scoped; the DB path ran `filterCssText` (a *security* filter — no
  * `@import`, no `expression()`) and injected the result raw, so a published
  * custom type could restyle the presenter chrome of every deck in the org.
  *
@@ -19,7 +18,6 @@ import assert from 'node:assert/strict';
 import { initSanitizer } from '../shared/sanitize.js';
 import { toRuntimeSlideType } from '../server/utils/custom-slide-type-runtime.js';
 import { scopeCss } from '../shared/slide-types/scope-css.js';
-import { SLIDE_TYPES } from '../shared/slide-types.js';
 
 // sanitizeSlideHtmlSync needs a pre-initialized DOMPurify, exactly as the
 // server does at startup; without it the template output is escaped and the
@@ -149,28 +147,6 @@ test('the security filter still runs: no @import or </style> breakout', () => {
   });
 
   assert.doesNotMatch(out, /@import/i, '@import must be stripped, not scoped');
-});
-
-// ============================================================================
-// The custom-html path: unchanged, and now sharing the implementation
-// ============================================================================
-
-test('custom-html still scopes to its per-slide root', () => {
-  const out = SLIDE_TYPES['custom-html-slide'].renderHtml(
-    { html: '<p class="x">hi</p>', css: CHROME_CSS, background: 'lime' },
-    { id: 'abc' },
-    {},
-  );
-  const css = styleOf(out);
-
-  assert.ok(css, 'author CSS produces a style block');
-  for (const line of css.split('\n')) {
-    const selector = line.split('{')[0].trim();
-    if (!selector || selector.startsWith('@')) continue;
-    for (const part of selector.split(',')) {
-      assert.match(part.trim(), /^\.custom-html-root\[data-chr="abc"\]/);
-    }
-  }
 });
 
 // ============================================================================

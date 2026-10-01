@@ -16,7 +16,6 @@ import { authEnabled, getUserFromRequestAsync } from '../../auth/auth.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUserAsync } from '../../auth/sandbox.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
-import { canEditCustomHtml } from '../../utils/route-middleware.js';
 import { createStorageScope } from '../../utils/context.js';
 
 // Public API v1 (API key authentication)
@@ -268,10 +267,6 @@ export async function handleApi({ repoRoot, req, res, url }) {
     try {
       const isDesigner = await resolveDesignerCapability(authedUser);
       authedUser = { ...authedUser, isDesigner };
-      authedUser = {
-        ...authedUser,
-        canEditCustomHtml: canEditCustomHtml(authedUser),
-      };
     } catch {
       // Fail open - don't block requests if designer resolution fails
     }

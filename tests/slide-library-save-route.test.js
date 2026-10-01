@@ -95,29 +95,4 @@ for (const shelf of ['personal', 'organization']) {
       assert.equal(res.payload.error, 'missing_if_match');
     });
   }
-
-  test(`${shelf} POST: custom-HTML markup without the capability is refused`, async () => {
-    const { ctx, res } = call('POST', `/api/slide-library/${shelf}`, {
-      name: 'Raw',
-      slideType: 'custom-html-slide',
-      content: { html: '<b>hi</b>' },
-    });
-    assert.equal(await handleSlideLibrary(ctx), true);
-    assert.equal(res.statusCode, 403);
-    assert.match(res.payload.message, /canEditCustomHtml/);
-  });
-
-  test(`${shelf} POST: markup hidden in a language version is refused too`, async () => {
-    const { ctx, res } = call('POST', `/api/slide-library/${shelf}`, {
-      name: 'Raw',
-      slideType: 'custom-html-slide',
-      content: {},
-      i18n: {
-        dominant: 'nl',
-        versions: { 'en-GB': { content: { css: 'body{}' } } },
-      },
-    });
-    await handleSlideLibrary(ctx);
-    assert.equal(res.statusCode, 403);
-  });
 }

@@ -399,7 +399,7 @@ routing, not of this table - the widgets are the open half of the same
 consolidation.
 
 Not repeated per row, because they are the same for all
-<!--gen:slide-type-count-->35<!--/gen:slide-type-count--> types: `slideBgImage`,
+<!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types: `slideBgImage`,
 
 `slideBgFit`, `slideBgFocusX/Y`, `slideBgOverlay`, `slideBgText`, `slideLogo`
 (Background image section), `a11yTitle`/`a11ySummary` (Accessibility) and the
@@ -447,7 +447,6 @@ rather than getting a home of its own.
 | `pyramid-slide`        | `title`, `subheading`, `bottomSubheading`, `levels`                                                      | –                      | –                                                                                                                           |
 | `cycle-slide`          | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items`                                        | –                      | –                                                                                                                           |
 | `gallery-slide`        | `title`, `subheading`, `bottomSubheading`                                                                | `images`               | `layout`                                                                                                                    |
-| `custom-html-slide`    | –                                                                                                        | `html`, `css`          | –                                                                                                                           |
 | `end-slide`            | `title`, `body`, `contactName`, `contactEmail`, `contactPhone`                                           | –                      | `contactUrl`, `social{n}Label`, `social{n}Url`                                                                              |
 
 <!--/gen:slide-type-coverage-->
