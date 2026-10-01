@@ -12,9 +12,8 @@ import {
   getPresentation,
   updatePresentation,
   deletePresentation,
-  duplicatePresentation,
 } from '../storage/presentations/index.js';
-import { loadPresentationChecked } from './presentation-access.js';
+import { loadPresentationChecked, mcpActor } from './presentation-access.js';
 import { singleOrganizationScope } from '../storage/scope.js';
 import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
@@ -29,6 +28,7 @@ import { createComment, setCommentStatus } from '../services/comments.js';
 import {
   assertCreatableDeckInput,
   createPresentation,
+  duplicatePresentation,
   publicDeckTimestamps,
 } from '../services/presentations.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
@@ -219,19 +219,14 @@ export function registerTools(
   // an agent-created poll slide reached storage without a `pollId`.
 
   /**
-   * The acting machine client for a per-deck authorization check: who is acting
-   * and in which organization. That comes off the session's own storage scope
-   * (an SSE session acts in its API key's organization; a stdio session in the
-   * single organization it is bound to), never off the deck being checked — see
-   * utils/presentation-authz/actor-access.js.
+   * The acting machine client for a service call: the session owner in the
+   * session's own organization, or the unrestricted operator for a local
+   * session without an owner ({@link mcpActor}).
    * @param {Object} [context] - Per-request context (SSE session)
-   * @returns {{email: string|null, organizationId: string|null}}
+   * @returns {import('../services/actor.js').Actor}
    */
   function actorOf(context) {
-    return {
-      email: getOwner(context),
-      organizationId: storageScopeOf(context)?.organizationId || null,
-    };
+    return mcpActor(storageScopeOf(context), getOwner(context));
   }
 
   /**
@@ -1483,17 +1478,11 @@ export function registerTools(
       required: ['presentationId'],
     },
     async ({ presentationId }, context) => {
-      await getCheckedPresentation(presentationId, context);
-      const duplicated = await duplicatePresentation(
+      const dup = await duplicatePresentation(
         storageScopeOf(context),
+        { actor: actorOf(context) },
         presentationId,
-        {
-          ownerEmail: getOwner(context),
-          actorEmail: getOwner(context),
-        },
       );
-      if (!duplicated.ok) throw new Error('Duplication failed');
-      const dup = duplicated.presentation;
 
       const result = {
         id: dup.id,

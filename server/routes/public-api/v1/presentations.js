@@ -7,7 +7,6 @@ import {
   listPresentations,
   updatePresentation,
   deletePresentation,
-  duplicatePresentation,
 } from '../../../storage/presentations/index.js';
 import {
   getTagsForPresentations,
@@ -31,6 +30,7 @@ import { changePresentationTheme } from '../../../storage/presentations/change-t
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   createPresentation,
+  duplicatePresentation,
   refuseRetiredDeckFields,
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
@@ -323,19 +323,14 @@ async function handleDuplicate(ctx, id) {
 
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok } = await getPresentationWithAccess(ctx, id);
-  if (!ok) return true;
+  // The key owner copies the deck; a refusal is answered in the v1 envelope
+  // by the mount-level withV1ErrorHandler wrap.
+  const copy = await duplicatePresentation(
+    storageScope,
+    { actor: ctx.authedUser },
+    id,
+  );
 
-  const duplicated = await duplicatePresentation(storageScope, id, {
-    actorEmail: apiKey.ownerEmail,
-  });
-
-  if (!duplicated.ok) {
-    await apiError(ctx, 500, 'Failed to duplicate presentation');
-    return true;
-  }
-
-  const copy = duplicated.presentation;
   const tags = await getTagsForPresentation(storageScope, copy.id);
   await apiCreated(ctx, {
     presentation: sanitizePresentation(copy, tags, apiKey.ownerEmail),

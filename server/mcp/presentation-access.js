@@ -45,13 +45,30 @@ export async function loadPresentationChecked(
       'A presentation id is required (pass `id` or `presentationId`).',
     );
   }
-  const actor = ownerEmail
+  return loadPresentationForActor(
+    storageScope,
+    { actor: mcpActor(storageScope, ownerEmail) },
+    presentationId,
+    { access },
+  );
+}
+
+/**
+ * The actor an MCP session acts as: its owner in the organization of its own
+ * storage scope, never the deck's (L10), or the unrestricted operator for a
+ * trusted local session without an owner. Every MCP handling that asks a
+ * service builds its actor here, so a deck the session may load is a deck it
+ * may copy or comment on under the same identity.
+ *
+ * @param {Object} storageScope - The session's storage scope.
+ * @param {string|null} ownerEmail - Acting owner email (null = trusted local session)
+ * @returns {import('../services/actor.js').Actor}
+ */
+export function mcpActor(storageScope, ownerEmail) {
+  return ownerEmail
     ? {
         email: ownerEmail,
         organizationId: storageScope?.organizationId || null,
       }
     : { email: null, unrestricted: true };
-  return loadPresentationForActor(storageScope, { actor }, presentationId, {
-    access,
-  });
 }
