@@ -27,12 +27,18 @@
  * only the internal route left an activity row. Now what one contract refuses,
  * every contract refuses, and every create leaves the same trail.
  *
+ * So is a copy ({@link duplicatePresentation}, B570). The internal route and
+ * v1 loaded the source and decided on their own, MCP handed storage an
+ * `ownerEmail` it never read, v1 answered a vanished source with a 500, and no
+ * contract left an activity row for the deck it had just made.
+ *
  * @module server/services/presentations
  */
 
 import {
   getPresentation,
   createPresentation as storeNewPresentation,
+  duplicatePresentation as storeDuplicate,
 } from '../storage/presentations/index.js';
 import { recordSlideLibraryUsage } from '../storage/slide-library-usage.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
@@ -345,6 +351,46 @@ export async function createPresentation(scope, { actor }, input = {}) {
     }
   }
   return created;
+}
+
+/**
+ * Copy a deck for an actor, on every contract.
+ *
+ * Whoever may read a deck may copy it: the source is loaded with
+ * {@link loadPresentationForActor} at `access: 'read'`, so the refusal is the
+ * loader's (404 absent, 403 unreadable; D255). The copy is the actor's, not
+ * the source owner's, and leaves the same `presentation.created` row a create
+ * leaves: to the activity feed a copy is a new deck. The copy itself (slide
+ * ids, rekeying, the title prefix, the sandbox quota) is storage's (D252).
+ *
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {{ actor: Actor }} identity - The copying actor (D253).
+ * @param {string} presentationId - The deck to copy.
+ * @returns {Promise<Object>} The copy.
+ * @throws {NotFoundError} No deck with this id in this scope.
+ * @throws {ForbiddenError} The actor may not read the deck.
+ * @throws {AppError} A storage refusal (sandbox quota).
+ */
+export async function duplicatePresentation(scope, identity, presentationId) {
+  const source = await loadPresentationForActor(
+    scope,
+    identity,
+    presentationId,
+  );
+  const { actor } = identity;
+  const duplicated = await storeDuplicate(scope, source.id, {
+    actorEmail: actor?.email || null,
+  });
+  if (!duplicated.ok) throwStorageFailure(duplicated);
+
+  const copy = duplicated.presentation;
+  if (actor?.email) {
+    fireAndForget(
+      recordPresentationCreated({ presentation: copy, actor, scope }),
+      'record presentation-created activity',
+    );
+  }
+  return copy;
 }
 
 /**

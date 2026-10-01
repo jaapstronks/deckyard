@@ -1,44 +1,28 @@
-import { duplicatePresentation } from '../../../storage/presentations/index.js';
-import {
-  methodNotAllowed,
-  notFound,
-  serveJson,
-  requireJsonBody,
-} from '../../../utils/http.js';
+import { duplicatePresentation } from '../../../services/presentations.js';
+import { methodNotAllowed, serveJson } from '../../../utils/http.js';
 import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
-import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
+/**
+ * POST /api/presentations/:id/duplicate — copy a deck for the session user.
+ * The handling (who may copy, whose the copy is, the activity row) is the
+ * service's (B570); this route answers. A refusal is thrown and the API error
+ * handler renders it.
+ */
 export async function handlePresentationDuplicate(
   { repoRoot, storageScope, req, res, authedUser } = {},
   id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({
+  const created = await duplicatePresentation(
     storageScope,
+    { actor: authedUser },
     id,
-    authedUser,
-    res,
-  });
-  if (!pres) return true;
-
-  // For now we only support simple server-side duplication. Keep request body as a
-  // forward-compatible hook for future options (e.g. scope override for admins).
-  const parsed = await requireJsonBody(req, res, { allowEmpty: true });
-  if (!parsed.ok) return true;
-
-  const created = await duplicatePresentation(storageScope, id, {
-    actorEmail: authedUser?.email || null,
-  });
-  if (!created.ok) return notFound(res);
+  );
   // The client turns this straight into a card (toListItem), so it needs the
   // same deck-card fields a list row carries — otherwise the freshly duplicated
   // deck is the one card in the grid with a colorless placeholder.
-  const [item] = await withDeckCardFields(
-    repoRoot,
-    [created.presentation],
-    storageScope,
-  );
+  const [item] = await withDeckCardFields(repoRoot, [created], storageScope);
   serveJson(res, 201, item);
   return true;
 }
