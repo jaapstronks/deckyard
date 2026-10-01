@@ -33,7 +33,7 @@ import {
 import { buildAiIteratePanel } from './ai-iterate-panel.js';
 import { h } from '../../../lib/dom/index.js';
 import { surfaceCapabilities } from './surfaces.js';
-import { aiEnabled } from '../../../lib/state/features.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 
 export function createRerenderEditor({
   editorMount,
@@ -360,7 +360,7 @@ export function createRerenderEditor({
     // the refine box is a tool, not a setting. It exists only where AI does:
     // with AI off every submit would fail on /api/ai/iterate (D179).
     const aiIteratePanel =
-      caps.deckTools && aiEnabled()
+      caps.deckTools && featureEnabled('ai')
         ? buildAiIteratePanel({
             api,
             pres,

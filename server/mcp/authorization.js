@@ -32,9 +32,9 @@
  * `docs/reference/api-error-format.md` § 401 versus 403.
  *
  * Before any of that sits the instance's own switch, which is not about the
- * key at all: an `ai` tool is not mounted while `enableAi` is off
- * (`AI_ENABLED=false`, demo mode, sandbox), on either transport — see
- * {@link isToolMounted}.
+ * key at all: a tool whose `feature` is off is not mounted — an AI tool while
+ * `enableAi` is off (`AI_ENABLED=false`, demo mode, sandbox) — on either
+ * transport. See {@link isToolMounted}.
  */
 
 import { TIER_LIMITS, hasPermission } from '../storage/api-keys.js';
@@ -46,22 +46,23 @@ import {
 import { allowRequest } from '../utils/rate-limit.js';
 import { apiTierBucket } from '../config/rate-limits.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
-import { getFeatureFlags } from '../config/flags-snapshot.js';
+import { isFeatureEnabled } from '../config/flags-snapshot.js';
 
 /**
  * Does this tool exist on this instance right now?
  *
- * The `ai` permission marks a tool that spends LLM tokens. With `enableAi` off
- * such a tool is absent, exactly as `/api/ai/*` and every other `ai` HTTP route
- * are (`server/utils/router.js`): `tools/list` leaves it out and `tools/call`
- * answers it as an unknown tool. This holds with or without an API key — the
- * kill switch belongs to the instance, not to the caller.
+ * A tool declares the installation cluster it belongs to as `feature` (D257),
+ * the same key its HTTP twin's mount or row carries. With that cluster off the
+ * tool is absent, exactly as the HTTP route is (`server/utils/router.js`):
+ * `tools/list` leaves it out and `tools/call` answers it as an unknown tool.
+ * This holds with or without an API key — the switch belongs to the instance,
+ * not to the caller. The `ai` *permission* is a key scope and switches nothing.
  *
- * @param {{permission?: string}} tool - The registered tool
+ * @param {{feature?: string|null}} tool - The registered tool
  * @returns {boolean}
  */
 export function isToolMounted(tool) {
-  return tool.permission !== 'ai' || getFeatureFlags().enableAi;
+  return !tool.feature || isFeatureEnabled(tool.feature);
 }
 
 /**

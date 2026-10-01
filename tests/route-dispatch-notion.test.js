@@ -3,15 +3,16 @@
  *
  * The notion module (docs/reference/route-dispatch.md) is Form A throughout:
  * every route is method-bearing and a method mismatch falls through (the old
- * per-file `pathname !== X || method !== Y` guards had no 405). The module
- * splits into two tables around the `enableNotion` feature flag —
- * `ROUTES` (always reachable; each handler self-gates on `notionEnabled()`)
- * and `GATED_ROUTES` (subjects/compose/suggest, reached only with the flag on).
+ * per-file `pathname !== X || method !== Y` guards had no 405). One table
+ * (B522): whether the module exists is its mount's `feature: 'notion'`
+ * (`NOTION_ENABLED`, pinned in tests/ai-kill-switch.test.js); each handler
+ * self-gates on `notionEnabled()` (configured); the two import rows also carry
+ * `feature: 'ai'`.
  *
  * Routing is asserted with `select()` over the exported tables (storage-free);
  * fall-through is asserted by invoking `handleNotion` for a wrong method and an
  * unknown path — neither reaches a real handler. `GET /api/notion/status` is
- * the one always-on, storage-free handler, so it is invoked end-to-end.
+ * the one storage-free handler, so it is invoked end-to-end.
  *
  * Run with: node --test tests/route-dispatch-notion.test.js
  */
@@ -19,11 +20,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-  ROUTES,
-  GATED_ROUTES,
-  handleNotion,
-} from '../server/routes/api/notion/index.js';
+import { ROUTES, handleNotion } from '../server/routes/api/notion/index.js';
 
 function select(routes, method, pathname) {
   for (const route of routes) {
@@ -78,7 +75,7 @@ function named(routes, method, path, handlerName) {
   );
 }
 
-test('notion: always-available routes resolve to their named handlers in order', () => {
+test('notion: one table, every route resolves to its named handler in order', () => {
   named(ROUTES, 'GET', '/api/notion/status', 'handleNotionStatus');
   named(ROUTES, 'POST', '/api/notion/fetch', 'handleNotionFetch');
   named(ROUTES, 'POST', '/api/notion/publish', 'handleNotionPublish');
@@ -89,26 +86,20 @@ test('notion: always-available routes resolve to their named handlers in order',
     '/api/notion/import/stream',
     'handleNotionImportStream',
   );
+  named(ROUTES, 'POST', '/api/notion/subjects', 'handleNotionSubjects');
+  named(ROUTES, 'POST', '/api/notion/compose', 'handleNotionCompose');
+  named(ROUTES, 'POST', '/api/notion/suggest', 'handleNotionSuggest');
+  assert.equal(ROUTES.length, 8, 'eight rows, all behind the notion mount');
 });
 
-test('notion: feature-gated routes live in GATED_ROUTES, not the always table', () => {
-  named(GATED_ROUTES, 'POST', '/api/notion/subjects', 'handleNotionSubjects');
-  named(GATED_ROUTES, 'POST', '/api/notion/compose', 'handleNotionCompose');
-  named(GATED_ROUTES, 'POST', '/api/notion/suggest', 'handleNotionSuggest');
-
-  // The gate is the whole point: the feature-gated paths must not be reachable
-  // through the always-available table.
-  for (const p of [
-    '/api/notion/subjects',
-    '/api/notion/compose',
-    '/api/notion/suggest',
-  ]) {
-    assert.equal(
-      select(ROUTES, 'POST', p),
-      null,
-      `${p} is not an always-available route`,
-    );
-  }
+test('notion: exactly the two import rows spend AI tokens', () => {
+  assert.deepEqual(
+    ROUTES.filter((r) => r.feature).map((r) => [r.pattern, r.feature]),
+    [
+      ['/api/notion/import', 'ai'],
+      ['/api/notion/import/stream', 'ai'],
+    ],
+  );
 });
 
 test('notion: import/stream stay distinct — /import does not swallow /import/stream', () => {
@@ -121,9 +112,9 @@ test('notion: import/stream stay distinct — /import does not swallow /import/s
   );
 });
 
-test('notion: a wrong method on an always-available path falls through (no 405)', async () => {
-  // GET on a POST-only path matches no row in either table, regardless of the
-  // feature flag, and never reaches a storage-touching handler.
+test('notion: a wrong method on a path falls through (no 405)', async () => {
+  // GET on a POST-only path matches no row and never reaches a
+  // storage-touching handler.
   for (const path of [
     '/api/notion/fetch',
     '/api/notion/import',

@@ -66,7 +66,7 @@ import {
 } from './bootstrap.js';
 import { loadEditorModel } from './load-editor-model.js';
 import { attachEditorLifecycle } from './editor-lifecycle.js';
-import { aiEnabled, getFeatures } from '../../lib/state/features.js';
+import { featureEnabled, getFeatures } from '../../lib/state/features.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
 import { restoreSlideFromServer } from './slide-lock-restore.js';
 import { debugLog } from '../../lib/util/debug.js';
@@ -686,7 +686,7 @@ export async function createEditorController({
     onOpenOverview: openDeckOverview,
     // AI Analysis exists only where AI does: with AI off the server answers
     // its route 404, so the menu has no item for it (B337, D179).
-    onAnalyze: aiEnabled()
+    onAnalyze: featureEnabled('ai')
       ? () =>
           openAnalyzeModalImpl({
             root,
@@ -1406,10 +1406,10 @@ export async function createEditorController({
     theme,
     // Both translate by AI, so where AI is off they are absent and so are the
     // "Fill slide…" item and the per-field "From {lang}" button (D179).
-    onTranslateSlide: aiEnabled()
+    onTranslateSlide: featureEnabled('ai')
       ? ({ slideId }) => openTranslateSlideModal({ slideId })
       : null,
-    onTranslateField: aiEnabled()
+    onTranslateField: featureEnabled('ai')
       ? ({ slideId, key }) => openTranslateFieldModal({ slideId, key })
       : null,
     user,
@@ -1639,7 +1639,7 @@ export async function createEditorController({
   // routes are not mounted, so a stray flag opens nothing (D179).
   if (queryParam('aiReview') === '1') {
     setQueryParams({ aiReview: null });
-    if (aiEnabled())
+    if (featureEnabled('ai'))
       requestAnimationFrame(() => openAiDeckReview({ postGeneration: true }));
   }
 

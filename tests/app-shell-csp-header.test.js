@@ -107,6 +107,7 @@ describe('the analytics origins are a projection of the emitted HTML', () => {
   // The env escape hatches also feed analyticsHeadHtml; pin them off so this
   // block only exercises the settings path.
   const ANALYTICS_ENV = [
+    'EXTERNAL_ANALYTICS_ENABLED',
     'DISABLE_ANALYTICS',
     'ANALYTICS_HEAD_HTML',
     'ANALYTICS_HEAD_HTML_B64',

@@ -167,7 +167,9 @@ test('the login gate is the only 401 an unidentified /api caller gets', () => {
   );
 
   const gateIdx = src.indexOf('return unauthorized(res);');
-  const dispatchIdx = src.indexOf('if (await handleLiveSessions(ctx)) return;');
+  const dispatchIdx = src.indexOf(
+    'if (await dispatchMounts(MOUNTS, ctx)) return;',
+  );
   assert.ok(
     gateIdx > 0 && dispatchIdx > gateIdx,
     'and it runs before dispatch',

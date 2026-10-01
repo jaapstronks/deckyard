@@ -564,7 +564,7 @@ export function registerTools(
       if (presentUrl) result.presentUrl = presentUrl;
       return result;
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── create_presentation_from_slides ────────────────────────────────────
@@ -998,7 +998,7 @@ export function registerTools(
         content: slide.content,
       };
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── iterate_presentation ───────────────────────────────────────────────
@@ -1060,7 +1060,7 @@ export function registerTools(
         totalSlides: pres.slides.length,
       };
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── validate_presentation ──────────────────────────────────────────────
@@ -1351,7 +1351,7 @@ export function registerTools(
         })),
       };
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── compress_presentation ──────────────────────────────────────────────
@@ -1415,7 +1415,7 @@ export function registerTools(
         slidesAfter: apply ? pres.slides.length : undefined,
       };
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── analyze_presentation ───────────────────────────────────────────────
@@ -1461,7 +1461,7 @@ export function registerTools(
         })),
       };
     },
-    { readOnly: true, permission: 'ai' },
+    { readOnly: true, permission: 'ai', feature: 'ai' },
   );
 
   // ─── duplicate_presentation ─────────────────────────────────────────────

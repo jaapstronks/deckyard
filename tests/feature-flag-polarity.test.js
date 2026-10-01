@@ -1,10 +1,12 @@
 /**
- * Feature-flag polarity (B68): the three kill switches carry the canonical
- * enable form (`AI_ENABLED` / `UPLOADS_ENABLED` / `IMAGE_LIBRARY_ENABLED`,
- * default on), while the legacy `DISABLE_*` spellings stay recognized —
- * inverted, with a boot warning — until their removal date (2026-11-01).
- * Pins the read precedence (new var > legacy var > default-on) and the
- * warning text an operator migrates by.
+ * Feature-flag polarity (B68, D259): every renamed flag carries the canonical
+ * enable form, while its legacy spelling stays recognized — with a boot
+ * warning — until the removal date (2026-11-01). The three B68 kill switches
+ * (`AI_ENABLED` / `UPLOADS_ENABLED` / `IMAGE_LIBRARY_ENABLED`) and
+ * `EXTERNAL_ANALYTICS_ENABLED` default on and replace an inverted
+ * `DISABLE_*`; `NOTION_ENABLED` defaults off and replaces `NOTION_FEATURE`,
+ * which had the same polarity. Pins the read precedence (new var > legacy var
+ * > default) and the warning text an operator migrates by.
  *
  * Run with: node --test tests/feature-flag-polarity.test.js
  */
@@ -16,6 +18,8 @@ import {
   isAiEnabled,
   isUploadsEnabled,
   isImageLibraryEnabled,
+  isExternalAnalyticsEnabled,
+  isNotionEnabled,
   deprecatedFlagWarnings,
 } from '../server/config/features.js';
 
@@ -31,9 +35,18 @@ const FLAGS = [
     name: 'IMAGE_LIBRARY_ENABLED',
     legacy: 'DISABLE_IMAGE_LIBRARY',
   },
+  {
+    read: isExternalAnalyticsEnabled,
+    name: 'EXTERNAL_ANALYTICS_ENABLED',
+    legacy: 'DISABLE_ANALYTICS',
+  },
 ];
 
-const ALL_VARS = FLAGS.flatMap((f) => [f.name, f.legacy]);
+const ALL_VARS = [
+  ...FLAGS.flatMap((f) => [f.name, f.legacy]),
+  'NOTION_ENABLED',
+  'NOTION_FEATURE',
+];
 
 /** Run fn with the given env vars set (undefined = unset), restoring after. */
 function withEnv(env, fn) {
@@ -107,6 +120,32 @@ for (const { read, name, legacy } of FLAGS) {
     });
   });
 }
+
+test('NOTION_ENABLED: defaults off; NOTION_FEATURE keeps its own polarity', () => {
+  withEnv({}, () => assert.equal(isNotionEnabled(), false));
+  withEnv({ NOTION_ENABLED: 'true' }, () =>
+    assert.equal(isNotionEnabled(), true),
+  );
+  // The legacy name meant the same thing, so it is read as-is, not inverted.
+  withEnv({ NOTION_FEATURE: 'true' }, () =>
+    assert.equal(isNotionEnabled(), true),
+  );
+  withEnv({ NOTION_FEATURE: 'false' }, () =>
+    assert.equal(isNotionEnabled(), false),
+  );
+  withEnv({ NOTION_ENABLED: 'false', NOTION_FEATURE: 'true' }, () =>
+    assert.equal(isNotionEnabled(), false, 'NOTION_ENABLED wins'),
+  );
+});
+
+test('a set NOTION_FEATURE warns with the same-polarity successor', () => {
+  withEnv({ NOTION_FEATURE: 'true' }, () => {
+    const [warning] = deprecatedFlagWarnings();
+    assert.match(warning, /^NOTION_FEATURE is deprecated/);
+    assert.ok(warning.includes('NOTION_ENABLED=true'));
+    assert.ok(warning.includes('2026-11-01'));
+  });
+});
 
 test('no legacy vars set means no deprecation warnings', () => {
   withEnv({}, () => {

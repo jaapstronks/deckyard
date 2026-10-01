@@ -68,7 +68,7 @@ services:
       MISTRAL_MODEL: '${MISTRAL_MODEL:-mistral-small-latest}'
 
       # Optional: keep Notion off by default in sandbox
-      NOTION_FEATURE: '${NOTION_FEATURE:-0}'
+      NOTION_ENABLED: '${NOTION_ENABLED:-false}'
       NOTION_SECRET: '${NOTION_SECRET:-}'
     volumes:
       - sandbox_data:/app/server/data

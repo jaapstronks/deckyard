@@ -9,19 +9,25 @@ export function getFeatures() {
 }
 
 /**
- * Whether this install has AI — the client's one reading of the server's
- * `enableAi` (off under `AI_ENABLED=false`, demo mode and sandbox).
+ * Whether this installation has cluster `key` — the client's one reading of
+ * the server's `enable<Key>` snapshot keys (D257, D260): `featureEnabled('ai')`
+ * is `enableAi` (off under `AI_ENABLED=false`, demo mode and sandbox),
+ * `featureEnabled('notion')` is `enableNotion`. Same key, same derivation as
+ * the server's `isFeatureEnabled(key)`.
  *
- * D179: where this is false an AI entry is absent from the DOM — not built,
- * not hidden with a style, not greyed out — because the server does not mount
- * the route behind it (404). Every AI entry asks this function, never the flag
- * itself; `tests/ai-entries-follow-enable-ai.test.js` holds the list of entries
- * and fails on a client call to an AI route that is not on it.
+ * D179/D260: where this is false the cluster's entry is absent from the DOM —
+ * not built, not hidden with a style, not greyed out — because the server does
+ * not mount the route behind it (404). Every entry asks this function, never
+ * the flag itself; `tests/feature-entries-follow-flags.test.js` holds the list
+ * of entries per cluster and fails on a client call to a cluster's route that
+ * is not on it.
  *
+ * @param {string} key - The cluster key (`'ai'`, `'notion'`, …)
  * @returns {boolean}
  */
-export function aiEnabled() {
-  return !!getFeatures()?.enableAi;
+export function featureEnabled(key) {
+  const flag = `enable${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+  return getFeatures()?.[flag] === true;
 }
 
 /**
@@ -47,5 +53,5 @@ export function sharingEnabled() {
  * @returns {boolean}
  */
 export function aiAltTextEnabled() {
-  return aiEnabled() && !!getFeatures()?.aiAltText;
+  return featureEnabled('ai') && !!getFeatures()?.aiAltText;
 }

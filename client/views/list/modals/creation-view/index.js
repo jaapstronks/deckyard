@@ -20,7 +20,7 @@ import {
 import { createModal } from '../../../../lib/dom/modal.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { markRequired } from '../../../../lib/dom/required-mark.js';
-import { aiEnabled, getFeatures } from '../../../../lib/state/features.js';
+import { featureEnabled, getFeatures } from '../../../../lib/state/features.js';
 import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
 import { createLibraryCompose } from './library-compose.js';
@@ -136,7 +136,7 @@ export function openCreationView({
     );
     rail.append(libraryItem);
   }
-  if (aiEnabled()) {
+  if (featureEnabled('ai')) {
     rail.append(
       makeRailItem(
         'content',
@@ -204,7 +204,7 @@ export function openCreationView({
   // getEffectiveMode/isDirty read its state, and Create delegates to its run().
   // Not built where AI is off (D179): the rail offers no "From content" there,
   // and the wizard and convert routes behind it are not mounted.
-  const content = aiEnabled()
+  const content = featureEnabled('ai')
     ? createContentCompose({ api, onChange: () => syncUI() })
     : null;
 

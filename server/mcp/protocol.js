@@ -139,12 +139,18 @@ export class McpServer {
    *   same one its `/api/v1` counterpart requires, so a key means the same
    *   thing on both transports. Fail closed as well: a keyed caller cannot
    *   reach a tool that declares no permission (see ./authorization.js).
+   * @param {string} [options.feature] - The installation cluster this tool
+   *   belongs to (D257), the same key its HTTP twin's mount or row carries
+   *   (`'ai'` for a tool that spends LLM tokens). With that cluster off the
+   *   tool is not mounted (./authorization.js `isToolMounted`). Distinct from
+   *   `permission`: the permission says which key scope may call it, the
+   *   feature whether it exists on this installation.
    *
    * Registering a name that already exists replaces it — that is how a fork's
    * custom registrar enriches a core tool (same name, original handler in the
    * closure; see ./custom-tools-loader.js). **The gate belongs to the name,
-   * not to the last registrant**: on such a re-register, `readOnly` and
-   * `permission` that the caller does not restate are inherited from the
+   * not to the last registrant**: on such a re-register, `readOnly`,
+   * `permission` and `feature` that the caller does not restate are inherited from the
    * existing entry instead of falling back to the defaults. The fail-closed
    * defaults are what a *first* registration gets — inheriting them on a
    * re-register would silently strip the gate off a gated tool, which fails
@@ -174,6 +180,10 @@ export class McpServer {
     }
     permission = permission ?? null;
 
+    const feature = stated('feature')
+      ? options.feature
+      : (existing?.feature ?? null);
+
     const { inputSchema: schema, handler: wrapped } = withPresentationIdAlias(
       inputSchema,
       handler,
@@ -185,6 +195,7 @@ export class McpServer {
       handler: wrapped,
       readOnly,
       permission,
+      feature,
     });
   }
 
@@ -283,7 +294,8 @@ export class McpServer {
   async _handleToolsCall(id, params, context) {
     const { name, arguments: args } = params || {};
 
-    // An unmounted tool (an `ai` tool while AI is off) is answered as the
+    // An unmounted tool (its `feature` is off — an AI tool while AI is off) is
+    // answered as the
     // unknown tool it is on this instance — the MCP spelling of the 404 its
     // HTTP twin gives (./authorization.js).
     const tool = name ? this.tools.get(name) : undefined;

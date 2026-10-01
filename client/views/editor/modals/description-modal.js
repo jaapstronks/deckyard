@@ -4,7 +4,7 @@ import {
 } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
-import { aiEnabled } from '../../../lib/state/features.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 
 function countSentences(text) {
   const s = String(text || '').trim();
@@ -90,7 +90,7 @@ export function openDescriptionModal({
 
   const btnRow = h('div', { class: 'row is-end is-mt-8' });
   // Absent where AI is off: the server does not mount the route (D179).
-  const btnGenerate = aiEnabled()
+  const btnGenerate = featureEnabled('ai')
     ? h('button', {
         class: 'btn btn-secondary',
         text: t('editor.descriptionModal.generate', 'Generate with AI'),

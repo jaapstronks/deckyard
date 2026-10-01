@@ -10,7 +10,7 @@
 
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom/index.js';
-import { aiEnabled } from '../../lib/state/features.js';
+import { featureEnabled } from '../../lib/state/features.js';
 import {
   activateVideoEmbeds,
   cleanupSlideRuntimes,
@@ -146,7 +146,7 @@ export async function renderPresenter(root, id) {
 
   // The status of the background translation fill below, which is an AI call:
   // where AI is off there is no fill and no pill (D179).
-  const translatePill = aiEnabled()
+  const translatePill = featureEnabled('ai')
     ? h('div', { class: 'pill', hidden: true, text: '' })
     : null;
 
@@ -729,7 +729,7 @@ export async function renderPresenter(root, id) {
   // Background: ensure every language the follow-along audience may pick can
   // render (fill missing only; preserve any manual translations). The fill
   // is an AI call, so where AI is off it does not run (D179).
-  if (aiEnabled())
+  if (featureEnabled('ai'))
     ensureFollowAlongTranslations({
       api,
       presentationId: id,

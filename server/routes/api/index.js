@@ -13,7 +13,6 @@ import {
   getMaintenanceState,
 } from '../../config/maintenance.js';
 import { authEnabled, getUserFromRequestAsync } from '../../auth/auth.js';
-import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUserAsync } from '../../auth/sandbox.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
@@ -34,7 +33,7 @@ import { handleInstanceHealthRoutes } from './instance-health.js';
 import { handleEmailTemplates } from './email-templates.js';
 import { handleFollowPublic } from './follow/index.js';
 import { handleFollowCodes, handleFollowCodesPublic } from './follow-codes.js';
-import { dispatchRoutes } from '../../utils/router.js';
+import { dispatchMounts, dispatchRoutes } from '../../utils/router.js';
 import { handleLiveSessions } from './live-sessions.js';
 import { handleLiveSessionsPublic } from './live-session-audience.js';
 import { handleAssets } from './assets.js';
@@ -102,6 +101,91 @@ export const MAINTENANCE_ROUTES = [
   },
 ];
 
+/**
+ * The mounts in front of the login gate (D257): auth flows, and the audience
+ * and viewer endpoints a device without a session reaches. Called with
+ * `authedUser: null` — `follow-codes` reads it to tell the public resolve from
+ * the authed mint (its `PUBLIC_ROUTES` table). Order mirrors the original
+ * chain.
+ *
+ * @type {import('../../utils/router.js').Mount[]}
+ */
+export const PUBLIC_MOUNTS = [
+  // Auth routes are special: some of them are allowed without a prior session.
+  { handle: handleAuth },
+  { handle: handlePasswordReset },
+  { handle: handleMagicLink },
+  // OIDC single sign-on routes (login redirect + IdP callback)
+  { handle: handleSso },
+  // Audience devices.
+  { handle: handleFollowPublic },
+  // Follow code resolution (GET) is public; creation (POST) is in MOUNTS.
+  { handle: handleFollowCodesPublic },
+  // Present-session companion: the session id in the join link is the
+  // authorization (see live-session-audience.js). Presenter actions on the
+  // same session stay behind deck-write, in MOUNTS.
+  { handle: handleLiveSessionsPublic },
+  { handle: handleSharePublic },
+  { handle: handleAnalyticsTrack },
+  { handle: handleAnalyticsReportPublic },
+];
+
+/**
+ * The mounts behind the login gate, in order. A mount with a `feature` is
+ * skipped while that installation cluster is off, so its paths answer the 404
+ * at the end of {@link handleApi}: the module does not exist here. That is
+ * the only way a module is switched off — never a flag branch in this chain.
+ *
+ * @type {import('../../utils/router.js').Mount[]}
+ */
+export const MOUNTS = [
+  { handle: handleLiveSessions },
+  { handle: handleAssets },
+  { handle: handleSlideTypes },
+  { handle: handleRenderSlide },
+  { handle: handleThemes },
+  { handle: handleCustomSlideTypes },
+  { handle: handleFontFamilies },
+  { handle: handleImageLibrary, feature: 'imageLibrary' },
+  { handle: handleMedia },
+  { handle: handleHome },
+  { handle: handleSandbox },
+  { handle: handlePresentations },
+  { handle: handleNotion, feature: 'notion' },
+  { handle: handleAi, feature: 'ai' },
+  { handle: handleConvert, feature: 'ai' },
+  { handle: handleUploads, feature: 'uploads' },
+  { handle: handleExports },
+  { handle: handleBulkExport },
+  { handle: handlePublish },
+  { handle: handleShareLinks },
+  { handle: handleCollaborators },
+  { handle: handleUsers },
+  { handle: handleProfile },
+  { handle: handleNotifications },
+  { handle: handleQuestions },
+  { handle: handleSettings },
+  { handle: handleApiKeys },
+  { handle: handleSlideLibrary },
+  { handle: handleSlideCollections },
+  { handle: handleDataSources, feature: 'liveData' },
+  { handle: handleActivity },
+  { handle: handleAnalytics },
+  { handle: handleTags },
+  { handle: handleStockMedia },
+  { handle: handleJobs },
+  // Organization management (multi-organization mode)
+  { handle: handleOrganizations },
+  { handle: handleOrganizationMembers },
+  // Follow code creation (POST) requires auth
+  { handle: handleFollowCodes },
+  { handle: handleAdminUsers },
+  { handle: handleAdminAiLogs },
+  { handle: handleAdminSso },
+  { handle: handleInstanceHealthRoutes },
+  { handle: handleEmailTemplates },
+];
+
 export async function handleApi({ repoRoot, req, res, url }) {
   // CSRF defense: reject cookie-authenticated, cross-origin state-changing
   // requests. No-ops for safe methods, non-cookie auth (API key / MCP), and
@@ -147,35 +231,16 @@ export async function handleApi({ repoRoot, req, res, url }) {
     );
   }
 
-  // Auth routes are special: some of them are allowed without a prior session.
-  if (await handleAuth({ repoRoot, req, res, url })) return;
-
-  // Password reset routes (public, no auth required)
-  if (await handlePasswordReset({ repoRoot, req, res, url })) return;
-
-  // Magic link routes (public, no auth required)
-  if (await handleMagicLink({ repoRoot, req, res, url })) return;
-
-  // OIDC single sign-on routes (public: login redirect + IdP callback)
-  if (await handleSso({ repoRoot, req, res, url })) return;
-
-  // Public endpoints (must be accessible without auth; used by audience devices).
-  if (await handleFollowPublic({ repoRoot, req, res, url })) return;
-  // Follow code resolution (GET) is public; which reads skip the gate is the
-  // PUBLIC_ROUTES table in follow-codes.js, an explicit reviewable row.
-  // Follow code creation (POST) requires auth and is handled below.
   if (
-    await handleFollowCodesPublic({ repoRoot, req, res, url, authedUser: null })
+    await dispatchMounts(PUBLIC_MOUNTS, {
+      repoRoot,
+      req,
+      res,
+      url,
+      authedUser: null,
+    })
   )
     return;
-  // Present-session companion: the session id in the join link is the
-  // authorization, so these sit in front of the login gate (see
-  // live-session-audience.js). Presenter actions on the same session stay
-  // behind deck-write, below.
-  if (await handleLiveSessionsPublic({ repoRoot, req, res, url })) return;
-  if (await handleSharePublic({ repoRoot, req, res, url })) return;
-  if (await handleAnalyticsTrack({ repoRoot, req, res, url })) return;
-  if (await handleAnalyticsReportPublic({ repoRoot, req, res, url })) return;
 
   // Sandbox mode: auto-provision a per-visitor guest session (cookie) and treat as authenticated.
   // This keeps per-visitor presentation isolation without a login screen.
@@ -208,53 +273,8 @@ export async function handleApi({ repoRoot, req, res, url }) {
   const storageScope = createStorageScope(authedUser, { repoRoot });
 
   const ctx = { repoRoot, storageScope, req, res, url, authedUser };
-  const flags = getFeatureFlags();
 
-  if (await handleLiveSessions(ctx)) return;
-  if (await handleAssets(ctx)) return;
-  if (await handleSlideTypes(ctx)) return;
-  if (await handleRenderSlide(ctx)) return;
-  if (await handleThemes(ctx)) return;
-  if (await handleCustomSlideTypes(ctx)) return;
-  if (await handleFontFamilies(ctx)) return;
-  if (await handleImageLibrary(ctx)) return;
-  if (await handleMedia(ctx)) return;
-  if (await handleHome(ctx)) return;
-  if (await handleSandbox(ctx)) return;
-  if (await handlePresentations(ctx)) return;
-  if (await handleNotion(ctx)) return;
-  if (flags.enableAi && (await handleAi(ctx))) return;
-  if (flags.enableAi && (await handleConvert(ctx))) return;
-  if (flags.enableUploads && (await handleUploads(ctx))) return;
-  if (await handleExports(ctx)) return;
-  if (await handleBulkExport(ctx)) return;
-  if (await handlePublish(ctx)) return;
-  if (await handleShareLinks(ctx)) return;
-  if (await handleCollaborators(ctx)) return;
-  if (await handleUsers(ctx)) return;
-  if (await handleProfile(ctx)) return;
-  if (await handleNotifications(ctx)) return;
-  if (await handleQuestions(ctx)) return;
-  if (await handleSettings(ctx)) return;
-  if (await handleApiKeys(ctx)) return;
-  if (await handleSlideLibrary(ctx)) return;
-  if (await handleSlideCollections(ctx)) return;
-  if (flags.enableLiveData && (await handleDataSources(ctx))) return;
-  if (await handleActivity(ctx)) return;
-  if (await handleAnalytics(ctx)) return;
-  if (await handleTags(ctx)) return;
-  if (await handleStockMedia(ctx)) return;
-  if (await handleJobs(ctx)) return;
-  // Organization management (multi-organization mode)
-  if (await handleOrganizations(ctx)) return;
-  if (await handleOrganizationMembers(ctx)) return;
-  // Follow code creation (POST) requires auth
-  if (await handleFollowCodes(ctx)) return;
-  if (await handleAdminUsers(ctx)) return;
-  if (await handleAdminAiLogs(ctx)) return;
-  if (await handleAdminSso(ctx)) return;
-  if (await handleInstanceHealthRoutes(ctx)) return;
-  if (await handleEmailTemplates(ctx)) return;
+  if (await dispatchMounts(MOUNTS, ctx)) return;
 
   return notFound(res);
 }

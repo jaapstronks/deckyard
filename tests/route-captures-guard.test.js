@@ -9,7 +9,7 @@
  *
  * The dispatcher itself throws on a length mismatch, so a mis-declared row
  * that any test exercises fails loudly. This guard covers the rest — every
- * exported route table in the tree (`ROUTES`, `PUBLIC_ROUTES`, `GATED_ROUTES`,
+ * exported route table in the tree (`ROUTES`, `PUBLIC_ROUTES`, `SCHEMA_ROUTES`,
  * … — any exported array of rows), including rows no test walks:
  *
  *   1. A declared `captures` has exactly one entry per capture group.
@@ -119,7 +119,7 @@ test('the guard sees the route tables at all', () => {
     // Tables not named ROUTES are tables all the same.
     'api/share-links/management.js#MANAGEMENT_ROUTES',
     'api/share-links/public.js#PUBLIC_ROUTES',
-    'api/notion/index.js#GATED_ROUTES',
+    'api/notion/index.js#ROUTES',
     // Outside api/: the public v1 API and the static viewers (B399 PR 2).
     'public-api/v1/exports.js#ROUTES',
     'public-api/v1/index.js#SCHEMA_ROUTES',

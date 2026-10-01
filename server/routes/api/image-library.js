@@ -46,54 +46,49 @@ async function withFavorite(storageScope, authedUser, item) {
   return { ...item, favorite };
 }
 
-// /api/image-library - Shared image library (shared across users).
-// The enableImageLibrary flag answers 404 before the method decision, so the
-// whole path stays one no-method handler (route-dispatch.md, guard-before-
-// method exception).
-async function handleImageLibraryCollection({
+// GET /api/image-library - Shared image library (shared across users).
+async function handleListImageLibrary({ storageScope, res, authedUser }) {
+  const items = await listImageLibrary(storageScope);
+  // Sandbox: uploads are off, so seed a curated set of sample images and
+  // logos a guest can actually place on a slide.
+  if (getFeatureFlags().sandboxMode) items.unshift(...listSandboxMedia());
+  // One star per item, spelled `favorite` (D176). The caller's own flag,
+  // derived in the facade — the same stamper the bulk export uses, so the
+  // two surfaces cannot disagree about whose star an item carries.
+  serveJson(res, 200, {
+    items: await stampFavorites(storageScope, items, authedUser?.email),
+  });
+  return true;
+}
+
+// POST /api/image-library - Add an item.
+async function handleCreateImageLibraryItem({
   storageScope,
   req,
   res,
   authedUser,
 }) {
   const flags = getFeatureFlags();
-  if (!flags.enableImageLibrary) return notFound(res);
-  if (req.method === 'GET') {
-    const items = await listImageLibrary(storageScope);
-    // Sandbox: uploads are off, so seed a curated set of sample images and
-    // logos a guest can actually place on a slide.
-    if (flags.sandboxMode) items.unshift(...listSandboxMedia());
-    // One star per item, spelled `favorite` (D176). The caller's own flag,
-    // derived in the facade — the same stamper the bulk export uses, so the
-    // two surfaces cannot disagree about whose star an item carries.
-    serveJson(res, 200, {
-      items: await stampFavorites(storageScope, items, authedUser?.email),
-    });
-    return true;
-  }
-  if (req.method === 'POST') {
-    // Demo stance: keep the library read-only (curated) to avoid abuse.
-    if (flags.demoMode || flags.sandboxMode)
-      return methodNotAllowed(res, ['GET']);
-    if (!authedUser) return unauthorized(res, 'Login required');
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    // Capture who uploaded this image
-    const created = await createImageLibraryItem(storageScope, {
-      ...body,
-      uploadedBy: authedUser.email || null,
-    });
-    // A fresh image is nobody's favorite yet, but it still answers in the one
-    // shape every item-returning route uses (D176).
-    serveJson(res, 201, { ...created, favorite: false });
-    return true;
-  }
-  return methodNotAllowed(res, ['GET', 'POST']);
+  // Demo stance: keep the library read-only (curated) to avoid abuse.
+  if (flags.demoMode || flags.sandboxMode)
+    return methodNotAllowed(res, ['GET']);
+  if (!authedUser) return unauthorized(res, 'Login required');
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  // Capture who uploaded this image
+  const created = await createImageLibraryItem(storageScope, {
+    ...body,
+    uploadedBy: authedUser.email || null,
+  });
+  // A fresh image is nobody's favorite yet, but it still answers in the one
+  // shape every item-returning route uses (D176).
+  serveJson(res, 201, { ...created, favorite: false });
+  return true;
 }
 
 // POST /api/image-library/generate-alts - Generate alt texts (preview; does
-// not persist). An `ai` route: with AI off (kill switch, demo, sandbox) the
+// not persist). A `feature: 'ai'` row: with AI off (kill switch, demo, sandbox) the
 // dispatcher answers 404 before this runs; `aiAltText` then only adds the
 // OpenAI-vendor requirement.
 async function handleGenerateAltsPreview({ repoRoot, req, res, authedUser }) {
@@ -117,12 +112,8 @@ async function handleGenerateAltsPreview({ repoRoot, req, res, authedUser }) {
   return true;
 }
 
-// /api/image-library/:id/usage - Where an image is used (flag before method,
-// so one no-method handler)
-async function handleImageUsage({ storageScope, req, res }, imageId) {
-  const flags = getFeatureFlags();
-  if (!flags.enableImageLibrary) return notFound(res);
-  if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
+// GET /api/image-library/:id/usage - Where an image is used
+async function handleImageUsage({ storageScope, res }, imageId) {
   const item = await getImageLibraryItem(storageScope, imageId);
   if (!item) return notFound(res);
   const usage = await getImageLibraryUsage(storageScope, item.url);
@@ -134,17 +125,15 @@ async function handleImageUsage({ storageScope, req, res }, imageId) {
   return true;
 }
 
-// /api/image-library/:id/generate-alts - Generate alt texts for a library item
-// (flag before method, so one no-method handler)
+// POST /api/image-library/:id/generate-alts - Generate alt texts for a library
+// item
 async function handleItemGenerateAlts(
   { repoRoot, storageScope, req, res, authedUser },
   imageId,
 ) {
-  const flags = getFeatureFlags();
-  if (!flags.enableImageLibrary) return notFound(res);
-  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   if (!authedUser) return unauthorized(res, 'Login required');
-  if (!flags.aiAltText) return forbidden(res, 'AI alt text is not enabled');
+  if (!getFeatureFlags().aiAltText)
+    return forbidden(res, 'AI alt text is not enabled');
   const item = await getImageLibraryItem(storageScope, imageId);
   if (!item) return notFound(res);
   const parsed = await requireJsonBody(req, res);
@@ -164,15 +153,12 @@ async function handleItemGenerateAlts(
   return true;
 }
 
-// /api/image-library/:id/replace-upload - Replace a local upload in place
-// (flag before method, so one no-method handler)
+// POST /api/image-library/:id/replace-upload - Replace a local upload in place
 async function handleReplaceUpload(
   { repoRoot, storageScope, req, res, authedUser },
   imageId,
 ) {
   const flags = getFeatureFlags();
-  if (!flags.enableImageLibrary) return notFound(res);
-  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   if (flags.demoMode || flags.sandboxMode)
     return methodNotAllowed(res, ['GET']);
   if (!authedUser) return unauthorized(res, 'Login required');
@@ -205,15 +191,11 @@ async function handleReplaceUpload(
   return true;
 }
 
-// /api/image-library/:id/favorite - Toggle favorite status (flag before
-// method, so one no-method handler)
+// POST /api/image-library/:id/favorite - Toggle favorite status
 async function handleToggleFavorite(
-  { storageScope, req, res, authedUser },
+  { storageScope, res, authedUser },
   imageId,
 ) {
-  const flags = getFeatureFlags();
-  if (!flags.enableImageLibrary) return notFound(res);
-  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
   if (!authedUser) return unauthorized(res, 'Login required');
 
   const item = await getImageLibraryItem(storageScope, imageId);
@@ -228,108 +210,164 @@ async function handleToggleFavorite(
   return true;
 }
 
-// /api/image-library/:id - Get / update / delete one item (flag before
-// method, so one no-method handler)
-async function handleImageItem(
+// GET /api/image-library/:id - One item
+async function handleGetImageItem({ storageScope, res, authedUser }, imageId) {
+  const item = await getImageLibraryItem(storageScope, imageId);
+  if (!item) return notFound(res);
+  serveJson(res, 200, await withFavorite(storageScope, authedUser, item));
+  return true;
+}
+
+// PUT /api/image-library/:id - Update one item
+async function handleUpdateImageItem(
   { storageScope, req, res, authedUser },
   imageId,
 ) {
   const flags = getFeatureFlags();
-  if (!flags.enableImageLibrary) return notFound(res);
-  if (req.method === 'GET') {
-    const item = await getImageLibraryItem(storageScope, imageId);
-    if (!item) return notFound(res);
-    serveJson(res, 200, await withFavorite(storageScope, authedUser, item));
-    return true;
-  }
-  if (req.method === 'PUT') {
-    if (flags.demoMode || flags.sandboxMode)
-      return methodNotAllowed(res, ['GET']);
-    if (!authedUser) return unauthorized(res, 'Login required');
-    const parsed = await requireJsonBody(req, res);
-    if (!parsed.ok) return true;
-    const body = parsed.body;
-    const updated = await updateImageLibraryItem(storageScope, imageId, body);
-    if (!updated.ok) return notFound(res);
-    serveJson(
-      res,
-      200,
-      await withFavorite(storageScope, authedUser, updated.image),
-    );
-    return true;
-  }
-  if (req.method === 'DELETE') {
-    if (flags.demoMode || flags.sandboxMode)
-      return methodNotAllowed(res, ['GET']);
-    // The library is organization-scoped, so the delete is too: an instance
-    // admin who is a plain member of the active organization may not throw
-    // away its images (shared/organization-role.js).
-    if (!isOrganizationAdmin(authedUser))
-      return forbidden(res, 'Admin required');
-    const deleted = await deleteImageLibraryItem(storageScope, imageId);
-    if (!deleted.ok) return notFound(res);
-    serveJson(res, 200, { ok: true });
-    return true;
-  }
-  return methodNotAllowed(res, ['GET', 'PUT', 'DELETE']);
+  if (flags.demoMode || flags.sandboxMode)
+    return methodNotAllowed(res, ['GET']);
+  if (!authedUser) return unauthorized(res, 'Login required');
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+  const body = parsed.body;
+  const updated = await updateImageLibraryItem(storageScope, imageId, body);
+  if (!updated.ok) return notFound(res);
+  serveJson(
+    res,
+    200,
+    await withFavorite(storageScope, authedUser, updated.image),
+  );
+  return true;
+}
+
+// DELETE /api/image-library/:id - Delete one item
+async function handleDeleteImageItem(
+  { storageScope, res, authedUser },
+  imageId,
+) {
+  const flags = getFeatureFlags();
+  if (flags.demoMode || flags.sandboxMode)
+    return methodNotAllowed(res, ['GET']);
+  // The library is organization-scoped, so the delete is too: an instance
+  // admin who is a plain member of the active organization may not throw
+  // away its images (shared/organization-role.js).
+  if (!isOrganizationAdmin(authedUser)) return forbidden(res, 'Admin required');
+  const deleted = await deleteImageLibraryItem(storageScope, imageId);
+  if (!deleted.ok) return notFound(res);
+  serveJson(res, 200, { ok: true });
+  return true;
 }
 
 /**
- * Declarative route table for `/api/image-library*` (A7.19 C8). Order matches
- * the previous if-chain — load-bearing here: the exact `/generate-alts` rows
- * come before the `/:id` regex, which would otherwise swallow that path. Most
- * paths run the `enableImageLibrary` flag guard *before* the method decision
- * (a disabled library answers 404, not 405), so they stay single no-method
- * handlers per the documented exception; the collection-level `/generate-alts`
- * checked the method first and keeps its explicit 405 as a catch-all row.
+ * Declarative route table for `/api/image-library*` (A7.19 C8), Form B: one
+ * row per method plus a catch-all `405` row per path. Order is load-bearing:
+ * the exact `/generate-alts` rows come before the `/:id` regex, which would
+ * otherwise swallow that path. Whether the library exists at all is the
+ * mount's `feature: 'imageLibrary'` (`routes/api/index.js`), not a check here.
  *
  * @type {import('../../utils/router.js').Route[]}
  */
 export const ROUTES = [
-  { pattern: '/api/image-library', handler: handleImageLibraryCollection },
+  {
+    method: 'GET',
+    pattern: '/api/image-library',
+    handler: handleListImageLibrary,
+  },
+  {
+    method: 'POST',
+    pattern: '/api/image-library',
+    handler: handleCreateImageLibraryItem,
+  },
+  {
+    pattern: '/api/image-library',
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'POST']),
+  },
   {
     method: 'POST',
     pattern: '/api/image-library/generate-alts',
     handler: handleGenerateAltsPreview,
-    ai: true,
+    feature: 'ai',
   },
   {
     pattern: '/api/image-library/generate-alts',
     handler: ({ res }) => methodNotAllowed(res, ['POST']),
-    ai: true,
+    feature: 'ai',
   },
   {
+    method: 'GET',
     pattern: /^\/api\/image-library\/([^/]+)\/usage$/,
     captures: ['uuid'],
     handler: handleImageUsage,
   },
   {
+    pattern: /^\/api\/image-library\/([^/]+)\/usage$/,
+    captures: ['uuid'],
+    handler: ({ res }) => methodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'POST',
     pattern: /^\/api\/image-library\/([^/]+)\/generate-alts$/,
     captures: ['uuid'],
     handler: handleItemGenerateAlts,
-    ai: true,
+    feature: 'ai',
   },
   {
+    pattern: /^\/api\/image-library\/([^/]+)\/generate-alts$/,
+    captures: ['uuid'],
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+    feature: 'ai',
+  },
+  {
+    method: 'POST',
     pattern: /^\/api\/image-library\/([^/]+)\/replace-upload$/,
     captures: ['uuid'],
     handler: handleReplaceUpload,
   },
   {
+    pattern: /^\/api\/image-library\/([^/]+)\/replace-upload$/,
+    captures: ['uuid'],
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'POST',
     pattern: /^\/api\/image-library\/([^/]+)\/favorite$/,
     captures: ['uuid'],
     handler: handleToggleFavorite,
   },
   {
+    pattern: /^\/api\/image-library\/([^/]+)\/favorite$/,
+    captures: ['uuid'],
+    handler: ({ res }) => methodNotAllowed(res, ['POST']),
+  },
+  {
+    method: 'GET',
     pattern: /^\/api\/image-library\/([^/]+)$/,
     captures: ['uuid'],
-    handler: handleImageItem,
+    handler: handleGetImageItem,
+  },
+  {
+    method: 'PUT',
+    pattern: /^\/api\/image-library\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: handleUpdateImageItem,
+  },
+  {
+    method: 'DELETE',
+    pattern: /^\/api\/image-library\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: handleDeleteImageItem,
+  },
+  {
+    pattern: /^\/api\/image-library\/([^/]+)$/,
+    captures: ['uuid'],
+    handler: ({ res }) => methodNotAllowed(res, ['GET', 'PUT', 'DELETE']),
   },
 ];
 
 /**
- * Handle image-library API routes. No module-wide guard: the original chain
- * guarded per path (feature flag, demo/sandbox stance, auth), and that stays
- * in the handlers.
+ * Handle image-library API routes. No module-wide guard: the per-path
+ * guards (demo/sandbox stance, auth) stay in the handlers, and the library's
+ * on/off is the mount's `feature`.
  *
  * @param {import('../../utils/context.js').AuthedContext} ctx
  * @returns {Promise<boolean>|boolean} true if a route handled the request.

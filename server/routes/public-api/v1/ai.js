@@ -278,8 +278,8 @@ async function handleAppendSlides(ctx) {
 // ============================================================
 
 /**
- * AI routes. The whole module is unmounted with AI off (./index.js), so the
- * rows need no `ai` flag of their own.
+ * AI routes. The whole module's mount carries `feature: 'ai'` (./index.js),
+ * so the rows need no `feature` of their own.
  */
 export const ROUTES = [
   {

@@ -90,7 +90,8 @@ the bare `/api/presentations/:id` row that must fall through). It also refuses a
 segment captured by hand (`url.pathname.match(…)`) anywhere under
 `server/routes/`, since such a capture sits outside every table (B399).
 
-The dispatcher's own 404 (an unsatisfied `captures`, an unmounted `ai` row)
+The dispatcher's own 404 (an unsatisfied `captures`, a row whose `feature` is
+off)
 answers in the internal `/api` envelope by default. The public v1 API walks its
 tables through `dispatchV1Routes` (`public-api/v1/middleware.js`), which passes
 `{ notFound: v1NotFound }` so the same table form answers the v1 envelope.
@@ -188,15 +189,27 @@ entry function, before `dispatchRoutes`:
 export function handleDataSources(ctx) {
   if (!ctx.url.pathname.startsWith('/api/data-sources')) return false;
   if (!ctx.authedUser) return unauthorized(ctx.res);
-  if (!isLiveDataEnabled()) return forbidden(ctx.res, '…') ?? true;
   return dispatchRoutes(ROUTES, ctx);
 }
 ```
 
 The prefix guard is not decoration: without it, every module's table is walked
 on every `/api/*` request, and a stray pattern could claim a path another module
-owns. Module-wide guards (prefix, auth, feature flag) that apply to **all** of a
-module's paths belong in the entry function; per-path guards belong in Form B.
+owns. Module-wide guards (prefix, auth) that apply to **all** of a module's
+paths belong in the entry function; per-path guards belong in Form B.
+
+## An installation cluster is a `feature`, not a guard
+
+Whether a module exists on this installation is not a guard in its entry
+function: it is `feature: '<key>'` on the module's row in its surface's mount
+table (`MOUNTS`, `PUBLIC_MOUNTS`, `V1_MOUNTS`, `STATIC_MOUNTS`), walked by
+`dispatchMounts` (`server/utils/router.js`), which skips the mount while
+`isFeatureEnabled(key)` is false. A single row of an otherwise mounted module
+carries `feature` itself; `dispatchRoutes` answers a match on it with the
+surface's 404 before the handler runs, whatever the method. A row's feature
+may add to its mount's (the Notion import is `notion` by mount and `ai` by
+row), never repeat or replace it. The keys and what each one switches:
+[feature-flags.md § Clusters](feature-flags.md#clusters) (D257).
 
 ## Context: `PublicContext` before the gate, `AuthedContext` after
 

@@ -1,7 +1,6 @@
 /**
  * Notion subjects and compose endpoint handlers.
  * Handles subject picking and raw content composition for AI wizard.
- * These endpoints are feature-gated.
  */
 
 import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
@@ -22,7 +21,6 @@ import {
 /**
  * Handle POST /api/notion/subjects
  * Subject picker for AI wizard: return 3 recent "subjects" for this creator.
- * Feature-gated endpoint.
  */
 export async function handleNotionSubjects({ req, res }) {
   if (!notionEnabled()) return refuseNotionUnconfigured(res);
@@ -81,7 +79,6 @@ export async function handleNotionSubjects({ req, res }) {
 /**
  * Handle POST /api/notion/compose
  * Compose raw input for the existing AI wizard (no attribution).
- * Feature-gated endpoint.
  */
 export async function handleNotionCompose({ req, res }) {
   if (!notionEnabled()) return refuseNotionUnconfigured(res);

@@ -203,16 +203,18 @@ Feature flags (`server/config/flags-snapshot.js`): `enableAi` — off with
 `AI_ENABLED=false`, **demo mode** or **sandbox mode**. When it is false, **every
 AI entry is not mounted**, one rule on every surface (B337):
 
-- **Internal API** — the router skips `handleAi` and `handleConvert` entirely,
-  so `/api/ai/*` 404s. Every other route that spends tokens (deck analysis,
-  translate and its `fields`/`missing` variants, description generation,
-  version compare, alt-text generation) declares `ai: true` in its route table,
-  and `dispatchRoutes` (`server/utils/router.js`) answers it 404 before the
-  handler runs — so before any SSE header. A new AI route declares the flag; it
-  does not re-check `enableAi` itself.
+- **Internal API** — the `handleAi` and `handleConvert` mounts carry
+  `feature: 'ai'`, so `dispatchMounts` skips them and `/api/ai/*` 404s. Every
+  other route that spends tokens (deck analysis, translate and its
+  `fields`/`missing` variants, description generation, version compare,
+  alt-text generation, the Notion import) declares `feature: 'ai'` in its route
+  table, and `dispatchRoutes` (`server/utils/router.js`) answers it 404 before
+  the handler runs — so before any SSE header. A new AI route declares the
+  feature; it does not re-check `enableAi` itself
+  ([feature-flags.md § Clusters](feature-flags.md#clusters)).
 - **Public API v1** — `/api/v1/ai/*` and `POST /api/v1/presentations/:id/translate`
   fall through to the v1 404.
-- **MCP** — a tool with the `ai` permission is left out of `tools/list` and
+- **MCP** — a tool declaring `feature: 'ai'` is left out of `tools/list` and
   answered as an unknown tool (`isToolMounted`, `server/mcp/authorization.js`),
   with or without an API key.
 - **Background work** — the weekly digest uses its template instead of the model.
