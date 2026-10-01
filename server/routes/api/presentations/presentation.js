@@ -1,7 +1,5 @@
-import {
-  deletePresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
+import { deletePresentation } from '../../../services/presentations.js';
 import { getTagsForPresentation } from '../../../storage/tags.js';
 import {
   methodNotAllowed,
@@ -21,7 +19,6 @@ import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { parseIfMatchRevision, diffAddedSlideIds } from './helpers.js';
 import {
   recordPresentationUpdated,
-  recordPresentationDeleted,
   recordPresentationMovedToOrganization,
   recordSlidesAdded,
 } from '../../../services/activity-events.js';
@@ -318,38 +315,9 @@ export async function handlePresentationItem(
   }
 
   if (req.method === 'DELETE') {
-    const existing = await withPresentationAuth({
-      storageScope,
-      id,
-      authedUser,
-      res,
-      permission: 'delete',
-    });
-    if (!existing) return true;
-
-    // Parse optional message from request body
-    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
-    if (!parsed.ok) return true;
-    const message = parsed.body?.message || null;
-
-    const deleted = await deletePresentation(storageScope, id, {
-      actorEmail: authedUser?.email,
-      message,
-    });
-    if (!deleted) return notFound(res);
-
-    // Record activity event (non-blocking, only for organization-visible presentations)
-    if (authedUser?.email && existing.visibility === 'organization') {
-      fireAndForget(
-        recordPresentationDeleted({
-          presentation: existing,
-          actor: authedUser,
-          scope: storageScope,
-        }),
-        'record presentation-deleted activity',
-      );
-    }
-
+    // Who may trash the deck and the activity row are the service's (B571);
+    // a refusal is thrown and the presentations router renders it.
+    await deletePresentation(storageScope, { actor: authedUser }, id);
     serveJson(res, 200, { ok: true });
     return true;
   }

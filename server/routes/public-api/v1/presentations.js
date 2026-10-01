@@ -6,7 +6,6 @@
 import {
   listPresentations,
   updatePresentation,
-  deletePresentation,
 } from '../../../storage/presentations/index.js';
 import {
   getTagsForPresentations,
@@ -30,6 +29,7 @@ import { changePresentationTheme } from '../../../storage/presentations/change-t
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   createPresentation,
+  deletePresentation,
   duplicatePresentation,
   refuseRetiredDeckFields,
   publicDeckTimestamps,
@@ -293,24 +293,11 @@ async function handleUpdate(ctx, id) {
  * DELETE /api/v1/presentations/:id - Delete a presentation.
  */
 async function handleDelete(ctx, id) {
-  const { storageScope, apiKey } = ctx;
-
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok } = await getPresentationWithAccess(ctx, id, {
-    access: 'delete',
-  });
-  if (!ok) return true;
-
-  const deleted = await deletePresentation(storageScope, id, {
-    actorEmail: apiKey.ownerEmail,
-  });
-
-  if (!deleted) {
-    await apiError(ctx, 404, 'Presentation not found');
-    return true;
-  }
-
+  // Only the owner trashes the deck (D22); a refusal is answered in the v1
+  // envelope by the mount-level withV1ErrorHandler wrap.
+  await deletePresentation(ctx.storageScope, { actor: ctx.authedUser }, id);
   await apiSuccess(ctx, { deleted: true });
   return true;
 }
