@@ -42,6 +42,7 @@ import sharp from 'sharp';
 
 import { resolveThemeLogo } from '../../shared/theme-logo.js';
 import { resolveSlideBgHex } from '../../shared/slide-surface-tone.js';
+import { escapeXml } from '../../shared/xml.js';
 import { toDataUrlIfLocal } from '../utils/html-utils.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -74,6 +75,12 @@ const TEXT_PX = Object.freeze({
   heading: 44, // --slide-text-2xl
   body: 20, // --slide-text-base
 });
+
+/**
+ * The face written for an uploaded family that names no desktop font: its CSS
+ * alias exists on no machine, and Arial is on every one (D126).
+ */
+const FALLBACK_TYPEFACE = 'Arial';
 
 /** The text colour a ground falls back to when the theme names none. */
 const FALLBACK_TEXT = '#0b0b0b';
@@ -134,6 +141,37 @@ function fontFamilyFromVar(vars, name) {
   }
   const first = raw.split(',')[0].trim();
   return first.replace(/^['"]|['"]$/g, '').trim();
+}
+
+/**
+ * The typeface a font token is written as in the PPTX — the one place that
+ * decides it, for the document theme and every placeholder run alike.
+ *
+ * A curated family's CSS name is the name Google publishes and a desktop
+ * install carries, so it is written as is. An uploaded family's CSS name is an
+ * alias the uploader chose, which PowerPoint and Keynote match against nothing
+ * ("missing font"); its `embedFonts` entries carry the installed font's full
+ * name as `desktopFamily` when the family declares one, and Arial stands in
+ * when it does not (B289, D126). An entry is uploaded when it is read from a
+ * `url` rather than a curated `path` (D244).
+ *
+ * pptxgenjs splices the face into an XML attribute unescaped, so it leaves
+ * here escaped.
+ *
+ * @param {object|null} theme - the active normalized theme
+ * @param {Record<string, string>} vars - the theme's cssVars
+ * @param {string} token - e.g. `--t-font-heading`
+ * @returns {string} the attribute-safe typeface, or '' when the theme names none
+ */
+function pptxTypeface(theme, vars, token) {
+  const family = fontFamilyFromVar(vars, token);
+  if (!family) return '';
+  const uploaded = (
+    Array.isArray(theme?.embedFonts) ? theme.embedFonts : []
+  ).filter((f) => f && f.family === family && f.url);
+  if (!uploaded.length) return escapeXml(family);
+  const desktop = uploaded.find((f) => f.desktopFamily)?.desktopFamily;
+  return escapeXml(desktop || FALLBACK_TYPEFACE);
 }
 
 /** A `#rrggbb` literal as pptxgenjs wants it: six hex digits, no hash. */
@@ -207,8 +245,8 @@ export function resolveThemeMaster(theme) {
       declaredMuted || vars['--t-color-text-muted'],
       declaredText || vars['--t-color-text'] || FALLBACK_TEXT,
     ),
-    headFont: fontFamilyFromVar(vars, '--t-font-heading'),
-    bodyFont: fontFamilyFromVar(vars, '--t-font-body'),
+    headFont: pptxTypeface(theme, vars, '--t-font-heading'),
+    bodyFont: pptxTypeface(theme, vars, '--t-font-body'),
     logoUrl: resolveThemeLogo(theme, content),
     logoAlt: String(theme?.assets?.logoAlt || 'Logo'),
     label: String(theme?.label || theme?.id || 'Theme'),
