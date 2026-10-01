@@ -42,6 +42,7 @@ import {
   canWritePresentation,
   canCommentOnPresentation,
   canDeletePresentation,
+  canManageCollaborators,
 } from './presentations.js';
 import { canResolveComment } from './comments.js';
 
@@ -153,6 +154,29 @@ export async function canActorDeletePresentation(pres, actor) {
   if (!pres || typeof pres !== 'object') return false;
   const actorUserId = await resolveActorUserId(actor);
   return canDeletePresentation({ user: actorUser(actor, actorUserId), pres });
+}
+
+/**
+ * Async check: may an actor manage who has access to a presentation?
+ *
+ * The owner, or a collaborator with admin permission — the machine-client
+ * counterpart of canManageCollaborators, with the collaborator row looked up.
+ *
+ * @param {Object} pres - The presentation object
+ * @param {Actor} actor - The acting person
+ * @returns {Promise<boolean>}
+ */
+export async function canActorManageCollaborators(pres, actor) {
+  if (!pres || typeof pres !== 'object') return false;
+  const [collaboratorPermission, actorUserId] = await Promise.all([
+    actor?.email ? getCollaboratorPermission(pres.id, actor.email) : null,
+    resolveActorUserId(actor),
+  ]);
+  return canManageCollaborators({
+    user: actorUser(actor, actorUserId),
+    pres,
+    collaboratorPermission,
+  });
 }
 
 /**

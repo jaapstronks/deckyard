@@ -54,6 +54,7 @@ export {
   checkActorAccess,
   canActorAccessPresentation,
   canActorDeletePresentation,
+  canActorManageCollaborators,
   canActorResolveComment,
   checkActorCommentAccess,
   canActorCommentOnPresentation,

@@ -9,15 +9,9 @@
  * itself is the route table, see `docs/reference/`.
  */
 
-import { getPresentation } from '../storage/presentations/index.js';
-import { getCollaboratorPermission } from '../storage/collaborators.js';
-import { notFound, badRequest, forbidden } from './http.js';
-import {
-  canReadPresentation,
-  canWritePresentation,
-  canDeletePresentation,
-  canManageCollaborators,
-} from './presentation-authz/index.js';
+import { serveJson } from './http.js';
+import { ForbiddenError, isAppError } from './errors.js';
+import { loadPresentationForActor } from '../services/presentations.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getGuestBySessionToken } from '../storage/share-links/index.js';
 import { parseCookies } from './cookies.js';
@@ -130,69 +124,18 @@ export function customHtmlEditViolation(prevSlides, nextSlides, allowed) {
 }
 
 /**
- * Check if a request has read access to a presentation.
- * Checks both authenticated user and guest session.
- * Also fetches collaborator permission for private presentations.
- *
- * @param {Object} options
- * @param {Object} options.req - HTTP request
- * @param {Object|null} options.authedUser - Authenticated user (may be null)
- * @param {Object} options.pres - Presentation object
- * @returns {Promise<{canRead: boolean, guestInfo: Object|null, collaboratorPermission: string|null}>}
- *
- * @example
- * const { canRead, guestInfo } = await checkPresentationReadAccess({ req, authedUser, pres });
- * if (!canRead) return forbidden(res);
- */
-export async function checkPresentationReadAccess({ req, authedUser, pres }) {
-  // Fetch collaborator permission if the user is authenticated
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  // Check authenticated user first (with collaborator permission)
-  if (canReadPresentation({ user: authedUser, pres, collaboratorPermission })) {
-    return { canRead: true, guestInfo: null, collaboratorPermission };
-  }
-
-  // Fall back to guest session
-  const guestInfo = await getGuestFromRequest(req);
-  if (guestInfo && guestInfo.shareLink.presentationId === pres.id) {
-    return { canRead: true, guestInfo, collaboratorPermission: null };
-  }
-
-  return { canRead: false, guestInfo: null, collaboratorPermission: null };
-}
-
-/**
- * Permission check function map.
- * Maps permission names to their corresponding check functions.
- */
-const PERMISSION_CHECKS = {
-  read: canReadPresentation,
-  write: canWritePresentation,
-  delete: canDeletePresentation,
-  manage: canManageCollaborators,
-};
-
-/**
- * Load a presentation and check authorization in one call.
- * Sends appropriate error response if the check fails.
- *
- * This is the canonical way a presentation route authorizes: load and check in
- * one call, then branch on the result. Not a stopgap — there is no wrapper
- * form to migrate to (see the file header).
+ * Load a presentation and check authorization in one call — the internal
+ * contract's adapter over {@link loadPresentationForActor}
+ * (`server/services/presentations.js`, B519). The service loads and decides;
+ * this renders a refusal in the internal envelope (404 absent, 403 not allowed,
+ * D255) and hands the route `null`, so the route only branches.
  *
  * @param {Object} options
  * @param {import('../storage/scope.js').StorageScope} options.storageScope - The request's storage scope
  * @param {string} options.id - Presentation ID
  * @param {Object} options.authedUser - Authenticated user object
  * @param {Object} options.res - HTTP response object
- * @param {'read'|'write'|'delete'|'manage'} [options.permission='read'] - Required permission
+ * @param {'read'|'write'|'delete'|'manage'|'comment'} [options.permission='read'] - Required permission
  * @returns {Promise<Object|null>} The presentation if authorized, null if error response was sent
  *
  * @example
@@ -207,33 +150,28 @@ export async function withPresentationAuth({
   res,
   permission = 'read',
 }) {
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) {
-    notFound(res);
-    return null;
-  }
-
-  const checkFn = PERMISSION_CHECKS[permission];
-  if (!checkFn) {
-    badRequest(res, `Invalid permission type: ${permission}`);
-    return null;
-  }
-
-  // For read/write permissions, check collaborator permission as well
-  let collaboratorPermission = null;
-  if ((permission === 'read' || permission === 'write') && authedUser?.email) {
-    collaboratorPermission = await getCollaboratorPermission(
+  try {
+    return await loadPresentationForActor(
+      storageScope,
+      { actor: authedUser },
       id,
-      authedUser.email,
+      { access: permission },
     );
+  } catch (err) {
+    return sendRefusal(res, err);
   }
+}
 
-  if (!checkFn({ user: authedUser, pres, collaboratorPermission })) {
-    forbidden(res);
-    return null;
-  }
-
-  return pres;
+/**
+ * Answer a service refusal in the internal envelope; rethrow anything else.
+ * @param {Object} res
+ * @param {unknown} err
+ * @returns {null}
+ */
+function sendRefusal(res, err) {
+  if (!isAppError(err)) throw err;
+  serveJson(res, err.statusCode, err.toJSON());
+  return null;
 }
 
 /**
@@ -249,11 +187,13 @@ export async function getGuestFromRequest(req) {
 }
 
 /**
- * Load a presentation and check read authorization (including guest access).
- * Sends appropriate error response if the check fails.
+ * Load a presentation for reading, by the signed-in user or — when they may
+ * not read it — by the share-link guest session on this request.
  *
- * Unlike withPresentationAuth, this helper also checks for guest session access
- * via share links, making it suitable for endpoints that allow guest viewers.
+ * The account comes first, the guest session is the fallback (D287 (2)): the
+ * service decides each identity on its own, never both at once (D253). A
+ * refusal is answered in the internal envelope, as in
+ * {@link withPresentationAuth}.
  *
  * @param {Object} options
  * @param {import('../storage/scope.js').StorageScope} options.storageScope - The request's storage scope
@@ -261,7 +201,7 @@ export async function getGuestFromRequest(req) {
  * @param {string} options.id - Presentation ID
  * @param {Object} options.authedUser - Authenticated user object
  * @param {Object} options.res - HTTP response object
- * @returns {Promise<{pres: Object|null, guestInfo: Object|null, collaboratorPermission: string|null}>}
+ * @returns {Promise<{pres: Object|null, guestInfo: Object|null}>}
  *
  * @example
  * const { pres, guestInfo } = await withPresentationReadAuth({ storageScope, req, id, authedUser, res });
@@ -274,18 +214,24 @@ export async function withPresentationReadAuth({
   authedUser,
   res,
 }) {
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) {
-    notFound(res);
-    return { pres: null, guestInfo: null, collaboratorPermission: null };
+  try {
+    const pres = await loadPresentationForActor(
+      storageScope,
+      { actor: authedUser },
+      id,
+    );
+    return { pres, guestInfo: null };
+  } catch (err) {
+    if (!(err instanceof ForbiddenError)) {
+      return { pres: sendRefusal(res, err), guestInfo: null };
+    }
+    const guestInfo = await getGuestFromRequest(req);
+    if (!guestInfo) return { pres: sendRefusal(res, err), guestInfo: null };
+    try {
+      const pres = await loadPresentationForActor(storageScope, guestInfo, id);
+      return { pres, guestInfo };
+    } catch (guestErr) {
+      return { pres: sendRefusal(res, guestErr), guestInfo: null };
+    }
   }
-
-  const { canRead, guestInfo, collaboratorPermission } =
-    await checkPresentationReadAccess({ req, authedUser, pres });
-  if (!canRead) {
-    forbidden(res);
-    return { pres: null, guestInfo: null, collaboratorPermission: null };
-  }
-
-  return { pres, guestInfo, collaboratorPermission };
 }

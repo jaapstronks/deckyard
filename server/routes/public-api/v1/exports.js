@@ -3,7 +3,6 @@
  * Handles presentation exports via API key authentication.
  */
 
-import { getPresentation } from '../../../storage/presentations/index.js';
 import { buildStandaloneHtml } from '../../../export/html.js';
 import { buildPrintHtml } from '../../../export/print.js';
 import { buildPptxBuffer } from '../../../export/pptx.js';
@@ -25,7 +24,8 @@ import {
   trackExportRequest,
   apiError,
 } from './middleware.js';
-import { canActorAccessPresentation } from '../../../utils/presentation-authz/index.js';
+import { loadPresentationForActor } from '../../../services/presentations.js';
+import { isAppError } from '../../../utils/errors.js';
 import { getRateLimitHeaders } from '../../../storage/api-usage.js';
 import { countInstanceHealth } from '../../../storage/instance-health.js';
 
@@ -57,17 +57,16 @@ async function prepareExportContext(
     ? null
     : normalizeLang(url?.searchParams?.get('lang'));
 
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) {
-    return { ok: false, status: 404, error: 'Presentation not found' };
-  }
-
-  if (!(await canActorAccessPresentation(pres, ctx.authedUser, 'read'))) {
-    return {
-      ok: false,
-      status: 403,
-      error: 'Access denied to this presentation',
-    };
+  let pres;
+  try {
+    pres = await loadPresentationForActor(
+      storageScope,
+      { actor: ctx.authedUser },
+      presentationId,
+    );
+  } catch (err) {
+    if (!isAppError(err)) throw err;
+    return { ok: false, status: err.statusCode, error: err.message };
   }
   countInstanceHealth([{ axis: 'export', key: format }]);
 

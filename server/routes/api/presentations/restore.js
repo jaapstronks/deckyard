@@ -1,19 +1,16 @@
 import {
-  getPresentation,
   updatePresentation,
   createPresentationVersion,
   getPresentationVersion,
 } from '../../../storage/presentations/index.js';
-import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import {
   methodNotAllowed,
   notFound,
   serveJson,
   jsonError,
-  forbidden,
 } from '../../../utils/http.js';
-import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { parseIfMatchRevision } from './helpers.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 export async function handlePresentationRestoreVersion(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -22,20 +19,14 @@ export async function handlePresentationRestoreVersion(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Fetch collaborator permission for ACL check
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  if (!canWritePresentation({ user: authedUser, pres, collaboratorPermission }))
-    return forbidden(res);
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   // If-Match required for everyone, admins included (escape hatch removed).
   const expectedRevision = parseIfMatchRevision(req);

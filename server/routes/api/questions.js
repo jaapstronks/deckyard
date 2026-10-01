@@ -16,13 +16,11 @@ import {
   promoteQuestion,
   removeQuestion,
 } from '../../storage/questions.js';
-import {
-  getPresentation,
-  updatePresentation,
-} from '../../storage/presentations/index.js';
-import { getCollaboratorPermission } from '../../storage/collaborators.js';
+import { updatePresentation } from '../../storage/presentations/index.js';
 import { notifyLiveSessionDeckUpdated } from '../../storage/live-sessions/index.js';
-import { canWritePresentation } from '../../utils/presentation-authz/index.js';
+import { loadPresentationForActor } from '../../services/presentations.js';
+import { withPresentationAuth } from '../../utils/route-middleware.js';
+import { isAppError } from '../../utils/errors.js';
 import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
@@ -55,25 +53,31 @@ function canRemoveQuestions(authedUser) {
  * Whether this user may promote a question into this deck.
  *
  * Promotion inserts a slide, so it follows the *deck*, not the instance —
- * `canWritePresentation` consults `isUnrestricted`, never `isAdmin`. The two
+ * the write right consults `isUnrestricted`, never `isAdmin`. The two
  * gates of this module each refuse exactly whom the other admits, on purpose.
+ *
+ * The same load-and-decide the promote route makes, reported as a boolean: an
+ * absent deck and a refused one both read "no" here (D289).
  *
  * @param {Object} storageScope
  * @param {Object|null} authedUser
- * @param {Object|null} pres - The deck, already read under `storageScope`
+ * @param {string} presentationId
  * @returns {Promise<boolean>}
  */
-async function canPromoteQuestions(storageScope, authedUser, pres) {
-  if (!authedUser || !pres) return false;
-  const collaboratorPermission =
-    authedUser.email && pres.id
-      ? await getCollaboratorPermission(pres.id, authedUser.email)
-      : null;
-  return canWritePresentation({
-    user: authedUser,
-    pres,
-    collaboratorPermission,
-  });
+async function canPromoteQuestions(storageScope, authedUser, presentationId) {
+  if (!authedUser) return false;
+  try {
+    await loadPresentationForActor(
+      storageScope,
+      { actor: authedUser },
+      presentationId,
+      { access: 'write' },
+    );
+    return true;
+  } catch (err) {
+    if (!isAppError(err)) throw err;
+    return false;
+  }
 }
 
 /**
@@ -89,7 +93,7 @@ async function canPromoteQuestions(storageScope, authedUser, pres) {
  * control whose request is refused, or hides one whose request would have been
  * allowed — the failure shared/organization-role.js was written to end. There
  * the fix was a shared predicate; here it cannot be, because
- * `canWritePresentation` needs the collaborator row and the storage scope. So
+ * the write right needs the collaborator row. So
  * the rule stays on the server and the surface asks (D182).
  *
  * Anonymous is a 401, the same answer the login gate in `handleApi` gives
@@ -103,9 +107,12 @@ async function handleQuestionCapabilities(
   presentationId,
 ) {
   if (!authedUser) return unauthorized(res);
-  const pres = await getPresentation(storageScope, presentationId);
   serveJson(res, 200, {
-    canPromote: await canPromoteQuestions(storageScope, authedUser, pres),
+    canPromote: await canPromoteQuestions(
+      storageScope,
+      authedUser,
+      presentationId,
+    ),
     canRemove: canRemoveQuestions(authedUser),
   });
   return true;
@@ -148,11 +155,14 @@ async function handleQuestionPromote(
 ) {
   if (!authedUser) return unauthorized(res);
 
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-
-  if (!(await canPromoteQuestions(storageScope, authedUser, pres)))
-    return forbidden(res);
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;

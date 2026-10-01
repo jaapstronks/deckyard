@@ -93,10 +93,10 @@ describe('loadPresentationChecked', () => {
     __setTestDb(null);
   });
 
-  it('throws "not found" for a nonexistent deck', async () => {
+  it('throws "not found" (404) for a nonexistent deck', async () => {
     await assert.rejects(
       loadPresentationChecked(testScope(), 'nope-does-not-exist', OWNER),
-      /Presentation not found: nope-does-not-exist/,
+      { name: 'NotFoundError', statusCode: 404 },
     );
   });
 
@@ -109,10 +109,12 @@ describe('loadPresentationChecked', () => {
     assert.equal(write.id, privateId);
   });
 
-  it('hides a private deck from another user (read), without leaking existence', async () => {
+  // D255: an unreadable deck is 403, an absent one 404, as on the other two
+  // contracts; the merged "not found or not accessible" answer is gone.
+  it('refuses a private deck to another user (read) with 403', async () => {
     await assert.rejects(
       loadPresentationChecked(testScope(), privateId, OTHER),
-      /not found or not accessible/,
+      { name: 'ForbiddenError', statusCode: 403 },
     );
   });
 
@@ -121,7 +123,7 @@ describe('loadPresentationChecked', () => {
       loadPresentationChecked(testScope(), privateId, OTHER, {
         access: 'write',
       }),
-      /not found or not accessible/,
+      { name: 'ForbiddenError', statusCode: 403 },
     );
   });
 
@@ -168,12 +170,19 @@ describe('loadPresentationChecked', () => {
     );
   });
 
-  it('skips per-deck checks when no owner is configured (trusted local stdio)', async () => {
-    const read = await loadPresentationChecked(testScope(), privateId, null);
-    assert.equal(read.id, privateId);
-    const write = await loadPresentationChecked(testScope(), privateId, null, {
-      access: 'write',
-    });
-    assert.equal(write.id, privateId);
+  it('grants everything when no owner is configured (trusted local stdio)', async () => {
+    for (const access of ['read', 'write', 'delete', 'manage', 'comment']) {
+      const pres = await loadPresentationChecked(testScope(), privateId, null, {
+        access,
+      });
+      assert.equal(pres.id, privateId, access);
+    }
+  });
+
+  it('still answers 404 for an absent deck without an owner', async () => {
+    await assert.rejects(
+      loadPresentationChecked(testScope(), 'nope-does-not-exist', null),
+      { name: 'NotFoundError' },
+    );
   });
 });

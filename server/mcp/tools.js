@@ -21,7 +21,6 @@ import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
   listComments,
   listRecentCommentsForOwner,
-  listAccessiblePresentationRefs,
   getComment,
   resolveComment,
   reopenComment,
@@ -1794,17 +1793,7 @@ export function registerTools(
     ) => {
       const ctx = storageScopeOf(context);
 
-      // Access guard: only decks the acting owner can see (owned or shared).
-      const refs = await listAccessiblePresentationRefs(
-        storageScopeOf(context),
-        'all',
-      );
-      const ref = refs.find((r) => r.id === presentationId);
-      if (!ref) {
-        throw new Error(
-          `Presentation not found or not accessible: ${presentationId}`,
-        );
-      }
+      const pres = await getCheckedPresentation(presentationId, context);
 
       const comments = await listComments(ctx, presentationId, {
         status: status === 'all' ? undefined : status,
@@ -1815,23 +1804,18 @@ export function registerTools(
 
       // Slide context reflects the deck as it is now; the stored
       // slideSnapshot on each comment shows the slide at create time.
-      const pres = await getPresentation(
-        storageScopeOf(context),
-        presentationId,
-      );
-      const enriched = enrichCommentsWithSlideContext(
-        comments,
-        pres || { slides: [] },
-      ).map((c) => ({
-        ...c,
-        editUrl: presentationUrl(presentationId, 'edit', {
-          slideId: c.slideId,
+      const enriched = enrichCommentsWithSlideContext(comments, pres).map(
+        (c) => ({
+          ...c,
+          editUrl: presentationUrl(presentationId, 'edit', {
+            slideId: c.slideId,
+          }),
         }),
-      }));
+      );
 
       return {
         presentationId,
-        presentationTitle: ref.title,
+        presentationTitle: pres.title,
         comments: enriched,
         total: enriched.length,
       };
