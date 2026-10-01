@@ -13,8 +13,6 @@
  */
 
 import { registerWorker, QUEUE_NAMES } from '../connection.js';
-import { getPresentation } from '../../../storage/presentations/index.js';
-import { loadThemeAssets } from '../../../utils/themes.js';
 import { buildPptxBuffer } from '../../../export/pptx.js';
 import { buildHandoffZipBuffer } from '../../../export/handoff-zip.js';
 import { renderSlidesToPdfBuffer } from '../../../render/pdf.js';
@@ -23,9 +21,7 @@ import {
   buildNotesMarkdown,
 } from '../../../export/notes.js';
 import { buildStandaloneHtml } from '../../../export/html.js';
-import { projectPresentationToLang } from '../../../storage/presentations/i18n.js';
-import { stripLiveOnlySlides } from '../../../export/pipeline.js';
-import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { prepareQueuedExportContext } from '../../../services/exports.js';
 import { jobScope } from '../../../storage/scope.js';
 import { createLogger } from '../../../utils/logger.js';
 
@@ -71,60 +67,6 @@ export function getStoredResult(jobId) {
 }
 
 /**
- * Prepare presentation for export.
- * @param {Object} job - Job object
- * @returns {Promise<Object>} Prepared context
- */
-async function prepareExportContext(job) {
-  const { presentationId, lang, stripLiveOnly = true, repoRoot } = job.data;
-
-  // Load presentation
-  const pres = await getPresentation(
-    jobScope(job.data, 'export job'),
-    presentationId,
-  );
-  if (!pres) {
-    throw new Error('Presentation not found');
-  }
-
-  // Project to specific language if requested
-  let projectedPres = pres;
-  if (lang) {
-    projectedPres = projectPresentationToLang(pres, lang);
-  }
-
-  // Strip live-only slides if requested
-  let filteredPres = projectedPres;
-  if (stripLiveOnly) {
-    filteredPres = stripLiveOnlySlides(projectedPres);
-  }
-
-  // Load theme. Same loader as the synchronous pipeline (`export/pipeline.js`):
-  // `utils/themes.js` takes repoRoot first and resolves both built-in themes
-  // and custom-theme UUIDs. The storage-layer `getThemeRecord(scope, themeId)` is a
-  // different signature entirely — calling it with a repoRoot used to yield
-  // `theme = null` on every queued export; today it throws.
-  const theme = await loadThemeAssets(
-    repoRoot,
-    filteredPres.theme,
-    jobScope(job.data, 'export job'),
-  );
-
-  // Load merged slide types (core + org-specific custom types)
-  const orgId = pres?.organizationId;
-  const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
-
-  return {
-    pres,
-    projectedPres,
-    filteredPres,
-    theme,
-    slideTypes,
-    lang,
-  };
-}
-
-/**
  * Process an export job.
  * @param {Object} job - BullMQ job
  * @returns {Promise<Object>} Result with download info
@@ -141,7 +83,13 @@ async function processExportJob(job) {
   // Update progress
   await job.updateProgress(10);
 
-  const ctx = await prepareExportContext(job);
+  // The request admitted and counted this export when it queued it; the
+  // worker builds as the system (services/exports.js).
+  const { presentationId, lang, stripLiveOnly } = job.data;
+  const ctx = await prepareQueuedExportContext(
+    jobScope(job.data, 'export job'),
+    { presentationId, lang, stripLiveOnly },
+  );
   await job.updateProgress(30);
 
   let buffer;
@@ -173,7 +121,7 @@ async function processExportJob(job) {
         {
           scale,
           theme: ctx.theme,
-          lang: ctx.lang || '',
+          lang: ctx.exportLang || '',
           slideTypes: ctx.slideTypes,
         },
       );
@@ -242,7 +190,7 @@ async function processExportJob(job) {
     contentType,
     extension,
     filename: ctx.filteredPres.title || 'presentation',
-    lang: ctx.lang,
+    langSuffix: ctx.langSuffix,
     ownerEmail: job.data.ownerEmail || null,
   };
 
