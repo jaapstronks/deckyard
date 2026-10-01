@@ -11,7 +11,6 @@ import {
   listPresentations,
   getPresentation,
   updatePresentation,
-  deletePresentation,
 } from '../storage/presentations/index.js';
 import { loadPresentationChecked, mcpActor } from './presentation-access.js';
 import { singleOrganizationScope } from '../storage/scope.js';
@@ -28,6 +27,7 @@ import { createComment, setCommentStatus } from '../services/comments.js';
 import {
   assertCreatableDeckInput,
   createPresentation,
+  deletePresentation,
   duplicatePresentation,
   publicDeckTimestamps,
 } from '../services/presentations.js';
@@ -268,7 +268,7 @@ export function registerTools(
   }
 
   /**
-   * Write options for updatePresentation/deletePresentation calls: attribute
+   * Write options for updatePresentation calls: attribute
    * the write to the acting session owner so the slide-lock policy
    * (enforceSlideWritePolicy) can tell authors from non-authors. Without an
    * actor the policy fails closed and author-locked slides reject even their
@@ -1154,8 +1154,11 @@ export function registerTools(
     },
     async ({ presentationId, confirm }, context) => {
       if (!confirm) {
-        // Fetch title for confirmation prompt
-        const pres = await getCheckedPresentation(presentationId, context);
+        // The preview asks the right the delete asks, so a session that may
+        // not trash the deck is refused here, not invited to confirm.
+        const pres = await getCheckedPresentation(presentationId, context, {
+          access: 'delete',
+        });
         return {
           deleted: false,
           id: presentationId,
@@ -1165,12 +1168,11 @@ export function registerTools(
             'Set confirm: true to delete this presentation. This action moves it to trash.',
         };
       }
-      await getCheckedPresentation(presentationId, context, {
-        access: 'delete',
-      });
-      await deletePresentation(storageScopeOf(context), presentationId, {
-        actorEmail: getOwner(context),
-      });
+      await deletePresentation(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        presentationId,
+      );
       return { deleted: true, id: presentationId };
     },
     { permission: 'write' },

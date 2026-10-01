@@ -32,6 +32,11 @@
  * `ownerEmail` it never read, v1 answered a vanished source with a 500, and no
  * contract left an activity row for the deck it had just made.
  *
+ * So is moving a deck to the trash ({@link deletePresentation}, B571). The
+ * internal route read a `message` from the body that storage never stored and
+ * was the only contract to leave an activity row; MCP answered `deleted: true`
+ * for a deck that was already in the trash.
+ *
  * @module server/services/presentations
  */
 
@@ -39,6 +44,7 @@ import {
   getPresentation,
   createPresentation as storeNewPresentation,
   duplicatePresentation as storeDuplicate,
+  deletePresentation as storeTrash,
 } from '../storage/presentations/index.js';
 import { recordSlideLibraryUsage } from '../storage/slide-library-usage.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
@@ -57,7 +63,10 @@ import {
   throwStorageFailure,
 } from '../utils/errors.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
-import { recordPresentationCreated } from './activity-events.js';
+import {
+  recordPresentationCreated,
+  recordPresentationDeleted,
+} from './activity-events.js';
 
 /**
  * @typedef {import('./actor.js').Actor} Actor
@@ -391,6 +400,47 @@ export async function duplicatePresentation(scope, identity, presentationId) {
     );
   }
   return copy;
+}
+
+/**
+ * Move a deck to the trash for an actor, on every contract.
+ *
+ * The deck is loaded with {@link loadPresentationForActor} at
+ * `access: 'delete'`, so the owner decides (`ownerId`, D22) and the refusal is
+ * the loader's (404 absent or already trashed, 403 not the owner; D255). A
+ * delete is always the trash: the permanent delete is its own handling
+ * (`services/permanent-delete.js`). The loader reads a trashed deck too, so a
+ * deck already in the trash is answered by storage's refusal to trash it
+ * twice: absent, on every contract. The activity row is
+ * left for an organization-visible deck only: the row outlives the deck and
+ * carries its title, and the feed cannot check read access on a deck it no
+ * longer has.
+ *
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {{ actor: Actor }} identity - The deleting actor (D253).
+ * @param {string} presentationId - The deck to trash.
+ * @returns {Promise<Object>} The deck as it was before it went to the trash.
+ * @throws {NotFoundError} No deck with this id in this scope, or it is
+ *   already in the trash.
+ * @throws {ForbiddenError} The actor may not delete the deck.
+ */
+export async function deletePresentation(scope, identity, presentationId) {
+  const pres = await loadPresentationForActor(scope, identity, presentationId, {
+    access: 'delete',
+  });
+  const { actor } = identity;
+  const trashed = await storeTrash(scope, pres.id, {
+    actorEmail: actor?.email || null,
+  });
+  if (!trashed) throw new NotFoundError('Presentation not found');
+
+  if (actor?.email && pres.visibility === 'organization') {
+    fireAndForget(
+      recordPresentationDeleted({ presentation: pres, actor, scope }),
+      'record presentation-deleted activity',
+    );
+  }
+  return pres;
 }
 
 /**
