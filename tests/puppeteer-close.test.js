@@ -104,12 +104,11 @@ test(
 );
 
 test(
-  'a close that never resolves is cut off: the process is killed within the timeout',
+  'a close that never resolves is cut off: the process has exited, killed, when shutdown resolves',
   { skip: isWindows && 'POSIX signals' },
   async () => {
     const proc = spawnLikeChrome('exec sleep 30');
     try {
-      const exited = once(proc, 'exit');
       const browser = {
         process: () => proc,
         close: () => new Promise(() => {}),
@@ -117,10 +116,11 @@ test(
 
       const started = Date.now();
       await shutDownBrowser(browser, { timeoutMs: 100 });
-      const [, signal] = await exited;
 
+      // Read straight after, not after awaiting `exit` here: the shutdown
+      // promises the process is gone, not that a kill was sent (B545).
+      assert.equal(proc.signalCode, 'SIGKILL');
       assert.ok(Date.now() - started < 2000, 'shutdown did not wait on close');
-      assert.equal(signal, 'SIGKILL');
     } finally {
       killGroup(proc);
     }
