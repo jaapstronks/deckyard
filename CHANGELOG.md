@@ -4,6 +4,46 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.51.0](https://github.com/jaapstronks/deckyard/compare/v1.50.0...v1.51.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **presentations:** internal creates refuse an unsupported lang before the work (B576) ([#1413](https://github.com/jaapstronks/deckyard/issues/1413))
+* **comments:** one setCommentStatus under three contracts (B569)
+* **presentations:** one createPresentation under three contracts (B521) ([#1408](https://github.com/jaapstronks/deckyard/issues/1408))
+* **authz:** one loadPresentationForActor under three contracts (B519)
+* **comments:** POST /api/v1/presentations/:id/comments answers a slideId that names no slide of the deck with 404 `slide_not_found` (was 400), beside `parent_not_found`. MCP add_comment/reply_to_comment now e-mail and fire the comment webhook like the other contracts, and answer a missing deck 404 / no comment right 403 (D255). For forks: maybeFireWebhook(repoRoot, origin, event) takes an origin string where it took the request, and notifyCommentCreated / notifyMentionsAdded take no request; notifyCommentCreatedInApp and routes/api/presentations/comments-shared.js are removed (import from server/services/comments.js).
+
+### Added
+
+* **admin:** instance-health view with census and usage per axis (B516) ([#1409](https://github.com/jaapstronks/deckyard/issues/1409)) ([4b1a914](https://github.com/jaapstronks/deckyard/commit/4b1a914c31c93069ef7263eb18609b3b2248d2a4))
+* **telemetry:** count instance health on the seams that exist (B514) ([eee206d](https://github.com/jaapstronks/deckyard/commit/eee206d7602d3a3944812bc7da457682418f7c33))
+
+
+### Fixed
+
+* **auth:** the sign-in screens title their tab with APP_NAME (B566) ([#1399](https://github.com/jaapstronks/deckyard/issues/1399)) ([549daf0](https://github.com/jaapstronks/deckyard/commit/549daf09ed6bbda768ac4a306034d71c2ea5f3c4))
+* **authz:** one loadPresentationForActor under three contracts (B519) ([1f79553](https://github.com/jaapstronks/deckyard/commit/1f79553a193c63423967ffb104c7ea80b1177892))
+* **comments:** one createComment service under three contracts (B518) ([#1404](https://github.com/jaapstronks/deckyard/issues/1404)) ([79527e2](https://github.com/jaapstronks/deckyard/commit/79527e2c9833504a4bf8e146a48c34bfb954ad23))
+* **comments:** one setCommentStatus under three contracts (B569) ([6155b5c](https://github.com/jaapstronks/deckyard/commit/6155b5c6eb3299b15526948cca86d780bda451e9))
+* **comments:** the comment textarea stays inside the panel (B563) ([#1396](https://github.com/jaapstronks/deckyard/issues/1396)) ([fb6ad49](https://github.com/jaapstronks/deckyard/commit/fb6ad4989faf96d4f3ba3eb264e417c3732f332c))
+* **doctor:** probe the real uploads dir; one container path per dir (B565) ([#1401](https://github.com/jaapstronks/deckyard/issues/1401)) ([814a550](https://github.com/jaapstronks/deckyard/commit/814a550e6cdff2bde77dc90f54a38e97a37d8763))
+* **editor:** slide number in a gutter beside the thumbnail, accent not red (B560) ([#1391](https://github.com/jaapstronks/deckyard/issues/1391)) ([c7a413e](https://github.com/jaapstronks/deckyard/commit/c7a413e9ad37494de4a1bf4560811c86f770a17e))
+* **editor:** store the pending save before a comment POST (B567) ([#1414](https://github.com/jaapstronks/deckyard/issues/1414)) ([93bcd56](https://github.com/jaapstronks/deckyard/commit/93bcd5631b67e0f9b987888de5534873178e9883))
+* or feat: too. Decided at the merge of [#1400](https://github.com/jaapstronks/deckyard/issues/1400), which was retitled. ([6d7b890](https://github.com/jaapstronks/deckyard/commit/6d7b890aa7b431e4d36f38aa2b229e6d504ce5f0))
+* **presentations:** internal creates refuse an unsupported lang before the work (B576) ([#1413](https://github.com/jaapstronks/deckyard/issues/1413)) ([ba3f802](https://github.com/jaapstronks/deckyard/commit/ba3f80282432d520e38a5c19a1de02216a4f712e))
+* **presentations:** one createPresentation under three contracts (B521) ([#1408](https://github.com/jaapstronks/deckyard/issues/1408)) ([4d63d2e](https://github.com/jaapstronks/deckyard/commit/4d63d2e550eae5067d51a7e5db2e9f09a0b98955))
+* **presentations:** one deletePresentation under three contracts (B571) ([#1412](https://github.com/jaapstronks/deckyard/issues/1412)) ([a8429ca](https://github.com/jaapstronks/deckyard/commit/a8429ca1888e3d3f87e3df31e0247d5e5cf93b28))
+* **presentations:** one duplicatePresentation under three contracts (B570) ([#1411](https://github.com/jaapstronks/deckyard/issues/1411)) ([4a7da27](https://github.com/jaapstronks/deckyard/commit/4a7da278c2c5f6486fdc8d828e75b24d1001e215))
+* **slides:** the card roles sit on one shared ladder (B512) ([#1400](https://github.com/jaapstronks/deckyard/issues/1400)) ([4f16832](https://github.com/jaapstronks/deckyard/commit/4f16832f82f4ae7df9f9b4cc9a8d93c29372708e))
+* **slides:** the diagram families sit on the card ladder (B517) ([#1402](https://github.com/jaapstronks/deckyard/issues/1402)) ([47db48a](https://github.com/jaapstronks/deckyard/commit/47db48a6bfde33ed2ccdd95197a2459edad2516e))
+
+
+### Changed
+
+* keep the next release in 1.x during beta ([4e37929](https://github.com/jaapstronks/deckyard/commit/4e379291089f34bf532c6d510b87828697dc6f46))
+
 ## [1.50.0](https://github.com/jaapstronks/deckyard/compare/v1.49.0...v1.50.0) (2026-09-29)
 
 
