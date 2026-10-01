@@ -19,6 +19,10 @@ import { isOrganizationAdmin } from '../../../../shared/organization-role.js';
 /**
  * Creates the image library detail view component
  * @param {Object} options - Component options
+ * @param {() => void} [options.onShow] - runs before the pane appears (the
+ *   owner hides the list it replaces)
+ * @param {() => void} [options.onHide] - runs after the pane is hidden, from
+ *   every exit: Back, Delete and a reload that lost the item
  * @returns {Object} Detail component API
  */
 export function createImageLibraryDetail({
@@ -36,6 +40,8 @@ export function createImageLibraryDetail({
   creditCb,
   setStatus,
   setBusy,
+  onShow = null,
+  onHide = null,
 } = {}) {
   const detailWrap = h('div', { class: 'image-lib-detail', hidden: true });
   const usageById = new Map();
@@ -522,6 +528,7 @@ export function createImageLibraryDetail({
     const id = String(it?.id || '').trim();
     if (!id) return;
     activeDetailId = id;
+    onShow?.();
     detailWrap.hidden = false;
     renderDetail(it);
 
@@ -541,10 +548,15 @@ export function createImageLibraryDetail({
     }
   };
 
+  // Every way out of the pane (Back, Delete, a reload that lost the item)
+  // comes through here, so the owner's `onHide` runs for all of them. The
+  // picker used to override `hide` on the returned object, which the Back
+  // button never reached: it left the modal empty.
   const hide = () => {
     activeDetailId = '';
     detailWrap.hidden = true;
     setStatus('');
+    onHide?.();
   };
 
   const getActiveId = () => activeDetailId;

@@ -276,6 +276,14 @@ function openLibraryModal({
     creditCb,
     setStatus,
     setBusy,
+    // The pane replaces the list: hide it on show, bring it back on hide.
+    // `layout`, `mobileNav` and `showList` are declared below; both callbacks
+    // run on a click, long after this call returns.
+    onShow: () => {
+      layout.hidden = true;
+      mobileNav.hidden = true;
+    },
+    onHide: () => showList(),
   });
 
   // Upload component
@@ -462,30 +470,14 @@ function openLibraryModal({
     }
   };
 
-  // Wire up show/hide between list and detail
+  // The list comes back whenever the detail pane hides (its `onHide`).
   const showList = () => {
-    detailComponent.hide();
     layout.hidden = false;
     mobileNav.hidden = false;
     libraryView.hidden =
       activeSection === SECTIONS.UNSPLASH || activeSection === SECTIONS.GIPHY;
     externalView.hidden = !libraryView.hidden;
     setStatus('');
-  };
-
-  // Override detail hide to show list
-  const originalHide = detailComponent.hide;
-  detailComponent.hide = () => {
-    originalHide();
-    showList();
-  };
-
-  // Override detail show to hide list
-  const originalShow = detailComponent.show;
-  detailComponent.show = (it) => {
-    layout.hidden = true;
-    mobileNav.hidden = true;
-    originalShow(it);
   };
 
   // Load data
@@ -560,7 +552,7 @@ function openLibraryModal({
       if (activeId) {
         const cur = items.find((x) => x?.id === activeId);
         if (cur) detailComponent.show(cur);
-        else showList();
+        else detailComponent.hide();
       }
     } catch (e) {
       setStatus(String(e?.message || e));
