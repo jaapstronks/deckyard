@@ -30,6 +30,7 @@
   "comments.error.reopenFailed": "Kon reactie niet heropenen",
   "comments.error.replyFailed": "Kon antwoord niet plaatsen",
   "comments.error.resolveFailed": "Kon reactie niet oplossen",
+  "comments.error.slideNotSaved": "Deze slide is nog niet opgeslagen. Wacht even en plaats je reactie opnieuw.",
   "comments.filter.ai": "AI",
   "comments.filter.all": "Alle",
   "comments.filter.allTypes": "Alle",

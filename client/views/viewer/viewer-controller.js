@@ -116,6 +116,7 @@ export async function createViewerController({
   if (canComment) {
     commentsPanel = createCommentsPanel({
       api,
+      commentsApi,
       toast: { info: () => {}, error: () => {}, success: () => {} },
       presentationId: id,
       pres,
