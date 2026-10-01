@@ -50,15 +50,19 @@ nothing.
 The key sits as `feature` wherever the cluster has a surface, and everything
 with the cluster off answers as if it did not exist:
 
-- **a mount** in a mount table (`MOUNTS`/`PUBLIC_MOUNTS` in
-  `server/routes/api/index.js`, `V1_MOUNTS`, `STATIC_MOUNTS`) — skipped by
-  `dispatchMounts`, so its paths reach the surface's 404;
+- **a mount** in a mount table (`API_KEY_MOUNTS`/`PUBLIC_MOUNTS`/`MOUNTS` in
+  `server/routes/api/index.js`, `V1_MOUNTS`, `STATIC_MOUNTS`, `ROOT_MOUNTS` in
+  `server/server.js`) — skipped by `dispatchMounts`, so its paths reach the
+  surface's 404;
 - **a route row** in a module that is otherwise mounted (the AI rows of
   `presentations`, `image-library`, v1 `translate`, the Notion import) — the
   row answers 404 in the surface's envelope before its handler runs
   ([route-dispatch.md](route-dispatch.md));
 - **an MCP tool** (`{ feature: 'ai' }`) — absent from `tools/list`,
   `tools/call` answers "Unknown tool";
+- **a spec path** in `docs/openapi.yaml` (`x-feature: ai`) — left out of the
+  spec `/api/v1/openapi.yaml` serves; `tests/openapi-route-diff.test.js` pins
+  each `x-feature` path on router rows with the same feature, both ways;
 - **a client entry** — not built (D179/D260), asked through
   `featureEnabled(key)`; `tests/feature-entries-follow-flags.test.js` holds
   the entries per cluster.
@@ -76,13 +80,15 @@ the declarations name the same keys.
 | `notion`       | `NOTION_ENABLED` (off)       | Mount `/api/notion/*` (all eight rows: status, fetch, publish, import, import/stream, subjects, compose, suggest); the Notion sub-tab in New presentation and Publish to Notion in Share. Also off in demo mode. `NOTION_SECRET` then says whether it is configured (501 without).                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `liveData`     | `LIVE_DATA_ENABLED` (off)    | Mount `/api/data-sources*`; the data-source indicator in the editor.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `analytics`    | `ANALYTICS_ENABLED` (on)     | Mounts `/api/track/*` (public), `/api/analytics/reports/:token` (public) and `/api/analytics/*` + `/api/presentations/:id/analytics*`; the tracking script on a published page, and view tracking in the share viewer and follow-along (their payloads carry `tracking: false`, as the audience has no snapshot); the pages `/insights`, `/analytics/:id`, `/reports/:token` (the app shell is not served); Insights in the sidebar, the editor's Analytics button and ⋯ entry, the admin card _Engagement Insights_, the deck's analytics section and the privacy and digest cards in Preferences. The weekly digest is not scheduled; `analytics-cleanup` keeps running and one boot line counts the rows still held (D261). |
+| `stockMedia`   | `STOCK_MEDIA_ENABLED` (on)   | Mount `/api/stock-media/*` (all fourteen rows: status, the bundled manifest, Unsplash and Giphy search, trending and download); the Unsplash and Giphy sections of the image library and the bundled gradients in the image picker (the status is not requested); the admin card _Stock Media_. Gradient files a deck already references stay reachable as static assets.                                                                                                                                                                                                                                                                                                                                                      |
+| `publicApi`    | `PUBLIC_API_ENABLED` (on)    | Mounts `/api/v1/*` (the spec and docs included), `/mcp` and `/api/api-keys*`; `npm run mcp` stops with one line; the settings tab _API keys_ and the onboarding step _Connect an AI agent_. With it off `/api/v1/*` answers what any absent `/api` path answers: 401 without a session, 404 with one. `mcp-session-sweep` keeps running and one boot line counts the unrevoked keys still stored (D261).                                                                                                                                                                                                                                                                                                                       |
 | `rssFeed`      | `RSS_FEED_ENABLED` (on)      | Static mount `/feed/rss.xml`, `/feed/atom.xml`, `/feed/feed.json`. The organization's own switch (`settings.rss.enabled`) sits under it.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 
 A cluster flag says what the installation _has_; an organization setting
 underneath it (`rss.enabled`, `analytics.enabled`, `stockMedia.<id>.enabled`)
 says what an organization _uses_. With the cluster off the setting is kept as
-stored, but its control is absent: there is nothing for it to switch. B524 and
-B525 add live, stock media and the public API to this table.
+stored, but its control is absent: there is nothing for it to switch. B524
+adds live to this table.
 
 ## Legacy spellings (until 2026-11-01)
 

@@ -132,6 +132,27 @@ export function isAnalyticsEnabled() {
 }
 
 /**
+ * The stock media cluster: the image sources beside the native library
+ * (bundled gradients, Unsplash, Giphy; `STOCK_MEDIA_ENABLED=false` switches it
+ * off; D258). Default: on. An installation flag; the organization's
+ * `stockMedia.<id>.enabled` toggles sit under it and stay what it uses.
+ * @returns {boolean}
+ */
+export function isStockMediaEnabled() {
+  return envBool('STOCK_MEDIA_ENABLED', true);
+}
+
+/**
+ * The public API cluster: the API-key surfaces — `/api/v1/*`, the `/mcp`
+ * transport, the stdio MCP server and the key management behind them
+ * (`PUBLIC_API_ENABLED=false` switches it off; D258). Default: on.
+ * @returns {boolean}
+ */
+export function isPublicApiEnabled() {
+  return envBool('PUBLIC_API_ENABLED', true);
+}
+
+/**
  * Demo mode: a read-mostly showcase install (sample decks, no AI, no
  * uploads). @returns {boolean}
  */

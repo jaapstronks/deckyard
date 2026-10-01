@@ -102,6 +102,21 @@ export const MAINTENANCE_ROUTES = [
 ];
 
 /**
+ * The API-key surface, walked before the maintenance gate and the session
+ * mounts (D257). Public API v1 carries its own `/api/v1` prefix guard and
+ * declines everything else; it runs `assertWritable` itself so the refusal
+ * answers its own envelope (B61). With the public API cluster off it is
+ * skipped, and `/api/v1/*` answers what any path this installation does not
+ * have answers: 401 without a session, the 404 at the end of
+ * {@link handleApi} with one.
+ *
+ * @type {import('../../utils/router.js').Mount[]}
+ */
+export const API_KEY_MOUNTS = [
+  { handle: handlePublicApiV1, feature: 'publicApi' },
+];
+
+/**
  * The mounts in front of the login gate (D257): auth flows, and the audience
  * and viewer endpoints a device without a session reaches. Called with
  * `authedUser: null` — `follow-codes` reads it to tell the public resolve from
@@ -165,14 +180,14 @@ export const MOUNTS = [
   { handle: handleNotifications },
   { handle: handleQuestions },
   { handle: handleSettings },
-  { handle: handleApiKeys },
+  { handle: handleApiKeys, feature: 'publicApi' },
   { handle: handleSlideLibrary },
   { handle: handleSlideCollections },
   { handle: handleDataSources, feature: 'liveData' },
   { handle: handleActivity },
   { handle: handleAnalytics, feature: 'analytics' },
   { handle: handleTags },
-  { handle: handleStockMedia },
+  { handle: handleStockMedia, feature: 'stockMedia' },
   { handle: handleJobs },
   // Organization management (multi-organization mode)
   { handle: handleOrganizations },
@@ -207,13 +222,9 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // viewers and presenters, and blocking GETs would turn a restart into an
   // outage for people who are not writing anything. The decision itself lives
   // in assertWritable — the shared choke-point every write surface (this
-  // dispatcher, the MCP tool dispatch, the v1 dispatcher above) goes through.
-  // Public API v1 routes (API key authentication, separate from session-based
-  // auth). The module carries its own /api/v1 prefix guard and declines
-  // everything else. Mounted above the maintenance write gate on purpose: the
-  // v1 surface is its own write surface with its own error envelope (B61), so
-  // it runs assertWritable itself and answers the refusal in that envelope.
-  if (await handlePublicApiV1({ repoRoot, req, res, url })) return;
+  // dispatcher, the MCP tool dispatch, the v1 dispatcher) goes through.
+  // The API-key surface comes first: it answers its own refusal.
+  if (await dispatchMounts(API_KEY_MOUNTS, { repoRoot, req, res, url })) return;
 
   try {
     assertWritable(req.method);

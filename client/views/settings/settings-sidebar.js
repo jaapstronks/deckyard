@@ -5,7 +5,7 @@
 
 import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
-import { getFeatures } from '../../lib/state/features.js';
+import { featureEnabled, getFeatures } from '../../lib/state/features.js';
 
 /**
  * Tab configuration for settings page.
@@ -151,9 +151,12 @@ export function createSettingsSidebar({
   }
 
   // The organization tab only exists in multi-workspace mode, so an admin on a
-  // single-workspace instance keeps the Admin group they always had.
+  // single-workspace instance keeps the Admin group they always had. The API
+  // keys tab only exists with the public API cluster (D260).
   const adminTabs = ADMIN_TABS.filter(
-    (tab) => tab.key !== ORGANIZATION_TAB.key || canSeeOrganization,
+    (tab) =>
+      (tab.key !== ORGANIZATION_TAB.key || canSeeOrganization) &&
+      (tab.key !== 'api-keys' || featureEnabled('publicApi')),
   );
 
   // Add designer section if user has designer capability

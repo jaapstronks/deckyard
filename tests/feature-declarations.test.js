@@ -42,7 +42,9 @@ const ROUTES_ROOT = join(repoRoot, 'server', 'routes');
 const { getFeatureFlags, isFeatureEnabled, featureFlagKey } =
   await import('../server/config/flags-snapshot.js');
 const { dispatchMounts } = await import('../server/utils/router.js');
-const { PUBLIC_MOUNTS, MOUNTS } = await import('../server/routes/api/index.js');
+const { API_KEY_MOUNTS, PUBLIC_MOUNTS, MOUNTS } =
+  await import('../server/routes/api/index.js');
+const { ROOT_MOUNTS } = await import('../server/server.js');
 const { V1_MOUNTS } = await import('../server/routes/public-api/v1/index.js');
 const { STATIC_MOUNTS } = await import('../server/routes/static/index.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
@@ -70,6 +72,8 @@ const isRouteTable = (value) =>
 const declarations = [];
 
 for (const [name, mounts] of Object.entries({
+  ROOT_MOUNTS,
+  API_KEY_MOUNTS,
   PUBLIC_MOUNTS,
   MOUNTS,
   V1_MOUNTS,
@@ -115,10 +119,12 @@ test('the scan sees the declarations at all', () => {
   assert.ok(declarations.length >= 20, `found ${declarations.length}`);
   const count = (prefix) =>
     declarations.filter(([w]) => w.startsWith(prefix)).length;
+  assert.equal(count('ROOT_MOUNTS['), 1, 'the /mcp transport');
+  assert.equal(count('API_KEY_MOUNTS['), 1, 'public API v1');
   assert.equal(
     count('MOUNTS['),
-    7,
-    'seven feature mounts behind the login gate',
+    9,
+    'nine feature mounts behind the login gate',
   );
   assert.equal(
     count('PUBLIC_MOUNTS['),
@@ -205,6 +211,7 @@ test('no route row says `ai: true` any more', () => {
 
 test('no mount chain branches on a flag', () => {
   for (const rel of [
+    'server/server.js',
     'server/routes/api/index.js',
     'server/routes/public-api/v1/index.js',
     'server/routes/static/index.js',
