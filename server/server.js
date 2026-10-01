@@ -31,7 +31,10 @@ import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { createLogger } from './utils/logger.js';
 import { scheduleSandboxCleanup } from './jobs/sandbox-cleanup.js';
 import { scheduleLiveSessionCleanup } from './jobs/live-session-cleanup.js';
-import { scheduleMcpSessionSweep } from './jobs/mcp-session-sweep.js';
+import {
+  scheduleMcpSessionSweep,
+  warnApiKeysWhileOff,
+} from './jobs/mcp-session-sweep.js';
 import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/lifecycle.js';
 import { initializeThemeSeeds } from './utils/theme-seeds.js';
@@ -62,10 +65,23 @@ import { closeRedis } from './utils/redis-client.js';
 import { initializeQueues, closeQueues } from './jobs/queue/connection.js';
 import { initializeWorkers } from './jobs/queue/workers/index.js';
 import { handleMcpSse } from './mcp/sse-mount.js';
+import { dispatchMounts } from './utils/router.js';
 import { maybeAttachCollab, shutdownCollab } from './collab/mount.js';
 import { assertExtensionDeclared } from './export/extension-name.js';
 
 const log = createLogger('server');
+
+/**
+ * The mounts the root dispatcher walks before `/api/*` and the static chain
+ * (D257). With the public API cluster off, `/mcp` is skipped and reaches the
+ * static chain's 404, as any path this installation does not have.
+ *
+ * @type {import('./utils/router.js').Mount[]}
+ */
+export const ROOT_MOUNTS = [
+  // MCP SSE transport (remote AI agent access, API-key authenticated).
+  { handle: handleMcpSse, feature: 'publicApi' },
+];
 
 function getUrl(req) {
   const host = req.headers.host || 'localhost';
@@ -136,11 +152,7 @@ async function handleRequest(req, res) {
       }
     }
 
-    // MCP SSE transport (remote AI agent access)
-    if (url.pathname === '/mcp') {
-      const handled = await handleMcpSse({ req, res, url, repoRoot });
-      if (handled) return;
-    }
+    if (await dispatchMounts(ROOT_MOUNTS, { req, res, url, repoRoot })) return;
 
     if (url.pathname.startsWith('/api/'))
       return await handleApi({ repoRoot, req, res, url });
@@ -339,6 +351,7 @@ async function main() {
 
   // Initialize background job queue (Redis-based, with fallback)
   if (!isFeatureEnabled('analytics')) await warnAnalyticsRowsWhileOff();
+  if (!isFeatureEnabled('publicApi')) await warnApiKeysWhileOff();
   await initializeQueues();
   await initializeWorkers();
 

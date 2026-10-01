@@ -52,7 +52,8 @@ info:
     - `403` - Forbidden (the key is valid but lacks the permission, or has no
       access to this presentation)
     - `404` - Not Found (also every AI endpoint on an instance with AI switched
-      off: `AI_ENABLED=false`, demo or sandbox — it is not mounted there)
+      off: `AI_ENABLED=false`, demo or sandbox — it is not mounted there, and
+      the spec this instance serves leaves those paths out)
     - `405` - Method Not Allowed (the `Allow` header lists the accepted methods)
     - `413` - Payload Too Large (request body over the configured size cap)
     - `423` - Locked (a changed slide is locked by the author or being edited by another user)
@@ -86,6 +87,15 @@ info:
     error shape: cross-cutting rejections (unknown route, wrong method, missing
     permission, rate limit) and endpoint-specific errors all answer this one
     envelope.
+
+    ## Optional clusters
+
+    A path that belongs to an installation cluster carries `x-feature: <key>`
+    (today only `ai`). The spec served at `/api/v1/openapi.yaml` leaves out
+    every path whose cluster is off on that instance, so it describes what the
+    instance answers. The whole v1 surface is itself a cluster: with
+    `PUBLIC_API_ENABLED=false` nothing under `/api/v1` exists, this spec
+    included.
 
   version: '1.0.0'
   contact:
@@ -1100,6 +1110,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/translate:
+    x-feature: ai
     post:
       operationId: translatePresentation
       tags:
@@ -1440,6 +1451,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
   /ai/vendors:
+    x-feature: ai
     get:
       operationId: listAiVendors
       tags:
@@ -1484,6 +1496,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
   /ai/wizard:
+    x-feature: ai
     post:
       operationId: generatePresentationWithAi
       tags:
@@ -1557,6 +1570,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
 
   /ai/append-slides:
+    x-feature: ai
     post:
       operationId: appendSlidesWithAi
       tags:

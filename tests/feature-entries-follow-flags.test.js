@@ -24,7 +24,7 @@
  *     that answers it.
  *
  * A cluster joins this file when it gets a client entry (B581 uploads, B523
- * analytics; B524 live, B525 stock media and the public API add theirs). An
+ * analytics, B525 stock media and the public API; B524 live adds its own). An
  * entry an anonymous page reaches has no snapshot to ask, so its gate is the
  * server's answer: a payload field or a page the app shell does not serve.
  *
@@ -224,6 +224,32 @@ const ENTRIES = {
       gate: 'client/views/follow/index.js',
     },
   ],
+  // One gate for every stock source: the status fetch answers empty without a
+  // request when the cluster is off, so the picker builds no Unsplash or Giphy
+  // section and the seam offers no gradients. The admin card asks itself.
+  stockMedia: [
+    {
+      entry: 'Image library + picker: Unsplash, Giphy, bundled gradients',
+      calls: [
+        'client/lib/net/stock-media.js',
+        'client/views/editor/image-library/unsplash-search.js',
+        'client/views/editor/image-library/giphy-search.js',
+      ],
+      gate: 'client/lib/net/stock-media.js',
+    },
+  ],
+  publicApi: [
+    {
+      entry: 'Settings: the API keys tab (keys, MCP connect card)',
+      calls: ['client/views/settings/api-keys/actions.js'],
+      gate: 'client/views/settings/index.js',
+    },
+    {
+      entry: 'Home onboarding: Connect an AI agent',
+      calls: ['client/views/list/onboarding-checklist.js'],
+      gate: 'client/views/list/onboarding-checklist.js',
+    },
+  ],
 };
 
 /** The predicate an entry's gate must ask, per cluster. */
@@ -233,11 +259,13 @@ const GATE = {
   uploads: /\bfeatureEnabled\('uploads'\)/,
   analytics:
     /\b(?:featureEnabled|isFeatureEnabled)\('analytics'\)|\btracking === true\b/,
+  stockMedia: /\bfeatureEnabled\('stockMedia'\)/,
+  publicApi: /\bfeatureEnabled\('publicApi'\)/,
 };
 
 /** The snapshot keys only `client/lib/state/features.js` may read. */
 const FLAG_READ =
-  /\.(enableAi|aiAltText|enableNotion|enableUploads|enableAnalytics)\b/;
+  /\.(enableAi|aiAltText|enableNotion|enableUploads|enableAnalytics|enableStockMedia|enablePublicApi)\b/;
 
 // ------------------------------------------------------------ the server side
 
@@ -260,6 +288,13 @@ const { ROUTES: analyticsRoutes, handleAnalytics } =
   await import('../server/routes/api/analytics/index.js');
 const { ROUTES: reportPublicRoutes, handleAnalyticsReportPublic } =
   await import('../server/routes/api/analytics/public.js');
+const {
+  PUBLIC_ROUTES: stockPublicRoutes,
+  AUTHED_ROUTES: stockAuthedRoutes,
+  handleStockMedia,
+} = await import('../server/routes/api/stock-media.js');
+const { ROUTES: apiKeyRoutes, handleApiKeys } =
+  await import('../server/routes/api/api-keys.js');
 
 /**
  * Each mount handle under a cluster, with the table it dispatches. A mount
@@ -277,6 +312,10 @@ const MOUNT_TABLES = {
     [handleAnalyticsReportPublic, reportPublicRoutes],
     [handleAnalytics, analyticsRoutes],
   ],
+  stockMedia: [
+    [handleStockMedia, [...stockPublicRoutes, ...stockAuthedRoutes]],
+  ],
+  publicApi: [[handleApiKeys, apiKeyRoutes]],
 };
 
 /** Tables whose rows may carry a `feature` of their own. */

@@ -45,10 +45,12 @@ function getHandler() {
 }
 
 /**
- * Handle MCP SSE requests. Safe to call on every request to /mcp.
- * Lazy-initializes the MCP server on first call.
+ * Handle MCP SSE requests: the `/mcp` mount (`ROOT_MOUNTS` in server.js).
+ * Declines every other path before touching the MCP server, which it
+ * lazy-initializes on the first request to `/mcp`.
  */
 export async function handleMcpSse(ctx) {
+  if (ctx.url.pathname !== '/mcp') return false;
   const handler = await getHandler();
   return handler(ctx);
 }
