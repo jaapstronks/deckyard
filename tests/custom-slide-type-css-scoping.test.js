@@ -18,6 +18,7 @@ import assert from 'node:assert/strict';
 import { initSanitizer } from '../shared/sanitize.js';
 import { toRuntimeSlideType } from '../server/utils/custom-slide-type-runtime.js';
 import { scopeCss } from '../shared/slide-types/scope-css.js';
+import { validateSlideTypeDefinition } from '../shared/slide-types/validate-definition.js';
 
 // sanitizeSlideHtmlSync needs a pre-initialized DOMPurify, exactly as the
 // server does at startup; without it the template output is escaped and the
@@ -178,4 +179,24 @@ test('a selector that merely extends the scope class is contained, not passed th
   // A true boundary (compound or descendant on the scope itself) stays put.
   assert.equal(scopeCss('.s.foo { c: d }', '.s'), '.s.foo { c: d }');
   assert.equal(scopeCss('.s:hover { c: d }', '.s'), '.s:hover { c: d }');
+});
+
+test('the DB path inlines its scoped CSS: the file-JS validator does not run on it', () => {
+  // `validateSlideTypeDefinition` refuses an inline <style> because a file-JS
+  // type has `custom/styles/` (B536). A DB type has no file: its pasted CSS is
+  // scoped and inlined by the runtime, and `toRuntimeSlideType` never calls
+  // the validator. Pinned so the two never meet by accident.
+  const def = toRuntimeSlideType({
+    slug: 'hero',
+    label: 'Hero',
+    template: '<div class="slide">{{esc title}}</div>',
+    css: 'h2 { color: red; }',
+  });
+  assert.match(def.renderHtml({}, { id: 's1' }, {}), /<style>/);
+  assert.ok(
+    validateSlideTypeDefinition(def, 'hero').errors.some((e) =>
+      e.includes('<style> block'),
+    ),
+    'the same definition would be refused on the file-JS path',
+  );
 });

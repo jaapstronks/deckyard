@@ -238,9 +238,10 @@ Renaming a class a type emits is a contract change — see
 gate that holds every class a type emits, core or yours, against
 `client/styles/**` plus `custom/styles/**`.
 
-Styles that must travel with the type even outside this install (a type you
-ship elsewhere) still belong inline in `renderHtml`, in a `<style>` element
-scoped to the same class.
+That stylesheet is the only place a file-JS type's CSS lives: the loader
+refuses a type whose render carries a `<style>` block, with a message naming
+the `custom/styles/` file to move it to. Shipping a type to another install
+means shipping its stylesheet with it.
 
 ### 3. Restart the server
 
