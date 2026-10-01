@@ -37,7 +37,6 @@
   "imageLibrary.photographer.label": "Fotograf",
   "imageLibrary.photographerEmpty": "Fotograf: —",
   "imageLibrary.photographerField": "Fotografens navn (valgfritt)",
-  "imageLibrary.readOnly": "Opplasting er slått av. Biblioteket er skrivebeskyttet.",
   "imageLibrary.readOnlySandbox": "Opplasting er slått av i sandkassen. Bruk Unsplash eller Giphy for å legge til bilder.",
   "imageLibrary.replace": "Erstatt filen…",
   "imageLibrary.replace.done": "Erstattet. Eksisterende lysbilder virker fortsatt (URL-en er uendret).",

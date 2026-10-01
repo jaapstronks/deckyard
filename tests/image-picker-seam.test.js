@@ -27,6 +27,7 @@ globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
 
 const { createImagePickerSeam } =
   await import('../client/views/editor/media/picker-provider.js');
+const { setFeatures } = await import('../client/lib/state/features.js');
 
 const noop = () => {};
 
@@ -332,6 +333,7 @@ test("a call site's hint is shown under the chooser title, and only when given",
 
 test('the direct upload route exists only where the library takes uploads (B579)', () => {
   const root = document.createElement('div');
+  setFeatures({ enableUploads: false });
   const withoutUploads = createImagePickerSeam({
     root,
     features: { enableImageLibrary: true },
@@ -339,20 +341,23 @@ test('the direct upload route exists only where the library takes uploads (B579)
   });
   assert.equal(withoutUploads.upload, null);
 
+  setFeatures({ enableUploads: true });
   const imagekitOnly = createImagePickerSeam({
     root,
-    features: { enableUploads: true },
+    features: {},
     openImageKit: spyOpener().open,
   });
   assert.equal(imagekitOnly.upload, null);
+  setFeatures(null);
 });
 
 test('the direct upload route skips the chooser and asks the library for the file dialog (B579)', () => {
   const root = document.createElement('div');
   const lib = spyOpener();
+  setFeatures({ enableUploads: true });
   const seam = createImagePickerSeam({
     root,
-    features: { enableImageLibrary: true, enableUploads: true },
+    features: { enableImageLibrary: true },
     openImageLibrary: lib.open,
     openBundledGradients: spyOpener().open,
   });
@@ -366,4 +371,5 @@ test('the direct upload route skips the chooser and asks the library for the fil
   seam({ onPick: noop });
   const chooser = root.querySelector('.image-source-chooser');
   assert.ok(chooser, 'two sources: the ordinary route shows the chooser');
+  setFeatures(null);
 });

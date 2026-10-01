@@ -128,7 +128,7 @@ export function createImageLibraryUpload({
   items,
   canAiAlt,
   context,
-  uploadsDisabled,
+  uploadsEnabled,
   onPick,
   onClose,
   onItemCreated,
@@ -145,7 +145,10 @@ export function createImageLibraryUpload({
     return inert;
   }
 
-  if (uploadsDisabled) {
+  // D295: an installation without uploads builds no upload entry at all; only
+  // the sandbox, which withholds a production feature, greys it out (D181).
+  if (!uploadsEnabled) {
+    if (!getFeatures()?.sandboxMode) return inert;
     addWrap.append(
       h('div', {
         class: 'field-label',
@@ -153,15 +156,10 @@ export function createImageLibraryUpload({
       }),
       h('div', {
         class: 'help',
-        text: getFeatures()?.sandboxMode
-          ? t(
-              'imageLibrary.readOnlySandbox',
-              'Uploads are off in the sandbox. Use Unsplash or Giphy to add images.',
-            )
-          : t(
-              'imageLibrary.readOnly',
-              'Uploads are disabled. The library is read-only.',
-            ),
+        text: t(
+          'imageLibrary.readOnlySandbox',
+          'Uploads are off in the sandbox. Use Unsplash or Giphy to add images.',
+        ),
       }),
     );
     return inert;

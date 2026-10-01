@@ -1482,10 +1482,11 @@ export async function createEditorController({
 
   const inlineEditor = createInlineEditor({
     api,
-    // Drag & drop image upload onto empty canvas placeholders is gated on the
-    // same flag as every other upload path (off in imagekit-only / sandbox /
-    // demo, where there is no upload destination).
-    uploadsEnabled: !!features?.enableUploads,
+    // Drag & drop image upload onto canvas images asks the same question as
+    // every other upload path (off in imagekit-only / sandbox / demo, where
+    // there is no upload destination). No drop target is a drop target that
+    // is absent, in the sandbox too: there is nothing to grey out (D295).
+    uploadsEnabled: featureEnabled('uploads'),
     thumb,
     previewStage: thumb.parentElement || thumb,
     overlayHost: preview,

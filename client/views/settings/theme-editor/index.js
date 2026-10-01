@@ -17,6 +17,7 @@ import { createColorPicker } from './color-picker.js';
 import { createContrastBadge } from './contrast-badge.js';
 import { createThemePreview } from './preview.js';
 import { createLogoUploader } from './logo-uploader.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 import { createConfigSections } from './config-sections.js';
 import { validateThemeConfig } from '../../../../shared/theme-config-schema.js';
 
@@ -196,7 +197,8 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
 
   logoCard.append(
     logoUploader.el,
-    logoHint,
+    // "Upload your logo…" names a route that only exists with uploads (D295).
+    ...(featureEnabled('uploads') ? [logoHint] : []),
     logoSmallLabel,
     logoSmallUploader.el,
     logoSmallHint,

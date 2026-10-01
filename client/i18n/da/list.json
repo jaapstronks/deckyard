@@ -37,7 +37,6 @@
   "imageLibrary.photographer.label": "Fotograf",
   "imageLibrary.photographerEmpty": "Fotograf: —",
   "imageLibrary.photographerField": "Fotografens navn (valgfrit)",
-  "imageLibrary.readOnly": "Upload er slået fra. Biblioteket er skrivebeskyttet.",
   "imageLibrary.readOnlySandbox": "Upload er slået fra i sandkassen. Brug Unsplash eller Giphy til at tilføje billeder.",
   "imageLibrary.replace": "Erstat fil…",
   "imageLibrary.replace.done": "Erstattet. Eksisterende slides virker fortsat (URL'en er uændret).",

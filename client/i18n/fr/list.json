@@ -37,7 +37,6 @@
   "imageLibrary.photographer.label": "Photographe",
   "imageLibrary.photographerEmpty": "Photographe : —",
   "imageLibrary.photographerField": "Nom du ou de la photographe (facultatif)",
-  "imageLibrary.readOnly": "Les téléversements sont désactivés. La bibliothèque est en lecture seule.",
   "imageLibrary.readOnlySandbox": "Les téléversements sont désactivés dans le bac à sable. Utilisez Unsplash ou Giphy pour ajouter des images.",
   "imageLibrary.replace": "Remplacer le fichier…",
   "imageLibrary.replace.done": "Remplacé. Les diapositives existantes continuent de fonctionner (URL inchangée).",

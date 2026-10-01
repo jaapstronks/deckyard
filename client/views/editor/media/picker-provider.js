@@ -25,6 +25,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { createQuickModal } from '../../../lib/dom/modal.js';
 import { h } from '../../../lib/dom/index.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 
 /**
  * @typedef {Object} PickedImage  Normalized, provider-agnostic pick.
@@ -326,7 +327,9 @@ export function createImagePickerSeam({
   const providers = [];
   if (flags.enableImageLibrary && typeof openImageLibrary === 'function') {
     providers.push(
-      libraryProvider(openImageLibrary, { canUpload: !!flags.enableUploads }),
+      libraryProvider(openImageLibrary, {
+        canUpload: featureEnabled('uploads'),
+      }),
     );
   }
   if (typeof openBundledGradients === 'function') {

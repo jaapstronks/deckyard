@@ -72,10 +72,7 @@ function renderImagesField({
 
   let rerendered = 0;
   const renderer = createFieldImages({
-    api: null,
     openImagePicker,
-    readFileAsDataUrl: null,
-    features: { enableUploads: false },
     pres: { id: 'p1', title: 'Deck', i18n: { active: 'nl' } },
     markDirty: () => {},
     scheduleUiRefresh: () => {},

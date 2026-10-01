@@ -23,8 +23,8 @@
  *     module reads the `enable<Key>` flag itself: one question, one place
  *     that answers it.
  *
- * A cluster joins this file when it gets a client entry (B523 analytics, B524
- * live, B525 stock media and the public API add theirs).
+ * A cluster joins this file when it gets a client entry (B581 uploads; B523
+ * analytics, B524 live, B525 stock media and the public API add theirs).
  *
  * A source scan cannot prove the gate wraps the right element; the DOM tests
  * at the bottom pin that for the menu, the description modal and the
@@ -156,16 +156,48 @@ const ENTRIES = {
       gate: 'client/views/editor/share-dropdown/index.js',
     },
   ],
+  // D295: installation-off is absent like every cluster; only `sandboxMode`
+  // beside the key greys an entry out (D181). The direct route from an image
+  // field and the inline editor's drop target reach `/api/uploads` through
+  // the library's `upload.js`, so their gates are listed with that entry.
+  uploads: [
+    {
+      entry: 'Image library: the upload panel',
+      calls: ['client/views/editor/image-library/upload.js'],
+      gate: 'client/views/editor/image-library/picker.js',
+    },
+    {
+      entry: 'Image fields: Upload from computer (the picker seam)',
+      calls: ['client/views/editor/image-library/upload.js'],
+      gate: 'client/views/editor/media/picker-provider.js',
+    },
+    {
+      entry: 'Inline editor: drop an image file on the canvas',
+      calls: ['client/views/editor/image-library/upload.js'],
+      gate: 'client/views/editor/editor-controller.js',
+    },
+    {
+      entry: 'Theme editor: logo dropzone',
+      calls: ['client/views/settings/theme-editor/upload-image.js'],
+      gate: 'client/views/settings/theme-editor/logo-uploader.js',
+    },
+    {
+      entry: 'Theme editor: add background images',
+      calls: ['client/views/settings/theme-editor/upload-image.js'],
+      gate: 'client/views/settings/theme-editor/backgrounds-section.js',
+    },
+  ],
 };
 
 /** The predicate an entry's gate must ask, per cluster. */
 const GATE = {
   ai: /\bfeatureEnabled\('ai'\)|\baiAltTextEnabled\(\)/,
   notion: /\bfeatureEnabled\('notion'\)/,
+  uploads: /\bfeatureEnabled\('uploads'\)/,
 };
 
 /** The snapshot keys only `client/lib/state/features.js` may read. */
-const FLAG_READ = /\.(enableAi|aiAltText|enableNotion)\b/;
+const FLAG_READ = /\.(enableAi|aiAltText|enableNotion|enableUploads)\b/;
 
 // ------------------------------------------------------------ the server side
 
@@ -180,6 +212,8 @@ const { ROUTES: convertRoutes, handleConvert } =
   await import('../server/routes/api/convert.js');
 const { ROUTES: notionRoutes, handleNotion } =
   await import('../server/routes/api/notion/index.js');
+const { ROUTES: uploadRoutes, handleUploads } =
+  await import('../server/routes/api/uploads.js');
 
 /**
  * Each mount handle under a cluster, with the table it dispatches. A mount
@@ -191,6 +225,7 @@ const MOUNT_TABLES = {
     [handleConvert, convertRoutes],
   ],
   notion: [[handleNotion, notionRoutes]],
+  uploads: [[handleUploads, uploadRoutes]],
 };
 
 /** Tables whose rows may carry a `feature` of their own. */
@@ -377,6 +412,46 @@ test('description modal: Generate with AI exists only where AI does', async () =
     );
     cancel.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
     await pending;
+  }
+  setFeatures(null);
+});
+
+test('uploads: off is absent, only the sandbox greys out (D295)', async () => {
+  const { createFieldImage } =
+    await import('../client/views/editor/fields/images/single-image.js');
+  const { createImageLibraryUpload } =
+    await import('../client/views/editor/image-library/upload.js');
+  const openImagePicker = () => {};
+  openImagePicker.providers = ['library'];
+  openImagePicker.upload = null;
+
+  for (const [features, expect] of [
+    [{ enableUploads: true }, 'or upload your own image'],
+    [{ enableUploads: false, sandboxMode: true }, 'off in the sandbox'],
+    [{ enableUploads: false }, null],
+  ]) {
+    setFeatures(features);
+    const field = createFieldImage({ openImagePicker, pres: { id: 'p1' } })(
+      { id: 's1', type: 'image', content: {} },
+      { key: 'image' },
+      () => {},
+    );
+    const text = field.textContent;
+    assert.ok(!text.includes('null'), 'no stray null in the field');
+    assert.ok(!text.includes('Uploads are disabled'));
+    if (expect) assert.ok(text.includes(expect), `${expect} in ${text}`);
+    else assert.ok(!/upload/i.test(text), `no upload copy in: ${text}`);
+
+    const panel = createImageLibraryUpload({
+      user: { email: 'a@b.c' },
+      items: () => [],
+      uploadsEnabled: features.enableUploads,
+    });
+    if (features.enableUploads)
+      assert.ok(panel.el.querySelector('.image-lib-dropzone'));
+    else if (features.sandboxMode)
+      assert.ok(panel.el.textContent.includes('off in the sandbox'));
+    else assert.equal(panel.el.childElementCount, 0);
   }
   setFeatures(null);
 });

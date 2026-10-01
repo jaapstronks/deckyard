@@ -297,8 +297,8 @@ Existing decks are not migrated. Any ImageKit URLs already stored in them retain
   the subsystem. Favourites are only attached to a listing when the caller has an
   email.
 - **Uploads** (`/api/uploads`, `/api/media/presign`, `/api/media/confirm`) are
-  refused in demo/sandbox mode, and `handleUploads` is skipped entirely by the
-  router when `flags.enableUploads` is off.
+  refused in demo/sandbox mode, and `handleUploads` is not mounted when the
+  `uploads` cluster is off (`feature: 'uploads'`, D257).
 - **Bytes are not tenant-scoped.** A `/uploads/<uuid>.<ext>` URL or a bucket
   object URL is a capability: anyone holding it can fetch it, which is what makes
   published decks and share links work. Isolation is on the _catalogue_, not on

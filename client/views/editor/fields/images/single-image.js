@@ -6,6 +6,7 @@ import { createAltSetter } from './alt-utils.js';
 import { createImagePickerButtons } from './picker-buttons.js';
 import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom/index.js';
+import { featureEnabled, getFeatures } from '../../../../lib/state/features.js';
 import {
   DEFAULT_DECK_LANG,
   translationSourceFor,
@@ -20,16 +21,12 @@ export function createFieldImage(ctx) {
   const {
     BACKGROUNDS,
     openImagePicker,
-    features,
     pres,
     normalizeLang,
     markDirty,
     scheduleUiRefresh,
     rerenderEditor,
   } = ctx;
-
-  const flags = features && typeof features === 'object' ? features : {};
-  const uploadsDisabled = !flags.enableUploads;
 
   const normalizeUrl = (x) => {
     if (typeof x === 'string') return x.trim();
@@ -172,36 +169,38 @@ export function createFieldImage(ctx) {
       wrap.append(presetsWrap);
     }
 
-    // Only show help text if not explicitly hidden
+    // Only show help text if not explicitly hidden. D295: the upload copy
+    // exists where uploads do; the sandbox greys them out with one sentence
+    // (D181); an installation without uploads names them nowhere.
     if (!field?.hideHelp) {
-      wrap.append(
-        h('div', {
-          class: 'help',
-          text: uploadsDisabled
-            ? flags.sandboxMode
-              ? t(
-                  'editor.image.help.uploadsSandbox',
-                  'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.',
-                )
-              : t(
-                  'editor.image.help.uploadsDisabled',
-                  'Choose from the library (recommended). Uploads are disabled.',
-                )
-            : t(
-                'editor.image.help.withUploads',
-                'Choose from the library (recommended) or upload your own image.',
-              ),
-        }),
-        uploadsDisabled
-          ? null
-          : h('div', {
-              class: 'help',
-              text: t(
-                'editor.image.help.storage',
-                'Images are stored locally in /server/uploads and used via URL.',
-              ),
-            }),
-      );
+      if (featureEnabled('uploads')) {
+        wrap.append(
+          h('div', {
+            class: 'help',
+            text: t(
+              'editor.image.help.withUploads',
+              'Choose from the library (recommended) or upload your own image.',
+            ),
+          }),
+          h('div', {
+            class: 'help',
+            text: t(
+              'editor.image.help.storage',
+              'Images are stored locally in /server/uploads and used via URL.',
+            ),
+          }),
+        );
+      } else if (getFeatures()?.sandboxMode) {
+        wrap.append(
+          h('div', {
+            class: 'help',
+            text: t(
+              'editor.image.help.uploadsSandbox',
+              'Uploads are off in the sandbox. Choose from the library, Unsplash or Giphy.',
+            ),
+          }),
+        );
+      }
     }
 
     return wrap;
