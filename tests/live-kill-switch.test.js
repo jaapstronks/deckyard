@@ -50,6 +50,8 @@ const { SLIDE_TYPES, renderSlideHtml } =
   await import('../shared/slide-types.js');
 const { clusterOffSlideTypes, isInsertableSlideType } =
   await import('../shared/slide-types/policy.js');
+const { filterForShareViewer } =
+  await import('../server/utils/public-output.js');
 
 test.afterEach(() => {
   delete process.env.LIVE_ENABLED;
@@ -246,6 +248,28 @@ for (const type of LIVE_TYPES) {
     }
   });
 }
+
+test('the anonymous share viewer gets no live-only slide with the cluster off', () => {
+  // The viewer has no feature snapshot, so the server answers for it: with
+  // live on the invite is served and its runtime draws the QR; with live off
+  // the invite leaves the payload, like it leaves every published output.
+  const pres = {
+    id: 'p1',
+    slides: [
+      { id: 'a', type: 'title-slide', content: {} },
+      { id: 'b', type: 'follow-invite-slide', content: {} },
+      { id: 'c', type: 'poll-slide', content: {} },
+    ],
+  };
+  const ids = (p) => p.slides.map((s) => s.id);
+  assert.deepEqual(ids(filterForShareViewer(pres)), ['a', 'b', 'c']);
+  process.env.LIVE_ENABLED = 'false';
+  assert.deepEqual(
+    ids(filterForShareViewer(pres)),
+    ['a', 'c'],
+    'the invite leaves, the poll stays in its static form',
+  );
+});
 
 // ------------------------------------------------------------ boot
 
