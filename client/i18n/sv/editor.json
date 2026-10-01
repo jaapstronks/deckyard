@@ -350,7 +350,6 @@
   "editor.image.bgHelp.uploadsSandbox": "Uppladdning är avstängd i sandlådan. Välj från biblioteket, Unsplash eller Giphy.",
   "editor.image.bgHelp.withUploads": "Välj en befintlig bild från biblioteket, eller ladda upp din egen bild endast för denna slide.",
   "editor.image.bgLibraryTitle": "Bibliotek: välj en bakgrundsbild",
-  "editor.image.chooseOrUpload": "Välj / ladda upp…",
   "editor.image.fieldLabel": "Bild",
   "editor.image.focusGridHelp": "Dra punkten på bilden, eller välj en position här.",
   "editor.image.help.storage": "Bilder lagras lokalt i /server/uploads och används via URL.",

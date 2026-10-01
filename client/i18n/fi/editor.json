@@ -355,7 +355,6 @@
   "editor.image.bgHelp.uploadsSandbox": "Tiedostojen lähetys on pois käytöstä hiekkalaatikossa. Valitse kuva kirjastosta, Unsplashista tai Giphystä.",
   "editor.image.bgHelp.withUploads": "Valitse olemassa oleva kuva kirjastosta tai lataa oma kuva vain tälle dialle.",
   "editor.image.bgLibraryTitle": "Kirjasto: valitse taustakuva",
-  "editor.image.chooseOrUpload": "Valitse / lähetä…",
   "editor.image.fieldLabel": "Kuva",
   "editor.image.focusGridHelp": "Vedä pistettä kuvan päällä tai valitse sijainti tästä.",
   "editor.image.help.storage": "Kuvat tallennetaan paikallisesti /server/uploads-kansioon ja käytetään URL:n kautta.",

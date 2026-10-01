@@ -329,3 +329,41 @@ test("a call site's hint is shown under the chooser title, and only when given",
   assert.equal(root.querySelector('.image-source-hint'), null);
   root.remove();
 });
+
+test('the direct upload route exists only where the library takes uploads (B579)', () => {
+  const root = document.createElement('div');
+  const withoutUploads = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: spyOpener().open,
+  });
+  assert.equal(withoutUploads.upload, null);
+
+  const imagekitOnly = createImagePickerSeam({
+    root,
+    features: { enableUploads: true },
+    openImageKit: spyOpener().open,
+  });
+  assert.equal(imagekitOnly.upload, null);
+});
+
+test('the direct upload route skips the chooser and asks the library for the file dialog (B579)', () => {
+  const root = document.createElement('div');
+  const lib = spyOpener();
+  const seam = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true, enableUploads: true },
+    openImageLibrary: lib.open,
+    openBundledGradients: spyOpener().open,
+  });
+  assert.equal(typeof seam.upload, 'function');
+  seam.upload({ title: 'Pick', onPick: noop });
+  assert.equal(root.querySelector('.image-source-chooser'), null);
+  assert.equal(lib.calls.length, 1);
+  assert.equal(lib.calls[0].upload, true);
+
+  // The ordinary route still opens the library without the file dialog.
+  seam({ onPick: noop });
+  const chooser = root.querySelector('.image-source-chooser');
+  assert.ok(chooser, 'two sources: the ordinary route shows the chooser');
+});

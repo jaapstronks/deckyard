@@ -354,7 +354,6 @@
   "editor.image.bgHelp.uploadsSandbox": "Os carregamentos estão desativados no ambiente de testes. Escolha na biblioteca, no Unsplash ou no Giphy.",
   "editor.image.bgHelp.withUploads": "Escolha uma imagem existente da biblioteca, ou carregue a sua própria imagem apenas para este diapositivo.",
   "editor.image.bgLibraryTitle": "Biblioteca: escolher imagem de fundo",
-  "editor.image.chooseOrUpload": "Escolher / carregar…",
   "editor.image.fieldLabel": "Imagem",
   "editor.image.focusGridHelp": "Arraste o ponto sobre a imagem ou escolha aqui uma posição.",
   "editor.image.help.storage": "As imagens são armazenadas localmente em /server/uploads e usadas via URL.",

@@ -6,6 +6,9 @@ import {
   getAllTags,
   installTagsAutocomplete,
   createAltLangInputs,
+  createAltBlock,
+  confirmMissingAlt,
+  createMoreDetails,
 } from './utils.js';
 import { h } from '../../../lib/dom/index.js';
 import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
@@ -148,7 +151,7 @@ export function createImageLibraryDetail({
     ]);
 
     const img = h('img', {
-      class: 'image-lib-detail-preview',
+      class: 'image-lib-preview-img',
       src: it?.url || '',
       alt: '',
       loading: 'lazy',
@@ -182,105 +185,86 @@ export function createImageLibraryDetail({
     const altInputs = createAltLangInputs({ disabled: !isEditable });
     altInputs.write(alts);
 
-    const altsAreEmpty = () => altInputs.isEmpty();
-
-    const ensureAltBeforeUse = async () => {
-      if (!altsAreEmpty()) return true;
-      if (canAiAlt) {
-        const genOk = await confirmModal(document.body, {
-          title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-          message: t(
-            'imageLibrary.alt.missingSuggestGenerate',
-            'Alt text is empty. Generate it with AI now? (Recommended)',
-          ),
+    /** @returns {Promise<boolean>} true when the alt inputs were filled */
+    const generateAlt = async () => {
+      try {
+        setBusy(true);
+        setStatus(t('imageLibrary.alt.generating', 'Generating alt text…'));
+        const resp = await api(`/api/image-library/${it.id}/generate-alts`, {
+          method: 'POST',
+          body: {
+            langs: altInputs.langs,
+            context: context || null,
+          },
         });
-        if (genOk) {
-          try {
-            setBusy(true);
-            setStatus(t('imageLibrary.alt.generating', 'Generating alt text…'));
-            const resp = await api(
-              `/api/image-library/${it.id}/generate-alts`,
-              {
-                method: 'POST',
-                body: {
-                  langs: altInputs.langs,
-                  context: context || null,
-                },
-              },
-            );
-            altInputs.write(resp?.alts);
-
-            const updated = await api(`/api/image-library/${it.id}`, {
-              method: 'PUT',
-              body: { alts: altInputs.read() },
-            });
-            onItemUpdated(updated);
-            setStatus(t('imageLibrary.alt.generated', 'Generated.'));
-            renderDetail(updated);
-            return true;
-          } catch (e) {
-            setStatus(String(e?.message || e));
-            return false;
-          } finally {
-            setBusy(false);
-          }
-        }
+        altInputs.write(resp?.alts);
+        setStatus(t('imageLibrary.alt.generated', 'Generated.'));
+        return true;
+      } catch (e) {
+        setStatus(String(e?.message || e));
+        return false;
+      } finally {
+        setBusy(false);
       }
-      return await confirmModal(document.body, {
-        title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-        message: t(
-          'imageLibrary.alt.missingConfirmUse',
-          'Alt text is still empty. Use this image anyway?',
-        ),
-      });
     };
 
-    const btnGenerateAlt = canAiAlt
-      ? h('button', {
-          class: 'btn btn-secondary',
-          type: 'button',
-          text: t('imageLibrary.alt.generate', 'Generate alt text (AI)'),
-          onclick: async () => {
-            try {
-              const overwriteOk = !altInputs.isEmpty()
-                ? await confirmModal(document.body, {
-                    title: t(
-                      'imageLibrary.alt.overwriteTitle',
-                      'Overwrite alt text',
-                    ),
-                    message: t(
-                      'imageLibrary.alt.overwriteConfirm',
-                      'Overwrite existing alt text with AI-generated text?',
-                    ),
-                    confirmLabel: t('imageLibrary.alt.overwrite', 'Overwrite'),
-                    danger: true,
-                  })
-                : true;
-              if (!overwriteOk) return;
-              setBusy(true);
-              setStatus(
-                t('imageLibrary.alt.generating', 'Generating alt text…'),
-              );
-              const resp = await api(
-                `/api/image-library/${it.id}/generate-alts`,
-                {
-                  method: 'POST',
-                  body: {
-                    langs: altInputs.langs,
-                    context: context || null,
-                  },
-                },
-              );
-              altInputs.write(resp?.alts);
-              setStatus(t('imageLibrary.alt.generated', 'Generated.'));
-            } catch (e) {
-              setStatus(String(e?.message || e));
-            } finally {
-              setBusy(false);
-            }
-          },
-        })
-      : null;
+    const generateAltOverwriting = async () => {
+      if (!altInputs.isEmpty()) {
+        const overwriteOk = await confirmModal(document.body, {
+          title: t('imageLibrary.alt.overwriteTitle', 'Overwrite alt text'),
+          message: t(
+            'imageLibrary.alt.overwriteConfirm',
+            'Overwrite existing alt text with AI-generated text?',
+          ),
+          confirmLabel: t('imageLibrary.alt.overwrite', 'Overwrite'),
+          danger: true,
+        });
+        if (!overwriteOk) return;
+      }
+      await generateAlt();
+    };
+
+    // The AI button sits with the alt inputs (B579), not in the action row.
+    const altBlock = createAltBlock({
+      altInputs,
+      onGenerate: canAiAlt && isEditable ? generateAltOverwriting : null,
+    });
+
+    const readForm = () => ({
+      description: inDescription.value || '',
+      tags: String(inTags.value || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean),
+      photographer: inPhotographer.value || '',
+      alts: altInputs.read(),
+    });
+    const savedForm = JSON.stringify(readForm());
+
+    /**
+     * Store the form when it differs from what was loaded.
+     * @returns {Promise<Object|null>} the stored item, `it` when nothing
+     *   changed, null when the save failed
+     */
+    const saveIfChanged = async () => {
+      if (!isEditable || JSON.stringify(readForm()) === savedForm) return it;
+      try {
+        setBusy(true);
+        setStatus(t('common.saving', 'Saving…'));
+        const updated = await api(`/api/image-library/${it.id}`, {
+          method: 'PUT',
+          body: readForm(),
+        });
+        onItemUpdated(updated);
+        setStatus(t('common.saved', 'Saved'));
+        return updated;
+      } catch (e) {
+        setStatus(String(e?.message || e));
+        return null;
+      } finally {
+        setBusy(false);
+      }
+    };
 
     // The API spells these `createdAt` / `updatedAt` (`mapImageRow` in
     // server/storage/image-library.js); reading `created` / `modified` here
@@ -302,15 +286,26 @@ export function createImageLibraryDetail({
       }),
     ]);
 
+    // "Use this image" also keeps what was typed (B579): an alt text filled in
+    // here should not be lost because the user skipped "Save".
     const btnUse = onPick
       ? h('button', {
           class: 'btn btn-primary',
           type: 'button',
           text: t('imageLibrary.useThis', 'Use this image'),
           onclick: async () => {
-            const ok = await ensureAltBeforeUse();
-            if (!ok) return;
-            onPick?.(it, {
+            if (
+              altInputs.isEmpty() &&
+              !(await confirmMissingAlt({
+                canAiAlt: canAiAlt && isEditable,
+                generate: generateAlt,
+              }))
+            ) {
+              return;
+            }
+            const stored = await saveIfChanged();
+            if (!stored) return;
+            onPick?.(stored, {
               applyCaptionCredit: allowCaptionCredit && creditCb?.checked,
             });
             onClose();
@@ -324,30 +319,8 @@ export function createImageLibraryDetail({
           type: 'button',
           text: t('common.save', 'Save'),
           onclick: async () => {
-            try {
-              setBusy(true);
-              setStatus(t('common.saving', 'Saving…'));
-              const tagsArr = String(inTags.value || '')
-                .split(',')
-                .map((s) => s.trim())
-                .filter(Boolean);
-              const updated = await api(`/api/image-library/${it.id}`, {
-                method: 'PUT',
-                body: {
-                  description: inDescription.value || '',
-                  tags: tagsArr,
-                  photographer: inPhotographer.value || '',
-                  alts: altInputs.read(),
-                },
-              });
-              onItemUpdated(updated);
-              setStatus(t('common.saved', 'Saved'));
-              renderDetail(updated);
-            } catch (e) {
-              setStatus(String(e?.message || e));
-            } finally {
-              setBusy(false);
-            }
+            const updated = await saveIfChanged();
+            if (updated) renderDetail(updated);
           },
         })
       : null;
@@ -489,53 +462,57 @@ export function createImageLibraryDetail({
           })
         : null;
 
+    // Preview beside the form, the rarely needed fields behind "More
+    // details", the action bar sticky at the bottom (B579): use, alt text and
+    // the buttons fit one screen without scrolling.
     detailWrap.append(
       headerRow,
-      img,
-      dates,
-      h('div', { class: 'image-lib-detail-meta' }, [
-        h('div', { class: 'image-lib-detail-grid' }, [
-          createFieldWrap(
-            t('imageLibrary.upload.url.label', 'Image URL'),
-            inUrl,
-            {
-              helpText: t(
-                'imageLibrary.detail.urlHelp',
-                'Slides store the URL, so deleting from the library does not break existing slides.',
-              ),
-            },
-          ),
-          createFieldWrap(
-            t('imageLibrary.description.label', 'Description (internal)'),
-            inDescription,
-          ),
-          createFieldWrap(t('imageLibrary.tags.label', 'Tags'), inTags),
+      h('div', { class: 'image-lib-picked' }, [
+        h('div', { class: 'image-lib-preview' }, [img]),
+        h('div', { class: 'stack is-gap-3 image-lib-metadata' }, [
+          altBlock.el,
           createFieldWrap(
             t('imageLibrary.photographer.label', 'Photographer'),
             inPhotographer,
           ),
-          ...altInputs.fields,
-        ]),
-        tagsDatalist,
-        inputReplace,
-        canReplaceInPlace
-          ? null
-          : h('div', {
-              class: 'help',
-              text: t(
-                'imageLibrary.replace.notLocal',
-                'Replace file is only available for images stored as local uploads (/uploads/…).',
-              ),
-            }),
-        usageBlock,
-        h('div', { class: 'image-lib-detail-actions' }, [
-          h('div', {}, [btnUse]),
-          h('div', { class: 'row is-wrap' }, [
-            btnReplace,
-            btnGenerateAlt,
-            btnSave,
-            btnDelete,
+          createMoreDetails([
+            createFieldWrap(
+              t('imageLibrary.upload.url.label', 'Image URL'),
+              inUrl,
+              {
+                helpText: t(
+                  'imageLibrary.detail.urlHelp',
+                  'Slides store the URL, so deleting from the library does not break existing slides.',
+                ),
+              },
+            ),
+            createFieldWrap(
+              t('imageLibrary.description.label', 'Description (internal)'),
+              inDescription,
+            ),
+            createFieldWrap(t('imageLibrary.tags.label', 'Tags'), inTags),
+            tagsDatalist,
+            dates,
+            canReplaceInPlace
+              ? null
+              : h('div', {
+                  class: 'help',
+                  text: t(
+                    'imageLibrary.replace.notLocal',
+                    'Replace file is only available for images stored as local uploads (/uploads/…).',
+                  ),
+                }),
+            usageBlock,
           ]),
+          inputReplace,
+        ]),
+      ]),
+      h('div', { class: 'image-lib-actions' }, [
+        btnUse,
+        h('div', { class: 'row is-wrap is-gap-2 image-lib-actions-rest' }, [
+          btnReplace,
+          btnSave,
+          btnDelete,
         ]),
       ]),
     );

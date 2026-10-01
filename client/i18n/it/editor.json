@@ -353,7 +353,6 @@
   "editor.image.bgHelp.uploadsSandbox": "I caricamenti sono disattivati nella sandbox. Scegli dalla libreria, da Unsplash o da Giphy.",
   "editor.image.bgHelp.withUploads": "Scegli un'immagine esistente dalla libreria oppure carica una tua immagine solo per questa slide.",
   "editor.image.bgLibraryTitle": "Libreria: scegli un'immagine di sfondo",
-  "editor.image.chooseOrUpload": "Scegli / carica…",
   "editor.image.fieldLabel": "Immagine",
   "editor.image.focusGridHelp": "Trascina il punto sull'immagine oppure scegli qui una posizione.",
   "editor.image.help.storage": "Le immagini sono memorizzate localmente in /server/uploads e usate tramite URL.",

@@ -56,14 +56,48 @@ import { h } from '../../../lib/dom/index.js';
  * @property {boolean} [primary]            The source the deployment means as *the* source:
  *                                          listed first, drawn as primary, focused. At most one.
  * @property {(opts: PickerOpts) => void} open
+ * @property {(opts: PickerOpts) => void} [upload] Straight to the OS file dialog,
+ *                                          skipping the source chooser (B579).
  */
 
 /**
  * Adapter: native image library (local/S3 upload + Unsplash/Giphy).
  * @param {Function} openLibraryRaw - bound `openImageLibraryPicker`
+ * @param {{canUpload?: boolean}} [opts] - whether this deployment takes uploads
  * @returns {PickerProvider}
  */
-function libraryProvider(openLibraryRaw) {
+function libraryProvider(openLibraryRaw, { canUpload = false } = {}) {
+  const openWith = (opts, { upload = false } = {}) =>
+    openLibraryRaw({
+      upload,
+      title: opts.title,
+      allowCaptionCredit: !!opts.allowCaptionCredit,
+      context: opts.context,
+      onPick: (it, { applyCaptionCredit } = {}) => {
+        const url = typeof it?.url === 'string' ? it.url.trim() : '';
+        if (!url) return;
+        const photographer =
+          typeof it?.photographer === 'string' ? it.photographer.trim() : '';
+        opts.onPick?.({
+          url,
+          alts: it?.alts && typeof it.alts === 'object' ? it.alts : undefined,
+          tags: Array.isArray(it?.tags) ? it.tags : undefined,
+          caption:
+            applyCaptionCredit && photographer
+              ? t('editor.image.photoCredit', 'Photo: {photographer}', {
+                  photographer,
+                })
+              : undefined,
+          meta: {
+            photographer: photographer || undefined,
+            source: it?.source,
+            sourceUrl: it?.sourceUrl,
+            id: it?.id,
+            description: it?.description,
+          },
+        });
+      },
+    });
   return {
     id: 'local-library',
     label: t('editor.image.source.library', 'Image library'),
@@ -71,37 +105,10 @@ function libraryProvider(openLibraryRaw) {
       'editor.image.source.library.description',
       'Uploaded images and stock photos',
     ),
-    open(opts) {
-      openLibraryRaw({
-        title: opts.title,
-        allowCaptionCredit: !!opts.allowCaptionCredit,
-        context: opts.context,
-        onPick: (it, { applyCaptionCredit } = {}) => {
-          const url = typeof it?.url === 'string' ? it.url.trim() : '';
-          if (!url) return;
-          const photographer =
-            typeof it?.photographer === 'string' ? it.photographer.trim() : '';
-          opts.onPick?.({
-            url,
-            alts: it?.alts && typeof it.alts === 'object' ? it.alts : undefined,
-            tags: Array.isArray(it?.tags) ? it.tags : undefined,
-            caption:
-              applyCaptionCredit && photographer
-                ? t('editor.image.photoCredit', 'Photo: {photographer}', {
-                    photographer,
-                  })
-                : undefined,
-            meta: {
-              photographer: photographer || undefined,
-              source: it?.source,
-              sourceUrl: it?.sourceUrl,
-              id: it?.id,
-              description: it?.description,
-            },
-          });
-        },
-      });
-    },
+    open: (opts) => openWith(opts),
+    // The direct route from an image field (B579): file dialog first, no
+    // source chooser. Only where this deployment stores uploads.
+    upload: canUpload ? (opts) => openWith(opts, { upload: true }) : undefined,
   };
 }
 
@@ -302,7 +309,10 @@ function openSourceChooser({ root, providers, hint, onChoose }) {
  * @param {Function} [args.openImageKit]         - bound `openImageKitPicker`
  * @param {Function} [args.importImageKitToOwnMedia] - copies a picked ImageKit
  *   asset into own media; absent when this deployment has no own media.
- * @returns {((opts: PickerOpts) => void) & { providers: PickerProvider[] }}
+ * @returns {((opts: PickerOpts) => void) & {
+ *   providers: PickerProvider[],
+ *   upload: ((opts: PickerOpts) => void) | null,
+ * }}
  */
 export function createImagePickerSeam({
   root,
@@ -315,7 +325,9 @@ export function createImagePickerSeam({
   const flags = features && typeof features === 'object' ? features : {};
   const providers = [];
   if (flags.enableImageLibrary && typeof openImageLibrary === 'function') {
-    providers.push(libraryProvider(openImageLibrary));
+    providers.push(
+      libraryProvider(openImageLibrary, { canUpload: !!flags.enableUploads }),
+    );
   }
   if (typeof openBundledGradients === 'function') {
     providers.push(bundledGradientsProvider(openBundledGradients));
@@ -339,6 +351,13 @@ export function createImagePickerSeam({
       onChoose: (p) => p.open(opts),
     });
   }
+
+  // The direct upload route (B579): one provider owns uploads, and an image
+  // field offers "Upload from computer" only when this is a function.
+  const uploader = providers.find((p) => typeof p.upload === 'function');
+  openImagePicker.upload = uploader
+    ? (opts = {}) => uploader.upload(opts)
+    : null;
 
   openImagePicker.providers = providers;
   return openImagePicker;

@@ -4,7 +4,7 @@ import { createModal } from '../../../lib/dom/modal.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { createImageLibraryGrid } from './grid.js';
 import { createImageLibraryDetail } from './detail.js';
-import { createImageLibraryUpload } from './upload.js';
+import { createImageLibraryUpload, chooseImageFile } from './upload.js';
 import { createUnsplashSearch } from './unsplash-search.js';
 import { createGiphySearch } from './giphy-search.js';
 import { createMediaLibrarySidebar, SECTIONS } from './sidebar.js';
@@ -99,10 +99,26 @@ function getSectionInfo(section) {
 }
 
 /**
- * Opens the image library picker modal
+ * Opens the image library picker modal.
+ *
+ * With `upload: true` it is the direct upload route from an image field
+ * (B579): the OS file dialog comes first, and the modal opens on the chosen
+ * file, already uploading. A cancelled dialog opens nothing.
+ *
  * @param {Object} options - Picker options
  */
-export function openImageLibraryPicker({
+export function openImageLibraryPicker({ upload = false, ...options } = {}) {
+  if (upload) {
+    chooseImageFile((file) => openLibraryModal({ ...options, file }));
+    return;
+  }
+  openLibraryModal(options);
+}
+
+/**
+ * @param {Object} options - Picker options, plus the `file` to start uploading
+ */
+function openLibraryModal({
   title = t('imageLibrary.title', 'Media Library'),
   allowCaptionCredit = false,
   onPick,
@@ -111,6 +127,7 @@ export function openImageLibraryPicker({
   root,
   features,
   context = null,
+  file = null,
 } = {}) {
   const flags = features && typeof features === 'object' ? features : {};
   const uploadsDisabled = !flags.enableUploads;
@@ -568,6 +585,10 @@ export function openImageLibraryPicker({
   renderMobileNav();
   // On a frame: the focus trap claims initial focus on the next frame, so a
   // synchronous call here would be overridden one frame later.
-  requestAnimationFrame(() => gridComponent.focus());
-  load();
+  if (file) {
+    load().then(() => uploadComponent.uploadFile(file));
+  } else {
+    requestAnimationFrame(() => gridComponent.focus());
+    load();
+  }
 }

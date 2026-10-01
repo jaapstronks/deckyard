@@ -350,7 +350,6 @@
   "editor.image.bgHelp.uploadsSandbox": "Uploads sind in der Sandbox deaktiviert. Wählen Sie aus der Bibliothek, Unsplash oder Giphy.",
   "editor.image.bgHelp.withUploads": "Wählen Sie ein bestehendes Bild aus der Bibliothek, oder laden Sie Ihr eigenes Bild nur für diese Folie hoch.",
   "editor.image.bgLibraryTitle": "Bibliothek: Hintergrundbild auswählen",
-  "editor.image.chooseOrUpload": "Auswählen / hochladen…",
   "editor.image.fieldLabel": "Bild",
   "editor.image.focusGridHelp": "Ziehen Sie den Punkt auf dem Bild oder wählen Sie hier eine Position.",
   "editor.image.help.storage": "Bilder werden lokal in /server/uploads gespeichert und über URL verwendet.",

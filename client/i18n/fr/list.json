@@ -32,7 +32,6 @@
   "imageLibrary.empty": "Pas encore d'éléments dans la bibliothèque.",
   "imageLibrary.favorite": "Ajouter aux favoris",
   "imageLibrary.loading": "Chargement de la bibliothèque…",
-  "imageLibrary.metadata": "Détails de l'image (facultatif)",
   "imageLibrary.noResults": "Aucun résultat.",
   "imageLibrary.photographer": "Photographe : {name}",
   "imageLibrary.photographer.label": "Photographe",

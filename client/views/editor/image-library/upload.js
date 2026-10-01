@@ -1,12 +1,14 @@
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { confirmModal } from '../../../lib/dom/modal.js';
 import { getFeatures } from '../../../lib/state/features.js';
 import {
   readFileAsDataUrl,
   getAllTags,
   installTagsAutocomplete,
   createAltLangInputs,
+  createAltBlock,
+  confirmMissingAlt,
+  createMoreDetails,
 } from './utils.js';
 import { h } from '../../../lib/dom/index.js';
 import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
@@ -89,16 +91,36 @@ export async function uploadFile(api, file) {
 }
 
 /**
+ * Open the OS file dialog for one image, restricted to what the server takes.
+ * Calls `onFile` with the chosen file; a cancelled dialog calls nothing.
+ *
+ * The direct upload route from an image field (B579) starts here, before any
+ * modal exists, so the file input cannot live inside the upload component.
+ *
+ * @param {(file: File) => void} onFile
+ */
+export function chooseImageFile(onFile) {
+  const input = h('input', { type: 'file', accept: imageUploadAccept() });
+  input.addEventListener('change', () => {
+    const file = input.files?.[0];
+    if (file) onFile(file);
+  });
+  input.click();
+}
+
+/**
  * Creates the image library upload component.
  *
  * - Drag-and-drop zone and URL field side by side, both visible from the start
- * - Metadata fields only shown after an image is picked
+ * - Once an image is picked: preview beside the form, alt text up front, the
+ *   rarely needed fields behind "More details", and an action bar that stays
+ *   in view (B579)
  *
  * The picker mounts this at the *top* of the library view (B210): uploading is
  * the common way into the modal, so it must not cost a scroll past the grid.
  *
  * @param {Object} options - Component options
- * @returns {{el: HTMLElement}} Upload component API
+ * @returns {{el: HTMLElement, uploadFile: (file: File) => Promise<void>}} Upload component API
  */
 export function createImageLibraryUpload({
   api,
@@ -117,9 +139,10 @@ export function createImageLibraryUpload({
   setBusy,
 } = {}) {
   const addWrap = h('div', { class: 'stack image-lib-upload' });
+  const inert = { el: addWrap, uploadFile: async () => {} };
 
   if (!user) {
-    return { el: addWrap };
+    return inert;
   }
 
   if (uploadsDisabled) {
@@ -141,7 +164,7 @@ export function createImageLibraryUpload({
             ),
       }),
     );
-    return { el: addWrap };
+    return inert;
   }
 
   let newUrl = '';
@@ -178,24 +201,6 @@ export function createImageLibraryUpload({
     ]),
   ]);
 
-  // Preview section (hidden initially)
-  const previewImg = h('img', { class: 'image-lib-preview-img', alt: '' });
-  const previewWrap = h('div', { class: 'image-lib-preview', hidden: true }, [
-    previewImg,
-  ]);
-
-  // Change image button (shown after upload)
-  const btnChangeImage = h('button', {
-    class: 'btn btn-secondary btn-sm',
-    text: t('imageLibrary.changeImage', 'Change image'),
-    onclick: () => inputFile.click(),
-  });
-  const changeImageRow = h(
-    'div',
-    { class: 'image-lib-change-row', hidden: true },
-    [btnChangeImage],
-  );
-
   // URL input as the alternative source. It sits beside the dropzone rather
   // than behind a toggle: a toggle that opens a field below the fold reads as
   // a broken button (B210).
@@ -213,7 +218,16 @@ export function createImageLibraryUpload({
     createFieldWrap(t('imageLibrary.upload.url.label', 'Image URL'), inputUrl),
   ]);
 
-  // Metadata section (hidden until image uploaded)
+  // Preview, beside the form rather than above it (B579): a preview on top
+  // pushed the alt text and the buttons below the fold.
+  const previewImg = h('img', { class: 'image-lib-preview-img', alt: '' });
+  const btnChangeImage = h('button', {
+    class: 'btn btn-secondary btn-sm',
+    type: 'button',
+    text: t('imageLibrary.changeImage', 'Change image'),
+    onclick: () => inputFile.click(),
+  });
+
   const inDescription = h('input', {
     class: 'form-input',
     placeholder: t('imageLibrary.description', 'Brief description (optional)'),
@@ -243,176 +257,127 @@ export function createImageLibraryUpload({
       .map((s) => s.trim())
       .filter(Boolean);
 
-  // Generate alt button
-  const btnGenerateAlt = canAiAlt
-    ? h('button', {
-        class: 'btn btn-secondary btn-sm',
-        type: 'button',
-        text: t('imageLibrary.alt.generate', 'Generate alt text (AI)'),
-        onclick: async () => {
-          if (!newUrl) return;
-          try {
-            setBusy(true);
-            setStatus(t('imageLibrary.alt.generating', 'Generating alt text…'));
-            const resp = await api('/api/image-library/generate-alts', {
-              method: 'POST',
-              body: {
-                url: newUrl,
-                description: inDescription.value || '',
-                tags: getTagsArray(),
-                photographer: inPhotographer.value || '',
-                langs: altInputs.langs,
-                context: context || null,
-              },
-            });
-            altInputs.write(resp?.alts);
-            setStatus(t('imageLibrary.alt.generated', 'Generated.'));
-          } catch (e) {
-            setStatus(String(e?.message || e));
-          } finally {
-            setBusy(false);
-          }
-        },
-      })
-    : null;
-
-  // Alt text fields with optional generate button
-  const altHeader = h('div', { class: 'row spread' }, [
-    h('div', {
-      class: 'field-label',
-      text: t('imageLibrary.altText', 'Alt text (accessibility)'),
-    }),
-    btnGenerateAlt,
-  ]);
-
-  const metadataSection = h(
-    'div',
-    { class: 'image-lib-metadata', hidden: true },
-    [
-      h('div', {
-        class: 'field-label',
-        text: t('imageLibrary.metadata', 'Image details (optional)'),
-      }),
-      h('div', { class: 'image-lib-metadata-grid' }, [
-        inDescription,
-        inTags,
-        inPhotographer,
-      ]),
-      tagsDatalist,
-      altHeader,
-      h('div', { class: 'image-lib-metadata-grid' }, altInputs.fields),
-    ],
-  );
-
-  // Action buttons (hidden until image uploaded)
-  const btnCreate = h('button', {
-    class: 'btn btn-primary',
-    text: t('imageLibrary.addButton', 'Save to library'),
-    onclick: async () => {
-      if (!newUrl) return;
+  /** @returns {Promise<boolean>} true when the alt inputs were filled */
+  const generateAlt = async () => {
+    if (!newUrl) return false;
+    try {
       setBusy(true);
-      setStatus(t('common.saving', 'Saving…'));
-      try {
-        const created = await api('/api/image-library', {
-          method: 'POST',
-          body: {
-            url: newUrl,
-            description: inDescription.value || '',
-            tags: getTagsArray(),
-            photographer: inPhotographer.value || '',
-            alts: altInputs.read(),
-          },
-        });
-        onItemCreated(created);
-        setStatus(t('imageLibrary.added', 'Added.'));
-        onShowDetail(created);
-      } catch (e) {
-        setStatus(String(e?.message || e));
-      } finally {
-        setBusy(false);
-      }
-    },
-  });
-
-  const btnUseOnly = h('button', {
-    class: 'btn btn-secondary',
-    text: t('imageLibrary.useWithoutSaving', 'Use without saving'),
-    onclick: async () => {
-      if (!newUrl) return;
-      if (altInputs.isEmpty()) {
-        if (canAiAlt) {
-          const genOk = await confirmModal(document.body, {
-            title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-            message: t(
-              'imageLibrary.alt.missingSuggestGenerate',
-              'Alt text is empty. Generate it with AI now? (Recommended)',
-            ),
-          });
-          if (genOk) {
-            try {
-              setBusy(true);
-              setStatus(
-                t('imageLibrary.alt.generating', 'Generating alt text…'),
-              );
-              const resp = await api('/api/image-library/generate-alts', {
-                method: 'POST',
-                body: {
-                  url: newUrl,
-                  description: inDescription.value || '',
-                  tags: getTagsArray(),
-                  photographer: inPhotographer.value || '',
-                  langs: altInputs.langs,
-                  context: context || null,
-                },
-              });
-              altInputs.write(resp?.alts);
-              setStatus(t('imageLibrary.alt.generated', 'Generated.'));
-            } catch (e) {
-              setStatus(String(e?.message || e));
-              return;
-            } finally {
-              setBusy(false);
-            }
-          } else {
-            const ok = await confirmModal(document.body, {
-              title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-              message: t(
-                'imageLibrary.alt.missingConfirmUse',
-                'Alt text is still empty. Use this image anyway?',
-              ),
-            });
-            if (!ok) return;
-          }
-        } else {
-          const ok = await confirmModal(document.body, {
-            title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
-            message: t(
-              'imageLibrary.alt.missingConfirmUse',
-              'Alt text is still empty. Use this image anyway?',
-            ),
-          });
-          if (!ok) return;
-        }
-      }
-
-      onPick?.(
-        {
+      setStatus(t('imageLibrary.alt.generating', 'Generating alt text…'));
+      const resp = await api('/api/image-library/generate-alts', {
+        method: 'POST',
+        body: {
           url: newUrl,
           description: inDescription.value || '',
           tags: getTagsArray(),
           photographer: inPhotographer.value || '',
-          alts: altInputs.read(),
+          langs: altInputs.langs,
+          context: context || null,
         },
-        { applyCaptionCredit: allowCaptionCredit && creditCb?.checked },
-      );
-      onClose();
+      });
+      altInputs.write(resp?.alts);
+      setStatus(t('imageLibrary.alt.generated', 'Generated.'));
+      return true;
+    } catch (e) {
+      setStatus(String(e?.message || e));
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const altBlock = createAltBlock({
+    altInputs,
+    onGenerate: canAiAlt ? generateAlt : null,
+    withAutoToggle: true,
+  });
+
+  const pickedSection = h('div', { class: 'image-lib-picked', hidden: true }, [
+    h('div', { class: 'stack is-gap-2 image-lib-preview' }, [
+      previewImg,
+      btnChangeImage,
+    ]),
+    h('div', { class: 'stack is-gap-3 image-lib-metadata' }, [
+      altBlock.el,
+      createFieldWrap(
+        t('imageLibrary.photographer.label', 'Photographer'),
+        inPhotographer,
+      ),
+      createMoreDetails([inDescription, inTags, tagsDatalist]),
+    ]),
+  ]);
+
+  const readForm = () => ({
+    url: newUrl,
+    description: inDescription.value || '',
+    tags: getTagsArray(),
+    photographer: inPhotographer.value || '',
+    alts: altInputs.read(),
+  });
+
+  /** @returns {Promise<boolean>} false when the user backed out */
+  const ensureAlt = () =>
+    altInputs.isEmpty()
+      ? confirmMissingAlt({ canAiAlt, generate: generateAlt })
+      : Promise.resolve(true);
+
+  const pickAndClose = (picked) => {
+    onPick?.(picked, {
+      applyCaptionCredit: allowCaptionCredit && creditCb?.checked,
+    });
+    onClose();
+  };
+
+  // One primary action (B579): opened from an image field it saves to the
+  // library *and* uses the image; without a field to fill it only saves.
+  const btnSave = h('button', {
+    class: 'btn btn-primary',
+    type: 'button',
+    text: onPick
+      ? t('imageLibrary.useThis', 'Use this image')
+      : t('imageLibrary.addButton', 'Save to library'),
+    onclick: async () => {
+      if (!newUrl) return;
+      if (onPick && !(await ensureAlt())) return;
+      setBusy(true);
+      setStatus(t('common.saving', 'Saving…'));
+      let created;
+      try {
+        created = await api('/api/image-library', {
+          method: 'POST',
+          body: readForm(),
+        });
+        onItemCreated(created);
+        setStatus(t('imageLibrary.added', 'Added.'));
+      } catch (e) {
+        setStatus(String(e?.message || e));
+        return;
+      } finally {
+        setBusy(false);
+      }
+      if (onPick) pickAndClose(created);
+      else onShowDetail(created);
     },
   });
 
+  const btnUseOnly = onPick
+    ? h('button', {
+        class: 'btn btn-secondary',
+        type: 'button',
+        text: t('imageLibrary.useWithoutSaving', 'Use without saving'),
+        onclick: async () => {
+          if (!newUrl) return;
+          if (!(await ensureAlt())) return;
+          pickAndClose(readForm());
+        },
+      })
+    : null;
+
+  // Sticky at the bottom of the scroll area (B579): the buttons stay in view
+  // whatever the form's height, which retires the old scrollIntoView.
   const actionsSection = h(
     'div',
     { class: 'image-lib-actions', hidden: true },
-    [btnCreate, btnUseOnly],
+    [btnSave, btnUseOnly],
   );
 
   /**
@@ -431,16 +396,9 @@ export function createImageLibraryUpload({
     newUrl = url;
     previewImg.src = url;
     entryRow.hidden = !fromUrl;
-    changeImageRow.hidden = fromUrl;
-    previewWrap.hidden = false;
-    metadataSection.hidden = false;
+    btnChangeImage.hidden = fromUrl;
+    pickedSection.hidden = false;
     actionsSection.hidden = false;
-    if (!fromUrl) {
-      // The panel now sits above the grid, so its own tail can fall below the
-      // fold: bring the Save/Use buttons into view rather than leave the user
-      // hunting for them. `nearest` scrolls the minimum needed, or not at all.
-      actionsSection.scrollIntoView({ block: 'nearest' });
-    }
   };
 
   /** Back to "nothing picked yet" — only the URL path can undo a pick. */
@@ -448,32 +406,37 @@ export function createImageLibraryUpload({
     newUrl = '';
     previewImg.removeAttribute('src');
     entryRow.hidden = false;
-    changeImageRow.hidden = true;
-    previewWrap.hidden = true;
-    metadataSection.hidden = true;
+    pickedSection.hidden = true;
     actionsSection.hidden = true;
   };
 
   // Handle file upload
-  const handleFile = async (file) => {
+  const uploadPicked = async (file) => {
     if (!file) return;
     setBusy(true);
     setStatus(t('imageLibrary.uploading', 'Uploading…'));
+    let uploaded = false;
     try {
       const result = await uploadFile(api, file);
       showUploadedState(result.url);
       setStatus(t('imageLibrary.uploaded', 'Uploaded.'));
+      uploaded = true;
     } catch (e) {
       setStatus(String(e?.message || e));
     } finally {
       setBusy(false);
+    }
+    // The remembered "generate on upload" choice: the alt is there before the
+    // user reaches for "Use", so the empty-alt question rarely comes up.
+    if (uploaded && altBlock.autoAlt() && altInputs.isEmpty()) {
+      await generateAlt();
     }
   };
 
   // File input change
   inputFile.addEventListener('change', () => {
     const file = inputFile.files?.[0];
-    if (file) handleFile(file);
+    if (file) uploadPicked(file);
   });
 
   // Dropzone click
@@ -492,7 +455,7 @@ export function createImageLibraryUpload({
     dropzone.classList.remove('is-dragover');
     const file = e.dataTransfer?.files?.[0];
     if (file && file.type.startsWith('image/')) {
-      handleFile(file);
+      uploadPicked(file);
     }
   });
 
@@ -510,14 +473,7 @@ export function createImageLibraryUpload({
 
   // Assemble component. No "Add new" heading here: this block is the first
   // thing in the modal below its own title, and the dropzone says what it is.
-  addWrap.append(
-    inputFile,
-    entryRow,
-    previewWrap,
-    changeImageRow,
-    metadataSection,
-    actionsSection,
-  );
+  addWrap.append(inputFile, entryRow, pickedSection, actionsSection);
 
-  return { el: addWrap };
+  return { el: addWrap, uploadFile: uploadPicked };
 }
