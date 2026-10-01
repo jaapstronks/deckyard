@@ -149,11 +149,11 @@ export async function loadPresentationForActor(
 }
 
 /**
- * Whether an identity may do `access` on a deck the caller already loaded —
- * the same decision as {@link loadPresentationForActor}, as a boolean, for a
- * handling that reports a capability or degrades instead of refusing (the
- * collab socket opens read-only; the question feed reports whether promoting
- * is allowed).
+ * Whether an identity may do `access` on a deck that
+ * {@link loadPresentationForActor} already handed out — the same decision, as
+ * a boolean, for a handling that degrades instead of refusing (the collab
+ * socket opens read-only). A handling that starts from an id asks the loader
+ * itself, so no route loads a deck beside it (D289).
  *
  * @param {Object} pres
  * @param {ServiceIdentity} identity

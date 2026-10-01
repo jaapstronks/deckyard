@@ -16,13 +16,11 @@ import {
   promoteQuestion,
   removeQuestion,
 } from '../../storage/questions.js';
-import {
-  getPresentation,
-  updatePresentation,
-} from '../../storage/presentations/index.js';
+import { updatePresentation } from '../../storage/presentations/index.js';
 import { notifyLiveSessionDeckUpdated } from '../../storage/live-sessions/index.js';
-import { mayOnPresentation } from '../../services/presentations.js';
+import { loadPresentationForActor } from '../../services/presentations.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
+import { isAppError } from '../../utils/errors.js';
 import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
@@ -58,13 +56,28 @@ function canRemoveQuestions(authedUser) {
  * the write right consults `isUnrestricted`, never `isAdmin`. The two
  * gates of this module each refuse exactly whom the other admits, on purpose.
  *
+ * The same load-and-decide the promote route makes, reported as a boolean: an
+ * absent deck and a refused one both read "no" here (D289).
+ *
+ * @param {Object} storageScope
  * @param {Object|null} authedUser
- * @param {Object|null} pres - The deck, already read under the request's scope
+ * @param {string} presentationId
  * @returns {Promise<boolean>}
  */
-async function canPromoteQuestions(authedUser, pres) {
+async function canPromoteQuestions(storageScope, authedUser, presentationId) {
   if (!authedUser) return false;
-  return mayOnPresentation(pres, { actor: authedUser }, 'write');
+  try {
+    await loadPresentationForActor(
+      storageScope,
+      { actor: authedUser },
+      presentationId,
+      { access: 'write' },
+    );
+    return true;
+  } catch (err) {
+    if (!isAppError(err)) throw err;
+    return false;
+  }
 }
 
 /**
@@ -94,9 +107,12 @@ async function handleQuestionCapabilities(
   presentationId,
 ) {
   if (!authedUser) return unauthorized(res);
-  const pres = await getPresentation(storageScope, presentationId);
   serveJson(res, 200, {
-    canPromote: await canPromoteQuestions(authedUser, pres),
+    canPromote: await canPromoteQuestions(
+      storageScope,
+      authedUser,
+      presentationId,
+    ),
     canRemove: canRemoveQuestions(authedUser),
   });
   return true;
