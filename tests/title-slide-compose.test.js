@@ -139,8 +139,11 @@ test('renderTitleView escapes every string in the view', () => {
     logo: { src: `/l.svg" onerror="x`, alt: evil },
   };
   const html = renderTitleView(view);
-  assert.doesNotMatch(html, /<script>/);
-  assert.doesNotMatch(html, /onerror="/);
+  // String checks, not a tag regexp: this is an assertion on escaped output,
+  // not an HTML filter (CodeQL's bad-tag-filter reads a `/<script>/` as one).
+  assert.equal(html.includes('<script'), false, 'no raw tag survives');
+  assert.equal(html.includes(evil), false, 'no raw view string survives');
+  assert.equal(html.includes('onerror="'), false);
   assert.equal(
     html.match(/&lt;script&gt;alert\(1\)&lt;\/script&gt;&quot;&#039;&amp;/g)
       ?.length,
