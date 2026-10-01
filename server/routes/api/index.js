@@ -30,6 +30,7 @@ import { handleSso } from './sso.js';
 import { handleAdminUsers } from './admin-users.js';
 import { handleAdminAiLogs } from './admin-ai-logs.js';
 import { handleAdminSso } from './admin-sso.js';
+import { handleInstanceHealthRoutes } from './instance-health.js';
 import { handleEmailTemplates } from './email-templates.js';
 import { handleFollowPublic } from './follow/index.js';
 import { handleFollowCodes, handleFollowCodesPublic } from './follow-codes.js';
@@ -252,6 +253,7 @@ export async function handleApi({ repoRoot, req, res, url }) {
   if (await handleAdminUsers(ctx)) return;
   if (await handleAdminAiLogs(ctx)) return;
   if (await handleAdminSso(ctx)) return;
+  if (await handleInstanceHealthRoutes(ctx)) return;
   if (await handleEmailTemplates(ctx)) return;
 
   return notFound(res);

@@ -265,6 +265,77 @@ export async function readInstanceHealth({ sinceDay } = {}) {
 }
 
 /**
+ * The first day anything was counted on this instance: the start of the D26
+ * term. Rows past retention are gone, but the term is three months and the
+ * retention thirteen, so the start stays readable as long as it matters.
+ *
+ * @returns {Promise<string|null>} `YYYY-MM-DD`, or `null` before the first
+ *   row and without a database.
+ */
+export async function readFirstInstanceHealthDay() {
+  return withDbGuard(null, async (db) => {
+    const row = await db
+      .selectFrom('instance_health')
+      .select('day')
+      .orderBy('day', 'asc')
+      .limit(1)
+      .executeTakeFirst();
+    return row ? toDay(row.day) : null;
+  });
+}
+
+/**
+ * One key's use within a window, as the admin view shows it (B516).
+ *
+ * @typedef {object} InstanceHealthUsage
+ * @property {string} key
+ * @property {number} daysActive - Days in the window the key was seen on.
+ * @property {string} lastSeen - `YYYY-MM-DD`, the last of those days.
+ * @property {number} count - Sightings summed over the window; kept for the
+ *   record, the measure is `daysActive` (D246).
+ */
+
+/**
+ * Fold stored rows into the use per key, per axis. Every axis is present,
+ * an axis nothing was counted on as `[]`. Within an axis the most-used key
+ * comes first (days active, then last seen, then name).
+ *
+ * @param {InstanceHealthRow[]} rows
+ * @returns {Record<string, InstanceHealthUsage[]>}
+ */
+export function summarizeInstanceHealth(rows) {
+  /** @type {Record<string, Map<string, InstanceHealthUsage>>} */
+  const byAxis = Object.fromEntries(
+    INSTANCE_HEALTH_AXES.map((axis) => [axis, new Map()]),
+  );
+  for (const { axis, key, day, count } of rows) {
+    const keys = byAxis[axis];
+    if (!keys) continue;
+    const entry = keys.get(key) || {
+      key,
+      daysActive: 0,
+      lastSeen: day,
+      count: 0,
+    };
+    entry.daysActive += 1;
+    if (day > entry.lastSeen) entry.lastSeen = day;
+    entry.count += count;
+    keys.set(key, entry);
+  }
+  return Object.fromEntries(
+    Object.entries(byAxis).map(([axis, keys]) => [
+      axis,
+      [...keys.values()].sort(
+        (a, b) =>
+          b.daysActive - a.daysActive ||
+          b.lastSeen.localeCompare(a.lastSeen) ||
+          a.key.localeCompare(b.key),
+      ),
+    ]),
+  );
+}
+
+/**
  * Delete every row from before `cutoffDay`. The retention job passes the day
  * {@link INSTANCE_HEALTH_RETENTION_DAYS} back.
  *

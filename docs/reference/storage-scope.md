@@ -31,8 +31,8 @@ operations that genuinely cannot be organization-scoped (next section).
 
 A function that validates with `allowCrossOrganization: true` accepts a
 `crossOrganizationScope(repoRoot, reason)` — a scope that deliberately states
-no organization. Three categories are legitimate; everything else is a
-violation, not a fourth category waiting to be named:
+no organization. Four categories are legitimate; everything else is a
+violation, not a fifth category waiting to be named:
 
 1. **Token-authorized reads** — a globally unique token (publish id, share
    token, follow code) was already resolved, and the deck id came _out_ of
@@ -46,6 +46,14 @@ violation, not a fourth category waiting to be named:
    `email_templates` are per-instance (keyed by nothing or by user email);
    jobs and pre-auth routes read them cross-organization because an
    organization never enters the query.
+4. **Instance-wide aggregates for the instance admin** — the instance-health
+   census (`server/storage/instance-census.js`, B516) reads organization-owned
+   rows (`presentations`, `custom_slide_types`) across the instance and answers
+   only counts per slide type, custom-type key or settings key: no row, no id,
+   no organization and no value leaves the function. Only the route behind the
+   instance-admin role (`users.role`, not a membership role) builds this scope.
+   A read that hands back a row, or a count per organization, is not in this
+   category.
 
 The `reason` string is mandatory and shows up in errors — write it for the
 reviewer who wonders why the call is exempt.

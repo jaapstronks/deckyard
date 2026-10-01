@@ -38,6 +38,8 @@ view reads those two (B516); `count` is kept for the record.
 | `countDeckView(surface, pres)`     | `surface:<surface>` plus `slide_type.viewed:<type>` for every type in the deck     |
 | `slideTypeEntries(axis, pres)`     | the distinct slide types of a deck, every language version included                |
 | `readInstanceHealth({ sinceDay })` | the rows from a day on, oldest first, `day` as `YYYY-MM-DD`                        |
+| `readFirstInstanceHealthDay()`     | the first day any row was counted, the start of the D26 term                       |
+| `summarizeInstanceHealth(rows)`    | folds rows into days active, last seen and count per key, per axis (pure)          |
 | `pruneInstanceHealth(cutoffDay)`   | deletes the days before the cutoff                                                 |
 
 The functions take **no storage scope**: the table has no organization for a
@@ -102,10 +104,42 @@ Rows older than **400 days** go in the daily retention job
 (`server/jobs/retention-cleanup.js`, `INSTANCE_HEALTH_RETENTION_DAYS`):
 thirteen months, so a deck used once a year still shows up.
 
-## Implementation status (as of 2026-09-30)
+## The admin view
 
-B514 (table, facade, measuring points) and B515 (the `api_v1` axis) are in.
-The admin view that reads the counters and computes the census is **B516**;
-until it lands the rows are only readable in the database. The pruning gate
-itself (A7.3, D26: the prune list opens three months after the first row on
-a production instance) is tracked in the planning, not here.
+`GET /api/instance-health?days=30|90|365` (`server/routes/api/instance-health.js`),
+shown as the **Instance Health** tab under Settings → Admin
+(`client/views/settings/tabs/health-tab.js`). Only an **instance** admin
+(`users.role`) may read it; a membership role does not reach it. `days` is
+optional (default 90); any other value is a 400, never rounded.
+
+| Field             | What it holds                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------ |
+| `days`, `since`   | the window, and its first day (today counts as one of the `days`)                          |
+| `firstMeasuredAt` | the first day any row was counted on this instance, whatever the window; `null` before it  |
+| `decisionDueAt`   | `firstMeasuredAt` plus three calendar months (D26), clamped at a month end                 |
+| `census`          | what the instance holds now, computed when the view opens (D245)                           |
+| `usage`           | per axis (every axis present), per key: `daysActive`, `lastSeen`, `count`; most days first |
+
+The census (`server/storage/instance-census.js`) has three parts:
+
+- **`slideTypes`** — per slide type, the decks carrying it and its slides. Every
+  language version is read, the way the `slide_type.authored` counter reads a
+  deck; a slide present in several versions (same id) counts once. Decks in the
+  trash and sandbox decks are left out.
+- **`customTypes`** — per `custom-<slug>` key, how many organizations define it
+  and how many of those definitions are published.
+- **`settings`** — the dotted paths of the instance settings that differ from
+  their default (`analytics.enabled`, `webhooks.signingSecret`). Names only;
+  a value (a webhook URL, a secret) never leaves the server.
+
+The census reads organization-owned rows across the instance under a
+cross-organization scope, category 4 in
+[`storage-scope.md`](storage-scope.md) § _When a scope may be
+cross-organization_: it answers counts, never a row, an id or an organization.
+
+## Implementation status (as of 2026-10-01)
+
+B514 (table, facade, measuring points), B515 (the `api_v1` axis) and B516 (the
+admin view and the census) are in. The pruning gate itself (A7.3, D26: the
+prune list opens three months after the first row on a production instance)
+is tracked in the planning, not here.

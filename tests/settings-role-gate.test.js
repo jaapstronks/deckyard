@@ -193,6 +193,7 @@ const ADMIN_TABS = [
   'email',
   'integrations',
   'analytics',
+  'health',
 ];
 const USER_TABS = ['account', 'preferences', 'export'];
 

@@ -75,6 +75,7 @@ const ADMIN_TABS = [
     labelKey: 'settings.tabs.analytics',
     label: 'External Analytics',
   },
+  { key: 'health', labelKey: 'settings.tabs.health', label: 'Instance Health' },
 ];
 
 /**
