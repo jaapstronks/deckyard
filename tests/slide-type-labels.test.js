@@ -14,10 +14,7 @@ import {
   CORE_SLIDE_TYPE_NAMES,
   SLIDE_TYPES,
 } from '../shared/slide-types/registry.js';
-import {
-  SLIDE_TYPE_LABEL_LOCALES,
-  coreSlideTypeLabels,
-} from '../server/utils/slide-type-labels.js';
+import { coreSlideTypeLabels } from '../server/utils/slide-type-labels.js';
 
 describe('coreSlideTypeLabels', () => {
   const labels = coreSlideTypeLabels();
@@ -27,7 +24,6 @@ describe('coreSlideTypeLabels', () => {
   });
 
   it('carries exactly en and nl per type', () => {
-    assert.deepEqual(SLIDE_TYPE_LABEL_LOCALES, ['en', 'nl']);
     for (const [name, entry] of Object.entries(labels)) {
       assert.deepEqual(Object.keys(entry), ['en', 'nl'], name);
     }

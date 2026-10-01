@@ -30,9 +30,6 @@ import {
   SLIDE_TYPES,
 } from '../../shared/slide-types/registry.js';
 
-/** The locales `labels` carries, in this order. */
-export const SLIDE_TYPE_LABEL_LOCALES = Object.freeze(['en', 'nl']);
-
 const NL_CATALOG_URL = new URL(
   '../../client/i18n/nl/slide-types.json',
   import.meta.url,
