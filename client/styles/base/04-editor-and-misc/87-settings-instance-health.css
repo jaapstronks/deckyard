@@ -1,0 +1,49 @@
+/* Instance Health Settings Tab (B516) */
+
+.instance-health-heading {
+  font-size: var(--ps-text-base);
+  font-weight: 600;
+  margin: var(--ps-space-4) 0 var(--ps-space-2);
+}
+
+.instance-health-usage-head {
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ps-space-2);
+}
+
+.instance-health-usage-head .instance-health-heading {
+  margin-bottom: 0;
+}
+
+.instance-health-section {
+  overflow-x: auto;
+}
+
+.instance-health-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--ps-text-sm);
+}
+
+.instance-health-table th,
+.instance-health-table td {
+  text-align: left;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
+}
+
+.instance-health-table th {
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-sunken) / 0.3);
+}
+
+.instance-health-table .is-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.instance-health-table tr:last-child td {
+  border-bottom: none;
+}

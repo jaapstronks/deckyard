@@ -25,6 +25,7 @@ import {
   createExportTab,
   createSlideTypesTab,
   createApiKeysTab,
+  createHealthTab,
 } from './tabs/index.js';
 import { nav } from '../../lib/state/router.js';
 import { icon } from '../../lib/dom/icons.js';
@@ -35,7 +36,14 @@ const DESIGNER_TABS = ['fonts', 'themes', 'slide-types'];
 // admin, but in multi-workspace mode it is also the only screen where a plain
 // member finds their own way out of an organization, so it carries its own,
 // weaker gate — see MEMBERS_TAB below and shared/organization-role.js.
-const ADMIN_TABS = ['admin', 'api-keys', 'email', 'integrations', 'analytics'];
+const ADMIN_TABS = [
+  'admin',
+  'api-keys',
+  'email',
+  'integrations',
+  'analytics',
+  'health',
+];
 const MEMBERS_TAB = 'users';
 // The organization's own profile. Like the members tab it is not an admin
 // surface: `GET /api/organizations/:id` answers to any member, so anyone in the
@@ -206,6 +214,7 @@ export async function renderSettings(root, { user } = {}) {
     addTab('email', createEmailTab({ user }));
     addTab('integrations', createIntegrationsTab({ user }));
     addTab('analytics', createAnalyticsTab({ user }));
+    addTab('health', createHealthTab());
   }
 
   // Current active tab

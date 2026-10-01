@@ -15,3 +15,4 @@ export { createAnalyticsTab } from './analytics-tab.js';
 export { createExportTab } from './export-tab.js';
 export { createSlideTypesTab } from './slide-types-tab/index.js';
 export { createApiKeysTab } from './api-keys-tab.js';
+export { createHealthTab } from './health-tab.js';
