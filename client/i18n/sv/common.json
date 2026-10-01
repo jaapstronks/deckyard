@@ -134,6 +134,7 @@
   "common.theme": "Tema",
   "common.themeCard.bodySpecimen": "Brödtext",
   "common.themeDefault": "Arbetsytans standard",
+  "common.themeDefaultNamed": "Arbetsytans standard ({name})",
   "common.toggleTheme": "Växla mellan mörkt och ljust läge",
   "common.unknown": "Okänd",
   "common.unknownError": "Okänt fel",

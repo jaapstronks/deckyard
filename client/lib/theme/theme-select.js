@@ -26,6 +26,24 @@ function themeListUrl(currentTheme) {
 }
 
 /**
+ * Label for the `default` choice: names the theme it resolves to, so the
+ * picker says *which* theme a deck on "Workspace default" gets (B584).
+ *
+ * The workspace default is the theme `GET /api/themes` marks `isDefault`;
+ * without one (the list has not loaded, or is empty) the bare label stands.
+ *
+ * @param {Array<{isDefault?: boolean, label?: string, id?: string}>} [themes]
+ * @returns {string}
+ */
+function defaultThemeLabel(themes = []) {
+  const record = themes.find((theme) => theme?.isDefault);
+  const name = String(record?.label || record?.id || '').trim();
+  return name
+    ? t('common.themeDefaultNamed', 'Workspace default ({name})', { name })
+    : t('common.themeDefault', 'Workspace default');
+}
+
+/**
  * Create a theme selector field with label and select element.
  *
  * @param {Object} options
@@ -49,12 +67,7 @@ function createThemeSelect({
   const select = h('select', { class: 'form-input is-compact' });
 
   // Default options
-  select.append(
-    h('option', {
-      value: 'default',
-      text: t('common.themeDefault', 'Workspace default'),
-    }),
-  );
+  select.append(h('option', { value: 'default', text: defaultThemeLabel() }));
   select.value = themeId;
 
   select.addEventListener('change', () => {
@@ -102,10 +115,7 @@ async function populateThemes({
 
     select.innerHTML = '';
     select.append(
-      h('option', {
-        value: 'default',
-        text: t('common.themeDefault', 'Workspace default'),
-      }),
+      h('option', { value: 'default', text: defaultThemeLabel(themes) }),
     );
     for (const theme of themes) {
       const id = String(theme?.id || '').trim();
@@ -418,14 +428,13 @@ export function createVisualThemePicker({
       const themes = Array.isArray(resp?.themes) ? resp.themes : [];
       if (!themes.length) return themeId;
 
-      const serverDefault = String(resp?.defaultThemeId || '');
-      const defaultRecord = themes.find((th) => th.id === serverDefault);
+      const defaultRecord = themes.find((th) => th.isDefault);
       const choices = defaultRecord
         ? [
             {
               ...defaultRecord,
               id: 'default',
-              label: t('common.themeDefault', 'Workspace default'),
+              label: defaultThemeLabel(themes),
             },
             ...themes,
           ]

@@ -186,9 +186,10 @@ async function handleThemeList({
         );
   for (const theme of themes) theme.isDefault = theme.id === defaultThemeId;
 
+  // The default is named once, on the theme itself (`isDefault`), as on
+  // `GET /api/themes/:id` and `/api/v1/themes` (B584).
   serveJson(res, 200, {
     themes,
-    defaultThemeId,
     enabledThemes: allowlist,
   });
   return true;
