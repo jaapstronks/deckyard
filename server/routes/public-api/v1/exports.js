@@ -8,13 +8,6 @@ import { buildPrintHtml } from '../../../export/print.js';
 import { buildPptxBuffer } from '../../../export/pptx.js';
 import { presentationToDeck } from '../../../../shared/slide-types.js';
 import { safeFilename } from '../../../utils/filename.js';
-import { stripLiveOnlySlidesFromPresentation } from '../../../utils/public-output.js';
-import {
-  normalizeLang,
-  projectPresentationForLang,
-} from '../../../utils/i18n.js';
-import { loadThemeAssets } from '../../../utils/themes.js';
-import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import {
   requirePermission,
   dispatchV1Routes,
@@ -24,73 +17,41 @@ import {
   trackExportRequest,
   apiError,
 } from './middleware.js';
-import { loadPresentationForActor } from '../../../services/presentations.js';
+import { prepareExportContext } from '../../../services/exports.js';
 import { isAppError } from '../../../utils/errors.js';
 import { getRateLimitHeaders } from '../../../storage/api-usage.js';
-import { countInstanceHealth } from '../../../storage/instance-health.js';
 
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
 
 /**
- * Get language suffix for filenames.
+ * The export context for a v1 request: the key owner asks, `?lang=` names the
+ * language, and a refusal is answered in the v1 envelope here.
+ *
+ * @param {Object} ctx - Request context
+ * @param {string} presentationId
+ * @param {{ format: string, allLanguages?: boolean }} options
+ * @returns {Promise<import('../../../services/exports.js').ExportContext|null>}
+ *   The context, or `null` when the refusal was already answered.
  */
-function getLangSuffix(exportLang) {
-  return exportLang === 'nl' ? '-NL' : exportLang === 'en-GB' ? '-EN' : '';
-}
-
-/**
- * Prepare export context with presentation loading and language projection.
- * A context that passes the access check counts one export of `format` on
- * the instance-health `export` axis, as the app's pipeline does (D247).
- */
-async function prepareExportContext(
-  ctx,
-  presentationId,
-  { format, allLanguages = false },
-) {
-  const { repoRoot, storageScope, url, apiKey } = ctx;
-  // The JSON deck carries every language version (D89), so it skips the
-  // `?lang=` projection that would drop the others.
-  const exportLang = allLanguages
-    ? null
-    : normalizeLang(url?.searchParams?.get('lang'));
-
-  let pres;
+async function exportContextFor(ctx, presentationId, { format, allLanguages }) {
   try {
-    pres = await loadPresentationForActor(
-      storageScope,
+    return await prepareExportContext(
+      ctx.storageScope,
       { actor: ctx.authedUser },
-      presentationId,
+      {
+        presentationId,
+        format,
+        lang: ctx.url?.searchParams?.get('lang'),
+        allLanguages,
+      },
     );
   } catch (err) {
     if (!isAppError(err)) throw err;
-    return { ok: false, status: err.statusCode, error: err.message };
+    await apiError(ctx, err.statusCode, err.message, { code: err.code });
+    return null;
   }
-  countInstanceHealth([{ axis: 'export', key: format }]);
-
-  const projected = exportLang
-    ? projectPresentationForLang(pres, exportLang)
-    : pres;
-  const filteredPres = stripLiveOnlySlidesFromPresentation(projected);
-  const theme = await loadThemeAssets(repoRoot, projected?.theme, storageScope);
-  const langSuffix = getLangSuffix(exportLang);
-
-  // Load merged slide types (core + org-specific custom types)
-  const orgId = apiKey?.organizationId || pres?.organizationId;
-  const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
-
-  return {
-    ok: true,
-    pres: projected,
-    filteredPres,
-    theme,
-    slideTypes,
-    exportLang,
-    langSuffix,
-    title: projected.title || 'presentation',
-  };
 }
 
 /**
@@ -133,14 +94,11 @@ async function handleJsonExport(ctx, id) {
   // Check export limit
   if (!(await checkExportLimit(ctx))) return true;
 
-  const exportCtx = await prepareExportContext(ctx, id, {
+  const exportCtx = await exportContextFor(ctx, id, {
     format: 'json',
     allLanguages: true,
   });
-  if (!exportCtx.ok) {
-    await apiError(ctx, exportCtx.status, exportCtx.error);
-    return true;
-  }
+  if (!exportCtx) return true;
 
   // Track export
   await trackExportRequest(ctx);
@@ -169,11 +127,8 @@ async function handleHtmlExport(ctx, id) {
   if (!(await checkExportLimit(ctx))) return true;
 
   const { repoRoot } = ctx;
-  const exportCtx = await prepareExportContext(ctx, id, { format: 'html' });
-  if (!exportCtx.ok) {
-    await apiError(ctx, exportCtx.status, exportCtx.error);
-    return true;
-  }
+  const exportCtx = await exportContextFor(ctx, id, { format: 'html' });
+  if (!exportCtx) return true;
 
   await trackExportRequest(ctx);
 
@@ -206,11 +161,8 @@ async function handlePdfExport(ctx, id) {
   if (!(await checkExportLimit(ctx))) return true;
 
   const { repoRoot } = ctx;
-  const exportCtx = await prepareExportContext(ctx, id, { format: 'pdf' });
-  if (!exportCtx.ok) {
-    await apiError(ctx, exportCtx.status, exportCtx.error);
-    return true;
-  }
+  const exportCtx = await exportContextFor(ctx, id, { format: 'pdf' });
+  if (!exportCtx) return true;
 
   await trackExportRequest(ctx);
 
@@ -242,11 +194,8 @@ async function handlePptxExport(ctx, id) {
   if (!(await checkExportLimit(ctx))) return true;
 
   const { repoRoot, url } = ctx;
-  const exportCtx = await prepareExportContext(ctx, id, { format: 'pptx' });
-  if (!exportCtx.ok) {
-    await apiError(ctx, exportCtx.status, exportCtx.error);
-    return true;
-  }
+  const exportCtx = await exportContextFor(ctx, id, { format: 'pptx' });
+  if (!exportCtx) return true;
 
   await trackExportRequest(ctx);
 

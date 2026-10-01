@@ -178,8 +178,9 @@ async function handleJobDownload({ res, authedUser }, fullJobId) {
 
   // Build filename
   const filename = result.filename || 'download';
-  const langSuffix = result.lang ? `-${result.lang.toUpperCase()}` : '';
-  const fullFilename = `${filename}${langSuffix}${result.extension}`;
+  // The export context's suffix (services/exports.js), so a queued export is
+  // named as the synchronous one is.
+  const fullFilename = `${filename}${result.langSuffix || ''}${result.extension}`;
 
   // HEAVY queue results are stored as temp files — stream them
   if (queueName === QUEUE_NAMES.HEAVY && result.filePath) {

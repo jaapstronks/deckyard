@@ -1,32 +1,16 @@
 import { safeFilename } from '../utils/filename.js';
-import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { jsonError, serveJson } from '../utils/http.js';
 import { isAppError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
-import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
-import { loadThemeAssets } from '../utils/themes.js';
-import { withPresentationAuth } from '../utils/route-middleware.js';
 import {
   addJob,
   isQueueAvailable,
   QUEUE_NAMES,
 } from '../jobs/queue/connection.js';
-import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
-import {
-  countInstanceHealth,
-  INSTANCE_HEALTH_KEYS,
-} from '../storage/instance-health.js';
+import { INSTANCE_HEALTH_KEYS } from '../storage/instance-health.js';
+import { prepareExportContext } from '../services/exports.js';
 
 const log = createLogger('export');
-
-/**
- * Get the language suffix for filenames based on export language
- * @param {string} exportLang - Export language code
- * @returns {string} Language suffix (e.g., '-NL', '-EN', or '')
- */
-export function getLangSuffix(exportLang) {
-  return exportLang === 'nl' ? '-NL' : exportLang === 'en-GB' ? '-EN' : '';
-}
 
 /**
  * Build export response headers
@@ -48,69 +32,31 @@ function buildExportHeaders({
 }
 
 /**
- * Common export context preparation - handles auth, loading, projection.
- * `storageScope` is the request's scope, passed down from the route context —
- * this module never builds one itself.
- * A context that passes the read check counts one export of `format` on the
- * instance-health `export` axis (D247): an export that was refused was not
- * one, one whose build then failed was still asked for.
+ * The export context for a request on the internal contract: the session user
+ * asks, `?lang=` names the language. A refusal throws (D255); the route's
+ * catch answers it through {@link handleExportError}.
  *
- * @param {Object} options - Context options
- * @param {string} options.format - The export's format id (the `export` axis
- *   vocabulary in `server/storage/instance-health.js`)
- * @param {boolean} [options.allLanguages] - skip the `?lang=` projection, for
- *   a format that carries every language version itself
- * @returns {Object} Export context or null if request should be rejected
+ * @param {{ storageScope: Object, authedUser: Object, url: URL }} reqCtx
+ * @param {string} presentationId
+ * @param {{ format: string, stripLiveOnly: boolean, allLanguages?: boolean }} options
+ * @returns {Promise<import('../services/exports.js').ExportContext>}
  */
-export async function prepareExportContext({
-  format,
-  repoRoot,
-  res,
-  url,
-  authedUser,
+export function exportContextFor(
+  { storageScope, authedUser, url },
   presentationId,
-  storageScope,
-  stripLiveOnly = true,
-  allLanguages = false,
-}) {
-  // A format that carries every language version (the portable deck, D89)
-  // takes the stored deck as it is: projecting onto `?lang=` first is what
-  // used to drop the other versions.
-  const exportLang = allLanguages
-    ? null
-    : normalizeLang(url?.searchParams?.get('lang'));
-
-  const pres = await withPresentationAuth({
+  { format, stripLiveOnly, allLanguages = false },
+) {
+  return prepareExportContext(
     storageScope,
-    id: presentationId,
-    authedUser,
-    res,
-  });
-  if (!pres) return null;
-  countInstanceHealth([{ axis: 'export', key: format }]);
-
-  const projected = exportLang
-    ? projectPresentationForLang(pres, exportLang)
-    : pres;
-  const filteredPres = stripLiveOnly
-    ? stripLiveOnlySlidesFromPresentation(projected)
-    : projected;
-  const theme = await loadThemeAssets(repoRoot, projected?.theme, storageScope);
-  const langSuffix = getLangSuffix(exportLang);
-
-  // Load merged slide types (core + org-specific custom types)
-  const orgId = authedUser?.organizationId || pres?.organizationId;
-  const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
-
-  return {
-    pres: projected,
-    filteredPres,
-    theme,
-    slideTypes,
-    exportLang,
-    langSuffix,
-    title: projected.title || 'presentation',
-  };
+    { actor: authedUser },
+    {
+      presentationId,
+      format,
+      lang: url?.searchParams?.get('lang'),
+      allLanguages,
+      stripLiveOnly,
+    },
+  );
 }
 
 /**
@@ -242,21 +188,12 @@ export function createExportRoute(config) {
       { repoRoot, storageScope, res, url, authedUser },
       presentationId,
     ) {
-      const ctx = await prepareExportContext({
-        format,
-        repoRoot,
-        res,
-        url,
-        authedUser,
-        presentationId,
-        storageScope,
-        stripLiveOnly,
-        allLanguages,
-      });
-
-      if (!ctx) return true; // Request was rejected, response already sent
-
       try {
+        const ctx = await exportContextFor(
+          { storageScope, authedUser, url },
+          presentationId,
+          { format, stripLiveOnly, allLanguages },
+        );
         const data = await buildContent(ctx, { repoRoot, url });
         const filename = getFilename(ctx);
 
@@ -298,20 +235,12 @@ export function createHtmlPreviewRoute(config) {
       { repoRoot, storageScope, res, url, authedUser },
       presentationId,
     ) {
-      const ctx = await prepareExportContext({
-        format,
-        repoRoot,
-        res,
-        url,
-        authedUser,
-        presentationId,
-        storageScope,
-        stripLiveOnly,
-      });
-
-      if (!ctx) return true;
-
       try {
+        const ctx = await exportContextFor(
+          { storageScope, authedUser, url },
+          presentationId,
+          { format, stripLiveOnly },
+        );
         const html = await buildHtml(ctx, { repoRoot, url });
         sendHtmlPreviewResponse(res, html);
         return true;
@@ -321,15 +250,6 @@ export function createHtmlPreviewRoute(config) {
       }
     },
   );
-}
-
-/**
- * Alias for stripLiveOnlySlidesFromPresentation (for use by workers).
- * @param {Object} pres - Presentation object
- * @returns {Object} Presentation with live-only slides removed
- */
-export function stripLiveOnlySlides(pres) {
-  return stripLiveOnlySlidesFromPresentation(pres);
 }
 
 /**
@@ -362,63 +282,44 @@ export function createAsyncExportRoute(config) {
       // Check if user prefers sync (query param ?sync=1)
       const forceSync = url.searchParams.get('sync') === '1';
 
-      // If queue is available and not forcing sync, queue the job
-      if (!forceSync && isQueueAvailable()) {
-        // Quick auth check
-        const pres = await withPresentationAuth({
-          storageScope,
-          id: presentationId,
-          authedUser,
-          res,
-        });
-        if (!pres) return true;
-
-        // Queue the job
-        const exportLang = normalizeLang(url.searchParams.get('lang'));
-        const scale = Math.max(
-          1,
-          Math.min(3, Number(url.searchParams.get('scale')) || 2),
+      try {
+        const ctx = await exportContextFor(
+          { storageScope, authedUser, url },
+          presentationId,
+          { format, stripLiveOnly },
         );
 
-        const { jobId, queued } = await addJob(QUEUE_NAMES.EXPORT, exportType, {
-          presentationId,
-          lang: exportLang,
-          stripLiveOnly,
-          scale,
-          repoRoot,
-          // Stamp the requester so the download/status routes can enforce
-          // ownership (job IDs are enumerable ints — see security-audit H3), and the
-          // organization so the worker acts in the organization the export came from.
-          ownerEmail: authedUser?.email || null,
-          organizationId: authedUser?.organizationId || undefined,
-        });
-
-        if (queued) {
-          countInstanceHealth([{ axis: 'export', key: format }]);
-          return serveJson(res, 202, {
-            queued: true,
-            jobId: `export-${jobId}`,
-            pollUrl: `/api/jobs/export-${jobId}`,
-            message: 'Export queued. Poll the status URL for completion.',
-          });
+        // If queue is available and not forcing sync, queue the job; the
+        // worker rebuilds the context as the system from what was admitted.
+        if (!forceSync && isQueueAvailable()) {
+          const { jobId, queued } = await addJob(
+            QUEUE_NAMES.EXPORT,
+            exportType,
+            {
+              presentationId,
+              lang: ctx.exportLang,
+              stripLiveOnly,
+              scale: parseScaleParam(url),
+              repoRoot,
+              // Stamp the requester so the download/status routes can enforce
+              // ownership (job IDs are enumerable ints — see security-audit
+              // H3), and the organization so the worker acts in the
+              // organization the export came from.
+              ownerEmail: authedUser?.email || null,
+              organizationId: authedUser?.organizationId || undefined,
+            },
+          );
+          if (queued) {
+            return serveJson(res, 202, {
+              queued: true,
+              jobId: `export-${jobId}`,
+              pollUrl: `/api/jobs/export-${jobId}`,
+              message: 'Export queued. Poll the status URL for completion.',
+            });
+          }
         }
-      }
 
-      // Fallback to synchronous export
-      const ctx = await prepareExportContext({
-        format,
-        repoRoot,
-        res,
-        url,
-        authedUser,
-        presentationId,
-        storageScope,
-        stripLiveOnly,
-      });
-
-      if (!ctx) return true;
-
-      try {
+        // Synchronous export: forced, or no queue to take it.
         const data = await buildContent(ctx, { repoRoot, url });
         const filename = getFilename(ctx);
 

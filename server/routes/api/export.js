@@ -22,7 +22,7 @@ import {
   createExportRoute,
   createHtmlPreviewRoute,
   createAsyncExportRoute,
-  prepareExportContext,
+  exportContextFor,
   parseScaleParam,
   sendExportResponse,
   handleExportError,
@@ -223,30 +223,21 @@ async function handlePngSlideExport(
 ) {
   const slideNum = Number(slideNumRaw || 0) || 0; // 1-based
 
-  const ctx = await prepareExportContext({
-    format: 'png',
-    repoRoot,
-    res,
-    url,
-    authedUser,
-    presentationId,
-    storageScope,
-    stripLiveOnly: true,
-  });
-
-  if (!ctx) return true;
-
-  const slides = Array.isArray(ctx.filteredPres?.slides)
-    ? ctx.filteredPres.slides
-    : [];
-  if (slideNum < 1 || slideNum > slides.length) {
-    badRequest(res, 'Unknown slide');
-    return true;
-  }
-
-  const scale = parseScaleParam(url);
-
   try {
+    const ctx = await exportContextFor(
+      { storageScope, authedUser, url },
+      presentationId,
+      { format: 'png', stripLiveOnly: true },
+    );
+    const slides = Array.isArray(ctx.filteredPres?.slides)
+      ? ctx.filteredPres.slides
+      : [];
+    if (slideNum < 1 || slideNum > slides.length) {
+      badRequest(res, 'Unknown slide');
+      return true;
+    }
+
+    const scale = parseScaleParam(url);
     const buf = await renderSlideToPngBuffer(repoRoot, slides[slideNum - 1], {
       scale,
       theme: ctx.theme,

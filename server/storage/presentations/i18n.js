@@ -217,24 +217,3 @@ export function normalizeI18n(pres, { slideTypes } = {}) {
     pres.slides = Array.isArray(dv.slides) ? dv.slides : pres.slides;
   }
 }
-
-/**
- * Project a presentation to a specific language.
- * Returns a shallow copy of the presentation with title and slides from the
- * requested language version (falls back to dominant if not available).
- *
- * @param {Object} pres - The presentation object
- * @param {string} lang - Target language code (e.g., 'nl', 'en-GB')
- * @returns {Object} Presentation with title/slides projected to the target language
- */
-export function projectPresentationToLang(pres, lang) {
-  if (!pres || typeof pres !== 'object') return pres;
-
-  const version = pickVersion(pres, lang);
-  return {
-    ...pres,
-    title: version.title || pres.title,
-    slides: version.slides || pres.slides,
-    lang: normalizeLang(lang) || pres.lang,
-  };
-}

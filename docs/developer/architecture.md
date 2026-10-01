@@ -295,11 +295,13 @@ broadcastToPresentation(id, 'comment:created', data); // Broadcast
 
 ## Export Pipeline
 
-Export uses a factory pattern (`server/export/pipeline.js`):
+Export uses a factory pattern (`server/export/pipeline.js`). The context every
+export builds from is prepared once, in `server/services/exports.js`, for the
+internal routes, the public v1 routes and the queued worker alike (B520):
 
 ```javascript
 // Pipeline stages:
-1. prepareExportContext()  // Load presentation, auth check, language projection
+1. prepareExportContext()  // services/exports.js: read right, count, language projection, theme, slide types
 2. Format-specific builder  // PNG, PDF, PPTX, HTML, etc.
 3. sendExportResponse()    // Download headers + buffer
 ```
