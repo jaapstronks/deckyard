@@ -38,6 +38,34 @@ const VALID_STYLES = ['normal', 'italic'];
 const VALID_FORMATS = ['woff2', 'woff'];
 const MAX_NAME_LEN = 255;
 
+/**
+ * The family's name as a desktop app knows it, or `null` when none is given
+ * (B289, D126). Only an uploaded family carries one: its `name` is an alias
+ * the uploader chose, while a hosted family's name is the vendor's own. A
+ * value that cannot be a font name is refused, never trimmed to fit.
+ * @param {unknown} value
+ * @param {string} source - the family's source
+ * @returns {{ok: true, value: string|null}|{ok: false, reason: 'invalid', field: 'desktop_family'}}
+ */
+function parseDesktopFamily(value, source) {
+  const invalid = { ok: false, reason: 'invalid', field: 'desktop_family' };
+  if (value === null || value === undefined || value === '') {
+    return { ok: true, value: null };
+  }
+  if (typeof value !== 'string') return invalid;
+  const name = value.trim();
+  // eslint-disable-next-line no-control-regex
+  if (
+    !name ||
+    name.length > MAX_NAME_LEN ||
+    /[\u0000-\u001f\u007f]/.test(name)
+  ) {
+    return invalid;
+  }
+  if (source !== 'upload') return invalid;
+  return { ok: true, value: name };
+}
+
 const FAMILY_COLUMNS = [
   'id',
   'name',
@@ -46,6 +74,7 @@ const FAMILY_COLUMNS = [
   'category',
   'source_config',
   'css_fallback',
+  'desktop_family',
   'sort_order',
   'created_at',
   'updated_at',
@@ -127,6 +156,9 @@ export async function createFontFamily(scope, data) {
     return { ok: false, reason: 'invalid', field: 'category' };
   }
 
+  const desktopFamily = parseDesktopFamily(data?.desktopFamily, source);
+  if (!desktopFamily.ok) return desktopFamily;
+
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);
 
@@ -156,6 +188,7 @@ export async function createFontFamily(scope, data) {
         css_fallback: data?.cssFallback
           ? String(data.cssFallback).slice(0, 255)
           : null,
+        desktop_family: desktopFamily.value,
         sort_order: typeof data?.sortOrder === 'number' ? data.sortOrder : 0,
         created_at: now,
         updated_at: now,
@@ -236,6 +269,23 @@ export async function updateFontFamily(scope, familyId, updates) {
       updateData.css_fallback = updates.cssFallback
         ? String(updates.cssFallback).slice(0, 255)
         : null;
+    }
+
+    if ('desktopFamily' in updates) {
+      // The rule depends on the source, which an update does not change.
+      const current = await db
+        .selectFrom('font_families')
+        .select('source')
+        .where('id', '=', familyId)
+        .where('organization_id', '=', orgId)
+        .executeTakeFirst();
+      if (!current) return { ok: false, reason: 'not_found' };
+      const desktopFamily = parseDesktopFamily(
+        updates.desktopFamily,
+        current.source,
+      );
+      if (!desktopFamily.ok) return desktopFamily;
+      updateData.desktop_family = desktopFamily.value;
     }
 
     if ('sortOrder' in updates) {
@@ -547,6 +597,7 @@ function formatFamily(row, lookup = NO_DISPLAY_NAMES) {
     category: row.category,
     sourceConfig: parseJson(row.source_config, {}),
     cssFallback: row.css_fallback || null,
+    desktopFamily: row.desktop_family || null,
     sortOrder: row.sort_order || 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
