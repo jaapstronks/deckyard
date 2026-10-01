@@ -17,7 +17,10 @@ import {
 import { extractPageId, notionEnabled } from '../../../utils/notion/index.js';
 import { convertNotionPage } from '../../../utils/convert-notion.js';
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { createPresentation } from '../../../services/presentations.js';
+import {
+  assertCreatableDeckInput,
+  createPresentation,
+} from '../../../services/presentations.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { handleNotionError, refuseNotionUnconfigured } from './utils.js';
@@ -44,6 +47,8 @@ export async function handleNotionImport({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // Refused before the conversion, so a refused body costs no work (B576).
+  assertCreatableDeckInput(body);
   const urlOrId = getTrimmedString(body, 'url') || '';
   const lang = getLangOrAuto(body);
   const vendor = getOptionalString(body, 'vendor');
@@ -157,6 +162,8 @@ export async function handleNotionImportStream({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // Refused before the conversion, so a refused body costs no work (B576).
+  assertCreatableDeckInput(body);
   const urlOrId = getTrimmedString(body, 'url') || '';
   const lang = getLangOrAuto(body);
   const vendor = getOptionalString(body, 'vendor');

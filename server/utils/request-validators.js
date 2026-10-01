@@ -53,6 +53,10 @@ export function getTrimmedString(body, key) {
  * (D61); a request naming any other axis language was silently dropped here
  * while the storage layer would have stored it.
  *
+ * An unsupported tag reads as null, the same as an absent field. A create
+ * route therefore refuses one with `assertCreatableDeckInput()` before it reads
+ * the field (B576); the routes that edit an existing deck read it here.
+ *
  * @param {object} body - Request body
  * @param {string} [key='lang'] - Field name
  * @returns {string|null}
@@ -62,8 +66,11 @@ export function getLang(body, key = 'lang') {
 }
 
 /**
- * Extract and validate a deck-language field, falling back to `'auto'`.
- * Same membership test as `getLang()`; `'auto'` means "detect it".
+ * Extract a deck-language field for the conversion pipeline, which spells
+ * "detect it" as `'auto'`: an absent field becomes `'auto'`. On the wire the
+ * one spelling of "detect" is an absent `lang`; a create route refuses an
+ * unsupported tag, `'auto'` included, with `assertCreatableDeckInput()` before
+ * it reads the field (B576), so the fallback here never hides one.
  * @param {object} body - Request body
  * @param {string} [key='lang'] - Field name
  * @returns {string}
