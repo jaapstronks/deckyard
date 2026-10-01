@@ -598,7 +598,6 @@ export async function handleNotion({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           url: notionUrl,
-          lang: 'auto',
           theme: themeId,
         }),
       });
@@ -671,7 +670,6 @@ export async function handleNotion({
         method: 'POST',
         body: {
           url: notionUrl,
-          lang: 'auto',
           theme: themeId,
         },
       });

@@ -3,7 +3,10 @@
  */
 
 import { updatePresentation } from '../../storage/presentations/index.js';
-import { createPresentation } from '../../services/presentations.js';
+import {
+  assertCreatableDeckInput,
+  createPresentation,
+} from '../../services/presentations.js';
 import {
   badRequest,
   jsonError,
@@ -37,6 +40,8 @@ async function handleConvertFile({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // Refused before the conversion, so a refused body costs no work (B576).
+  assertCreatableDeckInput(body);
   const { dataUrl, filename, vendor, lang, theme } = getConvertParams(body);
 
   if (!dataUrl) {
@@ -191,6 +196,8 @@ async function handleConvertStream({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // Refused before the conversion, so a refused body costs no work (B576).
+  assertCreatableDeckInput(body);
   const { dataUrl, filename, vendor, lang, theme } = getConvertParams(body);
 
   if (!dataUrl) {

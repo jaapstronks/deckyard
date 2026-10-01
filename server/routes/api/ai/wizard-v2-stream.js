@@ -23,6 +23,7 @@ import {
   validateSlideCount,
 } from '../../../utils/ai/validate-slides/index.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
+import { assertCreatableDeckInput } from '../../../services/presentations.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import {
   log,
@@ -48,6 +49,8 @@ export async function handleAiWizardV2Stream({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // Refused before the stream opens, so a refused body costs no LLM call (B576).
+  assertCreatableDeckInput(body);
   const {
     raw,
     vendor,
