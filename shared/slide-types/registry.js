@@ -11,7 +11,7 @@ import payoffSlide from './types/payoff-slide.js';
 import quoteSlide from './types/quote-slide.js';
 import teamCardsSlide from './types/team-cards-slide.js';
 import logoWallSlide from './types/logo-wall-slide.js';
-import titleSlide from './types/title-slide.js';
+import titleSlide from './types/title-slide/index.js';
 import videoSlide from './types/video-slide.js';
 import embedSlide from './types/embed-slide.js';
 import countdownSlide from './types/countdown-slide.js';

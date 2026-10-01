@@ -1180,6 +1180,66 @@ against the tile fill, and it says so in three lines.
 `primary`/`secondary`/`outline` button vocabulary `content-slide` and
 `image-text-slide` use.
 
+## Leaning on a core layout
+
+A fork that wants a core type's layout with its own values (another logo, an
+extra modifier, its own root class) **composes** that type instead of copying
+its renderer. A copied renderer carries a duty to stay in step with upstream
+that nothing measures, and it breaks silently when core's markup moves.
+
+A core type that offers this splits its render into two functions, exported
+from one stable address, `shared/slide-types/core-layouts.js`:
+
+- `resolve…View(content, slide, ctx)` decides every value the slide shows and
+  returns a plain **view** object;
+- `render…View(view)` turns a view into the markup, and does nothing else.
+
+Core's own `renderHtml` is exactly those two in a row, so what you compose is
+what core renders. Your type resolves core's view, changes values in it and
+renders:
+
+```javascript
+// custom/slide-types/acme-title-slide.js
+import {
+  resolveTitleView,
+  renderTitleView,
+} from '../../shared/slide-types/core-layouts.js';
+
+export default {
+  label: 'Acme title',
+  fields: [/* … title, subheading, meta, your own options … */],
+  defaults: {/* … */},
+  renderHtml: (content, slide, ctx) => {
+    const view = resolveTitleView(content, slide, ctx);
+    view.classes.push('slide-acme-title'); // your root, for custom/styles/
+    if (content?.frame === 'panel') view.classes.push('is-panel');
+    view.logo = { src: '/custom/assets/acme-logo.svg', alt: 'Acme' };
+    return renderTitleView(view);
+  },
+};
+```
+
+Three rules make it hold:
+
+- **Import from `core-layouts.js`, never from `types/<name>/`.** The type
+  directories are internal and move with upstream reorganisations; the seam
+  does not.
+- **Set values, never markup.** Your file writes no core class name; core's
+  structure (for the title slide, the `tsu-*` family) lives in one place. Style
+  your additions in `custom/styles/`, nested under your own root class.
+- **Never escape.** `render…View` escapes every string in the view: texts,
+  `alt`s, URLs, class names and style values. Put raw values in.
+
+The view is documented as a JSDoc typedef next to its functions
+(`TitleView` in `shared/slide-types/types/title-slide/render.js`, re-exported
+by `core-layouts.js`). A renamed view field breaks
+`tests/fixtures/fork-slide-types/fork-title-slide.js` in core's own fork CI
+lane, so it is a release-notes moment, not a silent break in your fork.
+
+Today `title-slide` offers this (`resolveTitleView` / `renderTitleView`). Other
+types get the same shape when a fork needs one: ask upstream, rather than
+copying the renderer in the meantime.
+
 ---
 
 ## Rendering Rules
