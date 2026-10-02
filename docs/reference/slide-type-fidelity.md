@@ -28,9 +28,9 @@ The line is drawn at **what the receiving application can edit**, not at how goo
 
 ## Implementation status (as of 2026-10-02)
 
-The tiers follow Jaap's judgement of the exported files at gate A2.8, not a guess. Six types are `native` on **layer 0** (`server/export/pptx-generic.js`), the generic composition from the slide's semantic projection: title, content, list, table, text-blocks and end. Video has a composition of its own. Eight types get their own mapper next and stay `raster` until it exists (image, image-text, quote, chapter-title, kpi-metrics, chart, callout, comparison). The live types, the picture sets and the diagrams stay `raster` for good: a list without its shape is no editable version of a diagram.
+The tiers follow Jaap's judgement of the exported files at gate A2.8, not a guess. Six types are `native` on **layer 0** (`server/export/pptx-generic.js`), the generic composition from the slide's semantic projection: title, content, list, table, text-blocks and end. Video and image have a composition of their own. Seven types get their own mapper next and stay `raster` until it exists (image-text, quote, chapter-title, kpi-metrics, chart, callout, comparison). The live types, the picture sets and the diagrams stay `raster` for good: a list without its shape is no editable version of a diagram.
 
-**Layer 0 is the standard composition behind a non-raster claim, and a type's own handler is an upgrade on it (D306).** A claim is therefore backed by either. In the pixel-perfect file (`export/pptx`) only the own handlers run, so there every slide but video is an image (D307).
+**Layer 0 is the standard composition behind a non-raster claim, and a type's own handler is an upgrade on it (D306).** A claim is therefore backed by either. In the pixel-perfect file (`export/pptx`) only the handlers that declare `pixelPerfect` in `NATIVE_PPTX_HANDLERS` run, so there every slide but video is an image (D307). A handler serves the editable file unless it says so; the image-slide mapper does not, because a picture of the slide is exactly what that row promises.
 
 ## Who declares, and who cannot
 

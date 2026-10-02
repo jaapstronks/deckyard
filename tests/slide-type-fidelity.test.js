@@ -17,7 +17,7 @@ import {
   slideFidelity,
 } from '../shared/slide-types/fidelity.js';
 import {
-  NATIVE_PPTX_SLIDE_TYPES,
+  PPTX_HANDLER_TYPES,
   unbackedFidelityClaims,
 } from '../server/export/pptx.js';
 import { layerZeroCovers } from '../server/export/pptx-generic.js';
@@ -101,7 +101,7 @@ const CLAIMED = CORE_SLIDE_TYPE_NAMES.filter(
 test('a type claims an editable PPTX slide only where one gets written', () => {
   const bare = CLAIMED.filter(
     (name) =>
-      !NATIVE_PPTX_SLIDE_TYPES.includes(name) &&
+      !PPTX_HANDLER_TYPES.includes(name) &&
       !layerZeroCovers(name, SLIDE_TYPES[name]),
   );
   assert.deepEqual(
@@ -116,9 +116,7 @@ test('a type claims an editable PPTX slide only where one gets written', () => {
 });
 
 test('a handler exists only for a type that claims it', () => {
-  const orphans = NATIVE_PPTX_SLIDE_TYPES.filter(
-    (name) => !CLAIMED.includes(name),
-  );
+  const orphans = PPTX_HANDLER_TYPES.filter((name) => !CLAIMED.includes(name));
   assert.deepEqual(
     orphans,
     [],

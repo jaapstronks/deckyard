@@ -13,8 +13,9 @@ import { applyThemeToPptx, createWidePptx } from './pptx-theme.js';
 import {
   composeGenericSlide,
   layerZeroCovers,
-  markHeaderTables,
+  finishEditablePackage,
 } from './pptx-generic.js';
+import { composeImageSlide } from './pptx-image-slide.js';
 import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
   parseVideoSource,
@@ -40,25 +41,47 @@ function safeScale(n) {
  * lives with the type, where an author adding a type is looking, and the
  * implementation lives here, where an author adding a mapper is looking.
  *
- * A handler is also the only composition the pixel-perfect export uses: there
- * every other slide travels as its image (D307).
+ * Each entry declares which file it serves. Every handler serves the editable
+ * export; one that also declares `pixelPerfect` serves the pixel-perfect
+ * export, where every other slide travels as its image (D307). That is a
+ * declaration on the entry, not a second map or a branch on a name: the menu
+ * row "every slide as an image, videos play" is pinned to the entries that
+ * declare it ({@link PIXEL_PERFECT_HANDLER_TYPES}).
  *
- * @type {Readonly<Record<string, Function>>}
+ * Every `compose` takes the layer-0 contract: `(pptx, slide, ctx)`, adds its
+ * own slide (on the theme's layouts when `ctx.spec` is set) and returns
+ * `{ pptxSlide, warnings }`.
+ *
+ * @type {Readonly<Record<string, Readonly<{ compose: Function, pixelPerfect?: true }>>>}
  */
 const NATIVE_PPTX_HANDLERS = Object.freeze({
-  'video-slide': handleVideoSlide,
+  'video-slide': Object.freeze({
+    compose: handleVideoSlide,
+    pixelPerfect: true,
+  }),
+  'image-slide': Object.freeze({ compose: composeImageSlide }),
 });
 
 /**
- * The slide types this build can write as a native PPTX composition.
+ * The slide types with a composition of their own, in either file.
  *
  * Exported for the facet's guardrail, which is the only consumer: the export
  * itself reads the map, not the names.
  *
  * @type {ReadonlyArray<string>}
  */
-export const NATIVE_PPTX_SLIDE_TYPES = Object.freeze(
+export const PPTX_HANDLER_TYPES = Object.freeze(
   Object.keys(NATIVE_PPTX_HANDLERS),
+);
+
+/**
+ * The slide types the pixel-perfect file composes natively instead of as an
+ * image. Exported for the menu-copy pin, which promises exactly this list.
+ *
+ * @type {ReadonlyArray<string>}
+ */
+export const PIXEL_PERFECT_HANDLER_TYPES = Object.freeze(
+  PPTX_HANDLER_TYPES.filter((type) => NATIVE_PPTX_HANDLERS[type].pixelPerfect),
 );
 
 const log = createLogger('export-pptx');
@@ -248,12 +271,13 @@ async function buildDeckPptx(
     // Which branch a slide takes is the type's own declaration, not a name this
     // module recognises: `fidelity.pptx`. A claim to an editable slide takes
     // the type's own handler when it has one, and layer 0 otherwise (D306).
-    // The pixel-perfect file only runs the handlers; a claim without one is
-    // an image there by design, not a shortfall, so it says nothing (D307).
+    // The pixel-perfect file only runs the handlers that declare it; any other
+    // claim is an image there by design, not a shortfall, so it says nothing
+    // (D307).
     const claimsNative = needsNativeComposition(def, 'pptx');
-    const composeNative = claimsNative
-      ? NATIVE_PPTX_HANDLERS[slide?.type]
-      : null;
+    const handler = claimsNative ? NATIVE_PPTX_HANDLERS[slide?.type] : null;
+    const composeNative =
+      handler && (editable || handler.pixelPerfect) ? handler.compose : null;
     const generic =
       editable &&
       (editable.compose === 'generic' || (claimsNative && !composeNative));
@@ -270,15 +294,16 @@ async function buildDeckPptx(
       pptxSlide = result.pptxSlide;
       warnings.push(...result.warnings);
     } else if (composeNative) {
-      pptxSlide = pptx.addSlide();
-      const nativeResult = await composeNative(pptxSlide, slide, slideNum, {
+      const result = await composeNative(pptx, slide, {
+        repoRoot,
+        spec,
+        slideNum,
+        docLang,
         slideWidth: SLIDE_W_IN,
         slideHeight: SLIDE_H_IN,
-        docLang,
       });
-      if (nativeResult?.warning) {
-        warnings.push(nativeResult.warning);
-      }
+      pptxSlide = result.pptxSlide;
+      warnings.push(...result.warnings);
     } else {
       // Regular slide: render as PNG
       pptxSlide = pptx.addSlide();
@@ -315,7 +340,7 @@ async function buildDeckPptx(
   }
 
   let out = await pptx.write('nodebuffer');
-  if (editable) out = await markHeaderTables(out);
+  if (editable) out = await finishEditablePackage(out);
   // The warnings are logged here because a .pptx has no channel for a
   // message. The one finding a user acts on, which slides became pictures,
   // also travels as `imageSlides` ({@link imageSlidesHeaders}).
@@ -351,8 +376,8 @@ function addSpeakerNotes(pptxSlide, slide) {
  * For Bunny videos: attempts to embed the MP4 directly.
  * For YouTube/Vimeo: creates a placeholder with instructions.
  *
- * Composes onto a slide the caller already added, so that every slide — raster
- * or video — is created and annotated in one place.
+ * Adds its own slide, on the handler contract every composition shares
+ * ({@link NATIVE_PPTX_HANDLERS}); the caller annotates it.
  *
  * Two audiences, two languages, and the split is deliberate (B358). What lands
  * *on the slide* is copy the reader of the deck sees, so it comes from the
@@ -361,20 +386,26 @@ function addSpeakerNotes(pptxSlide, slide) {
  * this returns is not copy: it goes to the server log (a .pptx has no channel
  * for a message), where the rest of this module already writes English.
  *
- * @param {object} pptxSlide - The pptxgenjs slide to compose onto.
+ * @param {object} pptx - The pptxgenjs instance.
  * @param {object} slide - The stored video slide.
- * @param {number} slideNum - 1-based slide number, for the log line.
- * @param {object} options
- * @param {number} options.slideWidth - Slide width in inches.
- * @param {number} options.slideHeight - Slide height in inches.
- * @param {string} [options.docLang] - The deck's document language.
- * @returns {Promise<{warning: string|null}>}
+ * @param {object} ctx
+ * @param {number} ctx.slideNum - 1-based slide number, for the log line.
+ * @param {number} ctx.slideWidth - Slide width in inches.
+ * @param {number} ctx.slideHeight - Slide height in inches.
+ * @param {string} [ctx.docLang] - The deck's document language.
+ * @returns {Promise<{ pptxSlide: object, warnings: string[] }>}
  */
-async function handleVideoSlide(
+async function handleVideoSlide(pptx, slide, ctx) {
+  const pptxSlide = pptx.addSlide();
+  const { warning } = await composeVideo(pptxSlide, slide, ctx);
+  return { pptxSlide, warnings: warning ? [warning] : [] };
+}
+
+/** The video slide's content, onto `pptxSlide`; a log line when it falls short. */
+async function composeVideo(
   pptxSlide,
   slide,
-  slideNum,
-  { slideWidth, slideHeight, docLang = '' },
+  { slideNum, slideWidth, slideHeight, docLang = '' },
 ) {
   const content = slide?.content || {};
   const source = String(content.source || '').trim();
