@@ -6,6 +6,7 @@ import {
   slideRuntime,
 } from '../../../shared/slide-types/runtime.js';
 import { slideTypeGroup } from '../../../shared/slide-types/authoring-groups.js';
+import { resolvedFidelities } from '../../../shared/slide-types/fidelity.js';
 import {
   SLIDE_TIER,
   slideFallback,
@@ -82,6 +83,12 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // shared/slide-types/tiers.js.
       tier: slideTypeTier(key),
       fallback: slideFallback(def) || undefined,
+      // The `fidelity` facet, resolved per export target: whether the editable
+      // PPTX composes this type or photographs it. The editor's "exports as an
+      // image" hint reads it here, so a fork type's declaration is heard and
+      // an undeclared one arrives as the `raster` the export will use. See
+      // shared/slide-types/fidelity.js.
+      fidelity: resolvedFidelities(def),
       themeOnly: def.themeOnly === true || undefined,
       defaultsByLang:
         def.defaultsByLang && typeof def.defaultsByLang === 'object'
@@ -200,6 +207,9 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
         // nothing about it. It carries no `fallback` because there is no
         // column for one yet — the unknown-type render contract covers it.
         tier: SLIDE_TIER.EXTENSION,
+        // No place to declare, so the export photographs it; the composed
+        // definition says the same (`toRuntimeSlideType()`).
+        fidelity: resolvedFidelities(null),
         css: ct.css || undefined,
         hasTemplate: Boolean(ct.template),
       };

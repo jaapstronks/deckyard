@@ -14,8 +14,8 @@ overlapping PDF entries and a duplicated "other language" section.
 | ------------- | ----------------------- | ----------------------------------------- | ------------------------------------------------------------------------------- |
 | Slides        | PDF                     | `pdf-slides.pdf`                          | `renderSlidesToPdfBuffer` (`server/render/pdf.js`, Puppeteer)                   |
 | Slides        | PNG                     | `png`                                     | `buildSlidesPngExportHtml` (opens in a tab)                                     |
-| Slides        | PPTX                    | `pptx`                                    | `buildPptxBuffer` (each slide an image, [see below](#what-the-pptx-hands-back)) |
-| Slides        | _(no row yet)_          | `pptx-editable`                           | `buildEditablePptxBuffer` ([see below](#what-the-editable-pptx-hands-back))     |
+| Slides        | PowerPoint              | `pptx`                                    | `buildPptxBuffer` (each slide an image, [see below](#what-the-pptx-hands-back)) |
+| Slides        | PowerPoint, editable    | `pptx-editable`                           | `buildEditablePptxBuffer` ([see below](#what-the-editable-pptx-hands-back))     |
 | Slides        | PPTX template           | `pptx-template`                           | `buildThemeTemplateBuffer` (download)                                           |
 | Slides        | HTML                    | `html`                                    | `buildStandaloneHtml` (download)                                                |
 | Documents     | Text handout            | `pdf`                                     | `buildPrintHtml` (the reader projection, laid out for paper)                    |
@@ -73,15 +73,28 @@ numbers slides with a CSS counter rather than text in the heading.
 Whatever the projection says about a slide type, the handout says too. See
 [`reflowable-html-export.md`](./reflowable-html-export.md).
 
+## Two PowerPoint rows
+
+PowerPoint has two rows because there are two intents, and neither is the default (D141): a file to show or to drop into someone else's presentation, and a file to keep working in. Each row's description is its promise.
+
+| Row                  | Promise (the row's description)                        | Route                  |
+| -------------------- | ------------------------------------------------------ | ---------------------- |
+| PowerPoint           | Pixel-perfect: every slide as an image, videos play    | `export/pptx`          |
+| PowerPoint, editable | Text and pictures you can edit, on the theme's layouts | `export/pptx-editable` |
+
+The pixel-perfect row opens the file in a tab, like the other downloads. The editable row fetches it (`?sync=1`), saves it, and then says which slides became pictures, as an `info` toast built from the `X-Image-Slides` response header (`IMAGE_SLIDES_HEADER` in `shared/export-headers.js`): "Slides 3, 7 are images: their type has no editable form yet." No toast when every slide is editable. The v1 API offers the same two routes (`exportPresentationPptx`, `exportPresentationPptxEditable`) and sends the same header on the editable one.
+
+The editor says it before the export too. The inspector of a slide whose type the editable export photographs ends with "In the editable PowerPoint, this slide is an image." The hint reads the type's `fidelity` facet off the `/api/slide-types` response, resolved per target (`resolvedFidelities()` in `shared/slide-types/fidelity.js`), through the predicate the export dispatches on (`needsNativeComposition()`), never a type name. A fork type's declaration is therefore heard, and a database type is served the `raster` the export uses.
+
 ## What the PPTX hands back
 
-Every slide but video travels as one picture, so nothing in the exported file is editable yet. Which branch a slide takes is the type's own `fidelity.pptx` declaration rather than a name the export recognises — see [`slide-type-fidelity.md`](./slide-type-fidelity.md).
+Every slide but video travels as one picture, so nothing in the exported file is editable; video plays (D307: a video as a still is a loss, not a faithful copy). Which branch a slide takes is the type's own `fidelity.pptx` declaration rather than a name the export recognises — see [`slide-type-fidelity.md`](./slide-type-fidelity.md). The handoff ZIP carries this file.
 
 ## What the editable PPTX hands back
 
-`export/pptx-editable` is the second PPTX intent (D141): the deck on the theme's three layouts, as text and pictures PowerPoint can edit, as far as each type allows. The route exists; its row in the export menu, the v1 route and the editor hint are the next step (station 3, PR 4), so the table above lists it without a row.
+`export/pptx-editable` is the second PPTX intent (D141): the deck on the theme's three layouts, as text and pictures PowerPoint can edit, as far as each type allows.
 
-Each slide goes the way its type's `fidelity.pptx` says. A type with a native composition of its own (`video-slide`) uses it; a type that declares `native` or `mixed` without one goes through **layer 0** (`server/export/pptx-generic.js`); a `raster` type travels as its image, exactly as in the pixel-perfect file, named by its heading as alt text. The builder returns the numbers of those image slides (`imageSlides`) and logs them, so "editable" says where it is pictures. Today every core type but video declares `raster`, so until gate A2.8 judges layer 0 per type the editable file is mostly images.
+Each slide goes the way its type's `fidelity.pptx` says. A type with a native composition of its own (`video-slide`) uses it; a type that declares `native` or `mixed` without one goes through **layer 0** (`server/export/pptx-generic.js`); a `raster` type travels as its image, exactly as in the pixel-perfect file, named by its heading as alt text. The builder returns the numbers of those image slides (`imageSlides`), the route sends them as `X-Image-Slides` and the server log records them, so "editable" says where it is pictures. A queued export (no `?sync=1`, a queue running) answers `202` and carries no header; the editor always asks synchronously. Today every core type but video declares `raster`, so until gate A2.8 judges layer 0 per type the editable file is mostly images.
 
 Layer 0 reads the slide's semantic projection, the same one the reader and the handout print, and places what it says onto a layout without any per-type code: the heading into the title placeholder, paragraphs and lists into the body placeholder (one paragraph per list item, label and value on soft-broken lines, a bullet glyph per level, numbered lists numbered explicitly), a table as a real table with its header row marked, pictures fitted to their own ratio with their alt text. A slide that is a heading and at most two short lines takes the title layout, pictures beside text the image layout, everything else heading and body. The library leaves three things to the caller, and layer 0 does them: a line budget (there is no working autofit, so the body size shrinks from the theme's `lg` step to 10pt until the estimate fits, and an overflow is reported), the picture frames (pptxgenjs never reads a picture's size), and `firstRow` on a table (patched into the written package). A slide whose projection holds nothing visible stays an empty layout and is reported.
 
@@ -103,7 +116,7 @@ Three consequences are visible in the output, and each is pinned by `tests/expor
 
 The three layouts are `Title`, `Heading and body` and `Heading, image and body` (`PPTX_LAYOUTS`). Their boxes and type sizes are expressed in the slide's own 1600x900 reference pixels and converted once, so they sit where the theme's padding and type scale put them; `--t-slide-text-scale` is honoured like any other theme value. Two things in the file are the library's, not the theme's: PowerPoint's layout gallery also lists pptxgenjs' own blank `DEFAULT` layout, which the writer always emits first; and the image slot of the third layout is an untyped content placeholder rather than a picture placeholder, because pptxgenjs 4.0.1 never writes `type="pic"` (it maps `image` to `pic` and then looks `pic` up again). PowerPoint offers such a slot for a picture as readily as for text, and a later layer addresses it by name (`image`), so nothing is lost, but the box is not picture-only.
 
-The deck's own PPTX export does not use these layouts yet — it still rasterises every slide but video. Putting slide content onto them is the next piece of work.
+The pixel-perfect PPTX does not use these layouts; the editable one puts each slide's content onto them ([see above](#what-the-editable-pptx-hands-back)).
 
 ## Speaker notes in the PPTX
 

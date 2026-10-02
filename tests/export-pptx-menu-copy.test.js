@@ -7,21 +7,23 @@ import { dirname, resolve } from 'node:path';
 import { NATIVE_PPTX_SLIDE_TYPES } from '../server/export/pptx.js';
 
 /**
- * The PPTX row in the export menu promises what the export hands back (B321).
+ * The two PowerPoint rows in the export menu promise what each file hands back
+ * (B321, D141, D307).
  *
- * Every slide but video travels as one picture (`docs/reference/export-menu.md`
- * § What the PPTX hands back), so the row says so rather than "PowerPoint
- * file", which reads as editable slides. The copy is pinned to the export's
- * own handler map, not only to today's sentence: the day a second native
- * composition lands (B290, layer 0), this test fails and the person adding the
- * mapper rewrites the row in the same PR.
+ * The pixel-perfect row: every slide but video travels as one picture
+ * (`docs/reference/export-menu.md` § What the PPTX hands back), and video plays.
+ * The copy is pinned to the export's own handler map, not only to today's
+ * sentence: the day the pixel-perfect file composes a second type natively,
+ * this test fails and whoever adds it rewrites the row in the same PR. The
+ * editable row promises editable text and pictures as far as the type allows;
+ * which slides did not make it is said after the export, not in the row.
  */
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-function editorCopy(locale) {
+function editorCopy(locale, key = 'editor.export.descPptx') {
   const path = resolve(root, 'client/i18n', locale, 'editor.json');
-  return JSON.parse(readFileSync(path, 'utf8'))['editor.export.descPptx'];
+  return JSON.parse(readFileSync(path, 'utf8'))[key];
 }
 
 test('the PPTX export still writes only video natively', () => {
@@ -35,9 +37,26 @@ test('the PPTX export still writes only video natively', () => {
   );
 });
 
-test('the PPTX row says each slide is an image, in en and nl', () => {
-  assert.equal(editorCopy('en'), 'PowerPoint, each slide as an image');
-  assert.equal(editorCopy('nl'), 'PowerPoint, elke slide als beeld');
+test('the pixel-perfect row says each slide is an image and video plays, in en and nl', () => {
+  assert.equal(
+    editorCopy('en'),
+    'Pixel-perfect: every slide as an image, videos play',
+  );
+  assert.equal(
+    editorCopy('nl'),
+    "Pixel-perfect: elke slide als beeld, video's spelen af",
+  );
+});
+
+test('the editable row is its own row, in en and nl', () => {
+  assert.equal(
+    editorCopy('en', 'editor.export.pptxEditable'),
+    'PowerPoint, editable',
+  );
+  assert.equal(
+    editorCopy('nl', 'editor.export.pptxEditable'),
+    'PowerPoint, bewerkbaar',
+  );
 });
 
 test('the in-code fallback is the en copy', () => {
@@ -47,6 +66,6 @@ test('the in-code fallback is the en copy', () => {
   );
   assert.match(
     src,
-    /t\(\s*'editor\.export\.descPptx',\s*'PowerPoint, each slide as an image',?\s*\)/,
+    /t\(\s*'editor\.export\.descPptx',\s*'Pixel-perfect: every slide as an image, videos play',?\s*\)/,
   );
 });

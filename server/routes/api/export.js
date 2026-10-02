@@ -3,7 +3,11 @@ import { buildPrintHtml } from '../../export/print.js';
 import { buildSlidesPdfHtml } from '../../export/pdf-slides.js';
 import { buildSlidesPngExportHtml } from '../../export/png-slides.js';
 import { buildSlidesPngZipBuffer } from '../../export/png-zip.js';
-import { buildEditablePptxBuffer, buildPptxBuffer } from '../../export/pptx.js';
+import {
+  buildEditablePptxBuffer,
+  buildPptxBuffer,
+  imageSlidesHeaders,
+} from '../../export/pptx.js';
 import { buildThemeTemplateBuffer } from '../../export/pptx-theme.js';
 import { buildHandoffZipBuffer } from '../../export/handoff-zip.js';
 import { buildDeckBundle, DECK_MIMETYPE } from '../../export/deck-bundle.js';
@@ -177,9 +181,11 @@ const exportRoutes = [
         slideTypes: ctx.slideTypes,
         compose: parseComposeParam(url),
       });
-      ctx.pptxWarnings = result.warnings;
+      ctx.imageSlides = result.imageSlides;
       return result.buffer;
     },
+    // Which slides became pictures, for the export menu's notice.
+    responseHeaders: (ctx) => imageSlidesHeaders(ctx.imageSlides),
   }),
 
   // The theme as a PPTX template: the layouts only, no slides (B264, D106).

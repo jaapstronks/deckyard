@@ -22,9 +22,11 @@ function buildExportHeaders({
   filename,
   langSuffix = '',
   extension,
+  headers = {},
 }) {
   const fullFilename = `${safeFilename(filename + langSuffix)}${extension}`;
   return {
+    ...headers,
     'Content-Type': contentType,
     'Content-Disposition': `attachment; filename="${fullFilename}"`,
     'Cache-Control': 'no-store',
@@ -77,15 +79,18 @@ export function parseScaleParam(url, defaultScale = 2) {
  */
 export function sendExportResponse(
   res,
-  { contentType, filename, langSuffix, extension, data },
+  { contentType, filename, langSuffix, extension, data, headers },
 ) {
-  const headers = buildExportHeaders({
-    contentType,
-    filename,
-    langSuffix,
-    extension,
-  });
-  res.writeHead(200, headers);
+  res.writeHead(
+    200,
+    buildExportHeaders({
+      contentType,
+      filename,
+      langSuffix,
+      extension,
+      headers,
+    }),
+  );
   res.end(data);
 }
 
@@ -271,6 +276,10 @@ export function createAsyncExportRoute(config) {
     // Builder options read from the request that the worker cannot read
     // itself: it has the job data, not the URL. Throws to refuse the request.
     jobOptions = () => ({}),
+    // Extra response headers for a synchronous answer, read from the context
+    // after `buildContent` ran: a finding about the file that the file itself
+    // cannot carry. A queued export answers 202 and has none.
+    responseHeaders = () => ({}),
     getFilename = (ctx) => ctx.title,
   } = config;
   assertExportFormat(format, pattern);
@@ -334,6 +343,7 @@ export function createAsyncExportRoute(config) {
           langSuffix: ctx.langSuffix,
           extension,
           data,
+          headers: responseHeaders(ctx),
         });
         return true;
       } catch (e) {

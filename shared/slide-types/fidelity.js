@@ -198,3 +198,24 @@ export function exportFidelity(def, target) {
 export function needsNativeComposition(def, target) {
   return exportFidelity(def, target) !== DEFAULT_FIDELITY;
 }
+
+/**
+ * A definition's resolved fidelity for every export target, as one object in
+ * the declaration's own shape (`{ pptx: 'raster' }`).
+ *
+ * The wire half of the facet. The editor holds the `/api/slide-types`
+ * response, not the registry, so the "this slide exports as an image" hint can
+ * only read the facet if it travels; resolved rather than raw for the same
+ * reason the authoring companions are, so an undeclared fork type arrives as
+ * the `raster` the export will actually use. A client reads it back through
+ * {@link needsNativeComposition}, never by comparing the string.
+ *
+ * @param {any} def - a slide-type definition, or `null` for a type that has no
+ *   place to declare (a database type)
+ * @returns {Record<string, string>}
+ */
+export function resolvedFidelities(def) {
+  return Object.fromEntries(
+    FIDELITY_TARGETS.map((target) => [target, exportFidelity(def, target)]),
+  );
+}

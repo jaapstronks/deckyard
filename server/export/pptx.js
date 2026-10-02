@@ -18,6 +18,7 @@ import {
   fetchVideoBuffer,
   getBunnyConfig,
 } from './video-helpers.js';
+import { IMAGE_SLIDES_HEADER } from '../../shared/export-headers.js';
 
 function safeScale(n) {
   const s = Number(n) || 2;
@@ -180,6 +181,19 @@ export async function buildEditablePptxBuffer(
 }
 
 /**
+ * The headers an editable PPTX response carries for its image slides
+ * ({@link IMAGE_SLIDES_HEADER}).
+ *
+ * @param {number[]} imageSlides - from {@link buildEditablePptxBuffer}
+ * @returns {Record<string, string>}
+ */
+export function imageSlidesHeaders(imageSlides) {
+  return imageSlides.length
+    ? { [IMAGE_SLIDES_HEADER]: imageSlides.join(',') }
+    : {};
+}
+
+/**
  * The one loop behind both PPTX intents. `editable` is null for the
  * pixel-perfect file and `{ compose }` for the editable one; the two differ
  * only in which composer a slide gets and in the theme's layouts being in the
@@ -302,10 +316,9 @@ async function buildDeckPptx(
 
   let out = await pptx.write('nodebuffer');
   if (editable) out = await markHeaderTables(out);
-  // The warnings are returned for a caller that can carry them, and logged
-  // here because today none can: every caller hands the buffer straight to a
-  // download or a job result, and a .pptx has no channel for a message. A
-  // warning that only lives in the return value is a warning nobody reads.
+  // The warnings are logged here because a .pptx has no channel for a
+  // message. The one finding a user acts on, which slides became pictures,
+  // also travels as `imageSlides` ({@link imageSlidesHeaders}).
   for (const w of warnings) {
     log.warn(`${String(pres?.title || 'Presentation')}: ${w}`);
   }
