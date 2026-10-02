@@ -1,0 +1,70 @@
+/* Accessibility section status chip: makes the "is this slide described for
+   screen readers?" state legible without opening the drawer. a11yTitle is an
+   override, so `auto` (announced by the slide's own heading) is the neutral
+   normal state; `custom` confirms an override; `no-heading` is the one case
+   that actually warrants a nudge. */
+.editor-a11y-status {
+  font-weight: 500;
+  font-size: 12px;
+  margin-left: var(--ps-space-2);
+  padding: 1px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Background-image section summary. The section is collapsed by default, so
+   the summary carries the state: a thumbnail when a background is set, a quiet
+   "none" chip when it isn't. That replaces the force-open this section used to
+   do — the active setting stays visible without the panel's height. */
+.editor-bg-status {
+  font-weight: 500;
+  font-size: 12px;
+  margin-left: var(--ps-space-2);
+  padding: 1px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-text-secondary) / 0.1);
+}
+.editor-bg-summary-thumb {
+  width: 34px;
+  height: 20px;
+  margin-left: var(--ps-space-2);
+  vertical-align: middle;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid hsl(var(--app-border-default));
+}
+.editor-a11y-status.is-auto {
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-text-secondary) / 0.1);
+}
+.editor-a11y-status.is-custom {
+  color: hsl(var(--app-success));
+  background: hsl(var(--app-success) / 0.14);
+}
+/* The chip's shape cue beside its colour (WCAG 1.4.1), from the icon set. */
+.editor-a11y-status.is-custom::before,
+.editor-a11y-status.is-no-heading::before {
+  content: '';
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: 0.25em;
+  vertical-align: -0.125em;
+  background-color: currentColor;
+  -webkit-mask: var(--a11y-status-icon) center / contain no-repeat;
+  mask: var(--a11y-status-icon) center / contain no-repeat;
+}
+.editor-a11y-status.is-custom::before {
+  --a11y-status-icon: url('/client/vendor/lucide-icons/check.svg');
+}
+/* Warning yellow is too light as text; use a darker amber for the label and
+   the soft warning tint for the chip. */
+.editor-a11y-status.is-no-heading {
+  color: hsl(35 88% 36%);
+  background: hsl(var(--app-warning) / 0.16);
+}
+.editor-a11y-status.is-no-heading::before {
+  --a11y-status-icon: url('/client/vendor/lucide-icons/triangle-alert.svg');
+}

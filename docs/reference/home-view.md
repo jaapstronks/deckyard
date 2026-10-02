@@ -8,7 +8,7 @@ two-column layout ("direction A", chosen over a zoned dashboard).
 ## Layout
 
 Full-width greeting header over two columns (`.home-columns`, collapses to one
-below 960px; CSS in `client/styles/base/01-core/31-list-layout.css`):
+below 960px; CSS in `client/styles/app/list/31-list-layout.css`):
 
 - **Main (`.home-main`)** — `Recent` (resume work) → `Popular` (discovery) →
   **Building blocks** shelf (the create affordance).

@@ -195,7 +195,7 @@ test('an empty essential list offers its first item without hover', () => {
 
 test('the stylesheet shows is-essential without hover and hides other chips until then', () => {
   const css = readFileSync(
-    'client/styles/base/04-editor-and-misc/105-inline-edit.css',
+    'client/styles/app/editor/105-inline-edit.css',
     'utf8',
   );
   const block = (selector) => {

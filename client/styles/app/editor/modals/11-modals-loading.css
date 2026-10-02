@@ -50,7 +50,7 @@
 }
 
 /* Spinner (built by client/lib/dom/spinner.js; sizing/animation in
-   base/01-core/06-spinner.css) */
+   app/shell/06-spinner.css) */
 .loading-modal-spinner {
   width: 80px;
   height: 80px;

@@ -1,0 +1,48 @@
+/* Field header: label above input, optional right-aligned action (e.g. "Vertaal") */
+.field-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ps-space-2);
+  margin-bottom: var(--ps-space-1);
+}
+
+.field-head .field-label {
+  margin-bottom: 0;
+}
+
+.field-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ps-space-2);
+  flex-shrink: 0;
+}
+
+.help {
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+  line-height: 1.4;
+  margin-top: var(--ps-space-1);
+}
+.help.help-with-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--ps-space-1) var(--ps-space-3);
+}
+.btn-copy-example {
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
+  color: hsl(var(--app-accent-text));
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.btn-copy-example:hover {
+  color: hsl(var(--app-accent-primary-hover));
+  text-decoration: none;
+}

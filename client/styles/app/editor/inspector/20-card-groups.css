@@ -1,0 +1,120 @@
+/* Repeatable groups */
+.card-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-4);
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-lg);
+}
+
+.card-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-3);
+}
+
+.card-group-title {
+  font-size: var(--ps-text-xs);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.card-group-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-2);
+}
+
+/* Compact per-item remove (×): quiet by default, danger on hover, so routine
+   list management doesn't read as a wall of destructive red buttons. */
+.btn.card-remove-btn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font-size: var(--ps-text-lg);
+  line-height: 1;
+  color: hsl(var(--app-text-secondary));
+  flex-shrink: 0;
+}
+.btn.card-remove-btn:hover:not(:disabled) {
+  color: hsl(var(--app-danger));
+  background: hsl(var(--app-danger-soft));
+  border-color: hsl(var(--app-danger) / 0.4);
+}
+
+/* Drag handle for reorderable items. `touch-action: none` hands vertical
+   drags to the pointer-sortable instead of scrolling the pane (touch). */
+.item-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--ps-radius-sm);
+  color: hsl(var(--app-text-tertiary));
+  cursor: grab;
+  touch-action: none;
+  transition:
+    color var(--ps-transition-fast),
+    background var(--ps-transition-fast);
+  flex-shrink: 0;
+}
+
+.item-drag-handle:hover {
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-hover));
+}
+
+.item-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Title preview in collapsed card headers */
+.item-title-preview {
+  text-transform: none;
+  letter-spacing: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+/* When showing the actual card/block title, use normal weight */
+.card-group-title.item-title-preview {
+  font-weight: 500;
+}
+
+/* Dim placeholder for untitled items */
+.item-title-preview.is-placeholder {
+  opacity: 0.5;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Pointer-sortable states (lib/dom/pointer-sortable.js): while sorting, the
+   neighbours animate to their made-room offsets; the dragged item itself
+   follows the pointer untransitioned and floats above the list. */
+.items-reorder-list .card-group {
+  position: relative;
+}
+
+.items-reorder-list.is-sorting .card-group {
+  transition: transform 0.15s ease;
+}
+
+.items-reorder-list.is-sorting .card-group.is-sort-dragging {
+  transition: none;
+  z-index: 10;
+  box-shadow: var(--app-shadow-lg);
+  opacity: 0.95;
+}

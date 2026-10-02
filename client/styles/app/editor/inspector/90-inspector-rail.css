@@ -1,0 +1,71 @@
+/* Collapse control for the inspector rail. The header row it used to live in
+   (an "INSPECTOR" title beside the already-active Inspector pane tab, ~57px)
+   was dropped in the 2026-07-26 declutter; the button stays, because it has to
+   sit inside the surface it dismisses and hover-only would strand touch. A
+   zero-height slot lets it float over the first field's label band — labels are
+   left-aligned and short, so nothing collides — at no vertical cost. */
+.editor-form-close-slot {
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+  position: relative;
+  z-index: 2;
+}
+.editor-form-close-btn {
+  color: hsl(var(--app-text-secondary));
+}
+.editor-form-close-btn:hover,
+.editor-form-close-btn:focus-visible {
+  color: hsl(var(--app-text-primary));
+}
+
+/* Selection-aware inspector: the [This element | Slide] tab bar, shown only
+   while a canvas element is selected. A segmented control at the top of the
+   pane; the element tab leads because selecting is what summoned it. */
+.inspector-tabs {
+  display: flex;
+  gap: var(--ps-space-1);
+  padding: var(--ps-space-1);
+  margin-bottom: var(--ps-space-3);
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-md);
+}
+.inspector-tab {
+  flex: 1;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+  color: hsl(var(--app-text-secondary));
+  background: transparent;
+  border: 0;
+  border-radius: var(--ps-radius-sm);
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+.inspector-tab:hover {
+  color: hsl(var(--app-text-primary));
+}
+.inspector-tab.is-active {
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-elevated));
+  box-shadow: 0 1px 2px hsl(0 0% 0% / 0.08);
+}
+.inspector-tab:focus-visible {
+  outline: 2px solid hsl(var(--app-accent-primary));
+  outline-offset: 1px;
+}
+
+.editor-form-header-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--ps-space-2);
+  /* Stay pinned to the right even when the header wraps to a second line
+     (a long type label in the left group). Otherwise the actions drop to the left, and the "…" menu - which opens
+     leftward from the button's right edge - overflows the panel's left edge
+     and gets clipped by the panel's overflow:hidden / hidden behind the
+     slides column. */
+  margin-left: auto;
+}

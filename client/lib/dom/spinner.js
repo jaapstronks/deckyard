@@ -4,7 +4,7 @@
  * Five hand-rolled variants used to exist (`.spinner` ×2, `.auth-spinner`,
  * `.lang-btn-spinner`, `.skeleton-spinner`, plus a dash-animated SVG in the
  * loading modal), each with its own CSS block and keyframes. This builder and
- * the single CSS block in `client/styles/base/01-core/06-spinner.css` replace
+ * the single CSS block in `client/styles/app/shell/06-spinner.css` replace
  * all of them. Layout (margins, centering) stays with the call site's context
  * CSS; the spinner itself only knows its size.
  *

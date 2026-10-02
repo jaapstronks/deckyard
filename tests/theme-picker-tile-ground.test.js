@@ -67,10 +67,7 @@ test('a title type the type map does not know is refused, not guessed', () => {
 
 test('the tile scroller holds the focus ring on every side', () => {
   const css = readFileSync(
-    new URL(
-      '../client/styles/base/04-editor-and-misc/97-theme-picker.css',
-      import.meta.url,
-    ),
+    new URL('../client/styles/app/list/97-theme-picker.css', import.meta.url),
     'utf8',
   );
   const list = css.match(/\.theme-picker-list \{([^}]*)\}/)?.[1] || '';

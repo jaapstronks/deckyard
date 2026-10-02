@@ -1,0 +1,105 @@
+.editor-callout {
+  padding: var(--ps-space-2-5);
+  border-radius: 12px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+  line-height: 1.45;
+}
+
+.callout-icon {
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: var(--ps-space-1);
+}
+
+.btn-lock-icon {
+  vertical-align: middle;
+}
+
+.editor-card {
+  padding: var(--ps-space-3);
+  border-radius: 12px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+
+.help.is-mt-8 {
+  margin-top: var(--ps-space-2);
+}
+
+.editor-img-preview {
+  display: block;
+  width: 160px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+
+.editor-img-thumb-btn {
+  padding: 0;
+  border-radius: 10px;
+  overflow: hidden;
+  width: 140px;
+  height: 78px;
+  border: 1px solid hsl(var(--app-border-default));
+}
+
+.editor-img-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Narrow inspector rail: smaller preset tiles so two fit per row instead of
+   a tall single column (the 340px default leaves ~240px inside a section). */
+.is-editor .inspector-panel .editor-img-thumb-btn {
+  width: 110px;
+  height: 62px;
+}
+
+.editor-logo-thumb-sm {
+  width: 72px;
+  height: 40px;
+  object-fit: contain;
+  background: hsl(var(--app-surface-white));
+  border-radius: 8px;
+  border: 1px solid hsl(var(--app-border-default));
+}
+
+.editor-logo-thumb-md {
+  width: 96px;
+  height: 54px;
+  object-fit: contain;
+  background: hsl(var(--app-surface-white));
+  border-radius: 10px;
+  border: 1px solid hsl(var(--app-border-default));
+}
+
+/* Slim image-collection rows (inspector Slide tab): thumbnail + label +
+   reorder controls, no per-image settings. */
+.editor-collection-thumb {
+  width: 56px;
+  height: 36px;
+  flex: none;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
+}
+
+.editor-toggle-row {
+  padding-top: var(--ps-space-1);
+}
+
+/* Avoid extra top margin; rely on `.editor-form` spacing instead. */
+.editor-form > .stack > .field-label,
+.editor-form > .field-grid > .stack > .field-label {
+  margin-top: 0;
+}
+
+.danger {
+  border-color: hsl(var(--app-danger) / 0.55) !important;
+}

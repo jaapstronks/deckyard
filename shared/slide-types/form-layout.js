@@ -26,8 +26,8 @@
  * Deliberately NOT in this vocabulary: width. A field's natural minimum width
  * is a property of its editor widget, not of the type, and the renderers
  * already stamp it (`is-field-narrow|wide|full`, see
- * client/styles/base/03-controls-and-forms.css). `.field-grid` is flex-wrap, so
- * a row reflows on the real column width. A type declaring widths would be
+ * client/styles/app/editor/inspector/10-field-grid.css). `.field-grid` is
+ * flex-wrap, so a row reflows on the real column width. A type declaring widths would be
  * declaring something it cannot know.
  *
  * Declaration, JSON-safe so a fork overriding a type by name brings its own:

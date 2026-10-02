@@ -26,7 +26,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
-const CSS_FILE = 'client/styles/base/01-core/10-shell-topbar-dropdown.css';
+const CSS_FILE = 'client/styles/app/shell/10-shell-topbar-dropdown.css';
 const JS_ROOTS = ['client/views/editor'];
 const TOPBAR_FILE = 'client/views/editor/topbar/index.js';
 
