@@ -4,6 +4,49 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.54.0](https://github.com/jaapstronks/deckyard/compare/v1.53.0...v1.54.0) (2026-10-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **client:** client/lib/user/*, client/lib/format/analytics-tracker.js, client/lib/format/analytics-erase-button.js and client/lib/theme/theme-select.js no longer exist. A fork importing them switches to client/views/user/index.js, client/lib/state/auth.js, client/lib/format/user-format.js, client/views/analytics/index.js or client/views/theme-select.js.
+* **client:** client/lib/slide-library/*, client/lib/comments/*, client/lib/slide-collections/* and client/views/editor/slide-library-picker.js no longer exist. A fork importing them switches to client/views/slide-library/index.js, client/views/comments/index.js or client/views/list/collections/index.js.
+* **slide-types:** a custom/slide-types/*.js type whose renderHtml emits a <style> block is refused at load. Move the rules to a stylesheet in custom/styles/ nested under the type's root class.
+
+### Added
+
+* **export:** editable PPTX on the theme layouts, layer 0 (B290) ([#1435](https://github.com/jaapstronks/deckyard/issues/1435)) ([6341495](https://github.com/jaapstronks/deckyard/commit/63414950fb10cabcd7bdf234f0a55e3224aec154))
+* **export:** PPTX writes an uploaded font's desktop name (B289) ([#1433](https://github.com/jaapstronks/deckyard/issues/1433)) ([384eea2](https://github.com/jaapstronks/deckyard/commit/384eea2c1bed1c15f2c005959cb6a247eb9395ba))
+* **export:** the layer-0 group exports as editable slides (B587) ([#1440](https://github.com/jaapstronks/deckyard/issues/1440)) ([2890099](https://github.com/jaapstronks/deckyard/commit/28900991dc92c6cef048b76b0793d5f4c6747144))
+* **export:** two PowerPoint rows and the editor's image-slide hint (B586) ([#1436](https://github.com/jaapstronks/deckyard/issues/1436)) ([a688c4e](https://github.com/jaapstronks/deckyard/commit/a688c4ef2fb9e83c05240a7bb895ec4f30cb5d2e))
+* live presenting is a cluster an installation can leave out (B524) ([#1424](https://github.com/jaapstronks/deckyard/issues/1424)) ([d1526e8](https://github.com/jaapstronks/deckyard/commit/d1526e8897588718f0ef34ee4ce661a3bc556b59))
+* **slide-types:** a file-JS type's CSS lives only in custom/styles/ (B536) ([#1428](https://github.com/jaapstronks/deckyard/issues/1428)) ([785b993](https://github.com/jaapstronks/deckyard/commit/785b99312cf8565a3ee0e68fd20e337b3aee397d))
+* **slide-types:** publish an English and Dutch name per core type (B322) ([#1431](https://github.com/jaapstronks/deckyard/issues/1431)) ([a7050d9](https://github.com/jaapstronks/deckyard/commit/a7050d900ab357cf29dd1f0adbcd384e688c1a4c))
+* **slide-types:** title-slide offers its layout as a composable view (B535) ([#1429](https://github.com/jaapstronks/deckyard/issues/1429)) ([f1b142c](https://github.com/jaapstronks/deckyard/commit/f1b142c117086f1eef94183fc410ad038d7a89fd))
+* stock media and the public API are clusters an installation can leave out (B525) ([#1422](https://github.com/jaapstronks/deckyard/issues/1422)) ([28cd2e9](https://github.com/jaapstronks/deckyard/commit/28cd2e975aa56ef58f90c7cc3ca31f686c3d3ce4))
+
+
+### Fixed
+
+* **client:** "Workspace default" names the theme it resolves to (B584) ([#1426](https://github.com/jaapstronks/deckyard/issues/1426)) ([9695f5e](https://github.com/jaapstronks/deckyard/commit/9695f5ea54e32fa2e8c1de8b6f82e39b7f3d6bac))
+* **deps:** bump brace-expansion from 5.0.9 to 5.0.12 (security) ([#1398](https://github.com/jaapstronks/deckyard/issues/1398)) ([68e4c32](https://github.com/jaapstronks/deckyard/commit/68e4c32dfc1a69b89205ab27db3891f07607762b))
+* **deps:** bump undici from 8.9.0 to 8.11.2 (security) ([#1366](https://github.com/jaapstronks/deckyard/issues/1366)) ([c7c6748](https://github.com/jaapstronks/deckyard/commit/c7c67486518a37050fd49c8ee230656e62e92817))
+* **slides:** poll without codes names the real follow URL (B583) ([#1425](https://github.com/jaapstronks/deckyard/issues/1425)) ([8b88dd4](https://github.com/jaapstronks/deckyard/commit/8b88dd4f3ec6b846bf6c3e9c6d0ced0a300ca211))
+* **tests:** browser shutdown waits for Chrome's exit; deck-bundle test owns its root (B545) ([#1430](https://github.com/jaapstronks/deckyard/issues/1430)) ([65b1b6e](https://github.com/jaapstronks/deckyard/commit/65b1b6eee7a1bcc413021124c057a3210f701d13))
+* **themes:** playful's accent pair reaches 4.5:1 (B544) ([#1434](https://github.com/jaapstronks/deckyard/issues/1434)) ([2639d7b](https://github.com/jaapstronks/deckyard/commit/2639d7b7d6289ced86f909153bc764ea2f543375))
+
+
+### Security
+
+* deleting a user revokes their pending magic links (B546) ([#1432](https://github.com/jaapstronks/deckyard/issues/1432)) ([0e38cd9](https://github.com/jaapstronks/deckyard/commit/0e38cd957159ca2158589510caeedb9932ab8072))
+
+
+### Changed
+
+* **client:** slide library, comments and collections are views (B528 PR 3a) ([#1380](https://github.com/jaapstronks/deckyard/issues/1380)) ([37edd90](https://github.com/jaapstronks/deckyard/commit/37edd90b9688108d5fa2b8b7d9e6c2d895ed96ae))
+* **client:** user, analytics tracker and theme select are views (B528 PR 3b) ([#1437](https://github.com/jaapstronks/deckyard/issues/1437)) ([2597240](https://github.com/jaapstronks/deckyard/commit/2597240e69e369e7ca7280ab4c4b1cc44d7767e0))
+* keep the next release in 1.x during beta ([f37b752](https://github.com/jaapstronks/deckyard/commit/f37b7526bbedbb6e4e70210cd4e2786daac7e243))
+
 ## [1.53.0](https://github.com/jaapstronks/deckyard/compare/v1.52.0...v1.53.0) (2026-10-01)
 
 
