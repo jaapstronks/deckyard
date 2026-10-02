@@ -8,7 +8,7 @@
   pointer-events: none;
   opacity: 0;
   transition: opacity 160ms ease;
-  padding: 10px 14px;
+  padding: var(--ps-space-2-5) var(--ps-space-3-5);
   border-radius: 999px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-overlay));

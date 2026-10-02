@@ -17,11 +17,11 @@
    shared/primitives.css, the one definition app.css and embed.css import too
    (D266); this file keeps no copy of them.
 
-   The presenter chrome itself (.presenter-*, .deck-slide, .sr-only,
-   .skip-link, progress bar) already lives in slides.css; those rules reference
-   --app-* / --ps-* / --z-skip-link design tokens with no inline fallback, so
-   the one thing this file MUST provide for that chrome to render is
-   shared/ui-tokens.css. */
+   The presenter chrome itself (.presenter-*, .deck, .deck-slide, progress
+   bar, start curtain) is the viewer layer, viewer.css (D267), imported below
+   before slides.css as in app.css. It reads --app-* / --ps-* design tokens
+   with no inline fallback, so shared/ui-tokens.css has to come first. The
+   embed iframe has no presenter shell and does not load it. */
 
 /* No @font-face import. Slide text is served by the theme's own embedFonts
    (base64-inlined by buildEmbeddedFontCss); the export *chrome* — topbar,
@@ -31,6 +31,7 @@
    reference that a downloaded file cannot resolve. */
 @import url('./shared/ui-tokens.css');
 @import url('./shared/primitives.css');
+@import url('./viewer.css');
 
 /* Base body chrome (from app/tokens.css — the export never loads app.css). */
 body {

@@ -591,8 +591,9 @@ new code:
 `tests/slide-css-tokens.test.js` — a value that exactly equals a slide token
 must be written as that token, per-file and per-category burndown budgets that
 only go down.
-Presenter chrome inside the slide bundle is excluded by file, with the reason
-in the test.
+The presenter chrome is not in the slide bundle: it is the viewer layer
+(`client/styles/viewer/`, D267), and the same test asserts the bundle reads no
+`--app-*`/`--ps-*` token.
 
 The same file measures **every** declaration on the six axes (font-size,
 line-height, spacing = margin + padding, gap, border-radius, `color`) and

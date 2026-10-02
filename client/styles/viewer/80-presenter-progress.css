@@ -1,6 +1,10 @@
 /* Presenter progress */
 .presenter-progress {
-  padding: 10px 16px;
+  /* Row 3 of the shell grid (50-presenter-layout.css), locked so hiding the
+     topbar can't move the bar. */
+  grid-row: 3;
+  grid-column: 1;
+  padding: var(--ps-space-2-5) var(--ps-space-4);
   background: hsl(var(--app-bg-elevated) / 0.92);
   border-top: 1px solid hsl(var(--app-border-default));
   backdrop-filter: blur(10px);
@@ -8,7 +12,7 @@
 .presenter-progress-text {
   font-size: 14px;
   color: hsl(var(--app-text-secondary));
-  margin-bottom: 6px;
+  margin-bottom: var(--ps-space-1-5);
 }
 .presenter-progress-bar {
   height: 6px;

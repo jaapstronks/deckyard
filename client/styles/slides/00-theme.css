@@ -5,7 +5,7 @@
    gets it through slides.css and nowhere else (D268).
    IMPORTANT: scoped to `.slide` so the *application UI* is not theme-branded.
    No `:root` here — the presenter chrome owns its own constants
-   (03-components/50-presenter-layout.css). */
+   (client/styles/viewer/50-presenter-layout.css). */
 
 .slide {
   /* Slide backgrounds */

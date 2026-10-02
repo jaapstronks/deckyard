@@ -105,23 +105,13 @@ const CATEGORIES = {
 
 /**
  * Sheets in the slide bundle that are not slide rendering, each with a reason
- * that is not "too much work".
- *
- * The presenter surfaces are app chrome that happens to live in the slide
- * bundle (they style the present window around the deck, use `--app-*` tokens,
- * and never render in an export or the MCP preview). They are outside the
- * slide token vocabulary on purpose.
+ * that is not "too much work". The presenter chrome is not among them: it is
+ * the viewer layer (`client/styles/viewer/`, D267) and sits outside this gate's
+ * directory, under the app-chrome gates.
  */
 const EXCLUDED = [
   /\/00-tokens\.css$/, // defines the scale; checking it against itself is circular
   /\/60-accessibility\.css$/, // page chrome (.sr-only, .skip-link) outside the .slide token scope
-  /\/50-presenter-layout\.css$/,
-  /\/51-presenter-console\.css$/,
-  /\/53-present-window\.css$/,
-  /\/80-presenter-progress\.css$/,
-  /\/82-auto-advance\.css$/,
-  /\/85-presenter-start\.css$/,
-  /\/90-presenter-edge-hint\.css$/,
 ];
 
 /** @param {string} dir @returns {Promise<string[]>} absolute paths of .css files, recursively */
@@ -687,9 +677,7 @@ describe('slide css tokens', () => {
     // surfaces and typography locals, `00-theme.css` — the theme layer right
     // behind it, D268 — covered by the contract snapshot below).
     //
-    // Scope is every sheet in the bundle, presenter chrome included: chrome
-    // draws its styling from `--app-*`/`--ps-*`, so a `--t-*` read there is
-    // just as wrong as one in slide CSS.
+    // Scope is every sheet in the bundle, the excluded ones included.
     const reads = [];
     for (const rel of allSheets) {
       if (/\/00-(tokens|theme)\.css$/.test(rel)) continue;
@@ -708,6 +696,30 @@ describe('slide css tokens', () => {
         'Theme influence reaches slide CSS through the --slide-* roles; only\n' +
         '00-tokens.css and 00-theme.css bind those to the theme contract. Add a role there if\n' +
         'the existing ones do not cover the case — do not read --t-* directly.',
+    );
+  });
+
+  it('reads no app-chrome token (--app-*, --ps-*) in the slide bundle', async () => {
+    // The slide bundle travels alone into the MCP preview, which loads no
+    // ui-tokens.css: an `--app-*`/`--ps-*` read there resolves to nothing
+    // (docs/reference/css-tokens.md § The trap). The presenter chrome that
+    // used to read them is the viewer layer now (`client/styles/viewer/`,
+    // D267), so the bundle reads none, the excluded sheets included.
+    const reads = [];
+    for (const rel of allSheets) {
+      const clean = stripComments(
+        await fs.readFile(path.join(repoRoot, rel), 'utf8'),
+      );
+      for (const m of clean.matchAll(/var\(\s*(--(?:app|ps)-[\w-]*)/g)) {
+        const line = clean.slice(0, m.index).split('\n').length;
+        reads.push(`${rel}:${line}  ${m[1]}`);
+      }
+    }
+    assert.deepStrictEqual(
+      reads.sort(),
+      [],
+      `${reads.length} app-chrome token read(s) in the slide bundle. Slide CSS\n` +
+        'reads --slide-* roles; chrome around the deck belongs in client/styles/viewer/.',
     );
   });
 

@@ -121,8 +121,9 @@ it touches slide types; `AGENTS.md` § Slide types points here.
 
 - Add a CSS file under `client/styles/slides/` in the appropriate bundle:
   - layout/title-ish slides: `client/styles/slides/01-layout-and-title/*`
-  - components/interactive/presenter helpers: `client/styles/slides/03-components/*`
-- Import it from the corresponding aggregator file (`client/styles/slides/01-layout-and-title.css` or `03-components.css`).
+  - components/interactive helpers: `client/styles/slides/03-components/*`
+  - not presenter chrome: that is the viewer layer, `client/styles/viewer/` (D267)
+- Declare it in `TYPE_CSS` in `scripts/generate-slide-css-aggregators.js` and run `npm run gen:slide-css`; the aggregator files (`client/styles/slides/01-layout-and-title.css`, `03-components.css`, …) are generated, never hand-edited.
 - Use theme variables via `.slide { --... }` indirection (see `client/styles/slides/00-theme.css`).
   - Don’t hardcode brand colors/fonts inside the slide CSS.
 - **Don’t reach for the app-chrome tokens (`--ps-*`, `--z-*`) inside

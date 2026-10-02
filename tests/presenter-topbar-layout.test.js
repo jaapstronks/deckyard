@@ -36,8 +36,8 @@ const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
-const componentsDir = path.join(repoRoot, 'client/styles/slides/03-components');
-const cssPath = path.join(componentsDir, '50-presenter-layout.css');
+const viewerDir = path.join(repoRoot, 'client/styles/viewer');
+const cssPath = path.join(viewerDir, '50-presenter-layout.css');
 
 /** Declarations of every rule whose selector list is exactly `selector`. */
 function declarationsOf(css, selector) {
@@ -129,7 +129,7 @@ describe('presenter shell: the bar sizes its row, the stage fits the rest (B506)
 
   it('no other host carries a second copy of the stage math', async () => {
     for (const file of ['51-presenter-console.css', '53-present-window.css']) {
-      const other = await fs.readFile(path.join(componentsDir, file), 'utf8');
+      const other = await fs.readFile(path.join(viewerDir, file), 'utf8');
       const stripped = other.replace(/\/\*[\s\S]*?\*\//g, '');
       assert.doesNotMatch(
         stripped,
