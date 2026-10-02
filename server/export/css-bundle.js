@@ -15,7 +15,6 @@ import { SLIDE_TYPES } from '../../shared/slide-types.js';
 import { embedSeamCssUrls } from './seam-css.js';
 import {
   embedCssUrlsForExport,
-  readTextIfExists,
   toDataUrlIfLocal,
   imageFieldKeysForType,
 } from '../utils/html-utils.js';
@@ -55,15 +54,16 @@ export async function loadExportCssBundle(
     throw new TypeError('loadExportCssBundle: opts.slides must be an array');
   }
   // `chromeCss` is the viewer/export chrome entrypoint (export.css), NOT the
-  // editor's app.css. An exported deck is a viewer: it needs slide CSS + theme
-  // + a thin presenter/toolbar chrome layer, never the ~620 KB of editor-only
-  // CSS app.css drags in. See client/styles/export.css for the boundary.
-  const [chromeCss, themeCss, slidesCss, fontCss] = await Promise.all([
+  // editor's app.css. An exported deck is a viewer: it needs the slide chain
+  // (slides.css, which carries the theme layer `slides/00-theme.css` right
+  // after its tokens) + a thin presenter/toolbar chrome layer, never the
+  // ~620 KB of editor-only CSS app.css drags in. See client/styles/export.css
+  // for the boundary.
+  const [chromeCss, slidesCss, fontCss] = await Promise.all([
     readCssWithImports(
       repoRoot,
       path.join(repoRoot, 'client', 'styles', 'export.css'),
     ),
-    readTextIfExists(path.join(repoRoot, 'client', 'styles', 'theme.css')),
     readCssWithImports(
       repoRoot,
       path.join(repoRoot, 'client', 'styles', 'slides.css'),
@@ -129,7 +129,6 @@ export async function loadExportCssBundle(
     repoRoot,
     customCss,
     chromeCss,
-    themeCss,
     slidesCss,
     fontCss,
     themeVarsCss,
@@ -157,7 +156,6 @@ export function buildExportStyleContent(bundle, extraCss = []) {
     [
       bundle.fontCss,
       stripFontFacesFromCss(bundle.chromeCss),
-      bundle.themeCss,
       stripFontFacesFromCss(bundle.slidesCss),
       // After the slide stylesheets, matching the embed (`styles:` block after
       // the linked slides.css) and the client (runtime-injected into <head>).
@@ -177,7 +175,7 @@ export function buildExportStyleContent(bundle, extraCss = []) {
       // @font-face here (theme fonts are embedded separately), so that inherited
       // stack falls through to the system font — which Skia can only embed as
       // Type 3 (glyph-as-procedure). `--font-body` is defined on `.slide` itself
-      // (theme.css, hard default `Arial, sans-serif`), so this keeps unstyled
+      // (slides/00-theme.css, hard default `Arial, sans-serif`), so this keeps unstyled
       // slide text on an embeddable font and stops the chrome token leaking into
       // the slide layer. Slide-type rules that set `--font-heading`/-body/-mono
       // outrank this (higher specificity), so headings etc. are unchanged.

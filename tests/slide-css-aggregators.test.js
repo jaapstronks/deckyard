@@ -5,6 +5,8 @@ import path from 'node:path';
 
 import { CORE_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
 import {
+  FOUNDATION_CSS,
+  ROOT_AGGREGATOR,
   TIERS,
   TYPE_CSS,
   SHARED_CSS,
@@ -33,6 +35,39 @@ test('every committed aggregator is byte-identical to the generated output', asy
       `${rel} is out of date — run \`node scripts/generate-slide-css-aggregators.js\``,
     );
   }
+});
+
+test('slides.css is a build product too: the foundation, then the tiers, in order', async () => {
+  const rel = path.join('client', 'styles', ROOT_AGGREGATOR);
+  const generated = (await buildAllAggregators()).get(rel);
+  assert.ok(generated, 'slides.css is part of the generated set');
+  const imports = [
+    ...generated.matchAll(/@import url\('\.\/slides\/([^']+)'\);/g),
+  ].map((m) => m[1]);
+  assert.deepEqual(imports, [
+    ...FOUNDATION_CSS,
+    ...TIERS.map((t) => t.aggregator),
+  ]);
+});
+
+test('the theme layer loads directly after the tokens it binds to (D268)', () => {
+  // `00-theme.css` turns a theme's `--t-*` into the slide-local variables the
+  // tiers read. It sits behind `00-tokens.css` and before anything else, and
+  // nowhere else: slides.css is its only address (no loose <link>, no second
+  // read in an export bundler).
+  const tokens = FOUNDATION_CSS.indexOf('00-tokens.css');
+  const theme = FOUNDATION_CSS.indexOf('00-theme.css');
+  assert.equal(tokens, 0, 'tokens first');
+  assert.equal(theme, 1, 'the theme layer directly after the tokens');
+  const foundationOnDisk = fs
+    .readdirSync(path.join(REPO_ROOT, 'client', 'styles', 'slides'))
+    .filter((f) => f.endsWith('.css') && !TIERS.some((t) => t.aggregator === f))
+    .sort();
+  assert.deepEqual(
+    [...FOUNDATION_CSS].sort(),
+    foundationOnDisk,
+    'every foundation sheet on disk is declared, and nothing else is',
+  );
 });
 
 test('every type-owned CSS entry names a real core type', () => {

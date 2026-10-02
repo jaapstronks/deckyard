@@ -1,5 +1,11 @@
 /* Presenter layout (also used in standalone export) */
 .presenter-shell {
+  /* The two chrome rows: the top bar's height as one row of controls (its
+     minimum when the controls wrap, B506) and the progress row. Both are
+     presenter constants, not theme input, so they live here and not in the
+     slide theme layer; `ui=min` (server/export/html.js) and fullscreen below
+     zero them on the same selector. */
+  --presenter-topbar-height: 56px;
   --presenter-progress-height: 56px;
   position: relative; /* containing block for the fullscreen chrome overlay */
   height: 100vh;
@@ -31,10 +37,10 @@
    (JS toggles .is-chrome-active). They span the whole shell so showing them
    never moves the slide, and the root cannot scroll. D111. */
 html.is-fullscreen {
-  --presenter-topbar-height: 0px;
   overflow: hidden;
 }
 html.is-fullscreen .presenter-shell {
+  --presenter-topbar-height: 0px;
   --presenter-progress-height: 0px;
   overflow: hidden; /* the parked bars sit just outside it */
 }
@@ -55,7 +61,7 @@ html.is-fullscreen .presenter-topbar {
   top: 0;
   bottom: auto;
   /* The row it leaves is 0 in fullscreen; keep the windowed bar's height
-     (theme.css --presenter-topbar-height). */
+     (the .presenter-shell --presenter-topbar-height default above). */
   min-height: 56px;
   transform: translateY(-100%);
 }

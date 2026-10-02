@@ -86,13 +86,11 @@ function lineOf(text, index) {
 const rel = (file) => path.relative(repoRoot, file);
 /**
  * The slide layer, which has its own contract (`slide-css-tokens.test.js`)
- * and reads the theme's `--t-*` input family. `theme.css` is that layer's
- * `--t-*` → slide-var step and lives outside `slides/` only until B531 moves
- * it to `slides/00-theme.css` (D268).
+ * and reads the theme's `--t-*` input family; its `--t-*` → slide-var step is
+ * `slides/00-theme.css` (D268).
  */
 const isSlideSheet = (file) =>
-  rel(file).startsWith(path.join('client', 'styles', 'slides') + path.sep) ||
-  rel(file) === path.join('client', 'styles', 'theme.css');
+  rel(file).startsWith(path.join('client', 'styles', 'slides') + path.sep);
 
 async function loadCss() {
   const files = await walk(stylesDir, (n) => n.endsWith('.css'));

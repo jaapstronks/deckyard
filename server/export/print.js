@@ -243,7 +243,6 @@ export async function buildPrintHtml(
           css.fontCss,
           stripFontFacesFromCss(css.chromeCss),
           css.themeVarsCss,
-          css.themeCss,
           stripFontFacesFromCss(css.slidesCss),
           PRINT_DOC_CSS,
         ],

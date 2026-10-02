@@ -69,8 +69,8 @@ const skip =
  *
  * Every rule here duels a core rule of *equal* specificity, so it can only win
  * by coming later — which is the property under test. `--font-body` is declared
- * on `.slide` by client/styles/theme.css (in every chain that inlines core
- * CSS); `body` margin/background are declared by the per-path document CSS.
+ * on `.slide` by client/styles/slides/00-theme.css (in every chain that inlines
+ * core CSS); `body` margin/background are declared by the per-path document CSS.
  */
 const PROBE_CSS = `
 .slide { --font-body: 'SeamProbe', sans-serif; }
@@ -211,19 +211,19 @@ const CASCADE_DUELS = {
     selector: '.slide',
     prop: '--font-body',
     expect: /SeamProbe/,
-    core: 'theme.css declares `.slide { --font-body: var(--t-font-body, …) }`',
+    core: '00-theme.css declares `.slide { --font-body: var(--t-font-body, …) }`',
   },
   'mcp/preview (list)': {
     selector: '.slide',
     prop: '--font-body',
     expect: /SeamProbe/,
-    core: 'theme.css declares `.slide { --font-body: var(--t-font-body, …) }`',
+    core: '00-theme.css declares `.slide { --font-body: var(--t-font-body, …) }`',
   },
   'mcp/preview (single)': {
     selector: '.slide',
     prop: '--font-body',
     expect: /SeamProbe/,
-    core: 'theme.css declares `.slide { --font-body: var(--t-font-body, …) }`',
+    core: '00-theme.css declares `.slide { --font-body: var(--t-font-body, …) }`',
   },
   'export/print': {
     selector: 'body',

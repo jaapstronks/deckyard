@@ -1,8 +1,8 @@
 /* Export / download viewer CSS entrypoint.
 
    A downloaded or rendered deck is a *viewer*, not the editor. It needs the
-   slide CSS (bundled separately as slides.css), the theme layer (theme.css +
-   per-theme vars) and a thin layer of presenter/toolbar chrome — but never the
+   slide chain (bundled separately as slides.css, theme layer included), the
+   per-theme vars and a thin layer of presenter/toolbar chrome — but never the
    ~620 KB of editor-only CSS that app.css drags in (app/components.css,
    base/01-core, base/03-controls-and-forms, base/04-editor-and-misc: modals,
    inspectors, the slide-type picker, settings, analytics, …). None of those
