@@ -3,10 +3,10 @@
  * Searches users by email or name with debounced input.
  */
 
-import { h, installDismissOnOutside } from '../dom/index.js';
-import { t } from '../ui-i18n.js';
-import { icon } from '../dom/icons.js';
-import { takeEscape } from '../dom/escape.js';
+import { h, installDismissOnOutside } from '../../lib/dom/index.js';
+import { t } from '../../lib/ui-i18n.js';
+import { icon } from '../../lib/dom/icons.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 1;

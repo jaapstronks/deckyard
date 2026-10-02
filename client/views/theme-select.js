@@ -4,10 +4,10 @@
  * Shared utilities for creating and populating theme selector dropdowns.
  */
 
-import { t } from '../ui-i18n.js';
-import { loadThemeById } from './theme.js';
-import { cssStringEscape } from '../../../shared/theme-fonts.js';
-import { h } from '../dom/index.js';
+import { t } from '../lib/ui-i18n.js';
+import { loadThemeById } from '../lib/theme/theme.js';
+import { cssStringEscape } from '../../shared/theme-fonts.js';
+import { h } from '../lib/dom/index.js';
 
 /**
  * Build the `GET /api/themes` URL for a picker.

@@ -15,9 +15,9 @@ import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import {
   createAnalyticsTracker,
   isAnalyticsEnabled,
-} from '../../lib/format/analytics-tracker.js';
-import { createEraseMyDataButton } from '../../lib/format/analytics-erase-button.js';
-import { me } from '../../lib/user/auth.js';
+  createEraseMyDataButton,
+} from '../analytics/index.js';
+import { me } from '../../lib/state/auth.js';
 import {
   addMyQuestionId,
   getMyQuestionIds,

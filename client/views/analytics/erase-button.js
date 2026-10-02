@@ -1,6 +1,6 @@
 /**
  * "Forget me" button for anonymous viewers: confirms, then erases the analytics
- * data this device has recorded (see `analytics-tracker.js` `erase()`).
+ * data this device has recorded (see `tracker.js` `erase()`).
  *
  * Shared by the two viewer surfaces that run a tracker — the share-viewer and
  * the follow view. It owns the flow worth sharing (confirm → erase → toast +
@@ -13,9 +13,9 @@
  * tracker, no button, no surface.
  */
 
-import { h } from '../dom/index.js';
-import { confirmModal } from '../dom/modal.js';
-import { toast } from '../dom/toast.js';
+import { h } from '../../lib/dom/index.js';
+import { confirmModal } from '../../lib/dom/modal.js';
+import { toast } from '../../lib/dom/toast.js';
 
 /**
  * @typedef {Object} EraseLabels

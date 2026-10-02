@@ -66,14 +66,15 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
     feature's records and renders them is a view**, however many pages use
     it. One owner → it lives inside that view; two or more → its own
     `views/<feature>/` with an `index.js` seam and no route (the shape
-    `views/viewer/` and `views/analytics/` already have).
+    `views/comments/`, `views/slide-library/` and `views/user/` have).
   - The direction is one way: **`lib/` never imports from `views/`.**
   - Feature-less shared UI has **one address: `lib/dom/`** — banners,
     empty states, a field wrapper. No `views/shared/`, no
     components or features folder, no third place.
-  - _Status:_ normative now; B528 PR 3b still moves the last feature UI out
-    of `lib/` (`user/`, the analytics tracker, `theme-select`) and adds the
-    guard. Don't add to what it moves out.
+  - `tests/client-layer-direction.test.js` pins both measurable halves at
+    zero, no allowlist: no `lib/` → `views/` import, and no module under
+    `lib/` outside `dom/` and `slide-runtime/` that imports both the `h()`
+    seam and a fetch layer.
 
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).

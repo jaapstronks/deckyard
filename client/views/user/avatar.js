@@ -4,9 +4,9 @@
  * Displays a user's profile image with fallback to initials.
  */
 
-import { h } from '../dom/index.js';
-import { initialsForName } from './user-format.js';
-import { t } from '../ui-i18n.js';
+import { h } from '../../lib/dom/index.js';
+import { initialsForName } from '../../lib/format/user-format.js';
+import { t } from '../../lib/ui-i18n.js';
 
 /**
  * Size presets for avatars

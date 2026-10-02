@@ -1,6 +1,6 @@
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom/index.js';
-import { authConfig, login, me, ssoButtonLabel } from '../../lib/user/auth.js';
+import { authConfig, login, me, ssoButtonLabel } from '../../lib/state/auth.js';
 import { t } from '../../lib/ui-i18n.js';
 import { createBusyManager } from '../../lib/dom/busy.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';

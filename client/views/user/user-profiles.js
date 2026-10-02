@@ -11,7 +11,7 @@
  * server/storage/display-identity.js.
  */
 
-import { api } from '../api.js';
+import { api } from '../../lib/api.js';
 
 // Cache storage
 const profileCache = new Map();

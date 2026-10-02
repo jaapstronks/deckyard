@@ -35,7 +35,7 @@ import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createModal, createModalActions } from '../../../lib/dom/modal.js';
-import { authConfig, ssoButtonLabel } from '../../../lib/user/auth.js';
+import { authConfig, ssoButtonLabel } from '../../../lib/state/auth.js';
 import { inviteMember } from './actions.js';
 import { invitableRoles } from './permissions.js';
 

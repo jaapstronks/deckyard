@@ -4,16 +4,16 @@
  * Displays a user avatar that opens a dropdown with Settings and Sign out options.
  */
 
-import { h, installDismissOnOutside } from '../dom/index.js';
+import { h, installDismissOnOutside } from '../../lib/dom/index.js';
 import { createAvatar, updateAvatar } from './avatar.js';
 import { getUserProfileAsync } from './user-profiles.js';
-import { displayNameFromEmail } from './user-format.js';
-import { logout } from './auth.js';
+import { displayNameFromEmail } from '../../lib/format/user-format.js';
+import { logout } from '../../lib/state/auth.js';
 import { createOrganizationSection } from './organization-switcher.js';
-import { storage } from '../storage.js';
-import { t } from '../ui-i18n.js';
-import { getHelpUrl } from '../theme/branding.js';
-import { nav } from '../state/router.js';
+import { storage } from '../../lib/storage.js';
+import { t } from '../../lib/ui-i18n.js';
+import { getHelpUrl } from '../../lib/theme/branding.js';
+import { nav } from '../../lib/state/router.js';
 
 /**
  * Create a user menu dropdown.

@@ -13,8 +13,8 @@ This repo is intentionally **simple, dependency-light, and modular**:
 ```
 deckyard/
 ├── client/              # Browser UI (vanilla ESM, no build step)
-│   ├── views/           # Page controllers (editor, presenter, follow, etc.)
-│   ├── lib/             # Browser utilities + slide mounting/cleanup
+│   ├── views/           # Features: pages and route-less feature folders
+│   ├── lib/             # The layer: DOM, transport, state, format, slide runtime
 │   ├── styles/          # CSS organized by layer
 │   └── i18n/            # Translation files per locale
 │
@@ -502,6 +502,16 @@ The full rule behind `AGENTS.md` § _Module layout: one folder = one seam_.
   client: `lib/<area>/` and `views/editor/` are _groups_ whose members are
   imported by path, and there is no duty to add an `index.js` barrel to a
   folder that is not a seam.
+- **`client/lib/` is a layer, `client/views/` is a feature** (D263). A
+  module that fetches a feature's records and renders them is a view,
+  however many pages use it; feature UI shared by two or more views gets
+  its own `views/<feature>/` with an `index.js` seam (`views/comments/`,
+  `views/slide-library/`, `views/user/`). `tests/client-layer-direction.test.js`
+  pins both measurable halves at zero, no allowlist: no import under
+  `client/lib/` lands in `client/views/`, and no module under `client/lib/`
+  outside `dom/` and `slide-runtime/` imports both the `h()` seam
+  (`lib/dom/index.js`) and a fetch layer (`lib/api.js`, `lib/net/*`, a bare
+  `fetch(`).
 
 ### Config accessors live only in `server/config/`
 

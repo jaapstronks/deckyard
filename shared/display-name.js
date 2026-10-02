@@ -13,7 +13,7 @@
  * "Unknown" for a blank input: that is a user-facing string, and the two sides
  * localize differently (the client through `ui-i18n`, the server not at all).
  * A blank input yields `''` — the absence, not a rendering of it — and each
- * side decides what to show for it. See `client/lib/user/user-format.js` for
+ * side decides what to show for it. See `client/lib/format/user-format.js` for
  * the localized wrapper.
  *
  * @module shared/display-name

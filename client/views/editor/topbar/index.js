@@ -13,16 +13,19 @@ import {
   getUiModePreference,
   setUiModePreference,
 } from '../../../lib/theme/ui-mode.js';
-import { logout } from '../../../lib/user/auth.js';
+import { logout } from '../../../lib/state/auth.js';
 import { createEditorTopbarMoreMenu } from './more-menu.js';
 import { openSubscriptionModal } from '../modals/subscription-modal.js';
 import { createLanguageMode } from './language-mode.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
-import { getUserProfileAsync } from '../../../lib/user/user-profiles.js';
-import { displayNameFromEmail } from '../../../lib/user/user-format.js';
-import { createUserMenu } from '../../../lib/user/user-menu.js';
-import { createNotificationBell } from '../../../lib/user/notification-bell.js';
+import {
+  createAvatar,
+  updateAvatar,
+  getUserProfileAsync,
+  createUserMenu,
+  createNotificationBell,
+} from '../../user/index.js';
+import { displayNameFromEmail } from '../../../lib/format/user-format.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';

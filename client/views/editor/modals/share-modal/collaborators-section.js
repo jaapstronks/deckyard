@@ -4,7 +4,7 @@
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
-import { createUserAutocomplete } from '../../../../lib/user/user-autocomplete.js';
+import { createUserAutocomplete } from '../../../user/index.js';
 import {
   openRevokeMessageModal,
   REVOKE_CONTEXT,
