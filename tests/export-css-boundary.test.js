@@ -45,8 +45,8 @@ const VIEWER_NEEDED = [
   '.btn-secondary', // deck nav
   '.form-input', // png-slides toolbar scale picker
   '.row', // exported presenter topbar
-  '.presenter-shell', // slides.css chrome
-  '.presenter-progress', // slides.css chrome
+  '.presenter-shell', // viewer.css chrome (D267)
+  '.presenter-progress', // viewer.css chrome (D267)
   '.sr-only', // slides.css a11y
   '.skip-link', // slides.css a11y
   '--app-bg-elevated', // ui-tokens.css — presenter chrome reads it unfallbacked

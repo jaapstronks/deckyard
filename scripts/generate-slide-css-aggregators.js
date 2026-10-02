@@ -1,14 +1,17 @@
 #!/usr/bin/env node
-// Derive the per-tier `@import` aggregators under `client/styles/slides/` from a
+// Derive the `@import` aggregators of the slide chain (`client/styles/slides.css`
+// and the per-tier files under `client/styles/slides/`) and of the viewer chrome
+// (`client/styles/viewer.css` over `client/styles/viewer/`, D267) from a
 // declared manifest instead of hand-maintaining the import lists.
 //
 // WHY THIS EXISTS
-// The three aggregator files (`01-layout-and-title.css`, `02-content-and-media.css`,
-// `03-components.css`) are just ordered lists of `@import`s. Hand-maintained, they
-// drift: a new slide type gets a stylesheet but nobody wires it in, or a removed
-// type leaves an orphaned import. This makes the list a build product of a
-// manifest, and `tests/slide-css-aggregators.test.js` gates it (byte-identical to
-// the committed files, every type real, every file on disk claimed exactly once).
+// The aggregator files (`slides.css` and the three tiers `01-layout-and-title.css`,
+// `02-content-and-media.css`, `03-components.css`) are just ordered lists of
+// `@import`s. Hand-maintained, they drift: a new slide type gets a stylesheet but
+// nobody wires it in, or a removed type leaves an orphaned import. This makes the
+// list a build product of a manifest, and `tests/slide-css-aggregators.test.js`
+// gates it (byte-identical to the committed files, every type real, every file on
+// disk claimed exactly once).
 //
 // THE CASCADE CONSTRAINT (the reason this is not a trivial sort)
 // The numeric filename prefixes (`00-`, `21-`, `35-`) are NOT sort keys — they are
@@ -33,6 +36,24 @@ import { formatGenerated } from './lib/format-generated.js';
 const SLIDES_DIR = fileURLToPath(
   new URL('../client/styles/slides/', import.meta.url),
 );
+
+/**
+ * The foundation of the chain, in the order `slides.css` imports it, before any
+ * tier: the design-system scale and the `--slide-*` roles (`00-tokens.css`), the
+ * theme layer that binds a theme's `--t-*` to the slide-local variables
+ * (`00-theme.css`, D268: it has no other address and no `:root`), and the shared
+ * partial patterns (`00-patterns.css`). The order is declared, not sorted: the
+ * theme layer follows the tokens it sits on.
+ * @type {string[]}
+ */
+export const FOUNDATION_CSS = [
+  '00-tokens.css',
+  '00-theme.css',
+  '00-patterns.css',
+];
+
+/** The chain's entry point, the one stylesheet every slide-rendering path loads. */
+export const ROOT_AGGREGATOR = 'slides.css';
 
 /**
  * The tiers, in the order `slides.css` imports them. Each is one aggregator
@@ -137,7 +158,6 @@ export const TYPE_CSS = {
   // move, out of scope for this brief).
   'poll-slide': [{ tier: '03-components', file: '10-poll.css', order: 19 }],
   'chart-slide': [{ tier: '03-components', file: '20-chart.css' }],
-  'custom-html-slide': [{ tier: '03-components', file: '26-custom-html.css' }],
   'chapter-title-slide': [
     { tier: '03-components', file: '30-chapter-title.css' },
   ],
@@ -161,7 +181,7 @@ export function typeCssEntries() {
 
 /**
  * Stylesheets owned by no single type: base layout, shared media/card layouts,
- * and the presenter/export chrome. Declared here because the registry has
+ * transitions, accessibility utilities and text styles. Declared here because the registry has
  * nothing to derive them from.
  * @type {Array<{ tier: string, file: string, order?: number }>}
  */
@@ -180,18 +200,38 @@ export const SHARED_CSS = [
   // (cardLinkOverlayHtml helper; icon-card-grid and logo-wall both render it)
   { tier: '02-content-and-media', file: '70-card-links.css' },
   // Tier 03
-  { tier: '03-components', file: '50-presenter-layout.css' },
-  { tier: '03-components', file: '51-presenter-console.css' },
   { tier: '03-components', file: '52-morph-transition.css' },
-  { tier: '03-components', file: '53-present-window.css' },
   { tier: '03-components', file: '60-accessibility.css' },
   { tier: '03-components', file: '70-step-reveal.css' },
-  { tier: '03-components', file: '80-presenter-progress.css' },
-  { tier: '03-components', file: '82-auto-advance.css' },
-  { tier: '03-components', file: '85-presenter-start.css' },
-  { tier: '03-components', file: '90-presenter-edge-hint.css' },
   { tier: '03-components', file: '97-text-styles.css' },
 ];
+
+/**
+ * The viewer chrome (D267 layer 3): the presenter shell around the slides —
+ * topbar, stage, console, progress, auto-advance, start curtain, edge hint and
+ * the projector window. It is app-layer CSS (it reads `--app-*`/`--ps-*`), not
+ * slide CSS, so it lives in `client/styles/viewer/` and has its own aggregator,
+ * `client/styles/viewer.css`, which the editor (`app.css`) and the export
+ * viewer (`export.css`) import before `slides.css`. The embed iframe and the
+ * MCP preview have no presenter shell and do not load it. Order is the numeric
+ * filename prefix, as in a tier.
+ * @type {{ dir: string, aggregator: string, header: string, files: string[] }}
+ */
+export const VIEWER_LAYER = {
+  dir: 'viewer',
+  aggregator: 'viewer.css',
+  header:
+    '/* Viewer chrome: the presenter shell around the slides (editor presenter, present window, exports). Generated by scripts/generate-slide-css-aggregators.js */',
+  files: [
+    '50-presenter-layout.css',
+    '51-presenter-console.css',
+    '53-present-window.css',
+    '80-presenter-progress.css',
+    '82-auto-advance.css',
+    '85-presenter-start.css',
+    '90-presenter-edge-hint.css',
+  ],
+};
 
 /** Numeric filename prefix (`10-poll.css` → 10), the default cascade order. */
 function filenamePrefix(file) {
@@ -231,6 +271,44 @@ function buildAggregator(tier) {
 }
 
 /**
+ * The viewer layer's files in cascade order (numeric filename prefix).
+ * @returns {string[]}
+ */
+export function viewerEntries() {
+  return [...VIEWER_LAYER.files].sort(
+    (a, b) => filenamePrefix(a) - filenamePrefix(b),
+  );
+}
+
+/** The exact bytes `viewer.css` should contain. */
+function buildViewerAggregator() {
+  const lines = viewerEntries().map(
+    (file) => `@import url('./${VIEWER_LAYER.dir}/${file}');`,
+  );
+  return `${VIEWER_LAYER.header}\n${lines.join('\n')}\n`;
+}
+
+/** The exact bytes `slides.css` should contain: the foundation, then the tiers. */
+function buildRootAggregator() {
+  const foundation = FOUNDATION_CSS.map(
+    (file) => `@import url('./slides/${file}');`,
+  );
+  const tiers = TIERS.map(
+    (tier) => `@import url('./slides/${tier.aggregator}');`,
+  );
+  return [
+    '/* Shared slide rendering (used by preview, presenter, and exports) */',
+    '',
+    '/* Design system foundation - must load first: tokens, then the theme layer that binds --t-* to them, then the partial patterns */',
+    ...foundation,
+    '',
+    '/* Slide layouts and components */',
+    ...tiers,
+    '',
+  ].join('\n');
+}
+
+/**
  * Map of every aggregator's repo-relative path → expected content,
  * Prettier-formatted with the repo config so `npm run format` and this
  * generator agree (see scripts/lib/format-generated.js).
@@ -238,10 +316,14 @@ function buildAggregator(tier) {
  */
 export async function buildAllAggregators() {
   const out = new Map();
+  const root = path.join('client', 'styles', ROOT_AGGREGATOR);
+  out.set(root, await formatGenerated(root, buildRootAggregator()));
   for (const tier of TIERS) {
     const rel = path.join('client', 'styles', 'slides', tier.aggregator);
     out.set(rel, await formatGenerated(rel, buildAggregator(tier)));
   }
+  const viewer = path.join('client', 'styles', VIEWER_LAYER.aggregator);
+  out.set(viewer, await formatGenerated(viewer, buildViewerAggregator()));
   return out;
 }
 

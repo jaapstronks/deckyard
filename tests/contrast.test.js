@@ -86,8 +86,9 @@ test('APCA returns 0 for identical colours and unparseable input', () => {
 });
 
 test('assessContrast applies the size-aware WCAG bar', () => {
-  // playful's accent: 4.40:1 against its dark pole. Passes as large text,
-  // fails as body text — the exact pair that motivated a size parameter.
+  // An orange accent against a deep-brown pole: 4.40:1. Passes as large text,
+  // fails as body text — the pair (playful's before B544) that motivated a
+  // size parameter.
   const large = assessContrast('#431407', '#ea580c', { size: 'large' });
   const body = assessContrast('#431407', '#ea580c', { size: 'body' });
 

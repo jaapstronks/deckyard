@@ -38,7 +38,6 @@ export function getThemeSlideTypeConfig(theme) {
  * @param {Object} options.def - Slide type definition
  * @param {Object} [options.theme] - Active theme
  * @param {Array} [options.disabledSlideTypes] - Org-level disabled types
- * @param {boolean} [options.canEditCustomHtml] - Whether the user may author raw HTML/CSS
  * @returns {boolean}
  */
 export function isInsertableSlideType({
@@ -46,7 +45,6 @@ export function isInsertableSlideType({
   def,
   theme,
   disabledSlideTypes,
-  canEditCustomHtml = false,
 } = {}) {
   const t = cleanStr(type);
   if (!t) return false;
@@ -57,10 +55,6 @@ export function isInsertableSlideType({
   // gate. Rung 1 of the deprecation ladder; no core type sits there right now
   // (docs/reference/slide-type-removal.md).
   if (def.deprecated) return false;
-
-  // The raw-HTML escape-hatch slide is only insertable by capability holders.
-  // Everyone else can still view/present/export existing ones (read-only).
-  if (t === 'custom-html-slide' && !canEditCustomHtml) return false;
 
   // Org-level curation check (most restrictive, checked first)
   if (Array.isArray(disabledSlideTypes) && disabledSlideTypes.includes(t)) {
@@ -76,6 +70,30 @@ export function isInsertableSlideType({
   if (def.themeOnly === true && !include.has(t)) return false;
 
   return true;
+}
+
+/**
+ * The types this installation does not have: each declares the cluster it
+ * needs (`feature: '<key>'`, D260) and that cluster is off. They count as
+ * org-disabled — every caller unions this with the organization's
+ * `disabledSlideTypes` before asking {@link isInsertableSlideType} — so they
+ * leave the picker, the AI catalogue and `get_slide_types`, while an existing
+ * slide keeps rendering (rendering does not go through the policy).
+ *
+ * The answer comes from the caller, so the server asks its snapshot
+ * (`isFeatureEnabled`) and the client its copy (`featureEnabled`); the rule
+ * is here once.
+ *
+ * @param {Record<string, { feature?: string }>} types - Type key → definition or wire metadata
+ * @param {(key: string) => boolean} isEnabled - Is cluster `key` on?
+ * @returns {string[]} The type keys whose cluster is off
+ */
+export function clusterOffSlideTypes(types, isEnabled) {
+  return Object.entries(types || {})
+    .filter(
+      ([, def]) => typeof def?.feature === 'string' && !isEnabled(def.feature),
+    )
+    .map(([type]) => type);
 }
 
 /**

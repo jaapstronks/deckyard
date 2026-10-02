@@ -17,8 +17,7 @@
  * 2. The claim, wherever it is written. One assertion over one concept: a
  *    slide does not arrive in a deck by itself, and a type definition is not
  *    where an insertion gate is declared. A type that really is uninsertable
- *    declares it in shared/slide-types/policy.js, next to `custom-html-slide`
- *    and `deprecated`; prose beside `ai:` is not a gate and cannot be
+ *    declares it in shared/slide-types/policy.js, next to `deprecated`; prose beside `ai:` is not a gate and cannot be
  *    executed.
  *
  * Half 2 scans the shipping surfaces rather than one folder, because that is

@@ -7,8 +7,8 @@
  *    one layout, six themes: what differs between the baselines is exactly the
  *    theme, so a drifting box or a fallback font is attributable.
  *  - **the all-field-types deck**, one pass over every field kind the registry
- *    knows (`string`, `markdown`, `enum`, `number`, `items`, `image`,
- *    `boolean`, `csv`, `code`), so a renderer regression in a field kind that
+ *    knows on a core type (`string`, `markdown`, `enum`, `number`, `items`,
+ *    `image`, `boolean`, `csv`), so a renderer regression in a field kind that
  *    the calibration slide does not use still has somewhere to show up.
  *
  * The calibration text is deliberately short and free of near-wrap lines. Where
@@ -138,17 +138,6 @@ export const ALL_FIELD_TYPES_SLIDES = [
         title: 'Chart data',
         chartType: 'bar',
         data: 'Label,Value\nAlfa,3\nBravo,5\nCharlie,2',
-      },
-    },
-  },
-  {
-    fieldKinds: ['code'],
-    titleSelector: '.slide .probe',
-    slide: {
-      type: 'custom-html-slide',
-      content: {
-        html: '<div class="probe">Custom HTML</div>',
-        css: '.probe { font-size: 48px; padding: 40px; }',
       },
     },
   },

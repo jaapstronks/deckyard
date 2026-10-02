@@ -368,9 +368,6 @@ export const COMPANIONS = [
       'follow-invite-slide':
         'app-managed slide (QR + join code); it carries no author-written text ' +
         'to edit on canvas, and the picker refuses to insert it',
-      'custom-html-slide':
-        'the content is raw HTML/CSS edited in a code field — an inline ghost ' +
-        'over rendered output would fight the source of truth',
       'payoff-slide':
         'open gap, not a principle: a single statement line that could carry a ' +
         'descriptor. Recorded here so it is a known absence rather than a silent one',

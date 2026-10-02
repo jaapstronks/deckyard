@@ -10,7 +10,8 @@
  * container units are the one form.
  *
  * Presenter chrome (console, present window, edge hint) sizes the browser
- * window itself and is out of scope. There is no allowance for slide CSS.
+ * window itself; it is the viewer layer (`client/styles/viewer/`, D267) and
+ * lives outside this directory. There is no allowance for slide CSS.
  *
  * Run with: node --test tests/slide-css-no-viewport-units.test.js
  */
@@ -26,14 +27,6 @@ const repoRoot = path.resolve(
   '..',
 );
 const slidesDir = path.join(repoRoot, 'client', 'styles', 'slides');
-
-/** Window-sized chrome, not slide content. */
-const CHROME = new Set([
-  'client/styles/slides/03-components/50-presenter-layout.css',
-  'client/styles/slides/03-components/51-presenter-console.css',
-  'client/styles/slides/03-components/53-present-window.css',
-  'client/styles/slides/03-components/90-presenter-edge-hint.css',
-]);
 
 const VIEWPORT_UNIT = /(?<![\w-])-?\d*\.?\d+(?:vw|vh|vmin|vmax|dvh|svh|lvh)\b/;
 
@@ -53,7 +46,6 @@ describe('slide css has no viewport units', () => {
   it('sizes slide content against the slide box', async () => {
     const offenders = [];
     for (const rel of await cssFiles(slidesDir)) {
-      if (CHROME.has(rel)) continue;
       const css = (await fs.readFile(path.join(repoRoot, rel), 'utf8')).replace(
         /\/\*[\s\S]*?\*\//g,
         '',

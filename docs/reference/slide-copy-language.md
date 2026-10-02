@@ -85,12 +85,11 @@ be empty.
 Copy that a renderer prints must go through `getSlideCopy()`. Some strings still
 do not. The first group are editor-canvas affordances rather than deck content:
 
-| Type                | Strings                                 |
-| ------------------- | --------------------------------------- |
-| `countdown-slide`   | `Start`, `Pause`, `Reset`               |
-| `custom-html-slide` | `Custom HTML`                           |
-| `embed-slide`       | the "Paste an HTTPS URL to embed…" hint |
-| `video-slide`       | the "Paste a YouTube/Vimeo URL…" hint   |
+| Type              | Strings                                 |
+| ----------------- | --------------------------------------- |
+| `countdown-slide` | `Start`, `Pause`, `Reset`               |
+| `embed-slide`     | the "Paste an HTTPS URL to embed…" hint |
+| `video-slide`     | the "Paste a YouTube/Vimeo URL…" hint   |
 
 The second group _is_ deck content — it is just only ever heard, not seen. Four
 types hardcode the `aria-label` on their structural list, where their siblings
@@ -159,7 +158,7 @@ what they hold:
   the live language switcher follow: the switcher refetches instead of
   reloading, and the new payload names its own language.
 - the **slide library** renders an item, not a deck. `contentLang(item)`
-  (`client/lib/slide-library/search.js`) is `getContentForLang()`'s other
+  (`client/views/slide-library/search.js`) is `getContentForLang()`'s other
   direction — which language _is_ this content — and answers `null` the same way
   `resolveDeckLang` does.
 

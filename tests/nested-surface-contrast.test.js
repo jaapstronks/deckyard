@@ -89,13 +89,13 @@ test('a dark lime is not assumed away', () => {
   );
 });
 
-test('accent contrast still holds, since accent is a surface too', () => {
-  // Judged at the `large` bucket, not `body`: --t-color-accent-contrast is worn
-  // by big glyphs — a letter in a 44px poll disc, a step number, an icon — not
-  // by paragraph text. Measured today, the tightest shipped pair is `playful`
-  // at 4.40:1, comfortably over `large` and just under `body`. That number is a
-  // property of the shipped palette, not of this mechanism.
-  const want = WCAG_THRESHOLDS.large.aa;
+test('accent contrast holds at body size, since accent is a surface too', () => {
+  // Judged at the `body` bucket: --t-color-accent-contrast is worn by text on
+  // every accent plane — a pyramid level's description, a funnel bar, a chip —
+  // not only by big glyphs. The derivation picks the better of the theme's two
+  // text poles, so a pair below the bar is a property of the shipped palette
+  // (B544: `playful` was 4.40:1 until its dark pole moved to #3c1206).
+  const want = WCAG_THRESHOLDS.body.aa;
   const failures = [];
   for (const { id, theme } of SHIPPED) {
     const bg = theme.cssVars?.['--t-color-accent'];

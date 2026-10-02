@@ -144,8 +144,7 @@ export function createBasicFields() {
 
   /**
    * Code field: monospace textarea that stores the raw string verbatim (no
-   * markdown parsing, no HTML escaping on input). Used for the custom-HTML slide.
-   * Supports opts.readOnly to render the value but block edits (capability gate).
+   * markdown parsing, no HTML escaping on input).
    */
   const fieldCode = (label, value, helpText, onChange, opts = {}) => {
     const ta = h('textarea', {
@@ -161,22 +160,17 @@ export function createBasicFields() {
     if (opts?.required) ta.required = true;
     if (typeof opts?.placeholder === 'string')
       ta.placeholder = opts.placeholder;
-    if (opts?.readOnly) {
-      ta.readOnly = true;
-      ta.setAttribute('aria-readonly', 'true');
-    } else {
-      ta.addEventListener('input', () => onChange(ta.value));
-      // Tab inserts two spaces instead of moving focus, for code-editing feel.
-      ta.addEventListener('keydown', (e) => {
-        if (e.key !== 'Tab' || e.shiftKey) return;
-        e.preventDefault();
-        const start = ta.selectionStart;
-        const end = ta.selectionEnd;
-        ta.value = ta.value.slice(0, start) + '  ' + ta.value.slice(end);
-        ta.selectionStart = ta.selectionEnd = start + 2;
-        onChange(ta.value);
-      });
-    }
+    ta.addEventListener('input', () => onChange(ta.value));
+    // Tab inserts two spaces instead of moving focus, for code-editing feel.
+    ta.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab' || e.shiftKey) return;
+      e.preventDefault();
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      ta.value = ta.value.slice(0, start) + '  ' + ta.value.slice(end);
+      ta.selectionStart = ta.selectionEnd = start + 2;
+      onChange(ta.value);
+    });
     const labelRightEl = opts?.labelRightEl || null;
     // Code always claims its own line in a responsive row.
     const wrap = h('div', { class: 'stack is-field is-field-full' }, [
@@ -189,10 +183,7 @@ export function createBasicFields() {
       ta,
       helpText ? h('div', { class: 'help', text: helpText }) : null,
     ]);
-    // Read-only code fields are capability-gated, not the author's to fill in.
-    return opts?.required && !opts?.readOnly
-      ? markFieldRequired({ wrap, control: ta })
-      : wrap;
+    return opts?.required ? markFieldRequired({ wrap, control: ta }) : wrap;
   };
 
   /**

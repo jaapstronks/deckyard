@@ -1,7 +1,8 @@
 /* Shared slide rendering (used by preview, presenter, and exports) */
 
-/* Design system foundation - must load first */
+/* Design system foundation - must load first: tokens, then the theme layer that binds --t-* to them, then the partial patterns */
 @import url('./slides/00-tokens.css');
+@import url('./slides/00-theme.css');
 @import url('./slides/00-patterns.css');
 
 /* Slide layouts and components */

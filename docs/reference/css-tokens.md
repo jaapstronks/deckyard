@@ -31,6 +31,12 @@ agent's preview — none of which share the app's chrome.
 > `ui-tokens.css` and `client/styles/shared/primitives.css` directly — as does the embed
 > shell's `embed.css`.
 >
+> The presenter chrome around the deck reads these tokens freely: it is the
+> **viewer layer**, `client/styles/viewer/` (aggregated in `viewer.css`, D267),
+> app-layer CSS that `app.css` and `export.css` load before `slides.css`, and
+> it falls under the app gates below. `tests/slide-css-tokens.test.js` pins the
+> other side: no `var(--app-*)`/`var(--ps-*)` anywhere under `slides/**`.
+>
 > So: **do not put `--ps-*` or `--z-*` inside `client/styles/slides/**`.** If you
 > need to, fix the bundle first (import `ui-tokens.css` from `slides.css`, or add
 > it to the preview bundle), then migrate. One fix unblocks both scales.

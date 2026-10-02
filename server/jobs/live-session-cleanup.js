@@ -28,7 +28,10 @@
 
 import { cleanupExpiredCodes } from '../storage/follow-codes.js';
 import { crossOrganizationScope } from '../storage/scope.js';
-import { sweepExpiredSessions } from '../storage/live-sessions/db.js';
+import {
+  countPersistedSessions,
+  sweepExpiredSessions,
+} from '../storage/live-sessions/db.js';
 import { createLogger } from '../utils/logger.js';
 import { createIntervalJob } from './interval-job.js';
 
@@ -99,4 +102,20 @@ export function scheduleLiveSessionCleanup({
       handle.stop();
     },
   };
+}
+
+/**
+ * The one boot line for a live cluster that is off while sessions are still
+ * stored (D261): nothing reaches them now, and the sweep above keeps running,
+ * so they expire with their questions, votes and feedback within the idle TTL.
+ * @returns {Promise<void>}
+ */
+export async function warnLiveSessionsWhileOff() {
+  const sessions = await countPersistedSessions();
+  if (sessions === 0) return;
+  log.warn(
+    `LIVE_ENABLED=false, but ${sessions} live session(s) are still stored. ` +
+      `Nothing reaches them; the live-session sweep expires them with their ` +
+      `questions, votes and feedback.`,
+  );
 }

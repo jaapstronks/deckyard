@@ -3,7 +3,11 @@ import { buildPrintHtml } from '../../export/print.js';
 import { buildSlidesPdfHtml } from '../../export/pdf-slides.js';
 import { buildSlidesPngExportHtml } from '../../export/png-slides.js';
 import { buildSlidesPngZipBuffer } from '../../export/png-zip.js';
-import { buildPptxBuffer } from '../../export/pptx.js';
+import {
+  buildEditablePptxBuffer,
+  buildPptxBuffer,
+  imageSlidesHeaders,
+} from '../../export/pptx.js';
 import { buildThemeTemplateBuffer } from '../../export/pptx-theme.js';
 import { buildHandoffZipBuffer } from '../../export/handoff-zip.js';
 import { buildDeckBundle, DECK_MIMETYPE } from '../../export/deck-bundle.js';
@@ -17,6 +21,7 @@ import { resolveDocLangFromPresentation } from '../../utils/doc-lang.js';
 import { renderSlidesToPdfBuffer } from '../../render/pdf.js';
 import { presentationToDeck } from '../../../shared/slide-types.js';
 import { badRequest, withErrorHandler } from '../../utils/http.js';
+import { ValidationError } from '../../utils/errors.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   createExportRoute,
@@ -157,6 +162,32 @@ const exportRoutes = [
     },
   }),
 
+  // PPTX, editable (B290, D141): the theme's layouts, each slide as text and
+  // pictures as far as its type's `fidelity.pptx` allows. A route of its own,
+  // not a mode on `pptx`: two intents are two artifacts. `?compose=generic`
+  // sends every slide through layer 0, for the comparison at gate A2.8.
+  createAsyncExportRoute({
+    format: 'pptx-editable',
+    pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx-editable$/,
+    contentType:
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    extension: '-editable.pptx',
+    exportType: 'pptx-editable',
+    jobOptions: (url) => ({ compose: parseComposeParam(url) }),
+    buildContent: async (ctx, { repoRoot, url }) => {
+      const result = await buildEditablePptxBuffer(repoRoot, ctx.filteredPres, {
+        scale: parseScaleParam(url),
+        theme: ctx.theme,
+        slideTypes: ctx.slideTypes,
+        compose: parseComposeParam(url),
+      });
+      ctx.imageSlides = result.imageSlides;
+      return result.buffer;
+    },
+    // Which slides became pictures, for the export menu's notice.
+    responseHeaders: (ctx) => imageSlidesHeaders(ctx.imageSlides),
+  }),
+
   // The theme as a PPTX template: the layouts only, no slides (B264, D106).
   // A separate route rather than a flag on `pptx` because the artifact is a
   // different thing — a starting document for a theme, not this deck in another
@@ -213,6 +244,23 @@ const exportRoutes = [
     },
   }),
 ];
+
+/**
+ * `?compose=` on the editable PPTX: absent is the export itself, `generic`
+ * the A2.8 comparison. Anything else is refused rather than read as either;
+ * the export itself has one spelling, the absence of the parameter.
+ *
+ * @param {URL} url
+ * @returns {'fidelity'|'generic'}
+ */
+function parseComposeParam(url) {
+  const raw = url.searchParams.get('compose');
+  if (raw === null) return 'fidelity';
+  if (raw === 'generic') return 'generic';
+  throw new ValidationError(
+    `Unknown compose '${raw}': leave it out, or use 'generic'.`,
+  );
+}
 
 // GET /api/presentations/:id/export/png/:n.png - Special handler for an
 // individual PNG slide (has extra URL param)

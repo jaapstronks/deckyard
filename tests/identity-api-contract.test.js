@@ -49,7 +49,7 @@ const auth = await import('../server/auth/auth.js');
 const { sanitizePresentation } =
   await import('../server/routes/public-api/v1/presentations.js');
 const { isCommentOwner } =
-  await import('../client/lib/comments/comment-authz.js');
+  await import('../client/views/comments/comment-authz.js');
 const { isPresentationAuthor: clientIsAuthor, isSlideLockedForUser } =
   await import('../client/lib/slide-authoring/slide-lock-authz.js');
 const { isPresentationAuthor: serverIsAuthor } =

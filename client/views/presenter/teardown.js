@@ -69,7 +69,7 @@ export function createPresenterTeardown({
         // session — mirrors the original inline teardown's guard.
         closeSessionEvents = null;
       },
-      () => toolsMenu.detach(),
+      () => toolsMenu?.detach(),
       detachStageScale,
       () => chromeAutoHide?.detach?.(),
       () => startCurtain?.dismiss?.(),

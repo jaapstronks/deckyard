@@ -36,8 +36,8 @@ const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   '..',
 );
-const componentsDir = path.join(repoRoot, 'client/styles/slides/03-components');
-const cssPath = path.join(componentsDir, '50-presenter-layout.css');
+const viewerDir = path.join(repoRoot, 'client/styles/viewer');
+const cssPath = path.join(viewerDir, '50-presenter-layout.css');
 
 /** Declarations of every rule whose selector list is exactly `selector`. */
 function declarationsOf(css, selector) {
@@ -110,6 +110,16 @@ describe('presenter shell: the bar sizes its row, the stage fits the rest (B506)
     assert.equal(shell['grid-template-columns'], 'minmax(0, 1fr)');
   });
 
+  it('the shell owns both chrome-row constants; the slide theme layer sets no :root', () => {
+    // B531 / D268: the top bar height is a presenter constant, not theme
+    // input. It used to ride along in the old theme layer under `:root`; now the shell
+    // declares it next to the progress height, so ui=min and fullscreen zero
+    // both on one selector.
+    const shell = declarationsOf(css, '.presenter-shell');
+    assert.equal(shell['--presenter-topbar-height'], '56px');
+    assert.equal(shell['--presenter-progress-height'], '56px');
+  });
+
   it('the stage fits the deck box, not the viewport minus a bar constant', () => {
     assert.equal(declarationsOf(css, '.deck')['container-type'], 'size');
     const stage = declarationsOf(css, '.deck-stage');
@@ -119,7 +129,7 @@ describe('presenter shell: the bar sizes its row, the stage fits the rest (B506)
 
   it('no other host carries a second copy of the stage math', async () => {
     for (const file of ['51-presenter-console.css', '53-present-window.css']) {
-      const other = await fs.readFile(path.join(componentsDir, file), 'utf8');
+      const other = await fs.readFile(path.join(viewerDir, file), 'utf8');
       const stripped = other.replace(/\/\*[\s\S]*?\*\//g, '');
       assert.doesNotMatch(
         stripped,

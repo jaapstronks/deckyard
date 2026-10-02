@@ -43,6 +43,7 @@ import { createPresenterToolsMenu } from './tools-menu.js';
 import { createPresenterFollowCodesPill } from './follow-codes-pill.js';
 import { createPresenterLangSeg } from './lang-seg.js';
 import { createPresenterInteractionControls } from './interaction-controls.js';
+import { createPresenterControlToggle } from './control-toggle.js';
 import { createPresenterStageScaffold } from './stage-scaffold.js';
 import { createPresenterConsole } from './console.js';
 import { openPresenterShortcuts } from './shortcuts-overlay.js';
@@ -140,9 +141,17 @@ export async function renderPresenter(root, id) {
     await copyToClipboardWithPromptFallback(text, label);
   };
 
+  // The live cluster (D260): the session behind the notes companion, the
+  // follow-along codes, remote control and the live interactions. Where the
+  // installation has none, no session is started and none of its controls is
+  // built; the deck presents on its own.
+  const hasLive = featureEnabled('live');
+
   // Developer convenience: show /go + 4-letter code in the top bar (outside the
   // slide). The tools menu re-parents the pill and relabels its copy button.
-  const followCodes = createPresenterFollowCodesPill({ modeLang });
+  const followCodes = hasLive
+    ? createPresenterFollowCodesPill({ modeLang })
+    : null;
 
   // The status of the background translation fill below, which is an AI call:
   // where AI is off there is no fill and no pill (D179).
@@ -150,23 +159,30 @@ export async function renderPresenter(root, id) {
     ? h('div', { class: 'pill', hidden: true, text: '' })
     : null;
 
-  const toolsMenu = createPresenterToolsMenu({
-    modeLang,
-    getSessionId: () => sessionId,
-    getSessionPresentationId: () => sessionPresId,
-    copyText,
-    followCodesPill: followCodes.el,
-    followCodesCopyBtn: followCodes.copyBtn,
-  });
-  const toolsWrap = toolsMenu.el;
-  const interactionCtl = createPresenterInteractionControls({
-    api,
-    getSessionId: () => sessionId,
-    getCurrentSlide: () => deckCtl?.getState?.()?.current || null,
-    getInteractionStateBySlideId: (slideId) =>
-      lastInteractionBySlideId.get(slideId) || null,
-  });
-  const interactionPill = interactionCtl.el;
+  const toolsMenu = followCodes
+    ? createPresenterToolsMenu({
+        modeLang,
+        getSessionId: () => sessionId,
+        getSessionPresentationId: () => sessionPresId,
+        copyText,
+        followCodesPill: followCodes.el,
+        followCodesCopyBtn: followCodes.copyBtn,
+      })
+    : null;
+  const toolsWrap = toolsMenu?.el || null;
+  const interactionCtl = hasLive
+    ? createPresenterInteractionControls({
+        api,
+        getSessionId: () => sessionId,
+        getCurrentSlide: () => deckCtl?.getState?.()?.current || null,
+        getInteractionStateBySlideId: (slideId) =>
+          lastInteractionBySlideId.get(slideId) || null,
+      })
+    : null;
+  const interactionPill = interactionCtl?.el || null;
+  const controlToggle = hasLive
+    ? createPresenterControlToggle({ api, getSessionId: () => sessionId }).el
+    : null;
 
   const langCtl = createPresenterLangSeg({
     modeLang,
@@ -239,11 +255,11 @@ export async function renderPresenter(root, id) {
     translatePill,
     interactionPill,
     toolsWrap,
+    controlToggle,
     autoAdvanceBtn,
     laserBtn,
     drawBtn,
     consoleToggle,
-    getSessionId: () => sessionId,
     onOpenProjector: () => openProjectorWindow(),
     onEdit: () => goToEditor(),
     onToggleFullscreen: () => toggleFullscreen(),
@@ -390,7 +406,7 @@ export async function renderPresenter(root, id) {
       } catch {
         // ignore
       }
-      interactionCtl.sync();
+      interactionCtl?.sync();
       videoLayer.updatePosition();
       syncProgressTime();
       updateConsole();
@@ -449,7 +465,7 @@ export async function renderPresenter(root, id) {
   });
   postSessionState = (partial) => statePoster.postSessionState(partial);
 
-  const syncInteractionUi = () => interactionCtl.sync();
+  const syncInteractionUi = () => interactionCtl?.sync();
 
   const startSlideId = queryParam('slideId') || queryParam('s') || '';
   deckCtl.setPresentation(pres, {
@@ -619,112 +635,116 @@ export async function renderPresenter(root, id) {
   shell.append(startCurtain.el);
 
   // Create presenter session (for notes companion)
-  try {
-    const sess = await startPresenterSession({
-      api,
-      presentationId: id,
-      onNext: guardNav(() => deckCtl?.next?.()),
-      onPrev: guardNav(() => deckCtl?.prev?.()),
-      onGoto: (slideIndex) => {
-        if (isStrictNav()) return;
-        const cur = deckCtl?.getState?.()?.idx ?? 0;
-        deckCtl?.show?.(Number(slideIndex ?? cur));
-      },
-      onDeckUpdated: (data) => {
-        // Live-update deck when a question is promoted into the presentation.
-        if (data?.presentationId && String(data.presentationId) !== String(id))
-          return;
-        deckCtl
-          ?.refreshDeck?.()
-          .then(() => {
-            const nextPres = deckCtl?.getState?.()?.presentation || null;
-            if (nextPres) pres = nextPres;
-          })
-          .catch(() => {});
-      },
-      onInteractionState: (data) => {
-        const slideId = String(data?.slideId || '').trim();
-        if (!slideId) return;
-        lastInteractionBySlideId.set(slideId, data);
-        if (String(data?.type || '') === 'likert')
-          applyLikertInteractionStateToStage(stage, data);
-        else if (String(data?.type || '') === 'poll')
-          applyPollInteractionStateToStage(stage, data);
-        // feedback: no stage UI updates (not displayed on slide)
-        syncInteractionUi();
-      },
-      onBranch: (data) => {
-        const onClose = String(data?.onClose || 'stay').trim();
-        const onCloseTarget = String(data?.onCloseTarget || '').trim();
-        if (onClose === 'next') {
-          deckCtl?.next?.();
-        } else if (onClose === 'goto' && onCloseTarget) {
-          // Find the slide index by ID
-          const state = deckCtl?.getState?.();
-          const slides = state?.slides || [];
-          const targetIdx = slides.findIndex(
-            (s) => String(s?.id || '') === onCloseTarget,
-          );
-          if (targetIdx >= 0) {
-            deckCtl?.show?.(targetIdx);
+  if (hasLive)
+    try {
+      const sess = await startPresenterSession({
+        api,
+        presentationId: id,
+        onNext: guardNav(() => deckCtl?.next?.()),
+        onPrev: guardNav(() => deckCtl?.prev?.()),
+        onGoto: (slideIndex) => {
+          if (isStrictNav()) return;
+          const cur = deckCtl?.getState?.()?.idx ?? 0;
+          deckCtl?.show?.(Number(slideIndex ?? cur));
+        },
+        onDeckUpdated: (data) => {
+          // Live-update deck when a question is promoted into the presentation.
+          if (
+            data?.presentationId &&
+            String(data.presentationId) !== String(id)
+          )
+            return;
+          deckCtl
+            ?.refreshDeck?.()
+            .then(() => {
+              const nextPres = deckCtl?.getState?.()?.presentation || null;
+              if (nextPres) pres = nextPres;
+            })
+            .catch(() => {});
+        },
+        onInteractionState: (data) => {
+          const slideId = String(data?.slideId || '').trim();
+          if (!slideId) return;
+          lastInteractionBySlideId.set(slideId, data);
+          if (String(data?.type || '') === 'likert')
+            applyLikertInteractionStateToStage(stage, data);
+          else if (String(data?.type || '') === 'poll')
+            applyPollInteractionStateToStage(stage, data);
+          // feedback: no stage UI updates (not displayed on slide)
+          syncInteractionUi();
+        },
+        onBranch: (data) => {
+          const onClose = String(data?.onClose || 'stay').trim();
+          const onCloseTarget = String(data?.onCloseTarget || '').trim();
+          if (onClose === 'next') {
+            deckCtl?.next?.();
+          } else if (onClose === 'goto' && onCloseTarget) {
+            // Find the slide index by ID
+            const state = deckCtl?.getState?.();
+            const slides = state?.slides || [];
+            const targetIdx = slides.findIndex(
+              (s) => String(s?.id || '') === onCloseTarget,
+            );
+            if (targetIdx >= 0) {
+              deckCtl?.show?.(targetIdx);
+            }
           }
-        }
-      },
-    });
-    sessionId = sess?.sessionId || null;
-    sessionPresId = id;
-    sessionFollowCodes = sess?.followCodes || null;
-    closeSessionEvents = sess?.close || null;
+        },
+      });
+      sessionId = sess?.sessionId || null;
+      sessionPresId = id;
+      sessionFollowCodes = sess?.followCodes || null;
+      closeSessionEvents = sess?.close || null;
 
-    if (sessionFollowCodes) {
-      followCodes.setCodes(sessionFollowCodes);
-      // Mirror the join codes to an already-open projector window so the beamer
-      // shows the same follow-invite/poll/feedback codes.
-      presentChannel.postCodes(sessionFollowCodes);
-      // Re-render slides now that follow codes are available.
-      // The deck is initially rendered before the presenter session is created,
-      // so follow-invite slides would otherwise miss the "Alternative" codes block.
-      try {
-        const curId = deckCtl?.getState?.()?.current?.id || '';
-        deckCtl?.setPresentation?.(pres, {
-          keepCurrentSlideId: curId,
-        });
-        if (curId && lastInteractionBySlideId.has(curId)) {
-          const st = lastInteractionBySlideId.get(curId);
-          if (String(st?.type || '') === 'likert')
-            applyLikertInteractionStateToStage(stage, st);
-          else applyPollInteractionStateToStage(stage, st);
-        }
-      } catch {
-        // ignore
-      }
-    }
-    toolsMenu.syncEnabled();
-    // Keep the session "live" while the presenter is talking (even if no slide/step changes happen).
-    if (sessionId) {
-      try {
-        if (keepAliveTid) clearInterval(keepAliveTid);
-      } catch {}
-      keepAliveTid = setInterval(() => {
+      if (sessionFollowCodes) {
+        followCodes.setCodes(sessionFollowCodes);
+        // Mirror the join codes to an already-open projector window so the beamer
+        // shows the same follow-invite/poll/feedback codes.
+        presentChannel.postCodes(sessionFollowCodes);
+        // Re-render slides now that follow codes are available.
+        // The deck is initially rendered before the presenter session is created,
+        // so follow-invite slides would otherwise miss the "Alternative" codes block.
         try {
-          const st = deckCtl?.getState?.();
-          const current = st?.current;
-          if (!current) return;
-          postSessionState({
-            slideId: current.id,
-            slideIndex: st?.idx ?? 0,
-            stepIdx: st?.stepIdx ?? 0,
-            stepParagraphs,
+          const curId = deckCtl?.getState?.()?.current?.id || '';
+          deckCtl?.setPresentation?.(pres, {
+            keepCurrentSlideId: curId,
           });
+          if (curId && lastInteractionBySlideId.has(curId)) {
+            const st = lastInteractionBySlideId.get(curId);
+            if (String(st?.type || '') === 'likert')
+              applyLikertInteractionStateToStage(stage, st);
+            else applyPollInteractionStateToStage(stage, st);
+          }
         } catch {
           // ignore
         }
-      }, 25_000);
-      keepAliveTid.unref?.();
+      }
+      toolsMenu?.syncEnabled();
+      // Keep the session "live" while the presenter is talking (even if no slide/step changes happen).
+      if (sessionId) {
+        try {
+          if (keepAliveTid) clearInterval(keepAliveTid);
+        } catch {}
+        keepAliveTid = setInterval(() => {
+          try {
+            const st = deckCtl?.getState?.();
+            const current = st?.current;
+            if (!current) return;
+            postSessionState({
+              slideId: current.id,
+              slideIndex: st?.idx ?? 0,
+              stepIdx: st?.stepIdx ?? 0,
+              stepParagraphs,
+            });
+          } catch {
+            // ignore
+          }
+        }, 25_000);
+        keepAliveTid.unref?.();
+      }
+    } catch {
+      // Ignore: presenter works without notes session
     }
-  } catch {
-    // Ignore: presenter works without notes session
-  }
 
   // Background: ensure every language the follow-along audience may pick can
   // render (fill missing only; preserve any manual translations). The fill

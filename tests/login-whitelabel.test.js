@@ -58,7 +58,7 @@ globalThis.fetch = async (input) => {
 
 const { renderLogin } = await import('../client/views/auth/index.js');
 const { authLogo } = await import('../client/views/auth/shell.js');
-const { ssoButtonLabel } = await import('../client/lib/user/auth.js');
+const { ssoButtonLabel } = await import('../client/lib/state/auth.js');
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
 

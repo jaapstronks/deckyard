@@ -2,6 +2,7 @@
 
 import { filterSlidesForContext } from '../../shared/slide-visibility.js';
 import { getSlideType } from '../../shared/slide-types/registry.js';
+import { isFeatureEnabled } from '../config/flags-snapshot.js';
 
 /**
  * Drop the slides whose type declares `liveOnly: true` — content that only
@@ -74,4 +75,21 @@ export function filterForViewOnly(pres, options = {}) {
   });
   if (filtered.length === slides.length && !options.markDrafts) return pres;
   return { ...pres, slides: filtered };
+}
+
+/**
+ * The deck an anonymous share viewer gets (`/s/:token`): the view-only filter
+ * with drafts badged, and with the live cluster off no live-only slide either.
+ * The viewer has no feature snapshot, so the server's answer is what it
+ * serves (D260, as `tracking` carries the analytics answer): an invite into a
+ * session nothing can start does not leave. A signed-in reader keeps the
+ * slide in its static form and asks its snapshot.
+ * @param {Object} pres - Presentation object
+ * @returns {Object} Filtered presentation
+ */
+export function filterForShareViewer(pres) {
+  const visible = filterForViewOnly(pres, { markDrafts: true });
+  return isFeatureEnabled('live')
+    ? visible
+    : stripLiveOnlySlidesFromPresentation(visible);
 }

@@ -5,10 +5,12 @@
 import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/dom/modal.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
-import { isGuestCommentAuthor } from '../../lib/comments/comment-authz.js';
-import { renderCommentBodyNodes } from '../../lib/comments/comment-body.js';
-import { createRichCommentInput } from '../../lib/comments/comment-rich-input.js';
-import { createCommentLinkButton } from '../../lib/comments/comment-toolbar.js';
+import {
+  isGuestCommentAuthor,
+  renderCommentBodyNodes,
+  createRichCommentInput,
+  createCommentLinkButton,
+} from '../comments/index.js';
 import { h } from '../../lib/dom/index.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
 import { icon } from '../../lib/dom/icons.js';

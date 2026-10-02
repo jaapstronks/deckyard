@@ -1,5 +1,5 @@
 /*
- * Fork fixture stylesheet — the `custom/styles/` half of the three fixtures in
+ * Fork fixture stylesheet — the `custom/styles/` half of the four fixtures in
  * `tests/fixtures/fork-slide-types/`.
  *
  * The `test-fork` CI job copies it into `custom/styles/` beside the fixture
@@ -22,4 +22,16 @@
 
 .slide-payoff .fork-payoff-mark {
   font-weight: 600;
+}
+
+/*
+ * Fixture D composes core's title layout: the `tsu-*` rules are core's, so
+ * only its own additions need a rule here.
+ */
+.slide-fork-title {
+  --fork-title-accent: currentColor;
+}
+
+.slide-fork-title.is-fork-panel {
+  outline: 2px solid var(--fork-title-accent);
 }

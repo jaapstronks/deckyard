@@ -6,8 +6,8 @@
  *      values and session tokens are no longer logged in full.
  * L4 — top-level error handler echoed raw err.message (path/SQL leak). Now only
  *      intentional sub-500 errors surface a message; unexpected errors don't.
- * L5 — weak custom-type CSS filter. Now shares filterCssText with the custom-html
- *      slide (strips @import / expression() / javascript: / </style>).
+ * L5 — weak custom-type CSS filter. Now uses the shared filterCssText
+ *      (strips @import / expression() / javascript: / </style>).
  * L6 — SSRF in font embedding. Retired with the fetch itself: the export no
  *      longer requests a font URL at all (D244, B511).
  * L7 — SSRF in outbound webhooks. postJson now uses the shared SSRF guard.
@@ -103,23 +103,15 @@ test('L5: filterCssText strips @import, defangs expression()/javascript:, escape
   assert.doesNotMatch(out, /<\/style/i, '</style> escaped');
 });
 
-test('L5: the custom-type runtime and custom-html slide share one filter', async () => {
+test('L5: the custom-type runtime uses the shared filter', async () => {
   // The render moved to shared/ in B192 so the Settings preview reaches the
   // same four steps; the filter went with it.
   const runtime = await readSrc('../shared/slide-types/custom-type-runtime.js');
-  const slide = await readSrc(
-    '../shared/slide-types/types/custom-html-slide.js',
-  );
   assert.match(runtime, /filterCssText\(css\)/, 'runtime uses filterCssText');
   assert.doesNotMatch(
     runtime,
     /function sanitizeCss/,
     'weak local sanitizeCss removed',
-  );
-  assert.match(
-    slide,
-    /from '\.\.\/\.\.\/css-filter\.js'/,
-    'slide imports the shared filter',
   );
 });
 

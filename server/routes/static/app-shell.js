@@ -224,10 +224,18 @@ export async function handleAppRoutes(ctx) {
   if (
     p.startsWith('/app') ||
     p.startsWith('/settings') ||
-    p.startsWith('/present') ||
-    p.startsWith('/notes') ||
-    p.startsWith('/notes-join') ||
-    p.startsWith('/follow')
+    p.startsWith('/present')
+  ) {
+    await serveAppIndex(ctx);
+    return true;
+  }
+  // The audience pages (follow-along, the notes companion and its join page)
+  // exist only with the live cluster (D260), like `/go` and their API.
+  if (
+    isFeatureEnabled('live') &&
+    (p.startsWith('/notes') ||
+      p.startsWith('/notes-join') ||
+      p.startsWith('/follow'))
   ) {
     await serveAppIndex(ctx);
     return true;

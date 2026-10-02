@@ -65,7 +65,7 @@ const themes = [
  * Tokens a record may add that its file form leaves to the stylesheet: the
  * record then pins the stylesheet's own fallback, so the slide paints the same.
  * clicknl sets no dark ground and renders on `var(--t-slide-bg-dark, #212121)`
- * (client/styles/theme.css); the record's derivation always emits one.
+ * (client/styles/slides/00-theme.css); the record's derivation always emits one.
  */
 const STYLESHEET_FALLBACKS = { '--t-slide-bg-dark': '#212121' };
 

@@ -23,6 +23,12 @@
  * meta endpoints have no row, so their ids are pinned below with the
  * operations. That id is the `api_v1:<id>` key the dispatcher counts.
  *
+ * And they agree on the **cluster** (B525, D257): a spec path carrying
+ * `x-feature: <key>` is a path whose router rows all answer 404 with that
+ * cluster off — through the row's own `feature` or its module's mount in
+ * `V1_MOUNTS` — and every such row's path carries the `x-feature`. The served
+ * spec drops those paths with the cluster off; this pin keeps the marker true.
+ *
  * Paths are compared structurally: every `{param}` (spec) and every capture
  * group (router regex) is normalized to `{}`, so `/presentations/{id}` and
  * `/presentations/([^/]+)` match. Method + normalized-path is the operation key.
@@ -125,13 +131,33 @@ function specOperations() {
 // Router side
 // ---------------------------------------------------------------------------
 
-const tables = await Promise.all(
+const modules = await Promise.all(
   ROUTE_TABLES.map(async ([file, exportName]) => {
     const mod = await import(pathToFileURL(path.join(V1_DIR, file)).href);
     assert.ok(Array.isArray(mod[exportName]), `${file} exports ${exportName}`);
-    return mod[exportName];
+    return { mod, routes: mod[exportName] };
   }),
 );
+const tables = modules.map((m) => m.routes);
+
+const { V1_MOUNTS } = await import(
+  pathToFileURL(path.join(V1_DIR, 'index.js')).href
+);
+
+/** The cluster a module's mount in `V1_MOUNTS` carries, if any. */
+function mountFeature(mod) {
+  const handles = new Set(Object.values(mod));
+  return V1_MOUNTS.find((m) => handles.has(m.handle))?.feature;
+}
+
+/** @param {{ pattern: string|RegExp }} route @returns {string} normalized v1 path */
+function routePath(route) {
+  const p =
+    typeof route.pattern === 'string'
+      ? route.pattern
+      : regexToPath(route.pattern.source);
+  return normalizePath(stripPrefix(p));
+}
 
 /** @returns {Map<string, string|undefined>} operation key → the row's `id` */
 function routerOperations() {
@@ -139,11 +165,7 @@ function routerOperations() {
   for (const routes of tables) {
     for (const route of routes) {
       if (!route.method) continue;
-      const p =
-        typeof route.pattern === 'string'
-          ? route.pattern
-          : regexToPath(route.pattern.source);
-      ops.set(`${route.method} ${normalizePath(stripPrefix(p))}`, route.id);
+      ops.set(`${route.method} ${routePath(route)}`, route.id);
     }
   }
   // META_OPERATIONS are already written with normalized (`{}`) paths.
@@ -207,4 +229,34 @@ test('a method-less row is a 405 answer, not an operation, and carries no id', (
     .filter((route) => !route.method && 'id' in route)
     .map((route) => String(route.pattern));
   assert.deepEqual(named, []);
+});
+
+test('every x-feature path is gated by the same cluster in the router, both ways', () => {
+  const spec = parseYaml(
+    fs.readFileSync(path.join(repoRoot, 'docs/openapi.yaml'), 'utf8'),
+  );
+  const specFeature = new Map(
+    Object.entries(spec.paths || {}).map(([p, item]) => [
+      normalizePath(p),
+      item['x-feature'],
+    ]),
+  );
+  const drift = [];
+  for (const { mod, routes } of modules) {
+    const fromMount = mountFeature(mod);
+    for (const route of routes) {
+      if (!route.method) continue;
+      const p = routePath(route);
+      const routerFeature = route.feature ?? fromMount;
+      if (specFeature.get(p) !== routerFeature)
+        drift.push(
+          `${route.method} ${p}: spec x-feature ${specFeature.get(p)} ≠ router ${routerFeature}`,
+        );
+    }
+  }
+  assert.deepEqual(drift, [], 'x-feature and the router disagree');
+  assert.ok(
+    [...specFeature.values()].filter((f) => f === 'ai').length >= 4,
+    'the three /ai paths and translate carry x-feature: ai',
+  );
 });

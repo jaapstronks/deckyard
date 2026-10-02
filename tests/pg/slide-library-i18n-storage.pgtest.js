@@ -127,7 +127,6 @@ pgDescribe(
         {
           actorEmail: ALICE,
           expectedRevision: created.item.revision,
-          contentGuard: () => null,
         },
       );
       assert.ok(edited?.ok, JSON.stringify(edited));

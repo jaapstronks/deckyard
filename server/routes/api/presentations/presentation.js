@@ -5,16 +5,11 @@ import {
   methodNotAllowed,
   notFound,
   serveJson,
-  forbidden,
   jsonError,
   requireJsonBody,
 } from '../../../utils/http.js';
 import { getEffectivePermission } from '../../../utils/presentation-authz/index.js';
-import {
-  withPresentationAuth,
-  canEditCustomHtml,
-  customHtmlEditViolation,
-} from '../../../utils/route-middleware.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { parseIfMatchRevision, diffAddedSlideIds } from './helpers.js';
 import {
@@ -154,17 +149,6 @@ export async function handlePresentationItem(
         'missing_if_match',
         'Missing If-Match revision',
       );
-
-    // Gate: only capability-holders may create or change raw HTML/CSS on a
-    // custom-html-slide. Non-capable users may still keep/reorder such slides.
-    if (Array.isArray(body?.slides)) {
-      const violation = customHtmlEditViolation(
-        existing.slides,
-        body.slides,
-        canEditCustomHtml(authedUser),
-      );
-      if (violation) return forbidden(res, violation);
-    }
 
     // Extract modified slide IDs for slide-level merge (concurrent editing)
     let modifiedSlideIds = null;

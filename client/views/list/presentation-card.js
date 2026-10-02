@@ -2,11 +2,10 @@ import { h } from '../../lib/dom/index.js';
 import { createInViewLoader } from '../../lib/dom/in-view.js';
 import { toast } from '../../lib/dom/toast.js';
 import { confirmModal } from '../../lib/dom/modal.js';
-import { displayNameFromEmail } from '../../lib/user/user-format.js';
+import { displayNameFromEmail } from '../../lib/format/user-format.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createAvatar } from '../../lib/user/avatar.js';
-import { getUserProfile } from '../../lib/user/user-profiles.js';
+import { createAvatar, getUserProfile } from '../user/index.js';
 import { icon } from '../../lib/dom/icons.js';
 import { nav } from '../../lib/state/router.js';
 

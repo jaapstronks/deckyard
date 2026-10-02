@@ -8,7 +8,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-import { createCollectionsApi } from '../client/lib/slide-collections/api.js';
+import { createCollectionsApi } from '../client/views/list/collections/api.js';
 
 /** Build a stub api() that records calls and returns queued responses. */
 function makeStubApi(handler) {

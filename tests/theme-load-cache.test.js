@@ -46,7 +46,7 @@ globalThis.fetch = async (url) => {
     headers: { get: () => 'application/json; charset=utf-8' },
     json: async () =>
       url === '/api/themes'
-        ? { defaultThemeId: currentDefault }
+        ? { themes: [{ id: currentDefault, isDefault: true }] }
         : structuredClone(served),
   };
 };

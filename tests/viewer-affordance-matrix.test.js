@@ -142,8 +142,9 @@ function fakeFetch(permission) {
     }
     if (url.includes('/api/themes')) {
       return json({
-        defaultThemeId: THEME_ID,
-        themes: [{ id: THEME_ID, label: 'Forest', source: 'seed' }],
+        themes: [
+          { id: THEME_ID, label: 'Forest', source: 'seed', isDefault: true },
+        ],
       });
     }
     return json({});

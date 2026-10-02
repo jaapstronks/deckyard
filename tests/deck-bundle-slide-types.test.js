@@ -49,6 +49,7 @@ const { createCustomSlideType, listCustomSlideTypes, getCustomSlideType } =
 const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
 
 let tmpUploads;
+let installRoot;
 let buildDeckBundle;
 let readDeckBundle;
 let handlePresentationsImportDeck;
@@ -63,6 +64,9 @@ const member = { email: 'member@example.com' };
 
 test.before(async () => {
   tmpUploads = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-types-up-'));
+  // A core installation of its own, without a custom/ tree: whatever sits in
+  // the checkout's custom/ never decides these results (B545).
+  installRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'deckyard-types-root-'));
   process.env.UPLOADS_DIR = tmpUploads;
   fs.writeFileSync(path.join(tmpUploads, 'hero.png'), PNG);
   __setTestDb(
@@ -88,6 +92,7 @@ test.after(() => {
   __resetStorageForTests();
   __setTestDb(null);
   fs.rmSync(tmpUploads, { recursive: true, force: true });
+  fs.rmSync(installRoot, { recursive: true, force: true });
 });
 
 let slugCounter = 0;
@@ -138,7 +143,7 @@ const deckWith = (type) => ({
 });
 
 async function bundleFor(type) {
-  return buildDeckBundle(process.cwd(), deckWith(`custom-${type.slug}`), {
+  return buildDeckBundle(installRoot, deckWith(`custom-${type.slug}`), {
     slideTypes: await buildMergedSlideTypes(senderScope()),
   });
 }
@@ -174,8 +179,8 @@ async function importInto(
   const url = new URL('http://x/api/presentations/import/deck');
   if (install) url.searchParams.set('install', install);
   await handlePresentationsImportDeck({
-    repoRoot: process.cwd(),
-    storageScope: { ...scope, repoRoot: process.cwd(), actorEmail: user.email },
+    repoRoot: installRoot,
+    storageScope: { ...scope, repoRoot: installRoot, actorEmail: user.email },
     req: fakeReq(buf),
     res,
     url,
@@ -232,10 +237,7 @@ test('export: each database type the deck uses is its record without ids', async
 });
 
 test('export: a core type carries no definition', async () => {
-  const bundle = await buildDeckBundle(
-    process.cwd(),
-    deckWith('content-slide'),
-  );
+  const bundle = await buildDeckBundle(installRoot, deckWith('content-slide'));
   const { manifest, slideTypes } = await readDeckBundle(bundle);
   assert.equal(manifest.slideTypes, undefined);
   assert.deepEqual(slideTypes, []);
@@ -370,7 +372,7 @@ test('a same-instance import lands on the type it came from', async () => {
 });
 
 test('a file-JS type travels by name: the same fork resolves it', async () => {
-  const bundle = await buildDeckBundle(process.cwd(), deckWith('acme-hero'));
+  const bundle = await buildDeckBundle(installRoot, deckWith('acme-hero'));
   const { manifest, deck } = await readDeckBundle(bundle);
   assert.equal(manifest.slideTypes, undefined, 'code carries no definition');
   assert.equal(deck.slides[0].type, 'acme-hero');
@@ -425,7 +427,7 @@ test('reading refuses a tampered definition and a mismatched slug', async () => 
 
 test('a version-2 bundle is refused', async () => {
   const bundle = await rezip(
-    await buildDeckBundle(process.cwd(), deckWith('content-slide')),
+    await buildDeckBundle(installRoot, deckWith('content-slide')),
     async (zip) => {
       const manifest = JSON.parse(
         await zip.file('manifest.json').async('string'),

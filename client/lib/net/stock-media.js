@@ -1,4 +1,5 @@
 import { api } from '../api.js';
+import { featureEnabled } from '../state/features.js';
 
 /**
  * One place that knows which image sources beside the native library are
@@ -7,6 +8,11 @@ import { api } from '../api.js';
  * decides which sidebar sections exist, and the admin panel for its
  * "configured" badges — and each fetching it separately meant the same request
  * three times and three spellings of the configured-AND-enabled rule.
+ *
+ * It is also the one gate of the stock media cluster in the client (D260):
+ * with `featureEnabled('stockMedia')` false the status is empty without a
+ * request, so no source is offered anywhere — the Unsplash and Giphy sections
+ * and the bundled gradients are absent, not greyed out.
  *
  * @typedef {Object} StockSourceStatus
  * @property {boolean} configured  Server-side prerequisites met (API key, assets).
@@ -31,6 +37,7 @@ export function invalidateStockMediaStatus() {
  * @returns {Promise<Record<string, StockSourceStatus>>}
  */
 export async function fetchStockMediaStatus({ maxAgeMs = 60_000 } = {}) {
+  if (!featureEnabled('stockMedia')) return {};
   const now = Date.now();
   if (cached && now - cachedAt < maxAgeMs) return cached;
   let resp = null;
