@@ -312,8 +312,13 @@ test(
     const theme = await seedThemeConfig('brand');
     const deck = {
       ...smokeDeck(),
+      // A timeline stays `raster` (gate A2.8: the geometry is the content);
+      // the cover the other tests use is editable since B587.
       slides: [
-        smokeSlide(),
+        {
+          type: 'timeline-slide',
+          content: { title: TITLE, items: [{ date: '2021', title: 'Pilot' }] },
+        },
         { type: 'video-slide', content: { source: '', title: 'Clip' } },
       ],
     };

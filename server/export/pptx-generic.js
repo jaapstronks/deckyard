@@ -45,6 +45,7 @@
 import { JSDOM } from 'jsdom';
 import JSZip from 'jszip';
 
+import { slideTypeSample } from '../../shared/slide-types/authoring-companions.js';
 import { renderSlideSectionHtml } from '../../shared/slide-types/semantic-projection.js';
 import { PPTX_LAYOUTS, layoutBox, themeTextPt } from './pptx-theme.js';
 import { containInBox, rasterForPptx } from './pptx-image.js';
@@ -483,6 +484,35 @@ export function slideBlocks(slide, def, { index = 0, lang, slideIds } = {}) {
   const walker = new BlockWalker();
   walker.walkChildren(section, { level: 0, item: null });
   return { heading: headingOf(section), blocks: walker.blocks };
+}
+
+/**
+ * Whether layer 0 can stand behind a type's claim to an editable slide (D306).
+ *
+ * A `native` or `mixed` claim without a mapper of its own is composed here, so
+ * the claim is true when layer 0 finds something to write: the type's example
+ * slide (its defaults under its sample, the content the picker inserts) has to
+ * project to at least one text object, a visible heading, a paragraph or a
+ * table. Pictures alone do not count, since an editable slide of only pictures
+ * is the raster export with extra steps.
+ *
+ * @param {string} type - registry type name, for the core sample lookup
+ * @param {object|null|undefined} def - the resolved definition
+ * @returns {boolean}
+ */
+export function layerZeroCovers(type, def) {
+  const content = {
+    ...(def?.defaults || {}),
+    ...(slideTypeSample(type, def) || {}),
+  };
+  const { heading, blocks } = slideBlocks(
+    { id: 'layer-0', type, content },
+    def,
+  );
+  return (
+    (heading.visible && Boolean(heading.text)) ||
+    blocks.some((block) => block.kind !== 'image')
+  );
 }
 
 // ---------------------------------------------------------------------------

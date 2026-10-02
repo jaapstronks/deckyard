@@ -125,7 +125,7 @@ const ROWS_FIELD = {
 export default {
   structure: 'tabular',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   label: 'Table',
   fields: [
     {

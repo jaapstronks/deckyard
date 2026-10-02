@@ -20,6 +20,7 @@ import {
   NATIVE_PPTX_SLIDE_TYPES,
   unbackedFidelityClaims,
 } from '../server/export/pptx.js';
+import { layerZeroCovers } from '../server/export/pptx-generic.js';
 
 /**
  * The `fidelity` facet's guardrail.
@@ -34,12 +35,12 @@ import {
  *    not be a fourth value, for the reason it is not one for `structure`: an
  *    undeclared type and a deliberately-rastered one would then be
  *    indistinguishable, and only one of them has been thought about.
- * 2. **Truthfulness** — a type declaring anything but `raster` is claiming a
- *    native composition exists. Checked against the export's own handler map,
- *    in both directions, because both drifts are real: a declaration that
- *    outruns the implementation quietly rasterises a slide the user was
- *    promised would be editable, and an implementation nothing declares is a
- *    mapper that never runs.
+ * 2. **Truthfulness** — a type declaring anything but `raster` is claiming an
+ *    editable slide. Layer 0 is the standard composition behind that claim and
+ *    a handler of the type's own an upgrade on it (D306), so the claim holds
+ *    when either exists: a handler in the export's map, or layer 0 finding
+ *    text in the type's example. The other direction is checked too, because
+ *    a handler nothing declares is a mapper that never runs.
  * 3. **No second definition** — the export dispatches on the facet, not on type
  *    names. This is the branch the facet retired, kept as a ceiling: `pptx.js`
  *    had exactly one name in it, which is precisely why nothing was guarding
@@ -93,29 +94,61 @@ test('an undeclared type resolves to the honest default', () => {
 
 // --- assertion 2: truthfulness ---------------------------------------------
 
-test('a type claims native PPTX only where the export has a composition', () => {
-  const claimed = CORE_SLIDE_TYPE_NAMES.filter(
-    (name) => slideFidelity(SLIDE_TYPES[name], 'pptx') !== 'raster',
-  ).sort();
-  const implemented = [...NATIVE_PPTX_SLIDE_TYPES].sort();
+const CLAIMED = CORE_SLIDE_TYPE_NAMES.filter(
+  (name) => slideFidelity(SLIDE_TYPES[name], 'pptx') !== 'raster',
+);
 
-  assert.deepEqual(
-    claimed,
-    implemented,
-    `these two must be the same set.\n` +
-      `  declared native/mixed: ${claimed.join(', ') || '(none)'}\n` +
-      `  handlers in server/export/pptx.js: ${implemented.join(', ') || '(none)'}\n\n` +
-      `A declaration without a handler rasterises the slide while telling the ` +
-      `user it is editable;\na handler without a declaration never runs. ` +
-      `Adding a native mapper is two edits, on purpose.`,
+test('a type claims an editable PPTX slide only where one gets written', () => {
+  const bare = CLAIMED.filter(
+    (name) =>
+      !NATIVE_PPTX_SLIDE_TYPES.includes(name) &&
+      !layerZeroCovers(name, SLIDE_TYPES[name]),
   );
+  assert.deepEqual(
+    bare,
+    [],
+    `these types declare native/mixed PPTX, have no handler in ` +
+      `server/export/pptx.js, and layer 0 finds no text in their example:\n` +
+      bare.map((name) => `  - ${name}`).join('\n') +
+      `\n\nTheir editable slides would come out empty. Declare 'raster', or ` +
+      `add a mapper.`,
+  );
+});
+
+test('a handler exists only for a type that claims it', () => {
+  const orphans = NATIVE_PPTX_SLIDE_TYPES.filter(
+    (name) => !CLAIMED.includes(name),
+  );
+  assert.deepEqual(
+    orphans,
+    [],
+    `NATIVE_PPTX_HANDLERS has a handler for a type that declares 'raster'; ` +
+      `it never runs. Adding a native mapper is two edits, on purpose: the ` +
+      `handler and the declaration.`,
+  );
+});
+
+test('layer 0 covers a claim only when it finds text', () => {
+  // The rule the two gates above lean on, on fixtures: a heading or a
+  // paragraph is enough, a slide with nothing a reader sees is not.
+  const fields = [{ key: 'title', type: 'string', label: 'Title' }];
+  assert.equal(
+    layerZeroCovers('fork-text-slide', {
+      fields,
+      defaults: { title: 'Said out loud' },
+    }),
+    true,
+  );
+  assert.equal(layerZeroCovers('fork-empty-slide', { fields: [] }), false);
+  assert.equal(layerZeroCovers('fork-silent-slide', {}), false);
 });
 
 test('the boot check reports a claim the build cannot honour, by name', () => {
   // Assertion 2 covers the core types in CI. A fork's file-JS types only exist
   // in the registry a running server composed, so the same question is asked
   // once more at boot — against the process-wide registry, which here holds
-  // whatever fork fixtures the suite loaded, and must be clean.
+  // whatever fork fixtures the suite loaded, and must be clean. A claim layer
+  // 0 backs is no finding (title-slide below); one it finds nothing in is.
   assert.deepEqual(unbackedFidelityClaims(), []);
   assert.deepEqual(
     unbackedFidelityClaims({
@@ -124,6 +157,7 @@ test('the boot check reports a claim the build cannot honour, by name', () => {
       'fork-raster-slide': { fidelity: { pptx: 'raster' } },
       'fork-silent-slide': {},
       'video-slide': SLIDE_TYPES['video-slide'],
+      'title-slide': SLIDE_TYPES['title-slide'],
     }),
     [
       { type: 'fork-native-slide', claim: 'native' },
