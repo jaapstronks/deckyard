@@ -1374,8 +1374,11 @@ paths:
       operationId: exportPresentationPptx
       tags:
         - Exports
-      summary: Export as PowerPoint
-      description: Exports the presentation as a PPTX file.
+      summary: Export as PowerPoint (pixel-perfect)
+      description: >-
+        Exports the presentation as a PPTX file in which every slide is an
+        image and videos play. Pixel-perfect, not editable; for an editable
+        file use `export/pptx-editable`.
       parameters:
         - name: id
           in: path
@@ -1399,6 +1402,64 @@ paths:
       responses:
         '200':
           description: PowerPoint export
+          content:
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /presentations/{id}/export/pptx-editable:
+    get:
+      operationId: exportPresentationPptxEditable
+      tags:
+        - Exports
+      summary: Export as PowerPoint (editable)
+      description: >-
+        Exports the presentation as a PPTX file on the theme's layouts, with
+        text and pictures that PowerPoint can edit, as far as each slide type
+        allows. A slide whose type cannot be written as editable objects
+        travels as an image; the `X-Image-Slides` response header names those
+        slides.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
+        - name: scale
+          in: query
+          description: Image scale factor (1-3) for the slides that travel as an image
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 3
+            default: 2
+      responses:
+        '200':
+          description: Editable PowerPoint export
+          headers:
+            X-Image-Slides:
+              description: >-
+                The 1-based numbers of the slides written as an image,
+                separated by commas (for example `3,7`). Absent when every
+                slide is editable.
+              schema:
+                type: string
+                pattern: '^[0-9]+(,[0-9]+)*$'
           content:
             application/vnd.openxmlformats-officedocument.presentationml.presentation:
               schema:

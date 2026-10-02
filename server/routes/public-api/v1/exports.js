@@ -5,7 +5,11 @@
 
 import { buildStandaloneHtml } from '../../../export/html.js';
 import { buildPrintHtml } from '../../../export/print.js';
-import { buildPptxBuffer } from '../../../export/pptx.js';
+import {
+  buildEditablePptxBuffer,
+  buildPptxBuffer,
+  imageSlidesHeaders,
+} from '../../../export/pptx.js';
 import { presentationToDeck } from '../../../../shared/slide-types.js';
 import { safeFilename } from '../../../utils/filename.js';
 import {
@@ -59,7 +63,7 @@ async function exportContextFor(ctx, presentationId, { format, allLanguages }) {
  */
 async function sendExportResponse(
   ctx,
-  { contentType, filename, extension, data },
+  { contentType, filename, extension, data, headers = {} },
 ) {
   const { res, apiKey } = ctx;
 
@@ -73,6 +77,7 @@ async function sendExportResponse(
   );
 
   res.writeHead(200, {
+    ...headers,
     'Content-Type': contentType,
     'Content-Disposition': `attachment; filename="${fullFilename}"`,
     'Cache-Control': 'no-store',
@@ -186,49 +191,77 @@ async function handlePdfExport(ctx, id) {
 }
 
 /**
- * GET /api/v1/presentations/:id/export/pptx - Export as PowerPoint.
+ * The two PowerPoint intents (D141), one handler each over the same body: the
+ * pixel-perfect file (every slide an image, video plays; D307) and the
+ * editable one (the theme's layouts, each slide as far as its type's
+ * `fidelity.pptx` allows). The editable answer names its image slides in
+ * {@link imageSlidesHeaders}; the file has no channel of its own for it.
+ *
+ * @param {{ format: string, extension: string, build: typeof buildPptxBuffer,
+ *   reportImageSlides: boolean }} intent
  */
-async function handlePptxExport(ctx, id) {
-  if (!requirePermission(ctx, 'export')) return true;
+function pptxExportHandler({ format, extension, build, reportImageSlides }) {
+  return async function handlePptxExport(ctx, id) {
+    if (!requirePermission(ctx, 'export')) return true;
 
-  if (!(await checkExportLimit(ctx))) return true;
+    if (!(await checkExportLimit(ctx))) return true;
 
-  const { repoRoot, url } = ctx;
-  const exportCtx = await exportContextFor(ctx, id, { format: 'pptx' });
-  if (!exportCtx) return true;
+    const { repoRoot, url } = ctx;
+    const exportCtx = await exportContextFor(ctx, id, { format });
+    if (!exportCtx) return true;
 
-  await trackExportRequest(ctx);
+    await trackExportRequest(ctx);
 
-  // Parse scale parameter
-  const scaleParam = url.searchParams.get('scale');
-  const scale = Math.max(1, Math.min(3, Number(scaleParam) || 2));
+    // Parse scale parameter
+    const scaleParam = url.searchParams.get('scale');
+    const scale = Math.max(1, Math.min(3, Number(scaleParam) || 2));
 
-  try {
-    const result = await buildPptxBuffer(repoRoot, exportCtx.filteredPres, {
-      scale,
-      theme: exportCtx.theme,
-      slideTypes: exportCtx.slideTypes,
-    });
+    try {
+      const result = await build(repoRoot, exportCtx.filteredPres, {
+        scale,
+        theme: exportCtx.theme,
+        slideTypes: exportCtx.slideTypes,
+      });
 
-    await sendExportResponse(ctx, {
-      contentType:
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      filename: `${exportCtx.title}${exportCtx.langSuffix}`,
-      extension: '.pptx',
-      data: result.buffer,
-    });
-    return true;
-  } catch (e) {
-    await apiError(ctx, 500, `Export failed: ${e.message}`);
-    return true;
-  }
+      await sendExportResponse(ctx, {
+        contentType:
+          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        filename: `${exportCtx.title}${exportCtx.langSuffix}`,
+        extension,
+        data: result.buffer,
+        headers: reportImageSlides
+          ? imageSlidesHeaders(result.imageSlides)
+          : {},
+      });
+      return true;
+    } catch (e) {
+      await apiError(ctx, 500, `Export failed: ${e.message}`);
+      return true;
+    }
+  };
 }
+
+/** GET /api/v1/presentations/:id/export/pptx - PowerPoint, pixel-perfect. */
+const handlePptxExport = pptxExportHandler({
+  format: 'pptx',
+  extension: '.pptx',
+  build: buildPptxBuffer,
+  reportImageSlides: false,
+});
+
+/** GET /api/v1/presentations/:id/export/pptx-editable - PowerPoint, editable. */
+const handleEditablePptxExport = pptxExportHandler({
+  format: 'pptx-editable',
+  extension: '-editable.pptx',
+  build: buildEditablePptxBuffer,
+  reportImageSlides: true,
+});
 
 // ============================================================
 // MAIN HANDLER
 // ============================================================
 
-/** The four export formats, one row each; any other method answers 405. */
+/** The five export formats, one row each; any other method answers 405. */
 export const ROUTES = [
   {
     method: 'GET',
@@ -259,8 +292,15 @@ export const ROUTES = [
     handler: handlePptxExport,
   },
   {
+    method: 'GET',
+    id: 'exportPresentationPptxEditable',
+    pattern: /^\/api\/v1\/presentations\/([^/]+)\/export\/pptx-editable$/,
+    captures: ['uuid'],
+    handler: handleEditablePptxExport,
+  },
+  {
     pattern:
-      /^\/api\/v1\/presentations\/([^/]+)\/export\/(?:json|html|pdf|pptx)$/,
+      /^\/api\/v1\/presentations\/([^/]+)\/export\/(?:json|html|pdf|pptx|pptx-editable)$/,
     captures: ['uuid'],
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
   },
