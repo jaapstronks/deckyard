@@ -64,6 +64,8 @@ const INVALID_FIELD_MESSAGES = {
   weight: 'Invalid font weight. Must be 100-900 in increments of 100.',
   style: 'Invalid font style. Must be normal or italic.',
   format: 'Invalid font format. Must be woff2 or woff.',
+  desktop_family:
+    'Invalid desktop font name. Only an uploaded family carries one, up to 255 characters.',
 };
 
 /**

@@ -86,14 +86,16 @@ it only shipped because the bundle used to inline `app.css` wholesale, which put
 a ~1 MB `<style>` block on every download.
 
 `export.css` is a thin chrome layer: `client/styles/shared/ui-tokens.css` (the
-design tokens the presenter chrome in `slides.css` reads unfallbacked) and
+design tokens the presenter chrome reads unfallbacked) and
 `client/styles/shared/primitives.css`, the one definition of the `.btn` family,
 `.form-input`, `.row` and the segmented control that `app.css` and `embed.css`
 import too. The exported deck nav, the pdf/png/print toolbars and the published
 page's language switch render those. The presenter chrome itself
-(`.presenter-*`, `.deck-slide`, `.sr-only`, `.skip-link`, progress bar) already
-lives in `slides.css`. `embed.css`, the iframe viewer's entrypoint, drops
-`app.css` the same way.
+(`.presenter-*`, `.deck`, `.deck-slide`, progress bar, start curtain) is the
+viewer layer, `client/styles/viewer.css` (D267), which `export.css` imports
+before `slides.css`, as `app.css` does; `.sr-only` and `.skip-link` stay in
+`slides.css`. `embed.css`, the iframe viewer's entrypoint, drops `app.css` the
+same way and loads no viewer layer: the embed shell styles its own deck box.
 
 The boundary is a maintained line: `tests/export-css-boundary.test.js` fails if
 editor-only selectors creep back in or if a viewer selector the DOM needs goes

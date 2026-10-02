@@ -261,23 +261,18 @@ function contentVariants(def) {
 }
 
 /**
- * Class names appearing in `class="…"`, plus any classes the markup styles
- * itself through an inline `<style>` block (a type may ship its own rules; a
- * fork type is the likely case).
+ * Class names appearing in `class="…"`. A type's rules live in a stylesheet,
+ * never in an inline `<style>` (the definition validator refuses one), so the
+ * markup's classes are the whole of what it asks the corpus for.
  * @param {string} html
- * @returns {{ emitted: Set<string>, selfStyled: Set<string> }}
+ * @returns {Set<string>}
  */
 function classesIn(html) {
   const emitted = new Set();
   for (const match of html.matchAll(/class="([^"]*)"/g)) {
     for (const name of match[1].split(/\s+/)) if (name) emitted.add(name);
   }
-  const selfStyled = new Set();
-  for (const match of html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)) {
-    for (const rec of extractCssClasses(match[1], 'inline <style>'))
-      selfStyled.add(rec.name);
-  }
-  return { emitted, selfStyled };
+  return emitted;
 }
 
 /**
@@ -285,13 +280,11 @@ function classesIn(html) {
  * emit.
  * @param {readonly string[]} names
  * @param {Record<string, object>} defs - the definitions to render with
- * @returns {{ emitted: Map<string, Set<string>>, selfStyled: Set<string> }}
- *   class name → the types that emit it, plus the classes a type styles
- *   through its own inline `<style>`
+ * @returns {{ emitted: Map<string, Set<string>> }} class name → the types
+ *   that emit it
  */
 function sweep(names, defs) {
   const emitted = new Map();
-  const selfStyled = new Set();
   for (const type of names) {
     for (const content of contentVariants(defs[type])) {
       let html;
@@ -305,28 +298,25 @@ function sweep(names, defs) {
         // render is asserted separately below.
         continue;
       }
-      const found = classesIn(html);
-      for (const name of found.emitted) {
+      for (const name of classesIn(html)) {
         if (!emitted.has(name)) emitted.set(name, new Set());
         emitted.get(name).add(type);
       }
-      for (const name of found.selfStyled) selfStyled.add(name);
     }
   }
-  return { emitted, selfStyled };
+  return { emitted };
 }
 
 /**
- * The emitted classes with no rule in `defined`, no inline `<style>` of their
- * own and no `UNSTYLED` excuse, sorted.
- * @param {{ emitted: Map<string, Set<string>>, selfStyled: Set<string> }} swept
+ * The emitted classes with no rule in `defined` and no `UNSTYLED` excuse,
+ * sorted.
+ * @param {{ emitted: Map<string, Set<string>> }} swept
  * @param {Set<string>} defined
  * @returns {string[]}
  */
 function orphansOf(swept, defined) {
   return [...swept.emitted.keys()]
     .filter((name) => !defined.has(name))
-    .filter((name) => !swept.selfStyled.has(name))
     .filter((name) => !Object.hasOwn(UNSTYLED, name))
     .sort();
 }

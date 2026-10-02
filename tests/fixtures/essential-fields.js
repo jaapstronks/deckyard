@@ -27,7 +27,6 @@ export const ESSENTIAL = {
   'comparison-slide.rightBody': 'chip',
   'content-slide.title': 'placeholder',
   'content-slide.body': 'placeholder',
-  'custom-html-slide.html': '.custom-html-empty',
   'cycle-slide.title': 'chip',
   'cycle-slide.items': 'add',
   'embed-slide.embedUrl': '.embed-empty',

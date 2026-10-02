@@ -1,0 +1,43 @@
+/* The theme layer of the slide chain: `--t-*` (what a theme sets, via injected
+   CSS on the server or JS on the client) → the slide-local variables the slide
+   stylesheets read. Loads right after 00-tokens.css (slides.css, generated from
+   scripts/generate-slide-css-aggregators.js); every path that renders a slide
+   gets it through slides.css and nowhere else (D268).
+   IMPORTANT: scoped to `.slide` so the *application UI* is not theme-branded.
+   No `:root` here — the presenter chrome owns its own constants
+   (client/styles/viewer/50-presenter-layout.css). */
+
+.slide {
+  /* Slide backgrounds */
+  --slide-bg-lime: var(--t-slide-bg-lime, #e2fe52);
+  --slide-bg-mist: var(--t-slide-bg-mist, #e0e6e2);
+  /* The deep brand-tinted surface (chapter-title, quote, countdown's dark
+     variant), set by themes as `--t-slide-bg-dark`. */
+  --slide-bg-dark: var(--t-slide-bg-dark, #212121);
+
+  /* Default slide colours live in 00-tokens.css as the --slide-* colour
+     roles (--slide-surface, --slide-on-surface, --slide-accent, …); the old
+     --color-* alias spelling is gone (slide-roles.md § What disappears). */
+
+  /* Typography */
+  --font-heading: var(--t-font-heading, Arial, sans-serif);
+  --font-body: var(--t-font-body, Arial, sans-serif);
+  --font-caption: var(--t-font-caption, var(--font-body));
+  --font-mono: var(
+    --t-font-mono,
+    'JetBrains Mono',
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    'Liberation Mono',
+    'Courier New',
+    monospace
+  );
+  --heading-transform: var(--t-heading-transform, none);
+  --heading-weight: var(--t-heading-weight, 400);
+
+  /* Slide sizing lives in 00-tokens.css (e.g. --slide-font-size-title,
+     --slide-padding) — no duplicates here. */
+}

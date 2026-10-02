@@ -9,6 +9,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
+const { markupSlideType, MARKUP_SLIDE_TYPE } =
+  await import('./fixtures/markup-slide-type.js');
 const { initSanitizer } = await import('../shared/sanitize.js');
 await initSanitizer();
 const { findUnnamedImages } = await import('../shared/unnamed-images.js');
@@ -189,26 +191,28 @@ test('an <img> in author markup without an alt attribute is refused; alt="" is d
   const slides = [
     {
       id: 'm',
-      type: 'custom-html-slide',
+      type: MARKUP_SLIDE_TYPE,
       content: { html: html('<img src="/a.png"><img src="/b.png">') },
     },
     {
       id: 'n',
-      type: 'custom-html-slide',
+      type: MARKUP_SLIDE_TYPE,
       content: { html: html('<img src="/a.png" alt="">') },
     },
     {
       id: 'o',
-      type: 'custom-html-slide',
+      type: MARKUP_SLIDE_TYPE,
       // The sanitizer strips the template, so its picture never reaches a
       // reader and is not the gate's business either.
       content: { html: html('<template><img src="/t.png"></template>') },
     },
   ];
+  // No core type declares `markup: true` since A7.8b; a fork type may.
+  const registry = { ...SLIDE_TYPES, [MARKUP_SLIDE_TYPE]: markupSlideType };
   const hit = { lang: null, slideIndex: 0, slideId: 'm', field: 'html' };
-  assert.deepEqual(findUnnamedImages(deck(slides), SLIDE_TYPES), [hit, hit]);
+  assert.deepEqual(findUnnamedImages(deck(slides), registry), [hit, hit]);
   assert.throws(
-    () => assertImagesNamed(deck(slides), SLIDE_TYPES),
+    () => assertImagesNamed(deck(slides), registry),
     (err) => {
       assert.equal(err.code, 'missing_alt');
       assert.deepEqual(err.toJSON().details, { ...hit, count: 2 });

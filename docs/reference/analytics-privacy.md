@@ -42,9 +42,9 @@ heartbeat,end}`, `POST /api/track/slide/view`, and the erasure route
   `publicDeviceLabel` (the per-deck device label described below).
 - `server/jobs/analytics-cleanup.js` — the retention sweep (delete old rows,
   anonymize old IPs).
-- `client/lib/format/analytics-tracker.js` — the browser tracker;
+- `client/views/analytics/tracker.js` — the browser tracker;
   `createAnalyticsTracker(...).erase()` is the client half of the erasure route.
-- `client/lib/format/analytics-erase-button.js` — the shared "forget me" button
+- `client/views/analytics/erase-button.js` — the shared "forget me" button
   used by the share-viewer and follow surfaces.
 
 ## What is recorded, per viewer type
@@ -108,7 +108,7 @@ using. The server:
    only that one session (`eraseAnalyticsDataForSession`);
 3. answers `{ ok: true, deleted: { sessions, slideViews } }`.
 
-The client half (`analytics-tracker.js` `erase()`) sends the token, then tears
+The client half (`client/views/analytics/tracker.js` `erase()`) sends the token, then tears
 the tracker down and **drops the device id from `localStorage`**, so a later
 visit begins as a fresh identity rather than re-linking to the erased history.
 The "forget me" button is present on the share-viewer and follow surfaces only

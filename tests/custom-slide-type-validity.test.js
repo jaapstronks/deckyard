@@ -23,16 +23,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  copyFileSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  rmSync,
-} from 'node:fs';
-import { join, dirname, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
-
-import {
   CORE_SLIDE_TYPE_DEFS,
   GLOBAL_SLIDE_FIELD_KEYS,
   CORE_SLIDE_TYPE_NAMES,
@@ -42,42 +32,7 @@ import {
   slideRootClass,
   validateSlideTypeDefinition,
 } from '../shared/slide-types/validate-definition.js';
-
-const TESTS_DIR = dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = resolve(TESTS_DIR, '..');
-const FIXTURE_DIR = join(TESTS_DIR, 'fixtures', 'fork-slide-types');
-
-/**
- * Import the fixtures the way the `test-fork` CI job installs them: from a
- * directory two levels below the repo root.
- *
- * They cannot be imported in place. A fork type's `import` specifiers are
- * written for its RUNTIME home (`custom/slide-types/`, hence `../../shared/…`),
- * and `payoff-slide.js` carries one on purpose — it is what
- * `tests/custom-imports-resolvable.test.js` exercises. Importing from
- * `tests/fixtures/` would resolve that to `tests/shared/…` and throw. Copying
- * to `<root>/<tmp>/slide-types/` restores the depth, so all three fixtures load
- * exactly as they do in the fork lane.
- *
- * @returns {Promise<Array<{file: string, name: string, def: unknown}>>}
- */
-async function loadFixtures() {
-  const files = readdirSync(FIXTURE_DIR).filter((f) => f.endsWith('.js'));
-  const tmp = mkdtempSync(join(REPO_ROOT, '.fork-fixtures-'));
-  try {
-    const dir = join(tmp, 'slide-types');
-    mkdirSync(dir);
-    const loaded = [];
-    for (const file of files) {
-      copyFileSync(join(FIXTURE_DIR, file), join(dir, file));
-      const mod = await import(pathToFileURL(join(dir, file)).href);
-      loaded.push({ file, name: file.replace(/\.js$/, ''), def: mod.default });
-    }
-    return loaded;
-  } finally {
-    rmSync(tmp, { recursive: true, force: true });
-  }
-}
+import { loadForkFixtures } from './helpers/fork-slide-type-fixtures.js';
 
 /** A minimal definition that must always validate clean. */
 function validDef(extra = {}) {
@@ -92,7 +47,7 @@ function validDef(extra = {}) {
 }
 
 test('every tracked fork fixture validates clean', async () => {
-  const fixtures = await loadFixtures();
+  const fixtures = await loadForkFixtures();
   assert.ok(fixtures.length >= 3, 'the fork fixture tree must not be empty');
 
   for (const { file, name, def } of fixtures) {
@@ -176,6 +131,35 @@ test('every core slide type carries its canonical root class', () => {
     'a core type must render `.slide-<canonical name>` as its root class — ' +
       'that is the rule custom types are warned against',
   );
+});
+
+/**
+ * A file-JS type has one place for its CSS: `custom/styles/`, loaded after core
+ * on every render path and read by the CSS contract gate. An inline `<style>`
+ * in the render was a second place neither sees, so it is refused (B536).
+ */
+test('a definition that renders an inline <style> is refused, naming custom/styles/', () => {
+  const report = validateSlideTypeDefinition(
+    validDef({
+      renderHtml: () =>
+        '<div class="slide slide-fixture"><style>.slide-fixture h2 { color: red; }</style></div>',
+    }),
+    'fixture-slide',
+  );
+  assert.equal(report.errors.length, 1);
+  assert.match(report.errors[0], /<style> block/);
+  assert.match(report.errors[0], /custom\/styles\/<nn>-fixture\.css/);
+});
+
+test('no core slide type renders an inline <style>', () => {
+  const offenders = Object.entries(CORE_SLIDE_TYPE_DEFS)
+    .filter(([name, def]) =>
+      validateSlideTypeDefinition(def, name).errors.some((e) =>
+        e.includes('<style> block'),
+      ),
+    )
+    .map(([name]) => name);
+  assert.deepEqual(offenders, []);
 });
 
 test('a well-formed definition reports nothing', () => {

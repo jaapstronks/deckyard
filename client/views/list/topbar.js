@@ -7,8 +7,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { getAppLogoUrl, getAppName } from '../../lib/theme/branding.js';
 import { icon } from '../../lib/dom/icons.js';
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
-import { createNotificationBell } from '../../lib/user/notification-bell.js';
-import { createUserMenu } from '../../lib/user/user-menu.js';
+import { createNotificationBell, createUserMenu } from '../user/index.js';
 import { h } from '../../lib/dom/index.js';
 import { takeEscape } from '../../lib/dom/escape.js';
 

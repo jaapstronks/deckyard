@@ -371,7 +371,10 @@ export function createAdminTab({ user }) {
   ]);
   analyticsCard.append(analyticsHint, analyticsOptions);
 
-  // Stock Media card
+  // Stock Media card. Absent on an installation without the stock media
+  // cluster (D260); the stored `stockMedia` setting is then left as it is,
+  // neither shown nor saved (D258).
+  const hasStockMedia = featureEnabled('stockMedia');
   const stockMediaCard = h('div', { class: 'stack editor-card' });
   stockMediaCard.append(
     h('div', {
@@ -447,7 +450,7 @@ export function createAdminTab({ user }) {
     senderCard,
     sessionCard,
     hasAnalytics ? analyticsCard : null,
-    stockMediaCard,
+    hasStockMedia ? stockMediaCard : null,
   ]);
 
   // A refused save is a state of this form, so it stays beside Save until the
@@ -532,6 +535,8 @@ export function createAdminTab({ user }) {
         analytics?.retention?.ipAnonymizationDays || 7,
       );
 
+      if (!hasStockMedia) return;
+
       // Stock media settings
       const stockMedia = app?.stockMedia || {};
       bundledEnabledCheck.checked = stockMedia?.bundled?.enabled === true;
@@ -606,11 +611,13 @@ export function createAdminTab({ user }) {
             },
           },
         }),
-        stockMedia: {
-          bundled: { enabled: bundledEnabledCheck.checked },
-          unsplash: { enabled: unsplashEnabledCheck.checked },
-          giphy: { enabled: giphyEnabledCheck.checked },
-        },
+        ...(hasStockMedia && {
+          stockMedia: {
+            bundled: { enabled: bundledEnabledCheck.checked },
+            unsplash: { enabled: unsplashEnabledCheck.checked },
+            giphy: { enabled: giphyEnabledCheck.checked },
+          },
+        }),
       });
 
       const supportedSlideLangs = Array.isArray(updatedApp?.supportedSlideLangs)

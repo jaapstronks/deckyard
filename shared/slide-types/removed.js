@@ -239,6 +239,27 @@ export const REMOVED_SLIDE_TYPES = {
         'records this removal as the second cost measurement (the KPI that closed the A7.1 done-gate), so it must name the type it measured',
     },
   },
+  'custom-html-slide': {
+    removed: '2026-10-01, A7.8b',
+    successor: null,
+    reason:
+      'a raw HTML/CSS escape hatch with a permission path no other type had ' +
+      '(REST/API/library/collab gates behind canEditCustomHtml); decided out ' +
+      'of core on 2026-08-03 so the product grows typed slides instead of a ' +
+      'private escape hatch. Revive path: a fork can re-adopt it as a ' +
+      '`custom/slide-types/` type from git history; the sanitizer ' +
+      '(shared/sanitize.js), the CSS filter and scopeCss stay in core, and so ' +
+      'does the `code` field type with its `markup: true` flag. The ' +
+      'permission path does not come back with it.',
+    // No conversion migration: the production scan on slides.ciiic.nl (all
+    // five type-carrying surfaces, 2026-08) found zero slides, and so did the
+    // local Postgres. A stored slide degrades to an archived slide.
+    migrations: [],
+    allowedReferences: {
+      'tests/slide-types-policy.test.js':
+        'asserts the type is off the registry and a stored slide degrades safely',
+    },
+  },
 };
 
 /** @type {string[]} */

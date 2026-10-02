@@ -4,6 +4,7 @@ import { buildDeckSlideOptions } from '../fields/card-link-field.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast as defaultToast } from '../../../lib/dom/toast.js';
 import { isOrgDisabledSlideType } from '../../../../shared/slide-types/policy.js';
+import { needsNativeComposition } from '../../../../shared/slide-types/fidelity.js';
 import { buildDataSourceIndicator } from '../data-source-panel.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { buildHeaderActions } from './header-actions.js';
@@ -97,10 +98,6 @@ export function createRerenderEditor({
     fieldTitleBgImage,
     fieldImages,
   } = fieldRenderers || {};
-
-  // Whether this user may author raw HTML/CSS (custom-html-slide). The server
-  // enforces the same gate on write; this drives the read-only UI state.
-  const canEditCustomHtml = Boolean(user?.canEditCustomHtml);
 
   // Track detachers for cleanup between re-renders. The header's actions
   // dropdown installs document-level pointerdown/keydown handlers, so the
@@ -482,7 +479,6 @@ export function createRerenderEditor({
       scheduleUiRefresh,
       updateSelectedSlideListItem,
       onTranslateField,
-      canEditCustomHtml,
       // Deck tools only: the csv-grid widget renders an "Edit data…" entry
       // point into the bottom-panel Data tab; a surface without that panel
       // keeps the inline grid.
@@ -662,6 +658,22 @@ export function createRerenderEditor({
 
     // Append accessibility toggle if it has content
     if (caps.a11y && a11yBody.childNodes?.length) form.append(a11yDetails);
+
+    // What the editable PowerPoint does with this slide, read from the type's
+    // `fidelity` facet on the slide-types response, never from its name: a
+    // type the export photographs says so here, before the user finds out in
+    // PowerPoint (D141). Deck-scoped, like the export itself.
+    if (caps.deckTools && def && !needsNativeComposition(def, 'pptx')) {
+      form.append(
+        h('p', {
+          class: 'help editor-export-hint',
+          text: t(
+            'editor.slide.exportsAsImage',
+            'In the editable PowerPoint, this slide is an image.',
+          ),
+        }),
+      );
+    }
 
     // AI refine box last: tooling under the settings.
     if (aiIteratePanel) form.append(aiIteratePanel);

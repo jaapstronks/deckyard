@@ -94,6 +94,7 @@ test('every export route gates its presentation id', async () => {
     'png.zip',
     'png/1.png',
     'pptx',
+    'pptx-editable',
     'pptx-template',
     'handoff.zip',
     'notes.md',

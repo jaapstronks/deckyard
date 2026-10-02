@@ -39,7 +39,6 @@
   "slideType.countdown-slide.field.soundOnZero.option.on.label": "Activé",
   "slideType.countdown-slide.field.zeroText.label": "Texte à zéro",
   "slideType.countdown-slide.label": "Compte à rebours",
-  "slideType.custom-html-slide.label": "HTML personnalisé",
   "slideType.cycle-slide.field.centerLabel.label": "Libellé central",
   "slideType.embed-slide.field.aspectRatio.label": "Format d'image",
   "slideType.embed-slide.field.embedUrl.label": "URL d'intégration (HTTPS uniquement)",

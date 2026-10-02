@@ -1,0 +1,475 @@
+/**
+ * Theme Selection Utilities
+ *
+ * Shared utilities for creating and populating theme selector dropdowns.
+ */
+
+import { t } from '../lib/ui-i18n.js';
+import { loadThemeById } from '../lib/theme/theme.js';
+import { cssStringEscape } from '../../shared/theme-fonts.js';
+import { h } from '../lib/dom/index.js';
+
+/**
+ * Build the `GET /api/themes` URL for a picker.
+ *
+ * The server hands back only the themes the workspace allows (D70), so a deck
+ * already sitting on a withdrawn theme would lose its own selection from the
+ * list. `?current=` is the one exception the server honours: name the theme in
+ * use and it stays offered, for this picker only.
+ *
+ * @param {string} [currentTheme] - Theme the deck is on right now
+ * @returns {string} Request path
+ */
+function themeListUrl(currentTheme) {
+  const id = String(currentTheme || '').trim();
+  return id ? `/api/themes?current=${encodeURIComponent(id)}` : '/api/themes';
+}
+
+/**
+ * Label for the `default` choice: names the theme it resolves to, so the
+ * picker says *which* theme a deck on "Workspace default" gets (B584).
+ *
+ * The workspace default is the theme `GET /api/themes` marks `isDefault`;
+ * without one (the list has not loaded, or is empty) the bare label stands.
+ *
+ * @param {Array<{isDefault?: boolean, label?: string, id?: string}>} [themes]
+ * @returns {string}
+ */
+function defaultThemeLabel(themes = []) {
+  const record = themes.find((theme) => theme?.isDefault);
+  const name = String(record?.label || record?.id || '').trim();
+  return name
+    ? t('common.themeDefaultNamed', 'Workspace default ({name})', { name })
+    : t('common.themeDefault', 'Workspace default');
+}
+
+/**
+ * Create a theme selector field with label and select element.
+ *
+ * @param {Object} options
+ * @param {string} [options.initialTheme] - Initial theme ID
+ * @param {Function} [options.onChange] - Called when theme changes
+ * @param {string} [options.className] - Additional CSS class for wrapper
+ * @returns {Object} { wrap, select, getTheme, setTheme }
+ */
+function createThemeSelect({
+  initialTheme = 'default',
+  onChange,
+  className = 'modal-field-narrow',
+} = {}) {
+  let themeId = initialTheme;
+
+  const wrap = h('div', { class: `stack is-field ${className}`.trim() });
+  const label = h('div', {
+    class: 'field-label',
+    text: t('common.theme', 'Theme'),
+  });
+  const select = h('select', { class: 'form-input is-compact' });
+
+  // Default options
+  select.append(h('option', { value: 'default', text: defaultThemeLabel() }));
+  select.value = themeId;
+
+  select.addEventListener('change', () => {
+    themeId = String(select.value || 'default');
+    onChange?.(themeId);
+  });
+
+  wrap.append(label, select);
+
+  return {
+    wrap,
+    select,
+    getTheme: () => themeId,
+    setTheme: (id) => {
+      themeId = id;
+      select.value = id;
+    },
+  };
+}
+
+/**
+ * Populate a theme select element with themes from the server.
+ *
+ * @param {Object} options
+ * @param {Function} options.api - API fetch function
+ * @param {HTMLSelectElement} options.select - Select element to populate
+ * @param {string} [options.currentTheme] - Currently selected theme ID
+ * @param {Function} [options.onPopulated] - Called with final theme ID after population
+ * @returns {Promise<string>} The resolved theme ID
+ */
+async function populateThemes({
+  api,
+  select,
+  currentTheme = 'default',
+  onPopulated,
+} = {}) {
+  try {
+    const resp = await api(themeListUrl(currentTheme));
+    const themes = Array.isArray(resp?.themes) ? resp.themes : [];
+
+    if (!themes.length) {
+      onPopulated?.(currentTheme);
+      return currentTheme;
+    }
+
+    select.innerHTML = '';
+    select.append(
+      h('option', { value: 'default', text: defaultThemeLabel(themes) }),
+    );
+    for (const theme of themes) {
+      const id = String(theme?.id || '').trim();
+      if (!id) continue;
+      const label = String(theme?.label || id).trim() || id;
+      select.append(h('option', { value: id, text: label }));
+    }
+
+    const wanted = String(currentTheme || '').trim();
+    const hasWanted = Array.from(select.options).some(
+      (o) => o.value === wanted,
+    );
+    const resolvedTheme = hasWanted
+      ? wanted
+      : String(select.options?.[0]?.value || 'default');
+
+    select.value = resolvedTheme;
+    onPopulated?.(resolvedTheme);
+    return resolvedTheme;
+  } catch {
+    onPopulated?.(currentTheme);
+    return currentTheme;
+  }
+}
+
+/**
+ * Create a theme selector and populate it from the server.
+ *
+ * Convenience function that combines createThemeSelect and populateThemes.
+ *
+ * @param {Object} options
+ * @param {Function} options.api - API fetch function
+ * @param {string} [options.initialTheme] - Initial theme ID
+ * @param {Function} [options.onChange] - Called when theme changes
+ * @param {string} [options.className] - Additional CSS class for wrapper
+ * @returns {Object} { wrap, select, getTheme, setTheme, populated: Promise }
+ */
+export function createAndPopulateThemeSelect({
+  api,
+  initialTheme = 'default',
+  onChange,
+  className,
+} = {}) {
+  const result = createThemeSelect({ initialTheme, onChange, className });
+
+  const populated = populateThemes({
+    api,
+    select: result.select,
+    currentTheme: initialTheme,
+    onPopulated: (resolvedTheme) => {
+      result.setTheme(resolvedTheme);
+    },
+  });
+
+  return {
+    ...result,
+    populated,
+  };
+}
+
+/**
+ * Create a visual theme picker with preview cards.
+ *
+ * Renders a grid of theme cards showing each theme's colors and fonts,
+ * replacing the plain <select> dropdown for a richer selection experience.
+ *
+ * When `initialTheme` is null/omitted, the picker adopts the workspace default
+ * theme reported by `GET /api/themes`. The grid shows exactly what that
+ * response offers: the `enabledThemes` allowlist is enforced server-side, so
+ * there is nothing withheld for a toggle to reveal.
+ *
+ * @param {Object} options
+ * @param {Function} options.api - API fetch function
+ * @param {string|null} [options.initialTheme=null] - Explicit initial theme ID;
+ *   when falsy the workspace default is used
+ * @param {Function} [options.onChange] - Called when theme changes
+ * @returns {Object} { wrap, getTheme, setTheme, populated: Promise }
+ */
+export function createVisualThemePicker({
+  api,
+  initialTheme = null,
+  onChange,
+} = {}) {
+  // An explicit initial theme overrides the workspace default; null means
+  // "adopt whatever the server reports as the default".
+  const explicitInitial = initialTheme ? String(initialTheme) : null;
+  let themeId = explicitInitial || 'default';
+
+  const wrap = h('div', { class: 'stack is-field theme-picker-wrap' });
+  const label = h('div', {
+    class: 'field-label',
+    text: t('common.theme', 'Theme'),
+  });
+  const grid = h('div', { class: 'theme-picker-grid' });
+  wrap.append(label, grid);
+
+  const cards = new Map(); // id -> card element
+  const BORDER_DEFAULT = '2px solid #ddd';
+  const BORDER_SELECTED = '2px solid hsl(160, 40%, 35%)';
+  const SHADOW_SELECTED = '0 0 0 2px hsla(160, 40%, 35%, 0.3)';
+
+  function applySelectedStyle(card, selected) {
+    card.classList.toggle('is-selected', selected);
+    card.style.border = selected ? BORDER_SELECTED : BORDER_DEFAULT;
+    card.style.boxShadow = selected ? SHADOW_SELECTED : 'none';
+  }
+
+  function selectCard(id) {
+    themeId = id;
+    for (const [cardId, card] of cards) {
+      applySelectedStyle(card, cardId === id);
+    }
+    onChange?.(id);
+  }
+
+  /**
+   * Resolve preview CSS vars for a theme entry from the /api/themes list.
+   * System themes are loaded in full via loadThemeById; custom themes use
+   * the inline colors/fonts already present in the list response.
+   */
+  async function resolvePreviewData(theme) {
+    if (theme.type === 'system') {
+      try {
+        const full = await loadThemeById(theme.id);
+        return {
+          ...theme,
+          cssVars: full?.cssVars || {},
+          embedFonts: full?.embedFonts || [],
+        };
+      } catch {
+        return { ...theme, cssVars: {}, embedFonts: [] };
+      }
+    }
+    // Custom themes: construct preview vars from inline colors/fonts
+    return {
+      ...theme,
+      cssVars: {
+        '--t-color-background': theme.colors?.background || '#ffffff',
+        '--t-color-accent': theme.colors?.primary || '#3B82F6',
+        '--t-color-text': theme.colors?.textDark || '#1f2937',
+        '--t-font-heading': theme.fonts?.heading
+          ? `'${theme.fonts.heading}', sans-serif`
+          : 'Inter, sans-serif',
+        '--t-font-body': theme.fonts?.body
+          ? `'${theme.fonts.body}', sans-serif`
+          : 'Inter, sans-serif',
+        '--t-heading-weight': '700',
+        '--t-heading-transform': 'none',
+      },
+      embedFonts: [],
+    };
+  }
+
+  /** Inject @font-face rules so heading/body fonts render in cards. */
+  function preloadFonts(enrichedThemes) {
+    const rules = [];
+    const seen = new Set();
+    for (const theme of enrichedThemes) {
+      if (!theme.embedFonts?.length) continue;
+      const vars = theme.cssVars || {};
+      for (const varName of ['--t-font-heading', '--t-font-body']) {
+        const family = (vars[varName] || '')
+          .split(',')[0]
+          .trim()
+          .replace(/^['"]|['"]$/g, '');
+        if (!family || seen.has(family)) continue;
+        const first = theme.embedFonts.find((f) => f.family === family);
+        if (!first) continue;
+        // One weight entry is enough for a preview card, but a curated font
+        // ships it as Google's disjoint latin / latin-ext pair — take both, or
+        // accented glyphs in a theme name render in a fallback face. For a
+        // variable family that single entry already spans every pinned weight
+        // ("400 700"), so this is the whole family; for a static one it is its
+        // lightest weight, which is all a preview needs.
+        const matches = theme.embedFonts.filter(
+          (f) =>
+            f.family === family &&
+            String(f.weight || 400) === String(first.weight || 400),
+        );
+        let added = false;
+        for (const match of matches) {
+          // Support both path-based (curated) and URL-based (uploaded) fonts
+          let src;
+          if (match.url) {
+            src = `url('${cssStringEscape(match.url)}') format('${cssStringEscape(match.format || 'woff2')}')`;
+          } else if (match.path) {
+            src = `url('/${cssStringEscape(match.path)}') format('woff2')`;
+          } else {
+            continue;
+          }
+          const range = match.unicodeRange
+            ? ` unicode-range: ${match.unicodeRange};`
+            : '';
+          rules.push(
+            `@font-face { font-family: '${cssStringEscape(match.family)}'; src: ${src}; font-weight: ${match.weight || 400}; font-style: ${match.style || 'normal'}; font-display: swap;${range} }`,
+          );
+          added = true;
+        }
+        if (added) seen.add(family);
+      }
+    }
+    if (rules.length) {
+      wrap.prepend(h('style', { text: rules.join('\n') }));
+    }
+  }
+
+  function renderCard(theme) {
+    const vars = theme.cssVars || {};
+    const bgColor = vars['--t-color-background'] || '#ffffff';
+    const accentColor = vars['--t-color-accent'] || '#3B82F6';
+    const textColor = vars['--t-color-text'] || '#1f2937';
+    const headingFont = vars['--t-font-heading'] || 'Inter, sans-serif';
+    const bodyFont = vars['--t-font-body'] || 'Inter, sans-serif';
+    const headingWeight = vars['--t-heading-weight'] || '700';
+    const headingTransform = vars['--t-heading-transform'] || 'none';
+
+    const card = h('button', {
+      type: 'button',
+      class: `theme-card${theme.id === themeId ? ' is-selected' : ''}`,
+      onclick: () => selectCard(theme.id),
+    });
+    const isSelected = theme.id === themeId;
+    // Inline layout styles so the card works even before CSS is cached.
+    Object.assign(card.style, {
+      display: 'block',
+      width: '140px',
+      overflow: 'hidden',
+      padding: '0',
+      textAlign: 'center',
+      border: isSelected ? BORDER_SELECTED : BORDER_DEFAULT,
+      borderRadius: '8px',
+      background: '#fff',
+      cursor: 'pointer',
+      boxShadow: isSelected ? SHADOW_SELECTED : 'none',
+      outline: 'none',
+    });
+
+    const preview = h('div', { class: 'theme-card-preview' });
+    Object.assign(preview.style, {
+      background: bgColor,
+      aspectRatio: '16 / 9',
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: '4px',
+      padding: '8px',
+      position: 'relative',
+      overflow: 'hidden',
+    });
+
+    const heading = h('div', { class: 'theme-card-heading', text: 'Aa' });
+    Object.assign(heading.style, {
+      fontFamily: headingFont,
+      fontWeight: headingWeight,
+      textTransform: headingTransform,
+      color: textColor,
+      fontSize: '22px',
+      lineHeight: '1.2',
+    });
+
+    const body = h('div', {
+      class: 'theme-card-body',
+      text: t('common.themeCard.bodySpecimen', 'Body text'),
+    });
+    Object.assign(body.style, {
+      fontFamily: bodyFont,
+      color: textColor,
+      fontSize: '9px',
+      opacity: '0.7',
+      lineHeight: '1',
+    });
+
+    const dot = h('div', { class: 'theme-card-accent' });
+    Object.assign(dot.style, {
+      background: accentColor,
+      width: '12px',
+      height: '12px',
+      borderRadius: '50%',
+      position: 'absolute',
+      bottom: '6px',
+      right: '6px',
+    });
+
+    preview.append(heading, body, dot);
+
+    const labelEl = h('div', {
+      class: 'theme-card-label',
+      text: theme.label || theme.id,
+    });
+    Object.assign(labelEl.style, {
+      padding: '6px 4px',
+      fontSize: '11px',
+      fontWeight: '600',
+      fontFamily: 'inherit',
+      color: '#666',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    });
+
+    card.append(preview, labelEl);
+    return card;
+  }
+
+  const populated = (async () => {
+    try {
+      const resp = await api(themeListUrl(explicitInitial));
+      const themes = Array.isArray(resp?.themes) ? resp.themes : [];
+      if (!themes.length) return themeId;
+
+      const defaultRecord = themes.find((th) => th.isDefault);
+      const choices = defaultRecord
+        ? [
+            {
+              ...defaultRecord,
+              id: 'default',
+              label: defaultThemeLabel(themes),
+            },
+            ...themes,
+          ]
+        : themes;
+
+      // Resolve the selected theme: explicit initial wins, else the workspace
+      // default, else the first available theme.
+      if (!choices.some((th) => th.id === themeId)) {
+        themeId = String(choices[0]?.id || 'default');
+      }
+
+      const enriched = await Promise.all(choices.map(resolvePreviewData));
+      preloadFonts(enriched);
+
+      for (const theme of enriched) {
+        const card = renderCard(theme);
+        cards.set(theme.id, card);
+        grid.append(card);
+      }
+
+      return themeId;
+    } catch {
+      return themeId;
+    }
+  })();
+
+  return {
+    wrap,
+    getTheme: () => themeId,
+    setTheme: (id) => {
+      themeId = id;
+      for (const [cardId, card] of cards) {
+        applySelectedStyle(card, cardId === id);
+      }
+    },
+    populated,
+  };
+}

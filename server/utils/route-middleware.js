@@ -15,7 +15,6 @@ import { loadPresentationForActor } from '../services/presentations.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getGuestBySessionToken } from '../storage/share-links/index.js';
 import { parseCookies } from './cookies.js';
-import { envStr, envList } from '../config/utils.js';
 
 // ============================================================
 // SIMPLE AUTHORIZATION HELPERS
@@ -41,86 +40,6 @@ import { envStr, envList } from '../config/utils.js';
 export function canManage(authedUser) {
   if (authedUser?.isDesigner === true) return true;
   return !isMultiOrgEnabled() && authedUser?.isAdmin === true;
-}
-
-/**
- * Emails explicitly allowed to author raw HTML/CSS (custom-html-slide), from the
- * CUSTOM_HTML_EDITOR_EMAILS env var (comma-separated, case-insensitive).
- * @returns {string[]}
- */
-function customHtmlEditorEmails() {
-  return envList('CUSTOM_HTML_EDITOR_EMAILS');
-}
-
-/**
- * Whether an email may author raw HTML/CSS custom-html slides. Admins (incl.
- * AUTH_ADMIN_EMAIL) always qualify; otherwise the email must be allowlisted via
- * CUSTOM_HTML_EDITOR_EMAILS. Used on paths where only an email is available
- * (e.g. the public API key owner). When nothing is configured, no non-admin
- * qualifies, so the feature degrades gracefully (view-only) for OSS installs.
- *
- * @param {string} email
- * @param {{ isAdmin?: boolean }} [opts]
- * @returns {boolean}
- */
-export function emailCanEditCustomHtml(email, { isAdmin = false } = {}) {
-  if (isAdmin) return true;
-  const e = String(email || '')
-    .trim()
-    .toLowerCase();
-  if (!e) return false;
-  const adminEmail = envStr('AUTH_ADMIN_EMAIL').toLowerCase();
-  if (adminEmail && e === adminEmail) return true;
-  return customHtmlEditorEmails().includes(e);
-}
-
-/**
- * Whether an authenticated user may author raw HTML/CSS custom-html slides.
- * Narrow, explicit capability (not general admin) so the dangerous surface is
- * opt-in; enforced server-side on every slide write path.
- * @param {Object} authedUser
- * @returns {boolean}
- */
-export function canEditCustomHtml(authedUser) {
-  if (!authedUser) return false;
-  return emailCanEditCustomHtml(authedUser.email, {
-    isAdmin: authedUser.isAdmin === true,
-  });
-}
-
-/**
- * Detect an unauthorized raw-HTML/CSS edit. Returns an error message if a
- * non-capable actor would create or change the `html` or `css` of any
- * custom-html-slide in `nextSlides` relative to `prevSlides`; otherwise null.
- *
- * Non-capable users may still keep, reorder, and edit non-markup fields (a11y,
- * background) of an existing custom-html-slide — only the markup is frozen.
- *
- * @param {Array} prevSlides - Slides as currently stored
- * @param {Array} nextSlides - Slides being written (may be a partial set)
- * @param {boolean} allowed - Whether the actor holds the capability
- * @returns {string|null}
- */
-export function customHtmlEditViolation(prevSlides, nextSlides, allowed) {
-  if (allowed) return null;
-  const prevById = new Map(
-    (Array.isArray(prevSlides) ? prevSlides : []).map((s) => [s?.id, s]),
-  );
-  for (const slide of Array.isArray(nextSlides) ? nextSlides : []) {
-    if (!slide || slide.type !== 'custom-html-slide') continue;
-    const next = slide.content || {};
-    const prev = prevById.get(slide.id);
-    const prevContent =
-      prev && prev.type === 'custom-html-slide' ? prev.content || {} : {};
-    for (const key of ['html', 'css']) {
-      const nv = typeof next[key] === 'string' ? next[key] : '';
-      const pv = typeof prevContent[key] === 'string' ? prevContent[key] : '';
-      if (nv !== pv) {
-        return `Editing raw HTML/CSS on a custom-html-slide requires the canEditCustomHtml capability (slide ${slide.id || '?'})`;
-      }
-    }
-  }
-  return null;
 }
 
 /**

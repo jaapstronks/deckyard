@@ -5,6 +5,8 @@ import path from 'node:path';
 
 import { CORE_SLIDE_TYPE_NAMES } from '../shared/slide-types/registry.js';
 import {
+  FOUNDATION_CSS,
+  ROOT_AGGREGATOR,
   TIERS,
   TYPE_CSS,
   SHARED_CSS,
@@ -14,6 +16,8 @@ import {
   buildAllAggregators,
   aggregatorAbsPath,
   REPO_ROOT,
+  VIEWER_LAYER,
+  viewerEntries,
 } from '../scripts/generate-slide-css-aggregators.js';
 
 /**
@@ -33,6 +37,39 @@ test('every committed aggregator is byte-identical to the generated output', asy
       `${rel} is out of date — run \`node scripts/generate-slide-css-aggregators.js\``,
     );
   }
+});
+
+test('slides.css is a build product too: the foundation, then the tiers, in order', async () => {
+  const rel = path.join('client', 'styles', ROOT_AGGREGATOR);
+  const generated = (await buildAllAggregators()).get(rel);
+  assert.ok(generated, 'slides.css is part of the generated set');
+  const imports = [
+    ...generated.matchAll(/@import url\('\.\/slides\/([^']+)'\);/g),
+  ].map((m) => m[1]);
+  assert.deepEqual(imports, [
+    ...FOUNDATION_CSS,
+    ...TIERS.map((t) => t.aggregator),
+  ]);
+});
+
+test('the theme layer loads directly after the tokens it binds to (D268)', () => {
+  // `00-theme.css` turns a theme's `--t-*` into the slide-local variables the
+  // tiers read. It sits behind `00-tokens.css` and before anything else, and
+  // nowhere else: slides.css is its only address (no loose <link>, no second
+  // read in an export bundler).
+  const tokens = FOUNDATION_CSS.indexOf('00-tokens.css');
+  const theme = FOUNDATION_CSS.indexOf('00-theme.css');
+  assert.equal(tokens, 0, 'tokens first');
+  assert.equal(theme, 1, 'the theme layer directly after the tokens');
+  const foundationOnDisk = fs
+    .readdirSync(path.join(REPO_ROOT, 'client', 'styles', 'slides'))
+    .filter((f) => f.endsWith('.css') && !TIERS.some((t) => t.aggregator === f))
+    .sort();
+  assert.deepEqual(
+    [...FOUNDATION_CSS].sort(),
+    foundationOnDisk,
+    'every foundation sheet on disk is declared, and nothing else is',
+  );
 });
 
 test('every type-owned CSS entry names a real core type', () => {
@@ -104,4 +141,54 @@ test('poll keeps its documented out-of-cascade position after countdown', () => 
     'poll loads before chart',
   );
   assert.equal(cascadeOrder(TYPE_CSS['poll-slide'][0]), 19);
+});
+
+test('every viewer-layer file on disk is claimed exactly once (D267)', () => {
+  const dir = path.join(REPO_ROOT, 'client', 'styles', VIEWER_LAYER.dir);
+  const onDisk = fs
+    .readdirSync(dir)
+    .filter((f) => f.endsWith('.css'))
+    .sort();
+  assert.deepEqual(
+    [...viewerEntries()].sort(),
+    onDisk,
+    'client/styles/viewer/ and VIEWER_LAYER.files disagree: declare a new sheet, un-declare a removed one',
+  );
+  assert.equal(
+    new Set(VIEWER_LAYER.files).size,
+    VIEWER_LAYER.files.length,
+    'a viewer file is declared twice',
+  );
+});
+
+test('the viewer layer loads in app.css and export.css only, before slides.css (D267)', () => {
+  const importsOf = (file) =>
+    [
+      ...fs
+        .readFileSync(path.join(REPO_ROOT, 'client', 'styles', file), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .matchAll(/@import url\('\.\/([^']+)'\);/g),
+    ].map((m) => m[1]);
+  const viewer = VIEWER_LAYER.aggregator;
+  // app.css: last, so the chrome keeps its place after the app CSS; the
+  // editor page links slides.css after app.css (client/index.html).
+  const app = importsOf('app.css');
+  assert.equal(app.at(-1), viewer, 'app.css imports viewer.css last');
+  // export.css: after the tokens and primitives the chrome reads; the export
+  // bundle appends slides.css after export.css (server/export/css-bundle.js).
+  const exp = importsOf('export.css');
+  assert.ok(
+    exp.indexOf(viewer) > exp.indexOf('shared/primitives.css') &&
+      exp.indexOf('shared/primitives.css') >= 0,
+    'export.css imports viewer.css after shared/primitives.css',
+  );
+  // The embed iframe and the slide chain carry no presenter shell.
+  assert.ok(
+    !importsOf('embed.css').includes(viewer),
+    'embed.css has no viewer layer',
+  );
+  assert.ok(
+    !importsOf(ROOT_AGGREGATOR).some((p) => p.includes(viewer)),
+    'slides.css (and so the MCP preview) has no viewer layer',
+  );
 });

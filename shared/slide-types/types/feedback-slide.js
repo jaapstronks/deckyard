@@ -1,4 +1,10 @@
-import { bgClass, escapeHtml, nonEmpty, BACKGROUND_FIELD } from '../helpers.js';
+import {
+  bgClass,
+  escapeHtml,
+  followPath,
+  nonEmpty,
+  BACKGROUND_FIELD,
+} from '../helpers.js';
 import { getSlideCopy } from '../slide-copy.js';
 import {
   DEFAULT_DECK_LANG,
@@ -10,6 +16,9 @@ export default {
   structure: 'singleton',
   fallback: 'content-slide',
   runtime: 'live',
+  // The installation cluster this type needs (D260): with `LIVE_ENABLED=false`
+  // it counts as org-disabled and an existing slide renders its static form.
+  feature: 'live',
   fidelity: { pptx: 'raster' },
   interaction: 'feedback',
   label: 'Feedback',
@@ -67,9 +76,7 @@ export default {
     // The QR points at the version being shown, not at a fixed Dutch-then-
     // English pair: a German audience scanning it lands in German (B182/D72 #6).
     const lang = normalizeLang(ctx?.lang) || DEFAULT_DECK_LANG;
-    const relFollow = presId
-      ? `/follow/${encodeURIComponent(presId)}?lang=${encodeURIComponent(lang)}`
-      : '';
+    const relFollow = followPath(presId, lang);
     // One row per code the session minted — one per version the deck has —
     // instead of a hardcoded NL row above an EN one. Outside a session nothing
     // is minted yet, so a single `----` row for the version on screen stands

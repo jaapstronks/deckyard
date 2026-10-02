@@ -11,7 +11,7 @@
  * large organization library (and vice versa).
  */
 
-import { contentLang } from '../../../lib/slide-library/search.js';
+import { contentLang } from '../../slide-library/index.js';
 import { THUMB_SOURCE_LIBRARY } from './thumbnails.js';
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';

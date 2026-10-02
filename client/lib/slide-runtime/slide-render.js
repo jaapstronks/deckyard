@@ -9,6 +9,7 @@ import { initLogoWallBalance } from './logo-wall-balance.js';
 import { applyThemeVarsToElement } from '../theme/theme.js';
 import { api as defaultApi } from '../api.js';
 import { h } from '../dom/index.js';
+import { featureEnabled, getFeatures } from '../state/features.js';
 import { ensurePrism, ensureKatex } from './prism-katex-loader.js';
 import { ensureScript } from '../dom/head-assets.js';
 
@@ -480,7 +481,14 @@ const MARKUP_RUNTIMES = Object.freeze([
   {
     // Follow-invite slides look blank without QR rendering. Thumbnails render
     // once without the resize handler, so many of them can't leak listeners.
+    // The invite mints a join code, so it runs only with the live cluster
+    // (D260); without it the slide keeps its static markup. An anonymous page
+    // (follow-along, the share viewer) has no snapshot to ask, and what it
+    // shows is already the server's answer: the follow page is served only
+    // with the cluster, and the share route leaves the invite out without it
+    // (`filterForShareViewer`). A signed-in page asks its snapshot.
     name: 'follow-invite',
+    runsIn: () => getFeatures() === null || featureEnabled('live'),
     run: (el, mode) =>
       initFollowInviteSlides(
         el,

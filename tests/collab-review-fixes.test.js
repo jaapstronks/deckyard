@@ -1,11 +1,11 @@
 /**
- * Regression tests for the four review blockers fixed on
+ * Regression tests for the review blockers fixed on
  * `fix/collab-review-blockers` (against umbrella PR #12):
  *
  *  1. path traversal — `presentationIdFromDocumentName` rejects non-uuid ids
  *     so the doc name can't reach `getPresentation` → `presPath` unsanitized.
- *  2. custom-html capability — a non-capable editor's raw HTML/CSS edit on a
- *     custom-html-slide is reverted in the doc; a capable editor's sticks.
+ *  2. (retired with the raw-HTML slide type, A7.8b: the capability gate it pinned
+ *     left core with the type.)
  *  3. live-apply load race — a server write is applied to a doc that is still
  *     LOADING (in `loadingDocuments`, not yet in `documents`), not dropped as
  *     a cold write.
@@ -27,11 +27,6 @@ import {
   presentationIdFromDocumentName,
   COLLAB_DOC_PREFIX,
 } from '../server/collab/auth.js';
-import { deckYdocCodec } from '../server/collab/deck-doc.js';
-import {
-  extractCustomHtml,
-  guardCustomHtml,
-} from '../server/collab/custom-html-guard.js';
 import { createCollabPersistence } from '../server/collab/persistence.js';
 import { applyServerWriteToActiveDoc } from '../server/collab/live-apply.js';
 import { testScope } from './helpers/storage-scope.js';
@@ -42,7 +37,7 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
-const { createPresentation, getPresentation, updatePresentation } =
+const { createPresentation, getPresentation } =
   await import('../server/storage/presentations/index.js');
 
 // The collab hooks still take a `repoRoot` for their scope shape; storage
@@ -104,204 +99,6 @@ describe('presentationIdFromDocumentName: charset guard (traversal)', () => {
   it('rejects names without the collab prefix', () => {
     assert.equal(presentationIdFromDocumentName('other:abc'), null);
     assert.equal(presentationIdFromDocumentName('abc'), null);
-  });
-});
-
-// ── 2. custom-html capability gate ──────────────────────────────────────────
-
-function customHtmlDeck() {
-  const slides = [
-    {
-      id: 'ch1',
-      type: 'custom-html-slide',
-      notes: '',
-      content: {
-        html: '<p>origineel</p>',
-        css: '.x{color:red}',
-        background: 'lime',
-      },
-    },
-    {
-      id: 's2',
-      type: 'content-slide',
-      notes: '',
-      content: { title: 'Gewoon', body: '' },
-    },
-  ];
-  return { id: 'deck-ch', title: 'CH deck', lang: 'nl', slides };
-}
-
-function bootstrappedDoc(pres) {
-  const doc = new Y.Doc();
-  deckYdocCodec.bootstrapPresentationToDoc(structuredClone(pres), doc);
-  return doc;
-}
-
-function chContent(doc, slideId) {
-  for (const ys of doc.getArray('slides').toArray()) {
-    if (ys.get('id') === slideId) return ys.get('content');
-  }
-  return null;
-}
-
-describe('guardCustomHtml: reverts non-capable raw HTML/CSS edits', () => {
-  it('reverts html + css changed by a non-capable editor', () => {
-    const doc = bootstrappedDoc(customHtmlDeck());
-    const snap = extractCustomHtml(doc, Y);
-
-    const c = chContent(doc, 'ch1');
-    c.set('html', '<script>evil</script>');
-    c.set('css', 'body{display:none}');
-
-    const { snapshot, reverted } = guardCustomHtml(doc, snap, {
-      allowed: false,
-      Y,
-    });
-    assert.equal(reverted, true);
-    assert.equal(chContent(doc, 'ch1').get('html'), '<p>origineel</p>');
-    assert.equal(chContent(doc, 'ch1').get('css'), '.x{color:red}');
-    // snapshot unchanged (still the good baseline)
-    assert.equal(snapshot.get('ch1').html, '<p>origineel</p>');
-  });
-
-  it('keeps a capable editor edit and re-snapshots', () => {
-    const doc = bootstrappedDoc(customHtmlDeck());
-    const snap = extractCustomHtml(doc, Y);
-
-    chContent(doc, 'ch1').set('html', '<p>nieuw en toegestaan</p>');
-    const { snapshot, reverted } = guardCustomHtml(doc, snap, {
-      allowed: true,
-      Y,
-    });
-    assert.equal(reverted, false);
-    assert.equal(
-      chContent(doc, 'ch1').get('html'),
-      '<p>nieuw en toegestaan</p>',
-    );
-    assert.equal(snapshot.get('ch1').html, '<p>nieuw en toegestaan</p>');
-  });
-
-  it('reverts raw HTML a non-capable editor adds to a fresh custom-html slide', () => {
-    const doc = bootstrappedDoc({
-      id: 'd',
-      title: 't',
-      lang: 'nl',
-      slides: [
-        {
-          id: 'ch1',
-          type: 'custom-html-slide',
-          notes: '',
-          content: { background: 'lime' },
-        },
-      ],
-    });
-    const snap = extractCustomHtml(doc, Y); // html baseline ''
-    chContent(doc, 'ch1').set('html', '<p>injected</p>');
-    const { reverted } = guardCustomHtml(doc, snap, { allowed: false, Y });
-    assert.equal(reverted, true);
-    assert.equal(
-      chContent(doc, 'ch1').has('html'),
-      false,
-      'added html field removed',
-    );
-  });
-
-  it('leaves non-markup fields (background) alone for non-capable editors', () => {
-    const doc = bootstrappedDoc(customHtmlDeck());
-    const snap = extractCustomHtml(doc, Y);
-    chContent(doc, 'ch1').set('background', 'blue');
-    const { reverted } = guardCustomHtml(doc, snap, { allowed: false, Y });
-    assert.equal(reverted, false, 'background is not gated');
-    assert.equal(chContent(doc, 'ch1').get('background'), 'blue');
-  });
-});
-
-describe('persistence onChange gate (wired end-to-end via a real deck)', () => {
-  let deckId;
-  let chId;
-
-  before(async () => {
-    const created = await createPresentation(testScope(), {
-      title: 'CH gate deck',
-      ownerEmail: 'owner@example.com',
-      lang: 'nl',
-    });
-    deckId = created.id;
-    chId = crypto.randomUUID(); // the facade validates slide ids as uuids
-    const pres = await getPresentation(testScope(), deckId);
-    pres.slides = [
-      {
-        id: chId,
-        type: 'custom-html-slide',
-        notes: '',
-        content: { html: '<p>ok</p>', css: '', background: 'lime' },
-      },
-    ];
-    // The facade does not enforce the capability (that's the route's job) —
-    // exactly the gap the doc-level gate closes.
-    await updatePresentation(testScope(), deckId, pres);
-  });
-
-  it('reverts a non-capable user; accepts a capable user', async () => {
-    const log = makeLog();
-    const hooks = createCollabPersistence({
-      repoRoot: REPO_ROOT,
-      deps: {
-        log,
-        canEditCustomHtmlFn: (u) => u?.email === 'boss@example.com',
-      },
-    });
-
-    const doc = new Y.Doc();
-    await hooks.onLoadDocument({
-      documentName: docName(deckId),
-      document: doc,
-    });
-
-    // Non-capable editor injects raw HTML → reverted by onChange.
-    chContent(doc, chId).set('html', '<script>steal()</script>');
-    hooks.onChange({
-      documentName: docName(deckId),
-      document: doc,
-      context: { user: { email: 'intern@example.com', isAdmin: false } },
-    });
-    assert.equal(
-      chContent(doc, chId).get('html'),
-      '<p>ok</p>',
-      'non-capable edit reverted',
-    );
-    assert.equal(
-      log.lines.warn.filter((l) => l.includes('canEditCustomHtml')).length,
-      1,
-    );
-
-    // Capable editor's edit sticks.
-    chContent(doc, chId).set('html', '<p>legit update</p>');
-    hooks.onChange({
-      documentName: docName(deckId),
-      document: doc,
-      context: { user: { email: 'boss@example.com', isAdmin: false } },
-    });
-    assert.equal(
-      chContent(doc, chId).get('html'),
-      '<p>legit update</p>',
-      'capable edit kept',
-    );
-
-    // Server-origin write (no context.user) is accepted (route-gated already).
-    chContent(doc, chId).set('html', '<p>server</p>');
-    hooks.onChange({
-      documentName: docName(deckId),
-      document: doc,
-      context: {},
-    });
-    assert.equal(
-      chContent(doc, chId).get('html'),
-      '<p>server</p>',
-      'server write kept',
-    );
-
-    hooks.afterUnloadDocument({ documentName: docName(deckId) });
   });
 });
 

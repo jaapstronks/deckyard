@@ -1,9 +1,9 @@
 /**
  * Scope author-supplied CSS under a slide root.
  *
- * Two paths let a human paste a stylesheet into Deckyard: the custom-html
- * slide (`types/custom-html-slide.js`) and the Settings > Slide Types builder
- * (`server/utils/custom-slide-type-runtime.js`). Both inject it as a `<style>`
+ * The Settings > Slide Types builder
+ * (`server/utils/custom-slide-type-runtime.js`) lets a human paste a
+ * stylesheet into Deckyard. It is injected as a `<style>`
  * block on a page that also carries the deck chrome, so an unscoped
  * `body { display: none }` or `.slide-inner { padding: 0 }` restyles the whole
  * presenter, the editor and every other slide.
@@ -15,9 +15,10 @@
  * this; the order matters because the filter defangs constructs this parser
  * would otherwise carry through untouched.
  *
- * It is one implementation on purpose. Two custom-CSS paths with two different
- * ideas of what "scoped" means is exactly the drift the beta stance is spent
- * removing (`docs/reference/versioning.md` § The beta stance).
+ * It is one implementation on purpose: a second pasted-CSS path gets this
+ * module, not its own idea of what "scoped" means — that is exactly the drift
+ * the beta stance is spent removing (`docs/reference/versioning.md` § The beta
+ * stance).
  *
  * Best-effort by design, and honest about it: `@keyframes` / `@font-face` /
  * `@page` bodies are not selector lists and are passed through untouched, so a
@@ -96,7 +97,7 @@ function scopeSelector(sel, scope) {
  * of the deck. Best-effort: @keyframes / @font-face / @page are left untouched
  * (their bodies aren't selectors); @media / @supports / @container are recursed.
  * @param {string} css
- * @param {string} scope - e.g. '.custom-html-root[data-chr="<id>"]' or '.slide-custom-hero'
+ * @param {string} scope - e.g. '.slide-custom-hero'
  * @returns {string}
  */
 export function scopeCss(css, scope) {

@@ -95,6 +95,8 @@
   "fonts.deleteError": "Verwijderen van lettertypefamilie mislukt.",
   "fonts.deleted": "Lettertypefamilie verwijderd.",
   "fonts.description": "Beheer eigen lettertypefamilies voor gebruik in thema's. Upload lettertypebestanden, koppel Adobe Fonts of fonts.com, of voeg Google Fonts toe.",
+  "fonts.desktopFamily": "Fontnaam op de desktop",
+  "fonts.desktopFamilyHelp": "De volledige naam van het geïnstalleerde font, zoals PowerPoint en Keynote die tonen. PowerPoint-exports gebruiken die; zonder naam vallen ze terug op Arial.",
   "fonts.discover": "Lettertypen zoeken",
   "fonts.discoverError": "Zoeken naar lettertypen mislukt.",
   "fonts.discovering": "Zoeken…",

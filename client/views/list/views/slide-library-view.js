@@ -1,12 +1,12 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
-import { createSlideLibraryPicker } from '../../../lib/slide-library/index.js';
 import {
+  createSlideLibraryPicker,
   copyLibraryItemToClipboard,
   createDeckFromLibraryItems,
-} from '../../../lib/slide-library/compose.js';
-import { createCollectionsBar } from '../../../lib/slide-collections/collections-bar.js';
+} from '../../slide-library/index.js';
+import { createCollectionsBar } from '../collections/index.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { getFeatures } from '../../../lib/state/features.js';
 import { createSandboxLibraryExplainer } from './sandbox-library-explainer.js';

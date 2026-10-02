@@ -63,8 +63,9 @@ instead of being borrowed from image-slide.
 
 A class passes if it has a rule in the corpus, `client/styles/**` plus the fork
 seam `custom/styles/**` (loaded last in every render path; see
-`server/utils/css-chain.js`), or if the rendered markup styles it in its own
-inline `<style>` block, or if it is listed in `UNSTYLED` with a reason. There is
+`server/utils/css-chain.js`), or if it is listed in `UNSTYLED` with a reason. (A
+file-JS type cannot style itself through an inline `<style>` block: the
+definition validator refuses one, so its rules are always in the corpus.) There is
 no fork allowlist: a fork's classes are styled by the fork's stylesheets, and
 those are in the corpus. A test pins the corpus to exactly those two roots.
 
@@ -101,14 +102,13 @@ keep the Dutch names the type was born with.
 
 ## Author CSS is scoped to the slide root
 
-Two surfaces let a human paste a stylesheet into a deck rather than write one in
-the repo: the **custom-html slide** (a `css` field on the slide) and a type built
-in **Settings > Slide Types** (a `css` column on the definition). Both inject it
-as a `<style>` block on a page that also carries the presenter, the editor and
+One surface lets a human paste a stylesheet into a deck rather than write one in
+the repo: a type built in **Settings > Slide Types** (a `css` column on the
+definition). It is injected as a `<style>` block on a page that also carries the presenter, the editor and
 every other slide, so an unscoped `body { display: none }` is not a styling
 mistake — it is one deck author restyling everyone's chrome.
 
-Both run the same two passes, in this order:
+It runs two passes, in this order:
 
 1. `filterCssText` (`shared/css-filter.js`) — the **security** half. No
    `@import`, no `expression()`, no `</style>` breakout.
@@ -117,14 +117,11 @@ Both run the same two passes, in this order:
    are remapped _onto_ that root rather than nested under it, because nesting
    them would silently match nothing.
 
-There is one implementation because there is one meaning. The DB path used to
-run only the first pass — its CSS reached deck chrome — and the fix was to give
-it the mechanism the other path already had, not to write a second one (B189).
+The DB path used to run only the first pass — its CSS reached deck chrome — and
+the fix gave it the containment pass rather than a second idea of "scoped"
+(B189).
 
-**What each path scopes to.** The custom-html slide owns its whole markup, so it
-scopes to a per-slide root it renders itself
-(`.custom-html-root[data-chr="<slide id>"]`) and two custom-html slides in one
-deck cannot style each other. A DB type scopes to its **root class** — the same
+**What it scopes to.** A DB type scopes to its **root class** — the same
 `slideRootClass()` derivation as everything else on this page, so the type
 `custom-hero` scopes to `.slide-custom-hero` — and the CSS therefore applies to
 every slide of that type, which is what a _type_'s stylesheet is for.

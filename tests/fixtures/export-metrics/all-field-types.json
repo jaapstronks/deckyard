@@ -105,31 +105,6 @@
       ]
     },
     {
-      "type": "custom-html-slide",
-      "title": {
-        "rect": {
-          "x": 64,
-          "y": 64,
-          "width": 1472,
-          "height": 139
-        },
-        "fontSize": "48px",
-        "fontWeight": "400",
-        "requestedFamily": "Inter",
-        "paintedFamilies": [
-          {
-            "family": "Inter",
-            "glyphs": 11
-          }
-        ],
-        "text": "Custom HTML"
-      },
-      "overflowing": [],
-      "loadedFonts": [
-        "Inter 400 700 [latin]"
-      ]
-    },
-    {
       "type": "image-slide",
       "title": {
         "rect": {

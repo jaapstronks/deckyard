@@ -273,6 +273,15 @@ custom/styles/
 └── fonts.css
 ```
 
+**Three levers, in order of preference.** Set `--t-*` tokens in your theme when
+a value is enough. Write rules here when it is not. And when you want a core
+slide type's layout with your own values, compose that type in
+`custom/slide-types/` rather than copying its markup and styling the copy (see
+[Leaning on a core layout](../developer/slide-types.md#leaning-on-a-core-layout)).
+Your rules style your own additions; core's rules keep styling core's structure.
+**Never name a core CSS file**: `@import` is not resolved here, and core's
+stylesheet paths are internal and move between releases.
+
 Every file in the folder is concatenated in filename order and loaded **last**:
 after the core stylesheets, after the theme, after the slide-type CSS, in the
 app **and** in every render path. Screen and export get the same bytes in the

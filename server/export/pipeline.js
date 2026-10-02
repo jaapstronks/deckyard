@@ -22,9 +22,11 @@ function buildExportHeaders({
   filename,
   langSuffix = '',
   extension,
+  headers = {},
 }) {
   const fullFilename = `${safeFilename(filename + langSuffix)}${extension}`;
   return {
+    ...headers,
     'Content-Type': contentType,
     'Content-Disposition': `attachment; filename="${fullFilename}"`,
     'Cache-Control': 'no-store',
@@ -77,15 +79,18 @@ export function parseScaleParam(url, defaultScale = 2) {
  */
 export function sendExportResponse(
   res,
-  { contentType, filename, langSuffix, extension, data },
+  { contentType, filename, langSuffix, extension, data, headers },
 ) {
-  const headers = buildExportHeaders({
-    contentType,
-    filename,
-    langSuffix,
-    extension,
-  });
-  res.writeHead(200, headers);
+  res.writeHead(
+    200,
+    buildExportHeaders({
+      contentType,
+      filename,
+      langSuffix,
+      extension,
+      headers,
+    }),
+  );
   res.end(data);
 }
 
@@ -268,6 +273,13 @@ export function createAsyncExportRoute(config) {
     exportType, // 'pptx', 'handoff-zip', etc.
     stripLiveOnly = true,
     buildContent, // Fallback sync builder
+    // Builder options read from the request that the worker cannot read
+    // itself: it has the job data, not the URL. Throws to refuse the request.
+    jobOptions = () => ({}),
+    // Extra response headers for a synchronous answer, read from the context
+    // after `buildContent` ran: a finding about the file that the file itself
+    // cannot carry. A queued export answers 202 and has none.
+    responseHeaders = () => ({}),
     getFilename = (ctx) => ctx.title,
   } = config;
   assertExportFormat(format, pattern);
@@ -288,6 +300,7 @@ export function createAsyncExportRoute(config) {
           presentationId,
           { format, stripLiveOnly },
         );
+        const options = jobOptions(url);
 
         // If queue is available and not forcing sync, queue the job; the
         // worker rebuilds the context as the system from what was admitted.
@@ -300,6 +313,7 @@ export function createAsyncExportRoute(config) {
               lang: ctx.exportLang,
               stripLiveOnly,
               scale: parseScaleParam(url),
+              options,
               repoRoot,
               // Stamp the requester so the download/status routes can enforce
               // ownership (job IDs are enumerable ints — see security-audit
@@ -329,6 +343,7 @@ export function createAsyncExportRoute(config) {
           langSuffix: ctx.langSuffix,
           extension,
           data,
+          headers: responseHeaders(ctx),
         });
         return true;
       } catch (e) {

@@ -6,7 +6,7 @@ import { createCommentsApi } from '../editor/comments-api.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { renderGuestJoinPrompt } from './guest-join.js';
 import { createShareViewerCommentsSection } from './viewer-comments.js';
-import { createEraseMyDataButton } from '../../lib/format/analytics-erase-button.js';
+import { createEraseMyDataButton } from '../analytics/index.js';
 
 /**
  * Build the share-viewer topbar: title, permission badge, guest controls

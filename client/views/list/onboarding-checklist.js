@@ -1,6 +1,6 @@
 import { t } from '../../lib/ui-i18n.js';
 import { storage } from '../../lib/storage.js';
-import { getFeatures } from '../../lib/state/features.js';
+import { featureEnabled, getFeatures } from '../../lib/state/features.js';
 import { h } from '../../lib/dom/index.js';
 import { nav } from '../../lib/state/router.js';
 import { icon } from '../../lib/dom/icons.js';
@@ -52,6 +52,9 @@ function writeState(state) {
 export function createOnboardingChecklist({ allByDate, onCreate, api }) {
   const hasDeck = Array.isArray(allByDate) && allByDate.length > 0;
   const isSandbox = !!getFeatures()?.sandboxMode;
+  // Connecting an agent needs the public API cluster; without it the step is
+  // absent, in the sandbox too (D260).
+  const hasPublicApi = featureEnabled('publicApi');
 
   let state = readState();
   if (!state) {
@@ -81,28 +84,30 @@ export function createOnboardingChecklist({ allByDate, onCreate, api }) {
     // create the API key it needs (anonymous, throwaway). So instead of a CTA
     // that dead-ends on a settings page they can't use, show it as a greyed-out
     // "here's what this does in a real Deckyard" note.
-    isSandbox
-      ? {
-          key: 'mcp',
-          info: true,
-          title: t('list.onboarding.mcpTitle', 'Connect an AI agent'),
-          hint: t(
-            'list.onboarding.mcpSandboxHint',
-            'Off in the sandbox. In your own Deckyard, drive decks from Claude and other agents via API or MCP.',
-          ),
-        }
-      : {
-          key: 'mcp',
-          title: t('list.onboarding.mcpTitle', 'Connect an AI agent'),
-          hint: t(
-            'list.onboarding.mcpHint',
-            'Drive Deckyard from Claude and other agents via API or MCP.',
-          ),
-          onAction: () => {
-            markStepDone('mcp');
-            nav('/settings#api-keys');
+    !hasPublicApi
+      ? null
+      : isSandbox
+        ? {
+            key: 'mcp',
+            info: true,
+            title: t('list.onboarding.mcpTitle', 'Connect an AI agent'),
+            hint: t(
+              'list.onboarding.mcpSandboxHint',
+              'Off in the sandbox. In your own Deckyard, drive decks from Claude and other agents via API or MCP.',
+            ),
+          }
+        : {
+            key: 'mcp',
+            title: t('list.onboarding.mcpTitle', 'Connect an AI agent'),
+            hint: t(
+              'list.onboarding.mcpHint',
+              'Drive Deckyard from Claude and other agents via API or MCP.',
+            ),
+            onAction: () => {
+              markStepDone('mcp');
+              nav('/settings#api-keys');
+            },
           },
-        },
   ].filter(Boolean);
 
   // Info rows (e.g. the sandbox agent note) aren't completable, so they never
@@ -233,7 +238,7 @@ export function createOnboardingChecklist({ allByDate, onCreate, api }) {
   // has ever been used is proof an agent actually connected — tick the step
   // without the user having to click it. Best-effort: any failure just leaves
   // the manual click-to-complete path intact.
-  if (!state.mcp && !isSandbox && typeof api === 'function') {
+  if (hasPublicApi && !state.mcp && !isSandbox && typeof api === 'function') {
     (async () => {
       try {
         const resp = await api('/api/api-keys');

@@ -13,7 +13,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createDeckFromLibraryItems } from '../client/lib/slide-library/compose.js';
+import { createDeckFromLibraryItems } from '../client/views/slide-library/compose.js';
 
 function captureApi() {
   const calls = [];

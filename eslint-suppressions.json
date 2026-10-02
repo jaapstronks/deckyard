@@ -47,7 +47,7 @@
       "count": 1
     }
   },
-  "client/lib/comments/mention-autocomplete.js": {
+  "client/views/comments/mention-autocomplete.js": {
     "no-useless-assignment": {
       "count": 1
     }
@@ -82,7 +82,7 @@
       "count": 1
     }
   },
-  "client/lib/format/analytics-tracker.js": {
+  "client/views/analytics/tracker.js": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -112,17 +112,17 @@
       "count": 1
     }
   },
-  "client/lib/slide-collections/collections-bar.js": {
+  "client/views/list/collections/collections-bar.js": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "client/lib/slide-library/edit-modal.js": {
+  "client/views/slide-library/edit-modal.js": {
     "no-restricted-syntax": {
       "count": 1
     }
   },
-  "client/lib/slide-library/picker.js": {
+  "client/views/slide-library/picker.js": {
     "no-restricted-syntax": {
       "count": 2
     }
@@ -182,12 +182,12 @@
       "count": 3
     }
   },
-  "client/lib/user/notification-bell.js": {
+  "client/views/user/notification-bell.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "client/lib/user/user-menu.js": {
+  "client/views/user/user-menu.js": {
     "no-restricted-syntax": {
       "count": 2
     }

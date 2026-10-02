@@ -149,7 +149,7 @@ const CHECKS = [
   },
   // ─── client shelf-axis modules: fully renamed, so a blanket scan holds ────
   {
-    file: 'client/lib/slide-library/state.js',
+    file: 'client/views/slide-library/state.js',
     forbidden: [
       {
         label: 'scope-as-shelf in the library state module (use shelf)',
@@ -159,7 +159,7 @@ const CHECKS = [
     required: [/\bshelf\b/, /organization/],
   },
   {
-    file: 'client/lib/slide-library/api.js',
+    file: 'client/views/slide-library/api.js',
     forbidden: [
       {
         label: 'scope-as-shelf in the library api module (use shelf)',
@@ -169,7 +169,7 @@ const CHECKS = [
     required: [/\bshelf\b/],
   },
   {
-    file: 'client/lib/slide-collections/api.js',
+    file: 'client/views/list/collections/api.js',
     forbidden: [
       {
         label: 'scope-as-shelf in the collections api module (use shelf)',

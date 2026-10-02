@@ -23,7 +23,7 @@ import { createEmptyState } from '../../lib/dom/empty-state.js';
 import {
   createAnalyticsTracker,
   isAnalyticsEnabled,
-} from '../../lib/format/analytics-tracker.js';
+} from '../analytics/index.js';
 
 // Extracted components
 import { renderPasswordPrompt } from './password-form.js';

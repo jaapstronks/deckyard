@@ -7,11 +7,13 @@ import { newSlide } from '../../../shared/slide-types/presentation.js';
 import { migrateLibraryItem } from '../../../shared/slide-types/schema-version.js';
 import { t } from '../../lib/ui-i18n.js';
 import { newId } from '../../lib/util/id.js';
-import { createSlideLibraryPicker } from './slide-library-picker.js';
+import {
+  createSlideLibraryPicker,
+  sortByPinnedThenName,
+} from '../slide-library/index.js';
 import { toast } from '../../lib/dom/toast.js';
 import { debugLog } from '../../lib/util/debug.js';
 import { isInsertableSlideType } from '../../../shared/slide-types/policy.js';
-import { sortByPinnedThenName } from '../../lib/slide-library/search.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
@@ -313,8 +315,6 @@ export function createSlidesPanel({
     });
   };
 
-  const canEditCustomHtml = Boolean(user?.canEditCustomHtml);
-
   const insertSlide = (
     type,
     { afterSlideId, parentId = null, contentOverrides = null } = {},
@@ -325,7 +325,6 @@ export function createSlidesPanel({
         def: SLIDE_TYPES?.[type],
         theme,
         disabledSlideTypes,
-        canEditCustomHtml,
       })
     ) {
       toast?.error?.('This slide type is not available for the active theme.');
@@ -365,7 +364,6 @@ export function createSlidesPanel({
             def: SLIDE_TYPES?.[type],
             theme,
             disabledSlideTypes,
-            canEditCustomHtml,
           })
         );
       });
@@ -390,7 +388,6 @@ export function createSlidesPanel({
     theme,
     insertSlide,
     disabledSlideTypes,
-    canEditCustomHtml,
     // Escape hatch: when a search finds no matching type, offer to build it with
     // AI, seeded with the query. Lazy arrow — openAiAppendWizard is defined below
     // and only invoked at click time. Null where AI is off: the picker then
@@ -438,7 +435,6 @@ export function createSlidesPanel({
         def: SLIDE_TYPES?.[type],
         theme,
         disabledSlideTypes,
-        canEditCustomHtml,
       })
     ) {
       toast?.error?.('This slide type is not available for the active theme.');

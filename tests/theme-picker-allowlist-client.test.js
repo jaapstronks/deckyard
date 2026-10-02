@@ -39,7 +39,7 @@ globalThis.fetch = async () => {
 };
 
 const { createVisualThemePicker, createAndPopulateThemeSelect } =
-  await import('../client/lib/theme/theme-select.js');
+  await import('../client/views/theme-select.js');
 const { buildThemeSection } =
   await import('../client/views/editor/modals/settings-modal/theme.js');
 
@@ -70,9 +70,14 @@ function fakeThemesApi({ allowed, all = [BRAND, EDITORIAL, MIDNIGHT] }) {
       'current',
     );
     const offered = all.filter((id) => allowed.includes(id) || id === current);
+    const defaultThemeId = allowed[0] || BRAND;
     return {
-      themes: offered.map((id) => ({ id, label: LABELS[id], source: 'seed' })),
-      defaultThemeId: allowed[0] || BRAND,
+      themes: offered.map((id) => ({
+        id,
+        label: LABELS[id],
+        source: 'seed',
+        isDefault: id === defaultThemeId,
+      })),
       enabledThemes: allowed,
     };
   };
@@ -100,7 +105,11 @@ test('the visual picker renders one grid, with no "show all" escape hatch', asyn
   const labels = [...grids[0].querySelectorAll('.theme-card-label')].map(
     (el) => el.textContent,
   );
-  assert.deepEqual(labels, ['Workspace default', 'Forest', 'Editorial']);
+  assert.deepEqual(labels, [
+    'Workspace default (Forest)',
+    'Forest',
+    'Editorial',
+  ]);
 });
 
 test('the visual picker asks for the deck theme it was opened on', async () => {
@@ -114,7 +123,7 @@ test('the visual picker asks for the deck theme it was opened on', async () => {
   );
   assert.deepEqual(
     labels,
-    ['Workspace default', 'Forest', 'Midnight'],
+    ['Workspace default (Forest)', 'Forest', 'Midnight'],
     'the withdrawn theme is offered here, and only here',
   );
 });
@@ -157,6 +166,29 @@ test('the deck-settings select drops a theme the workspace withdrew', async () =
     ['default', BRAND],
     'editorial and midnight are not selectable anywhere',
   );
+});
+
+test('both pickers name the theme "Workspace default" resolves to (B584)', async () => {
+  const { api } = fakeThemesApi({ allowed: [BRAND, EDITORIAL] });
+  const selector = createAndPopulateThemeSelect({ api, initialTheme: BRAND });
+  await selector.populated;
+  assert.equal(selector.select.options[0].text, 'Workspace default (Forest)');
+
+  const picker = createVisualThemePicker({ api });
+  await picker.populated;
+  assert.equal(
+    picker.wrap.querySelector('.theme-card-label').textContent,
+    'Workspace default (Forest)',
+  );
+});
+
+test('without a marked default the select keeps the bare label', async () => {
+  const api = async () => ({
+    themes: [{ id: BRAND, label: 'Forest', source: 'seed' }],
+  });
+  const selector = createAndPopulateThemeSelect({ api, initialTheme: BRAND });
+  await selector.populated;
+  assert.equal(selector.select.options[0].text, 'Workspace default');
 });
 
 test('the deck-settings section reads the deck theme under its real name', async () => {

@@ -459,7 +459,11 @@ What a theme may set — the full contract, ~30–35 tokens, zero type names:
 - **Spacing**: `--t-slide-space-scale` (same model; contract point, multiplier
   not yet implemented).
 - **Radius**: `--t-radius{,-sm,-lg}`. **Shadow**: `--t-shadow-scale`.
-- **Layout/branding**: `--t-logo-url`, gradient tokens, title layout.
+- **Layout/branding**: gradient tokens, title layout. `--t-logo-url` is a
+  theme token the theme builder emits and the exports mask
+  (`export-safe-css.md`), but **no slide CSS reads it**: the `--logo-url`
+  slide variable had no reader and left the theme layer with B531, so the
+  token is outside the slide-CSS contract snapshot.
 
 Per-type `--t-<type>-*` tokens (icon-card-grid, per-KPI-tile, table, quote and
 chapter families) are **removed, not aliased** — the KPI tiles join the
@@ -570,10 +574,11 @@ consumers and then deletes the family. None of these is a valid spelling for
 new code:
 
 1. ~~`--font-size-title/subtitle/heading/body` + `--line-height-body`~~ —
-   **done** (batch 2.2a): consumers migrated, family deleted from `theme.css`;
+   **done** (batch 2.2a): consumers migrated, family deleted from the theme
+   layer (then `theme.css`, now `slides/00-theme.css`);
 2. ~~the `--color-*` spelling of the text-colour alias layer~~ — **done**
    (batch 2.2b): consumers migrated to the `--slide-*` colour roles, alias
-   definitions deleted from `theme.css`;
+   definitions deleted from the theme layer;
 3. ~~the five `--t-*` legacy aliases (`--t-primary`, `--t-accent`,
    `--t-bg-dark`, `--t-brand-1/2`)~~ — **done** (phase 3): consumers read
    roles, `theme-normalize.js` fills `--t-color-brand-{1..3}` from
@@ -586,8 +591,9 @@ new code:
 `tests/slide-css-tokens.test.js` — a value that exactly equals a slide token
 must be written as that token, per-file and per-category burndown budgets that
 only go down.
-Presenter chrome inside the slide bundle is excluded by file, with the reason
-in the test.
+The presenter chrome is not in the slide bundle: it is the viewer layer
+(`client/styles/viewer/`, D267), and the same test asserts the bundle reads no
+`--app-*`/`--ps-*` token.
 
 The same file measures **every** declaration on the six axes (font-size,
 line-height, spacing = margin + padding, gap, border-radius, `color`) and
@@ -628,6 +634,6 @@ The same file carries the end-state contract check: **no `var(--t-…)`
 anywhere in the slide bundle outside `00-tokens.css`** (grown from the
 batch-2.3a radius slice to the whole `--t-*` namespace in phase 3), plus the
 seam snapshot: the set of `--t-*` tokens the two contract files
-(`00-tokens.css`, `theme.css`) read is pinned in
+(`00-tokens.css`, `00-theme.css`) read is pinned in
 `tests/fixtures/theme-contract.json`, so a new theme dependency is a
 deliberate diff, never a side effect.

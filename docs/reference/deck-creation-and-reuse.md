@@ -36,7 +36,7 @@ used to be split between starter kits and the slide library:
 2. **Compose from parts → the slide library.** A library item is
    `{ slideType, content }` and composes freely into any deck, adopting the
    target deck's theme (theme is deck-level). The shared compose path is
-   `client/lib/slide-library/compose.js`
+   `client/views/slide-library/compose.js`
    (`buildSlidesFromLibraryItems` / `createDeckFromLibraryItems`), which
    preserves per-language content across the NL/EN round-trip.
 3. **A curated, repeatable start → Collections.** A named, ordered, scoped set
@@ -94,7 +94,7 @@ ordered `slideIds[]`, timestamps.
 - **API:** `/api/slide-collections` (GET/POST/PATCH/DELETE + reorder), same
   shelf/authz conventions as `server/routes/api/slide-library.js` (the shared
   shelf lives under the `/organization` segment).
-- **Manage** from the library sidebar (`client/lib/slide-collections/`): a
+- **Manage** from the library sidebar (`client/views/list/collections/`): a
   collections bar (create/rename/delete + chips), a manage-membership modal
   (drag-reorder + remove), and add-to-collection off the card more-menu.
 - **Use** from the creation view: picking a collection pre-seeds the compose
@@ -123,7 +123,7 @@ Two themes stay in the response regardless of the allowlist:
 - the theme named by **`?current=<id>`**. Pickers editing a deck pass the theme
   it is on, so a deck that predates a withdrawal keeps rendering and keeps
   showing its own selection. The two picker helpers in
-  `client/lib/theme/theme-select.js` add the parameter automatically.
+  `client/views/theme-select.js` add the parameter automatically.
 
 `?all=1` returns the unfiltered list and is honoured only for users who may
 manage themes. It exists for one caller: the Themes settings tab, which cannot
@@ -149,7 +149,7 @@ A library item stores per-language content under `i18n.versions[<lang>].content`
 and every hop of the compose path carries it: `mapSlideLibraryRow`
 (`server/storage/slide-library.js`) returns `i18n` on the item, the
 internal `/api/slide-library` routes serve that object as-is,
-`buildSlidesFromLibraryItems` (`client/lib/slide-library/compose.js`) forwards
+`buildSlidesFromLibraryItems` (`client/views/slide-library/compose.js`) forwards
 each available language as `contentByLang`, and `prepareNewPresentation`
 (`server/storage/presentations/crud/factory.js`) expands that into one i18n
 version per language, sharing a stable slide id across versions. A slide with
@@ -229,14 +229,10 @@ writer that bypasses the route still meets them.
 - **Content.** `content` replaces the stored content as a whole; the client
   sends its full working copy, keys the schema does not know included. The
   server does not validate it against the type's schema, but it must be a plain
-  object, and the raw-HTML/CSS capability gate (`customHtmlEditViolation`)
-  applies against the stored version — on create too, where every language
-  version in the body is checked. The gate is a callback the caller hands to
-  storage (`contentGuard`), and it fails closed like the organization guard: a
-  `content` patch from a caller that brings none is `403 forbidden`.
+  object.
 
 **The editor (D171, B336).** Edit in the library lightbox opens the full slide
-form for the item's type (`client/lib/slide-library/edit-modal.js`): nested
+form for the item's type (`client/views/slide-library/edit-modal.js`): nested
 members and cards, images through the normal picker, background, layout and
 accessibility. It mounts `createSingleSlideEditor`
 (`client/views/editor/single-slide-editor.js`), which wraps the one slide in a

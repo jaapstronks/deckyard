@@ -273,6 +273,25 @@ export async function updateUser(scope, userId, updates) {
 }
 
 /**
+ * Tables of single-use login tokens, keyed on the email address rather than the
+ * user id. They outlive the `users` row unless deleted with it, and a magic
+ * link redeemed after the delete recreates the account (B546).
+ */
+const LOGIN_TOKEN_TABLES = ['password_reset_tokens', 'magic_link_tokens'];
+
+/**
+ * Delete every pending login token for an email address.
+ * @param {import('kysely').Kysely<any>} db - The database handle
+ * @param {string} email - The normalized email address
+ * @returns {Promise<void>}
+ */
+async function deleteLoginTokens(db, email) {
+  for (const table of LOGIN_TOKEN_TABLES) {
+    await db.deleteFrom(table).where('user_email', '=', email).execute();
+  }
+}
+
+/**
  * Delete a user.
  * @param {import('./scope.js').StorageScope} scope - The caller's storage scope
  * @param {string} userId - The user ID
@@ -295,11 +314,7 @@ export async function deleteUser(scope, userId) {
       return { ok: false, reason: 'not_found' };
     }
 
-    // Delete any pending reset tokens
-    await db
-      .deleteFrom('password_reset_tokens')
-      .where('user_email', '=', user.email)
-      .execute();
+    await deleteLoginTokens(db, user.email);
 
     // Delete the user
     await db

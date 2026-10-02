@@ -54,8 +54,14 @@ async function runEdit(label, failRecordLoad = false) {
     requests.push(`${opts.method || 'GET'} ${path}`);
     if (path === '/api/themes?all=1') {
       return Response.json({
-        themes: [{ id: ID, source: 'organization', label: 'Original' }],
-        defaultThemeId: ID,
+        themes: [
+          {
+            id: ID,
+            source: 'organization',
+            label: 'Original',
+            isDefault: true,
+          },
+        ],
         enabledThemes: [],
       });
     }

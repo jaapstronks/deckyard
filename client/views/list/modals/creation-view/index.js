@@ -21,7 +21,7 @@ import { createModal } from '../../../../lib/dom/modal.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { markRequired } from '../../../../lib/dom/required-mark.js';
 import { featureEnabled, getFeatures } from '../../../../lib/state/features.js';
-import { createVisualThemePicker } from '../../../../lib/theme/theme-select.js';
+import { createVisualThemePicker } from '../../../theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
 import { createLibraryCompose } from './library-compose.js';
 import { createContentCompose } from './content-compose.js';

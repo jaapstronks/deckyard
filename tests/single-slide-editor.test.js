@@ -42,7 +42,7 @@ globalThis.fetch = async (url) => {
   requested.push(String(url));
   const body =
     String(url) === '/api/themes'
-      ? { defaultThemeId: THEME_ID }
+      ? { themes: [{ id: THEME_ID, isDefault: true }] }
       : { id: THEME_ID, slug: 'brand', label: 'Forest', cssVars: {} };
   return new Response(JSON.stringify(body), {
     status: 200,

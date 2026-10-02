@@ -270,7 +270,7 @@ into the shape the builder merges.
 
 - Keys must match `--t-[a-z0-9-]+`.
 - **`--t-ui-*` is rejected.** The application chrome is deliberately
-  theme-independent (see the header comment in `client/styles/theme.css`); a
+  theme-independent (see the header comment in `client/styles/slides/00-theme.css`); a
   theme must not be able to restyle the app around the slides.
 - Values are stripped of `;{}<>`, so a value cannot terminate its declaration
   and open a new rule — the same guard `shared/theme-slide-backgrounds.js`

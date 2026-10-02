@@ -8,9 +8,12 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
-import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
-import { invalidateProfile } from '../../../lib/user/user-profiles.js';
-import { displayNameFromEmail } from '../../../lib/user/user-format.js';
+import {
+  createAvatar,
+  updateAvatar,
+  invalidateProfile,
+} from '../../user/index.js';
+import { displayNameFromEmail } from '../../../lib/format/user-format.js';
 import { createPasswordSection } from '../sections/index.js';
 import {
   fetchMySettings,

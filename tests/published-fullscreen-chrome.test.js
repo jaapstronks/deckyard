@@ -126,8 +126,14 @@ test('fullscreen CSS keys on html.is-fullscreen only, both bars as overlays', as
   );
   assert.match(
     html,
-    /html\.is-fullscreen \{\s*--presenter-topbar-height: 0px;\s*overflow: hidden;/,
+    /html\.is-fullscreen \{\s*overflow: hidden;/,
     'the root cannot scroll in fullscreen',
+  );
+  // Both chrome rows collapse on the shell, the selector `ui=min` zeroes them
+  // on too; the windowed default sits on `.presenter-shell` itself (B531).
+  assert.match(
+    html,
+    /html\.is-fullscreen \.presenter-shell \{\s*--presenter-topbar-height: 0px;\s*--presenter-progress-height: 0px;/,
   );
   assert.match(
     html,

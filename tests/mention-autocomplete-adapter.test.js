@@ -26,9 +26,9 @@ globalThis.Element = dom.window.Element;
 globalThis.getComputedStyle = dom.window.getComputedStyle;
 
 const { textareaCaretAdapter, attachMentionAutocomplete } =
-  await import('../client/lib/comments/mention-autocomplete.js');
+  await import('../client/views/comments/mention-autocomplete.js');
 const { createRichCommentInput } =
-  await import('../client/lib/comments/comment-rich-input.js');
+  await import('../client/views/comments/comment-rich-input.js');
 
 const ANN = { name: 'Ann Lee', email: 'ann@x.com' };
 

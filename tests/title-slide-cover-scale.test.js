@@ -15,7 +15,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
 import { renderSlideHtml } from '../shared/slide-types/presentation.js';
-import { coverFontScale } from '../shared/slide-types/types/title-slide.js';
+import { coverFontScale } from '../shared/slide-types/types/title-slide/render.js';
 
 const X = (n) => 'x'.repeat(n);
 

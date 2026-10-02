@@ -369,14 +369,12 @@ Column semantics:
 | `pyramid-slide`        | `title`, `subheading`, `bottomSubheading`, `levels`                                                      | `title`, `subheading`, `bottomSubheading`, `levels.text`                                                   | `levels`                      | –                       | –                                                                           |
 | `cycle-slide`          | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items`                                        | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items.text`                                     | `items`                       | –                       | –                                                                           |
 | `gallery-slide`        | `title`, `subheading`, `bottomSubheading`                                                                | `title`, `subheading`, `bottomSubheading`, `images.caption`                                                | `images`                      | –                       | media `images[]`; focus drag                                                |
-| `custom-html-slide`    | _no descriptor_                                                                                          | –                                                                                                          | –                             | –                       | –                                                                           |
 | `end-slide`            | `title`, `body`, `contactName`, `contactEmail`, `contactPhone`                                           | `body`, `contactName`, `contactEmail`, `contactPhone`                                                      | –                             | `body`                  | –                                                                           |
 
 <!--/gen:slide-type-canvas-->
 
 Not inline, intentionally: `payoff-slide` and `follow-invite-slide` (no
-editable content), `custom-html-slide` (escape hatch, out of scope - its
-`html`/`css` are code editors in the bulk modal).
+editable content).
 
 Deliberately not inline within covered types: layout/variant/background/
 density enums (inspector; the canvas layout switcher uses the separate
