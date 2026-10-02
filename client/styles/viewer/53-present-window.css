@@ -32,15 +32,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: var(--ps-space-4);
   max-width: 520px;
-  padding: 32px;
+  padding: var(--ps-space-8);
   text-align: center;
 }
 .present-window-curtain-title {
   font-size: 28px;
   font-weight: 650;
-  color: hsl(var(--app-text-strong, var(--app-text-default)));
+  color: hsl(var(--app-text-primary));
 }
 .present-window-curtain-hint {
   max-width: 42ch;

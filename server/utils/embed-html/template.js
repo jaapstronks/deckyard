@@ -54,17 +54,18 @@ const EMBED_SHELL_CSS = `
         user-select: none;
         white-space: nowrap;
       }
-      /* The slide CSS already defines .deck and .deck-slide */
+      /* The embed owns its deck box. The presenter's .deck/.deck-slide rules
+         are the viewer layer (client/styles/viewer/, D267), which an embed
+         does not load: the stage wrapper fills the space under the controls. */
       .ps-embed-deck-wrap {
         flex: 1;
         min-height: 0;
       }
       .ps-embed-deck-wrap .deck {
+        position: relative;
+        display: flex;
         height: 100%;
-        /* Override presenter styling from slides CSS (.deck centers content).
-           In embeds we want the stage wrapper to fill the available space under the top controls. */
-        align-items: stretch;
-        justify-content: stretch;
+        overflow: hidden;
       }
 
       /* Embed stage scaling: slides use fixed px typography; scale the whole stage like exports do. */
@@ -86,9 +87,11 @@ const EMBED_SHELL_CSS = `
         max-width: none;
         max-height: none;
       }
-      /* In embed mode, we always show exactly 1 slide */
+      /* In embed mode, we always show exactly 1 slide, filling the stage. */
       .deck-slide {
         display: none;
+        position: absolute;
+        inset: 0;
       }
       .deck-slide.is-active {
         display: block;

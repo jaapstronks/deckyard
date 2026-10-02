@@ -11,7 +11,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: var(--ps-space-6);
   background: hsl(var(--app-bg-base) / 0.86);
   backdrop-filter: blur(14px);
   opacity: 1;
@@ -27,9 +27,9 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  gap: 14px;
+  gap: var(--ps-space-3-5);
   max-width: 520px;
-  padding: 40px 44px;
+  padding: var(--ps-space-10) 44px;
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: 16px;
@@ -37,7 +37,6 @@
 }
 
 .presenter-start-title {
-  font-family: var(--font-heading);
   font-size: 26px;
   line-height: 1.2;
   color: hsl(var(--app-text-primary));
@@ -49,9 +48,9 @@
 }
 
 .presenter-start-fs {
-  margin-top: 8px;
+  margin-top: var(--ps-space-2);
   font-size: 16px;
-  padding: 12px 22px;
+  padding: var(--ps-space-3) 22px;
 }
 
 .presenter-start-windowed {
@@ -59,7 +58,7 @@
   border: none;
   color: hsl(var(--app-text-secondary));
   font-size: 14px;
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   cursor: pointer;
   border-radius: 8px;
   transition:
@@ -76,7 +75,7 @@
 }
 
 .presenter-start-hint {
-  margin-top: 6px;
+  margin-top: var(--ps-space-1-5);
   font-size: 12px;
   color: hsl(var(--app-text-secondary));
 }

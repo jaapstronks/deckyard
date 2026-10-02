@@ -107,18 +107,15 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   grid-row: 2;
   grid-column: 1;
 }
-.presenter-progress {
-  grid-row: 3;
-  grid-column: 1;
-}
+/* Row 3, the progress bar, is placed by its owner (80-presenter-progress.css). */
 
 .presenter-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: var(--ps-space-4);
   min-height: var(--presenter-topbar-height);
-  padding: 8px 16px;
+  padding: var(--ps-space-2) var(--ps-space-4);
   box-sizing: border-box;
   background: hsl(var(--app-bg-elevated) / 0.92);
   border-bottom: 1px solid hsl(var(--app-border-default));
@@ -140,7 +137,7 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   flex-wrap: wrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 8px 10px;
+  gap: var(--ps-space-2) var(--ps-space-2-5);
   flex: 0 1 auto;
   min-width: 0;
 }
@@ -168,7 +165,7 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   border: 1px solid hsl(var(--app-border-default));
   border-radius: 0.5rem;
   box-shadow: var(--app-shadow-xl);
-  padding: 0.75rem;
+  padding: var(--ps-space-3);
   z-index: 200;
 
   /* Hidden by default */
@@ -180,9 +177,9 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
 
 .presenter-tools-actions {
   display: flex;
-  gap: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  margin-bottom: 0.5rem;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-1) var(--ps-space-2);
+  margin-bottom: var(--ps-space-2);
 }
 .presenter-tools-actions .presenter-tools-item {
   flex: 1;
@@ -193,12 +190,12 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
    audience link is safe to broadcast. Distinct framing prevents mix-ups. */
 .presenter-tools-section {
   border-radius: 0.5rem;
-  padding: 0.25rem;
+  padding: var(--ps-space-1);
 }
 .presenter-tools-section--private {
   background: hsl(var(--app-danger) / 0.06);
   border: 1px solid hsl(var(--app-danger) / 0.25);
-  margin-bottom: 0.5rem;
+  margin-bottom: var(--ps-space-2);
 }
 .presenter-tools-section--audience {
   background: hsl(var(--app-success) / 0.06);
@@ -208,12 +205,12 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: var(--ps-space-2);
   font-size: 0.8125rem;
   font-weight: 600;
   color: hsl(var(--app-text-primary));
-  margin-bottom: 0.5rem;
-  padding: 0.25rem 0.5rem;
+  margin-bottom: var(--ps-space-2);
+  padding: var(--ps-space-1) var(--ps-space-2);
 }
 .presenter-tools-badge {
   flex-shrink: 0;
@@ -235,15 +232,15 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
 .presenter-tools-hint {
   font-size: 0.6875rem;
   color: hsl(var(--app-text-secondary));
-  padding: 0.25rem 0.5rem;
-  margin-bottom: 0.5rem;
+  padding: var(--ps-space-1) var(--ps-space-2);
+  margin-bottom: var(--ps-space-2);
 }
 .presenter-tools-warn {
   font-size: 0.6875rem;
   line-height: 1.35;
   color: hsl(var(--app-danger));
-  padding: 0.25rem 0.5rem 0.35rem;
-  margin-bottom: 0.25rem;
+  padding: var(--ps-space-1) var(--ps-space-2) 0.35rem;
+  margin-bottom: var(--ps-space-1);
 }
 .presenter-tools-popover .presenter-tools-item {
   width: 100%;
@@ -251,9 +248,9 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   background: transparent;
   border: none;
   color: hsl(var(--app-text-secondary));
-  padding: 0.5rem 0.75rem;
+  padding: var(--ps-space-2) var(--ps-space-3);
   border-radius: 0.375rem;
-  margin-bottom: 0.25rem;
+  margin-bottom: var(--ps-space-1);
   cursor: pointer;
   transition:
     background 120ms ease,
@@ -273,12 +270,12 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
 .presenter-followcodes {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-3);
   background: hsl(var(--app-bg-sunken));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: 0.375rem;
-  margin-top: 0.5rem;
+  margin-top: var(--ps-space-2);
 }
 .presenter-followcodes-text {
   font-size: 0.8125rem;
@@ -295,11 +292,11 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
 .presenter-toggle {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--ps-space-2);
   font-size: 14px;
   color: hsl(var(--app-text-secondary));
   user-select: none;
-  padding: 6px 10px;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
   border-radius: 999px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-sunken));
@@ -320,7 +317,6 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
      topbar label it has always been. No-op for the live presenter's div. */
   margin: 0;
   font-weight: inherit;
-  font-family: var(--font-heading);
   font-size: 18px;
   color: hsl(var(--app-text-primary));
 }
@@ -334,11 +330,11 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
 .presenter-highlighter-btn.is-active {
   background: hsl(var(--app-accent-primary));
   border-color: hsl(var(--app-accent-primary));
-  color: hsl(var(--app-text-on-accent, 0 0% 100%));
+  color: hsl(var(--app-text-on-solid));
 }
 .presenter-highlighter-btn.is-active:hover:not(:disabled) {
-  background: hsl(var(--app-accent-primary-hover, var(--app-accent-primary)));
-  border-color: hsl(var(--app-accent-primary-hover, var(--app-accent-primary)));
+  background: hsl(var(--app-accent-primary-hover));
+  border-color: hsl(var(--app-accent-primary-hover));
 }
 .deck {
   position: relative;

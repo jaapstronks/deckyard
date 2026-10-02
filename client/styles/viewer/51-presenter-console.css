@@ -22,7 +22,7 @@
 .presenter-shell.is-console .presenter-console {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: var(--ps-space-3-5);
   position: absolute;
   top: 0;
   right: 0;
@@ -31,7 +31,7 @@
      padding and border outside the width it covered the slide's edge. */
   box-sizing: border-box;
   width: var(--presenter-console-width);
-  padding: 16px;
+  padding: var(--ps-space-4);
   background: hsl(var(--app-bg-elevated) / 0.96);
   border-left: 1px solid hsl(var(--app-border-default));
   z-index: 40;
@@ -51,8 +51,8 @@ html.is-fullscreen .presenter-shell.is-console .deck {
 .presenter-console-timer {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-3);
   background: hsl(var(--app-bg-sunken));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: 0.5rem;
@@ -60,10 +60,9 @@ html.is-fullscreen .presenter-shell.is-console .deck {
 .presenter-console-clock-row {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: var(--ps-space-2);
 }
 .presenter-console-clock {
-  font-family: var(--font-heading, inherit);
   font-variant-numeric: tabular-nums;
   font-size: 40px;
   line-height: 1;
@@ -71,17 +70,17 @@ html.is-fullscreen .presenter-shell.is-console .deck {
   color: hsl(var(--app-text-primary));
 }
 .presenter-console-clock.is-overtime {
-  color: hsl(var(--app-danger, 0 72% 51%));
+  color: hsl(var(--app-danger));
 }
 .presenter-console-overtime {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: hsl(var(--app-danger, 0 72% 51%));
+  color: hsl(var(--app-danger));
 }
 .presenter-console-timer-actions {
-  gap: 8px;
+  gap: var(--ps-space-2);
 }
 .presenter-console-timer-actions .btn {
   flex: 1;
@@ -89,11 +88,11 @@ html.is-fullscreen .presenter-shell.is-console .deck {
 .presenter-console-timer-toggle.is-active {
   background: hsl(var(--app-accent-primary));
   border-color: hsl(var(--app-accent-primary));
-  color: hsl(var(--app-text-on-accent, 0 0% 100%));
+  color: hsl(var(--app-text-on-solid));
 }
 .presenter-console-target-row {
   align-items: center;
-  gap: 8px;
+  gap: var(--ps-space-2);
 }
 .presenter-console-target-label {
   margin: 0;
@@ -114,7 +113,7 @@ html.is-fullscreen .presenter-shell.is-console .deck {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: hsl(var(--app-text-secondary));
-  margin-bottom: 6px;
+  margin-bottom: var(--ps-space-1-5);
 }
 
 /* --- Next-slide block ---------------------------------------------------- */
@@ -135,7 +134,7 @@ html.is-fullscreen .presenter-shell.is-console .deck {
   justify-content: center;
 }
 .presenter-console-next-meta {
-  margin: 6px 0 0;
+  margin: var(--ps-space-1-5) 0 0;
 }
 
 /* --- Notes block --------------------------------------------------------- */
@@ -151,7 +150,7 @@ html.is-fullscreen .presenter-shell.is-console .deck {
   font-size: 0.95rem;
   line-height: 1.5;
   color: hsl(var(--app-text-primary));
-  padding-right: 4px;
+  padding-right: var(--ps-space-1);
 }
 .presenter-console-notes-body > :first-child {
   margin-top: 0;
