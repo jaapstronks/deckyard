@@ -123,7 +123,7 @@ it touches slide types; `AGENTS.md` § Slide types points here.
   - layout/title-ish slides: `client/styles/slides/01-layout-and-title/*`
   - components/interactive/presenter helpers: `client/styles/slides/03-components/*`
 - Import it from the corresponding aggregator file (`client/styles/slides/01-layout-and-title.css` or `03-components.css`).
-- Use theme variables via `.slide { --... }` indirection (see `client/styles/theme.css`).
+- Use theme variables via `.slide { --... }` indirection (see `client/styles/slides/00-theme.css`).
   - Don’t hardcode brand colors/fonts inside the slide CSS.
 - **Don’t reach for the app-chrome tokens (`--ps-*`, `--z-*`) inside
   `client/styles/slides/**`.** `slides.css` doesn’t import `ui-tokens.css`, and

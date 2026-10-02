@@ -105,7 +105,7 @@ const isOverridableCssVar = (key) =>
  * CSS custom properties a theme may override directly.
  *
  * Only `--t-*` — those are the theme layer. `--t-ui-*` is rejected because the
- * app chrome is deliberately theme-independent (see client/styles/theme.css),
+ * app chrome is deliberately theme-independent (see client/styles/slides/00-theme.css),
  * and a theme must not be able to restyle the application around the slides.
  * Values are stripped of the punctuation that would let one escape its
  * declaration, mirroring shared/theme-slide-backgrounds.js.

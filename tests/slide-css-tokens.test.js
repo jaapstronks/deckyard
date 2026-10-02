@@ -684,15 +684,15 @@ describe('slide css tokens', () => {
     // per-type families followed in phase 3 steps 2-3; the legacy aliases were
     // the last reads. Every theme lever now enters slide CSS through a
     // `--slide-*` role minted in `00-tokens.css` (or, for the background
-    // surfaces and typography locals, `client/styles/theme.css` — outside the
-    // bundle and covered by the contract snapshot below).
+    // surfaces and typography locals, `00-theme.css` — the theme layer right
+    // behind it, D268 — covered by the contract snapshot below).
     //
     // Scope is every sheet in the bundle, presenter chrome included: chrome
     // draws its styling from `--app-*`/`--ps-*`, so a `--t-*` read there is
     // just as wrong as one in slide CSS.
     const reads = [];
     for (const rel of allSheets) {
-      if (/\/00-tokens\.css$/.test(rel)) continue;
+      if (/\/00-(tokens|theme)\.css$/.test(rel)) continue;
       const clean = stripComments(
         await fs.readFile(path.join(repoRoot, rel), 'utf8'),
       );
@@ -706,7 +706,7 @@ describe('slide css tokens', () => {
       [],
       `${reads.length} direct theme-token read(s) in the slide bundle.\n` +
         'Theme influence reaches slide CSS through the --slide-* roles; only\n' +
-        '00-tokens.css binds those to the theme contract. Add a role there if\n' +
+        '00-tokens.css and 00-theme.css bind those to the theme contract. Add a role there if\n' +
         'the existing ones do not cover the case — do not read --t-* directly.',
     );
   });
@@ -714,8 +714,8 @@ describe('slide css tokens', () => {
   it('the theme contract matches the committed seam snapshot', async () => {
     // The seam table as a machine check (phase 3 step 6): the theme contract
     // IS the set of `--t-*` tokens the two contract files read —
-    // `00-tokens.css` (the roles) and `client/styles/theme.css` (background
-    // surfaces, typography locals, logo). A new theme dependency therefore
+    // `00-tokens.css` (the roles) and `00-theme.css` (background surfaces,
+    // typography locals). A new theme dependency therefore
     // shows up as a diff of `tests/fixtures/theme-contract.json` and has to be
     // a deliberate decision, never a side effect of styling one slide type.
     //
@@ -725,7 +725,7 @@ describe('slide css tokens', () => {
     // the `--t-ui-*` namespace, which never reaches slide CSS.
     const contractFiles = [
       path.join(slidesDir, '00-tokens.css'),
-      path.join(repoRoot, 'client', 'styles', 'theme.css'),
+      path.join(slidesDir, '00-theme.css'),
     ];
     const found = new Set();
     for (const file of contractFiles) {

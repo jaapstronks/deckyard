@@ -1,14 +1,16 @@
 #!/usr/bin/env node
-// Derive the per-tier `@import` aggregators under `client/styles/slides/` from a
-// declared manifest instead of hand-maintaining the import lists.
+// Derive the `@import` aggregators of the slide chain (`client/styles/slides.css`
+// and the per-tier files under `client/styles/slides/`) from a declared manifest
+// instead of hand-maintaining the import lists.
 //
 // WHY THIS EXISTS
-// The three aggregator files (`01-layout-and-title.css`, `02-content-and-media.css`,
-// `03-components.css`) are just ordered lists of `@import`s. Hand-maintained, they
-// drift: a new slide type gets a stylesheet but nobody wires it in, or a removed
-// type leaves an orphaned import. This makes the list a build product of a
-// manifest, and `tests/slide-css-aggregators.test.js` gates it (byte-identical to
-// the committed files, every type real, every file on disk claimed exactly once).
+// The aggregator files (`slides.css` and the three tiers `01-layout-and-title.css`,
+// `02-content-and-media.css`, `03-components.css`) are just ordered lists of
+// `@import`s. Hand-maintained, they drift: a new slide type gets a stylesheet but
+// nobody wires it in, or a removed type leaves an orphaned import. This makes the
+// list a build product of a manifest, and `tests/slide-css-aggregators.test.js`
+// gates it (byte-identical to the committed files, every type real, every file on
+// disk claimed exactly once).
 //
 // THE CASCADE CONSTRAINT (the reason this is not a trivial sort)
 // The numeric filename prefixes (`00-`, `21-`, `35-`) are NOT sort keys — they are
@@ -33,6 +35,24 @@ import { formatGenerated } from './lib/format-generated.js';
 const SLIDES_DIR = fileURLToPath(
   new URL('../client/styles/slides/', import.meta.url),
 );
+
+/**
+ * The foundation of the chain, in the order `slides.css` imports it, before any
+ * tier: the design-system scale and the `--slide-*` roles (`00-tokens.css`), the
+ * theme layer that binds a theme's `--t-*` to the slide-local variables
+ * (`00-theme.css`, D268: it has no other address and no `:root`), and the shared
+ * partial patterns (`00-patterns.css`). The order is declared, not sorted: the
+ * theme layer follows the tokens it sits on.
+ * @type {string[]}
+ */
+export const FOUNDATION_CSS = [
+  '00-tokens.css',
+  '00-theme.css',
+  '00-patterns.css',
+];
+
+/** The chain's entry point, the one stylesheet every slide-rendering path loads. */
+export const ROOT_AGGREGATOR = 'slides.css';
 
 /**
  * The tiers, in the order `slides.css` imports them. Each is one aggregator
@@ -229,6 +249,26 @@ function buildAggregator(tier) {
   return `${tier.header}\n${lines.join('\n')}\n`;
 }
 
+/** The exact bytes `slides.css` should contain: the foundation, then the tiers. */
+function buildRootAggregator() {
+  const foundation = FOUNDATION_CSS.map(
+    (file) => `@import url('./slides/${file}');`,
+  );
+  const tiers = TIERS.map(
+    (tier) => `@import url('./slides/${tier.aggregator}');`,
+  );
+  return [
+    '/* Shared slide rendering (used by preview, presenter, and exports) */',
+    '',
+    '/* Design system foundation - must load first: tokens, then the theme layer that binds --t-* to them, then the partial patterns */',
+    ...foundation,
+    '',
+    '/* Slide layouts and components */',
+    ...tiers,
+    '',
+  ].join('\n');
+}
+
 /**
  * Map of every aggregator's repo-relative path → expected content,
  * Prettier-formatted with the repo config so `npm run format` and this
@@ -237,6 +277,8 @@ function buildAggregator(tier) {
  */
 export async function buildAllAggregators() {
   const out = new Map();
+  const root = path.join('client', 'styles', ROOT_AGGREGATOR);
+  out.set(root, await formatGenerated(root, buildRootAggregator()));
   for (const tier of TIERS) {
     const rel = path.join('client', 'styles', 'slides', tier.aggregator);
     out.set(rel, await formatGenerated(rel, buildAggregator(tier)));

@@ -417,7 +417,6 @@ export function renderEmbedHtmlDocument({
     stylesheets: [
       '/assets/fonts/google/fonts.css',
       '/client/styles/embed.css',
-      '/client/styles/theme.css',
       '/client/styles/slides.css',
     ],
     styles: [
