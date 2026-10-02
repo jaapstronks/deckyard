@@ -8,8 +8,8 @@
  * - Device ID in localStorage
  */
 
-import { storage } from '../storage.js';
-import { api } from '../api.js';
+import { storage } from '../../lib/storage.js';
+import { api } from '../../lib/api.js';
 
 const DEVICE_ID_KEY = 'ps.analytics.deviceId';
 const HEARTBEAT_INTERVAL_MS = 30000; // 30 seconds

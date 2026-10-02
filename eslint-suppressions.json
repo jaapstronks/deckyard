@@ -82,7 +82,7 @@
       "count": 1
     }
   },
-  "client/lib/format/analytics-tracker.js": {
+  "client/views/analytics/tracker.js": {
     "no-restricted-syntax": {
       "count": 1
     }
@@ -182,12 +182,12 @@
       "count": 3
     }
   },
-  "client/lib/user/notification-bell.js": {
+  "client/views/user/notification-bell.js": {
     "no-restricted-syntax": {
       "count": 3
     }
   },
-  "client/lib/user/user-menu.js": {
+  "client/views/user/user-menu.js": {
     "no-restricted-syntax": {
       "count": 2
     }

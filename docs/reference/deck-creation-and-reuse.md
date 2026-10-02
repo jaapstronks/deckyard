@@ -123,7 +123,7 @@ Two themes stay in the response regardless of the allowlist:
 - the theme named by **`?current=<id>`**. Pickers editing a deck pass the theme
   it is on, so a deck that predates a withdrawal keeps rendering and keeps
   showing its own selection. The two picker helpers in
-  `client/lib/theme/theme-select.js` add the parameter automatically.
+  `client/views/theme-select.js` add the parameter automatically.
 
 `?all=1` returns the unfiltered list and is honoured only for users who may
 manage themes. It exists for one caller: the Themes settings tab, which cannot

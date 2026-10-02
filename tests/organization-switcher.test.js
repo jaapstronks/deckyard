@@ -47,9 +47,9 @@ globalThis.fetch = async (input, init = {}) => {
 };
 
 const { setFeatures } = await import('../client/lib/state/features.js');
-const { createUserMenu } = await import('../client/lib/user/user-menu.js');
+const { createUserMenu } = await import('../client/views/user/user-menu.js');
 const { createOrganizationSection } =
-  await import('../client/lib/user/organization-switcher.js');
+  await import('../client/views/user/organization-switcher.js');
 
 const ORGS = [
   { id: 'org-a', name: 'Alpha', membership: { role: 'owner' } },

@@ -39,7 +39,7 @@ globalThis.fetch = async () => {
 };
 
 const { createVisualThemePicker, createAndPopulateThemeSelect } =
-  await import('../client/lib/theme/theme-select.js');
+  await import('../client/views/theme-select.js');
 const { buildThemeSection } =
   await import('../client/views/editor/modals/settings-modal/theme.js');
 

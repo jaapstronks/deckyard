@@ -215,12 +215,12 @@ const ENTRIES = {
     },
     {
       entry: 'Share viewer: view tracking',
-      calls: ['client/lib/format/analytics-tracker.js'],
+      calls: ['client/views/analytics/tracker.js'],
       gate: 'client/views/share-viewer/index.js',
     },
     {
       entry: 'Follow-along: view tracking',
-      calls: ['client/lib/format/analytics-tracker.js'],
+      calls: ['client/views/analytics/tracker.js'],
       gate: 'client/views/follow/index.js',
     },
   ],

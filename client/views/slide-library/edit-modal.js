@@ -18,7 +18,7 @@ import { cleanStr } from '../../../shared/string-utils.js';
 import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-schemas.js';
 import { createSingleSlideEditor } from '../editor/single-slide-editor.js';
 import { loadSlideTypes } from '../editor/bootstrap.js';
-import { meWithMeta } from '../../lib/user/auth.js';
+import { meWithMeta } from '../../lib/state/auth.js';
 import { h } from '../../lib/dom/index.js';
 import { editRefusalText } from './permissions.js';
 

@@ -69,9 +69,13 @@ const TOAST_SITES = [
     total: 3,
     discarded: 3,
   },
-  { file: 'client/lib/user/organization-switcher.js', total: 1, discarded: 1 },
   {
-    file: 'client/lib/format/analytics-erase-button.js',
+    file: 'client/views/user/organization-switcher.js',
+    total: 1,
+    discarded: 1,
+  },
+  {
+    file: 'client/views/analytics/erase-button.js',
     total: 1,
     discarded: 1,
   },

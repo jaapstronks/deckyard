@@ -3,16 +3,16 @@
  * Shows unread count badge and dropdown with notification list.
  */
 
-import { h, installDismissOnOutside } from '../dom/index.js';
-import { icon } from '../dom/icons.js';
+import { h, installDismissOnOutside } from '../../lib/dom/index.js';
+import { icon } from '../../lib/dom/icons.js';
 import {
   createSSEConnection,
   LONG_LIVED_STREAM,
-} from '../net/sse-connection.js';
-import { t } from '../ui-i18n.js';
+} from '../../lib/net/sse-connection.js';
+import { t } from '../../lib/ui-i18n.js';
 import { createAvatar } from './avatar.js';
 import { getUserProfile, prefetchProfiles } from './user-profiles.js';
-import { nav } from '../state/router.js';
+import { nav } from '../../lib/state/router.js';
 
 /**
  * Accessible label for a notification list item. Each shape is one full

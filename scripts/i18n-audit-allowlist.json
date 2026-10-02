@@ -15,7 +15,7 @@
   ],
   "orphans": {},
   "hardcoded": {
-    "client/lib/theme/theme-select.js :: Aa": "Typographic specimen — the letterforms are the content, not a word to translate.",
+    "client/views/theme-select.js :: Aa": "Typographic specimen — the letterforms are the content, not a word to translate.",
     "client/views/editor/ai-append.js :: LLM": "Acronym used as-is in every locale.",
     "client/views/editor/export-modal.js :: Markdown": "Format name.",
     "client/views/editor/image-library/giphy-search.js :: Powered by GIPHY": "Required attribution string — GIPHY brand guidelines mandate the English wording.",

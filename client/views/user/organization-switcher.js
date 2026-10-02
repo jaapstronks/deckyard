@@ -14,12 +14,12 @@
  *   the UI.
  */
 
-import { h } from '../dom/index.js';
-import { api } from '../api.js';
-import { toast } from '../dom/toast.js';
-import { t } from '../ui-i18n.js';
-import { getFeatures } from '../state/features.js';
-import { icon } from '../dom/icons.js';
+import { h } from '../../lib/dom/index.js';
+import { api } from '../../lib/api.js';
+import { toast } from '../../lib/dom/toast.js';
+import { t } from '../../lib/ui-i18n.js';
+import { getFeatures } from '../../lib/state/features.js';
+import { icon } from '../../lib/dom/icons.js';
 
 /**
  * Fetch the organizations the signed-in user belongs to.
