@@ -15,7 +15,7 @@ import { TITLE_BLOCK } from './title-block.js';
 export default {
   structure: 'singleton',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   label: 'Title slide',
   fieldGroups: [TITLE_BLOCK.group],
   fields: [

@@ -10,7 +10,11 @@ import { getAppName } from '../config/branding.js';
 import { createLogger } from '../utils/logger.js';
 import { slideHeading } from '../../shared/slide-types/semantic-projection.js';
 import { applyThemeToPptx, createWidePptx } from './pptx-theme.js';
-import { composeGenericSlide, markHeaderTables } from './pptx-generic.js';
+import {
+  composeGenericSlide,
+  layerZeroCovers,
+  markHeaderTables,
+} from './pptx-generic.js';
 import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
   parseVideoSource,
@@ -26,18 +30,18 @@ function safeScale(n) {
 }
 
 /**
- * The native compositions this export can write, keyed by slide type.
+ * The compositions of its own a type has in this export, keyed by slide type.
  *
- * The `fidelity` facet says which types *claim* a composition; this map is what
- * actually exists, and the two are held together by
- * `tests/slide-type-fidelity.test.js` in both directions. Splitting it that way
- * is the point of the facet: the claim lives with the type, where an author
- * adding a type is looking, and the implementation lives here, where an author
- * adding a mapper is looking. Neither has to know the other's inventory, and
- * neither can drift without the test noticing.
+ * The `fidelity` facet says which types *claim* an editable slide; layer 0
+ * (`pptx-generic.js`) is the standard composition behind every such claim, and
+ * this map holds the upgrades on it (D306). A handler here needs a claim, or it
+ * never runs; a claim needs either a handler here or layer 0 finding text in
+ * the type's example. `tests/slide-type-fidelity.test.js` holds both. The claim
+ * lives with the type, where an author adding a type is looking, and the
+ * implementation lives here, where an author adding a mapper is looking.
  *
- * One entry today. Every other core type is `raster` — a picture of the slide,
- * which is what the whole export was until this facet existed.
+ * A handler is also the only composition the pixel-perfect export uses: there
+ * every other slide travels as its image (D307).
  *
  * @type {Readonly<Record<string, Function>>}
  */
@@ -60,11 +64,12 @@ export const NATIVE_PPTX_SLIDE_TYPES = Object.freeze(
 const log = createLogger('export-pptx');
 
 /**
- * The types in a registry whose `fidelity.pptx` claims a composition this
- * build does not have.
+ * The types in a registry whose `fidelity.pptx` claims an editable slide this
+ * build cannot write: no handler of its own, and layer 0 finds no text in its
+ * example (D306).
  *
- * The facet's guardrail pins the core types against `NATIVE_PPTX_HANDLERS` in
- * CI; this is the same check for the registry a *running* server composed,
+ * The facet's guardrail pins the core types in CI; this is the same check for
+ * the registry a *running* server composed,
  * which is where a fork's file-JS types appear. Called once at boot so the
  * mismatch is reported where the person who wrote the declaration is looking —
  * the server log at startup — rather than only inside an export nobody can see
@@ -78,7 +83,11 @@ const log = createLogger('export-pptx');
 export function unbackedFidelityClaims(registry = SLIDE_TYPES) {
   const out = [];
   for (const [type, def] of Object.entries(registry || {})) {
-    if (needsNativeComposition(def, 'pptx') && !NATIVE_PPTX_HANDLERS[type]) {
+    if (
+      needsNativeComposition(def, 'pptx') &&
+      !NATIVE_PPTX_HANDLERS[type] &&
+      !layerZeroCovers(type, def)
+    ) {
       out.push({ type, claim: exportFidelity(def, 'pptx') });
     }
   }
@@ -97,7 +106,8 @@ export function warnUnbackedFidelityClaims(registry = SLIDE_TYPES) {
   for (const { type, claim } of claims) {
     log.warn(
       `slide type ${type} declares PPTX fidelity '${claim}', but this build ` +
-        `has no native composition for it — its slides export as an image. ` +
+        `has no composition of its own for it and layer 0 finds no text in ` +
+        `its example — its slides come out empty in the editable PPTX. ` +
         `Declare 'raster' or add a mapper to NATIVE_PPTX_HANDLERS in ` +
         `server/export/pptx.js.`,
     );
@@ -236,13 +246,10 @@ async function buildDeckPptx(
     const def = registry[slide?.type];
 
     // Which branch a slide takes is the type's own declaration, not a name this
-    // module recognises: `fidelity.pptx`. A type that says anything other than
-    // `raster` is claiming a composition exists for it, so the claim is checked
-    // against what this build actually has rather than trusted — a fork can
-    // declare `native` on a type whose mapper lives in a branch that never
-    // shipped. Boot already reported that (warnUnbackedFidelityClaims); this is
-    // the same fact at the moment it costs a slide its editable export. In the
-    // editable export layer 0 backs every claim, so there it costs nothing.
+    // module recognises: `fidelity.pptx`. A claim to an editable slide takes
+    // the type's own handler when it has one, and layer 0 otherwise (D306).
+    // The pixel-perfect file only runs the handlers; a claim without one is
+    // an image there by design, not a shortfall, so it says nothing (D307).
     const claimsNative = needsNativeComposition(def, 'pptx');
     const composeNative = claimsNative
       ? NATIVE_PPTX_HANDLERS[slide?.type]
@@ -250,13 +257,6 @@ async function buildDeckPptx(
     const generic =
       editable &&
       (editable.compose === 'generic' || (claimsNative && !composeNative));
-    if (claimsNative && !composeNative && !editable) {
-      warnings.push(
-        `Slide ${slideNum}: type ${slide?.type} declares PPTX fidelity ` +
-          `'${exportFidelity(def, 'pptx')}', but this build has no native ` +
-          `composition for it — exported as an image.`,
-      );
-    }
 
     let pptxSlide;
     if (generic) {

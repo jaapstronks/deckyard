@@ -59,7 +59,7 @@ export default {
   structure: 'collection',
   fallback: 'list-slide',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'Text blocks',
