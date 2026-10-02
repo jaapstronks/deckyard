@@ -38,12 +38,10 @@
  * value like any other and is honoured.
  */
 
-import sharp from 'sharp';
-
 import { resolveThemeLogo } from '../../shared/theme-logo.js';
 import { resolveSlideBgHex } from '../../shared/slide-surface-tone.js';
 import { escapeXml } from '../../shared/xml.js';
-import { toDataUrlIfLocal } from '../utils/html-utils.js';
+import { rasterForPptx } from './pptx-image.js';
 import { createLogger } from '../utils/logger.js';
 
 const log = createLogger('export-pptx-theme');
@@ -91,17 +89,70 @@ const FALLBACK_GROUND = '#ffffff';
  * The layout names, in the order PowerPoint offers them.
  *
  * Exported because two other places need to name a layout without re-deriving
- * it: the guardrail test, and whatever writes slides onto these layouts next
- * (PR 3). English, and not run through i18n, because these strings are read in
- * PowerPoint's own layout gallery next to its own English-shaped chrome, and
- * because a layout name is an identifier a later `addSlide({ masterName })`
- * has to match exactly.
+ * it: the guardrail test, and the generic composition that writes slides onto
+ * these layouts (`pptx-generic.js`, B290). English, and not run through i18n,
+ * because these strings are read in PowerPoint's own layout gallery next to its
+ * own English-shaped chrome, and because a layout name is an identifier a later
+ * `addSlide({ masterName })` has to match exactly.
  */
 export const PPTX_LAYOUTS = Object.freeze({
   title: 'Title',
   headingBody: 'Heading and body',
   headingImageBody: 'Heading, image and body',
 });
+
+/**
+ * Where each layout's boxes sit, in reference pixels — the one statement of the
+ * geometry. The layouts below are built from it, and so is every slide the
+ * generic composition writes onto them, so a box cannot sit in one place on the
+ * layout and in another on the slide.
+ *
+ * `x` and `w` default to the padded content column.
+ */
+const LAYOUT_BOXES_PX = Object.freeze({
+  title: Object.freeze({
+    title: Object.freeze({ y: 300, h: 220 }),
+    subtitle: Object.freeze({ y: 536, h: 120 }),
+  }),
+  headingBody: Object.freeze({
+    title: Object.freeze({ y: PADDING_PX, h: 120 }),
+    body: Object.freeze({ y: 240, h: 540 }),
+  }),
+  headingImageBody: Object.freeze({
+    title: Object.freeze({ y: PADDING_PX, h: 120 }),
+    image: Object.freeze({ x: PADDING_PX, y: 240, w: 720, h: 540 }),
+    body: Object.freeze({ x: 832, y: 240, w: 704, h: 540 }),
+  }),
+});
+
+/**
+ * One box of one layout, in inches on the exported slide.
+ *
+ * @param {keyof typeof PPTX_LAYOUTS} layout
+ * @param {string} name - `title`, `subtitle`, `body` or `image`
+ * @returns {{x: number, y: number, w: number, h: number}}
+ */
+export function layoutBox(layout, name) {
+  const box = LAYOUT_BOXES_PX[layout]?.[name];
+  if (!box) throw new TypeError(`no box '${name}' on layout '${layout}'`);
+  return {
+    x: pxToIn(box.x ?? PADDING_PX),
+    y: pxToIn(box.y),
+    w: pxToIn(box.w ?? CANVAS_W_PX - 2 * PADDING_PX),
+    h: pxToIn(box.h),
+  };
+}
+
+/**
+ * A step of the type scale in points, under the theme's own multiplier.
+ *
+ * @param {ReturnType<typeof resolveThemeMaster>} spec
+ * @param {keyof typeof TEXT_PX} step
+ * @returns {number}
+ */
+export function themeTextPt(spec, step) {
+  return pxToPt(TEXT_PX[step] * (spec?.textScale || 1));
+}
 
 /** Reference pixels to inches on the exported slide, on either axis. */
 function pxToIn(px) {
@@ -255,15 +306,12 @@ export function resolveThemeMaster(theme) {
 }
 
 /**
- * The theme's mark as PNG bytes, ready for `addImage`, sized to fit the corner
- * box without distortion.
+ * The theme's mark as raster bytes, ready for `addImage`, sized to fit the
+ * corner box without distortion.
  *
- * Two things are done by hand here rather than left to the library, both for
- * reasons the B232 spike measured. The SVG is rasterized, because pptxgenjs'
- * own SVG fallback is not an image any non-PowerPoint renderer can read. And
- * the display box is computed from the mark's real pixels, because pptxgenjs
- * never reads an image's intrinsic size: its `sizing` option takes the box you
- * gave it *as* the image size, so `contain` is a no-op that stretches.
+ * The rasterizing and the reading of the real pixel size happen in
+ * {@link rasterForPptx}, for the reasons the B232 spike measured; what is left
+ * here is fitting the corner box to the mark's ratio.
  *
  * A mark that is not a local asset — a remote URL, an unreadable path — yields
  * nothing rather than a broken reference: a template with no logo is a smaller
@@ -275,49 +323,21 @@ export function resolveThemeMaster(theme) {
  */
 export async function rasterThemeLogo(repoRoot, url) {
   if (!url) return null;
-  let png;
-  try {
-    const dataUrl = await toDataUrlIfLocal(repoRoot, url, {
-      transform: async (buf, ext) => {
-        // Render at the export's own resolution rather than the source's: an
-        // SVG has no pixels of its own, and a 150pt-wide mark on a 2x export
-        // wants ~300 of them.
-        const out =
-          ext === 'svg'
-            ? await sharp(buf, { density: 288 })
-                .resize({
-                  width: LOGO_W_PX * 2,
-                  height: LOGO_H_PX * 2,
-                  fit: 'inside',
-                  withoutEnlargement: false,
-                })
-                .png()
-                .toBuffer()
-            : await sharp(buf).png().toBuffer();
-        return { buf: out, mime: 'image/png' };
-      },
-    });
-    if (!dataUrl.startsWith('data:image/png;base64,')) return null;
-    png = Buffer.from(dataUrl.slice('data:image/png;base64,'.length), 'base64');
-  } catch (err) {
-    log.warn(`theme logo could not be rasterized (${url}): ${err?.message}`);
+  // Rendered at twice the corner box: a 150pt-wide mark on a 2x export wants
+  // ~300 pixels.
+  const mark = await rasterForPptx(repoRoot, url, {
+    maxPx: { w: LOGO_W_PX * 2, h: LOGO_H_PX * 2 },
+  });
+  if (!mark) {
+    log.warn(`theme logo could not be rasterized (${url})`);
     return null;
   }
-
-  let meta;
-  try {
-    meta = await sharp(png).metadata();
-  } catch {
-    return null;
-  }
-  const iw = Number(meta?.width) || LOGO_W_PX;
-  const ih = Number(meta?.height) || LOGO_H_PX;
   // Fit the box to the mark's own ratio — the crop pptxgenjs would not do.
-  const ratio = Math.min(LOGO_W_PX / iw, LOGO_H_PX / ih);
+  const ratio = Math.min(LOGO_W_PX / mark.w, LOGO_H_PX / mark.h);
   return {
-    data: `data:image/png;base64,${png.toString('base64')}`,
-    w: pxToIn(iw * ratio),
-    h: pxToIn(ih * ratio),
+    data: mark.data,
+    w: pxToIn(mark.w * ratio),
+    h: pxToIn(mark.h * ratio),
   };
 }
 
@@ -334,9 +354,7 @@ export async function rasterThemeLogo(repoRoot, url) {
  * @returns {Array<object>} one `SlideMasterProps` per layout
  */
 export function themeLayoutDefinitions(spec, logo = null) {
-  const pad = pxToIn(PADDING_PX);
-  const innerW = pxToIn(CANVAS_W_PX - 2 * PADDING_PX);
-  const pt = (step) => pxToPt(TEXT_PX[step] * spec.textScale);
+  const pt = (step) => themeTextPt(spec, step);
 
   const background = { color: spec.background };
 
@@ -358,15 +376,12 @@ export function themeLayoutDefinitions(spec, logo = null) {
       ]
     : [];
 
-  const heading = (name, y, h, step) => ({
+  const heading = (layout, step) => ({
     placeholder: {
       options: {
-        name,
+        name: 'title',
         type: 'title',
-        x: pad,
-        y,
-        w: innerW,
-        h,
+        ...layoutBox(layout, 'title'),
         fontFace: spec.headFont || undefined,
         fontSize: pt(step),
         color: spec.text,
@@ -376,17 +391,14 @@ export function themeLayoutDefinitions(spec, logo = null) {
     },
   });
 
-  const body = (name, x, y, w, h, color = spec.text) => ({
+  const body = (layout, name, step, color) => ({
     placeholder: {
       options: {
         name,
         type: 'body',
-        x,
-        y,
-        w,
-        h,
+        ...layoutBox(layout, name),
         fontFace: spec.bodyFont || undefined,
-        fontSize: pt('body'),
+        fontSize: pt(step),
         color,
         align: 'left',
         valign: 'top',
@@ -399,24 +411,8 @@ export function themeLayoutDefinitions(spec, logo = null) {
       title: PPTX_LAYOUTS.title,
       background,
       objects: [
-        heading('title', pxToIn(300), pxToIn(220), 'title'),
-        {
-          placeholder: {
-            options: {
-              name: 'subtitle',
-              type: 'body',
-              x: pad,
-              y: pxToIn(536),
-              w: innerW,
-              h: pxToIn(120),
-              fontFace: spec.bodyFont || undefined,
-              fontSize: pxToPt(TEXT_PX.subtitle * spec.textScale),
-              color: spec.textMuted,
-              align: 'left',
-              valign: 'top',
-            },
-          },
-        },
+        heading('title', 'title'),
+        body('title', 'subtitle', 'subtitle', spec.textMuted),
         ...logoObject,
       ],
     },
@@ -424,8 +420,8 @@ export function themeLayoutDefinitions(spec, logo = null) {
       title: PPTX_LAYOUTS.headingBody,
       background,
       objects: [
-        heading('title', pad, pxToIn(120), 'heading'),
-        body('body', pad, pxToIn(240), innerW, pxToIn(540)),
+        heading('headingBody', 'heading'),
+        body('headingBody', 'body', 'body', spec.text),
         ...logoObject,
       ],
     },
@@ -433,20 +429,17 @@ export function themeLayoutDefinitions(spec, logo = null) {
       title: PPTX_LAYOUTS.headingImageBody,
       background,
       objects: [
-        heading('title', pad, pxToIn(120), 'heading'),
+        heading('headingImageBody', 'heading'),
         {
           placeholder: {
             options: {
               name: 'image',
               type: 'pic',
-              x: pad,
-              y: pxToIn(240),
-              w: pxToIn(720),
-              h: pxToIn(540),
+              ...layoutBox('headingImageBody', 'image'),
             },
           },
         },
-        body('body', pxToIn(832), pxToIn(240), pxToIn(704), pxToIn(540)),
+        body('headingImageBody', 'body', 'body', spec.text),
         ...logoObject,
       ],
     },
@@ -494,6 +487,24 @@ export async function applyThemeToPptx(pptx, theme, { repoRoot = '.' } = {}) {
  * @returns {Promise<Buffer>}
  */
 export async function buildThemeTemplateBuffer(repoRoot, theme) {
+  const pptx = await createWidePptx();
+  const spec = await applyThemeToPptx(pptx, theme, { repoRoot });
+  pptx.title = `${spec.label} template`;
+  pptx.subject = `${spec.label} theme layouts`;
+
+  return pptx.write('nodebuffer');
+}
+
+/**
+ * A fresh pptxgenjs presentation on the 16:9 wide layout (13.333 x 7.5in), the
+ * one every PPTX this server writes starts from.
+ *
+ * pptxgenjs is an optional dependency, loaded here and nowhere else; without
+ * it the export answers `PPTXGEN_MISSING`.
+ *
+ * @returns {Promise<object>} a pptxgenjs instance
+ */
+export async function createWidePptx() {
   let pptxgen;
   try {
     pptxgen = await import('pptxgenjs');
@@ -504,13 +515,9 @@ export async function buildThemeTemplateBuffer(repoRoot, theme) {
     err.code = 'PPTXGEN_MISSING';
     throw err;
   }
+  // ESM/CJS interop: pptxgenjs exports a default class in most setups.
   const PptxGen = pptxgen?.default || pptxgen?.PptxGenJS || pptxgen;
   const pptx = new PptxGen();
   pptx.layout = 'LAYOUT_WIDE';
-
-  const spec = await applyThemeToPptx(pptx, theme, { repoRoot });
-  pptx.title = `${spec.label} template`;
-  pptx.subject = `${spec.label} theme layouts`;
-
-  return pptx.write('nodebuffer');
+  return pptx;
 }

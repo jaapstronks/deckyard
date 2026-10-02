@@ -15,6 +15,7 @@ overlapping PDF entries and a duplicated "other language" section.
 | Slides        | PDF                     | `pdf-slides.pdf`                          | `renderSlidesToPdfBuffer` (`server/render/pdf.js`, Puppeteer)                   |
 | Slides        | PNG                     | `png`                                     | `buildSlidesPngExportHtml` (opens in a tab)                                     |
 | Slides        | PPTX                    | `pptx`                                    | `buildPptxBuffer` (each slide an image, [see below](#what-the-pptx-hands-back)) |
+| Slides        | _(no row yet)_          | `pptx-editable`                           | `buildEditablePptxBuffer` ([see below](#what-the-editable-pptx-hands-back))     |
 | Slides        | PPTX template           | `pptx-template`                           | `buildThemeTemplateBuffer` (download)                                           |
 | Slides        | HTML                    | `html`                                    | `buildStandaloneHtml` (download)                                                |
 | Documents     | Text handout            | `pdf`                                     | `buildPrintHtml` (the reader projection, laid out for paper)                    |
@@ -75,6 +76,18 @@ Whatever the projection says about a slide type, the handout says too. See
 ## What the PPTX hands back
 
 Every slide but video travels as one picture, so nothing in the exported file is editable yet. Which branch a slide takes is the type's own `fidelity.pptx` declaration rather than a name the export recognises — see [`slide-type-fidelity.md`](./slide-type-fidelity.md).
+
+## What the editable PPTX hands back
+
+`export/pptx-editable` is the second PPTX intent (D141): the deck on the theme's three layouts, as text and pictures PowerPoint can edit, as far as each type allows. The route exists; its row in the export menu, the v1 route and the editor hint are the next step (station 3, PR 4), so the table above lists it without a row.
+
+Each slide goes the way its type's `fidelity.pptx` says. A type with a native composition of its own (`video-slide`) uses it; a type that declares `native` or `mixed` without one goes through **layer 0** (`server/export/pptx-generic.js`); a `raster` type travels as its image, exactly as in the pixel-perfect file, named by its heading as alt text. The builder returns the numbers of those image slides (`imageSlides`) and logs them, so "editable" says where it is pictures. Today every core type but video declares `raster`, so until gate A2.8 judges layer 0 per type the editable file is mostly images.
+
+Layer 0 reads the slide's semantic projection, the same one the reader and the handout print, and places what it says onto a layout without any per-type code: the heading into the title placeholder, paragraphs and lists into the body placeholder (one paragraph per list item, label and value on soft-broken lines, a bullet glyph per level, numbered lists numbered explicitly), a table as a real table with its header row marked, pictures fitted to their own ratio with their alt text. A slide that is a heading and at most two short lines takes the title layout, pictures beside text the image layout, everything else heading and body. The library leaves three things to the caller, and layer 0 does them: a line budget (there is no working autofit, so the body size shrinks from the theme's `lg` step to 10pt until the estimate fits, and an overflow is reported), the picture frames (pptxgenjs never reads a picture's size), and `firstRow` on a table (patched into the written package). A slide whose projection holds nothing visible stays an empty layout and is reported.
+
+`?compose=generic` sends every slide through layer 0, whatever it declares. It is not a user choice but the comparison gate A2.8 is judged on (D141 (c)); any other value is refused.
+
+Pictures are fetched the way the other exports fetch them: local assets from disk, remote `http(s)` through the SSRF guard, which does not follow redirects. A picture that cannot travel is replaced by its alt text in a dashed frame, and reported.
 
 ## What the theme template hands back
 

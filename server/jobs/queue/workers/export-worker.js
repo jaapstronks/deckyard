@@ -13,7 +13,10 @@
  */
 
 import { registerWorker, QUEUE_NAMES } from '../connection.js';
-import { buildPptxBuffer } from '../../../export/pptx.js';
+import {
+  buildEditablePptxBuffer,
+  buildPptxBuffer,
+} from '../../../export/pptx.js';
 import { buildHandoffZipBuffer } from '../../../export/handoff-zip.js';
 import { renderSlidesToPdfBuffer } from '../../../render/pdf.js';
 import {
@@ -111,6 +114,24 @@ async function processExportJob(job) {
       contentType =
         'application/vnd.openxmlformats-officedocument.presentationml.presentation';
       extension = '.pptx';
+      break;
+    }
+
+    case 'pptx-editable': {
+      const result = await buildEditablePptxBuffer(
+        job.data.repoRoot,
+        ctx.filteredPres,
+        {
+          scale,
+          theme: ctx.theme,
+          slideTypes: ctx.slideTypes,
+          compose: job.data.options?.compose,
+        },
+      );
+      buffer = result.buffer;
+      contentType =
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+      extension = '-editable.pptx';
       break;
     }
 
