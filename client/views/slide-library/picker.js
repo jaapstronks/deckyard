@@ -9,16 +9,16 @@
  * - slide-library-controls.js - UI controls (shelf, view, search, filters)
  */
 
-import { t } from '../ui-i18n.js';
-import { confirmModal } from '../dom/modal.js';
+import { t } from '../../lib/ui-i18n.js';
+import { confirmModal } from '../../lib/dom/modal.js';
 import {
   RENDER_VIA_THEME,
   renderSlideElement,
-} from '../slide-runtime/slide-render.js';
-import { loadThemeById } from '../theme/theme.js';
+} from '../../lib/slide-runtime/slide-render.js';
+import { loadThemeById } from '../../lib/theme/theme.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { icon } from '../dom/icons.js';
-import { h, installDismissOnOutside } from '../dom/index.js';
+import { icon } from '../../lib/dom/icons.js';
+import { h, installDismissOnOutside } from '../../lib/dom/index.js';
 import { DEFAULT_THEME_REF } from '../../../shared/constants/themes.js';
 import {
   sortByPinnedThenName,

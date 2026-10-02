@@ -35,11 +35,11 @@ globalThis.requestAnimationFrame = () => 0;
 globalThis.cancelAnimationFrame = () => {};
 
 const { createSlideLibraryPicker } =
-  await import('../client/lib/slide-library/picker.js');
+  await import('../client/views/slide-library/picker.js');
 const { createSlideLibraryApi } =
-  await import('../client/lib/slide-library/api.js');
+  await import('../client/views/slide-library/api.js');
 const { editRefusalText } =
-  await import('../client/lib/slide-library/permissions.js');
+  await import('../client/views/slide-library/permissions.js');
 
 const REFUSAL = 'Only its maker or an admin can edit this shared slide.';
 

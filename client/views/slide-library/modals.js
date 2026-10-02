@@ -3,20 +3,20 @@
  * Lightbox and use-slide modal for the slide library picker
  */
 
-import { t } from '../ui-i18n.js';
-import { toast } from '../dom/toast.js';
+import { t } from '../../lib/ui-i18n.js';
+import { toast } from '../../lib/dom/toast.js';
 import {
   RENDER_VIA_THEME,
   renderSlideElement,
-} from '../slide-runtime/slide-render.js';
+} from '../../lib/slide-runtime/slide-render.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { icon } from '../dom/icons.js';
-import { createModal } from '../dom/modal.js';
-import { createTagEditor } from '../../views/list/tag-editor.js';
+import { icon } from '../../lib/dom/icons.js';
+import { createModal } from '../../lib/dom/modal.js';
+import { createTagEditor } from '../list/tag-editor.js';
 import { getContentForLang } from './search.js';
 import { openEditModal } from './edit-modal.js';
-import { createInlineError } from '../dom/inline-error.js';
-import { h } from '../dom/index.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
+import { h } from '../../lib/dom/index.js';
 import { canEditLibraryItem, refuseEdit } from './permissions.js';
 
 /**

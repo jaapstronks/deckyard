@@ -23,7 +23,7 @@ globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
 
 const { copyLibraryItemToClipboard } =
-  await import('../client/lib/slide-library/compose.js');
+  await import('../client/views/slide-library/compose.js');
 const { pasteSlidesFromClipboard } =
   await import('../client/lib/slide-authoring/clone-slides.js');
 const { getClipboardCount } =

@@ -17,10 +17,10 @@
  * in the source.
  */
 
-import { h, installDismissOnOutside } from '../dom/index.js';
-import { t } from '../ui-i18n.js';
+import { h, installDismissOnOutside } from '../../lib/dom/index.js';
+import { t } from '../../lib/ui-i18n.js';
 import { mentionMarkup } from '../../../shared/comment-mentions.js';
-import { takeEscape } from '../dom/escape.js';
+import { takeEscape } from '../../lib/dom/escape.js';
 
 const DEBOUNCE_MS = 200;
 

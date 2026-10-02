@@ -3,8 +3,8 @@
  * Handles API calls for the slide library picker
  */
 
-import { toast } from '../dom/toast.js';
-import { t } from '../ui-i18n.js';
+import { toast } from '../../lib/dom/toast.js';
+import { t } from '../../lib/ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { libraryWriteFailure } from './permissions.js';
 

@@ -9,9 +9,9 @@
  * answer is no, greys the control out with the same sentence beside it.
  */
 
-import { t } from '../ui-i18n.js';
+import { t } from '../../lib/ui-i18n.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { h } from '../dom/index.js';
+import { h } from '../../lib/dom/index.js';
 
 /**
  * Whether the caller may change `item`: its content, name, description, or

@@ -16,7 +16,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { buildSlidesFromLibraryItems } from '../client/lib/slide-library/compose.js';
+import { buildSlidesFromLibraryItems } from '../client/views/slide-library/compose.js';
 import { prepareNewPresentation } from '../server/storage/presentations/crud/factory.js';
 import { createFakeDb } from './helpers/fake-db.js';
 import { seedRow } from './helpers/theme-seed.js';

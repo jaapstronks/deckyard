@@ -158,7 +158,7 @@ what they hold:
   the live language switcher follow: the switcher refetches instead of
   reloading, and the new payload names its own language.
 - the **slide library** renders an item, not a deck. `contentLang(item)`
-  (`client/lib/slide-library/search.js`) is `getContentForLang()`'s other
+  (`client/views/slide-library/search.js`) is `getContentForLang()`'s other
   direction — which language _is_ this content — and answers `null` the same way
   `resolveDeckLang` does.
 
