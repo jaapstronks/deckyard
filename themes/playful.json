@@ -7,7 +7,7 @@
     "primary": "#ea580c",
     "background": "#fffbf5",
     "textLight": "#ffffff",
-    "textDark": "#431407",
+    "textDark": "#3c1206",
     "brand": ["#db2777", "#ea580c", "#f59e0b", "#fb7185"],
     "chart": [
       "#ea580c",
@@ -20,7 +20,7 @@
       "#3b82f6"
     ],
     "accentOnDark": "#f9a8d4",
-    "textMuted": "rgba(67, 20, 7, 0.6)",
+    "textMuted": "rgba(60, 18, 6, 0.6)",
     "backgrounds": {
       "lime": "#fffbf5",
       "mist": "#ffe4e6",
