@@ -7,6 +7,7 @@ import {
   analyticsHeadHtml,
   analyticsScriptOrigins,
 } from '../../analytics/head.js';
+import { isFeatureEnabled } from '../../config/flags-snapshot.js';
 import { buildAppShellCspHeader } from '../../utils/document-csp.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUser } from '../../auth/sandbox.js';
@@ -16,6 +17,8 @@ import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { OVERRIDDEN_CORE_SLIDE_TYPE_NAMES } from '../../../shared/slide-types.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
+import { getAppName } from '../../config/branding.js';
+import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
 /**
  * Inline-script fragment naming the core slide types a fork has overridden by
@@ -35,6 +38,27 @@ function serverRenderedTypesHeadHtml() {
   )};</script>`;
 }
 
+/**
+ * Put the configured `APP_NAME` into the shell's `<title>` and its
+ * `<meta name="application-name">`. The meta is where the client reads the name
+ * (`client/lib/theme/branding.js`), so a page that never fetches `/me` (the
+ * sign-in screens) still titles its tab with it; the `<title>` is what a link
+ * preview or a slow client shows before any script runs. Both are rewritten,
+ * never added: `client/index.html` carries each exactly once. The replacements
+ * are functions, so a `$` in the name is text, not a replacement pattern.
+ * @param {string} html
+ * @returns {string}
+ */
+export function injectAppName(html) {
+  const name = escapeHtml(getAppName());
+  return html
+    .replace(/<title>[^<]*<\/title>/, () => `<title>${name}</title>`)
+    .replace(
+      /<meta name="application-name" content="[^"]*" \/>/,
+      () => `<meta name="application-name" content="${name}" />`,
+    );
+}
+
 /** Read the SPA shell (client/index.html). */
 export async function readIndexHtml(clientDir) {
   const htmlPath = path.join(clientDir, 'index.html');
@@ -42,9 +66,9 @@ export async function readIndexHtml(clientDir) {
 }
 
 /**
- * Inject the head fragments common to every app-shell response: sandbox SEO/OG
- * tags, the client debug flag, and analytics. Shared by the app index and the
- * share-link viewer so both stay in sync.
+ * Inject the head fragments common to every app-shell response: the app name,
+ * sandbox SEO/OG tags, the client debug flag, and analytics. Shared by the app
+ * index and the share-link viewer so both stay in sync.
  *
  * Returns the shell's CSP header value alongside the HTML, because the two
  * are coupled here: the analytics fragment this function injects loads its
@@ -57,6 +81,7 @@ export async function readIndexHtml(clientDir) {
  * @returns {Promise<{ html: string, csp: string }>}
  */
 export async function injectSeoDebugAnalytics(html, { req, url, repoRoot }) {
+  html = injectAppName(html);
   // Sandbox SEO + OG tags (root indexed, internal SPA routes noindex).
   const seo = sandboxAppSeoHeadHtml(req, { path: url?.pathname || '/' });
   if (seo) {
@@ -199,13 +224,30 @@ export async function handleAppRoutes(ctx) {
   if (
     p.startsWith('/app') ||
     p.startsWith('/settings') ||
-    p.startsWith('/present') ||
-    p.startsWith('/notes') ||
-    p.startsWith('/notes-join') ||
-    p.startsWith('/follow') ||
-    p.startsWith('/analytics') ||
-    p.startsWith('/reports') ||
-    p.startsWith('/insights')
+    p.startsWith('/present')
+  ) {
+    await serveAppIndex(ctx);
+    return true;
+  }
+  // The audience pages (follow-along, the notes companion and its join page)
+  // exist only with the live cluster (D260), like `/go` and their API.
+  if (
+    isFeatureEnabled('live') &&
+    (p.startsWith('/notes') ||
+      p.startsWith('/notes-join') ||
+      p.startsWith('/follow'))
+  ) {
+    await serveAppIndex(ctx);
+    return true;
+  }
+  // The analytics pages exist only with the analytics cluster (D260): without
+  // it the shell is not served, so `/insights`, `/analytics/:id` and the
+  // anonymous `/reports/:token` answer the static 404 like their API does.
+  if (
+    isFeatureEnabled('analytics') &&
+    (p.startsWith('/analytics') ||
+      p.startsWith('/reports') ||
+      p.startsWith('/insights'))
   ) {
     await serveAppIndex(ctx);
     return true;

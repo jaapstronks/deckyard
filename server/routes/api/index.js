@@ -13,11 +13,9 @@ import {
   getMaintenanceState,
 } from '../../config/maintenance.js';
 import { authEnabled, getUserFromRequestAsync } from '../../auth/auth.js';
-import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import { ensureSandboxUserAsync } from '../../auth/sandbox.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
-import { canEditCustomHtml } from '../../utils/route-middleware.js';
 import { createStorageScope } from '../../utils/context.js';
 
 // Public API v1 (API key authentication)
@@ -30,10 +28,11 @@ import { handleSso } from './sso.js';
 import { handleAdminUsers } from './admin-users.js';
 import { handleAdminAiLogs } from './admin-ai-logs.js';
 import { handleAdminSso } from './admin-sso.js';
+import { handleInstanceHealthRoutes } from './instance-health.js';
 import { handleEmailTemplates } from './email-templates.js';
 import { handleFollowPublic } from './follow/index.js';
 import { handleFollowCodes, handleFollowCodesPublic } from './follow-codes.js';
-import { dispatchRoutes } from '../../utils/router.js';
+import { dispatchMounts, dispatchRoutes } from '../../utils/router.js';
 import { handleLiveSessions } from './live-sessions.js';
 import { handleLiveSessionsPublic } from './live-session-audience.js';
 import { handleAssets } from './assets.js';
@@ -101,6 +100,106 @@ export const MAINTENANCE_ROUTES = [
   },
 ];
 
+/**
+ * The API-key surface, walked before the maintenance gate and the session
+ * mounts (D257). Public API v1 carries its own `/api/v1` prefix guard and
+ * declines everything else; it runs `assertWritable` itself so the refusal
+ * answers its own envelope (B61). With the public API cluster off it is
+ * skipped, and `/api/v1/*` answers what any path this installation does not
+ * have answers: 401 without a session, the 404 at the end of
+ * {@link handleApi} with one.
+ *
+ * @type {import('../../utils/router.js').Mount[]}
+ */
+export const API_KEY_MOUNTS = [
+  { handle: handlePublicApiV1, feature: 'publicApi' },
+];
+
+/**
+ * The mounts in front of the login gate (D257): auth flows, and the audience
+ * and viewer endpoints a device without a session reaches. Called with
+ * `authedUser: null` — `follow-codes` reads it to tell the public resolve from
+ * the authed mint (its `PUBLIC_ROUTES` table). Order mirrors the original
+ * chain.
+ *
+ * @type {import('../../utils/router.js').Mount[]}
+ */
+export const PUBLIC_MOUNTS = [
+  // Auth routes are special: some of them are allowed without a prior session.
+  { handle: handleAuth },
+  { handle: handlePasswordReset },
+  { handle: handleMagicLink },
+  // OIDC single sign-on routes (login redirect + IdP callback)
+  { handle: handleSso },
+  // Audience devices.
+  { handle: handleFollowPublic, feature: 'live' },
+  // Follow code resolution (GET) is public; creation (POST) is in MOUNTS.
+  { handle: handleFollowCodesPublic, feature: 'live' },
+  // Present-session companion: the session id in the join link is the
+  // authorization (see live-session-audience.js). Presenter actions on the
+  // same session stay behind deck-write, in MOUNTS.
+  { handle: handleLiveSessionsPublic, feature: 'live' },
+  { handle: handleSharePublic },
+  { handle: handleAnalyticsTrack, feature: 'analytics' },
+  { handle: handleAnalyticsReportPublic, feature: 'analytics' },
+];
+
+/**
+ * The mounts behind the login gate, in order. A mount with a `feature` is
+ * skipped while that installation cluster is off, so its paths answer the 404
+ * at the end of {@link handleApi}: the module does not exist here. That is
+ * the only way a module is switched off — never a flag branch in this chain.
+ *
+ * @type {import('../../utils/router.js').Mount[]}
+ */
+export const MOUNTS = [
+  { handle: handleLiveSessions, feature: 'live' },
+  { handle: handleAssets },
+  { handle: handleSlideTypes },
+  { handle: handleRenderSlide },
+  { handle: handleThemes },
+  { handle: handleCustomSlideTypes },
+  { handle: handleFontFamilies },
+  { handle: handleImageLibrary, feature: 'imageLibrary' },
+  { handle: handleMedia },
+  { handle: handleHome },
+  { handle: handleSandbox },
+  { handle: handlePresentations },
+  { handle: handleNotion, feature: 'notion' },
+  { handle: handleAi, feature: 'ai' },
+  { handle: handleConvert, feature: 'ai' },
+  { handle: handleUploads, feature: 'uploads' },
+  { handle: handleExports },
+  { handle: handleBulkExport },
+  { handle: handlePublish },
+  { handle: handleShareLinks },
+  { handle: handleCollaborators },
+  { handle: handleUsers },
+  { handle: handleProfile },
+  { handle: handleNotifications },
+  { handle: handleQuestions, feature: 'live' },
+  { handle: handleSettings },
+  { handle: handleApiKeys, feature: 'publicApi' },
+  { handle: handleSlideLibrary },
+  { handle: handleSlideCollections },
+  { handle: handleDataSources, feature: 'liveData' },
+  { handle: handleActivity },
+  { handle: handleAnalytics, feature: 'analytics' },
+  { handle: handleTags },
+  { handle: handleStockMedia, feature: 'stockMedia' },
+  { handle: handleJobs },
+  // Organization management (multi-organization mode)
+  { handle: handleOrganizations },
+  { handle: handleOrganizationMembers },
+  // Follow code creation (POST) requires auth
+  { handle: handleFollowCodes, feature: 'live' },
+  { handle: handleAdminUsers },
+  { handle: handleAdminAiLogs },
+  { handle: handleAdminSso },
+  { handle: handleInstanceHealthRoutes },
+  { handle: handleEmailTemplates },
+];
+
 export async function handleApi({ repoRoot, req, res, url }) {
   // CSRF defense: reject cookie-authenticated, cross-origin state-changing
   // requests. No-ops for safe methods, non-cookie auth (API key / MCP), and
@@ -122,13 +221,9 @@ export async function handleApi({ repoRoot, req, res, url }) {
   // viewers and presenters, and blocking GETs would turn a restart into an
   // outage for people who are not writing anything. The decision itself lives
   // in assertWritable — the shared choke-point every write surface (this
-  // dispatcher, the MCP tool dispatch, the v1 dispatcher above) goes through.
-  // Public API v1 routes (API key authentication, separate from session-based
-  // auth). The module carries its own /api/v1 prefix guard and declines
-  // everything else. Mounted above the maintenance write gate on purpose: the
-  // v1 surface is its own write surface with its own error envelope (B61), so
-  // it runs assertWritable itself and answers the refusal in that envelope.
-  if (await handlePublicApiV1({ repoRoot, req, res, url })) return;
+  // dispatcher, the MCP tool dispatch, the v1 dispatcher) goes through.
+  // The API-key surface comes first: it answers its own refusal.
+  if (await dispatchMounts(API_KEY_MOUNTS, { repoRoot, req, res, url })) return;
 
   try {
     assertWritable(req.method);
@@ -146,35 +241,16 @@ export async function handleApi({ repoRoot, req, res, url }) {
     );
   }
 
-  // Auth routes are special: some of them are allowed without a prior session.
-  if (await handleAuth({ repoRoot, req, res, url })) return;
-
-  // Password reset routes (public, no auth required)
-  if (await handlePasswordReset({ repoRoot, req, res, url })) return;
-
-  // Magic link routes (public, no auth required)
-  if (await handleMagicLink({ repoRoot, req, res, url })) return;
-
-  // OIDC single sign-on routes (public: login redirect + IdP callback)
-  if (await handleSso({ repoRoot, req, res, url })) return;
-
-  // Public endpoints (must be accessible without auth; used by audience devices).
-  if (await handleFollowPublic({ repoRoot, req, res, url })) return;
-  // Follow code resolution (GET) is public; which reads skip the gate is the
-  // PUBLIC_ROUTES table in follow-codes.js, an explicit reviewable row.
-  // Follow code creation (POST) requires auth and is handled below.
   if (
-    await handleFollowCodesPublic({ repoRoot, req, res, url, authedUser: null })
+    await dispatchMounts(PUBLIC_MOUNTS, {
+      repoRoot,
+      req,
+      res,
+      url,
+      authedUser: null,
+    })
   )
     return;
-  // Present-session companion: the session id in the join link is the
-  // authorization, so these sit in front of the login gate (see
-  // live-session-audience.js). Presenter actions on the same session stay
-  // behind deck-write, below.
-  if (await handleLiveSessionsPublic({ repoRoot, req, res, url })) return;
-  if (await handleSharePublic({ repoRoot, req, res, url })) return;
-  if (await handleAnalyticsTrack({ repoRoot, req, res, url })) return;
-  if (await handleAnalyticsReportPublic({ repoRoot, req, res, url })) return;
 
   // Sandbox mode: auto-provision a per-visitor guest session (cookie) and treat as authenticated.
   // This keeps per-visitor presentation isolation without a login screen.
@@ -191,10 +267,6 @@ export async function handleApi({ repoRoot, req, res, url }) {
     try {
       const isDesigner = await resolveDesignerCapability(authedUser);
       authedUser = { ...authedUser, isDesigner };
-      authedUser = {
-        ...authedUser,
-        canEditCustomHtml: canEditCustomHtml(authedUser),
-      };
     } catch {
       // Fail open - don't block requests if designer resolution fails
     }
@@ -207,52 +279,8 @@ export async function handleApi({ repoRoot, req, res, url }) {
   const storageScope = createStorageScope(authedUser, { repoRoot });
 
   const ctx = { repoRoot, storageScope, req, res, url, authedUser };
-  const flags = getFeatureFlags();
 
-  if (await handleLiveSessions(ctx)) return;
-  if (await handleAssets(ctx)) return;
-  if (await handleSlideTypes(ctx)) return;
-  if (await handleRenderSlide(ctx)) return;
-  if (await handleThemes(ctx)) return;
-  if (await handleCustomSlideTypes(ctx)) return;
-  if (await handleFontFamilies(ctx)) return;
-  if (await handleImageLibrary(ctx)) return;
-  if (await handleMedia(ctx)) return;
-  if (await handleHome(ctx)) return;
-  if (await handleSandbox(ctx)) return;
-  if (await handlePresentations(ctx)) return;
-  if (await handleNotion(ctx)) return;
-  if (flags.enableAi && (await handleAi(ctx))) return;
-  if (flags.enableAi && (await handleConvert(ctx))) return;
-  if (flags.enableUploads && (await handleUploads(ctx))) return;
-  if (await handleExports(ctx)) return;
-  if (await handleBulkExport(ctx)) return;
-  if (await handlePublish(ctx)) return;
-  if (await handleShareLinks(ctx)) return;
-  if (await handleCollaborators(ctx)) return;
-  if (await handleUsers(ctx)) return;
-  if (await handleProfile(ctx)) return;
-  if (await handleNotifications(ctx)) return;
-  if (await handleQuestions(ctx)) return;
-  if (await handleSettings(ctx)) return;
-  if (await handleApiKeys(ctx)) return;
-  if (await handleSlideLibrary(ctx)) return;
-  if (await handleSlideCollections(ctx)) return;
-  if (flags.enableLiveData && (await handleDataSources(ctx))) return;
-  if (await handleActivity(ctx)) return;
-  if (await handleAnalytics(ctx)) return;
-  if (await handleTags(ctx)) return;
-  if (await handleStockMedia(ctx)) return;
-  if (await handleJobs(ctx)) return;
-  // Organization management (multi-organization mode)
-  if (await handleOrganizations(ctx)) return;
-  if (await handleOrganizationMembers(ctx)) return;
-  // Follow code creation (POST) requires auth
-  if (await handleFollowCodes(ctx)) return;
-  if (await handleAdminUsers(ctx)) return;
-  if (await handleAdminAiLogs(ctx)) return;
-  if (await handleAdminSso(ctx)) return;
-  if (await handleEmailTemplates(ctx)) return;
+  if (await dispatchMounts(MOUNTS, ctx)) return;
 
   return notFound(res);
 }

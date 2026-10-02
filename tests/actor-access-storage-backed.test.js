@@ -61,6 +61,7 @@ const {
   canActorDeletePresentation,
   canActorResolveComment,
   canActorCommentOnPresentation,
+  canActorManageCollaborators,
 } = await import('../server/utils/presentation-authz/actor-access.js');
 
 // --- Actors -----------------------------------------------------------------
@@ -125,6 +126,8 @@ const COMMENT_COLLAB_DECK = 'deck-collab-comment';
 const VIEW_COLLAB_DECK = 'deck-collab-view';
 const REVOKED_COLLAB_DECK = 'deck-collab-revoked';
 const EXTERNAL_COLLAB_DECK = 'deck-collab-external';
+const ADMIN_COLLAB_DECK = 'deck-collab-admin';
+const EDIT_COLLAB_DECK = 'deck-collab-edit';
 
 test.before(async () => {
   __setTestDb(
@@ -161,6 +164,18 @@ test.before(async () => {
           user_email: STRANGER.email,
           permission: 'edit',
           revoked_at: '2026-02-01T00:00:00.000Z',
+        }),
+        collaboratorRow({
+          id: 'c-admin',
+          presentation_id: ADMIN_COLLAB_DECK,
+          user_email: STRANGER.email,
+          permission: 'admin',
+        }),
+        collaboratorRow({
+          id: 'c-edit',
+          presentation_id: EDIT_COLLAB_DECK,
+          user_email: STRANGER.email,
+          permission: 'edit',
         }),
         collaboratorRow({
           id: 'c-external',
@@ -388,4 +403,41 @@ test('canActorCommentOnPresentation — an actor with no identity is refused', a
 
 test('canActorCommentOnPresentation — no presentation, no decision', async () => {
   assert.equal(await canActorCommentOnPresentation(null, CREATOR), false);
+});
+
+// ---------------------------------------------------------------------------
+// canActorManageCollaborators — the owner, or an admin collaborator (B519)
+// ---------------------------------------------------------------------------
+
+test('canActorManageCollaborators — the owner manages their deck', async () => {
+  assert.equal(
+    await canActorManageCollaborators(deck('m1'), {
+      ...OWNER,
+      email: 'seeded-owner@example.com',
+    }),
+    true,
+  );
+});
+
+test('canActorManageCollaborators — the creator stamp alone does not carry it', async () => {
+  // D49: handing out access is power over the object.
+  assert.equal(await canActorManageCollaborators(deck('m2'), CREATOR), false);
+});
+
+test('canActorManageCollaborators — an admin collaborator may, an edit collaborator may not', async () => {
+  // The grant comes out of `presentation_collaborators`, which is why this
+  // decider looks the row up; without it an admin collaborator is a stranger.
+  assert.equal(
+    await canActorManageCollaborators(deck(ADMIN_COLLAB_DECK), STRANGER),
+    true,
+  );
+  assert.equal(
+    await canActorManageCollaborators(deck(EDIT_COLLAB_DECK), STRANGER),
+    false,
+  );
+});
+
+test('canActorManageCollaborators — no identity, no presentation, no decision', async () => {
+  assert.equal(await canActorManageCollaborators(deck('m3'), ANON), false);
+  assert.equal(await canActorManageCollaborators(null, OWNER), false);
 });

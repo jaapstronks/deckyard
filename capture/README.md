@@ -200,6 +200,14 @@ flagged for review — the same drift mechanism the registry uses for source dep
     part of the address — which under `AUTH_DEV_BYPASS` is `dev@local.test`, so an
     unpinned run puts "Dev" in the frame.
 
+- **The deck language is set at seed time when slide copy is in frame.**
+  A type's own copy (a live slide's "Live results" heading, say) follows the
+  _deck_ language, not the UI locale, and a deck created without one takes the
+  installation default. `seedDeck(api, { lang: 'en-GB', … })` passes it to the
+  create call, where the server builds the `i18n` envelope around it. The five
+  slide-editor shots (`recipes/_slide-editor-shots.js`) and the editor-family
+  shots set it; `editor-full` predates this and still inherits.
+
 ## Marketing shots
 
 `public/images/marketing/` is the second destination, driven by the shot list in

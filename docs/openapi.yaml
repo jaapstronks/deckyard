@@ -52,7 +52,8 @@ info:
     - `403` - Forbidden (the key is valid but lacks the permission, or has no
       access to this presentation)
     - `404` - Not Found (also every AI endpoint on an instance with AI switched
-      off: `AI_ENABLED=false`, demo or sandbox — it is not mounted there)
+      off: `AI_ENABLED=false`, demo or sandbox — it is not mounted there, and
+      the spec this instance serves leaves those paths out)
     - `405` - Method Not Allowed (the `Allow` header lists the accepted methods)
     - `413` - Payload Too Large (request body over the configured size cap)
     - `423` - Locked (a changed slide is locked by the author or being edited by another user)
@@ -86,6 +87,15 @@ info:
     error shape: cross-cutting rejections (unknown route, wrong method, missing
     permission, rate limit) and endpoint-specific errors all answer this one
     envelope.
+
+    ## Optional clusters
+
+    A path that belongs to an installation cluster carries `x-feature: <key>`
+    (today only `ai`). The spec served at `/api/v1/openapi.yaml` leaves out
+    every path whose cluster is off on that instance, so it describes what the
+    instance answers. The whole v1 surface is itself a cluster: with
+    `PUBLIC_API_ENABLED=false` nothing under `/api/v1` exists, this spec
+    included.
 
   version: '1.0.0'
   contact:
@@ -298,7 +308,10 @@ paths:
         Creates a new presentation with the specified properties. A deck's
         theme and language are named `theme` and `lang` everywhere; the retired
         spellings `themeId` and `language` are refused with a 400 whose
-        `details` name the field to use instead.
+        `details` name the field to use instead. The deck is owned by the
+        key's owner; an `ownerEmail` in the body is refused with a 400, as
+        is a `lang` outside the enum. A create is recorded in the deck's
+        activity feed like one made in the app.
       requestBody:
         required: true
         content:
@@ -1097,6 +1110,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
   /presentations/{id}/translate:
+    x-feature: ai
     post:
       operationId: translatePresentation
       tags:
@@ -1360,8 +1374,11 @@ paths:
       operationId: exportPresentationPptx
       tags:
         - Exports
-      summary: Export as PowerPoint
-      description: Exports the presentation as a PPTX file.
+      summary: Export as PowerPoint (pixel-perfect)
+      description: >-
+        Exports the presentation as a PPTX file in which every slide is an
+        image and videos play. Pixel-perfect, not editable; for an editable
+        file use `export/pptx-editable`.
       parameters:
         - name: id
           in: path
@@ -1385,6 +1402,64 @@ paths:
       responses:
         '200':
           description: PowerPoint export
+          content:
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /presentations/{id}/export/pptx-editable:
+    get:
+      operationId: exportPresentationPptxEditable
+      tags:
+        - Exports
+      summary: Export as PowerPoint (editable)
+      description: >-
+        Exports the presentation as a PPTX file on the theme's layouts, with
+        text and pictures that PowerPoint can edit, as far as each slide type
+        allows. A slide whose type cannot be written as editable objects
+        travels as an image; the `X-Image-Slides` response header names those
+        slides.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
+        - name: scale
+          in: query
+          description: Image scale factor (1-3) for the slides that travel as an image
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 3
+            default: 2
+      responses:
+        '200':
+          description: Editable PowerPoint export
+          headers:
+            X-Image-Slides:
+              description: >-
+                The 1-based numbers of the slides written as an image,
+                separated by commas (for example `3,7`). Absent when every
+                slide is editable.
+              schema:
+                type: string
+                pattern: '^[0-9]+(,[0-9]+)*$'
           content:
             application/vnd.openxmlformats-officedocument.presentationml.presentation:
               schema:
@@ -1437,6 +1512,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
   /ai/vendors:
+    x-feature: ai
     get:
       operationId: listAiVendors
       tags:
@@ -1481,6 +1557,7 @@ paths:
           $ref: '#/components/responses/RateLimited'
 
   /ai/wizard:
+    x-feature: ai
     post:
       operationId: generatePresentationWithAi
       tags:
@@ -1554,6 +1631,7 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
 
   /ai/append-slides:
+    x-feature: ai
     post:
       operationId: appendSlidesWithAi
       tags:
@@ -1829,7 +1907,10 @@ paths:
       description: |
         Creates a comment (or a reply when `parentId` is given) authored by
         the API key owner. When `slideId` is given, a snapshot of that slide
-        is stored with the comment. Requires the `comments:write` permission and
+        is stored with the comment. A `slideId` that names no slide of the
+        deck, or a `parentId` that names no comment on it, answers 404
+        (`slide_not_found` / `parent_not_found`); a reply to a reply joins
+        the top of its thread. Requires the `comments:write` permission and
         comment permission on the presentation (owner/creator, organization
         member, or collaborator with comment rights).
       parameters:
@@ -1893,7 +1974,8 @@ paths:
       summary: Change comment status
       description: |
         Resolve, reopen or dismiss a comment. Allowed transitions follow the
-        app: open→resolved, open→dismissed, resolved→open (409 otherwise).
+        app: open→resolved, open→dismissed, resolved→open; any other answers
+        400 with the transition's reason code.
         Requires the `comments:write` permission; only the presentation
         owner/creator may change status.
       parameters:
@@ -1934,8 +2016,6 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
-        '409':
-          description: Transition not allowed from the comment's current status
         '429':
           $ref: '#/components/responses/RateLimited'
 

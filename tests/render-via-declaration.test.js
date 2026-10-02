@@ -54,12 +54,13 @@ globalThis.HTMLElement = dom.window.HTMLElement;
 
 const { serverRenderRequest } =
   await import('../client/lib/slide-runtime/slide-render.js');
-const { PUBLIC_ROUTES: SHARE_PUBLIC_ROUTES } =
+const { PUBLIC_ROUTES: SHARE_PUBLIC_ROUTES, handleSharePublic } =
   await import('../server/routes/api/share-links/index.js');
-const { ROUTES: FOLLOW_ROUTES } =
+const { ROUTES: FOLLOW_ROUTES, handleFollowPublic } =
   await import('../server/routes/api/follow/index.js');
-const { ROUTES: SESSION_ROUTES } =
+const { ROUTES: SESSION_ROUTES, handleLiveSessionsPublic } =
   await import('../server/routes/api/live-session-audience.js');
+const { PUBLIC_MOUNTS } = await import('../server/routes/api/index.js');
 
 /** The client entrypoints only: `renderSlideHtml` never asks the server. */
 const CLIENT_ENTRYPOINTS = RENDER_ENTRYPOINTS.filter(
@@ -98,27 +99,31 @@ function optionsText(site) {
 // --- 2. The gate -----------------------------------------------------------
 
 /**
- * The route tables mounted before the login gate, pinned by position in the API
- * dispatcher: a table only counts if its handler is called before
- * `unauthorized(res)`.
+ * The route tables mounted before the login gate: a table only counts if its
+ * handler is a row of `PUBLIC_MOUNTS`, and `PUBLIC_MOUNTS` is dispatched before
+ * `unauthorized(res)` in the API dispatcher.
  */
 function preGateTables() {
   const src = stripComments(read('server/routes/api/index.js'));
   const gate = src.indexOf('return unauthorized(res)');
   assert.ok(gate > 0, 'the login gate is where this guard expects it');
+  const at = src.indexOf('dispatchMounts(PUBLIC_MOUNTS');
+  assert.ok(at > 0 && at < gate, 'PUBLIC_MOUNTS runs before the login gate');
   const tables = [
-    ['handleSharePublic', SHARE_PUBLIC_ROUTES],
-    ['handleFollowPublic', FOLLOW_ROUTES],
-    ['handleLiveSessionsPublic', SESSION_ROUTES],
+    ['handleSharePublic', handleSharePublic, SHARE_PUBLIC_ROUTES],
+    ['handleFollowPublic', handleFollowPublic, FOLLOW_ROUTES],
+    ['handleLiveSessionsPublic', handleLiveSessionsPublic, SESSION_ROUTES],
   ];
-  for (const [handler] of tables) {
-    const at = src.indexOf(`${handler}(`);
+  // A `feature` on the mount (follow and the session audience are the live
+  // cluster, D260) decides whether it exists, not which side of the gate it is
+  // on.
+  for (const [name, handle] of tables) {
     assert.ok(
-      at > 0 && at < gate,
-      `${handler} is mounted before the login gate`,
+      PUBLIC_MOUNTS.some((m) => m.handle === handle),
+      `${name} is mounted before the login gate`,
     );
   }
-  return tables.map(([, routes]) => routes);
+  return tables.map(([, , routes]) => routes);
 }
 
 function matchesPreGate(tables, method, pathname) {

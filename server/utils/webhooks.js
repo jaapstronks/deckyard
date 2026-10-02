@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { getAppSettings, getUserSettings } from '../storage/settings.js';
-import { getRequestOrigin, toAbsoluteUrl } from './request-url.js';
+import { toAbsoluteUrl } from './request-url.js';
 import { nowIso } from './normalize.js';
 import { assertPublicHttpUrl } from './ssrf-guard.js';
 import { crossOrganizationScope } from '../storage/scope.js';
@@ -134,11 +134,10 @@ function buildCommonPayload({
   authedUser = null,
   userSettings = null,
   pres = null,
-  req = null,
+  origin = null,
   extra = null,
 } = {}) {
   const now = nowIso();
-  const origin = getRequestOrigin(req);
 
   const presentationId = typeof pres?.id === 'string' ? pres.id : '';
   const editPath = presentationId ? `/app/${presentationId}` : null;
@@ -203,10 +202,9 @@ function buildSlideLibraryPayload({
   authedUser = null,
   userSettings = null,
   slideItem = null,
-  req = null,
+  origin = null,
 } = {}) {
   const now = nowIso();
-  const origin = getRequestOrigin(req);
 
   const slideId = typeof slideItem?.id === 'string' ? slideItem.id : '';
   const libraryPath = '/app/slide-library';
@@ -250,9 +248,23 @@ function buildSlideLibraryPayload({
   };
 }
 
+/**
+ * Fire the configured webhook for an event, if one is set. Best-effort: never
+ * blocks the caller on delivery.
+ *
+ * `origin` is the absolute base the payload's links are built on: a route
+ * passes the request's (`getRequestOrigin(req)`), a service with no request
+ * the configured public base (`getAppBaseUrl()`). `null` leaves the absolute
+ * URLs out and keeps the paths.
+ *
+ * @param {string|null} repoRoot
+ * @param {string|null} origin - e.g. `https://decks.example.com`
+ * @param {Object} [event]
+ * @returns {Promise<void>}
+ */
 export async function maybeFireWebhook(
   repoRoot,
-  req,
+  origin,
   {
     event = '',
     pres = null,
@@ -296,14 +308,14 @@ export async function maybeFireWebhook(
           authedUser,
           userSettings,
           slideItem,
-          req,
+          origin,
         })
       : buildCommonPayload({
           event: e,
           authedUser,
           userSettings,
           pres,
-          req,
+          origin,
           extra,
         });
 

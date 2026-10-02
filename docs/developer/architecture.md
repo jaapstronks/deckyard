@@ -128,10 +128,14 @@ export async function handleSlideLockAcquire(
 }
 ```
 
-Permissions are `read` | `write` | `delete` | `manage`. Sibling
-helpers cover the other shapes: `withPresentationReadAuth`,
-`withPresentationCommentAuth` (guest access via share links), `canManage`, and
-the custom-HTML capability checks.
+Permissions are `read` | `write` | `delete` | `manage` | `comment`. The helper
+is the internal adapter over `loadPresentationForActor`
+(`server/services/presentations.js`, B519), which loads and decides on every
+contract; the helper only renders the 404/403. Sibling helpers cover the other
+shapes: `withPresentationReadAuth` (guest access via share links), `canManage`,
+and the custom-HTML capability checks. Creating a comment has no wrapper: the
+comment service asks the same load with `access: 'comment'`, for an account or
+a share-link guest (B518).
 
 There is deliberately **no composition/wrapper family**. One existed alongside
 these helpers for months with zero call sites and was removed rather than
@@ -177,12 +181,15 @@ backend either has a query path or the call is a bug.
 ### On-disk state
 
 - Uploads: `/server/uploads/{filename}`
+- Private media: `/server/data/private-media/` — uploaded font variants, which
+  the database refers to by key and no static root serves (local provider; in
+  S3 mode they are `private/*` in the bucket).
 - Deck thumbnails: `/server/data/deck-thumbs/` — a derived, regenerable cache.
 - No domain data is written to `/server/data/` as JSON any more. Settings, email
   templates, image-library usage, present sessions, follow codes, questions,
   interactions and feedback all persist in PostgreSQL. What remains under
-  `/server/data/` is the thumbnail cache plus the import source the migration
-  chain reads from on an upgrading install.
+  `/server/data/` is the private media, the thumbnail cache and the import
+  source the migration chain reads from on an upgrading install.
 
 ### PostgreSQL Storage
 
@@ -288,11 +295,13 @@ broadcastToPresentation(id, 'comment:created', data); // Broadcast
 
 ## Export Pipeline
 
-Export uses a factory pattern (`server/export/pipeline.js`):
+Export uses a factory pattern (`server/export/pipeline.js`). The context every
+export builds from is prepared once, in `server/services/exports.js`, for the
+internal routes, the public v1 routes and the queued worker alike (B520):
 
 ```javascript
 // Pipeline stages:
-1. prepareExportContext()  // Load presentation, auth check, language projection
+1. prepareExportContext()  // services/exports.js: read right, count, language projection, theme, slide types
 2. Format-specific builder  // PNG, PDF, PPTX, HTML, etc.
 3. sendExportResponse()    // Download headers + buffer
 ```
@@ -370,7 +379,9 @@ export default {
 Slides can have runtime behavior (timers, event listeners, SSE connections). If you add side-effects:
 
 1. **Attach in client runtime** (not in shared renderers)
-2. **Return a cleanup function** so `client/lib/slide-runtime/slide-render.js` can dispose when slides change
+2. **Return a cleanup function** so `client/lib/slide-runtime/slide-render.js` can dispose when slides change (`__sbCleanup`)
+3. **Teardown is best-effort**: run disposal handles through `disposeAll([...])` from `client/lib/dom/disposal.js` instead of per-handle `try { x?.(); } catch {}` — one broken handle must not abort the rest, and failures are recorded via `debugLog` (B150).
+4. **A client factory returns `{ el, detach }`** — the node it built and the function that unwires it. `destroy` / `teardown` / `cleanup` and `element` are retired spellings, gated in `eslint.config.js` (B150). `close` and `stop` still mean what they say: a user action on a modal, and halting a stream or timer.
 
 ```javascript
 // client/lib/slide-runtime.js
@@ -432,6 +443,65 @@ Its two other rules (no index-only folder, no multi-file folder without an
 `index.js`) stay scoped to the store level of `server/storage/`: client
 folders such as `lib/<area>/` and `views/editor/` are groups imported by path,
 not seams.
+
+### One folder = one seam
+
+The full rule behind `AGENTS.md` § _Module layout: one folder = one seam_.
+
+- When a unit is decomposed into concern modules, it lives as a **folder `X/`
+  whose `index.js` is the sole public seam** (a barrel re-exporting the public
+  API); the concern modules sit inside as plain siblings. Consumers import
+  `X/index.js`, never the concern files.
+- **Don't** put an eponymous wrapper file _beside_ the folder (`X.js` next to
+  `X/`, or a `foo-panel.js` re-export next to `foo-panel/`) — the folder's
+  `index.js` already is the seam, so the wrapper is redundant indirection.
+  Likewise don't suffix the folder with its role (`email-templates/`, not
+  `email-templates-panel/`).
+- **Re-export shim at a moved path: no, with one bounded exception.** When a
+  module moves or a file decomposes into `X/index.js`, the default is **no
+  shim at the old path** — a re-export is a second canonical form for one
+  module, exactly the tolerance-creep the beta stance forbids (see the
+  eponymous-wrapper rule above; #348 _removed_ such a wrapper). Forks sync on
+  tags, not `main`, so the move is a release-notes moment, not a mid-stream
+  surprise. A temporary shim is allowed **only** when all three hold: (1) it
+  lives **one release, then is deleted** — never longer; (2) the moved thing is
+  a **broadly-imported public seam** (the kind a forker imports, not an
+  internal concern file); (3) the **removal date is stated in the same release
+  notes** that ship the move. Absent all three, move the path and list it under
+  breaking changes. This is the beta stance applied to module moves
+  (`docs/reference/versioning.md` § _The beta stance: purity over
+  compatibility_).
+- A module that is _not_ decomposed stays a single file — it is itself a
+  concern module of its parent folder (e.g. each `settings/tabs/*-tab.js` is a
+  concern of `tabs/`, whose `index.js` is the barrel). A tab that grows its own
+  sub-concerns becomes `tabs/<name>-tab/` with an `index.js` seam, exactly like
+  `settings/` decomposes into `tabs/`.
+- Canonical example: `client/views/settings/` — every panel is a folder with an
+  `index.js` barrel (`api-keys/`, `admin-users/`, `theme-editor/`, …), no
+  wrappers, no role suffixes.
+- **`server/storage/` applies this literally.** A bare `X.js` is an
+  _undecomposed_ single-concern store (`feedback.js`, `settings.js`). The
+  moment a store splits into more than one module it becomes a folder `X/`
+  whose `index.js` is the facade/seam — consumers import
+  `server/storage/X/index.js`, never a concern file. So reading a storage
+  import tells you the shape: `X.js` = one module; `X/index.js` = a seam
+  over concern modules (`X/list.js`, `X/crud.js`, …). All of it reads and
+  writes Postgres through the adapter; the call convention (scope-first,
+  validated) is pinned in `docs/reference/storage-scope.md` and enforced by
+  `tests/storage-call-convention.test.js`. The _shape_ is enforced too:
+  `tests/module-layout.test.js` fails on a folder holding nothing but
+  an `index.js`, and on a multi-file folder without one — no allowlist. The
+  same file enforces the eponymous-wrapper rule above across all of
+  `server/`: no `P/X.js` beside a folder `P/X/`.
+- **`client/` follows the same rule.** No `P/X.js` beside a folder `P/X/`
+  anywhere under `client/` (`client/vendor/` excepted, third-party code):
+  a real module becomes its folder's `index.js` (`lib/dom/index.js`,
+  `views/editor/index.js`), a re-export shim is deleted and its importers
+  point at the folder. `tests/module-layout.test.js` enforces it, no
+  allowlist (D262). The two storage-shape rules do **not** apply to the
+  client: `lib/<area>/` and `views/editor/` are _groups_ whose members are
+  imported by path, and there is no duty to add an `index.js` barrel to a
+  folder that is not a seam.
 
 ### Config accessors live only in `server/config/`
 

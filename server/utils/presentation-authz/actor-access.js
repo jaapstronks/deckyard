@@ -1,10 +1,11 @@
 /**
  * Actor-based presentation access checks.
  *
- * Shared by machine-client surfaces (public API, MCP tools) where the acting
- * party is an API key or an MCP session rather than a browser session. Wraps the
- * canonical canRead/canWrite checks with collaborator-permission lookup so
- * machine clients follow the exact same rules as the editor routes.
+ * The deciders a service asks (`server/services/`, D253): whichever contract
+ * the actor came in on — a browser session, an API key, an MCP session — the
+ * same check answers. Wraps the canonical canRead/canWrite checks with the
+ * collaborator-permission lookup so every surface follows the exact same
+ * rules.
  *
  * ## An actor is an identity *and* an organization
  *
@@ -41,15 +42,15 @@ import {
   canWritePresentation,
   canCommentOnPresentation,
   canDeletePresentation,
+  canManageCollaborators,
 } from './presentations.js';
 import { canResolveComment } from './comments.js';
 
 /**
- * The acting machine client.
+ * The acting person — one type on all three contracts (D253); its home and the
+ * guest counterpart are in `server/services/actor.js`.
  *
- * @typedef {Object} Actor
- * @property {string} email - The identity: API key owner / MCP session owner.
- * @property {string|null} [organizationId] - The organization the key or session acts in.
+ * @typedef {import('../../services/actor.js').Actor} Actor
  */
 
 /**
@@ -82,13 +83,22 @@ export function checkActorAccess({
  *
  * @param {Actor} [actor]
  * @param {string|null} [actorUserId]
- * @returns {{id: string|null, email: string|undefined, organizationId: string|null}}
+ * @returns {{id: string|null, email: string|undefined, organizationId: string|null, isAdmin?: true, organizationRole?: string|null, unrestricted?: true}}
  */
 function actorUser(actor, actorUserId = null) {
   return {
     id: actorUserId || null,
     email: actor?.email,
     organizationId: actor?.organizationId || null,
+    // An admin session (internal contract only) moderates every deck of its
+    // organization (`isOrganizationAdmin`); an API key or MCP session never
+    // carries the flag, so it never gains the role here.
+    ...(actor?.isAdmin === true
+      ? { isAdmin: true, organizationRole: actor.organizationRole ?? null }
+      : {}),
+    // The auth-off operator (internal contract only) passes every decider;
+    // dropping the flag here would lock them out of their own instance.
+    ...(actor?.unrestricted === true ? { unrestricted: true } : {}),
   };
 }
 
@@ -153,10 +163,34 @@ export async function canActorDeletePresentation(pres, actor) {
 }
 
 /**
+ * Async check: may an actor manage who has access to a presentation?
+ *
+ * The owner, or a collaborator with admin permission — the machine-client
+ * counterpart of canManageCollaborators, with the collaborator row looked up.
+ *
+ * @param {Object} pres - The presentation object
+ * @param {Actor} actor - The acting person
+ * @returns {Promise<boolean>}
+ */
+export async function canActorManageCollaborators(pres, actor) {
+  if (!pres || typeof pres !== 'object') return false;
+  const [collaboratorPermission, actorUserId] = await Promise.all([
+    actor?.email ? getCollaboratorPermission(pres.id, actor.email) : null,
+    resolveActorUserId(actor),
+  ]);
+  return canManageCollaborators({
+    user: actorUser(actor, actorUserId),
+    pres,
+    collaboratorPermission,
+  });
+}
+
+/**
  * Async check: may an actor moderate a comment — resolve, dismiss or reopen it?
  *
- * Deck-ownership-only, like the editor route's canResolveComment, with the
- * actor's identity resolved to a `users.id` first.
+ * The deck's owner or creator, or an organization admin acting in a session
+ * ({@link canResolveComment}), with the actor's identity resolved to a
+ * `users.id` first.
  *
  * @param {Object} pres - The presentation the comment lives on
  * @param {Actor} actor - The acting machine client

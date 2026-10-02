@@ -1,7 +1,4 @@
-import {
-  getPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
 import {
   uploadImageKitBuffer,
   getImageKitConfigFromEnv,
@@ -13,18 +10,16 @@ import {
 import { pdfToImages } from '../../../render/pdf-to-images.js';
 import {
   methodNotAllowed,
-  notFound,
-  forbidden,
   badRequest,
   requireJsonBody,
 } from '../../../utils/http.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
-import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { getString } from '../../../utils/request-validators.js';
 import { createLogger } from '../../../utils/logger.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { newSlide } from '../../../../shared/slide-types/presentation.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 const log = createLogger('import-slides-as-images');
 
 /**
@@ -86,11 +81,14 @@ export async function handlePresentationImportSlidesAsImages(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-  if (!canWritePresentation({ user: authedUser, pres })) {
-    return forbidden(res, 'Not authorized');
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;

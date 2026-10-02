@@ -505,7 +505,7 @@
   object-fit: contain;
   flex: 0 0 auto;
   /* The SVG is black; invert to white for dark UI */
-  filter: var(--app-logo-filter, invert(1));
+  filter: var(--app-logo-filter);
   opacity: 0.95;
 }
 

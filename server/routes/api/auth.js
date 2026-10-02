@@ -40,7 +40,6 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { allowLoginAttempt } from '../../utils/rate-limit.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
-import { canEditCustomHtml } from '../../utils/route-middleware.js';
 import { getSsoPublicConfig } from '../../config/sso.js';
 import { getBranding } from '../../config/branding.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
@@ -184,10 +183,6 @@ async function handleAuthMe({ repoRoot, req, res }) {
     }
   } catch {
     // ignore designer resolution failures; /me should stay reliable
-  }
-  // Resolve raw-HTML authoring capability (custom-html-slide gate)
-  if (outUser) {
-    outUser = { ...outUser, canEditCustomHtml: canEditCustomHtml(outUser) };
   }
   serveJson(res, 200, { user: outUser, features: getFeatureFlags() });
   return true;

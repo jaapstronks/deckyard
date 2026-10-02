@@ -4,7 +4,7 @@ import { createModal } from '../../../lib/dom/modal.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { createImageLibraryGrid } from './grid.js';
 import { createImageLibraryDetail } from './detail.js';
-import { createImageLibraryUpload } from './upload.js';
+import { createImageLibraryUpload, chooseImageFile } from './upload.js';
 import { createUnsplashSearch } from './unsplash-search.js';
 import { createGiphySearch } from './giphy-search.js';
 import { createMediaLibrarySidebar, SECTIONS } from './sidebar.js';
@@ -13,7 +13,10 @@ import {
   isStockSourceAvailable,
 } from '../../../lib/net/stock-media.js';
 import { h } from '../../../lib/dom/index.js';
-import { aiAltTextEnabled } from '../../../lib/state/features.js';
+import {
+  aiAltTextEnabled,
+  featureEnabled,
+} from '../../../lib/state/features.js';
 
 // Re-export for backward compatibility
 export { readFileAsDataUrl } from './utils.js';
@@ -99,21 +102,36 @@ function getSectionInfo(section) {
 }
 
 /**
- * Opens the image library picker modal
+ * Opens the image library picker modal.
+ *
+ * With `upload: true` it is the direct upload route from an image field
+ * (B579): the OS file dialog comes first, and the modal opens on the chosen
+ * file, already uploading. A cancelled dialog opens nothing.
+ *
  * @param {Object} options - Picker options
  */
-export function openImageLibraryPicker({
+export function openImageLibraryPicker({ upload = false, ...options } = {}) {
+  if (upload) {
+    chooseImageFile((file) => openLibraryModal({ ...options, file }));
+    return;
+  }
+  openLibraryModal(options);
+}
+
+/**
+ * @param {Object} options - Picker options, plus the `file` to start uploading
+ */
+function openLibraryModal({
   title = t('imageLibrary.title', 'Media Library'),
   allowCaptionCredit = false,
   onPick,
   user,
   api,
   root,
-  features,
   context = null,
+  file = null,
 } = {}) {
-  const flags = features && typeof features === 'object' ? features : {};
-  const uploadsDisabled = !flags.enableUploads;
+  const uploadsEnabled = featureEnabled('uploads');
   const canAiAlt = aiAltTextEnabled();
 
   const unlockScroll = lockDocumentScroll();
@@ -259,6 +277,14 @@ export function openImageLibraryPicker({
     creditCb,
     setStatus,
     setBusy,
+    // The pane replaces the list: hide it on show, bring it back on hide.
+    // `layout`, `mobileNav` and `showList` are declared below; both callbacks
+    // run on a click, long after this call returns.
+    onShow: () => {
+      layout.hidden = true;
+      mobileNav.hidden = true;
+    },
+    onHide: () => showList(),
   });
 
   // Upload component
@@ -268,7 +294,7 @@ export function openImageLibraryPicker({
     items: () => items,
     canAiAlt,
     context,
-    uploadsDisabled,
+    uploadsEnabled,
     onPick,
     onClose: close,
     onItemCreated: (created) => {
@@ -445,30 +471,14 @@ export function openImageLibraryPicker({
     }
   };
 
-  // Wire up show/hide between list and detail
+  // The list comes back whenever the detail pane hides (its `onHide`).
   const showList = () => {
-    detailComponent.hide();
     layout.hidden = false;
     mobileNav.hidden = false;
     libraryView.hidden =
       activeSection === SECTIONS.UNSPLASH || activeSection === SECTIONS.GIPHY;
     externalView.hidden = !libraryView.hidden;
     setStatus('');
-  };
-
-  // Override detail hide to show list
-  const originalHide = detailComponent.hide;
-  detailComponent.hide = () => {
-    originalHide();
-    showList();
-  };
-
-  // Override detail show to hide list
-  const originalShow = detailComponent.show;
-  detailComponent.show = (it) => {
-    layout.hidden = true;
-    mobileNav.hidden = true;
-    originalShow(it);
   };
 
   // Load data
@@ -543,7 +553,7 @@ export function openImageLibraryPicker({
       if (activeId) {
         const cur = items.find((x) => x?.id === activeId);
         if (cur) detailComponent.show(cur);
-        else showList();
+        else detailComponent.hide();
       }
     } catch (e) {
       setStatus(String(e?.message || e));
@@ -568,6 +578,10 @@ export function openImageLibraryPicker({
   renderMobileNav();
   // On a frame: the focus trap claims initial focus on the next frame, so a
   // synchronous call here would be overridden one frame later.
-  requestAnimationFrame(() => gridComponent.focus());
-  load();
+  if (file) {
+    load().then(() => uploadComponent.uploadFile(file));
+  } else {
+    requestAnimationFrame(() => gridComponent.focus());
+    load();
+  }
 }

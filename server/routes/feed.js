@@ -8,7 +8,7 @@ import { getOrganizationById } from '../storage/user-organizations/index.js';
 import { getOrgSettings } from '../utils/org-settings.js';
 import { listPublishedForFeed } from '../storage/published.js';
 import { buildFeed } from '../utils/rss-feed.js';
-import { isRssFeedEnabled, isMultiOrgEnabled } from '../config/features.js';
+import { isMultiOrgEnabled } from '../config/features.js';
 import { createLogger } from '../utils/logger.js';
 import { matchesIfNoneMatch, notModified } from '../utils/http.js';
 const log = createLogger('feed');
@@ -27,6 +27,9 @@ const ROUTES = {
 
 /**
  * Handle feed requests. Returns true if the request was handled, false otherwise.
+ * Whether feeds exist on this installation (`RSS_FEED_ENABLED`) is the static
+ * mount's `feature: 'rssFeed'` (`routes/static/index.js`); the organization's
+ * own switch (`settings.rss.enabled`) is the gate checked here.
  */
 export async function handleFeed({ repoRoot, req, res, url }) {
   const format = ROUTES[url.pathname];
@@ -35,13 +38,6 @@ export async function handleFeed({ repoRoot, req, res, url }) {
   if (req.method !== 'GET') {
     res.writeHead(405, { Allow: 'GET' });
     res.end();
-    return true;
-  }
-
-  // Feature flag kill switch
-  if (!isRssFeedEnabled()) {
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('Not Found');
     return true;
   }
 

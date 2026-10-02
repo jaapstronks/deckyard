@@ -33,7 +33,7 @@ import { createDropdown } from '../../../lib/dom/dropdown.js';
 import { icon, makeDropdownCaret } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
-import { aiEnabled } from '../../../lib/state/features.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 import {
   DEFAULT_DECK_LANG,
   getLangDisplayName,
@@ -862,7 +862,7 @@ export function createLanguageMode({
     return { el, show, hide };
   };
   // Not built where AI is off (D179): creating a version then just switches.
-  const translateInvite = aiEnabled() ? createTranslateInvite() : null;
+  const translateInvite = featureEnabled('ai') ? createTranslateInvite() : null;
   const showTranslateInvite = (msg, sourceLang) =>
     translateInvite?.show(msg, sourceLang);
 
@@ -904,7 +904,7 @@ export function createLanguageMode({
       langMenu.detach();
     },
     // Null where AI is off: the More menu then builds no Translate item.
-    translateOtherLanguage: aiEnabled()
+    translateOtherLanguage: featureEnabled('ai')
       ? () => translateOtherLanguage({ onStatus: toastStatus })
       : null,
     canTranslate: () => retranslateTargets().length > 0,

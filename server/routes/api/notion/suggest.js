@@ -1,7 +1,6 @@
 /**
  * Notion suggest endpoint handler.
  * Backwards-compatible endpoint that returns the first subject's composed raw.
- * Feature-gated endpoint.
  */
 
 import { badRequest, serveJson } from '../../../utils/http.js';
@@ -15,7 +14,6 @@ import {
 /**
  * Handle POST /api/notion/suggest
  * Backwards-compatible: old endpoint returns the first subject's composed raw.
- * Feature-gated endpoint.
  */
 export async function handleNotionSuggest({ res }) {
   if (!notionEnabled()) return refuseNotionUnconfigured(res);

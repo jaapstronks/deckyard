@@ -1,0 +1,324 @@
+/* Shared primitives (D266): the controls every bundle renders, defined once.
+
+   `app.css` (the editor), `export.css` (a downloaded or rendered deck) and
+   `embed.css` (the iframe viewer) all import this file right after the
+   tokens. A primitive lives here and nowhere else; a bundle that needs a
+   different look for one scopes an override in its own entry file, it does
+   not keep a second copy. `tests/css-one-definition.test.js` holds the line.
+
+   Editor-only primitives (modals, field labels, `.stack`, `.is-*`) stay in
+   `app/components.css`; they never reach a viewer. */
+
+/* ---- Buttons ---- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-4);
+  border-radius: var(--ps-radius-md);
+  text-decoration: none;
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  line-height: 1.25;
+  border: 1px solid hsl(var(--app-border-default));
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--ps-transition-fast);
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-elevated));
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.btn:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.25);
+}
+
+/* Inline spinner: any button can flip to a busy/cancel state with a spinner
+   by toggling `.is-loading` (the `.btn` gap handles spacing to the label). */
+.btn.is-loading::before {
+  content: '';
+  display: inline-block;
+  width: 0.85em;
+  height: 0.85em;
+  vertical-align: -0.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.7s linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn.is-loading::before {
+    animation-duration: 2s;
+  }
+}
+
+.btn-primary {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+}
+.btn-primary:hover:not(:disabled) {
+  background: hsl(var(--app-accent-primary-hover));
+  border-color: hsl(var(--app-accent-primary-hover));
+}
+
+.btn-secondary {
+  background: hsl(var(--app-bg-elevated));
+  border-color: hsl(var(--app-border-strong));
+  box-shadow: var(--app-shadow-sm);
+  color: hsl(var(--app-text-primary));
+}
+.btn-secondary:hover:not(:disabled) {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-strong));
+}
+
+.btn-ai {
+  background: hsl(var(--app-accent-primary));
+  border-color: hsl(var(--app-accent-primary));
+  color: hsl(var(--app-text-on-solid));
+  box-shadow: var(--app-shadow-sm);
+}
+.btn-ai:hover:not(:disabled) {
+  background: hsl(var(--app-accent-primary-hover));
+  border-color: hsl(var(--app-accent-primary-hover));
+}
+
+.btn-danger {
+  color: hsl(var(--app-danger));
+  background: hsl(var(--app-danger-soft));
+  border-color: transparent;
+}
+.btn-danger:hover:not(:disabled) {
+  color: hsl(var(--app-text-on-solid));
+  background: hsl(var(--app-danger));
+  border-color: hsl(var(--app-danger));
+}
+
+.btn.is-compact {
+  padding: var(--ps-space-1) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+}
+
+.btn.is-compact-sm {
+  padding: var(--ps-space-0-5) var(--ps-space-2);
+  font-size: var(--ps-text-xs);
+  line-height: 1.1;
+}
+
+.btn.is-pill {
+  border-radius: var(--ps-radius-full);
+}
+
+.btn-icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+
+.btn.is-icon-only {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* Size ladder on the type scale: `-sm` is the `--ps-text-sm` step, `-xs` the
+   `--ps-text-xs` step. Until now each was defined in the leaf file that
+   happened to use it first (comments panel, slide-type editor), twice for
+   `-xs` with different values. */
+.btn-sm {
+  padding: var(--ps-space-1) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+}
+
+.btn-xs {
+  padding: var(--ps-space-0-5) var(--ps-space-2);
+  font-size: var(--ps-text-xs);
+  min-height: 22px;
+  min-width: 22px;
+}
+
+/* ---- Inputs ---- */
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  color: hsl(var(--app-text-primary));
+  font-size: var(--ps-text-base);
+  line-height: 1.5;
+  outline: none;
+  transition: all var(--ps-transition-fast);
+  box-shadow: inset 0 1px 3px hsl(var(--app-text-primary) / 0.06);
+}
+.form-input::placeholder {
+  color: hsl(var(--app-text-tertiary));
+}
+.form-input:focus {
+  border-color: hsl(var(--app-border-focus));
+  background: hsl(var(--app-bg-elevated));
+  box-shadow:
+    inset 0 1px 2px hsl(var(--app-text-primary) / 0.03),
+    0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
+}
+
+/* Input size ladder. Until now `form-input-sm`/`-xs` had no base definition:
+   the only rules carrying them were ancestor-scoped, so `form-input
+   form-input-sm` rendered at full size everywhere else. These are the
+   definitions the markup has been asking for; the scoped rules that remain
+   are layout (flex, max-width), not size. */
+.form-input-sm {
+  padding: var(--ps-space-1) var(--ps-space-2);
+  font-size: var(--ps-text-sm);
+}
+
+.form-input-xs {
+  padding: var(--ps-space-0-5) var(--ps-space-1-5);
+  font-size: var(--ps-text-xs);
+  height: auto;
+  min-height: 0;
+}
+
+.form-input:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+/* Utility: compact input/select in modals */
+.form-input.is-compact {
+  width: auto;
+  min-width: 200px;
+  max-width: 320px;
+}
+
+/* ---- Layout ---- */
+
+/* Row layout: every shell and both viewers lay out toolbars with it. */
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--ps-space-3);
+}
+.row.spread {
+  justify-content: space-between;
+}
+.row.is-wrap {
+  flex-wrap: wrap;
+}
+.row.is-end {
+  justify-content: flex-end;
+}
+
+/* ---- Segmented control ---- */
+
+.sb-segmented {
+  display: inline-flex;
+  align-items: center;
+  /* Wrap onto a second row rather than overflowing whatever holds the control.
+     The size intent (`is-field-wide`/`is-field-full`) gives a 3+ option control
+     its own line, which is enough for short labels but not for five word-length
+     ones: callout-slide's five kinds measured 351px of buttons in a 299px
+     inspector column, and the last one was simply clipped off the panel. This
+     used to be scoped to `.field-grid` only — a narrower spelling of the same
+     rule, which left every control outside a responsive row overflowing. */
+  flex-wrap: wrap;
+  /* In the editor, segmented controls often sit inside `.stack` (a flex column with
+     default `align-items: stretch`), which would otherwise stretch them full-width.
+     Make them shrink-wrap by default. */
+  width: fit-content;
+  max-width: 100%;
+  background: hsl(var(--app-bg-sunken));
+  border-radius: var(--ps-radius-lg);
+  padding: var(--ps-space-1);
+  gap: var(--ps-space-1);
+}
+
+.sb-segmented-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+  font-weight: 500;
+  color: hsl(var(--app-text-secondary));
+  background: transparent;
+  border: none;
+  border-radius: var(--ps-radius-md);
+  cursor: pointer;
+  transition: all var(--ps-transition-fast);
+  white-space: nowrap;
+}
+
+.sb-segmented-btn:hover:not(:disabled):not(.is-active) {
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-hover));
+}
+
+/* Disabled segmented control: a stand-in for a setting that lives elsewhere,
+   not a broken one. The inspector's "This text" tab draws the real control and
+   disables it when the field's alignment belongs to its field group (see
+   client/views/editor/editor-form/text-element-card.js), on the principle that
+   a greyed control plus a line saying where the setting moved to beats a
+   silently missing one. Without these rules the disabled control rendered
+   pixel-identical to a live one — full opacity, pointer cursor, an active pill
+   — so it read as dead rather than as delegated. */
+.sb-segmented-btn:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.sb-segmented-btn.is-active {
+  color: hsl(var(--app-text-primary));
+  background: hsl(var(--app-bg-elevated));
+  box-shadow: var(--app-shadow-sm);
+}
+
+.sb-segmented-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.4);
+}
+
+/* The viewers' language switch (embed and published page): bordered, tighter,
+   and a link or a button that brings no font of its own, since neither viewer
+   loads the editor's element resets. The published page renders `<a>` (each
+   version is a URL), hence the link reset. */
+.sb-segmented.is-lang-switch {
+  align-items: stretch;
+  flex-wrap: nowrap;
+  overflow: hidden;
+  border: 1px solid hsl(var(--app-border-default));
+  padding: var(--ps-space-0-5);
+  gap: var(--ps-space-0-5);
+}
+
+.sb-segmented.is-lang-switch .sb-segmented-btn {
+  margin: 0;
+  padding: var(--ps-space-1-5) var(--ps-space-2-5);
+  font: 600 var(--ps-text-sm) / 1 var(--ps-font-sans);
+  border-radius: calc(var(--ps-radius-md) - 2px);
+  text-decoration: none;
+}

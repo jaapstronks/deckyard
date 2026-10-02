@@ -1,6 +1,6 @@
 {
   "name": "deckyard",
-  "version": "1.49.0",
+  "version": "1.53.0",
   "description": "Self-hosted presentation engine for humans and AI agents (MCP-native)",
   "license": "MIT",
   "repository": {
@@ -41,6 +41,7 @@
     "i18n:sync:apply": "node scripts/i18n-sync.js --apply",
     "start": "node server/server.js",
     "setup": "node scripts/setup.js",
+    "doctor": "node scripts/doctor.js",
     "org:create": "node scripts/org-create.js",
     "fork:seams": "node scripts/fork-seams.js",
     "seed:bg-demo": "node scripts/seed-bg-contrast-demo.js",

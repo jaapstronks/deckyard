@@ -11,9 +11,8 @@
  * `routes/api/presentations/index.js` — the behaviour is unchanged, only shared.
  */
 
-import { getFeatureFlags } from '../config/flags-snapshot.js';
-import { recordInstanceHealth } from '../storage/instance-health.js';
-import { fireAndForget } from './fire-and-forget.js';
+import { isFeatureEnabled } from '../config/flags-snapshot.js';
+import { countInstanceHealth } from '../storage/instance-health.js';
 import { notFound } from './http.js';
 import { isUuid } from './uuid.js';
 
@@ -67,12 +66,16 @@ import { isUuid } from './uuid.js';
  *   declares no axis throws: a name that nothing counts is a mistake, not a
  *   silent default.
  * @property {(ctx: object, ...params: string[]) => unknown} handler
- * @property {boolean} [ai] - The route spends LLM tokens. With `enableAi` off
- *   (`AI_ENABLED=false`, demo mode, sandbox) it is not mounted: a match
- *   answers 404 before the handler runs, whatever the method — the same
- *   answer `/api/ai/*` gives, whose whole module is skipped at the mount.
- *   Declare it here rather than re-checking the flag in the handler, so no AI
- *   entry can open its stream or call a vendor first.
+ * @property {string} [feature] - The installation cluster this row belongs to
+ *   (D257): `'ai'` for a row that spends LLM tokens, and so on. With that
+ *   cluster off (`isFeatureEnabled(feature)` — for `'ai'`: `AI_ENABLED=false`,
+ *   demo mode, sandbox) the row is not mounted: a match answers 404 in the
+ *   surface's own envelope before the handler runs, whatever the method — the
+ *   same answer a whole module gives when its {@link Mount} carries the
+ *   feature. Declare it here rather than re-checking the flag in the handler,
+ *   so no entry can open its stream or call a vendor first. A row's feature
+ *   can sit on top of its mount's (a Notion import needs `notion` and `ai`),
+ *   never beside it as a second spelling.
  */
 
 /**
@@ -104,11 +107,11 @@ function capturesSatisfyDeclaration(captures, params, pattern) {
  *   - A string `pattern` is an exact pathname match.
  *   - A RegExp `pattern` is tested against the pathname; its capture groups are
  *     passed to the handler as trailing positional arguments.
- *   - A matched `ai` route answers 404 instead while `enableAi` is off.
+ *   - A matched row whose `feature` is off answers 404 instead.
  *   - A matched row whose `captures` declaration is not satisfied answers 404
  *     instead: a segment declared `'uuid'` that cannot be one names no row.
  *   - A matched row with an `id` that passes both gates is counted once on
- *     `options.axis` (`recordInstanceHealth`, fire-and-forget) before its
+ *     `options.axis` (`countInstanceHealth`, fire-and-forget) before its
  *     handler runs — what the handler then answers does not change the count.
  *
  * **Order is significant** for RegExp/overlapping tables (`/search` before
@@ -123,8 +126,8 @@ function capturesSatisfyDeclaration(captures, params, pattern) {
  *   matched handler as its first argument.
  * @param {object} [options]
  * @param {(res: import('node:http').ServerResponse) => unknown} [options.notFound]
- *   - How this surface answers the dispatcher's own 404 (an unmounted `ai`
- *   route, an unsatisfied `captures`). Defaults to the internal `/api`
+ *   - How this surface answers the dispatcher's own 404 (a row whose `feature`
+ *   is off, an unsatisfied `captures`). Defaults to the internal `/api`
  *   envelope; the public v1 API passes its own, so one table form serves
  *   both wire contracts.
  * @param {string} [options.axis] - The instance-health axis this surface's
@@ -152,7 +155,8 @@ export function dispatchRoutes(
       params = match.slice(1);
     }
 
-    if (route.ai && !getFeatureFlags().enableAi) return answerNotFound(ctx.res);
+    if (route.feature && !isFeatureEnabled(route.feature))
+      return answerNotFound(ctx.res);
     if (
       route.captures &&
       !capturesSatisfyDeclaration(route.captures, params, route.pattern)
@@ -164,13 +168,41 @@ export function dispatchRoutes(
           `route ${route.pattern} carries id '${route.id}' but its surface declares no axis`,
         );
       }
-      fireAndForget(
-        recordInstanceHealth([{ axis, key: route.id }]),
-        'instance health',
-      );
+      countInstanceHealth([{ axis, key: route.id }]);
     }
     return route.handler(ctx, ...params);
   }
 
+  return false;
+}
+
+/**
+ * One module in a surface's mount chain (D257).
+ *
+ * @typedef {object} Mount
+ * @property {(ctx: object) => unknown} handle - The module's entry: truthy once
+ *   it answered, falsy to let the next mount try.
+ * @property {string} [feature] - The installation cluster the whole module
+ *   belongs to. With it off the mount is skipped, so its paths reach the
+ *   surface's own 404 — the module does not exist on this installation.
+ */
+
+/**
+ * Walk a mount table in order until one module answers.
+ *
+ * The mount-level twin of {@link dispatchRoutes}: `server/routes/api/index.js`,
+ * the public v1 router and the static router each declare their chain as a
+ * table and hand it here, so "this module is off" is a `feature` on its row and
+ * never a `flags.x &&` branch in a chain.
+ *
+ * @param {Mount[]} mounts - The chain, walked top to bottom.
+ * @param {object} ctx - Forwarded verbatim to each `handle`.
+ * @returns {Promise<boolean>} true once a mount answered, false when none did.
+ */
+export async function dispatchMounts(mounts, ctx) {
+  for (const { handle, feature } of mounts) {
+    if (feature && !isFeatureEnabled(feature)) continue;
+    if (await handle(ctx)) return true;
+  }
   return false;
 }

@@ -158,6 +158,31 @@ export async function createApiKey(scope, { name, ownerEmail, permissions }) {
 }
 
 /**
+ * How many unrevoked API keys the instance holds, across organizations. Read
+ * once at boot when the public API cluster is off, so the operator learns the
+ * keys are still there and refused for now (D261).
+ *
+ * @param {import('./scope.js').StorageScope} scope - Cross-organization.
+ * @returns {Promise<number>} Zero without a database.
+ */
+export async function countActiveApiKeys(scope) {
+  toStorageContext(
+    scope,
+    'countActiveApiKeys',
+    {},
+    { allowCrossOrganization: true },
+  );
+  return withDbGuard(0, async (db) => {
+    const row = await db
+      .selectFrom('api_keys')
+      .select((eb) => eb.fn.countAll().as('n'))
+      .where('revoked_at', 'is', null)
+      .executeTakeFirst();
+    return Number(row?.n) || 0;
+  });
+}
+
+/**
  * Validate an API key and return the associated data.
  * Also updates last_used_at timestamp.
  * @param {string} rawKey - The raw API key from the request

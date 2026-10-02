@@ -3,6 +3,8 @@ import { h } from '../../lib/dom/index.js';
 
 const MIN_WIDTH = 200;
 const BASE_MAX_WIDTH = 500;
+/** Width of `.slide-thumb-row`'s number gutter (`--slide-num-gutter`). */
+const SLIDE_NUM_GUTTER_PX = 24;
 
 /**
  * The slides panel's ceiling. Like the inspector's, a flat cap meant a very
@@ -49,9 +51,11 @@ export function createSlidesPanelResize({ panelEl, isSlidesCollapsed }) {
       '--slides-panel-width',
       `${clamped}px`,
     );
-    // Calculate thumb scale: panel width minus padding, borders, and scrollbar gutter divided by slide width (1600)
-    // List padding: 8px each side = 16px, Thumb border: 1px each side = 2px, Scrollbar gutter: ~15px
-    const thumbWidth = clamped - 16 - 2 - 15;
+    // Calculate thumb scale: panel width minus padding, borders, scrollbar
+    // gutter and slide-number gutter, divided by slide width (1600).
+    // List padding: 8px each side = 16px, Thumb border: 1px each side = 2px,
+    // Scrollbar gutter: ~15px, number gutter: SLIDE_NUM_GUTTER_PX
+    const thumbWidth = clamped - 16 - 2 - 15 - SLIDE_NUM_GUTTER_PX;
     const thumbScale = thumbWidth / 1600;
     document.documentElement.style.setProperty(
       '--slides-thumb-scale',

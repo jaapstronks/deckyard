@@ -26,6 +26,7 @@ import { createNotificationBell } from '../../../lib/user/notification-bell.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 
 export function createEditorTopbar({
   api,
@@ -244,6 +245,10 @@ export function createEditorTopbar({
   // MORE MENU
   // ============================================================
 
+  const hasAnalytics = featureEnabled('analytics');
+  // The Companion is a live session (the notes companion): absent, caret and
+  // ⋯ entry both, where the installation has no live cluster (D260).
+  const hasLive = featureEnabled('live');
   const moreMenu = createEditorTopbarMoreMenu({
     root,
     toast,
@@ -274,13 +279,13 @@ export function createEditorTopbar({
     // Demoted from their own topbar icons (2026-07-16 chrome re-org): the
     // bar keeps deck-level actions; utilities live here.
     onAnalyze,
-    onOpenAnalytics: () => nav(`/analytics/${id}`),
+    onOpenAnalytics: hasAnalytics ? () => nav(`/analytics/${id}`) : null,
     onShowShortcuts: () => onShowShortcuts?.(),
     onOpenSettings: () => openSettings(),
     onSubscription: () =>
       openSubscriptionModal({ api, toast, presentationId: id }),
     onOpenOverview: () => onOpenOverview?.(),
-    onOpenCompanion: () => openNotesQr(),
+    onOpenCompanion: hasLive ? () => openNotesQr() : null,
   });
   detachers.push(moreMenu.detach);
 
@@ -288,14 +293,18 @@ export function createEditorTopbar({
   // ANALYTICS BUTTON
   // ============================================================
 
-  const btnAnalytics = h('button', {
-    class: 'ghost-icon-btn topbar-analytics-btn topbar-fold-lg',
-    type: 'button',
-    title: t('editor.analytics', 'Analytics'),
-    'aria-label': t('editor.analytics', 'Analytics'),
-    onclick: () => nav(`/analytics/${id}`),
-  });
-  btnAnalytics.append(icon('chart-column', { size: 16 }));
+  // Absent, not hidden, where the installation has no analytics cluster
+  // (D260): no button, no ⋯ entry, no share-link probe for one.
+  const btnAnalytics = hasAnalytics
+    ? h('button', {
+        class: 'ghost-icon-btn topbar-analytics-btn topbar-fold-lg',
+        type: 'button',
+        title: t('editor.analytics', 'Analytics'),
+        'aria-label': t('editor.analytics', 'Analytics'),
+        onclick: () => nav(`/analytics/${id}`),
+      })
+    : null;
+  btnAnalytics?.append(icon('chart-column', { size: 16 }));
 
   /**
    * Analytics is a control with two conditions, not one: the fold ladder says
@@ -317,7 +326,9 @@ export function createEditorTopbar({
   };
 
   const isPublished = !!pres?.published?.id;
-  if (isPublished) {
+  if (!hasAnalytics) {
+    // No cluster, no control to show or hide.
+  } else if (isPublished) {
     setAnalyticsAvailable(true);
   } else {
     // Not published: the deck may still have an audience through a share link.
@@ -397,38 +408,41 @@ export function createEditorTopbar({
   // presenting extras you never need while editing (Companion phone remote).
   // The caret is the one part of the group on the ladder: Present never
   // leaves the bar, its extras do.
-  const presentCompanionItem = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
-    text: t('editor.companion', 'Companion'),
-    title: t(
-      'editor.companion.title',
-      'Open speaker notes companion on your phone (QR code).',
-    ),
-    onclick: () => {
-      closePresentMenu();
-      openNotesQr();
-    },
-  });
-  const {
-    details: presentMenuDetails,
-    close: closePresentMenu,
-    detach: detachPresentMenu,
-  } = createDropdown({
-    triggerClass: 'btn btn-primary btn-icon topbar-present-caret',
-    triggerContent: [icon('chevron-down', { size: 14 })],
-    title: t('editor.present.more', 'More presenting options'),
-    ariaLabel: t('editor.present.more', 'More presenting options'),
-    // Folds at sm into the ⋯ Companion entry; see Topbar Responsive.
-    detailsClass: 'topbar-present-more topbar-fold-sm',
-    menuClass: 'dropdown-menu-right',
-    items: [presentCompanionItem],
-  });
-  detachers.push(detachPresentMenu);
-  const presentGroup = h('div', { class: 'topbar-present-group' }, [
-    btnPresent,
-    presentMenuDetails,
-  ]);
+  const presentCompanionItem = hasLive
+    ? h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: t('editor.companion', 'Companion'),
+        title: t(
+          'editor.companion.title',
+          'Open speaker notes companion on your phone (QR code).',
+        ),
+        onclick: () => {
+          closePresentMenu?.();
+          openNotesQr();
+        },
+      })
+    : null;
+  // The caret holds only the Companion, so without it there is no caret.
+  const presentMenu = presentCompanionItem
+    ? createDropdown({
+        triggerClass: 'btn btn-primary btn-icon topbar-present-caret',
+        triggerContent: [icon('chevron-down', { size: 14 })],
+        title: t('editor.present.more', 'More presenting options'),
+        ariaLabel: t('editor.present.more', 'More presenting options'),
+        // Folds at sm into the ⋯ Companion entry; see Topbar Responsive.
+        detailsClass: 'topbar-present-more topbar-fold-sm',
+        menuClass: 'dropdown-menu-right',
+        items: [presentCompanionItem],
+      })
+    : null;
+  const closePresentMenu = presentMenu?.close;
+  if (presentMenu) detachers.push(presentMenu.detach);
+  const presentGroup = h(
+    'div',
+    { class: 'topbar-present-group' },
+    [btnPresent, presentMenu?.details].filter(Boolean),
+  );
 
   // ============================================================
   // UNDO / REDO
@@ -550,8 +564,8 @@ export function createEditorTopbar({
 
   detachers.push(languageMode.detach);
 
-  // Warm the notes session in the background
-  ensureNotesSession?.().catch(() => {});
+  // Warm the notes session in the background, where there is a live cluster.
+  if (hasLive) ensureNotesSession?.().catch(() => {});
 
   languageMode.syncLangUi();
 

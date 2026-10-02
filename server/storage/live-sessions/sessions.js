@@ -1,6 +1,7 @@
 import { createFollowCode, FOLLOW_CODE_TTL_MS } from '../follow-codes.js';
 import { getPresentation } from '../presentations/index.js';
 import { toStorageContext } from '../scope.js';
+import { countInstanceHealth } from '../instance-health.js';
 import {
   DEFAULT_DECK_LANG,
   resolveDeckLang,
@@ -146,6 +147,7 @@ export async function createLiveSession(scope, { presentationId }) {
 
     s.lastActivityAt = Date.now();
     schedulePersist(s);
+    countInstanceHealth([{ axis: 'interaction', key: 'live_session' }]);
     return {
       ok: true,
       sessionId: s.sessionId,
@@ -178,6 +180,7 @@ export async function createLiveSession(scope, { presentationId }) {
   // Awaited, not debounced: the row is what makes the session findable from
   // another process, and the presenter's very next request may land there.
   await persistSession(s);
+  countInstanceHealth([{ axis: 'interaction', key: 'live_session' }]);
   return {
     ok: true,
     sessionId,

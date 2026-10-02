@@ -1,11 +1,7 @@
 {
-  "pageCount": 6,
+  "pageCount": 5,
   "parseErrors": [],
   "pages": [
-    {
-      "width": 1200,
-      "height": 675.1
-    },
     {
       "width": 1200,
       "height": 675.1
@@ -32,7 +28,6 @@
     "MarkdownanditemsBodyplusactionsAboldwordandaslantedone.FirstpointSecondpointRead",
     "TablerowsColumnAColumnBOneTwoThreeFour",
     "Chartdata012345AlfaBravoCharlie",
-    "CustomHTML",
     "ImageandflagYourlogohereAlocalasset,sothefixtureneedsnonetwork"
   ]
 }

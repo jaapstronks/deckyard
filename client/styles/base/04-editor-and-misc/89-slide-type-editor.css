@@ -47,7 +47,7 @@
 
 .custom-type-card-slug {
   font-size: var(--ps-text-xs);
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
   color: hsl(var(--app-text-tertiary));
 }
 
@@ -81,7 +81,7 @@
 }
 
 .slide-type-status-badge.is-draft {
-  background: hsl(var(--app-bg-secondary));
+  background: hsl(var(--app-bg-sunken));
   color: hsl(var(--app-text-secondary));
 }
 
@@ -199,12 +199,12 @@
   padding: var(--ps-space-2) var(--ps-space-3);
   cursor: pointer;
   user-select: none;
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   transition: background-color 0.1s ease;
 }
 
 .field-list-item-summary:hover {
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
 }
 
 .field-list-item-info {
@@ -234,7 +234,7 @@
 
 .field-list-item-key {
   font-size: var(--ps-text-xs);
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
   color: hsl(var(--app-text-tertiary));
 }
 
@@ -274,7 +274,7 @@
 
 .field-list-nested {
   padding: var(--ps-space-3);
-  background: hsl(var(--app-bg-secondary) / 0.2);
+  background: hsl(var(--app-bg-sunken) / 0.2);
   border-radius: var(--ps-radius-md);
   border: 1px dashed hsl(var(--app-border-subtle));
 }
@@ -282,14 +282,11 @@
 /* Reorder buttons */
 .field-list-reorder {
   font-size: 12px;
-  min-width: 22px;
-  min-height: 22px;
-  padding: 0;
 }
 
 /* Code textarea (monospace for template/CSS/JSON) */
 .code-textarea {
-  font-family: var(--ps-font-mono, 'Menlo', 'Consolas', monospace) !important;
+  font-family: var(--ps-font-mono) !important;
   font-size: 13px !important;
   line-height: 1.5 !important;
   tab-size: 2;
@@ -297,22 +294,8 @@
   resize: vertical;
 }
 
-/* Button sizes */
-.btn-xs {
-  font-size: var(--ps-text-xs);
-  padding: 2px 6px;
-  min-height: 22px;
-  min-width: 22px;
-}
-
-.field-label-sm {
-  font-size: var(--ps-text-xs);
-  font-weight: 500;
-  color: hsl(var(--app-text-secondary));
-}
-
 .font-mono {
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
 }
 
 /* ============================================================
@@ -322,7 +305,7 @@
 .slide-type-preview-container {
   width: 100%;
   min-width: 0;
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   border-radius: var(--ps-radius-lg);
   padding: var(--ps-space-4);
   border: 1px solid hsl(var(--app-border-subtle));
@@ -411,7 +394,7 @@
 
 .template-help code,
 .template-help-field-list code {
-  font-family: var(--ps-font-mono, 'Menlo', 'Consolas', monospace);
+  font-family: var(--ps-font-mono);
   font-size: 12px;
   padding: 1px 5px;
   border-radius: 4px;

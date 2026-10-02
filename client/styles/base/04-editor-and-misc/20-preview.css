@@ -181,8 +181,8 @@
    `bg-elevated`, identical to the white bar, so it would vanish. Matches the
    `.ghost-icon-btn.is-active` treatment used elsewhere in the chrome. */
 .pane-tab.is-active {
-  background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.12));
-  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  background: hsl(var(--app-accent-soft));
+  color: hsl(var(--app-accent-text));
   box-shadow: none;
 }
 
@@ -193,7 +193,7 @@
   height: 16px;
   padding: 0 4px;
   border-radius: 999px;
-  background: hsl(var(--app-danger, 0 72% 51%));
+  background: hsl(var(--app-danger));
   color: hsl(0 0% 100%);
   font-size: 10px;
   font-weight: 700;
@@ -206,7 +206,7 @@
 }
 
 .pane-tab-badge--seen {
-  background: hsl(var(--app-text-tertiary, 0 0% 55%));
+  background: hsl(var(--app-text-tertiary));
 }
 
 /* Narrow widths: drop the opener labels (icons + badge stay). */
@@ -252,7 +252,7 @@
   font-size: var(--ps-text-xs);
   font-weight: 600;
   white-space: nowrap;
-  box-shadow: var(--app-shadow-md, 0 4px 12px rgba(0, 0, 0, 0.18));
+  box-shadow: var(--app-shadow-md);
   pointer-events: none;
 }
 

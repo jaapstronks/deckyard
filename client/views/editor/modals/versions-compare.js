@@ -14,7 +14,7 @@ import {
 import { formatDateTime } from '../../../lib/format/format.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
-import { aiEnabled } from '../../../lib/state/features.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 import { icon } from '../../../lib/dom/icons.js';
 
 /**
@@ -91,7 +91,7 @@ export function openVersionCompareModal({
   // answers the compare-ai route 404 there.
   // (D179). `analyzeWithAi` is only reachable through the button, so it never
   // meets the nulls.
-  const aiOn = aiEnabled();
+  const aiOn = featureEnabled('ai');
   const aiButton = aiOn
     ? h('button', {
         class: 'btn btn-secondary btn-sm',

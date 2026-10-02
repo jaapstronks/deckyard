@@ -150,7 +150,7 @@
   display: flex;
   gap: 2px;
   padding: 3px;
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: 8px;
   box-shadow: 0 4px 14px hsl(0 0% 0% / 0.18);
@@ -170,7 +170,7 @@
   width: 26px;
   height: 26px;
   padding: 0;
-  color: hsl(var(--app-text-default));
+  color: hsl(var(--app-text-primary));
   background: transparent;
   border: 0;
   border-radius: 5px;
@@ -187,7 +187,7 @@
 }
 
 .ie-sel-toolbar .ie-sel-btn:disabled {
-  color: hsl(var(--app-text-muted));
+  color: hsl(var(--app-text-secondary));
   opacity: 0.45;
   cursor: default;
   background: transparent;
@@ -254,7 +254,7 @@
 }
 .ie-overlay .ie-card-add,
 .ie-overlay .ie-media-hint {
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  background: hsl(var(--app-bg-elevated));
   box-shadow: 0 2px 6px hsl(0 0% 0% / 0.12);
 }
 
@@ -275,7 +275,7 @@
   transform: translateY(-50%);
   padding: var(--ps-space-0-5) var(--ps-space-2);
   border-radius: 999px;
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  background: hsl(var(--app-bg-elevated));
   box-shadow: 0 2px 6px hsl(0 0% 0% / 0.12);
   text-shadow: none;
   opacity: 0;
@@ -327,7 +327,7 @@
       hsl(var(--app-accent-primary) / 0.12),
       hsl(var(--app-accent-primary) / 0.12)
     ),
-    hsl(var(--app-bg-elevated, 0 0% 100%));
+    hsl(var(--app-bg-elevated));
   border-color: hsl(var(--app-accent-primary) / 0.9);
 }
 
@@ -372,8 +372,8 @@
   padding: 0;
   font-size: var(--ps-text-lg);
   line-height: 1;
-  color: hsl(var(--app-danger, 0 70% 50%));
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  color: hsl(var(--app-danger));
+  background: hsl(var(--app-bg-elevated));
   border: 1.5px solid hsl(var(--app-border-default));
   border-radius: 999px;
   box-shadow: 0 2px 6px hsl(0 0% 0% / 0.15);
@@ -394,7 +394,7 @@
 
 .ie-overlay .ie-clear:hover,
 .ie-overlay .ie-card-remove:hover {
-  background: hsl(var(--app-danger, 0 70% 50%) / 0.12);
+  background: hsl(var(--app-danger) / 0.12);
 }
 
 /* ---- Reorder grip (⠿) and drop indicator ---- */
@@ -408,7 +408,7 @@
   font-size: 12px;
   line-height: 1;
   color: hsl(var(--app-accent-primary));
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  background: hsl(var(--app-bg-elevated));
   border: 1.5px solid hsl(var(--app-border-default));
   border-radius: 999px;
   box-shadow: 0 2px 6px hsl(0 0% 0% / 0.15);
@@ -468,7 +468,7 @@
   position: absolute;
   inset: 0;
   z-index: 45;
-  background: hsl(var(--app-bg-sunken, 0 0% 0%) / 0.45);
+  background: hsl(var(--app-bg-sunken) / 0.45);
   backdrop-filter: blur(3px);
   -webkit-backdrop-filter: blur(3px);
   animation: ie-fade-in 0.12s ease;
@@ -486,9 +486,9 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-lg, 12px);
+  border-radius: var(--ps-radius-lg);
   box-shadow: 0 24px 60px hsl(0 0% 0% / 0.35);
   animation: ie-pop-in 0.14s ease;
 }
@@ -520,7 +520,7 @@
 .ie-md-modal .ie-md-mode {
   font-weight: 600;
   font-size: var(--ps-text-base);
-  color: hsl(var(--app-text-default, 0 0% 10%));
+  color: hsl(var(--app-text-primary));
 }
 
 .ie-md-modal .ie-md-close {
@@ -532,7 +532,7 @@
   padding: 0;
   font-size: 20px;
   line-height: 1;
-  color: hsl(var(--app-text-muted, 0 0% 40%));
+  color: hsl(var(--app-text-secondary));
   background: transparent;
   border: none;
   border-radius: 6px;
@@ -540,7 +540,7 @@
 }
 
 .ie-md-modal .ie-md-close:hover {
-  background: hsl(var(--app-bg-sunken, 0 0% 90%) / 0.6);
+  background: hsl(var(--app-bg-sunken) / 0.6);
 }
 
 /* The reused markdown field fills the modal; grow the textarea for real editing. */
@@ -577,8 +577,8 @@
   max-width: calc(100% - 32px);
   padding: 8px 8px 8px 14px;
   background: hsl(var(--app-accent-primary));
-  color: hsl(var(--app-text-on-accent, 0 0% 100%));
-  border-radius: var(--ps-radius-pill, 999px);
+  color: hsl(var(--app-text-on-solid));
+  border-radius: var(--ps-radius-full);
   box-shadow: 0 8px 24px hsl(0 0% 0% / 0.28);
   font-size: var(--ps-text-sm);
   font-weight: 500;
@@ -599,7 +599,7 @@
   height: 22px;
   padding: 0;
   border: none;
-  border-radius: var(--ps-radius-full, 999px);
+  border-radius: var(--ps-radius-full);
   background: hsl(0 0% 100% / 0.18);
   color: inherit;
   font-size: var(--ps-text-lg);
@@ -719,7 +719,7 @@
   display: inline-flex;
   gap: var(--ps-space-0-5);
   padding: 3px;
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-subtle));
   border-radius: 999px;
   box-shadow: 0 2px 8px hsl(0 0% 0% / 0.16);

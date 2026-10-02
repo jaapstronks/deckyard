@@ -2,8 +2,9 @@
 
 The class names a slide type renders are a public contract. Renaming one is a
 change a fork has to hear about, and `tests/slide-type-css-contract.test.js` is
-the gate that keeps the upstream half honest: **every class a core slide type
-emits must resolve to a CSS rule.**
+the gate that keeps both halves honest: **every class a slide type emits must
+resolve to a CSS rule**, a core type's in core's stylesheets, a fork type's in
+core's or the fork's own.
 
 ## Why this direction is the exact one
 
@@ -31,9 +32,13 @@ was purely visual and a human found it hours after deploy.
 
 ## What the test does
 
-For every registered core type it renders the defaults, plus one variant per
-value that can carry a modifier class, and collects the class names. Three kinds
-of value are swept:
+For every registered type it renders the defaults, plus one variant per value
+that can carry a modifier class, and collects the class names. It sweeps the
+registry in two halves, each from the definition that applies to it: the core
+types from `CORE_SLIDE_TYPE_DEFS` (so a fork's override never hides a core class
+that moved), and the types a fork adds or overrides (`CUSTOM_SLIDE_TYPE_NAMES`)
+from `SLIDE_TYPES`, the definition that actually runs. Three kinds of value are
+swept:
 
 - every declared option of every enum field;
 - both states of every boolean field;
@@ -56,9 +61,22 @@ the class from the sweep; the canonical `bleed` toggle now covers it. `is-black`
 `is-fit-contain` is now attributed to image-text through its own flat `fit`
 instead of being borrowed from image-slide.
 
-A class passes if it has a rule in `client/styles/**`, or if the rendered markup
-styles it in its own inline `<style>` block (the likely shape for a fork type
-that ships its own rules), or if it is listed in `UNSTYLED` with a reason.
+A class passes if it has a rule in the corpus, `client/styles/**` plus the fork
+seam `custom/styles/**` (loaded last in every render path; see
+`server/utils/css-chain.js`), or if it is listed in `UNSTYLED` with a reason. (A
+file-JS type cannot style itself through an inline `<style>` block: the
+definition validator refuses one, so its rules are always in the corpus.) There is
+no fork allowlist: a fork's classes are styled by the fork's stylesheets, and
+those are in the corpus. A test pins the corpus to exactly those two roots.
+
+**Where each half runs.** In upstream's own `test` job `custom/` is empty, so
+the fork half sweeps nothing and skips; a synthetic type proves that an
+unstyled class in it fails and that a rule in `custom/styles/` clears it. The
+`test-fork` job copies the three fixture types from
+`tests/fixtures/fork-slide-types/` into `custom/slide-types/` and their
+stylesheet from `tests/fixtures/fork-styles/` into `custom/styles/`, and runs
+the fork half for real. A fork runs the same file in its own checkout, over its
+own types and its own `custom/styles/`.
 
 ## The root class is not a free choice
 
@@ -84,14 +102,13 @@ keep the Dutch names the type was born with.
 
 ## Author CSS is scoped to the slide root
 
-Two surfaces let a human paste a stylesheet into a deck rather than write one in
-the repo: the **custom-html slide** (a `css` field on the slide) and a type built
-in **Settings > Slide Types** (a `css` column on the definition). Both inject it
-as a `<style>` block on a page that also carries the presenter, the editor and
+One surface lets a human paste a stylesheet into a deck rather than write one in
+the repo: a type built in **Settings > Slide Types** (a `css` column on the
+definition). It is injected as a `<style>` block on a page that also carries the presenter, the editor and
 every other slide, so an unscoped `body { display: none }` is not a styling
 mistake — it is one deck author restyling everyone's chrome.
 
-Both run the same two passes, in this order:
+It runs two passes, in this order:
 
 1. `filterCssText` (`shared/css-filter.js`) — the **security** half. No
    `@import`, no `expression()`, no `</style>` breakout.
@@ -100,14 +117,11 @@ Both run the same two passes, in this order:
    are remapped _onto_ that root rather than nested under it, because nesting
    them would silently match nothing.
 
-There is one implementation because there is one meaning. The DB path used to
-run only the first pass — its CSS reached deck chrome — and the fix was to give
-it the mechanism the other path already had, not to write a second one (B189).
+The DB path used to run only the first pass — its CSS reached deck chrome — and
+the fix gave it the containment pass rather than a second idea of "scoped"
+(B189).
 
-**What each path scopes to.** The custom-html slide owns its whole markup, so it
-scopes to a per-slide root it renders itself
-(`.custom-html-root[data-chr="<slide id>"]`) and two custom-html slides in one
-deck cannot style each other. A DB type scopes to its **root class** — the same
+**What it scopes to.** A DB type scopes to its **root class** — the same
 `slideRootClass()` derivation as everything else on this page, so the type
 `custom-hero` scopes to `.slide-custom-hero` — and the CSS therefore applies to
 every slide of that type, which is what a _type_'s stylesheet is for.
@@ -167,10 +181,10 @@ and a third requires every entry to carry a reason. Same two-way honesty as
 
 ## What it cannot see
 
-**A fork's own slide types.** They live in `custom/slide-types/`, which upstream
-does not have. The test protects upstream from renaming a class out from under
-_itself_; nothing in this repo can tell a fork that its `ciiic-title-slide`
-depends on a name that moved. That is what the release-notes rule is for —
+**A fork's break before the fork merges.** The fork half runs in the fork's
+checkout, so it goes red when the fork merges an upstream tag that moved a
+class its types emit, not when upstream moved it. By then the fork knows
+_that_ a name moved; the release notes say _what it became_ —
 `docs/reference/versioning.md` § _Renamed slide-type classes go in the release
 notes_.
 

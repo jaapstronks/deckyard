@@ -16,6 +16,11 @@ analytics-privacy work (decisions recorded in `docs/plans/done/decisions.md`
 [`tenant-isolation.md`](tenant-isolation.md); the wider data-subject-rights
 surface for logged-in people is the GDPR export/erase endpoint below.
 
+The instance-health counters are **not** part of this surface: they count
+which slide types, surfaces, formats and tools an install uses, per day,
+with no person, deck, device or organization in the row, and they are not
+switched by `analytics.enabled` ([`instance-health.md`](instance-health.md)).
+
 Analytics is the **only** anonymous-visitor-PII surface Deckyard has. Lead
 capture — a slide that stored a visitor's name and e-mail with its own
 retention and GDPR flow — was stripped on 2026-08-22 (D50); its erase path,

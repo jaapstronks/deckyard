@@ -3,7 +3,6 @@
  * Includes create, update, and delete operations.
  */
 
-import { getPresentation } from '../../../storage/presentations/index.js';
 import {
   badRequest,
   methodNotAllowed,
@@ -14,192 +13,94 @@ import {
   forbidden,
 } from '../../../utils/http.js';
 import {
-  canReadPresentation,
   canEditComment,
   canDeleteComment,
-  canGuestComment,
   canGuestEditComment,
   canGuestDeleteComment,
 } from '../../../utils/presentation-authz/index.js';
 import {
   getComment,
   getCommentAuthorEmail,
-  createComment,
   updateComment,
   deleteComment,
 } from '../../../storage/presentations/comments.js';
-import { recordCommentCreated } from '../../../services/activity-events.js';
 import {
   broadcastToPresentation,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
 import {
   getGuestFromRequest,
-  withPresentationCommentAuth,
+  withPresentationReadAuth,
 } from '../../../utils/route-middleware.js';
+import { notifyMentionsAdded } from '../../../services/comment-notifications.js';
 import {
-  notifyCommentCreated,
-  notifyMentionsAdded,
-} from '../../../services/comment-notifications.js';
-import {
+  createComment,
   MAX_COMMENT_LENGTH,
   broadcastCommentCounts,
-} from './comments-shared.js';
+} from '../../../services/comments.js';
+import { ForbiddenError } from '../../../utils/errors.js';
 import { getString } from '../../../utils/request-validators.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 /**
- * Check if a user (authenticated or guest) can edit a comment.
+ * Whoever reached the deck — the account, or the share-link guest session the
+ * read fell back to — may edit this comment when it is theirs (or they
+ * moderate).
  */
-async function checkCommentEditAccess({ req, authedUser, pres, comment }) {
-  if (canReadPresentation({ user: authedUser, pres })) {
-    return canEditComment({ user: authedUser, comment });
-  }
-  const guestInfo = await getGuestFromRequest(req);
-  if (guestInfo && guestInfo.shareLink.presentationId === pres.id) {
-    return canGuestEditComment({ guest: guestInfo.guest, comment });
-  }
-  return false;
+function mayEditComment({ authedUser, guestInfo, comment }) {
+  return guestInfo
+    ? canGuestEditComment({ guest: guestInfo.guest, comment })
+    : canEditComment({ user: authedUser, comment });
 }
 
-/**
- * Check if a user (authenticated or guest) can delete a comment.
- */
-async function checkCommentDeleteAccess({ req, authedUser, pres, comment }) {
-  if (canReadPresentation({ user: authedUser, pres })) {
-    return canDeleteComment({ user: authedUser, pres, comment });
-  }
-  const guestInfo = await getGuestFromRequest(req);
-  if (guestInfo && guestInfo.shareLink.presentationId === pres.id) {
-    return canGuestDeleteComment({ guest: guestInfo.guest, comment });
-  }
-  return false;
+/** As {@link mayEditComment}, for deletion (the deck owner also moderates). */
+function mayDeleteComment({ authedUser, guestInfo, pres, comment }) {
+  return guestInfo
+    ? canGuestDeleteComment({ guest: guestInfo.guest, comment })
+    : canDeleteComment({ user: authedUser, pres, comment });
 }
 
 /**
  * Create a new comment.
  * POST /api/presentations/:id/comments
- * Body: { body, slideId?, parentId? }
+ * Body: { body, slideId?, parentId?, positionX?, positionY? }
  *
- * Supports both authenticated users and verified guests with share link access.
+ * The flow is `services/comments.js`; this adapter parses the body and names
+ * who is asking. This contract is the one that can carry two credentials at
+ * once — a signed-in session and a share-link guest session — and its rule is
+ * that the account comments when it may, otherwise the guest session on this
+ * deck does. The service decides "may"; a refusal of the account falls back to
+ * the guest, never the other way round.
  */
 export async function handlePresentationCommentsCreate(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const { pres, guestInfo: foundGuestInfo } = await withPresentationCommentAuth(
-    { storageScope, req, id, authedUser, res },
-  );
-  if (!pres) return true;
-
-  // Determine commenter identity
-  let commenterEmail = authedUser?.email;
-  let commenterName = authedUser?.name;
-  let isGuest = false;
-  let guestInfo = null;
-
-  if (authedUser?.email && !foundGuestInfo) {
-    // Authenticated user with comment access - use their info
-    commenterEmail = authedUser?.email;
-    commenterName = authedUser?.name;
-  } else if (foundGuestInfo) {
-    // Guest session found - verify they can comment
-    guestInfo = foundGuestInfo;
-
-    if (
-      !canGuestComment({
-        guest: guestInfo.guest,
-        shareLink: guestInfo.shareLink,
-        presentationId: id,
-      })
-    ) {
-      return forbidden(res);
-    }
-
-    commenterEmail = guestInfo.guest.email;
-    commenterName = guestInfo.guest.name;
-    isGuest = true;
-  }
-
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  if (!getString(body, 'body').trim()) {
-    return badRequest(res, 'Comment body is required');
-  }
-
-  // Validate comment body length
-  if (body.body.length > MAX_COMMENT_LENGTH) {
-    return badRequest(
-      res,
-      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
-    );
-  }
-
-  // Get parent comment if this is a reply (for notification recipient)
-  let parentComment = null;
-  if (body.parentId) {
-    parentComment = await getComment(storageScope, body.parentId);
-  }
-
-  const result = await createComment(storageScope, id, {
-    email: commenterEmail,
-    name: commenterName,
-    // A guest is keyed on their guest row (migration 079): without this id the
-    // comment would be nobody's, and the guest could never edit or delete it.
-    guestId: isGuest ? guestInfo.guest.id : null,
+  const input = {
+    presentationId: id,
     body: body.body,
     slideId: body.slideId || null,
     parentId: body.parentId || null,
     positionX: body.positionX,
     positionY: body.positionY,
-  });
+  };
 
-  if (!result.ok) {
-    return storageError(res, result);
+  let created;
+  try {
+    created = await createComment(storageScope, { actor: authedUser }, input);
+  } catch (err) {
+    if (!(err instanceof ForbiddenError)) throw err;
+    const guestInfo = await getGuestFromRequest(req);
+    if (!guestInfo) throw err;
+    created = await createComment(storageScope, guestInfo, input);
   }
 
-  // Fire notifications (non-blocking)
-  // For guests, create a mock authedUser object for notifications
-  const notificationUser = isGuest
-    ? { email: commenterEmail, name: commenterName }
-    : authedUser;
-
-  fireAndForget(
-    notifyCommentCreated(repoRoot, req, {
-      presentation: pres,
-      comment: result.comment,
-      parentComment,
-      actor: notificationUser,
-      scope: storageScope,
-    }),
-    'comment-created notification fan-out',
-  );
-
-  // Record activity event (non-blocking)
-  fireAndForget(
-    recordCommentCreated({
-      comment: result.comment,
-      presentation: pres,
-      actor: notificationUser,
-      isGuest,
-      scope: storageScope,
-    }),
-    'record comment-created activity',
-  );
-
-  // Broadcast to all connected clients (non-blocking)
-  broadcastToPresentation(id, CommentEventTypes.CREATED, {
-    comment: result.comment,
-  });
-  fireAndForget(
-    broadcastCommentCounts(id, storageScope),
-    'broadcast comment counts',
-  );
-
-  serveJson(res, 201, result);
+  serveJson(res, 201, { ok: true, comment: created.comment });
   return true;
 }
 
@@ -217,8 +118,14 @@ export async function handlePresentationCommentUpdate(
 ) {
   if (req.method !== 'PUT') return methodNotAllowed(res, ['PUT']);
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res, 'Presentation not found');
+  const { pres, guestInfo } = await withPresentationReadAuth({
+    storageScope,
+    req,
+    id,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
 
   const comment = await getComment(storageScope, commentId);
 
@@ -226,13 +133,7 @@ export async function handlePresentationCommentUpdate(
     return notFound(res, 'Comment not found');
   }
 
-  const canEdit = await checkCommentEditAccess({
-    req,
-    authedUser,
-    pres,
-    comment,
-  });
-  if (!canEdit) {
+  if (!mayEditComment({ authedUser, guestInfo, pres, comment })) {
     return forbidden(res);
   }
 
@@ -266,7 +167,7 @@ export async function handlePresentationCommentUpdate(
       const parentComment = result.comment?.parentId
         ? await getComment(storageScope, result.comment.parentId)
         : null;
-      await notifyMentionsAdded(repoRoot, req, {
+      await notifyMentionsAdded(repoRoot, {
         presentation: pres,
         comment: result.comment,
         previousMentions: comment.mentions,
@@ -306,8 +207,14 @@ export async function handlePresentationCommentDelete(
 ) {
   if (req.method !== 'DELETE') return methodNotAllowed(res, ['DELETE']);
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res, 'Presentation not found');
+  const { pres, guestInfo } = await withPresentationReadAuth({
+    storageScope,
+    req,
+    id,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
 
   const comment = await getComment(storageScope, commentId);
 
@@ -315,13 +222,7 @@ export async function handlePresentationCommentDelete(
     return notFound(res, 'Comment not found');
   }
 
-  const canDelete = await checkCommentDeleteAccess({
-    req,
-    authedUser,
-    pres,
-    comment,
-  });
-  if (!canDelete) {
+  if (!mayDeleteComment({ authedUser, guestInfo, pres, comment })) {
     return forbidden(res);
   }
 

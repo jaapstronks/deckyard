@@ -10,47 +10,27 @@ import { getAppBaseUrl } from '../config/utils.js';
 import {
   listPresentations,
   getPresentation,
-  createPresentation,
   updatePresentation,
-  deletePresentation,
-  duplicatePresentation,
 } from '../storage/presentations/index.js';
-import { loadPresentationChecked } from './presentation-access.js';
+import { loadPresentationChecked, mcpActor } from './presentation-access.js';
 import { singleOrganizationScope } from '../storage/scope.js';
 import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
   listComments,
   listRecentCommentsForOwner,
-  listAccessiblePresentationRefs,
-  getComment,
-  createComment,
-  resolveComment,
-  reopenComment,
-  dismissComment,
 } from '../storage/presentations/comments.js';
 import {
-  canActorCommentOnPresentation,
-  canActorResolveComment,
-} from '../utils/presentation-authz/index.js';
-import {
-  buildSlideSnapshot,
   enrichCommentsWithSlideContext,
   slideContextFor,
 } from '../services/comment-slide-context.js';
+import { createComment, setCommentStatus } from '../services/comments.js';
 import {
-  broadcastToPresentation,
-  CommentEventTypes,
-} from '../services/comment-events.js';
-import {
-  recordCommentCreated,
-  recordCommentResolved,
-  recordCommentReopened,
-} from '../services/activity-events.js';
-import { notifyCommentCreatedInApp } from '../services/comment-notifications.js';
-import {
-  broadcastCommentCounts,
-  MAX_COMMENT_LENGTH,
-} from '../routes/api/presentations/comments-shared.js';
+  assertCreatableDeckInput,
+  createPresentation,
+  deletePresentation,
+  duplicatePresentation,
+  publicDeckTimestamps,
+} from '../services/presentations.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   convertSlideToType,
@@ -101,7 +81,6 @@ import {
   TRANSLATION_LANGS,
 } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
-import { fireAndForget } from '../utils/fire-and-forget.js';
 
 /**
  * Get the best display title for a slide, regardless of type.
@@ -240,19 +219,14 @@ export function registerTools(
   // an agent-created poll slide reached storage without a `pollId`.
 
   /**
-   * The acting machine client for a per-deck authorization check: who is acting
-   * and in which organization. That comes off the session's own storage scope
-   * (an SSE session acts in its API key's organization; a stdio session in the
-   * single organization it is bound to), never off the deck being checked — see
-   * utils/presentation-authz/actor-access.js.
+   * The acting machine client for a service call: the session owner in the
+   * session's own organization, or the unrestricted operator for a local
+   * session without an owner ({@link mcpActor}).
    * @param {Object} [context] - Per-request context (SSE session)
-   * @returns {{email: string|null, organizationId: string|null}}
+   * @returns {import('../services/actor.js').Actor}
    */
   function actorOf(context) {
-    return {
-      email: getOwner(context),
-      organizationId: storageScopeOf(context)?.organizationId || null,
-    };
+    return mcpActor(storageScopeOf(context), getOwner(context));
   }
 
   /**
@@ -294,7 +268,7 @@ export function registerTools(
   }
 
   /**
-   * Write options for updatePresentation/deletePresentation calls: attribute
+   * Write options for updatePresentation calls: attribute
    * the write to the acting session owner so the slide-lock policy
    * (enforceSlideWritePolicy) can tell authors from non-authors. Without an
    * actor the policy fails closed and author-locked slides reject even their
@@ -426,8 +400,7 @@ export function registerTools(
           id: p.id,
           title: p.title || 'Untitled',
           theme: p.theme || 'default',
-          createdAt: p.created,
-          updatedAt: p.modified,
+          ...publicDeckTimestamps(p),
         };
         if (slideCount !== null) item.slideCount = slideCount;
         // Present on shared decks; marks how the caller has access.
@@ -515,11 +488,6 @@ export function registerTools(
           type: 'string',
           description: 'Speaker name for the title slide',
         },
-        ownerEmail: {
-          type: 'string',
-          description:
-            'Email of the presentation owner (for access control). If not provided, uses the server default.',
-        },
         vendor: {
           type: 'string',
           description:
@@ -528,19 +496,19 @@ export function registerTools(
       },
       required: ['content'],
     },
-    async (
-      {
+    async (args, context) => {
+      const {
         content,
         title,
         theme: requestedTheme,
         lang,
         speaker = '',
-        ownerEmail,
         vendor,
-      },
-      context,
-    ) => {
-      const effectiveOwner = ownerEmail || getOwner(context);
+      } = args;
+      // Refused before the generation, so a refused call costs no LLM call;
+      // the deck is the session owner's (B521).
+      assertCreatableDeckInput(args);
+      const effectiveOwner = getOwner(context);
       // Checked before the generation, so an unknown theme costs no LLM call.
       const { themeId: theme, theme: themeObj } = await settleNewDeckTheme(
         repoRoot,
@@ -562,12 +530,11 @@ export function registerTools(
       const parts = deckToPresentationParts(deck, { theme: themeObj, lang });
       if (title) parts.title = title;
 
-      const created = await createPresentation(storageScopeOf(context), {
-        title: parts.title,
-        theme,
-        lang: lang || undefined,
-        ownerEmail: effectiveOwner,
-      });
+      const created = await createPresentation(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { title: parts.title, theme, lang: lang || undefined },
+      );
 
       const updated = await updatePresentation(
         storageScopeOf(context),
@@ -597,7 +564,7 @@ export function registerTools(
       if (presentUrl) result.presentUrl = presentUrl;
       return result;
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── create_presentation_from_slides ────────────────────────────────────
@@ -648,11 +615,6 @@ export function registerTools(
           description: `Language, one of ${TRANSLATION_LANGS.join(', ')} (default: ${DEFAULT_DECK_LANG})`,
           enum: [...TRANSLATION_LANGS],
         },
-        ownerEmail: {
-          type: 'string',
-          description:
-            'Email of the presentation owner. Defaults to the session/server owner.',
-        },
         validation: {
           type: 'string',
           description:
@@ -667,23 +629,21 @@ export function registerTools(
       },
       required: ['title', 'slides'],
     },
-    async (
-      {
+    async (args, context) => {
+      const {
         title,
         slides,
         theme: requestedTheme,
         lang = 'nl',
-        ownerEmail,
         validation = 'strict',
         auto_prepend_title = false,
-      },
-      context,
-    ) => {
+      } = args;
       if (!Array.isArray(slides) || slides.length === 0) {
         throw new Error('"slides" must be a non-empty array');
       }
+      assertCreatableDeckInput(args);
 
-      const effectiveOwner = ownerEmail || getOwner(context);
+      const effectiveOwner = getOwner(context);
 
       // Strip incoming `id` fields so storage assigns fresh UUIDs; preserve type/content/notes.
       let inputSlides = slides.map((s) => ({
@@ -744,17 +704,11 @@ export function registerTools(
       }
 
       // Create stub row, then write the slide payload in one update.
-      const created = await createPresentation(storageScopeOf(context), {
-        title,
-        theme,
-        lang,
-        ownerEmail: effectiveOwner,
-      });
-      if (created?.ok === false) {
-        throw new Error(
-          `createPresentation failed: ${created.reason || 'unknown'}`,
-        );
-      }
+      const created = await createPresentation(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { title, theme, lang },
+      );
 
       const updated = await updatePresentation(
         storageScopeOf(context),
@@ -1044,7 +998,7 @@ export function registerTools(
         content: slide.content,
       };
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── iterate_presentation ───────────────────────────────────────────────
@@ -1106,7 +1060,7 @@ export function registerTools(
         totalSlides: pres.slides.length,
       };
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── validate_presentation ──────────────────────────────────────────────
@@ -1200,8 +1154,11 @@ export function registerTools(
     },
     async ({ presentationId, confirm }, context) => {
       if (!confirm) {
-        // Fetch title for confirmation prompt
-        const pres = await getCheckedPresentation(presentationId, context);
+        // The preview asks the right the delete asks, so a session that may
+        // not trash the deck is refused here, not invited to confirm.
+        const pres = await getCheckedPresentation(presentationId, context, {
+          access: 'delete',
+        });
         return {
           deleted: false,
           id: presentationId,
@@ -1211,12 +1168,11 @@ export function registerTools(
             'Set confirm: true to delete this presentation. This action moves it to trash.',
         };
       }
-      await getCheckedPresentation(presentationId, context, {
-        access: 'delete',
-      });
-      await deletePresentation(storageScopeOf(context), presentationId, {
-        actorEmail: getOwner(context),
-      });
+      await deletePresentation(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        presentationId,
+      );
       return { deleted: true, id: presentationId };
     },
     { permission: 'write' },
@@ -1395,7 +1351,7 @@ export function registerTools(
         })),
       };
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── compress_presentation ──────────────────────────────────────────────
@@ -1459,7 +1415,7 @@ export function registerTools(
         slidesAfter: apply ? pres.slides.length : undefined,
       };
     },
-    { permission: 'ai' },
+    { permission: 'ai', feature: 'ai' },
   );
 
   // ─── analyze_presentation ───────────────────────────────────────────────
@@ -1505,7 +1461,7 @@ export function registerTools(
         })),
       };
     },
-    { readOnly: true, permission: 'ai' },
+    { readOnly: true, permission: 'ai', feature: 'ai' },
   );
 
   // ─── duplicate_presentation ─────────────────────────────────────────────
@@ -1524,17 +1480,11 @@ export function registerTools(
       required: ['presentationId'],
     },
     async ({ presentationId }, context) => {
-      await getCheckedPresentation(presentationId, context);
-      const duplicated = await duplicatePresentation(
+      const dup = await duplicatePresentation(
         storageScopeOf(context),
+        { actor: actorOf(context) },
         presentationId,
-        {
-          ownerEmail: getOwner(context),
-          actorEmail: getOwner(context),
-        },
       );
-      if (!duplicated.ok) throw new Error('Duplication failed');
-      const dup = duplicated.presentation;
 
       const result = {
         id: dup.id,
@@ -1804,17 +1754,7 @@ export function registerTools(
     ) => {
       const ctx = storageScopeOf(context);
 
-      // Access guard: only decks the acting owner can see (owned or shared).
-      const refs = await listAccessiblePresentationRefs(
-        storageScopeOf(context),
-        'all',
-      );
-      const ref = refs.find((r) => r.id === presentationId);
-      if (!ref) {
-        throw new Error(
-          `Presentation not found or not accessible: ${presentationId}`,
-        );
-      }
+      const pres = await getCheckedPresentation(presentationId, context);
 
       const comments = await listComments(ctx, presentationId, {
         status: status === 'all' ? undefined : status,
@@ -1825,23 +1765,18 @@ export function registerTools(
 
       // Slide context reflects the deck as it is now; the stored
       // slideSnapshot on each comment shows the slide at create time.
-      const pres = await getPresentation(
-        storageScopeOf(context),
-        presentationId,
-      );
-      const enriched = enrichCommentsWithSlideContext(
-        comments,
-        pres || { slides: [] },
-      ).map((c) => ({
-        ...c,
-        editUrl: presentationUrl(presentationId, 'edit', {
-          slideId: c.slideId,
+      const enriched = enrichCommentsWithSlideContext(comments, pres).map(
+        (c) => ({
+          ...c,
+          editUrl: presentationUrl(presentationId, 'edit', {
+            slideId: c.slideId,
+          }),
         }),
-      }));
+      );
 
       return {
         presentationId,
-        presentationTitle: ref.title,
+        presentationTitle: pres.title,
         comments: enriched,
         total: enriched.length,
       };
@@ -1971,92 +1906,27 @@ export function registerTools(
   }
 
   /**
-   * Shared create path for add_comment and reply_to_comment.
+   * Shared create path for add_comment and reply_to_comment. The flow is
+   * `services/comments.js`; this adapter names the actor and shapes the tool
+   * result.
    */
   async function createCommentAsActor(
     { presentationId, body, slideId = null, parentId = null },
     context,
   ) {
-    const owner = requireCommentActor(context);
-    const pres = await getCheckedPresentation(presentationId, context);
-
-    if (!(await canActorCommentOnPresentation(pres, actorOf(context)))) {
-      throw new Error(
-        'You do not have comment permission on this presentation',
-      );
-    }
-
-    const text = typeof body === 'string' ? body.trim() : '';
-    if (!text) throw new Error('Comment body is required');
-    if (text.length > MAX_COMMENT_LENGTH) {
-      throw new Error(
-        `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
-      );
-    }
-
-    let slideSnapshot = null;
-    if (slideId) {
-      const slide = (pres.slides || []).find((s) => s?.id === slideId);
-      if (!slide)
-        throw new Error(`Slide not found in this presentation: ${slideId}`);
-      slideSnapshot = buildSlideSnapshot(slide);
-    }
-
-    const ctx = storageScopeOf(context);
-    const result = await createComment(ctx, presentationId, {
-      email: owner,
-      body: text,
-      slideId,
-      parentId,
-      slideSnapshot,
-    });
-
-    if (!result.ok) {
-      throw new Error(
-        `Could not create comment: ${result.reason} (comments require the DB storage backend)`,
-      );
-    }
-
-    // Same side effects as the app routes so the editor UI updates live.
-    // The parent lookup rides inside the voided task: the tool response
-    // must not wait on notification plumbing.
-    fireAndForget(
-      (async () => {
-        const parentComment = parentId ? await getComment(ctx, parentId) : null;
-        await notifyCommentCreatedInApp({
-          presentation: pres,
-          comment: result.comment,
-          parentComment,
-          actor: { email: owner },
-          scope: ctx,
-        });
-      })(),
-      'MCP comment-created in-app notification',
+    requireCommentActor(context);
+    const { comment, presentation } = await createComment(
+      storageScopeOf(context),
+      { actor: actorOf(context) },
+      { presentationId, body, slideId, parentId },
     );
-    fireAndForget(
-      recordCommentCreated({
-        comment: result.comment,
-        presentation: pres,
-        actor: { email: owner },
-        scope: ctx,
-      }),
-      'record comment-created activity',
-    );
-    broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
-      comment: result.comment,
-    });
-    fireAndForget(
-      broadcastCommentCounts(presentationId, ctx),
-      'broadcast comment counts',
-    );
-
     return {
       ok: true,
       comment: {
-        ...result.comment,
-        slide: slideContextFor(pres, result.comment.slideId),
+        ...comment,
+        slide: slideContextFor(presentation, comment.slideId),
         editUrl: presentationUrl(presentationId, 'edit', {
-          slideId: result.comment.slideId,
+          slideId: comment.slideId,
         }),
       },
     };
@@ -2113,20 +1983,11 @@ export function registerTools(
       },
       required: ['presentationId', 'commentId', 'body'],
     },
-    async ({ presentationId, commentId, body }, context) => {
-      requireCommentActor(context); // writes need an attributable actor
-      const ctx = storageScopeOf(context);
-
-      const parent = await getComment(ctx, commentId);
-      if (!parent || parent.presentationId !== presentationId) {
-        throw new Error(`Comment not found on this presentation: ${commentId}`);
-      }
-
-      // Threads are one level deep: replying to a reply joins its thread.
-      const parentId = parent.parentId || parent.id;
-
-      return createCommentAsActor({ presentationId, body, parentId }, context);
-    },
+    async ({ presentationId, commentId, body }, context) =>
+      createCommentAsActor(
+        { presentationId, body, parentId: commentId },
+        context,
+      ),
     { permission: 'comments:write' },
   );
 
@@ -2152,72 +2013,13 @@ export function registerTools(
       required: ['presentationId', 'commentId', 'status'],
     },
     async ({ presentationId, commentId, status }, context) => {
-      const owner = requireCommentActor(context);
-      const ctx = storageScopeOf(context);
-
-      const comment = await getComment(ctx, commentId);
-      if (!comment || comment.presentationId !== presentationId) {
-        throw new Error(`Comment not found on this presentation: ${commentId}`);
-      }
-
-      const pres = await getCheckedPresentation(presentationId, context);
-      if (!(await canActorResolveComment(pres, actorOf(context)))) {
-        throw new Error(
-          'Only the presentation owner can change comment status',
-        );
-      }
-
-      let result;
-      if (status === 'resolved') {
-        result = await resolveComment(ctx, commentId, { email: owner });
-      } else if (status === 'dismissed') {
-        result = await dismissComment(ctx, commentId, { email: owner });
-      } else {
-        result = await reopenComment(ctx, commentId);
-      }
-
-      if (!result.ok) {
-        throw new Error(`Could not change status: ${result.reason}`);
-      }
-
-      const actor = { email: owner };
-      if (status === 'resolved') {
-        fireAndForget(
-          recordCommentResolved({
-            comment: result.comment,
-            presentation: pres,
-            actor,
-            scope: ctx,
-          }),
-          'record comment-resolved activity',
-        );
-        broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, {
-          comment: result.comment,
-        });
-      } else if (status === 'open') {
-        fireAndForget(
-          recordCommentReopened({
-            comment: result.comment,
-            presentation: pres,
-            actor,
-            scope: ctx,
-          }),
-          'record comment-reopened activity',
-        );
-        broadcastToPresentation(presentationId, CommentEventTypes.REOPENED, {
-          comment: result.comment,
-        });
-      } else {
-        broadcastToPresentation(presentationId, CommentEventTypes.RESOLVED, {
-          comment: result.comment,
-        });
-      }
-      fireAndForget(
-        broadcastCommentCounts(presentationId, ctx),
-        'broadcast comment counts',
+      requireCommentActor(context);
+      const { comment } = await setCommentStatus(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { presentationId, commentId, status },
       );
-
-      return { ok: true, comment: result.comment };
+      return { ok: true, comment };
     },
     { permission: 'comments:write' },
   );

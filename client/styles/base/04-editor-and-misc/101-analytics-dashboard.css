@@ -17,7 +17,7 @@
   display: flex;
   align-items: center;
   height: 56px;
-  padding: 0 var(--ps-space-4, 16px);
+  padding: 0 var(--ps-space-4);
   background: hsl(var(--app-bg-elevated));
   border-bottom: 1px solid hsl(var(--app-border-default));
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -26,13 +26,13 @@
 .dashboard-back-btn {
   display: inline-flex;
   align-items: center;
-  gap: var(--ps-space-2, 8px);
-  padding: var(--ps-space-2, 8px) var(--ps-space-3, 12px);
-  font-size: var(--ps-text-sm, 14px);
+  gap: var(--ps-space-2);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
   font-weight: 500;
   color: hsl(var(--app-text-secondary));
   text-decoration: none;
-  border-radius: var(--ps-radius-md, 6px);
+  border-radius: var(--ps-radius-md);
   transition:
     background 0.15s,
     color 0.15s;
@@ -47,34 +47,34 @@
 .dashboard-shell {
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--ps-space-6, 24px) var(--ps-space-4, 16px);
+  padding: var(--ps-space-6) var(--ps-space-4);
 }
 
 /* Header */
 .dashboard-header {
-  margin-bottom: var(--ps-space-6, 24px);
+  margin-bottom: var(--ps-space-6);
 }
 
 .dashboard-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--ps-space-4, 16px);
+  gap: var(--ps-space-4);
   flex-wrap: wrap;
 }
 
 .dashboard-title {
-  font-size: var(--ps-text-2xl, 24px);
+  font-size: var(--ps-text-2xl);
   font-weight: 600;
   color: hsl(var(--app-text-primary));
   margin: 0;
 }
 
 .dashboard-period-select {
-  padding: var(--ps-space-2, 8px) var(--ps-space-3, 12px);
-  font-size: var(--ps-text-sm, 14px);
+  padding: var(--ps-space-2) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
   border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md, 6px);
+  border-radius: var(--ps-radius-md);
   background: hsl(var(--app-bg-elevated));
   color: hsl(var(--app-text-primary));
   cursor: pointer;
@@ -97,15 +97,15 @@
 .dashboard-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--ps-space-4, 16px);
-  margin-bottom: var(--ps-space-6, 24px);
+  gap: var(--ps-space-4);
+  margin-bottom: var(--ps-space-6);
 }
 
 .dashboard-metric-card {
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-lg, 12px);
-  padding: var(--ps-space-5, 20px);
+  border-radius: var(--ps-radius-lg);
+  padding: var(--ps-space-5);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.04),
     0 1px 2px rgba(0, 0, 0, 0.06);
@@ -122,10 +122,10 @@
 }
 
 .dashboard-metric-label {
-  font-size: var(--ps-text-sm, 14px);
+  font-size: var(--ps-text-sm);
   font-weight: 500;
   color: hsl(var(--app-text-secondary));
-  margin-bottom: var(--ps-space-2, 8px);
+  margin-bottom: var(--ps-space-2);
   text-transform: uppercase;
   letter-spacing: 0.025em;
 }
@@ -142,8 +142,8 @@
   display: flex;
   align-items: center;
   gap: var(--ps-space-1);
-  font-size: var(--ps-text-xs, 12px);
-  margin-top: var(--ps-space-2, 8px);
+  font-size: var(--ps-text-xs);
+  margin-top: var(--ps-space-2);
   font-weight: 500;
 }
 
@@ -163,23 +163,23 @@
 .dashboard-card {
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-lg, 12px);
-  padding: var(--ps-space-5, 20px);
+  border-radius: var(--ps-radius-lg);
+  padding: var(--ps-space-5);
   box-shadow:
     0 1px 3px rgba(0, 0, 0, 0.04),
     0 1px 2px rgba(0, 0, 0, 0.06);
 }
 
 .dashboard-card-title {
-  font-size: var(--ps-text-base, 16px);
+  font-size: var(--ps-text-base);
   font-weight: 600;
   color: hsl(var(--app-text-primary));
-  margin: 0 0 var(--ps-space-4, 16px) 0;
+  margin: 0 0 var(--ps-space-4) 0;
 }
 
 /* Chart */
 .dashboard-chart-card {
-  margin-bottom: var(--ps-space-6, 24px);
+  margin-bottom: var(--ps-space-6);
 }
 
 .dashboard-chart-wrap {
@@ -193,7 +193,7 @@
   display: flex;
   align-items: flex-end;
   gap: 3px;
-  padding-bottom: var(--ps-space-2, 8px);
+  padding-bottom: var(--ps-space-2);
 }
 
 .dashboard-chart-bar-col {
@@ -211,7 +211,7 @@
     hsl(var(--app-accent-primary)) 0%,
     hsl(var(--app-accent-primary-active)) 100%
   );
-  border-radius: var(--ps-radius-sm, 4px) var(--ps-radius-sm, 4px) 0 0;
+  border-radius: var(--ps-radius-sm) var(--ps-radius-sm) 0 0;
   min-height: 4px;
   transition:
     opacity 0.15s,
@@ -228,17 +228,17 @@
 .dashboard-chart-labels {
   display: flex;
   justify-content: space-between;
-  font-size: var(--ps-text-xs, 12px);
+  font-size: var(--ps-text-xs);
   color: hsl(var(--app-text-tertiary));
   border-top: 1px solid hsl(var(--app-border-subtle));
-  padding-top: var(--ps-space-2, 8px);
+  padding-top: var(--ps-space-2);
 }
 
 /* Bottom Row */
 .dashboard-bottom-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
-  gap: var(--ps-space-4, 16px);
+  gap: var(--ps-space-4);
 }
 
 @media (max-width: 1024px) {
@@ -255,28 +255,28 @@
 
 .dashboard-top-table th {
   text-align: left;
-  font-size: var(--ps-text-xs, 12px);
+  font-size: var(--ps-text-xs);
   font-weight: 600;
   color: hsl(var(--app-text-secondary));
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: var(--ps-space-3, 12px) var(--ps-space-3, 12px);
+  padding: var(--ps-space-3) var(--ps-space-3);
   border-bottom: 2px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-sunken));
 }
 
 .dashboard-top-table th:first-child {
-  border-radius: var(--ps-radius-md, 8px) 0 0 0;
+  border-radius: var(--ps-radius-md) 0 0 0;
 }
 
 .dashboard-top-table th:last-child {
-  border-radius: 0 var(--ps-radius-md, 8px) 0 0;
+  border-radius: 0 var(--ps-radius-md) 0 0;
 }
 
 .dashboard-top-table td {
-  padding: var(--ps-space-3, 12px);
+  padding: var(--ps-space-3);
   border-bottom: 1px solid hsl(var(--app-border-subtle));
-  font-size: var(--ps-text-sm, 14px);
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-primary));
 }
 
@@ -309,25 +309,25 @@
 .dashboard-source-bars {
   display: flex;
   flex-direction: column;
-  gap: var(--ps-space-4, 16px);
+  gap: var(--ps-space-4);
 }
 
 .dashboard-source-row {
   display: flex;
   flex-direction: column;
-  gap: var(--ps-space-2, 8px);
+  gap: var(--ps-space-2);
 }
 
 .dashboard-source-bar-wrap {
   height: 10px;
   background: hsl(var(--app-border-subtle));
-  border-radius: var(--ps-radius-full, 9999px);
+  border-radius: var(--ps-radius-full);
   overflow: hidden;
 }
 
 .dashboard-source-bar {
   height: 100%;
-  border-radius: var(--ps-radius-full, 9999px);
+  border-radius: var(--ps-radius-full);
   transition: width 0.4s ease;
 }
 
@@ -352,7 +352,7 @@
 }
 
 .dashboard-source-label {
-  font-size: var(--ps-text-sm, 14px);
+  font-size: var(--ps-text-sm);
   color: hsl(var(--app-text-secondary));
   font-weight: 500;
 }
@@ -361,15 +361,15 @@
 .dashboard-alert-banner {
   display: flex;
   align-items: center;
-  gap: var(--ps-space-3, 12px);
-  padding: var(--ps-space-3, 12px) var(--ps-space-4, 16px);
+  gap: var(--ps-space-3);
+  padding: var(--ps-space-3) var(--ps-space-4);
   background: hsl(var(--app-danger-soft));
   border: 1px solid hsl(var(--app-danger));
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
   color: hsl(var(--app-danger));
-  font-size: var(--ps-text-sm, 14px);
+  font-size: var(--ps-text-sm);
   font-weight: 500;
-  margin-bottom: var(--ps-space-4, 16px);
+  margin-bottom: var(--ps-space-4);
 }
 
 .dashboard-alert-icon {
@@ -389,10 +389,10 @@
   align-items: center;
   justify-content: center;
   min-height: 400px;
-  gap: var(--ps-space-3, 12px);
+  gap: var(--ps-space-3);
 }
 
 .dashboard-shell .analytics-loading-text {
   color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-sm, 14px);
+  font-size: var(--ps-text-sm);
 }

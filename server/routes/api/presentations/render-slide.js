@@ -9,18 +9,11 @@
  * deckless `POST /api/render-slide` calls too (B278).
  */
 
-import { getPresentation } from '../../../storage/presentations/index.js';
-import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { loadThemeAssets } from '../../../utils/themes.js';
-import { canReadPresentation } from '../../../utils/presentation-authz/index.js';
 import { resolveDeckLang } from '../../../../shared/i18n-utils.js';
-import {
-  methodNotAllowed,
-  notFound,
-  requireJsonBody,
-  forbidden,
-} from '../../../utils/http.js';
+import { methodNotAllowed, requireJsonBody } from '../../../utils/http.js';
 import { serveSlideRender } from '../render-slide.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 export async function handleRenderSlide(
   { repoRoot, storageScope, req, res, authedUser } = {},
@@ -28,19 +21,13 @@ export async function handleRenderSlide(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-
-  // Authorization check
-  const collaboratorPermission = await getCollaboratorPermission(
-    presentationId,
-    authedUser?.email,
-  );
-  if (
-    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
 
   const jsonResult = await requireJsonBody(req, res);
   if (!jsonResult.ok) return true;

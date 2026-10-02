@@ -1,6 +1,7 @@
 import { envBool, envStr } from '../config/utils.js';
 import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { isEmbeddableUrl, isValidProviderId } from './provider-ids.js';
+import { isExternalAnalyticsEnabled } from '../config/features.js';
 
 function safeB64ToUtf8(s) {
   const raw = String(s || '').trim();
@@ -199,7 +200,7 @@ function buildGtmHtml({ containerId }) {
  * @returns {Array<{html: string, scriptOrigins: string[]}>}
  */
 function collectAnalyticsHead({ sandbox = false, settings = null } = {}) {
-  if (envBool('DISABLE_ANALYTICS', false)) return [];
+  if (!isExternalAnalyticsEnabled()) return [];
   if (sandbox && !envBool('ANALYTICS_ALLOW_IN_SANDBOX', false)) return [];
 
   const entries = [];

@@ -3,7 +3,6 @@
  * Displays slide comments and allows users to add, reply, and resolve.
  */
 
-import { createCommentsApi } from './comments-api.js';
 import { t } from '../../lib/ui-i18n.js';
 import { icon, makeDropdownCaret } from '../../lib/dom/icons.js';
 import { createDropdown } from '../../lib/dom/dropdown.js';
@@ -27,11 +26,14 @@ import {
   collectUnreadThreadIds,
 } from './comments-read-state.js';
 import { h } from '../../lib/dom/index.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 
 /**
  * Creates a comments panel component for the editor.
  * @param {Object} options - Configuration options
  * @param {Function} options.api - API function for making requests
+ * @param {Object} options.commentsApi - The page's comments client
+ *   (`createCommentsApi`); the editor's stores its pending save before a create
  * @param {Object} [options.toast] - Toast notification handler
  * @param {string} options.presentationId - The presentation ID
  * @param {Object} options.pres - The presentation object
@@ -44,6 +46,7 @@ import { h } from '../../lib/dom/index.js';
  */
 export function createCommentsPanel({
   api,
+  commentsApi,
   toast,
   presentationId,
   pres,
@@ -54,8 +57,6 @@ export function createCommentsPanel({
   onJumpToSlide,
   onRequestClose,
 }) {
-  const commentsApi = createCommentsApi({ api, presentationId });
-
   // State
   let comments = [];
   let openCount = 0;
@@ -291,8 +292,28 @@ export function createCommentsPanel({
   // Comment submission
   // ========================================
 
+  /**
+   * The sentence for a refused create. A `slide_not_found` on the slide the
+   * user is looking at means the stored deck does not hold it yet (live
+   * edits persist on the server's debounce, D287): say that, not a generic
+   * failure. Anything else carries the server's own sentence.
+   * @param {Error & { code?: string }} err
+   * @param {string} fallback
+   * @returns {string}
+   */
+  function createRefusalMessage(err, fallback) {
+    if (err?.code === 'slide_not_found') {
+      return t(
+        'comments.error.slideNotSaved',
+        'This slide is not saved yet. Wait a moment and post again.',
+      );
+    }
+    return err?.message || fallback;
+  }
+
   async function submitComment() {
     const body = commentInput.getValue().trim();
+    postError.clear();
     if (!body) return;
 
     try {
@@ -307,7 +328,13 @@ export function createCommentsPanel({
       // redundant load (and slide-list rebuild).
       if (!sse.isConnected()) loadComments();
     } catch (err) {
-      toast?.error?.(t('comments.error.postFailed', 'Failed to post comment'));
+      postError.show(
+        createRefusalMessage(
+          err,
+          t('comments.error.postFailed', 'Failed to post comment'),
+        ),
+        { control: commentInput.el },
+      );
     }
   }
 
@@ -324,7 +351,12 @@ export function createCommentsPanel({
       // fallback for a dropped connection only.
       if (!sse.isConnected()) loadComments();
     } catch (err) {
-      toast?.error?.(t('comments.error.replyFailed', 'Failed to post reply'));
+      toast?.error?.(
+        createRefusalMessage(
+          err,
+          t('comments.error.replyFailed', 'Failed to post reply'),
+        ),
+      );
     }
   }
 
@@ -604,7 +636,9 @@ export function createCommentsPanel({
     createCommentLinkButton({ input: commentInput }),
     inputSubmitBtn,
   );
-  inputEl.append(commentInput.el, inputControls);
+  // The refusal of a post sits under the composer until the next attempt.
+  const postError = createInlineError({ callout: true });
+  inputEl.append(commentInput.el, postError.el, inputControls);
   mainMentionAc = attachMentions(commentInput, inputEl);
 
   // Assemble panel

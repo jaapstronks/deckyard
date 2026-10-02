@@ -3,7 +3,11 @@ import { buildPrintHtml } from '../../export/print.js';
 import { buildSlidesPdfHtml } from '../../export/pdf-slides.js';
 import { buildSlidesPngExportHtml } from '../../export/png-slides.js';
 import { buildSlidesPngZipBuffer } from '../../export/png-zip.js';
-import { buildPptxBuffer } from '../../export/pptx.js';
+import {
+  buildEditablePptxBuffer,
+  buildPptxBuffer,
+  imageSlidesHeaders,
+} from '../../export/pptx.js';
 import { buildThemeTemplateBuffer } from '../../export/pptx-theme.js';
 import { buildHandoffZipBuffer } from '../../export/handoff-zip.js';
 import { buildDeckBundle, DECK_MIMETYPE } from '../../export/deck-bundle.js';
@@ -17,12 +21,13 @@ import { resolveDocLangFromPresentation } from '../../utils/doc-lang.js';
 import { renderSlidesToPdfBuffer } from '../../render/pdf.js';
 import { presentationToDeck } from '../../../shared/slide-types.js';
 import { badRequest, withErrorHandler } from '../../utils/http.js';
+import { ValidationError } from '../../utils/errors.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import {
   createExportRoute,
   createHtmlPreviewRoute,
   createAsyncExportRoute,
-  prepareExportContext,
+  exportContextFor,
   parseScaleParam,
   sendExportResponse,
   handleExportError,
@@ -32,6 +37,7 @@ import {
 const exportRoutes = [
   // JSON export
   createExportRoute({
+    format: 'json',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/json$/,
     allLanguages: true,
     contentType: 'application/json; charset=utf-8',
@@ -48,6 +54,7 @@ const exportRoutes = [
   // .deck bundle: self-contained portable deck (deck.json + content-addressed
   // assets + manifest inventory). Renders/round-trips without the server.
   createExportRoute({
+    format: 'deck',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/deck\.zip$/,
     allLanguages: true,
     contentType: DECK_MIMETYPE,
@@ -59,6 +66,7 @@ const exportRoutes = [
 
   // HTML export (download)
   createExportRoute({
+    format: 'html',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/html$/,
     contentType: 'text/html; charset=utf-8',
     extension: '.html',
@@ -71,6 +79,7 @@ const exportRoutes = [
 
   // PDF preview (browser render, then print-to-PDF)
   createHtmlPreviewRoute({
+    format: 'pdf',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf$/,
     buildHtml: async (ctx, { repoRoot }) =>
       buildPrintHtml(repoRoot, ctx.filteredPres, {
@@ -81,6 +90,7 @@ const exportRoutes = [
 
   // PDF slides preview
   createHtmlPreviewRoute({
+    format: 'pdf-slides',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf-slides$/,
     buildHtml: async (ctx, { repoRoot }) =>
       buildSlidesPdfHtml(repoRoot, ctx.filteredPres, {
@@ -92,6 +102,7 @@ const exportRoutes = [
   // Server-rendered PDF download (deterministic across browsers/OS).
   // Pattern does not clash with the pdf-slides$ preview route thanks to the $ anchors.
   createAsyncExportRoute({
+    format: 'pdf-slides',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf-slides\.pdf$/,
     contentType: 'application/pdf',
     extension: '.pdf',
@@ -105,6 +116,7 @@ const exportRoutes = [
 
   // PNG slides preview
   createHtmlPreviewRoute({
+    format: 'png',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/png$/,
     buildHtml: async (ctx, { repoRoot }) =>
       buildSlidesPngExportHtml(repoRoot, ctx.filteredPres, {
@@ -115,6 +127,7 @@ const exportRoutes = [
 
   // PNG slides bundled as a single ZIP ("Download all PNGs")
   createExportRoute({
+    format: 'png-zip',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/png\.zip$/,
     contentType: 'application/zip',
     extension: '-png.zip',
@@ -130,6 +143,7 @@ const exportRoutes = [
 
   // PPTX export (supports async via queue)
   createAsyncExportRoute({
+    format: 'pptx',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx$/,
     contentType:
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -148,12 +162,39 @@ const exportRoutes = [
     },
   }),
 
+  // PPTX, editable (B290, D141): the theme's layouts, each slide as text and
+  // pictures as far as its type's `fidelity.pptx` allows. A route of its own,
+  // not a mode on `pptx`: two intents are two artifacts. `?compose=generic`
+  // sends every slide through layer 0, for the comparison at gate A2.8.
+  createAsyncExportRoute({
+    format: 'pptx-editable',
+    pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx-editable$/,
+    contentType:
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    extension: '-editable.pptx',
+    exportType: 'pptx-editable',
+    jobOptions: (url) => ({ compose: parseComposeParam(url) }),
+    buildContent: async (ctx, { repoRoot, url }) => {
+      const result = await buildEditablePptxBuffer(repoRoot, ctx.filteredPres, {
+        scale: parseScaleParam(url),
+        theme: ctx.theme,
+        slideTypes: ctx.slideTypes,
+        compose: parseComposeParam(url),
+      });
+      ctx.imageSlides = result.imageSlides;
+      return result.buffer;
+    },
+    // Which slides became pictures, for the export menu's notice.
+    responseHeaders: (ctx) => imageSlidesHeaders(ctx.imageSlides),
+  }),
+
   // The theme as a PPTX template: the layouts only, no slides (B264, D106).
   // A separate route rather than a flag on `pptx` because the artifact is a
   // different thing — a starting document for a theme, not this deck in another
   // format. It still hangs off the deck, because the deck is what names the
   // theme.
   createExportRoute({
+    format: 'pptx-template',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pptx-template$/,
     contentType:
       'application/vnd.openxmlformats-officedocument.presentationml.presentation',
@@ -164,6 +205,7 @@ const exportRoutes = [
 
   // Handoff ZIP export (supports async via queue)
   createAsyncExportRoute({
+    format: 'handoff',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/handoff\.zip$/,
     contentType: 'application/zip',
     extension: '-handoff.zip',
@@ -181,6 +223,7 @@ const exportRoutes = [
 
   // Notes Markdown export
   createExportRoute({
+    format: 'notes-md',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/notes\.md$/,
     contentType: 'text/markdown; charset=utf-8',
     extension: '-notes.md',
@@ -190,6 +233,7 @@ const exportRoutes = [
 
   // Notes DOCX export
   createExportRoute({
+    format: 'notes-docx',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/notes\.docx$/,
     contentType:
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -201,6 +245,23 @@ const exportRoutes = [
   }),
 ];
 
+/**
+ * `?compose=` on the editable PPTX: absent is the export itself, `generic`
+ * the A2.8 comparison. Anything else is refused rather than read as either;
+ * the export itself has one spelling, the absence of the parameter.
+ *
+ * @param {URL} url
+ * @returns {'fidelity'|'generic'}
+ */
+function parseComposeParam(url) {
+  const raw = url.searchParams.get('compose');
+  if (raw === null) return 'fidelity';
+  if (raw === 'generic') return 'generic';
+  throw new ValidationError(
+    `Unknown compose '${raw}': leave it out, or use 'generic'.`,
+  );
+}
+
 // GET /api/presentations/:id/export/png/:n.png - Special handler for an
 // individual PNG slide (has extra URL param)
 async function handlePngSlideExport(
@@ -210,29 +271,21 @@ async function handlePngSlideExport(
 ) {
   const slideNum = Number(slideNumRaw || 0) || 0; // 1-based
 
-  const ctx = await prepareExportContext({
-    repoRoot,
-    res,
-    url,
-    authedUser,
-    presentationId,
-    storageScope,
-    stripLiveOnly: true,
-  });
-
-  if (!ctx) return true;
-
-  const slides = Array.isArray(ctx.filteredPres?.slides)
-    ? ctx.filteredPres.slides
-    : [];
-  if (slideNum < 1 || slideNum > slides.length) {
-    badRequest(res, 'Unknown slide');
-    return true;
-  }
-
-  const scale = parseScaleParam(url);
-
   try {
+    const ctx = await exportContextFor(
+      { storageScope, authedUser, url },
+      presentationId,
+      { format: 'png', stripLiveOnly: true },
+    );
+    const slides = Array.isArray(ctx.filteredPres?.slides)
+      ? ctx.filteredPres.slides
+      : [];
+    if (slideNum < 1 || slideNum > slides.length) {
+      badRequest(res, 'Unknown slide');
+      return true;
+    }
+
+    const scale = parseScaleParam(url);
     const buf = await renderSlideToPngBuffer(repoRoot, slides[slideNum - 1], {
       scale,
       theme: ctx.theme,

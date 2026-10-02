@@ -25,7 +25,7 @@ export function createEnumFields({ fieldSelect } = {}) {
   const swatchEl = (cssVar) =>
     h('span', {
       class: 'sb-swatch',
-      style: `--sb-swatch:${cssVar}`,
+      style: `--swatch:${cssVar}`,
       'aria-hidden': 'true',
     });
 

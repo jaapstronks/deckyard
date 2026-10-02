@@ -10,8 +10,6 @@
  * method mismatch, no 405. Table order mirrors the old branch order exactly.
  */
 
-import { getPresentation } from '../../../storage/presentations/index.js';
-import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import {
   listShareLinks,
   preRegisterGuest,
@@ -20,7 +18,6 @@ import {
   markInvitationSent,
 } from '../../../storage/share-links/index.js';
 import { sendGuestInvitationEmail } from '../../../integrations/brevo.js';
-import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import {
   badRequest,
@@ -29,23 +26,12 @@ import {
   requireJsonBody,
   serveJson,
   storageError,
-  forbidden,
 } from '../../../utils/http.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 import { createLogger } from '../../../utils/logger.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 const log = createLogger('guests');
-
-/**
- * Helper to fetch collaborator permission for ACL checks.
- *
- * Takes no context: a collaborator row is scoped by its deck, not by the
- * session (see the header of server/storage/collaborators.js).
- */
-async function getCollabPermission(pres, authedUser) {
-  if (!authedUser?.email || !pres?.id) return null;
-  return getCollaboratorPermission(pres.id, authedUser.email);
-}
 
 /** POST /api/presentations/:id/share-links/:linkId/guests - Pre-register guest */
 async function handleGuestPreRegister(
@@ -53,14 +39,14 @@ async function handleGuestPreRegister(
   presentationId,
   linkId,
 ) {
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollabPermission(pres, authedUser);
-  if (
-    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   const jsonResult = await requireJsonBody(req, res);
   if (!jsonResult.ok) return true;
@@ -123,14 +109,14 @@ async function handleGuestList(
   presentationId,
   linkId,
 ) {
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollabPermission(pres, authedUser);
-  if (
-    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   const guests = await listGuestsForShareLink(storageScope, linkId);
   serveJson(res, 200, { guests });
@@ -144,14 +130,14 @@ async function handleGuestRemove(
   _linkId,
   guestId,
 ) {
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollabPermission(pres, authedUser);
-  if (
-    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   const result = await removeGuest(storageScope, guestId);
   if (!result.ok) {
@@ -169,14 +155,14 @@ async function handleGuestResend(
   linkId,
   guestId,
 ) {
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) return notFound(res);
-  const collaboratorPermission = await getCollabPermission(pres, authedUser);
-  if (
-    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id: presentationId,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   // Get the guest
   const guests = await listGuestsForShareLink(storageScope, linkId);

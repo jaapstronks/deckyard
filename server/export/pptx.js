@@ -8,6 +8,9 @@ import { resolveDeckLang } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { getAppName } from '../config/branding.js';
 import { createLogger } from '../utils/logger.js';
+import { slideHeading } from '../../shared/slide-types/semantic-projection.js';
+import { applyThemeToPptx, createWidePptx } from './pptx-theme.js';
+import { composeGenericSlide, markHeaderTables } from './pptx-generic.js';
 import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
   parseVideoSource,
@@ -15,6 +18,7 @@ import {
   fetchVideoBuffer,
   getBunnyConfig,
 } from './video-helpers.js';
+import { IMAGE_SLIDES_HEADER } from '../../shared/export-headers.js';
 
 function safeScale(n) {
   const s = Number(n) || 2;
@@ -101,8 +105,24 @@ export function warnUnbackedFidelityClaims(registry = SLIDE_TYPES) {
   return claims;
 }
 
+/** PPTX's wide layout, in inches. */
+const SLIDE_W_IN = 13.333;
+const SLIDE_H_IN = 7.5;
+
 /**
- * Build PPTX buffer from presentation.
+ * The values `compose` takes on the editable export. `fidelity` is the export
+ * itself: each slide as its type declares (D141). `generic` routes every slide
+ * through layer 0, whatever it declares — not a user choice, but the
+ * comparison gate A2.8 is judged on (D141 (c)).
+ *
+ * @type {ReadonlyArray<string>}
+ */
+export const PPTX_EDITABLE_COMPOSE = Object.freeze(['fidelity', 'generic']);
+
+/**
+ * The pixel-perfect PPTX: every slide as the image the PNG export makes, bar
+ * the types with a native composition of their own (D141's "PowerPoint").
+ *
  * @param {string} repoRoot - Repository root path
  * @param {object} pres - Presentation object
  * @param {object} options - Export options
@@ -115,33 +135,88 @@ export async function buildPptxBuffer(
   pres,
   { scale = 2, theme = null, slideTypes = null } = {},
 ) {
-  const warnings = [];
+  const { buffer, warnings } = await buildDeckPptx(repoRoot, pres, {
+    scale,
+    theme,
+    slideTypes,
+    editable: null,
+  });
+  return { buffer, warnings };
+}
 
-  let pptxgen;
-  try {
-    // ESM/CJS interop: pptxgenjs exports a default class in most setups.
-    pptxgen = await import('pptxgenjs');
-  } catch {
-    const err = new Error(
-      'PPTX export requires pptxgenjs. Install it with: npm i pptxgenjs',
-    );
-    err.code = 'PPTXGEN_MISSING';
-    throw err;
+/**
+ * The editable PPTX (D141's "PowerPoint, editable"): every slide on the
+ * theme's layouts as text and pictures PowerPoint can edit, as far as its type
+ * allows (B290).
+ *
+ * Which slide goes which way is the type's `fidelity.pptx`: a type with a
+ * native composition of its own uses it, a type that declares `native` or
+ * `mixed` without one goes through layer 0 (`pptx-generic.js`), and a `raster`
+ * type travels as its image, as in the pixel-perfect export. The image slides
+ * are reported by number, because "editable" that is partly pictures has to
+ * say where.
+ *
+ * @param {string} repoRoot
+ * @param {object} pres
+ * @param {{ scale?: number, theme?: object|null, slideTypes?: object|null,
+ *   compose?: 'fidelity'|'generic' }} [options] - `compose: 'generic'` sends
+ *   every slide through layer 0 ({@link PPTX_EDITABLE_COMPOSE})
+ * @returns {Promise<{ buffer: Buffer, warnings: string[], imageSlides: number[] }>}
+ *   `imageSlides` are the 1-based numbers of the slides written as an image
+ */
+export async function buildEditablePptxBuffer(
+  repoRoot,
+  pres,
+  { scale = 2, theme = null, slideTypes = null, compose = 'fidelity' } = {},
+) {
+  if (!PPTX_EDITABLE_COMPOSE.includes(compose)) {
+    throw new TypeError(`unknown PPTX compose '${compose}'`);
   }
+  return buildDeckPptx(repoRoot, pres, {
+    scale,
+    theme,
+    slideTypes,
+    editable: { compose },
+  });
+}
 
-  const PptxGen = pptxgen?.default || pptxgen?.PptxGenJS || pptxgen;
-  const pptx = new PptxGen();
-  // 16:9 widescreen (PowerPoint default)
-  pptx.layout = 'LAYOUT_WIDE';
+/**
+ * The headers an editable PPTX response carries for its image slides
+ * ({@link IMAGE_SLIDES_HEADER}).
+ *
+ * @param {number[]} imageSlides - from {@link buildEditablePptxBuffer}
+ * @returns {Record<string, string>}
+ */
+export function imageSlidesHeaders(imageSlides) {
+  return imageSlides.length
+    ? { [IMAGE_SLIDES_HEADER]: imageSlides.join(',') }
+    : {};
+}
 
-  // PPTXGenJS wide layout is ~13.333 x 7.5 inches
-  const SLIDE_W_IN = 13.333;
-  const SLIDE_H_IN = 7.5;
+/**
+ * The one loop behind both PPTX intents. `editable` is null for the
+ * pixel-perfect file and `{ compose }` for the editable one; the two differ
+ * only in which composer a slide gets and in the theme's layouts being in the
+ * file.
+ *
+ * @returns {Promise<{ buffer: Buffer, warnings: string[], imageSlides: number[] }>}
+ */
+async function buildDeckPptx(
+  repoRoot,
+  pres,
+  { scale, theme, slideTypes, editable },
+) {
+  const warnings = [];
+  const imageSlides = [];
 
+  const pptx = await createWidePptx();
   pptx.author = getAppName();
   pptx.company = '';
   pptx.subject = String(pres?.title || 'Presentation');
   pptx.title = String(pres?.title || 'Presentation');
+  const spec = editable
+    ? await applyThemeToPptx(pptx, theme, { repoRoot })
+    : null;
 
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   // The registry this deck's types resolve against — the caller's when it has
@@ -153,14 +228,12 @@ export async function buildPptxBuffer(
   const s = safeScale(scale);
   const deckLang = resolveDeckLang(pres);
   const docLang = resolveDocLangFromPresentation(pres);
+  const slideIds = slides.map((slide) => String(slide?.id || ''));
 
   for (let i = 0; i < slides.length; i++) {
     const slide = slides[i];
     const slideNum = i + 1;
-    // One slide part per deck slide, created here rather than inside each
-    // branch: the speaker notes below attach to every slide the same way, and
-    // a second creation site is how the video branch ended up without them.
-    const pptxSlide = pptx.addSlide();
+    const def = registry[slide?.type];
 
     // Which branch a slide takes is the type's own declaration, not a name this
     // module recognises: `fidelity.pptx`. A type that says anything other than
@@ -168,13 +241,16 @@ export async function buildPptxBuffer(
     // against what this build actually has rather than trusted — a fork can
     // declare `native` on a type whose mapper lives in a branch that never
     // shipped. Boot already reported that (warnUnbackedFidelityClaims); this is
-    // the same fact at the moment it costs a slide its editable export.
-    const def = registry[slide?.type];
+    // the same fact at the moment it costs a slide its editable export. In the
+    // editable export layer 0 backs every claim, so there it costs nothing.
     const claimsNative = needsNativeComposition(def, 'pptx');
     const composeNative = claimsNative
       ? NATIVE_PPTX_HANDLERS[slide?.type]
       : null;
-    if (claimsNative && !composeNative) {
+    const generic =
+      editable &&
+      (editable.compose === 'generic' || (claimsNative && !composeNative));
+    if (claimsNative && !composeNative && !editable) {
       warnings.push(
         `Slide ${slideNum}: type ${slide?.type} declares PPTX fidelity ` +
           `'${exportFidelity(def, 'pptx')}', but this build has no native ` +
@@ -182,7 +258,19 @@ export async function buildPptxBuffer(
       );
     }
 
-    if (composeNative) {
+    let pptxSlide;
+    if (generic) {
+      const result = await composeGenericSlide(pptx, slide, def, {
+        repoRoot,
+        spec,
+        slideNum,
+        lang: docLang,
+        slideIds,
+      });
+      pptxSlide = result.pptxSlide;
+      warnings.push(...result.warnings);
+    } else if (composeNative) {
+      pptxSlide = pptx.addSlide();
       const nativeResult = await composeNative(pptxSlide, slide, slideNum, {
         slideWidth: SLIDE_W_IN,
         slideHeight: SLIDE_H_IN,
@@ -193,6 +281,7 @@ export async function buildPptxBuffer(
       }
     } else {
       // Regular slide: render as PNG
+      pptxSlide = pptx.addSlide();
       const pngBuf = await renderSlideToPngBuffer(repoRoot, slide, {
         scale: s,
         theme,
@@ -207,21 +296,33 @@ export async function buildPptxBuffer(
         y: 0,
         w: SLIDE_W_IN,
         h: SLIDE_H_IN,
+        // A picture of a whole slide is named by the slide's heading, the
+        // name the reader gives it, so a screen reader in PowerPoint reads
+        // more than "Image 1".
+        altText: slideHeading(slide, def, { index: i, lang: docLang }).text,
       });
+      imageSlides.push(slideNum);
     }
 
     addSpeakerNotes(pptxSlide, slide);
   }
 
-  const out = await pptx.write('nodebuffer');
-  // The warnings are returned for a caller that can carry them, and logged
-  // here because today none can: every caller hands the buffer straight to a
-  // download or a job result, and a .pptx has no channel for a message. A
-  // warning that only lives in the return value is a warning nobody reads.
+  if (editable && imageSlides.length) {
+    warnings.push(
+      `Slides ${imageSlides.join(', ')} exported as an image: their type ` +
+        `declares PPTX fidelity 'raster'.`,
+    );
+  }
+
+  let out = await pptx.write('nodebuffer');
+  if (editable) out = await markHeaderTables(out);
+  // The warnings are logged here because a .pptx has no channel for a
+  // message. The one finding a user acts on, which slides became pictures,
+  // also travels as `imageSlides` ({@link imageSlidesHeaders}).
   for (const w of warnings) {
     log.warn(`${String(pres?.title || 'Presentation')}: ${w}`);
   }
-  return { buffer: out, warnings };
+  return { buffer: out, warnings, imageSlides };
 }
 
 /**

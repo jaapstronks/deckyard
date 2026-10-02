@@ -159,31 +159,8 @@
 .items-reorder-list.is-sorting .card-group.is-sort-dragging {
   transition: none;
   z-index: 10;
-  box-shadow: var(--ps-shadow-lg, 0 8px 24px rgb(0 0 0 / 0.18));
+  box-shadow: var(--app-shadow-lg);
   opacity: 0.95;
-}
-
-/* Segmented control */
-.sb-segmented {
-  display: inline-flex;
-  align-items: center;
-  /* Wrap onto a second row rather than overflowing whatever holds the control.
-     The size intent (`is-field-wide`/`is-field-full`) gives a 3+ option control
-     its own line, which is enough for short labels but not for five word-length
-     ones: callout-slide's five kinds measured 351px of buttons in a 299px
-     inspector column, and the last one was simply clipped off the panel. This
-     used to be scoped to `.field-grid` only — a narrower spelling of the same
-     rule, which left every control outside a responsive row overflowing. */
-  flex-wrap: wrap;
-  /* In the editor, segmented controls often sit inside `.stack` (a flex column with
-     default `align-items: stretch`), which would otherwise stretch them full-width.
-     Make them shrink-wrap by default. */
-  width: fit-content;
-  max-width: 100%;
-  background: hsl(var(--app-bg-sunken));
-  border-radius: var(--ps-radius-lg);
-  padding: var(--ps-space-1);
-  gap: var(--ps-space-1);
 }
 
 .sb-segmented.is-toggle {
@@ -193,22 +170,6 @@
 /* Editor forms: ensure segmented controls don't stretch to full width inside stacks/grids. */
 .editor-form .sb-segmented {
   align-self: flex-start;
-}
-
-.sb-segmented-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--ps-space-2) var(--ps-space-3);
-  font-size: var(--ps-text-sm);
-  font-weight: 500;
-  color: hsl(var(--app-text-secondary));
-  background: transparent;
-  border: none;
-  border-radius: var(--ps-radius-md);
-  cursor: pointer;
-  transition: all var(--ps-transition-fast);
-  white-space: nowrap;
 }
 
 /* Image focus picker (3x3 grid) */
@@ -280,37 +241,8 @@
   font-size: var(--ps-text-xs);
 }
 
-.sb-segmented-btn:hover:not(:disabled):not(.is-active) {
-  color: hsl(var(--app-text-primary));
-  background: hsl(var(--app-bg-hover));
-}
-
-/* Disabled segmented control: a stand-in for a setting that lives elsewhere,
-   not a broken one. The inspector's "This text" tab draws the real control and
-   disables it when the field's alignment belongs to its field group (see
-   client/views/editor/editor-form/text-element-card.js), on the principle that
-   a greyed control plus a line saying where the setting moved to beats a
-   silently missing one. Without these rules the disabled control rendered
-   pixel-identical to a live one — full opacity, pointer cursor, an active pill
-   — so it read as dead rather than as delegated. */
-.sb-segmented-btn:disabled {
-  cursor: default;
-  opacity: 0.55;
-}
-
 .stack.is-field.is-disabled .field-label {
   opacity: 0.7;
-}
-
-.sb-segmented-btn.is-active {
-  color: hsl(var(--app-text-primary));
-  background: hsl(var(--app-bg-elevated));
-  box-shadow: var(--app-shadow-sm);
-}
-
-.sb-segmented-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.4);
 }
 
 /* Outlined variant: a tighter, bordered segmented control for chrome that sits
@@ -358,7 +290,9 @@
   width: 16px;
   height: 16px;
   border-radius: 999px;
-  background: var(--sb-swatch);
+  /* Hook: set inline by `views/editor/fields/enum.js` and
+     `views/editor/editor-form/text-element-card.js`. */
+  background: var(--swatch, transparent);
   box-shadow: 0 0 0 1px hsl(var(--app-border-default));
 }
 
@@ -737,9 +671,9 @@
   gap: var(--ps-space-1);
   padding: var(--ps-space-1);
   margin-bottom: var(--ps-space-3);
-  background: hsl(var(--app-bg-subtle, var(--app-bg-muted, 220 14% 96%)));
+  background: hsl(var(--app-bg-sunken));
   border: 1px solid hsl(var(--app-border-subtle));
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
 }
 .inspector-tab {
   flex: 1;
@@ -749,7 +683,7 @@
   color: hsl(var(--app-text-secondary));
   background: transparent;
   border: 0;
-  border-radius: var(--ps-radius-sm, 6px);
+  border-radius: var(--ps-radius-sm);
   cursor: pointer;
   transition:
     background-color 0.12s ease,
@@ -760,7 +694,7 @@
 }
 .inspector-tab.is-active {
   color: hsl(var(--app-text-primary));
-  background: hsl(var(--app-bg-elevated, 0 0% 100%));
+  background: hsl(var(--app-bg-elevated));
   box-shadow: 0 1px 2px hsl(0 0% 0% / 0.08);
 }
 .inspector-tab:focus-visible {
@@ -773,8 +707,7 @@
   justify-content: flex-end;
   gap: var(--ps-space-2);
   /* Stay pinned to the right even when the header wraps to a second line
-     (e.g. custom-html's wider "EDIT · CUSTOM HTML · Custom type" left group).
-     Otherwise the actions drop to the left, and the "…" menu - which opens
+     (a long type label in the left group). Otherwise the actions drop to the left, and the "…" menu - which opens
      leftward from the button's right edge - overflows the panel's left edge
      and gets clipped by the panel's overflow:hidden / hidden behind the
      slides column. */
@@ -937,7 +870,7 @@
 
 /* Smaller field labels for stacked fields */
 .field-label-sm {
-  font-size: var(--ps-text-sm);
+  font-size: var(--ps-text-xs);
   font-weight: 500;
   color: hsl(var(--app-text-secondary));
   margin-bottom: var(--ps-space-1);
@@ -984,7 +917,7 @@
 
 .color-hex-input {
   width: 100px;
-  font-family: var(--ps-font-mono, monospace);
+  font-family: var(--ps-font-mono);
   text-transform: uppercase;
 }
 

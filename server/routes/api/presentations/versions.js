@@ -1,11 +1,9 @@
 import {
-  getPresentation,
   createPresentationVersion,
   getPresentationVersion,
   listPresentationVersions,
   prunePresentationVersions,
 } from '../../../storage/presentations/index.js';
-import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import {
   isAiCompareAvailable,
   compareVersionsWithAi,
@@ -17,14 +15,10 @@ import {
   notFound,
   serveJson,
   requireJsonBody,
-  forbidden,
 } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
-import {
-  canReadPresentation,
-  canWritePresentation,
-} from '../../../utils/presentation-authz/index.js';
 import { logError, logDebug } from '../../../utils/logger.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 // Throttle session-end snapshots to prevent duplicates from rapid beacon delivery
 // (e.g., both beforeunload and visibilitychange firing on tab close)
@@ -34,20 +28,15 @@ export async function handlePresentationVersions(
   { repoRoot, storageScope, req, res, authedUser } = {},
   id,
 ) {
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Fetch collaborator permission for ACL check
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  if (!canReadPresentation({ user: authedUser, pres, collaboratorPermission }))
-    return forbidden(res);
+  // Listing reads the deck; taking a snapshot of it is a write.
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: req.method === 'POST' ? 'write' : 'read',
+  });
+  if (!pres) return true;
 
   if (req.method === 'GET') {
     const versions = await listPresentationVersions(storageScope, id);
@@ -56,10 +45,6 @@ export async function handlePresentationVersions(
   }
 
   if (req.method === 'POST') {
-    if (
-      !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
-    )
-      return forbidden(res);
     const parsed = await requireJsonBody(req, res, { allowEmpty: true });
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -102,23 +87,13 @@ export async function handlePresentationVersionItem(
     return methodNotAllowed(res, ['GET']);
   }
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Fetch collaborator permission for ACL check
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  if (
-    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
 
   const version = await getPresentationVersion(storageScope, id, versionId);
   if (!version) return notFound(res);
@@ -150,23 +125,13 @@ export async function handlePresentationVersionExport(
     return methodNotAllowed(res, ['GET']);
   }
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Fetch collaborator permission for ACL check
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  if (
-    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
 
   const version = await getPresentationVersion(storageScope, id, versionId);
   if (!version) return notFound(res);
@@ -228,23 +193,13 @@ export async function handlePresentationVersionCompareAi(
     );
   }
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Fetch collaborator permission for ACL check
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  if (
-    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+  });
+  if (!pres) return true;
 
   const version = await getPresentationVersion(storageScope, id, versionId);
   if (!version) return notFound(res);
@@ -292,23 +247,14 @@ export async function handlePresentationSessionEnd(
     return methodNotAllowed(res, ['POST']);
   }
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Fetch collaborator permission for ACL check
-  let collaboratorPermission = null;
-  if (authedUser?.email && pres?.id) {
-    collaboratorPermission = await getCollaboratorPermission(
-      pres.id,
-      authedUser.email,
-    );
-  }
-
-  if (
-    !canWritePresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   try {
     // Throttle check: skip if a session-end snapshot was created recently

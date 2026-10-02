@@ -117,7 +117,7 @@ and the KPI display sizes carry the values; roles bind meaning to a step:
 | Body       | `--slide-font-size-body`       | `--slide-text-base` |
 | Caption    | `--slide-font-size-caption`    | `--slide-text-sm`   |
 | Label      | `--slide-font-size-label`      | `--slide-text-xs`   |
-| Card title | `--slide-font-size-card-title` | `--slide-text-md`   |
+| Card title | `--slide-font-size-card-title` | `--slide-text-lg`   |
 | Card body  | `--slide-font-size-card-body`  | `--slide-text-md`   |
 
 One step sits above the table: the title slide's cover title reads
@@ -173,7 +173,11 @@ card roles — `--slide-font-size-card-title`, `--slide-font-size-card-body`,
 those axes.
 
 The members, measured rather than declared: the icon-card (both layouts), the
-text block, the team card, the timeline card, the matrix cell and the KPI tile.
+text block, the team card, the timeline card, the matrix cell, the KPI tile, and
+the item of each diagram family (process step, funnel stage, pyramid level,
+cycle stage). A diagram item has no box of its own, but its title and text size
+together on a count ladder all the same, so it sets the two text roles and
+nothing else.
 Three neighbours look like members and are not: **`.comparison-side` is a
 column**, not a box — no surface, and its padding is the gutter between the two
 halves; **the gallery tile, the logo-wall cell and the follow-invite QR plate**
@@ -228,19 +232,44 @@ the smaller step. The KPI tile is the worked example: label and note were both
 `card-title: lg` / `card-body: md` is why the note needs no exception comment —
 the roles carry the ordering that a comment used to have to assert.
 
+### The card ladder
+
+The ordering is tighter than "title ≥ body": **every rung of every card sits on
+one shared ladder**, where the title is exactly one step above the body on the
+text scale, and `xs / xs` is the floor (D15, D250).
+
+| Rung | title / body  | carried by                                                                                                                                                              |
+| ---- | ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| R0   | `xl` / `lg`   | text-blocks, 1 block                                                                                                                                                    |
+| R1   | `lg` / `md`   | the `00-tokens.css` default, text-blocks base, team-cards 4, KPI tile, matrix cell, icon-card, process 3, cycle 3                                                       |
+| R2   | `md` / `base` | text-blocks 3, team-cards base, matrix ≤1024px, icon-card tiles, process 4, funnel 3–4, pyramid 3, cycle 4                                                              |
+| R3   | `base` / `sm` | text-blocks 4–6 and 3 rows ∧ 1–2 blocks, team-cards 6, timeline card, icon-card tiles 5–6, process 5–7, funnel 5, pyramid 4–5, cycle 5–6                                |
+| R4   | `sm` / `xs`   | text-blocks 3 rows ∧ 3+ blocks and 4 rows ∧ 1–3 blocks, team-cards 18 and 6 with a bottom subheading, timeline ≤1024px, funnel 6 and 4 ≤1024px, pyramid 6 and 5 ≤1024px |
+| R5   | `xs` / `xs`   | text-blocks 4 rows ∧ 4+ blocks, team-cards 25                                                                                                                           |
+
+What is shared is the **series of rungs**, not the count → rung mapping: that
+stays per pattern, because the box geometry differs too much (a matrix quadrant
+is ~700×350, a timeline strip ~250×150) for "six cards" to mean one size across
+types.
+
+**Which way a pair moves onto the ladder.** The body is the anchor: it carries
+the content and sets the legibility floor in every overflow measurement, so
+**the title moves to one step above the body** — downwards too, because a title
+one step above its body still reads as a title. The exception is **a rung that
+exists to make content fit** (the text-blocks 3-row and 4-row tiers say so at
+the declaration): it may not grow, so there the body drops a step instead. That
+makes the pair of a new rung derivable rather than a matter of taste, and
+checkable: no card grows past what its rung allowed.
+
+**A rung is one rule that names both roles.** A density override that sets only
+`card-body` leaves `card-title` at whatever the rung above it set, which is an
+ordering nobody decided. `tests/slide-card-ladder.test.js` pins both halves over
+`client/styles/slides/**` and the fork's `custom/styles/**`, with no allowlist:
+every rule that sets one card text role sets both, as `--slide-text-*` steps,
+one step apart or `xs / xs`. A fork card that sets the roles is on the same
+ladder.
+
 ### What this does not settle
-
-Every card pattern still runs its **own** density ladder: a matrix cell starts
-at `xl` where a timeline card starts at `base`, and the census's 91 unique card
-sizes are all still there, now named rather than reduced. One shared card
-ladder — density N takes size S(N) across types — is the change that would
-actually collapse that count, and it is a value change on every card, so it is
-its own piece of work, not a side effect of naming.
-
-The diagram families (process, funnel, pyramid, cycle) present the same
-title/body-on-a-count-ladder shape and are deliberately left out: their ladders
-were just ratified value-by-value under the tie-break, and folding them in means
-re-opening that record rather than reading it.
 
 There is no shared card base — each card pattern owns its own box. A
 `.slide-card` once stood in `00-patterns.css` claiming to be one, but nothing

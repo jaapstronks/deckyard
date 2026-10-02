@@ -118,7 +118,7 @@
   /* The cell is the card; .cell-title / .cell-body read the roles
      (slide-roles.md § The card pattern). */
   --slide-card-padding: var(--slide-space-6) var(--slide-space-8);
-  --slide-font-size-card-title: var(--slide-text-xl);
+  --slide-font-size-card-title: var(--slide-text-lg);
   --slide-font-size-card-body: var(--slide-text-md);
   display: flex;
   flex-direction: column;
@@ -287,9 +287,9 @@
   }
 
   .slide-matrix .matrix-cell {
-    /* ladder rung: both stay under the base cell (xl / md) */
+    /* ladder rung: both stay under the base cell (lg / md) */
     --slide-card-padding: var(--slide-space-5);
-    --slide-font-size-card-title: var(--slide-text-lg);
+    --slide-font-size-card-title: var(--slide-text-md);
     --slide-font-size-card-body: var(--slide-text-base);
   }
 

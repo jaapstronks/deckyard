@@ -1,11 +1,13 @@
 import { notFound, methodNotAllowed, serveJson } from '../../../utils/http.js';
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
 import { getPresentation } from '../../../storage/presentations/index.js';
+import { countDeckView } from '../../../storage/instance-health.js';
 import {
   computeMissingTranslation,
   pickVersion,
 } from '../../../../shared/i18n-progress.js';
 import { crossOrganizationScope } from '../../../storage/scope.js';
+import { isFeatureEnabled } from '../../../config/flags-snapshot.js';
 import {
   normalizeLang,
   resolveDeckLang,
@@ -113,11 +115,15 @@ export async function handleFollowPresentation(
   }
 
   const picked = pickPresentationForLang(pres, lang);
+  countDeckView('follow', pres);
   serveJson(res, 200, {
     ...state,
     lang: lang || null,
     meta,
     capabilities: computeAudienceCapabilitiesFromState(state, pres),
+    // The audience has no feature snapshot: the payload says whether this
+    // installation has the analytics cluster (D260), as share `verify` does.
+    tracking: isFeatureEnabled('analytics'),
     presentation: {
       id: picked.id,
       title: picked.title,

@@ -10,39 +10,12 @@
  */
 
 import { getAppBaseUrl } from '../../../config/utils.js';
+import { listComments } from '../../../storage/presentations/comments.js';
 import {
-  listComments,
-  getComment,
-  createComment,
-  resolveComment,
-  reopenComment,
-  dismissComment,
-} from '../../../storage/presentations/comments.js';
-import {
-  canActorCommentOnPresentation,
-  canResolveComment,
-} from '../../../utils/presentation-authz/index.js';
-import {
-  buildSlideSnapshot,
   enrichCommentsWithSlideContext,
   slideContextFor,
 } from '../../../services/comment-slide-context.js';
-import {
-  recordCommentCreated,
-  recordCommentResolved,
-  recordCommentReopened,
-} from '../../../services/activity-events.js';
-import {
-  broadcastToPresentation,
-  CommentEventTypes,
-} from '../../../services/comment-events.js';
-import { notifyCommentCreated } from '../../../services/comment-notifications.js';
-import { getTrimmedString } from '../../../utils/request-validators.js';
-import { getErrorStatus } from '../../../utils/http.js';
-import {
-  broadcastCommentCounts,
-  MAX_COMMENT_LENGTH,
-} from '../../api/presentations/comments-shared.js';
+import { createComment, setCommentStatus } from '../../../services/comments.js';
 import {
   requirePermission,
   dispatchV1Routes,
@@ -54,7 +27,6 @@ import {
   apiCreated,
   apiError,
 } from './middleware.js';
-import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 /**
  * Editor deep link for a comment: /app/:id, anchored to the commented
@@ -175,123 +147,35 @@ async function handleListComments(ctx, presentationId) {
 
 /**
  * POST /api/v1/presentations/:id/comments - Create a comment or reply.
- * Body: { body, slideId?, parentId? }. Author = the API key owner.
+ * Body: { body, slideId?, parentId? }. Author = the API key owner. The flow —
+ * comment right, validation, snapshot, notifications — is
+ * `services/comments.js`; a refusal is thrown and `withV1ErrorHandler`
+ * renders it.
  */
 async function handleCreateComment(ctx, presentationId) {
-  const { repoRoot, req, apiKey, authedUser } = ctx;
+  const { req, authedUser } = ctx;
 
   if (!requirePermission(ctx, 'comments:write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
-  if (!ok) return true;
-
-  // Commenting needs comment permission (owner/creator, organization user, or
-  // collaborator with comment rights or higher) — not full write access.
-  if (!(await canActorCommentOnPresentation(pres, authedUser))) {
-    await apiError(
-      ctx,
-      403,
-      'API key owner may not comment on this presentation',
-    );
-    return true;
-  }
-
-  const text = getTrimmedString(body, 'body');
-  if (!text) {
-    await apiError(ctx, 400, 'Comment body is required');
-    return true;
-  }
-  if (text.length > MAX_COMMENT_LENGTH) {
-    await apiError(
-      ctx,
-      400,
-      `Comment must be ${MAX_COMMENT_LENGTH} characters or less`,
-    );
-    return true;
-  }
-
-  const slideId = body?.slideId || null;
-  let slideSnapshot = null;
-  if (slideId) {
-    const slide = (pres.slides || []).find((s) => s?.id === slideId);
-    if (!slide) {
-      await apiError(ctx, 400, 'slideId does not exist in this presentation');
-      return true;
-    }
-    slideSnapshot = buildSlideSnapshot(slide);
-  }
-
-  const sctx = ctx.storageScope;
-
-  // For replies: fetch the parent (notification recipient + 404 mapping).
-  let parentComment = null;
-  if (body?.parentId) {
-    parentComment = await getComment(sctx, body.parentId);
-    if (!parentComment || parentComment.presentationId !== presentationId) {
-      await apiError(ctx, 404, 'Parent comment not found on this presentation');
-      return true;
-    }
-  }
-
-  const result = await createComment(sctx, presentationId, {
-    email: apiKey.ownerEmail,
-    body: text,
-    slideId,
-    parentId: body?.parentId || null,
-    slideSnapshot,
-  });
-
-  if (!result.ok) {
-    // The status comes from the reason register, not from a ladder here (D52).
-    // The envelope stays `sendV1Error` via `apiError` — this route answers the
-    // public v1 shape, not the internal one — but which status a reason means
-    // is decided in one place for every surface.
-    await apiError(
-      ctx,
-      getErrorStatus(result.reason),
-      `Could not create comment: ${result.reason}`,
-    );
-    return true;
-  }
-
-  const actor = { email: apiKey.ownerEmail };
-
-  // Same side effects as the internal route: notify, record, broadcast.
-  fireAndForget(
-    notifyCommentCreated(repoRoot, req, {
-      presentation: pres,
-      comment: result.comment,
-      parentComment,
-      actor,
-      scope: sctx,
-    }),
-    'comment-created notification fan-out',
-  );
-  fireAndForget(
-    recordCommentCreated({
-      comment: result.comment,
-      presentation: pres,
-      actor,
-      scope: sctx,
-    }),
-    'record comment-created activity',
-  );
-  broadcastToPresentation(presentationId, CommentEventTypes.CREATED, {
-    comment: result.comment,
-  });
-  fireAndForget(
-    broadcastCommentCounts(presentationId, sctx),
-    'broadcast comment counts',
+  const { comment, presentation } = await createComment(
+    ctx.storageScope,
+    { actor: authedUser },
+    {
+      presentationId,
+      body: body?.body,
+      slideId: body?.slideId || null,
+      parentId: body?.parentId || null,
+    },
   );
 
   await apiCreated(ctx, {
     ok: true,
     comment: {
-      ...sanitizeComment(result.comment, pres),
-      slide: slideContextFor(pres, result.comment.slideId),
+      ...sanitizeComment(comment, presentation),
+      slide: slideContextFor(presentation, comment.slideId),
     },
   });
   return true;
@@ -299,109 +183,29 @@ async function handleCreateComment(ctx, presentationId) {
 
 /**
  * POST /api/v1/comments/:commentId/status - Change a comment's status.
- * Body: { status: 'resolved' | 'open' | 'dismissed' }.
- * Allowed transitions follow the app: open→resolved, open→dismissed,
- * resolved→open. Only the presentation owner/creator may change status.
+ * Body: { status: 'resolved' | 'open' | 'dismissed' }. Who may moderate and
+ * which transition is allowed is `setCommentStatus` (`services/comments.js`);
+ * a refusal is thrown and `withV1ErrorHandler` renders it.
  */
 async function handleCommentStatus(ctx, commentId) {
-  const { req, apiKey, authedUser } = ctx;
+  const { req, authedUser } = ctx;
 
   if (!requirePermission(ctx, 'comments:write')) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
-  const status = body?.status;
-  if (!['resolved', 'open', 'dismissed'].includes(status)) {
-    await apiError(ctx, 400, 'Invalid status (resolved|open|dismissed)');
-    return true;
-  }
-
-  const sctx = ctx.storageScope;
-  const comment = await getComment(sctx, commentId);
-  if (!comment) {
-    await apiError(ctx, 404, 'Comment not found');
-    return true;
-  }
-
-  const { ok, pres } = await getPresentationWithAccess(
-    ctx,
-    comment.presentationId,
-  );
-  if (!ok) return true;
-
-  // Same rule as the app: only the presentation owner/creator moderates. The
-  // context's authed user carries the API-key owner's resolved `users.id`, so
-  // this decides on the stable key like every other ownership check.
-  if (!canResolveComment({ user: authedUser, pres, comment })) {
-    await apiError(
-      ctx,
-      403,
-      'Only the presentation owner can change comment status',
-    );
-    return true;
-  }
-
-  let result;
-  if (status === 'resolved') {
-    result = await resolveComment(sctx, commentId, {
-      email: apiKey.ownerEmail,
-    });
-  } else if (status === 'dismissed') {
-    result = await dismissComment(sctx, commentId, {
-      email: apiKey.ownerEmail,
-    });
-  } else {
-    result = await reopenComment(sctx, commentId);
-  }
-
-  if (!result.ok) {
-    await apiError(ctx, 409, `Could not change status: ${result.reason}`);
-    return true;
-  }
-
-  const actor = { email: apiKey.ownerEmail };
-  if (status === 'resolved') {
-    fireAndForget(
-      recordCommentResolved({
-        comment: result.comment,
-        presentation: pres,
-        actor,
-        scope: sctx,
-      }),
-      'record comment-resolved activity',
-    );
-    broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
-      comment: result.comment,
-    });
-  } else if (status === 'open') {
-    fireAndForget(
-      recordCommentReopened({
-        comment: result.comment,
-        presentation: pres,
-        actor,
-        scope: sctx,
-      }),
-      'record comment-reopened activity',
-    );
-    broadcastToPresentation(pres.id, CommentEventTypes.REOPENED, {
-      comment: result.comment,
-    });
-  } else {
-    broadcastToPresentation(pres.id, CommentEventTypes.RESOLVED, {
-      comment: result.comment,
-    });
-  }
-  fireAndForget(
-    broadcastCommentCounts(pres.id, sctx),
-    'broadcast comment counts',
+  const { comment, presentation } = await setCommentStatus(
+    ctx.storageScope,
+    { actor: authedUser },
+    { commentId, status: body?.status },
   );
 
   await apiSuccess(ctx, {
     ok: true,
     comment: {
-      ...sanitizeComment(result.comment, pres),
-      slide: slideContextFor(pres, result.comment.slideId),
+      ...sanitizeComment(comment, presentation),
+      slide: slideContextFor(presentation, comment.slideId),
     },
   });
   return true;

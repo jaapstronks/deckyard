@@ -20,6 +20,7 @@
 import crypto from 'node:crypto';
 import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/index.js';
+import { countInstanceHealth } from './instance-health.js';
 
 // Follow codes are guessable live-session handles: a valid one resolves to a
 // presenter's live follow URL. Use a CSPRNG (not Math.random, which is
@@ -128,6 +129,8 @@ export async function resolveFollowCode(scope, code) {
       return null;
     }
 
+    // An audience member reached a live deck by typing its code (D247).
+    countInstanceHealth([{ axis: 'interaction', key: 'follow_code' }]);
     return row.follow_url;
   });
 }

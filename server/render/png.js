@@ -24,6 +24,12 @@ import {
   loadExportCssBundle,
   buildExportStyleContent,
 } from '../export/css-bundle.js';
+import { exportImageEmbedTransform } from '../export/image-compress.js';
+import {
+  measureImageDisplayPx,
+  displayAwareEmbedTransform,
+} from '../export/image-measure.js';
+import { loadExportDocument } from './load-export-document.js';
 
 /** The 1600x900 canvas this path renders into, plus the static-media gradient gate. */
 const PNG_DOC_CSS = `
@@ -56,7 +62,19 @@ export async function buildSlidePngHtml(
   slide,
   { theme = null, slideTypes = null, lang = null, docLang = '' } = {},
 ) {
-  const css = await loadExportCssBundle(repoRoot, theme, null);
+  // Images are downsampled as they are inlined, exactly as on the PDF route: a
+  // 3200px upload embedded at full resolution made a two-image slide a 14 MB
+  // document, which Chrome parsed slowly enough to lose the load race (B302).
+  // The flat cap covers theme assets and top-level image fields (near
+  // full-bleed); the <img src> pass below gets the display-aware cap.
+  const imageTransform = exportImageEmbedTransform();
+  const cache = new Map();
+  const css = await loadExportCssBundle(repoRoot, theme, null, {
+    slides: [slide],
+    slideTypes,
+    transform: imageTransform,
+    cache,
+  });
 
   const cloned = structuredClone(slide);
   const imgKeys = imageFieldKeysForType(cloned?.type);
@@ -65,7 +83,9 @@ export async function buildSlidePngHtml(
       // embedRemote: inline remote http(s) images through the SSRF guard (or
       // strip) so no user-supplied URL reaches headless Chrome. Security 2.
       cloned.content[k] = await toDataUrlIfLocal(repoRoot, cloned.content[k], {
+        transform: imageTransform,
         embedRemote: true,
+        cache,
       });
     }
   }
@@ -79,8 +99,17 @@ export async function buildSlidePngHtml(
           stripEditorAttrs: true,
           lang,
         });
+  const styleContent = buildExportStyleContent(css, [PNG_DOC_CSS]);
+  // Cap each <img src> at a retina margin over the size it is drawn at, so a
+  // gallery thumbnail does not embed at full-bleed resolution. The 1600x900
+  // canvas at deviceScaleFactor <= 3 is covered by that margin. image-measure.js.
+  const displayPx = imageTransform
+    ? await measureImageDisplayPx({ slidesHtml: [slideHtml], styleContent })
+    : new Map();
   slideHtml = await embedImgSrcDataUrls(repoRoot, slideHtml, {
+    transform: displayAwareEmbedTransform(displayPx) ?? imageTransform,
     embedRemote: true,
+    cache,
   });
   // The deck's document language when the caller has one. A bare slide cannot
   // see a deck-level `pres.lang`, so an RTL deck would raster left-to-right —
@@ -97,7 +126,7 @@ export async function buildSlidePngHtml(
   return `${buildDocumentHead({
     lang: resolvedDocLang,
     head: [buildPrismKatexTags({ ...highlightNeeds, mode: 'inlined' })],
-    styles: [buildExportStyleContent(css, [PNG_DOC_CSS])],
+    styles: [styleContent],
   })}
   <body>
     <div class="ps-theme">${css.wmHtml}${slideHtml}</div>
@@ -136,7 +165,7 @@ export async function renderSlideToPngBuffer(
       lang,
       docLang,
     });
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await loadExportDocument(page, html, { label: 'PNG export' });
     await settleRenderedPage(page);
     const buf = await page.screenshot({
       type: 'png',

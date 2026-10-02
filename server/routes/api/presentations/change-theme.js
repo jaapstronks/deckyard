@@ -3,7 +3,6 @@
  * Analyzes theme compatibility and applies theme changes.
  */
 
-import { getPresentation } from '../../../storage/presentations/index.js';
 import { changePresentationTheme } from '../../../storage/presentations/change-theme.js';
 import {
   serveJson,
@@ -11,14 +10,13 @@ import {
   notFound,
   badRequest,
   requireJsonBody,
-  forbidden,
 } from '../../../utils/http.js';
-import { canWritePresentation } from '../../../utils/presentation-authz/index.js';
 import { getString } from '../../../utils/request-validators.js';
 import { findTheme, resolveThemeId } from '../../../utils/themes.js';
 import { getConvertibleSlideTypes } from '../../../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { getThemeSlideTypeConfig } from '../../../../shared/slide-types/policy.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 /**
  * Check if a slide type is compatible with a theme.
@@ -73,13 +71,14 @@ export async function handleAnalyzeThemeChange(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Only users with edit permission can analyze theme changes
-  if (!canWritePresentation({ user: authedUser, pres })) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   // Parse request body
   const parsed = await requireJsonBody(req, res);
@@ -169,13 +168,14 @@ export async function handleChangeTheme(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Only users with edit permission can change theme
-  if (!canWritePresentation({ user: authedUser, pres })) {
-    return forbidden(res);
-  }
+  const pres = await withPresentationAuth({
+    storageScope,
+    id,
+    authedUser,
+    res,
+    permission: 'write',
+  });
+  if (!pres) return true;
 
   // Parse request body
   const parsed = await requireJsonBody(req, res);

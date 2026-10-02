@@ -1,27 +1,19 @@
-import {
-  deletePresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
+import { deletePresentation } from '../../../services/presentations.js';
 import { getTagsForPresentation } from '../../../storage/tags.js';
 import {
   methodNotAllowed,
   notFound,
   serveJson,
-  forbidden,
   jsonError,
   requireJsonBody,
 } from '../../../utils/http.js';
 import { getEffectivePermission } from '../../../utils/presentation-authz/index.js';
-import {
-  withPresentationAuth,
-  canEditCustomHtml,
-  customHtmlEditViolation,
-} from '../../../utils/route-middleware.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { parseIfMatchRevision, diffAddedSlideIds } from './helpers.js';
 import {
   recordPresentationUpdated,
-  recordPresentationDeleted,
   recordPresentationMovedToOrganization,
   recordSlidesAdded,
 } from '../../../services/activity-events.js';
@@ -157,17 +149,6 @@ export async function handlePresentationItem(
         'missing_if_match',
         'Missing If-Match revision',
       );
-
-    // Gate: only capability-holders may create or change raw HTML/CSS on a
-    // custom-html-slide. Non-capable users may still keep/reorder such slides.
-    if (Array.isArray(body?.slides)) {
-      const violation = customHtmlEditViolation(
-        existing.slides,
-        body.slides,
-        canEditCustomHtml(authedUser),
-      );
-      if (violation) return forbidden(res, violation);
-    }
 
     // Extract modified slide IDs for slide-level merge (concurrent editing)
     let modifiedSlideIds = null;
@@ -318,38 +299,9 @@ export async function handlePresentationItem(
   }
 
   if (req.method === 'DELETE') {
-    const existing = await withPresentationAuth({
-      storageScope,
-      id,
-      authedUser,
-      res,
-      permission: 'delete',
-    });
-    if (!existing) return true;
-
-    // Parse optional message from request body
-    const parsed = await requireJsonBody(req, res, { allowEmpty: true });
-    if (!parsed.ok) return true;
-    const message = parsed.body?.message || null;
-
-    const deleted = await deletePresentation(storageScope, id, {
-      actorEmail: authedUser?.email,
-      message,
-    });
-    if (!deleted) return notFound(res);
-
-    // Record activity event (non-blocking, only for organization-visible presentations)
-    if (authedUser?.email && existing.visibility === 'organization') {
-      fireAndForget(
-        recordPresentationDeleted({
-          presentation: existing,
-          actor: authedUser,
-          scope: storageScope,
-        }),
-        'record presentation-deleted activity',
-      );
-    }
-
+    // Who may trash the deck and the activity row are the service's (B571);
+    // a refusal is thrown and the presentations router renders it.
+    await deletePresentation(storageScope, { actor: authedUser }, id);
     serveJson(res, 200, { ok: true });
     return true;
   }

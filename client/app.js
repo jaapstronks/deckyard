@@ -134,8 +134,9 @@ async function render() {
   // Keep these here so they always get reset correctly, even if a view throws.
   document.documentElement.classList.toggle('is-editor', r.name === 'edit');
 
-  // Baseline browser-tab title (app name). Views that own a document — the
-  // editor and presenter — override this with the deck title once it loads.
+  // Baseline browser-tab title (app name, from the served shell, so it holds
+  // on the sign-in screens too). Views that own a document — the editor and
+  // presenter — override this with the deck title once it loads.
   setDocumentTitle();
 
   // Unmount previous view (important for global key handlers like the presenter).
@@ -221,10 +222,6 @@ async function render() {
       const returnTo = currentUrl();
       return nav(`/login?returnTo=${encodeURIComponent(returnTo)}`);
     }
-
-    // Re-apply the baseline title now that branding config has loaded, so
-    // authenticated app pages reflect a configured (white-label) app name.
-    setDocumentTitle();
 
     // Bootstrap settings once we're authenticated:
     // - app-wide supported slide languages (also drives language-mode UI)

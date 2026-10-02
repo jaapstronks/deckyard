@@ -9,25 +9,19 @@
    selectors appear in an exported deck's DOM; they only shipped because
    loadExportCssBundle inlined app.css wholesale.
 
-   This mirrors embed.css (the iframe viewer), which already proves a deck
-   viewer needs only tokens + slides.css. The export DOM is a superset of the
-   embed DOM — it has a full presenter topbar, prev/next/loop nav and the
-   pdf/png/print toolbars — so it needs a few more chrome selectors than
-   embed.css carries: the whole .btn family (incl. .btn-primary and
-   .btn.is-compact), .form-input (the PNG toolbar's scale picker) and .row.
+   Like embed.css (the iframe viewer), a deck viewer needs only tokens,
+   primitives and slides.css. The export DOM is a superset of the embed DOM:
+   it has a full presenter topbar, prev/next/loop nav and the pdf/png/print
+   toolbars, which render the `.btn` family, `.form-input` (the PNG toolbar's
+   scale picker), `.row` and the language switch. All of those come from
+   shared/primitives.css, the one definition app.css and embed.css import too
+   (D266); this file keeps no copy of them.
 
    The presenter chrome itself (.presenter-*, .deck-slide, .sr-only,
    .skip-link, progress bar) already lives in slides.css; those rules reference
    --app-* / --ps-* / --z-skip-link design tokens with no inline fallback, so
    the one thing this file MUST provide for that chrome to render is
-   shared/ui-tokens.css.
-
-   Why the .btn rules are copied here rather than shared with app/components.css:
-   keeping them byte-for-byte identical to the editor's current buttons is what
-   makes an exported deck look the same before and after this split. A future
-   consolidation of the three .btn copies (app / embed / export) into one shared
-   partial is a separate, editor-touching refactor — see the PR discussion. If
-   you change .btn in app/components.css, mirror the change here. */
+   shared/ui-tokens.css. */
 
 /* No @font-face import. Slide text is served by the theme's own embedFonts
    (base64-inlined by buildEmbeddedFontCss); the export *chrome* — topbar,
@@ -36,6 +30,7 @@
    the whole ~2.7 MB library into every download or leave a `/assets/...`
    reference that a downloaded file cannot resolve. */
 @import url('./shared/ui-tokens.css');
+@import url('./shared/primitives.css');
 
 /* Base body chrome (from app/tokens.css — the export never loads app.css). */
 body {
@@ -44,149 +39,4 @@ body {
   min-height: 100vh;
   color: hsl(var(--app-text-primary));
   background: hsl(var(--app-bg-base));
-}
-
-/* Button family — copied verbatim from app/components.css so exported deck nav
-   (prev/next/loop) and the pdf/png/print toolbars render identically. */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--ps-space-2);
-  padding: var(--ps-space-2) var(--ps-space-4);
-  border-radius: var(--ps-radius-md);
-  text-decoration: none;
-  font-size: var(--ps-text-sm);
-  font-weight: 500;
-  line-height: 1.25;
-  border: 1px solid hsl(var(--app-border-default));
-  cursor: pointer;
-  user-select: none;
-  transition: all var(--ps-transition-fast);
-  color: hsl(var(--app-text-primary));
-  background: hsl(var(--app-bg-elevated));
-}
-.btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.btn:active:not(:disabled) {
-  transform: translateY(1px);
-}
-.btn:focus-visible {
-  outline: none;
-  border-color: hsl(var(--app-border-focus));
-  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
-    hsl(var(--app-accent-primary) / 0.25);
-}
-.btn-primary {
-  background: hsl(var(--app-accent-primary));
-  border-color: hsl(var(--app-accent-primary));
-  color: hsl(var(--app-text-on-solid));
-}
-.btn-primary:hover:not(:disabled) {
-  background: hsl(var(--app-accent-primary-hover));
-  border-color: hsl(var(--app-accent-primary-hover));
-}
-.btn-secondary {
-  background: hsl(var(--app-bg-elevated));
-  border-color: hsl(var(--app-border-strong));
-  box-shadow: var(--app-shadow-sm);
-  color: hsl(var(--app-text-primary));
-}
-.btn-secondary:hover:not(:disabled) {
-  background: hsl(var(--app-bg-hover));
-}
-.btn.is-compact {
-  padding: var(--ps-space-1) var(--ps-space-3);
-  font-size: var(--ps-text-sm);
-}
-
-/* Form input — the PNG-export toolbar renders a <select class="form-input">
-   (the scale picker). Also copied verbatim from app/components.css. */
-.form-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: var(--ps-space-2) var(--ps-space-3);
-  border-radius: var(--ps-radius-md);
-  border: 1px solid hsl(var(--app-border-default));
-  background: hsl(var(--app-bg-elevated));
-  color: hsl(var(--app-text-primary));
-  font-size: var(--ps-text-base);
-  line-height: 1.5;
-  outline: none;
-  transition: all var(--ps-transition-fast);
-  box-shadow: inset 0 1px 3px hsl(var(--app-text-primary) / 0.06);
-}
-.form-input::placeholder {
-  color: hsl(var(--app-text-tertiary));
-}
-.form-input:focus {
-  border-color: hsl(var(--app-border-focus));
-  background: hsl(var(--app-bg-elevated));
-  box-shadow:
-    inset 0 1px 2px hsl(var(--app-text-primary) / 0.03),
-    0 0 0 3px hsl(var(--app-accent-primary) / 0.15);
-}
-
-/* Row layout util — the exported presenter topbar uses <div class="row">.
-   Copied (unscoped) from base/02-lists-and-thumbs/50-layout-utils.css, where it
-   is scoped under .presenter-shell among other app shells. */
-.row {
-  display: flex;
-  align-items: center;
-  gap: var(--ps-space-3);
-}
-.row.spread {
-  justify-content: space-between;
-}
-.row.is-wrap {
-  flex-wrap: wrap;
-}
-.row.is-end {
-  justify-content: flex-end;
-}
-
-/* Segmented control — the published page's language switch, one button per
-   version the deck has (B182/D72 #6). Mirrors the rules in embed.css, where
-   the embed's own switch uses the same markup: both viewer shells keep their
-   own copy of the chrome they render, for the reason the .btn family above
-   states. Two deliberate differences from that copy: the lengths are written
-   as spacing tokens (embed.css predates that gate), and the published page
-   renders <a> rather than <button> — each version is a URL — so the link
-   defaults are reset alongside the button ones. */
-.sb-segmented {
-  display: inline-flex;
-  border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-lg);
-  overflow: hidden;
-  background: hsl(var(--app-bg-sunken));
-  padding: var(--ps-space-0-5);
-  gap: var(--ps-space-0-5);
-}
-.sb-segmented-btn {
-  appearance: none;
-  border: 0;
-  margin: 0;
-  padding: var(--ps-space-1-5) var(--ps-space-2-5);
-  background: transparent;
-  color: hsl(var(--app-text-secondary));
-  font: 600 var(--ps-text-sm)/1 var(--ps-font-sans);
-  cursor: pointer;
-  border-radius: calc(var(--ps-radius-md) - 2px);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.sb-segmented-btn:hover {
-  background: hsl(var(--app-bg-hover));
-  color: hsl(var(--app-text-primary));
-}
-.sb-segmented-btn.is-active {
-  background: hsl(var(--app-bg-elevated));
-  color: hsl(var(--app-text-primary));
-  box-shadow: var(--app-shadow-sm);
-}
-.sb-segmented-btn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.4);
 }

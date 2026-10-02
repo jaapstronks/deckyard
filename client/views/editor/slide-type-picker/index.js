@@ -78,7 +78,6 @@ export function createSlideTypePicker({
   theme,
   insertSlide,
   disabledSlideTypes,
-  canEditCustomHtml = false,
   requestAi = null,
   // Optional inline "From your library" strip (item 10). Both must be provided,
   // and the caller must also pass onSeeAllLibrary per render, or the strip is
@@ -291,7 +290,6 @@ export function createSlideTypePicker({
         def: SLIDE_TYPES?.[type],
         theme,
         disabledSlideTypes,
-        canEditCustomHtml,
       });
 
     // Thumbnails are expensive, so hydrate them only as they approach the

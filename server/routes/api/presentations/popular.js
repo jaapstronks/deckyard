@@ -169,6 +169,11 @@ export async function getPopularPresentations(ctx) {
  * Drop rows the user cannot read. The query keeps published private decks
  * in scope for their own readers, but a card must never surface a deck
  * (title + first-slide thumbnail) the click can't open.
+ *
+ * A list predicate over query rows, not a per-deck load: it asks the read
+ * decider directly and looks a collaborator row up only for the rows the cheap
+ * check refused. A route that addresses one deck by id goes through
+ * `loadPresentationForActor` (`server/services/presentations.js`) instead.
  */
 async function filterReadableRows(rows, ctx) {
   const user = ctx?.user || null;

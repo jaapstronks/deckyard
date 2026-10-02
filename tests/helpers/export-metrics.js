@@ -195,7 +195,7 @@ export async function measureSlide(
     // export's own scale option is already covered by the smoke test.
     await page.setViewport({ ...FRAME, deviceScaleFactor: 1 });
     const html = await buildSlidePngHtml(repoRoot, slide, { theme });
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    await page.setContent(html, { waitUntil: 'load' });
     await page.evaluate(() => document.fonts?.ready);
 
     const inPage = await page.evaluate(

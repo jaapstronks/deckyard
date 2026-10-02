@@ -10,7 +10,6 @@ import {
 } from '../../../storage/api-keys.js';
 import {
   normalizePresentationVisibility,
-  canActorAccessPresentation,
   hasIdentity,
   isOwnerOrCreator,
 } from '../../../utils/presentation-authz/index.js';
@@ -29,9 +28,13 @@ import {
   readRequestBody,
   isJsonObject,
 } from '../../../utils/http.js';
-import { codeForStatus, getStatusCode } from '../../../utils/errors.js';
+import {
+  codeForStatus,
+  getStatusCode,
+  isAppError,
+} from '../../../utils/errors.js';
 import { logError } from '../../../utils/logger.js';
-import { getPresentation } from '../../../storage/presentations/index.js';
+import { loadPresentationForActor } from '../../../services/presentations.js';
 
 // ============================================================
 // API KEY AUTHENTICATION
@@ -151,8 +154,10 @@ export function requirePermission(ctx, permission) {
 // ============================================================
 
 /**
- * Synchronous ownership/visibility filter for presentation *listings* only.
- * Returns true if:
+ * Synchronous ownership/visibility filter for presentation *listings* only: a
+ * list predicate, not a per-deck right. A route that addresses one deck by id
+ * asks {@link getPresentationWithAccess} (the service's
+ * `loadPresentationForActor`) instead. Returns true if:
  * - Presentation has organization visibility
  * - API key owner matches presentation owner or creator
  *
@@ -161,9 +166,7 @@ export function requirePermission(ctx, permission) {
  * collection filter).
  *
  * Note: this deliberately ignores the collaborator table (checking it per
- * deck in a list would be N queries). For per-deck access decisions use
- * getPresentationWithAccess, which is collaborator-aware and distinguishes
- * read from write access.
+ * deck in a list would be N queries); the per-deck check is collaborator-aware.
  * @param {Object} presentation - The presentation object
  * @param {Object} actor - The acting API-key owner (`ctx.authedUser`: `{id, email}`)
  * @returns {boolean}
@@ -178,17 +181,16 @@ export function canAccessPresentation(presentation, actor) {
 }
 
 /**
- * Fetch a presentation and verify access in one call.
- * Sends appropriate error responses if presentation not found or access denied.
+ * Fetch a presentation and verify access in one call — the v1 adapter over
+ * {@link loadPresentationForActor} (`server/services/presentations.js`, B519).
+ * The service loads and decides with the key owner as the actor; this renders a
+ * refusal in the v1 envelope, with the key's rate-limit headers (404 absent,
+ * 403 not allowed, D255).
  *
- * Uses the same collaborator-aware canRead/canWritePresentation checks as the
- * editor routes: reads allow owner/creator, organization visibility, and any
- * collaborator; writes additionally require edit rights (owner/creator,
- * writable organization-visible deck, or a collaborator with edit/admin permission).
- * @param {Object} ctx - Request context with repoRoot, authedUser and apiKey
+ * @param {Object} ctx - Request context with storageScope, authedUser and apiKey
  * @param {string} presentationId - The presentation ID to fetch
  * @param {Object} [options]
- * @param {'read'|'write'} [options.access='read'] - Required access level
+ * @param {'read'|'write'|'delete'|'manage'|'comment'} [options.access='read'] - Required access level
  * @returns {Promise<{ok: boolean, pres?: Object}>} - Result with presentation if successful
  */
 export async function getPresentationWithAccess(
@@ -196,28 +198,19 @@ export async function getPresentationWithAccess(
   presentationId,
   { access = 'read' } = {},
 ) {
-  const { storageScope, authedUser } = ctx;
-
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) {
-    await apiError(ctx, 404, 'Presentation not found');
+  try {
+    const pres = await loadPresentationForActor(
+      ctx.storageScope,
+      { actor: ctx.authedUser },
+      presentationId,
+      { access },
+    );
+    return { ok: true, pres };
+  } catch (err) {
+    if (!isAppError(err)) throw err;
+    await apiError(ctx, err.statusCode, err.message, { code: err.code });
     return { ok: false };
   }
-
-  if (!(await canActorAccessPresentation(pres, authedUser, 'read'))) {
-    await apiError(ctx, 403, 'Access denied to this presentation');
-    return { ok: false };
-  }
-
-  if (
-    access === 'write' &&
-    !(await canActorAccessPresentation(pres, authedUser, 'write'))
-  ) {
-    await apiError(ctx, 403, 'You have read-only access to this presentation');
-    return { ok: false };
-  }
-
-  return { ok: true, pres };
 }
 
 /**
@@ -535,7 +528,7 @@ export function v1NotFound(res, message = 'Not found') {
 /**
  * Walk a v1 `ROUTES` table: the shared dispatcher (`utils/router.js`), with
  * its own 404s — a `captures: ['uuid']` segment that cannot be one, an
- * unmounted `ai` row — answered in the v1 envelope, and every matched
+ * row whose `feature` is off — answered in the v1 envelope, and every matched
  * operation counted as `api_v1:<operationId>` (B515).
  *
  * @param {import('../../../utils/router.js').Route[]} routes

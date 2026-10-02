@@ -11,9 +11,10 @@ import {
   sandboxWatermarkEnabled,
   sandboxWatermarkHtml,
 } from '../utils/sandbox-watermark.js';
+import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { embedSeamCssUrls } from './seam-css.js';
 import {
   embedCssUrlsForExport,
-  embedLocalCssUrls,
   readTextIfExists,
   toDataUrlIfLocal,
   imageFieldKeysForType,
@@ -28,7 +29,13 @@ import { mapLimit, exportEmbedConcurrency } from '../utils/map-limit.js';
  * @param {string} repoRoot - Repository root path
  * @param {Object|null} theme - Theme object
  * @param {*} watermark - Watermark config (or null)
- * @param {Object} [opts]
+ * @param {Object} opts
+ * @param {Array<Object>} opts.slides - The slides this export renders. The
+ *   fork seam's images are inlined only for rules that can match one of them
+ *   (see `./seam-css.js`), so this is required: a caller that forgot it would
+ *   silently lose a fork type's artwork.
+ * @param {Record<string, object>|null} [opts.slideTypes] - Merged registry the
+ *   slide types resolve against (defaults to SLIDE_TYPES).
  * @param {Function} [opts.transform] - Image-bytes transform for inlined theme
  *   assets. A theme background is full-bleed, so the flat cap fits; without
  *   this the largest image on the slide would be the one image embedded at
@@ -42,8 +49,11 @@ export async function loadExportCssBundle(
   repoRoot,
   theme,
   watermark,
-  { transform = null, cache = null } = {},
+  { slides, slideTypes = null, transform = null, cache = null } = {},
 ) {
+  if (!Array.isArray(slides)) {
+    throw new TypeError('loadExportCssBundle: opts.slides must be an array');
+  }
   // `chromeCss` is the viewer/export chrome entrypoint (export.css), NOT the
   // editor's app.css. An exported deck is a viewer: it needs slide CSS + theme
   // + a thin presenter/toolbar chrome layer, never the ~620 KB of editor-only
@@ -61,23 +71,28 @@ export async function loadExportCssBundle(
     buildEmbeddedFontCss(repoRoot, theme),
   ]);
 
-  // The fork seam, with every local `url()` it references inlined as a data
-  // URL: a fork `@font-face` source and a `background: url(/custom/assets/…)`
-  // alike. Export documents are self-contained (Puppeteer `setContent`, or a
+  // The fork seam, with its local `url()`s inlined as data URLs: a fork
+  // `@font-face` source and a `background: url(/custom/assets/…)` alike.
+  // Export documents are self-contained (Puppeteer `setContent`, or a
   // downloaded .html), so a root-relative path has no origin to resolve
   // against there and would silently drop out — a system font instead of the
-  // fork's face, no image where the fork drew one. One pass for every local
-  // `url()`, the same one the theme vars take below, because the seam is the
-  // only CSS form a fork has (D271) and a font-only pass left the other half
-  // of that form broken (B554). Local only: the seam is the operator's own
-  // file, not user input, so it takes the allowlist (`isRenderAssetRef`) but
-  // not the SSRF half.
+  // fork's face, no image where the fork drew one (B554). Only where it can be
+  // drawn, though: a rule scoped to a slide type this export does not render
+  // keeps its `url()` as written, so a deck without the fork's title slide
+  // does not carry the title slide's artwork (B557, `./seam-css.js`). Local
+  // only: the seam is the operator's own file, not user input, so it takes the
+  // allowlist (`isRenderAssetRef`) but not the SSRF half.
   // The seam is deliberately *not* run through `stripFontFacesFromCss`: a
   // fork's own faces are the point (see docs/reference/fork-setup.md).
-  const customCss = await embedLocalCssUrls(
+  const customCss = await embedSeamCssUrls(
     repoRoot,
     readCustomStylesCss(repoRoot),
-    { transform, cache },
+    {
+      slides,
+      slideTypes: slideTypes || SLIDE_TYPES,
+      transform,
+      cache,
+    },
   );
 
   // Theme vars take the same `url()` pass as the page markup. The export

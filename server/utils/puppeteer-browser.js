@@ -177,6 +177,11 @@ export const BROWSER_CLOSE_TIMEOUT_MS = 5000;
  * `timeoutMs` (the same macOS case took over ten seconds), or whose close
  * rejected, is killed.
  *
+ * The promise is that the Chrome process has exited when this resolves, so it
+ * waits on the process's own `exit` event, on both paths. `proc.kill()` only
+ * sends the signal: reading `exitCode` straight after it saw `null` whenever a
+ * loaded machine pushed the close past the timeout (B545).
+ *
  * @param {import('puppeteer-core').Browser} browser
  * @param {object} [options]
  * @param {number} [options.timeoutMs]
@@ -187,6 +192,11 @@ export async function shutDownBrowser(
   { timeoutMs = BROWSER_CLOSE_TIMEOUT_MS } = {},
 ) {
   const proc = browser.process();
+  // Subscribed before the close starts, so the event cannot slip past.
+  const exited =
+    proc && proc.exitCode === null && proc.signalCode === null
+      ? once(proc, 'exit')
+      : null;
   let timer;
   const timedOut = new Promise((resolve) => {
     timer = setTimeout(resolve, timeoutMs);
@@ -197,11 +207,15 @@ export async function shutDownBrowser(
       debugLog('[puppeteer] browser.close() rejected', err);
     });
     await Promise.race([closed, timedOut]);
-    if (proc && proc.exitCode === null && proc.signalCode === null) {
-      proc.kill('SIGKILL');
-    }
   } finally {
     clearTimeout(timer);
+  }
+  if (exited) {
+    // `kill()` only sends the signal; the process is gone once `exit` fires.
+    if (proc.exitCode === null && proc.signalCode === null) {
+      proc.kill('SIGKILL');
+    }
+    await exited;
   }
   await Promise.all(
     (proc?.stdio ?? []).map((stream) => {

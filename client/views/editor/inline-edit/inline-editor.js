@@ -72,7 +72,7 @@ import { takeEscape } from '../../../lib/dom/escape.js';
  * @param {Object} opts
  * @param {Function} [opts.api] - fetch wrapper; used to upload dropped image files
  * @param {boolean} [opts.uploadsEnabled] - whether drag & drop image upload onto
- *   empty placeholders is available (mirrors `features.enableUploads`)
+ *   empty placeholders is available (the caller asks `featureEnabled('uploads')`)
  * @param {HTMLElement} opts.thumb - the preview slide container (stable element)
  * @param {HTMLElement} [opts.overlayHost] - host for the markdown modal + backdrop
  *   (defaults to the thumb's stage). A larger host (the preview panel) makes the

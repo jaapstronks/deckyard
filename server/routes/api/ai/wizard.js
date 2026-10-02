@@ -5,6 +5,7 @@ import {
 } from '../../../utils/request-validators.js';
 import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { settleNewDeckTheme } from '../../../utils/themes.js';
+import { assertCreatableDeckInput } from '../../../services/presentations.js';
 import { generateDeckJsonFromRawContent } from '../../../utils/openai/deck.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { loadSlideTypeContext, createPresentationWithI18n } from './shared.js';
@@ -23,6 +24,8 @@ export async function handleAiWizard({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // Refused before the generation, so a refused body costs no LLM call (B576).
+  assertCreatableDeckInput(body);
   const {
     raw,
     vendor,

@@ -1,7 +1,5 @@
-import {
-  createPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
+import { createPresentation } from '../../../services/presentations.js';
 import {
   loadDisabledSlideTypes,
   loadCustomSlideTypes,
@@ -125,14 +123,17 @@ export async function createPresentationWithI18n(
   storageScope,
   { parts, lang, authedUser, theme, settings, notionSourcePageId },
 ) {
-  const created = await createPresentation(storageScope, {
-    title: parts.title,
-    theme,
-    ownerEmail: authedUser?.email || null,
-    lang: lang || undefined,
-    ...(settings ? { settings } : {}),
-    ...(notionSourcePageId ? { notionSourcePageId } : {}),
-  });
+  const created = await createPresentation(
+    storageScope,
+    { actor: authedUser },
+    {
+      title: parts.title,
+      theme,
+      lang: lang || undefined,
+      ...(settings ? { settings } : {}),
+      ...(notionSourcePageId ? { notionSourcePageId } : {}),
+    },
+  );
 
   const activeLang =
     created?.i18n?.active ||

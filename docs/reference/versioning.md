@@ -151,6 +151,12 @@ MCP parameter, a response status, an export artifact's shape — is titled
 when the diff is internally refactor-shaped.** `refactor:` is reserved for
 changes with no observable effect on any of the surfaces above.
 
+**What a slide renders counts as observable.** A change to the rendered output
+of an existing slide type (a size, a spacing step, a colour) shows in every
+existing deck and export, so it is titled `fix:` or `feat:` as well, however
+refactor-shaped the diff (D281). #1400 moved four card types onto one ladder
+under a `refactor(css):` title and was retitled at the merge.
+
 This was learned the expensive way: the webhook rename (#829), the MCP
 `scope` → `ownership` argument (#798), the shelf-axis rename in the bulk-export
 ZIP (#806/#827), two retracted wizard endpoints (#835) and the follow-API's
@@ -183,10 +189,13 @@ release notes, under the same heading as breaking changes.** One line per rename
 A fork styling its own slide types against core CSS is relying on those names,
 and the release notes are the only place it can learn they moved.
 
-`tests/slide-type-css-contract.test.js` enforces the upstream half — every class
-a core type emits must resolve to a CSS rule — so a rename cannot silently leave
-one side behind. It cannot see a fork's types, which is why the release-notes
-line matters. Details: `docs/reference/slide-type-css-contract.md`.
+`tests/slide-type-css-contract.test.js` enforces it on both halves: every class
+a core type emits must resolve to a CSS rule, and in a fork's checkout every
+class a fork type emits must resolve to one in core's or the fork's
+`custom/styles/`. So a rename cannot silently leave one side behind; the fork's
+suite goes red on the merge of the tag. What it cannot say is what the new name
+is, which is why the release-notes line matters. Details:
+`docs/reference/slide-type-css-contract.md`.
 
 ## Commit conventions
 
@@ -264,6 +273,57 @@ non-breaking cases named above).
   Reconcile once during review — keep the curated prose as the `1.1.0` body, or
   the generated list, or a merge of both — then delete the stale `[Unreleased]`.
   From the next cycle on, the changelog is fully machine-maintained.
+
+## Upstream release recipes
+
+Upstream's maintainer steps around a release, moved out of `docs/developer/maintaining.md` (B553); that file keeps a one-line summary.
+
+- **No MAJOR bumps while Deckyard is in beta.** The version stays in `1.x` until
+  the beta badge comes off; `2.0.0` is reserved for leaving beta, not for a
+  tidy-up that happens to break something. `BREAKING CHANGE:` / `!` still force a
+  MAJOR automatically, so if the Release PR proposes a `2.x`, override it down
+  with a `Release-As: 1.<next>.0` trailer before merging. Retiring an unused
+  slide type and moving internal modules are explicitly **not** breaking —
+  rationale and procedure in `docs/reference/versioning.md`.
+- **Releases are automated** via `release-please`: it keeps one open Release PR
+  (`chore(main): release X.Y.Z`) up to date on every push to `main`. Cutting a
+  release = **merging that Release PR** (bumps `package.json`, finalizes
+  `CHANGELOG.md`, tags `vX.Y.Z`, publishes a GitHub Release). You never bump the
+  number by hand. Merges to `main` are internal CI; a release is the deliberate
+  outward signal — the two are decoupled. Forks sync on tags, not `main`.
+  Details + one-time PAT setup: `docs/reference/versioning.md`.
+- **Release → release notes on `deckyard-website`** is a hub → spoke recipe
+  (this repo is the hub of `deckyard-website`, `deckyard-planning`,
+  `deckyard-cloud` and `deckyard-video`; rules and the test question in
+  the multi-repo protocol in `../../_meta/` § Cross-repo, `hub:` in
+  `../../_meta/REPOS.yaml`).
+  After a Release PR merges, write the note in
+  `../deckyard-website/src/content/releases/{en,nl}/X.Y.Z.md` from the
+  `CHANGELOG.md` section (selection criterion: what a user notices, not the
+  commit prefix; bump `SLIDE_TYPE_COUNT` in its `src/lib/facts.ts` if the count
+  changed), run its `npm run verify`, commit and push there with the tag in the
+  message. No briefing. A briefing stays the route when the website has an open
+  PR or plan touching those pages, or the note needs a positioning call rather
+  than a rewrite. The other way round never: `deckyard-website` does not change
+  this repo.
+- **Release → sandbox on the tag.** `sandbox.deckyard.eu` runs a release tag,
+  never `main`, and whoever merges the Release PR moves it to the new tag in the
+  same session. On the box, in the sandbox checkout: dump the database first,
+  then `git fetch --tags origin && git checkout <tag>`, then bring up only
+  `app` and `postgres` with both compose files (the base file plus the
+  override; the base file alone starts a Caddy that collides with the host's
+  and runs the app without its env). Verify on the box and in the browser
+  (open an example deck from the sandbox Home). Host, key and file names live
+  in the private runbook, `deckyard-website` `internal/ops/hetzner-sandbox-vps.md`
+  § Updates; they do not belong in this public repo.
+- **Long-running feature tracks** (integration-branch history) use an integration branch: sub-PRs target
+  that branch (not `main`), which gets one umbrella PR to `main` when the
+  whole track is accepted. **No integration branch is active right now** —
+  the `collab` track (ADR 001) shipped to `main` and its branch is gone, so
+  everything currently bases on `main`. When a track _does_ open one:
+  **the base branch is set at PR creation** and GitHub defaults to `main`,
+  so always pass it explicitly (`gh pr create --base <track> …`) and
+  double-check the "wants to merge into" line before finishing up.
 
 ## How people hear about a release
 

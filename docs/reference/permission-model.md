@@ -68,8 +68,12 @@ Storage and cache:
 
 Enforcement seam and the routes that hand grants out:
 
-- `server/utils/route-middleware.js` — `withPresentationAuth` (load + check +
-  respond, for `read` / `write` / `delete` / `manage`) and
+- `server/services/presentations.js` — `loadPresentationForActor` (load +
+  decide, for `read` / `write` / `delete` / `manage` / `comment`, on every
+  contract) and `mayOnPresentation` (the same decision on a deck already
+  loaded, as a boolean).
+- `server/utils/route-middleware.js` — `withPresentationAuth` (the internal
+  adapter: the service's refusal as a 404/403 response) and
   `withPresentationReadAuth` (the same, plus a guest-session fallback).
 - `server/routes/api/collaborators.js` — invite, list, revoke and re-level
   collaborators.
@@ -171,19 +175,24 @@ and _is_ the authorization, which is why link reads take no organization
 
 ### 1. A request asks for a deck
 
-`withPresentationAuth({ storageScope, id, authedUser, res, permission })` —
-the caller passes the request's central storage scope; the helper builds
-nothing itself:
+`loadPresentationForActor(scope, { actor }, id, { access })`
+(`server/services/presentations.js`) — the internal route reaches it through
+`withPresentationAuth({ storageScope, id, authedUser, res, permission })`, the
+public API through `getPresentationWithAccess`, MCP through
+`loadPresentationChecked`; each adapter only renders the refusal (B519):
 
-1. `getPresentation(storageScope, id)` — organization-scoped.
+1. `getPresentation(scope, id)` — organization-scoped.
    Nothing back → **404**. A deck in another organization is _absent_, not
    forbidden, so authorization never sees it.
-2. For `read` and `write`, look up the caller's collaborator permission
-   (cached).
-3. Apply the decider for the requested permission
-   (`read` → `canReadPresentation`, `write` → `canWritePresentation`,
-   `delete`, `manage`). `false` → **403** — the caller is past the login gate,
-   so what they lack is permission, not a session (D68).
+2. Read first: the caller's collaborator permission (cached) and
+   `canReadPresentation`. `false` → **403** — the caller is past the login
+   gate, so what they lack is permission, not a session (D68). The same on all
+   three contracts (D255): MCP no longer folds an unreadable deck into "not
+   found".
+3. Then the requested right on top (`write` → `canWritePresentation`,
+   `delete` → `canDeletePresentation`, `manage` → `canManageCollaborators`,
+   `comment` → `canCommentOnPresentation`, with the collaborator row wherever
+   the decider reads one). `false` → **403**.
 4. Return the presentation.
 
 `withPresentationReadAuth` is the same with one extra rung: if the

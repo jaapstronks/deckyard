@@ -118,13 +118,12 @@ test('markdown fields get the same treatment', () => {
   assert.equal(ta.getAttribute('aria-invalid'), 'true');
 });
 
-test("a read-only code field is not the author's to fill in, so it is not flagged", () => {
-  const wrap = fieldCode('HTML', '', 'help', () => {}, {
-    required: true,
-    readOnly: true,
-  });
-  assert.equal(wrap.classList.contains('is-required'), false);
-  assert.equal(wrap.querySelector('.inline-error'), null);
+test('code fields get the same treatment', () => {
+  const wrap = fieldCode('HTML', '', 'help', () => {}, { required: true });
+  const ta = wrap.querySelector('textarea');
+  assert.ok(wrap.querySelector('.field-required-mark'));
+  blur(ta);
+  assert.equal(ta.getAttribute('aria-invalid'), 'true');
 });
 
 test('emptyRequiredFields finds the empty ones only', () => {

@@ -15,6 +15,7 @@ Two PostgreSQL tables (migration `037_font_management.js`), both org-scoped:
 - `source_config` (JSONB): source-specific data (Typekit project ID, Monotype project ID, Google spec string)
 - `slug`: unique per org, used for CSS class names
 - `css_fallback`: optional CSS fallback stack override
+- `desktop_family`: optional, uploaded families only — the installed font's full name, which the PPTX export writes (see § Desktop name in PowerPoint exports)
 
 **`font_variants`** — individual weight/style files for a family.
 
@@ -80,15 +81,17 @@ Without the pin, `assets/fonts/google/` was a function of Google's release
 schedule rather than of this repository, and no rendering baseline could mean
 anything (`docs/plans/briefs/export-structural-metrics.md`).
 
-**Which install failures are fatal.** A pinned URL that answers with an HTTP
+**Every install failure is fatal.** A pinned URL that answers with an HTTP
 error, or answers with bytes whose checksum does not match, is a _repository_
-problem: the lock points at something that is no longer there, and installing
-anyway leaves a checkout with silently missing fonts. Those abort `postinstall`
-with a non-zero exit and a `--update-lock` instruction. A request that never
-gets an answer at all (DNS, timeout, offline, proxy) is an _environment_
-problem: these assets are optional at runtime, every consumer falls back to the
-system stack, and failing `npm install` over a flaky connection would be worse.
-Those warn and continue.
+problem: the lock points at something that is no longer there. Those abort
+`postinstall` with a non-zero exit and a `--update-lock` instruction. A request
+that never gets an answer at all (DNS, timeout, offline, proxy) is an
+_environment_ problem: it is retried twice with a short backoff, and when the
+third attempt fails too, `postinstall` aborts with the network cause. The fonts
+are not optional: the core theme seeds refuse to load when a curated face is
+missing on disk (`server/utils/theme-seeds.js`), so skipping a file would only
+move the failure to the first boot or test that seeds themes, under a message
+that blames the seed instead of the network (B559).
 
 Each weight ships as **two files**, Google's disjoint `latin` and `latin-ext`
 subsets, named `<slug>-<weight>-<subset>.woff2`. Both are needed: `latin` holds
@@ -288,6 +291,16 @@ A second `--apply` does nothing.
 
 - Uploaded fonts are inlined as data URLs (read through the provider), like the HTML export
 - External (Adobe/Monotype/Google) fonts: Puppeteer loads their CSS/JS over the network
+
+**PPTX theme template** (`server/export/pptx-theme.js`): see the next section.
+
+### Desktop name in PowerPoint exports
+
+A `.pptx` carries a font as a name, never as a file: the recipient's PowerPoint or Keynote either has a font installed under that name or substitutes one ("missing font"). An uploaded family's `name` is an alias its uploader chose for CSS (`GT America Extended`), which exists on no machine. So an uploaded family can declare **`desktopFamily`**: the installed font's **full name**, name ID 4 in the font file (`GT America LCG Ext Md`). It is the full name rather than the PostScript name (ID 6) because PowerPoint on Windows matches family and full names, and rather than the family name (ID 1) because that covers every width of a superfamily and did not resolve in Keynote (D126, measured 2026-09-16).
+
+- **Where it is set**: the font editor (Settings → Fonts, uploaded families) or `desktopFamily` on `POST`/`PUT /api/font-families[/:id]`. `null` or `""` clears it. A hosted family (Adobe, Monotype, Google) is refused with `details.field: "desktop_family"`: its name is the vendor's own. So is a value over 255 characters or with control characters; nothing is trimmed to fit.
+- **How it travels**: `buildThemeConfig()` copies it onto the family's `embedFonts` entries as `desktopFamily`. A theme record has no font field of its own for it (D208).
+- **What the export writes**, per font token, in `pptxTypeface()`: the `desktopFamily` of the uploaded family at the head of the token's stack; **Arial** for an uploaded family without one; the CSS name itself for a curated family, whose name is the one Google publishes. The same value goes into the document theme (`theme1.xml`) and every layout placeholder. A theme that names no font leaves the face to the document theme, as before.
 
 ### Cache Invalidation
 

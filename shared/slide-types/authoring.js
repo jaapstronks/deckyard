@@ -8,7 +8,6 @@ import chartSlideAuthoring from './types/chart-slide/authoring.js';
 import comparisonSlideAuthoring from './types/comparison-slide/authoring.js';
 import contentSlideAuthoring from './types/content-slide/authoring.js';
 import countdownSlideAuthoring from './types/countdown-slide/authoring.js';
-import customHtmlSlideAuthoring from './types/custom-html-slide/authoring.js';
 import cycleSlideAuthoring from './types/cycle-slide/authoring.js';
 import embedSlideAuthoring from './types/embed-slide/authoring.js';
 import endSlideAuthoring from './types/end-slide/authoring.js';
@@ -59,7 +58,6 @@ export const SLIDE_TYPE_AUTHORING = {
   'comparison-slide': comparisonSlideAuthoring,
   'content-slide': contentSlideAuthoring,
   'countdown-slide': countdownSlideAuthoring,
-  'custom-html-slide': customHtmlSlideAuthoring,
   'cycle-slide': cycleSlideAuthoring,
   'embed-slide': embedSlideAuthoring,
   'end-slide': endSlideAuthoring,

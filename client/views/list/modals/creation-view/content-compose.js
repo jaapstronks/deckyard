@@ -22,6 +22,7 @@ import {
   handleNotion,
 } from '../new-presentation/handlers.js';
 import { h } from '../../../../lib/dom/index.js';
+import { featureEnabled } from '../../../../lib/state/features.js';
 
 /**
  * @param {object} opts
@@ -135,12 +136,15 @@ export function createContentCompose({ api, onChange }) {
   ]);
   panel.append(contentSubtabs, contentSubWrap);
 
-  // Reveal the Notion sub-tab only when the integration is configured.
-  api('/api/notion/status')
-    .then((resp) => {
-      if (resp?.enabled) btnSubNotion.classList.remove('is-hidden');
-    })
-    .catch(() => {});
+  // Reveal the Notion sub-tab only when this installation has the integration
+  // (`NOTION_ENABLED`, else the route does not exist) and it is configured.
+  if (featureEnabled('notion')) {
+    api('/api/notion/status')
+      .then((resp) => {
+        if (resp?.enabled) btnSubNotion.classList.remove('is-hidden');
+      })
+      .catch(() => {});
+  }
 
   btnSubPaste.addEventListener('click', () => {
     contentSubtab = 'paste';

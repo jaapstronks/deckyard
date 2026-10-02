@@ -1,6 +1,7 @@
 /**
  * Action route handlers for presentation comments.
- * Includes resolve, reopen, dismiss, and apply operations.
+ * Includes resolve, reopen, dismiss, and apply operations. The status changes
+ * are `services/comments.js` (B569); apply is internal-only and stays here.
  */
 
 import {
@@ -20,14 +21,8 @@ import { canResolveComment } from '../../../utils/presentation-authz/index.js';
 import {
   getComment,
   resolveComment,
-  reopenComment,
-  dismissComment,
   markThreadsRead,
 } from '../../../storage/presentations/comments.js';
-import {
-  recordCommentResolved,
-  recordCommentReopened,
-} from '../../../services/activity-events.js';
 import {
   broadcastToPresentation,
   CommentEventTypes,
@@ -36,7 +31,10 @@ import {
   withPresentationAuth,
   withPresentationReadAuth,
 } from '../../../utils/route-middleware.js';
-import { broadcastCommentCounts } from './comments-shared.js';
+import {
+  broadcastCommentCounts,
+  setCommentStatus,
+} from '../../../services/comments.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
@@ -44,128 +42,37 @@ import { newSlide } from '../../../../shared/slide-types/presentation.js';
 import { resolveSlideTypeName } from '../../../../shared/slide-types/registry.js';
 
 /**
+ * Resolve, reopen or dismiss a comment: the internal adapter over
+ * `setCommentStatus` (`services/comments.js`), which decides who may and which
+ * transition is allowed. A refusal is thrown and the API error handler renders
+ * it.
+ *
+ * @param {'resolved'|'open'|'dismissed'} status
+ */
+function statusRoute(status) {
+  return async ({ storageScope, req, res, authedUser } = {}, id, commentId) => {
+    if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
+    const { comment } = await setCommentStatus(
+      storageScope,
+      { actor: authedUser },
+      { presentationId: id, commentId, status },
+    );
+    serveJson(res, 200, { ok: true, comment });
+    return true;
+  };
+}
+
+/**
  * Resolve a comment.
  * POST /api/presentations/:id/comments/:commentId/resolve
  */
-export async function handlePresentationCommentResolve(
-  { storageScope, req, res, authedUser } = {},
-  id,
-  commentId,
-) {
-  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-
-  const pres = await withPresentationAuth({
-    storageScope,
-    id,
-    authedUser,
-    res,
-    permission: 'read',
-  });
-  if (!pres) return true;
-
-  const comment = await getComment(storageScope, commentId);
-
-  if (!comment || comment.presentationId !== id) {
-    return notFound(res, 'Comment not found');
-  }
-
-  // Only owner/admin can resolve
-  if (!canResolveComment({ user: authedUser, pres, comment })) {
-    return forbidden(res);
-  }
-
-  const result = await resolveComment(storageScope, commentId, {
-    email: authedUser?.email,
-  });
-
-  if (!result.ok) {
-    return storageError(res, result);
-  }
-
-  // Record activity event (non-blocking)
-  fireAndForget(
-    recordCommentResolved({
-      comment: result.comment,
-      presentation: pres,
-      actor: authedUser,
-      scope: storageScope,
-    }),
-    'record comment-resolved activity',
-  );
-
-  // Broadcast to all connected clients (non-blocking)
-  broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
-    comment: result.comment,
-  });
-  fireAndForget(
-    broadcastCommentCounts(id, storageScope),
-    'broadcast comment counts',
-  );
-
-  serveJson(res, 200, result);
-  return true;
-}
+export const handlePresentationCommentResolve = statusRoute('resolved');
 
 /**
  * Reopen a resolved comment.
  * POST /api/presentations/:id/comments/:commentId/reopen
  */
-export async function handlePresentationCommentReopen(
-  { storageScope, req, res, authedUser } = {},
-  id,
-  commentId,
-) {
-  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-
-  const pres = await withPresentationAuth({
-    storageScope,
-    id,
-    authedUser,
-    res,
-    permission: 'read',
-  });
-  if (!pres) return true;
-
-  const comment = await getComment(storageScope, commentId);
-
-  if (!comment || comment.presentationId !== id) {
-    return notFound(res, 'Comment not found');
-  }
-
-  // Only owner/admin can reopen
-  if (!canResolveComment({ user: authedUser, pres, comment })) {
-    return forbidden(res);
-  }
-
-  const result = await reopenComment(storageScope, commentId);
-
-  if (!result.ok) {
-    return storageError(res, result);
-  }
-
-  // Record activity event (non-blocking)
-  fireAndForget(
-    recordCommentReopened({
-      comment: result.comment,
-      presentation: pres,
-      actor: authedUser,
-      scope: storageScope,
-    }),
-    'record comment-reopened activity',
-  );
-
-  // Broadcast to all connected clients (non-blocking)
-  broadcastToPresentation(id, CommentEventTypes.REOPENED, {
-    comment: result.comment,
-  });
-  fireAndForget(
-    broadcastCommentCounts(id, storageScope),
-    'broadcast comment counts',
-  );
-
-  serveJson(res, 200, result);
-  return true;
-}
+export const handlePresentationCommentReopen = statusRoute('open');
 
 /**
  * Dismiss an AI suggestion.
@@ -173,53 +80,7 @@ export async function handlePresentationCommentReopen(
  *
  * Different from resolve - used specifically for AI suggestions the user doesn't want to act on.
  */
-export async function handlePresentationCommentDismiss(
-  { storageScope, req, res, authedUser } = {},
-  id,
-  commentId,
-) {
-  if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-
-  const pres = await withPresentationAuth({
-    storageScope,
-    id,
-    authedUser,
-    res,
-    permission: 'read',
-  });
-  if (!pres) return true;
-
-  const comment = await getComment(storageScope, commentId);
-
-  if (!comment || comment.presentationId !== id) {
-    return notFound(res, 'Comment not found');
-  }
-
-  // Only owner/admin can dismiss (same as resolve)
-  if (!canResolveComment({ user: authedUser, pres, comment })) {
-    return forbidden(res);
-  }
-
-  const result = await dismissComment(storageScope, commentId, {
-    email: authedUser?.email,
-  });
-
-  if (!result.ok) {
-    return storageError(res, result);
-  }
-
-  // Broadcast to all connected clients (non-blocking)
-  broadcastToPresentation(id, CommentEventTypes.RESOLVED, {
-    comment: result.comment,
-  });
-  fireAndForget(
-    broadcastCommentCounts(id, storageScope),
-    'broadcast comment counts',
-  );
-
-  serveJson(res, 200, result);
-  return true;
-}
+export const handlePresentationCommentDismiss = statusRoute('dismissed');
 
 /**
  * Apply an AI suggestion - create the proposed slide.

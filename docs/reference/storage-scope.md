@@ -31,8 +31,8 @@ operations that genuinely cannot be organization-scoped (next section).
 
 A function that validates with `allowCrossOrganization: true` accepts a
 `crossOrganizationScope(repoRoot, reason)` — a scope that deliberately states
-no organization. Three categories are legitimate; everything else is a
-violation, not a fourth category waiting to be named:
+no organization. Four categories are legitimate; everything else is a
+violation, not a fifth category waiting to be named:
 
 1. **Token-authorized reads** — a globally unique token (publish id, share
    token, follow code) was already resolved, and the deck id came _out_ of
@@ -46,6 +46,14 @@ violation, not a fourth category waiting to be named:
    `email_templates` are per-instance (keyed by nothing or by user email);
    jobs and pre-auth routes read them cross-organization because an
    organization never enters the query.
+4. **Instance-wide aggregates for the instance admin** — the instance-health
+   census (`server/storage/instance-census.js`, B516) reads organization-owned
+   rows (`presentations`, `custom_slide_types`) across the instance and answers
+   only counts per slide type, custom-type key or settings key: no row, no id,
+   no organization and no value leaves the function. Only the route behind the
+   instance-admin role (`users.role`, not a membership role) builds this scope.
+   A read that hands back a row, or a count per organization, is not in this
+   category.
 
 The `reason` string is mandatory and shows up in errors — write it for the
 reviewer who wonders why the call is exempt.
@@ -120,6 +128,20 @@ behaviour-preserving throughout — the boundary decision (D5, 2026-08-06)
 placed it there on purpose. The net result is one doctrine on both paths:
 whether a call arrives scope-first through `resolveScope()` or reaches
 `getOrgId()` directly, an absent organization is refused, never guessed.
+
+## Instance telemetry takes no scope
+
+Two tables are counters about the instance itself, keyed by nothing an
+organization could own: `api_usage_daily` (quota per API key, rate limits)
+and `instance_health` (which surfaces the install uses, D246 — no
+organization, person or deck in the row). Their facades, `api-usage.js` and
+`instance-health.js`, take **no** `StorageScope`. That is not a fourth
+cross-organization category: a cross-organization scope is for _reading_
+organization-owned rows without a filter, and writes may never run
+cross-organization. Here there is no organization to state or to skip, so a
+scope parameter would be ceremony that validates nothing. A new table joins
+this pair only when it, too, has no organization column and no per-person
+key; anything else takes a scope.
 
 ## Enforcement and implementation status (as of 2026-08-21)
 

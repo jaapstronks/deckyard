@@ -86,17 +86,21 @@ it only shipped because the bundle used to inline `app.css` wholesale, which put
 a ~1 MB `<style>` block on every download.
 
 `export.css` is a thin chrome layer: `client/styles/shared/ui-tokens.css` (the
-design tokens the presenter chrome in `slides.css` reads unfallbacked) and the
-`.btn` family + `.form-input` + `.row`
-that the exported deck nav and the pdf/png/print toolbars use. The presenter chrome itself (`.presenter-*`, `.deck-slide`,
-`.sr-only`, `.skip-link`, progress bar) already lives in `slides.css`. This
-mirrors `embed.css`, the iframe viewer's entrypoint, which drops `app.css` the
-same way.
+design tokens the presenter chrome in `slides.css` reads unfallbacked) and
+`client/styles/shared/primitives.css`, the one definition of the `.btn` family,
+`.form-input`, `.row` and the segmented control that `app.css` and `embed.css`
+import too. The exported deck nav, the pdf/png/print toolbars and the published
+page's language switch render those. The presenter chrome itself
+(`.presenter-*`, `.deck-slide`, `.sr-only`, `.skip-link`, progress bar) already
+lives in `slides.css`. `embed.css`, the iframe viewer's entrypoint, drops
+`app.css` the same way.
 
 The boundary is a maintained line: `tests/export-css-boundary.test.js` fails if
 editor-only selectors creep back in or if a viewer selector the DOM needs goes
-missing. If you change `.btn` in `app/components.css`, mirror it in `export.css`
-(the rules are copied verbatim so exported buttons look identical). Trimming the
+missing, and `tests/css-one-definition.test.js` fails if a primitive is defined
+anywhere but `primitives.css`. A viewer that needs a different look scopes an
+override in its own entry file (`embed.css` sets the toolbar font under
+`.ps-embed-controls`); it keeps no copy. Trimming the
 remaining bulk — `slides.css` is ~310 KB of per-slide-type CSS shipped whole —
 is separate, out-of-scope work.
 

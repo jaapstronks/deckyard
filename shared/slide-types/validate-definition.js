@@ -108,9 +108,8 @@ function functionPaths(value, path, seen) {
  * renders `.slide-acme-hero` and `comparison-slide` renders `.slide-comparison`.
  *
  * That class is what a file-JS type's stylesheet nests under, and it is also
- * the scope the two *pasted*-CSS paths rewrite their selectors against — the
- * custom-html slide and the Settings > Slide Types builder, both through
- * `scopeCss` in scope-css.js. A fork's `custom/styles/*.css` gets no such pass:
+ * the scope the *pasted*-CSS path rewrites its selectors against — the
+ * Settings > Slide Types builder, through `scopeCss` in scope-css.js. A fork's `custom/styles/*.css` gets no such pass:
  * it is hand-written and concatenated after all core CSS on every render path,
  * so without a root of its own a selector there has nothing to be nested under
  * and reaches deck chrome instead. One derivation, used by the scaffolder's
@@ -131,29 +130,37 @@ function firstTag(html) {
 }
 
 /**
- * Warn when a rendered sample's root element does not carry
- * {@link slideRootClass}. A cheap string check, deliberately a warning: the
- * slide renders fine without it, it is the fork's *stylesheet* that loses its
- * anchor, and a type that ships no CSS at all is a legitimate shape.
- *
- * The sample is the type's own `defaults` — the nearest thing to real content
- * a definition carries. A renderer that throws or returns a non-string on it is
- * not reported here: whether empty content must render is a separate contract
- * from which class the root wears.
+ * Render a definition once on its own `defaults` — the nearest thing to real
+ * content a definition carries — for the checks that read markup. A renderer
+ * that throws or returns a non-string on it yields `null`: whether empty
+ * content must render is a separate contract from what the markup contains.
  *
  * @param {object} def
  * @param {string} who - the registry key, already trimmed.
- * @param {{errors: string[], warnings: string[]}} out
+ * @returns {string|null}
  */
-function checkRootClass(def, who, out) {
+function renderSample(def, who) {
   const sample = isPlainObject(def.defaults) ? def.defaults : {};
   let html;
   try {
     html = def.renderHtml(sample, { type: who, content: sample }, {});
   } catch {
-    return;
+    return null;
   }
-  if (typeof html !== 'string' || !html.trim()) return;
+  return typeof html === 'string' && html.trim() ? html : null;
+}
+
+/**
+ * Warn when a rendered sample's root element does not carry
+ * {@link slideRootClass}. A cheap string check, deliberately a warning: the
+ * slide renders fine without it, it is the fork's *stylesheet* that loses its
+ * anchor, and a type that ships no CSS at all is a legitimate shape.
+ *
+ * @param {string} html - the sample render.
+ * @param {string} who - the registry key, already trimmed.
+ * @param {{errors: string[], warnings: string[]}} out
+ */
+function checkRootClass(html, who, out) {
   const root = firstTag(html);
   if (!root) return;
   const classes = /\bclass\s*=\s*(?:"([^"]*)"|'([^']*)')/.exec(root.attrs);
@@ -170,12 +177,35 @@ function checkRootClass(def, who, out) {
 }
 
 /**
+ * Refuse a sample render that carries a `<style>` block. A file-JS type has
+ * one place for its CSS, `custom/styles/`, which every render path loads after
+ * core and which the CSS contract gate reads; an inline block is a second
+ * place none of that sees. Database-defined types are not checked here: their
+ * pasted CSS is scoped and inlined by the runtime, which never calls this
+ * validator.
+ *
+ * @param {string} html - the sample render.
+ * @param {string} who - the registry key, already trimmed.
+ * @param {{errors: string[], warnings: string[]}} out
+ */
+function checkNoInlineStyle(html, who, out) {
+  if (!/<style\b/i.test(html)) return;
+  out.errors.push(
+    `${who}: the rendered markup carries a <style> block — a slide type's ` +
+      `CSS lives in one place, a stylesheet in ` +
+      `\`custom/styles/<nn>-${canonicalTypeName(who)}.css\` nested under ` +
+      `\`.${slideRootClass(who)}\`, which every render path loads after core`,
+  );
+}
+
+/**
  * Validate a slide-type definition — the object a `custom/slide-types/*.js`
  * file default-exports, or a core type's definition.
  *
- * Same input, same report. It calls `def.renderHtml` once on an empty sample
- * for the root-class check; a definition whose renderer throws or returns a
- * non-string on empty content simply skips that one check.
+ * Same input, same report. It calls `def.renderHtml` once on the type's
+ * `defaults` for the markup checks (root class, no inline `<style>`); a
+ * definition whose renderer throws or returns a non-string there simply skips
+ * those checks.
  *
  * @param {unknown} def - the definition to check.
  * @param {string} name - the registry key it would be registered under (the
@@ -217,7 +247,11 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
         `registers but every slide of it fails to render`,
     );
   } else {
-    checkRootClass(def, who, out);
+    const html = renderSample(def, who);
+    if (html) {
+      checkRootClass(html, who, out);
+      checkNoInlineStyle(html, who, out);
+    }
   }
 
   // --- fields[] --------------------------------------------------------------

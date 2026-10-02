@@ -107,7 +107,7 @@ ad hoc under a worse name.
 
 Today there is exactly one: **`code-slide`** (tier 2, fallback `content-slide`).
 A code/monospace slide is genuinely missing; without it the options are
-`custom-html-slide` or a text slide, and in both cases the semantics are gone —
+a fork-local type or a text slide, and in both cases the semantics are gone —
 nothing says "this is source, render it monospaced, do not reflow it". The
 fallback loses the monospacing, not the code.
 

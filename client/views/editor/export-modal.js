@@ -18,6 +18,7 @@ import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { openModal } from '../../lib/dom/modal.js';
 import { toast } from '../../lib/dom/toast.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 import { downloadBlob } from '../../lib/dom/download.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
@@ -26,11 +27,12 @@ import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { getLangShortLabel } from '../../lib/format/lang-selector.js';
 import { getFeatures } from '../../lib/state/features.js';
+import { IMAGE_SLIDES_HEADER } from '../../../shared/export-headers.js';
 
 const LUCIDE = (name) => `/client/vendor/lucide-icons/${name}.svg`;
 
 // Client-side ceiling for the synchronous PDF render before we offer the
-// browser-print fallback. The server's own cap is PDF_EXPORT_TIMEOUT_MS (120s);
+// browser-print fallback. The server's own cap is EXPORT_RENDER_TIMEOUT_MS (120s);
 // we bail a little sooner so the user isn't left staring at a dead spinner.
 const PDF_FETCH_TIMEOUT_MS = 90_000;
 
@@ -40,7 +42,8 @@ const PDF_FETCH_TIMEOUT_MS = 90_000;
  * export is triggered ('tab' → new tab, 'download' → same-tab navigation).
  * `allLanguages` marks a format that carries every language version itself
  * (the portable deck, D89): its URL takes no `?lang=`, since the route ignores
- * one. PDF and Notes are special-cased in the row builder.
+ * one. PDF, the editable PowerPoint and Notes are special-cased in the row
+ * builder.
  * @returns {Array<{key:string,title:string,formats:Array<object>}>}
  */
 function exportGroups() {
@@ -65,17 +68,29 @@ function exportGroups() {
           path: 'png',
           open: 'tab',
         },
+        // The two PowerPoint intents (D141): a file to show, and a file to
+        // work in. Neither is the default, so they are two rows, not a mode.
         {
           key: 'pptx',
-          name: 'PPTX',
+          name: t('editor.export.pptx', 'PowerPoint'),
           desc: t(
             'editor.export.descPptx',
-            'PowerPoint, each slide as an image',
+            'Pixel-perfect: every slide as an image, videos play',
           ),
           icon: 'presentation',
           color: 'amber',
           path: 'pptx',
           open: 'tab',
+        },
+        {
+          key: 'pptxEditable',
+          name: t('editor.export.pptxEditable', 'PowerPoint, editable'),
+          desc: t(
+            'editor.export.descPptxEditable',
+            "Text and pictures you can edit, on the theme's layouts",
+          ),
+          icon: 'presentation',
+          color: 'amber',
         },
         {
           key: 'pptxTemplate',
@@ -200,6 +215,86 @@ function filenameFromDisposition(cd, fallback) {
 }
 
 /**
+ * Fetch a synchronous export and save it under the server's filename.
+ *
+ * Binary download: the response is file bytes read as a blob, which api()'s
+ * json/text contract cannot express. Resolves to the response's headers, so a
+ * caller can read a finding the file itself cannot carry; throws on a failed
+ * or aborted fetch.
+ *
+ * @param {string} url
+ * @param {string} fallbackName - used when the response names no file
+ * @param {AbortSignal} [signal]
+ * @returns {Promise<Headers>}
+ */
+async function downloadExport(url, fallbackName, signal) {
+  // eslint-disable-next-line no-restricted-syntax
+  const res = await fetch(url, { signal, credentials: 'same-origin' });
+  if (!res.ok) {
+    // The error envelope's sentence when the server sent one.
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.message || `HTTP ${res.status}`);
+  }
+  const blob = await res.blob();
+  downloadBlob(
+    blob,
+    filenameFromDisposition(
+      res.headers.get('Content-Disposition'),
+      fallbackName,
+    ),
+  );
+  return res.headers;
+}
+
+/**
+ * The editable PowerPoint flow: fetch the file synchronously, save it, and say
+ * which slides became pictures. The pixel-perfect row opens in a tab and needs
+ * none of this; "editable" that is partly images has to say where (D141). A
+ * failure is a state of this row, shown under it, like the PDF row's fallback.
+ */
+async function exportEditablePptx({ id, getLang, title, button, error }) {
+  error.clear();
+  const originalLabel = button.textContent;
+  button.disabled = true;
+  button.textContent = t('editor.export.pptxBusy', 'Building PowerPoint…');
+  const url = buildExportUrl(
+    `/api/presentations/${id}/export/pptx-editable?sync=1`,
+    getLang(),
+  );
+  try {
+    const headers = await downloadExport(
+      url,
+      `${title || 'export'}-editable.pptx`,
+    );
+    const imageSlides = (headers.get(IMAGE_SLIDES_HEADER) || '')
+      .split(',')
+      .filter(Boolean);
+    if (imageSlides.length === 1) {
+      toast.info(
+        t(
+          'editor.export.imageSlidesOne',
+          'Slide {n} is an image: its type has no editable form yet.',
+          { n: imageSlides[0] },
+        ),
+      );
+    } else if (imageSlides.length > 1) {
+      toast.info(
+        t(
+          'editor.export.imageSlidesMany',
+          'Slides {list} are images: their type has no editable form yet.',
+          { list: imageSlides.join(', ') },
+        ),
+      );
+    }
+  } catch (err) {
+    error.show(err.message, { focus: false });
+  } finally {
+    button.disabled = false;
+    button.textContent = originalLabel;
+  }
+}
+
+/**
  * The PDF flow: fetch the server-rendered PDF synchronously (so we can detect
  * success/failure directly), download it, and only on error/timeout reveal the
  * browser-print fallback.
@@ -222,20 +317,7 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), PDF_FETCH_TIMEOUT_MS);
   try {
-    // Binary download: the response is PDF bytes read as a blob, which
-    // api()'s json/text contract cannot express.
-    // eslint-disable-next-line no-restricted-syntax
-    const res = await fetch(url, {
-      signal: controller.signal,
-      credentials: 'same-origin',
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const blob = await res.blob();
-    const filename = filenameFromDisposition(
-      res.headers.get('Content-Disposition'),
-      `${title || 'export'}.pdf`,
-    );
-    downloadBlob(blob, filename);
+    await downloadExport(url, `${title || 'export'}.pdf`, controller.signal);
   } catch (err) {
     // Reveal the browser-print fallback: open the printable slide page in a new
     // tab, where the user does Cmd/Ctrl-P → Save as PDF.
@@ -312,6 +394,20 @@ function buildFormatRow(fmt, { id, getLang, title, openPublic }) {
     actions.append(btn);
     makeClickable(() => btn.click());
     return h('div', { class: 'export-format-rowwrap' }, [row, fallbackWrap]);
+  }
+
+  if (fmt.key === 'pptxEditable') {
+    const error = createInlineError();
+    const btn = h('button', {
+      class: 'btn btn-secondary btn-sm',
+      type: 'button',
+      text: t('editor.export.exportAction', 'Export'),
+      onclick: () =>
+        exportEditablePptx({ id, getLang, title, button: btn, error }),
+    });
+    actions.append(btn);
+    makeClickable(() => btn.click());
+    return h('div', { class: 'export-format-rowwrap' }, [row, error.el]);
   }
 
   if (Array.isArray(fmt.actions)) {

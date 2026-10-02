@@ -19,7 +19,7 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--ps-space-2) var(--ps-space-3);
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  border-bottom: 1px solid hsl(var(--app-border-default));
 }
 
 .comments-panel-header h3 {
@@ -36,17 +36,12 @@
   justify-content: space-between;
   gap: var(--ps-space-2);
   padding: var(--ps-space-2) var(--ps-space-3);
-  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  border-bottom: 1px solid hsl(var(--app-border-default));
 }
 
 /* The scope switch is the shared segmented control in its outlined variant
    (`.sb-segmented.is-outlined`, see `03-controls-and-forms.css`). The
    `.comments-scope` / `.comments-scope-btn` classes stay as selector hooks. */
-
-.comments-filter-trigger {
-  padding: 3px 8px;
-  font-size: var(--ps-text-xs);
-}
 
 .comments-filter-menu {
   min-width: 150px;
@@ -54,8 +49,8 @@
 
 .comments-filter-item.is-selected {
   font-weight: 600;
-  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
-  background: hsl(var(--app-accent-soft, var(--app-accent-primary) / 0.1));
+  color: hsl(var(--app-accent-text));
+  background: hsl(var(--app-accent-soft));
 }
 
 .comments-panel-list {
@@ -67,7 +62,7 @@
 .comment-thread {
   margin-bottom: var(--ps-space-3);
   padding-bottom: var(--ps-space-3);
-  border-bottom: 1px solid var(--border-light, #f0f0f0);
+  border-bottom: 1px solid hsl(var(--app-border-subtle));
 }
 
 .comment-thread:last-child {
@@ -83,13 +78,13 @@
   margin-right: -8px;
   padding-left: var(--ps-space-2);
   padding-right: var(--ps-space-2);
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .comment-thread.is-jumpable:hover {
-  background: hsl(var(--app-bg-hover, 220 14% 94%));
+  background: hsl(var(--app-bg-hover));
 }
 
 /* Mentions: chip in the body, inline autocomplete popover */
@@ -120,8 +115,8 @@
   display: none;
   max-height: 220px;
   overflow-y: auto;
-  background: var(--color-bg, #fff);
-  border: 1px solid var(--color-border, #e5e7eb);
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   padding: var(--ps-space-1);
@@ -146,18 +141,18 @@
 
 .mention-autocomplete-item:hover,
 .mention-autocomplete-item.is-highlighted {
-  background: var(--color-gray-100, #f3f4f6);
+  background: hsl(var(--app-bg-hover));
 }
 
 .mention-autocomplete-name {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-color, #333);
+  color: hsl(var(--app-text-primary));
 }
 
 .mention-autocomplete-email {
   font-size: var(--ps-text-xs);
-  color: var(--text-muted, #888);
+  color: hsl(var(--app-text-secondary));
 }
 
 /* Per-user read-state: unseen activity from others (mail convention) */
@@ -182,7 +177,7 @@
   margin-left: var(--ps-space-3);
   padding-left: var(--ps-space-3);
   margin-top: var(--ps-space-1-5);
-  border-left: 2px solid var(--border-light, #e0e0e0);
+  border-left: 2px solid hsl(var(--app-border-subtle));
 }
 
 .comment-resolved {
@@ -199,12 +194,12 @@
 .comment-author {
   font-weight: 600;
   font-size: 12px;
-  color: var(--text-color, #333);
+  color: hsl(var(--app-text-primary));
 }
 
 .comment-time {
   font-size: var(--ps-text-xs);
-  color: var(--text-muted, #999);
+  color: hsl(var(--app-text-secondary));
 }
 
 .comment-slide-link {
@@ -212,23 +207,23 @@
   padding: 1px 6px;
   font-size: 10px;
   font-weight: 500;
-  color: hsl(var(--app-accent-primary, 210 70% 50%));
-  background: hsl(var(--app-accent-soft, 210 70% 95%));
-  border: 1px solid hsl(var(--app-accent-primary, 210 70% 50%) / 0.25);
+  color: hsl(var(--app-accent-primary));
+  background: hsl(var(--app-accent-soft));
+  border: 1px solid hsl(var(--app-accent-primary) / 0.25);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
   white-space: nowrap;
 }
 .comment-slide-link:hover {
-  background: hsl(var(--app-accent-primary, 210 70% 50%) / 0.15);
-  border-color: hsl(var(--app-accent-primary, 210 70% 50%) / 0.4);
+  background: hsl(var(--app-accent-primary) / 0.15);
+  border-color: hsl(var(--app-accent-primary) / 0.4);
 }
 
 .comment-body {
   font-size: var(--ps-text-sm);
   line-height: 1.4;
-  color: var(--text-color, #333);
+  color: hsl(var(--app-text-primary));
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -253,7 +248,7 @@
   gap: var(--ps-space-1-5);
   margin-top: var(--ps-space-2);
   padding: var(--ps-space-2);
-  background: var(--surface-alt, #f8f8f8);
+  background: hsl(var(--app-bg-sunken));
   border-radius: 6px;
 }
 
@@ -261,7 +256,7 @@
   flex: 1;
   padding: var(--ps-space-1-5) var(--ps-space-2);
   font-size: 12px;
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid hsl(var(--app-border-default));
   border-radius: 4px;
   resize: none;
   font-family: inherit;
@@ -270,20 +265,21 @@
 
 .comment-reply-textarea:focus {
   outline: none;
-  border-color: var(--primary-color, #007bff);
+  border-color: hsl(var(--app-accent-primary));
 }
 
 .comments-panel-input {
   padding: var(--ps-space-3);
-  border-top: 1px solid var(--border-color, #e0e0e0);
-  background: var(--surface-alt, #fafafa);
+  border-top: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-sunken));
 }
 
 .comments-input-textarea {
   width: 100%;
+  box-sizing: border-box;
   padding: var(--ps-space-2) var(--ps-space-2-5);
   font-size: var(--ps-text-sm);
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid hsl(var(--app-border-default));
   border-radius: 6px;
   resize: none;
   font-family: inherit;
@@ -293,7 +289,7 @@
 
 .comments-input-textarea:focus {
   outline: none;
-  border-color: var(--primary-color, #007bff);
+  border-color: hsl(var(--app-accent-primary));
 }
 
 /* Rich composer: a contenteditable standing in for the old textarea, so it
@@ -309,12 +305,12 @@
 
 .comment-rich-input:focus {
   outline: none;
-  border-color: var(--primary-color, #007bff);
+  border-color: hsl(var(--app-accent-primary));
 }
 
 .comment-rich-input:empty::before {
   content: attr(data-placeholder);
-  color: var(--text-muted, #999);
+  color: hsl(var(--app-text-secondary));
   pointer-events: none;
 }
 
@@ -328,7 +324,7 @@
 /* Links look the same while you type them and after you post, which is the
    whole point of showing them as links rather than as `[text](url)` markup. */
 .comment-body-link {
-  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  color: hsl(var(--app-accent-text));
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -348,15 +344,13 @@
 }
 
 .comment-toolbar-btn {
-  padding: var(--ps-space-1) var(--ps-space-2-5);
-  font-size: 12px;
-  color: var(--text-muted, #666);
+  color: hsl(var(--app-text-secondary));
   background: transparent;
-  border: 1px solid var(--border-color, #e0e0e0);
+  border: 1px solid hsl(var(--app-border-default));
 }
 
 .comment-toolbar-btn:hover {
-  color: hsl(var(--app-accent-text, var(--app-accent-primary)));
+  color: hsl(var(--app-accent-text));
   border-color: hsl(var(--app-accent-primary) / 0.6);
 }
 
@@ -376,7 +370,7 @@
   position: absolute;
   top: -4px;
   right: -4px;
-  background: var(--danger-color, #dc3545);
+  background: hsl(var(--app-danger));
   color: white;
   font-size: var(--ps-text-xs);
   font-weight: 600;
@@ -396,7 +390,7 @@
 
 /* Seen state: grey background instead of red */
 .comments-badge--seen {
-  background: var(--muted-color, #6c757d);
+  background: hsl(var(--app-text-secondary));
 }
 
 /* Slide comment indicator */
@@ -406,7 +400,7 @@
   right: 4px;
   width: 20px;
   height: 20px;
-  background: var(--primary-color, #007bff);
+  background: hsl(var(--app-accent-primary));
   color: white;
   font-size: var(--ps-text-xs);
   font-weight: 600;
@@ -418,7 +412,7 @@
 }
 
 .slide-comment-indicator:hover {
-  background: var(--primary-dark, #0056b3);
+  background: hsl(var(--app-accent-primary-hover));
 }
 
 /* Slide lock indicator (locked by another user) */
@@ -428,7 +422,7 @@
   right: 4px;
   width: 20px;
   height: 20px;
-  background: hsl(var(--app-status-warning, 45 100% 50%));
+  background: hsl(var(--app-warning));
   color: hsl(0 0% 10%);
   font-size: var(--ps-text-xs);
   font-weight: 600;
@@ -457,7 +451,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: hsl(var(--app-status-warning, 45 100% 50%) / 0.1);
+  background: hsl(var(--app-warning) / 0.1);
   pointer-events: none;
   border-radius: var(--ps-radius-sm);
 }
@@ -469,7 +463,7 @@
   right: -2px;
   width: 12px;
   height: 12px;
-  background: hsl(var(--app-status-warning, 45 100% 50%));
+  background: hsl(var(--app-warning));
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -492,21 +486,10 @@
   position: relative;
 }
 
-/* Button size variants */
-.btn-xs {
-  padding: var(--ps-space-0-5) var(--ps-space-2);
-  font-size: 12px;
-}
-
-.btn-sm {
-  padding: var(--ps-space-1) var(--ps-space-3);
-  font-size: var(--ps-text-sm);
-}
-
 /* Marker-click highlight: flash the targeted thread in the pane list. */
 .comment-thread.is-highlighted {
   background: hsl(var(--app-accent-primary) / 0.1);
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
   transition: background 0.4s ease;
 }
 
@@ -538,7 +521,7 @@
   padding: 0;
   border: 2px solid hsl(0 0% 100%);
   border-radius: 50% 50% 50% 2px;
-  background: hsl(var(--app-accent-primary, 210 70% 50%));
+  background: hsl(var(--app-accent-primary));
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   cursor: pointer;
   pointer-events: auto;
@@ -552,12 +535,12 @@
 }
 
 .comment-marker:focus-visible {
-  outline: 2px solid hsl(var(--app-accent-primary, 210 70% 50%));
+  outline: 2px solid hsl(var(--app-accent-primary));
   outline-offset: 2px;
 }
 
 .comment-marker.is-resolved {
-  background: hsl(var(--app-text-secondary, 220 9% 46%));
+  background: hsl(var(--app-text-secondary));
   opacity: 0.7;
 }
 
@@ -572,7 +555,7 @@
   min-width: 15px;
   height: 15px;
   padding: 0 3px;
-  background: hsl(var(--app-danger, 4 65% 48%));
+  background: hsl(var(--app-danger));
   color: #fff;
   font-size: 9px;
   font-weight: 700;
@@ -602,8 +585,8 @@
   padding: var(--ps-space-2-5);
   background: hsl(var(--app-bg-elevated));
   border: 1px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md, 8px);
-  box-shadow: var(--app-shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.22));
+  border-radius: var(--ps-radius-md);
+  box-shadow: var(--app-shadow-lg);
   /* Offset down-right from the click point so the cursor doesn't cover it. */
   transform: translate(14px, 14px);
 }
@@ -628,7 +611,7 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: hsl(var(--app-accent-primary, 210 70% 50%));
+  background: hsl(var(--app-accent-primary));
   border: 2px solid hsl(var(--app-bg-elevated));
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
@@ -744,12 +727,12 @@
 .analyze-status {
   font-size: var(--ps-text-base);
   margin-bottom: var(--ps-space-3);
-  color: var(--text-color, #333);
+  color: hsl(var(--app-text-primary));
 }
 
 .analyze-progress-bar {
   height: 8px;
-  background: var(--border-color, #e0e0e0);
+  background: hsl(var(--app-border-default));
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: var(--ps-space-4);
@@ -773,7 +756,7 @@
   align-items: flex-start;
   gap: var(--ps-space-2);
   padding: var(--ps-space-1-5) var(--ps-space-2);
-  background: var(--surface-alt, #f8f8f8);
+  background: hsl(var(--app-bg-sunken));
   border-radius: 4px;
   margin-bottom: var(--ps-space-1);
   font-size: 12px;
@@ -828,12 +811,12 @@
 }
 
 .analyze-suggestion-body {
-  color: var(--text-muted, #666);
+  color: hsl(var(--app-text-secondary));
   line-height: 1.3;
 }
 
 .analyze-info {
-  color: var(--text-muted, #666);
+  color: hsl(var(--app-text-secondary));
   font-size: var(--ps-text-sm);
   line-height: 1.5;
   margin: 0 0 var(--ps-space-3) 0;

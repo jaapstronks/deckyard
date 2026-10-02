@@ -16,6 +16,7 @@ import { buildAnalyticsSection } from './analytics.js';
 import { buildLiveVideoSection } from './live-video.js';
 import { buildAutoAdvanceSection } from './auto-advance.js';
 import { h } from '../../../../lib/dom/index.js';
+import { featureEnabled } from '../../../../lib/state/features.js';
 
 /**
  * Open the deck settings modal. Assembles the form from independent section
@@ -59,7 +60,11 @@ export function openSettingsModal({
   const language = buildLanguageSection(ctx);
   const authorPreview = buildAuthorPreviewSection(ctx);
   const rssFeed = buildRssFeedSection({ ...ctx, api });
-  const analytics = buildAnalyticsSection(ctx);
+  // Absent where the installation has no analytics cluster (D260); the deck's
+  // stored options are left as they are.
+  const analytics = featureEnabled('analytics')
+    ? buildAnalyticsSection(ctx)
+    : null;
   const liveVideo = buildLiveVideoSection(ctx);
   const autoAdvance = buildAutoAdvanceSection(ctx);
   const tags = buildTagsSection({ pres, api });
@@ -75,7 +80,7 @@ export function openSettingsModal({
     language.el,
     authorPreview.row,
     rssFeed.row,
-    analytics.el,
+    analytics?.el,
     liveVideo.el,
     autoAdvance.el,
   ]);

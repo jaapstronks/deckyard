@@ -2,6 +2,7 @@ import { openImageLibraryPicker } from './image-library-picker.js';
 import { openImageKitPicker } from './imagekit-picker/index.js';
 import { openBundledGradientPicker } from './bundled-gradients/picker.js';
 import { createImagePickerSeam } from './media/picker-provider.js';
+import { featureEnabled } from '../../lib/state/features.js';
 import {
   fetchStockMediaStatus,
   isStockSourceAvailable,
@@ -35,7 +36,6 @@ export async function createImagePickers({ root, user, api, features }) {
       user,
       api,
       root,
-      features,
     });
 
   // Only offer ImageKit as a source when the server reports it's actually
@@ -51,7 +51,7 @@ export async function createImagePickers({ root, user, api, features }) {
     : undefined;
 
   // Without uploads, the adapter refuses picks and explains the missing storage.
-  const importImageKitToOwnMedia = features?.enableUploads
+  const importImageKitToOwnMedia = featureEnabled('uploads')
     ? ({ fileId, url }) =>
         api('/api/media/imagekit/import', {
           method: 'POST',

@@ -225,7 +225,8 @@ class, in `105-inline-edit.css`.
   `uploadFile()` (`image-library/upload.js`) — no source chooser, ImageKit stays
   browse-only. The attach reuses `resolveMediaTarget()` + the popover's
   markDirty/requestSave/rerender path (collab + undo parity). Gated on
-  `features.enableUploads` (off in imagekit-only / sandbox / demo);
+  `featureEnabled('uploads')` (off in imagekit-only / sandbox / demo; no
+  drop target in any of them, D295);
   `isFileDrag()` ignores internal card-reorder drags. Empty slots only —
   replacing a filled image stays a popover action.
 - **Icons** → clicking an element tagged `data-inline-icon` opens the
@@ -368,14 +369,12 @@ Column semantics:
 | `pyramid-slide`        | `title`, `subheading`, `bottomSubheading`, `levels`                                                      | `title`, `subheading`, `bottomSubheading`, `levels.text`                                                   | `levels`                      | –                       | –                                                                           |
 | `cycle-slide`          | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items`                                        | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items.text`                                     | `items`                       | –                       | –                                                                           |
 | `gallery-slide`        | `title`, `subheading`, `bottomSubheading`                                                                | `title`, `subheading`, `bottomSubheading`, `images.caption`                                                | `images`                      | –                       | media `images[]`; focus drag                                                |
-| `custom-html-slide`    | _no descriptor_                                                                                          | –                                                                                                          | –                             | –                       | –                                                                           |
 | `end-slide`            | `title`, `body`, `contactName`, `contactEmail`, `contactPhone`                                           | `body`, `contactName`, `contactEmail`, `contactPhone`                                                      | –                             | `body`                  | –                                                                           |
 
 <!--/gen:slide-type-canvas-->
 
 Not inline, intentionally: `payoff-slide` and `follow-invite-slide` (no
-editable content), `custom-html-slide` (escape hatch, out of scope - its
-`html`/`css` are code editors in the bulk modal).
+editable content).
 
 Deliberately not inline within covered types: layout/variant/background/
 density enums (inspector; the canvas layout switcher uses the separate

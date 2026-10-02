@@ -229,11 +229,7 @@ writer that bypasses the route still meets them.
 - **Content.** `content` replaces the stored content as a whole; the client
   sends its full working copy, keys the schema does not know included. The
   server does not validate it against the type's schema, but it must be a plain
-  object, and the raw-HTML/CSS capability gate (`customHtmlEditViolation`)
-  applies against the stored version — on create too, where every language
-  version in the body is checked. The gate is a callback the caller hands to
-  storage (`contentGuard`), and it fails closed like the organization guard: a
-  `content` patch from a caller that brings none is `403 forbidden`.
+  object.
 
 **The editor (D171, B336).** Edit in the library lightbox opens the full slide
 form for the item's type (`client/views/slide-library/edit-modal.js`): nested

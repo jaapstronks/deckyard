@@ -4,6 +4,10 @@ The fastest path from a bare Ubuntu VPS to a running, HTTPS-enabled Deckyard
 instance. Everything here uses the `docker-compose.yml` + `Caddyfile` shipped
 in the repo root.
 
+Deploying on a PaaS (Coolify, Railway, Fly, Render) instead? See
+[deploy-paas.md](deploy-paas.md). The minimal production environment for
+either route is in [production-checklist.md](production-checklist.md).
+
 ## Fastest start (local, one command)
 
 To just try Deckyard on your own machine, run:
@@ -30,6 +34,7 @@ To configure interactively (AI provider + key, auth, port, theme) at any time:
 ```bash
 npm run setup          # a few questions; writes .env
 npm run setup -- --yes # non-interactive safe defaults (auth off, no AI)
+npm run setup -- --profile production --out .env.production  # the production block
 ```
 
 The wizard upserts only the keys it asks about on top of your existing `.env`,
@@ -78,7 +83,9 @@ every option; the ones most installs want:
 | `COLLAB_ENABLED` (+ `COLLAB_LIVE_EDITS`)                     | Real-time collaboration: presence, and optionally live co-editing (default off)    |
 | `BREVO_API_KEY` + `BREVO_SENDER_*`, `APP_URL`                | Outgoing notification email (optional); `APP_URL` is used for links in those mails |
 
-After editing: `docker compose up -d` to apply.
+After editing: `docker compose up -d` to apply, then check the result with
+`docker compose exec app node scripts/doctor.js`: one line per check, and the
+fix for each red one ([doctor.md](doctor.md)).
 
 ### Storage: the bundled database
 
@@ -135,13 +142,11 @@ unset or set to `postgres`, and there is no third spelling:
 
 ### Backups
 
-The `pg_data` volume holds everything except uploaded media:
-
-```bash
-docker compose exec postgres sh -c 'pg_dump -U "$POSTGRES_USER" "$POSTGRES_DB"' > backup.sql
-```
-
-Back that up together with `server/uploads/`.
+The `pg_data` volume holds everything except uploaded media, which lives in
+`server/uploads/` (images and files) and `server/data/private-media/` (font
+variants). The dump-and-restore pair, what to keep and what not, and a
+restore you can rehearse without touching production:
+[backup-restore.md](backup-restore.md).
 
 ## Deploy updates
 
@@ -152,17 +157,6 @@ bash scripts/vps-deploy.sh --host <your-server-ip> --user root
 This pulls the latest `main` and rebuilds the containers. Or set up your own
 CI to run the same two commands over SSH.
 
-## Back up
-
-On the compose stack (Postgres): the `pg_data` volume plus `server/uploads/` —
-see [Backups](#backups) above for the `pg_dump` command.
-
-Outside compose, back up your own PostgreSQL plus the same two directories:
-
-- `server/data/` — the deck-thumbnail cache plus whatever an old install's
-  one-time import left behind (settings and decks live in PostgreSQL since 1.x)
-- `server/uploads/` — uploaded media
-
 ## Pruning legacy disk data
 
 An install that ran Deckyard before the PostgreSQL migration still carries the
@@ -172,7 +166,8 @@ import moved into the database. Those files are dead copies, but do not delete
 them by hand: the boot-time guard uses `server/data/presentations/` to detect
 an install whose decks never reached the database, so removing it in the wrong
 order disarms that guard.
-What stays alive in that directory is exactly one thing: `deck-thumbs/`, the
+What stays alive in that directory is two things: `private-media/`, the
+uploaded font variants the database refers to, and `deck-thumbs/`, the
 thumbnail cache. `server/uploads/` is unrelated and always stays.
 
 Do this in order (on a compose stack, prefix the npm commands with

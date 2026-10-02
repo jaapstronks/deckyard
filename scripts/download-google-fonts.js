@@ -33,6 +33,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 import {
   CURATED_FONTS,
@@ -50,6 +51,7 @@ import {
   CUSTOM_FONTS_LOCK_PATH,
   CUSTOM_FONTS_LOCK_REL,
 } from '../shared/custom-fonts-loader.js';
+import { isCli } from './lib/is-cli.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -161,41 +163,65 @@ async function fetchFontFaces(url) {
   return faces;
 }
 
+/** How often a font request is tried before the install gives up on it. */
+const FETCH_ATTEMPTS = 3;
+/** Per-attempt ceiling, so a hung connection costs seconds, not minutes. */
+const FETCH_TIMEOUT_MS = 30_000;
+
 /**
- * Fetch a URL and return its bytes.
+ * Fetch a URL and return its bytes, retrying a request that got no answer.
  *
- * The two failure modes are not the same kind of problem, and the caller has
- * to be able to tell them apart:
+ * The two failure modes are different problems, and both stop the install:
  *
  * - **The server answered, with an error.** A pinned `fonts.gstatic.com` URL
  *   that 404s means the pin is rotten — the repository is asking for bytes
- *   Google no longer serves. Installing anyway leaves a checkout with silently
- *   missing fonts, which is exactly the unreproducible state the lock exists to
- *   prevent. Marked `fatalPin`.
+ *   Google no longer serves. Retrying cannot help; the message says to
+ *   `--update-lock`.
  * - **The request never got an answer** (DNS, timeout, offline, proxy). That is
- *   the environment, not the repository; these assets are optional at runtime
- *   and failing `npm install` over a flaky connection would be worse.
+ *   usually a blip, so it is retried with a short backoff. When every attempt
+ *   fails the install still stops: the fonts are not optional. The theme seeds
+ *   refuse to load when a curated face is missing (`server/utils/theme-seeds.js`),
+ *   so a checkout that "fell back to the system stack" does not boot — skipping
+ *   the file only moved the failure from `npm ci` to the first test that seeds
+ *   themes, with a message that names the seed instead of the network (B559).
+ *
+ * @param {string} url
+ * @param {{attempts?: number, backoffMs?: number}} [opts] - tests shrink these
+ * @returns {Promise<Buffer>}
  */
-async function fetchBytes(url) {
+export async function fetchBytes(
+  url,
+  { attempts = FETCH_ATTEMPTS, backoffMs = 1000 } = {},
+) {
   let response;
-  try {
-    response = await fetch(url);
-  } catch (err) {
-    const cause = err?.cause?.code ? ` (${err.cause.code})` : '';
-    throw new Error(
-      `could not reach ${url}${cause} — network error, not a broken pin`,
-    );
+  for (let attempt = 1; ; attempt++) {
+    try {
+      response = await fetch(url, {
+        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      });
+      // The body is part of the answer: a connection that drops mid-stream
+      // is the same blip as one that never connects, so it is retried too.
+      if (response.ok) return Buffer.from(await response.arrayBuffer());
+      break;
+    } catch (err) {
+      const cause = err?.cause?.code || err?.name;
+      if (attempt >= attempts) {
+        throw new Error(
+          `could not reach ${url} (${cause}) after ${attempts} attempts — ` +
+            'network error, not a broken pin; the curated fonts are required, re-run the install',
+        );
+      }
+      console.error(
+        `   ↻ could not reach ${url} (${cause}), retry ${attempt}/${attempts - 1}`,
+      );
+      await sleep(backoffMs * attempt);
+    }
   }
-  if (!response.ok) {
-    const err = new Error(
-      `Failed to download font: ${response.status} ${response.statusText}\n` +
-        `      ${url}\n` +
-        '      the pinned URL is gone; re-run with --update-lock and review the diff',
-    );
-    err.fatalPin = true;
-    throw err;
-  }
-  return Buffer.from(await response.arrayBuffer());
+  throw new Error(
+    `Failed to download font: ${response.status} ${response.statusText}\n` +
+      `      ${url}\n` +
+      '      the pinned URL is gone; re-run with --update-lock and review the diff',
+  );
 }
 
 /**
@@ -394,11 +420,10 @@ async function readLock({ optional = false } = {}) {
 /**
  * Download one family's pinned files, verifying each checksum.
  *
- * A checksum mismatch is fatal: it means the bytes on disk are not the bytes
+ * Every failure is fatal. A checksum mismatch means the bytes are not the bytes
  * this repository pinned, and rendering against them would be unreproducible in
- * exactly the way the lock exists to prevent. A *network* failure is not fatal —
- * these assets are optional at runtime (every consumer falls back to the system
- * stack) and failing `npm install` over a flaky connection would be worse.
+ * exactly the way the lock exists to prevent; a missing file is refused by the
+ * theme seeds later anyway (see `fetchBytes`).
  *
  * @param {Object} font - Font object from CURATED_FONTS
  * @param {Object} lock - Parsed lockfile
@@ -408,12 +433,10 @@ async function readLock({ optional = false } = {}) {
 async function downloadPinnedFont(font, lock, options) {
   const pinned = lock.fonts[font.family];
   if (!pinned) {
-    const err = new Error(
+    throw new Error(
       `not in ${lockRelFor(font.family)} — run ` +
         '`node scripts/download-google-fonts.js --update-lock`',
     );
-    err.fatalPin = true;
-    throw err;
   }
 
   const fontDir = path.join(FONTS_DIR, pinned.slug);
@@ -468,15 +491,13 @@ async function downloadPinnedFont(font, lock, options) {
     const actual = sha256(bytes);
     for (const entry of stale) {
       if (actual !== entry.sha256) {
-        const err = new Error(
+        throw new Error(
           `checksum mismatch for ${entry.file}\n` +
             `      expected ${entry.sha256}\n` +
             `      received ${actual}\n` +
             `      the pinned URL no longer serves the pinned bytes; re-run with --update-lock ` +
             `and review the diff`,
         );
-        err.fatalPin = true;
-        throw err;
       }
       await fs.writeFile(path.join(fontDir, entry.file), bytes);
       console.log(`   ✓ ${entry.file}`);
@@ -591,36 +612,17 @@ async function main() {
   if (!options.dryRun) await fs.mkdir(FONTS_DIR, { recursive: true });
 
   let successCount = 0;
-  let errorCount = 0;
-  let fatal = null;
 
   for (const font of selectFonts(options)) {
     console.log(`\n📝 Processing: ${font.family}`);
-    try {
-      const { downloaded, cached } = await downloadPinnedFont(
-        font,
-        lock,
-        options,
-      );
-      if (!options.dryRun && downloaded === 0)
-        console.log(`   ✓ ${cached} files already pinned`);
-      successCount++;
-    } catch (err) {
-      // A broken pin is a repository problem and must stop the run; an
-      // unreachable network is an environment problem and must not break
-      // `npm install`. fetchBytes / downloadPinnedFont tag the first kind.
-      if (err.fatalPin) {
-        fatal = err;
-        break;
-      }
-      console.error(`   ❌ Error: ${err.message}`);
-      errorCount++;
-    }
-  }
-
-  if (fatal) {
-    console.error(`\n❌ ${fatal.message}`);
-    process.exit(1);
+    const { downloaded, cached } = await downloadPinnedFont(
+      font,
+      lock,
+      options,
+    );
+    if (!options.dryRun && downloaded === 0)
+      console.log(`   ✓ ${cached} files already pinned`);
+    successCount++;
   }
 
   // Generate @font-face CSS
@@ -634,18 +636,15 @@ async function main() {
   // Summary
   console.log('\n========================');
   console.log(`✅ Processed: ${successCount} fonts`);
-  if (errorCount > 0) {
-    console.log(
-      `⚠️  Skipped: ${errorCount} fonts (download failed — fonts fall back to the system stack)`,
-    );
-  }
 
   if (options.dryRun) {
     console.log('\n(Run without --dry-run to download fonts)');
   }
 }
 
-main().catch((err) => {
-  console.error('\n❌ Fatal error:', err.message);
-  process.exit(1);
-});
+if (isCli(import.meta.url)) {
+  main().catch((err) => {
+    console.error('\n❌ Fatal error:', err.message);
+    process.exit(1);
+  });
+}

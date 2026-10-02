@@ -26,12 +26,42 @@
   display: none;
 }
 
-/* Theme card */
+/* Theme card. The settings list and the theme picker
+   (client/lib/theme/theme-select.js) render the same card root, so its rules
+   live here once (D269); the picker's inner parts stay in 13-modals-misc.css. */
 .theme-card {
   display: flex;
   flex-direction: column;
   gap: var(--ps-space-3);
   padding: var(--ps-space-3);
+  width: 140px;
+  flex-shrink: 0;
+  border: 2px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-md);
+  background: hsl(var(--app-bg-elevated));
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    transform 0.15s,
+    box-shadow 0.2s;
+  overflow: hidden;
+  text-align: center;
+}
+
+.theme-card:hover {
+  border-color: hsl(var(--app-accent-primary));
+  transform: scale(1.03);
+}
+
+.theme-card.is-selected {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.3);
+}
+
+@media (max-width: 640px) {
+  .theme-card {
+    width: 110px;
+  }
 }
 
 .theme-card-preview {
@@ -43,6 +73,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 16 / 9;
+  flex-direction: column;
+  gap: var(--ps-space-1);
+  padding: var(--ps-space-2);
 }
 
 .theme-card-logo {
@@ -175,7 +209,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
   border: 1px solid hsl(var(--app-border-subtle));
   border-radius: var(--ps-radius-md);
   overflow: hidden;
@@ -205,7 +239,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--ps-space-2);
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   border: 2px dashed hsl(var(--app-border-subtle));
   border-radius: var(--ps-radius-md);
   cursor: pointer;
@@ -487,7 +521,7 @@
 .theme-font-picker-preview {
   margin-top: var(--ps-space-2);
   padding: var(--ps-space-2) var(--ps-space-3);
-  background: hsl(var(--app-bg-secondary) / 0.5);
+  background: hsl(var(--app-bg-sunken) / 0.5);
   border-radius: var(--ps-radius-sm);
   font-size: var(--ps-text-base);
   color: hsl(var(--app-text-primary));
@@ -503,7 +537,7 @@
 .theme-preview-container {
   width: 100%;
   min-width: 0;
-  background: hsl(var(--app-bg-secondary) / 0.3);
+  background: hsl(var(--app-bg-sunken) / 0.3);
   border-radius: var(--ps-radius-lg);
   padding: var(--ps-space-4);
   border: 1px solid hsl(var(--app-border-subtle));
@@ -523,7 +557,7 @@
   overflow: hidden;
   border-radius: var(--ps-radius-md);
   border: 1px solid hsl(var(--app-border-subtle));
-  background: hsl(var(--app-bg-primary));
+  background: hsl(var(--app-bg-base));
 }
 
 .theme-preview-thumb {
@@ -582,7 +616,7 @@
 /* A preset whose file has gone missing stays visible so it can be removed. */
 .theme-bg-preset.is-broken {
   border-style: dashed;
-  border-color: hsl(var(--app-danger, 0 70% 50%));
+  border-color: hsl(var(--app-danger));
 }
 .theme-bg-preset.is-broken .theme-bg-preset-img {
   display: none;
@@ -593,7 +627,6 @@
   top: 2px;
   right: 2px;
   line-height: 1;
-  padding: 2px 6px;
   opacity: 0;
   transition: opacity 0.12s ease;
 }
@@ -631,11 +664,3 @@
 }
 
 /* Stock media status helper */
-.stock-media-status {
-  font-weight: normal;
-  margin-left: var(--ps-space-1);
-}
-
-.stock-media-status.is-warning {
-  color: hsl(var(--app-warning));
-}

@@ -32,6 +32,7 @@ globalThis.cancelAnimationFrame =
 
 const { openSettingsModal } =
   await import('../client/views/editor/modals/settings-modal/index.js');
+const { setFeatures } = await import('../client/lib/state/features.js');
 
 function messyPres() {
   return {
@@ -50,6 +51,7 @@ function messyPres() {
 }
 
 test('modal assembles all sections and normalizes each slice', () => {
+  setFeatures({ enableAnalytics: true });
   const root = document.createElement('div');
   document.body.appendChild(root);
   const pres = messyPres();
@@ -98,6 +100,21 @@ test('modal assembles all sections and normalizes each slice', () => {
   cb.checked = !cb.checked;
   cb.dispatchEvent(new Event('change', { bubbles: true }));
   assert.ok(dirty >= 1, 'markDirty called on change');
+  setFeatures(null);
+});
+
+test('without the analytics cluster the analytics section is absent (D260)', () => {
+  setFeatures({ enableAnalytics: false });
+  document.body.innerHTML = '';
+  const root = document.createElement('div');
+  document.body.appendChild(root);
+  const pres = messyPres();
+  openSettingsModal({ root, pres, api: null });
+  const grid = document.querySelector('.settings-modal-grid');
+  assert.equal(grid.children.length, 10, 'ten grid sections');
+  assert.ok(!grid.textContent.includes('Engagement Insights'));
+  assert.equal(pres.settings.analyticsOptions, undefined, 'stored as it was');
+  setFeatures(null);
 });
 
 test('theme and tags show unavailable branch without an api', () => {

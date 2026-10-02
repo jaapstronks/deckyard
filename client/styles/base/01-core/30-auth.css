@@ -35,6 +35,13 @@
   box-sizing: border-box;
 }
 
+/* The refused sign-in (`createInlineError({ callout: true })`) opens the card;
+   it takes the gap the card keeps between its sections, so the SSO button or
+   the magic-link block below it doesn't touch its border. */
+.auth-card > .inline-error.is-callout {
+  margin-bottom: var(--ps-space-4);
+}
+
 /* Auth Header */
 .auth-header {
   text-align: center;
@@ -95,7 +102,7 @@
 }
 
 .auth-input:hover {
-  border-color: hsl(var(--app-border-hover));
+  border-color: hsl(var(--app-border-strong));
 }
 
 .auth-input:focus {

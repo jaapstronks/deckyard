@@ -51,6 +51,7 @@ The internal `/api/*` routes return errors in one canonical envelope:
 
   | Code                     | Status | `details`                                                                                                                                                                                                                                                                                                                |
   | ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+  | `invalid`                | 400    | `{ field, index?, itemIndex?, reason?, use? }` — a storage reason, so it carries the location keys; `use` is added when the refused field is a retired spelling and names the field to send instead (`themeId` → `theme`, `language` → `lang`; B446, B521).                                                              |
   | `held`                   | 409    | `{ lock }` — the competing slide lock, as the acquire/list bodies name it.                                                                                                                                                                                                                                               |
   | `conflict`               | 409    | `{ id, revision, modified, updatedBy, conflictingSlides? }` — the server copy the stale `If-Match` lost against, `updatedBy` its last writer as a display pair (`null` when none is recorded); `conflictingSlides` names the slides the slide-level merge could not reconcile. One builder: `revisionConflict()` (B217). |
   | `locked`                 | 423    | `{ slideId, lockKind, holder? }` — which slide, author or concurrent lock, who holds it (named, not addressed; D22).                                                                                                                                                                                                     |
@@ -125,6 +126,7 @@ reason. Spreading the result by hand
 (`jsonError(res, getErrorStatus(result.reason), result.reason)`) drops all of
 that, so `tests/storage-reason-vocabulary.test.js` refuses that form under
 `server/routes/**`.
+A service in `server/services/` answers no response of its own: it throws the same result through **`throwStorageFailure(result, message?)`** in `server/utils/errors.js` (D254), which reads the register the same way and carries `details.field` the same way, as an `AppError`; the contract's own error handler (`withErrorHandler`, `withV1ErrorHandler`, the MCP `toolError`) renders it, so no adapter translates a reason a second time.
 `getErrorStatus` reads the closed `REASONS` register in
 [`server/storage/reasons.js`](../../server/storage/reasons.js), which states one
 status and one `kind` (`'caller'` 4xx / `'ours'` 5xx) per code. It takes **no**

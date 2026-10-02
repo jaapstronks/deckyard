@@ -58,6 +58,7 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
+const { withErrorHandler } = await import('../server/utils/http.js');
 const { invalidatePermission } =
   await import('../server/storage/cache/permission-cache.js');
 const {
@@ -362,7 +363,9 @@ async function call(
   };
   const res = makeRes();
   const authedUser = as || undefined;
-  const handled = await handler(
+  // The router mounts these under `withErrorHandler`; a service refusal is a
+  // thrown AppError that handler renders, so the test drives the same path.
+  const handled = await withErrorHandler('comments-test', handler)(
     {
       repoRoot: process.cwd(),
       storageScope: createStorageScope(authedUser, { repoRoot: process.cwd() }),
@@ -429,7 +432,8 @@ test('someone in another organization cannot comment — the deck is absent to t
 // The anonymous cells pin the wiring of the permission check itself: the
 // cross-org 404 above is produced by storage scoping alone, so without these
 // the create/edit/delete/resolve handlers would stay green with their
-// `withPresentationCommentAuth` checks short-circuited to allow.
+// permission checks (the comment service for create, the route wrappers for
+// the rest) short-circuited to allow.
 test('an anonymous visitor cannot comment', async () => {
   await seed();
   const { res } = await call(handlePresentationCommentsCreate, 'POST', {

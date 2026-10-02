@@ -2,10 +2,11 @@
  * API route for converting PowerPoint/PDF files to presentations.
  */
 
+import { updatePresentation } from '../../storage/presentations/index.js';
 import {
+  assertCreatableDeckInput,
   createPresentation,
-  updatePresentation,
-} from '../../storage/presentations/index.js';
+} from '../../services/presentations.js';
 import {
   badRequest,
   jsonError,
@@ -39,6 +40,8 @@ async function handleConvertFile({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // Refused before the conversion, so a refused body costs no work (B576).
+  assertCreatableDeckInput(body);
   const { dataUrl, filename, vendor, lang, theme } = getConvertParams(body);
 
   if (!dataUrl) {
@@ -139,12 +142,15 @@ async function handleConvertFile({
       return true;
     }
 
-    const created = await createPresentation(storageScope, {
-      title: parts.title || deck.title || 'Converted Presentation',
-      theme: themeId,
-      ownerEmail: authedUser?.email || null,
-      lang: effectiveLang,
-    });
+    const created = await createPresentation(
+      storageScope,
+      { actor: authedUser },
+      {
+        title: parts.title || deck.title || 'Converted Presentation',
+        theme: themeId,
+        lang: effectiveLang,
+      },
+    );
 
     const updated = await updatePresentation(
       storageScope,
@@ -190,6 +196,8 @@ async function handleConvertStream({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+  // Refused before the conversion, so a refused body costs no work (B576).
+  assertCreatableDeckInput(body);
   const { dataUrl, filename, vendor, lang, theme } = getConvertParams(body);
 
   if (!dataUrl) {
@@ -441,12 +449,15 @@ async function handleConvertStream({
     // The write step: no deck is created for a client that already left.
     signal.throwIfAborted();
 
-    const created = await createPresentation(storageScope, {
-      title: parts.title || deck.title || 'Converted Presentation',
-      theme: themeId,
-      ownerEmail: authedUser?.email || null,
-      lang: effectiveLang,
-    });
+    const created = await createPresentation(
+      storageScope,
+      { actor: authedUser },
+      {
+        title: parts.title || deck.title || 'Converted Presentation',
+        theme: themeId,
+        lang: effectiveLang,
+      },
+    );
 
     const updated = await updatePresentation(
       storageScope,

@@ -5,8 +5,9 @@
  * bound — several of them carry personal data (actor emails on activity
  * events), so leaving them unwired is a GDPR-shaped liability, not just disk.
  *
- * Covers four tables the analytics cleanup does not:
+ * Covers five tables the analytics cleanup does not:
  *  - api_usage_daily   — rate-limit accounting, kept 90 days (in the query).
+ *  - instance_health   — surface counters, kept 400 days (D248).
  *  - presentation_share_links — expired links flipped to revoked every run.
  *  - activity_events   — organization feed, kept ACTIVITY_RETENTION_DAYS (180).
  *  - slide_locks       — expired collaboration locks, deleted every run.
@@ -18,6 +19,10 @@
  */
 
 import { cleanupOldUsage } from '../storage/api-usage.js';
+import {
+  INSTANCE_HEALTH_RETENTION_DAYS,
+  pruneInstanceHealth,
+} from '../storage/instance-health.js';
 import { cleanupExpiredShareLinks } from '../storage/share-links/index.js';
 import { deleteOldActivityEvents } from '../storage/activity-events.js';
 import { cleanupExpiredSlideLocks } from '../storage/slide-locks.js';
@@ -121,7 +126,7 @@ async function purgeExpiredTrash({ repoRoot, retentionDays }) {
  * @param {string} [options.repoRoot] - Repository root, for the thumbnail cache
  * @param {number} [options.activityRetentionDays] - Days to retain activity events
  * @param {number} [options.trashRetentionDays] - Days a trashed deck stays recoverable
- * @returns {Promise<{usage: number, shareLinks: number, activityEvents: number, slideLocks: number, trashedDecks: number}>}
+ * @returns {Promise<{usage: number, instanceHealth: number, shareLinks: number, activityEvents: number, slideLocks: number, trashedDecks: number}>}
  */
 export async function runRetentionCleanup({
   repoRoot = defaultRepoRoot,
@@ -132,6 +137,11 @@ export async function runRetentionCleanup({
 
   const usage = await cleanupOldUsage();
   log.info(`Deleted ${usage} old api_usage_daily rows`);
+
+  const instanceHealth = await pruneInstanceHealth(
+    cutoffIsoFor(INSTANCE_HEALTH_RETENTION_DAYS).slice(0, 10),
+  );
+  log.info(`Deleted ${instanceHealth} old instance_health rows`);
 
   const shareLinks = await cleanupExpiredShareLinks();
   log.info(`Revoked ${shareLinks} expired share links`);
@@ -155,7 +165,14 @@ export async function runRetentionCleanup({
 
   log.info('Cleanup complete');
 
-  return { usage, shareLinks, activityEvents, slideLocks, trashedDecks };
+  return {
+    usage,
+    instanceHealth,
+    shareLinks,
+    activityEvents,
+    slideLocks,
+    trashedDecks,
+  };
 }
 
 /**
@@ -209,6 +226,7 @@ if (process.argv[1]?.endsWith('retention-cleanup.js')) {
     .then((result) => {
       console.log(`\nSummary:`);
       console.log(`  api_usage_daily rows deleted: ${result.usage}`);
+      console.log(`  instance_health rows deleted: ${result.instanceHealth}`);
       console.log(`  Expired share links revoked:  ${result.shareLinks}`);
       console.log(`  Activity events deleted:      ${result.activityEvents}`);
       console.log(`  Expired slide locks deleted:  ${result.slideLocks}`);

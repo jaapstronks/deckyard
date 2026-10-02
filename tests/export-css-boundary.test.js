@@ -54,7 +54,9 @@ const VIEWER_NEEDED = [
 ];
 
 test('the export style block carries no editor-only CSS', async () => {
-  const bundle = await loadExportCssBundle(repoRoot, null, null);
+  const bundle = await loadExportCssBundle(repoRoot, null, null, {
+    slides: [],
+  });
   const style = buildExportStyleContent(bundle);
   for (const sel of EDITOR_ONLY) {
     assert.ok(
@@ -66,7 +68,9 @@ test('the export style block carries no editor-only CSS', async () => {
 });
 
 test('the export style block keeps the viewer chrome the DOM depends on', async () => {
-  const bundle = await loadExportCssBundle(repoRoot, null, null);
+  const bundle = await loadExportCssBundle(repoRoot, null, null, {
+    slides: [],
+  });
   const style = buildExportStyleContent(bundle);
   for (const sel of VIEWER_NEEDED) {
     assert.ok(
@@ -78,7 +82,9 @@ test('the export style block keeps the viewer chrome the DOM depends on', async 
 });
 
 test('the export chrome CSS stays small (regression ceiling)', async () => {
-  const bundle = await loadExportCssBundle(repoRoot, null, null);
+  const bundle = await loadExportCssBundle(repoRoot, null, null, {
+    slides: [],
+  });
   // chromeCss is export.css (tokens + button/row chrome), a few KB. The old
   // app.css bundle was ~630 KB. A ceiling well below that catches an accidental
   // re-point at app.css or a large editor import sneaking in via export.css.
@@ -106,6 +112,7 @@ test('a theme variant outranks the generic luminance default in exports', async 
       ],
     },
     null,
+    { slides: [] },
   );
   const style = buildExportStyleContent(bundle);
   const variantAt = style.indexOf('.slide.slide-bg-testvariant');

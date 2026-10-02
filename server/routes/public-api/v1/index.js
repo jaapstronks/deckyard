@@ -5,6 +5,7 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { parseDocument } from 'yaml';
 import { serveJson } from '../../../utils/http.js';
 import {
   MaintenanceWriteError,
@@ -32,7 +33,8 @@ import { handleSlideLibrary } from './slide-library.js';
 import { handleSlides } from './slides.js';
 import { handleTranslation } from './translate.js';
 import { handleComments } from './comments.js';
-import { getFeatureFlags } from '../../../config/flags-snapshot.js';
+import { dispatchMounts } from '../../../utils/router.js';
+import { isFeatureEnabled } from '../../../config/flags-snapshot.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
 // Generated deck JSON Schema (single source: the slide-type field registry).
@@ -84,7 +86,28 @@ async function handleApiInfo(ctx) {
 // ============================================================
 
 /**
- * Serve the OpenAPI specification.
+ * The spec as this installation answers it: every path whose `x-feature`
+ * cluster is off is left out (D257), so the spec never lists a path that
+ * answers 404 here. Comments of the rest are kept.
+ *
+ * @param {string} source - `docs/openapi.yaml` as read from disk
+ * @returns {string}
+ */
+export function filterOpenApiSpec(source) {
+  const doc = parseDocument(source);
+  const paths = doc.get('paths');
+  const off = (paths?.items || []).filter((pair) => {
+    const feature = pair.value?.get?.('x-feature');
+    return feature && !isFeatureEnabled(feature);
+  });
+  // Nothing off: the file as written, byte for byte.
+  if (off.length === 0) return source;
+  for (const pair of off) paths.delete(pair.key);
+  return doc.toString();
+}
+
+/**
+ * Serve the OpenAPI specification, filtered to this installation's clusters.
  */
 async function handleOpenApiSpec(ctx) {
   const { req, res, url, repoRoot } = ctx;
@@ -99,7 +122,7 @@ async function handleOpenApiSpec(ctx) {
 
   try {
     const specPath = path.join(repoRoot, 'docs', 'openapi.yaml');
-    const spec = await fs.readFile(specPath, 'utf8');
+    const spec = filterOpenApiSpec(await fs.readFile(specPath, 'utf8'));
     res.writeHead(200, {
       'Content-Type': 'text/yaml; charset=utf-8',
       'Cache-Control': 'public, max-age=3600',
@@ -248,6 +271,28 @@ function handleSchema(ctx) {
 // ============================================================
 
 /**
+ * The feature modules behind API-key authentication, in order. Each module
+ * entry is wrapped in withV1ErrorHandler, so a throw from any sub-handler
+ * answers the v1 envelope rather than leaking the internal `{ ok:false, … }`
+ * shape. A mount with a `feature` is skipped while that installation cluster
+ * is off (D257): `/ai/*` then answers the v1 404, the same answer the internal
+ * `/api/ai/*` gives.
+ *
+ * @type {import('../../../utils/router.js').Mount[]}
+ */
+export const V1_MOUNTS = [
+  { handle: handlePublishing },
+  { handle: handleTranslation },
+  { handle: handleSlideLibrary },
+  { handle: handleSlides },
+  { handle: handleComments },
+  { handle: handlePresentations },
+  { handle: handleExports },
+  { handle: handleAi, feature: 'ai' },
+  { handle: handleResources },
+];
+
+/**
  * Main handler for all /api/v1/* routes.
  * Authenticates API key and routes to feature handlers.
  *
@@ -311,20 +356,7 @@ export const handlePublicApiV1 = withV1ErrorHandler(
     // Track the request (don't await - fire and forget)
     fireAndForget(trackRequest(ctx), 'v1 request tracking');
 
-    // Route to feature handlers. Each module entry is wrapped in
-    // withV1ErrorHandler, so a throw from any sub-handler answers the v1
-    // envelope rather than leaking the internal `{ ok:false, … }` shape.
-    if (await handlePublishing(ctx)) return true;
-    if (await handleTranslation(ctx)) return true;
-    if (await handleSlideLibrary(ctx)) return true;
-    if (await handleSlides(ctx)) return true;
-    if (await handleComments(ctx)) return true;
-    if (await handlePresentations(ctx)) return true;
-    if (await handleExports(ctx)) return true;
-    // AI off (kill switch, demo, sandbox) unmounts /ai/* — the same 404 the
-    // internal /api/ai/* gives (server/routes/api/index.js).
-    if (getFeatureFlags().enableAi && (await handleAi(ctx))) return true;
-    if (await handleResources(ctx)) return true;
+    if (await dispatchMounts(V1_MOUNTS, ctx)) return true;
 
     return v1NotFound(ctx.res);
   },

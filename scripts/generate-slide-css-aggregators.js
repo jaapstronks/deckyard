@@ -137,7 +137,6 @@ export const TYPE_CSS = {
   // move, out of scope for this brief).
   'poll-slide': [{ tier: '03-components', file: '10-poll.css', order: 19 }],
   'chart-slide': [{ tier: '03-components', file: '20-chart.css' }],
-  'custom-html-slide': [{ tier: '03-components', file: '26-custom-html.css' }],
   'chapter-title-slide': [
     { tier: '03-components', file: '30-chapter-title.css' },
   ],

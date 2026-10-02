@@ -48,45 +48,6 @@
   flex-wrap: wrap;
 }
 
-.theme-card {
-  display: block;
-  width: 140px;
-  flex-shrink: 0;
-  border: 2px solid hsl(var(--app-border-default));
-  border-radius: var(--ps-radius-md);
-  background: hsl(var(--app-bg-elevated));
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    transform 0.15s,
-    box-shadow 0.2s;
-  overflow: hidden;
-  padding: 0;
-  text-align: center;
-}
-
-.theme-card:hover {
-  border-color: hsl(var(--app-accent-primary));
-  transform: scale(1.03);
-}
-
-.theme-card.is-selected {
-  border-color: hsl(var(--app-accent-primary));
-  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.3);
-}
-
-.theme-card-preview {
-  aspect-ratio: 16 / 9;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--ps-space-1);
-  padding: var(--ps-space-2);
-  position: relative;
-  overflow: hidden;
-}
-
 .theme-card-heading {
   font-size: var(--ps-text-2xl);
   line-height: 1.2;
@@ -127,10 +88,6 @@
 
 /* Mobile adjustments */
 @media (max-width: 640px) {
-  .theme-card {
-    width: 110px;
-  }
-
   .theme-card-heading {
     font-size: var(--ps-text-xl);
   }
@@ -528,7 +485,7 @@
   text-align: left;
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-md);
-  background: hsl(var(--app-bg-surface));
+  background: hsl(var(--app-bg-elevated));
   cursor: pointer;
   color: hsl(var(--app-text-primary));
   transition:
@@ -826,8 +783,8 @@
 }
 
 .change-theme-reason-theme_specific {
-  color: hsl(var(--app-warning-text, 45 80% 30%));
-  background: hsl(var(--app-warning-bg, 45 90% 90%));
+  color: hsl(var(--app-warning-text));
+  background: hsl(var(--app-warning-soft));
 }
 
 .change-theme-reason-will_be_hidden {
@@ -1336,7 +1293,7 @@
   flex-direction: column;
   gap: var(--ps-space-0-5);
   padding: var(--ps-space-2-5) var(--ps-space-3);
-  border: 1px solid var(--color-border, #e5e7eb);
+  border: 1px solid hsl(var(--app-border-default));
   border-radius: 8px;
   background: transparent;
   text-align: left;
@@ -1344,7 +1301,7 @@
 }
 
 .subscription-level-option:hover {
-  background: var(--color-gray-100, #f3f4f6);
+  background: hsl(var(--app-bg-hover));
 }
 
 .subscription-level-option.is-selected {
@@ -1359,10 +1316,10 @@
 .subscription-level-label {
   font-weight: 600;
   font-size: var(--ps-text-sm);
-  color: var(--text-color, #333);
+  color: hsl(var(--app-text-primary));
 }
 
 .subscription-level-help {
   font-size: 12px;
-  color: var(--text-muted, #777);
+  color: hsl(var(--app-text-secondary));
 }

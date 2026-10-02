@@ -1,4 +1,4 @@
-import { escapeHtml } from '../helpers.js';
+import { escapeHtml, followPath } from '../helpers.js';
 import { normalizeLang, DEFAULT_DECK_LANG } from '../../i18n-utils.js';
 import { getSlideCopy } from '../slide-copy.js';
 
@@ -15,6 +15,9 @@ export default {
   // `static`: the join code it renders is a render input the session hands
   // over (ctx.followCodes), not state the session keeps for this slide.
   runtime: 'static',
+  // The installation cluster this type needs (D260): with `LIVE_ENABLED=false`
+  // it counts as org-disabled and an existing slide renders its static form.
+  feature: 'live',
   fidelity: { pptx: 'raster' },
   // `presentationId` caches which deck this slide invites people into (the QR
   // code is built from it), so a copy into another deck has to re-point it.
@@ -77,9 +80,7 @@ export default {
       body: customBody || base.followInviteBody,
     };
 
-    const relFollow = presId
-      ? `/follow/${encodeURIComponent(presId)}?lang=${encodeURIComponent(lang)}`
-      : '';
+    const relFollow = followPath(presId, lang);
 
     // Get follow codes from context (when available during presentations).
     // Keyed by deck language, one per version the deck has (B182/D72 #6), so

@@ -4,6 +4,89 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.53.0](https://github.com/jaapstronks/deckyard/compare/v1.52.0...v1.53.0) (2026-10-01)
+
+
+### Added
+
+* analytics is a cluster an installation can leave out (B523) ([#1421](https://github.com/jaapstronks/deckyard/issues/1421)) ([12ddbe3](https://github.com/jaapstronks/deckyard/commit/12ddbe38b9fd829ba930d9ed962fae3d8336b492))
+* **client:** uploads entries are absent where the install has none (B581) ([#1420](https://github.com/jaapstronks/deckyard/issues/1420)) ([333fe18](https://github.com/jaapstronks/deckyard/commit/333fe18e14d45cae024f6d4afce3e6d6145a242d))
+* **editor:** single-image upload flow without scrolling (B579) ([#1418](https://github.com/jaapstronks/deckyard/issues/1418)) ([4ed9a84](https://github.com/jaapstronks/deckyard/commit/4ed9a8425ca44ad110541bb18fde4839ffb0e01b))
+
+## [1.52.0](https://github.com/jaapstronks/deckyard/compare/v1.51.0...v1.52.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* NOTION_FEATURE is renamed NOTION_ENABLED and now gates the whole /api/notion/* module (default off); an install that set only NOTION_SECRET must also set NOTION_ENABLED=true. DISABLE_ANALYTICS is renamed EXTERNAL_ANALYTICS_ENABLED (inverted). Both legacy names are honoured with a boot warning until the first release after 2026-11-01 (D259). With LIVE_DATA_ENABLED off, /api/data-sources/* answers 404 instead of 403; with RSS_FEED_ENABLED off, /feed/* answers the static 404 instead of a text/plain one.
+
+### Added
+
+* one feature field on mount, row and MCP tool (B522) ([#1416](https://github.com/jaapstronks/deckyard/issues/1416)) ([117f13c](https://github.com/jaapstronks/deckyard/commit/117f13c0bbd687b9595e2b3009fef7cd857792b6))
+
+
+### Changed
+
+* keep the next release in 1.x during beta ([832c23b](https://github.com/jaapstronks/deckyard/commit/832c23b9c5474524e913910f9fbf4a41d913571c))
+
+## [1.51.0](https://github.com/jaapstronks/deckyard/compare/v1.50.0...v1.51.0) (2026-10-01)
+
+
+### ⚠ BREAKING CHANGES
+
+* **presentations:** internal creates refuse an unsupported lang before the work (B576) ([#1413](https://github.com/jaapstronks/deckyard/issues/1413))
+* **comments:** one setCommentStatus under three contracts (B569)
+* **presentations:** one createPresentation under three contracts (B521) ([#1408](https://github.com/jaapstronks/deckyard/issues/1408))
+* **authz:** one loadPresentationForActor under three contracts (B519)
+* **comments:** POST /api/v1/presentations/:id/comments answers a slideId that names no slide of the deck with 404 `slide_not_found` (was 400), beside `parent_not_found`. MCP add_comment/reply_to_comment now e-mail and fire the comment webhook like the other contracts, and answer a missing deck 404 / no comment right 403 (D255). For forks: maybeFireWebhook(repoRoot, origin, event) takes an origin string where it took the request, and notifyCommentCreated / notifyMentionsAdded take no request; notifyCommentCreatedInApp and routes/api/presentations/comments-shared.js are removed (import from server/services/comments.js).
+
+### Added
+
+* **admin:** instance-health view with census and usage per axis (B516) ([#1409](https://github.com/jaapstronks/deckyard/issues/1409)) ([4b1a914](https://github.com/jaapstronks/deckyard/commit/4b1a914c31c93069ef7263eb18609b3b2248d2a4))
+* **telemetry:** count instance health on the seams that exist (B514) ([eee206d](https://github.com/jaapstronks/deckyard/commit/eee206d7602d3a3944812bc7da457682418f7c33))
+
+
+### Fixed
+
+* **auth:** the sign-in screens title their tab with APP_NAME (B566) ([#1399](https://github.com/jaapstronks/deckyard/issues/1399)) ([549daf0](https://github.com/jaapstronks/deckyard/commit/549daf09ed6bbda768ac4a306034d71c2ea5f3c4))
+* **authz:** one loadPresentationForActor under three contracts (B519) ([1f79553](https://github.com/jaapstronks/deckyard/commit/1f79553a193c63423967ffb104c7ea80b1177892))
+* **comments:** one createComment service under three contracts (B518) ([#1404](https://github.com/jaapstronks/deckyard/issues/1404)) ([79527e2](https://github.com/jaapstronks/deckyard/commit/79527e2c9833504a4bf8e146a48c34bfb954ad23))
+* **comments:** one setCommentStatus under three contracts (B569) ([6155b5c](https://github.com/jaapstronks/deckyard/commit/6155b5c6eb3299b15526948cca86d780bda451e9))
+* **comments:** the comment textarea stays inside the panel (B563) ([#1396](https://github.com/jaapstronks/deckyard/issues/1396)) ([fb6ad49](https://github.com/jaapstronks/deckyard/commit/fb6ad4989faf96d4f3ba3eb264e417c3732f332c))
+* **doctor:** probe the real uploads dir; one container path per dir (B565) ([#1401](https://github.com/jaapstronks/deckyard/issues/1401)) ([814a550](https://github.com/jaapstronks/deckyard/commit/814a550e6cdff2bde77dc90f54a38e97a37d8763))
+* **editor:** slide number in a gutter beside the thumbnail, accent not red (B560) ([#1391](https://github.com/jaapstronks/deckyard/issues/1391)) ([c7a413e](https://github.com/jaapstronks/deckyard/commit/c7a413e9ad37494de4a1bf4560811c86f770a17e))
+* **editor:** store the pending save before a comment POST (B567) ([#1414](https://github.com/jaapstronks/deckyard/issues/1414)) ([93bcd56](https://github.com/jaapstronks/deckyard/commit/93bcd5631b67e0f9b987888de5534873178e9883))
+* or feat: too. Decided at the merge of [#1400](https://github.com/jaapstronks/deckyard/issues/1400), which was retitled. ([6d7b890](https://github.com/jaapstronks/deckyard/commit/6d7b890aa7b431e4d36f38aa2b229e6d504ce5f0))
+* **presentations:** internal creates refuse an unsupported lang before the work (B576) ([#1413](https://github.com/jaapstronks/deckyard/issues/1413)) ([ba3f802](https://github.com/jaapstronks/deckyard/commit/ba3f80282432d520e38a5c19a1de02216a4f712e))
+* **presentations:** one createPresentation under three contracts (B521) ([#1408](https://github.com/jaapstronks/deckyard/issues/1408)) ([4d63d2e](https://github.com/jaapstronks/deckyard/commit/4d63d2e550eae5067d51a7e5db2e9f09a0b98955))
+* **presentations:** one deletePresentation under three contracts (B571) ([#1412](https://github.com/jaapstronks/deckyard/issues/1412)) ([a8429ca](https://github.com/jaapstronks/deckyard/commit/a8429ca1888e3d3f87e3df31e0247d5e5cf93b28))
+* **presentations:** one duplicatePresentation under three contracts (B570) ([#1411](https://github.com/jaapstronks/deckyard/issues/1411)) ([4a7da27](https://github.com/jaapstronks/deckyard/commit/4a7da278c2c5f6486fdc8d828e75b24d1001e215))
+* **slides:** the card roles sit on one shared ladder (B512) ([#1400](https://github.com/jaapstronks/deckyard/issues/1400)) ([4f16832](https://github.com/jaapstronks/deckyard/commit/4f16832f82f4ae7df9f9b4cc9a8d93c29372708e))
+* **slides:** the diagram families sit on the card ladder (B517) ([#1402](https://github.com/jaapstronks/deckyard/issues/1402)) ([47db48a](https://github.com/jaapstronks/deckyard/commit/47db48a6bfde33ed2ccdd95197a2459edad2516e))
+
+
+### Changed
+
+* keep the next release in 1.x during beta ([4e37929](https://github.com/jaapstronks/deckyard/commit/4e379291089f34bf532c6d510b87828697dc6f46))
+
+## [1.50.0](https://github.com/jaapstronks/deckyard/compare/v1.49.0...v1.50.0) (2026-09-29)
+
+
+### Added
+
+* **capture:** recipes for the slide editors and the editor family (B548) ([#1390](https://github.com/jaapstronks/deckyard/issues/1390)) ([fca9daf](https://github.com/jaapstronks/deckyard/commit/fca9daf62f694d97d6ff14b4b1d17a9036d50549))
+* **ops:** npm run doctor and a Dockerfile HEALTHCHECK (B428 PR 1) ([#1383](https://github.com/jaapstronks/deckyard/issues/1383)) ([04cc0e6](https://github.com/jaapstronks/deckyard/commit/04cc0e602df4d1b24fe779c79118c313e877c111))
+* **ops:** production profile, PaaS deploy and back-up pages (B428 PR 2) ([#1384](https://github.com/jaapstronks/deckyard/issues/1384)) ([429ae85](https://github.com/jaapstronks/deckyard/commit/429ae856c0e776a3f58f9b73e66431645bd75b62))
+
+
+### Fixed
+
+* **auth:** space the refused sign-in callout from the card below it (B558) ([#1386](https://github.com/jaapstronks/deckyard/issues/1386)) ([fab0fe8](https://github.com/jaapstronks/deckyard/commit/fab0fe83c52c6155c7a6daa3ef84f4ad0c8e1a9d))
+* **ci:** retry a font download that gets no answer, then fail the install (B559) ([#1389](https://github.com/jaapstronks/deckyard/issues/1389)) ([5ad93d3](https://github.com/jaapstronks/deckyard/commit/5ad93d332cc3fa82f9ed88db85a3f746adbc83b5))
+* **export:** inline a fork seam image only when the export can draw it (B557) ([#1387](https://github.com/jaapstronks/deckyard/issues/1387)) ([5ee6189](https://github.com/jaapstronks/deckyard/commit/5ee618959779b8f1dffd8c31409449af1c6adee6))
+* **export:** shutting down Chrome releases its stdio pipes (B549) ([#1378](https://github.com/jaapstronks/deckyard/issues/1378)) ([c327a87](https://github.com/jaapstronks/deckyard/commit/c327a875b979a1566fde9077f40d77edb81e9503))
+* **render:** PNG export waits for load and embeds display-sized images (B302) ([#1388](https://github.com/jaapstronks/deckyard/issues/1388)) ([39c2ea5](https://github.com/jaapstronks/deckyard/commit/39c2ea5cf2d06135dff6a02d5321be7b3e884137))
+
 ## [1.49.0](https://github.com/jaapstronks/deckyard/compare/v1.48.0...v1.49.0) (2026-09-29)
 
 

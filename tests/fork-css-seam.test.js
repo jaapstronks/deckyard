@@ -29,9 +29,7 @@
 import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { mkdtempSync, mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import {
@@ -50,6 +48,7 @@ import { loadExportCssBundle } from '../server/export/css-bundle.js';
 import { buildAllRenderPaths } from '../server/render-paths.js';
 import { buildSlidesPdfHtml } from '../server/export/pdf-slides.js';
 import { renderSlideToPngBuffer } from '../server/render/png.js';
+import { createCoreFixtureRoot } from './helpers/core-fixture-root.js';
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
@@ -78,10 +77,8 @@ const PROBE_CSS = `
 body { margin: 7px; background: rgb(1, 2, 3); }
 `;
 
-const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'deckyard-seam-'));
-for (const dir of ['client', 'assets', 'shared', 'themes']) {
-  symlinkSync(path.join(repoRoot, dir), path.join(fixtureRoot, dir), 'dir');
-}
+const { root: fixtureRoot, remove: removeFixtureRoot } =
+  createCoreFixtureRoot('deckyard-seam-');
 mkdirSync(path.join(fixtureRoot, 'custom', 'styles'), { recursive: true });
 writeFileSync(
   path.join(fixtureRoot, 'custom', 'styles', '10-probe.css'),
@@ -91,7 +88,7 @@ writeFileSync(
 
 after(async () => {
   await closePuppeteerBrowser();
-  await rm(fixtureRoot, { recursive: true, force: true });
+  await removeFixtureRoot();
 });
 
 const SLIDE = {
@@ -393,10 +390,9 @@ test('a fork @font-face survives into self-contained exports', async () => {
   // client/styles/shared/fonts.css into custom/styles/fonts.css. In an export
   // there is no origin to resolve `/assets/...` against, so the URL is inlined
   // — and the face itself must not be stripped the way core faces are.
-  const fontRoot = mkdtempSync(path.join(tmpdir(), 'deckyard-seam-font-'));
-  for (const dir of ['client', 'assets', 'shared', 'themes']) {
-    symlinkSync(path.join(repoRoot, dir), path.join(fontRoot, dir), 'dir');
-  }
+  const { root: fontRoot, remove: removeFontRoot } = createCoreFixtureRoot(
+    'deckyard-seam-font-',
+  );
   mkdirSync(path.join(fontRoot, 'custom', 'styles'), { recursive: true });
   writeFileSync(
     path.join(fontRoot, 'custom', 'styles', 'fonts.css'),
@@ -407,7 +403,9 @@ test('a fork @font-face survives into self-contained exports', async () => {
     'utf8',
   );
   try {
-    const bundle = await loadExportCssBundle(fontRoot, null, null);
+    const bundle = await loadExportCssBundle(fontRoot, null, null, {
+      slides: [],
+    });
     const style = buildCssChain(fontRoot, ['a { color: red; }'], {
       customCss: bundle.customCss,
     });
@@ -424,7 +422,7 @@ test('a fork @font-face survives into self-contained exports', async () => {
         'left relative it resolves against nothing and falls back silently',
     );
   } finally {
-    await rm(fontRoot, { recursive: true, force: true });
+    await removeFontRoot();
   }
 });
 
@@ -438,10 +436,9 @@ test(
     // seam has to be inlined for images exactly as for fonts — otherwise the
     // image drops out of every PDF and PNG without an error. Pinned on the
     // pixel, not the string: the PNG is what the fork ships.
-    const imageRoot = mkdtempSync(path.join(tmpdir(), 'deckyard-seam-image-'));
-    for (const dir of ['client', 'assets', 'shared', 'themes']) {
-      symlinkSync(path.join(repoRoot, dir), path.join(imageRoot, dir), 'dir');
-    }
+    const { root: imageRoot, remove: removeImageRoot } = createCoreFixtureRoot(
+      'deckyard-seam-image-',
+    );
     mkdirSync(path.join(imageRoot, 'custom', 'styles'), { recursive: true });
     mkdirSync(path.join(imageRoot, 'custom', 'assets'), { recursive: true });
     const { default: sharp } = await import('sharp');
@@ -493,7 +490,7 @@ test(
           'url() in custom/styles/ resolved against nothing',
       );
     } finally {
-      await rm(imageRoot, { recursive: true, force: true });
+      await removeImageRoot();
     }
   },
 );

@@ -17,6 +17,7 @@ import { openExportModal } from '../export-modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { handleNotionPublish } from './share-actions.js';
 import { h } from '../../../lib/dom/index.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 
 export function setupShareDropdown({
   api,
@@ -122,14 +123,18 @@ export function setupShareDropdown({
 
   button.addEventListener('click', () => openShare());
 
-  // Check whether Notion publishing is available (drives the Notion action).
-  api('/api/notion/status')
-    .then((resp) => {
-      notionAvailable = !!resp?.enabled;
-    })
-    .catch(() => {
-      notionAvailable = false;
-    });
+  // Check whether Notion publishing is available (drives the Notion action):
+  // the installation has the integration (`NOTION_ENABLED`, else the route
+  // does not exist) and it is configured.
+  if (featureEnabled('notion')) {
+    api('/api/notion/status')
+      .then((resp) => {
+        notionAvailable = !!resp?.enabled;
+      })
+      .catch(() => {
+        notionAvailable = false;
+      });
+  }
 
   syncShareUi();
 

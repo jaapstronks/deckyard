@@ -14,6 +14,10 @@ import {
   isMultiOrgEnabled,
   isLiveDataEnabled,
   isRssFeedEnabled,
+  isAnalyticsEnabled,
+  isLiveEnabled,
+  isStockMediaEnabled,
+  isPublicApiEnabled,
   isCollabEnabled,
   isCollabLiveEditsEnabled,
   isDemoMode,
@@ -21,7 +25,7 @@ import {
   isAiEnabled,
   isUploadsEnabled,
   isImageLibraryEnabled,
-  isNotionFeatureEnabled,
+  isNotionEnabled,
 } from './features.js';
 import { getBranding } from './branding.js';
 import { trashRetentionDays } from './retention.js';
@@ -41,7 +45,7 @@ export function getFeatureFlags() {
   // The image-source chooser gates its ImageKit option on this so an
   // unconfigured install never shows a button that only leads to an error.
   const imagekitConfigured = getImageKitConfigFromEnv().configured;
-  const enableNotion = !demoMode && isNotionFeatureEnabled();
+  const enableNotion = !demoMode && isNotionEnabled();
   const llm = getLlmStatus();
 
   const aiAltText =
@@ -69,6 +73,10 @@ export function getFeatureFlags() {
     multiOrganization: isMultiOrgEnabled(),
     enableLiveData: isLiveDataEnabled(),
     enableRssFeed: isRssFeedEnabled(),
+    enableAnalytics: isAnalyticsEnabled(),
+    enableLive: isLiveEnabled(),
+    enableStockMedia: isStockMediaEnabled(),
+    enablePublicApi: isPublicApiEnabled(),
     collab: isCollabEnabled(),
     collabLiveEdits: isCollabLiveEditsEnabled(),
     // The trash hint states this number, so the copy and the sweep that acts on
@@ -76,4 +84,37 @@ export function getFeatureFlags() {
     trashRetentionDays: trashRetentionDays(),
     branding: getBranding(),
   };
+}
+
+/**
+ * Is this installation's cluster `key` on (D257)?
+ *
+ * The one question every `feature` declaration asks — a mount, a route row, an
+ * MCP tool. The key is the env prefix in lowerCamel and lands on the snapshot
+ * key `enable<Key>`: `AI_ENABLED` ↔ `enableAi` ↔ `'ai'`, `RSS_FEED_ENABLED` ↔
+ * `enableRssFeed` ↔ `'rssFeed'`. Derived, not looked up, so there is no second
+ * vocabulary to keep in step; a key that lands on no snapshot key throws, so a
+ * typo in a declaration fails loudly instead of switching something off.
+ *
+ * @param {string} key - The cluster key (`'ai'`, `'notion'`, …)
+ * @returns {boolean}
+ */
+export function isFeatureEnabled(key) {
+  const flag = featureFlagKey(key);
+  const flags = getFeatureFlags();
+  if (!(flag in flags)) {
+    throw new TypeError(
+      `unknown feature '${key}': no '${flag}' in the snapshot`,
+    );
+  }
+  return flags[flag] === true;
+}
+
+/**
+ * The snapshot key a cluster key lands on: `'imageLibrary'` → `'enableImageLibrary'`.
+ * @param {string} key
+ * @returns {string}
+ */
+export function featureFlagKey(key) {
+  return `enable${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 }

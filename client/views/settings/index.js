@@ -25,17 +25,29 @@ import {
   createExportTab,
   createSlideTypesTab,
   createApiKeysTab,
+  createHealthTab,
 } from './tabs/index.js';
 import { nav } from '../../lib/state/router.js';
+import { featureEnabled } from '../../lib/state/features.js';
 import { icon } from '../../lib/dom/icons.js';
 
 const DEFAULT_TAB = 'account';
 const DESIGNER_TABS = ['fonts', 'themes', 'slide-types'];
+// The API keys tab belongs to the public API cluster: on an installation
+// without it the tab is absent and its hash lands on the default (D260).
+const API_KEYS_TAB = 'api-keys';
 // The members tab is no longer one of these. It sits in the Admin group for an
 // admin, but in multi-workspace mode it is also the only screen where a plain
 // member finds their own way out of an organization, so it carries its own,
 // weaker gate — see MEMBERS_TAB below and shared/organization-role.js.
-const ADMIN_TABS = ['admin', 'api-keys', 'email', 'integrations', 'analytics'];
+const ADMIN_TABS = [
+  'admin',
+  API_KEYS_TAB,
+  'email',
+  'integrations',
+  'analytics',
+  'health',
+];
 const MEMBERS_TAB = 'users';
 // The organization's own profile. Like the members tab it is not an admin
 // surface: `GET /api/organizations/:id` answers to any member, so anyone in the
@@ -77,6 +89,10 @@ function getTabFromHash({
   }
 
   if (hash === ORGANIZATION_TAB && !canSeeOrganization) {
+    return DEFAULT_TAB;
+  }
+
+  if (hash === API_KEYS_TAB && !featureEnabled('publicApi')) {
     return DEFAULT_TAB;
   }
 
@@ -202,10 +218,13 @@ export async function renderSettings(root, { user } = {}) {
   // Admin tabs
   if (isAdmin) {
     addTab('admin', createAdminTab({ user }));
-    addTab('api-keys', createApiKeysTab({ user }));
+    if (featureEnabled('publicApi')) {
+      addTab(API_KEYS_TAB, createApiKeysTab({ user }));
+    }
     addTab('email', createEmailTab({ user }));
     addTab('integrations', createIntegrationsTab({ user }));
     addTab('analytics', createAnalyticsTab({ user }));
+    addTab('health', createHealthTab());
   }
 
   // Current active tab
@@ -227,6 +246,10 @@ export async function renderSettings(root, { user } = {}) {
     }
     // Guard the organization tab
     if (tabKey === ORGANIZATION_TAB && !canSeeOrganization) {
+      tabKey = DEFAULT_TAB;
+    }
+    // Guard the API keys tab
+    if (tabKey === API_KEYS_TAB && !featureEnabled('publicApi')) {
       tabKey = DEFAULT_TAB;
     }
 

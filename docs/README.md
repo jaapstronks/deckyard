@@ -6,7 +6,7 @@
 | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `docs/developer/`   | Contributor docs: architecture, dev setup, themes, slide types, i18n, API                                                                                                                                                         |
 | `docs/reference/`   | Stable "how it works" docs: MCP server, fork setup, font management, AI prompts, feature deep-dives                                                                                                                               |
-| `docs/ops/`         | Operations: self-hosting / VPS deploy guide                                                                                                                                                                                       |
+| `docs/ops/`         | Operations: self-hosting, PaaS deploy, production checklist, doctor, back-ups                                                                                                                                                     |
 | `docs/adr/`         | Architecture decision records (historical; only the status line is kept current)                                                                                                                                                  |
 | `docs/plans/`       | Planning workspace: worklist, strategy, per-item briefings. A **symlink to a private sibling repo**, and **gitignored** here — absent on a fresh clone, and none of it ships with the OSS repo. Indexed from `docs/plans/TODO.md` |
 | `docs/openapi.yaml` | OpenAPI spec — stays at this path, the server serves it at `/api/v1/openapi.yaml`                                                                                                                                                 |
@@ -57,6 +57,7 @@ ships:
 | The full list of built-in slide types                         | `docs/reference/slide-type-inventory.md` (generated)                       |
 | Whether something is a new type or a variant                  | `docs/reference/slide-type-structure.md`                                   |
 | Which types we promise, and what a second implementation owes | `docs/reference/slide-type-tiers.md`, `docs/reference/deck-conformance.md` |
+| Adding a new slide type, end to end                           | `docs/reference/slide-type-pipeline.md`                                    |
 | What a new slide type owes elsewhere                          | `docs/reference/slide-type-companions.md`                                  |
 | Removing a slide type                                         | `docs/reference/slide-type-removal.md`                                     |
 | CSS design tokens (spacing, z-index)                          | `docs/reference/css-tokens.md`                                             |
@@ -99,6 +100,7 @@ nothing is discoverable only by `ls`.
 
 | Doc                                                                          | What it covers                                                    |
 | ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [`slide-type-pipeline.md`](reference/slide-type-pipeline.md)                 | How a type flows to every surface, and the new-type checklist     |
 | [`slide-type-inventory.md`](reference/slide-type-inventory.md)               | The built-in types (generated from the registry)                  |
 | [`slide-type-directory.md`](reference/slide-type-directory.md)               | The directory form a type ships in                                |
 | [`slide-type-structure.md`](reference/slide-type-structure.md)               | The `structure` facet, and type vs variant                        |
@@ -200,7 +202,12 @@ nothing is discoverable only by `ls`.
 | Doc                                                              | What it covers                                                                                                             |
 | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | [`../ops/self-hosting.md`](ops/self-hosting.md)                  | VPS deploy guide                                                                                                           |
+| [`../ops/production-checklist.md`](ops/production-checklist.md)  | The minimal production environment, one word of why per variable                                                           |
+| [`../ops/deploy-paas.md`](ops/deploy-paas.md)                    | Deploy on a PaaS: the image contract, and Coolify                                                                          |
+| [`../ops/doctor.md`](ops/doctor.md)                              | `npm run doctor`: check an installation before the first user                                                              |
+| [`../ops/backup-restore.md`](ops/backup-restore.md)              | Back up and restore, with a rehearsed restore recipe                                                                       |
 | [`../ops/agent-install.md`](ops/agent-install.md)                | Install Deckyard with an AI agent                                                                                          |
+| [`../ops/agent-deploy.md`](ops/agent-deploy.md)                  | Deploy Deckyard to production with an AI agent, ending with the doctor                                                     |
 | [`../ops/multi-organization.md`](ops/multi-organization.md)      | Run several organizations on one instance (runbook)                                                                        |
 | [`fork-setup.md`](reference/fork-setup.md)                       | Setting up a fork                                                                                                          |
 | [`storage-layer.md`](reference/storage-layer.md)                 | The `server/storage/` module map, Postgres adapter seam, and scope-based tenancy                                           |
@@ -214,6 +221,7 @@ nothing is discoverable only by `ls`.
 | [`data-sources.md`](reference/data-sources.md)                   | Live slide data sources (Notion/CSV): the fetch/bind pipeline, the csv-url SSRF sink, and the config                       |
 | [`analytics.md`](reference/analytics.md)                         | View analytics end to end: tracking routes, aggregations, reports, retention job                                           |
 | [`analytics-privacy.md`](reference/analytics-privacy.md)         | What view analytics stores per viewer, the two erase routes, retention                                                     |
+| [`instance-health.md`](reference/instance-health.md)             | The instance-health counters: which slide types, surfaces, formats, interactions and tools an install uses, per day        |
 | [`email-infrastructure.md`](reference/email-infrastructure.md)   | The Brevo transport, the senders, and the admin-customizable templates                                                     |
 | [`jobs-and-queues.md`](reference/jobs-and-queues.md)             | The BullMQ queue layer, its synchronous fallback, and the recurring interval jobs                                          |
 | [`maintenance-mode.md`](reference/maintenance-mode.md)           | Deploying without failing saves in open editors                                                                            |

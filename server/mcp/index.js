@@ -43,6 +43,7 @@ import { assertExtensionDeclared } from '../export/extension-name.js';
 import { storageModeError } from '../config/database.js';
 import { repoRoot } from '../config/paths.js';
 import { envStr } from '../config/utils.js';
+import { isFeatureEnabled } from '../config/flags-snapshot.js';
 
 /**
  * The MCP server with core tools, the fork's custom tools and the prompts
@@ -69,6 +70,14 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 
 // Initialize
 async function main() {
+  // The stdio server is the public API cluster's third surface beside /mcp and
+  // /api/v1 (D258): with the cluster off this installation has none of them.
+  if (!isFeatureEnabled('publicApi')) {
+    process.stderr.write(
+      '[MCP] PUBLIC_API_ENABLED=false: this installation has no MCP server.\n',
+    );
+    process.exit(1);
+  }
   await assertExtensionDeclared(repoRoot);
   // Same storage guards as the HTTP server (server/server.js): an unknown
   // STORAGE_MODE, or an empty database next to a populated file-storage data

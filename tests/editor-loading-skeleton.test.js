@@ -28,7 +28,7 @@ globalThis.fetch = async (url) =>
   new Response(
     JSON.stringify(
       String(url) === '/api/themes'
-        ? { defaultThemeId: THEME_ID }
+        ? { themes: [{ id: THEME_ID, isDefault: true }] }
         : { id: THEME_ID, slug: 'brand', label: 'Forest', cssVars: {} },
     ),
     { status: 200, headers: { 'content-type': 'application/json' } },

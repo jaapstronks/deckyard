@@ -4,7 +4,7 @@
  */
 
 import { updatePresentation } from '../../../storage/presentations/index.js';
-import { presentationTimestamps } from './deck-fields.js';
+import { publicDeckTimestamps } from '../../../services/presentations.js';
 import {
   newSlide,
   validateSlide,
@@ -26,10 +26,6 @@ import {
   apiCreated,
   apiError,
 } from './middleware.js';
-import {
-  emailCanEditCustomHtml,
-  customHtmlEditViolation,
-} from '../../../utils/route-middleware.js';
 import {
   getOptionalString,
   getOptionalObject,
@@ -177,17 +173,6 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
     return true;
   }
 
-  // Gate raw HTML/CSS authoring on the key owner's capability.
-  const htmlViolation = customHtmlEditViolation(
-    [existingSlide],
-    [updatedSlide],
-    emailCanEditCustomHtml(apiKey.ownerEmail),
-  );
-  if (htmlViolation) {
-    await apiError(ctx, 403, htmlViolation);
-    return true;
-  }
-
   // Replace slide in array
   slides[index] = updatedSlide;
 
@@ -207,7 +192,7 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
     presentation: {
       id: updated.id,
       revision: updated.revision || 0,
-      updatedAt: presentationTimestamps(updated).updatedAt,
+      updatedAt: publicDeckTimestamps(updated).updatedAt,
     },
   });
   return true;
@@ -280,17 +265,6 @@ async function handleCreateSlide(ctx, presentationId) {
   const errors = validateSlide(newSlideObj, { slideTypes });
   if (errors.length > 0) {
     await apiError(ctx, 400, 'Invalid slide data', { details: { errors } });
-    return true;
-  }
-
-  // Gate raw HTML/CSS authoring on the key owner's capability.
-  const htmlViolation = customHtmlEditViolation(
-    [],
-    [newSlideObj],
-    emailCanEditCustomHtml(apiKey.ownerEmail),
-  );
-  if (htmlViolation) {
-    await apiError(ctx, 403, htmlViolation);
     return true;
   }
 

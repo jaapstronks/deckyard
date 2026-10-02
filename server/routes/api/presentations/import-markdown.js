@@ -10,10 +10,8 @@
  * (public in sandbox/demo mode, security-audit H7).
  */
 
-import {
-  createPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
+import { createPresentation } from '../../../services/presentations.js';
 import {
   jsonError,
   serveJson,
@@ -89,12 +87,15 @@ export async function handlePresentationsImportMarkdown({
   );
 
   // Create presentation
-  const created = await createPresentation(storageScope, {
-    title: parts.title,
-    theme: themeId,
-    lang,
-    ownerEmail: authedUser?.email || null,
-  });
+  const created = await createPresentation(
+    storageScope,
+    { actor: authedUser },
+    {
+      title: parts.title,
+      theme: themeId,
+      lang,
+    },
+  );
   log.info('[import-markdown] Created presentation:', created.id);
 
   // Build i18n structure (same as JSON import)

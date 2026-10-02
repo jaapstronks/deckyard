@@ -260,10 +260,17 @@ export async function renderFollow(root, presentationId) {
     // the deck's settings do not travel to the audience.
     videoLayer.setConfig(pres?.liveVideo);
 
-    // The viewer's local preference is the only client-side check here; the
-    // owner's opt-out is enforced by server/routes/api/analytics-track.js.
-    // We skip tracking for logged-in users to protect coworker privacy.
-    if (!analyticsTracker && !analyticsChecked && isAnalyticsEnabled()) {
+    // `tracking` is the installation's analytics cluster (D260), carried by
+    // the payload because the audience has no feature snapshot; then the
+    // viewer's local preference. The owner's opt-out is enforced by
+    // server/routes/api/analytics-track.js. We skip tracking for logged-in
+    // users to protect coworker privacy.
+    if (
+      resp?.tracking === true &&
+      !analyticsTracker &&
+      !analyticsChecked &&
+      isAnalyticsEnabled()
+    ) {
       analyticsChecked = true;
       // Check if user is logged in - if so, skip tracking
       me()

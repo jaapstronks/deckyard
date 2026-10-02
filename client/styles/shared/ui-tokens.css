@@ -94,6 +94,8 @@
   --z-drag: 999999; /* drag ghost — the ceiling, above everything */
 
   --ps-topbar-height: 56px;
+  --ps-sidebar-width: 220px;
+  --ps-sidebar-collapsed-width: 64px;
   --ps-slides-collapsed-width: 64px;
   --ps-slides-expanded-width: 200px;
   --ps-editor-content-max-width: 640px;
@@ -112,7 +114,7 @@
   --app-bg-hover: 220 14% 94%;
   --app-bg-active: 220 14% 91%;
   /* Always-white surface for asset thumbnails (logos/icons/QR), regardless of UI mode */
-  --app-surface-white: 0 0% 100%;
+  --app-surface-white: 0 0% 100%; /* mode-invariant */
 
   --app-text-primary: 220 13% 13%;
   --app-text-secondary: 220 9% 46%;
@@ -120,7 +122,7 @@
   --app-text-disabled: 220 9% 74%;
   --app-text-inverse: 0 0% 100%;
   /* Text color for content placed on accent/danger solid backgrounds (always white). */
-  --app-text-on-solid: 0 0% 100%;
+  --app-text-on-solid: 0 0% 100%; /* mode-invariant */
 
   --app-border-default: 220 13% 90%;
   --app-border-subtle: 220 13% 94%;
@@ -167,11 +169,6 @@
   /* Logo treatment (overview topbar logo.svg is black by default) */
   --app-logo-filter: none;
   --app-icon-filter: none;
-
-  /* Legacy aliases: keep old variable names out of new CSS, but preserve `--sb-*` for class hooks. */
-  --sb-bg: hsl(var(--app-bg-elevated));
-  --sb-border: hsl(var(--app-border-default));
-  --sb-shadow: var(--app-shadow-md);
 }
 
 :root[data-ui-mode='dark'] {
@@ -182,16 +179,12 @@
   --app-bg-overlay: 222 20% 14%;
   --app-bg-hover: 222 15% 18%;
   --app-bg-active: 222 15% 22%;
-  /* Always-white surface for asset thumbnails (logos/icons/QR), regardless of UI mode */
-  --app-surface-white: 0 0% 100%;
 
   --app-text-primary: 210 20% 95%;
   --app-text-secondary: 215 15% 65%;
   --app-text-tertiary: 215 12% 50%;
   --app-text-disabled: 215 10% 40%;
   --app-text-inverse: 222 20% 9%;
-  /* Text color for content placed on accent/danger solid backgrounds (always white). */
-  --app-text-on-solid: 0 0% 100%;
 
   --app-border-default: 222 15% 22%;
   --app-border-subtle: 222 15% 18%;

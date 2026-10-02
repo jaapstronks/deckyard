@@ -1,6 +1,5 @@
 import {
   badRequest,
-  forbidden,
   jsonError,
   methodNotAllowed,
   requireJsonBody,
@@ -28,6 +27,7 @@ import {
   recordSlideLibraryUsage,
 } from '../../storage/slide-library-usage.js';
 import { maybeFireWebhook } from '../../utils/webhooks.js';
+import { getRequestOrigin } from '../../utils/request-url.js';
 import { loadThemeAssets } from '../../utils/themes.js';
 import { generateAndSaveOgPreview } from '../../render/preview-image.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
@@ -35,10 +35,6 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { createLogger } from '../../utils/logger.js';
 import { matchesIdentity } from '../../../shared/identity-match.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
-import {
-  canEditCustomHtml,
-  customHtmlEditViolation,
-} from '../../utils/route-middleware.js';
 import { parseIfMatchRevision } from './presentations/helpers.js';
 import { sharingEnabled } from '../../config/sandbox.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
@@ -84,33 +80,6 @@ function canEditOrganizationItem(authedUser, item) {
 }
 
 /**
- * The raw-HTML/CSS capability gate on a library item, the same one every deck
- * write path enforces: a user without `canEditCustomHtml` may not create or
- * change the markup of a custom-html-slide. Returns a refusal message or null.
- *
- * @param {object|null} authedUser
- * @param {{id?: string, slideType?: string, content?: object}|null} prev - The stored item, or null on create
- * @param {string} slideType
- * @param {object[]} nextContents - Every content object being written
- * @returns {string|null}
- */
-function customHtmlViolation(authedUser, prev, slideType, nextContents) {
-  const id = prev?.id || 'new';
-  const prevSlides = prev
-    ? [{ id, type: prev.slideType, content: prev.content }]
-    : [];
-  for (const content of nextContents) {
-    const violation = customHtmlEditViolation(
-      prevSlides,
-      [{ id, type: slideType, content }],
-      canEditCustomHtml(authedUser),
-    );
-    if (violation) return violation;
-  }
-  return null;
-}
-
-/**
  * Refuse a create for a type that declares `library: false` (B401): the same
  * predicate the editor's Save-to-library action reads, so the API cannot put
  * on a shelf what the UI withholds. Resolved against the organization's
@@ -135,24 +104,13 @@ async function refuseNonLibraryType(storageScope, res, slideType) {
   return true;
 }
 
-/** Every content object a create body carries: the base and each language version. */
-function createContents(body) {
-  const versions = body?.i18n?.versions;
-  return [
-    body?.content,
-    ...(versions && typeof versions === 'object'
-      ? Object.values(versions).map((v) => v?.content)
-      : []),
-  ].filter(Boolean);
-}
-
 /**
  * The save-contract options a PATCH hands to storage (D170): the `If-Match`
- * revision and the content gate. Answers itself and returns null for a patch
+ * revision. Answers itself and returns null for a patch
  * outside the closed key set (400 `invalid` with the field) and for a
  * name/description/content edit without `If-Match` (428).
  */
-function patchOptions(req, res, body, authedUser) {
+function patchOptions(req, res, body) {
   const invalid = libraryPatchViolation(body);
   if (invalid) {
     mutationError(res, invalid);
@@ -164,11 +122,7 @@ function patchOptions(req, res, body, authedUser) {
     jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
     return null;
   }
-  return {
-    expectedRevision,
-    contentGuard: (item, next) =>
-      customHtmlViolation(authedUser, item, item.slideType, [next]),
-  };
+  return { expectedRevision };
 }
 
 function actorEmail(authedUser) {
@@ -230,13 +184,6 @@ async function handlePersonalCreate({ storageScope, req, res, authedUser }) {
   if (await refuseNonLibraryType(storageScope, res, body?.slideType)) {
     return true;
   }
-  const violation = customHtmlViolation(
-    authedUser,
-    null,
-    body?.slideType,
-    createContents(body),
-  );
-  if (violation) return forbidden(res, violation);
   const r = await createPersonalLibraryItem(storageScope, email, body, {
     actorEmail: email,
   });
@@ -254,7 +201,7 @@ async function handlePersonalUpdate(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const opts = patchOptions(req, res, body, authedUser);
+  const opts = patchOptions(req, res, body);
   if (!opts) return true;
   const r = await updatePersonalLibraryItem(storageScope, email, id, body, {
     actorEmail: email,
@@ -320,13 +267,6 @@ async function handleOrganizationCreate({
   if (await refuseNonLibraryType(storageScope, res, body?.slideType)) {
     return true;
   }
-  const violation = customHtmlViolation(
-    authedUser,
-    null,
-    body?.slideType,
-    createContents(body),
-  );
-  if (violation) return forbidden(res, violation);
   const r = await createOrganizationLibraryItem(storageScope, body, {
     actorEmail: email,
   });
@@ -361,7 +301,7 @@ async function handleOrganizationCreate({
 
   // Fire webhook for organization-library addition (reuses organization share webhook URL)
   fireAndForget(
-    maybeFireWebhook(repoRoot, req, {
+    maybeFireWebhook(repoRoot, getRequestOrigin(req), {
       event: 'slide.added_to_organization_library',
       slideItem: { ...r.item, previewUrl },
       authedUser,
@@ -389,7 +329,7 @@ async function handleOrganizationUpdate(
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const opts = patchOptions(req, res, body, authedUser);
+  const opts = patchOptions(req, res, body);
   if (!opts) return true;
   const r = await updateOrganizationLibraryItem(storageScope, id, body, {
     actorEmail: email,

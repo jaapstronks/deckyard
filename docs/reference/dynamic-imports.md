@@ -6,9 +6,11 @@ wrote the line. This document is the shared answer to "is this dynamic import
 justified, or is it noise?" — the rule, the current inventory, and the handful
 of sites that look wrong but are not.
 
-The companion rule about which packages may live in `optionalDependencies` is in
-[`AGENTS.md`](../../AGENTS.md) § _The project's "non-negotiables"_. This document
-is about the `import()` call; that one is about `package.json`.
+The companion rule about which packages may live in `optionalDependencies` is
+§ _Which packages are optional_ below (summarized in
+[`AGENTS.md`](../../AGENTS.md) § _The project's "non-negotiables"_). The rest of
+this document is about the `import()` call; that section is about
+`package.json`.
 
 ## The rule
 
@@ -100,6 +102,25 @@ untangling as a design change, never as a find-and-replace.
 - `client/views/editor/data-source-panel.js` → `./data-source-modal.js`.
 - `server/routes/api/*` and `server/jobs/queue/workers/*` carry a few
   request-path lazy loads of the same shape.
+
+## Which packages are optional
+
+- A package that is only reached through a gated `await import()` — behind a
+  feature flag or with graceful "not installed" handling — lives in
+  `optionalDependencies`, not `dependencies`, so a minimal install can omit it
+  (`npm install --omit=optional`) and a failed install doesn't break the rest.
+  Current set: `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` (S3
+  media), `puppeteer-core` (Chrome exports), `pptxgenjs` (PPTX export),
+  `pdf-parse` (PDF import), `bullmq` + `ioredis` (Redis job queue),
+  `@hocuspocus/server` + `crossws` (live collaboration). A package that is
+  _statically_ imported (e.g. `openid-client`) stays a hard `dependency` even
+  if its feature is off, because loading the module pulls it in regardless.
+- **`ciiic-translation-rules` is fork-only** and deliberately **not declared**
+  in `package.json`: it's a private package that ships only in the CIIIC fork,
+  loaded through an optional `await import()` in
+  `server/utils/openai/translate.js` that falls back to empty rules when it's
+  absent. Adding it to `package.json` would break `npm install` for the OSS
+  repo, so it stays undeclared by design.
 
 ## Why this is written down
 

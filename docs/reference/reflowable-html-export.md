@@ -35,8 +35,8 @@ document that stays readable with JavaScript — and author CSS — turned off.
   definitions:
   - `string` → `<p>`, `markdown` → semantic prose (headings, lists, blockquotes),
     `code` → `<pre><code>`, `csv` → a `<table>`. A `code` field declaring
-    `markup: true` holds author HTML the canvas renders (custom-html's `html`),
-    so it projects as that HTML, sanitized by the canvas's own
+    `markup: true` holds author HTML the canvas renders (a fork type may
+    declare one), so it projects as that HTML, sanitized by the canvas's own
     `sanitizeSlideHtmlSync`, in one `<div data-field>`; its stylesheet (`css`)
     is `presentational`, and so are the author's `style` attributes, which the
     projection drops (`presentation: false`): a reflowable document reads

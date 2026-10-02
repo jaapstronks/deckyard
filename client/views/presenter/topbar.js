@@ -1,7 +1,5 @@
 import { h } from '../../lib/dom/index.js';
-import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createPresenterControlToggle } from './control-toggle.js';
 
 /**
  * Assemble the presenter topbar: the deck title and the actions row (notes
@@ -16,13 +14,13 @@ import { createPresenterControlToggle } from './control-toggle.js';
  * @param {object} opts.pres - presentation (for the title).
  * @param {HTMLElement} opts.langSeg
  * @param {HTMLElement|null} opts.translatePill - absent where AI is off
- * @param {HTMLElement} opts.interactionPill
- * @param {HTMLElement} opts.toolsWrap
+ * @param {HTMLElement|null} opts.interactionPill - absent where live is off
+ * @param {HTMLElement|null} opts.toolsWrap - absent where live is off
+ * @param {HTMLElement|null} opts.controlToggle - absent where live is off
  * @param {HTMLElement} opts.autoAdvanceBtn
  * @param {HTMLElement} opts.laserBtn
  * @param {HTMLElement} opts.drawBtn
  * @param {HTMLElement} opts.consoleToggle
- * @param {() => (string|null)} opts.getSessionId - for the control toggle.
  * @param {() => void} opts.onOpenProjector
  * @param {() => void} opts.onEdit
  * @param {() => void} opts.onToggleFullscreen
@@ -34,11 +32,11 @@ export function buildPresenterTopbar({
   translatePill,
   interactionPill,
   toolsWrap,
+  controlToggle,
   autoAdvanceBtn,
   laserBtn,
   drawBtn,
   consoleToggle,
-  getSessionId,
   onOpenProjector,
   onEdit,
   onToggleFullscreen,
@@ -46,14 +44,15 @@ export function buildPresenterTopbar({
   const top = h('div', { class: 'presenter-topbar' });
   const actions = h('div', { class: 'presenter-actions' });
 
-  // `translatePill` is null where AI is off; `append` would print that.
+  // `translatePill` is null where AI is off, the live controls where live is;
+  // `append` would print that.
   const items = [
     // Notes companion + remote control
     langSeg,
     translatePill,
     interactionPill,
     toolsWrap,
-    createPresenterControlToggle({ api, getSessionId }).el,
+    controlToggle,
     laserBtn,
     drawBtn,
     consoleToggle,

@@ -46,6 +46,10 @@ const {
 } = await import('../shared/organization-role.js');
 const { createSettingsSidebar } =
   await import('../client/views/settings/settings-sidebar.js');
+const { setFeatures } = await import('../client/lib/state/features.js');
+
+// An installation with the public API cluster, as by default (B525).
+setFeatures({ enablePublicApi: true });
 
 /** The instance admin, seen from an organization where they hold `role`. */
 const admin = (role) => ({
@@ -193,6 +197,7 @@ const ADMIN_TABS = [
   'email',
   'integrations',
   'analytics',
+  'health',
 ];
 const USER_TABS = ['account', 'preferences', 'export'];
 
@@ -213,4 +218,16 @@ test('single-organization keeps every admin tab it had', () => {
     ...USER_TABS,
     ...ADMIN_TABS,
   ]);
+});
+
+test('without the public API cluster the API keys tab is absent (B525, D260)', () => {
+  setFeatures({ enablePublicApi: false });
+  try {
+    assert.deepEqual(visibleTabKeys(admin(undefined)), [
+      ...USER_TABS,
+      ...ADMIN_TABS.filter((key) => key !== 'api-keys'),
+    ]);
+  } finally {
+    setFeatures({ enablePublicApi: true });
+  }
 });

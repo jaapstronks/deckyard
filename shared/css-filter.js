@@ -1,8 +1,8 @@
 /**
  * Shared author-CSS filter.
  *
- * Author-supplied CSS is injected inside a `<style>` block (custom-html slide,
- * custom slide types), so the threat surface is: breaking out of the style tag,
+ * Author-supplied CSS is injected inside a `<style>` block (custom slide
+ * types), so the threat surface is: breaking out of the style tag,
  * JavaScript-in-CSS (legacy `expression()`, `javascript:` URLs), and external
  * resource loads / data-exfil via `@import`. Strip/defang those. This is not a
  * full CSS parser — it neutralises the known-dangerous constructs.

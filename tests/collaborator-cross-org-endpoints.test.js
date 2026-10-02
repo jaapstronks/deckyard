@@ -90,6 +90,7 @@ const { handlePresentationThumbnail } =
   await import('../server/routes/api/presentations/thumbnail.js');
 const { handlePresentationDuplicate } =
   await import('../server/routes/api/presentations/duplicate.js');
+const { withErrorHandler } = await import('../server/utils/http.js');
 
 /** Holds an `edit` row on the deck. */
 const COLLABORATOR = {
@@ -289,7 +290,8 @@ const ENDPOINTS = [
   { name: 'the thumbnail', handler: handlePresentationThumbnail, granted: 404 },
   {
     name: 'duplicating the deck',
-    handler: handlePresentationDuplicate,
+    // The route throws its refusal (B570); the presentations router renders it.
+    handler: withErrorHandler('presentations', handlePresentationDuplicate),
     granted: 201,
     method: 'POST',
   },

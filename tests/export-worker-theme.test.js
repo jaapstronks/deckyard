@@ -85,21 +85,34 @@ test('runtime resolves UUID and default, and refuses obsolete names', async () =
 });
 
 test('the export worker loads its theme through utils/themes.js', async () => {
-  const src = await fs.readFile(
+  // Since B520 the worker builds its context in services/exports.js, the one
+  // export context every caller shares; the loader is pinned there.
+  const worker = await fs.readFile(
     path.join(repoRoot, 'server/jobs/queue/workers/export-worker.js'),
+    'utf8',
+  );
+  const service = await fs.readFile(
+    path.join(repoRoot, 'server/services/exports.js'),
     'utf8',
   );
 
   assert.match(
-    src,
+    worker,
+    /import\s*\{[^}]*\bprepareQueuedExportContext\b[^}]*\}\s*from\s*'[^']*services\/exports\.js'/,
+    'export-worker must build its context through services/exports.js',
+  );
+  assert.match(
+    service,
     /import\s*\{[^}]*\bloadThemeAssets\b[^}]*\}\s*from\s*'[^']*utils\/themes\.js'/,
-    'export-worker must import loadThemeAssets from utils/themes.js',
+    'services/exports.js must import loadThemeAssets from utils/themes.js',
   );
-  assert.doesNotMatch(
-    src,
-    /from\s*'[^']*storage\/themes\.js'/,
-    'export-worker must not reach for the storage-layer theme accessor: its signature is (scope, themeId)',
-  );
+  for (const src of [worker, service]) {
+    assert.doesNotMatch(
+      src,
+      /from\s*'[^']*storage\/themes\.js'/,
+      'the export context must not reach for the storage-layer theme accessor: its signature is (scope, themeId)',
+    );
+  }
 });
 
 test('the export worker reads the export type from the job name, not job.data', async () => {

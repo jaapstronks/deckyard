@@ -1,5 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import {
   upsertEnv,
@@ -8,6 +13,8 @@ import {
   flagUpdates,
   hasEnvValue,
   strayAiKeyWarnings,
+  PRODUCTION_ENV,
+  productionEnvBlock,
 } from '../scripts/setup.js';
 import { DEFAULT_THEME_SLUG } from '../shared/constants/themes.js';
 
@@ -150,4 +157,84 @@ test('hasEnvValue only matches a non-empty uncommented assignment', () => {
   assert.equal(hasEnvValue('# FOO=bar', 'FOO'), false);
   assert.equal(hasEnvValue('FOO=', 'FOO'), false);
   assert.equal(hasEnvValue('FOOBAR=x', 'FOO'), false);
+});
+
+// --- production profile (B428) ---
+
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+test('productionEnvBlock writes required keys live and optional ones commented', () => {
+  const block = productionEnvBlock();
+  for (const { key, optional } of PRODUCTION_ENV) {
+    const re = new RegExp(`^${optional ? '# ' : ''}${key}=`, 'm');
+    assert.match(block, re, key);
+  }
+  assert.match(block, /^NODE_ENV=production$/m);
+  assert.match(block, /^DATABASE_URL=$/m, 'operator-only values stay empty');
+});
+
+// The disk paths are the code's defaults (`server/config/storage-paths.js`),
+// which the image and every ops doc name. A profile line for them would be a
+// second spelling of the default (B565).
+test('productionEnvBlock names no storage directory', () => {
+  assert.doesNotMatch(productionEnvBlock(), /^#? ?(UPLOADS_DIR|DATA_DIR)=/m);
+});
+
+test('productionEnvBlock generates a fresh AUTH_SECRET per call', () => {
+  const secret = (block) => block.match(/^AUTH_SECRET=(.*)$/m)[1];
+  const a = secret(productionEnvBlock());
+  assert.ok(a.length >= 32);
+  assert.notEqual(a, secret(productionEnvBlock()));
+});
+
+test('productionEnvBlock derives APP_URL and the OIDC callback from --app-url', () => {
+  const block = productionEnvBlock({
+    'app-url': 'https://slides.example.com/',
+    'admin-email': 'ops@example.com',
+  });
+  assert.match(block, /^APP_URL=https:\/\/slides\.example\.com$/m);
+  assert.match(block, /^AUTH_ADMIN_EMAIL=ops@example\.com$/m);
+  assert.match(
+    block,
+    /^# OIDC_REDIRECT_URI=https:\/\/slides\.example\.com\/api\/auth\/oidc\/callback$/m,
+  );
+});
+
+test('every production variable is one .env.example documents', () => {
+  const example = readFileSync(path.join(ROOT, '.env.example'), 'utf8');
+  for (const { key } of PRODUCTION_ENV) {
+    assert.match(example, new RegExp(`^#? ?${key}=`, 'm'), key);
+  }
+});
+
+test('the production checklist tables every variable with its why', () => {
+  const doc = readFileSync(
+    path.join(ROOT, 'docs/ops/production-checklist.md'),
+    'utf8',
+  );
+  for (const { key, why } of PRODUCTION_ENV) {
+    assert.match(doc, new RegExp(`^\\| \`${key}\` +\\| ${why} +\\|`, 'm'), key);
+  }
+});
+
+test('setup --profile production refuses to overwrite an existing file', () => {
+  const dir = mkdtempSync(path.join(tmpdir(), 'deckyard-setup-'));
+  const out = path.join(dir, '.env.production');
+  const run = () =>
+    execFileSync(
+      process.execPath,
+      [
+        path.join(ROOT, 'scripts/setup.js'),
+        '--profile',
+        'production',
+        '--out',
+        out,
+      ],
+      { stdio: 'pipe' },
+    );
+  run();
+  assert.match(readFileSync(out, 'utf8'), /^NODE_ENV=production$/m);
+  writeFileSync(out, 'KEEP=me\n');
+  assert.throws(run, (err) => /already exists/.test(String(err.stderr)));
+  assert.equal(readFileSync(out, 'utf8'), 'KEEP=me\n');
 });

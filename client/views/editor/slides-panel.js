@@ -23,7 +23,7 @@ import {
   insertSlideAfter,
 } from './slide-insert-position.js';
 import { h } from '../../lib/dom/index.js';
-import { aiEnabled } from '../../lib/state/features.js';
+import { featureEnabled } from '../../lib/state/features.js';
 import { icon } from '../../lib/dom/icons.js';
 import { takeEscape } from '../../lib/dom/escape.js';
 
@@ -315,8 +315,6 @@ export function createSlidesPanel({
     });
   };
 
-  const canEditCustomHtml = Boolean(user?.canEditCustomHtml);
-
   const insertSlide = (
     type,
     { afterSlideId, parentId = null, contentOverrides = null } = {},
@@ -327,7 +325,6 @@ export function createSlidesPanel({
         def: SLIDE_TYPES?.[type],
         theme,
         disabledSlideTypes,
-        canEditCustomHtml,
       })
     ) {
       toast?.error?.('This slide type is not available for the active theme.');
@@ -367,7 +364,6 @@ export function createSlidesPanel({
             def: SLIDE_TYPES?.[type],
             theme,
             disabledSlideTypes,
-            canEditCustomHtml,
           })
         );
       });
@@ -392,12 +388,11 @@ export function createSlidesPanel({
     theme,
     insertSlide,
     disabledSlideTypes,
-    canEditCustomHtml,
     // Escape hatch: when a search finds no matching type, offer to build it with
     // AI, seeded with the query. Lazy arrow — openAiAppendWizard is defined below
     // and only invoked at click time. Null where AI is off: the picker then
     // builds no button (D179).
-    requestAi: !aiEnabled()
+    requestAi: !featureEnabled('ai')
       ? null
       : ({ afterSlideId, query } = {}) =>
           openAiAppendWizard({ afterSlideId, initialPrompt: query || '' }),
@@ -440,7 +435,6 @@ export function createSlidesPanel({
         def: SLIDE_TYPES?.[type],
         theme,
         disabledSlideTypes,
-        canEditCustomHtml,
       })
     ) {
       toast?.error?.('This slide type is not available for the active theme.');
@@ -545,7 +539,7 @@ export function createSlidesPanel({
 
   // Null where AI is off, so the type modal builds no "Add with AI…" button
   // (D179) — a guard inside the opener left the button standing, dead.
-  const openAiAppendWizard = !aiEnabled()
+  const openAiAppendWizard = !featureEnabled('ai')
     ? null
     : ({ afterSlideId, initialPrompt = '' } = {}) =>
         openAiAppendWizardModal({

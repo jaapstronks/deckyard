@@ -5,15 +5,15 @@ insert picker, and the settings tab where an org curates which types its authors
 may reach for. Both group the types, and until this axis landed both did it from
 their own hand-written table.
 
-Those two tables disagreed. Of the 33 offerable types they agreed on 28:
+Those two tables disagreed. Of the 33 offerable types they agreed on 28; four
+of the five disagreements are below (the fifth type has since left core):
 
-| Type                | Picker said                 | Settings said                   |
-| ------------------- | --------------------------- | ------------------------------- |
-| `process-slide`     | `layouts`                   | `process`, a heading of its own |
-| `timeline-slide`    | `layouts`                   | `process`                       |
-| `payoff-slide`      | _absent_ → computed "Other" | `other`, spelled out            |
-| `end-slide`         | _absent_ → computed "Other" | `other`, spelled out            |
-| `custom-html-slide` | _absent_ → computed "Other" | `other`, spelled out            |
+| Type             | Picker said                 | Settings said                   |
+| ---------------- | --------------------------- | ------------------------------- |
+| `process-slide`  | `layouts`                   | `process`, a heading of its own |
+| `timeline-slide` | `layouts`                   | `process`                       |
+| `payoff-slide`   | _absent_ → computed "Other" | `other`, spelled out            |
+| `end-slide`      | _absent_ → computed "Other" | `other`, spelled out            |
 
 The disagreement is not the interesting part; the reason it survived is. Both
 surfaces fold a type they have never heard of into an "Other" bucket without

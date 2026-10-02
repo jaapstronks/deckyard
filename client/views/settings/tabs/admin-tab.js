@@ -4,6 +4,7 @@
  */
 
 import { h } from '../../../lib/dom/index.js';
+import { featureEnabled } from '../../../lib/state/features.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { getAppName } from '../../../lib/theme/branding.js';
 import { t } from '../../../lib/ui-i18n.js';
@@ -238,7 +239,10 @@ export function createAdminTab({ user }) {
   // Theme configuration (default theme + picker visibility) lives in the
   // Themes settings tab.
 
-  // Engagement Insights (Analytics) card
+  // Engagement Insights (Analytics) card. Absent on an installation without
+  // the analytics cluster (D260); the stored `analytics` setting is then left
+  // as it is, neither shown nor saved (D258).
+  const hasAnalytics = featureEnabled('analytics');
   const analyticsCard = h('div', { class: 'stack editor-card' });
   analyticsCard.append(
     h('div', {
@@ -367,7 +371,10 @@ export function createAdminTab({ user }) {
   ]);
   analyticsCard.append(analyticsHint, analyticsOptions);
 
-  // Stock Media card
+  // Stock Media card. Absent on an installation without the stock media
+  // cluster (D260); the stored `stockMedia` setting is then left as it is,
+  // neither shown nor saved (D258).
+  const hasStockMedia = featureEnabled('stockMedia');
   const stockMediaCard = h('div', { class: 'stack editor-card' });
   stockMediaCard.append(
     h('div', {
@@ -442,8 +449,8 @@ export function createAdminTab({ user }) {
     aiCard,
     senderCard,
     sessionCard,
-    analyticsCard,
-    stockMediaCard,
+    hasAnalytics ? analyticsCard : null,
+    hasStockMedia ? stockMediaCard : null,
   ]);
 
   // A refused save is a state of this form, so it stays beside Save until the
@@ -528,6 +535,8 @@ export function createAdminTab({ user }) {
         analytics?.retention?.ipAnonymizationDays || 7,
       );
 
+      if (!hasStockMedia) return;
+
       // Stock media settings
       const stockMedia = app?.stockMedia || {};
       bundledEnabledCheck.checked = stockMedia?.bundled?.enabled === true;
@@ -593,18 +602,22 @@ export function createAdminTab({ user }) {
           name: senderNameInput.value.trim(),
         },
         sessionDurationDays: parseInt(sessionSelect.value, 10) || 30,
-        analytics: {
-          enabled: analyticsEnabledCheck.checked,
-          retention: {
-            sessionDataDays: parseInt(retentionSessionSelect.value, 10) || 90,
-            ipAnonymizationDays: parseInt(retentionIpSelect.value, 10) || 7,
+        ...(hasAnalytics && {
+          analytics: {
+            enabled: analyticsEnabledCheck.checked,
+            retention: {
+              sessionDataDays: parseInt(retentionSessionSelect.value, 10) || 90,
+              ipAnonymizationDays: parseInt(retentionIpSelect.value, 10) || 7,
+            },
           },
-        },
-        stockMedia: {
-          bundled: { enabled: bundledEnabledCheck.checked },
-          unsplash: { enabled: unsplashEnabledCheck.checked },
-          giphy: { enabled: giphyEnabledCheck.checked },
-        },
+        }),
+        ...(hasStockMedia && {
+          stockMedia: {
+            bundled: { enabled: bundledEnabledCheck.checked },
+            unsplash: { enabled: unsplashEnabledCheck.checked },
+            giphy: { enabled: giphyEnabledCheck.checked },
+          },
+        }),
       });
 
       const supportedSlideLangs = Array.isArray(updatedApp?.supportedSlideLangs)

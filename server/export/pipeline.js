@@ -1,30 +1,16 @@
 import { safeFilename } from '../utils/filename.js';
-import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
-import { jsonError, notFound, serveJson, forbidden } from '../utils/http.js';
+import { jsonError, serveJson } from '../utils/http.js';
 import { isAppError } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
-import { getPresentation } from '../storage/presentations/index.js';
-import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
-import { loadThemeAssets } from '../utils/themes.js';
-import { canReadPresentation } from '../utils/presentation-authz/index.js';
-import { getCollaboratorPermission } from '../storage/collaborators.js';
 import {
   addJob,
   isQueueAvailable,
   QUEUE_NAMES,
 } from '../jobs/queue/connection.js';
-import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
+import { INSTANCE_HEALTH_KEYS } from '../storage/instance-health.js';
+import { prepareExportContext } from '../services/exports.js';
 
 const log = createLogger('export');
-
-/**
- * Get the language suffix for filenames based on export language
- * @param {string} exportLang - Export language code
- * @returns {string} Language suffix (e.g., '-NL', '-EN', or '')
- */
-export function getLangSuffix(exportLang) {
-  return exportLang === 'nl' ? '-NL' : exportLang === 'en-GB' ? '-EN' : '';
-}
 
 /**
  * Build export response headers
@@ -36,9 +22,11 @@ function buildExportHeaders({
   filename,
   langSuffix = '',
   extension,
+  headers = {},
 }) {
   const fullFilename = `${safeFilename(filename + langSuffix)}${extension}`;
   return {
+    ...headers,
     'Content-Type': contentType,
     'Content-Disposition': `attachment; filename="${fullFilename}"`,
     'Cache-Control': 'no-store',
@@ -46,70 +34,31 @@ function buildExportHeaders({
 }
 
 /**
- * Common export context preparation - handles auth, loading, projection.
- * `storageScope` is the request's scope, passed down from the route context —
- * this module never builds one itself.
- * @param {Object} options - Context options
- * @param {boolean} [options.allLanguages] - skip the `?lang=` projection, for
- *   a format that carries every language version itself
- * @returns {Object} Export context or null if request should be rejected
+ * The export context for a request on the internal contract: the session user
+ * asks, `?lang=` names the language. A refusal throws (D255); the route's
+ * catch answers it through {@link handleExportError}.
+ *
+ * @param {{ storageScope: Object, authedUser: Object, url: URL }} reqCtx
+ * @param {string} presentationId
+ * @param {{ format: string, stripLiveOnly: boolean, allLanguages?: boolean }} options
+ * @returns {Promise<import('../services/exports.js').ExportContext>}
  */
-export async function prepareExportContext({
-  repoRoot,
-  res,
-  url,
-  authedUser,
+export function exportContextFor(
+  { storageScope, authedUser, url },
   presentationId,
-  storageScope,
-  stripLiveOnly = true,
-  allLanguages = false,
-}) {
-  // A format that carries every language version (the portable deck, D89)
-  // takes the stored deck as it is: projecting onto `?lang=` first is what
-  // used to drop the other versions.
-  const exportLang = allLanguages
-    ? null
-    : normalizeLang(url?.searchParams?.get('lang'));
-
-  const pres = await getPresentation(storageScope, presentationId);
-  if (!pres) {
-    notFound(res);
-    return null;
-  }
-
-  const collaboratorPermission = authedUser?.email
-    ? await getCollaboratorPermission(presentationId, authedUser.email)
-    : null;
-
-  if (
-    !canReadPresentation({ user: authedUser, pres, collaboratorPermission })
-  ) {
-    forbidden(res);
-    return null;
-  }
-
-  const projected = exportLang
-    ? projectPresentationForLang(pres, exportLang)
-    : pres;
-  const filteredPres = stripLiveOnly
-    ? stripLiveOnlySlidesFromPresentation(projected)
-    : projected;
-  const theme = await loadThemeAssets(repoRoot, projected?.theme, storageScope);
-  const langSuffix = getLangSuffix(exportLang);
-
-  // Load merged slide types (core + org-specific custom types)
-  const orgId = authedUser?.organizationId || pres?.organizationId;
-  const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });
-
-  return {
-    pres: projected,
-    filteredPres,
-    theme,
-    slideTypes,
-    exportLang,
-    langSuffix,
-    title: projected.title || 'presentation',
-  };
+  { format, stripLiveOnly, allLanguages = false },
+) {
+  return prepareExportContext(
+    storageScope,
+    { actor: authedUser },
+    {
+      presentationId,
+      format,
+      lang: url?.searchParams?.get('lang'),
+      allLanguages,
+      stripLiveOnly,
+    },
+  );
 }
 
 /**
@@ -130,15 +79,18 @@ export function parseScaleParam(url, defaultScale = 2) {
  */
 export function sendExportResponse(
   res,
-  { contentType, filename, langSuffix, extension, data },
+  { contentType, filename, langSuffix, extension, data, headers },
 ) {
-  const headers = buildExportHeaders({
-    contentType,
-    filename,
-    langSuffix,
-    extension,
-  });
-  res.writeHead(200, headers);
+  res.writeHead(
+    200,
+    buildExportHeaders({
+      contentType,
+      filename,
+      langSuffix,
+      extension,
+      headers,
+    }),
+  );
   res.end(data);
 }
 
@@ -198,12 +150,31 @@ function exportRow(method, pattern, handler) {
 }
 
 /**
+ * Refuse a factory config without a known format id when the table is built,
+ * not when the first export is counted: a row the `export` axis cannot name
+ * would count nothing, or throw on every request.
+ *
+ * @param {unknown} format
+ * @param {RegExp} pattern
+ * @returns {void}
+ * @throws {TypeError}
+ */
+function assertExportFormat(format, pattern) {
+  if (!INSTANCE_HEALTH_KEYS.export.includes(/** @type {string} */ (format))) {
+    throw new TypeError(
+      `export route ${pattern} declares no known format (got '${format}')`,
+    );
+  }
+}
+
+/**
  * Create an export route with common boilerplate.
  * @param {Object} config - Route configuration
  * @returns {import('../utils/router.js').Route}
  */
 export function createExportRoute(config) {
   const {
+    format,
     pattern,
     method = 'GET',
     contentType,
@@ -213,6 +184,7 @@ export function createExportRoute(config) {
     buildContent,
     getFilename = (ctx) => ctx.title,
   } = config;
+  assertExportFormat(format, pattern);
 
   return exportRow(
     method,
@@ -221,20 +193,12 @@ export function createExportRoute(config) {
       { repoRoot, storageScope, res, url, authedUser },
       presentationId,
     ) {
-      const ctx = await prepareExportContext({
-        repoRoot,
-        res,
-        url,
-        authedUser,
-        presentationId,
-        storageScope,
-        stripLiveOnly,
-        allLanguages,
-      });
-
-      if (!ctx) return true; // Request was rejected, response already sent
-
       try {
+        const ctx = await exportContextFor(
+          { storageScope, authedUser, url },
+          presentationId,
+          { format, stripLiveOnly, allLanguages },
+        );
         const data = await buildContent(ctx, { repoRoot, url });
         const filename = getFilename(ctx);
 
@@ -260,7 +224,14 @@ export function createExportRoute(config) {
  * @returns {import('../utils/router.js').Route}
  */
 export function createHtmlPreviewRoute(config) {
-  const { pattern, method = 'GET', stripLiveOnly = true, buildHtml } = config;
+  const {
+    format,
+    pattern,
+    method = 'GET',
+    stripLiveOnly = true,
+    buildHtml,
+  } = config;
+  assertExportFormat(format, pattern);
 
   return exportRow(
     method,
@@ -269,19 +240,12 @@ export function createHtmlPreviewRoute(config) {
       { repoRoot, storageScope, res, url, authedUser },
       presentationId,
     ) {
-      const ctx = await prepareExportContext({
-        repoRoot,
-        res,
-        url,
-        authedUser,
-        presentationId,
-        storageScope,
-        stripLiveOnly,
-      });
-
-      if (!ctx) return true;
-
       try {
+        const ctx = await exportContextFor(
+          { storageScope, authedUser, url },
+          presentationId,
+          { format, stripLiveOnly },
+        );
         const html = await buildHtml(ctx, { repoRoot, url });
         sendHtmlPreviewResponse(res, html);
         return true;
@@ -294,15 +258,6 @@ export function createHtmlPreviewRoute(config) {
 }
 
 /**
- * Alias for stripLiveOnlySlidesFromPresentation (for use by workers).
- * @param {Object} pres - Presentation object
- * @returns {Object} Presentation with live-only slides removed
- */
-export function stripLiveOnlySlides(pres) {
-  return stripLiveOnlySlidesFromPresentation(pres);
-}
-
-/**
  * Create an async export route that queues jobs when available.
  * Falls back to synchronous export if queue is unavailable.
  * @param {Object} config - Route configuration
@@ -310,6 +265,7 @@ export function stripLiveOnlySlides(pres) {
  */
 export function createAsyncExportRoute(config) {
   const {
+    format,
     pattern,
     method = 'GET',
     contentType,
@@ -317,8 +273,16 @@ export function createAsyncExportRoute(config) {
     exportType, // 'pptx', 'handoff-zip', etc.
     stripLiveOnly = true,
     buildContent, // Fallback sync builder
+    // Builder options read from the request that the worker cannot read
+    // itself: it has the job data, not the URL. Throws to refuse the request.
+    jobOptions = () => ({}),
+    // Extra response headers for a synchronous answer, read from the context
+    // after `buildContent` ran: a finding about the file that the file itself
+    // cannot carry. A queued export answers 202 and has none.
+    responseHeaders = () => ({}),
     getFilename = (ctx) => ctx.title,
   } = config;
+  assertExportFormat(format, pattern);
 
   return exportRow(
     method,
@@ -330,70 +294,46 @@ export function createAsyncExportRoute(config) {
       // Check if user prefers sync (query param ?sync=1)
       const forceSync = url.searchParams.get('sync') === '1';
 
-      // If queue is available and not forcing sync, queue the job
-      if (!forceSync && isQueueAvailable()) {
-        // Quick auth check
-        const pres = await getPresentation(storageScope, presentationId);
-        if (!pres) {
-          return notFound(res);
-        }
-        const collaboratorPermission = authedUser?.email
-          ? await getCollaboratorPermission(presentationId, authedUser.email)
-          : null;
-        if (
-          !canReadPresentation({
-            user: authedUser,
-            pres,
-            collaboratorPermission,
-          })
-        ) {
-          return forbidden(res);
-        }
-
-        // Queue the job
-        const exportLang = normalizeLang(url.searchParams.get('lang'));
-        const scale = Math.max(
-          1,
-          Math.min(3, Number(url.searchParams.get('scale')) || 2),
-        );
-
-        const { jobId, queued } = await addJob(QUEUE_NAMES.EXPORT, exportType, {
-          presentationId,
-          lang: exportLang,
-          stripLiveOnly,
-          scale,
-          repoRoot,
-          // Stamp the requester so the download/status routes can enforce
-          // ownership (job IDs are enumerable ints — see security-audit H3), and the
-          // organization so the worker acts in the organization the export came from.
-          ownerEmail: authedUser?.email || null,
-          organizationId: authedUser?.organizationId || undefined,
-        });
-
-        if (queued) {
-          return serveJson(res, 202, {
-            queued: true,
-            jobId: `export-${jobId}`,
-            pollUrl: `/api/jobs/export-${jobId}`,
-            message: 'Export queued. Poll the status URL for completion.',
-          });
-        }
-      }
-
-      // Fallback to synchronous export
-      const ctx = await prepareExportContext({
-        repoRoot,
-        res,
-        url,
-        authedUser,
-        presentationId,
-        storageScope,
-        stripLiveOnly,
-      });
-
-      if (!ctx) return true;
-
       try {
+        const ctx = await exportContextFor(
+          { storageScope, authedUser, url },
+          presentationId,
+          { format, stripLiveOnly },
+        );
+        const options = jobOptions(url);
+
+        // If queue is available and not forcing sync, queue the job; the
+        // worker rebuilds the context as the system from what was admitted.
+        if (!forceSync && isQueueAvailable()) {
+          const { jobId, queued } = await addJob(
+            QUEUE_NAMES.EXPORT,
+            exportType,
+            {
+              presentationId,
+              lang: ctx.exportLang,
+              stripLiveOnly,
+              scale: parseScaleParam(url),
+              options,
+              repoRoot,
+              // Stamp the requester so the download/status routes can enforce
+              // ownership (job IDs are enumerable ints — see security-audit
+              // H3), and the organization so the worker acts in the
+              // organization the export came from.
+              ownerEmail: authedUser?.email || null,
+              organizationId: authedUser?.organizationId || undefined,
+            },
+          );
+          if (queued) {
+            return serveJson(res, 202, {
+              queued: true,
+              jobId: `export-${jobId}`,
+              pollUrl: `/api/jobs/export-${jobId}`,
+              message: 'Export queued. Poll the status URL for completion.',
+            });
+          }
+        }
+
+        // Synchronous export: forced, or no queue to take it.
         const data = await buildContent(ctx, { repoRoot, url });
         const filename = getFilename(ctx);
 
@@ -403,6 +343,7 @@ export function createAsyncExportRoute(config) {
           langSuffix: ctx.langSuffix,
           extension,
           data,
+          headers: responseHeaders(ctx),
         });
         return true;
       } catch (e) {

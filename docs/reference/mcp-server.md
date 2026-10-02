@@ -30,7 +30,7 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-The `DECKYARD_MCP_OWNER_EMAIL` sets who owns presentations created via MCP. This should match your Deckyard user email. Without it, presentations are created without an owner and may show "Access Denied" in the web UI.
+The `DECKYARD_MCP_OWNER_EMAIL` sets who owns presentations created via MCP. This should match your Deckyard user email. Without it, presentations are created without an owner and may show "Access Denied" in the web UI. The create tools take no `ownerEmail` of their own: a new deck belongs to the session owner, as it does on every other contract, and an `ownerEmail` argument is refused (B521).
 
 It also determines what the session may touch: every tool that fetches a deck by id enforces per-deck access for this owner (read for read-only tools; collaborator-aware write access for mutating tools; delete is owner-only). When the variable is unset, the stdio session is treated as a trusted local single-user process and per-deck checks are skipped.
 
@@ -168,7 +168,7 @@ server/mcp/
 
 Each tool maps directly to existing Deckyard functionality:
 
-- `create_presentation` → `generateDeckV2()` + `createPresentation()`
+- `create_presentation` → `generateDeckV2()` + `createPresentation()` (the service in `server/services/presentations.js`, B521)
 - `create_presentation_from_slides` → `validateRefinedSlidesStrict()` / `validateAndFixRefinedSlides()` + `createPresentation()` + `updatePresentation()` (no AI pass)
 - `convert_slide` → `convertSlideWithAi()`
 - `iterate_presentation` → `iteratePresentation()`

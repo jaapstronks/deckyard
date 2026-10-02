@@ -15,8 +15,8 @@ await initSanitizer();
 const { slideHeading, renderSlideBodySemanticHtml, renderSlideSectionHtml } =
   await import('../shared/slide-types/semantic-projection.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
-const { slideTypeSample } =
-  await import('../shared/slide-types/authoring-companions.js');
+const { markupSlideType, MARKUP_SLIDE_TYPE } =
+  await import('./fixtures/markup-slide-type.js');
 const { migratePresentation } =
   await import('../shared/slide-types/schema-version.js');
 
@@ -1913,11 +1913,18 @@ describe('pairs stay pairs (D131)', () => {
 });
 
 describe('markup — author HTML projects as its content, not its source (B298)', () => {
-  const def = SLIDE_TYPES['custom-html-slide'];
-  it('the sample reads as its sanitized HTML; the CSS is presentational', () => {
-    const sample = slideTypeSample('custom-html-slide', def);
+  // No core type declares `markup: true` since the raw-HTML type left core (A7.8b);
+  // the flag stays vocabulary a fork type may use, so a fixture carries it.
+  const def = markupSlideType;
+  it('the markup reads as its sanitized HTML; the CSS is presentational', () => {
     const html = renderSlideSectionHtml(
-      { type: 'custom-html-slide', content: sample },
+      {
+        type: MARKUP_SLIDE_TYPE,
+        content: {
+          html: '<div class="ch-card"><p class="ch-figure">99.98%</p></div>',
+          css: '.ch-kicker { color: red }',
+        },
+      },
       def,
     );
     assert.ok(html.includes('<div data-field="html"><div class="ch-card">'));
@@ -1925,15 +1932,15 @@ describe('markup — author HTML projects as its content, not its source (B298)'
     assert.ok(!html.includes('<pre'), 'no source block');
     assert.ok(!html.includes('ch-kicker {'), 'the stylesheet is not text');
     assert.ok(!html.includes('data-field="css"'));
-    // No h1..h3 in the sample: the hidden heading falls back to the type label.
+    // No h1..h3 in the markup: the hidden heading falls back to the type label.
     assert.ok(
-      html.includes('<h2 id="slide-1-title" class="sr-only">Custom HTML</h2>'),
+      html.includes('<h2 id="slide-1-title" class="sr-only">Markup</h2>'),
     );
   });
 
   it('the first h1..h3 of the sanitized HTML names the slide, as a hidden heading', () => {
     const slide = {
-      type: 'custom-html-slide',
+      type: MARKUP_SLIDE_TYPE,
       content: {
         html: '<p>Kicker</p><h3>  Org <em>chart</em>\n</h3><h1>Later</h1>',
       },
@@ -1950,7 +1957,7 @@ describe('markup — author HTML projects as its content, not its source (B298)'
     const stripped = {
       content: { html: '<template><h2>Gone</h2></template><p>Body</p>' },
     };
-    assert.equal(slideHeading(stripped, def).text, 'Custom HTML');
+    assert.equal(slideHeading(stripped, def).text, 'Markup');
     // An a11yTitle still names the slide first.
     assert.equal(
       slideHeading({ content: { ...slide.content, a11yTitle: 'Named' } }, def)
@@ -1983,7 +1990,7 @@ describe('markup — author HTML projects as its content, not its source (B298)'
     // Pinned next to the canvas: the same tree, only the presentation differs.
     assert.ok(
       def
-        .renderHtml({ html, css: '' }, { id: 's1', type: 'custom-html-slide' })
+        .renderHtml({ html, css: '' }, { id: 's1', type: MARKUP_SLIDE_TYPE })
         .includes('style="color: white; position: absolute"'),
     );
   });

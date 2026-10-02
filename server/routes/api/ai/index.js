@@ -17,7 +17,7 @@ import { handleAiIterate } from './iterate.js';
  *
  * @type {import('../../../utils/router.js').Route[]}
  */
-const ROUTES = [
+export const ROUTES = [
   { method: 'GET', pattern: '/api/ai/vendors', handler: handleAiVendors },
   { method: 'POST', pattern: '/api/ai/wizard', handler: handleAiWizard },
   {

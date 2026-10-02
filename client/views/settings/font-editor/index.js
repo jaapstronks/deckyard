@@ -68,6 +68,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
     name: fontFamily?.name || '',
     source: fontFamily?.source || 'upload',
     category: fontFamily?.category || 'sans-serif',
+    desktopFamily: fontFamily?.desktopFamily || '',
     sourceConfig: fontFamily?.sourceConfig || {},
     variants: fontFamily?.variants || [],
   };
@@ -181,6 +182,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
           );
         }
         updateSourcePanels();
+        updateDesktopField();
       });
       const label = h('span', { text: t(src.labelKey, src.label) });
       option.append(radio, label);
@@ -236,7 +238,40 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
   }
   categoryField.append(categorySelect);
 
-  fieldsGrid.append(nameField, categoryField);
+  // Desktop name: only an uploaded family's name is an alias of its own, so
+  // only there does the PPTX export need the installed font's name (B289).
+  const desktopField = h('div', { class: 'stack' });
+  desktopField.append(
+    h('label', {
+      class: 'field-label',
+      text: t('fonts.desktopFamily', 'Desktop font name'),
+    }),
+  );
+  const desktopInput = h('input', {
+    class: 'form-input',
+    type: 'text',
+    value: state.desktopFamily,
+    maxlength: '255',
+    oninput: (e) => {
+      state.desktopFamily = e.target.value;
+    },
+  });
+  desktopField.append(
+    desktopInput,
+    h('div', {
+      class: 'help',
+      text: t(
+        'fonts.desktopFamilyHelp',
+        'The full name of the installed font, as PowerPoint and Keynote list it. PowerPoint exports use it; without it they fall back to Arial.',
+      ),
+    }),
+  );
+  function updateDesktopField() {
+    desktopField.hidden = state.source !== 'upload';
+  }
+  updateDesktopField();
+
+  fieldsGrid.append(nameField, categoryField, desktopField);
   commonCard.append(fieldsGrid);
 
   // ─── Source-specific Panels ───────────────────────────────
@@ -313,6 +348,7 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
   const controlFor = {
     name: nameInput,
     category: categorySelect,
+    desktop_family: desktopInput,
   };
 
   saveBtn.addEventListener('click', async () => {
@@ -355,6 +391,9 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
         category: state.category,
         sourceConfig,
       };
+      if (state.source === 'upload') {
+        data.desktopFamily = state.desktopFamily.trim() || null;
+      }
 
       let result;
       if (isEditing) {

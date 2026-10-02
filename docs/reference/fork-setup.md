@@ -273,6 +273,15 @@ custom/styles/
 └── fonts.css
 ```
 
+**Three levers, in order of preference.** Set `--t-*` tokens in your theme when
+a value is enough. Write rules here when it is not. And when you want a core
+slide type's layout with your own values, compose that type in
+`custom/slide-types/` rather than copying its markup and styling the copy (see
+[Leaning on a core layout](../developer/slide-types.md#leaning-on-a-core-layout)).
+Your rules style your own additions; core's rules keep styling core's structure.
+**Never name a core CSS file**: `@import` is not resolved here, and core's
+stylesheet paths are internal and move between releases.
+
 Every file in the folder is concatenated in filename order and loaded **last**:
 after the core stylesheets, after the theme, after the slide-type CSS, in the
 app **and** in every render path. Screen and export get the same bytes in the
@@ -346,6 +355,14 @@ HTML) by the same pass as the fonts: every local `url()` under `/assets/` or
 `/custom/assets/` in `custom/styles/` becomes a data URL there. So a slide
 type's artwork belongs in its stylesheet, not in a `style="…"` attribute on the
 markup. A remote `url()` is left as written.
+
+Only where the export can draw it, though: a rule whose every selector needs
+the root class of a slide type the deck does not use (`.slide-acme-hero …`,
+see [Add CSS](../developer/slide-types.md#2-add-css-optional)) keeps its
+`url()` as written, so a deck without your title slide does not carry its
+artwork. Scope a type's
+images under its root class and they cost nothing elsewhere; `@font-face`
+sources and unscoped rules are always inlined (`server/export/seam-css.js`).
 
 Two things the seam does not do: it does not resolve `@import` (add another
 file to the folder instead), and it is read once at boot — restart the server

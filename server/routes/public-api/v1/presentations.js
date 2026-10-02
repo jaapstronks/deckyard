@@ -5,17 +5,12 @@
 
 import {
   listPresentations,
-  getPresentation,
-  createPresentation,
   updatePresentation,
-  deletePresentation,
-  duplicatePresentation,
 } from '../../../storage/presentations/index.js';
 import {
   getTagsForPresentations,
   getTagsForPresentation,
 } from '../../../storage/tags.js';
-import { normalizeEmail } from '../../../utils/normalize.js';
 import { canonicalSlideType } from '../../../../shared/slide-types.js';
 import {
   requirePermission,
@@ -33,10 +28,12 @@ import { parsePaginationParams } from '../../../utils/request-validators.js';
 import { changePresentationTheme } from '../../../storage/presentations/change-theme.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
+  createPresentation,
+  deletePresentation,
+  duplicatePresentation,
   refuseRetiredDeckFields,
-  refuseUnsupportedLang,
-  presentationTimestamps,
-} from './deck-fields.js';
+  publicDeckTimestamps,
+} from '../../../services/presentations.js';
 
 // ============================================================
 // HELPER FUNCTIONS
@@ -105,7 +102,7 @@ export function sanitizePresentation(pres, tags = [], requesterEmail = null) {
     })),
     i18n: pres.i18n || null,
     revision: pres.revision || 0,
-    ...presentationTimestamps(pres),
+    ...publicDeckTimestamps(pres),
     tags,
   };
 }
@@ -188,14 +185,14 @@ async function handleCreate(ctx) {
     requireObject: true,
   });
   if (!bodyOk) return true;
-  if (await refuseRetiredDeckFields(ctx, body)) return true;
-  if (await refuseUnsupportedLang(ctx, body)) return true;
 
-  // Create presentation with API key owner as the owner
-  const created = await createPresentation(storageScope, {
-    ...body,
-    ownerEmail: apiKey.ownerEmail,
-  });
+  // The key owner creates the deck; a refusal is answered in the v1 envelope
+  // by the mount-level withV1ErrorHandler wrap.
+  const created = await createPresentation(
+    storageScope,
+    { actor: ctx.authedUser },
+    body,
+  );
 
   const tags = await getTagsForPresentation(storageScope, created.id);
   await apiCreated(ctx, {
@@ -237,7 +234,7 @@ async function handleUpdate(ctx, id) {
     requireObject: true,
   });
   if (!bodyOk) return true;
-  if (await refuseRetiredDeckFields(ctx, body)) return true;
+  refuseRetiredDeckFields(body);
 
   // Don't allow changing ownership via API
   delete body.ownerEmail;
@@ -296,33 +293,11 @@ async function handleUpdate(ctx, id) {
  * DELETE /api/v1/presentations/:id - Delete a presentation.
  */
 async function handleDelete(ctx, id) {
-  const { storageScope, apiKey } = ctx;
-
   if (!requirePermission(ctx, 'write')) return true;
 
-  const existing = await getPresentation(storageScope, id);
-  if (!existing) {
-    await apiError(ctx, 404, 'Presentation not found');
-    return true;
-  }
-
-  // Only owner can delete
-  const owner = normalizeEmail(existing?.ownerEmail);
-  const apiOwner = normalizeEmail(apiKey.ownerEmail);
-  if (owner && owner !== apiOwner) {
-    await apiError(ctx, 403, 'Only the presentation owner can delete it');
-    return true;
-  }
-
-  const deleted = await deletePresentation(storageScope, id, {
-    actorEmail: apiKey.ownerEmail,
-  });
-
-  if (!deleted) {
-    await apiError(ctx, 404, 'Presentation not found');
-    return true;
-  }
-
+  // Only the owner trashes the deck (D22); a refusal is answered in the v1
+  // envelope by the mount-level withV1ErrorHandler wrap.
+  await deletePresentation(ctx.storageScope, { actor: ctx.authedUser }, id);
   await apiSuccess(ctx, { deleted: true });
   return true;
 }
@@ -335,19 +310,14 @@ async function handleDuplicate(ctx, id) {
 
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok } = await getPresentationWithAccess(ctx, id);
-  if (!ok) return true;
+  // The key owner copies the deck; a refusal is answered in the v1 envelope
+  // by the mount-level withV1ErrorHandler wrap.
+  const copy = await duplicatePresentation(
+    storageScope,
+    { actor: ctx.authedUser },
+    id,
+  );
 
-  const duplicated = await duplicatePresentation(storageScope, id, {
-    actorEmail: apiKey.ownerEmail,
-  });
-
-  if (!duplicated.ok) {
-    await apiError(ctx, 500, 'Failed to duplicate presentation');
-    return true;
-  }
-
-  const copy = duplicated.presentation;
   const tags = await getTagsForPresentation(storageScope, copy.id);
   await apiCreated(ctx, {
     presentation: sanitizePresentation(copy, tags, apiKey.ownerEmail),

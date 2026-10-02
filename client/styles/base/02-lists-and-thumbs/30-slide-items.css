@@ -79,8 +79,9 @@
   .thumb.thumb-mini {
   position: relative;
   width: 100%;
-  /* Use dynamic scale from JS, fallback to default for 200px panel width: (200-16-2-15)/1600 = 0.1044 */
-  --thumb-scale: var(--slides-thumb-scale, 0.1044);
+  /* Use dynamic scale from JS, fallback to default for 200px panel width
+     minus the 24px number gutter: (200-16-2-15-24)/1600 = 0.0894 */
+  --thumb-scale: var(--slides-thumb-scale, 0.0894);
 }
 
 :where(

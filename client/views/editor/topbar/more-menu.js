@@ -34,7 +34,8 @@ export function createEditorTopbarMoreMenu({
   // The opener behind the bar's analytics button. Like Export and Share this
   // is the same call, not a copy — but unlike them the control is conditional
   // (a deck with no audience has no statistics), so the caller drives both
-  // halves through `setAnalyticsAvailable` (B354 round 2).
+  // halves through `setAnalyticsAvailable` (B354 round 2). Absent where the
+  // installation has no analytics cluster, and so is the item (D260).
   onOpenAnalytics,
   // The openers behind the bar's Export and Share buttons. Their entries here
   // are not copies of those actions but the same call, shown at the widths
@@ -278,26 +279,31 @@ export function createEditorTopbarMoreMenu({
   // until the caller says otherwise — an inline `display: none` beats the fold
   // rule, so "no audience" wins at every width and the entry never leads to an
   // empty dashboard.
-  const btnAnalytics = menuItem({
-    class: 'dropdown-item topbar-fold-lg',
-    text: t('editor.analytics', 'Analytics'),
-    onclick: () => run(onOpenAnalytics),
-  });
-  btnAnalytics.style.display = 'none';
+  const btnAnalytics = onOpenAnalytics
+    ? menuItem({
+        class: 'dropdown-item topbar-fold-lg',
+        text: t('editor.analytics', 'Analytics'),
+        onclick: () => run(onOpenAnalytics),
+      })
+    : null;
+  if (btnAnalytics) btnAnalytics.style.display = 'none';
 
   // The ⋯ half of the Present caret, which folds at sm: the caret holds only
   // the Companion (a phone remote for a live talk), and on a phone its 36px
   // are what the bar cannot carry once its icon buttons are 44px touch
   // targets. Present itself stays in the bar.
-  const btnCompanion = menuItem({
-    class: 'dropdown-item topbar-fold-sm',
-    text: t('editor.companion', 'Companion'),
-    title: t(
-      'editor.companion.title',
-      'Open speaker notes companion on your phone (QR code).',
-    ),
-    onclick: () => run(onOpenCompanion),
-  });
+  // Absent where the installation has no live cluster (D260).
+  const btnCompanion = onOpenCompanion
+    ? menuItem({
+        class: 'dropdown-item topbar-fold-sm',
+        text: t('editor.companion', 'Companion'),
+        title: t(
+          'editor.companion.title',
+          'Open speaker notes companion on your phone (QR code).',
+        ),
+        onclick: () => run(onOpenCompanion),
+      })
+    : null;
 
   // The ⋯ half of the collab avatar stack, which folds at sm: the stack's
   // avatars cost more than a phone's bar can carry, and on a phone the slide
@@ -345,8 +351,9 @@ export function createEditorTopbarMoreMenu({
     title: t('common.moreOptions', 'More options'),
     ariaLabel: t('common.moreOptions', 'More options'),
     menuClass: 'dropdown-menu-right',
-    // `btnAnalyze` and `btnTranslateOther` are null where AI is off; `append`
-    // would print that.
+    // `btnAnalyze` and `btnTranslateOther` are null where AI is off,
+    // `btnAnalytics` where analytics is, `btnCompanion` where live is;
+    // `append` would print that.
     items: [
       presenceEntry,
       btnCompanion,
@@ -393,7 +400,7 @@ export function createEditorTopbarMoreMenu({
      * @returns {void}
      */
     setAnalyticsAvailable: (available) => {
-      btnAnalytics.style.display = available ? '' : 'none';
+      if (btnAnalytics) btnAnalytics.style.display = available ? '' : 'none';
     },
     /**
      * Name the peers in the ⋯ half of the presence stack. The caller applies

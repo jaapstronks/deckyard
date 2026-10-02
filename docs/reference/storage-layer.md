@@ -64,7 +64,9 @@ each path resolves.
 
 **Top-level facades** cover the remaining domains: auth/account
 (`users.js`, `sso.js`, `magic-link.js`, `password-reset.js`, `api-keys.js`,
-`api-usage.js`, `access-attempts.js`), presentation-adjacent
+`api-usage.js`, `access-attempts.js`), instance telemetry
+(`instance-health.js`, the one writer of `instance_health` —
+[`instance-health.md`](instance-health.md)), presentation-adjacent
 (`slide-locks.js`), collaboration/live (`collaborators.js`, `notifications.js`,
 `activity-events.js`, `feedback.js`, `leads.js`, `questions.js`,
 `interactions.js`, `follow-codes.js`), content
@@ -324,7 +326,7 @@ in `server/utils/http.js`. A route that spread the result by hand would drop
 `details.field`, so the gate refuses `jsonError(res, getErrorStatus(…), …)` under
 `server/routes/**`. The share-access validators in `routes/api/analytics-track.js`
 answered `{ ok: false, code, message }` until then; they say `reason` now, since
-one meaning gets one field name.
+one meaning gets one field name. The service layer has the emitter's twin: `throwStorageFailure(result, message?)` in `server/utils/errors.js` turns the same result into an `AppError` for the contract's error handler to render (D254), so the facade's `{ ok, reason }` contract stays as it is and the service boundary is where a result becomes an exception.
 
 ### Implementation status: failure shapes (as of 2026-08-21)
 
@@ -395,6 +397,21 @@ fallback._ The entry points:
   `isMultiOrgEnabled()` is false; otherwise it throws.
 - `jobScope(jobData, operation)` — background jobs carry `organizationId` in the
   payload, else fall back to `singleOrganizationScope`.
+
+Two facades hold per-instance tables with no organization column and take no
+scope: `api-usage.js` (quota per API key) and `instance-health.js` (surface
+counters, D246). A scope would state an organization their queries have
+nothing to bind to; see [`storage-scope.md`](storage-scope.md) § _Instance
+telemetry takes no scope_.
+
+The scope says _which organization_; it does not say _who may do what_. That
+is not the facade's (D252): a by-id deck load for a person goes through
+`loadPresentationForActor(scope, identity, id, { access })` in
+`server/services/presentations.js`, which loads through the facade, asks the
+deciders and throws `NotFoundError` (no row in this scope) or `ForbiddenError`
+(the row is there, the right is not; D255). Every contract's adapter
+(`withPresentationAuth`, v1 `getPresentationWithAccess`, MCP
+`loadPresentationChecked`) calls it and only renders the refusal (B519).
 
 The full isolation model (hosting shapes, `MULTI_ORG_ENABLED`, rules
 R1–R3) is in [`tenant-isolation.md`](tenant-isolation.md); it is not repeated

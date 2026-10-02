@@ -299,3 +299,20 @@ export async function sweepExpiredSessions() {
     return Number(result?.numDeletedRows ?? 0);
   });
 }
+
+/**
+ * How many live sessions are persisted, expired or not. Read once at boot when
+ * the live cluster is off, so the operator learns what the sweep still holds
+ * (D261).
+ *
+ * @returns {Promise<number>} Zero without a database.
+ */
+export async function countPersistedSessions() {
+  return withDbGuard(0, async (db) => {
+    const row = await db
+      .selectFrom('present_sessions')
+      .select((eb) => eb.fn.countAll().as('n'))
+      .executeTakeFirst();
+    return Number(row?.n) || 0;
+  });
+}

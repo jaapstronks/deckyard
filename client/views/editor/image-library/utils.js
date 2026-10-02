@@ -3,6 +3,8 @@ import { createFieldWrap } from '../../../lib/dom/field-wrap.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { getSupportedLangs } from '../../../lib/format/i18n.js';
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
+import { debugLog } from '../../../lib/util/debug.js';
 
 /** Slide aspect ratio (16:9) */
 const SLIDE_ASPECT_RATIO = 16 / 9;
@@ -217,4 +219,133 @@ export function createAltLangInputs({
     },
     isEmpty: () => langs.every((l) => !valueOf(l).trim()),
   };
+}
+
+/** Per-viewer memory of the "generate alt text on upload" choice (B579). */
+const AUTO_ALT_KEY = 'deckyard.imageLibrary.autoAlt';
+
+/** @returns {boolean} whether this browser asked for alt text on upload */
+export function readAutoAltPref() {
+  try {
+    return localStorage.getItem(AUTO_ALT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** @param {boolean} on */
+function writeAutoAltPref(on) {
+  try {
+    localStorage.setItem(AUTO_ALT_KEY, on ? '1' : '0');
+  } catch (err) {
+    // Storage blocked: the choice simply isn't remembered.
+    debugLog('[image-library] auto-alt preference not stored', err);
+  }
+}
+
+/**
+ * The alt-text block of the upload and detail forms: a label with the AI
+ * button beside it, the per-language inputs, and (upload only) the remembered
+ * "generate on upload" toggle (B579).
+ *
+ * Without AI alt text (`aiAltTextEnabled()`, D179) neither the button nor the
+ * toggle exists: pass no `onGenerate`.
+ *
+ * @param {Object} opts
+ * @param {ReturnType<typeof createAltLangInputs>} opts.altInputs
+ * @param {(() => void)|null} [opts.onGenerate] - AI button handler; omitted = no button
+ * @param {boolean} [opts.withAutoToggle] - render the "generate on upload" checkbox
+ * @returns {{ el: HTMLElement, autoAlt: () => boolean }}
+ */
+export function createAltBlock({
+  altInputs,
+  onGenerate = null,
+  withAutoToggle = false,
+}) {
+  const btnGenerate = onGenerate
+    ? h('button', {
+        class: 'btn btn-secondary btn-sm',
+        type: 'button',
+        text: t('imageLibrary.alt.generate', 'Generate alt text (AI)'),
+        onclick: () => onGenerate(),
+      })
+    : null;
+
+  const autoCb =
+    onGenerate && withAutoToggle
+      ? h('input', {
+          type: 'checkbox',
+          checked: readAutoAltPref(),
+          onchange: (e) => writeAutoAltPref(e.target.checked),
+        })
+      : null;
+
+  const el = h('div', { class: 'stack is-gap-2 image-lib-alt' }, [
+    h('div', { class: 'row spread is-gap-2' }, [
+      h('div', {
+        class: 'field-label',
+        text: t('imageLibrary.altText', 'Alt text (accessibility)'),
+      }),
+      btnGenerate,
+    ]),
+    ...altInputs.fields,
+    autoCb
+      ? h('label', { class: 'row is-gap-2 help image-lib-alt-auto' }, [
+          autoCb,
+          h('span', {
+            text: t(
+              'imageLibrary.alt.autoOnUpload',
+              'Generate alt text automatically after upload',
+            ),
+          }),
+        ])
+      : null,
+  ]);
+
+  return { el, autoAlt: () => !!autoCb?.checked };
+}
+
+/**
+ * Ask before an image goes into a slide without alt text. With AI alt text the
+ * first question offers to generate it; declining (or no AI) asks whether to
+ * use the image anyway.
+ *
+ * @param {Object} opts
+ * @param {boolean} opts.canAiAlt
+ * @param {() => Promise<boolean>} opts.generate - fills the inputs; false on failure
+ * @returns {Promise<boolean>} true = go ahead with the pick
+ */
+export async function confirmMissingAlt({ canAiAlt, generate }) {
+  const title = t('imageLibrary.alt.missingTitle', 'Alt text missing');
+  if (canAiAlt) {
+    const genOk = await confirmModal(document.body, {
+      title,
+      message: t(
+        'imageLibrary.alt.missingSuggestGenerate',
+        'Alt text is empty. Generate it with AI now? (Recommended)',
+      ),
+    });
+    if (genOk) return generate();
+  }
+  return confirmModal(document.body, {
+    title,
+    message: t(
+      'imageLibrary.alt.missingConfirmUse',
+      'Alt text is still empty. Use this image anyway?',
+    ),
+  });
+}
+
+/**
+ * The "More details" disclosure holding the fields an upload rarely needs
+ * (B579): kept out of the first screen so the alt text and the action bar
+ * fit without scrolling.
+ * @param {Array<Node|null>} children
+ * @returns {HTMLDetailsElement}
+ */
+export function createMoreDetails(children) {
+  return h('details', { class: 'image-lib-more' }, [
+    h('summary', { text: t('imageLibrary.moreDetails', 'More details') }),
+    h('div', { class: 'stack is-gap-2 image-lib-more-body' }, children),
+  ]);
 }

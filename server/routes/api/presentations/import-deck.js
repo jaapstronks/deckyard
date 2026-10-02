@@ -29,10 +29,8 @@
  * anything else is a generic 500.
  */
 
-import {
-  createPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
+import { createPresentation } from '../../../services/presentations.js';
 import { readRequestBody, serveJson, badRequest } from '../../../utils/http.js';
 import {
   readDeckBundle,
@@ -300,13 +298,16 @@ export async function handlePresentationsImportDeck({
     carriedSlideTypes,
   });
 
-  const created = await createPresentation(storageScope, {
-    title: parts.title,
-    theme,
-    extensions: parts.extensions,
-    lang,
-    ownerEmail: authedUser?.email || null,
-  });
+  const created = await createPresentation(
+    storageScope,
+    { actor: authedUser },
+    {
+      title: parts.title,
+      theme,
+      extensions: parts.extensions,
+      lang,
+    },
+  );
 
   // Update i18n.versions[lang] with the imported slides, otherwise
   // normalizeI18n overwrites them with defaults (mirrors import-json.js). The

@@ -3,6 +3,7 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { getPublishedById } from '../../storage/published.js';
+import { countDeckView } from '../../storage/instance-health.js';
 import { buildStandaloneHtml } from '../../export/html.js';
 import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { buildReaderHtml } from '../../export/reader.js';
@@ -17,6 +18,7 @@ import {
 import { getLangDisplayName } from '../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
 import { generateTrackingScriptHtml } from '../../analytics/tracking-script.js';
+import { isFeatureEnabled } from '../../config/flags-snapshot.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import { toIsoOrNull } from '../../utils/normalize.js';
 
@@ -68,6 +70,7 @@ async function servePublishedReader(
     return true;
   }
 
+  countDeckView('published', pres);
   const modeLang = resolveLangModeFromPresOrUrl(pres, url);
   const projected = projectPresentationForLang(pres, modeLang);
   const orgId = pres?.organizationId;
@@ -144,6 +147,7 @@ async function servePublishedPage(
     return true;
   }
 
+  countDeckView('published', pres);
   const proto =
     (req.headers['x-forwarded-proto'] &&
       String(req.headers['x-forwarded-proto']).split(',')[0].trim()) ||
@@ -227,7 +231,7 @@ async function servePublishedPage(
   const switchHtml =
     versionLangs.length > 1
       ? `
-            <div class="sb-segmented" role="group" aria-label="Language">
+            <div class="sb-segmented is-lang-switch" role="group" aria-label="Language">
               ${versionLangs
                 .map(
                   (lang) =>
@@ -254,12 +258,15 @@ async function servePublishedPage(
     organizationId: pres.organizationId,
   });
 
-  // Add analytics tracking script for published pages
-  const trackingScript = generateTrackingScriptHtml({
-    presentationId: entry.presentationId,
-    sourceType: 'published',
-    sourceId: publishId,
-  });
+  // The tracking script posts to /api/track/*, which is not mounted on an
+  // installation without the analytics cluster (D260): no script at all then.
+  const trackingScript = isFeatureEnabled('analytics')
+    ? generateTrackingScriptHtml({
+        presentationId: entry.presentationId,
+        sourceType: 'published',
+        sourceId: publishId,
+      })
+    : '';
 
   const orgId = pres?.organizationId;
   const slideTypes = await buildMergedSlideTypes({ organizationId: orgId });

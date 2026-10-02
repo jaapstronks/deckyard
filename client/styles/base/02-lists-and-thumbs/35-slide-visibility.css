@@ -31,7 +31,7 @@
 
 /* Color coding by preset */
 .slide-visibility-badge--draft {
-  background: var(--c-warning, #f59e0b);
+  background: hsl(var(--app-warning));
   color: #000;
 }
 
@@ -40,7 +40,7 @@
 }
 
 .slide-visibility-badge--internal {
-  background: var(--c-info, #3b82f6);
+  background: hsl(var(--app-accent-primary));
   color: #fff;
 }
 
@@ -49,7 +49,7 @@
 }
 
 .slide-visibility-badge--hidden {
-  background: var(--c-danger, #ef4444);
+  background: hsl(var(--app-danger));
   color: #fff;
 }
 
@@ -58,7 +58,7 @@
 }
 
 .slide-visibility-badge--skipInPresentation {
-  background: var(--c-muted, #6b7280);
+  background: hsl(var(--app-text-secondary));
   color: #fff;
 }
 
@@ -67,8 +67,8 @@
 }
 
 .slide-visibility-badge--custom {
-  background: var(--c-purple, #8b5cf6);
-  color: #fff;
+  background: hsl(var(--app-text-primary));
+  color: hsl(var(--app-text-inverse));
 }
 
 .slide-visibility-badge--custom::before {
@@ -106,7 +106,7 @@
 }
 
 .slide-visibility-toggle.is-visibility-restricted {
-  color: var(--c-warning, #f59e0b);
+  color: hsl(var(--app-warning));
 }
 
 /* Show on hover or when slide is selected */
@@ -155,8 +155,8 @@
   position: fixed;
   z-index: 999;
   min-width: 260px;
-  background: var(--c-bg-elevated, #1a1e1d);
-  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.12));
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   overflow: hidden;
@@ -168,8 +168,8 @@
   z-index: 1000;
   min-width: 168px;
   padding: 6px;
-  background: var(--c-bg-elevated, #1a1e1d);
-  border: 1px solid var(--c-border, rgba(255, 255, 255, 0.12));
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
@@ -181,7 +181,7 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--c-text, rgba(255, 255, 255, 0.92));
+  color: hsl(var(--app-text-primary));
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -190,23 +190,23 @@
 
 .slide-context-menu-item:hover,
 .slide-context-menu-item:focus-visible {
-  background: rgba(255, 255, 255, 0.08);
+  background: hsl(var(--app-bg-hover));
   outline: none;
 }
 
 .slide-context-menu-item.is-danger {
-  color: var(--c-danger, #ef4444);
+  color: hsl(var(--app-danger));
 }
 
 .slide-context-menu-item.is-danger:hover,
 .slide-context-menu-item.is-danger:focus-visible {
-  background: rgba(239, 68, 68, 0.14);
+  background: hsl(var(--app-danger-soft));
 }
 
 .slide-context-menu-sep {
   height: 1px;
   margin: 6px 4px;
-  background: var(--c-border, rgba(255, 255, 255, 0.12));
+  background: hsl(var(--app-border-default));
 }
 
 .visibility-menu-header {
@@ -214,7 +214,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-bottom: 1px solid var(--c-border, rgba(255, 255, 255, 0.12));
+  border-bottom: 1px solid hsl(var(--app-border-default));
   font-weight: 600;
   font-size: var(--ps-text-sm);
 }
@@ -222,7 +222,7 @@
 .visibility-menu-close {
   background: none;
   border: none;
-  color: var(--c-text-muted, rgba(255, 255, 255, 0.6));
+  color: hsl(var(--app-text-secondary));
   font-size: var(--ps-text-xl);
   line-height: 1;
   cursor: pointer;
@@ -236,8 +236,8 @@
 }
 
 .visibility-menu-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--c-text, rgba(255, 255, 255, 0.92));
+  background: hsl(var(--app-bg-hover));
+  color: hsl(var(--app-text-primary));
 }
 
 .visibility-menu-options {
@@ -253,22 +253,22 @@
   border: none;
   border-radius: 6px;
   background: transparent;
-  color: var(--c-text, rgba(255, 255, 255, 0.92));
+  color: hsl(var(--app-text-primary));
   text-align: left;
   cursor: pointer;
   transition: background 0.15s ease;
 }
 
 .visibility-menu-option:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: hsl(var(--app-bg-hover));
 }
 
 .visibility-menu-option.is-active {
-  background: rgba(var(--c-accent-rgb, 99, 102, 241), 0.2);
+  background: hsl(var(--app-accent-soft));
 }
 
 .visibility-menu-option:active {
-  background: rgba(var(--c-accent-rgb, 99, 102, 241), 0.3);
+  background: hsl(var(--app-accent-soft-hover));
   transform: scale(0.98);
 }
 
@@ -284,27 +284,27 @@
 }
 
 .visibility-icon--visible {
-  background: var(--c-success, #10b981);
+  background: hsl(var(--app-success));
 }
 
 .visibility-icon--draft {
-  background: var(--c-warning, #f59e0b);
+  background: hsl(var(--app-warning));
 }
 
 .visibility-icon--internal {
-  background: var(--c-info, #3b82f6);
+  background: hsl(var(--app-accent-primary));
 }
 
 .visibility-icon--hidden {
-  background: var(--c-danger, #ef4444);
+  background: hsl(var(--app-danger));
 }
 
 .visibility-icon--skipInPresentation {
-  background: var(--c-muted, #6b7280);
+  background: hsl(var(--app-text-secondary));
 }
 
 .visibility-icon--custom {
-  background: var(--c-purple, #8b5cf6);
+  background: hsl(var(--app-text-primary));
 }
 
 /* ========================================
@@ -324,14 +324,14 @@
 
 .visibility-option-desc {
   font-size: var(--ps-text-xs);
-  color: var(--c-text-muted, rgba(255, 255, 255, 0.6));
+  color: hsl(var(--app-text-secondary));
   line-height: 1.4;
   margin-top: 2px;
 }
 
 .visibility-option-check {
   display: inline-flex;
-  color: var(--c-success, #10b981);
+  color: hsl(var(--app-success));
   flex-shrink: 0;
   margin-left: auto;
 }
@@ -341,7 +341,7 @@
    ======================================== */
 
 .slide-draft-badge {
-  background: var(--c-warning, #f59e0b);
+  background: hsl(var(--app-warning));
   color: #000;
   font-size: 10px;
   font-weight: 700;
@@ -361,7 +361,7 @@
   height: 0;
   border-style: solid;
   border-width: 0 24px 24px 0;
-  border-color: transparent var(--c-warning, #f59e0b) transparent transparent;
+  border-color: transparent hsl(var(--app-warning)) transparent transparent;
 }
 
 /* Draft badge in viewer thumbnails */
@@ -369,7 +369,7 @@
   position: absolute;
   top: 4px;
   right: 4px;
-  background: var(--c-warning, #f59e0b);
+  background: hsl(var(--app-warning));
   color: #000;
   font-size: 9px;
   font-weight: 700;

@@ -9,7 +9,7 @@
     left 0.3s ease-out,
     top 0.3s ease-out,
     width 0.3s ease-out;
-  border-radius: var(--ps-radius-md, 8px);
+  border-radius: var(--ps-radius-md);
   overflow: hidden;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
   background: #000;
@@ -57,7 +57,7 @@
   color: #fff;
   font-size: 12px;
   padding: 4px 10px;
-  border-radius: var(--ps-radius-sm, 4px);
+  border-radius: var(--ps-radius-sm);
   cursor: pointer;
   backdrop-filter: blur(4px);
   transition: background 0.15s;
@@ -132,6 +132,6 @@
     width: 40% !important;
     min-width: 140px;
     max-width: 200px;
-    border-radius: var(--ps-radius-md, 8px);
+    border-radius: var(--ps-radius-md);
   }
 }

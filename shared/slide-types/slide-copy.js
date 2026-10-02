@@ -21,7 +21,7 @@ export const SLIDE_COPY = {
     // Poll slide
     pollJoinTitle: 'Meekijken + stemmen',
     pollJoinHelpWithCodes: 'Ga naar /go en vul de code in',
-    pollJoinHelpWithoutCodes: 'Ga naar /follow/<presentationId>',
+    pollJoinHelpWithoutCodes: 'Ga naar {url}',
     pollOptionsLabel: 'Antwoordopties',
     pollResultsLabel: 'Live resultaten',
     pollResultsTitle: 'Live resultaten',
@@ -145,7 +145,7 @@ export const SLIDE_COPY = {
     // Poll slide
     pollJoinTitle: 'Follow along + vote',
     pollJoinHelpWithCodes: 'Go to /go and enter the code',
-    pollJoinHelpWithoutCodes: 'Go to /follow/<presentationId>',
+    pollJoinHelpWithoutCodes: 'Go to {url}',
     pollOptionsLabel: 'Answer options',
     pollResultsLabel: 'Live results',
     pollResultsTitle: 'Live results',

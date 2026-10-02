@@ -66,7 +66,8 @@ import {
 } from './bootstrap.js';
 import { loadEditorModel } from './load-editor-model.js';
 import { attachEditorLifecycle } from './editor-lifecycle.js';
-import { aiEnabled, getFeatures } from '../../lib/state/features.js';
+import { featureEnabled, getFeatures } from '../../lib/state/features.js';
+import { clusterOffSlideTypes } from '../../../shared/slide-types/policy.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
 import { restoreSlideFromServer } from './slide-lock-restore.js';
 import { debugLog } from '../../lib/util/debug.js';
@@ -169,9 +170,16 @@ export async function createEditorController({
     editorModel;
 
   const orgSettings = orgSettingsData?.settings || {};
-  const disabledSlideTypes = Array.isArray(orgSettings.disabledSlideTypes)
-    ? orgSettings.disabledSlideTypes
-    : [];
+  // The organization's curation plus the types whose installation cluster is
+  // off, which count as org-disabled (D260): one list for every insertion path.
+  const disabledSlideTypes = [
+    ...new Set([
+      ...(Array.isArray(orgSettings.disabledSlideTypes)
+        ? orgSettings.disabledSlideTypes
+        : []),
+      ...clusterOffSlideTypes(SLIDE_TYPES, featureEnabled),
+    ]),
+  ];
 
   // ============================================================
   // EDITOR STATE
@@ -686,7 +694,7 @@ export async function createEditorController({
     onOpenOverview: openDeckOverview,
     // AI Analysis exists only where AI does: with AI off the server answers
     // its route 404, so the menu has no item for it (B337, D179).
-    onAnalyze: aiEnabled()
+    onAnalyze: featureEnabled('ai')
       ? () =>
           openAnalyzeModalImpl({
             root,
@@ -851,7 +859,16 @@ export async function createEditorController({
   // PREVIEW PANEL
   // ============================================================
 
-  const commentsApi = createCommentsApi({ api, presentationId: id });
+  // One comments client for the whole editor. It stores the pending save
+  // before every create: the service refuses a `slideId` the stored deck does
+  // not hold yet (D287). With live edits on, the save manager holds nothing
+  // and the Y.Doc persists on the server's debounce; the panel then names
+  // the refusal instead (B567).
+  const commentsApi = createCommentsApi({
+    api,
+    presentationId: id,
+    beforeCreate: saveManager.flush,
+  });
 
   // Pane tabs (Inspector / Comments / Notes) at the far right of the slide
   // toolbar, directly above the rail. The panes are slide-scoped, so the
@@ -1028,6 +1045,7 @@ export async function createEditorController({
 
   commentsPanel = createCommentsPanel({
     api,
+    commentsApi,
     toast,
     presentationId: id,
     pres,
@@ -1396,10 +1414,10 @@ export async function createEditorController({
     theme,
     // Both translate by AI, so where AI is off they are absent and so are the
     // "Fill slide…" item and the per-field "From {lang}" button (D179).
-    onTranslateSlide: aiEnabled()
+    onTranslateSlide: featureEnabled('ai')
       ? ({ slideId }) => openTranslateSlideModal({ slideId })
       : null,
-    onTranslateField: aiEnabled()
+    onTranslateField: featureEnabled('ai')
       ? ({ slideId, key }) => openTranslateFieldModal({ slideId, key })
       : null,
     user,
@@ -1472,10 +1490,11 @@ export async function createEditorController({
 
   const inlineEditor = createInlineEditor({
     api,
-    // Drag & drop image upload onto empty canvas placeholders is gated on the
-    // same flag as every other upload path (off in imagekit-only / sandbox /
-    // demo, where there is no upload destination).
-    uploadsEnabled: !!features?.enableUploads,
+    // Drag & drop image upload onto canvas images asks the same question as
+    // every other upload path (off in imagekit-only / sandbox / demo, where
+    // there is no upload destination). No drop target is a drop target that
+    // is absent, in the sandbox too: there is nothing to grey out (D295).
+    uploadsEnabled: featureEnabled('uploads'),
     thumb,
     previewStage: thumb.parentElement || thumb,
     overlayHost: preview,
@@ -1629,7 +1648,7 @@ export async function createEditorController({
   // routes are not mounted, so a stray flag opens nothing (D179).
   if (queryParam('aiReview') === '1') {
     setQueryParams({ aiReview: null });
-    if (aiEnabled())
+    if (featureEnabled('ai'))
       requestAnimationFrame(() => openAiDeckReview({ postGeneration: true }));
   }
 

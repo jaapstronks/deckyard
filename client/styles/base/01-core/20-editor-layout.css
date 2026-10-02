@@ -275,7 +275,7 @@
   gap: var(--ps-space-2);
   padding: var(--ps-space-2) var(--ps-space-3);
   background: hsl(var(--app-bg-elevated));
-  border-bottom: 1px solid hsl(var(--app-border-primary));
+  border-bottom: 1px solid hsl(var(--app-border-default));
 }
 
 .is-editor .slides-paste-bar[hidden] {
@@ -557,7 +557,7 @@
     top: var(--ps-topbar-height);
     left: 0;
     bottom: 0;
-    width: var(--ps-slides-drawer-width, min(320px, 85vw));
+    width: var(--ps-slides-drawer-width);
     z-index: var(--z-drawer);
     transform: translateX(-100%);
     transition: transform 0.25s ease-out;
@@ -592,20 +592,20 @@
     z-index: var(--z-header);
     width: 48px;
     height: 48px;
-    border-radius: var(--ps-radius-full, 9999px);
+    border-radius: var(--ps-radius-full);
     background: hsl(var(--app-accent-primary));
-    color: hsl(var(--app-text-on-solid, 0 0% 100%));
+    color: hsl(var(--app-text-on-solid));
     box-shadow: var(--app-shadow-lg);
     align-items: center;
     justify-content: center;
     border: none;
     cursor: pointer;
-    font-size: var(--ps-text-xl, 1.25rem);
+    font-size: var(--ps-text-xl);
     transition: background 0.15s ease;
   }
 
   .slides-drawer-toggle:hover {
-    background: hsl(var(--app-accent-primary-hover, var(--app-accent-primary)));
+    background: hsl(var(--app-accent-primary-hover));
   }
 
   .slides-drawer-toggle:focus-visible {

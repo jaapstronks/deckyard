@@ -175,7 +175,8 @@ named by absolute URL (`url('/custom/assets/acme-hero-ground.png')`). Exports
 are self-contained, so every local `url()` in the seam — a background image or
 an `@font-face` source alike — is inlined as a data URL in PDF, PNG and
 downloaded HTML; the artwork does not need to move into a `style` attribute on
-the markup to reach an export.
+the markup to reach an export. A rule scoped under the type's root class is
+inlined only in exports of decks that use the type, so nest its images there.
 
 Do **not** add a file under `client/styles/slides/`: that tree is core-owned,
 its aggregators are generated, and a fork-added file there is a merge conflict
@@ -218,9 +219,8 @@ renderHtml: (content) => `
 `;
 ```
 
-The codebase automates this wherever a _human pastes_ a stylesheet: both the
-custom-html slide and a type built in Settings > Slide Types have their CSS
-rewritten under the slide's root by one shared `scopeCss`
+The codebase automates this wherever a _human pastes_ a stylesheet: a type
+built in Settings > Slide Types has its CSS rewritten under the slide's root by one shared `scopeCss`
 (`shared/slide-types/scope-css.js`), so those selectors _cannot_ escape — see
 [`slide-type-css-contract.md`](../reference/slide-type-css-contract.md) §
 _Author CSS is scoped to the slide root_. A file-JS type is the exception, and
@@ -235,11 +235,13 @@ it.
 
 Renaming a class a type emits is a contract change — see
 [`slide-type-css-contract.md`](../reference/slide-type-css-contract.md), the
-gate that keeps core's half honest.
+gate that holds every class a type emits, core or yours, against
+`client/styles/**` plus `custom/styles/**`.
 
-Styles that must travel with the type even outside this install (a type you
-ship elsewhere) still belong inline in `renderHtml`, in a `<style>` element
-scoped to the same class.
+That stylesheet is the only place a file-JS type's CSS lives: the loader
+refuses a type whose render carries a `<style>` block, with a message naming
+the `custom/styles/` file to move it to. Shipping a type to another install
+means shipping its stylesheet with it.
 
 ### 3. Restart the server
 
@@ -637,10 +639,6 @@ In the Acme theme record’s `config`:
 > field-renderer and this table all read from that vocabulary;
 > `tests/field-types.test.js` fails the build if a definition uses an unknown
 > type or this table drifts from the registry.
-
-The `code` field supports `capability: 'customHtml'`: when set, the field is
-read-only for users who lack the `canEditCustomHtml` capability (the server
-enforces the same rule on write). Used by the built-in Custom HTML slide.
 
 ### Media Fields
 
@@ -1182,6 +1180,66 @@ against the tile fill, and it says so in three lines.
 `primary`/`secondary`/`outline` button vocabulary `content-slide` and
 `image-text-slide` use.
 
+## Leaning on a core layout
+
+A fork that wants a core type's layout with its own values (another logo, an
+extra modifier, its own root class) **composes** that type instead of copying
+its renderer. A copied renderer carries a duty to stay in step with upstream
+that nothing measures, and it breaks silently when core's markup moves.
+
+A core type that offers this splits its render into two functions, exported
+from one stable address, `shared/slide-types/core-layouts.js`:
+
+- `resolve…View(content, slide, ctx)` decides every value the slide shows and
+  returns a plain **view** object;
+- `render…View(view)` turns a view into the markup, and does nothing else.
+
+Core's own `renderHtml` is exactly those two in a row, so what you compose is
+what core renders. Your type resolves core's view, changes values in it and
+renders:
+
+```javascript
+// custom/slide-types/acme-title-slide.js
+import {
+  resolveTitleView,
+  renderTitleView,
+} from '../../shared/slide-types/core-layouts.js';
+
+export default {
+  label: 'Acme title',
+  fields: [/* … title, subheading, meta, your own options … */],
+  defaults: {/* … */},
+  renderHtml: (content, slide, ctx) => {
+    const view = resolveTitleView(content, slide, ctx);
+    view.classes.push('slide-acme-title'); // your root, for custom/styles/
+    if (content?.frame === 'panel') view.classes.push('is-panel');
+    view.logo = { src: '/custom/assets/acme-logo.svg', alt: 'Acme' };
+    return renderTitleView(view);
+  },
+};
+```
+
+Three rules make it hold:
+
+- **Import from `core-layouts.js`, never from `types/<name>/`.** The type
+  directories are internal and move with upstream reorganisations; the seam
+  does not.
+- **Set values, never markup.** Your file writes no core class name; core's
+  structure (for the title slide, the `tsu-*` family) lives in one place. Style
+  your additions in `custom/styles/`, nested under your own root class.
+- **Never escape.** `render…View` escapes every string in the view: texts,
+  `alt`s, URLs, class names and style values. Put raw values in.
+
+The view is documented as a JSDoc typedef next to its functions
+(`TitleView` in `shared/slide-types/types/title-slide/render.js`, re-exported
+by `core-layouts.js`). A renamed view field breaks
+`tests/fixtures/fork-slide-types/fork-title-slide.js` in core's own fork CI
+lane, so it is a release-notes moment, not a silent break in your fork.
+
+Today `title-slide` offers this (`resolveTitleView` / `renderTitleView`). Other
+types get the same shape when a fork needs one: ask upstream, rather than
+copying the renderer in the meantime.
+
 ---
 
 ## Rendering Rules
@@ -1498,47 +1556,24 @@ This setup:
 
 ---
 
-## Custom HTML slide (raw escape hatch)
+## Raw HTML in a fork type
 
-`custom-html-slide` (`shared/slide-types/types/custom-html-slide.js`) is a
-first-class core type for bespoke, pixel-controlled layouts (org charts,
-connected diagrams, one-off compositions) that no typed slide captures. The
-author writes raw **HTML** and scoped **CSS** in two `code` fields.
+Core ships no raw-HTML slide: the escape hatch left core in A7.8b, with its
+permission path, so the product grows typed slides instead (the tombstone in
+`shared/slide-types/removed.js` records the decision and the revive path). A
+fork that wants one builds it as a `custom/slide-types/` type. What core keeps
+for that:
 
-**Rendering** is isomorphic, so the slide renders identically in the live
-editor, present mode, audience follow-along, the public `/p/` share viewer, and
-the Puppeteer PNG/PDF/OG export paths. PPTX export rasterizes it like any other
-slide (no special handling needed).
+- the `code` field type, and its `markup: true` flag: the reader projection
+  renders such a field as sanitized HTML instead of as source, and the publish
+  alt-check walks its `<img>` tags;
+- `sanitizeSlideHtmlSync()` (`shared/sanitize.js`), the same sanitizer the
+  reader uses, so the canvas and the reader agree on one tree;
+- `filterCssText` (`shared/css-filter.js`) and `scopeCss`
+  (`shared/slide-types/scope-css.js`) for a pasted stylesheet.
 
-**Security model:**
-
-- The HTML is sanitized on every render via `sanitizeSlideHtmlSync()`
-  (`shared/sanitize.js`). Rich structural markup plus SVG/MathML are kept;
-  `<script>`, inline event handlers (`onclick=`…), `<iframe>`/`<object>`/
-  `<embed>`, `<form>`/`<input>`, and external `<link>`/`<style>` are stripped.
-  **JavaScript is never executed** on any path - Puppeteer _would_ run scripts,
-  but receives none.
-- The CSS is **scoped to the slide root** (`.custom-html-root[data-chr="<id>"]`)
-  so it cannot restyle the deck chrome, and is filtered for `@import`,
-  `expression()`, and `</style>` breakouts. Author CSS can read theme tokens
-  (`var(--t-color-accent)` …).
-
-**Authoring gate:** writing the raw markup requires the `canEditCustomHtml`
-capability. Resolution: a user is allowed if they are an admin, or their email
-is listed in the `CUSTOM_HTML_EDITOR_EMAILS` env var (comma-separated). With
-neither configured, no non-admin qualifies, so the feature degrades to
-view-only on OSS installs. The gate is enforced:
-
-- in the editor UI (the `code` fields render read-only, and the type is hidden
-  from the slide-type picker for non-capable users);
-- server-side on `PUT /api/presentations/:id` and the public API
-  (`PUT`/`POST /api/v1/presentations/:id/slides…`) via
-  `customHtmlEditViolation()` - a non-capable actor cannot create or change a
-  custom-html slide's `html`/`css`, even by hand-crafting a request.
-
-The type declares `ai: false` on its definition, so the AI generator and MCP
-`get_slide_types` never surface or auto-pick it (see
-[Withholding a type from agents](#withholding-a-type-from-agents)).
+There is no capability gate to inherit: on a fork, every editor who can edit a
+deck can edit such a field. That is the fork's call to make.
 
 ---
 

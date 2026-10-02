@@ -27,7 +27,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const COMPONENTS = 'client/styles/app/components.css';
+const PRIMITIVES = 'client/styles/shared/primitives.css';
 
 /** Every `.js` file under a directory, recursively. */
 async function walkJs(dir, out = []) {
@@ -49,21 +49,21 @@ describe('form-input size ladder', () => {
     }
     assert.ok(used.size > 0, 'the modifiers should still be in use');
 
-    const css = await fs.readFile(path.join(ROOT, COMPONENTS), 'utf8');
+    const css = await fs.readFile(path.join(ROOT, PRIMITIVES), 'utf8');
     const missing = [...used].filter(
       (cls) => !new RegExp(`^\\.${cls}\\s*\\{`, 'm').test(css),
     );
     assert.deepStrictEqual(
       missing,
       [],
-      `no base definition in ${COMPONENTS} for: ${missing.join(', ')} — ` +
+      `no base definition in ${PRIMITIVES} for: ${missing.join(', ')} — ` +
         'an ancestor-scoped rule is not a definition; the class renders at ' +
         'full size everywhere else.',
     );
   });
 
   it('the ladder is a ladder: xs is smaller than sm is smaller than base', async () => {
-    const css = await fs.readFile(path.join(ROOT, COMPONENTS), 'utf8');
+    const css = await fs.readFile(path.join(ROOT, PRIMITIVES), 'utf8');
     const fontOf = (selector) => {
       const block = css.match(
         new RegExp(`^\\.${selector}\\s*\\{([^}]*)\\}`, 'm'),

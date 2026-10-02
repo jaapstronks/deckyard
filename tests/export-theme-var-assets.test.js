@@ -21,19 +21,21 @@
  * Run with: node --test tests/export-theme-var-assets.test.js
  */
 
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { loadExportCssBundle } from '../server/export/css-bundle.js';
 import { normalizeTheme } from '../shared/theme-normalize.js';
 import { themeVarsCssText } from '../server/utils/themes.js';
+import { createCoreFixtureRoot } from './helpers/core-fixture-root.js';
 
-const repoRoot = path.resolve(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '..',
+// Core only: since B554 the fork seam's `url()`s share the cache and the
+// transform with the theme vars, so in a fork checkout `custom/styles/*.css`
+// would add to every count below (B556).
+const { root: repoRoot, remove: removeRepoRoot } = createCoreFixtureRoot(
+  'deckyard-theme-var-assets-',
 );
+after(removeRepoRoot);
 
 /** A real repo asset, so the embed pass has something to actually read. */
 const LOCAL_ASSET = '/assets/images/deckyard-mark.svg';
@@ -52,7 +54,9 @@ function themeWithAssetVar(value) {
 
 test('a bare url() in a theme var is inlined as a data URL', async () => {
   const theme = themeWithAssetVar(`url('${LOCAL_ASSET}') center / cover`);
-  const bundle = await loadExportCssBundle(repoRoot, theme, null);
+  const bundle = await loadExportCssBundle(repoRoot, theme, null, {
+    slides: [],
+  });
 
   assert.doesNotMatch(
     bundle.themeVarsCss,
@@ -75,7 +79,9 @@ test('artwork stacked under a gradient survives too', async () => {
   const theme = themeWithAssetVar(
     `linear-gradient(90deg, rgba(0,0,0,0.6), transparent), url('${LOCAL_ASSET}') center / cover, #13393a`,
   );
-  const bundle = await loadExportCssBundle(repoRoot, theme, null);
+  const bundle = await loadExportCssBundle(repoRoot, theme, null, {
+    slides: [],
+  });
 
   assert.match(bundle.themeVarsCss, /data:image\/svg\+xml/);
   assert.match(
@@ -96,7 +102,9 @@ test('a remote url() in a theme var never reaches Chrome', async () => {
   const theme = themeWithAssetVar(
     'url(http://169.254.169.254/latest/meta-data/), #000',
   );
-  const bundle = await loadExportCssBundle(repoRoot, theme, null);
+  const bundle = await loadExportCssBundle(repoRoot, theme, null, {
+    slides: [],
+  });
   assert.doesNotMatch(
     bundle.themeVarsCss,
     /169\.254\.169\.254/,
@@ -116,7 +124,9 @@ test('a remote url() is stripped even when a gradient sits over it', async () =>
   const theme = themeWithAssetVar(
     'linear-gradient(90deg, rgba(0,0,0,0.6), transparent), url(http://169.254.169.254/x.png), #000',
   );
-  const bundle = await loadExportCssBundle(repoRoot, theme, null);
+  const bundle = await loadExportCssBundle(repoRoot, theme, null, {
+    slides: [],
+  });
   assert.doesNotMatch(bundle.themeVarsCss, /169\.254\.169\.254/);
 });
 
@@ -125,11 +135,11 @@ test('a local asset is embedded once and shared with the slide pass', async () =
   // slide must be read and recompressed once, not twice.
   const cache = new Map();
   const theme = themeWithAssetVar(`url('${LOCAL_ASSET}')`);
-  await loadExportCssBundle(repoRoot, theme, null, { cache });
+  await loadExportCssBundle(repoRoot, theme, null, { slides: [], cache });
   assert.equal(cache.size, 1, 'the theme asset lands in the shared cache');
 
   const before = cache.size;
-  await loadExportCssBundle(repoRoot, theme, null, { cache });
+  await loadExportCssBundle(repoRoot, theme, null, { slides: [], cache });
   assert.equal(cache.size, before, 'a second export path reuses the entry');
 });
 
@@ -143,7 +153,7 @@ test('the transform reaches a theme asset', async () => {
     return { buffer: buf, contentType: meta?.contentType || 'image/svg+xml' };
   };
   const theme = themeWithAssetVar(`url('${LOCAL_ASSET}')`);
-  await loadExportCssBundle(repoRoot, theme, null, { transform });
+  await loadExportCssBundle(repoRoot, theme, null, { slides: [], transform });
   assert.equal(called, 1, 'the image-bytes transform must see the theme asset');
 });
 
@@ -153,6 +163,7 @@ test('a var with no url() is left byte-identical', async () => {
     repoRoot,
     themeWithAssetVar('#13393a'),
     null,
+    { slides: [] },
   );
   assert.equal(
     bundle.themeVarsCss,
@@ -168,6 +179,8 @@ test('a local asset that cannot be read keeps its original url()', async () => {
   // cannot cause a fetch, so there is nothing to defend against.
   const missing = '/assets/images/definitely-not-here-9f3a.svg';
   const theme = themeWithAssetVar(`url('${missing}')`);
-  const bundle = await loadExportCssBundle(repoRoot, theme, null);
+  const bundle = await loadExportCssBundle(repoRoot, theme, null, {
+    slides: [],
+  });
   assert.match(bundle.themeVarsCss, new RegExp(missing));
 });

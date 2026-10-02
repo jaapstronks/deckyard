@@ -5,7 +5,11 @@ import http from 'node:http';
 import fs from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { CLIENT_DIR, SHARED_PUBLIC_DIRS, repoRoot } from './config/paths.js';
-import { authConfigError, authConfigWarnings } from './auth/auth.js';
+import {
+  authConfigError,
+  authConfigWarnings,
+  devBypassProductionError,
+} from './auth/auth.js';
 import { deprecatedFlagWarnings } from './config/features.js';
 import { mediaConfigWarnings } from './media/config.js';
 import { brandingConfigWarnings } from './config/branding.js';
@@ -15,10 +19,10 @@ import {
   databaseConnectionError,
   isDatabaseConnectionError,
 } from './config/database.js';
-import { publicUrlWarnings, envStr, envBool, envInt } from './config/utils.js';
+import { publicUrlWarnings, envStr, envInt } from './config/utils.js';
 import { handleApi } from './routes/api/index.js';
 import { handleStatic } from './routes/static/index.js';
-import { getFeatureFlags } from './config/flags-snapshot.js';
+import { getFeatureFlags, isFeatureEnabled } from './config/flags-snapshot.js';
 import { allowRequest, getClientIp } from './utils/rate-limit.js';
 import { rateLimited } from './utils/http.js';
 import { REQUEST_LIMITS } from './config/rate-limits.js';
@@ -26,8 +30,14 @@ import { applySecurityHeaders } from './utils/security-headers.js';
 import { buildTopLevelErrorBody } from './utils/error-response.js';
 import { createLogger } from './utils/logger.js';
 import { scheduleSandboxCleanup } from './jobs/sandbox-cleanup.js';
-import { scheduleLiveSessionCleanup } from './jobs/live-session-cleanup.js';
-import { scheduleMcpSessionSweep } from './jobs/mcp-session-sweep.js';
+import {
+  scheduleLiveSessionCleanup,
+  warnLiveSessionsWhileOff,
+} from './jobs/live-session-cleanup.js';
+import {
+  scheduleMcpSessionSweep,
+  warnApiKeysWhileOff,
+} from './jobs/mcp-session-sweep.js';
 import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/lifecycle.js';
 import { initializeThemeSeeds } from './utils/theme-seeds.js';
@@ -48,17 +58,33 @@ import {
 import { announceMaintenance } from './services/maintenance.js';
 import { scheduleAuthCleanup } from './jobs/auth-cleanup.js';
 import { scheduleDigestEmailJob } from './jobs/digest-email.js';
-import { scheduleAnalyticsCleanup } from './jobs/analytics-cleanup.js';
+import {
+  scheduleAnalyticsCleanup,
+  warnAnalyticsRowsWhileOff,
+} from './jobs/analytics-cleanup.js';
 import { scheduleRetentionCleanup } from './jobs/retention-cleanup.js';
 import { initSanitizer } from '../shared/sanitize.js';
 import { closeRedis } from './utils/redis-client.js';
 import { initializeQueues, closeQueues } from './jobs/queue/connection.js';
 import { initializeWorkers } from './jobs/queue/workers/index.js';
 import { handleMcpSse } from './mcp/sse-mount.js';
+import { dispatchMounts } from './utils/router.js';
 import { maybeAttachCollab, shutdownCollab } from './collab/mount.js';
 import { assertExtensionDeclared } from './export/extension-name.js';
 
 const log = createLogger('server');
+
+/**
+ * The mounts the root dispatcher walks before `/api/*` and the static chain
+ * (D257). With the public API cluster off, `/mcp` is skipped and reaches the
+ * static chain's 404, as any path this installation does not have.
+ *
+ * @type {import('./utils/router.js').Mount[]}
+ */
+export const ROOT_MOUNTS = [
+  // MCP SSE transport (remote AI agent access, API-key authenticated).
+  { handle: handleMcpSse, feature: 'publicApi' },
+];
 
 function getUrl(req) {
   const host = req.headers.host || 'localhost';
@@ -129,11 +155,7 @@ async function handleRequest(req, res) {
       }
     }
 
-    // MCP SSE transport (remote AI agent access)
-    if (url.pathname === '/mcp') {
-      const handled = await handleMcpSse({ req, res, url, repoRoot });
-      if (handled) return;
-    }
+    if (await dispatchMounts(ROOT_MOUNTS, { req, res, url, repoRoot })) return;
 
     if (url.pathname.startsWith('/api/'))
       return await handleApi({ repoRoot, req, res, url });
@@ -204,13 +226,11 @@ export function buildServer() {
 async function main() {
   const server = buildServer();
 
-  // Security check: warn if AUTH_DEV_BYPASS is enabled in production
-  if (process.env.NODE_ENV === 'production') {
-    if (envBool('AUTH_DEV_BYPASS')) {
-      console.error(
-        '\n⚠️  SECURITY WARNING: AUTH_DEV_BYPASS is enabled in production!\n' +
-          '   This allows passwordless admin access. Set AUTH_DEV_BYPASS=false immediately.\n',
-      );
+  // Security check: refuse a leftover AUTH_DEV_BYPASS in production.
+  {
+    const bypassErr = devBypassProductionError();
+    if (bypassErr) {
+      console.error(`\n⚠️  SECURITY: ${bypassErr}\n`);
       process.exit(1);
     }
   }
@@ -321,7 +341,11 @@ async function main() {
     scheduleLiveSessionCleanup(), // TTL sweep for live sessions + follow codes
     scheduleMcpSessionSweep(), // TTL sweep for expired MCP SSE sessions
     scheduleAuthCleanup(), // Clean expired tokens hourly
-    scheduleDigestEmailJob({ repoRoot }), // Weekly digest emails
+    // The digest acts on analytics; with the cluster off it is not scheduled.
+    // The cleanup only lets data expire, so it runs either way (D261).
+    ...(isFeatureEnabled('analytics')
+      ? [scheduleDigestEmailJob({ repoRoot })] // Weekly digest emails
+      : []),
     scheduleAnalyticsCleanup(), // Clean old analytics daily
     scheduleRetentionCleanup(), // Trim usage/share-links/activity/slide-locks daily
     { stop: stopCommentHeartbeat },
@@ -329,6 +353,9 @@ async function main() {
   ];
 
   // Initialize background job queue (Redis-based, with fallback)
+  if (!isFeatureEnabled('analytics')) await warnAnalyticsRowsWhileOff();
+  if (!isFeatureEnabled('publicApi')) await warnApiKeysWhileOff();
+  if (!isFeatureEnabled('live')) await warnLiveSessionsWhileOff();
   await initializeQueues();
   await initializeWorkers();
 

@@ -1,4 +1,6 @@
-/* Slide number overlay - positioned in top-left corner of thumbnail */
+/* Slide number: its own gutter beside the thumbnail, never on top of it, so
+   it covers no slide content. The gutter width is also read by the thumb-scale
+   math in client/views/editor/slides-panel-resize.js (SLIDE_NUM_GUTTER_PX). */
 :where(
     .app-shell,
     .modal-backdrop,
@@ -8,27 +10,56 @@
     .presenter-shell,
     .viewer-shell
   )
-  .slide-num-overlay {
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  min-width: 18px;
+  .slide-thumb-row {
+  --slide-num-gutter: 24px;
+  display: flex;
+  align-items: flex-start;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-thumb-row
+  > .thumb.thumb-mini {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+:where(
+    .app-shell,
+    .modal-backdrop,
+    .notes-shell,
+    .follow-shell,
+    .join-shell,
+    .presenter-shell,
+    .viewer-shell
+  )
+  .slide-num {
+  flex: 0 0 var(--slide-num-gutter);
+  box-sizing: border-box;
   height: 18px;
-  padding: 0 5px;
+  padding-right: var(--ps-space-1);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 0.625rem;
   font-weight: 700;
-  color: hsl(var(--app-text-primary));
-  background: hsl(var(--app-bg-elevated) / 0.9);
-  border-radius: var(--ps-radius-sm);
+  color: hsl(var(--app-text-secondary));
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
-  box-shadow: 0 1px 2px hsl(0 0% 0% / 0.1);
-  z-index: 2;
 }
 
+/* The active (open) slide: accent fill on the number, next to the accent
+   border on the row (30-slide-items.css). Accent, not --app-danger: red is
+   for errors only (docs/reference/feedback-surfaces.md). A multi-selection
+   keeps a plain number and an accent outline on the thumbnail, so the two
+   stay apart in a long list. */
 :where(
     .app-shell,
     .modal-backdrop,
@@ -39,42 +70,17 @@
     .viewer-shell
   )
   .slide-item.is-active
-  .slide-num-overlay,
-:where(
-    .app-shell,
-    .modal-backdrop,
-    .notes-shell,
-    .follow-shell,
-    .join-shell,
-    .presenter-shell,
-    .viewer-shell
-  )
-  .slide-item.is-selected
-  .slide-num-overlay {
+  .slide-num {
+  margin-right: var(--ps-space-1);
+  flex-basis: calc(var(--slide-num-gutter) - var(--ps-space-1));
+  padding-right: 0;
+  border-radius: var(--ps-radius-sm);
   background: hsl(var(--app-accent-primary));
   color: hsl(var(--app-text-on-solid));
 }
 
-/* The active (currently open) slide gets a bold RED number badge with a thick
-   red ring (white separator so the ring reads against the red fill), so the
-   selection is unmistakable in a long list. Later rule → wins over the accent
-   fill above; specificity is equal (:where() adds none). */
-:where(
-    .app-shell,
-    .modal-backdrop,
-    .notes-shell,
-    .follow-shell,
-    .join-shell,
-    .presenter-shell,
-    .viewer-shell
-  )
-  .slide-item.is-active
-  .slide-num-overlay {
-  background: hsl(var(--app-danger));
-  color: #fff;
-  box-shadow:
-    0 0 0 2px hsl(0 0% 100%),
-    0 0 0 4px hsl(var(--app-danger));
+.is-slides-collapsed .slide-num {
+  display: none;
 }
 
 /* Multi-selection: blue border on selected slide thumbnails */
@@ -92,20 +98,4 @@
   outline: 3px solid hsl(var(--app-accent-primary));
   outline-offset: -3px;
   border-radius: var(--ps-radius-sm);
-}
-
-/* Adjust overlay position when selected to account for border */
-:where(
-    .app-shell,
-    .modal-backdrop,
-    .notes-shell,
-    .follow-shell,
-    .join-shell,
-    .presenter-shell,
-    .viewer-shell
-  )
-  .slide-item.is-selected
-  .slide-num-overlay {
-  top: 6px;
-  left: 6px;
 }
