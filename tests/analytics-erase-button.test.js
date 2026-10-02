@@ -1,5 +1,5 @@
 /**
- * The shared "forget me" button (`client/lib/format/analytics-erase-button.js`).
+ * The shared "forget me" button (`client/views/analytics/erase-button.js`).
  *
  * The button is the client half of the anonymous erasure route: confirm →
  * `tracker.erase()` → toast + self-remove. This drives that handler under jsdom
@@ -42,7 +42,7 @@ globalThis.requestAnimationFrame = (fn) => dom.window.setTimeout(fn, 0);
 globalThis.cancelAnimationFrame = (id) => dom.window.clearTimeout(id);
 
 const { createEraseMyDataButton } =
-  await import('../client/lib/format/analytics-erase-button.js');
+  await import('../client/views/analytics/erase-button.js');
 
 const LABELS = {
   button: 'Forget me',

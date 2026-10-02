@@ -9,12 +9,13 @@ import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
-import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
-import { displayNameFromEmail } from '../../../lib/user/user-format.js';
 import {
+  createAvatar,
+  updateAvatar,
   invalidateProfile,
   getUserProfileAsync,
-} from '../../../lib/user/user-profiles.js';
+} from '../../user/index.js';
+import { displayNameFromEmail } from '../../../lib/format/user-format.js';
 
 /**
  * Create profile image section with upload/remove buttons.

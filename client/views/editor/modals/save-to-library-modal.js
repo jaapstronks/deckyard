@@ -324,7 +324,7 @@ export function openSaveToLibraryModal({
           };
         }
         // Same invariant as a deck's: `dominant` names the version the top-level
-        // buffers hold (`contentLang()` in client/lib/slide-library/search.js
+        // buffers hold (`contentLang()` in client/views/slide-library/search.js
         // reads it as "which language is `item.content` written in"). A library
         // item is born here from the slide on screen — `payload.content` is that
         // version's content — so its `dominant` is fixed at creation to the

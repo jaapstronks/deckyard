@@ -57,7 +57,7 @@
  *    a rating scale. See {@link pairedKeys}.
  *  - **`markup` is honoured.** A `code` field's value is source by default,
  *    and a reader shows source as source. A field that declares `markup: true`
- *    holds author HTML the canvas renders (custom-html), so the reader renders
+ *    holds author HTML the canvas renders, so the reader renders
  *    it too, through the same sanitizer the canvas uses, minus the author's
  *    `style` attributes (presentation, like the `css` field), and names a
  *    slide without a title by its first `h1..h3`. See {@link markupHeadingText}.

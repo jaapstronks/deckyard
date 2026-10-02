@@ -1,6 +1,6 @@
 /**
  * The client half of the anonymous erasure: `createAnalyticsTracker(...).erase()`
- * (`client/lib/format/analytics-tracker.js`).
+ * (`client/views/analytics/tracker.js`).
  *
  * The server route is pinned in `tests/analytics-track-erase.test.js` and the
  * shared button in `tests/analytics-erase-button.test.js` (with a mocked
@@ -49,7 +49,7 @@ globalThis.fetch = async (url, opts) => {
 };
 
 const { createAnalyticsTracker } =
-  await import('../client/lib/format/analytics-tracker.js');
+  await import('../client/views/analytics/tracker.js');
 const { storage } = await import('../client/lib/storage.js');
 
 const DEVICE_ID_KEY = 'ps.analytics.deviceId';

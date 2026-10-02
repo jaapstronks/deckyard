@@ -13,16 +13,19 @@ import {
   getUiModePreference,
   setUiModePreference,
 } from '../../../lib/theme/ui-mode.js';
-import { logout } from '../../../lib/user/auth.js';
+import { logout } from '../../../lib/state/auth.js';
 import { createEditorTopbarMoreMenu } from './more-menu.js';
 import { openSubscriptionModal } from '../modals/subscription-modal.js';
 import { createLanguageMode } from './language-mode.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { createAvatar, updateAvatar } from '../../../lib/user/avatar.js';
-import { getUserProfileAsync } from '../../../lib/user/user-profiles.js';
-import { displayNameFromEmail } from '../../../lib/user/user-format.js';
-import { createUserMenu } from '../../../lib/user/user-menu.js';
-import { createNotificationBell } from '../../../lib/user/notification-bell.js';
+import {
+  createAvatar,
+  updateAvatar,
+  getUserProfileAsync,
+  createUserMenu,
+  createNotificationBell,
+} from '../../user/index.js';
+import { displayNameFromEmail } from '../../../lib/format/user-format.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
@@ -246,6 +249,9 @@ export function createEditorTopbar({
   // ============================================================
 
   const hasAnalytics = featureEnabled('analytics');
+  // The Companion is a live session (the notes companion): absent, caret and
+  // ⋯ entry both, where the installation has no live cluster (D260).
+  const hasLive = featureEnabled('live');
   const moreMenu = createEditorTopbarMoreMenu({
     root,
     toast,
@@ -282,7 +288,7 @@ export function createEditorTopbar({
     onSubscription: () =>
       openSubscriptionModal({ api, toast, presentationId: id }),
     onOpenOverview: () => onOpenOverview?.(),
-    onOpenCompanion: () => openNotesQr(),
+    onOpenCompanion: hasLive ? () => openNotesQr() : null,
   });
   detachers.push(moreMenu.detach);
 
@@ -405,38 +411,41 @@ export function createEditorTopbar({
   // presenting extras you never need while editing (Companion phone remote).
   // The caret is the one part of the group on the ladder: Present never
   // leaves the bar, its extras do.
-  const presentCompanionItem = h('button', {
-    class: 'dropdown-item',
-    type: 'button',
-    text: t('editor.companion', 'Companion'),
-    title: t(
-      'editor.companion.title',
-      'Open speaker notes companion on your phone (QR code).',
-    ),
-    onclick: () => {
-      closePresentMenu();
-      openNotesQr();
-    },
-  });
-  const {
-    details: presentMenuDetails,
-    close: closePresentMenu,
-    detach: detachPresentMenu,
-  } = createDropdown({
-    triggerClass: 'btn btn-primary btn-icon topbar-present-caret',
-    triggerContent: [icon('chevron-down', { size: 14 })],
-    title: t('editor.present.more', 'More presenting options'),
-    ariaLabel: t('editor.present.more', 'More presenting options'),
-    // Folds at sm into the ⋯ Companion entry; see Topbar Responsive.
-    detailsClass: 'topbar-present-more topbar-fold-sm',
-    menuClass: 'dropdown-menu-right',
-    items: [presentCompanionItem],
-  });
-  detachers.push(detachPresentMenu);
-  const presentGroup = h('div', { class: 'topbar-present-group' }, [
-    btnPresent,
-    presentMenuDetails,
-  ]);
+  const presentCompanionItem = hasLive
+    ? h('button', {
+        class: 'dropdown-item',
+        type: 'button',
+        text: t('editor.companion', 'Companion'),
+        title: t(
+          'editor.companion.title',
+          'Open speaker notes companion on your phone (QR code).',
+        ),
+        onclick: () => {
+          closePresentMenu?.();
+          openNotesQr();
+        },
+      })
+    : null;
+  // The caret holds only the Companion, so without it there is no caret.
+  const presentMenu = presentCompanionItem
+    ? createDropdown({
+        triggerClass: 'btn btn-primary btn-icon topbar-present-caret',
+        triggerContent: [icon('chevron-down', { size: 14 })],
+        title: t('editor.present.more', 'More presenting options'),
+        ariaLabel: t('editor.present.more', 'More presenting options'),
+        // Folds at sm into the ⋯ Companion entry; see Topbar Responsive.
+        detailsClass: 'topbar-present-more topbar-fold-sm',
+        menuClass: 'dropdown-menu-right',
+        items: [presentCompanionItem],
+      })
+    : null;
+  const closePresentMenu = presentMenu?.close;
+  if (presentMenu) detachers.push(presentMenu.detach);
+  const presentGroup = h(
+    'div',
+    { class: 'topbar-present-group' },
+    [btnPresent, presentMenu?.details].filter(Boolean),
+  );
 
   // ============================================================
   // UNDO / REDO
@@ -558,8 +567,8 @@ export function createEditorTopbar({
 
   detachers.push(languageMode.detach);
 
-  // Warm the notes session in the background
-  ensureNotesSession?.().catch(() => {});
+  // Warm the notes session in the background, where there is a live cluster.
+  if (hasLive) ensureNotesSession?.().catch(() => {});
 
   languageMode.syncLangUi();
 

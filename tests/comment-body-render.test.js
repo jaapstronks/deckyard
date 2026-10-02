@@ -19,7 +19,7 @@ globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 
 const { renderCommentBodyNodes } =
-  await import('../client/lib/comments/comment-body.js');
+  await import('../client/views/comments/comment-body.js');
 
 function render(body) {
   const el = document.createElement('div');

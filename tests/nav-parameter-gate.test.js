@@ -90,7 +90,7 @@ test('gate: no allowlist — it is in force inside the router itself', async () 
   for (const file of [
     'client/lib/state/router.js',
     'client/app.js',
-    'client/lib/user/user-menu.js',
+    'client/views/user/user-menu.js',
   ]) {
     const messages = await lintProbe(
       "export const f = ({ nav }) => nav('/app');\n",

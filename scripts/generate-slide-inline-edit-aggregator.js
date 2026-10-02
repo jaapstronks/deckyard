@@ -17,7 +17,7 @@
 // WHY IT IMPORTS NAMESPACES, NOT NAMED EXPORTS
 // The file carries two facets now, and the two do not cover the same types: a
 // type can own an inspector keep-list without being inline-editable at all
-// (custom-html, follow-invite, payoff). Importing `* as <type>` keeps the
+// (follow-invite, payoff). Importing `* as <type>` keeps the
 // generator a pure directory scan — it never has to know which of the named
 // exports a given file happens to have — and the aggregator drops the misses at
 // runtime instead. A third facet costs one line here and none in the scan.

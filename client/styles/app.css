@@ -5,3 +5,7 @@
 @import url('./shared/primitives.css');
 @import url('./app/components.css');
 @import url('./base.css');
+/* The viewer chrome (presenter shell, D267 layer 3), shared with export.css.
+   Last in this file so it keeps the place it had relative to the app CSS when
+   it lived at the end of the slide chain; slides.css loads after it. */
+@import url('./viewer.css');

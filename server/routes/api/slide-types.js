@@ -6,6 +6,7 @@ import {
   slideRuntime,
 } from '../../../shared/slide-types/runtime.js';
 import { slideTypeGroup } from '../../../shared/slide-types/authoring-groups.js';
+import { resolvedFidelities } from '../../../shared/slide-types/fidelity.js';
 import {
   SLIDE_TIER,
   slideFallback,
@@ -49,6 +50,10 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // insertion policy hides them from the picker + AI. The client needs
       // the flag to enforce that, so it travels in the metadata.
       deprecated: def.deprecated === true ? true : undefined,
+      // The installation cluster the type needs (D260). The editor counts a
+      // type whose cluster is off as org-disabled, through
+      // `clusterOffSlideTypes()` in shared/slide-types/policy.js.
+      feature: typeof def.feature === 'string' ? def.feature : undefined,
       // `library: false` withholds the type from the slide library. The
       // editor's Save-to-library action reads it off this response, so a fork
       // type declaring it is only heard if the flag travels. See
@@ -78,6 +83,12 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
       // shared/slide-types/tiers.js.
       tier: slideTypeTier(key),
       fallback: slideFallback(def) || undefined,
+      // The `fidelity` facet, resolved per export target: whether the editable
+      // PPTX composes this type or photographs it. The editor's "exports as an
+      // image" hint reads it here, so a fork type's declaration is heard and
+      // an undeclared one arrives as the `raster` the export will use. See
+      // shared/slide-types/fidelity.js.
+      fidelity: resolvedFidelities(def),
       themeOnly: def.themeOnly === true || undefined,
       defaultsByLang:
         def.defaultsByLang && typeof def.defaultsByLang === 'object'
@@ -196,6 +207,9 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
         // nothing about it. It carries no `fallback` because there is no
         // column for one yet — the unknown-type render contract covers it.
         tier: SLIDE_TIER.EXTENSION,
+        // No place to declare, so the export photographs it; the composed
+        // definition says the same (`toRuntimeSlideType()`).
+        fidelity: resolvedFidelities(null),
         css: ct.css || undefined,
         hasTemplate: Boolean(ct.template),
       };

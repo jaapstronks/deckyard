@@ -264,8 +264,7 @@ every population agrees with rule 1:
 | core type, not overridden | core's markup (core defs carry no `inline`) | the aggregator  | yes    |
 
 This also closes the old latent hole where the fallback fired for a bundled
-core name without a core descriptor (`payoff-slide`, `follow-invite-slide`,
-`custom-html-slide`): an override of one of those is now server-rendered too, so
+core name without a core descriptor (`payoff-slide`, `follow-invite-slide`): an override of one of those is now server-rendered too, so
 `def.inline` describes its actual DOM, and a non-overridden one has no `inline`
 and resolves to `null`.
 
@@ -297,8 +296,8 @@ so it has no "plain data" gate. `descriptors.js` spreads it into
 `INLINE_DESCRIPTORS` and keeps only the grammar doc and the two lookup helpers.
 
 That file carries **two** facets — the descriptor and the inspector keep-list —
-and they do not cover the same types: `custom-html-slide`, `follow-invite-slide`
-and `payoff-slide` own a keep-list without being inline-editable at all. So it
+and they do not cover the same types: `follow-invite-slide` and `payoff-slide`
+own a keep-list without being inline-editable at all. So it
 imports module _namespaces_ (`import * as titleSlide from …`) and slices each
 facet out of them at runtime, dropping the types that do not declare it. That
 keeps the generator a pure directory scan — it never has to know which named

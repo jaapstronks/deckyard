@@ -13,7 +13,7 @@ import {
   setRenderer,
   startRouter,
 } from './lib/state/router.js';
-import { meWithMeta } from './lib/user/auth.js';
+import { meWithMeta } from './lib/state/auth.js';
 import { setFeatures } from './lib/state/features.js';
 import { syncSandboxBanner } from './lib/dom/sandbox-banner.js';
 import {
@@ -37,9 +37,11 @@ import { renderNotesJoin } from './views/notes-join.js';
 import { renderFollow } from './views/follow/index.js';
 import { renderShareViewer } from './views/share-viewer/index.js';
 import { renderSettings } from './views/settings/index.js';
-import { renderAnalytics } from './views/analytics/index.js';
-import { renderSharedReport } from './views/analytics/shared-report.js';
-import { renderDashboard } from './views/analytics/dashboard.js';
+import {
+  renderAnalytics,
+  renderSharedReport,
+  renderDashboard,
+} from './views/analytics/index.js';
 import { initUiMode } from './lib/theme/ui-mode.js';
 import { fetchAppSettings, fetchMySettings } from './lib/net/settings.js';
 import { setSupportedLangs, writeLangMode } from './lib/format/i18n.js';

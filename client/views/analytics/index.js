@@ -1,6 +1,14 @@
 /**
- * Analytics dashboard view for presentation metrics.
+ * Analytics - the feature's public seam and the per-presentation dashboard.
+ * Besides `renderAnalytics` it exports the organization dashboard, the shared
+ * report page, and the viewer-side tracker and "forget me" button that the
+ * share viewer and follow-along mount.
  */
+
+export { renderDashboard } from './dashboard.js';
+export { renderSharedReport } from './shared-report.js';
+export { createAnalyticsTracker, isAnalyticsEnabled } from './tracker.js';
+export { createEraseMyDataButton } from './erase-button.js';
 
 import { h } from '../../lib/dom/index.js';
 import { api } from '../../lib/api.js';

@@ -94,7 +94,7 @@ Client:
 - `client/views/analytics/` (14 modules) — the dashboard, date picker, timeline
   and heatmap charts, viewer list, realtime viewer, report modal, the public
   `shared-report.js` view and the leads tab.
-- `client/lib/format/analytics-tracker.js` — the SPA-side tracker.
+- `client/views/analytics/tracker.js` — the SPA-side tracker.
 
 ## Data model
 

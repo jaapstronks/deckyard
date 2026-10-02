@@ -33,9 +33,7 @@ import {
   getYDocState as defaultGetYDocState,
   setYDocState as defaultSetYDocState,
 } from '../storage/presentations/ydocs.js';
-import { canEditCustomHtml } from '../utils/route-middleware.js';
 import { singleOrganizationScope } from '../storage/scope.js';
-import { extractCustomHtml, guardCustomHtml } from './custom-html-guard.js';
 
 /**
  * Create the Hocuspocus persistence hooks.
@@ -46,10 +44,9 @@ import { extractCustomHtml, guardCustomHtml } from './custom-html-guard.js';
  *   for this document. The hooks run outside any request, so the organization is
  *   recorded at connect time by mount.js (which has the authorized deck) and read
  *   back here. Defaults to the deck's own organization for standalone use.
- * @param {Object} [options.deps] - Test seam: override storage/codec/Y/log/
- *   canEditCustomHtmlFn
+ * @param {Object} [options.deps] - Test seam: override storage/codec/Y/log
  * @returns {{onLoadDocument: Function, onStoreDocument: Function,
- *   onChange: Function, afterUnloadDocument: Function}}
+ *   afterUnloadDocument: Function}}
  */
 export function createCollabPersistence({
   repoRoot,
@@ -82,12 +79,8 @@ export function createCollabPersistence({
     updatePresentation = defaultUpdatePresentation,
     getYDocState = defaultGetYDocState,
     setYDocState = defaultSetYDocState,
-    canEditCustomHtmlFn = canEditCustomHtml,
     log = console,
   } = deps;
-
-  /** Per-document snapshot of custom-html raw fields, for the capability gate. */
-  const customHtmlSnapshots = new Map();
 
   /** A doc is ours once bootstrap/load populated meta (guards empty docs). */
   function isPopulated(document) {
@@ -101,7 +94,6 @@ export function createCollabPersistence({
     const stored = await getYDocState(storageScopeFor(documentName), id);
     if (stored instanceof Uint8Array && stored.length > 0) {
       Y.applyUpdate(document, stored, 'collab-load');
-      customHtmlSnapshots.set(documentName, extractCustomHtml(document, Y));
       return document;
     }
 
@@ -141,39 +133,11 @@ export function createCollabPersistence({
         err?.message || err,
       );
     }
-    customHtmlSnapshots.set(documentName, extractCustomHtml(document, Y));
     return document;
   }
 
-  /**
-   * Per-change custom-html capability gate (see custom-html-guard.js). Fires
-   * for every doc update with the originating connection's context; a
-   * non-capable editor's raw HTML/CSS edit on a custom-html-slide is reverted
-   * in place. Server-origin writes (live-apply, no `context.user`) are already
-   * gated by the REST route, so they update the snapshot instead.
-   */
-  function onChange({ documentName, document, context }) {
-    const id = presentationIdFromDocumentName(documentName);
-    if (!id) return;
-    const user = context?.user;
-    const allowed = !user || canEditCustomHtmlFn(user);
-    const prev = customHtmlSnapshots.get(documentName);
-    const { snapshot, reverted } = guardCustomHtml(document, prev, {
-      allowed,
-      Y,
-    });
-    customHtmlSnapshots.set(documentName, snapshot);
-    if (reverted) {
-      log.warn(
-        `[collab] reverted a raw HTML/CSS edit on ${id} by a user without the ` +
-          `canEditCustomHtml capability (${user?.email || 'unknown'})`,
-      );
-    }
-  }
-
-  /** Drop the per-document snapshot when Hocuspocus unloads the doc. */
+  /** Drop the per-document organization when Hocuspocus unloads the doc. */
   function afterUnloadDocument({ documentName }) {
-    customHtmlSnapshots.delete(documentName);
     documentOrganizations.delete(documentName);
   }
 
@@ -241,5 +205,5 @@ export function createCollabPersistence({
     }
   }
 
-  return { onLoadDocument, onStoreDocument, onChange, afterUnloadDocument };
+  return { onLoadDocument, onStoreDocument, afterUnloadDocument };
 }

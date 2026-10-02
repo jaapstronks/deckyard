@@ -1,6 +1,6 @@
 /**
  * Contract tests for the public API v1 exports module (B40 PR 5+):
- * GET /api/v1/presentations/:id/export/{json,html,pdf,pptx}.
+ * GET /api/v1/presentations/:id/export/{json,html,pdf,pptx,pptx-editable}.
  *
  * The surface these pin, per docs/openapi.yaml: the portable JSON deck export
  * (format sentinel, canonical slide-type ids, attachment headers), the
@@ -8,12 +8,13 @@
  * filename suffix, and the shared gate ladder: `export` permission → daily
  * export limit → deck lookup → access check.
  *
- * The PPTX success path is NOT covered: `buildPptxBuffer` renders every slide
+ * The PPTX success paths are NOT covered: `buildPptxBuffer` renders every slide
  * to a PNG in a headless browser, which the fake-db recipe deliberately does
  * not start (the browser lives in the export smoke test only) — noted as an
  * explicit opt-out in the B40 brief's Opt-out-log. Its gate ladder is shared
- * with the other three variants and pinned there; the pptx route's permission
- * gate is pinned here.
+ * with the other three variants and pinned there; the permission gate of both
+ * pptx routes is pinned here. `pptx-editable` photographs a raster type the
+ * same way, so it shares the opt-out.
  *
  * Handler-import level against the database double, like the neighbours
  * (tests/public-api-partial-write.test.js). Negative assertions pin the
@@ -317,7 +318,7 @@ test('GET /export/pdf answers print-ready HTML with the -print filename', async 
 
 test('every export variant is refused with 403 without the export permission', async () => {
   await installDb();
-  for (const variant of ['json', 'html', 'pdf', 'pptx']) {
+  for (const variant of ['json', 'html', 'pdf', 'pptx', 'pptx-editable']) {
     const ctx = makeCtx(
       'GET',
       `/api/v1/presentations/${DECK_ID}/export/${variant}`,

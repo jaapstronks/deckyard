@@ -846,6 +846,24 @@ export function liveInteractionOptions(content) {
 }
 
 /**
+ * The audience's follow-along path for one version of a deck:
+ * `/follow/<id>?lang=<lang>`. One builder for every live type that points an
+ * audience at it (the invite's and feedback's QR, the poll's join line), so
+ * the URL a QR encodes and the URL a slide prints cannot drift. Relative on
+ * purpose: `renderHtml` stays pure, and the runtime makes it absolute where a
+ * QR needs a host (`follow-invite-runtime.js`).
+ *
+ * @param {string} presentationId - the deck id; empty → `''` (no path)
+ * @param {string} lang - the normalized deck language of the version shown
+ * @returns {string}
+ */
+export function followPath(presentationId, lang) {
+  const id = String(presentationId || '').trim();
+  if (!id) return '';
+  return `/follow/${encodeURIComponent(id)}?lang=${encodeURIComponent(lang)}`;
+}
+
+/**
  * Resolve a raw per-card `link` value into an anchor descriptor, or `null`.
  *
  * Shared across clickable card/tile slide types (icon-card-grid, logo-wall, …).

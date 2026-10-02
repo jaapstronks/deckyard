@@ -8,7 +8,6 @@ import * as chartSlide from './types/chart-slide/inline-edit.js';
 import * as comparisonSlide from './types/comparison-slide/inline-edit.js';
 import * as contentSlide from './types/content-slide/inline-edit.js';
 import * as countdownSlide from './types/countdown-slide/inline-edit.js';
-import * as customHtmlSlide from './types/custom-html-slide/inline-edit.js';
 import * as cycleSlide from './types/cycle-slide/inline-edit.js';
 import * as embedSlide from './types/embed-slide/inline-edit.js';
 import * as endSlide from './types/end-slide/inline-edit.js';
@@ -53,7 +52,6 @@ const MODULES = Object.freeze({
   'comparison-slide': comparisonSlide,
   'content-slide': contentSlide,
   'countdown-slide': countdownSlide,
-  'custom-html-slide': customHtmlSlide,
   'cycle-slide': cycleSlide,
   'embed-slide': embedSlide,
   'end-slide': endSlide,

@@ -540,6 +540,10 @@ function buildManagedEmbedFonts(headingManaged, bodyManaged) {
         weight: variant.weight || 400,
         style: variant.style || 'normal',
         format: variant.format || 'woff2',
+        // The name the PPTX export writes for this family (B289, D126).
+        ...(managed.desktopFamily
+          ? { desktopFamily: managed.desktopFamily }
+          : {}),
       });
     }
   }

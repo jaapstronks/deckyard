@@ -11,7 +11,7 @@ import payoffSlide from './types/payoff-slide.js';
 import quoteSlide from './types/quote-slide.js';
 import teamCardsSlide from './types/team-cards-slide.js';
 import logoWallSlide from './types/logo-wall-slide.js';
-import titleSlide from './types/title-slide.js';
+import titleSlide from './types/title-slide/index.js';
 import videoSlide from './types/video-slide.js';
 import embedSlide from './types/embed-slide.js';
 import countdownSlide from './types/countdown-slide.js';
@@ -32,7 +32,6 @@ import funnelSlide from './types/funnel-slide.js';
 import pyramidSlide from './types/pyramid-slide.js';
 import cycleSlide from './types/cycle-slide.js';
 import gallerySlide from './types/gallery-slide.js';
-import customHtmlSlide from './types/custom-html-slide.js';
 import { GLOBAL_SLIDE_FIELD_KEYS, composeSlideType } from './compose.js';
 import {
   CORE_NAMESPACE,
@@ -97,7 +96,6 @@ const CORE_SLIDE_TYPES = {
   'pyramid-slide': pyramidSlide,
   'cycle-slide': cycleSlide,
   'gallery-slide': gallerySlide,
-  'custom-html-slide': customHtmlSlide,
   'end-slide': endSlide,
 };
 

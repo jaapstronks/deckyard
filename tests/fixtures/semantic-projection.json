@@ -615,28 +615,6 @@
       "</section>"
     ]
   },
-  "custom-html-slide": {
-    "nl": [
-      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"custom-html-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\" class=\"sr-only\">Custom HTML</h2>",
-      "<div data-field=\"html\"><div class=\"ch-card\">",
-      "  <p class=\"ch-kicker\">Uptime this quarter</p>",
-      "  <p class=\"ch-figure\">99.98%</p>",
-      "  <p class=\"ch-note\">Two incidents, both under four minutes.</p>",
-      "</div></div>",
-      "</section>"
-    ],
-    "en-GB": [
-      "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"custom-html-slide\" aria-labelledby=\"slide-1-title\">",
-      "<h2 id=\"slide-1-title\" class=\"sr-only\">Custom HTML</h2>",
-      "<div data-field=\"html\"><div class=\"ch-card\">",
-      "  <p class=\"ch-kicker\">Uptime this quarter</p>",
-      "  <p class=\"ch-figure\">99.98%</p>",
-      "  <p class=\"ch-note\">Two incidents, both under four minutes.</p>",
-      "</div></div>",
-      "</section>"
-    ]
-  },
   "end-slide": {
     "nl": [
       "<section id=\"slide-1\" class=\"reader-slide\" data-slide-type=\"end-slide\" aria-labelledby=\"slide-1-title\">",

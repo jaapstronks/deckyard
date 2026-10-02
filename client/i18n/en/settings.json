@@ -95,6 +95,8 @@
   "fonts.deleteError": "Failed to delete font family.",
   "fonts.deleted": "Font family deleted.",
   "fonts.description": "Manage custom font families for use in themes. Upload font files, connect Adobe Fonts, fonts.com, or add Google Fonts.",
+  "fonts.desktopFamily": "Desktop font name",
+  "fonts.desktopFamilyHelp": "The full name of the installed font, as PowerPoint and Keynote list it. PowerPoint exports use it; without it they fall back to Arial.",
   "fonts.discover": "Discover Fonts",
   "fonts.discoverError": "Failed to discover fonts.",
   "fonts.discovering": "Discovering…",

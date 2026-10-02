@@ -16,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { RADIUS_SCALES, SHADOW_SCALES } from '../shared/theme-config-schema.js';
+import { readCssWithImports } from '../server/utils/read-css-with-imports.js';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const tokensCss = readFileSync(
@@ -70,4 +71,55 @@ test('every scale the schema can emit is a value CSS can use', () => {
       assert.match(value, /^\d+px$/, `${name}.${token} is not a px length`);
     }
   }
+});
+
+test('the resolved slide chain binds the theme once, under .slide, with no :root (B531, D268)', async () => {
+  // Every path that renders a slide (editor, embed, HTML/PDF/PNG export, MCP
+  // preview) reads `slides.css` through `readCssWithImports`; the theme layer
+  // `slides/00-theme.css` rides along right after `00-tokens.css` and has no
+  // other address. So the resolved chain carries exactly one `.slide {}` block
+  // that binds `--font-heading` to `--t-font-heading`, and - the layer being
+  // scoped to `.slide` so the app chrome stays theme-independent - no `:root`
+  // at all. A second block with the same names would make the result depend
+  // on import order; the chain has none.
+  const stripComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+  const chain = stripComments(
+    await readCssWithImports(
+      repoRoot,
+      join(repoRoot, 'client/styles/slides.css'),
+    ),
+  );
+  const themeBlocks =
+    chain.match(
+      /\.slide\s*\{[^}]*--font-heading:\s*var\(\s*--t-font-heading,/g,
+    ) || [];
+  assert.equal(themeBlocks.length, 1, 'one .slide {} theme block in the chain');
+  for (const name of [
+    '--slide-bg-lime',
+    '--slide-bg-mist',
+    '--slide-bg-dark',
+    '--font-heading',
+    '--font-body',
+    '--font-caption',
+    '--font-mono',
+    '--heading-transform',
+    '--heading-weight',
+  ]) {
+    const definitions =
+      chain.match(new RegExp(`(^|[\\s{;])${name}\\s*:`, 'g')) || [];
+    assert.equal(
+      definitions.length,
+      1,
+      `${name} is defined once in the slide chain`,
+    );
+  }
+  assert.doesNotMatch(
+    chain,
+    /:root\s*\{/,
+    'the slide chain sets nothing on :root',
+  );
+  const tokensAt = chain.indexOf('--slide-radius-sm:');
+  const themeAt = chain.indexOf('--font-heading: var(');
+  assert.ok(tokensAt !== -1 && themeAt !== -1);
+  assert.ok(tokensAt < themeAt, 'tokens come before the theme layer');
 });

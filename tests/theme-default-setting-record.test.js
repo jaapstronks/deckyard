@@ -67,7 +67,7 @@ test('fresh settings expose the seed UUID as default and mark only that record',
       authedUser: { organizationId: ORG, email: 'member@example.com' },
     });
     assert.equal(res.statusCode, 200);
-    assert.equal(res.body.defaultThemeId, BRAND);
+    assert.equal('defaultThemeId' in res.body, false);
     assert.equal(
       res.body.themes.find((theme) => theme.id === BRAND).isDefault,
       true,

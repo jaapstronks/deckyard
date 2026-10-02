@@ -67,6 +67,7 @@ import {
 import { loadEditorModel } from './load-editor-model.js';
 import { attachEditorLifecycle } from './editor-lifecycle.js';
 import { featureEnabled, getFeatures } from '../../lib/state/features.js';
+import { clusterOffSlideTypes } from '../../../shared/slide-types/policy.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
 import { restoreSlideFromServer } from './slide-lock-restore.js';
 import { debugLog } from '../../lib/util/debug.js';
@@ -169,9 +170,16 @@ export async function createEditorController({
     editorModel;
 
   const orgSettings = orgSettingsData?.settings || {};
-  const disabledSlideTypes = Array.isArray(orgSettings.disabledSlideTypes)
-    ? orgSettings.disabledSlideTypes
-    : [];
+  // The organization's curation plus the types whose installation cluster is
+  // off, which count as org-disabled (D260): one list for every insertion path.
+  const disabledSlideTypes = [
+    ...new Set([
+      ...(Array.isArray(orgSettings.disabledSlideTypes)
+        ? orgSettings.disabledSlideTypes
+        : []),
+      ...clusterOffSlideTypes(SLIDE_TYPES, featureEnabled),
+    ]),
+  ];
 
   // ============================================================
   // EDITOR STATE

@@ -17,9 +17,11 @@
  */
 
 import { t } from '../../../../lib/ui-i18n.js';
-import { createSlideLibraryPicker } from '../../../../lib/slide-library/index.js';
-import { createDeckFromLibraryItems } from '../../../../lib/slide-library/compose.js';
-import { createCollectionsApi } from '../../../../lib/slide-collections/api.js';
+import {
+  createSlideLibraryPicker,
+  createDeckFromLibraryItems,
+} from '../../../slide-library/index.js';
+import { createCollectionsApi } from '../../collections/index.js';
 import { h } from '../../../../lib/dom/index.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { nav } from '../../../../lib/state/router.js';

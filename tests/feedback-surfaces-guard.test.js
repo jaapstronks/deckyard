@@ -55,7 +55,7 @@ const repoRoot = path.join(here, '..');
 const TOAST_SITES = [
   // --- the server's sentence thrown away for generic copy (B205) ---
   {
-    file: 'client/lib/slide-library/edit-modal.js',
+    file: 'client/views/slide-library/edit-modal.js',
     total: 1,
     discarded: 1,
   },
@@ -69,9 +69,13 @@ const TOAST_SITES = [
     total: 3,
     discarded: 3,
   },
-  { file: 'client/lib/user/organization-switcher.js', total: 1, discarded: 1 },
   {
-    file: 'client/lib/format/analytics-erase-button.js',
+    file: 'client/views/user/organization-switcher.js',
+    total: 1,
+    discarded: 1,
+  },
+  {
+    file: 'client/views/analytics/erase-button.js',
     total: 1,
     discarded: 1,
   },
@@ -117,7 +121,7 @@ const TOAST_SITES = [
   { file: 'client/views/editor/topbar/more-menu.js', total: 3, discarded: 1 },
   { file: 'client/views/editor/export-modal.js', total: 1, discarded: 1 },
   // --- background failures that expire in a toast (B206) ---
-  { file: 'client/lib/slide-library/modals.js', total: 2, background: 2 },
+  { file: 'client/views/slide-library/modals.js', total: 2, background: 2 },
   { file: 'client/views/notes/notes-editor.js', total: 1, background: 1 },
 ];
 
@@ -135,7 +139,7 @@ const BURNDOWN = { refusals: 0, discarded: 23, background: 5 };
  * toast — so B205 settles their wording, not their placement.
  */
 const REFUSE_AND_RETURN = [
-  { file: 'client/lib/slide-library/edit-modal.js', hits: 1 },
+  { file: 'client/views/slide-library/edit-modal.js', hits: 1 },
   { file: 'client/views/editor/inline-edit/inline-editor.js', hits: 1 },
   { file: 'client/views/editor/modals/json-debug-modal.js', hits: 1 },
   { file: 'client/views/editor/topbar/index.js', hits: 1 },

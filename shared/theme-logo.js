@@ -11,7 +11,7 @@
 // same answer therefore holds in the editor preview, the export worker and the
 // published artifact. Both places that draw a theme mark ask this module: the
 // per-slide corner logo (shared/slide-types/presentation.js) and the title
-// slide's own logo (shared/slide-types/types/title-slide.js).
+// slide's own logo (shared/slide-types/types/title-slide/render.js).
 
 import { resolveSlideSurfaceTone } from './slide-surface-tone.js';
 

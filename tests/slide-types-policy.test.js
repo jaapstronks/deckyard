@@ -46,6 +46,27 @@ test('split-partner-title-slide is removed: off the registry, and a stored slide
   assert.match(html, /Old partners/);
 });
 
+test('custom-html-slide is removed: off the registry, and a stored slide degrades safely', () => {
+  // A7.8b: the raw HTML/CSS escape hatch left core with its permission path
+  // (decided 2026-08-03). The production scan found no slide on it.
+  assert.equal(
+    SLIDE_TYPES['custom-html-slide'],
+    undefined,
+    'no longer registered',
+  );
+  // The archived slide shows the stored markup as text, never as markup: the
+  // sanitizer that used to stand between it and the page left with the type.
+  const html = renderSlideHtml({
+    type: 'custom-html-slide',
+    content: { html: '<img src=x onerror="alert(1)"><p>Org chart</p>' },
+  });
+  assert.match(html, /slide-unresolved/);
+  assert.match(html, /custom-html-slide/);
+  assert.match(html, /Org chart/);
+  assert.doesNotMatch(html, /<img/);
+  assert.doesNotMatch(html, /<p>Org chart/);
+});
+
 test('freeform-slide is removed: off the registry, and a stored slide degrades safely', () => {
   // The last rung of the deprecation ladder: `deprecated: true` (out of picker
   // + AI, render-only) was a waypoint, not an end state. The freeform canvas
@@ -229,22 +250,6 @@ test('themeOnly follows explicit include after a theme is duplicated', () => {
       theme: { ...duplicate, slideTypes: { include: [type], exclude: [type] } },
     }),
     false,
-  );
-});
-
-test('custom-html requires the capability', () => {
-  const def = { label: 'Custom HTML' };
-  assert.equal(
-    isInsertableSlideType({ type: 'custom-html-slide', def }),
-    false,
-  );
-  assert.equal(
-    isInsertableSlideType({
-      type: 'custom-html-slide',
-      def,
-      canEditCustomHtml: true,
-    }),
-    true,
   );
 });
 

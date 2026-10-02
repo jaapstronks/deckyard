@@ -74,8 +74,8 @@ test('opt-out covers deprecated types and the ai:false flag', () => {
   assert.equal(isAgentOptOut({}), false);
 
   const resolved = resolveAgentSlideTypes({});
-  // A capability-gated escape hatch: live, but not for agents.
-  assert.equal(resolved['custom-html-slide'], undefined);
+  // A live type that declares `ai: false` is not offered to agents.
+  assert.equal(resolved['follow-invite-slide'], undefined);
 });
 
 test('an undocumented registered type is still offered, flagged documented:false', () => {
@@ -211,8 +211,7 @@ test('essential travels beside required, in item fields too (D211)', () => {
 
 test('the agent catalog marks exactly the audited core fields essential', () => {
   // Fork-stable: the core definitions, not a checkout's overrides. A type
-  // withheld from agents (custom-html-slide) has no catalog entry to carry
-  // its row.
+  // withheld from agents (`ai: false`) has no catalog entry to carry its row.
   const derived = [];
   const expected = [];
   for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {

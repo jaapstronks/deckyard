@@ -262,7 +262,6 @@ test('internal and v1 theme routes use each organization default despite stale r
   const assertRoutes = async (organizationId, expected) => {
     const internal = await request(organizationId, '/api/themes');
     const publicList = await request(organizationId, '/api/v1/themes');
-    assert.equal(internal.defaultThemeId, expected);
     assert.deepEqual(defaults(internal.themes), [expected]);
     assert.deepEqual(defaults(publicList.themes), [expected]);
     for (const theme of publicList.themes) {

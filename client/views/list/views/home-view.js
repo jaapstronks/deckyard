@@ -7,8 +7,8 @@ import {
 } from '../../../lib/dom/empty-state.js';
 import { createSandboxExamplesSection } from './sandbox-examples.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
-import { displayNameFromEmail } from '../../../lib/user/user-format.js';
-import { createCollectionsApi } from '../../../lib/slide-collections/api.js';
+import { displayNameFromEmail } from '../../../lib/format/user-format.js';
+import { createCollectionsApi } from '../collections/index.js';
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';

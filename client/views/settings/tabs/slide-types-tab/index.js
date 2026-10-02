@@ -27,6 +27,8 @@ import { createCurationThumbnail } from './curation-thumbnails.js';
 import { openTypePreview as openTypePreviewModal } from './type-preview-modal.js';
 import { DEFAULT_THEME_REF } from '../../../../../shared/constants/themes.js';
 import { icon } from '../../../../lib/dom/icons.js';
+import { featureEnabled } from '../../../../lib/state/features.js';
+import { clusterOffSlideTypes } from '../../../../../shared/slide-types/policy.js';
 
 /**
  * Create the slide types curation tab.
@@ -751,8 +753,14 @@ export function createSlideTypesTab({ user } = {}) {
     // Curation is about which types an author may *insert*, so a deprecated type
     // has nothing to curate: it is already unreachable from every insertion path
     // (see isInsertableSlideType) while existing slides keep rendering.
+    // The same holds for a type whose installation cluster is off (D260).
+    const clusterOff = new Set(
+      clusterOffSlideTypes(slideTypeMeta, featureEnabled),
+    );
     const isCuratable = (type) =>
-      Boolean(slideTypeMeta[type]) && !slideTypeMeta[type].deprecated;
+      Boolean(slideTypeMeta[type]) &&
+      !slideTypeMeta[type].deprecated &&
+      !clusterOff.has(type);
 
     // The shelves, with membership resolved from each type's own `group`
     // declaration (see ./categories.js). Resolved against slideTypeMeta — the

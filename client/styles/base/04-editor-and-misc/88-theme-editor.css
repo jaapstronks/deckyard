@@ -27,7 +27,7 @@
 }
 
 /* Theme card. The settings list and the theme picker
-   (client/lib/theme/theme-select.js) render the same card root, so its rules
+   (client/views/theme-select.js) render the same card root, so its rules
    live here once (D269); the picker's inner parts stay in 13-modals-misc.css. */
 .theme-card {
   display: flex;

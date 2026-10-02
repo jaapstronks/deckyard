@@ -15,7 +15,7 @@
   resize: vertical;
 }
 
-/* Monospace code editor textarea (custom-html-slide html/css fields) */
+/* Monospace code editor textarea (`code` fields) */
 .form-textarea-code {
   min-height: 200px;
   resize: vertical;

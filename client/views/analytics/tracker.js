@@ -1,0 +1,405 @@
+/**
+ * Analytics tracker for presentation views.
+ *
+ * Lightweight, non-blocking tracker that:
+ * - Uses navigator.sendBeacon for reliable session end
+ * - 30-second heartbeat interval
+ * - Visibility API for pause/resume
+ * - Device ID in localStorage
+ */
+
+import { storage } from '../../lib/storage.js';
+import { api } from '../../lib/api.js';
+
+const DEVICE_ID_KEY = 'ps.analytics.deviceId';
+const HEARTBEAT_INTERVAL_MS = 30000; // 30 seconds
+const FETCH_TIMEOUT_MS = 10000; // 10 seconds
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 1000; // 1 second base delay for exponential backoff
+
+/**
+ * Generate a unique device ID.
+ * @returns {string}
+ */
+function generateDeviceId() {
+  const array = new Uint8Array(16);
+  crypto.getRandomValues(array);
+  return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join(
+    '',
+  );
+}
+
+/**
+ * Validate device ID format (32 hex chars).
+ * @param {string} deviceId - The device ID to validate
+ * @returns {boolean}
+ */
+function isValidDeviceId(deviceId) {
+  return deviceId && /^[a-f0-9]{32}$/i.test(deviceId);
+}
+
+/**
+ * Get or create device ID from localStorage.
+ * Validates stored ID and regenerates if invalid.
+ * @returns {string}
+ */
+function getDeviceId() {
+  let deviceId = storage.get(DEVICE_ID_KEY);
+  // Validate stored device ID - regenerate if invalid or tampered
+  if (!isValidDeviceId(deviceId)) {
+    deviceId = generateDeviceId();
+    storage.set(DEVICE_ID_KEY, deviceId);
+  }
+  return deviceId;
+}
+
+/**
+ * Create an analytics tracker for a presentation.
+ * @param {Object} options - Tracker options
+ * @param {string} options.presentationId - The presentation ID to track
+ * @param {string} options.sourceType - 'share_link' | 'follow' | 'embed'
+ * @param {string} [options.sourceId] - Share link token or session ID
+ * @param {string} [options.viewerEmail] - Viewer's email if authenticated
+ * @param {string} [options.viewerType] - 'guest' | 'authenticated' | 'anonymous'
+ * @returns {Object} Tracker API
+ */
+export function createAnalyticsTracker({
+  presentationId,
+  sourceType,
+  sourceId = null,
+  viewerEmail = null,
+  viewerType = 'anonymous',
+} = {}) {
+  let sessionToken = null;
+  let currentSlideId = null;
+  let currentSlideIndex = 0;
+  let heartbeatInterval = null;
+  let isActive = true;
+  let isStarted = false;
+  let isDetached = false;
+
+  const deviceId = getDeviceId();
+
+  /**
+   * Sleep for a given duration.
+   * @param {number} ms - Milliseconds to sleep
+   * @returns {Promise<void>}
+   */
+  function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Send tracking request with timeout and retry logic.
+   * @param {string} endpoint - API endpoint
+   * @param {Object} data - Request data
+   * @param {Object} [options] - Options
+   * @param {boolean} [options.retry] - Whether to retry on failure (default: false)
+   * @param {boolean} [options.critical] - Whether this is a critical request (uses retries)
+   * @returns {Promise<Object|null>}
+   */
+  async function sendTrack(
+    endpoint,
+    data,
+    { retry = false, critical = false } = {},
+  ) {
+    const maxAttempts = retry || critical ? MAX_RETRIES : 1;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        // Create abort controller for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(
+          () => controller.abort(),
+          FETCH_TIMEOUT_MS,
+        );
+
+        try {
+          return await api(endpoint, {
+            method: 'POST',
+            body: data,
+            keepalive: true, // Allow request to complete even if page unloads
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      } catch (error) {
+        // Don't retry on client errors (4xx)
+        if (error.statusCode >= 400 && error.statusCode < 500) {
+          return null;
+        }
+        // Don't retry if aborted intentionally or on final attempt
+        if (error.name === 'AbortError' && attempt === maxAttempts) {
+          return null;
+        }
+      }
+
+      // Exponential backoff before retry (only if not final attempt)
+      if (attempt < maxAttempts) {
+        const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt - 1);
+        await sleep(delay);
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Send tracking request via beacon (for page unload).
+   * @param {string} endpoint - API endpoint
+   * @param {Object} data - Request data
+   */
+  function sendBeacon(endpoint, data) {
+    try {
+      const blob = new Blob([JSON.stringify(data)], {
+        type: 'application/json',
+      });
+      navigator.sendBeacon(endpoint, blob);
+    } catch {
+      // Ignore errors
+    }
+  }
+
+  /**
+   * Start the tracking session.
+   * @returns {Promise<boolean>} True if session started successfully
+   */
+  async function start() {
+    if (isStarted || isDetached) return false;
+
+    // Session start is critical - use retry logic
+    const result = await sendTrack(
+      '/api/track/session/start',
+      {
+        presentationId,
+        sourceType,
+        sourceId,
+        viewerEmail,
+        viewerType,
+        deviceId,
+      },
+      { critical: true },
+    );
+
+    // destroy() can land while the (retrying, therefore slow) session-start
+    // request is in flight — the viewer navigated away before tracking was
+    // live. destroy() already ran its teardown, so wiring the heartbeat and
+    // the three global listeners here would strand them for the whole tab.
+    // Close the session we just opened instead of abandoning it server-side.
+    if (isDetached) {
+      if (result?.sessionToken) {
+        sendBeacon('/api/track/session/end', {
+          sessionToken: result.sessionToken,
+          exitSlideId: currentSlideId,
+          exitSlideIndex: currentSlideIndex,
+        });
+      }
+      return false;
+    }
+
+    if (result?.sessionToken) {
+      sessionToken = result.sessionToken;
+      isStarted = true;
+
+      // Start heartbeat
+      startHeartbeat();
+
+      // Set up visibility change handler
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+
+      // Set up unload handler
+      window.addEventListener('beforeunload', handleUnload);
+      window.addEventListener('pagehide', handleUnload);
+
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Track a slide change.
+   * @param {string} slideId - The new slide ID
+   * @param {number} [slideIndex] - The slide index
+   */
+  function trackSlide(slideId, slideIndex = 0) {
+    if (!isStarted || isDetached || !sessionToken) return;
+
+    currentSlideId = slideId;
+    currentSlideIndex = slideIndex;
+
+    // Record slide view (don't await - non-blocking)
+    sendTrack('/api/track/slide/view', {
+      sessionToken,
+      slideId,
+      slideIndex,
+    });
+  }
+
+  /**
+   * Send heartbeat to keep session alive.
+   */
+  function heartbeat() {
+    if (!isStarted || isDetached || !sessionToken || !isActive) return;
+
+    sendTrack('/api/track/session/heartbeat', {
+      sessionToken,
+      currentSlideId,
+      currentSlideIndex,
+    });
+  }
+
+  /**
+   * Start the heartbeat interval.
+   */
+  function startHeartbeat() {
+    if (heartbeatInterval) return;
+    heartbeatInterval = setInterval(heartbeat, HEARTBEAT_INTERVAL_MS);
+    // No-op in the browser (`unref` is Node's), and the same line the other
+    // long-lived client timers carry (`views/follow/index.js`,
+    // `lib/qa/questions-feed.js`): outside a browser a live interval holds the
+    // process open, so a jsdom test that reaches this tracker hangs instead of
+    // finishing.
+    heartbeatInterval.unref?.();
+  }
+
+  /**
+   * Stop the heartbeat interval.
+   */
+  function stopHeartbeat() {
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
+  }
+
+  /**
+   * Handle visibility change (pause/resume tracking).
+   */
+  function handleVisibilityChange() {
+    if (document.hidden) {
+      isActive = false;
+      stopHeartbeat();
+    } else {
+      isActive = true;
+      startHeartbeat();
+      // Send immediate heartbeat when becoming visible
+      heartbeat();
+    }
+  }
+
+  /**
+   * Handle page unload - end session via beacon.
+   */
+  function handleUnload() {
+    if (!isStarted || isDetached || !sessionToken) return;
+
+    sendBeacon('/api/track/session/end', {
+      sessionToken,
+      exitSlideId: currentSlideId,
+      exitSlideIndex: currentSlideIndex,
+    });
+  }
+
+  /**
+   * Destroy the tracker and end the session.
+   */
+  function detach() {
+    if (isDetached) return;
+    isDetached = true;
+
+    // Clean up event listeners
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('beforeunload', handleUnload);
+    window.removeEventListener('pagehide', handleUnload);
+
+    // Stop heartbeat
+    stopHeartbeat();
+
+    // End session
+    if (isStarted && sessionToken) {
+      sendBeacon('/api/track/session/end', {
+        sessionToken,
+        exitSlideId: currentSlideId,
+        exitSlideIndex: currentSlideIndex,
+      });
+    }
+  }
+
+  /**
+   * Erase this viewer's analytics data server-side ("forget me").
+   *
+   * Sends the live session token as proof of possession; the server resolves it
+   * to a device id and erases every session of that device (or just this one if
+   * it has no device id). Then it tears the tracker down *without* the usual
+   * session-end beacon — the sessions are already gone, so /session/end would
+   * only 404 — and drops the device id from localStorage, so a later visit
+   * starts as a fresh identity rather than re-linking to the erased history.
+   *
+   * @returns {Promise<{ok: boolean, deleted?: Object}|null>} Server result, or
+   *   null when there is no live session to erase (analytics off, or start()
+   *   has not resolved yet) or the erase request failed.
+   */
+  async function erase() {
+    if (isDetached || !isStarted || !sessionToken) return null;
+
+    const result = await sendTrack('/api/track/my-data/erase', {
+      sessionToken,
+    });
+
+    // Nothing was erased (rate limit, network, server error): keep the tracker
+    // live and the device id in place, so a retry click can actually succeed
+    // and the history stays reachable for a later erase.
+    if (!result?.ok) return result;
+
+    // Tear down like destroy(), but skip the end beacon: the rows are deleted.
+    isDetached = true;
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('beforeunload', handleUnload);
+    window.removeEventListener('pagehide', handleUnload);
+    stopHeartbeat();
+    sessionToken = null;
+
+    // Forget the device so the next visit is a new identity, not a re-link.
+    storage.remove(DEVICE_ID_KEY);
+
+    return result;
+  }
+
+  /**
+   * Get the current session token.
+   * @returns {string|null}
+   */
+  function getSessionToken() {
+    return sessionToken;
+  }
+
+  /**
+   * Check if tracker is currently active.
+   * @returns {boolean}
+   */
+  function isTracking() {
+    return isStarted && !isDetached;
+  }
+
+  return {
+    start,
+    trackSlide,
+    detach,
+    erase,
+    getSessionToken,
+    isTracking,
+  };
+}
+
+/**
+ * Whether this viewer allows tracking: the local opt-out preference only.
+ * The owner's per-deck opt-out is not read here; the server refuses a
+ * session for such a deck (server/routes/api/analytics-track.js, D234), so
+ * there is one authority for that rule.
+ * @returns {boolean}
+ */
+export function isAnalyticsEnabled() {
+  return !storage.getBool('ps.analytics.disabled', false);
+}

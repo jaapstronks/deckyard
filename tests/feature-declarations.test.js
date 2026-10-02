@@ -42,10 +42,14 @@ const ROUTES_ROOT = join(repoRoot, 'server', 'routes');
 const { getFeatureFlags, isFeatureEnabled, featureFlagKey } =
   await import('../server/config/flags-snapshot.js');
 const { dispatchMounts } = await import('../server/utils/router.js');
-const { PUBLIC_MOUNTS, MOUNTS } = await import('../server/routes/api/index.js');
+const { API_KEY_MOUNTS, PUBLIC_MOUNTS, MOUNTS } =
+  await import('../server/routes/api/index.js');
+const { ROOT_MOUNTS } = await import('../server/server.js');
 const { V1_MOUNTS } = await import('../server/routes/public-api/v1/index.js');
 const { STATIC_MOUNTS } = await import('../server/routes/static/index.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
+const { SLIDE_TYPES } = await import('../shared/slide-types.js');
+const { slideRuntime } = await import('../shared/slide-types/runtime.js');
 const { registerTools } = await import('../server/mcp/tools.js');
 
 /** @param {string} dir @returns {string[]} */
@@ -70,6 +74,8 @@ const isRouteTable = (value) =>
 const declarations = [];
 
 for (const [name, mounts] of Object.entries({
+  ROOT_MOUNTS,
+  API_KEY_MOUNTS,
   PUBLIC_MOUNTS,
   MOUNTS,
   V1_MOUNTS,
@@ -100,6 +106,10 @@ registerTools(mcp, { defaultOwnerEmail: 'owner@example.com' });
 for (const tool of mcp.tools.values())
   if (tool.feature) declarations.push([`mcp:${tool.name}`, tool.feature]);
 
+// A slide type declares the cluster it needs on its spec (D260).
+for (const [type, def] of Object.entries(SLIDE_TYPES))
+  if (def.feature) declarations.push([`slide-type:${type}`, def.feature]);
+
 /** The keys in the § Clusters table of feature-flags.md. */
 function documentedClusters() {
   const doc = readFileSync(
@@ -115,18 +125,21 @@ test('the scan sees the declarations at all', () => {
   assert.ok(declarations.length >= 20, `found ${declarations.length}`);
   const count = (prefix) =>
     declarations.filter(([w]) => w.startsWith(prefix)).length;
+  assert.equal(count('ROOT_MOUNTS['), 1, 'the /mcp transport');
+  assert.equal(count('API_KEY_MOUNTS['), 1, 'public API v1');
   assert.equal(
     count('MOUNTS['),
-    7,
-    'seven feature mounts behind the login gate',
+    12,
+    'twelve feature mounts behind the login gate',
   );
   assert.equal(
     count('PUBLIC_MOUNTS['),
-    2,
-    'the analytics tracker and public report',
+    5,
+    'the analytics tracker and public report, follow, follow codes, the session audience',
   );
   assert.equal(count('V1_MOUNTS['), 1, 'v1 /ai');
-  assert.equal(count('STATIC_MOUNTS['), 1, 'the feeds');
+  assert.equal(count('STATIC_MOUNTS['), 2, 'the feeds and /go');
+  assert.equal(count('slide-type:'), 5, 'the four live types and the invite');
   assert.equal(count('mcp:'), 6, 'six AI tools');
   assert.ok(
     declarations.some(([w]) => w.startsWith('api/notion/index.js#ROUTES')),
@@ -205,6 +218,7 @@ test('no route row says `ai: true` any more', () => {
 
 test('no mount chain branches on a flag', () => {
   for (const rel of [
+    'server/server.js',
     'server/routes/api/index.js',
     'server/routes/public-api/v1/index.js',
     'server/routes/static/index.js',
@@ -235,4 +249,13 @@ test('the module-internal gates are gone', () => {
   assert.ok(mounted, 'isToolMounted is found');
   assert.doesNotMatch(mounted[0], /permission/);
   assert.match(mounted[0], /tool\.feature/);
+});
+
+test('a type with the live runtime declares the live cluster', () => {
+  // `runtime: 'live'` says what a presenting session does for the type; the
+  // cluster is what the installation must have for that. A live type without
+  // the declaration would stay insertable on an installation without live.
+  for (const [type, def] of Object.entries(SLIDE_TYPES))
+    if (slideRuntime(def) === 'live')
+      assert.equal(def.feature, 'live', `${type} declares feature: 'live'`);
 });

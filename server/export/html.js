@@ -578,7 +578,6 @@ export async function buildStandaloneHtml(
           css.fontCss,
           chromeCss,
           css.themeVarsCss,
-          css.themeCss,
           slidesCss,
           css.wmCss,
           STANDALONE_CSS,

@@ -27,10 +27,6 @@ import {
   apiError,
 } from './middleware.js';
 import {
-  emailCanEditCustomHtml,
-  customHtmlEditViolation,
-} from '../../../utils/route-middleware.js';
-import {
   getOptionalString,
   getOptionalObject,
   getNonNegativeNumber,
@@ -177,17 +173,6 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
     return true;
   }
 
-  // Gate raw HTML/CSS authoring on the key owner's capability.
-  const htmlViolation = customHtmlEditViolation(
-    [existingSlide],
-    [updatedSlide],
-    emailCanEditCustomHtml(apiKey.ownerEmail),
-  );
-  if (htmlViolation) {
-    await apiError(ctx, 403, htmlViolation);
-    return true;
-  }
-
   // Replace slide in array
   slides[index] = updatedSlide;
 
@@ -280,17 +265,6 @@ async function handleCreateSlide(ctx, presentationId) {
   const errors = validateSlide(newSlideObj, { slideTypes });
   if (errors.length > 0) {
     await apiError(ctx, 400, 'Invalid slide data', { details: { errors } });
-    return true;
-  }
-
-  // Gate raw HTML/CSS authoring on the key owner's capability.
-  const htmlViolation = customHtmlEditViolation(
-    [],
-    [newSlideObj],
-    emailCanEditCustomHtml(apiKey.ownerEmail),
-  );
-  if (htmlViolation) {
-    await apiError(ctx, 403, htmlViolation);
     return true;
   }
 

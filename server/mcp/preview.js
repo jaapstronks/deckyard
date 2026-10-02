@@ -10,7 +10,6 @@ import path from 'node:path';
 import { renderSlideHtml } from '../../shared/slide-types.js';
 import { escapeHtml } from '../../shared/slide-types/helpers.js';
 import { readCssWithImports } from '../utils/read-css-with-imports.js';
-import { readTextIfExists } from '../utils/html-utils.js';
 import { themeVarsCssText } from '../utils/themes.js';
 import { embedSlideImages } from '../export/css-bundle.js';
 import { buildCssChain } from '../utils/css-chain.js';
@@ -58,8 +57,9 @@ const SINGLE_SCALE_SCRIPT = `<script>
 const _slidesCssCache = new Map();
 
 /**
- * Load and cache the minimal slide CSS (slides.css + theme.css only).
- * Skips app.css (~458KB) and font embeddings to keep output small.
+ * Load and cache the minimal slide CSS: the slide chain (slides.css, theme
+ * layer included) and nothing else. Skips app.css (~458KB) and font
+ * embeddings to keep output small.
  *
  * @param {string} root - Repository root path
  * @returns {Promise<string>}
@@ -68,12 +68,10 @@ async function getMinimalCss(root) {
   const hit = _slidesCssCache.get(root);
   if (hit) return hit;
 
-  const [slidesCss, themeCss] = await Promise.all([
-    readCssWithImports(root, path.join(root, 'client', 'styles', 'slides.css')),
-    readTextIfExists(path.join(root, 'client', 'styles', 'theme.css')),
-  ]);
-
-  const css = `${themeCss || ''}\n${slidesCss}`;
+  const css = await readCssWithImports(
+    root,
+    path.join(root, 'client', 'styles', 'slides.css'),
+  );
   _slidesCssCache.set(root, css);
   return css;
 }

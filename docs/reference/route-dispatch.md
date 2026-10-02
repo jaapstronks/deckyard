@@ -226,8 +226,8 @@ gate. The two context shapes are named typedefs in `server/utils/context.js`:
 
 **The rule (A7.19 C8, decision B3b): a handler mounted after the auth gate
 receives an `AuthedContext` and never calls `getUserFromRequestAsync` itself.**
-Re-resolving the user drops the enrichment the gate added (`isDesigner`,
-`canEditCustomHtml`) and the `storageScope`, and costs an extra round-trip. Read
+Re-resolving the user drops the enrichment the gate added (`isDesigner`)
+and the `storageScope`, and costs an extra round-trip. Read
 `authedUser` and `storageScope` off the context.
 
 ## Testing a migrated module
