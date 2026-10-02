@@ -48,7 +48,7 @@ const skip =
 
 /**
  * Both edges of every band on the ladder (see "Topbar Responsive" in
- * client/styles/base/01-core/10-shell-topbar-dropdown.css). The low edge is
+ * client/styles/app/shell/10-shell-topbar-dropdown.css). The low edge is
  * where a band is tightest; the high edge is one pixel before the next rung
  * brings a control back.
  */

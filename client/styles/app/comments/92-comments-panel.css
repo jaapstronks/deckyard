@@ -40,7 +40,7 @@
 }
 
 /* The scope switch is the shared segmented control in its outlined variant
-   (`.sb-segmented.is-outlined`, see `03-controls-and-forms.css`). The
+   (`.sb-segmented.is-outlined`, see `app/components.css`). The
    `.comments-scope` / `.comments-scope-btn` classes stay as selector hooks. */
 
 .comments-filter-menu {

@@ -18,6 +18,7 @@ import {
   REPO_ROOT,
   VIEWER_LAYER,
   viewerEntries,
+  APP_FEATURE_LAYER,
 } from '../scripts/generate-slide-css-aggregators.js';
 
 /**
@@ -190,5 +191,56 @@ test('the viewer layer loads in app.css and export.css only, before slides.css (
   assert.ok(
     !importsOf(ROOT_AGGREGATOR).some((p) => p.includes(viewer)),
     'slides.css (and so the MCP preview) has no viewer layer',
+  );
+});
+
+test('every feature-chrome file is claimed exactly once, each in a feature folder (D267)', () => {
+  const appDir = path.join(
+    REPO_ROOT,
+    'client',
+    'styles',
+    APP_FEATURE_LAYER.dir,
+  );
+  const onDisk = fs
+    .readdirSync(appDir, { recursive: true })
+    .filter((f) => f.endsWith('.css'))
+    .map((f) => f.split(path.sep).join('/'));
+  // The two files directly in app/ are entry layers, imported by app.css on
+  // their own: the app tokens and the editor primitives (D266).
+  const loose = onDisk.filter((f) => !f.includes('/')).sort();
+  assert.deepEqual(
+    loose,
+    ['components.css', 'tokens.css'],
+    'a feature sheet lives in its feature folder, never loose in client/styles/app/',
+  );
+  assert.deepEqual(
+    [...APP_FEATURE_LAYER.files].sort(),
+    onDisk.filter((f) => f.includes('/')).sort(),
+    'client/styles/app/<feature>/ and APP_FEATURE_LAYER.files disagree: declare a new sheet, un-declare a removed one',
+  );
+  assert.equal(
+    new Set(APP_FEATURE_LAYER.files).size,
+    APP_FEATURE_LAYER.files.length,
+    'a feature sheet is declared twice',
+  );
+  // The folders are the map of client/views/; `shell/` is the app frame
+  // around every view (topbar, sidebar, utilities, toasts, banners).
+  const views = fs
+    .readdirSync(path.join(REPO_ROOT, 'client', 'views'), {
+      withFileTypes: true,
+    })
+    .filter((d) => d.isDirectory())
+    .map((d) => d.name);
+  const allowed = new Set([...views, 'shell']);
+  for (const file of APP_FEATURE_LAYER.files) {
+    const feature = file.split('/')[0];
+    assert.ok(
+      allowed.has(feature),
+      `${file}: "${feature}/" is not a folder of client/views/ (or shell/)`,
+    );
+  }
+  assert.ok(
+    !fs.existsSync(path.join(REPO_ROOT, 'client', 'styles', 'base')),
+    'client/styles/base/ is gone: the feature chrome lives under app/<feature>/',
   );
 });

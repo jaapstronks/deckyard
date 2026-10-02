@@ -491,7 +491,7 @@ surfaces do not share a vocabulary — so they do not share rules either:
   `00-tokens.css`), the code palette stays theme-overridable per deck, and the
   rules no longer leak into app chrome.
 - **App chrome** (speaker-notes view, presenter console) — one shared block in
-  `client/styles/base/04-editor-and-misc/60-notes.css`, keyed on the
+  `client/styles/app/notes/60-notes.css`, keyed on the
   `.notes-body` class, speaking `--ps-*`/`--app-*`. Both chrome containers
   carry the class; a new chrome surface that renders markdown opts in the same
   way. Prism and KaTeX only run on slide roots (`slide-render.js`,

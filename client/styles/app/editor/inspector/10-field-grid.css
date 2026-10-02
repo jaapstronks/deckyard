@@ -1,0 +1,43 @@
+/* Editor and modal controls */
+
+/* Responsive field row.
+   The editor form column is drag-resizable (--inspector-width), so its width
+   is independent of the viewport and media queries can't help here. Instead the
+   row reflows on its own real width via flex-wrap: fields sit side by side when
+   there is room and drop onto their own line when there isn't - no breakpoints,
+   no JS, no per-slide-type tuning.
+
+   Each field carries a size intent (its natural minimum width) as an
+   `is-field-*` class on its wrapper; `--field-basis` is that minimum. A field
+   whose basis no longer fits beside its neighbour wraps to the next line, then
+   grows to fill the row. The class is inert outside a `.field-grid` (the flex
+   rules below are scoped to direct children), so renderers can stamp it
+   unconditionally.
+
+   Size tokens:
+     narrow ~ number / short numeric inputs
+     default ~ text inputs, selects, 2-3 option toggles
+     wide   ~ 4-6 option segmented controls (need room before sharing a row)
+     full   ~ textareas / markdown / anything that wants its own line */
+.field-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ps-space-3);
+  align-items: start;
+}
+.field-grid > * {
+  /* 10rem default: at the standard ~400px form column (≈358px inner) two
+     default fields still pair up (160·2 + gap ≤ 358); they only stack once the
+     column is dragged below ≈374px, which is exactly the "too narrow" regime. */
+  flex: 1 1 var(--field-basis, 10rem);
+  min-width: 0;
+}
+.field-grid > .is-field-narrow {
+  --field-basis: 7rem;
+}
+.field-grid > .is-field-wide {
+  --field-basis: 17rem;
+}
+.field-grid > .is-field-full {
+  --field-basis: 100%;
+}

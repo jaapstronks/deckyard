@@ -94,7 +94,7 @@
 }
 
 /* The textarea's invalid border comes from `.form-input[aria-invalid='true']`
-   in 03-controls-and-forms.css: the attribute the inline helper sets is the
+   in editor/inspector/50-field-labels.css: the attribute the inline helper sets is the
    state, so this panel needs no class of its own for it.
 
    The panel is a flex column around a stretching textarea, so its refusals

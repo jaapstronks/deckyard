@@ -28,14 +28,14 @@ const repoRoot = path.resolve(
 
 /** Editor-only selectors that were in the old app.css bundle and must stay out. */
 const EDITOR_ONLY = [
-  '.user-menu', // base/01-core/10-shell-topbar-dropdown.css
-  '.ps-type-thumb', // base/02-lists-and-thumbs/70-slide-type-picker.css
-  '.inspector-tab', // base/03-controls-and-forms.css
-  '.editor-advanced', // base/03-controls-and-forms.css
-  '.slide-type-picker', // base/02-lists-and-thumbs
-  '.settings-', // base/04-editor-and-misc settings/admin panels
-  '.comments-panel', // base/04-editor-and-misc/92-comments-panel.css
-  '.theme-editor', // base/04-editor-and-misc/88-theme-editor.css
+  '.user-menu', // app/shell/10-shell-topbar-dropdown.css
+  '.ps-type-thumb', // app/editor/70-slide-type-picker.css
+  '.inspector-tab', // app/editor/inspector/
+  '.editor-advanced', // app/editor/inspector/
+  '.slide-type-picker', // app/editor/70-slide-type-picker.css
+  '.settings-', // app/settings/
+  '.comments-panel', // app/comments/92-comments-panel.css
+  '.theme-editor', // app/settings/88-theme-editor.css
 ];
 
 /** Selectors / tokens the exported deck DOM (html.js, pdf/png/print) needs. */

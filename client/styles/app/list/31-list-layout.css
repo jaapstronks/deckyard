@@ -4,7 +4,7 @@
    ============================================================ */
 
 .list {
-  /* base list styles live in `02-lists-and-thumbs.css` */
+  /* base list styles live in `app/shell/10-list.css` */
 }
 
 .presentation-grid-content {
@@ -190,7 +190,7 @@
 }
 
 .list-item {
-  /* base list-item styles live in `02-lists-and-thumbs.css` */
+  /* base list-item styles live in `app/shell/10-list.css` */
 }
 
 .presentation-grid-frame {

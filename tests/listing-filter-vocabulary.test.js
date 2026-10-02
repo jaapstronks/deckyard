@@ -90,7 +90,7 @@ const CHECKS = [
     required: [/\bownership\b/],
   },
   {
-    file: 'client/styles/base/02-lists-and-thumbs/80-tags.css',
+    file: 'client/styles/app/list/80-tags.css',
     forbidden: [
       {
         label: 'scope-filter CSS class (use ownership-filter)',

@@ -21,7 +21,7 @@ segmented toggles wrapped their buttons onto a ragged second line.
 
 Two pieces, both at a single chokepoint:
 
-1. **`.field-grid` is a flex-wrap row** (`client/styles/base/03-controls-and-forms.css`).
+1. **`.field-grid` is a flex-wrap row** (`client/styles/app/editor/inspector/10-field-grid.css`).
    It reflows on its own real width, not the viewport's. Fields grow to fill a
    row and wrap to the next line when they no longer fit.
 
