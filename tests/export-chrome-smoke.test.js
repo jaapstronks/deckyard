@@ -45,7 +45,10 @@ import {
 } from '../server/utils/puppeteer-browser.js';
 import { renderSlidesToPdfBuffer } from '../server/render/pdf.js';
 import { renderSlideToPngBuffer } from '../server/render/png.js';
-import { buildPptxBuffer } from '../server/export/pptx.js';
+import {
+  buildEditablePptxBuffer,
+  buildPptxBuffer,
+} from '../server/export/pptx.js';
 import { renderSandboxOgImagePng } from '../server/utils/sandbox-og-image.js';
 import { parsePdf } from '../server/utils/convert-file/pdf-parser.js';
 import { seedThemeConfig } from './helpers/theme-seed.js';
@@ -292,6 +295,44 @@ test(
     assert.ok(
       notesText.includes('On two lines, even.'),
       'a multi-line note should survive whole',
+    );
+  },
+);
+
+/**
+ * The editable PPTX's raster branch (B290): a `raster` type travels as its
+ * image there too, named by its heading, and the export reports it by number.
+ * Layer 0 and the native branch are pinned browser-free in
+ * `export-pptx-editable.test.js`.
+ */
+test(
+  'editable PPTX writes a raster type as its image and reports it',
+  { skip },
+  async () => {
+    const theme = await seedThemeConfig('brand');
+    const deck = {
+      ...smokeDeck(),
+      slides: [
+        smokeSlide(),
+        { type: 'video-slide', content: { source: '', title: 'Clip' } },
+      ],
+    };
+    const { buffer, imageSlides, warnings } = await buildEditablePptxBuffer(
+      repoRoot,
+      deck,
+      { scale: 1, theme },
+    );
+    assert.deepEqual(imageSlides, [1], 'only the raster slide is an image');
+    assert.ok(
+      warnings.some((w) => w.startsWith('Slides 1 exported as an image')),
+      `the image slide is named in the warnings, got: ${warnings}`,
+    );
+    const zip = await JSZip.loadAsync(Buffer.from(buffer));
+    const slide1 = await zip.file('ppt/slides/slide1.xml').async('string');
+    assert.match(
+      slide1,
+      new RegExp(`<p:pic>[\\s\\S]*descr="${TITLE}"`),
+      'the picture of the slide carries its heading as alt text',
     );
   },
 );

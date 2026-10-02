@@ -60,6 +60,7 @@ export const INSTANCE_HEALTH_KEYS = Object.freeze({
     'png',
     'png-zip',
     'pptx',
+    'pptx-editable',
     'pptx-template',
     'handoff',
     'notes-md',

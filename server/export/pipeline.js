@@ -268,6 +268,9 @@ export function createAsyncExportRoute(config) {
     exportType, // 'pptx', 'handoff-zip', etc.
     stripLiveOnly = true,
     buildContent, // Fallback sync builder
+    // Builder options read from the request that the worker cannot read
+    // itself: it has the job data, not the URL. Throws to refuse the request.
+    jobOptions = () => ({}),
     getFilename = (ctx) => ctx.title,
   } = config;
   assertExportFormat(format, pattern);
@@ -288,6 +291,7 @@ export function createAsyncExportRoute(config) {
           presentationId,
           { format, stripLiveOnly },
         );
+        const options = jobOptions(url);
 
         // If queue is available and not forcing sync, queue the job; the
         // worker rebuilds the context as the system from what was admitted.
@@ -300,6 +304,7 @@ export function createAsyncExportRoute(config) {
               lang: ctx.exportLang,
               stripLiveOnly,
               scale: parseScaleParam(url),
+              options,
               repoRoot,
               // Stamp the requester so the download/status routes can enforce
               // ownership (job IDs are enumerable ints — see security-audit
