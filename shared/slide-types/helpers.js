@@ -693,14 +693,28 @@ function normalizePct01to100(raw) {
   return Math.round(clamp(n, 0, 100));
 }
 
-export function objectPositionStyleAttrFromFocus({ focusX, focusY } = {}) {
+/**
+ * An image's focus point from its stored `focusX`/`focusY`, as whole
+ * percentages: the point a cover crop keeps in view and a contain frame aligns
+ * to. `null` when the slide sets neither, which means the centre; an axis left
+ * empty is the centre on that axis. The one reading of the two fields, shared
+ * by the canvas (`object-position`) and the PPTX export's crop.
+ *
+ * @param {{ focusX?: unknown, focusY?: unknown }} [content]
+ * @returns {{ x: number, y: number }|null}
+ */
+export function focusFromContent({ focusX, focusY } = {}) {
   const x = normalizePct01to100(focusX);
   const y = normalizePct01to100(focusY);
-  if (x == null && y == null) return '';
-  const xx = x == null ? 50 : x;
-  const yy = y == null ? 50 : y;
+  if (x == null && y == null) return null;
+  return { x: x == null ? 50 : x, y: y == null ? 50 : y };
+}
+
+export function objectPositionStyleAttrFromFocus(content = {}) {
+  const focus = focusFromContent(content);
+  if (!focus) return '';
   return styleAttrFromVars({
-    'object-position': `${xx}% ${yy}%`,
+    'object-position': `${focus.x}% ${focus.y}%`,
   });
 }
 

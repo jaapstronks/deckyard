@@ -2,7 +2,6 @@ import {
   escapeHtml,
   imagePlaceholderHtml,
   objectPositionStyleAttrFromFocus,
-  pickAltText,
   renderSubheadingHtml,
   renderBottomSubheadingHtml,
   hasBottomSubheading,
@@ -14,13 +13,14 @@ import { getSlideCopy } from '../slide-copy.js';
 import {
   resolveImageSlideImage,
   ensureImageSlideImage,
+  imageSlideAltText,
   IMAGE_SLIDE_IMAGE_DEFAULTS,
 } from './image-slide/image.js';
 
 export default {
   structure: 'singleton',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   label: 'Image slide',
   labelField: 'caption',
   fields: [
@@ -288,21 +288,7 @@ export default {
       : renderBottomSubheadingHtml(content);
     const imageRole =
       content?.imageRole === 'decorative' ? 'decorative' : 'content';
-    const altNl =
-      typeof content?.altNl === 'string' ? content.altNl.trim() : '';
-    const altEn =
-      typeof content?.altEn === 'string' ? content.altEn.trim() : '';
-    const altExplicit =
-      typeof content?.alt === 'string' ? content.alt.trim() : '';
-    const alt =
-      imageRole === 'decorative'
-        ? ''
-        : pickAltText({
-            explicit: altExplicit || altNl || altEn,
-            src: content?.image,
-            fallbacks: [content?.caption, content?.title, content?.subheading],
-            hardFallback: 'Image',
-          });
+    const alt = imageSlideAltText(content);
     const img = content?.image
       ? (() => {
           // For cover layouts this controls the crop focus; for contain layout this controls alignment.
