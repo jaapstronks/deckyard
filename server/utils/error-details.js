@@ -63,6 +63,8 @@ export const LOCATION_KEYS = Object.freeze([
  * @type {Readonly<Record<string, readonly string[]>>}
  */
 export const PAYLOAD_KEYS = Object.freeze({
+  // Strict slide validation groups field errors under one named list (B572).
+  bad_request: Object.freeze(['errors']),
   // A storage reason too (field, index, …); `use` names the field a retired
   // spelling became (B446, B521).
   invalid: Object.freeze(['use']),
