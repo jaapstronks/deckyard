@@ -39,7 +39,7 @@ const ADAPTER_DIRS = ['server/mcp', 'server/routes/public-api/v1'];
 /** Current baselines. Lower them when an item removes an import; never raise. */
 const BASELINE = {
   'server/routes/api': 0,
-  'server/storage/presentations': 11,
+  'server/storage/presentations': 10,
 };
 
 function listJs(dir) {

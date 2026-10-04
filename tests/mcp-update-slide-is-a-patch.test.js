@@ -34,6 +34,8 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
 const { registerTools } = await import('../server/mcp/tools.js');
+const { updateSlide: updateSlideAsActor } =
+  await import('../server/services/slides.js');
 
 /** A deck with one title slide, in Dutch, on the default theme. */
 async function installDb() {
@@ -184,6 +186,34 @@ test('a type change the model has no mapping for is refused, not stored', async 
   );
   assert.equal(stored(db).type, 'title-slide');
   assert.equal(stored(db).content.title, 'Hoi');
+});
+
+test('AI conversion may replace an unmapped type only with valid complete content', async () => {
+  const db = await installDb();
+  const scope = { repoRoot: process.cwd(), organizationId: ORG };
+  const identity = {
+    actor: { id: userIdFor(OWNER), email: OWNER, organizationId: ORG },
+  };
+  const input = {
+    presentationId: DECK_ID,
+    slideId: SLIDE_ID,
+    type: 'content-slide',
+    conversion: 'replace',
+    content: { title: 'Nieuwe inhoud', body: '<p>Tekst</p>' },
+  };
+
+  await assert.rejects(
+    updateSlideAsActor(scope, identity, {
+      ...input,
+      content: { title: 'Nieuwe inhoud', body: { invalid: true } },
+    }),
+    (err) => err.statusCode === 400 && err.details?.errors?.length > 0,
+  );
+  assert.equal(stored(db).type, 'title-slide', 'invalid output was not stored');
+
+  const { slide } = await updateSlideAsActor(scope, identity, input);
+  assert.equal(slide.type, 'content-slide');
+  assert.equal(stored(db).content.body, '<p>Tekst</p>');
 });
 
 // B260 / D117: the refusal is not a dead end. It names the action that does
