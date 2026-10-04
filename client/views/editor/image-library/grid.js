@@ -45,7 +45,7 @@ export function createImageLibraryGrid({
     const mkChip = (label, tagValue) => {
       const isActive = activeTag === tagValue;
       const btn = h('button', {
-        class: `btn btn-secondary is-compact-sm is-pill image-lib-tag-chip${
+        class: `btn btn-secondary btn-xs is-pill image-lib-tag-chip${
           isActive ? ' is-active' : ''
         }`,
         type: 'button',

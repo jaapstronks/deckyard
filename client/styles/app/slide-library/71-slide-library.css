@@ -371,7 +371,7 @@
 }
 
 /* Action button on the right */
-.ps-lib-action-btn.btn.is-compact {
+.ps-lib-action-btn.btn.btn-sm {
   flex-shrink: 0;
 }
 

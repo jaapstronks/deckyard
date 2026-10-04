@@ -624,9 +624,9 @@ export async function buildStandaloneHtml(
         <div id="loopBar" class="ps-standalone-loop-bar"><div id="loopBarFill" class="ps-standalone-loop-bar-fill"></div></div>
         <div class="ps-standalone-progress-row">
           <nav class="ps-standalone-nav" aria-label="Slide navigation">
-            <button id="btnPrev" class="btn btn-secondary is-compact" type="button" aria-label="Previous slide">Previous</button>
-            <button id="btnNext" class="btn btn-secondary is-compact" type="button" aria-label="Next slide">Next</button>
-            <button id="btnLoop" class="btn btn-secondary is-compact" type="button" aria-label="Auto-loop" aria-pressed="false" hidden>▶ Loop</button>
+            <button id="btnPrev" class="btn btn-secondary btn-sm" type="button" aria-label="Previous slide">Previous</button>
+            <button id="btnNext" class="btn btn-secondary btn-sm" type="button" aria-label="Next slide">Next</button>
+            <button id="btnLoop" class="btn btn-secondary btn-sm" type="button" aria-label="Auto-loop" aria-pressed="false" hidden>▶ Loop</button>
             <label class="ps-standalone-loop" hidden id="loopIntervalWrap">
               <input id="loopInterval" class="ps-standalone-loop-interval" type="number" min="1" max="300" step="1" aria-label="Seconds per slide" />
               <span>s</span>

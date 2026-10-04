@@ -464,7 +464,7 @@ export function createSlideLibraryPicker({
     // same as every other insertion path (B386).
     if (allowInsert && activeView !== 'trash') {
       const insertBtn = h('button', {
-        class: 'btn btn-primary is-compact ps-lib-action-btn',
+        class: 'btn btn-primary btn-sm ps-lib-action-btn',
         type: 'button',
         text: t('slideLibrary.action.insert', 'Insert'),
         onclick: () => {
@@ -477,7 +477,7 @@ export function createSlideLibraryPicker({
 
     if (!allowInsert && !compose && activeView !== 'trash') {
       const useBtn = h('button', {
-        class: 'btn btn-primary is-compact ps-lib-action-btn',
+        class: 'btn btn-primary btn-sm ps-lib-action-btn',
         type: 'button',
         text: t('slideLibrary.action.use', 'Use'),
         onclick: () => modals.openUseSlideModal(it),
@@ -487,7 +487,7 @@ export function createSlideLibraryPicker({
 
     if (activeView === 'trash') {
       const restoreBtn = h('button', {
-        class: 'btn btn-secondary is-compact ps-lib-action-btn',
+        class: 'btn btn-secondary btn-sm ps-lib-action-btn',
         type: 'button',
         text: t('slideLibrary.action.restore', 'Restore'),
         onclick: () => apiOps.setTrashed(shelf, it, false, { rerender }),
@@ -553,7 +553,7 @@ export function createSlideLibraryPicker({
 
       if (allowInsert) {
         const insertAllBtn = h('button', {
-          class: 'btn btn-primary is-compact',
+          class: 'btn btn-primary btn-sm',
           type: 'button',
           text: t('slideLibrary.selection.insertAll', 'Insert {count} slides', {
             count: String(count),
@@ -570,7 +570,7 @@ export function createSlideLibraryPicker({
         actions.append(insertAllBtn);
       } else if (onNewPresentation) {
         const newPresBtn = h('button', {
-          class: 'btn btn-primary is-compact',
+          class: 'btn btn-primary btn-sm',
           type: 'button',
           text: t('slideLibrary.selection.newPresentation', 'New presentation'),
           onclick: () => {
@@ -586,7 +586,7 @@ export function createSlideLibraryPicker({
       // Add to team library
       if (state.getShelf() === 'personal' && state.getView() !== 'trash') {
         const pushToTeamBtn = h('button', {
-          class: 'btn btn-secondary is-compact',
+          class: 'btn btn-secondary btn-sm',
           type: 'button',
           text: t('slideLibrary.selection.addToTeam', 'Add to team library'),
           onclick: async () => {
@@ -602,7 +602,7 @@ export function createSlideLibraryPicker({
       // Move to trash
       if (state.getView() !== 'trash') {
         const trashBtn = h('button', {
-          class: 'btn btn-secondary is-compact is-danger-text',
+          class: 'btn btn-secondary btn-sm is-danger-text',
           type: 'button',
           text: t('slideLibrary.selection.trash', 'Move to trash'),
           onclick: async () => {

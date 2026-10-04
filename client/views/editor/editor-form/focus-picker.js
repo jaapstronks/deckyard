@@ -97,7 +97,7 @@ export function renderFocusGridField({
   const actions = h('div', { class: 'row sb-focus-actions' });
   const resetBtn = h('button', {
     type: 'button',
-    class: 'btn btn-secondary is-compact-sm',
+    class: 'btn btn-secondary btn-xs',
     text: t('editor.focusPicker.center', 'Center'),
     disabled,
     title: t('editor.focusPicker.reset', 'Reset focus to center'),

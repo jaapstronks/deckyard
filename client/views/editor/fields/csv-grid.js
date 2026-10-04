@@ -407,7 +407,7 @@ export function createCsvGridEditor({
 
     const actions = h('div', { class: 'csv-grid-actions row is-wrap' });
     const addRowBtn = h('button', {
-      class: 'btn btn-secondary is-compact-sm',
+      class: 'btn btn-secondary btn-xs',
       type: 'button',
       text: t('editor.chart.grid.addRow', '+ Row'),
       onclick: () => {
@@ -420,7 +420,7 @@ export function createCsvGridEditor({
     if (cols < model.max) {
       actions.append(
         h('button', {
-          class: 'btn btn-secondary is-compact-sm',
+          class: 'btn btn-secondary btn-xs',
           type: 'button',
           text: t('editor.chart.grid.addSeries', '+ Series'),
           onclick: () => addColumn(),
@@ -493,13 +493,13 @@ export function createCsvGridEditor({
     seg.el,
     h('div', { class: 'row is-wrap csv-grid-toolbar-actions' }, [
       h('button', {
-        class: 'btn btn-secondary is-compact-sm',
+        class: 'btn btn-secondary btn-xs',
         type: 'button',
         text: t('editor.chart.importCsv', 'Import CSV'),
         onclick: () => fileInput.click(),
       }),
       h('button', {
-        class: 'btn btn-secondary is-compact-sm',
+        class: 'btn btn-secondary btn-xs',
         type: 'button',
         text: t('editor.chart.example', 'Example'),
         onclick: () => loadValue(exampleFor(chartType)),

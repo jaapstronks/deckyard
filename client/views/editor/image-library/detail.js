@@ -426,7 +426,7 @@ export function createImageLibraryDetail({
                   if (!pid) return null;
                   const slug = String(p?.slug || '').trim() || 'presentation';
                   return h('a', {
-                    class: 'btn btn-secondary is-compact-sm',
+                    class: 'btn btn-secondary btn-xs',
                     href: `/p/${pid}-${slug}`,
                     target: '_blank',
                     rel: 'noreferrer',
@@ -441,7 +441,7 @@ export function createImageLibraryDetail({
                 ]),
                 h('div', { class: 'row is-wrap is-gap-sm' }, [
                   h('a', {
-                    class: 'btn btn-secondary is-compact-sm',
+                    class: 'btn btn-secondary btn-xs',
                     href: `/app/${u.id}`,
                     target: '_blank',
                     rel: 'noreferrer',
