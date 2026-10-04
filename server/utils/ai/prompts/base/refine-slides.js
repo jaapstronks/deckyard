@@ -48,7 +48,8 @@ You are creating slides for this presentation. Keep content consistent with the 
 YOUR JOB:
 1. Choose the BEST slide type for each rough slide based on its content
 2. Structure the content using the EXACT schema shown in the catalog (no mixing!)
-3. Provide brief reasoning for debugging
+3. Write presenter notes from the source context
+4. Explain your type choice to the presenter in one sentence
 
 OUTPUT LANGUAGE: ${langLabel}
 Write all titles and content in ${langLabel}.
@@ -95,12 +96,17 @@ Return ONLY valid JSON:
       "originalIndex": <the exact index shown in the input>,
       "type": "<slide-type-name>",
       "content": { <exact schema for this type> },
-      "reasoning": "Chose text-blocks because content has cause-effect structure",
+      "presenterNotes": "2-4 sentences for the presenter",
+      "reasoning": "The source describes how rising costs led to the new policy, so the arrow layout shows that cause and effect",
       "alternativeType": "icon-card-grid-slide",
       "alternativeReason": "Use if items are independent rather than causal"
     }
   ]
 }
+
+PRESENTER NOTES AND REASONING:
+- Each slide comes with the part of the source it draws on. The slide shows the WHAT; the notes give the WHY and HOW: background the slide leaves out, an example or figure to mention, a transition. Use only what the source context says.
+- "reasoning" is shown to the presenter in ${langLabel}: name what in the source made this type fit (sequence, comparison, figures, ...). No jargon about schemas or fields.
 
 CONTENT TIPS:
 - list-slide: items[] array, minimum 2 items, each with {title, text}
@@ -182,6 +188,13 @@ export function buildPhase2UserPrompt({ slides, groupId }) {
     );
     lines.push('Content:');
     lines.push(slide.roughContent);
+    const source = slide.sourceContext;
+    if (source) {
+      lines.push('');
+      lines.push(`Source context (section "${source.heading}"):`);
+      for (const point of source.keyPoints || []) lines.push(`- ${point}`);
+      if (source.excerpt) lines.push(`Excerpt: "${source.excerpt}"`);
+    }
     if (slide.presenterNotes) {
       lines.push('');
       lines.push('Presenter Notes (preserve for the slide):');

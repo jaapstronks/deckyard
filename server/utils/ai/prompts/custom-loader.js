@@ -11,7 +11,7 @@
  *
  *   export default {
  *     // same signature as the base builder it replaces
- *     buildPhase1SystemPrompt({ detectedLang, requestedLang, targetSlides }) {
+ *     buildAnalysisSystemPrompt({ detectedLang, requestedLang }) {
  *       return `...your tuned outline prompt...`;
  *     },
  *   };

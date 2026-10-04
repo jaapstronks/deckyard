@@ -94,6 +94,26 @@ export function applyRevisionOperations(outline, operations) {
         [target.presenterNotes, source.presenterNotes]
           .filter(Boolean)
           .join(' ');
+      const contexts = [target.sourceContext, source.sourceContext].filter(
+        Boolean,
+      );
+      target.sourceContext = contexts.length
+        ? {
+            heading: [
+              ...new Set(contexts.map((context) => context.heading)),
+            ].join(' / '),
+            keyPoints: [
+              ...new Set(
+                contexts.flatMap((context) => context.keyPoints || []),
+              ),
+            ],
+            excerpt: [
+              ...new Set(
+                contexts.map((context) => context.excerpt).filter(Boolean),
+              ),
+            ].join('\n'),
+          }
+        : null;
       target.hints = [
         ...new Set([...(target.hints || []), ...(source.hints || [])]),
       ];

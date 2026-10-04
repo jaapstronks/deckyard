@@ -10,7 +10,12 @@
  * `prompts.<name>(...)`.
  */
 
-export { buildPhase1SystemPrompt, buildPhase1UserPrompt } from './outline.js';
+export {
+  buildAnalysisSystemPrompt,
+  buildAnalysisUserPrompt,
+  buildStructureSystemPrompt,
+  buildStructureUserPrompt,
+} from './outline.js';
 // `buildThemeContextSection` is deliberately NOT re-exported: it's an internal
 // helper that `buildPhase2SystemPrompt` calls as a module-local sibling, not
 // through the resolved `prompts` registry (base modules can't import `prompts`
