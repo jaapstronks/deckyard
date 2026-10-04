@@ -89,11 +89,10 @@ show them after the editor loads the deck.
 
 ## Model configuration (Claude vendor)
 
-`server/utils/llm/config.js`: default `claude-sonnet-5` for generation/fill;
-the outline/plan step requests `getLlmConfig({ role: 'plan' })` →
-`claude-opus-4-8`. A pinned `CLAUDE_MODEL` applies everywhere;
-`CLAUDE_MODEL_PLAN` overrides the plan step separately. Other vendors ignore
-`role`.
+`server/utils/llm/config.js`: default `claude-opus-5` for every call. The
+outline/plan step requests `getLlmConfig({ role: 'plan' })` so that
+`CLAUDE_MODEL_PLAN` can pin it separately; a pinned `CLAUDE_MODEL` applies
+everywhere. Other vendors ignore `role`.
 
 `server/utils/llm/providers/claude.js`: models with sampling params removed
 (sonnet-5, opus-4.7+, fable/mythos, and any major ≥ 5) get `temperature`

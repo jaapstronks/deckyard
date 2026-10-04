@@ -36,7 +36,7 @@ export const JUDGE_EFFORT = 'high';
  */
 export const GENERATION_VENDORS = {
   claude: {
-    model: 'claude-opus-4-8',
+    model: 'claude-opus-5',
     envVars: ['CLAUDE_MODEL', 'CLAUDE_MODEL_PLAN'],
   },
   openai: { model: 'gpt-5.5', envVars: ['OPENAI_MODEL'] },
