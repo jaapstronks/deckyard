@@ -138,6 +138,42 @@ test('a malformed repair cannot evade the earlier length refusal', async (t) => 
   });
 });
 
+for (const [label, type, content] of [
+  ['empty content', 'content-slide', {}],
+  ['missing content', 'content-slide', undefined],
+  ['null content', 'content-slide', null],
+  ['missing title', 'content-slide', { body: 'Complete sentence.' }],
+  ['missing body', 'content-slide', { title: 'Title' }],
+  ['wrong title type', 'content-slide', { title: 42, body: 'Sentence.' }],
+  ['wrong body type', 'content-slide', { title: 'Title', body: [] }],
+  ['blank required text', 'content-slide', { title: ' ', body: 'Sentence.' }],
+  [
+    'invalid nested blocks',
+    'text-blocks-slide',
+    { title: 'Title', rows: [{ blocks: 'invalid' }] },
+  ],
+  [
+    'invalid nested text',
+    'text-blocks-slide',
+    { title: 'Title', rows: [{ blocks: [{ title: 'Block', body: 42 }] }] },
+  ],
+]) {
+  test(`length rewrite refuses ${label} without fallback`, async (t) => {
+    const repair = { slides: [{ originalIndex: 0, type, content }] };
+    await withReplies(
+      t,
+      [response('x'.repeat(cap + 1)), repair],
+      async (requests) => {
+        await assert.rejects(
+          refineSlideGroup(group, { vendor: 'openai' }),
+          SlideTextLengthError,
+        );
+        assert.equal(requests.length, 2);
+      },
+    );
+  });
+}
+
 test('overlong structural slides go to refinement intact', () => {
   const slides = ['quote', 'chapter'].map((intent, index) => ({
     ...original,

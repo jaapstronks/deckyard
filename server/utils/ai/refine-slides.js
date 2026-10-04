@@ -363,6 +363,15 @@ export async function refineSlideGroup(
             disabledSlideTypes,
           );
           assertSlideTextLengths(normalized, SLIDE_TYPES[normalized.type]);
+          // A rewrite must supply valid content itself, before structural
+          // normalization can fill missing values or repair malformed items.
+          if (
+            lengthFailure &&
+            !validateSlideContent(SLIDE_TYPES[normalized.type], refined.content)
+              .valid
+          ) {
+            throw lengthFailure;
+          }
         }
         break;
       }
