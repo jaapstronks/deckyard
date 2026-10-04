@@ -296,7 +296,7 @@ export const INVENTORY = {
   // --- sparse tables: absence is normal, staleness is the defect ------------
   'scripts/generate-slide-css-aggregators.js': {
     kind: sparse,
-    gate: 'tests/slide-css-aggregators.test.js',
+    gate: 'tests/css-aggregators.test.js',
     why:
       'TYPE_CSS maps a type to its stylesheet; only types with their own CSS ' +
       'appear. Already gated the right way — every key must be a registered ' +

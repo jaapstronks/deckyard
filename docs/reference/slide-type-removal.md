@@ -226,7 +226,7 @@ Then, in rough dependency order:
 2. **Delete the stylesheet(s)** — every sheet the type claims in `TYPE_CSS`
    (`scripts/generate-slide-css-aggregators.js`; a type may claim more than
    one), then remove the `TYPE_CSS` entry and regenerate the aggregators.
-   `tests/slide-css-aggregators.test.js` enforces both directions: an entry
+   `tests/css-aggregators.test.js` enforces both directions: an entry
    for an unregistered type fails, and an unclaimed file on disk fails — so
    the 118 lines of `.slide-partner-split` that outlived
    `split-partner-title-slide` inside a shared sheet can no longer happen for
