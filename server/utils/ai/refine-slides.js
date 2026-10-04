@@ -17,6 +17,10 @@ import { extractJsonObject } from '../openai/json.js';
 import { SLIDE_TYPE_CATALOG } from './slide-type-catalog.js';
 import { validateSlideContentStructure } from './validate-slide-structure.js';
 import { describeIssue, validateSlideContent } from './schemas/index.js';
+import {
+  assertSlideTextLengths,
+  SlideTextLengthError,
+} from './validate-slides/index.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types/registry.js';
 import { prompts } from './prompts/index.js';
 import { createLogger } from '../logger.js';
@@ -213,7 +217,7 @@ function createFallbackSlide(originalSlide) {
     const content = originalSlide.roughContent;
     // Try to extract quote and author
     const quoteMatch = content.match(/"([^"]+)"/);
-    const quote = quoteMatch ? quoteMatch[1] : content.slice(0, 260);
+    const quote = quoteMatch ? quoteMatch[1] : content;
 
     return {
       originalIndex: originalSlide.index,
@@ -233,7 +237,7 @@ function createFallbackSlide(originalSlide) {
       originalIndex: originalSlide.index,
       type: 'payoff-slide',
       content: {
-        tagline: originalSlide.roughContent.slice(0, 120).trim() || 'Thank you',
+        tagline: originalSlide.roughContent.trim() || 'Thank you',
       },
       reasoning: 'Fallback: Phase 2 failed, created basic closing slide',
       presenterNotes,
@@ -310,6 +314,7 @@ export async function refineSlideGroup(
   let rawResponse;
   let parsed;
   let retryCount = 0;
+  let lengthFailure = null;
   const maxRetries = 1;
 
   while (retryCount <= maxRetries) {
@@ -335,6 +340,30 @@ export async function refineSlideGroup(
         Array.isArray(parsed.slides) &&
         parsed.slides.length > 0
       ) {
+        if (
+          lengthFailure &&
+          slides.some(
+            (original) =>
+              !parsed.slides.some(
+                (refined) => refined?.originalIndex === original.index,
+              ),
+          )
+        ) {
+          throw lengthFailure;
+        }
+        for (let pos = 0; pos < parsed.slides.length; pos++) {
+          const refined = parsed.slides[pos];
+          const original =
+            slides.find((s) => s.index === refined?.originalIndex) ||
+            slides[pos];
+          if (!original) continue;
+          const normalized = normalizeRefinedSlide(
+            refined,
+            original,
+            disabledSlideTypes,
+          );
+          assertSlideTextLengths(normalized, SLIDE_TYPES[normalized.type]);
+        }
         break;
       }
 
@@ -344,12 +373,16 @@ export async function refineSlideGroup(
       // provider fetch the caller just aborted, and the fallback slides would
       // be written for a reader who is already gone.
       if (signal?.aborted) throw err;
+      if (err instanceof SlideTextLengthError) lengthFailure = err;
       retryCount++;
       if (retryCount > maxRetries) {
         log.error(
           `Failed after ${maxRetries + 1} attempts for group ${groupId}:`,
           err.message,
         );
+
+        // A transport fallback would evade a failed rewrite and lose content.
+        if (lengthFailure) throw lengthFailure;
 
         // Return fallback slides
         const fallbackSlides = slides.map((s) => createFallbackSlide(s));
@@ -373,6 +406,13 @@ export async function refineSlideGroup(
         return fallbackSlides;
       }
 
+      if (err instanceof SlideTextLengthError) {
+        messages.push({ role: 'assistant', content: rawResponse });
+        messages.push({
+          role: 'user',
+          content: `Rewrite the complete slides response to fix these length violations: ${err.message}. Keep the meaning, use complete sentences within each declared maxLength, and preserve originalIndex. Do not cut text or append an ellipsis.`,
+        });
+      }
       log.warn(`Retry ${retryCount} for group ${groupId}`);
     }
   }

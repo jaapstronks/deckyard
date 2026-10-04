@@ -1,8 +1,7 @@
 /**
  * Fix pipeline.
  *
- * Non-throwing validation that repairs AI-generated slides in place: truncates
- * overlong text, applies per-type fixes, enforces item min/max (padding,
+ * Validation that refuses overlong text and applies per-type fixes, enforces item min/max (padding,
  * truncating, or downgrading to content-slide), attaches non-blocking content
  * warnings, and diffs input vs output into a list of applied fixes.
  */
@@ -12,7 +11,7 @@ import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { SLIDE_ITEM_REQUIREMENTS } from './constants.js';
 import { logValidation } from './logging.js';
 import { checkForUnknownFields } from './fields.js';
-import { truncateContentFields } from './truncate.js';
+import { assertSlideTextLengths } from './lengths.js';
 import {
   fixTableSlideContent,
   fixListSlideLayout,
@@ -56,13 +55,14 @@ export function validateAndFixSlide(
     content = fixTextBlocksSlideDefaults(content);
   }
 
-  // First, truncate all text fields to the max lengths their type declares
-  const truncatedContent = truncateContentFields(def, content);
-  const fixedSlide = { ...slide, content: truncatedContent };
+  // Text is authored by the model: deterministic repairs cannot shorten it.
+  assertSlideTextLengths({ ...slide, content }, def);
+  const checkedContent = content;
+  const fixedSlide = { ...slide, content: checkedContent };
 
   // Add icon-card-grid optimization note to reasoning
   if (type === 'icon-card-grid-slide') {
-    const optimization = getIconCardGridOptimization(truncatedContent);
+    const optimization = getIconCardGridOptimization(checkedContent);
     if (optimization) {
       fixedSlide.reasoning = (fixedSlide.reasoning || '').trim();
       if (fixedSlide.reasoning) {
@@ -74,30 +74,30 @@ export function validateAndFixSlide(
   }
 
   // The same derivation strict throws on, here only logged: the fix pipeline
-  // repairs what it can and never rejects, so an issue it cannot repair is a
+  // repairs structure and refuses overlong text, so an issue it cannot repair is a
   // signal for the prompt, not an error for the caller.
-  const schemaResult = validateSlideContent(def, truncatedContent, { theme });
+  const schemaResult = validateSlideContent(def, checkedContent, { theme });
   if (!schemaResult.valid && schemaResult.issues.length > 0) {
     logValidation('content-schema-issues', {
       slideType: type,
       originalIndex: slide.originalIndex,
       issues: schemaResult.issues.map(
-        (issue) => describeIssue(issue, truncatedContent).message,
+        (issue) => describeIssue(issue, checkedContent).message,
       ),
     });
   }
 
   // Check for unknown fields that the AI generated but the slide type doesn't support
   // This helps identify content loss and improve prompts
-  checkForUnknownFields(type, truncatedContent, {
+  checkForUnknownFields(type, checkedContent, {
     originalIndex: slide.originalIndex,
-    title: truncatedContent.title,
+    title: checkedContent.title,
   });
 
   const req = SLIDE_ITEM_REQUIREMENTS[type];
   if (!req) return fixedSlide;
 
-  let arr = truncatedContent[req.field];
+  let arr = checkedContent[req.field];
 
   // If field doesn't exist or isn't an array, it will fail validation anyway
   if (!Array.isArray(arr)) {
@@ -105,7 +105,7 @@ export function validateAndFixSlide(
       slideType: type,
       field: req.field,
       originalIndex: slide.originalIndex,
-      received: typeof truncatedContent[req.field],
+      received: typeof checkedContent[req.field],
     });
     return fixedSlide;
   }
@@ -122,7 +122,7 @@ export function validateAndFixSlide(
     });
     arr = arr.slice(0, req.max);
     fixedSlide.content = {
-      ...truncatedContent,
+      ...checkedContent,
       [req.field]: arr,
     };
     fixedSlide.reasoning =
@@ -147,16 +147,16 @@ export function validateAndFixSlide(
         to: 'content-slide',
         reason: 'insufficient items (<=1)',
         originalIndex: slide.originalIndex,
-        title: truncatedContent.title,
+        title: checkedContent.title,
       });
       return {
         ...fixedSlide,
         type: 'content-slide',
         content: {
-          title: truncatedContent.title || 'Content',
-          body: buildBodyFromItems(arr, truncatedContent),
+          title: checkedContent.title || 'Content',
+          body: buildBodyFromItems(arr, checkedContent),
           layout: 'one-column',
-          background: truncatedContent.background || 'lime',
+          background: checkedContent.background || 'lime',
         },
         reasoning:
           (fixedSlide.reasoning || '') +
@@ -171,16 +171,16 @@ export function validateAndFixSlide(
         to: 'content-slide',
         reason: 'insufficient items (<2)',
         originalIndex: slide.originalIndex,
-        title: truncatedContent.title,
+        title: checkedContent.title,
       });
       return {
         ...fixedSlide,
         type: 'content-slide',
         content: {
-          title: truncatedContent.title || 'Timeline',
+          title: checkedContent.title || 'Timeline',
           body: buildBodyFromTimelineItems(arr),
           layout: 'one-column',
-          background: truncatedContent.background || 'lime',
+          background: checkedContent.background || 'lime',
         },
         reasoning:
           (fixedSlide.reasoning || '') +
@@ -208,7 +208,7 @@ export function validateAndFixSlide(
       return {
         ...fixedSlide,
         content: {
-          ...truncatedContent,
+          ...checkedContent,
           [req.field]: paddedArr,
         },
         reasoning:
@@ -358,6 +358,7 @@ export function validateAndFixRefinedSlides(
     const slide = refinedSlides[i];
     const prevSlide = i > 0 ? fixedSlides[i - 1] : null;
     const fixedSlide = validateAndFixSlide(slide, { slideTypes, theme });
+    assertSlideTextLengths(fixedSlide, slideTypes[fixedSlide.type]);
 
     // Add content-aware warnings
     const warnings = getContentWarnings(fixedSlide, prevSlide);

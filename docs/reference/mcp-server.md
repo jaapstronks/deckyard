@@ -203,7 +203,7 @@ When the caller is itself an LLM (or any agent that already has structured data)
 ```
 
 - `validation: "strict"` (default) throws `{ slideIndex, slideType, field, expected, got, message }` on the first issue — no partial write.
-- `validation: "fix"` applies auto-fixes (truncate, pad, layout switch) and returns them as `appliedFixes` in the response.
+- `validation: "fix"` applies structural auto-fixes (pad, layout switch); overlong text is refused and returns the repairs as `appliedFixes` in the response.
 - `auto_prepend_title: true` prepends the theme's default title-slide using `title` when the first slide isn't already one.
 
 Call `get_slide_types` first (it returns an `example` field per type) to see the exact content shape for each slide type.
