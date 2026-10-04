@@ -39,7 +39,7 @@
  *   real pixel size and its frame fitted to it (`pptx-image.js`).
  * - **Bullets per level, and the table header.** pptxgenjs writes the same `•`
  *   on every level and never sets `firstRow`; both are set here, the second by
- *   a pass over the written package ({@link markHeaderTables}).
+ *   a pass over the written package ({@link finishEditablePackage}).
  */
 
 import { JSDOM } from 'jsdom';
@@ -51,9 +51,9 @@ import { PPTX_LAYOUTS, layoutBox, themeTextPt } from './pptx-theme.js';
 import { containInBox, rasterForPptx } from './pptx-image.js';
 
 /** The smallest body size the line budget may choose before it gives up. */
-const MIN_BODY_PT = 10;
+export const MIN_BODY_PT = 10;
 /** The smallest heading size, for a title too long for its box. */
-const MIN_HEADING_PT = 16;
+export const MIN_HEADING_PT = 16;
 /**
  * Average advance of a glyph, as a share of the font size. A Latin text face
  * sets around half an em per character; the budget errs a little wide, since
@@ -563,6 +563,19 @@ function tableBlockHeight(block, pt, widthIn) {
   return h;
 }
 
+/**
+ * Width, in inches, a text block needs at `pt` to set its longest line
+ * unwrapped: the box for text that sits on a chip as wide as its words (the
+ * canvas' `width: fit-content`), before the caller caps it.
+ */
+export function textBlockWidth(block, pt) {
+  let chars = 0;
+  for (const p of block.paragraphs) {
+    for (const line of p.lines) chars = Math.max(chars, lineChars(line));
+  }
+  return (chars * pt * CHAR_EM) / 72 + INSET_X;
+}
+
 function blockHeight(block, pt, widthIn) {
   return block.kind === 'table'
     ? tableBlockHeight(block, pt, widthIn)
@@ -672,6 +685,27 @@ function paragraphOptions(p, pt) {
 }
 
 /**
+ * A dashed frame with words in it, where a picture should be: the alt text of
+ * one that could not travel, or the placeholder of a frame left empty.
+ *
+ * @param {object} pptxSlide
+ * @param {string} text
+ * @param {{x: number, y: number, w: number, h: number}} frame - inches
+ * @param {{ spec: { textMuted: string }, pt: number }} style
+ */
+export function placeStandIn(pptxSlide, text, frame, { spec, pt }) {
+  pptxSlide.addText(text, {
+    ...frame,
+    fontSize: pt,
+    italic: true,
+    color: spec.textMuted,
+    align: 'center',
+    valign: 'middle',
+    line: { color: spec.textMuted, width: 0.75, dashType: 'dash' },
+  });
+}
+
+/**
  * Pictures tiled into a box, each in its own cell and fitted to its own
  * ratio, with its caption under it.
  */
@@ -703,14 +737,9 @@ async function placeImages(pptxSlide, images, box, ctx) {
       });
     } else {
       // The picture could not travel; its alt text says what was there.
-      pptxSlide.addText(img.alt || img.src, {
-        ...frame,
-        fontSize: ctx.captionPt,
-        italic: true,
-        color: ctx.spec.textMuted,
-        align: 'center',
-        valign: 'middle',
-        line: { color: ctx.spec.textMuted, width: 0.75, dashType: 'dash' },
+      placeStandIn(pptxSlide, img.alt || img.src, frame, {
+        spec: ctx.spec,
+        pt: ctx.captionPt,
       });
       ctx.warnings.push(
         `Slide ${ctx.slideNum}: image ${img.src} could not be embedded; its alt text stands in.`,
@@ -901,30 +930,58 @@ export async function composeGenericSlide(pptx, slide, def, ctx) {
 }
 
 /**
- * Set `firstRow` on every table written with a header row.
+ * The object name a decorative picture is written under, so the pass over the
+ * package can mark it. pptxgenjs writes the image's file name as the
+ * description of a picture without alt text, which a screen reader reads out.
+ */
+export const DECORATIVE_PICTURE_NAME = 'Decorative picture';
+
+/** PowerPoint's "Mark as decorative" (Office 2019+), on a `p:cNvPr`. */
+const DECORATIVE_EXT =
+  '<a:extLst><a:ext uri="{C183D7F6-B498-43B3-948B-1728B52AA6E4}">' +
+  '<adec:decorative xmlns:adec="http://schemas.microsoft.com/office/drawing/2017/decorative" val="1"/>' +
+  '</a:ext></a:extLst>';
+
+/**
+ * What pptxgenjs cannot write, patched into the written package for the
+ * objects the composition named for it.
  *
- * pptxgenjs writes `<a:tblPr/>` empty, so PowerPoint's "Header Row" box is off
- * and applying a table style drops our bold header (B232 (c)). The library has
- * no option for it; the written package is patched instead, for the tables
- * {@link placeTable} named as having a header.
+ * - **Header rows.** pptxgenjs writes `<a:tblPr/>` empty, so PowerPoint's
+ *   "Header Row" box is off and applying a table style drops our bold header
+ *   (B232 (c)). `firstRow` is set on every table {@link placeTable} named as
+ *   having one.
+ * - **Decorative pictures.** A picture named {@link DECORATIVE_PICTURE_NAME}
+ *   loses the file name pptxgenjs wrote as its description and is marked
+ *   decorative, so a screen reader skips it as the canvas' `aria-hidden` does.
  *
  * @param {Buffer} buffer - a written .pptx
  * @returns {Promise<Buffer>}
  */
-export async function markHeaderTables(buffer) {
+export async function finishEditablePackage(buffer) {
   const zip = await JSZip.loadAsync(buffer);
   const parts = zip.file(/^ppt\/slides\/slide\d+\.xml$/);
   let changed = false;
   for (const part of parts) {
     const xml = await part.async('string');
-    if (!xml.includes(HEADER_TABLE_NAME)) continue;
-    const next = xml.replace(
-      /<p:graphicFrame>[\s\S]*?<\/p:graphicFrame>/g,
-      (frame) =>
-        frame.includes(`name="${HEADER_TABLE_NAME}"`)
-          ? frame.replace('<a:tblPr/>', '<a:tblPr firstRow="1"/>')
-          : frame,
-    );
+    let next = xml;
+    if (next.includes(HEADER_TABLE_NAME)) {
+      next = next.replace(
+        /<p:graphicFrame>[\s\S]*?<\/p:graphicFrame>/g,
+        (frame) =>
+          frame.includes(`name="${HEADER_TABLE_NAME}"`)
+            ? frame.replace('<a:tblPr/>', '<a:tblPr firstRow="1"/>')
+            : frame,
+      );
+    }
+    if (next.includes(DECORATIVE_PICTURE_NAME)) {
+      next = next.replace(
+        new RegExp(
+          `<p:cNvPr ([^>]*)name="${DECORATIVE_PICTURE_NAME}" descr="[^"]*">`,
+          'g',
+        ),
+        `<p:cNvPr $1name="${DECORATIVE_PICTURE_NAME}" descr="">${DECORATIVE_EXT}`,
+      );
+    }
     if (next !== xml) {
       zip.file(part.name, next);
       changed = true;

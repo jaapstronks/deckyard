@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
-import { NATIVE_PPTX_SLIDE_TYPES } from '../server/export/pptx.js';
+import { PIXEL_PERFECT_HANDLER_TYPES } from '../server/export/pptx.js';
 
 /**
  * The two PowerPoint rows in the export menu promise what each file hands back
@@ -12,9 +12,11 @@ import { NATIVE_PPTX_SLIDE_TYPES } from '../server/export/pptx.js';
  *
  * The pixel-perfect row: every slide but video travels as one picture
  * (`docs/reference/export-menu.md` § What the PPTX hands back), and video plays.
- * The copy is pinned to the export's own handler map, not only to today's
- * sentence: the day the pixel-perfect file composes a second type natively,
- * this test fails and whoever adds it rewrites the row in the same PR. The
+ * The copy is pinned to the handlers that declare `pixelPerfect` in the
+ * export's own map, not only to today's sentence: the day the pixel-perfect
+ * file composes a second type natively, this test fails and whoever adds it
+ * rewrites the row in the same PR. A handler that serves only the editable
+ * file (image-slide, B588) leaves this list alone. The
  * editable row promises editable text and pictures as far as the type allows;
  * which slides did not make it is said after the export, not in the row.
  */
@@ -26,11 +28,11 @@ function editorCopy(locale, key = 'editor.export.descPptx') {
   return JSON.parse(readFileSync(path, 'utf8'))[key];
 }
 
-test('the PPTX export still writes only video natively', () => {
+test('the pixel-perfect PPTX still writes only video natively', () => {
   assert.deepEqual(
-    [...NATIVE_PPTX_SLIDE_TYPES],
+    [...PIXEL_PERFECT_HANDLER_TYPES],
     ['video-slide'],
-    'A native PPTX composition was added: the export no longer hands back ' +
+    'The pixel-perfect file composes a second type natively: it no longer hands back ' +
       'every other slide as an image. Rewrite editor.export.descPptx in every ' +
       'locale (and the fallback in client/views/editor/export-modal.js) to say ' +
       'what the file now holds, then update this pin.',
