@@ -18,6 +18,11 @@ import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { detectDeckLanguage, normalizeLang } from '../openai/lang.js';
+import { SLIDE_TYPES } from '../../../shared/slide-types/registry.js';
+import {
+  assertSlideTextLengths,
+  SlideTextLengthError,
+} from './validate-slides/index.js';
 import { prompts } from './prompts/index.js';
 import { createLogger } from '../logger.js';
 
@@ -231,11 +236,6 @@ function resolveStructuralSlide(slide) {
     let authorName = lines[1] || '';
     let authorTitle = lines[2] || '';
 
-    // If quote is too long, truncate
-    if (quote.length > 260) {
-      quote = quote.slice(0, 257) + '...';
-    }
-
     return {
       originalIndex: index,
       type: 'quote-slide',
@@ -254,7 +254,7 @@ function resolveStructuralSlide(slide) {
       originalIndex: index,
       type: 'payoff-slide',
       content: {
-        tagline: roughContent.slice(0, 120) || '',
+        tagline: roughContent || '',
       },
       reasoning: 'Structural: closing slide resolved directly',
       presenterNotes: presenterNotes || '',
@@ -444,7 +444,19 @@ export function separateSlidesForProcessing(slides) {
     if (['chapter', 'quote', 'closing'].includes(slide.intent)) {
       const resolved = resolveStructuralSlide(slide);
       if (resolved) {
-        structuralSlides.push(resolved);
+        try {
+          assertSlideTextLengths(resolved, SLIDE_TYPES[resolved.type]);
+          structuralSlides.push(resolved);
+          continue;
+        } catch (err) {
+          if (!(err instanceof SlideTextLengthError)) throw err;
+          contentGroups.push({
+            groupId: `structural-${slide.index}`,
+            slides: [slide],
+            intent: slide.intent,
+          });
+          continue;
+        }
       }
       continue;
     }

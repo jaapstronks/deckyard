@@ -7,7 +7,7 @@
  * The max-length tables are gone (D87). They were a second spelling of
  * `fields[].maxLength` and disagreed with it in nineteen places; both
  * validators now read the declaration — strict through
- * `schemas/content-schema.js`, the fix pipeline through `truncate.js`. The
+ * `schemas/content-schema.js`, the fix pipeline through `lengths.js`. The
  * item-count *numbers* were already read off the definition; what stays is the
  * judgement about which three types get padded or downgraded rather than
  * refused, and that is behaviour, not a constraint.

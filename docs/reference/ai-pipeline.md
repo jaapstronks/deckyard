@@ -71,9 +71,9 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
 - `server/utils/ai/validate-slides/` (an `index.js` barrel over 8 modules) —
   the repair stage: `checks.js`, `constants.js` (which types get their item
   count repaired — a behaviour choice, not a constraint), `fields.js`
-  (valid/unknown field keys), `fix.js` (the non-throwing repair pipeline),
+  (valid/unknown field keys), `fix.js` (the structural repair pipeline),
   `fixers.js` (per-type repairs), `strict.js` (throwing validation for raw
-  output), `truncate.js`, `logging.js`.
+  output), `lengths.js`, `logging.js`.
 - `server/utils/ai/validate-slide-structure.js` — structural check of
   one slide's content against its type.
 - `server/utils/ai/slide-type-catalog.js` — a 21-line compatibility re-export of
@@ -170,16 +170,7 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
   the "new presentation" modal: a single prompt via
   `generateDeckJsonFromRawContent`, no outline phase, no group refinement. The
   user-chosen theme always wins over whatever the model returned.
-- **Validate and fix** — the stage that makes the output usable. `fix.js`
-  truncates over-long text to word boundaries (to the `maxLength` the field
-  itself declares), drops unknown fields, applies per-type repairs and smart
-  defaults from `fixers.js`, and repairs the item count for the three types
-  `constants.js` names — non-throwing, because a repairable slide is better
-  than a failed generation. `strict.js` is the throwing counterpart used on raw
-  output: it reads the same derivation and refuses on the first issue, an
-  undeclared key included (`unknown_field`), so an agent is told rather than
-  having its content silently dropped. Every repair is recorded as a validation
-  event.
+- **Validate and fix**: `lengths.js` refuses overlong strings using the type's recursive content schema, including nested collection fields. Phase 2 checks each response before accepting it and gives the model one retry with the rejected response and exact field violations. If that rewrite fails, generation fails instead of returning clipped text or a fallback. Structural slides whose declared lengths are exceeded also go to Phase 2. `fix.js` keeps its structural repairs, defaults and item-count handling; it never shortens text. Raw slide validation through `strict.js` still refuses every schema issue. No length limit is widened.
 - **Append / refine / iterate / compress** — the editing verbs. Append generates
   slides for an existing deck; section refine revises a contiguous range with a
   couple of neighbouring slides as context; iterate applies a natural-language

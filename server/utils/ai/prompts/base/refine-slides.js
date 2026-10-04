@@ -10,6 +10,7 @@
  * itself overridable is a separate step of the seam.
  */
 
+import { SLIDE_TYPES } from '../../../../../shared/slide-types/registry.js';
 import { buildPhase2CatalogPrompt } from '../../slide-type-catalog.js';
 
 /**
@@ -58,7 +59,7 @@ ${contextSection}
 CRITICAL RULES
 ═══════════════════════════════════════════════════════════════════════════════
 
-1. ALL SLIDES HERE ARE intent:"content" - choose the best content slide type
+1. Follow each input slide intent; structural intents keep their structural type.
 
 2. USE EXACT SCHEMAS:
    - Each slide type has a specific content structure
@@ -75,11 +76,11 @@ CRITICAL RULES
    - Timeline/roadmap with dates → timeline-slide
    - When uncertain, choose the plainer type (text or bulleted list)
 
-4. MAX LENGTHS (will be truncated if exceeded):
-   - title: 120 chars
-   - list-slide item title: 80 chars, item text: 120 chars
-   - card labels: 40 chars
-   - Keep content concise!
+4. MAX LENGTHS:
+   - Follow the declared field limits below, including nested items.
+   - Overlong text is rejected and must be rewritten, never truncated.
+   - Write complete sentences; shorten the wording without losing its meaning.
+${buildLengthContract(disabledSlideTypes, customSlideTypes)}
 
 ${adjacentContext ? `ADJACENT CONTEXT (avoid repetition):\n${adjacentContext}\n` : ''}
 
@@ -209,5 +210,28 @@ export function buildPhase2UserPrompt({ slides, groupId }) {
       ' for the first slide).',
   );
 
+  return lines.join('\n');
+}
+
+/** Publish the actual field caps instead of a second handwritten length table. */
+function buildLengthContract(disabled = [], custom = []) {
+  const lines = [];
+  function walk(fields, prefix, caps) {
+    for (const field of fields || []) {
+      const path = `${prefix}${field.key}`;
+      if (Number.isFinite(field.maxLength))
+        caps.push(`${path}: ${field.maxLength}`);
+      if (field.itemFields) walk(field.itemFields, `${path}[].`, caps);
+    }
+  }
+  for (const [type, def] of [
+    ...Object.entries(SLIDE_TYPES),
+    ...custom.map((ct) => [`custom-${ct.slug}`, ct]),
+  ]) {
+    if (disabled.includes(type)) continue;
+    const caps = [];
+    walk(def.fields, '', caps);
+    if (caps.length) lines.push(`   - ${type}: ${caps.join('; ')}`);
+  }
   return lines.join('\n');
 }

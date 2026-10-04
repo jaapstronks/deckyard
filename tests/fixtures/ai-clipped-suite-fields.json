@@ -1,0 +1,58 @@
+[
+  {
+    "run": "2026-10-04_12-04-02",
+    "caseId": "nl-kamerbrief-duurzame-digitalisering",
+    "type": "list-slide",
+    "path": ["items", 0, "text"],
+    "clippedText": "De Nederlandse digitale sector loopt voorop via innovaties voor energie-efficiëntie van datacenters en verduurzaming..."
+  },
+  {
+    "run": "2026-10-04_12-04-02",
+    "caseId": "nl-kamerbrief-duurzame-digitalisering",
+    "type": "list-slide",
+    "path": ["items", 1, "text"],
+    "clippedText": "AI en digitalisering versnellen verduurzaming via data, Digitale Product Paspoorten en nieuwe circulaire..."
+  },
+  {
+    "run": "2026-10-04_12-13-30",
+    "caseId": "deckyard-readme",
+    "type": "comparison-slide",
+    "path": ["verdict"],
+    "clippedText": "Both paths work for AI agents too — Claude Code or Cursor can self-install non-interactively via..."
+  },
+  {
+    "run": "2026-10-04_12-13-30",
+    "caseId": "nl-kamerbrief-duurzame-digitalisering",
+    "type": "list-slide",
+    "path": ["items", 0, "text"],
+    "clippedText": "Nederland moet als innovatieve en open economie vooroplopen in de digitale en duurzame transitie om het..."
+  },
+  {
+    "run": "2026-10-04_12-13-30",
+    "caseId": "nl-kamerbrief-duurzame-digitalisering",
+    "type": "list-slide",
+    "path": ["items", 0, "text"],
+    "clippedText": "De Nationale Coalitie Duurzame Digitalisering stelde het Manifest Duurzame Digitalisering op en wil Nederland..."
+  },
+  {
+    "run": "2026-10-04_12-13-30",
+    "caseId": "nl-kamerbrief-duurzame-digitalisering",
+    "type": "list-slide",
+    "path": ["items", 1, "text"],
+    "clippedText": "Het kabinet verwelkomt dit en onderschrijft ook internationaal de visie van de Europese Commissie op een geslaagde..."
+  },
+  {
+    "run": "2026-10-04_12-13-30",
+    "caseId": "nl-kamerbrief-duurzame-digitalisering",
+    "type": "list-slide",
+    "path": ["items", 2, "text"],
+    "clippedText": "Kathmann over efficiëntiegroei/vraagreductie en CO2-meetmethodiek; Teunissen over brede milieueffecten en..."
+  },
+  {
+    "run": "2026-10-04_12-13-30",
+    "caseId": "philips-q4-2024",
+    "type": "quote-slide",
+    "path": ["quote"],
+    "clippedText": "We delivered better care for more people by enhancing execution and focusing on driving improvements in profitability and cash flow, as well as order and sales growth. We strengthened our fundamentals and resolved significant US litigation relating to the R..."
+  }
+]
