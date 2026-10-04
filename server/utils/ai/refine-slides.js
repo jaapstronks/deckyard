@@ -20,6 +20,7 @@ import { describeIssue, validateSlideContent } from './schemas/index.js';
 import {
   assertSlideTextLengths,
   SlideTextLengthError,
+  validateAndFixSlide,
 } from './validate-slides/index.js';
 import { SLIDE_TYPES } from '../../../shared/slide-types/registry.js';
 import { prompts } from './prompts/index.js';
@@ -372,6 +373,10 @@ export async function refineSlideGroup(
           ) {
             throw lengthFailure;
           }
+          // Structural repair can expose text that the raw schema cannot see
+          // (for example array table rows). Refuse it within the same retry.
+          const fixed = validateAndFixSlide(normalized);
+          assertSlideTextLengths(fixed, SLIDE_TYPES[fixed.type]);
         }
         break;
       }

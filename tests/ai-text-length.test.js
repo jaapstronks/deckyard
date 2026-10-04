@@ -262,3 +262,78 @@ test('all eight clipped suite field paths refuse oversize copy without clipping'
     assert.equal(parent[example.path.at(-1)], text);
   }
 });
+
+const tableResponse = (content) => ({
+  slides: [{ originalIndex: 0, type: 'table-slide', content }],
+});
+const longTable = () =>
+  tableResponse({
+    title: 'Table',
+    rows: [['x'.repeat(401), 'value']],
+  });
+
+async function refineAndValidate() {
+  return validateAndFixRefinedSlides(
+    await refineSlideGroup(group, { vendor: 'openai' }),
+  );
+}
+
+test('table lengths exposed by structural repair trigger a successful rewrite before final validation', async (t) => {
+  const short = {
+    title: 'Table',
+    rows: [{ c1: 'A short complete sentence.', c2: 'value' }],
+  };
+  await withReplies(
+    t,
+    [longTable(), tableResponse(short)],
+    async (requests) => {
+      const [slide] = await refineAndValidate();
+      assert.equal(requests.length, 2);
+      assert.equal(slide.type, 'table-slide');
+      assert.deepEqual(slide.content.rows, short.rows);
+      assert.match(requests[1].messages.at(-1).content, /rows\.0\.c1/);
+      assert.match(requests[1].messages.at(-1).content, /401 > 400/);
+      assert.deepEqual(
+        JSON.parse(requests[1].messages.at(-2).content),
+        longTable(),
+      );
+    },
+  );
+});
+
+for (const [label, repair] of [
+  [
+    'exhausted',
+    tableResponse({
+      title: 'Table',
+      rows: [{ c1: 'x'.repeat(401), c2: 'value' }],
+    }),
+  ],
+  [
+    'structurally repairable but raw-invalid',
+    tableResponse({ title: 'Table', rows: [['Short.', 'value']] }),
+  ],
+  ['empty content', tableResponse({})],
+  ['invalid envelope', {}],
+]) {
+  test(`table length rewrite rejects ${label} output without fallback`, async (t) => {
+    await withReplies(t, [longTable(), repair], async (requests) => {
+      await assert.rejects(refineAndValidate(), SlideTextLengthError);
+      assert.equal(requests.length, 2);
+    });
+  });
+}
+
+test('valid structural table repair still passes refinement and final validation in one call', async (t) => {
+  const boundary = 'x'.repeat(400);
+  await withReplies(
+    t,
+    [tableResponse({ title: 'Table', rows: [[boundary, 'value']] })],
+    async (requests) => {
+      const [slide] = await refineAndValidate();
+      assert.equal(requests.length, 1);
+      assert.deepEqual(slide.content.rows, [{ c1: boundary, c2: 'value' }]);
+      assert.equal(slide.content.colCount, '2');
+    },
+  );
+});
