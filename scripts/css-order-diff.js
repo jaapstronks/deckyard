@@ -10,21 +10,38 @@ import {
   APP_FEATURE_LAYER,
   APP_FEATURE_ORDER,
   appFeatureEntries,
+  viewerEntries,
 } from './generate-slide-css-aggregators.js';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
-const baseline = execFileSync(
-  'git',
-  ['show', 'b8fc6507:client/styles/base.css'],
-  { cwd: root, encoding: 'utf8' },
-);
+function baselineImports(file) {
+  const source = execFileSync(
+    'git',
+    ['show', `b8fc6507:client/styles/${file}`],
+    { cwd: root, encoding: 'utf8' },
+  );
+  return [...source.matchAll(/@import url\('\.\/([^']+)'\)/g)].map(
+    (match) => match[1],
+  );
+}
+
+// Tokens and primitives stay ahead of both populations. In B533, app.css
+// loaded base.css before viewer.css; B534 puts viewer chrome first.
 const oldFiles = [
-  ...baseline.matchAll(/@import url\('\.\/app\/([^']+)'\)/g),
-].map((match) => match[1]);
-const newFiles = APP_FEATURE_ORDER.flatMap((feature) =>
-  appFeatureEntries(feature).map((file) => `${feature}/${file}`),
-);
-const expected = [...APP_FEATURE_LAYER.files].sort();
+  ...baselineImports('base.css'),
+  ...baselineImports('viewer.css'),
+];
+const viewerFiles = viewerEntries().map((file) => `viewer/${file}`);
+const newFiles = [
+  ...viewerFiles,
+  ...APP_FEATURE_ORDER.flatMap((feature) =>
+    appFeatureEntries(feature).map((file) => `app/${feature}/${file}`),
+  ),
+];
+const expected = [
+  ...APP_FEATURE_LAYER.files.map((file) => `app/${file}`),
+  ...viewerFiles,
+].sort();
 if (
   JSON.stringify([...oldFiles].sort()) !== JSON.stringify(expected) ||
   JSON.stringify([...newFiles].sort()) !== JSON.stringify(expected)
@@ -116,9 +133,7 @@ function parseRules(source) {
 const rules = new Map(
   oldFiles.map((file) => [
     file,
-    parseRules(
-      fs.readFileSync(path.join(root, 'client/styles/app', file), 'utf8'),
-    ),
+    parseRules(fs.readFileSync(path.join(root, 'client/styles', file), 'utf8')),
   ]),
 );
 const newIndex = new Map(newFiles.map((file, index) => [file, index]));
