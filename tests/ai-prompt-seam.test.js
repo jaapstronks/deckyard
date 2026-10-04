@@ -92,7 +92,8 @@ test('base outline builders produce their copy and honour the language label', (
     targetSlides: 7,
   });
   assert.match(structure, /OUTPUT LANGUAGE: ENGLISH/, 'falls back to detected');
-  assert.match(structure, /Target: 7 content slides/);
+  assert.match(structure, /Budget: about 7 slides in the finished deck/);
+  assert.match(structure, /Plan at most 6 slides here/);
 });
 
 test('loadCustomPromptOverrides: absent file resolves to an empty map', async () => {

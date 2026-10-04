@@ -8,6 +8,7 @@ import {
 } from '../server/utils/ai/generate-outline.js';
 import { buildPhase2UserPrompt } from '../server/utils/ai/prompts/base/refine-slides.js';
 import { buildStructureUserPrompt } from '../server/utils/ai/prompts/base/outline.js';
+import { validateSlideCount } from '../server/utils/ai/validate-slides/index.js';
 
 const ANALYSIS = normalizeAnalysis({
   title: ' Duurzame digitalisering ',
@@ -105,4 +106,21 @@ test('status messages also reach six lines for an empty or one-section source', 
   for (const sections of [[], ANALYSIS.sections.slice(0, 1)]) {
     assert.equal(buildStatusMessages({ sections }, 'nl').length, 6);
   }
+});
+
+test('wizard budget counts the automatic title and structural slides', () => {
+  const slides = [
+    ...Array.from({ length: 8 }, () => ({ type: 'content-slide' })),
+    { type: 'chapter-title-slide' },
+    { type: 'quote-slide' },
+  ];
+  const result = validateSlideCount(slides, 10);
+  assert.equal(result.contentSlides, 9);
+  assert.equal(result.totalSlides, 11);
+  assert.equal(result.percentage, 110);
+  assert.equal(result.overBudget, false);
+  assert.equal(
+    validateSlideCount([...slides, { type: 'payoff-slide' }], 10).overBudget,
+    true,
+  );
 });

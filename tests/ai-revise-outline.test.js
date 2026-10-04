@@ -83,6 +83,26 @@ test('drops are capped so a revision cannot gut the deck', () => {
   assert.match(rejected[0].why, /drop cap reached/);
 });
 
+test('revision stops at the deck budget floor across merges and drops', () => {
+  const operations = [
+    { type: 'merge', slides: [2, 4], roughContent: 'Bookings and recap' },
+    { type: 'drop', slide: 5, reason: 'boilerplate' },
+  ];
+  const {
+    outline: revised,
+    applied,
+    rejected,
+  } = applyRevisionOperations(outline(), operations, { minimumSlides: 5 });
+  assert.equal(revised.slides.length, 5);
+  assert.equal(applied.length, 1);
+  assert.match(rejected[0].why, /slide budget floor reached/);
+  assert.ok(
+    revised.slides.some(
+      (slide) => slide.roughContent === 'Company boilerplate',
+    ),
+  );
+});
+
 test('structural slides cannot be revised', () => {
   const { applied, rejected } = applyRevisionOperations(outline(), [
     { type: 'drop', slide: 1, reason: 'chapter divider' },

@@ -69,10 +69,11 @@ SECTIONS
 - Follow the source's own logic: one section per distinct topic, in the order that tells the story best (usually the source's order).
 - "importance": how much of a presentation this section deserves. Be honest; most sources have only a few high sections.
 - "keyPoints": 2-8 per section. Each point stands on its own and keeps the specifics (figures, names, dates, steps in order). A later step builds slides from these points alone, without the source, so a missing figure is lost for good.
+- Preserve distinctions that change a claim: qualifiers, separate terms for different artifacts, and which date or citation belongs to which event. Do not flatten two different conditions into one generic point.
 - Keep sequences recognisable: phases, steps and dated events stay in order and say so ("Phase 1: ...", "2026: ...").
 - "excerpt": copy one sentence from the source exactly, character for character. Never paraphrase it. Max 200 characters.
 - "quotes": only real quotes from the source with a named speaker. Omit the field when there are none.
-- Leave out boilerplate: tables of contents, disclaimers, legal notices, navigation text.`;
+- Leave out boilerplate: tables of contents, disclaimers and navigation text. Keep licensing or usage terms when they define the product or its output.`;
 }
 
 /**
@@ -169,10 +170,11 @@ HINTS (content slides only) - the shape of the content, not a slide type
 BUDGET AND STRUCTURE
 ═══════════════════════════════════════════════════════════════════════════════
 
-1. Target: ${targetSlides} content slides (excluding chapter dividers, quotes and closing).
-2. Chapters only for major sections, each with 3-5 content slides. Under 10 content slides, at most 2 chapters; only a long deck needs more than 4.
-3. Never put two quote slides back to back.
-4. If two slides would overlap, merge them. Repetition is worse than omission.
+1. Budget: about ${targetSlides} slides in the finished deck, INCLUDING the automatic title slide, chapter dividers, quotes and closing. Plan at most ${targetSlides - 1} slides here. A chapter, quote or closing takes a place that could otherwise carry content.
+2. Spend the budget on the important findings first. Combine related facts on one focused content slide instead of making a separate slide for every key point; keep the figures, names and dates that support the main message. Preserve qualifiers ("limited" is not "no") and keep each figure or citation attached to the claim it supports. Low-importance sections may need no slide.
+3. Chapters only for major changes of subject, with at least 3 content slides between dividers. Under 10 planned slides, at most 2 chapters; even a long deck rarely needs more than 4.
+4. Never put two quote slides back to back. A quote needs to add something the surrounding content does not already say.
+5. If two slides would overlap, merge them. Repetition is worse than omission.
 
 All text MUST be in ${langLabel}.`;
 }
