@@ -50,6 +50,7 @@ const {
   canReadPresentation,
   canWritePresentation,
   canDeletePresentation,
+  canRestorePresentation,
   canChangePresentationVisibility,
   canManageCollaborators,
   canCommentOnPresentation,
@@ -298,6 +299,29 @@ describe('canDeletePresentation', () => {
       canDeletePresentation({ user: OPERATOR, pres: privateDeck }),
       true,
     );
+  });
+});
+
+describe('canRestorePresentation', () => {
+  const trashed = { ...privateDeck, trashedBy: { id: OTHER_ID } };
+
+  it('owner, creator, original trasher and instance admin may restore', () => {
+    for (const user of [OWNER, CREATOR, OTHER, ADMIN]) {
+      assert.equal(canRestorePresentation({ user, pres: trashed }), true);
+    }
+  });
+
+  it('identity is keyed on user id and an unrelated actor is refused', () => {
+    assert.equal(
+      canRestorePresentation({ user: ADDRESS_ONLY, pres: trashed }),
+      false,
+    );
+    assert.equal(canRestorePresentation({ user: ANON, pres: trashed }), false);
+    assert.equal(
+      canRestorePresentation({ user: OTHER, pres: privateDeck }),
+      false,
+    );
+    assert.equal(canRestorePresentation({ user: ADMIN, pres: null }), false);
   });
 });
 

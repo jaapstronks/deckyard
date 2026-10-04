@@ -23,6 +23,7 @@ export {
   canReadPresentation,
   canWritePresentation,
   canDeletePresentation,
+  canRestorePresentation,
   canChangePresentationVisibility,
   canTransferOwnership,
   canManageCollaborators,

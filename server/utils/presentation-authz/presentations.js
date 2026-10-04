@@ -35,6 +35,7 @@ import {
   hasIdentity,
   isOwner,
   isOwnerOrCreator,
+  matchesIdentity,
 } from '../../../shared/identity-match.js';
 
 /**
@@ -157,6 +158,16 @@ export function canDeletePresentation({ user, pres } = {}) {
   // permission (D49).
   if (!hasIdentity(user)) return false;
   return isOwner(user, pres);
+}
+
+/** A trashed deck may be restored by its owner, creator, trasher or admin. */
+export function canRestorePresentation({ user, pres } = {}) {
+  if (!pres || typeof pres !== 'object') return false;
+  return (
+    user?.isAdmin === true ||
+    isOwnerOrCreator(user, pres) ||
+    matchesIdentity(user, { userId: pres.trashedBy?.id })
+  );
 }
 
 /**
