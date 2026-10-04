@@ -267,7 +267,9 @@ function resolveStructuralSlide(slide) {
 }
 
 /**
- * One JSON-returning call of the outline, with the plan-role model.
+ * One JSON-returning call of the outline, with the plan-role model. A reply
+ * that does not parse (typically cut off at the token ceiling) gets one more
+ * attempt, as a Phase 2 group does.
  * @returns {Promise<{ parsed: object, messages: Array, rawResponse: string }>}
  */
 async function requestOutlineStep(
@@ -278,27 +280,33 @@ async function requestOutlineStep(
     { role: 'system', content: systemPrompt },
     { role: 'user', content: userPrompt },
   ];
-  const rawResponse = await requestChatCompletionContent({
-    vendor: llm.vendor,
-    apiKey: llm.apiKey,
-    model: llm.model,
-    temperature: 0.3,
-    responseFormat: { type: 'json_object' },
-    // Headroom: current Claude models spend part of the output budget on
-    // (adaptive) thinking.
-    maxTokens,
-    messages,
-    signal,
-  });
-  const parsed = extractJsonObject(rawResponse);
-  if (!parsed) {
-    throw LlmError.fromJsonParseFailure(rawResponse, {
-      phase: `outline-${step}`,
+  const maxAttempts = 2;
+  for (let attempt = 1; ; attempt += 1) {
+    const rawResponse = await requestChatCompletionContent({
       vendor: llm.vendor,
+      apiKey: llm.apiKey,
       model: llm.model,
+      temperature: 0.3,
+      responseFormat: { type: 'json_object' },
+      // Headroom: current Claude models spend part of the output budget on
+      // (adaptive) thinking.
+      maxTokens,
+      messages,
+      signal,
+    });
+    const parsed = extractJsonObject(rawResponse);
+    if (parsed) return { parsed, messages, rawResponse };
+    if (attempt >= maxAttempts) {
+      throw LlmError.fromJsonParseFailure(rawResponse, {
+        phase: `outline-${step}`,
+        vendor: llm.vendor,
+        model: llm.model,
+      });
+    }
+    log.warn(`Outline ${step}: reply did not parse, retrying`, {
+      length: rawResponse?.length || 0,
     });
   }
-  return { parsed, messages, rawResponse };
 }
 
 /**
@@ -370,7 +378,7 @@ export async function generateOutline(
       targetSlides,
     }),
     userPrompt: prompts.buildStructureUserPrompt({ analysis }),
-    maxTokens: 12000,
+    maxTokens: 16000,
     llm,
     signal,
   });
