@@ -22,3 +22,6 @@ docs/plans
 
 # Generated baselines: a reformat here would make the next regeneration a diff.
 tests/fixtures/export-metrics
+test-suite/.cache
+test-suite/history.json
+test-suite/runs

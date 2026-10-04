@@ -77,6 +77,12 @@ const ALLOWLIST = [
     file: 'CHANGELOG.md',
     contains: 'typed slide types with a shared schema',
   },
+  {
+    // Frozen AI-suite judge output records what a generated deck claimed in
+    // this run. Rewriting it to the current count would corrupt the evidence.
+    file: 'test-suite/runs/2026-10-04_17-14-30/report.md',
+    contains: "The stray 'mist' fragment at the bottom",
+  },
 ];
 
 function trackedMarkdownFiles() {

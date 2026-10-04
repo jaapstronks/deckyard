@@ -402,6 +402,7 @@ export async function generateOutline(
     metadata: {
       detectedLang: detectedLang.code,
       requestedLang,
+      targetSlides,
       vendor: llm.vendor,
       model: llm.model,
       calls: 2,
