@@ -16,6 +16,8 @@
  *   --vendor NAME   Generation vendor: claude (default) or openai. The judge
  *                   always stays on the pinned judge model, so scores from
  *                   different vendors remain on one scale.
+ *   --model ID      Generation model for every call (plan and fill), instead
+ *                   of the vendor's pinned model. Must have a PRICING entry.
  */
 
 import fs from 'node:fs/promises';
@@ -28,6 +30,7 @@ import {
   GENERATION_VENDORS,
   JUDGE_EFFORT,
   MODEL,
+  PRICING,
   RUNS_DIR,
 } from '../lib/config.js';
 import { computePromptVersion } from '../lib/prompt-version.js';
@@ -62,6 +65,7 @@ function parseArgs(argv) {
     refresh: false,
     label: '',
     vendor: DEFAULT_VENDOR,
+    model: null,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -85,6 +89,13 @@ function parseArgs(argv) {
       if (!GENERATION_VENDORS[options.vendor]) {
         throw new Error(
           `Unknown vendor "${options.vendor}". Known: ${Object.keys(GENERATION_VENDORS).join(', ')}`,
+        );
+      }
+    } else if (arg === '--model') {
+      options.model = next();
+      if (!PRICING[options.model]) {
+        throw new Error(
+          `Unpriced model "${options.model}". Known: ${Object.keys(PRICING).join(', ')}`,
         );
       }
     } else if (arg === '--help' || arg === '-h') options.help = true;
@@ -117,7 +128,10 @@ async function main() {
   // Pin the generation model for the chosen vendor. getLlmConfig reads these
   // per call, so setting them here covers the whole run. Both Claude stages
   // (plan and fill) are pinned to one model so the two phases stay comparable.
-  const generation = GENERATION_VENDORS[options.vendor];
+  const generation = {
+    ...GENERATION_VENDORS[options.vendor],
+    ...(options.model ? { model: options.model } : {}),
+  };
   for (const envVar of generation.envVars)
     process.env[envVar] = generation.model;
   process.env.LLM_VENDOR = options.vendor;

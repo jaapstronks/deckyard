@@ -52,6 +52,18 @@ export const DEFAULT_VENDOR = 'claude';
  * report at all.
  */
 export const PRICING = {
+  'claude-opus-5': {
+    input: 5.0,
+    output: 25.0,
+    cacheRead: 0.5,
+    cacheWrite: 6.25,
+  },
+  'claude-sonnet-5': {
+    input: 2.0,
+    output: 10.0,
+    cacheRead: 0.2,
+    cacheWrite: 2.5,
+  },
   'claude-opus-4-8': {
     input: 5.0,
     output: 25.0,
