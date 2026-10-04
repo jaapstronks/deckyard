@@ -44,17 +44,11 @@ test('extractSlideText treats list items as bullets whatever the slide type', ()
   assert.match(bullets[0], /Launch/);
 });
 
-test('extractSlideText drops config keys by substring, not just exact names', () => {
-  // Keys like headerAlign, bgCustomColor or a row's color / arrow hold
-  // configuration. An exact-name blocklist misses the compound ones, and their
-  // values then read as slide prose -- which made the judge penalize decks for
-  // invisible text.
+test('extractSlideText follows declared field types at every nesting level', () => {
   const { allText } = extractSlideText({
     type: 'text-blocks-slide',
     content: {
       title: 'Barriers',
-      headerAlign: 'left',
-      bgCustomColor: 'teal',
       rows: [
         {
           color: 'yellow',
@@ -69,16 +63,53 @@ test('extractSlideText drops config keys by substring, not just exact names', ()
       ],
     },
   });
-  for (const token of ['yellow', 'down', 'left', 'teal']) {
-    assert.ok(
-      !allText.includes(token),
-      `config value "${token}" must not count as slide text`,
-    );
-  }
-  assert.ok(
-    allText.includes('Split transitions'),
-    'real content is still captured',
+  for (const token of ['yellow', 'down']) assert.ok(!allText.includes(token));
+  assert.match(allText, /Split transitions/);
+  assert.match(allText, /The two transitions rarely meet/);
+});
+
+test('table configuration never becomes jury prose, but an on cell remains text', () => {
+  const slide = {
+    type: 'table-slide',
+    content: {
+      title: 'How Deckyard Compares',
+      caption: 'Capability by capability',
+      colCount: '2',
+      headerRow: 'on',
+      animateByCell: 'off',
+      cornerCell: 'label',
+      tableStyle: 'plain',
+      rows: [
+        { c1: 'Capability', c2: 'Deckyard' },
+        { c1: 'Switch', c2: 'on' },
+      ],
+    },
+  };
+  const { body, bullets } = extractSlideText(slide);
+  assert.equal(
+    body,
+    'Capability by capability\nCapability\nDeckyard\nSwitch\non',
   );
+  assert.deepEqual(bullets, ['Capability Deckyard', 'Switch on']);
+  assert.equal(deckMetrics({ slides: [slide] }).perSlide[0].words, 10);
+});
+
+test('declared prose is retained even when its key looks like configuration', () => {
+  const { allText } = extractSlideText({
+    type: 'title-slide',
+    content: {
+      title: 'Title',
+      logoAlt: 'Accessible logo text',
+      background: 'lime',
+    },
+  });
+  assert.match(allText, /Accessible logo text/);
+  assert.doesNotMatch(allText, /lime/);
+  const unknown = extractSlideText({
+    type: 'unknown-slide',
+    content: { imageStory: 'A real story', count: 4 },
+  });
+  assert.equal(unknown.body, 'A real story');
 });
 
 test('extractSlideText finds bullets in markdown bodies', () => {

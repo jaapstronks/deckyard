@@ -425,3 +425,13 @@ cannot discriminate on than one the pipeline has solved.
 
 Next experiment: slide allocation, iterated at the outline stage only
 (~$0.20/case, no phase 2 spend).
+
+## B592 - schema-based text extraction for the judge (2026-10-04)
+
+**Motivated by** the four deckyard-readme runs `2026-10-04_12-04-02`, `2026-10-04_12-13-30`, `2026-10-04_12-13-40` and `2026-10-04_12-24-56`. Each verdict reports a stray “on” in a comparison table.
+
+**Root cause.** `extractSlideText()` treated `headerRow: "on"` as prose because its key escaped the configuration-name regex. Every affected slide is a `table-slide`; its HTML renderer never emits the toggle as text. The jury's descriptions of an on-screen artifact were inferred from an incorrect text projection.
+
+**Change.** The extractor uses the registry's text-field spec and shared value rule at each nesting level. Declared machine fields stay out; text cells containing “on” remain prose. Unknown keys and types follow the existing string-value rule.
+
+**Validation.** Offline replay of all four archived decks removes the standalone toggle from jury text. Regression tests cover the table toggle, genuine “on” cell text, nested configuration and prose with configuration-like keys. No new generation or judge call was made, so there is no revised quality score. Historical verdicts and density metrics remain unchanged and should not be compared as if they used the corrected extractor.
