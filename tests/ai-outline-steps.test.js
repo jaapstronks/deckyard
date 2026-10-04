@@ -6,6 +6,7 @@ import {
   normalizeAnalysis,
   normalizeStructure,
 } from '../server/utils/ai/generate-outline.js';
+import { buildPhase2UserPrompt } from '../server/utils/ai/prompts/base/refine-slides.js';
 import { buildStructureUserPrompt } from '../server/utils/ai/prompts/base/outline.js';
 
 const ANALYSIS = normalizeAnalysis({
@@ -88,4 +89,20 @@ test('buildStatusMessages names the sections and pads to six lines', () => {
   assert.equal(nl[0], 'Slides maken over Vijf fases...');
   const en = buildStatusMessages(ANALYSIS, 'en-GB');
   assert.equal(en[1], 'Creating slides about Budget...');
+});
+
+test('phase 2 receives the verbatim excerpt and specific key points', () => {
+  const slides = normalizeStructure(
+    { slides: [{ intent: 'content', section: 0, roughContent: 'Fases' }] },
+    ANALYSIS,
+  );
+  const prompt = buildPhase2UserPrompt({ slides, groupId: 'g1' });
+  assert.match(prompt, /Het programma kent vijf fases\./);
+  assert.match(prompt, /Fase 1: inventarisatie \(2026\)/);
+});
+
+test('status messages also reach six lines for an empty or one-section source', () => {
+  for (const sections of [[], ANALYSIS.sections.slice(0, 1)]) {
+    assert.equal(buildStatusMessages({ sections }, 'nl').length, 6);
+  }
 });

@@ -10,22 +10,22 @@
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 5.00 | — |
-| Structure | 4.67 | — |
-| Slide economy | 3.00 | — |
-| Faithfulness | 4.67 | — |
-| Presentability | 3.33 | — |
-| **Overall** | **4.13** | — |
+| Dimension      |    Score | vs. previous |
+| -------------- | -------: | -----------: |
+| Coverage       |     5.00 |            — |
+| Structure      |     4.67 |            — |
+| Slide economy  |     3.00 |            — |
+| Faithfulness   |     4.67 |            — |
+| Presentability |     3.33 |            — |
+| **Overall**    | **4.13** |            — |
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| deckyard-readme | B | 29 | 40.1 | 0 | 89% | 5/5 | 4.20 |
-| nl-kamerbrief-duurzame-digitalisering | B | 16 | 32.44 | 0 | 100% | 5/5 | 4.00 |
-| philips-q4-2024 | A | 37 | 32.86 | 0 | 100% | 5/5 | 4.20 |
+| Case                                  | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ------------------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| deckyard-readme                       | B   |     29 |        40.1 |     0 |            89% |      5/5 | 4.20 |
+| nl-kamerbrief-duurzame-digitalisering | B   |     16 |       32.44 |     0 |           100% |      5/5 | 4.00 |
+| philips-q4-2024                       | A   |     37 |       32.86 |     0 |           100% |      5/5 | 4.20 |
 
 ## Weakest dimensions — judge rationales
 
@@ -57,9 +57,9 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Model | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| generation | `claude-sonnet-5` | 32 | 641671 | 99915 | 0 | 0 | $2.2825 |
-| judge | `claude-opus-4-8` | 3 | 56803 | 4710 | 0 | 0 | $0.4018 |
-| topics | `claude-opus-4-8` | 2 | 29350 | 1641 | 0 | 0 | $0.1878 |
-| **Total** | | 37 | 727824 | 106266 | 0 | 0 | **$2.8721** |
+| Category   | Model             | Calls |  Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----------------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| generation | `claude-sonnet-5` |    32 | 641671 |  99915 |           0 |          0 |     $2.2825 |
+| judge      | `claude-opus-4-8` |     3 |  56803 |   4710 |           0 |          0 |     $0.4018 |
+| topics     | `claude-opus-4-8` |     2 |  29350 |   1641 |           0 |          0 |     $0.1878 |
+| **Total**  |                   |    37 | 727824 | 106266 |           0 |          0 | **$2.8721** |
