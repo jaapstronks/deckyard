@@ -59,15 +59,16 @@ const PRIMITIVES = [
 
 /**
  * @param {string} dir
- * @returns {Promise<string[]>} absolute paths of every `.css` file, sorted
+ * @param {string[]} extensions
+ * @returns {Promise<string[]>} absolute paths of matching files, sorted
  */
-async function walk(dir) {
+async function walk(dir, extensions = ['.css']) {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   const out = [];
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) out.push(...(await walk(full)));
-    else if (entry.name.endsWith('.css')) out.push(full);
+    if (entry.isDirectory()) out.push(...(await walk(full, extensions)));
+    else if (extensions.includes(path.extname(entry.name))) out.push(full);
   }
   return out.sort();
 }
@@ -206,5 +207,26 @@ describe('one definition per class (B530)', () => {
       [],
       'every listed primitive has its base rule in shared/primitives.css',
     );
+  });
+});
+
+describe('button size spelling', () => {
+  it('uses the size ladder in CSS and markup', async () => {
+    const strays = [];
+    for (const root of ['client', 'server', 'shared']) {
+      for (const file of await walk(path.join(repoRoot, root), [
+        '.css',
+        '.js',
+        '.html',
+      ])) {
+        const text = stripComments(await fs.readFile(file, 'utf8'));
+        for (const [index, line] of text.split('\n').entries()) {
+          const classes = /(?<![\w-])btn(?![\w-])/;
+          if (classes.test(line) && /\bis-compact(?:-sm)?\b/.test(line))
+            strays.push(`${path.relative(repoRoot, file)}:${index + 1}`);
+        }
+      }
+    }
+    assert.deepEqual(strays, [], 'buttons use btn-sm or btn-xs');
   });
 });

@@ -115,17 +115,6 @@
   border-color: hsl(var(--app-danger));
 }
 
-.btn.is-compact {
-  padding: var(--ps-space-1) var(--ps-space-3);
-  font-size: var(--ps-text-sm);
-}
-
-.btn.is-compact-sm {
-  padding: var(--ps-space-0-5) var(--ps-space-2);
-  font-size: var(--ps-text-xs);
-  line-height: 1.1;
-}
-
 .btn.is-pill {
   border-radius: var(--ps-radius-full);
 }

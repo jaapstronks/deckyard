@@ -20,6 +20,8 @@
  * same pattern as image-set's `ensureImageSetImages`.
  */
 
+import { pickAltText } from '../../helpers.js';
+
 /**
  * Type-level image config for image-slide (looked up, never stored per
  * slide): an image without its own fit/bleed follows these. Only deviating
@@ -94,4 +96,26 @@ export function ensureImageSlideImage(content) {
   }
   content.layout = '';
   return content;
+}
+
+/**
+ * The image-slide picture's alt text: empty for a decorative image, else the
+ * author's own (`alt`, or a legacy `altNl`/`altEn`), else the caption, title
+ * or subheading, else a name read from the file. The one answer for the canvas
+ * `<img alt>` and the PPTX picture's description, so a screen reader hears the
+ * same thing in either.
+ *
+ * @param {Object} content - slide content
+ * @returns {string}
+ */
+export function imageSlideAltText(content) {
+  if (content?.imageRole === 'decorative') return '';
+  const own = (key) =>
+    typeof content?.[key] === 'string' ? content[key].trim() : '';
+  return pickAltText({
+    explicit: own('alt') || own('altNl') || own('altEn'),
+    src: content?.image,
+    fallbacks: [content?.caption, content?.title, content?.subheading],
+    hardFallback: 'Image',
+  });
 }

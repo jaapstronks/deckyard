@@ -9,8 +9,9 @@
  * gave it *as* the image size, so `contain` stretches — so the size is read
  * here and the caller fits the frame to it.
  *
- * Shared by the theme's mark (`pptx-theme.js`) and every picture the generic
- * composition places (`pptx-generic.js`): one route from a URL to bytes.
+ * Shared by the theme's mark (`pptx-theme.js`), every picture the generic
+ * composition places (`pptx-generic.js`) and the image-slide mapper
+ * (`pptx-image-slide.js`): one route from a URL to bytes.
  */
 
 import sharp from 'sharp';
@@ -107,17 +108,65 @@ export async function rasterForPptx(
   };
 }
 
+/** The centre of a picture: where a frame aligns when no focus is set. */
+const CENTRE = Object.freeze({ x: 50, y: 50 });
+
 /**
- * The largest frame of an image's own ratio that fits a box, centred in it —
+ * The largest frame of an image's own ratio that fits a box -
  * `object-fit: contain`, done by hand because pptxgenjs' `sizing` cannot.
+ * `focus` places it in the spare room as `object-position` does: 0 is the
+ * box's left (top) edge, 50 the centre, 100 the right (bottom) edge.
  *
  * @param {{w: number, h: number}} pixels - the image's pixel size
  * @param {{x: number, y: number, w: number, h: number}} box - inches
+ * @param {{x: number, y: number}} [focus] - percentages
  * @returns {{x: number, y: number, w: number, h: number}} inches
  */
-export function containInBox(pixels, box) {
+export function containInBox(pixels, box, focus = CENTRE) {
   const ratio = Math.min(box.w / pixels.w, box.h / pixels.h);
   const w = pixels.w * ratio;
   const h = pixels.h * ratio;
-  return { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w, h };
+  return {
+    x: box.x + ((box.w - w) * focus.x) / 100,
+    y: box.y + ((box.h - h) * focus.y) / 100,
+    w,
+    h,
+  };
+}
+
+/**
+ * The crop that fills a box with an image of another ratio, keeping `focus`
+ * in view - `object-fit: cover` with `object-position`, as pptxgenjs picture
+ * options (B232 (d)).
+ *
+ * The library takes the `w`/`h` it is given as the image's own size, and a
+ * `crop` sizing as the rectangle of it to show, in the same inches; the
+ * picture it writes is that rectangle's size. So `w`/`h` are the whole image
+ * scaled to cover the box, and the crop is the box's share of it. PowerPoint
+ * keeps the crop editable ("Crop" shows the rest of the picture).
+ *
+ * @param {{w: number, h: number}} pixels - the image's pixel size
+ * @param {{x: number, y: number, w: number, h: number}} box - inches
+ * @param {{x: number, y: number}} [focus] - percentages
+ * @returns {{x: number, y: number, w: number, h: number,
+ *   sizing: {type: 'crop', x: number, y: number, w: number, h: number}}}
+ *   `addImage` options: spread them in
+ */
+export function coverCrop(pixels, box, focus = CENTRE) {
+  const scale = Math.max(box.w / pixels.w, box.h / pixels.h);
+  const w = pixels.w * scale;
+  const h = pixels.h * scale;
+  return {
+    x: box.x,
+    y: box.y,
+    w,
+    h,
+    sizing: {
+      type: 'crop',
+      x: ((w - box.w) * focus.x) / 100,
+      y: ((h - box.h) * focus.y) / 100,
+      w: box.w,
+      h: box.h,
+    },
+  };
 }

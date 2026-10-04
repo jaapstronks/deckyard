@@ -122,7 +122,7 @@ export function createUploadPanel({
       const deleteBtn = h(
         'button',
         {
-          class: 'btn btn-secondary is-compact is-danger',
+          class: 'btn btn-secondary btn-sm is-danger',
           type: 'button',
           title: t('fonts.removeVariant', 'Remove variant'),
           onclick: () => handleRemoveVariant(variant.id, weight, style),
@@ -132,7 +132,7 @@ export function createUploadPanel({
       cell.append(deleteBtn);
     } else {
       const uploadBtn = h('button', {
-        class: 'btn btn-secondary is-compact',
+        class: 'btn btn-secondary btn-sm',
         type: 'button',
         text: t('fonts.uploadCta', '+ Upload'),
         onclick: () => handleUploadVariant(weight, style),

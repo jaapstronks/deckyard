@@ -878,7 +878,7 @@ export function createLanguageMode({
   });
   // Title is set by syncLangUi (it doubles as the busy explanation).
   const langMenu = createDropdown({
-    triggerClass: 'btn btn-secondary is-compact',
+    triggerClass: 'btn btn-secondary btn-sm',
     triggerContent: [langMenuLabel, langMenuCode, makeDropdownCaret()],
     detailsClass: 'lang-menu',
     ariaLabel: t('editor.langMode.title', 'Language mode (edit + present)'),

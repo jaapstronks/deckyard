@@ -100,7 +100,7 @@ export function createSlidesPanel({
   const searchClearBtn = h(
     'button',
     {
-      class: 'btn btn-secondary is-compact slides-search-clear',
+      class: 'btn btn-secondary btn-sm slides-search-clear',
       type: 'button',
       title: t('editor.slides.search.clear', 'Clear search'),
       hidden: true,
@@ -597,7 +597,7 @@ export function createSlidesPanel({
         h(
           'button',
           {
-            class: 'btn btn-primary slides-add-btn is-compact',
+            class: 'btn btn-primary slides-add-btn btn-sm',
             type: 'button',
             'aria-label': t('editor.slides.add', 'Add slide'),
             onclick: () =>
