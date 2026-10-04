@@ -148,3 +148,38 @@ test('slides are renumbered contiguously after revision', () => {
     [0, 1, 2, 3, 4],
   );
 });
+
+test('merging slides preserves source context from both sections for phase 2', () => {
+  const outline = {
+    slides: [
+      {
+        index: 0,
+        intent: 'content',
+        roughContent: 'First',
+        sourceContext: {
+          heading: 'Budget',
+          keyPoints: ['€12 mln'],
+          excerpt: 'The budget is €12 mln.',
+        },
+      },
+      {
+        index: 1,
+        intent: 'content',
+        roughContent: 'Second',
+        sourceContext: {
+          heading: 'Timing',
+          keyPoints: ['Launch in 2027'],
+          excerpt: 'We launch in 2027.',
+        },
+      },
+    ],
+  };
+  const { outline: revised } = applyRevisionOperations(outline, [
+    { type: 'merge', slides: [1, 2], roughContent: 'Budget and timing' },
+  ]);
+  assert.deepEqual(revised.slides[0].sourceContext.keyPoints, [
+    '€12 mln',
+    'Launch in 2027',
+  ]);
+  assert.match(revised.slides[0].sourceContext.excerpt, /We launch in 2027/);
+});

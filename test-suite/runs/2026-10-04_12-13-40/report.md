@@ -14,25 +14,26 @@ No prompt files changed since then — differences are run-to-run variance.
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 4.67 | ▼ -0.33 |
-| Structure | 5.00 | · 0.00 |
-| Slide economy | 3.67 | · 0.00 |
-| Faithfulness | 4.00 | ▲ +0.33 |
-| Presentability | 4.33 | ▲ +0.66 |
-| **Overall** | **4.33** | · +0.13 |
+| Dimension      |    Score | vs. previous |
+| -------------- | -------: | -----------: |
+| Coverage       |     4.67 |      ▼ -0.33 |
+| Structure      |     5.00 |       · 0.00 |
+| Slide economy  |     3.67 |       · 0.00 |
+| Faithfulness   |     4.00 |      ▲ +0.33 |
+| Presentability |     4.33 |      ▲ +0.66 |
+| **Overall**    | **4.33** |      · +0.13 |
 
 > **Regression warning.** These dimensions moved down:
+>
 > - Coverage (-0.33)
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| deckyard-readme | B | 24 | 43.63 | 1 | 100% | 5/5 | 4.40 |
-| nl-kamerbrief-duurzame-digitalisering | B | 13 | 34.69 | 0 | 100% | 4/5 | 4.00 |
-| philips-q4-2024 | A | 24 | 46.71 | 5 | 98% | 5/5 | 4.60 |
+| Case                                  | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ------------------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| deckyard-readme                       | B   |     24 |       43.63 |     1 |           100% |      5/5 | 4.40 |
+| nl-kamerbrief-duurzame-digitalisering | B   |     13 |       34.69 |     0 |           100% |      4/5 | 4.00 |
+| philips-q4-2024                       | A   |     24 |       46.71 |     5 |            98% |      5/5 | 4.60 |
 
 ## Weakest dimensions — judge rationales
 
@@ -64,8 +65,8 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Model | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| generation | `claude-opus-5` | 19 | 393351 | 54289 | 0 | 0 | $3.3240 |
-| judge | `claude-opus-4-8` | 3 | 54633 | 6290 | 0 | 0 | $0.4304 |
-| **Total** | | 22 | 447984 | 60579 | 0 | 0 | **$3.7544** |
+| Category   | Model             | Calls |  Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----------------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| generation | `claude-opus-5`   |    19 | 393351 |  54289 |           0 |          0 |     $3.3240 |
+| judge      | `claude-opus-4-8` |     3 |  54633 |   6290 |           0 |          0 |     $0.4304 |
+| **Total**  |                   |    22 | 447984 |  60579 |           0 |          0 | **$3.7544** |

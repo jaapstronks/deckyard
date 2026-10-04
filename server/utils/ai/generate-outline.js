@@ -180,9 +180,8 @@ export function buildStatusMessages(analysis, lang) {
     .filter(Boolean)
     .slice(0, 6)
     .map(copy.section);
-  for (const line of copy.generic) {
-    if (messages.length >= 6) break;
-    messages.push(line);
+  while (messages.length < 6) {
+    messages.push(copy.generic[messages.length % copy.generic.length]);
   }
   return messages;
 }
@@ -418,10 +417,10 @@ export async function generateOutline(
         structure: structureStep.messages,
       },
       output: outline,
-      rawResponse: {
+      rawResponse: JSON.stringify({
         analysis: analysisStep.rawResponse,
         structure: structureStep.rawResponse,
-      },
+      }),
       metadata: outline.metadata,
     });
   }

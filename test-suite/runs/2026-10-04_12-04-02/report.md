@@ -10,22 +10,22 @@
 
 ## Scores by dimension
 
-| Dimension | Score | vs. previous |
-| --- | ---: | ---: |
-| Coverage | 5.00 | — |
-| Structure | 5.00 | — |
-| Slide economy | 3.67 | — |
-| Faithfulness | 3.67 | — |
-| Presentability | 3.67 | — |
-| **Overall** | **4.20** | — |
+| Dimension      |    Score | vs. previous |
+| -------------- | -------: | -----------: |
+| Coverage       |     5.00 |            — |
+| Structure      |     5.00 |            — |
+| Slide economy  |     3.67 |            — |
+| Faithfulness   |     3.67 |            — |
+| Presentability |     3.67 |            — |
+| **Overall**    | **4.20** |            — |
 
 ## Per-case results
 
-| Case | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| deckyard-readme | B | 30 | 42.1 | 1 | 89% | 5/5 | 4.40 |
-| nl-kamerbrief-duurzame-digitalisering | B | 14 | 32.21 | 0 | 100% | 5/5 | 4.00 |
-| philips-q4-2024 | A | 25 | 36.72 | 0 | 98% | 5/5 | 4.20 |
+| Case                                  | Cat | Slides | Words/slide | Walls | Number support | Coverage | Mean |
+| ------------------------------------- | --- | -----: | ----------: | ----: | -------------: | -------: | ---: |
+| deckyard-readme                       | B   |     30 |        42.1 |     1 |            89% |      5/5 | 4.40 |
+| nl-kamerbrief-duurzame-digitalisering | B   |     14 |       32.21 |     0 |           100% |      5/5 | 4.00 |
+| philips-q4-2024                       | A   |     25 |       36.72 |     0 |            98% |      5/5 | 4.20 |
 
 ## Weakest dimensions — judge rationales
 
@@ -39,7 +39,7 @@ These rationales are the input for the next prompt change.
 
 ### Faithfulness (3.67)
 
-- **deckyard-readme** (4/5): Figures (34 slide types, 27 tools, 7 prompts) and the comparison table are accurate to the source, and DeepSeek on slide 4 is traceable to the config block. Deduct for the stray 'on' fragment in slide 9's table body, a rendering artifact that reads as a spurious value.
+- **deckyard-readme** (4/5): Figures (slide-type snapshot on 2026-10-04: 34; 27 tools; 7 prompts) and the comparison table are accurate to the source, and DeepSeek on slide 4 is traceable to the config block. Deduct for the stray 'on' fragment in slide 9's table body, a rendering artifact that reads as a spurious value.
 - **nl-kamerbrief-duurzame-digitalisering** (4/5): Content is traceable to the source with no fabricated figures. Minor padding appears on slide 12 ('Bevestigt de koploperspositie van Nederland') and slide 13's claim the SIIA was 'Ontwikkeld door de NCDD' is a reasonable inference from footnote 10 but slightly firmer than the source states.
 - **philips-q4-2024** (3/5): Nearly all figures are traceable and accurate, but slide 18 states Mature geographies are 'Now 74% of group sales FY2024' when 13,159/18,021 = 73%, a derived figure that is both not in the source and miscalculated. The generator should avoid introducing computed percentages unless verified; remove or correct this.
 
@@ -57,9 +57,9 @@ These rationales are the input for the next prompt change.
 
 ## Cost breakdown
 
-| Category | Model | Calls | Input | Output | Cache write | Cache read | USD |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| topics | `claude-opus-4-8` | 3 | 36051 | 2407 | 0 | 0 | $0.2404 |
-| generation | `claude-sonnet-5` | 24 | 504758 | 75760 | 0 | 0 | $1.7671 |
-| judge | `claude-opus-4-8` | 3 | 53100 | 5156 | 0 | 0 | $0.3944 |
-| **Total** | | 30 | 593909 | 83323 | 0 | 0 | **$2.4019** |
+| Category   | Model             | Calls |  Input | Output | Cache write | Cache read |         USD |
+| ---------- | ----------------- | ----: | -----: | -----: | ----------: | ---------: | ----------: |
+| topics     | `claude-opus-4-8` |     3 |  36051 |   2407 |           0 |          0 |     $0.2404 |
+| generation | `claude-sonnet-5` |    24 | 504758 |  75760 |           0 |          0 |     $1.7671 |
+| judge      | `claude-opus-4-8` |     3 |  53100 |   5156 |           0 |          0 |     $0.3944 |
+| **Total**  |                   |    30 | 593909 |  83323 |           0 |          0 | **$2.4019** |
