@@ -76,7 +76,7 @@ export function createSlidesPanelActions({
   };
 
   const bulkCopyBtn = h('button', {
-    class: 'btn btn-secondary is-compact is-icon-only',
+    class: 'btn btn-secondary btn-sm is-icon-only',
     type: 'button',
     title: t('editor.slides.bulkCopyTitle', 'Copy selected slides (⌘C)'),
     onclick: () => {
@@ -99,7 +99,7 @@ export function createSlidesPanelActions({
   });
 
   const bulkDeleteBtn = h('button', {
-    class: 'btn btn-danger is-compact is-icon-only',
+    class: 'btn btn-danger btn-sm is-icon-only',
     type: 'button',
     title: t('editor.slides.bulkDeleteTitle', 'Delete selected slides'),
     onclick: async () => {
@@ -144,7 +144,7 @@ export function createSlidesPanelActions({
   });
 
   const bulkCancelBtn = h('button', {
-    class: 'btn btn-secondary is-compact is-icon-only',
+    class: 'btn btn-secondary btn-sm is-icon-only',
     type: 'button',
     title: t('editor.slides.bulkCancelTitle', 'Cancel selection'),
     onclick: () => {
@@ -156,7 +156,7 @@ export function createSlidesPanelActions({
 
   // Bulk lock button (author only)
   const bulkLockBtn = h('button', {
-    class: 'btn btn-secondary is-compact is-icon-only',
+    class: 'btn btn-secondary btn-sm is-icon-only',
     type: 'button',
     title: t('editor.slides.lockSelectedTitle', 'Lock selected slides'),
     onclick: () => {
@@ -174,7 +174,7 @@ export function createSlidesPanelActions({
 
   // Bulk unlock button (author only)
   const bulkUnlockBtn = h('button', {
-    class: 'btn btn-secondary is-compact is-icon-only',
+    class: 'btn btn-secondary btn-sm is-icon-only',
     type: 'button',
     title: t('editor.slides.unlockSelectedTitle', 'Unlock selected slides'),
     onclick: () => {
@@ -223,7 +223,7 @@ export function createSlidesPanelActions({
   };
 
   const pasteBtn = h('button', {
-    class: 'btn btn-primary is-compact',
+    class: 'btn btn-primary btn-sm',
     type: 'button',
     text: t('editor.slides.paste', 'Paste'),
     title: t(

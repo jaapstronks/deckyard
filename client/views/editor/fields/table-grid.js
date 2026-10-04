@@ -177,7 +177,7 @@ function buildTableGrid({
         h(
           'button',
           {
-            class: 'btn btn-danger is-compact-sm table-editor-colhead-delete',
+            class: 'btn btn-danger btn-xs table-editor-colhead-delete',
             title: t('editor.table.deleteCol', 'Delete column {col}', {
               col: colLabel(c),
             }),
@@ -195,7 +195,7 @@ function buildTableGrid({
   hr.append(
     h('th', { class: 'table-editor-corner table-editor-addcol-th' }, [
       h('button', {
-        class: 'btn btn-secondary is-compact-sm',
+        class: 'btn btn-secondary btn-xs',
         text: '+',
         title: t('editor.table.addCol', '+ Column'),
         disabled: colCount >= MAX_COLS,
@@ -256,7 +256,7 @@ function buildTableGrid({
         h(
           'button',
           {
-            class: 'btn btn-danger is-compact-sm',
+            class: 'btn btn-danger btn-xs',
             title: t('editor.table.deleteRow', 'Delete row {n}', {
               n: rIdx + 1,
             }),
@@ -281,7 +281,7 @@ function buildTableGrid({
       { colspan: String(colCount + 2), class: 'table-editor-addrow-td' },
       [
         h('button', {
-          class: 'btn btn-secondary is-compact-sm table-editor-addrow-btn',
+          class: 'btn btn-secondary btn-xs table-editor-addrow-btn',
           text: t('editor.table.addRow', '+ Row'),
           disabled: rows.length >= MAX_ROWS,
           onclick: () => {
@@ -380,7 +380,7 @@ export function createTableGridEditor({
   labelRow.append(
     h('div', { class: 'field-label', text: t('editor.table.title', 'Table') }),
     h('button', {
-      class: 'btn btn-secondary is-compact-sm',
+      class: 'btn btn-secondary btn-xs',
       text: t('editor.table.edit', 'Edit table'),
       title: t('editor.table.editTip', 'Open a roomy table editor in a dialog'),
       onclick: () =>

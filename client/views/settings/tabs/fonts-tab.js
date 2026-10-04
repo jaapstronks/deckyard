@@ -173,13 +173,13 @@ export function createFontsTab({ user } = {}) {
       // Actions
       const actions = h('div', { class: 'font-family-card-actions' });
       const editBtn = h('button', {
-        class: 'btn btn-secondary is-compact',
+        class: 'btn btn-secondary btn-sm',
         type: 'button',
         text: t('common.edit', 'Edit'),
         onclick: () => openEditor(family.id),
       });
       const deleteBtn = h('button', {
-        class: 'btn btn-secondary is-compact is-danger',
+        class: 'btn btn-secondary btn-sm is-danger',
         type: 'button',
         text: t('common.delete', 'Delete'),
         onclick: () => handleDelete(family),
