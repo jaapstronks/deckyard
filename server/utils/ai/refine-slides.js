@@ -160,7 +160,12 @@ function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
     reasoning: String(slide?.reasoning || '').trim(),
     alternativeType: String(slide?.alternativeType || '').trim() || null,
     alternativeReason: String(slide?.alternativeReason || '').trim() || null,
-    presenterNotes: originalSlide.presenterNotes || '',
+    // Phase 2 writes the notes from the source context; an outline that still
+    // carries notes (a revision merge) is the fallback.
+    presenterNotes:
+      String(slide?.presenterNotes || '').trim() ||
+      originalSlide.presenterNotes ||
+      '',
   };
 }
 

@@ -391,12 +391,7 @@ keeps its call signature. Anything you don't override falls back to the base.
 // custom/ai/prompts.js
 export default {
   // Same signature as the base builder it replaces.
-  buildPhase1SystemPrompt({
-    detectedLang,
-    requestedLang,
-    targetSlides,
-    estimatedInputLines,
-  }) {
+  buildAnalysisSystemPrompt({ detectedLang, requestedLang }) {
     return `...your tuned outline system prompt...`;
   },
 };
@@ -404,13 +399,14 @@ export default {
 
 The overridable builder names (from `server/utils/ai/prompts/base/index.js`):
 
-| Builder                                                  | Used for                             |
-| -------------------------------------------------------- | ------------------------------------ |
-| `buildPhase1SystemPrompt` / `buildPhase1UserPrompt`      | outline generation                   |
-| `buildPhase2SystemPrompt` / `buildPhase2UserPrompt`      | full-deck (slide) generation         |
-| `buildRevisionSystemPrompt` / `buildRevisionUserPrompt`  | outline revision                     |
-| `buildSectionSystemPrompt` / `buildSectionUserPrompt`    | per-section refine                   |
-| `buildSlideIterationPrompt` / `buildDeckIterationPrompt` | "Refine" iteration on a slide / deck |
+| Builder                                                   | Used for                             |
+| --------------------------------------------------------- | ------------------------------------ |
+| `buildAnalysisSystemPrompt` / `buildAnalysisUserPrompt`   | outline, step 1: source analysis     |
+| `buildStructureSystemPrompt` / `buildStructureUserPrompt` | outline, step 2: slide plan          |
+| `buildPhase2SystemPrompt` / `buildPhase2UserPrompt`       | full-deck (slide) generation         |
+| `buildRevisionSystemPrompt` / `buildRevisionUserPrompt`   | outline revision                     |
+| `buildSectionSystemPrompt` / `buildSectionUserPrompt`     | per-section refine                   |
+| `buildSlideIterationPrompt` / `buildDeckIterationPrompt`  | "Refine" iteration on a slide / deck |
 
 Rules the loader enforces (a typo fails loud, never silent): only
 function-valued entries whose key matches a known builder are applied; anything

@@ -1,12 +1,17 @@
 /**
  * Phase 1: Outline Generation
  *
- * Creates a presentation outline from raw content WITHOUT knowing about specific slide types.
- * This phase focuses on:
- * - Structuring content into logical slides
- * - Identifying chapters
- * - Providing grouping hints for Phase 2
- * - Detecting quotes, timelines, and other patterns
+ * Creates a presentation outline from raw content WITHOUT knowing about
+ * specific slide types, in two calls with one job each (see
+ * `prompts/base/outline.js`):
+ *
+ * 1. Analysis: what the source contains (sections, key points, excerpts).
+ * 2. Structure: the slide plan within the budget (intents, rough content,
+ *    hints, grouping), built from the analysis alone.
+ *
+ * Each outline slide carries its section of the analysis as `sourceContext`,
+ * so Phase 2 sees what the source said, not only the plan's paraphrase.
+ * Status lines for the loading UI are derived from the analysis in code.
  */
 
 import { getLlmConfig } from '../llm/config.js';
@@ -47,103 +52,139 @@ export function calculateTargetSlides(rawContent, targetLength) {
   return { targetSlides: computed, estimatedInputLines: lines };
 }
 
+const trimmed = (value) => String(value ?? '').trim();
+
 /**
- * Validate and normalize Phase 1 output
+ * Validate and normalize the analysis call's output.
+ *
+ * @param {object} parsed
+ * @returns {{ title: string, subtitle: string, summary: string, sections: Array<object> }}
  */
-function normalizePhase1Output(parsed) {
+export function normalizeAnalysis(parsed) {
   if (!parsed || typeof parsed !== 'object') {
-    throw new Error('Phase 1 did not return valid JSON');
+    throw new Error('Outline analysis did not return valid JSON');
   }
+  const sections = (Array.isArray(parsed.sections) ? parsed.sections : [])
+    .map((s) => ({
+      heading: trimmed(s?.heading),
+      importance: ['high', 'medium', 'low'].includes(trimmed(s?.importance))
+        ? trimmed(s.importance)
+        : 'medium',
+      keyPoints: (Array.isArray(s?.keyPoints) ? s.keyPoints : [])
+        .map(trimmed)
+        .filter(Boolean),
+      excerpt: trimmed(s?.excerpt),
+      quotes: (Array.isArray(s?.quotes) ? s.quotes : [])
+        .map((q) => ({
+          text: trimmed(q?.text),
+          author: trimmed(q?.author),
+          role: trimmed(q?.role),
+        }))
+        .filter((q) => q.text),
+    }))
+    .filter((s) => s.heading || s.keyPoints.length);
 
-  const output = {
-    title: String(parsed.title || 'Untitled Presentation').trim(),
-    subtitle: String(parsed.subtitle || '').trim(),
-    summary: String(parsed.summary || '').trim(),
-    statusMessages: [],
-    chapters: [],
-    slides: [],
+  return {
+    title: trimmed(parsed.title) || 'Untitled Presentation',
+    subtitle: trimmed(parsed.subtitle),
+    summary: trimmed(parsed.summary),
+    sections,
   };
+}
 
-  // Normalize status messages
-  if (Array.isArray(parsed.statusMessages)) {
-    output.statusMessages = parsed.statusMessages
-      .map((msg) => String(msg || '').trim())
-      .filter((msg) => msg.length > 0);
+/**
+ * Validate and normalize the structure call's output into outline slides.
+ * Opening slides are dropped (the title slide is added downstream), and each
+ * slide gets its analysis section as `sourceContext`.
+ *
+ * @param {object} parsed
+ * @param {{ sections: Array<object> }} analysis
+ * @returns {Array<object>}
+ */
+export function normalizeStructure(parsed, analysis) {
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Outline structure did not return valid JSON');
+  }
+  const slides = [];
+  for (const slide of Array.isArray(parsed.slides) ? parsed.slides : []) {
+    const intent = normalizeIntent(slide?.intent);
+    if (intent === 'opening') continue;
+    const section = analysis.sections[Number(slide?.section)] || null;
+    slides.push({
+      index: slides.length,
+      intent,
+      roughContent: trimmed(slide?.roughContent),
+      presenterNotes: '',
+      hints: Array.isArray(slide?.hints) ? slide.hints.map(trimmed) : [],
+      groupId: slide?.groupId != null ? trimmed(slide.groupId) : null,
+      sourceContext: section
+        ? {
+            heading: section.heading,
+            keyPoints: section.keyPoints,
+            excerpt: section.excerpt,
+          }
+        : null,
+    });
   }
 
-  // Add fallback messages if none were generated
-  // Note: statusMessages in output will be in the requested language (LLM should generate them)
-  // These fallbacks are Dutch as that's the default language
-  if (output.statusMessages.length === 0) {
-    output.statusMessages = [
-      'Presentatie voorbereiden...',
-      'Inhoud analyseren...',
-      'Hoofdpunten structureren...',
-      'Slides maken...',
-      'Layouts selecteren...',
-      'Afwerking toevoegen...',
-    ];
-  }
-
-  // Ensure minimum number of messages
-  const minMessages = 6;
-  if (output.statusMessages.length < minMessages) {
-    const genericMessages = [
-      'Inhoud verwerken...',
-      'Structuur bepalen...',
-      'Slides opmaken...',
-      'Details toevoegen...',
-    ];
-    while (
-      output.statusMessages.length < minMessages &&
-      genericMessages.length > 0
-    ) {
-      output.statusMessages.push(genericMessages.shift());
-    }
-  }
-
-  // Normalize chapters (for metadata only - not used in grouping)
-  if (Array.isArray(parsed.chapters)) {
-    output.chapters = parsed.chapters.map((ch, idx) => ({
-      title: String(ch?.title || `Chapter ${idx + 1}`).trim(),
-      slideIndexes: Array.isArray(ch?.slideIndexes) ? ch.slideIndexes : [],
-    }));
-  }
-
-  // Normalize slides - filter out any "opening" intent (handled separately)
-  if (Array.isArray(parsed.slides)) {
-    let slideIndex = 0;
-    for (const slide of parsed.slides) {
-      const intent = normalizeIntent(slide?.intent);
-      // Skip opening slides - title is handled at top level
-      if (intent === 'opening') continue;
-
-      output.slides.push({
-        index: slideIndex++,
-        intent,
-        roughContent: String(slide?.roughContent || '').trim(),
-        presenterNotes: String(slide?.presenterNotes || '').trim(),
-        hints: Array.isArray(slide?.hints)
-          ? slide.hints.map((h) => String(h).trim())
-          : [],
-        groupId: slide?.groupId != null ? String(slide.groupId).trim() : null,
-      });
-    }
-  }
-
-  // Ensure we have at least one slide
-  if (output.slides.length === 0) {
-    output.slides.push({
+  if (slides.length === 0) {
+    slides.push({
       index: 0,
       intent: 'content',
       roughContent: 'Overview',
       presenterNotes: '',
       hints: [],
       groupId: null,
+      sourceContext: null,
     });
   }
+  return slides;
+}
 
-  return output;
+const STATUS_COPY = {
+  nl: {
+    section: (heading) => `Slides maken over ${heading}...`,
+    generic: [
+      'Structuur bepalen...',
+      'Slide-types kiezen...',
+      'Details toevoegen...',
+      'Afwerking toevoegen...',
+    ],
+  },
+  en: {
+    section: (heading) => `Creating slides about ${heading}...`,
+    generic: [
+      'Planning the structure...',
+      'Choosing slide types...',
+      'Adding details...',
+      'Finishing touches...',
+    ],
+  },
+};
+
+/**
+ * Status lines for the loading UI, derived from the analysis: one per section
+ * (at most six), padded with generic lines to at least six. Written in code
+ * rather than asked of a model call that has more important work.
+ *
+ * @param {{ sections: Array<{ heading: string }> }} analysis
+ * @param {string} lang - 'nl' or anything else (English)
+ * @returns {string[]}
+ */
+export function buildStatusMessages(analysis, lang) {
+  const copy = String(lang || '').startsWith('nl')
+    ? STATUS_COPY.nl
+    : STATUS_COPY.en;
+  const messages = analysis.sections
+    .map((s) => s.heading)
+    .filter(Boolean)
+    .slice(0, 6)
+    .map(copy.section);
+  for (const line of copy.generic) {
+    if (messages.length >= 6) break;
+    messages.push(line);
+  }
+  return messages;
 }
 
 /**
@@ -226,6 +267,41 @@ function resolveStructuralSlide(slide) {
 }
 
 /**
+ * One JSON-returning call of the outline, with the plan-role model.
+ * @returns {Promise<{ parsed: object, messages: Array, rawResponse: string }>}
+ */
+async function requestOutlineStep(
+  step,
+  { systemPrompt, userPrompt, maxTokens, llm, signal },
+) {
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userPrompt },
+  ];
+  const rawResponse = await requestChatCompletionContent({
+    vendor: llm.vendor,
+    apiKey: llm.apiKey,
+    model: llm.model,
+    temperature: 0.3,
+    responseFormat: { type: 'json_object' },
+    // Headroom: current Claude models spend part of the output budget on
+    // (adaptive) thinking.
+    maxTokens,
+    messages,
+    signal,
+  });
+  const parsed = extractJsonObject(rawResponse);
+  if (!parsed) {
+    throw LlmError.fromJsonParseFailure(rawResponse, {
+      phase: `outline-${step}`,
+      vendor: llm.vendor,
+      model: llm.model,
+    });
+  }
+  return { parsed, messages, rawResponse };
+}
+
+/**
  * Generate a presentation outline from raw content
  *
  * @param {string} rawContent - The source text to create a presentation from
@@ -254,18 +330,13 @@ export async function generateOutline(
   } = {},
 ) {
   const startTime = Date.now();
-  // Plan role: the outline drives the whole deck's structure and type
-  // selection, so the Claude vendor uses a stronger model here (Opus).
-  const {
-    vendor: resolvedVendor,
-    apiKey,
-    model,
-  } = getLlmConfig({ vendor, role: 'plan' });
+  // Plan role: the outline drives the whole deck's structure, so the Claude
+  // vendor uses a stronger model here (Opus) unless pinned otherwise.
+  const llm = getLlmConfig({ vendor, role: 'plan' });
 
   const detectedLang = detectDeckLanguage(rawContent);
   const requestedLang = normalizeLang(targetLang);
 
-  // Calculate target slide count based on content and user preference
   const { targetSlides, estimatedInputLines } = calculateTargetSlides(
     rawContent,
     targetLength,
@@ -274,64 +345,75 @@ export async function generateOutline(
     `Target: ${targetSlides} slides for ${estimatedInputLines} lines (targetLength: ${targetLength})`,
   );
 
-  const systemPrompt = prompts.buildPhase1SystemPrompt({
-    detectedLang,
-    requestedLang,
-    targetSlides,
-    estimatedInputLines,
-  });
-
-  const userPrompt = prompts.buildPhase1UserPrompt({
-    rawContent,
-    userName: String(userName || '').trim(),
-    rawFirstSlideTitle: String(rawFirstSlideTitle || '').trim(),
-  });
-
-  const messages = [
-    { role: 'system', content: systemPrompt },
-    { role: 'user', content: userPrompt },
-  ];
-
-  const rawResponse = await requestChatCompletionContent({
-    vendor: resolvedVendor,
-    apiKey,
-    model,
-    temperature: 0.3,
-    responseFormat: { type: 'json_object' },
-    // Headroom: current Claude models spend part of the output budget on
-    // (adaptive) thinking, and large decks produce long outlines.
+  // Step 1: what the source contains.
+  const analysisStep = await requestOutlineStep('analysis', {
+    systemPrompt: prompts.buildAnalysisSystemPrompt({
+      detectedLang,
+      requestedLang,
+    }),
+    userPrompt: prompts.buildAnalysisUserPrompt({
+      rawContent,
+      userName: trimmed(userName),
+      rawFirstSlideTitle: trimmed(rawFirstSlideTitle),
+    }),
     maxTokens: 16000,
-    messages,
+    llm,
     signal,
   });
+  const analysis = normalizeAnalysis(analysisStep.parsed);
 
-  const parsed = extractJsonObject(rawResponse);
-  if (!parsed) {
-    throw LlmError.fromJsonParseFailure(rawResponse, {
-      phase: 'outline',
-      vendor: resolvedVendor,
-      model,
-    });
-  }
+  // Step 2: the slide plan, from the analysis alone.
+  const structureStep = await requestOutlineStep('structure', {
+    systemPrompt: prompts.buildStructureSystemPrompt({
+      detectedLang,
+      requestedLang,
+      targetSlides,
+    }),
+    userPrompt: prompts.buildStructureUserPrompt({ analysis }),
+    maxTokens: 12000,
+    llm,
+    signal,
+  });
+  const slides = normalizeStructure(structureStep.parsed, analysis);
 
-  const outline = normalizePhase1Output(parsed);
-
-  // Add metadata
-  outline.metadata = {
-    detectedLang: detectedLang.code,
-    requestedLang,
-    vendor: resolvedVendor,
-    model,
-    durationMs: Date.now() - startTime,
+  const outline = {
+    title: analysis.title,
+    subtitle: analysis.subtitle,
+    summary: analysis.summary,
+    statusMessages: buildStatusMessages(
+      analysis,
+      requestedLang || detectedLang.code,
+    ),
+    chapters: slides
+      .filter((s) => s.intent === 'chapter')
+      .map((s) => ({
+        title: s.roughContent.split('\n')[0] || '',
+        slideIndexes: [s.index],
+      })),
+    slides,
+    analysis,
+    metadata: {
+      detectedLang: detectedLang.code,
+      requestedLang,
+      vendor: llm.vendor,
+      model: llm.model,
+      calls: 2,
+      durationMs: Date.now() - startTime,
+    },
   };
 
-  // Call logging callback if provided
   if (typeof onLog === 'function') {
     onLog({
       input: { rawContent: rawContent.slice(0, 2000), userName, targetLang },
-      messages,
+      messages: {
+        analysis: analysisStep.messages,
+        structure: structureStep.messages,
+      },
       output: outline,
-      rawResponse,
+      rawResponse: {
+        analysis: analysisStep.rawResponse,
+        structure: structureStep.rawResponse,
+      },
       metadata: outline.metadata,
     });
   }

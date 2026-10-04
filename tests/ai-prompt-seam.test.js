@@ -22,15 +22,15 @@ import {
 import { loadCustomPromptOverrides } from '../server/utils/ai/prompts/custom-loader.js';
 
 const baseStub = {
-  buildPhase1SystemPrompt: () => 'base-outline',
+  buildAnalysisSystemPrompt: () => 'base-outline',
   buildRevisionSystemPrompt: () => 'base-revision',
 };
 
 test('resolvePrompts: a function override for a known builder wins', () => {
   const r = resolvePrompts(baseStub, {
-    buildPhase1SystemPrompt: () => 'custom-outline',
+    buildAnalysisSystemPrompt: () => 'custom-outline',
   });
-  assert.equal(r.buildPhase1SystemPrompt(), 'custom-outline');
+  assert.equal(r.buildAnalysisSystemPrompt(), 'custom-outline');
   assert.equal(
     r.buildRevisionSystemPrompt(),
     'base-revision',
@@ -53,12 +53,13 @@ test('resolvePrompts: non-functions and unknown keys are ignored', () => {
 
 test('resolvePrompts: no overrides returns the base builders', () => {
   const r = resolvePrompts(baseStub);
-  assert.equal(r.buildPhase1SystemPrompt(), 'base-outline');
+  assert.equal(r.buildAnalysisSystemPrompt(), 'base-outline');
   assert.equal(r.buildRevisionSystemPrompt(), 'base-revision');
 });
 
 test('shipped prompts object exposes every base builder as a function', () => {
-  assert.ok(BASE_PROMPT_NAMES.includes('buildPhase1SystemPrompt'));
+  assert.ok(BASE_PROMPT_NAMES.includes('buildAnalysisSystemPrompt'));
+  assert.ok(BASE_PROMPT_NAMES.includes('buildStructureSystemPrompt'));
   assert.ok(BASE_PROMPT_NAMES.includes('buildPhase2SystemPrompt'));
   assert.ok(BASE_PROMPT_NAMES.includes('buildSectionSystemPrompt'));
   for (const name of BASE_PROMPT_NAMES) {
@@ -77,16 +78,21 @@ test('shipped prompts object exposes every base builder as a function', () => {
   );
 });
 
-test('base outline builder produces its copy and honours the language label', () => {
-  const out = prompts.buildPhase1SystemPrompt({
+test('base outline builders produce their copy and honour the language label', () => {
+  const analysis = prompts.buildAnalysisSystemPrompt({
     detectedLang: { label: 'ENGLISH' },
     requestedLang: 'nl',
-    targetSlides: 7,
-    estimatedInputLines: 30,
   });
-  assert.match(out, /presentation outline generator/);
-  assert.match(out, /OUTPUT LANGUAGE: DUTCH/, 'requestedLang nl -> DUTCH');
-  assert.match(out, /Target: 7 content slides/);
+  assert.match(analysis, /You analyse a source document/);
+  assert.match(analysis, /OUTPUT LANGUAGE: DUTCH/, 'requestedLang nl -> DUTCH');
+
+  const structure = prompts.buildStructureSystemPrompt({
+    detectedLang: { label: 'ENGLISH' },
+    requestedLang: null,
+    targetSlides: 7,
+  });
+  assert.match(structure, /OUTPUT LANGUAGE: ENGLISH/, 'falls back to detected');
+  assert.match(structure, /Target: 7 content slides/);
 });
 
 test('loadCustomPromptOverrides: absent file resolves to an empty map', async () => {
@@ -106,12 +112,12 @@ test('loadCustomPromptOverrides: loads a fork file, filtered to known builders',
   });
   assert.deepEqual(
     Object.keys(loaded),
-    ['buildPhase1SystemPrompt'],
+    ['buildAnalysisSystemPrompt'],
     'only the valid known override survives',
   );
-  assert.equal(loaded.buildPhase1SystemPrompt(), 'CUSTOM_OUTLINE_PROMPT');
+  assert.equal(loaded.buildAnalysisSystemPrompt(), 'CUSTOM_OUTLINE_PROMPT');
 
   // And it wins when resolved against the real base.
   const resolved = resolvePrompts(prompts, loaded);
-  assert.equal(resolved.buildPhase1SystemPrompt(), 'CUSTOM_OUTLINE_PROMPT');
+  assert.equal(resolved.buildAnalysisSystemPrompt(), 'CUSTOM_OUTLINE_PROMPT');
 });

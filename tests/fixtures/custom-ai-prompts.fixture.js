@@ -6,7 +6,7 @@
  *  - a function whose name is not a builder      -> ignored (unknown key)
  */
 export default {
-  buildPhase1SystemPrompt() {
+  buildAnalysisSystemPrompt() {
     return 'CUSTOM_OUTLINE_PROMPT';
   },
   buildDeckIterationPrompt: 'not-a-function',

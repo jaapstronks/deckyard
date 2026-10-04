@@ -88,6 +88,12 @@ export const PRICING = {
 export const PROMPT_SOURCE_FILES = [
   'server/utils/ai/generate-outline.js',
   'server/utils/ai/refine-slides.js',
+  'server/utils/ai/revise-outline.js',
+  // The prompt copy itself, since the base/overlay seam moved it out of the
+  // mechanism files above.
+  'server/utils/ai/prompts/base/outline.js',
+  'server/utils/ai/prompts/base/refine-slides.js',
+  'server/utils/ai/prompts/base/revise-outline.js',
   'server/utils/ai/slide-catalog/builders.js',
   'server/utils/ai/slide-catalog/basic-content-slides.js',
   'server/utils/ai/slide-catalog/structural-slides.js',

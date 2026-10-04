@@ -46,8 +46,13 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
 - `server/utils/ai/generate-deck-v2.js` — the orchestrator: `generateDeckV2`,
   `groupSlidesForPhase2`, `refineSlideGroup`, `assembleDeck`, plus session
   id/logger helpers.
-- `server/utils/ai/generate-outline.js` — **phase 1**:
-  `generateOutline`, `separateSlidesForProcessing`, `calculateTargetSlides`.
+- `server/utils/ai/generate-outline.js` — **phase 1**, two calls with one
+  job each: _analysis_ (what the source contains: sections, key points, a
+  verbatim excerpt, quotes) and _structure_ (the slide plan within the budget,
+  built from the analysis alone). Each outline slide carries its analysis
+  section as `sourceContext` for phase 2; the loading-screen status lines are
+  derived from the analysis in code. Exports `generateOutline`,
+  `separateSlidesForProcessing`, `calculateTargetSlides`.
 - `server/utils/ai/revise-outline.js` — **phase 1b**: a second pass
   over the outline before any slide is built (an outline is cheap to re-plan).
 - `server/utils/ai/refine-slides.js` — **phase 2**:
@@ -149,11 +154,14 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
 - **Two-phase generation** (`POST /api/ai/wizard-v2/stream`) — the live path.
   The handler validates params, loads the org's slide-type context (disabled +
   custom types) and theme context, then: **phase 1** `generateOutline` produces
-  a title, chapters and rough slides with no slide-type vocabulary; **phase 1b**
-  `reviseOutline` re-plans it; `separateSlidesForProcessing` +
+  a title, chapters and rough slides with no slide-type vocabulary (analysis
+  call, then structure call); **phase 1b** `reviseOutline` re-plans it (only in
+  `generateDeckV2`, so MCP and the AI test suite; the wizard stream skips it);
+  `separateSlidesForProcessing` +
   `groupSlidesForPhase2` split the outline into groups; **phase 2**
   `refineAllSlideGroups` runs one LLM call per group, each shown the catalogue,
-  the examples and the theme context, returning a type plus structured content
+  the examples, the theme context and each slide's source context, returning a
+  type, structured content, presenter notes and a presenter-facing reasoning
   per slide; `validateAndFixRefinedSlides` repairs the result;
   `assembleDeck` prepends a title slide and emits a `deckyard.deck` document;
   `createPresentationWithI18n` persists it. Progress is streamed as SSE status
