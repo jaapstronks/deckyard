@@ -100,7 +100,7 @@ Two things that are _not_ in the directory today:
   `scripts/generate-slide-css-aggregators.js`, from which the `@import`
   aggregators are derived. A type claims its sheet(s) there — possibly several,
   because rules keep their cascade position and a type may have rules in more
-  than one tier — and `tests/slide-css-aggregators.test.js` fails on a claim
+  than one tier — and `tests/css-aggregators.test.js` fails on a claim
   without a registered type or a sheet without a claim, so removing a type
   forces its CSS out with it. Physically _moving_ CSS into the type directory
   is deliberately not done: it is entangled with the separate question of what

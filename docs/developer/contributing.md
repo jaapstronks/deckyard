@@ -266,7 +266,7 @@ bodies is a second place the contract can drift from `docs/openapi.yaml`.
    `03-components/`; the numeric prefix is a cascade position, not a sort key)
 4. Declare that file in `TYPE_CSS` in `scripts/generate-slide-css-aggregators.js`
    and run `npm run gen:slide-css` — the per-tier aggregator files are
-   generated, never hand-edited (`tests/slide-css-aggregators.test.js` gates
+   generated, never hand-edited (`tests/css-aggregators.test.js` gates
    this)
 5. Add labels to **both** Tier-1 locales: `client/i18n/en/slide-types.json` and
    `client/i18n/nl/slide-types.json` (`npm test` fails if either drifts)
