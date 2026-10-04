@@ -6,7 +6,7 @@
  * two hand-rolled look-alikes with their own class names and their own CSS —
  * `.pane-tabs` (inspector/comments/notes) and `.comments-scope`. The CSS is now
  * one source (`.sb-segmented`, plus the `is-outlined` variant in
- * `base/03-controls-and-forms.css`); this factory is the DOM half of that, so
+ * `app/components.css`); this factory is the DOM half of that, so
  * callers describe segments instead of rebuilding the markup and the
  * is-active/aria-pressed bookkeeping.
  *

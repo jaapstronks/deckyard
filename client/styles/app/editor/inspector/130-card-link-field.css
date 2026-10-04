@@ -1,0 +1,12 @@
+/* Card-link field: text input + in-deck slide picker side by side. */
+.card-link-row {
+  align-items: stretch;
+}
+.card-link-row .form-input:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.card-link-row .card-link-picker {
+  flex: 0 1 auto;
+  max-width: 45%;
+}

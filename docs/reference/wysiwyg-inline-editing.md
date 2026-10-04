@@ -67,7 +67,7 @@ Types without both are completely untouched.
 | One-time "click any text to edit" coach mark                                                                | `client/views/editor/inline-edit/coach-mark.js`                                      |
 | Wiring + rerender guard + convert action                                                                    | `client/views/editor/editor-controller.js`                                           |
 | Lightbox-click suppression on inline-editable slides                                                        | `client/views/editor/preview-panel.js`                                               |
-| Styles                                                                                                      | `client/styles/base/04-editor-and-misc/105-inline-edit.css`                          |
+| Styles                                                                                                      | `client/styles/app/editor/105-inline-edit.css`                                       |
 
 ### The overlay layer
 

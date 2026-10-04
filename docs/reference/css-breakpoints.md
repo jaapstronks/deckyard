@@ -64,7 +64,7 @@ Its rule: a control has exactly one home at any width, the bar or the ⋯ menu,
 and `.topbar-fold-<rung>` marks **both halves** of one control so the two
 cannot flip at different widths. The rungs it folds at, the widths each band
 needs, and why the notification bell never folds are documented where the
-rules live: `client/styles/base/01-core/10-shell-topbar-dropdown.css`, section
+rules live: `client/styles/app/shell/10-shell-topbar-dropdown.css`, section
 _Topbar Responsive_. `tests/topbar-fold-ladder.test.js` fails if a rung is
 only half wired.
 

@@ -1,0 +1,72 @@
+/* Editor forms: ensure segmented controls don't stretch to full width inside stacks/grids. */
+.editor-form .sb-segmented {
+  align-self: flex-start;
+}
+
+/* Image focus picker (3x3 grid) */
+.sb-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 34px);
+  grid-template-rows: repeat(3, 34px);
+  gap: var(--ps-space-1);
+  width: fit-content;
+  max-width: 100%;
+  padding: var(--ps-space-1);
+  background: hsl(var(--app-bg-sunken));
+  border: 1px solid hsl(var(--app-border-subtle));
+  border-radius: var(--ps-radius-lg);
+}
+
+.sb-focus-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: var(--ps-radius-md);
+  border: 1px solid hsl(var(--app-border-default));
+  background: hsl(var(--app-bg-elevated));
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all var(--ps-transition-fast);
+}
+
+.sb-focus-btn:hover:not(:disabled) {
+  background: hsl(var(--app-bg-hover));
+  border-color: hsl(var(--app-border-strong));
+}
+
+.sb-focus-btn:focus-visible {
+  outline: none;
+  border-color: hsl(var(--app-border-focus));
+  box-shadow: 0 0 0 var(--ps-focus-ring-offset)
+    hsl(var(--app-accent-primary) / 0.25);
+}
+
+.sb-focus-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sb-focus-btn.is-active {
+  border-color: hsl(var(--app-accent-primary));
+  box-shadow: 0 0 0 2px hsl(var(--app-accent-primary) / 0.18);
+}
+
+.sb-focus-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--ps-radius-full);
+  background: hsl(var(--app-text-secondary) / 0.7);
+}
+
+.sb-focus-btn.is-active .sb-focus-dot {
+  background: hsl(var(--app-accent-primary));
+}
+
+.sb-focus-actions {
+  margin-top: var(--ps-space-2);
+}
+
+.stack.is-field.is-disabled .field-label {
+  opacity: 0.7;
+}

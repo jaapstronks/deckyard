@@ -74,7 +74,7 @@ For text-blocks, each row has an optional heading above its blocks, including th
 ## The inspector rail
 
 The editor is a 3-column grid, slides | canvas | inspector
-(`client/styles/base/01-core/20-editor-layout.css`). The inspector column
+(`client/styles/app/shell/20-editor-layout.css`). The inspector column
 sits on the **right**, has a drag-resizable width on its left edge
 (`client/views/editor/inspector-resize.js`, `--inspector-width`, min 320px,
 default 340px), and is a **toggleable rail with swappable panes**

@@ -6,7 +6,7 @@
  * menus and their submenus). This factory builds that scaffold and wires the
  * standard dismiss-on-outside behaviour, so callers only describe the trigger
  * and the menu contents. Classes and DOM shape match the CSS in
- * `01-core/10-shell-topbar-dropdown.css` (`.dropdown`, `.dropdown-trigger`,
+ * `app/shell/10-shell-topbar-dropdown.css` (`.dropdown`, `.dropdown-trigger`,
  * `.dropdown-menu`), so there is no visual change versus the hand-built form.
  */
 

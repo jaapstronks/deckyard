@@ -54,9 +54,9 @@ Editor integration (`client/views/editor/`):
 
 Styles:
 
-- `client/styles/base/04-editor-and-misc/89-slide-type-editor.css` — card grid,
+- `client/styles/app/settings/89-slide-type-editor.css` — card grid,
   editor layout, field list, preview, badges, context menus (imported from
-  `client/styles/base/04-editor-and-misc.css`).
+  `client/styles/base.css`).
 
 One facet a DB type does not choose: `toRuntimeSlideType()` writes `fidelity: { pptx: 'raster' }` onto every composed record. A template plus author CSS has nowhere to put a declaration and no native PPTX mapper could exist for arbitrary markup, so this is what the kind of type _is_ rather than what it falls back to - see [`slide-type-fidelity.md`](./slide-type-fidelity.md).
 

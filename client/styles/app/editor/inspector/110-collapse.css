@@ -1,0 +1,62 @@
+/* Row collapse toggle button */
+.row-collapse-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: var(--ps-radius-sm);
+  color: hsl(var(--app-text-tertiary));
+  cursor: pointer;
+  transition:
+    color var(--ps-transition-fast),
+    background var(--ps-transition-fast),
+    transform var(--ps-transition-fast);
+  flex-shrink: 0;
+}
+
+.row-collapse-toggle:hover {
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-hover));
+}
+
+.row-collapse-toggle .icon {
+  transition: transform var(--ps-transition-fast);
+}
+
+/* Rotate chevron when collapsed */
+.card-group.is-collapsed .row-collapse-toggle .icon {
+  transform: rotate(-90deg);
+}
+
+/* Bulk collapse/expand-all toggle in card-list headers */
+.collapse-all-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-1);
+}
+.collapse-all-toggle .icon {
+  transition: transform var(--ps-transition-fast);
+}
+.collapse-all-toggle.is-all-collapsed .icon {
+  transform: rotate(-90deg);
+}
+
+/* Smaller field labels for stacked fields */
+.field-label-sm {
+  font-size: var(--ps-text-xs);
+  font-weight: 500;
+  color: hsl(var(--app-text-secondary));
+  margin-bottom: var(--ps-space-1);
+}
+
+/* Collapsible block content */
+.block-collapsible-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ps-space-3);
+}

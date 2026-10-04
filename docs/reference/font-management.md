@@ -263,17 +263,17 @@ A second `--apply` does nothing.
 
 ### Key Client Files
 
-| File                                                         | Purpose                                                 |
-| ------------------------------------------------------------ | ------------------------------------------------------- |
-| `client/views/settings/tabs/fonts-tab.js`                    | Font families list page in settings                     |
-| `client/views/settings/font-editor/index.js`                 | Font family editor (source selection, common fields)    |
-| `client/views/settings/font-editor/upload-panel.js`          | Upload source: weight/style grid, file upload           |
-| `client/views/settings/font-editor/adobe-panel.js`           | Adobe source: project discovery + import                |
-| `client/views/settings/font-editor/monotype-panel.js`        | Monotype source: project ID config                      |
-| `client/views/settings/font-editor/google-panel.js`          | Google source: spec string + preview                    |
-| `client/views/settings/theme-editor/font-picker.js`          | Font dropdown (curated + managed, live preview)         |
-| `client/views/settings/theme-editor/index.js`                | Theme editor (fetches managed fonts, passes to pickers) |
-| `client/styles/base/04-editor-and-misc/104-font-manager.css` | All font management UI styles                           |
+| File                                                  | Purpose                                                 |
+| ----------------------------------------------------- | ------------------------------------------------------- |
+| `client/views/settings/tabs/fonts-tab.js`             | Font families list page in settings                     |
+| `client/views/settings/font-editor/index.js`          | Font family editor (source selection, common fields)    |
+| `client/views/settings/font-editor/upload-panel.js`   | Upload source: weight/style grid, file upload           |
+| `client/views/settings/font-editor/adobe-panel.js`    | Adobe source: project discovery + import                |
+| `client/views/settings/font-editor/monotype-panel.js` | Monotype source: project ID config                      |
+| `client/views/settings/font-editor/google-panel.js`   | Google source: spec string + preview                    |
+| `client/views/settings/theme-editor/font-picker.js`   | Font dropdown (curated + managed, live preview)         |
+| `client/views/settings/theme-editor/index.js`         | Theme editor (fetches managed fonts, passes to pickers) |
+| `client/styles/app/settings/104-font-manager.css`     | All font management UI styles                           |
 
 ### Export Pipeline
 

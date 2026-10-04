@@ -47,11 +47,11 @@ const repoRoot = path.resolve(
 );
 const SHARE_CSS = path.join(
   repoRoot,
-  'client/styles/base/04-editor-and-misc/12-modals-share.css',
+  'client/styles/app/editor/modals/12-modals-share.css',
 );
 const MODALS_BASE_CSS = path.join(
   repoRoot,
-  'client/styles/base/04-editor-and-misc/10-modals-base.css',
+  'client/styles/app/editor/modals/10-modals-base.css',
 );
 const SHARE_MODAL_JS = path.join(
   repoRoot,

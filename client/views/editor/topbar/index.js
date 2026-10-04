@@ -507,7 +507,7 @@ export function createEditorTopbar({
   // The fold rung of a control the bar does not build itself. The rung belongs
   // to the bar's width budget, not to the button, so it is stamped here next
   // to the layout it serves - the ladder is documented in
-  // `styles/base/01-core/10-shell-topbar-dropdown.css` (Topbar Responsive).
+  // `styles/app/shell/10-shell-topbar-dropdown.css` (Topbar Responsive).
   // The collab avatar stack's place in the bar. The bar builds it rather than
   // the presence module, so it is a child of the bar and sits on the ladder
   // like every other one: five avatars and a +N chip spend 124px, which the

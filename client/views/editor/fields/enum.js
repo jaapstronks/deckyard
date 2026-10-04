@@ -149,7 +149,7 @@ export function createEnumFields({ fieldSelect } = {}) {
   };
 
   // A responsive row of fields. Columns are no longer fixed: `.field-grid` is a
-  // flex-wrap container (see 03-controls-and-forms.css) that lays fields out
+  // flex-wrap container (see app/editor/inspector/10-field-grid.css) that lays fields out
   // side by side when the editor column is wide enough and stacks them when it
   // isn't, driven by each field's own size intent (`is-field-*`). The legacy
   // `cols` argument is accepted for backward compatibility but no longer drives

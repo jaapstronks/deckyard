@@ -29,7 +29,7 @@ const repoRoot = path.resolve(
 
 const BASE_LAYER = path.join(
   repoRoot,
-  'client/styles/base/04-editor-and-misc/10-modals-base.css',
+  'client/styles/app/editor/modals/10-modals-base.css',
 );
 
 /** @returns {string[]} every .css file under `dir` */
