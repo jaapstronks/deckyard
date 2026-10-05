@@ -36,9 +36,14 @@ const MAX_DROP_RATIO = 0.25;
  *
  * @param {object} outline
  * @param {Array<object>} operations
+ * @param {{ minimumSlides?: number }} options - Minimum outline size, excluding the automatic title slide
  * @returns {{outline: object, applied: object[], rejected: {operation: object, why: string}[]}}
  */
-export function applyRevisionOperations(outline, operations) {
+export function applyRevisionOperations(
+  outline,
+  operations,
+  { minimumSlides = 0 } = {},
+) {
   const slides = [...(outline.slides || [])];
   const applied = [];
   const rejected = [];
@@ -54,6 +59,8 @@ export function applyRevisionOperations(outline, operations) {
   let drops = 0;
 
   const reject = (operation, why) => rejected.push({ operation, why });
+  const atMinimum = () =>
+    minimumSlides > 0 && slides.length - removed.size <= minimumSlides;
 
   for (const operation of Array.isArray(operations) ? operations : []) {
     const positions =
@@ -84,6 +91,10 @@ export function applyRevisionOperations(outline, operations) {
         reject(operation, 'merge must supply the combined content');
         continue;
       }
+      if (atMinimum()) {
+        reject(operation, `slide budget floor reached (${minimumSlides})`);
+        continue;
+      }
       const [first, second] = positions.slice().sort((a, b) => a - b);
       const target = byPosition.get(first);
       const source = byPosition.get(second);
@@ -94,6 +105,26 @@ export function applyRevisionOperations(outline, operations) {
         [target.presenterNotes, source.presenterNotes]
           .filter(Boolean)
           .join(' ');
+      const contexts = [target.sourceContext, source.sourceContext].filter(
+        Boolean,
+      );
+      target.sourceContext = contexts.length
+        ? {
+            heading: [
+              ...new Set(contexts.map((context) => context.heading)),
+            ].join(' / '),
+            keyPoints: [
+              ...new Set(
+                contexts.flatMap((context) => context.keyPoints || []),
+              ),
+            ],
+            excerpt: [
+              ...new Set(
+                contexts.map((context) => context.excerpt).filter(Boolean),
+              ),
+            ].join('\n'),
+          }
+        : null;
       target.hints = [
         ...new Set([...(target.hints || []), ...(source.hints || [])]),
       ];
@@ -113,6 +144,10 @@ export function applyRevisionOperations(outline, operations) {
           operation,
           `drop cap reached (${maxDrops} of ${contentCount} content slides)`,
         );
+        continue;
+      }
+      if (atMinimum()) {
+        reject(operation, `slide budget floor reached (${minimumSlides})`);
         continue;
       }
       removed.add(positions[0]);
@@ -216,7 +251,11 @@ export async function reviseOutline(
     outline: revisedOutline,
     applied,
     rejected,
-  } = applyRevisionOperations(outline, parsed.operations);
+  } = applyRevisionOperations(outline, parsed.operations, {
+    minimumSlides: outline.metadata?.targetSlides
+      ? Math.ceil(outline.metadata.targetSlides * 0.9) - 1
+      : 0,
+  });
 
   const revision = {
     assessment: parsed.assessment || '',

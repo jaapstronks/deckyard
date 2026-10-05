@@ -45,6 +45,7 @@ import {
   createPresentation as storeNewPresentation,
   duplicatePresentation as storeDuplicate,
   deletePresentation as storeTrash,
+  restorePresentation as storeRestore,
 } from '../storage/presentations/index.js';
 import { recordSlideLibraryUsage } from '../storage/slide-library-usage.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
@@ -54,6 +55,7 @@ import {
   canActorManageCollaborators,
   canActorCommentOnPresentation,
   canActorResolveComment,
+  canRestorePresentation,
   canGuestComment,
 } from '../utils/presentation-authz/index.js';
 import {
@@ -441,6 +443,31 @@ export async function deletePresentation(scope, identity, presentationId) {
     );
   }
   return pres;
+}
+
+/** Restore a trashed deck for its owner, creator, trasher or admin. */
+export async function restorePresentation(scope, { actor }, presentationId) {
+  const pres = presentationId
+    ? await getPresentation(scope, presentationId)
+    : null;
+  if (!pres) throw new NotFoundError('Presentation not found');
+  if (!pres.trashedAt) {
+    throw new AppError(
+      'Presentation is not in trash',
+      409,
+      null,
+      'not_trashed',
+    );
+  }
+  if (!canRestorePresentation({ user: actor, pres })) {
+    throw new ForbiddenError(
+      'You do not have permission to restore this presentation',
+    );
+  }
+
+  const restored = await storeRestore(scope, pres.id);
+  if (!restored.ok) throw new NotFoundError('Presentation not found');
+  return restored.presentation;
 }
 
 /**

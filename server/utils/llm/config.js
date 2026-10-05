@@ -100,15 +100,15 @@ export function getLlmConfig({ vendor = null, role = null } = {}) {
   }
 
   if (resolved === 'claude') {
-    // Default: claude-sonnet-5 for generation/fill; claude-opus-4-8 for the
-    // plan/outline step (role 'plan'), where structure + type selection
-    // matter most. A pinned CLAUDE_MODEL keeps applying everywhere unless
-    // CLAUDE_MODEL_PLAN overrides the plan step separately.
-    const fillModel = (optionalEnv('CLAUDE_MODEL') || 'claude-sonnet-5').trim();
+    // Default: claude-opus-5 for every call. Measured against claude-sonnet-5
+    // on the AI suite (2026-10-04, B469): Opus scored higher at roughly twice
+    // the generation cost, and deck quality wins that trade. CLAUDE_MODEL pins
+    // every call; CLAUDE_MODEL_PLAN overrides the plan/outline step alone.
+    const fillModel = (optionalEnv('CLAUDE_MODEL') || 'claude-opus-5').trim();
     const planModel = (
       optionalEnv('CLAUDE_MODEL_PLAN') ||
       optionalEnv('CLAUDE_MODEL') ||
-      'claude-opus-4-8'
+      'claude-opus-5'
     ).trim();
     return {
       vendor: 'claude',

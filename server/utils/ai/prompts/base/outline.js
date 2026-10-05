@@ -1,252 +1,211 @@
 /**
- * Base prompt copy — Phase 1 (outline generation).
+ * Base prompt copy — Phase 1 (outline), in two calls.
  *
- * This is the OSS-default, generic-but-functional prompt content for the
- * outline pass. A downstream fork can override any of these builders by
- * exporting a same-named function from `custom/ai/prompts.js` (see
- * `server/utils/ai/prompts/custom-loader.js`). The generation *mechanism*
- * (LLM transport, JSON parsing, validation) stays in `generate-outline.js`.
+ * The outline used to be one call that read the whole source and returned
+ * structure, slide budget, groupings, presenter notes, chapters and loading-
+ * screen status lines at once. It is now two calls with one job each:
+ *
+ * 1. **Analysis** reads the source and says what it contains: title, summary,
+ *    sections with their key points, a verbatim excerpt and any quotes. No
+ *    slides yet.
+ * 2. **Structure** turns that analysis into a slide plan within the budget:
+ *    intent, rough content, hints and grouping per slide. It never sees the raw
+ *    source, so the analysis must carry the specifics.
+ *
+ * Presenter notes are written in Phase 2, which sees each slide's section of
+ * the analysis. Status lines are derived from the analysis in code.
+ *
+ * This is the OSS-default prompt content. A downstream fork can override any
+ * builder by exporting a same-named function from `custom/ai/prompts.js` (see
+ * `server/utils/ai/prompts/custom-loader.js`). The generation *mechanism* (LLM
+ * transport, JSON parsing, validation) stays in `generate-outline.js`.
  */
+
+/** The output-language label both calls write in. */
+function outputLanguageLabel({ detectedLang, requestedLang }) {
+  if (requestedLang === 'nl') return 'DUTCH';
+  if (requestedLang === 'en-GB') return 'ENGLISH';
+  return detectedLang.label;
+}
 
 /**
- * Build the system prompt for Phase 1
+ * Build the system prompt for the analysis call.
  */
-export function buildPhase1SystemPrompt({
-  detectedLang,
-  requestedLang,
-  targetSlides,
-  estimatedInputLines,
-}) {
-  const langLabel =
-    requestedLang === 'nl'
-      ? 'DUTCH'
-      : requestedLang === 'en-GB'
-        ? 'ENGLISH'
-        : detectedLang.label;
+export function buildAnalysisSystemPrompt({ detectedLang, requestedLang }) {
+  const langLabel = outputLanguageLabel({ detectedLang, requestedLang });
 
-  return `You are a presentation outline generator. Analyze raw content and create a structured outline.
+  return `You analyse a source document that will become a presentation. Your only job is to say what the source contains and what matters in it. You do not design slides.
 
-CRITICAL: Your role is to DISTILL and PRIORITIZE content. A good presentation is the 20% of source material that conveys 80% of the value. Each slide must earn its place. Push supporting detail and context to presenter notes, not onto slides.
-
-OUTPUT LANGUAGE: ${langLabel}
+OUTPUT LANGUAGE: ${langLabel} (except "excerpt" and quote "text", which stay verbatim in the source's language)
 
 Return ONLY valid JSON:
 {
-  "title": "Presentation Title",
-  "subtitle": "Subtitle or speaker name",
-  "summary": "2-3 sentence summary of the presentation's main theme",
-  "statusMessages": ["Slide toevoegen over X...", "Hoofdstuk maken..."],
-  "slides": [
+  "title": "Presentation title",
+  "subtitle": "Event, date or speaker name, or empty",
+  "summary": "2-3 sentences: the source's main message",
+  "sections": [
     {
-      "intent": "chapter|content|quote|closing",
-      "roughContent": "Concise slide content (what appears on slide)",
-      "presenterNotes": "Detailed context, examples, talking points for the presenter",
-      "hints": ["hint1"],
-      "groupId": "group-1"
+      "heading": "Short name for this part of the source",
+      "importance": "high|medium|low",
+      "keyPoints": ["A specific point, with the numbers, names and dates the source gives"],
+      "excerpt": "One short verbatim sentence from the source that carries this section",
+      "quotes": [{ "text": "Verbatim quote", "author": "Name", "role": "Role or empty" }]
     }
   ]
 }
 
 ═══════════════════════════════════════════════════════════════════════════════
-TITLE AND SUBTITLE - KEEP THEM SHORT!
+TITLE AND SUBTITLE - SHORT
 ═══════════════════════════════════════════════════════════════════════════════
 
-The "title" and "subtitle" are for the TITLE SLIDE. They must be SHORT and punchy.
-
-TITLE RULES:
-- Maximum 6-8 words. Shorter is better.
-- Just the core topic name, NOT a summary or description
-- NO explanatory phrases like "in the Netherlands" or "programme running until 2029"
-- Think: what would fit on a conference badge?
-
-SUBTITLE RULES:
-- Maximum 8-10 words. Can be empty if not needed.
-- ONLY contextual info: event name, date, or speaker name
-- NO additional topic information or qualifiers
-- NO pipes (|) or concatenated phrases
-
-BAD EXAMPLES:
-- Title: "Annual Conference for Digital Innovation in Technology and Business"
-- Subtitle: "Presented at Tech Summit — March 10–12, 2026"
-
-GOOD EXAMPLES:
-- Title: "Digital Innovation" or "Tech Summit 2026"
-- Subtitle: "Tech Summit — March 2026" or "Jane Smith, Company"
-
-When the source file has an event/date title (e.g., "Tech Summit 2026 – March 10–12"):
-- That's CONTEXT, not the topic. Put it in the subtitle.
-- Analyze the content to find the actual topic for the title.
+- Title: the core topic in at most 6-8 words, like a conference badge. No explanatory phrases.
+- Subtitle: at most 8-10 words of context only (event, date, speaker). May be empty. No pipes.
+- An event name or date in the source's own title is context: put it in the subtitle and find the real topic for the title.
 
 ═══════════════════════════════════════════════════════════════════════════════
-IMPORTANT: NO OPENING/TITLE SLIDE
+SECTIONS
 ═══════════════════════════════════════════════════════════════════════════════
 
-The presentation ALREADY has a title slide. Do NOT create an intent:"opening" slide.
-Just fill in the "title" and "subtitle" fields at the top level.
-Your slides array should start with either a "chapter" or "content" slide.
-
-═══════════════════════════════════════════════════════════════════════════════
-STATUS MESSAGES - META/PROCESS FOCUSED
-═══════════════════════════════════════════════════════════════════════════════
-
-Status messages describe the PROCESS of creating slides, not the content itself.
-
-BAD (too content-focused):
-  "Talentontwikkeling positioneren als groeiversneller voor de sector."
-  "Digitale kanalen inventariseren: website, Circle-community, nieuwsbrief"
-
-GOOD (process-focused):
-  "Slide toevoegen over talentontwikkeling..."
-  "Hoofdstuk maken over digitale strategie..."
-  "Tijdlijn opbouwen met mijlpalen..."
-  "Overzicht maken van de actielijnen..."
-  "Quote toevoegen..."
-  "Afrondende slide maken..."
-
-In English:
-  "Adding slide about talent development..."
-  "Creating chapter on digital strategy..."
-  "Building timeline with milestones..."
-  "Creating overview of action lines..."
-  "Adding quote..."
-  "Creating closing slide..."
-
-═══════════════════════════════════════════════════════════════════════════════
-SLIDE INTENTS (no "opening" - that's automatic)
-═══════════════════════════════════════════════════════════════════════════════
-
-"chapter" - Section divider. Provide:
-  - roughContent: "Chapter Title\\nOptional subtitle"
-  - These are resolved directly, not sent to AI refinement
-
-"content" - Regular content slide. Provide:
-  - roughContent: RICH detail (4-8 bullet points, specifics, context)
-  - hints: patterns detected (has-4-items, is-timeline, has-cause-effect, etc.)
-  - groupId: group similar slides together
-
-"quote" - Standalone quote. Provide:
-  - roughContent: "The quote text.\\nAuthor Name\\nAuthor Role/Title"
-  - Keep quotes short (1-3 sentences, max 260 chars)
-  - These are resolved directly, not sent to AI refinement
-
-"closing" - Final payoff slide (optional). Provide:
-  - roughContent: "Optional tagline or call-to-action"
-  - This is resolved directly, not sent to AI refinement
-
-═══════════════════════════════════════════════════════════════════════════════
-roughContent RULES
-═══════════════════════════════════════════════════════════════════════════════
-
-For CONTENT slides, be CONCISE but specific:
-- 4-8 bullet points per slide (focused, not exhaustive)
-- Include key specifics (numbers, names) but not every detail
-- Put expanded detail in presenterNotes, not on the slide
-- Each slide should stand alone with one clear message
-
-BAD (too verbose, belongs in notes): "Educational institutions and investment rules with all details:\\n- Can invest in facilities for non-economic activities\\n- Must maintain separate accounting per activity type\\n- Public funds restricted to non-economic only\\n- Important distinction between support vs public funding\\n- November 17 adjustments clarified many rules\\n- Special provisions for research institutions\\n- EU state aid rules also apply"
-
-GOOD (slide content):
-roughContent: "Investment rules for educational institutions:\\n- Separate accounting required\\n- Public funds: non-economic activities only\\n- November 17 clarifications apply"
-presenterNotes: "Key detail: institutions can invest in facilities but must maintain separate accounts. The Nov 17 adjustments clarified the distinction between support and public funding. Mention EU state aid rules if audience asks."
-
-═══════════════════════════════════════════════════════════════════════════════
-HINTS (for content slides only)
-═══════════════════════════════════════════════════════════════════════════════
-
-- "has-N-items" (e.g., "has-4-items") - parallel points
-- "is-timeline" - sequential phases with dates
-- "is-list-with-explanations" - items with title + description
-- "has-numeric-data" - statistics, KPIs
-- "has-cause-effect" - inputs→outputs, challenges→solutions (only when one group genuinely LEADS TO the other; plain parallel points are "has-N-items", not this)
-- "has-comparison" - pros/cons, A vs B, before/after
-- "has-matrix" - 2x2 grid like SWOT analysis
-- "has-pyramid" - hierarchical levels, priority tiers
-- "has-funnel" - narrowing stages with decreasing numbers
-- "has-cycle" - recurring/circular process (PDCA, sprints)
-- "has-process" - linear step-by-step workflow
-- "has-history" - historical events with past dates
-
-═══════════════════════════════════════════════════════════════════════════════
-SLIDE BUDGET
-═══════════════════════════════════════════════════════════════════════════════
-
-Target: ${targetSlides} content slides (excluding title, chapter dividers, and closing)
-
-Content density guidelines:
-- Each content slide should cover ONE clear point
-- Combine related items rather than creating multiple similar slides
-- If two slides would have overlapping content, merge them
-- Repetition is worse than omission
-
-For input of ~${estimatedInputLines} lines:
-- Aim for roughly 1 slide per 5-10 lines of distinct content
-- Sections with overlap should share slides, not duplicate them
-
-═══════════════════════════════════════════════════════════════════════════════
-PRESENTER NOTES
-═══════════════════════════════════════════════════════════════════════════════
-
-For each content slide, generate "presenterNotes" with:
-- Additional context and background not shown on slide
-- Specific examples, data points, or anecdotes to mention
-- Talking points and transitions to the next slide
-- Answers to likely audience questions
-
-The slide shows the WHAT. Notes contain the WHY and HOW.
-Notes should be 2-4 sentences per slide.
-
-═══════════════════════════════════════════════════════════════════════════════
-STRUCTURE GUIDELINES
-═══════════════════════════════════════════════════════════════════════════════
-
-1. Start with a chapter or content slide (NOT opening)
-2. Use chapters ONLY for major sections (prefer fewer chapters)
-3. Give each chapter 3-5 content slides. A chapter divider carries no content
-   of its own, so a deck that changes chapter every second slide spends a large
-   share of its length on dividers. As a guide: under 10 content slides, use at
-   most 2 chapters; only a long deck needs more than 4.
-4. Stay within the slide budget (target: ${targetSlides} content slides)
-5. Space quote slides apart (never back-to-back)
-6. Consolidation is better than expansion - fewer strong slides beat many weak ones
-
-═══════════════════════════════════════════════════════════════════════════════
-REMINDER: OUTPUT LANGUAGE
-═══════════════════════════════════════════════════════════════════════════════
-
-All output text (title, subtitle, summary, statusMessages, roughContent, presenterNotes) MUST be in ${langLabel}.`;
+- Follow the source's own logic: one section per distinct topic, in the order that tells the story best (usually the source's order).
+- "importance": how much of a presentation this section deserves. Be honest; most sources have only a few high sections.
+- "keyPoints": 2-8 per section. Each point stands on its own and keeps the specifics (figures, names, dates, steps in order). A later step builds slides from these points alone, without the source, so a missing figure is lost for good.
+- Preserve distinctions that change a claim: qualifiers, separate terms for different artifacts, and which date or citation belongs to which event. Do not flatten two different conditions into one generic point.
+- Keep sequences recognisable: phases, steps and dated events stay in order and say so ("Phase 1: ...", "2026: ...").
+- "excerpt": copy one sentence from the source exactly, character for character. Never paraphrase it. Max 200 characters.
+- "quotes": only real quotes from the source with a named speaker. Omit the field when there are none.
+- Leave out boilerplate: tables of contents, disclaimers and navigation text. Keep licensing or usage terms when they define the product or its output.`;
 }
 
 /**
- * Build the user prompt for Phase 1
+ * Build the user prompt for the analysis call.
  */
-export function buildPhase1UserPrompt({
+export function buildAnalysisUserPrompt({
   rawContent,
   userName,
   rawFirstSlideTitle,
 }) {
-  const lines = ['Analyze this content and create a presentation outline.', ''];
+  const lines = ['Analyse this source.', ''];
 
   if (rawFirstSlideTitle) {
     lines.push(`ORIGINAL TITLE FROM SOURCE FILE: "${rawFirstSlideTitle}"`);
     lines.push(
-      'Note: This may be an event name, date, or contextual title rather than the actual topic.',
-    );
-    lines.push(
-      'Determine the real presentation topic from the content and use that as the title.',
-    );
-    lines.push(
-      'You may use the original title info in the subtitle if appropriate.',
+      'This may be an event name, date or contextual title rather than the topic.',
     );
     lines.push('');
   }
 
   if (userName) {
-    lines.push(`PRESENTER NAME (use as subtitle on title slide): ${userName}`);
+    lines.push(`PRESENTER NAME (use as subtitle): ${userName}`);
     lines.push('');
   }
 
-  lines.push('RAW CONTENT:');
+  lines.push('SOURCE:');
   lines.push(String(rawContent || ''));
+
+  return lines.join('\n');
+}
+
+/**
+ * Build the system prompt for the structure call.
+ */
+export function buildStructureSystemPrompt({
+  detectedLang,
+  requestedLang,
+  targetSlides,
+}) {
+  const langLabel = outputLanguageLabel({ detectedLang, requestedLang });
+
+  return `You plan the slides of a presentation from an analysis of its source. You decide which slides exist, in which order, and what each one says. You do not choose visual slide types; a later step does that from your hints.
+
+CRITICAL: A good presentation is the 20% of the source that conveys 80% of the value. Each slide earns its place. Give high-importance sections more room, and merge or drop low-importance ones.
+
+OUTPUT LANGUAGE: ${langLabel}
+
+Return ONLY valid JSON:
+{
+  "slides": [
+    {
+      "intent": "chapter|content|quote|closing",
+      "section": 0,
+      "roughContent": "What appears on the slide",
+      "hints": ["has-4-items"],
+      "groupId": "group-1"
+    }
+  ]
+}
+
+"section" is the index (0-based) of the analysis section the slide draws on.
+
+═══════════════════════════════════════════════════════════════════════════════
+SLIDE INTENTS
+═══════════════════════════════════════════════════════════════════════════════
+
+The presentation already has a title slide. Never add one; start with a chapter or content slide.
+
+"chapter" - Section divider. roughContent: "Chapter title\\nOptional subtitle"
+"content" - Regular slide. roughContent: 3-6 focused lines with the key specifics (figures, names, dates). One clear message per slide.
+"quote"   - roughContent: "The quote text.\\nAuthor name\\nAuthor role". Only quotes the analysis lists; 1-3 sentences, max 260 characters.
+"closing" - Optional final payoff. roughContent: one tagline or call to action.
+
+═══════════════════════════════════════════════════════════════════════════════
+HINTS (content slides only) - the shape of the content, not a slide type
+═══════════════════════════════════════════════════════════════════════════════
+
+- "has-N-items" (e.g. "has-4-items") - parallel points
+- "is-timeline" - sequential phases with dates
+- "is-list-with-explanations" - items with title + description
+- "has-numeric-data" - statistics, KPIs
+- "has-cause-effect" - one group genuinely LEADS TO the other (plain parallel points are "has-N-items")
+- "has-comparison" - pros/cons, A vs B, before/after
+- "has-matrix" - 2x2 grid such as SWOT
+- "has-pyramid" - hierarchical levels, priority tiers
+- "has-funnel" - narrowing stages with decreasing numbers
+- "has-cycle" - recurring process (PDCA, sprints)
+- "has-process" - linear step-by-step workflow
+- "has-history" - historical events with past dates
+
+"groupId": give content slides that belong together (same section, similar shape) the same id, so they are styled consistently.
+
+═══════════════════════════════════════════════════════════════════════════════
+BUDGET AND STRUCTURE
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Budget: about ${targetSlides} slides in the finished deck, INCLUDING the automatic title slide, chapter dividers, quotes and closing. Plan at most ${targetSlides - 1} slides here. A chapter, quote or closing takes a place that could otherwise carry content.
+2. Spend the budget on the important findings first. Combine related facts on one focused content slide instead of making a separate slide for every key point; keep the figures, names and dates that support the main message. Preserve qualifiers ("limited" is not "no") and keep each figure or citation attached to the claim it supports. Low-importance sections may need no slide.
+3. Chapters only for major changes of subject, with at least 3 content slides between dividers. Under 10 planned slides, at most 2 chapters; even a long deck rarely needs more than 4.
+4. Never put two quote slides back to back. A quote needs to add something the surrounding content does not already say.
+5. If two slides would overlap, merge them. Repetition is worse than omission.
+
+All text MUST be in ${langLabel}.`;
+}
+
+/**
+ * Build the user prompt for the structure call.
+ *
+ * @param {object} options
+ * @param {object} options.analysis - normalized output of the analysis call
+ */
+export function buildStructureUserPrompt({ analysis }) {
+  const lines = [
+    'Plan the slides for this presentation.',
+    '',
+    `TITLE: ${analysis.title}`,
+  ];
+  if (analysis.subtitle) lines.push(`SUBTITLE: ${analysis.subtitle}`);
+  if (analysis.summary) lines.push(`SUMMARY: ${analysis.summary}`);
+  lines.push('');
+
+  analysis.sections.forEach((section, i) => {
+    lines.push(
+      `--- SECTION ${i} (${section.importance} importance): ${section.heading} ---`,
+    );
+    for (const point of section.keyPoints) lines.push(`- ${point}`);
+    for (const quote of section.quotes) {
+      const by = [quote.author, quote.role].filter(Boolean).join(', ');
+      lines.push(`QUOTE: "${quote.text}"${by ? ` (${by})` : ''}`);
+    }
+    lines.push('');
+  });
 
   return lines.join('\n');
 }

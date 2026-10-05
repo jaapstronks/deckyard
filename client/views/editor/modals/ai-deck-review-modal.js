@@ -82,7 +82,7 @@ export function openAiDeckReviewModal({
   // --- Selection + section refine ------------------------------------------
   const selectionHint = h('span', { class: 'ai-review-selection-hint' });
   const btnClearSelection = h('button', {
-    class: 'btn btn-secondary is-compact',
+    class: 'btn btn-secondary btn-sm',
     type: 'button',
     text: t('editor.deckReview.clearSelection', 'Clear selection'),
     hidden: true,

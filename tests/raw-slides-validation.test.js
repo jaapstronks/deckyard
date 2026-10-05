@@ -86,17 +86,15 @@ describe('validateRefinedSlidesStrict', () => {
 });
 
 describe('diffAppliedFixes', () => {
-  it('reports truncation on overlong title', () => {
+  it('refuses an overlong title instead of applying a text fix', () => {
     const input = [
       { type: 'title-slide', content: { title: 'x'.repeat(500) } },
     ];
-    const fixed = validateAndFixRefinedSlides(
-      input.map((s) => ({ type: s.type, content: s.content })),
+    assert.throws(
+      () => validateAndFixRefinedSlides(input),
+      /exceeds max length/,
     );
-    const fixes = diffAppliedFixes(input, fixed);
-    const titleFix = fixes.find((f) => f.field === 'title');
-    assert.ok(titleFix, 'expected a title fix');
-    assert.match(titleFix.change, /truncated/);
+    assert.equal(input[0].content.title.length, 500);
   });
 
   it('reports layout switch on 5+ list items', () => {

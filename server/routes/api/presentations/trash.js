@@ -2,24 +2,16 @@
  * Trash API routes for soft-deleted presentations.
  */
 
-import {
-  listTrashedPresentations,
-  restorePresentation,
-  getPresentation,
-} from '../../../storage/presentations/index.js';
+import { listTrashedPresentations } from '../../../storage/presentations/index.js';
 import { permanentlyDeletePresentation } from '../../../services/permanent-delete.js';
+import { restorePresentation } from '../../../services/presentations.js';
 import {
   methodNotAllowed,
-  notFound,
   serveJson,
-  forbidden,
   storageError,
 } from '../../../utils/http.js';
 import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
-import {
-  isOwnerOrCreator,
-  matchesIdentity,
-} from '../../../../shared/identity-match.js';
+import { canRestorePresentation } from '../../../utils/presentation-authz/index.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 
 /**
@@ -48,17 +40,9 @@ export async function handlePresentationsTrashList({
 
   const items = await listTrashedPresentations(storageScope);
 
-  // Filter to only show items the user can see (owner, creator, trasher, or
-  // admin). Identity is matched through shared/identity-match.js, on the stable
-  // `users.id` and nothing else, so a renamed user still sees the items they
-  // own or trashed (T10 PR F2).
-  const filtered = items.filter((p) => {
-    if (authedUser?.isAdmin) return true;
-    return (
-      isOwnerOrCreator(authedUser, p) ||
-      matchesIdentity(authedUser, { userId: p.trashedBy?.id })
-    );
-  });
+  const filtered = items.filter((pres) =>
+    canRestorePresentation({ user: authedUser, pres }),
+  );
 
   serveJson(
     res,
@@ -79,42 +63,12 @@ export async function handlePresentationRestore(
     return methodNotAllowed(res, ['POST']);
   }
 
-  // First check if the presentation exists and is in trash
-  const existing = await getPresentation(storageScope, id);
-  if (!existing) {
-    return notFound(res);
-  }
-
-  // Check if presentation is actually trashed
-  if (!existing.trashedAt) {
-    return storageError(
-      res,
-      { reason: 'not_trashed' },
-      'Presentation is not in trash',
-    );
-  }
-
-  // Check authorization: owner, creator, trasher, or admin. Matched through
-  // shared/identity-match.js on the stable `users.id`, so a rename does not
-  // strip the trasher of their restore right (T10 PR F2).
-  const canRestore =
-    authedUser?.isAdmin ||
-    isOwnerOrCreator(authedUser, existing) ||
-    matchesIdentity(authedUser, { userId: existing.trashedBy?.id });
-
-  if (!canRestore) {
-    return forbidden(
-      res,
-      'You do not have permission to restore this presentation',
-    );
-  }
-
-  const restored = await restorePresentation(storageScope, id);
-  if (!restored.ok) {
-    return notFound(res);
-  }
-
-  serveJson(res, 200, restored.presentation);
+  const restored = await restorePresentation(
+    storageScope,
+    { actor: authedUser },
+    id,
+  );
+  serveJson(res, 200, restored);
   return true;
 }
 

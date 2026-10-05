@@ -46,8 +46,13 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
 - `server/utils/ai/generate-deck-v2.js` — the orchestrator: `generateDeckV2`,
   `groupSlidesForPhase2`, `refineSlideGroup`, `assembleDeck`, plus session
   id/logger helpers.
-- `server/utils/ai/generate-outline.js` — **phase 1**:
-  `generateOutline`, `separateSlidesForProcessing`, `calculateTargetSlides`.
+- `server/utils/ai/generate-outline.js` — **phase 1**, two calls with one
+  job each: _analysis_ (what the source contains: sections, key points, a
+  verbatim excerpt, quotes) and _structure_ (the slide plan within the budget,
+  built from the analysis alone). Each outline slide carries its analysis
+  section as `sourceContext` for phase 2; the loading-screen status lines are
+  derived from the analysis in code. Exports `generateOutline`,
+  `separateSlidesForProcessing`, `calculateTargetSlides`.
 - `server/utils/ai/revise-outline.js` — **phase 1b**: a second pass
   over the outline before any slide is built (an outline is cheap to re-plan).
 - `server/utils/ai/refine-slides.js` — **phase 2**:
@@ -66,9 +71,9 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
 - `server/utils/ai/validate-slides/` (an `index.js` barrel over 8 modules) —
   the repair stage: `checks.js`, `constants.js` (which types get their item
   count repaired — a behaviour choice, not a constraint), `fields.js`
-  (valid/unknown field keys), `fix.js` (the non-throwing repair pipeline),
+  (valid/unknown field keys), `fix.js` (the structural repair pipeline),
   `fixers.js` (per-type repairs), `strict.js` (throwing validation for raw
-  output), `truncate.js`, `logging.js`.
+  output), `lengths.js`, `logging.js`.
 - `server/utils/ai/validate-slide-structure.js` — structural check of
   one slide's content against its type.
 - `server/utils/ai/slide-type-catalog.js` — a 21-line compatibility re-export of
@@ -149,11 +154,14 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
 - **Two-phase generation** (`POST /api/ai/wizard-v2/stream`) — the live path.
   The handler validates params, loads the org's slide-type context (disabled +
   custom types) and theme context, then: **phase 1** `generateOutline` produces
-  a title, chapters and rough slides with no slide-type vocabulary; **phase 1b**
-  `reviseOutline` re-plans it; `separateSlidesForProcessing` +
+  a title, chapters and rough slides with no slide-type vocabulary (analysis
+  call, then structure call); **phase 1b** `reviseOutline` re-plans it (only in
+  `generateDeckV2`, so MCP and the AI test suite; the wizard stream skips it);
+  `separateSlidesForProcessing` +
   `groupSlidesForPhase2` split the outline into groups; **phase 2**
   `refineAllSlideGroups` runs one LLM call per group, each shown the catalogue,
-  the examples and the theme context, returning a type plus structured content
+  the examples, the theme context and each slide's source context, returning a
+  type, structured content, presenter notes and a presenter-facing reasoning
   per slide; `validateAndFixRefinedSlides` repairs the result;
   `assembleDeck` prepends a title slide and emits a `deckyard.deck` document;
   `createPresentationWithI18n` persists it. Progress is streamed as SSE status
@@ -162,16 +170,7 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
   the "new presentation" modal: a single prompt via
   `generateDeckJsonFromRawContent`, no outline phase, no group refinement. The
   user-chosen theme always wins over whatever the model returned.
-- **Validate and fix** — the stage that makes the output usable. `fix.js`
-  truncates over-long text to word boundaries (to the `maxLength` the field
-  itself declares), drops unknown fields, applies per-type repairs and smart
-  defaults from `fixers.js`, and repairs the item count for the three types
-  `constants.js` names — non-throwing, because a repairable slide is better
-  than a failed generation. `strict.js` is the throwing counterpart used on raw
-  output: it reads the same derivation and refuses on the first issue, an
-  undeclared key included (`unknown_field`), so an agent is told rather than
-  having its content silently dropped. Every repair is recorded as a validation
-  event.
+- **Validate and fix**: `lengths.js` refuses overlong strings using the type's recursive content schema, including nested collection fields. Phase 2 checks each response before accepting it and gives the model one retry with the rejected response and exact field violations. If that rewrite fails, generation fails instead of returning clipped text or a fallback. Structural slides whose declared lengths are exceeded also go to Phase 2. `fix.js` keeps its structural repairs, defaults and item-count handling; it never shortens text. Raw slide validation through `strict.js` still refuses every schema issue. No length limit is widened.
 - **Append / refine / iterate / compress** — the editing verbs. Append generates
   slides for an existing deck; section refine revises a contiguous range with a
   couple of neighbouring slides as context; iterate applies a natural-language
@@ -188,16 +187,16 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
 
 ## Config & flags
 
-| Name                                                                   | Where                            | Purpose / default                                                                                                                                              |
-| ---------------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `LLM_VENDOR`                                                           | `utils/llm/config.js`            | Explicit default vendor. Must be a known vendor (`shared/llm-vendors.js`).                                                                                     |
-| `OPENAI_API` + `OPENAI_MODEL`                                          | idem                             | Model default `gpt-5.2`.                                                                                                                                       |
-| `CLAUDE_API` + `CLAUDE_MODEL` / `CLAUDE_MODEL_PLAN`                    | idem                             | Fill default `claude-sonnet-5`; plan default `claude-opus-4-8`. A pinned `CLAUDE_MODEL` applies everywhere unless `CLAUDE_MODEL_PLAN` overrides the plan step. |
-| `MISTRAL_API` + `MISTRAL_MODEL`                                        | idem                             | Default `mistral-large-latest` (`mistral-small-latest` in sandbox).                                                                                            |
-| `DEEPSEEK_API` + `DEEPSEEK_MODEL`                                      | idem                             | Default `deepseek-chat`.                                                                                                                                       |
-| `OPENAI_COMPAT_ENDPOINT` + `OPENAI_COMPAT_MODEL` + `OPENAI_COMPAT_API` | idem                             | Any OpenAI-compatible endpoint; the key is optional (local servers).                                                                                           |
-| `AI_VALIDATION_LOGGING`                                                | `utils/ai/validation-logging.js` | On unless set to `false`.                                                                                                                                      |
-| `NODE_ENV`                                                             | `utils/ai/logging.js`            | Full conversation logging is disabled in production.                                                                                                           |
+| Name                                                                   | Where                            | Purpose / default                                                                                                                                      |
+| ---------------------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `LLM_VENDOR`                                                           | `utils/llm/config.js`            | Explicit default vendor. Must be a known vendor (`shared/llm-vendors.js`).                                                                             |
+| `OPENAI_API` + `OPENAI_MODEL`                                          | idem                             | Model default `gpt-5.2`.                                                                                                                               |
+| `CLAUDE_API` + `CLAUDE_MODEL` / `CLAUDE_MODEL_PLAN`                    | idem                             | Default `claude-opus-5` for every call (fill and plan). A pinned `CLAUDE_MODEL` applies everywhere unless `CLAUDE_MODEL_PLAN` overrides the plan step. |
+| `MISTRAL_API` + `MISTRAL_MODEL`                                        | idem                             | Default `mistral-large-latest` (`mistral-small-latest` in sandbox).                                                                                    |
+| `DEEPSEEK_API` + `DEEPSEEK_MODEL`                                      | idem                             | Default `deepseek-chat`.                                                                                                                               |
+| `OPENAI_COMPAT_ENDPOINT` + `OPENAI_COMPAT_MODEL` + `OPENAI_COMPAT_API` | idem                             | Any OpenAI-compatible endpoint; the key is optional (local servers).                                                                                   |
+| `AI_VALIDATION_LOGGING`                                                | `utils/ai/validation-logging.js` | On unless set to `false`.                                                                                                                              |
+| `NODE_ENV`                                                             | `utils/ai/logging.js`            | Full conversation logging is disabled in production.                                                                                                   |
 
 Feature flags (`server/config/flags-snapshot.js`): `enableAi` — off with
 `AI_ENABLED=false`, **demo mode** or **sandbox mode**. When it is false, **every

@@ -317,29 +317,26 @@ for (const validation of ['strict', 'fix']) {
   });
 }
 
-test("the fix branch reads the custom type's own declarations", async () => {
+test("the fix branch refuses text past the custom type's own cap", async () => {
   const db = await installDb();
-
-  const result = await mcpTool('create_presentation_from_slides')({
-    title: 'From slides',
-    validation: 'fix',
-    slides: [
-      {
-        type: CUSTOM_TYPE,
-        content: { title: 'A partner wall title far past the cap' },
-      },
-    ],
-  });
-
-  const created = db.__tables.presentations.find((row) => row.id === result.id);
-  const title = created.slides[0].content.title;
-  assert.ok(
-    title.length <= TITLE_CAP,
-    `expected the title truncated to ${TITLE_CAP}, got ${JSON.stringify(title)}`,
+  const before = db.__tables.presentations.length;
+  await assert.rejects(
+    mcpTool('create_presentation_from_slides')({
+      title: 'From slides',
+      validation: 'fix',
+      slides: [
+        {
+          type: CUSTOM_TYPE,
+          content: { title: 'A partner wall title far past the cap' },
+        },
+      ],
+    }),
+    new RegExp(`37 > ${TITLE_CAP}`),
   );
-  assert.ok(
-    result.appliedFixes.some((fix) => fix.field === 'title'),
-    `expected a reported fix on title, got ${JSON.stringify(result.appliedFixes)}`,
+  assert.equal(
+    db.__tables.presentations.length,
+    before,
+    'refused text is not persisted',
   );
 });
 

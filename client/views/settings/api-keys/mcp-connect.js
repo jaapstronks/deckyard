@@ -18,7 +18,7 @@ import { toast } from '../../../lib/dom/toast.js';
  */
 function copyButton(getText) {
   const btn = h('button', {
-    class: 'btn btn-secondary is-compact',
+    class: 'btn btn-secondary btn-sm',
     type: 'button',
     text: t('common.copy', 'Copy'),
   });
@@ -143,7 +143,7 @@ export function renderMcpConnectCard() {
       text: t('settings.mcp.rest.label', 'Prefer plain REST?'),
     }),
     h('a', {
-      class: 'btn btn-secondary is-compact',
+      class: 'btn btn-secondary btn-sm',
       href: '/api/v1/openapi.yaml',
       target: '_blank',
       rel: 'noopener',

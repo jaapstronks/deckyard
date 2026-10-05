@@ -285,7 +285,7 @@ export async function handleAiWizardV2Stream({
         slideCount: updated.slides?.length || 0,
         budget: {
           target: budgetTarget,
-          actual: budgetValidation.contentSlides,
+          actual: budgetValidation.totalSlides,
           percentage: budgetValidation.percentage,
           overBudget: budgetValidation.overBudget,
         },

@@ -36,8 +36,8 @@ export function isSlideTypeValid(type, content) {
 /**
  * Validate slide count against target and log warnings
  *
- * @param {Array} slides - Array of slides (refined or final deck slides)
- * @param {number} targetSlides - Target number of content slides
+ * @param {Array} slides - Validated outline slides, before the automatic title slide
+ * @param {number} targetSlides - Target number of slides in the finished deck
  * @returns {{ contentSlides: number, totalSlides: number, overBudget: boolean, percentage: number }}
  */
 export function validateSlideCount(slides, targetSlides) {
@@ -55,23 +55,22 @@ export function validateSlideCount(slides, targetSlides) {
     return !NON_CONTENT_SLIDE_TYPES.has(type);
   }).length;
 
-  const totalSlides = slides.length;
-  const overBudget = contentSlides > targetSlides * 1.5;
-  const percentage = Math.round((contentSlides / targetSlides) * 100);
+  const totalSlides = slides.length + 1;
+  const overBudget = totalSlides > targetSlides * 1.1;
+  const percentage = Math.round((totalSlides / targetSlides) * 100);
 
   if (overBudget) {
     logValidation('warn-over-budget', {
-      contentSlides,
+      totalSlides,
       targetSlides,
       percentage,
-      threshold: '150%',
-      totalSlides,
-      message: `Generated ${contentSlides} content slides, target was ${targetSlides} (${percentage}% of target)`,
+      threshold: '110%',
+      message: `Generated ${totalSlides} slides, target was ${targetSlides} (${percentage}% of target)`,
     });
   } else {
     // Info-level log for monitoring
     log.info(
-      `Slide budget: ${contentSlides}/${targetSlides} content slides (${percentage}%)`,
+      `Slide budget: ${totalSlides}/${targetSlides} slides (${percentage}%)`,
     );
   }
 

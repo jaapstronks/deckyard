@@ -70,7 +70,7 @@ export function createCollectionsBar({ api, root }) {
         text: t('slideLibrary.collections.title', 'Collections'),
       }),
       h('button', {
-        class: 'btn btn-secondary is-compact',
+        class: 'btn btn-secondary btn-sm',
         type: 'button',
         text: t('slideLibrary.collections.new', 'New collection'),
         onclick: () =>

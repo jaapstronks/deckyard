@@ -3,35 +3,21 @@
  * in --dry-run and cost nothing.
  */
 
+import { getSlideType } from '../../shared/slide-types/registry.js';
+import {
+  emptyTextFieldSpec,
+  isPerLanguageKey,
+  textFieldSpec,
+} from '../../shared/slide-types/text-fields.js';
+
 /** Content keys that carry a slide's heading rather than its body. */
 const TITLE_KEYS = new Set(['title', 'heading', 'tagline']);
-
-/**
- * Configuration words. A key counts as configuration if it contains any of
- * these, case-insensitively.
- *
- * Matching on substrings rather than exact names is deliberate: config keys
- * come compounded (`headerAlign`, `bgCustomColor`, `slideBgText`). An
- * exact-name blocklist misses those, and their values ("left", "teal") then
- * read as slide prose -- which made the judge penalize decks for text no
- * audience ever sees.
- */
-const CONFIG_KEY_PATTERN =
-  /(^|[a-z0-9])(background|layout|variant|density|icon|colou?r|arrow|image|url|src|alt|logo|theme|tone|align|direction|enabled|count|size|width|height|position|style|id|type)([A-Z0-9]|$)/i;
-
-/**
- * @param {string} key
- * @returns {boolean} true when the key holds configuration rather than text
- */
-function isConfigKey(key) {
-  return CONFIG_KEY_PATTERN.test(String(key || ''));
-}
 
 /**
  * Pull the human-readable text out of a slide, whatever its type.
  *
  * Slide content is type-specific (`body`, `items[]`, `quote`, `metrics[]`, ...),
- * so this walks the content object rather than assuming a shape. Anything
+ * so this walks the content against its declared text-field spec. Anything
  * list-like counts as a bullet, which is what "bullets per slide" means for
  * card, timeline, and KPI slides too.
  *
@@ -44,11 +30,18 @@ export function extractSlideText(slide) {
   const bodyParts = [];
   const bullets = [];
 
-  const walk = (value, key, depth) => {
+  const spec = textFieldSpec(getSlideType(slide?.type)?.fields);
+  const walk = (value, key, depth, levelSpec) => {
     if (value == null) return;
+    if (
+      levelSpec.declaredKeys.has(key) &&
+      !levelSpec.textKeys.has(key) &&
+      !levelSpec.items.has(key)
+    )
+      return;
     if (typeof value === 'string') {
       const text = value.trim();
-      if (!text || isConfigKey(key)) return;
+      if (!text || !isPerLanguageKey(levelSpec, key, value)) return;
       if (depth === 0 && TITLE_KEYS.has(key)) titleParts.push(text);
       else bodyParts.push(text);
       return;
@@ -57,7 +50,8 @@ export function extractSlideText(slide) {
       for (const item of value) {
         // Each array entry is one bullet, however it is structured.
         const before = bodyParts.length;
-        walk(item, key, depth + 1);
+        const itemSpec = levelSpec.items.get(key) || emptyTextFieldSpec();
+        walk(item, key, depth + 1, itemSpec);
         const added = bodyParts.slice(before).join(' ').trim();
         if (added) bullets.push(added);
       }
@@ -65,12 +59,12 @@ export function extractSlideText(slide) {
     }
     if (typeof value === 'object') {
       for (const [childKey, childValue] of Object.entries(value)) {
-        walk(childValue, childKey, depth + 1);
+        walk(childValue, childKey, depth + 1, levelSpec);
       }
     }
   };
 
-  for (const [key, value] of Object.entries(content)) walk(value, key, 0);
+  for (const [key, value] of Object.entries(content)) walk(value, key, 0, spec);
 
   // Markdown bodies carry their own bullets; count those too.
   const body = bodyParts.join('\n');

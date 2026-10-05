@@ -113,7 +113,7 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
         );
 
         const importBtn = h('button', {
-          class: 'btn btn-primary is-compact',
+          class: 'btn btn-primary btn-sm',
           type: 'button',
           text: t('fonts.import', 'Import'),
         });

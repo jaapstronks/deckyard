@@ -13,6 +13,8 @@ different system on purpose, and `ui-tokens.css` must never depend on them.
 
 ## Scope: app chrome, not slides
 
+The app loads four layers in order: tokens (`client/styles/app/tokens.css`), primitives (`client/styles/shared/primitives.css`, `client/styles/app/components.css`), viewer chrome (`client/styles/viewer.css`), then feature chrome (`client/styles/app/<feature>.css`). Each feature aggregator reads its own `app/<feature>/` folder. The folder names follow `client/views/`; `shell/` supplies the shared frame. The order and the map rule are maintained in [AGENTS.md](../../AGENTS.md) § Theming & styling boundaries and guarded by `tests/css-aggregators.test.js`. For B534's one-time cascade audit against the B533 baseline, run `node scripts/css-order-diff.js` and review its selector-pair candidates.
+
 These tokens style the application around the deck: the editor, the topbar,
 panels, modals, the analytics view. They are deliberately **not** available to
 slide rendering. A slide's spacing comes from its own `--slide-*` variables, so

@@ -6,7 +6,7 @@
  * resolved here against optional fork overrides from `custom/ai/prompts.js`.
  *
  * Pipeline code imports the resolved `prompts` object and calls builders by
- * name — `prompts.buildPhase1SystemPrompt({ ... })` — without knowing or caring
+ * name — `prompts.buildAnalysisSystemPrompt({ ... })` — without knowing or caring
  * whether the base or a fork override answered.
  *
  * Resolution happens once at module load via top-level await, so `prompts` is a

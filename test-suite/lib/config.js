@@ -36,7 +36,7 @@ export const JUDGE_EFFORT = 'high';
  */
 export const GENERATION_VENDORS = {
   claude: {
-    model: 'claude-opus-4-8',
+    model: 'claude-opus-5',
     envVars: ['CLAUDE_MODEL', 'CLAUDE_MODEL_PLAN'],
   },
   openai: { model: 'gpt-5.5', envVars: ['OPENAI_MODEL'] },
@@ -52,6 +52,18 @@ export const DEFAULT_VENDOR = 'claude';
  * report at all.
  */
 export const PRICING = {
+  'claude-opus-5': {
+    input: 5.0,
+    output: 25.0,
+    cacheRead: 0.5,
+    cacheWrite: 6.25,
+  },
+  'claude-sonnet-5': {
+    input: 2.0,
+    output: 10.0,
+    cacheRead: 0.2,
+    cacheWrite: 2.5,
+  },
   'claude-opus-4-8': {
     input: 5.0,
     output: 25.0,
@@ -76,6 +88,12 @@ export const PRICING = {
 export const PROMPT_SOURCE_FILES = [
   'server/utils/ai/generate-outline.js',
   'server/utils/ai/refine-slides.js',
+  'server/utils/ai/revise-outline.js',
+  // The prompt copy itself, since the base/overlay seam moved it out of the
+  // mechanism files above.
+  'server/utils/ai/prompts/base/outline.js',
+  'server/utils/ai/prompts/base/refine-slides.js',
+  'server/utils/ai/prompts/base/revise-outline.js',
   'server/utils/ai/slide-catalog/builders.js',
   'server/utils/ai/slide-catalog/basic-content-slides.js',
   'server/utils/ai/slide-catalog/structural-slides.js',

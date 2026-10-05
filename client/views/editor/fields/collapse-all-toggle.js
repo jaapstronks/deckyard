@@ -26,7 +26,7 @@ export function collapseAllToggle({ state, keys, rerender } = {}) {
 
   const btn = h('button', {
     type: 'button',
-    class: `btn btn-secondary is-compact-sm collapse-all-toggle${allCollapsed ? ' is-all-collapsed' : ''}`,
+    class: `btn btn-secondary btn-xs collapse-all-toggle${allCollapsed ? ' is-all-collapsed' : ''}`,
     title: label,
     onclick: (e) => {
       e.preventDefault();

@@ -4,8 +4,18 @@
 @import url('./app/tokens.css');
 @import url('./shared/primitives.css');
 @import url('./app/components.css');
-@import url('./base.css');
-/* The viewer chrome (presenter shell, D267 layer 3), shared with export.css.
-   Last in this file so it keeps the place it had relative to the app CSS when
-   it lived at the end of the slide chain; slides.css loads after it. */
 @import url('./viewer.css');
+@import url('./app/shell.css');
+@import url('./app/list.css');
+@import url('./app/slide-library.css');
+@import url('./app/editor.css');
+@import url('./app/comments.css');
+@import url('./app/settings.css');
+@import url('./app/user.css');
+@import url('./app/share-viewer.css');
+@import url('./app/viewer.css');
+@import url('./app/presenter.css');
+@import url('./app/follow.css');
+@import url('./app/notes.css');
+@import url('./app/analytics.css');
+@import url('./app/auth.css');

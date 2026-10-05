@@ -83,6 +83,26 @@ test('drops are capped so a revision cannot gut the deck', () => {
   assert.match(rejected[0].why, /drop cap reached/);
 });
 
+test('revision stops at the deck budget floor across merges and drops', () => {
+  const operations = [
+    { type: 'merge', slides: [2, 4], roughContent: 'Bookings and recap' },
+    { type: 'drop', slide: 5, reason: 'boilerplate' },
+  ];
+  const {
+    outline: revised,
+    applied,
+    rejected,
+  } = applyRevisionOperations(outline(), operations, { minimumSlides: 5 });
+  assert.equal(revised.slides.length, 5);
+  assert.equal(applied.length, 1);
+  assert.match(rejected[0].why, /slide budget floor reached/);
+  assert.ok(
+    revised.slides.some(
+      (slide) => slide.roughContent === 'Company boilerplate',
+    ),
+  );
+});
+
 test('structural slides cannot be revised', () => {
   const { applied, rejected } = applyRevisionOperations(outline(), [
     { type: 'drop', slide: 1, reason: 'chapter divider' },
@@ -147,4 +167,39 @@ test('slides are renumbered contiguously after revision', () => {
     revised.slides.map((s) => s.index),
     [0, 1, 2, 3, 4],
   );
+});
+
+test('merging slides preserves source context from both sections for phase 2', () => {
+  const outline = {
+    slides: [
+      {
+        index: 0,
+        intent: 'content',
+        roughContent: 'First',
+        sourceContext: {
+          heading: 'Budget',
+          keyPoints: ['€12 mln'],
+          excerpt: 'The budget is €12 mln.',
+        },
+      },
+      {
+        index: 1,
+        intent: 'content',
+        roughContent: 'Second',
+        sourceContext: {
+          heading: 'Timing',
+          keyPoints: ['Launch in 2027'],
+          excerpt: 'We launch in 2027.',
+        },
+      },
+    ],
+  };
+  const { outline: revised } = applyRevisionOperations(outline, [
+    { type: 'merge', slides: [1, 2], roughContent: 'Budget and timing' },
+  ]);
+  assert.deepEqual(revised.slides[0].sourceContext.keyPoints, [
+    '€12 mln',
+    'Launch in 2027',
+  ]);
+  assert.match(revised.slides[0].sourceContext.excerpt, /We launch in 2027/);
 });

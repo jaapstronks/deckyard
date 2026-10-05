@@ -63,7 +63,7 @@ function translateLabelRightEl({ pres, onTranslateField, slideId, key }) {
   const langLabel = getLangDisplayName(sourceLang);
   const preview = value.length > 90 ? `${value.slice(0, 90)}…` : value;
   return h('button', {
-    class: 'btn btn-secondary is-compact-sm is-pill',
+    class: 'btn btn-secondary btn-xs is-pill',
     type: 'button',
     text: t('editor.translateField.from', 'From {lang}', { lang: langLabel }),
     title: t(

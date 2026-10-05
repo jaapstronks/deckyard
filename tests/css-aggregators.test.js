@@ -19,6 +19,8 @@ import {
   VIEWER_LAYER,
   viewerEntries,
   APP_FEATURE_LAYER,
+  APP_FEATURE_ORDER,
+  appFeatureEntries,
 } from '../scripts/generate-slide-css-aggregators.js';
 
 /**
@@ -171,10 +173,15 @@ test('the viewer layer loads in app.css and export.css only, before slides.css (
         .matchAll(/@import url\('\.\/([^']+)'\);/g),
     ].map((m) => m[1]);
   const viewer = VIEWER_LAYER.aggregator;
-  // app.css: last, so the chrome keeps its place after the app CSS; the
-  // editor page links slides.css after app.css (client/index.html).
+  // app.css: layer 3 follows tokens and primitives, before feature chrome.
   const app = importsOf('app.css');
-  assert.equal(app.at(-1), viewer, 'app.css imports viewer.css last');
+  assert.deepEqual(app, [
+    'app/tokens.css',
+    'shared/primitives.css',
+    'app/components.css',
+    viewer,
+    ...APP_FEATURE_ORDER.map((feature) => `app/${feature}.css`),
+  ]);
   // export.css: after the tokens and primitives the chrome reads; the export
   // bundle appends slides.css after export.css (server/export/css-bundle.js).
   const exp = importsOf('export.css');
@@ -205,12 +212,16 @@ test('every feature-chrome file is claimed exactly once, each in a feature folde
     .readdirSync(appDir, { recursive: true })
     .filter((f) => f.endsWith('.css'))
     .map((f) => f.split(path.sep).join('/'));
-  // The two files directly in app/ are entry layers, imported by app.css on
-  // their own: the app tokens and the editor primitives (D266).
+  // The two hand-maintained entry layers and one generated aggregator per
+  // feature are the only files directly in app/.
   const loose = onDisk.filter((f) => !f.includes('/')).sort();
   assert.deepEqual(
     loose,
-    ['components.css', 'tokens.css'],
+    [
+      'components.css',
+      'tokens.css',
+      ...APP_FEATURE_ORDER.map((f) => `${f}.css`),
+    ].sort(),
     'a feature sheet lives in its feature folder, never loose in client/styles/app/',
   );
   assert.deepEqual(
@@ -222,6 +233,37 @@ test('every feature-chrome file is claimed exactly once, each in a feature folde
     new Set(APP_FEATURE_LAYER.files).size,
     APP_FEATURE_LAYER.files.length,
     'a feature sheet is declared twice',
+  );
+  const folders = fs
+    .readdirSync(appDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  assert.deepEqual(
+    [...APP_FEATURE_ORDER].sort(),
+    folders,
+    'each app feature folder has exactly one declared aggregator',
+  );
+  assert.equal(
+    new Set(APP_FEATURE_ORDER).size,
+    APP_FEATURE_ORDER.length,
+    'an app feature appears only once in layer order',
+  );
+  for (const feature of APP_FEATURE_ORDER) {
+    const actual = fs
+      .readdirSync(path.join(appDir, feature), { recursive: true })
+      .filter((file) => file.endsWith('.css'))
+      .map((file) => file.split(path.sep).join('/'))
+      .sort();
+    assert.deepEqual(
+      [...appFeatureEntries(feature)].sort(),
+      actual,
+      `${feature}: every sheet is claimed exactly once`,
+    );
+  }
+  assert.ok(
+    !fs.existsSync(path.join(REPO_ROOT, 'client', 'styles', 'base.css')),
+    'the flat base.css aggregator is gone',
   );
   // The folders are the map of client/views/; `shell/` is the app frame
   // around every view (topbar, sidebar, utilities, toasts, banners).
