@@ -318,6 +318,9 @@ function placeCopy(
         y,
         w: copy.w,
         h: headingH,
+        // Named, not inherited: as a placeholder the box would take the
+        // master's title alignment, which PowerPoint centres.
+        align: 'left',
         valign: 'top',
         objectName: POSITIONED_TITLE_NAME,
       },

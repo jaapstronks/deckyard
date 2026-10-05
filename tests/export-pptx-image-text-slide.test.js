@@ -152,6 +152,7 @@ test('a half split puts a cover picture edge to edge in the left column and the 
 
   const title = titleShape(xml);
   assert.deepEqual(texts(title), ['The harbour at dawn']);
+  assert.match(title, /<a:pPr[^>]*algn="l"/, 'the title is set left');
   const box = frameOf(title);
   near(box.x, SLIDE_W / 2 + pad, 'the title sits in the copy column');
   near(box.w, SLIDE_W / 2 - 2 * pad, 'inside its padding');
