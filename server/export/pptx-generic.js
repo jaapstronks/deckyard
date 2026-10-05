@@ -860,7 +860,7 @@ export async function composeGenericSlide(pptx, slide, def, ctx) {
   const { heading } = projected;
   if (heading.visible && heading.text) {
     const titleBox = layoutBox(layout, 'title');
-    const headingStep = layout === 'title' ? 'title' : 'heading';
+    const headingStep = layout === 'title' ? '5xl' : '2xl';
     const block = {
       kind: 'text',
       paragraphs: [
@@ -901,9 +901,9 @@ export async function composeGenericSlide(pptx, slide, def, ctx) {
   // slide text at, and shrinks from there; the layouts' own `base` step is the
   // size of a template's empty box, and starting there left short slides with
   // small type in a large empty box.
-  const bodyStep = 'subtitle';
+  const bodyStep = 'lg';
   const region = layoutBox(layout, bodyName);
-  const bodyPt = themeTextPt(spec, 'body');
+  const bodyPt = themeTextPt(spec, 'base');
 
   if (flow.length) {
     const fit = fitSize(flow, region, themeTextPt(spec, bodyStep), MIN_BODY_PT);
@@ -936,6 +936,17 @@ export async function composeGenericSlide(pptx, slide, def, ctx) {
  */
 export const DECORATIVE_PICTURE_NAME = 'Decorative picture';
 
+/**
+ * The object name a heading is written under when its composition places it
+ * somewhere other than the layout's title box, so the pass over the package
+ * can make it the slide's title placeholder anyway. pptxgenjs copies a
+ * placeholder's position from the layout and ignores the one given, so a
+ * moved title is written as a text box and marked here; a placeholder with
+ * its own `a:xfrm` on the slide keeps that position in PowerPoint, and the
+ * slide keeps its title in the outline and for a screen reader.
+ */
+export const POSITIONED_TITLE_NAME = 'Slide title';
+
 /** PowerPoint's "Mark as decorative" (Office 2019+), on a `p:cNvPr`. */
 const DECORATIVE_EXT =
   '<a:extLst><a:ext uri="{C183D7F6-B498-43B3-948B-1728B52AA6E4}">' +
@@ -953,6 +964,8 @@ const DECORATIVE_EXT =
  * - **Decorative pictures.** A picture named {@link DECORATIVE_PICTURE_NAME}
  *   loses the file name pptxgenjs wrote as its description and is marked
  *   decorative, so a screen reader skips it as the canvas' `aria-hidden` does.
+ * - **Moved titles.** A text box named {@link POSITIONED_TITLE_NAME} becomes
+ *   the slide's title placeholder, keeping its own position.
  *
  * @param {Buffer} buffer - a written .pptx
  * @returns {Promise<Buffer>}
@@ -980,6 +993,16 @@ export async function finishEditablePackage(buffer) {
           'g',
         ),
         `<p:cNvPr $1name="${DECORATIVE_PICTURE_NAME}" descr="">${DECORATIVE_EXT}`,
+      );
+    }
+    if (next.includes(POSITIONED_TITLE_NAME)) {
+      next = next.replace(/<p:sp>[\s\S]*?<\/p:sp>/g, (shape) =>
+        shape.includes(`name="${POSITIONED_TITLE_NAME}"`)
+          ? shape.replace(
+              /<p:nvPr(?:\/>|><\/p:nvPr>)/,
+              '<p:nvPr><p:ph type="title"/></p:nvPr>',
+            )
+          : shape,
       );
     }
     if (next !== xml) {

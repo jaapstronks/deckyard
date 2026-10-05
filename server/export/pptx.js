@@ -16,6 +16,7 @@ import {
   finishEditablePackage,
 } from './pptx-generic.js';
 import { composeImageSlide } from './pptx-image-slide.js';
+import { composeImageTextSlide } from './pptx-image-text-slide.js';
 import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
   parseVideoSource,
@@ -60,6 +61,7 @@ const NATIVE_PPTX_HANDLERS = Object.freeze({
     pixelPerfect: true,
   }),
   'image-slide': Object.freeze({ compose: composeImageSlide }),
+  'image-text-slide': Object.freeze({ compose: composeImageTextSlide }),
 });
 
 /**
@@ -297,8 +299,10 @@ async function buildDeckPptx(
       const result = await composeNative(pptx, slide, {
         repoRoot,
         spec,
+        def,
         slideNum,
         docLang,
+        slideIds,
         slideWidth: SLIDE_W_IN,
         slideHeight: SLIDE_H_IN,
       });

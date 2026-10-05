@@ -216,6 +216,16 @@ export const INVENTORY = {
       'for the examples, four more of the same. Regenerating it is the only ' +
       'way to change it.',
   },
+  'server/export/pptx.js': {
+    kind: sparse,
+    why:
+      'NATIVE_PPTX_HANDLERS — the types with an editable PPTX composition of ' +
+      'their own (video, image, image-text; B588 adds one per PR). ' +
+      'Intentionally partial: every other non-raster type is composed by ' +
+      'layer 0. Staleness is gated both ways by ' +
+      'tests/slide-type-fidelity.test.js: a handler needs a claim, a claim ' +
+      'needs a handler or layer-0 text (D306, D311).',
+  },
   'server/utils/ai/slide-catalog/definitions.js': {
     kind: sparse,
     why:

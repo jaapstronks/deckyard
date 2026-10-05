@@ -12,6 +12,8 @@
  * `fit` follows the type default.
  */
 
+import { pickAltText } from '../../helpers.js';
+
 /**
  * Type-level image config for image-text (the ImageRef defaults, right-hand
  * side of `content.fit ?? imageDefaults.fit`). Looked up, not stored: an empty
@@ -62,4 +64,24 @@ export function resolveImageTextImage(content) {
     focusX: c.focusX ?? '',
     focusY: c.focusY ?? '',
   };
+}
+
+/**
+ * The image-text picture's alt text: empty for a decorative image, else the
+ * author's own `alt`, else the caption or title, else a name read from the
+ * file. The one answer for the canvas `<img alt>` and the PPTX picture's
+ * description, so a screen reader hears the same thing in either.
+ *
+ * @param {Object} content - slide content
+ * @returns {string}
+ */
+export function imageTextAltText(content) {
+  if (content?.imageRole === 'decorative') return '';
+  const { src, alt } = resolveImageTextImage(content);
+  return pickAltText({
+    explicit: alt,
+    src,
+    fallbacks: [content?.caption, content?.title],
+    hardFallback: 'Image',
+  });
 }

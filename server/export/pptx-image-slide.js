@@ -121,9 +121,9 @@ export async function composeImageSlide(pptx, slide, ctx) {
   await placePicture(pptxSlide, content, frame, fit, ctx, warnings);
 
   const sizes = {
-    heading: themeTextPt(spec, 'heading'),
-    sub: themeTextPt(spec, 'subtitle'),
-    body: themeTextPt(spec, 'body'),
+    heading: themeTextPt(spec, '2xl'),
+    sub: themeTextPt(spec, 'lg'),
+    body: themeTextPt(spec, 'base'),
   };
   if (bleed) {
     placeOverlays(pptxSlide, { title, subheading, bottom, caption }, frame, {
@@ -159,7 +159,7 @@ export async function composeImageSlide(pptx, slide, ctx) {
 async function placePicture(pptxSlide, content, frame, fit, ctx, warnings) {
   const { spec } = ctx;
   const src = field(content, 'image');
-  const standInPt = Math.max(MIN_BODY_PT, themeTextPt(spec, 'body'));
+  const standInPt = Math.max(MIN_BODY_PT, themeTextPt(spec, 'base'));
   if (!src) {
     // An empty frame is the author's state, not a failure: the canvas shows
     // the same placeholder.
@@ -286,9 +286,15 @@ function placeOverlays(
 
 /**
  * Chips stacked up from a frame's bottom-left corner, the last one lowest:
- * the bottom subheading sits above the caption, as on the canvas.
+ * the bottom subheading sits above the caption, as on the canvas. Shared with
+ * the image-text mapper, whose caption is the same chip on its own frame.
+ *
+ * @param {object} pptxSlide
+ * @param {Array<{ text: string, pt: number, face?: string }>} lines
+ * @param {{x: number, y: number, w: number, h: number}} frame
+ * @param {{ bodyFont?: string }} spec
  */
-function placeChips(pptxSlide, lines, frame, spec) {
+export function placeChips(pptxSlide, lines, frame, spec) {
   let bottomEdge = frame.y + frame.h - CHIP_INSET;
   for (const line of [...lines].reverse()) {
     const h = placeChip(pptxSlide, [line], frame, spec, 'bottom', bottomEdge);
