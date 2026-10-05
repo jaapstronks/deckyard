@@ -12,7 +12,17 @@ import {
 } from '../../shared/slide-types.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { loadDeckTheme } from '../utils/themes.js';
-import { AppError, NotFoundError, ValidationError } from '../utils/errors.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+  TRANSLATION_LANGS,
+} from '../../shared/i18n-utils.js';
+import {
+  AppError,
+  NotFoundError,
+  ValidationError,
+  throwStorageFailure,
+} from '../utils/errors.js';
 import { loadPresentationForActor } from './presentations.js';
 
 async function writeOptions({ actor }) {
@@ -53,6 +63,58 @@ function refuseUnsupportedConversion(err) {
     },
     'unsupported_conversion',
   );
+}
+
+/**
+ * Store a change to the dominant slide buffer without replacing unrelated deck
+ * columns. Storage interprets top-level slides as the active language on input,
+ * then projects the dominant language back to the top level. A deck can retain
+ * a different active language, so feed that version's unchanged buffer through
+ * the input fields while updating the dominant version explicitly.
+ */
+async function persistSlides(scope, identity, pres, slides) {
+  let body = { slides };
+  const i18n = pres.i18n;
+  if (i18n?.versions && Object.keys(i18n.versions).length > 0) {
+    const dominant =
+      normalizeLang(i18n.dominant) ||
+      normalizeLang(i18n.active) ||
+      TRANSLATION_LANGS.find((lang) => i18n.versions[lang]) ||
+      DEFAULT_DECK_LANG;
+    const active = normalizeLang(i18n.active);
+    const copy = structuredClone(i18n);
+    const versions = copy.versions;
+    versions[dominant] = {
+      ...(versions[dominant] || {}),
+      title: pres.title,
+      slides,
+    };
+    const activeVersion =
+      active && active !== dominant ? versions[active] : null;
+    body = {
+      id: pres.id,
+      title: activeVersion?.title ?? pres.title,
+      slides: activeVersion?.slides ?? slides,
+      i18n: copy,
+    };
+  }
+  const result = await updatePresentation(
+    scope,
+    pres.id,
+    body,
+    await writeOptions(identity),
+  );
+  if (!result) throw new NotFoundError('Presentation not found');
+  if (result.ok === false) {
+    throwStorageFailure(
+      result,
+      result.errors
+        ?.map((error) => error.message)
+        .filter(Boolean)
+        .join('; ') || `Could not save slides: ${result.reason}`,
+    );
+  }
+  return result;
 }
 
 /**
@@ -119,12 +181,7 @@ export async function updateSlide(scope, identity, input) {
   };
   assertValidSlide(slide, slideTypes);
   slides[index] = slide;
-  const presentation = await updatePresentation(
-    scope,
-    presentationId,
-    { slides },
-    await writeOptions(identity),
-  );
+  const presentation = await persistSlides(scope, identity, pres, slides);
   return { slide, index, presentation };
 }
 
@@ -177,12 +234,7 @@ export async function addSlide(scope, identity, input) {
     if (after >= 0) index = after + 1;
   }
   slides.splice(index, 0, slide);
-  const presentation = await updatePresentation(
-    scope,
-    presentationId,
-    { slides },
-    await writeOptions(identity),
-  );
+  const presentation = await persistSlides(scope, identity, pres, slides);
   return { slide, index, presentation };
 }
 
@@ -200,12 +252,7 @@ export async function removeSlide(
   if (slides.length <= 1)
     throw new ValidationError('Cannot delete the last slide in a presentation');
   slides.splice(index, 1);
-  const presentation = await updatePresentation(
-    scope,
-    presentationId,
-    { slides },
-    await writeOptions(identity),
-  );
+  const presentation = await persistSlides(scope, identity, pres, slides);
   return { presentation };
 }
 
@@ -232,11 +279,6 @@ export async function reorderSlides(
     seen.add(id);
   }
   for (const slide of existing) if (!seen.has(slide.id)) slides.push(slide);
-  const presentation = await updatePresentation(
-    scope,
-    presentationId,
-    { slides },
-    await writeOptions(identity),
-  );
+  const presentation = await persistSlides(scope, identity, pres, slides);
   return { slides, presentation };
 }

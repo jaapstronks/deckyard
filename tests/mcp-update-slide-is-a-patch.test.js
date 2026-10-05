@@ -132,6 +132,26 @@ test('a content update is a patch: what is not sent stays', async () => {
   assert.equal(slide.content.meta, 'M');
 });
 
+test('an update preserves author-chosen slide ids and existing slide fields', async () => {
+  const db = await installDb();
+  Object.assign(stored(db), {
+    id: 'intro',
+    parentId: 'chapter-one',
+    notes: 'Speaker notes',
+    duration: 45,
+    lockedByAuthor: true,
+  });
+
+  await updateSlide({ content: { subheading: 'Nieuw' } });
+  const slide = stored(db);
+  assert.equal(slide.id, 'intro');
+  assert.equal(slide.parentId, 'chapter-one');
+  assert.equal(slide.notes, 'Speaker notes');
+  assert.equal(slide.duration, 45);
+  assert.equal(slide.lockedByAuthor, true);
+  assert.equal(slide.content.subheading, 'Nieuw');
+});
+
 test('a type change is a conversion: what maps carries over, the rest is re-seeded', async () => {
   const db = await installDb();
   const result = await updateSlide({

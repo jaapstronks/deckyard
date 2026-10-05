@@ -1,7 +1,7 @@
 /**
  * Partial writes must not erase deck-level columns the caller never mentioned.
  *
- * The public API's slide handlers save with `{ slides }` and nothing else. The
+ * The public API's slide handlers save only the slide data they own. The
  * Postgres store built its UPDATE unconditionally, and `jsonb(undefined)`
  * answered an explicit `null`, so one `POST /api/v1/presentations/:id/slides`
  * wiped `i18n`, `settings`, `published` and `description` on a production deck.
@@ -9,7 +9,7 @@
  * clause — one field in the same object behaving unlike the four below it is
  * what made this invisible for so long.
  *
- * The rule these tests pin: a column whose source value is `undefined` stays
+ * The storage rule these tests pin: a column whose source value is `undefined` stays
  * out of the UPDATE, an explicit `null` still clears it. The second half
  * matters as much as the first — unpublishing says `published: null`.
  *
@@ -45,6 +45,8 @@ const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { handleSlides } =
   await import('../server/routes/public-api/v1/slides.js');
 const { __store } = await import('../server/storage/presentations/index.js');
+const { McpServer } = await import('../server/mcp/protocol.js');
+const { registerTools } = await import('../server/mcp/tools.js');
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -62,7 +64,17 @@ const STORED_I18N = {
   active: 'nl',
   dominant: 'nl',
   versions: {
-    nl: { title: 'Nederlandse titel', slides: [] },
+    nl: {
+      title: 'Nederlandse titel',
+      slides: [
+        {
+          id: 'slide-1',
+          type: 'title-slide',
+          content: { title: 'Hoi' },
+          parentId: null,
+        },
+      ],
+    },
     'en-GB': { title: 'English title', slides: [] },
   },
 };
@@ -121,6 +133,17 @@ function seedDb() {
 /** The stored row, straight from the double. */
 function storedDeck(db) {
   return db.__tables.presentations.find((row) => row.id === DECK_ID);
+}
+
+function mcpTool(name, args) {
+  const server = new McpServer();
+  registerTools(server, { defaultOwnerEmail: OWNER });
+  return server.tools
+    .get(name)
+    .handler(
+      { presentationId: DECK_ID, ...args },
+      { ownerEmail: OWNER, organizationId: ORG },
+    );
 }
 
 /**
@@ -202,7 +225,18 @@ test('POST /api/v1/presentations/:id/slides leaves untouched deck columns alone'
   assert.equal(row.slides.length, 2, 'the slide the request added is stored');
 
   // The four columns the incident emptied.
-  assert.deepEqual(row.i18n, STORED_I18N, 'i18n survives a partial write');
+  assert.deepEqual(
+    row.i18n.versions.nl.slides,
+    row.slides,
+    'dominant version follows the added slide',
+  );
+  assert.deepEqual(
+    row.i18n.versions['en-GB'],
+    STORED_I18N.versions['en-GB'],
+    'other language survives',
+  );
+  assert.equal(row.i18n.active, 'nl');
+  assert.equal(row.i18n.dominant, 'nl');
   assert.deepEqual(
     row.settings,
     STORED_SETTINGS,
@@ -256,7 +290,8 @@ test('DELETE of a slide leaves untouched deck columns alone', async () => {
 
   const row = storedDeck(db);
   assert.equal(row.slides.length, 1);
-  assert.deepEqual(row.i18n, STORED_I18N);
+  assert.deepEqual(row.i18n.versions.nl.slides, row.slides);
+  assert.deepEqual(row.i18n.versions['en-GB'], STORED_I18N.versions['en-GB']);
   assert.deepEqual(row.settings, STORED_SETTINGS);
   assert.deepEqual(row.published, STORED_PUBLISHED);
   assert.equal(row.description, 'Deck description');
@@ -299,9 +334,145 @@ test('POST /slides/reorder leaves untouched deck columns alone', async () => {
     row.slides.map((s) => s.id),
     ['slide-2', 'slide-1'],
   );
-  assert.deepEqual(row.i18n, STORED_I18N);
+  assert.deepEqual(row.i18n.versions.nl.slides, row.slides);
+  assert.deepEqual(row.i18n.versions['en-GB'], STORED_I18N.versions['en-GB']);
   assert.deepEqual(row.settings, STORED_SETTINGS);
   assert.deepEqual(row.published, STORED_PUBLISHED);
+});
+
+test('v1 updates the dominant version while retaining a different active language', async () => {
+  const db = await installDb();
+  const row = storedDeck(db);
+  row.i18n = structuredClone(STORED_I18N);
+  row.i18n.active = 'en-GB';
+  row.i18n.versions['en-GB'].slides = [
+    {
+      id: 'slide-1',
+      type: 'title-slide',
+      content: { title: 'Hello' },
+      parentId: null,
+    },
+  ];
+
+  const ctx = makeCtx(
+    'PUT',
+    `/api/v1/presentations/${DECK_ID}/slides/slide-1`,
+    {
+      content: { title: 'Nieuw' },
+    },
+  );
+  await handleSlides(ctx);
+
+  assert.equal(ctx.res.statusCode, 200);
+  assert.equal(row.i18n.active, 'en-GB');
+  assert.equal(row.i18n.versions.nl.slides[0].content.title, 'Nieuw');
+  assert.equal(row.slides[0].content.title, 'Nieuw');
+  assert.equal(row.i18n.versions['en-GB'].slides[0].content.title, 'Hello');
+  assert.equal(row.i18n.versions['en-GB'].title, 'English title');
+  assert.equal(row.title, 'Nederlandse titel');
+  assert.deepEqual(row.settings, STORED_SETTINGS);
+  assert.deepEqual(row.published, STORED_PUBLISHED);
+});
+
+test('a sparse i18n block stays sparse after a slide edit', async () => {
+  const db = await installDb();
+  const row = storedDeck(db);
+  row.i18n = {};
+  const ctx = makeCtx(
+    'PUT',
+    `/api/v1/presentations/${DECK_ID}/slides/slide-1`,
+    {
+      content: { title: 'Nieuw' },
+    },
+  );
+  await handleSlides(ctx);
+
+  assert.equal(ctx.res.statusCode, 200);
+  assert.deepEqual(row.i18n, {});
+  assert.equal(row.title, 'Nederlandse titel');
+  assert.equal(row.slides[0].content.title, 'Nieuw');
+});
+
+test('a deck without an active language still updates its dominant version', async () => {
+  const db = await installDb();
+  const row = storedDeck(db);
+  row.i18n = structuredClone(STORED_I18N);
+  delete row.i18n.active;
+
+  const ctx = makeCtx(
+    'PUT',
+    `/api/v1/presentations/${DECK_ID}/slides/slide-1`,
+    { content: { title: 'Gewijzigd' } },
+  );
+  await handleSlides(ctx);
+
+  assert.equal(ctx.res.statusCode, 200);
+  assert.equal(row.i18n.active, undefined);
+  assert.equal(row.i18n.versions.nl.slides[0].content.title, 'Gewijzigd');
+  assert.equal(row.slides[0].content.title, 'Gewijzigd');
+  assert.deepEqual(row.i18n.versions['en-GB'], STORED_I18N.versions['en-GB']);
+  assert.equal(row.title, 'Nederlandse titel');
+});
+
+test('MCP update and add keep the dominant version in sync without changing the active version', async () => {
+  const db = await installDb();
+  const row = storedDeck(db);
+  row.i18n = structuredClone(STORED_I18N);
+  row.i18n.active = 'en-GB';
+  row.i18n.versions['en-GB'].slides = [
+    {
+      id: 'slide-1',
+      type: 'title-slide',
+      content: { title: 'Hello' },
+      parentId: null,
+    },
+  ];
+
+  const updated = await mcpTool('update_slide', {
+    slideIndex: 0,
+    content: { title: 'MCP edit' },
+  });
+  assert.equal(updated.updated, true);
+  assert.equal(row.i18n.versions.nl.slides[0].content.title, 'MCP edit');
+  assert.equal(row.i18n.versions['en-GB'].slides[0].content.title, 'Hello');
+
+  const added = await mcpTool('add_slide', {
+    type: 'title-slide',
+    content: { title: 'MCP addition' },
+  });
+  assert.equal(added.added, true);
+  assert.deepEqual(row.i18n.versions.nl.slides, row.slides);
+  assert.equal(row.i18n.versions['en-GB'].slides.length, 1);
+  assert.equal(row.i18n.active, 'en-GB');
+  assert.equal(row.title, 'Nederlandse titel');
+});
+
+test('v1 and MCP report a slide limit refusal and leave storage unchanged', async () => {
+  const db = await installDb();
+  const previous = process.env.PRESENTATION_HARD_SLIDE_LIMIT;
+  process.env.PRESENTATION_HARD_SLIDE_LIMIT = '1';
+  try {
+    const ctx = makeCtx('POST', `/api/v1/presentations/${DECK_ID}/slides`, {
+      type: 'title-slide',
+      content: { title: 'Too many' },
+    });
+    await handleSlides(ctx);
+    assert.equal(ctx.res.statusCode, 409);
+    assert.equal(ctx.res.body.error, 'limit_exceeded');
+    await assert.rejects(
+      mcpTool('add_slide', {
+        type: 'title-slide',
+        content: { title: 'Too many' },
+      }),
+      (err) => err.statusCode === 409 && err.code === 'limit_exceeded',
+    );
+    assert.equal(storedDeck(db).slides.length, 1);
+    assert.deepEqual(storedDeck(db).i18n, STORED_I18N);
+  } finally {
+    if (previous === undefined)
+      delete process.env.PRESENTATION_HARD_SLIDE_LIMIT;
+    else process.env.PRESENTATION_HARD_SLIDE_LIMIT = previous;
+  }
 });
 
 test('an explicit null still clears the column', async () => {
