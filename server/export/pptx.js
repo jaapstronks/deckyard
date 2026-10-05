@@ -16,6 +16,7 @@ import {
   finishEditablePackage,
 } from './pptx-generic.js';
 import { composeImageSlide } from './pptx-image-slide.js';
+import { composeQuoteSlide } from './pptx-quote-slide.js';
 import { composeImageTextSlide } from './pptx-image-text-slide.js';
 import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
@@ -62,6 +63,7 @@ const NATIVE_PPTX_HANDLERS = Object.freeze({
   }),
   'image-slide': Object.freeze({ compose: composeImageSlide }),
   'image-text-slide': Object.freeze({ compose: composeImageTextSlide }),
+  'quote-slide': Object.freeze({ compose: composeQuoteSlide }),
 });
 
 /**
