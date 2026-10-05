@@ -36,7 +36,7 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
  * @returns {{tone: string, highlight: string, rest: string}} `highlight` is the
  *   coloured prefix, `rest` the remainder of the note.
  */
-function parseNoteTone(noteRaw) {
+export function parseNoteTone(noteRaw) {
   const n = String(noteRaw || '').trim();
   if (!n) return { tone: 'default', highlight: '', rest: '' };
   // Match leading +/-/− followed by digits/punctuation, up to first space
@@ -54,11 +54,28 @@ function parseNoteTone(noteRaw) {
   return { tone, highlight: prefix, rest };
 }
 
+/** The cards displayed by this type, including the legacy delta spelling. */
+export function displayMetrics(content) {
+  return (Array.isArray(content?.metrics) ? content.metrics : [])
+    .filter((metric) => metric && typeof metric === 'object')
+    .slice(0, 4)
+    .map((metric) => {
+      const legacyDelta = String(metric.delta || '').trim();
+      const note = String(metric.note || '').trim();
+      return {
+        value: String(metric.value || '').trim(),
+        unit: String(metric.unit || '').trim(),
+        label: String(metric.label || '').trim(),
+        note: legacyDelta ? `${legacyDelta}${note ? ` ${note}` : ''}` : note,
+      };
+    });
+}
+
 export default {
   structure: 'collection',
   fallback: 'list-slide',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'KPI',
@@ -317,24 +334,13 @@ export default {
     const countUpOn =
       content?.countUp === 'on' && (mode === 'present' || mode === 'follow');
 
-    let metrics = Array.isArray(content?.metrics) ? content.metrics : [];
-    if (!Array.isArray(metrics)) metrics = [];
-    metrics = metrics.filter((m) => m && typeof m === 'object').slice(0, 4);
+    const metrics = displayMetrics(content);
     const count = clampInt(metrics.length, 1, 4, 1);
 
     const cards = [];
     for (let i = 0; i < count; i += 1) {
       const m = metrics[i] || {};
-      const value = String(m?.value || '').trim();
-      const unit = String(m?.unit || '').trim();
-      const label = String(m?.label || '').trim();
-
-      // BACK-COMPAT: merge legacy 'delta' into 'note' at render time
-      const legacyDelta = String(m?.delta || '').trim();
-      const rawNote = String(m?.note || '').trim();
-      const effectiveNote = legacyDelta
-        ? `${legacyDelta}${rawNote ? ` ${rawNote}` : ''}`
-        : rawNote;
+      const { value, unit, label, note: effectiveNote } = m;
 
       const { tone, highlight, rest } = parseNoteTone(effectiveNote);
 
