@@ -17,6 +17,58 @@ import {
 } from '../../../../../shared/i18n-utils.js';
 
 /**
+ * Wire an import's SSE progress events to the loading modal and its rotator.
+ *
+ * One contract for every streaming import (file conversion, Notion, paste
+ * text), so the bar means the same thing everywhere
+ * (`docs/reference/import-progress.md`):
+ *
+ * - **The bar belongs to the modal.** `setProgress` is monotone, and a phase
+ *   that is one long model call carries `creepTo`, so it moves without
+ *   claiming progress the server cannot measure.
+ * - **The message line belongs to the rotator** once the server has handed it
+ *   messages. `refine-progress` is real progress and therefore moves the bar
+ *   only; the content-aware messages keep running beside it. The closing
+ *   phases (`finalize`, `save`) stop the rotator and take over both.
+ *
+ * @param {Object} opts
+ * @param {Object} opts.loadingModal - Controller from `showLoadingModal`.
+ * @param {Object} opts.rotator - Controller from `createMessageRotator`.
+ * @returns {{ onStatus: (data: Object) => void, onMessages: (data: Object) => void }}
+ */
+function createProgressBinding({ loadingModal, rotator }) {
+  return {
+    onStatus: (data) => {
+      const phase = data?.phase || '';
+      const closing = phase === 'finalize' || phase === 'save';
+      const hasMessages = rotator.getState().messages.length > 0;
+
+      if (closing) rotator.stop();
+
+      // Real progress and the creep both move the bar, whoever owns the text.
+      if (data?.progress) loadingModal.setProgress(data.progress);
+      if (data?.creepTo) {
+        loadingModal.creepTo(data.creepTo, { durationMs: data.creepMs });
+      }
+
+      // The text is the rotator's as soon as it has messages, except at the
+      // close. `refine-progress` is a bar event: its section counter would
+      // otherwise silence the content-aware messages.
+      if (closing || (!hasMessages && phase !== 'refine-progress')) {
+        loadingModal.update(data?.message || '', { immediate: closing });
+      }
+    },
+    onMessages: (data) => {
+      rotator.setMessages(data?.statusMessages || [], {
+        interval: data?.intervalMs,
+        loop: data?.loop,
+      });
+      rotator.start();
+    },
+  };
+}
+
+/**
  * Handle empty presentation creation.
  *
  * A missing title and a refusal from the server are states of the form, not
@@ -106,11 +158,9 @@ export async function handlePasteText({
   loadingModal.setProgress(5);
 
   const rotator = createMessageRotator({
-    onUpdate: (message, progress) => {
-      loadingModal.update(message);
-      loadingModal.setProgress(progress);
-    },
+    onUpdate: (message) => loadingModal.update(message),
   });
+  const progressBinding = createProgressBinding({ loadingModal, rotator });
 
   try {
     const created = await generatePresentationStreaming({
@@ -124,28 +174,8 @@ export async function handlePasteText({
         transitions: { preset: 'fade' },
       },
       notionSourcePageId: null,
-      onStatus: ({ message, progress, phase }) => {
-        // Real progress from the staged pipeline ("Wrote section 2 of 5…")
-        // takes over from the rotating placeholder messages.
-        if (
-          phase === 'refine-progress' ||
-          phase === 'save' ||
-          phase === 'finalize'
-        ) {
-          rotator.stop();
-          loadingModal.update(message);
-          if (progress) loadingModal.setProgress(progress);
-          return;
-        }
-        if (!rotator.getState().messages.length) {
-          loadingModal.update(message);
-          if (progress) loadingModal.setProgress(progress);
-        }
-      },
-      onMessages: ({ statusMessages }) => {
-        rotator.setMessages(statusMessages || []);
-        rotator.start();
-      },
+      onStatus: progressBinding.onStatus,
+      onMessages: progressBinding.onMessages,
       onError: ({ message }) => {
         rotator.stop();
         loadingModal.update(
@@ -155,9 +185,9 @@ export async function handlePasteText({
     });
 
     rotator.stop();
-    loadingModal.update(t('common.done', 'Done'));
+    loadingModal.update(t('common.done', 'Done'), { immediate: true });
     loadingModal.setProgress(100);
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 500));
     loadingModal.close();
     close();
     // aiReview=1 opens the whole-deck review grid on top of the editor.
@@ -179,9 +209,9 @@ export async function handlePasteText({
           },
         },
       });
-      loadingModal.update(t('common.done', 'Done'));
+      loadingModal.update(t('common.done', 'Done'), { immediate: true });
       loadingModal.setProgress(100);
-      await new Promise((r) => setTimeout(r, 800));
+      await new Promise((r) => setTimeout(r, 500));
       loadingModal.close();
       close();
       nav(`/app/${created.id}?lang=${encodeURIComponent(langMode)}&aiReview=1`);
@@ -236,11 +266,9 @@ export async function handleConvertFile({
   loadingModal.setProgress(5);
 
   const rotator = createMessageRotator({
-    onUpdate: (message, progress) => {
-      loadingModal.update(message);
-      loadingModal.setProgress(progress);
-    },
+    onUpdate: (message) => loadingModal.update(message),
   });
+  const progressBinding = createProgressBinding({ loadingModal, rotator });
 
   try {
     let useStreaming = true;
@@ -266,29 +294,15 @@ export async function handleConvertFile({
         let streamError = false;
 
         await processSSEStream(response.body, {
-          onStatus: (data) => {
-            const phase = data?.phase || '';
-            if (
-              phase === 'finalize' ||
-              phase === 'save' ||
-              !rotator.getState().messages.length
-            ) {
-              rotator.stop();
-              loadingModal.update(data?.message || '');
-              if (data?.progress) loadingModal.setProgress(data.progress);
-            }
-          },
-          onMessages: (data) => {
-            rotator.setMessages(data?.statusMessages || []);
-            rotator.start();
-          },
+          onStatus: progressBinding.onStatus,
+          onMessages: progressBinding.onMessages,
           onComplete: async (data) => {
             streamComplete = true;
             rotator.stop();
             const result = data;
-            loadingModal.update(t('common.done', 'Done'));
+            loadingModal.update(t('common.done', 'Done'), { immediate: true });
             loadingModal.setProgress(100);
-            await new Promise((r) => setTimeout(r, 800));
+            await new Promise((r) => setTimeout(r, 500));
             loadingModal.close();
             close();
             nav(
@@ -329,9 +343,9 @@ export async function handleConvertFile({
       });
 
       if (result.success && result.presentation) {
-        loadingModal.update(t('common.done', 'Done'));
+        loadingModal.update(t('common.done', 'Done'), { immediate: true });
         loadingModal.setProgress(100);
-        await new Promise((r) => setTimeout(r, 800));
+        await new Promise((r) => setTimeout(r, 500));
         loadingModal.close();
         close();
         nav(`/app/${result.presentation.id}?lang=${encodeURIComponent(lang)}`);
@@ -581,11 +595,9 @@ export async function handleNotion({
   loadingModal.setProgress(5);
 
   const rotator = createMessageRotator({
-    onUpdate: (message, progress) => {
-      loadingModal.update(message);
-      loadingModal.setProgress(progress);
-    },
+    onUpdate: (message) => loadingModal.update(message),
   });
+  const progressBinding = createProgressBinding({ loadingModal, rotator });
 
   try {
     let useStreaming = true;
@@ -609,22 +621,8 @@ export async function handleNotion({
         let streamError = false;
 
         await processSSEStream(response.body, {
-          onStatus: (data) => {
-            const phase = data?.phase || '';
-            if (
-              phase === 'finalize' ||
-              phase === 'save' ||
-              !rotator.getState().messages.length
-            ) {
-              rotator.stop();
-              loadingModal.update(data?.message || '');
-              if (data?.progress) loadingModal.setProgress(data.progress);
-            }
-          },
-          onMessages: (data) => {
-            rotator.setMessages(data?.statusMessages || []);
-            rotator.start();
-          },
+          onStatus: progressBinding.onStatus,
+          onMessages: progressBinding.onMessages,
           onComplete: async (data) => {
             streamComplete = true;
             rotator.stop();
@@ -633,9 +631,9 @@ export async function handleNotion({
               normalizeLang(result.detectedLang) ||
               normalizeLang(result.presentation?.lang) ||
               DEFAULT_DECK_LANG;
-            loadingModal.update(t('common.done', 'Done'));
+            loadingModal.update(t('common.done', 'Done'), { immediate: true });
             loadingModal.setProgress(100);
-            await new Promise((r) => setTimeout(r, 800));
+            await new Promise((r) => setTimeout(r, 500));
             loadingModal.close();
             close();
             nav(
@@ -679,9 +677,9 @@ export async function handleNotion({
           normalizeLang(result.detectedLang) ||
           normalizeLang(result.presentation?.lang) ||
           DEFAULT_DECK_LANG;
-        loadingModal.update(t('common.done', 'Done'));
+        loadingModal.update(t('common.done', 'Done'), { immediate: true });
         loadingModal.setProgress(100);
-        await new Promise((r) => setTimeout(r, 800));
+        await new Promise((r) => setTimeout(r, 500));
         loadingModal.close();
         close();
         nav(
