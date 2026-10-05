@@ -19,6 +19,7 @@ import { composeImageSlide } from './pptx-image-slide.js';
 import { composeQuoteSlide } from './pptx-quote-slide.js';
 import { composeChapterTitleSlide } from './pptx-chapter-title-slide.js';
 import { composeImageTextSlide } from './pptx-image-text-slide.js';
+import { composeKpiMetricsSlide } from './pptx-kpi-metrics-slide.js';
 import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
   parseVideoSource,
@@ -66,6 +67,7 @@ const NATIVE_PPTX_HANDLERS = Object.freeze({
   'image-text-slide': Object.freeze({ compose: composeImageTextSlide }),
   'quote-slide': Object.freeze({ compose: composeQuoteSlide }),
   'chapter-title-slide': Object.freeze({ compose: composeChapterTitleSlide }),
+  'kpi-metrics-slide': Object.freeze({ compose: composeKpiMetricsSlide }),
 });
 
 /**
@@ -303,6 +305,7 @@ async function buildDeckPptx(
       const result = await composeNative(pptx, slide, {
         repoRoot,
         spec,
+        theme,
         def,
         slideNum,
         docLang,

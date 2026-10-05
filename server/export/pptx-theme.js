@@ -72,6 +72,7 @@ const TEXT_PX = Object.freeze({
   '4xl': 64, // quote and chapter title
   '5xl': 80, // the deck's cover title
   '2xl': 44, // a slide heading
+  '3xl': 52, // the KPI slide heading
   xl: 34,
   lg: 28, // most slide text, and the cover subtitle
   md: 24,
