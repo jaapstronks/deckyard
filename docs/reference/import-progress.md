@@ -61,11 +61,14 @@ closing phases (`finalize`, `save`) stop the rotator and take over both.
 
 ## No sleeping on the server
 
-The server does not pace messages with `setTimeout`. It hands the client a
-list and starts working; the rotator fills the wait (`loop: true` for a list
+The server does not sleep before work with `setTimeout`. It hands the client
+a list and starts working; the rotator fills the wait (`loop: true` for a list
 that must cover a phase of unknown length, `intervalMs` for its pace). Pacing
 on the server made the import measurably longer — 4.8s of it, before any work
-began — for messages that described work that had not started.
+began — for messages that described work that had not started. The one
+exception is deliberate: two 500ms beats between the closing milestones
+(`finalize`, `save`), so the snapped closing messages are perceptible at all —
+they separate work that is already done.
 
 ## The event shapes
 

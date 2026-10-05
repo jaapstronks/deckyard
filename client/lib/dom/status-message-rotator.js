@@ -54,6 +54,10 @@ export function createMessageRotator({
   };
 
   const start = () => {
+    // Idempotent: a second `messages` event mid-phase (parse list, then the
+    // outline's) restarts the one chain instead of starting a second timer
+    // chain that `stop` cannot clear.
+    stop();
     if (messages.length > 0) {
       rotate();
     }

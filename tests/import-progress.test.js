@@ -113,6 +113,30 @@ describe('the rotator owns text, not progress', () => {
     rotator.stop();
     assert.deepEqual(seen, ['only']);
   });
+
+  it('runs one timer chain, however often it is started', async () => {
+    // An import sends two `messages` events (the parse list, then the
+    // outline's). A second start() must restart the chain, not add one that
+    // keeps rotating after stop() and overwrites the closing messages.
+    const seen = [];
+    const rotator = createMessageRotator({
+      onUpdate: (m) => seen.push(m),
+      interval: 10,
+    });
+    rotator.setMessages(['parse'], { loop: true });
+    rotator.start();
+    rotator.setMessages(['a', 'b', 'c', 'd']);
+    rotator.start();
+    await new Promise((r) => setTimeout(r, 15));
+    rotator.stop();
+    const before = seen.length;
+    await new Promise((r) => setTimeout(r, 40));
+    assert.equal(
+      seen.length,
+      before,
+      `rotated after stop(): ${seen.join(', ')}`,
+    );
+  });
 });
 
 describe('the ladder has one source', () => {
