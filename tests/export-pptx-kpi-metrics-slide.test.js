@@ -125,3 +125,11 @@ test('long labels remain present and reduce their font size to fit', async () =>
   assert.match(shape, new RegExp(label));
   assert.match(shape, /sz="\d+"/);
 });
+
+test('an empty metrics list keeps the canvas placeholder card', async () => {
+  const { shapes, result } = await exportMetrics({ metrics: [] });
+  assert.deepEqual(result.warnings, []);
+  assert.ok(shapeNamed(shapes, 'KPI 1 card'));
+  assert.match(shapeNamed(shapes, 'KPI 1 value and unit'), /<a:t>0<\/a:t>/);
+  assert.match(shapeNamed(shapes, 'KPI 1 label'), /<a:t>Label<\/a:t>/);
+});

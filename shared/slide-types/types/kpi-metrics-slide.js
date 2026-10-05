@@ -56,7 +56,7 @@ export function parseNoteTone(noteRaw) {
 
 /** The cards displayed by this type, including the legacy delta spelling. */
 export function displayMetrics(content) {
-  return (Array.isArray(content?.metrics) ? content.metrics : [])
+  const metrics = (Array.isArray(content?.metrics) ? content.metrics : [])
     .filter((metric) => metric && typeof metric === 'object')
     .slice(0, 4)
     .map((metric) => {
@@ -69,6 +69,9 @@ export function displayMetrics(content) {
         note: legacyDelta ? `${legacyDelta}${note ? ` ${note}` : ''}` : note,
       };
     });
+  return metrics.length
+    ? metrics
+    : [{ value: '', unit: '', label: '', note: '' }];
 }
 
 export default {

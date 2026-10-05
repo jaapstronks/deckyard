@@ -110,7 +110,7 @@ export async function composeKpiMetricsSlide(pptx, slide, ctx) {
     title,
     { x: pad, y: headerY, w: width, h: slideHeight * 0.14 },
     {
-      fontSize: themeTextPt(spec, '2xl'),
+      fontSize: themeTextPt(spec, '3xl'),
       color,
       fontFace: spec.headFont || undefined,
       align: headerAlign,
