@@ -286,9 +286,15 @@ function placeOverlays(
 
 /**
  * Chips stacked up from a frame's bottom-left corner, the last one lowest:
- * the bottom subheading sits above the caption, as on the canvas.
+ * the bottom subheading sits above the caption, as on the canvas. Shared with
+ * the image-text mapper, whose caption is the same chip on its own frame.
+ *
+ * @param {object} pptxSlide
+ * @param {Array<{ text: string, pt: number, face?: string }>} lines
+ * @param {{x: number, y: number, w: number, h: number}} frame
+ * @param {{ bodyFont?: string }} spec
  */
-function placeChips(pptxSlide, lines, frame, spec) {
+export function placeChips(pptxSlide, lines, frame, spec) {
   let bottomEdge = frame.y + frame.h - CHIP_INSET;
   for (const line of [...lines].reverse()) {
     const h = placeChip(pptxSlide, [line], frame, spec, 'bottom', bottomEdge);
