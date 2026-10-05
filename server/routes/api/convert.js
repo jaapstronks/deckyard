@@ -28,6 +28,11 @@ import {
   SUPPORTED_MIME_TYPES,
 } from '../../utils/convert-file/index.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import {
+  OUTLINE_CREEP_MS,
+  PROGRESS,
+  REFINE_CREEP_MS,
+} from '../../utils/import-progress.js';
 
 // POST /api/convert - Convert a file to a presentation
 async function handleConvertFile({
@@ -318,27 +323,26 @@ async function handleConvertStream({
           : ['Loading file...', 'Extracting content...'];
 
   try {
-    // Stream initial messages with delays
-    // These are shown during file parsing which is fast, so we show them with minimal delay
-    // The real waiting happens during AI processing where content-aware messages are shown
-    let progress = 5;
-    const progressStep = Math.floor(20 / initialMessages.length);
+    // The parse messages are handed to the client's rotator instead of being
+    // paced here with sleeps: parsing and the outline call start immediately,
+    // and the rotator fills the wait. Sleeping on the server only made the
+    // import longer (B595).
+    signal.throwIfAborted();
+    sseWrite(res, {
+      event: 'messages',
+      data: { statusMessages: initialMessages, intervalMs: 6000, loop: true },
+    });
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: initialMessages[0],
+        phase: 'parse',
+        progress: PROGRESS.parse,
+      },
+    });
 
-    for (const msg of initialMessages) {
-      signal.throwIfAborted();
-      sseWrite(res, {
-        event: 'status',
-        data: {
-          message: msg,
-          phase: 'parse',
-          progress,
-        },
-      });
-      progress += progressStep;
-      await new Promise((r) => setTimeout(r, 1200));
-    }
-
-    // Show "analyzing content" message while AI processes
+    // Parsing plus the outline call is one long stretch without events, so the
+    // bar creeps toward the refine floor instead of standing still.
     sseWrite(res, {
       event: 'status',
       data: {
@@ -346,7 +350,9 @@ async function handleConvertStream({
           ? 'Inhoud analyseren en structuur bepalen...'
           : 'Analyzing content and structure...',
         phase: 'analyze',
-        progress: 28,
+        progress: PROGRESS.parse,
+        creepTo: PROGRESS.refineFloor,
+        creepMs: OUTLINE_CREEP_MS,
       },
     });
 
@@ -364,15 +370,12 @@ async function handleConvertStream({
       signal,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
-        // Send messages immediately as they arrive (for real-time feel)
+        // Message only: the bar is owned by the creep until the first section
+        // group finishes, so an arriving message may not move it.
         if (!statusMessagesSent) {
           sseWrite(res, {
             event: 'status',
-            data: {
-              message: msg,
-              phase: 'convert',
-              progress: Math.min(25 + statusMessages.length * 3, 75),
-            },
+            data: { message: msg, phase: 'convert' },
           });
         }
       },
@@ -386,7 +389,36 @@ async function handleConvertStream({
               statusMessages: outline.statusMessages,
             },
           });
+          // The outline is a real milestone, so the bar lands on the refine
+          // floor; from there the phase creeps until a group reports.
+          sseWrite(res, {
+            event: 'status',
+            data: {
+              phase: 'refine',
+              progress: PROGRESS.refineFloor,
+              creepTo: PROGRESS.refineCeiling,
+              creepMs: REFINE_CREEP_MS,
+            },
+          });
         }
+      },
+      // Real progress: one event per finished section group, the same shape
+      // the wizard stream uses.
+      onGroupDone: ({ done, total }) => {
+        sseWrite(res, {
+          event: 'status',
+          data: {
+            message: isNl
+              ? `Sectie ${done} van ${total} geschreven…`
+              : `Wrote section ${done} of ${total}…`,
+            progress: Math.round(
+              PROGRESS.refineFloor +
+                (done / total) *
+                  (PROGRESS.refineCeiling - PROGRESS.refineFloor),
+            ),
+            phase: 'refine-progress',
+          },
+        });
       },
     });
 
@@ -411,28 +443,28 @@ async function handleConvertStream({
         message: isNl
           ? `${slideCount} slide${slideCount !== 1 ? 's' : ''} gegenereerd`
           : `Generated ${slideCount} slide${slideCount !== 1 ? 's' : ''}`,
-        progress: 85,
+        progress: PROGRESS.refineCeiling,
         phase: 'finalize',
       },
     });
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 500));
 
     sseWrite(res, {
       event: 'status',
       data: {
         message: isNl ? 'Presentatie opbouwen...' : 'Building presentation...',
-        progress: 90,
+        progress: PROGRESS.building,
         phase: 'finalize',
       },
     });
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 500));
 
     // Create presentation
     sseWrite(res, {
       event: 'status',
       data: {
         message: isNl ? 'Opslaan in bibliotheek...' : 'Saving to library...',
-        progress: 95,
+        progress: PROGRESS.save,
         phase: 'save',
       },
     });

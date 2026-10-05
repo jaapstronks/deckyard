@@ -41,6 +41,8 @@ const log = createLogger('convert-notion');
  * @param {boolean} options.enableLogging - Enable AI conversation logging (default: true)
  * @param {function} options.onStatusMessage - Callback for status messages during conversion
  * @param {function} options.onOutlineComplete - Callback when outline is ready (with statusMessages)
+ * @param {function} options.onGroupDone - ({ done, total }) => void, called as
+ *   each section group finishes (real progress, for streaming UIs)
  * @param {AbortSignal} [options.signal] - Cancels the import: it reaches both
  *   model phases and is checked before every image re-host, so a caller whose
  *   reader left stops instead of importing for nobody.
@@ -53,6 +55,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
+    onGroupDone = null,
     signal = null,
   } = options;
 
@@ -140,6 +143,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       enableLogging,
       onStatusMessage,
       onOutlineComplete,
+      onGroupDone,
       processedImages,
       richContent, // Pass full content for image/table slide creation
       signal,
@@ -282,6 +286,7 @@ async function convertWithAi(formattedContent, options = {}) {
     enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
+    onGroupDone = null,
     processedImages = [],
     richContent = null,
     signal = null,
@@ -350,6 +355,7 @@ async function convertWithAi(formattedContent, options = {}) {
         summary: outline.summary,
       },
       onLog: logger ? (data) => logger.logPhase2(data) : null,
+      onGroupDone,
       signal,
     });
   }

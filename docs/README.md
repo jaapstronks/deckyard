@@ -160,6 +160,7 @@ nothing is discoverable only by `ls`.
 | [`ai-pipeline.md`](reference/ai-pipeline.md)             | The two-phase generation pipeline: LLM transport, prompts, catalogue, validate-and-fix   |
 | [`ai-wizard-prompts.md`](reference/ai-wizard-prompts.md) | The deck-generation prompts                                                              |
 | [`ai-slide-review.md`](reference/ai-slide-review.md)     | Deck grid, batch review, section refine                                                  |
+| [`import-progress.md`](reference/import-progress.md)     | The one progress model the streaming imports share: phases, creep, monotonicity          |
 | [`api-error-format.md`](reference/api-error-format.md)   | The internal API error envelope                                                          |
 | [`feedback-surfaces.md`](reference/feedback-surfaces.md) | Which message goes where: toast, inline refusal, chip — place, lifetime, content, focus  |
 | [`route-dispatch.md`](reference/route-dispatch.md)       | The `ROUTES`-table dispatch norm for `/api/*` modules                                    |

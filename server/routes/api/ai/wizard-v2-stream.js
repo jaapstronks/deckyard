@@ -26,6 +26,11 @@ import { getDisplayNameForUser } from '../../../utils/user-name.js';
 import { assertCreatableDeckInput } from '../../../services/presentations.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import {
+  OUTLINE_CREEP_MS,
+  PROGRESS,
+  REFINE_CREEP_MS,
+} from '../../../utils/import-progress.js';
+import {
   log,
   loadSlideTypeContext,
   loadAiThemeContext,
@@ -87,12 +92,17 @@ export async function handleAiWizardV2Stream({
   const { signal } = stream;
 
   try {
-    // Phase 1: Generate outline (get status messages)
+    // Phase 1: Generate outline. One long model call with no events of its
+    // own, so the bar creeps toward the refine floor instead of standing
+    // still (B595; `docs/reference/import-progress.md`).
     sseWrite(res, {
       event: 'status',
       data: {
         message: 'Analyzing your content...',
         phase: 'outline',
+        progress: PROGRESS.parse,
+        creepTo: PROGRESS.refineFloor,
+        creepMs: OUTLINE_CREEP_MS,
       },
     });
 
@@ -131,7 +141,9 @@ export async function handleAiWizardV2Stream({
           langCode === 'nl'
             ? `Outline klaar: ${outline.slides.length} slides in ${contentGroups.length} secties…`
             : `Outline ready: ${outline.slides.length} slides in ${contentGroups.length} sections…`,
-        progress: 20,
+        progress: PROGRESS.refineFloor,
+        creepTo: PROGRESS.refineCeiling,
+        creepMs: REFINE_CREEP_MS,
         phase: 'refine',
       },
     });
@@ -161,7 +173,11 @@ export async function handleAiWizardV2Stream({
                 langCode === 'nl'
                   ? `Sectie ${done} van ${total} geschreven…`
                   : `Wrote section ${done} of ${total}…`,
-              progress: Math.round(20 + (done / total) * 65),
+              progress: Math.round(
+                PROGRESS.refineFloor +
+                  (done / total) *
+                    (PROGRESS.refineCeiling - PROGRESS.refineFloor),
+              ),
               phase: 'refine-progress',
             },
           });
@@ -237,7 +253,7 @@ export async function handleAiWizardV2Stream({
       event: 'status',
       data: {
         message: 'Saving your presentation...',
-        progress: 90,
+        progress: PROGRESS.save,
         phase: 'save',
       },
     });

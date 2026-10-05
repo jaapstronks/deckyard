@@ -33,6 +33,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
+    onGroupDone = null, // ({ done, total }) => void, one tick per finished group
     firstSlideContent = null, // Content from the first source slide
     imageOnlySlides = [], // Pre-processed image-only slides to merge back in
     aiSlideIndexOffset = 0, // Offset to apply to AI slide indices for correct source ordering
@@ -99,6 +100,7 @@ export async function convertWithAi(formattedContent, options = {}) {
       },
       onLog: logger ? (data) => logger.logPhase2Call(data) : null,
       onStatusMessage,
+      onGroupDone,
       signal,
     });
   }
