@@ -187,7 +187,7 @@ export function quoteFontScale(count, quoteTexts) {
 }
 
 /** Extra quotes worth rendering: those with actual quote text. */
-function activeExtraQuotes(content) {
+export function activeExtraQuotes(content) {
   const arr = Array.isArray(content?.quotes) ? content.quotes : [];
   return arr
     .slice(0, MAX_EXTRA_QUOTES)
@@ -198,7 +198,7 @@ function activeExtraQuotes(content) {
 export default {
   structure: 'singleton',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   label: 'Quote',
   labelField: 'quote',
   fieldGroups: [QUOTE_BLOCK.group],

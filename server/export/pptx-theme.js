@@ -69,6 +69,7 @@ const LOGO_INSET_Y_PX = 52;
  * its canvas CSS sets. Only the steps the layouts and mappers use.
  */
 const TEXT_PX = Object.freeze({
+  '4xl': 64, // quote and chapter title
   '5xl': 80, // the deck's cover title
   '2xl': 44, // a slide heading
   xl: 34,
@@ -266,7 +267,8 @@ function pptxColor(hex, fallback) {
  * @param {object|null} theme - the active normalized theme
  * @returns {{groundId: string, background: string, text: string, textMuted: string,
  *   headFont: string, bodyFont: string, logoUrl: string, logoAlt: string,
- *   label: string, textScale: number}}
+ *   label: string, textScale: number, darkBackground: string, darkText: string,
+ *   darkAccent: string, monoFont: string}}
  */
 export function resolveThemeMaster(theme) {
   const vars =
@@ -291,6 +293,18 @@ export function resolveThemeMaster(theme) {
 
   return {
     groundId,
+    darkBackground: pptxColor(vars['--t-slide-bg-dark'], '212121'),
+    darkText: pptxColor(
+      vars['--t-slide-bg-dark-text'] || vars['--t-text-color-light'],
+      'FFFFFF',
+    ),
+    darkAccent: pptxColor(
+      vars['--t-color-accent-on-dark'] || vars['--t-color-link-on-dark'],
+      vars['--t-slide-bg-dark-text'] ||
+        vars['--t-text-color-light'] ||
+        'FFFFFF',
+    ),
+    monoFont: pptxTypeface(theme, vars, '--t-font-mono') || 'Courier New',
     background: pptxColor(resolveSlideBgHex(content, theme), FALLBACK_GROUND),
     text: pptxColor(declaredText || vars['--t-color-text'], FALLBACK_TEXT),
     // A muted colour is often `rgba(...)`, which pptxgenjs cannot take; the
