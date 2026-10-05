@@ -121,9 +121,9 @@ export async function composeImageSlide(pptx, slide, ctx) {
   await placePicture(pptxSlide, content, frame, fit, ctx, warnings);
 
   const sizes = {
-    heading: themeTextPt(spec, 'heading'),
-    sub: themeTextPt(spec, 'subtitle'),
-    body: themeTextPt(spec, 'body'),
+    heading: themeTextPt(spec, '2xl'),
+    sub: themeTextPt(spec, 'lg'),
+    body: themeTextPt(spec, 'base'),
   };
   if (bleed) {
     placeOverlays(pptxSlide, { title, subheading, bottom, caption }, frame, {
@@ -159,7 +159,7 @@ export async function composeImageSlide(pptx, slide, ctx) {
 async function placePicture(pptxSlide, content, frame, fit, ctx, warnings) {
   const { spec } = ctx;
   const src = field(content, 'image');
-  const standInPt = Math.max(MIN_BODY_PT, themeTextPt(spec, 'body'));
+  const standInPt = Math.max(MIN_BODY_PT, themeTextPt(spec, 'base'));
   if (!src) {
     // An empty frame is the author's state, not a failure: the canvas shows
     // the same placeholder.

@@ -81,6 +81,20 @@ const HEADING_GAP_SHARE = 20 / 1600;
 /** The most of the copy column the heading may take before the body. */
 const HEADING_MAX_SHARE = 0.5;
 
+/**
+ * The type step the canvas sets the body at (`10-image-text.css`): `lg`, one
+ * step up beside a narrow picture, one step down on a compact slide. The
+ * width class applies on the corner layout too, so it counts there as well.
+ *
+ * @param {object} content
+ * @returns {'xl'|'lg'|'md'}
+ */
+export function bodyTextStep(content) {
+  const narrow = content?.imageWidth === 'narrow';
+  if (content?.density === 'compact') return narrow ? 'lg' : 'md';
+  return narrow ? 'xl' : 'lg';
+}
+
 /** One plain paragraph as a text block, the shape the line budget reads. */
 function textBlock(text) {
   return {
@@ -169,7 +183,7 @@ export async function composeImageTextSlide(pptx, slide, ctx) {
     warnings,
     top: corner,
     gap: slideWidth * HEADING_GAP_SHARE,
-    bodyStep: content?.density === 'compact' ? 'body' : 'subtitle',
+    bodyStep: bodyTextStep(content),
   });
 
   const caption =
@@ -177,7 +191,7 @@ export async function composeImageTextSlide(pptx, slide, ctx) {
   if (caption) {
     placeChips(
       pptxSlide,
-      [{ text: caption, pt: themeTextPt(spec, 'body') }],
+      [{ text: caption, pt: themeTextPt(spec, 'base') }],
       media,
       spec,
     );
@@ -192,7 +206,7 @@ export async function composeImageTextSlide(pptx, slide, ctx) {
 async function placePicture(pptxSlide, content, media, ctx, warnings) {
   const { spec, slideWidth } = ctx;
   const { src, fit } = resolveImageTextImage(content);
-  const standInPt = Math.max(MIN_BODY_PT, themeTextPt(spec, 'body'));
+  const standInPt = Math.max(MIN_BODY_PT, themeTextPt(spec, 'base'));
   if (!src) {
     // An empty column is the author's state, not a failure: the canvas shows
     // the same placeholder.
@@ -269,7 +283,7 @@ function placeCopy(
     const fitted = fitSize(
       [heading],
       { ...copy, h: copy.h * (body.length ? HEADING_MAX_SHARE : 1) },
-      themeTextPt(spec, 'heading'),
+      themeTextPt(spec, '2xl'),
       MIN_HEADING_PT,
     );
     if (!fitted.fits)

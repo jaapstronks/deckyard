@@ -165,6 +165,38 @@ test('a half split puts a cover picture edge to edge in the left column and the 
   }
 });
 
+test('the body starts at the step the canvas sets for its width and density', async () => {
+  // One short line fits at the cap, so its size is the step itself:
+  // `10-image-text.css` sets lg, xl beside a narrow picture, one step down
+  // on a compact slide.
+  const bodySize = async (extra) => {
+    const { xml } = await exportSlide({
+      title: 'Sizes',
+      body: 'One short line.',
+      image: IMAGE,
+      ...extra,
+    });
+    const shape = [...xml.matchAll(/<p:sp>[\s\S]*?<\/p:sp>/g)]
+      .map((m) => m[0])
+      .find((sp) => sp.includes('One short line.'));
+    return Number(/<a:rPr[^>]*\ssz="(\d+)"/.exec(shape)[1]) / 100;
+  };
+  const half = await bodySize({});
+  const narrow = await bodySize({ imageWidth: 'narrow' });
+  const halfCompact = await bodySize({ density: 'compact' });
+  const narrowCompact = await bodySize({
+    imageWidth: 'narrow',
+    density: 'compact',
+  });
+  // The budget rounds to its own steps, so the test reads the order.
+  assert.ok(narrow > half, `narrow (xl, ${narrow}) above half (lg, ${half})`);
+  assert.ok(
+    halfCompact < half,
+    `compact (md, ${halfCompact}) below half (lg, ${half})`,
+  );
+  assert.equal(narrowCompact, half, 'narrow and compact is lg again');
+});
+
 test('imageSide and imageWidth move and size the column', async () => {
   const { xml } = await exportSlide({
     title: 'Wide on the right',

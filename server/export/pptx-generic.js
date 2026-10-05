@@ -860,7 +860,7 @@ export async function composeGenericSlide(pptx, slide, def, ctx) {
   const { heading } = projected;
   if (heading.visible && heading.text) {
     const titleBox = layoutBox(layout, 'title');
-    const headingStep = layout === 'title' ? 'title' : 'heading';
+    const headingStep = layout === 'title' ? '5xl' : '2xl';
     const block = {
       kind: 'text',
       paragraphs: [
@@ -901,9 +901,9 @@ export async function composeGenericSlide(pptx, slide, def, ctx) {
   // slide text at, and shrinks from there; the layouts' own `base` step is the
   // size of a template's empty box, and starting there left short slides with
   // small type in a large empty box.
-  const bodyStep = 'subtitle';
+  const bodyStep = 'lg';
   const region = layoutBox(layout, bodyName);
-  const bodyPt = themeTextPt(spec, 'body');
+  const bodyPt = themeTextPt(spec, 'base');
 
   if (flow.length) {
     const fit = fitSize(flow, region, themeTextPt(spec, bodyStep), MIN_BODY_PT);

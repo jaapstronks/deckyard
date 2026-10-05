@@ -64,14 +64,17 @@ const LOGO_INSET_X_PX = 56;
 const LOGO_INSET_Y_PX = 52;
 
 /**
- * The type scale, in reference pixels, from `00-tokens.css`. Only the four
- * steps the layouts below actually use.
+ * The type scale, in reference pixels, from `00-tokens.css`, keyed by the
+ * step's own name (`--slide-text-<step>`) so a composition asks for the step
+ * its canvas CSS sets. Only the steps the layouts and mappers use.
  */
 const TEXT_PX = Object.freeze({
-  title: 80, // --slide-text-5xl, the deck's cover
-  subtitle: 28, // --slide-text-lg
-  heading: 44, // --slide-text-2xl
-  body: 20, // --slide-text-base
+  '5xl': 80, // the deck's cover title
+  '2xl': 44, // a slide heading
+  xl: 34,
+  lg: 28, // most slide text, and the cover subtitle
+  md: 24,
+  base: 20, // a template's empty body box
 });
 
 /**
@@ -411,8 +414,8 @@ export function themeLayoutDefinitions(spec, logo = null) {
       title: PPTX_LAYOUTS.title,
       background,
       objects: [
-        heading('title', 'title'),
-        body('title', 'subtitle', 'subtitle', spec.textMuted),
+        heading('title', '5xl'),
+        body('title', 'subtitle', 'lg', spec.textMuted),
         ...logoObject,
       ],
     },
@@ -420,8 +423,8 @@ export function themeLayoutDefinitions(spec, logo = null) {
       title: PPTX_LAYOUTS.headingBody,
       background,
       objects: [
-        heading('headingBody', 'heading'),
-        body('headingBody', 'body', 'body', spec.text),
+        heading('headingBody', '2xl'),
+        body('headingBody', 'body', 'base', spec.text),
         ...logoObject,
       ],
     },
@@ -429,7 +432,7 @@ export function themeLayoutDefinitions(spec, logo = null) {
       title: PPTX_LAYOUTS.headingImageBody,
       background,
       objects: [
-        heading('headingImageBody', 'heading'),
+        heading('headingImageBody', '2xl'),
         {
           placeholder: {
             options: {
@@ -439,7 +442,7 @@ export function themeLayoutDefinitions(spec, logo = null) {
             },
           },
         },
-        body('headingImageBody', 'body', 'body', spec.text),
+        body('headingImageBody', 'body', 'base', spec.text),
         ...logoObject,
       ],
     },
