@@ -59,3 +59,19 @@ export const inlineEdit = {
  * @type {string[]}
  */
 export const inspectorKeeps = [];
+
+/**
+ * The row is this type's sub-element: clicking anything in a row selects it,
+ * and the "This row" tab carries the row's colour and the arrow to the next
+ * row - settings, not content you can point at (B450, D313).
+ * Grammar: shared/slide-types/inline-edit-companions.js.
+ * @type {Object}
+ */
+export const elementTab = {
+  card: {
+    list: 'rows',
+    fields: ['color', 'arrow'],
+    labelKey: 'editor.inspector.tab.row',
+    label: 'This row',
+  },
+};

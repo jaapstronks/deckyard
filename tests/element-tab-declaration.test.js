@@ -32,7 +32,7 @@ const { elementAppliesToSlide } =
 /** Content rich enough that every collection has three items. */
 function contentFor(type) {
   const content = structuredClone(SLIDE_TYPES[type]?.defaults || {});
-  for (const key of ['images', 'members', 'logos', 'items']) {
+  for (const key of ['images', 'members', 'logos', 'items', 'rows', 'cells']) {
     content[key] = [{}, {}, {}];
   }
   return content;
@@ -61,6 +61,9 @@ const EXPECTED = {
   'logo-wall-slide': { image: [0, 1, 2] },
   'quote-slide': { image: [1, 2, 3] }, // up to three author portraits
   'icon-card-grid-slide': { card: [0, 1, 2] },
+  // B450: a row's colour + arrow and a cell's tone live in a "This card" tab.
+  'text-blocks-slide': { card: [0, 1, 2] },
+  'matrix-slide': { card: [0, 1, 2] },
 };
 
 test('every type offers exactly the element tabs it used to', () => {

@@ -49,8 +49,9 @@ export const inlineEdit = {
 export const inspectorKeeps = ['layout'];
 
 /**
- * The card is this type's sub-element: one tab per item.
+ * The card is this type's sub-element: one tab per item, carrying the card's
+ * icon and link (the shared "This card" card).
  * Grammar: shared/slide-types/inline-edit-companions.js.
  * @type {Object}
  */
-export const elementTab = { card: { list: 'items' } };
+export const elementTab = { card: { list: 'items', fields: ['icon', 'link'] } };

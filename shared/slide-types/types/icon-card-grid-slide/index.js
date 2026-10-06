@@ -90,6 +90,7 @@ export default {
         {
           key: 'icon',
           label: 'Icon',
+          labelKey: 'editor.cards.icon',
           type: 'string',
           required: false,
           maxLength: 40,

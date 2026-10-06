@@ -26,6 +26,7 @@
  */
 
 import { getInlineDescriptor } from './descriptors.js';
+import { slideTypeElementTab } from '../../../../shared/slide-types/inline-edit-companions.js';
 import {
   getByPath,
   setByPath,
@@ -1200,7 +1201,9 @@ export function createInlineEditor({
       bar.hidden = !on;
     }
     for (const { fieldKey, outlineBox } of textSelectables) {
-      const on = sel?.kind === 'text' && sel.fieldKey === fieldKey;
+      const on =
+        (sel?.kind === 'text' || sel?.kind === 'card') &&
+        sel.fieldKey === fieldKey;
       outlineBox.classList.toggle('is-selected', on);
     }
     overlay.reposition();
@@ -1479,16 +1482,18 @@ export function createInlineEditor({
   }
 
   // The element a canvas interaction selects, for the selection-aware
-  // inspector. Only types with an element tab participate; a click that maps to
-  // nothing selectable clears the selection (back to slide-only).
+  // inspector: a path inside an item of the list the type's `card` element tab
+  // names selects that item. Only types declaring one participate; a click
+  // that maps to nothing selectable clears the selection (back to slide-only).
   function elementForCardPath(path) {
     const slide = getSlide?.();
     if (!slide) return null;
-    if (slide.type === 'icon-card-grid-slide') {
-      const m = /^items\.(\d+)(?:\.|$)/.exec(String(path || ''));
-      if (m) return { kind: 'card', idx: Number(m[1]) };
-    }
-    return null;
+    const list = slideTypeElementTab(slide.type, getSlideDef?.(slide.type))
+      ?.card?.list;
+    if (typeof list !== 'string') return null;
+    const [head, idx] = String(path || '').split('.');
+    if (head !== list || !/^\d+$/.test(idx || '')) return null;
+    return { kind: 'card', idx: Number(idx) };
   }
 
   /**
@@ -1842,13 +1847,16 @@ export function createInlineEditor({
           ? 'markdown'
           : 'text';
     // Selection for the inspector element tab: a card's text selects the card
-    // (icon/link controls); a stylable text field (plain or markdown) selects
+    // (its declared item settings); a stylable text field (plain or markdown) selects
     // itself for block-level alignment/colour ("This text"); csv (chart data)
     // selects nothing.
     const cardSel = elementForCardPath(path);
-    if (cardSel) selectElement(cardSel);
-    else if (kind === 'text' || kind === 'markdown')
-      selectElement({ kind: 'text', fieldKey: path });
+    const stylable = kind === 'text' || kind === 'markdown';
+    // A card's text selects the card AND names the field, so the card tab
+    // carries the item settings and the clicked text's own styling (D313).
+    if (cardSel)
+      selectElement(stylable ? { ...cardSel, fieldKey: path } : cardSel);
+    else if (stylable) selectElement({ kind: 'text', fieldKey: path });
     else selectElement(null);
     // Chart data opens on the bottom-panel Data tab, not a canvas modal
     // (editing-surfaces §4.3): one data surface, reachable from the chart or
