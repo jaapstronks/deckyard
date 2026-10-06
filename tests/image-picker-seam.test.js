@@ -373,3 +373,63 @@ test('the direct upload route skips the chooser and asks the library for the fil
   assert.ok(chooser, 'two sources: the ordinary route shows the chooser');
   setFeatures(null);
 });
+
+test('batch upload is offered only by an upload-capable library', () => {
+  const root = document.createElement('div');
+  setFeatures({ enableUploads: false, sandboxMode: true });
+  const sandbox = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: spyOpener().open,
+  });
+  assert.equal(sandbox.uploadMany, null);
+  setFeatures({ enableUploads: true });
+  const noLibrary = createImagePickerSeam({
+    root,
+    features: {},
+    openImageLibrary: spyOpener().open,
+    openImageKit: spyOpener().open,
+  });
+  assert.equal(noLibrary.uploadMany, null);
+  setFeatures(null);
+});
+
+test('batch upload skips the source chooser and normalizes once before onPickMany', () => {
+  const root = document.createElement('div');
+  const lib = spyOpener();
+  const picks = [];
+  setFeatures({ enableUploads: true });
+  const seam = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: lib.open,
+    openImageKit: spyOpener().open,
+  });
+  seam.uploadMany({
+    spec: { fieldKey: 'logos' },
+    capacity: () => 30,
+    onPickMany: (batch) => {
+      picks.push(batch);
+      return false;
+    },
+  });
+  assert.equal(root.querySelector('.image-source-chooser'), null);
+  assert.equal(lib.calls.length, 1);
+  assert.equal(lib.calls[0].batch, true);
+  assert.deepEqual(lib.calls[0].spec, { fieldKey: 'logos' });
+  assert.equal(lib.calls[0].capacity(), 30);
+  const result = lib.calls[0].onPickMany([
+    { url: '/one.png', alts: { nl: 'Eén' }, name: 'One', id: 'a' },
+    { url: '', alts: { nl: 'skip' } },
+    { url: '/two.png', alts: { nl: 'Twee' }, name: 'Two', id: 'b' },
+  ]);
+  assert.equal(result, false);
+  assert.deepEqual(
+    picks[0].map((pick) => [pick.url, pick.name, pick.alts.nl, pick.meta.id]),
+    [
+      ['/one.png', 'One', 'Eén', 'a'],
+      ['/two.png', 'Two', 'Twee', 'b'],
+    ],
+  );
+  setFeatures(null);
+});

@@ -108,6 +108,7 @@ export default {
       required: true,
       minItems: 2,
       maxItems: 6,
+      batchImages: true,
       collapsible: true, // item-rich: per-image collapse in the editor
       itemDefaults: {
         src: '',

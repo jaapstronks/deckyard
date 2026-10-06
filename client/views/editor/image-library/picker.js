@@ -5,6 +5,7 @@ import { icon } from '../../../lib/dom/icons.js';
 import { createImageLibraryGrid } from './grid.js';
 import { createImageLibraryDetail } from './detail.js';
 import { createImageLibraryUpload, chooseImageFile } from './upload.js';
+import { openImageBatch, chooseImageFiles } from './batch.js';
 import { createUnsplashSearch } from './unsplash-search.js';
 import { createGiphySearch } from './giphy-search.js';
 import { createMediaLibrarySidebar, SECTIONS } from './sidebar.js';
@@ -110,7 +111,15 @@ function getSectionInfo(section) {
  *
  * @param {Object} options - Picker options
  */
-export function openImageLibraryPicker({ upload = false, ...options } = {}) {
+export function openImageLibraryPicker({
+  upload = false,
+  batch = false,
+  ...options
+} = {}) {
+  if (batch) {
+    chooseImageFiles((files) => openImageBatch({ ...options, files }));
+    return;
+  }
   if (upload) {
     chooseImageFile((file) => openLibraryModal({ ...options, file }));
     return;
@@ -132,6 +141,7 @@ function openLibraryModal({
   file = null,
 } = {}) {
   const uploadsEnabled = featureEnabled('uploads');
+  const libraryOnly = typeof onPick !== 'function';
   const canAiAlt = aiAltTextEnabled();
 
   const unlockScroll = lockDocumentScroll();
@@ -307,6 +317,19 @@ function openLibraryModal({
     creditCb,
     setStatus,
     setBusy,
+    onMultipleFiles: libraryOnly
+      ? (files) =>
+          openImageBatch({
+            api,
+            root,
+            files,
+            onItemsCreated: (created) => {
+              items = [created, ...items];
+              sidebarComponent?.render();
+              gridComponent.renderGrid();
+            },
+          })
+      : null,
   });
 
   // Stock media components (created lazily)
@@ -370,6 +393,26 @@ function openLibraryModal({
   // whole thumbnail grid.
   libraryView.append(
     uploadComponent.el,
+    uploadsEnabled && user && libraryOnly
+      ? h('button', {
+          type: 'button',
+          class: 'btn btn-secondary image-batch-library-entry',
+          text: t('imageLibrary.batch.libraryEntry', 'Upload several images…'),
+          onclick: () =>
+            chooseImageFiles((files) =>
+              openImageBatch({
+                api,
+                root,
+                files,
+                onItemsCreated: (created) => {
+                  items = [created, ...items];
+                  sidebarComponent?.render();
+                  gridComponent.renderGrid();
+                },
+              }),
+            ),
+        })
+      : null,
     toolbar,
     sectionHeader,
     gridComponent.grid,

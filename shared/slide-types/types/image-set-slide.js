@@ -77,6 +77,7 @@ export default {
       required: true,
       minItems: IMAGE_SET_MIN_IMAGES,
       maxItems: IMAGE_SET_MAX_IMAGES,
+      batchImages: true,
       itemDefaults: { src: '', alt: '' },
       itemFields: [
         { key: 'src', label: 'Image URL', type: 'image', required: false },

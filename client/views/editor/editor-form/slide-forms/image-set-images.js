@@ -35,6 +35,8 @@ import {
 } from '../../../../../shared/slide-types/types/image-set-slide/images.js';
 import { h } from '../../../../lib/dom/index.js';
 import { icon } from '../../../../lib/dom/icons.js';
+import { resolveDeckLang } from '../../../../../shared/i18n-utils.js';
+import { startBatchCollectionUpload } from '../../media/batch-collection.js';
 
 /**
  * Reorder/add/remove wiring for the images collection.
@@ -140,6 +142,10 @@ function renderImageSetCollectionSection({
   markDirty,
   rerenderEditor,
   scheduleUiRefresh,
+  def,
+  pres,
+  getSelectedSlideId,
+  openImagePicker,
 } = {}) {
   const content = slide?.content;
   if (!content || typeof content !== 'object') return null;
@@ -174,6 +180,33 @@ function renderImageSetCollectionSection({
         class: 'btn btn-secondary btn-sm',
         text: t('editor.imageText.addImage', '+ Add image'),
         onclick: () => actions.addImage(),
+      }),
+    );
+  }
+  const imageField = def?.fields?.find((field) => field.key === 'images');
+  if (
+    imageField?.batchImages &&
+    typeof openImagePicker?.uploadMany === 'function'
+  ) {
+    headerRow.append(
+      h('button', {
+        type: 'button',
+        class: 'btn btn-secondary btn-sm',
+        text: t('imageLibrary.batch.entry', 'Upload images…'),
+        onclick: () =>
+          startBatchCollectionUpload({
+            slide,
+            field: imageField,
+            pres,
+            activeLang: resolveDeckLang(pres),
+            getSelectedSlideId,
+            openImagePicker,
+            onApplied: () => {
+              markDirty?.();
+              rerenderEditor?.();
+              scheduleUiRefresh?.();
+            },
+          }),
       }),
     );
   }
@@ -232,14 +265,28 @@ function renderImageSetCollectionSection({
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
 export function renderImageSetCollectionExtra(ctx) {
-  const { form, slide, used, markDirty, rerenderEditor, scheduleUiRefresh } =
-    ctx;
+  const {
+    form,
+    slide,
+    used,
+    markDirty,
+    rerenderEditor,
+    scheduleUiRefresh,
+    def,
+    pres,
+    getSelectedSlideId,
+    fieldRenderers,
+  } = ctx;
   const section = renderImageSetCollectionSection({
     slide,
     used,
     markDirty,
     rerenderEditor,
     scheduleUiRefresh,
+    def,
+    pres,
+    getSelectedSlideId,
+    openImagePicker: fieldRenderers?.openImagePicker,
   });
   if (section) form.append(section);
 }

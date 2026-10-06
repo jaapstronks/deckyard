@@ -120,6 +120,7 @@ export function createRenderField({
   // When set, the widget renders an "Edit data…" entry point instead of the
   // inline grid (the grid belongs on a wide surface, editing-surfaces §4.3).
   onEditData = null,
+  getSelectedSlideId,
 } = {}) {
   const {
     fieldText,
@@ -132,6 +133,7 @@ export function createRenderField({
     fieldTitleBgImage,
     fieldImages,
     fieldIconPicker,
+    openImagePicker,
   } = fieldRenderers || {};
 
   // Editing one of these changes WHICH controls the form shows (some other
@@ -529,6 +531,9 @@ export function createRenderField({
         def,
         field,
         fieldRenderers,
+        openImagePicker,
+        pres,
+        getSelectedSlideId,
         deckSlides,
         markDirty,
         scheduleUiRefresh,

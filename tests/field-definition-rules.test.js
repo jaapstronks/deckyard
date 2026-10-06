@@ -58,6 +58,46 @@ const errors = (fields, profile) =>
     .findings.filter((f) => f.severity === 'error')
     .map((f) => f.code);
 
+test('batchImages is a validated image-collection capability', () => {
+  const valid = {
+    key: 'images',
+    type: 'items',
+    label: 'Images',
+    batchImages: true,
+    maxItems: 6,
+    itemFields: [
+      { key: 'src', type: 'image', label: 'Image' },
+      { key: 'alt', type: 'string', label: 'Alt' },
+    ],
+  };
+  assert.ok(!errors([valid], FILE_JS).includes('batch_images_invalid'));
+  for (const changed of [
+    { batchImages: 'yes' },
+    { maxItems: undefined },
+    { maxItems: 0 },
+    { itemFields: [{ key: 'alt', type: 'string', label: 'Alt' }] },
+    {
+      itemFields: [
+        valid.itemFields[0],
+        valid.itemFields[0],
+        valid.itemFields[1],
+      ],
+    },
+  ]) {
+    assert.ok(
+      errors([{ ...valid, ...changed }], FILE_JS).includes(
+        'batch_images_invalid',
+      ),
+    );
+  }
+  assert.ok(
+    errors(
+      [{ key: 'a', type: 'string', label: 'A', batchImages: true }],
+      FILE_JS,
+    ).includes('batch_images_invalid'),
+  );
+});
+
 // --- 1. one rule set, two vocabularies -------------------------------------
 
 /**

@@ -137,6 +137,7 @@ export function createImageLibraryUpload({
   creditCb,
   setStatus,
   setBusy,
+  onMultipleFiles,
 } = {}) {
   const addWrap = h('div', { class: 'stack image-lib-upload' });
   const inert = { el: addWrap, uploadFile: async () => {} };
@@ -451,7 +452,12 @@ export function createImageLibraryUpload({
   dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropzone.classList.remove('is-dragover');
-    const file = e.dataTransfer?.files?.[0];
+    const files = Array.from(e.dataTransfer?.files || []);
+    if (files.length > 1 && onMultipleFiles) {
+      onMultipleFiles(files);
+      return;
+    }
+    const file = files[0];
     if (file && file.type.startsWith('image/')) {
       uploadPicked(file);
     }

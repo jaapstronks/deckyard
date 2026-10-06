@@ -15,6 +15,10 @@ import {
   fieldFormRows,
 } from '../../../../shared/slide-types/form-layout.js';
 import { h } from '../../../lib/dom/index.js';
+import {
+  imageCollectionSpec,
+  startBatchCollectionUpload,
+} from '../media/batch-collection.js';
 
 /**
  * The generic collection editor: ONE add/remove/reorder/collapse machine for
@@ -97,6 +101,9 @@ export function createCollectionEditor({
   labels = null,
   lang = null,
   depth = 0,
+  openImagePicker = null,
+  pres = null,
+  getSelectedSlideId = () => slide?.id,
 } = {}) {
   const { fieldImage, fieldIconPicker, fieldEnum, fieldGrid, fieldNumber } =
     fieldRenderers || {};
@@ -166,6 +173,31 @@ export function createCollectionEditor({
   });
   const pill = h('div', { class: 'pill' });
   controlsRow.append(btnAdd, pill);
+  const batchSpec = depth === 0 ? imageCollectionSpec(field) : null;
+  if (batchSpec && typeof openImagePicker?.uploadMany === 'function') {
+    controlsRow.append(
+      h('button', {
+        type: 'button',
+        class: 'btn btn-secondary',
+        text: t('imageLibrary.batch.entry', 'Upload images…'),
+        onclick: () => {
+          startBatchCollectionUpload({
+            slide,
+            field,
+            pres,
+            activeLang: lang,
+            getSelectedSlideId,
+            openImagePicker,
+            onApplied: () => {
+              markDirty?.();
+              scheduleUiRefresh?.();
+              renderList();
+            },
+          });
+        },
+      }),
+    );
+  }
   controls.append(controlsRow);
   wrap.append(controls);
 

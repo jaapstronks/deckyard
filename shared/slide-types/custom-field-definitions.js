@@ -90,6 +90,7 @@ export const CUSTOM_TYPE_PROPERTY_KEYS = Object.freeze({
       'itemFields',
       'minItems',
       'maxItems',
+      'batchImages',
       'itemLabelField',
     ]),
   }),
@@ -103,6 +104,7 @@ export const CUSTOM_TYPE_PROPERTY_KEYS = Object.freeze({
     maxLength: 'number',
     minItems: 'number',
     maxItems: 'number',
+    batchImages: 'boolean',
   }),
 });
 
@@ -170,6 +172,7 @@ function cleanField(field) {
     clean.itemFields = field.itemFields.map(cleanField);
     if (typeof field.minItems === 'number') clean.minItems = field.minItems;
     if (typeof field.maxItems === 'number') clean.maxItems = field.maxItems;
+    if (field.batchImages === true) clean.batchImages = true;
     if (isNonEmpty(field.itemLabelField))
       clean.itemLabelField = field.itemLabelField.trim();
   }

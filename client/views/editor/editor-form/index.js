@@ -97,6 +97,7 @@ export function createRerenderEditor({
     fieldImage,
     fieldTitleBgImage,
     fieldImages,
+    openImagePicker,
   } = fieldRenderers || {};
 
   // Track detachers for cleanup between re-renders. The header's actions
@@ -455,6 +456,7 @@ export function createRerenderEditor({
 
     const renderField = createRenderField({
       pres,
+      getSelectedSlideId,
       slide,
       def,
       PARTNER_LOGOS,
@@ -473,6 +475,7 @@ export function createRerenderEditor({
         fieldImage,
         fieldTitleBgImage,
         fieldImages,
+        openImagePicker,
       },
       markDirty,
       rerenderEditor,
@@ -585,6 +588,7 @@ export function createRerenderEditor({
       // The deck, for forms that need the active language version rather than
       // anything stored on the slide (follow-invite's copy labels).
       pres,
+      getSelectedSlideId,
       // Selection-aware inspector: element-scoped widgets render into
       // elementForm for the selected element; slide-wide stays in form.
       elementForm,
@@ -608,6 +612,7 @@ export function createRerenderEditor({
         fieldIconPicker,
         fieldImage,
         fieldTitleBgImage,
+        openImagePicker,
       },
       markDirty,
       rerenderEditor,
