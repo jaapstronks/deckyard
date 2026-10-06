@@ -8,6 +8,7 @@ import { renderImageSetCollectionExtra } from './slide-forms/image-set-images.js
 import { renderIconCardExtras } from './slide-forms/icon-card-links.js';
 import { renderListDensityExtra } from './slide-forms/list-density.js';
 import { renderImageElementCard } from './image-element-card.js';
+import { renderItemElementCard } from './item-element-card.js';
 
 /**
  * What the phase-3 inspector keeps per slide type (editor-UI track, fase 3).
@@ -95,11 +96,10 @@ export function getInspectorKeepKeys(type, def) {
  *   wrong axis (slide-forms/image-set-images.js, the #528 exception).
  *   image-text-slide has no row: since D100 it carries one flat image, which
  *   the elementTab rule below covers in full.
- * - icon-card-grid-slide: per-card icon + link with the selected-card /
- *   all-cards split and the numbered-mirror sync — real one-type UI whose
- *   declarative form would put an icon picker, a link field and a
- *   write-through hook in the vocabulary for one declarant
- *   (slide-forms/icon-card-links.js).
+ * - icon-card-grid-slide: the all-cards "Card icons & links" overview on the
+ *   Slide tab when no card is selected — an editing-surface choice, not a
+ *   field property; the selected card's own controls are the shared
+ *   "This card" card (slide-forms/icon-card-links.js).
  * - list-slide: the "Text size" step-down note — needs live layout
  *   resolution, which the JSON-safe field vocabulary cannot carry
  *   (slide-forms/list-density.js).
@@ -123,7 +123,9 @@ const INSPECTOR_EXTRAS = new Map([
  *    The card is descriptor-driven and the offer is the `elementTab`
  *    declaration on the type (inline-edit-companions.js), so the declaration
  *    is the whole story: a fork type that declares an image element tab gets
- *    the card without touching a file outside its own directory.
+ *    the card without touching a file outside its own directory. A selected
+ *    collection item gets the "This card" card the same way, from a `card`
+ *    element tab that names item `fields` (item-element-card.js).
  * 2. THE EXCEPTIONS — the INSPECTOR_EXTRAS table above.
  *
  * Runs BEFORE the generic keeps loop; anything rendered here marks its keys
@@ -154,6 +156,24 @@ export function renderInspectorExtrasByType(ctx) {
       def,
       idx: selectedElement.idx,
       fieldRenderers,
+      deckSlides: ctx.deckSlides,
+      markDirty,
+      rerenderEditor,
+      rerenderPreview,
+      scheduleUiRefresh,
+    });
+  }
+
+  // The same rule for a selected collection item: a type whose `card` element
+  // tab names item `fields` gets the shared "This card" card for them.
+  if (selectedElement?.kind === 'card') {
+    renderItemElementCard({
+      container: elementForm,
+      slide,
+      def,
+      idx: selectedElement.idx,
+      fieldRenderers,
+      deckSlides: ctx.deckSlides,
       markDirty,
       rerenderEditor,
       rerenderPreview,

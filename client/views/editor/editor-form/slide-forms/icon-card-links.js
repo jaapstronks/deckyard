@@ -1,26 +1,18 @@
 /**
- * The icon-card-grid slide's per-card icon + link controls.
+ * The icon-card-grid slide's all-cards overview of icon + link.
  *
- * DOCUMENTED EXCEPTION (route 4 PR D, editor-per-type-behaviour brief). This
- * is real one-type UI, not a table a declaration could replace:
- *
- * 1. The selected-card / all-cards split is an editing-surface decision, not
- *    a field property: with a card selected only that card's controls render
- *    in the element tab; with none, every card renders in a collapsed "Card
- *    icons & links" group so the Slide tab still leads with the at-a-glance
- *    settings.
- * 2. The declarative form would be a generic per-item settings card driven by
- *    `itemFields` (the card-equivalent of image-element-card.js). That is a
- *    real concept, but it needs both the icon picker and the card-link field
- *    in the closed vocabulary — for exactly one declarant today. A vocabulary
- *    of one is more expensive than this exception; promote it when a second
- *    card-type appears.
- *
- * The card numbering ("1. Title") and the collapsible are deliberate UX and
- * stay as they are.
+ * DOCUMENTED EXCEPTION (route 4 PR D, editor-per-type-behaviour brief), now
+ * only half of one: the selected-card controls are the shared "This card"
+ * card (item-element-card.js), driven by the `card` element tab's `fields`
+ * since B450 gave that card a second and third declarant (text-blocks rows,
+ * matrix cells). What stays here is an editing-surface decision rather than a
+ * field property: with NO card selected, every card's controls render in a
+ * collapsed "Card icons & links" group so the Slide tab still leads with the
+ * at-a-glance settings. The card numbering ("1. Title") and the collapsible
+ * are deliberate UX.
  */
 import { t } from '../../../../lib/ui-i18n.js';
-import { fieldCardLink } from '../../fields/card-link-field.js';
+import { renderItemElementCard } from '../item-element-card.js';
 import { h } from '../../../../lib/dom/index.js';
 
 /**
@@ -42,30 +34,24 @@ function collapsibleGroup(title, { open = false } = {}) {
 }
 
 /**
- * Per-card icon picker + link: settings the wysiwyg deliberately never
- * covers. Renders the layout field first, then the card controls — into the
- * element tab for the selected card, or all cards in a slide-tab collapsible.
+ * The all-cards overview of the per-card icon + link: with no card selected,
+ * every card's "This card" controls render in a collapsed "Card icons & links"
+ * group on the Slide tab, numbered by card. A selected card gets the same
+ * controls in its own tab through the shared item card (the `card` element
+ * tab's `fields`), so this module renders only the overview.
  *
  * @param {Object} ctx - Same context shape as renderSlideFormByType
  */
 export function renderIconCardExtras(ctx) {
-  const {
-    form,
-    elementForm,
-    selectedElement,
-    slide,
-    add,
-    fieldRenderers,
-    deckSlides,
-    markDirty,
-    scheduleUiRefresh,
-  } = ctx;
+  const { form, selectedElement, slide, add } = ctx;
 
   add('layout');
   const items = Array.isArray(slide.content?.items) ? slide.content.items : [];
-  if (!items.length) return;
-  const { fieldIconPicker } = fieldRenderers || {};
-  const renderCard = (item, idx, container) => {
+  if (!items.length || selectedElement?.kind === 'card') return;
+  const section = collapsibleGroup(
+    t('editor.inspector.cardsConfig', 'Card icons & links'),
+  );
+  items.forEach((item, idx) => {
     const group = h('div', { class: 'stack card-group' });
     group.append(
       h('div', {
@@ -73,49 +59,8 @@ export function renderIconCardExtras(ctx) {
         text: `${idx + 1}. ${String(item?.title || '').trim() || t('editor.inspector.cardUntitled', 'Untitled card')}`,
       }),
     );
-    if (typeof fieldIconPicker === 'function') {
-      group.append(
-        fieldIconPicker(
-          t('editor.cards.icon', 'Icon'),
-          item.icon || '',
-          (v) => {
-            items[idx].icon = v;
-            markDirty?.();
-            scheduleUiRefresh?.();
-          },
-          {},
-        ),
-      );
-    }
-    group.append(
-      fieldCardLink({
-        value: item.link || '',
-        slides: deckSlides,
-        onChange: (v) => {
-          items[idx].link = v;
-          markDirty?.();
-          scheduleUiRefresh?.();
-        },
-        help: t(
-          'editor.cards.linkHelp2',
-          'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).',
-        ),
-      }),
-    );
-    container.append(group);
-  };
-
-  const cardIdx =
-    selectedElement?.kind === 'card' && selectedElement.idx < items.length
-      ? selectedElement.idx
-      : null;
-  if (cardIdx != null) {
-    renderCard(items[cardIdx], cardIdx, elementForm);
-  } else {
-    const section = collapsibleGroup(
-      t('editor.inspector.cardsConfig', 'Card icons & links'),
-    );
-    items.forEach((item, idx) => renderCard(item, idx, section.body));
-    form.append(section.el);
-  }
+    renderItemElementCard({ ...ctx, container: group, idx });
+    section.body.append(group);
+  });
+  form.append(section.el);
 }

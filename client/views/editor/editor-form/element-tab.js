@@ -46,11 +46,29 @@ export function elementAppliesToSlide(slide, sel, { slideTypes = null } = {}) {
   return elementTabOffersIndex(offer, slide.content || {}, sel.idx);
 }
 
-/** Label for the element tab, by selected element kind. */
-export function elementTabLabel(sel) {
+/**
+ * Label for the element tab, by selected element kind. A `card` offer may name
+ * its item (`labelKey` + `label`: "This row", "This cell"); otherwise it is
+ * "This card".
+ *
+ * @param {Object} sel - the selection ({kind, idx, fieldKey})
+ * @param {Object} [opts]
+ * @param {Object} [opts.slide] - the current slide, for the card offer
+ * @param {Object} [opts.slideTypes] - the editor's slide-type metadata
+ * @returns {string}
+ */
+export function elementTabLabel(sel, { slide = null, slideTypes = null } = {}) {
   if (sel?.kind === 'image')
     return t('editor.inspector.tab.image', 'This image');
-  if (sel?.kind === 'card') return t('editor.inspector.tab.card', 'This card');
+  if (sel?.kind === 'card') {
+    const card = slide
+      ? slideTypeElementTab(slide.type, slideTypes?.[slide.type] || null)?.card
+      : null;
+    if (typeof card?.labelKey === 'string' && card.labelKey) {
+      return t(card.labelKey, card.label || 'This card');
+    }
+    return t('editor.inspector.tab.card', 'This card');
+  }
   if (sel?.kind === 'text') return t('editor.inspector.tab.text', 'This text');
   return t('editor.inspector.tab.element', 'This element');
 }

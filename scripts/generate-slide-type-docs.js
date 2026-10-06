@@ -33,6 +33,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { formatGenerated } from './lib/format-generated.js';
+import { initSanitizer } from '../shared/sanitize.js';
 
 import {
   SLIDE_TYPES,
@@ -224,6 +225,9 @@ export async function buildAllDocs() {
 }
 
 async function main() {
+  // The item-level coverage column renders every core type once; without
+  // DOMPurify the markdown fields would warn (the output is the same).
+  await initSanitizer();
   let changed = 0;
   for (const [rel, content] of await buildAllDocs()) {
     const abs = path.join(REPO_ROOT, rel);

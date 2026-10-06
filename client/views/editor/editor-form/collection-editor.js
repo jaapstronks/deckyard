@@ -3,12 +3,8 @@ import { icon } from '../../../lib/dom/icons.js';
 import { attachPointerSortable } from '../../../lib/dom/pointer-sortable.js';
 import { createCollapsedState } from '../../../lib/slide-authoring/collapsed-state.js';
 import { collapseAllToggle } from '../fields/collapse-all-toggle.js';
-import { fieldCardLink } from '../fields/card-link-field.js';
-import { markLinkField } from '../fields/link-field.js';
-import { renderImageFitField } from '../fields/image-fit.js';
 import { getInlineDescriptor } from '../inline-edit/descriptors.js';
-import { fieldEditor } from '../../../../shared/slide-types/field-editors.js';
-import { optionCopy } from '../fields/option-copy.js';
+import { renderItemFieldWidget } from './item-field-widget.js';
 import { resolveItemDefaults } from '../../../../shared/slide-types/item-defaults.js';
 import {
   fieldFormLayout,
@@ -105,8 +101,7 @@ export function createCollectionEditor({
   pres = null,
   getSelectedSlideId = () => slide?.id,
 } = {}) {
-  const { fieldImage, fieldIconPicker, fieldEnum, fieldGrid, fieldNumber } =
-    fieldRenderers || {};
+  const { fieldGrid } = fieldRenderers || {};
 
   const minItems = Math.max(0, Number(field?.minItems || 0) || 0);
   const maxItems = Math.max(minItems, Number(field?.maxItems || 99) || 99);
@@ -233,32 +228,6 @@ export function createCollectionEditor({
     onReorder: moveItem,
   });
 
-  const makeInput = (
-    label,
-    value,
-    { maxLength, multiline, number, placeholder, fieldType } = {},
-    onChange,
-  ) => {
-    if (number && fieldNumber) {
-      return fieldNumber(label, value ?? '', onChange, {});
-    }
-    const input = multiline
-      ? h('textarea', { class: 'form-input form-textarea-sm', rows: '2' })
-      : h('input', { class: 'form-input' });
-    input.value = value ?? '';
-    if (Number(maxLength) > 0) input.maxLength = Number(maxLength);
-    if (typeof placeholder === 'string' && placeholder)
-      input.placeholder = placeholder;
-    input.addEventListener('input', () => onChange(input.value));
-    const wrap = h('div', { class: 'stack is-field' }, [
-      h('div', { class: 'field-label', text: label }),
-      input,
-    ]);
-    return multiline
-      ? wrap
-      : markLinkField({ wrap, control: input, fieldType });
-  };
-
   /** The collapsed-header preview: first non-empty string field's value. */
   const itemTitle = (item, i) => {
     for (const f of itemFields) {
@@ -372,7 +341,6 @@ export function createCollectionEditor({
       };
       for (const f of itemFields) {
         const k = String(f.key || '');
-        const label = t(f.labelKey || k, f.label || k);
 
         // `relationField` names the relation to the NEXT item (text-blocks'
         // arrow): meaningless on the last item, so it doesn't render there.
@@ -381,84 +349,6 @@ export function createCollectionEditor({
           k === field.relationField &&
           i >= current.length - 1
         ) {
-          continue;
-        }
-
-        // Widgets from the closed field-editor vocabulary
-        // (shared/slide-types/field-editors.js). This loop implements the two
-        // item-sized ones; any other name falls through to the base widget
-        // for the declared type.
-        const editor = fieldEditor(f);
-        if (editor === 'icon-picker' && typeof fieldIconPicker === 'function') {
-          pushWidget(
-            k,
-            fieldIconPicker(
-              label,
-              item?.[k] || '',
-              (v) => setItemKey(k, v),
-              {},
-            ),
-          );
-          continue;
-        }
-        if (editor === 'card-link') {
-          pushWidget(
-            k,
-            fieldCardLink({
-              value: item?.[k] || '',
-              slides: deckSlides,
-              onChange: (v) => setItemKey(k, v),
-              help: t(
-                'editor.cards.linkHelp2',
-                'Makes the card clickable. Pick a slide to jump to, or type an https:// / mailto: link (opens in a new tab).',
-              ),
-            }),
-          );
-          continue;
-        }
-        if (editor === 'image-fit') {
-          const fitEl = renderImageFitField({
-            fieldEnum,
-            field: { ...f, key: k },
-            target: item,
-            typeDefault: def?.imageDefaults?.fit,
-            onChange: (v) => setItemKey(k, v),
-          });
-          if (fitEl) {
-            pushWidget(k, fitEl);
-            continue;
-          }
-        }
-
-        if (f.type === 'image' && fieldImage) {
-          // fieldImage edits `slide.content[key]`; a proxy slide maps that
-          // contract onto this item object.
-          const proxySlide = {
-            type: slide.type,
-            id: slide.id,
-            content: item,
-          };
-          const imageField = { ...f, key: k, hideHelp: true };
-          pushWidget(
-            k,
-            fieldImage(proxySlide, imageField, (url) => {
-              setItemKey(k, url);
-              renderList();
-            }),
-          );
-          continue;
-        }
-
-        if (f.type === 'enum' && typeof fieldEnum === 'function') {
-          const options = (Array.isArray(f.options) ? f.options : []).map(
-            optionCopy,
-          );
-          pushWidget(
-            k,
-            fieldEnum({ ...f, options }, item?.[k] ?? '', (v) =>
-              setItemKey(k, v),
-            ),
-          );
           continue;
         }
 
@@ -496,34 +386,19 @@ export function createCollectionEditor({
           continue;
         }
 
-        if (
-          f.type === 'string' ||
-          f.type === 'markdown' ||
-          f.type === 'number' ||
-          f.type === 'url' ||
-          f.type === 'email'
-        ) {
-          pushWidget(
-            k,
-            makeInput(
-              label,
-              item?.[k] ?? '',
-              {
-                maxLength: f.maxLength,
-                multiline: f.type === 'markdown' || !!f.multiline,
-                number: f.type === 'number',
-                fieldType: f.type,
-                placeholder:
-                  typeof f.placeholder === 'string' && f.placeholderKey
-                    ? t(f.placeholderKey, f.placeholder)
-                    : f.placeholder,
-              },
-              (v) => setItemKey(k, v),
-            ),
-          );
-          continue;
-        }
-        // Unknown item-field type: degrade to nothing rather than break.
+        // Every other item field: the shared per-item widget, the same one
+        // the inspector's "This card" tab renders (item-field-widget.js).
+        const widget = renderItemFieldWidget({
+          field: f,
+          item,
+          setItemKey,
+          slide,
+          def,
+          fieldRenderers,
+          deckSlides,
+          onImageChange: renderList,
+        });
+        if (widget) pushWidget(k, widget);
       }
 
       // Nested collections break a grid run without moving past later fields.
