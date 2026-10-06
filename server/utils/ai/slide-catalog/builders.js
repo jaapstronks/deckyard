@@ -171,9 +171,13 @@ For intent:"quote" ONLY. A single powerful quote.
 EXACT CONTENT SCHEMA (NO image field, NO bullets):
 \`\`\`json
 {
-  "quote": "The actual quote text, 1-3 sentences max.",
-  "authorName": "Person Name",
-  "authorTitle": "Their Role or Title"
+  "quotes": [
+    {
+      "quote": "The actual quote text, 1-3 sentences max.",
+      "authorName": "Person Name",
+      "authorTitle": "Their Role or Title"
+    }
+  ]
 }
 \`\`\`
 

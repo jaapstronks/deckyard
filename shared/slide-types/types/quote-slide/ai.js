@@ -47,8 +47,12 @@ export const ai = {
  */
 export const aiExamples = [
   {
-    quote: 'Innovation distinguishes between a leader and a follower.',
-    authorName: 'Steve Jobs',
-    authorTitle: 'Co-founder, Apple Inc.',
+    quotes: [
+      {
+        quote: 'Innovation distinguishes between a leader and a follower.',
+        authorName: 'Steve Jobs',
+        authorTitle: 'Co-founder, Apple Inc.',
+      },
+    ],
   },
 ];

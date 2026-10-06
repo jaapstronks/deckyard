@@ -13,11 +13,12 @@ const { seedThemeConfig } = await import('./helpers/theme-seed.js');
 const { resolveThemeMaster, themeTextPt } =
   await import('../server/export/pptx-theme.js');
 const theme = await seedThemeConfig('midnight');
-const sample = {
+const first = {
   quote: 'Make room for better ideas.',
   authorName: 'Jane & Sam',
   authorTitle: 'Designers',
 };
+const sample = { quotes: [first] };
 
 async function exportQuote(content = sample, customTheme = theme) {
   const built = await buildEditablePptxBuffer(
@@ -76,8 +77,8 @@ test('centered quote moves its whole block; ordinary attribution sits at the bot
 
 test('multiple quotes alternate and preserve their own attribution and matching font size', async () => {
   const { shapes, built } = await exportQuote({
-    ...sample,
     quotes: [
+      first,
       { quote: 'A second voice.', authorName: 'Alex', authorTitle: 'Editor' },
       { quote: 'A third voice.', authorName: 'Chris' },
     ],
@@ -101,27 +102,33 @@ test('multiple quotes alternate and preserve their own attribution and matching 
 
 test('empty extras and extras beyond the canvas limit do not export', async () => {
   const { xml } = await exportQuote({
-    ...sample,
-    quotes: [{ quote: ' ' }, { quote: 'Second' }, { quote: 'Must not appear' }],
+    quotes: [
+      first,
+      { quote: ' ' },
+      { quote: 'Second' },
+      { quote: 'Must not appear' },
+    ],
   });
   assert.match(xml, /Second/);
   assert.doesNotMatch(xml, /Must not appear/);
 });
 
-test('primary and extra portraits are independent editable circular pictures with alt text', async () => {
+test('first and later portraits are independent editable circular pictures with alt text', async () => {
   const image = '/assets/images/slides-previewimage.png';
   const { xml, built } = await exportQuote({
-    ...sample,
-    authorImage1: image,
-    authorImage1Alt: 'Jane portrait',
-    authorImage2: image,
-    authorImage2Alt: 'Sam portrait',
     quotes: [
+      {
+        ...first,
+        authorImage1: image,
+        authorImage1Alt: 'Jane portrait',
+        authorImage2: image,
+        authorImage2Alt: 'Sam portrait',
+      },
       {
         quote: 'Second',
         authorName: 'Alex',
-        authorImage: image,
-        authorImageAlt: 'Alex portrait',
+        authorImage1: image,
+        authorImage1Alt: 'Alex portrait',
       },
     ],
   });
@@ -134,9 +141,13 @@ test('primary and extra portraits are independent editable circular pictures wit
 
 test('missing portrait warns and keeps the quotation and attribution', async () => {
   const { xml, built } = await exportQuote({
-    ...sample,
-    authorImage1: '/assets/missing-quote-portrait.png',
-    authorImage1Alt: 'Missing portrait',
+    quotes: [
+      {
+        ...first,
+        authorImage1: '/assets/missing-quote-portrait.png',
+        authorImage1Alt: 'Missing portrait',
+      },
+    ],
   });
   assert.equal(built.warnings.length, 1);
   assert.match(built.warnings[0], /could not be embedded/);
@@ -164,7 +175,9 @@ test('dark palette and scale come from the theme even when its default is light'
 });
 
 test('empty quotation does not turn the attribution into a quotation', async () => {
-  const { xml, shapes } = await exportQuote({ authorName: 'Only author' });
+  const { xml, shapes } = await exportQuote({
+    quotes: [{ authorName: 'Only author' }],
+  });
   assert.match(xml, /Only author/);
   assert.doesNotMatch(shapes[0], /Only author/);
 });

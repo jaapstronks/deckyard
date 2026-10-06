@@ -40,7 +40,7 @@ the element?**
 
 Legend for the record level: **S** = slide (`content.<key>`), **I** = item in an
 array (`content.images[i].<key>` etc.), **N** = flat numbered slide key
-(`col{n}…`, `authorImage{n}…`). 🚩 marks the smell: one concept stored at
+(`col{n}…`). 🚩 marks the smell: one concept stored at
 different levels across types, at two levels within one type, or an
 inspector write path that disagrees with the render read path.
 
@@ -77,23 +77,23 @@ rule exists to stop exactly this.
 
 ### alt 🚩
 
-| Type                             | Level          | Field(s)                                                               | Render precedence                                                                                         |
-| -------------------------------- | -------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| image-slide                      | S              | `alt` (+`altNl`/`altEn`)                                               | `content` (`image-slide.js:242-252`)                                                                      |
-| image-text                       | S (since D100) | `alt`                                                                  | `resolveImageTextImage`; the vestigial `altNl`/`altEn` were folded and dropped by the schema funnel (v15) |
-| image-set                        | **I** ✅       | item `alt` canonical                                                   | item (translated as an itemKey)                                                                           |
-| content-columns                  | N              | `col{n}Alt`                                                            | per column                                                                                                |
-| gallery / team-cards / logo-wall | I              | `images[i]`/`members[i]`/`logos[i]`.`alt`                              | item (the numbered mirrors went with schema v7 -> v8)                                                     |
-| quote                            | **S + I** 🚩   | primary `authorImage{n}Alt` (flat) + extras `quotes[i].authorImageAlt` | flat for portraits 1-2 `quote-slide.js:85-99`; item for extra quotes `:108-118`                           |
+| Type                             | Level          | Field(s)                                  | Render precedence                                                                                         |
+| -------------------------------- | -------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| image-slide                      | S              | `alt` (+`altNl`/`altEn`)                  | `content` (`image-slide.js:242-252`)                                                                      |
+| image-text                       | S (since D100) | `alt`                                     | `resolveImageTextImage`; the vestigial `altNl`/`altEn` were folded and dropped by the schema funnel (v15) |
+| image-set                        | **I** ✅       | item `alt` canonical                      | item (translated as an itemKey)                                                                           |
+| content-columns                  | N              | `col{n}Alt`                               | per column                                                                                                |
+| gallery / team-cards / logo-wall | I              | `images[i]`/`members[i]`/`logos[i]`.`alt` | item (the numbered mirrors went with schema v7 -> v8)                                                     |
+| quote                            | **I** ✅       | `quotes[i].authorImage{n}Alt`             | item; every quote, the first included, lives in `quotes[]` (D314, schema v17)                             |
 
 ### role, background, structural layout, media collection
 
-| Property                    | image-slide                                                         | image-text                                                        | content-columns    | gallery           | team-cards  | logo-wall | quote                                                   |
-| --------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------ | ----------------- | ----------- | --------- | ------------------------------------------------------- |
-| `imageRole` (a11y exposure) | S `content`                                                         | S `content` (one frame)                                           | —                  | —                 | —           | —         | —                                                       |
-| `background` (slide bg)     | S                                                                   | S (+ `imageBackground` = _different_ axis: image-area bg)         | S                  | S                 | S           | S         | S                                                       |
-| **structural `layout`**     | ❌ none (legacy `layout` was fit; split into `fit`+`bleed`, step 3) | S `split/corner` (toolbar chip); image-set: S `beside/top/bottom` | ❌ (`columnCount`) | S `layout` (grid) | —           | —         | —                                                       |
-| media collection            | flat `image`                                                        | flat `image` (one image; 2–3 images are image-set's `images[]`)   | flat `col{n}Image` | `images[]`        | `members[]` | `logos[]` | flat `authorImage{n}` + item `quotes[i].authorImage` 🚩 |
+| Property                    | image-slide                                                         | image-text                                                        | content-columns    | gallery           | team-cards  | logo-wall | quote                      |
+| --------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------ | ----------------- | ----------- | --------- | -------------------------- |
+| `imageRole` (a11y exposure) | S `content`                                                         | S `content` (one frame)                                           | —                  | —                 | —           | —         | —                          |
+| `background` (slide bg)     | S                                                                   | S (+ `imageBackground` = _different_ axis: image-area bg)         | S                  | S                 | S           | S         | S                          |
+| **structural `layout`**     | ❌ none (legacy `layout` was fit; split into `fit`+`bleed`, step 3) | S `split/corner` (toolbar chip); image-set: S `beside/top/bottom` | ❌ (`columnCount`) | S `layout` (grid) | —           | —         | —                          |
+| media collection            | flat `image`                                                        | flat `image` (one image; 2–3 images are image-set's `images[]`)   | flat `col{n}Image` | `images[]`        | `members[]` | `logos[]` | `quotes[i].authorImage{n}` |
 
 `imageRole` and `background` are **uniformly slide-level** — they do not exhibit
 the smell. Only `fit`, `focus`, `alt` (and the portrait `image` in quote) do.

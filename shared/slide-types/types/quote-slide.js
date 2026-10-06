@@ -28,30 +28,40 @@ const QUOTE_BLOCK = alignGroup('quote-block', 'quoteAlign', {
   schematicKind: 'quote',
 });
 
-// Portraits on the primary (legacy) quote: two slots so a shared quote (a duo)
-// can show both people. Extra quotes carry a single optional portrait each.
-const MAX_PORTRAITS = 2;
-// Extra quotes stacked under the primary one (quotes 2 and 3). The primary
-// quote stays in the flat top-level fields, so existing single-quote decks are
-// byte-for-byte unchanged and their duo portraits are preserved.
-const MAX_EXTRA_QUOTES = 2;
+/**
+ * Every quote on the slide lives in `quotes[]`, the first included (D314):
+ * one storage form, so a quote, its byline and its portraits mean the same
+ * keys wherever they stand. Stored decks from before the fold carried the
+ * first quote in flat top-level keys; the v16 -> v17 schema step moved them.
+ */
+const MAX_QUOTES = 3;
+// Each quote shows up to two round portraits (a duo shares one quote).
+const PORTRAIT_SLOTS = 2;
 
-/** One rendered portrait circle. `inlineIdx` wires the media popover (primary
- * quote only); extra quotes omit it and are edited via the side form. */
-function portraitHtml(src, alt, inlineIdx) {
-  const idxAttr = inlineIdx != null ? ` data-inline-photo="${inlineIdx}"` : '';
+/**
+ * The `data-inline-photo` index of portrait `slot` (1-based) on quote `i`:
+ * item-major, matching the `slots` media grammar in the inline-edit companion.
+ * @param {number} i
+ * @param {number} slot
+ * @returns {number}
+ */
+export function portraitPhotoIndex(i, slot) {
+  return i * PORTRAIT_SLOTS + (slot - 1);
+}
+
+/** One rendered portrait circle; `photoIdx` wires the canvas media popover. */
+function portraitHtml(src, alt, photoIdx) {
   return `
-              <div class="quote-portrait"${idxAttr}>
+              <div class="quote-portrait" data-inline-photo="${photoIdx}">
                 <img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />
               </div>`;
 }
 
-/** An empty portrait slot rendered on the editor canvas only, so a FIRST
- * portrait can be added in-slide via the media popover (flat authorImage{n}).
- * `inlineIdx` is the 1-based slot number. */
-function placeholderPortraitHtml(inlineIdx) {
+/** An empty portrait slot, drawn on the editor canvas only, so a portrait can
+ * be added in-slide via the media popover. */
+function placeholderPortraitHtml(photoIdx) {
   return `
-              ${imagePlaceholderHtml({ className: 'quote-portrait', index: inlineIdx, compact: true })}`;
+              ${imagePlaceholderHtml({ className: 'quote-portrait', index: photoIdx, compact: true })}`;
 }
 
 /** Wrap portrait parts in their container (or nothing when there are none). */
@@ -62,94 +72,53 @@ function portraitsWrap(parts) {
 }
 
 /**
- * Render the blockquote + author footer for one quote. Shared by the single
+ * Render the blockquote + author footer for quote `i`. Shared by the single
  * and multi layouts so both stay in sync; `morph` only tags the single layout
  * (per-slide morph roles must be unique, and the single quote is the animated
  * hero case).
  */
-function quoteBlockInnerHtml({
-  quote,
-  authorName,
-  authorTitle,
-  portraitsHtml,
-  quoteField,
-  nameField,
-  titleField,
-  morph = false,
-}) {
+function quoteBlockInnerHtml(item, i, portraitsHtml, { morph = false } = {}) {
   const morphQuote = morph ? ' data-morph-role="quote-text"' : '';
   const morphAuthor = morph ? ' data-morph-role="quote-author"' : '';
   return `
             <blockquote class="quote-text"${morphQuote} dir="auto">
-              <p data-inline-field="${quoteField}">${escapeHtml(curlyQuote(quote))}</p>
+              <p data-inline-field="quotes.${i}.quote">${escapeHtml(curlyQuote(item?.quote))}</p>
             </blockquote>
             <footer class="quote-author${portraitsHtml ? ' has-portraits' : ''}"${morphAuthor}>
               ${portraitsHtml}
               <div>
-                <div class="name" data-inline-field="${nameField}" dir="auto">${escapeHtml(
-                  authorName,
+                <div class="name" data-inline-field="quotes.${i}.authorName" dir="auto">${escapeHtml(
+                  item?.authorName,
                 )}</div>
-                <div class="role" data-inline-field="${titleField}" dir="auto">${escapeHtml(
-                  authorTitle,
+                <div class="role" data-inline-field="quotes.${i}.authorTitle" dir="auto">${escapeHtml(
+                  item?.authorTitle,
                 )}</div>
               </div>
             </footer>`;
 }
 
-/** Portrait parts for the primary quote, from the flat authorImage1/2 slots.
- * In the editor (`editMode`), the next empty slot renders a clickable
- * placeholder so a first portrait can be added in-slide. */
-function primaryPortraitParts(content, editMode = false) {
+/** Portrait parts for quote `i`. In the editor (`editMode`), the first empty
+ * slot renders a clickable placeholder so a portrait can be added in-slide. */
+function portraitParts(item, i, editMode = false) {
   const parts = [];
   let firstEmpty = 0;
-  for (let n = 1; n <= MAX_PORTRAITS; n++) {
-    const src =
-      typeof content?.[`authorImage${n}`] === 'string'
-        ? content[`authorImage${n}`].trim()
-        : '';
+  for (let n = 1; n <= PORTRAIT_SLOTS; n++) {
+    const raw = item?.[`authorImage${n}`];
+    const src = typeof raw === 'string' ? raw.trim() : '';
     if (!src) {
       if (!firstEmpty) firstEmpty = n;
       continue;
     }
     const alt = pickAltText({
-      explicit: content?.[`authorImage${n}Alt`],
+      explicit: item?.[`authorImage${n}Alt`],
       src,
-      fallbacks: [content?.authorName],
+      fallbacks: [item?.authorName],
       hardFallback: 'Portrait',
     });
-    parts.push(portraitHtml(src, alt, n));
+    parts.push(portraitHtml(src, alt, portraitPhotoIndex(i, n)));
   }
   if (editMode && firstEmpty) {
-    parts.push(placeholderPortraitHtml(firstEmpty));
-  }
-  return parts;
-}
-
-/** Portrait parts for an extra quote (single optional portrait, no inline idx). */
-function extraPortraitParts(item) {
-  // Two optional slots, matching the primary quote's duo support: authorImage
-  // (legacy single slot) + authorImage2. Extras are edited via the side form,
-  // so no inline photo index.
-  const parts = [];
-  const slots = [
-    { src: item?.authorImage, alt: item?.authorImageAlt },
-    { src: item?.authorImage2, alt: item?.authorImage2Alt },
-  ];
-  for (const { src, alt } of slots) {
-    const s = typeof src === 'string' ? src.trim() : '';
-    if (!s) continue;
-    parts.push(
-      portraitHtml(
-        s,
-        pickAltText({
-          explicit: alt,
-          src: s,
-          fallbacks: [item?.authorName],
-          hardFallback: 'Portrait',
-        }),
-        null,
-      ),
-    );
+    parts.push(placeholderPortraitHtml(portraitPhotoIndex(i, firstEmpty)));
   }
   return parts;
 }
@@ -186,13 +155,25 @@ export function quoteFontScale(count, quoteTexts) {
   return Math.round(scale * 1000) / 1000;
 }
 
-/** Extra quotes worth rendering: those with actual quote text. */
-export function activeExtraQuotes(content) {
+/**
+ * The quotes the slide shows, with their index into `quotes[]`: the first
+ * always (it is the slide's quote, even while empty), the others only once
+ * they hold quote text, up to three.
+ * @param {Object} content
+ * @returns {Array<{item: Object, i: number}>}
+ */
+export function displayQuotes(content) {
   const arr = Array.isArray(content?.quotes) ? content.quotes : [];
   return arr
-    .slice(0, MAX_EXTRA_QUOTES)
-    .map((item, i) => ({ item, i }))
-    .filter(({ item }) => typeof item?.quote === 'string' && item.quote.trim());
+    .slice(0, MAX_QUOTES)
+    .map((item, i) => ({
+      item: item && typeof item === 'object' ? item : {},
+      i,
+    }))
+    .filter(
+      ({ item, i }) =>
+        i === 0 || (typeof item.quote === 'string' && item.quote.trim()),
+    );
 }
 
 export default {
@@ -200,94 +181,36 @@ export default {
   runtime: 'static',
   fidelity: { pptx: 'native' },
   label: 'Quote',
-  labelField: 'quote',
+  labelField: 'quotes',
   fieldGroups: [QUOTE_BLOCK.group],
   layoutVariants: QUOTE_BLOCK.variants,
   fields: [
     QUOTE_BLOCK.field,
-    {
-      key: 'quote',
-      essential: true,
-      label: 'Quote',
-      type: 'string',
-      required: true,
-      maxLength: 400,
-      // Alignment belongs to the quote-block group, which moves quote, byline
-      // and portraits together; `role` still governs colour/size affordances.
-      role: 'quote',
-      group: 'quote-block',
-    },
-    {
-      key: 'authorName',
-      label: 'Name',
-      type: 'string',
-      required: true,
-      maxLength: 80,
-      role: 'attribution',
-      group: 'quote-block',
-    },
-    {
-      key: 'authorTitle',
-      label: 'Role / title',
-      type: 'string',
-      required: true,
-      maxLength: 120,
-      role: 'attribution',
-      group: 'quote-block',
-    },
-    // Optional round portrait photos, shown next to the name/byline. Two
-    // slots so a shared quote (e.g. a duo) can show both people.
-    {
-      key: 'authorImage1',
-      label: 'Portrait photo 1 (optional)',
-      type: 'image',
-      nameKey: 'authorName',
-      required: false,
-    },
-    {
-      key: 'authorImage1Alt',
-      label: 'Portrait 1 alt text (optional)',
-      type: 'string',
-      required: false,
-      maxLength: 180,
-    },
-    {
-      key: 'authorImage2',
-      label: 'Portrait photo 2 (optional)',
-      type: 'image',
-      nameKey: 'authorName',
-      required: false,
-    },
-    {
-      key: 'authorImage2Alt',
-      label: 'Portrait 2 alt text (optional)',
-      type: 'string',
-      required: false,
-      maxLength: 180,
-    },
-    // Optional extra quotes (2 and 3). When present, the slide switches to a
-    // stacked, alternating-alignment layout. Each carries its own attribution
-    // and up to two optional portraits (like the primary quote, e.g. a duo).
-    // Kept separate from the primary quote so existing single-quote decks
-    // (incl. duos with two portraits) are untouched.
+    // One to three quotes. A second or third stacks the quotes in an
+    // alternating-alignment layout; each carries its own byline and up to two
+    // optional portraits (a duo shares one quote).
     {
       key: 'quotes',
-      label: 'Extra quotes (optional, max 2)',
+      // A quote slide without its quote is empty quotation marks. Essential
+      // on a list means its first entry (D211): the first quote's text asks
+      // for itself in-box, its `itemLabelField`.
+      essential: true,
+      label: 'Quotes',
       type: 'items',
-      required: false,
-      minItems: 0,
-      maxItems: MAX_EXTRA_QUOTES,
-      // Seeded with placeholder copy (like the primary quote's defaults) so a
-      // quote added on the canvas renders and is click-to-edit immediately -
-      // an empty quote is filtered out by activeExtraQuotes and would appear to
-      // do nothing. The user replaces the placeholders, or removes the quote
-      // with its × badge.
+      required: true,
+      minItems: 1,
+      maxItems: MAX_QUOTES,
+      itemLabelField: 'quote',
+      // Seeded with placeholder copy so a quote added on the canvas renders
+      // and is click-to-edit immediately - a quote past the first without
+      // text is not shown. The user replaces the placeholders, or removes the
+      // quote with its × badge.
       itemDefaults: {
         quote: 'A strong quote goes here.',
         authorName: 'Name Surname',
         authorTitle: 'Role / title',
-        authorImage: '',
-        authorImageAlt: '',
+        authorImage1: '',
+        authorImage1Alt: '',
         authorImage2: '',
         authorImage2Alt: '',
       },
@@ -296,8 +219,8 @@ export default {
           quote: 'Een sterke quote komt hier.',
           authorName: 'Voornaam Achternaam',
           authorTitle: 'Functie / titel',
-          authorImage: '',
-          authorImageAlt: '',
+          authorImage1: '',
+          authorImage1Alt: '',
           authorImage2: '',
           authorImage2Alt: '',
         },
@@ -309,15 +232,20 @@ export default {
           type: 'string',
           required: true,
           maxLength: 400,
+          // Alignment belongs to the quote-block group, which moves quote,
+          // byline and portraits together; `role` still governs colour/size
+          // affordances.
           role: 'quote',
+          group: 'quote-block',
         },
         {
           key: 'authorName',
           label: 'Name',
           type: 'string',
-          required: false,
+          required: true,
           maxLength: 80,
           role: 'attribution',
+          group: 'quote-block',
         },
         {
           key: 'authorTitle',
@@ -326,16 +254,17 @@ export default {
           required: false,
           maxLength: 120,
           role: 'attribution',
+          group: 'quote-block',
         },
         {
-          key: 'authorImage',
+          key: 'authorImage1',
           label: 'Portrait photo 1 (optional)',
           type: 'image',
           nameKey: 'authorName',
           required: false,
         },
         {
-          key: 'authorImageAlt',
+          key: 'authorImage1Alt',
           label: 'Portrait 1 alt text (optional)',
           type: 'string',
           required: false,
@@ -362,71 +291,74 @@ export default {
   defaultsByLang: {
     nl: {
       quoteAlign: 'left',
-      quote: 'Een sterke quote komt hier.',
-      authorName: 'Voornaam Achternaam',
-      authorTitle: 'Functie / titel',
-      authorImage1: '',
-      authorImage1Alt: '',
-      authorImage2: '',
-      authorImage2Alt: '',
-      quotes: [],
+      quotes: [
+        {
+          quote: 'Een sterke quote komt hier.',
+          authorName: 'Voornaam Achternaam',
+          authorTitle: 'Functie / titel',
+          authorImage1: '',
+          authorImage1Alt: '',
+          authorImage2: '',
+          authorImage2Alt: '',
+        },
+      ],
     },
     'en-GB': {
       quoteAlign: 'left',
-      quote: 'A strong quote goes here.',
-      authorName: 'Name Surname',
-      authorTitle: 'Function / title',
-      authorImage1: '',
-      authorImage1Alt: '',
-      authorImage2: '',
-      authorImage2Alt: '',
-      quotes: [],
+      quotes: [
+        {
+          quote: 'A strong quote goes here.',
+          authorName: 'Name Surname',
+          authorTitle: 'Function / title',
+          authorImage1: '',
+          authorImage1Alt: '',
+          authorImage2: '',
+          authorImage2Alt: '',
+        },
+      ],
     },
   },
   // The language-less seed: what every path with no deck language clones.
   // Key-identical to the maps above; see `defaults` in validate-definition.js.
   defaults: {
     quoteAlign: 'left',
-    quote: 'A strong quote goes here.',
-    authorName: 'Name Surname',
-    authorTitle: 'Role / title',
-    authorImage1: '',
-    authorImage1Alt: '',
-    authorImage2: '',
-    authorImage2Alt: '',
-    quotes: [],
+    quotes: [
+      {
+        quote: 'A strong quote goes here.',
+        authorName: 'Name Surname',
+        authorTitle: 'Role / title',
+        authorImage1: '',
+        authorImage1Alt: '',
+        authorImage2: '',
+        authorImage2Alt: '',
+      },
+    ],
   },
   renderHtml: (content, slide, ctx) => {
     const editMode = ctx?.mode === 'edit';
     const vars = gradientVarsForSlide(slide?.id, 'quote');
-    const extras = activeExtraQuotes(content);
+    const quotes = displayQuotes(content);
 
-    // Single-quote (the common, legacy case): keep the hero layout. The font
-    // scale only dips below 1 for long quotes, so short/typical quotes still
-    // render at the default hero size.
-    if (!extras.length) {
+    // A single quote keeps the hero layout. The font scale only dips below 1
+    // for long quotes, so short/typical quotes still render at the default
+    // hero size.
+    if (quotes.length === 1) {
+      const [{ item, i }] = quotes;
       const styleVars = {
         ...(vars || {}),
-        '--quote-scale': quoteFontScale(1, [content?.quote]),
+        '--quote-scale': quoteFontScale(1, [item.quote]),
       };
       // Centre the WHOLE block - quote, byline and portraits - in the slide,
       // not just the text within a left-hung column. Driven by the quote-block
       // group (Layout chip); `quoteAlign` is the only stored form.
       const groupClass = groupAlignClass(QUOTE_BLOCK.group, content);
       const alignClass = groupClass ? ` ${groupClass}` : '';
-      const portraitsHtml = portraitsWrap(
-        primaryPortraitParts(content, editMode),
+      const inner = quoteBlockInnerHtml(
+        item,
+        i,
+        portraitsWrap(portraitParts(item, i, editMode)),
+        { morph: true },
       );
-      const inner = quoteBlockInnerHtml({
-        quote: content?.quote,
-        authorName: content?.authorName,
-        authorTitle: content?.authorTitle,
-        portraitsHtml,
-        quoteField: 'quote',
-        nameField: 'authorName',
-        titleField: 'authorTitle',
-        morph: true,
-      });
       return `
         <div class="slide slide-quote${alignClass}"${styleAttrFromVars(styleVars)}>
           <div class="slide-inner">${inner}
@@ -435,56 +367,28 @@ export default {
       `;
     }
 
-    // Multi-quote: primary + extras stacked, alignment alternating L / R / L
-    // via :nth-child CSS. Font scales down with the count (data-quote-count).
-    // `inlineIdx` is the item's index into quotes[] for the editor's card
-    // affordances (remove ×); the primary quote lives in the flat top-level
-    // fields, so it carries no index and gets no remove badge.
-    const items = [];
-    items.push({
-      inner: quoteBlockInnerHtml({
-        quote: content?.quote,
-        authorName: content?.authorName,
-        authorTitle: content?.authorTitle,
-        portraitsHtml: portraitsWrap(primaryPortraitParts(content, editMode)),
-        quoteField: 'quote',
-        nameField: 'authorName',
-        titleField: 'authorTitle',
-      }),
-      inlineIdx: null,
-    });
-    for (const { item, i } of extras) {
-      items.push({
-        inner: quoteBlockInnerHtml({
-          quote: item?.quote,
-          authorName: item?.authorName,
-          authorTitle: item?.authorTitle,
-          portraitsHtml: portraitsWrap(extraPortraitParts(item)),
-          quoteField: `quotes.${i}.quote`,
-          nameField: `quotes.${i}.authorName`,
-          titleField: `quotes.${i}.authorTitle`,
-        }),
-        inlineIdx: i,
-      });
-    }
-
-    const count = items.length;
-    const itemsHtml = items
-      .map(({ inner, inlineIdx }) => {
-        const idxAttr =
-          inlineIdx != null
-            ? ` data-inline-item="quotes" data-inline-item-index="${inlineIdx}"`
-            : '';
-        return `<div class="quote-item"${idxAttr}>${inner}\n            </div>`;
+    // Several quotes stacked, alignment alternating L / R / L via
+    // :nth-child CSS. Font scales down with the count (data-quote-count).
+    // Each item carries its index into quotes[] for the editor's card
+    // affordances (remove ×, reorder).
+    const count = quotes.length;
+    const itemsHtml = quotes
+      .map(({ item, i }) => {
+        const inner = quoteBlockInnerHtml(
+          item,
+          i,
+          portraitsWrap(portraitParts(item, i, editMode)),
+        );
+        return `<div class="quote-item" data-inline-item="quotes" data-inline-item-index="${i}">${inner}\n            </div>`;
       })
       .join('\n            ');
 
     const styleVars = {
       ...(vars || {}),
-      '--quote-scale': quoteFontScale(count, [
-        content?.quote,
-        ...extras.map(({ item }) => item?.quote),
-      ]),
+      '--quote-scale': quoteFontScale(
+        count,
+        quotes.map(({ item }) => item.quote),
+      ),
     };
 
     return `

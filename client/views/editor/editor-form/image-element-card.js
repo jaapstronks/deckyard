@@ -24,7 +24,10 @@
 import { renderFocusGridField } from './focus-picker.js';
 import { renderImagePositionPicker } from './image-position-picker.js';
 import { imageFitOptions } from '../fields/image-fit.js';
-import { getInlineDescriptor } from '../inline-edit/descriptors.js';
+import {
+  getInlineDescriptor,
+  resolveMediaMember,
+} from '../inline-edit/descriptors.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { renderItemFieldWidget } from './item-field-widget.js';
 
@@ -47,29 +50,10 @@ function resolveImageElement(slide, def, idx) {
   const media = descriptor?.media;
   if (!slide || !media || !Number.isInteger(idx)) return null;
 
-  const sub = (s) => (media.list ? s : String(s).replace('{n}', String(idx)));
-
-  let member;
-  let imageField;
-  let altField;
-  let extraFields;
-  if (media.list) {
-    const arr = slide.content?.[media.list];
-    if (!Array.isArray(arr) || idx < 0 || idx >= arr.length) return null;
-    member = arr[idx];
-    imageField = media.imageField;
-    altField = media.altField;
-    extraFields = Array.isArray(media.extraFields) ? media.extraFields : [];
-  } else {
-    member = slide.content;
-    imageField = sub(media.imageField);
-    altField = sub(media.altField);
-    extraFields = (media.extraFields || []).map((f) => ({
-      ...f,
-      key: sub(f.key),
-    }));
-  }
-  if (!member || typeof member !== 'object') return null;
+  // Never pads: the inspector reads a selection, it does not make one.
+  const target = resolveMediaMember(slide.content, media, idx);
+  if (!target) return null;
+  const { member, sub, imageField, altField, extraFields } = target;
 
   let focus = null;
   if (descriptor.focus) {

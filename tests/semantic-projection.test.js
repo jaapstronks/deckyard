@@ -292,9 +292,13 @@ describe('the reader alt ladder: explicit, a name, nothing (D135, B297)', () => 
     const html = body(
       {
         content: {
-          quote: 'Ship it.',
-          authorName: 'Grace Hopper',
-          authorImage1: '/grace.png',
+          quotes: [
+            {
+              quote: 'Ship it.',
+              authorName: 'Grace Hopper',
+              authorImage1: '/grace.png',
+            },
+          ],
         },
       },
       SLIDE_TYPES['quote-slide'],
@@ -1377,9 +1381,9 @@ describe('role — the projection reads what a text field is (D128)', () => {
     const html = body(
       {
         content: {
-          quote: 'Ship it.',
-          authorName: 'Ada',
-          authorTitle: 'Engineer',
+          quotes: [
+            { quote: 'Ship it.', authorName: 'Ada', authorTitle: 'Engineer' },
+          ],
         },
       },
       quoteDef,
@@ -1394,10 +1398,13 @@ describe('role — the projection reads what a text field is (D128)', () => {
   });
 
   it('an empty attribution leaves no <footer>, a half-filled one keeps its line', () => {
-    const none = body({ content: { quote: 'Ship it.' } }, quoteDef);
+    const none = body(
+      { content: { quotes: [{ quote: 'Ship it.' }] } },
+      quoteDef,
+    );
     assert.ok(!none.includes('<footer'), none);
     const half = body(
-      { content: { quote: 'Ship it.', authorTitle: 'Engineer' } },
+      { content: { quotes: [{ quote: 'Ship it.', authorTitle: 'Engineer' }] } },
       quoteDef,
     );
     assert.ok(
@@ -1408,15 +1415,22 @@ describe('role — the projection reads what a text field is (D128)', () => {
     );
   });
 
-  it('extra quotes get the same table inside their item, and no <h3>', () => {
+  it('two quotes are a list, each the same table inside its item, no <h3>', () => {
+    // One quote is the passage itself (above); two or more read as a list of
+    // quotations (D314).
     const html = body(
       {
         content: {
-          quote: 'One.',
-          quotes: [{ quote: 'Two.', authorName: 'Grace' }],
+          quotes: [{ quote: 'One.' }, { quote: 'Two.', authorName: 'Grace' }],
         },
       },
       quoteDef,
+    );
+    assert.ok(
+      html.includes(
+        '<li class="reader-item"><blockquote data-field="quote"><p>One.</p></blockquote></li>',
+      ),
+      html,
     );
     assert.ok(
       html.includes(

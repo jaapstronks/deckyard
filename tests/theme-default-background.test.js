@@ -296,9 +296,9 @@ test('MCP create_presentation_from_slides seeds the theme ground', async () => {
         {
           type: 'quote-slide',
           content: {
-            quote: 'Zo dan',
-            authorName: 'Iemand',
-            authorTitle: 'Rol',
+            quotes: [
+              { quote: 'Zo dan', authorName: 'Iemand', authorTitle: 'Rol' },
+            ],
           },
         },
       ],

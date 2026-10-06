@@ -1,12 +1,13 @@
 /**
  * Tests for the quote slide: content-aware font sizing, canvas card affordance
- * hooks (data-inline-item-index on extra quotes only), and vertical layout.
+ * hooks (data-inline-item-index on every quote of a multi layout), and
+ * vertical layout.
  *
  * The renderer sets a per-slide --quote-scale from how much text there is so a
  * single hero quote stays large and only dips for long copy, while 2-3 stacked
- * quotes grow back toward the top of their size band when they're short. The
- * primary quote lives in flat fields (no index -> no remove ×); extras carry
- * their quotes[] index so the inline editor can remove them.
+ * quotes grow back toward the top of their size band when they're short. Every
+ * quote lives in quotes[] (D314); in the multi layout each carries its index so
+ * the inline editor can remove and reorder it, the hero layout carries none.
  *
  * Run with: node --test tests/quote-slide.test.js
  */
@@ -70,83 +71,63 @@ describe('quoteFontScale', () => {
 });
 
 describe('quote slide render', () => {
+  const q = (quote, authorName = 'A', authorTitle = 'B') => ({
+    quote,
+    authorName,
+    authorTitle,
+  });
+
   it('single quote emits --quote-scale and no multi markers', () => {
-    const html = render({ quote: SHORT, authorName: 'A', authorTitle: 'B' });
+    const html = render({ quotes: [q(SHORT)] });
     assert.equal(scaleFromHtml(html), 1);
     assert.ok(!/is-multi/.test(html));
     assert.ok(!/data-inline-item-index/.test(html));
   });
 
-  it('two quotes: count=2, scale set, only the extra carries an item index', () => {
-    const html = render({
-      quote: SHORT,
-      authorName: 'A',
-      authorTitle: 'B',
-      quotes: [{ quote: SHORT, authorName: 'C', authorTitle: 'D' }],
-    });
+  it('two quotes: count=2, scale set, both carry their item index', () => {
+    const html = render({ quotes: [q(SHORT), q(SHORT, 'C', 'D')] });
     assert.match(html, /data-quote-count="2"/);
     assert.ok(scaleFromHtml(html) > 0.6);
-    // Exactly one item index (the extra, index 0) - the primary has none.
     const indices = [...html.matchAll(/data-inline-item-index="(\d+)"/g)].map(
       (m) => m[1],
     );
-    assert.deepEqual(indices, ['0']);
+    assert.deepEqual(indices, ['0', '1']);
     assert.match(html, /data-inline-item="quotes" data-inline-item-index="0"/);
   });
 
-  it('three quotes: count=3, both extras indexed 0 and 1', () => {
+  it('three quotes: count=3, indexed 0, 1 and 2', () => {
     const html = render({
-      quote: SHORT,
-      authorName: 'A',
-      authorTitle: 'B',
-      quotes: [
-        { quote: SHORT, authorName: 'C', authorTitle: 'D' },
-        { quote: SHORT, authorName: 'E', authorTitle: 'F' },
-      ],
+      quotes: [q(SHORT), q(SHORT, 'C', 'D'), q(SHORT, 'E', 'F')],
     });
     assert.match(html, /data-quote-count="3"/);
     const indices = [...html.matchAll(/data-inline-item-index="(\d+)"/g)].map(
       (m) => m[1],
     );
-    assert.deepEqual(indices, ['0', '1']);
+    assert.deepEqual(indices, ['0', '1', '2']);
   });
 
-  it('an extra quote with empty text is not rendered (stays single)', () => {
-    const html = render({
-      quote: SHORT,
-      authorName: 'A',
-      authorTitle: 'B',
-      quotes: [{ quote: '', authorName: 'C', authorTitle: 'D' }],
-    });
+  it('a later quote with empty text is not rendered (stays single)', () => {
+    const html = render({ quotes: [q(SHORT), q('', 'C', 'D')] });
     assert.ok(!/is-multi/.test(html));
   });
 
   it('centre-aligned quote block centres the whole composition (is-align-center)', () => {
-    const html = render({
-      quote: SHORT,
-      authorName: 'A',
-      authorTitle: 'B',
-      quoteAlign: 'center',
-    });
+    const html = render({ quotes: [q(SHORT)], quoteAlign: 'center' });
     assert.match(html, /slide-quote is-align-center/);
   });
 
   it('left/default alignment does not add the centre class', () => {
-    const html = render({ quote: SHORT, authorName: 'A', authorTitle: 'B' });
+    const html = render({ quotes: [q(SHORT)] });
     assert.ok(!/is-align-center/.test(html));
   });
 
-  it('an extra quote renders up to two portraits (like the primary)', () => {
+  it('a later quote renders up to two portraits, like the first', () => {
     const html = render({
-      quote: SHORT,
-      authorName: 'A',
-      authorTitle: 'B',
       quotes: [
+        q(SHORT),
         {
-          quote: SHORT,
-          authorName: 'C',
-          authorTitle: 'D',
-          authorImage: 'https://ex/1.jpg',
+          ...q(SHORT, 'C', 'D'),
+          authorImage1: 'https://ex/1.jpg',
           authorImage2: 'https://ex/2.jpg',
         },
       ],

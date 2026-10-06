@@ -11,31 +11,31 @@
 
 /** @type {Object} InlineDescriptor for quote-slide. */
 export const inlineEdit = {
-  formText: ['quote', 'authorName', 'authorTitle'],
-  // Add/remove whole extra quotes (2nd/3rd) on the canvas. Extra quotes live
-  // in quotes[]; the primary quote stays in the flat top-level fields and is
-  // NOT part of the array - its .quote-item carries no data-inline-item-index,
-  // so insertCardLevel skips it and it never gets a remove ×. The add button
-  // anchors to .slide-inner (present in both the single-quote hero layout and
-  // the multi layout), so "Add quote" appears even before any extra exists
-  // (quotes[] empty -> no .quote-item yet). Removing an item splices the whole
-  // quote, including its byline and portrait. Reorder is disabled: the primary
-  // can't move into the array, so a partial reorder would mislead.
+  // Every quote lives in quotes[] (D314); its text, name and role are inline
+  // fields, its portraits the media below, so the bulk modal is never the
+  // only way in. quotes stays out of formText: its items carry images.
+  formText: [],
+  // Add/remove/reorder whole quotes on the canvas. The add button anchors to
+  // .slide-inner (present in the single-quote hero layout too), so "Add
+  // quote" appears before a second quote exists. The hero layout draws no
+  // .quote-item, so the one quote never gets a remove × (minItems 1).
+  // Removing a quote splices it whole, byline and portraits included.
   cards: {
     field: 'quotes',
     container: '.slide-inner',
     itemSelector: '.quote-item',
-    reorder: false,
     addLabelKey: 'editor.inline.addQuote',
     addLabel: 'Add quote',
     removeLabelKey: 'editor.inline.removeQuote',
     removeLabel: 'Remove quote',
   },
-  // Clicking a filled portrait opens the media popover writing to the flat
-  // authorImage{n} / authorImage{n}Alt fields (data-inline-photo carries
-  // the 1-based slot number). Empty slots render nothing - portraits are
-  // fully optional, so a first portrait is added via the side form.
+  // Two portrait slots per quote: data-inline-photo numbers them item-major
+  // (portraitPhotoIndex), the popover writes authorImage{n} / authorImage{n}Alt
+  // on that quote. The first empty slot of each quote draws a placeholder on
+  // the canvas, so a first portrait is added in-slide as well.
   media: {
+    list: 'quotes',
+    slots: 2,
     photoSelector: '.quote-portrait[data-inline-photo]',
     imageField: 'authorImage{n}',
     altField: 'authorImage{n}Alt',
@@ -50,9 +50,9 @@ export const inlineEdit = {
 export const inspectorKeeps = [];
 
 /**
- * Up to three author portraits, at indices 1-3: index 0 is the quote's own
- * image slot, which has no element tab.
+ * The portraits: two slots on each of up to three quotes, photo indices 0-5
+ * (item-major, see `media.slots`).
  * Grammar: shared/slide-types/inline-edit-companions.js.
  * @type {Object}
  */
-export const elementTab = { image: { range: [1, 3] } };
+export const elementTab = { image: { range: [0, 5] } };

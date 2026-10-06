@@ -233,35 +233,20 @@ test('no settings-shaped field relies on the bulk modal alone', () => {
  * The parity invariant one level down (B450): an ITEM field whose only home is
  * the bulk modal. The list-level check above counted a collection as homed once
  * the list was, which is how text-blocks' row arrows and colours stayed
- * modal-only. This is a ratchet: the pinned list may only shrink. A new entry
- * fails (give the field a home - canvas for content, the "This card" tab or the
- * inspector for settings), and an entry that found a home fails too, so the
- * pin is removed in the same change that fixes it.
+ * modal-only. The ratchet that pinned the leftovers reached zero with B599, so
+ * any entry fails: give the field a home - canvas for content, the "This card"
+ * tab or the inspector for settings.
  */
-test('no item field gains the bulk modal as its only home', () => {
-  const PINNED = [
-    'quote-slide.quotes.authorImage',
-    'quote-slide.quotes.authorImageAlt',
-    'quote-slide.quotes.authorImage2',
-    'quote-slide.quotes.authorImage2Alt',
-  ];
+test('no item field has the bulk modal as its only home', () => {
   const actual = coverageRows().flatMap((r) =>
     r.itemBulkOnly.map((p) => `${r.type}.${p}`),
   );
-  const added = actual.filter((k) => !PINNED.includes(k));
-  const homed = PINNED.filter((k) => !actual.includes(k));
   assert.deepEqual(
-    added,
+    actual,
     [],
     'these item fields render nowhere but the bulk modal - give each a home ' +
-      '(docs/reference/editing-surfaces.md), do not pin them:\n' +
-      added.join('\n'),
-  );
-  assert.deepEqual(
-    homed,
-    [],
-    'these pinned item fields have a home now - drop them from PINNED:\n' +
-      homed.join('\n'),
+      '(docs/reference/editing-surfaces.md):\n' +
+      actual.join('\n'),
   );
 });
 

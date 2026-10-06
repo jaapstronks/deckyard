@@ -311,7 +311,10 @@ test('v4->v5 keeps per-field colour/size on the same field', () => {
   );
   const content = migrated.slides[0].content;
   assert.equal(content.quoteAlign, 'center');
-  assert.deepEqual(content.textStyles, { quote: { color: 'accent' } });
+  // v16 -> v17 then moves the field's style with it into quotes[0] (D314).
+  assert.deepEqual(content.textStyles, {
+    'quotes.0.quote': { color: 'accent' },
+  });
 });
 
 test('v4->v5 drops an align the group never offered without inventing a value', () => {
@@ -1941,4 +1944,164 @@ test('a delta binding moves to the note, unless the note is bound already', () =
     { target: 'metrics[0].note', source: 'B1' },
     { target: 'metrics[1].note', source: 'C2' },
   ]);
+});
+
+/* ------------------------------------------------------------------ *
+ * v16 -> v17: every quote of a quote-slide lives in quotes[] (D314)
+ * ------------------------------------------------------------------ */
+
+/** A deck at v16 holding one quote-slide. */
+function quoteDeckAtV16(content, dataSource) {
+  return {
+    id: randomUUID(),
+    title: 'quotes',
+    lang: 'nl',
+    schemaVersion: 16,
+    slides: [
+      {
+        id: 's1',
+        type: 'quote-slide',
+        content,
+        ...(dataSource ? { dataSource } : {}),
+      },
+    ],
+  };
+}
+
+test('the flat first quote becomes quotes[0], ahead of the stored extras', () => {
+  const migrated = migratePresentation(
+    quoteDeckAtV16({
+      quoteAlign: 'center',
+      quote: 'One.',
+      authorName: 'Ada',
+      authorTitle: 'Eng',
+      authorImage1: '/a.png',
+      authorImage1Alt: 'Ada',
+      authorImage2: '/b.png',
+      authorImage2Alt: '',
+      quotes: [
+        {
+          quote: 'Two.',
+          authorName: 'Grace',
+          authorImage: '/g.png',
+          authorImageAlt: 'Grace',
+          authorImage2: '/h.png',
+        },
+      ],
+    }),
+  );
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(migrated.slides[0].content, {
+    quoteAlign: 'center',
+    quotes: [
+      {
+        quote: 'One.',
+        authorName: 'Ada',
+        authorTitle: 'Eng',
+        authorImage1: '/a.png',
+        authorImage1Alt: 'Ada',
+        authorImage2: '/b.png',
+        authorImage2Alt: '',
+      },
+      {
+        quote: 'Two.',
+        authorName: 'Grace',
+        authorImage1: '/g.png',
+        authorImage1Alt: 'Grace',
+        authorImage2: '/h.png',
+      },
+    ],
+  });
+});
+
+test('the quote fold renders the deck as the two forms did', () => {
+  const html = (content) =>
+    SLIDE_TYPES['quote-slide'].renderHtml(content, { id: 's' }, {});
+  const migrated = migratePresentation(
+    quoteDeckAtV16({
+      quote: 'One.',
+      authorName: 'Ada',
+      quotes: [{ quote: '' }, { quote: 'Three.', authorName: 'Lin' }],
+    }),
+  );
+  const out = html(migrated.slides[0].content);
+  // The first always shows, an extra only with text: two quotes.
+  assert.match(out, /data-quote-count="2"/);
+  assert.match(out, /One\./);
+  assert.match(out, /Three\./);
+});
+
+test('styles and bindings follow the fields they were keyed on', () => {
+  const migrated = migratePresentation(
+    quoteDeckAtV16(
+      {
+        quote: 'One.',
+        quotes: [{ quote: 'Two.' }],
+        textStyles: {
+          quote: { color: 'accent', align: 'center' },
+          authorName: { align: 'center' },
+          'quotes.0.quote': { size: 'lg' },
+        },
+      },
+      {
+        provider: 'csv-url',
+        config: {},
+        bindings: [
+          { target: 'quote', source: 'A1' },
+          { target: 'quotes[0].authorName', source: 'B2' },
+        ],
+      },
+    ),
+  );
+  const slide = migrated.slides[0];
+  assert.deepEqual(slide.content.textStyles, {
+    'quotes.0.quote': { color: 'accent' },
+    'quotes.1.quote': { size: 'lg' },
+  });
+  assert.deepEqual(slide.dataSource.bindings, [
+    { target: 'quotes[0].quote', source: 'A1' },
+    { target: 'quotes[1].authorName', source: 'B2' },
+  ]);
+});
+
+test('the quote fold is a no-op on the current shape and on a second run', () => {
+  const current = quoteDeckAtV16({
+    quoteAlign: 'left',
+    quotes: [{ quote: 'One.', authorName: 'Ada', authorImage1: '/a.png' }],
+    textStyles: { 'quotes.0.quote': { color: 'accent' } },
+  });
+  const before = structuredClone(current.slides);
+  const migrated = migratePresentation(current);
+  assert.deepEqual(migrated.slides, before);
+  const again = SCHEMA_MIGRATIONS[16](structuredClone(migrated));
+  assert.deepEqual(again.slides, before);
+});
+
+test('the quote fold reaches every language version', () => {
+  const slide = (quote) => ({
+    id: 's1',
+    type: 'quote-slide',
+    content: { quote, authorName: 'Ada' },
+  });
+  const migrated = migratePresentation({
+    id: randomUUID(),
+    title: 'q',
+    lang: 'nl',
+    schemaVersion: 16,
+    slides: [slide('Een.')],
+    i18n: {
+      versions: {
+        nl: { slides: [slide('Een.')] },
+        'en-GB': { slides: [slide('One.')] },
+      },
+    },
+  });
+  for (const [lang, text] of [
+    ['nl', 'Een.'],
+    ['en-GB', 'One.'],
+  ]) {
+    const content = migrated.i18n.versions[lang].slides[0].content;
+    assert.equal(content.quotes[0].quote, text, lang);
+    assert.ok(!('quote' in content), lang);
+  }
 });

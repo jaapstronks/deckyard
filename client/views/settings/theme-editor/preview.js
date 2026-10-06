@@ -54,12 +54,16 @@ const sampleSlides = () => [
     id: 'preview-quote',
     type: 'quote-slide',
     content: {
-      quote: t(
-        'settings.themes.preview.quote',
-        'A quote, on the theme’s dark surface.',
-      ),
-      authorName: t('settings.themes.preview.quoteAuthor', 'Someone'),
-      authorTitle: t('settings.themes.preview.quoteRole', 'Their role'),
+      quotes: [
+        {
+          quote: t(
+            'settings.themes.preview.quote',
+            'A quote, on the theme’s dark surface.',
+          ),
+          authorName: t('settings.themes.preview.quoteAuthor', 'Someone'),
+          authorTitle: t('settings.themes.preview.quoteRole', 'Their role'),
+        },
+      ],
     },
   },
 ];

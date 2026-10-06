@@ -184,12 +184,15 @@ describe('real schemas: marker-anchored fields are tagged, shapes are not', () =
     // group wins, so no per-field values are offered at all.
     const out = fieldAlignAffordance(
       SLIDE_TYPES['quote-slide'].fields,
-      'quote',
+      'quotes.0.quote',
     );
     assert.equal(out.owner, 'group');
     assert.deepEqual(out.values, []);
     assert.deepEqual(
-      fieldAllowedAlignValues(SLIDE_TYPES['quote-slide'].fields, 'quote'),
+      fieldAllowedAlignValues(
+        SLIDE_TYPES['quote-slide'].fields,
+        'quotes.0.quote',
+      ),
       [],
     );
   });
