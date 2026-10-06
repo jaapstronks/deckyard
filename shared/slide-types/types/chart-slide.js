@@ -41,7 +41,7 @@ export default {
   // profile: the picture needs a charting library, the data does not.
   fallback: 'table-slide',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'Chart',
