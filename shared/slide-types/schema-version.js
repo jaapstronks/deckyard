@@ -51,7 +51,7 @@ import { foldUnofferedEnums } from './normalize-content.js';
 import { canonicalJson } from '../slide-fingerprint.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 15;
+export const CURRENT_SCHEMA_VERSION = 16;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -792,6 +792,62 @@ function cutImageTextPluralLayouts(pres) {
   return pres;
 }
 
+const KPI_METRICS_TYPE = 'kpi-metrics-slide';
+
+/** A concrete binding target on a metric's retired `delta` key. */
+const KPI_DELTA_TARGET = /^metrics\[(\d+)\]\.delta$/;
+
+/**
+ * Fold kpi-metrics' retired `metrics[].delta` into the metric's `note` (B599).
+ *
+ * The schema dropped `delta` long ago, but the renderer kept reading it and
+ * prepended it to the note, so a metric showed one line stored as two keys.
+ * The canvas edits the note in place; with `delta` still standing beside it,
+ * an edit would write the whole line into `note` and the delta would print
+ * twice. The note is the one form: `delta` + a space + `note`, exactly what
+ * the renderer composed, and the key is dropped.
+ *
+ * A live-data binding on `metrics[N].delta` follows the value to
+ * `metrics[N].note`. When that metric's note is bound as well, the note
+ * binding already owns the line and the delta binding is dropped: two
+ * bindings on one key would let refresh order decide what shows.
+ *
+ * Keys on the retired key only, so it is a no-op on everything the current
+ * writers produce. Idempotent.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldKpiDeltaIntoNote(pres) {
+  for (const slide of eachSlide(pres)) {
+    if (slide?.type !== KPI_METRICS_TYPE) continue;
+    const metrics = slide.content?.metrics;
+    if (Array.isArray(metrics)) {
+      for (const metric of metrics) {
+        if (!metric || typeof metric !== 'object') continue;
+        if (!Object.prototype.hasOwnProperty.call(metric, 'delta')) continue;
+        const delta = str(metric.delta);
+        const note = str(metric.note);
+        if (delta) metric.note = note ? `${delta} ${note}` : delta;
+        delete metric.delta;
+      }
+    }
+    const bindings = slide.dataSource?.bindings;
+    if (!Array.isArray(bindings)) continue;
+    const targets = new Set(bindings.map((b) => b?.target));
+    slide.dataSource.bindings = bindings.filter((binding) => {
+      const m = KPI_DELTA_TARGET.exec(String(binding?.target || ''));
+      if (!m) return true;
+      const noteTarget = `metrics[${m[1]}].note`;
+      if (targets.has(noteTarget)) return false;
+      binding.target = noteTarget;
+      targets.add(noteTarget);
+      return true;
+    });
+  }
+  return pres;
+}
+
 /**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
  * still allowed into the one version `i + 1` requires. No stamp is stored (see
@@ -1240,6 +1296,11 @@ export const SCHEMA_MIGRATIONS = [
   // not declare one, or `duo` would be folded to a singleton layout before this
   // step ever saw it. A full-funnel test pins that.
   cutImageTextPluralLayouts,
+
+  // v15 -> v16: kpi-metrics' retired `metrics[].delta` folds into the note it
+  // was printed in front of, so the canvas edits one stored line (B599). See
+  // foldKpiDeltaIntoNote.
+  foldKpiDeltaIntoNote,
 ];
 
 /**

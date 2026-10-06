@@ -67,8 +67,8 @@ export const aiExamples = [
     title: 'Key Results',
     background: 'lime',
     metrics: [
-      { value: '85', unit: '%', label: 'Customer Satisfaction', delta: '+12%' },
-      { value: '2.5', unit: 'M', label: 'Users Reached', delta: '+500K' },
+      { value: '85', unit: '%', label: 'Customer Satisfaction', note: '+12%' },
+      { value: '2.5', unit: 'M', label: 'Users Reached', note: '+500K' },
       { value: '40', unit: '%', label: 'Cost Reduction' },
     ],
   },

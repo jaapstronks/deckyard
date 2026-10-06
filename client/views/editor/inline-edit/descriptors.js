@@ -77,8 +77,7 @@
  *     the keys the settings inspector may omit (conservative fallback in
  *     inspector-form.js); the bulk "Edit all text" modal renders them too.
  *     A field whose editor also carries non-inline controls (icon pickers,
- *     image subfields, KPI delta/note, table column ops) must NOT be listed
- *     here.
+ *     image subfields, table column ops) must NOT be listed here.
  *
  *   media: per-image affordance. Clicking an element tagged
  *     `data-inline-photo="<n>"` opens an in-slide popover (image picker + alt

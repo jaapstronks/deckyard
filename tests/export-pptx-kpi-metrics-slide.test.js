@@ -59,8 +59,7 @@ test('KPI values and units stay together in editable cards', async () => {
         value: '1.2',
         unit: 'M',
         label: 'Reach',
-        delta: '-5%',
-        note: 'vs plan',
+        note: '-5% vs plan',
       },
     ],
   });
