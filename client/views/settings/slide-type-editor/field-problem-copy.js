@@ -49,6 +49,10 @@ const CODE_COPY = {
     'settings.slideTypes.fields.error.duplicateKey',
     '{where} reuses a key another field already has.',
   ],
+  duplicate_heading_role: [
+    'settings.slideTypes.fields.error.duplicateHeadingRole',
+    '{where} is marked as the slide heading, but “{first}” already is — a slide has one heading, so keep the mark on one field.',
+  ],
   enum_without_options: [
     'settings.slideTypes.fields.error.enumWithoutOptions',
     '{where} is a dropdown with no options — add at least one.',
@@ -57,6 +61,10 @@ const CODE_COPY = {
     'settings.slideTypes.fields.error.itemsWithoutItemFields',
     '{where} is a repeater with no item fields — add at least one, so something describes the shape of an item.',
   ],
+  heading_role_on_item_field: [
+    'settings.slideTypes.fields.error.headingRoleOnItemField',
+    '{where} is marked as the slide heading inside a repeater — mark a top-level text field instead; an item takes its heading from the repeater’s item label field.',
+  ],
   essential_on_item_field: [
     'settings.slideTypes.fields.error.essentialOnItemField',
     '{where} is marked essential inside a repeater — mark the repeater itself instead, which makes its first item essential.',
@@ -64,6 +72,10 @@ const CODE_COPY = {
   property_wrong_type: [
     'settings.slideTypes.fields.error.propertyWrongType',
     '{where} gives “{property}” a value of the wrong type — it takes a {expected}.',
+  ],
+  property_value_not_offered: [
+    'settings.slideTypes.fields.error.propertyValueNotOffered',
+    '{where} gives “{property}” a value this builder does not offer — remove it, or use one of {offered}.',
   ],
   unknown_property: [
     'settings.slideTypes.fields.error.unknownProperty',
@@ -85,5 +97,9 @@ export function fieldProblemMessage(problem) {
     types: CUSTOM_TYPE_FIELD_TYPES.join(', '),
     property: problem.detail?.property || '',
     expected: problem.detail?.expected || '',
+    first: problem.detail?.first || '',
+    offered: (problem.detail?.offered || [])
+      .map((v) => JSON.stringify(v))
+      .join(', '),
   });
 }

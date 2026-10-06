@@ -145,6 +145,19 @@ const SHARED_RULES = [
     ],
     'essential_on_item_field',
   ],
+  [
+    // D129: the slide heading is a top-level field; an item heads itself.
+    'an item sub-field that declares `role: heading`',
+    [
+      {
+        key: 'a',
+        type: 'items',
+        label: 'A',
+        itemFields: [{ key: 'b', type: 'string', label: 'B', role: 'heading' }],
+      },
+    ],
+    'heading_role_on_item_field',
+  ],
 ];
 
 for (const [why, fields, code] of SHARED_RULES) {
@@ -656,7 +669,7 @@ test('every core type declares at most one heading field', async () => {
   }
 });
 
-test('`semantic` is a flag on an enum; anything else warns, and a DB row may not carry it', () => {
+test('`semantic` is a flag on an enum; anything else warns, and a DB row carries only `true`', () => {
   const findings = walkFieldDefinitions(
     [
       {
@@ -687,14 +700,23 @@ test('`semantic` is a flag on an enum; anything else warns, and a DB row may not
   for (const f of findings)
     assert.notEqual(describeFieldFinding(f), 'Invalid field definitions.');
 
-  // The builder has no control for it, so a stored row refuses it (D84)
-  // rather than dropping it on Save.
+  // The builder has a checkbox for it (B305), so a stored enum row keeps
+  // `true`; any other value is one no control could have written, so it is
+  // refused (D84) rather than dropped on Save, and so is the flag on a string.
   const stored = validateCustomFieldDefinitions([
     { key: 'v', type: 'enum', label: 'V', options: ['a'], semantic: true },
   ]);
-  assert.equal(stored.ok, false);
-  assert.equal(stored.problem.code, 'unknown_property');
-  assert.equal(stored.problem.detail.property, 'semantic');
+  assert.equal(stored.ok, true);
+  assert.equal(stored.fields[0].semantic, true);
+  const notTrue = validateCustomFieldDefinitions([
+    { key: 'v', type: 'enum', label: 'V', options: ['a'], semantic: false },
+  ]);
+  assert.equal(notTrue.problem.code, 'property_value_not_offered');
+  const onString = validateCustomFieldDefinitions([
+    { key: 't', type: 'string', label: 'T', semantic: true },
+  ]);
+  assert.equal(onString.problem.code, 'unknown_property');
+  assert.equal(onString.problem.detail.property, 'semantic');
 });
 
 test('`markup` is a flag on a code field; anything else warns, and a DB row may not carry it', () => {
