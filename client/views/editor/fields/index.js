@@ -35,5 +35,6 @@ export function createFieldRenderers(deps = {}) {
     fieldImage,
     fieldTitleBgImage,
     fieldImages,
+    openImagePicker: deps.openImagePicker,
   };
 }

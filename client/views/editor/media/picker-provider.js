@@ -68,6 +68,31 @@ import { featureEnabled } from '../../../lib/state/features.js';
  * @returns {PickerProvider}
  */
 function libraryProvider(openLibraryRaw, { canUpload = false } = {}) {
+  const normalize = (it, applyCaptionCredit = false) => {
+    const url = typeof it?.url === 'string' ? it.url.trim() : '';
+    if (!url) return null;
+    const photographer =
+      typeof it?.photographer === 'string' ? it.photographer.trim() : '';
+    return {
+      url,
+      alts: it?.alts && typeof it.alts === 'object' ? it.alts : undefined,
+      name: it?.name,
+      tags: Array.isArray(it?.tags) ? it.tags : undefined,
+      caption:
+        applyCaptionCredit && photographer
+          ? t('editor.image.photoCredit', 'Photo: {photographer}', {
+              photographer,
+            })
+          : undefined,
+      meta: {
+        photographer: photographer || undefined,
+        source: it?.source,
+        sourceUrl: it?.sourceUrl,
+        id: it?.id,
+        description: it?.description,
+      },
+    };
+  };
   const openWith = (opts, { upload = false } = {}) =>
     openLibraryRaw({
       upload,
@@ -75,28 +100,8 @@ function libraryProvider(openLibraryRaw, { canUpload = false } = {}) {
       allowCaptionCredit: !!opts.allowCaptionCredit,
       context: opts.context,
       onPick: (it, { applyCaptionCredit } = {}) => {
-        const url = typeof it?.url === 'string' ? it.url.trim() : '';
-        if (!url) return;
-        const photographer =
-          typeof it?.photographer === 'string' ? it.photographer.trim() : '';
-        opts.onPick?.({
-          url,
-          alts: it?.alts && typeof it.alts === 'object' ? it.alts : undefined,
-          tags: Array.isArray(it?.tags) ? it.tags : undefined,
-          caption:
-            applyCaptionCredit && photographer
-              ? t('editor.image.photoCredit', 'Photo: {photographer}', {
-                  photographer,
-                })
-              : undefined,
-          meta: {
-            photographer: photographer || undefined,
-            source: it?.source,
-            sourceUrl: it?.sourceUrl,
-            id: it?.id,
-            description: it?.description,
-          },
-        });
+        const picked = normalize(it, applyCaptionCredit);
+        if (picked) opts.onPick?.(picked);
       },
     });
   return {
@@ -110,6 +115,19 @@ function libraryProvider(openLibraryRaw, { canUpload = false } = {}) {
     // The direct route from an image field (B579): file dialog first, no
     // source chooser. Only where this deployment stores uploads.
     upload: canUpload ? (opts) => openWith(opts, { upload: true }) : undefined,
+    uploadMany: canUpload
+      ? (opts) =>
+          openLibraryRaw({
+            batch: true,
+            spec: opts.spec,
+            capacity: opts.capacity,
+            validateDestination: opts.validateDestination,
+            onPickMany: (items) =>
+              opts.onPickMany?.(
+                items.map((item) => normalize(item)).filter(Boolean),
+              ),
+          })
+      : undefined,
   };
 }
 
@@ -313,6 +331,7 @@ function openSourceChooser({ root, providers, hint, onChoose }) {
  * @returns {((opts: PickerOpts) => void) & {
  *   providers: PickerProvider[],
  *   upload: ((opts: PickerOpts) => void) | null,
+ *   uploadMany: ((opts: PickerOpts) => void) | null,
  * }}
  */
 export function createImagePickerSeam({
@@ -360,6 +379,9 @@ export function createImagePickerSeam({
   const uploader = providers.find((p) => typeof p.upload === 'function');
   openImagePicker.upload = uploader
     ? (opts = {}) => uploader.upload(opts)
+    : null;
+  openImagePicker.uploadMany = uploader?.uploadMany
+    ? (opts = {}) => uploader.uploadMany(opts)
     : null;
 
   openImagePicker.providers = providers;

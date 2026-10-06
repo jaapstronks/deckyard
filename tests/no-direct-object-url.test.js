@@ -30,6 +30,11 @@ const ALLOWLIST = [
     file: 'client/lib/dom/download.js',
     reason: 'the downloadBlob() implementation itself',
   },
+  {
+    file: 'client/views/editor/image-library/batch.js',
+    reason:
+      'local image previews use object URLs so thirty files are not decoded as base64 before their upload turn; the batch modal revokes each URL on removal or close',
+  },
 ];
 
 /** Third-party code we neither wrote nor patch. */

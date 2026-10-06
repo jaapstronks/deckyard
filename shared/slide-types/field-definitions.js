@@ -442,7 +442,30 @@ export function walkFieldDefinitions(fields, profile) {
         }
       }
 
+      if (field.batchImages !== undefined && type !== 'items') {
+        at2('batch_images_invalid', 'error');
+      }
       if (type === 'items') {
+        if (field.batchImages !== undefined) {
+          const itemFields = Array.isArray(field.itemFields)
+            ? field.itemFields
+            : [];
+          const imageFields = itemFields.filter(
+            (item) => item?.type === 'image',
+          );
+          const altFields = itemFields.filter(
+            (item) => item?.key === 'alt' && item?.type === 'string',
+          );
+          if (
+            field.batchImages !== true ||
+            !Number.isSafeInteger(field.maxItems) ||
+            field.maxItems < 1 ||
+            imageFields.length !== 1 ||
+            altFields.length !== 1
+          ) {
+            at2('batch_images_invalid', 'error');
+          }
+        }
         if (!Array.isArray(field.itemFields) || field.itemFields.length === 0) {
           at2('items_without_item_fields', 'error');
         } else {
@@ -833,6 +856,8 @@ const FINDING_MESSAGES = {
   items_without_item_fields: (where) =>
     `${where} is an items field with no \`itemFields\` — add at least one, so ` +
     `something describes the shape of an item.`,
+  batch_images_invalid: (where) =>
+    `${where} declares \`batchImages\` without one image field, one string alt field and a positive integer \`maxItems\`. Set it to true on that items collection only.`,
   unknown_property: (where, f) =>
     `${where} declares \`${f?.detail?.property}\`, which is not part of what ` +
     `a stored field definition may say — the properties accepted here are: ` +
