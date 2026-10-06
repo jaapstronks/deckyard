@@ -778,13 +778,20 @@ A DB-backed type is a row a form writes, so what its fields may declare is a
 **closed vocabulary**, read per field type
 (`CUSTOM_TYPE_PROPERTY_KEYS` in `shared/slide-types/custom-field-definitions.js`):
 
-| Applies to  | Properties                                                    |
-| ----------- | ------------------------------------------------------------- |
-| every field | `key`, `type`, `label`, `required`, `placeholder`, `helpText` |
-| `string`    | `maxLength`, `mediaRef` (`{ label, linkKey }`)                |
-| `markdown`  | `maxLength`                                                   |
-| `enum`      | `options`, `foldUnofferedTo`                                  |
-| `items`     | `itemFields`, `minItems`, `maxItems`, `itemLabelField`        |
+| Applies to  | Properties                                                                 |
+| ----------- | -------------------------------------------------------------------------- |
+| every field | `key`, `type`, `label`, `required`, `essential`, `placeholder`, `helpText` |
+| `string`    | `maxLength`, `mediaRef` (`{ label, linkKey }`), `role` (only `'heading'`)  |
+| `markdown`  | `maxLength`                                                                |
+| `enum`      | `options`, `foldUnofferedTo`, `semantic` (only `true`)                     |
+| `items`     | `itemFields`, `minItems`, `maxItems`, `batchImages`, `itemLabelField`      |
+
+`role` and `semantic` are closed choices the builder offers only in part: a
+"Slide heading" box on a top-level text row (D129, one per slide, so marking a
+row unmarks the others) and a "This choice carries meaning" box on an enum row
+(D130b). Any other value is one no control could have written, so it is refused
+with `property_value_not_offered` (the vocabulary's `values`), and a second
+heading with `duplicate_heading_role`.
 
 Anything else is **refused**, not dropped: `POST`/`PATCH` answers `400` with
 `unknown_property` and the row that declares it, and the builder shows the same

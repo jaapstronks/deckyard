@@ -83,9 +83,9 @@ export const CUSTOM_TYPE_PROPERTY_KEYS = Object.freeze({
     'helpText',
   ]),
   byType: Object.freeze({
-    string: Object.freeze(['maxLength', 'mediaRef']),
+    string: Object.freeze(['maxLength', 'mediaRef', 'role']),
     markdown: Object.freeze(['maxLength']),
-    enum: Object.freeze(['options', 'foldUnofferedTo']),
+    enum: Object.freeze(['options', 'foldUnofferedTo', 'semantic']),
     items: Object.freeze([
       'itemFields',
       'minItems',
@@ -105,6 +105,13 @@ export const CUSTOM_TYPE_PROPERTY_KEYS = Object.freeze({
     minItems: 'number',
     maxItems: 'number',
     batchImages: 'boolean',
+  }),
+  // The builder offers one text role, the slide's heading (D129), and one
+  // spelling of an enum that carries meaning (D130b). The walk refuses any
+  // other value, so a DB type cannot say what no control could have written.
+  values: Object.freeze({
+    role: Object.freeze(['heading']),
+    semantic: Object.freeze([true]),
   }),
 });
 
@@ -155,8 +162,11 @@ function cleanField(field) {
   if (typeof field.placeholder === 'string')
     clean.placeholder = field.placeholder;
   if (typeof field.helpText === 'string') clean.helpText = field.helpText;
+  if (clean.type === 'string' && field.role !== undefined)
+    clean.role = field.role;
   if (clean.type === 'enum') {
     clean.options = field.options;
+    if (field.semantic !== undefined) clean.semantic = field.semantic;
     if (isNonEmpty(field.foldUnofferedTo))
       clean.foldUnofferedTo = field.foldUnofferedTo.trim();
   }

@@ -343,3 +343,137 @@ test('every boolean control is named by its label, and a click on the text toggl
     assert.equal(property in view.seen.fields[1], false);
   }
 });
+
+test('a top-level text row marks the slide heading, one row at a time, and the reader shows it (B305, D129)', async () => {
+  const { toRuntimeSlideType } =
+    await import('../server/utils/custom-slide-type-runtime.js');
+  const { renderSlideSectionHtml } =
+    await import('../shared/slide-types/semantic-projection.js');
+
+  const view = mount([
+    { key: 'headline', type: 'string', label: 'Headline' },
+    { key: 'kicker', type: 'string', label: 'Kicker' },
+    { key: 'body', type: 'markdown', label: 'Body' },
+    {
+      key: 'rows',
+      type: 'items',
+      label: 'Rows',
+      itemFields: [{ key: 'name', type: 'string', label: 'Name' }],
+    },
+  ]);
+  const [headlineRow, kickerRow, bodyRow, rowsRow] = rows(view.el);
+  assert.ok(control(headlineRow, 'Slide heading'), 'a text row offers it');
+  assert.equal(control(bodyRow, 'Slide heading'), null, 'markdown does not');
+  const nested = rowsRow.querySelector('.field-list-nested .field-list-editor');
+  assert.equal(
+    control(rows(nested)[0], 'Slide heading'),
+    null,
+    'an item heads itself through itemLabelField',
+  );
+
+  const kickerBox = control(kickerRow, 'Slide heading');
+  kickerBox.checked = true;
+  fire(kickerBox, 'change');
+  // Marking a second row moves the mark: one heading per slide.
+  const headlineBox = control(rows(view.el)[0], 'Slide heading');
+  headlineBox.checked = true;
+  fire(headlineBox, 'change');
+  assert.equal(view.seen.fields[0].role, 'heading');
+  assert.equal('role' in view.seen.fields[1], false);
+  assert.equal(control(rows(view.el)[1], 'Slide heading').checked, false);
+
+  const stored = validateCustomFieldDefinitions(view.seen.fields);
+  assert.equal(stored.ok, true);
+  assert.equal(stored.fields[0].role, 'heading', 'it survives the Save');
+
+  const def = toRuntimeSlideType({
+    id: '11111111-1111-1111-1111-111111111111',
+    slug: 'hero',
+    label: 'Hero',
+    fields: stored.fields,
+    defaults: {},
+    baseType: 'title-slide',
+  });
+  const html = renderSlideSectionHtml(
+    { type: def.name, content: { headline: 'Our plan', kicker: 'Q3' } },
+    def,
+  );
+  assert.match(
+    html,
+    /<h2[^>]*data-field="headline"[^>]*>Our plan<\/h2>/,
+    'the marked field is the visible heading',
+  );
+  assert.doesNotMatch(html, /class="sr-only"/, 'and no hidden name stands in');
+});
+
+test('an enum row marks a meaningful choice, and the reader keeps it as data (B305, D130b)', async () => {
+  const { toRuntimeSlideType } =
+    await import('../server/utils/custom-slide-type-runtime.js');
+  const { renderSlideSectionHtml } =
+    await import('../shared/slide-types/semantic-projection.js');
+
+  const view = mount([
+    { key: 'title', type: 'string', label: 'Title' },
+    { key: 'verdict', type: 'enum', label: 'Verdict', options: ['go', 'stop'] },
+  ]);
+  const [titleRow, verdictRow] = rows(view.el);
+  assert.equal(control(titleRow, 'carries meaning'), null);
+  const box = control(verdictRow, 'carries meaning');
+  assert.equal(box.checked, false);
+  box.checked = true;
+  fire(box, 'change');
+  assert.equal(view.seen.fields[1].semantic, true);
+
+  const stored = validateCustomFieldDefinitions(view.seen.fields);
+  assert.equal(stored.ok, true);
+  assert.equal(stored.fields[1].semantic, true);
+
+  const def = toRuntimeSlideType({
+    id: '11111111-1111-1111-1111-111111111111',
+    slug: 'verdict',
+    label: 'Verdict',
+    fields: stored.fields,
+    defaults: {},
+    baseType: 'title-slide',
+  });
+  const html = renderSlideSectionHtml(
+    { type: def.name, content: { title: 'Launch', verdict: 'go' } },
+    def,
+  );
+  assert.match(html, /data-verdict="go"/);
+
+  // Unticking stores nothing, not a `false`.
+  const again = mount(stored.fields);
+  const reopened = control(rows(again.el)[1], 'carries meaning');
+  assert.equal(reopened.checked, true);
+  reopened.checked = false;
+  fire(reopened, 'change');
+  assert.equal('semantic' in again.seen.fields[1], false);
+});
+
+test('a stored row may say only what a builder control could have written (B305)', () => {
+  const refused = [
+    [{ key: 't', type: 'string', label: 'T', role: 'quote' }, 'role'],
+    [
+      { key: 'v', type: 'enum', label: 'V', options: ['a'], semantic: false },
+      'semantic',
+    ],
+  ];
+  for (const [field, property] of refused) {
+    const result = validateCustomFieldDefinitions([field]);
+    assert.equal(result.ok, false);
+    assert.equal(result.problem.code, 'property_value_not_offered');
+    assert.equal(result.problem.detail.property, property);
+  }
+  const wrongRow = validateCustomFieldDefinitions([
+    { key: 'b', type: 'markdown', label: 'B', role: 'heading' },
+  ]);
+  assert.equal(wrongRow.problem.code, 'unknown_property');
+
+  const twice = validateCustomFieldDefinitions([
+    { key: 'a', type: 'string', label: 'A', role: 'heading' },
+    { key: 'b', type: 'string', label: 'B', role: 'heading' },
+  ]);
+  assert.equal(twice.ok, false);
+  assert.equal(twice.problem.code, 'duplicate_heading_role');
+});
