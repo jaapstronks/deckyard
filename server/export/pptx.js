@@ -21,6 +21,7 @@ import { composeChapterTitleSlide } from './pptx-chapter-title-slide.js';
 import { composeImageTextSlide } from './pptx-image-text-slide.js';
 import { composeKpiMetricsSlide } from './pptx-kpi-metrics-slide.js';
 import { composeChartSlide } from './pptx-chart-slide.js';
+import { composeComparisonSlide } from './pptx-comparison-slide.js';
 import { composeCalloutSlide } from './pptx-callout-slide.js';
 import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
@@ -71,6 +72,7 @@ const NATIVE_PPTX_HANDLERS = Object.freeze({
   'chapter-title-slide': Object.freeze({ compose: composeChapterTitleSlide }),
   'kpi-metrics-slide': Object.freeze({ compose: composeKpiMetricsSlide }),
   'chart-slide': Object.freeze({ compose: composeChartSlide }),
+  'comparison-slide': Object.freeze({ compose: composeComparisonSlide }),
   'callout-slide': Object.freeze({ compose: composeCalloutSlide }),
 });
 

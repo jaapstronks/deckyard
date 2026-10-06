@@ -1,5 +1,5 @@
 /** Editable callout: its semantic text inside the canvas' centred frame. */
-import { hexToRgb, pickTextColorForBg } from '../../shared/color-utils.js';
+import { pickTextColorForBg } from '../../shared/color-utils.js';
 import {
   resolveSlideBgHex,
   resolveSlideBgTone,
@@ -14,7 +14,7 @@ import {
   slideBlocks,
   textBlockHeight,
 } from './pptx-generic.js';
-import { layoutBox, themeTextPt } from './pptx-theme.js';
+import { layoutBox, themeTextPt, mixPptxColors } from './pptx-theme.js';
 
 const CANVAS_W = 1600;
 
@@ -27,19 +27,6 @@ const TONES = Object.freeze({
   note: '4A5A63',
   tip: '0F766E',
 });
-
-function mix(a, b, share) {
-  const left = hexToRgb(a);
-  const right = hexToRgb(b);
-  return ['r', 'g', 'b']
-    .map((channel) =>
-      Math.round(left[channel] * share + right[channel] * (1 - share))
-        .toString(16)
-        .padStart(2, '0'),
-    )
-    .join('')
-    .toUpperCase();
-}
 
 function textBlock(paragraphs) {
   return { kind: 'text', paragraphs };
@@ -73,9 +60,9 @@ export async function composeCalloutSlide(pptx, slide, ctx) {
   const dark = resolveSlideBgTone(content, theme) === 'dark';
   const text = pickTextColorForBg(ground).replace('#', '').toUpperCase();
   const baseTone = TONES[calloutVariant(content.variant)];
-  const tone = dark ? mix(baseTone, 'FFFFFF', 0.45) : baseTone;
-  const panelFill = mix(tone, ground, 0.1);
-  const panelEdge = mix(tone, ground, 0.24);
+  const tone = dark ? mixPptxColors(baseTone, 'FFFFFF', 0.45) : baseTone;
+  const panelFill = mixPptxColors(tone, ground, 0.1);
+  const panelEdge = mixPptxColors(tone, ground, 0.24);
 
   const pad = layoutBox('headingBody', 'title').x;
   const panelW = (slideWidth - 2 * pad) * 0.72;
@@ -168,7 +155,7 @@ export async function composeCalloutSlide(pptx, slide, ctx) {
     pptxSlide.addText(
       paragraphRuns(source.paragraphs, {
         pt: sourcePt,
-        color: mix(text, ground, 0.7),
+        color: mixPptxColors(text, ground, 0.7),
         face: spec.bodyFont,
       }),
       {
