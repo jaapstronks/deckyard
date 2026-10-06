@@ -20,6 +20,7 @@ import { composeQuoteSlide } from './pptx-quote-slide.js';
 import { composeChapterTitleSlide } from './pptx-chapter-title-slide.js';
 import { composeImageTextSlide } from './pptx-image-text-slide.js';
 import { composeKpiMetricsSlide } from './pptx-kpi-metrics-slide.js';
+import { composeChartSlide } from './pptx-chart-slide.js';
 import { fillCopy, getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import {
   parseVideoSource,
@@ -68,6 +69,7 @@ const NATIVE_PPTX_HANDLERS = Object.freeze({
   'quote-slide': Object.freeze({ compose: composeQuoteSlide }),
   'chapter-title-slide': Object.freeze({ compose: composeChapterTitleSlide }),
   'kpi-metrics-slide': Object.freeze({ compose: composeKpiMetricsSlide }),
+  'chart-slide': Object.freeze({ compose: composeChartSlide }),
 });
 
 /**
