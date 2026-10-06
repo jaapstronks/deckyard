@@ -13,7 +13,7 @@
  * caller asks here and keeps only its answer: streaming, headers, rate-limit
  * headers, the envelope (brief `one-service-layer.md`, D252–D256).
  *
- * Two entries, one per kind of caller:
+ * Three entries, one per kind of caller:
  *
  *   - {@link prepareExportContext} — someone asks for an export. The deck is
  *     loaded with the read right ({@link loadPresentationForActor}, so a
@@ -24,6 +24,9 @@
  *   - {@link prepareQueuedExportContext} — the export worker builds what an
  *     earlier request was admitted for. It acts as the system (D252): the
  *     right was decided and the export counted when the job was queued.
+ *   - {@link buildExportContext} — describe an already-authorized deck, as MCP
+ *     does before returning a download link. No export has been requested yet,
+ *     so this neither repeats the access check nor counts an export.
  *
  * @module server/services/exports
  */
@@ -81,7 +84,11 @@ function langSuffixFor(exportLang) {
  * @param {{ exportLang: string|null, stripLiveOnly: boolean }} options
  * @returns {Promise<ExportContext>}
  */
-async function buildExportContext(scope, pres, { exportLang, stripLiveOnly }) {
+export async function buildExportContext(
+  scope,
+  pres,
+  { exportLang, stripLiveOnly },
+) {
   const projected = exportLang
     ? projectPresentationForLang(pres, exportLang)
     : pres;

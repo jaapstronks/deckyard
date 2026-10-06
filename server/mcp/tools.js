@@ -81,6 +81,9 @@ import {
   TRANSLATION_LANGS,
 } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
+import { buildExportContext } from '../services/exports.js';
+import { normalizeLang } from '../utils/i18n.js';
+import { needsNativeComposition } from '../../shared/slide-types/fidelity.js';
 
 /**
  * Get the best display title for a slide, regardless of type.
@@ -1541,16 +1544,16 @@ export function registerTools(
 
   server.tool(
     'export_presentation',
-    'Get a download URL for a finished export of a deck (PDF, PPTX, self-contained HTML, deck JSON, or a zip of per-slide PNGs). Returns a URL the user opens in a browser where they are signed in to Deckyard; the server renders the file on demand. Use this to deliver a downloadable file. For an inline visual preview instead, use preview_presentation.',
+    'Get a download URL for a finished export of a deck (PDF, pixel-perfect or editable PPTX, self-contained HTML, deck JSON, or a zip of per-slide PNGs). Returns a URL the user opens in a browser where they are signed in to Deckyard; the server renders the file on demand. Use this to deliver a downloadable file. For an inline visual preview instead, use preview_presentation.',
     {
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
         format: {
           type: 'string',
-          enum: ['pdf', 'pptx', 'html', 'json', 'png-zip'],
+          enum: ['pdf', 'pptx', 'pptx-editable', 'html', 'json', 'png-zip'],
           description:
-            'Export format. pdf = server-rendered PDF; pptx = PowerPoint; html = self-contained HTML; json = deck source; png-zip = one PNG per slide, zipped.',
+            'Export format. pdf = server-rendered PDF; pptx = pixel-perfect PowerPoint (video plays); pptx-editable = editable PowerPoint, with imageSlides listing the 1-based exported slide numbers that remain images; html = self-contained HTML; json = deck source; png-zip = one PNG per slide, zipped.',
         },
         lang: {
           type: 'string',
@@ -1567,6 +1570,7 @@ export function registerTools(
       const EXPORT_PATHS = {
         pdf: 'export/pdf-slides.pdf',
         pptx: 'export/pptx',
+        'pptx-editable': 'export/pptx-editable',
         html: 'export/html',
         json: 'export/json',
         'png-zip': 'export/png.zip',
@@ -1588,6 +1592,22 @@ export function registerTools(
         };
       }
 
+      // Describe the same projected, filtered deck the download route builds,
+      // without rendering it twice or counting a download before it happens.
+      let imageSlides;
+      if (format === 'pptx-editable') {
+        const { filteredPres, slideTypes } = await buildExportContext(
+          storageScopeOf(context),
+          pres,
+          { exportLang: normalizeLang(lang), stripLiveOnly: true },
+        );
+        imageSlides = filteredPres.slides.flatMap((slide, index) =>
+          needsNativeComposition(slideTypes[slide.type], 'pptx')
+            ? []
+            : [index + 1],
+        );
+      }
+
       let downloadUrl = `${base}/api/presentations/${presentationId}/${relPath}`;
       if (lang) downloadUrl += `?lang=${encodeURIComponent(lang)}`;
 
@@ -1596,6 +1616,7 @@ export function registerTools(
         title: pres.title,
         format,
         downloadUrl,
+        ...(imageSlides ? { imageSlides } : {}),
         note: 'Open this URL in a browser signed in to Deckyard to download the file. PDF/PPTX/PNG are rendered on demand and may take a few seconds for large decks.',
       };
     },
