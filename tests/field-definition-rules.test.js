@@ -145,6 +145,19 @@ const SHARED_RULES = [
     ],
     'essential_on_item_field',
   ],
+  [
+    // D129: the slide heading is a top-level field; an item heads itself.
+    'an item sub-field that declares `role: heading`',
+    [
+      {
+        key: 'a',
+        type: 'items',
+        label: 'A',
+        itemFields: [{ key: 'b', type: 'string', label: 'B', role: 'heading' }],
+      },
+    ],
+    'heading_role_on_item_field',
+  ],
 ];
 
 for (const [why, fields, code] of SHARED_RULES) {

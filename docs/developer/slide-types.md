@@ -790,8 +790,9 @@ A DB-backed type is a row a form writes, so what its fields may declare is a
 "Slide heading" box on a top-level text row (D129, one per slide, so marking a
 row unmarks the others) and a "This choice carries meaning" box on an enum row
 (D130b). Any other value is one no control could have written, so it is refused
-with `property_value_not_offered` (the vocabulary's `values`), and a second
-heading with `duplicate_heading_role`.
+with `property_value_not_offered` (the vocabulary's `values`), a second
+heading with `duplicate_heading_role`, and a heading on an item sub-field with
+`heading_role_on_item_field`.
 
 Anything else is **refused**, not dropped: `POST`/`PATCH` answers `400` with
 `unknown_property` and the row that declares it, and the builder shows the same

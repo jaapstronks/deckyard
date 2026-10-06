@@ -61,6 +61,10 @@ const CODE_COPY = {
     'settings.slideTypes.fields.error.itemsWithoutItemFields',
     '{where} is a repeater with no item fields — add at least one, so something describes the shape of an item.',
   ],
+  heading_role_on_item_field: [
+    'settings.slideTypes.fields.error.headingRoleOnItemField',
+    '{where} is marked as the slide heading inside a repeater — mark a top-level text field instead; an item takes its heading from the repeater’s item label field.',
+  ],
   essential_on_item_field: [
     'settings.slideTypes.fields.error.essentialOnItemField',
     '{where} is marked essential inside a repeater — mark the repeater itself instead, which makes its first item essential.',

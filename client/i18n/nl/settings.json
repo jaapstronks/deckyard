@@ -646,6 +646,7 @@
   "settings.slideTypes.fields.error.duplicateKey": "{where} gebruikt een sleutel die een ander veld al heeft.",
   "settings.slideTypes.fields.error.enumWithoutOptions": "{where} is een keuzelijst zonder opties — voeg er minstens één toe.",
   "settings.slideTypes.fields.error.essentialOnItemField": "{where} is als essentieel gemarkeerd binnen een herhaler — markeer de herhaler zelf, dan is het eerste item essentieel.",
+  "settings.slideTypes.fields.error.headingRoleOnItemField": "{where} is binnen een herhaler als kop van de slide gemarkeerd — markeer een tekstveld op het hoogste niveau; een item haalt zijn kop uit het itemlabelveld van de herhaler.",
   "settings.slideTypes.fields.error.itemsWithoutItemFields": "{where} is een herhaler zonder itemvelden — voeg er minstens één toe, zodat iets de vorm van een item beschrijft.",
   "settings.slideTypes.fields.error.missingKey": "{where} heeft geen sleutel.",
   "settings.slideTypes.fields.error.missingLabel": "{where} heeft geen label.",

@@ -372,6 +372,12 @@ export function walkFieldDefinitions(fields, profile) {
           headingKey = key;
         }
       }
+      // On an item sub-field the declaration has no reader: the projection
+      // reads it at the top level only, so it is refused on every surface
+      // rather than stored as a promise nothing keeps.
+      if (at.depth > 0 && field.role === 'heading') {
+        at2('heading_role_on_item_field', 'error');
+      }
 
       // `essential` on a list means its first entry (D211); there is no
       // per-entry flag, because every entry after the first is optional by
@@ -891,6 +897,10 @@ const FINDING_MESSAGES = {
     `${where} gives \`${f?.detail?.property}\` the value ` +
     `${JSON.stringify(f?.detail?.value)} — a stored field definition accepts ` +
     `only ${(f?.detail?.offered || []).map((v) => JSON.stringify(v)).join(', ')} there.`,
+  heading_role_on_item_field: (where) =>
+    `${where} declares \`role: 'heading'\` on an item sub-field — the slide's ` +
+    `heading is a top-level field, and an item heads itself through the ` +
+    `list's \`itemLabelField\`, so declare it there instead.`,
   essential_on_item_field: (where) =>
     `${where} declares \`essential\` on an item sub-field — a list is ` +
     `essential as a whole, which means its first entry, so declare it on the ` +

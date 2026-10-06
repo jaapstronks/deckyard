@@ -646,6 +646,7 @@
   "settings.slideTypes.fields.error.duplicateKey": "{where} reuses a key another field already has.",
   "settings.slideTypes.fields.error.enumWithoutOptions": "{where} is a dropdown with no options — add at least one.",
   "settings.slideTypes.fields.error.essentialOnItemField": "{where} is marked essential inside a repeater — mark the repeater itself instead, which makes its first item essential.",
+  "settings.slideTypes.fields.error.headingRoleOnItemField": "{where} is marked as the slide heading inside a repeater — mark a top-level text field instead; an item takes its heading from the repeater’s item label field.",
   "settings.slideTypes.fields.error.itemsWithoutItemFields": "{where} is a repeater with no item fields — add at least one, so something describes the shape of an item.",
   "settings.slideTypes.fields.error.missingKey": "{where} has no key.",
   "settings.slideTypes.fields.error.missingLabel": "{where} has no label.",
