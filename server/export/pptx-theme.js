@@ -38,6 +38,7 @@
  * value like any other and is honoured.
  */
 
+import { hexToRgb } from '../../shared/color-utils.js';
 import { resolveThemeLogo } from '../../shared/theme-logo.js';
 import { resolveSlideBgHex } from '../../shared/slide-surface-tone.js';
 import { escapeXml } from '../../shared/xml.js';
@@ -299,6 +300,7 @@ export function resolveThemeMaster(theme) {
       vars['--t-slide-bg-dark-text'] || vars['--t-text-color-light'],
       'FFFFFF',
     ),
+    accent: pptxColor(vars['--t-color-accent'], '385C5C'),
     darkAccent: pptxColor(
       vars['--t-color-accent-on-dark'] || vars['--t-color-link-on-dark'],
       vars['--t-slide-bg-dark-text'] ||
@@ -538,4 +540,18 @@ export async function createWidePptx() {
   const pptx = new PptxGen();
   pptx.layout = 'LAYOUT_WIDE';
   return pptx;
+}
+
+/** Flatten a translucent canvas colour into an opaque PowerPoint colour. */
+export function mixPptxColors(a, b, share) {
+  const left = hexToRgb(a);
+  const right = hexToRgb(b);
+  return ['r', 'g', 'b']
+    .map((channel) =>
+      Math.round(left[channel] * share + right[channel] * (1 - share))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')
+    .toUpperCase();
 }

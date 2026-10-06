@@ -28,7 +28,7 @@ The line is drawn at **what the receiving application can edit**, not at how goo
 
 ## Implementation status (as of 2026-10-06)
 
-The tiers follow Jaap's judgement of the exported files at gate A2.8, not a guess. Six types are `native` on **layer 0** (`server/export/pptx-generic.js`), the generic composition from the slide's semantic projection: title, content, list, table, text-blocks and end. Video, image, image-text, quote, chapter-title, kpi-metrics and chart have a composition of their own. Callout and comparison stay `raster` until their own mappers land. The live types, the picture sets and the diagrams stay `raster` for good: a list without its shape is no editable version of a diagram.
+The tiers follow Jaap's judgement of the exported files at gate A2.8, not a guess. Six types are `native` on **layer 0** (`server/export/pptx-generic.js`), the generic composition from the slide's semantic projection: title, content, list, table, text-blocks and end. Video, image, image-text, quote, chapter-title, kpi-metrics, chart, callout and comparison have a composition of their own. The live types, the picture sets and the diagrams stay `raster` for good: a list without its shape is no editable version of a diagram.
 
 **Layer 0 is the standard composition behind a non-raster claim, and a type's own handler is an upgrade on it (D306).** A claim is therefore backed by either. In the pixel-perfect file (`export/pptx`) only the handlers that declare `pixelPerfect` in `NATIVE_PPTX_HANDLERS` run, so there every slide but video is an image (D307). The other type-specific handlers serve only the editable file, because a picture of the slide is exactly what the pixel-perfect row promises.
 
@@ -68,3 +68,5 @@ A fork type gets the same question at boot: `warnUnbackedFidelityClaims()` repor
 - [`slide-type-runtime.md`](./slide-type-runtime.md) — the facet this one is modelled on.
 - [`slide-type-structure.md`](./slide-type-structure.md) — the first facet, and why facets rather than a hierarchy.
 - [`export-menu.md`](./export-menu.md) — where the exports live for the user.
+
+Comparison preserves two editable columns, their headings and markdown, the four treatments (versus, before/after, pros/cons and trade-off), and the optional verdict and subheadings. Before/after mutes the left column and adds a direction marker; pros/cons uses status-coloured headings and native check/cross bullets; trade-off uses quiet uppercase labels. Typography, flat colours and geometry are best effort. Each column uses the shared fit budget independently; text beyond the minimum size budget produces an export warning without dropping words. LibreOffice can lose a bullet on a paragraph with mixed inline styling (B598); PowerPoint and Keynote rendering have not been verified for this mapper. Pixel-perfect export still renders the comparison as an image.
