@@ -40,7 +40,7 @@ function dialog() {
   return document.querySelector('.image-batch-modal');
 }
 function action(index) {
-  return dialog().querySelectorAll('.image-batch-actions button')[index];
+  return dialog().querySelectorAll('.image-batch-actions > button')[index];
 }
 function fillAlts() {
   for (const row of dialog().querySelectorAll('.image-batch-row')) {
@@ -313,4 +313,204 @@ test('stopping during metadata save preserves stored record and skips remaining 
   assert.equal(posts, 1);
   assert.equal(applied, 0);
   closeAndClean(batch);
+});
+
+const { setFeatures } = await import('../client/lib/state/features.js');
+function aiButton(prefix = 'Generate missing alt text') {
+  return [...dialog().querySelectorAll('button')].find(
+    (button) => !button.hidden && button.textContent.startsWith(prefix),
+  );
+}
+function consent(accept) {
+  const modals = [...document.querySelectorAll('.modal')];
+  const modal = modals.at(-1);
+  assert.match(modal.textContent, /OpenAI.*AI costs/);
+  modal.querySelector(accept ? '.btn-primary' : '.btn-secondary').click();
+}
+function altInput(rowIndex, langIndex = 0) {
+  const row = dialog().querySelectorAll('.image-batch-row')[rowIndex];
+  return row.querySelectorAll('.image-batch-fields input')[langIndex];
+}
+function change(input, value) {
+  input.value = value;
+  input.dispatchEvent(new dom.window.Event('input', { bubbles: true }));
+}
+function uploadApi(generate) {
+  return async (path, opts) => {
+    if (path === '/api/media/status') return { presignedSupported: false };
+    if (path === '/api/uploads')
+      return { url: `/uploads/${opts.body.originalName}` };
+    if (path === '/api/image-library/generate-alts') return generate(opts.body);
+    throw new Error(`Unexpected API path ${path}`);
+  };
+}
+
+test('30-image consent, concurrency two, missing languages only and explicit row retry', async () => {
+  setFeatures({ enableAi: true, aiAltText: true });
+  const calls = [];
+  let active = 0;
+  let maximum = 0;
+  let fail = true;
+  const batch = openImageBatch({
+    api: uploadApi(async (body) => {
+      calls.push(body);
+      active += 1;
+      maximum = Math.max(maximum, active);
+      await tick();
+      active -= 1;
+      if (body.url.endsWith('/7.png') && fail) {
+        fail = false;
+        throw new Error('Controlled AI failure');
+      }
+      return {
+        alts: Object.fromEntries(
+          body.langs.map((lang) => [lang, `AI ${lang}`]),
+        ),
+      };
+    }),
+    files: Array.from({ length: 30 }, (_, i) => file(`${i + 1}.png`)),
+  });
+  try {
+    await until(() => !aiButton().disabled);
+    assert.equal(calls.length, 0);
+    assert.match(aiButton().textContent, /30 images/);
+    aiButton().click();
+    assert.match(document.body.lastElementChild.textContent, /30 images/);
+    consent(false);
+    await until(() => !aiButton().disabled);
+    assert.equal(calls.length, 0);
+    for (const input of dialog()
+      .querySelectorAll('.image-batch-row')[0]
+      .querySelectorAll('.image-batch-fields input'))
+      change(input, 'Already filled');
+    change(altInput(1), 'One language filled');
+    const skippedLang = (
+      await import('../client/lib/format/i18n.js')
+    ).getSupportedLangs()[0];
+    assert.match(aiButton().textContent, /29 images/);
+    aiButton().click();
+    consent(true);
+    await until(() => calls.length === 29 && !aiButton().disabled);
+    assert.equal(maximum, 2);
+    assert.equal(
+      calls.some((body) => body.url.endsWith('/1.png')),
+      false,
+    );
+    assert.equal(
+      calls
+        .find((body) => body.url.endsWith('/2.png'))
+        .langs.includes(skippedLang),
+      false,
+    );
+    assert.equal(altInput(1).value, 'One language filled');
+    assert.ok(dialog().textContent.includes('Controlled AI failure'));
+    const retry = aiButton('Retry AI for this image');
+    assert.equal(retry.hidden, false);
+    retry.click();
+    assert.match(document.body.lastElementChild.textContent, /1 images/);
+    consent(true);
+    await until(
+      () => calls.length === 30 && aiButton().disabled && !action(0).disabled,
+    );
+    assert.ok(calls.at(-1).url.endsWith('/7.png'));
+    assert.equal(retry.hidden, true);
+  } finally {
+    closeAndClean(batch);
+    setFeatures(null);
+  }
+});
+
+test('manual edits including type-then-clear win; stop drains two requests before applying', async () => {
+  setFeatures({ enableAi: true, aiAltText: true });
+  const pending = [];
+  const picks = [];
+  const batch = openImageBatch({
+    api: uploadApi((body) => {
+      const request = deferred();
+      pending.push({ ...request, body });
+      return request.promise;
+    }),
+    files: [file('one.png'), file('two.png'), file('three.png')],
+    onPickMany: (images) => picks.push(images),
+  });
+  try {
+    await until(() => !aiButton().disabled);
+    aiButton().click();
+    consent(true);
+    await until(() => pending.length === 2);
+    change(altInput(0), 'Manual');
+    change(altInput(1), 'Transient');
+    change(altInput(1), '');
+    aiButton('Stop AI generation').click();
+    assert.equal(action(0).disabled, true);
+    assert.equal(action(1).disabled, true);
+    action(1).dispatchEvent(new dom.window.MouseEvent('click'));
+    assert.equal(picks.length, 0);
+    pending.forEach(({ resolve, body }) =>
+      resolve({
+        alts: Object.fromEntries(body.langs.map((lang) => [lang, 'Generated'])),
+      }),
+    );
+    await until(() => !action(0).disabled);
+    assert.equal(pending.length, 2);
+    assert.equal(altInput(0).value, 'Manual');
+    assert.equal(altInput(1).value, '');
+    fillAlts();
+    action(1).click();
+    await until(() => picks.length === 1);
+    assert.equal(picks[0].length, 3);
+  } finally {
+    closeAndClean(batch);
+    setFeatures(null);
+  }
+});
+
+test('closing a generating batch ignores late results and does not start queued requests', async () => {
+  setFeatures({ enableAi: true, aiAltText: true });
+  const pending = [];
+  const batch = openImageBatch({
+    api: uploadApi((body) => {
+      const request = deferred();
+      pending.push({ ...request, body });
+      return request.promise;
+    }),
+    files: [file('one.png'), file('two.png'), file('three.png')],
+  });
+  try {
+    await until(() => !aiButton().disabled);
+    aiButton().click();
+    consent(true);
+    await until(() => pending.length === 2);
+    const input = altInput(0);
+    batch.close();
+    pending.forEach(({ resolve, body }) =>
+      resolve({
+        alts: Object.fromEntries(body.langs.map((lang) => [lang, 'Late'])),
+      }),
+    );
+    await tick();
+    await tick();
+    assert.equal(input.value, '');
+    assert.equal(pending.length, 2);
+    assert.equal(dialog(), null);
+  } finally {
+    closeAndClean(batch);
+    setFeatures(null);
+  }
+});
+
+test('AI disabled leaves only manual batch editing', async () => {
+  setFeatures({ enableAi: false, aiAltText: true });
+  const batch = openImageBatch({
+    api: uploadApi(() => assert.fail('AI disabled')),
+    files: [file('manual.png')],
+  });
+  try {
+    await until(() => !action(0).disabled);
+    assert.equal(aiButton(), undefined);
+    assert.equal(aiButton('Retry AI'), undefined);
+  } finally {
+    closeAndClean(batch);
+    setFeatures(null);
+  }
 });

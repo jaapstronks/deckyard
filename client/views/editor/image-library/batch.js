@@ -10,6 +10,7 @@ import {
   imageUploadAccept,
 } from '../../../../shared/constants/image-uploads.js';
 import { uploadFile } from './upload.js';
+import { createBatchAlts } from './batch-alts.js';
 import { runBatchTasks } from '../media/batch-runner.js';
 
 let nextRowId = 0;
@@ -185,6 +186,17 @@ export function openImageBatch({
     continueButton,
     cancel,
   ]);
+  const ai = createBatchAlts({
+    api,
+    rows,
+    rowForm,
+    canStart: () => !closed && !stopped && !phaseBusy && !applied,
+    canContinue: () => !stopped,
+    isClosed: () => closed,
+    setBusy: (busy) => setBusy(busy),
+    rowChanged: rowStatus,
+  });
+  if (ai) actions.prepend(ai.el);
   modal.append(notice, message, error.el, drop, add, list, details, actions);
 
   const showError = (value) => {
@@ -209,6 +221,7 @@ export function openImageBatch({
     }
   };
   function updateActions() {
+    ai?.update();
     const failedUploads = rows.filter((row) => row.uploadStatus === 'failed');
     const failedSaves = rows.filter(
       (row) => row.saveStatus === 'failed' || row.saveStatus === 'uncertain',
@@ -285,16 +298,19 @@ export function openImageBatch({
         ? row.saveError
         : row.uploadStatus === 'failed'
           ? row.uploadError
-          : '';
+          : row.aiError;
     if (failure) row.error.show(failure, { focus: false });
     else row.error.clear();
-    row.status.textContent = failure
-      ? ''
-      : row.libraryItem
-        ? t('imageLibrary.batch.saved', 'Saved')
-        : row.uploadStatus === 'uploaded'
-          ? t('imageLibrary.batch.uploaded', 'Uploaded')
-          : t('imageLibrary.uploading', 'Uploading…');
+    row.status.textContent =
+      row.aiStatus === 'generating'
+        ? t('imageLibrary.alt.generating', 'Generating alt text…')
+        : failure
+          ? ''
+          : row.libraryItem
+            ? t('imageLibrary.batch.saved', 'Saved')
+            : row.uploadStatus === 'uploaded'
+              ? t('imageLibrary.batch.uploaded', 'Uploaded')
+              : t('imageLibrary.uploading', 'Uploading…');
     updateActions();
   }
 
@@ -308,6 +324,9 @@ export function openImageBatch({
       url: '',
       uploadStatus: 'pending',
       saveStatus: 'idle',
+      aiStatus: 'idle',
+      aiError: '',
+      altRevisions: {},
       saveAttempted: false,
       libraryItem: null,
       uploadError: '',
@@ -346,6 +365,11 @@ export function openImageBatch({
         ...(spec?.altMaxLength ? { maxlength: spec.altMaxLength } : {}),
       });
       row.altInputs[lang] = input;
+      row.altRevisions[lang] = 0;
+      input.addEventListener('input', () => {
+        row.altRevisions[lang] += 1;
+        ai?.update();
+      });
       fields.append(
         h('label', {}, [
           t('imageLibrary.alt.langLabel', 'Alt text ({lang})', {
@@ -355,6 +379,15 @@ export function openImageBatch({
         ]),
       );
     }
+    row.aiRetry = ai
+      ? h('button', {
+          type: 'button',
+          class: 'btn btn-secondary btn-sm',
+          hidden: true,
+          text: t('imageLibrary.batch.aiRetry', 'Retry AI for this image…'),
+          onclick: () => ai.retry(row),
+        })
+      : null;
     row.el = h(
       'article',
       { class: 'image-batch-row', 'data-batch-id': String(id) },
@@ -380,6 +413,7 @@ export function openImageBatch({
           ]),
           row.status,
           row.error.el,
+          row.aiRetry,
           fields,
           h('details', { class: 'image-lib-more' }, [
             h('summary', {
