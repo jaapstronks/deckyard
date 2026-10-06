@@ -116,6 +116,59 @@ test('retry after a definite metadata failure reuses uploaded URLs and confirmed
   closeAndClean(batch);
 });
 
+test('continuing after a partial save waits for the remaining POST and applies once', async () => {
+  const lastPost = deferred();
+  const picks = [];
+  let posts = 0;
+  const api = async (path, opts) => {
+    if (path === '/api/media/status') return { presignedSupported: false };
+    if (path === '/api/uploads')
+      return { url: `/uploads/${opts.body.originalName}` };
+    if (path === '/api/image-library') {
+      posts += 1;
+      if (posts === 1)
+        throw Object.assign(new Error('Storage temporarily unavailable'), {
+          code: 'storage_error',
+        });
+      if (posts === 2) return { id: 'second-id' };
+      return lastPost.promise;
+    }
+    throw new Error(`Unexpected API path ${path}`);
+  };
+  const batch = openImageBatch({
+    api,
+    files: [file('first.png'), file('second.png'), file('third.png')],
+    onPickMany: (images) => picks.push(images),
+  });
+  try {
+    await until(() => !action(0).disabled);
+    fillAlts();
+    action(0).click();
+    await until(() => posts === 3);
+    const continueButton = action(3);
+    assert.equal(continueButton.disabled, true);
+    continueButton.click();
+    // Also guard the handler itself against activation during an active phase.
+    continueButton.dispatchEvent(new dom.window.MouseEvent('click'));
+    assert.equal(picks.length, 0);
+    assert.ok(dialog());
+    lastPost.resolve({ id: 'third-id' });
+    await until(() => !continueButton.disabled);
+    assert.equal(picks.length, 0);
+    continueButton.click();
+    continueButton.dispatchEvent(new dom.window.MouseEvent('click'));
+    assert.equal(picks.length, 1);
+    assert.deepEqual(
+      picks[0].map((pick) => pick.id),
+      ['second-id', 'third-id'],
+    );
+    assert.equal(dialog(), null);
+  } finally {
+    lastPost.resolve({ id: 'third-id' });
+    closeAndClean(batch);
+  }
+});
+
 test('uncertain metadata result cannot be retried blindly', async () => {
   let posts = 0;
   let applied = 0;

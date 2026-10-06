@@ -141,6 +141,7 @@ function openLibraryModal({
   file = null,
 } = {}) {
   const uploadsEnabled = featureEnabled('uploads');
+  const libraryOnly = typeof onPick !== 'function';
   const canAiAlt = aiAltTextEnabled();
 
   const unlockScroll = lockDocumentScroll();
@@ -316,17 +317,19 @@ function openLibraryModal({
     creditCb,
     setStatus,
     setBusy,
-    onMultipleFiles: (files) =>
-      openImageBatch({
-        api,
-        root,
-        files,
-        onItemsCreated: (created) => {
-          items = [created, ...items];
-          sidebarComponent?.render();
-          gridComponent.renderGrid();
-        },
-      }),
+    onMultipleFiles: libraryOnly
+      ? (files) =>
+          openImageBatch({
+            api,
+            root,
+            files,
+            onItemsCreated: (created) => {
+              items = [created, ...items];
+              sidebarComponent?.render();
+              gridComponent.renderGrid();
+            },
+          })
+      : null,
   });
 
   // Stock media components (created lazily)
@@ -390,7 +393,7 @@ function openLibraryModal({
   // whole thumbnail grid.
   libraryView.append(
     uploadComponent.el,
-    uploadsEnabled && user
+    uploadsEnabled && user && libraryOnly
       ? h('button', {
           type: 'button',
           class: 'btn btn-secondary image-batch-library-entry',

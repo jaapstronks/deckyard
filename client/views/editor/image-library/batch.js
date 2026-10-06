@@ -239,6 +239,7 @@ export function openImageBatch({
       );
     continueButton.hidden =
       !failedSaves.length || !successful.length || !onPickMany;
+    continueButton.disabled = phaseBusy || stopped || applied;
     continueButton.textContent = t(
       'imageLibrary.batch.continue',
       'Continue with {count} saved images',
@@ -267,7 +268,6 @@ export function openImageBatch({
     if (stopped) {
       save.disabled = true;
       if (useOnly) useOnly.disabled = true;
-      continueButton.disabled = true;
     }
     cancel.textContent = phaseBusy
       ? t(
@@ -563,7 +563,7 @@ export function openImageBatch({
   }
 
   function applySuccessful(selected = rows) {
-    if (closed || stopped || applied || !selected.length) return;
+    if (closed || stopped || phaseBusy || applied || !selected.length) return;
     if (!validateDestination()) {
       showError(
         t(
