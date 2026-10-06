@@ -966,6 +966,9 @@ const DECORATIVE_EXT =
  *   decorative, so a screen reader skips it as the canvas' `aria-hidden` does.
  * - **Moved titles.** A text box named {@link POSITIONED_TITLE_NAME} becomes
  *   the slide's title placeholder, keeping its own position.
+ * - **Paragraph properties.** pptxgenjs 4.0.1 writes `a:pPr` before every
+ *   run. Only the first run owns the paragraph options (see paragraphRuns);
+ *   later copies violate DrawingML and override bullets in LibreOffice.
  *
  * @param {Buffer} buffer - a written .pptx
  * @returns {Promise<Buffer>}
@@ -976,7 +979,17 @@ export async function finishEditablePackage(buffer) {
   let changed = false;
   for (const part of parts) {
     const xml = await part.async('string');
-    let next = xml;
+    let next = xml.replace(/<a:p>[\s\S]*?<\/a:p>/g, (paragraph) => {
+      let first = true;
+      return paragraph.replace(
+        /<a:pPr\b[^>]*(?:\/>|>[\s\S]*?<\/a:pPr>)/g,
+        (properties) => {
+          if (!first) return '';
+          first = false;
+          return properties;
+        },
+      );
+    });
     if (next.includes(HEADER_TABLE_NAME)) {
       next = next.replace(
         /<p:graphicFrame>[\s\S]*?<\/p:graphicFrame>/g,
