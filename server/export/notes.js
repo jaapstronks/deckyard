@@ -12,7 +12,7 @@ function slideTitleCandidate(slide) {
     c.question,
     c.prompt,
     c.statement,
-    c.quote,
+    Array.isArray(c.quotes) ? c.quotes[0]?.quote : '',
   ]
     .map((v) => (typeof v === 'string' ? v.trim() : ''))
     .filter(Boolean);
