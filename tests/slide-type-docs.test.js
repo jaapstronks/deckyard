@@ -240,7 +240,6 @@ test('no settings-shaped field relies on the bulk modal alone', () => {
  */
 test('no item field gains the bulk modal as its only home', () => {
   const PINNED = [
-    'kpi-metrics-slide.metrics.note',
     'quote-slide.quotes.authorImage',
     'quote-slide.quotes.authorImageAlt',
     'quote-slide.quotes.authorImage2',

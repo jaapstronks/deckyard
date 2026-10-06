@@ -114,11 +114,6 @@ export const BINDABLE_SLIDE_TYPES = {
         sourceHint: 'cell or property',
       },
       {
-        target: 'metrics[*].delta',
-        label: 'Metric delta',
-        sourceHint: 'cell or property',
-      },
-      {
         target: 'metrics[*].unit',
         label: 'Metric unit',
         sourceHint: 'cell or property',

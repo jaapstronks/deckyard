@@ -22,14 +22,16 @@ export const inlineEdit = {
       within: '.kpi-value',
       pos: 'append',
     },
+    // The note line under the label; the renderer omits it when empty.
+    { list: 'metrics', field: 'note', item: '.kpi-metric', pos: 'append' },
   ],
   cards: {
     field: 'metrics',
     container: '.kpi-grid',
     itemSelector: '.kpi-metric',
   },
-  // metrics stays in the form: delta/note subfields have no inline path.
-  formText: HEADER_TEXT,
+  // Every metric subfield (value, unit, label, note) edits on the canvas.
+  formText: [...HEADER_TEXT, 'metrics'],
 };
 
 /**

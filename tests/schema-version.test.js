@@ -1881,3 +1881,64 @@ test('every declared lossless rename names a registered successor', () => {
     assert.equal(REMOVED_SLIDE_TYPES[old].losslessRename, true);
   }
 });
+
+/* ------------------------------------------------------------------ *
+ * v15 -> v16: kpi-metrics' retired delta folds into the note (B599)
+ * ------------------------------------------------------------------ */
+
+/** A deck at v15 holding one kpi-metrics slide. */
+function kpiDeckAtV15(metrics, dataSource) {
+  return {
+    id: randomUUID(),
+    title: 'kpi',
+    lang: 'nl',
+    schemaVersion: 15,
+    slides: [
+      {
+        id: 's1',
+        type: 'kpi-metrics-slide',
+        content: { title: 'T', metrics },
+        ...(dataSource ? { dataSource } : {}),
+      },
+    ],
+  };
+}
+
+test('a stored kpi delta becomes the front of its note, as it rendered', () => {
+  const migrated = migratePresentation(
+    kpiDeckAtV15([
+      { value: '1', label: 'A', delta: '-5%', note: 'vs plan' },
+      { value: '2', label: 'B', delta: '+3pp' },
+      { value: '3', label: 'C', delta: '', note: 'flat' },
+      { value: '4', label: 'D', note: '+1 kept' },
+    ]),
+  );
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(
+    migrated.slides[0].content.metrics.map((m) => [m.note, 'delta' in m]),
+    [
+      ['-5% vs plan', false],
+      ['+3pp', false],
+      ['flat', false],
+      ['+1 kept', false],
+    ],
+  );
+});
+
+test('a delta binding moves to the note, unless the note is bound already', () => {
+  const migrated = migratePresentation(
+    kpiDeckAtV15([{ value: '1' }, { value: '2' }], {
+      provider: 'csv-url',
+      config: {},
+      bindings: [
+        { target: 'metrics[0].delta', source: 'B1' },
+        { target: 'metrics[1].note', source: 'C2' },
+        { target: 'metrics[1].delta', source: 'B2' },
+      ],
+    }),
+  );
+  assert.deepEqual(migrated.slides[0].dataSource.bindings, [
+    { target: 'metrics[0].note', source: 'B1' },
+    { target: 'metrics[1].note', source: 'C2' },
+  ]);
+});
