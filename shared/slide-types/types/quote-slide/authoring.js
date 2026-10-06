@@ -41,8 +41,12 @@ export default {
    * `defaults` on the definition).
    */
   sample: {
-    quote: 'The best way to predict the future is to create it.',
-    authorName: 'Peter Drucker',
-    authorTitle: 'Management Consultant',
+    quotes: [
+      {
+        quote: 'The best way to predict the future is to create it.',
+        authorName: 'Peter Drucker',
+        authorTitle: 'Management Consultant',
+      },
+    ],
   },
 };

@@ -87,12 +87,14 @@ import { needsNativeComposition } from '../../shared/slide-types/fidelity.js';
 
 /**
  * Get the best display title for a slide, regardless of type.
- * Falls through: title → tagline → quote → label → value → first non-empty string field.
+ * Falls through: title → tagline → first quote → label → value → first non-empty string field.
  */
 function slideTitle(slide) {
   const c = slide?.content;
   if (!c) return '';
-  return c.title || c.tagline || c.quote || c.label || c.value || '';
+  return (
+    c.title || c.tagline || c.quotes?.[0]?.quote || c.label || c.value || ''
+  );
 }
 
 /**

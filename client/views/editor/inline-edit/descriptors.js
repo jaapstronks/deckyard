@@ -86,6 +86,11 @@
  *         mutates the item object at that index. `imageField` / `altField` /
  *         `extraFields[].key` are the item's own keys.
  *         { list, photoSelector, imageField, altField, extraFields? }
+ *         With `slots: k` each item holds k images (quote-slide's two author
+ *         portraits): `<n>` numbers them item-major, so photo `<n>` is slot
+ *         `<n> % k + 1` of item `floor(<n> / k)`, and a `{n}` token in the
+ *         item keys takes that 1-based slot (`authorImage{n}`). One integer
+ *         stays the photo's whole address, for the canvas and the inspector.
  *       Flat mode (no `list`): the popover mutates `slide.content` directly.
  *         `imageField` / `altField` / `extraFields[].key` are content keys; a
  *         `{n}` token in any of them is replaced with `<n>` (e.g. a per-column
@@ -136,7 +141,7 @@
  * @property {Array<Object>} [ghosts]
  * @property {Array<Object>} [itemGhosts]
  * @property {{field:string, container:string, itemSelector:string}} [cards]
- * @property {{list?:string, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>}} [media]
+ * @property {{list?:string, slots?:number, photoSelector:string, imageField:string, altField:string, extraFields?:Array<Object>}} [media]
  * @property {{xField:string, yField:string, cropMode:(slide:Object, idx:number)=>('cover'|'contain'), containSelector?:string}} [focus]
  *   Draggable focal-point handle on filled images. Resolves the write target
  *   the same way `media` does (item in list mode, `slide.content` in flat mode
@@ -162,6 +167,7 @@
  */
 
 import { SLIDE_TYPE_INLINE_EDIT } from '../../../../shared/slide-types/inline-edit.js';
+import { getByPath } from './field-path.js';
 
 // This map is no longer hand-maintained here. Every core type declares its
 // descriptor in `shared/slide-types/types/<name>/inline-edit.js`, and the map
@@ -175,6 +181,57 @@ import { SLIDE_TYPE_INLINE_EDIT } from '../../../../shared/slide-types/inline-ed
 
 /** @type {Record<string, InlineDescriptor>} */
 export const INLINE_DESCRIPTORS = { ...SLIDE_TYPE_INLINE_EDIT };
+
+/**
+ * Where a `media` photo index writes: the member object and its resolved
+ * image / alt / extra-field keys, per the array, slotted-array and flat shapes
+ * documented above. The one resolver the canvas popover, the focus drag and
+ * the inspector's "This image" card share.
+ *
+ * @param {Object} content - slide content
+ * @param {Object} media - the descriptor's `media` entry
+ * @param {number} idx - the photo's `data-inline-photo` index
+ * @param {{create?: boolean}} [opts] - `create` pads a short list with empty
+ *   items (a renderer may draw a placeholder past the stored array)
+ * @returns {null | {member: Object, sub: (key:string) => string,
+ *   imageField: string, altField: string, extraFields: Array<Object>}}
+ */
+export function resolveMediaMember(
+  content,
+  media,
+  idx,
+  { create = false } = {},
+) {
+  if (!media || !Number.isInteger(idx) || idx < 0) return null;
+  let member;
+  let token;
+  if (media.list) {
+    const arr = getByPath(content, media.list);
+    if (!Array.isArray(arr)) return null;
+    const slots =
+      Number.isInteger(media.slots) && media.slots > 1 ? media.slots : 1;
+    const itemIdx = Math.floor(idx / slots);
+    if (create) while (arr.length <= itemIdx) arr.push({});
+    member = arr[itemIdx];
+    token = slots > 1 ? String((idx % slots) + 1) : null;
+  } else {
+    member = content;
+    token = String(idx);
+  }
+  if (!member || typeof member !== 'object') return null;
+  const sub = (key) =>
+    token === null ? String(key) : String(key).replace('{n}', token);
+  return {
+    member,
+    sub,
+    imageField: sub(media.imageField),
+    altField: sub(media.altField),
+    extraFields: (Array.isArray(media.extraFields)
+      ? media.extraFields
+      : []
+    ).map((f) => ({ ...f, key: sub(f.key) })),
+  };
+}
 
 /**
  * Resolve the inline descriptor for a slide type. Definition first, core

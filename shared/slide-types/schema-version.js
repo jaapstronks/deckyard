@@ -51,7 +51,7 @@ import { foldUnofferedEnums } from './normalize-content.js';
 import { canonicalJson } from '../slide-fingerprint.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 16;
+export const CURRENT_SCHEMA_VERSION = 17;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -849,6 +849,122 @@ function foldKpiDeltaIntoNote(pres) {
 }
 
 /**
+ * The keys a quote-slide held its first quote in, before every quote lived in
+ * `quotes[]` (D314). `imagekitFileId` rode along: the canvas popover wrote it
+ * beside whichever flat portrait it set.
+ */
+const FLAT_QUOTE_KEYS = [
+  'quote',
+  'authorName',
+  'authorTitle',
+  'authorImage1',
+  'authorImage1Alt',
+  'authorImage2',
+  'authorImage2Alt',
+  'imagekitFileId',
+];
+
+/** An extra quote's first portrait, before the slots took one spelling. */
+const LEGACY_ITEM_PORTRAIT_KEYS = [
+  ['authorImage', 'authorImage1'],
+  ['authorImageAlt', 'authorImage1Alt'],
+];
+
+/** `quotes.N.rest` (a text-style key) with N shifted by one, else null. */
+function shiftQuoteStyleKey(key) {
+  const m = /^quotes\.(\d+)\.(.+)$/.exec(key);
+  return m ? `quotes.${Number(m[1]) + 1}.${m[2]}` : null;
+}
+
+/** `quotes[N].rest` (a binding target) with N shifted by one, else null. */
+function shiftQuoteBindingTarget(target) {
+  const m = /^quotes\[(\d+)\]\.(.+)$/.exec(target);
+  return m ? `quotes[${Number(m[1]) + 1}].${m[2]}` : null;
+}
+
+/**
+ * Fold quote-slide into one storage form: every quote in `quotes[]` (D314).
+ *
+ * The first quote used to live in flat top-level keys and quotes two and three
+ * in `quotes[]`, whose portraits were spelled `authorImage` / `authorImage2`
+ * against the flat `authorImage1` / `authorImage2`. Two forms of one concept,
+ * so the canvas could reach the first quote's portraits and not the others'.
+ *
+ * The flat keys become item 0, ahead of the stored extras; an extra's
+ * `authorImage` / `authorImageAlt` become `authorImage1` / `authorImage1Alt`.
+ * Everything keyed on a field path follows: a text style on `quote` moves to
+ * `quotes.0.quote` and an extra's `quotes.N.*` to `quotes.N+1.*`; a live-data
+ * binding likewise. Render-equivalent: the first quote always showed, the
+ * others only with text, and `displayQuotes` keeps exactly that rule.
+ *
+ * Keys on the flat keys and the retired item spelling only, which no current
+ * writer produces. Idempotent.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldQuoteSlideIntoQuotes(pres) {
+  for (const slide of eachSlide(pres)) {
+    if (slide?.type !== QUOTE_SLIDE_TYPE) continue;
+    const content = slide.content;
+    if (!content || typeof content !== 'object') continue;
+    const own = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+    const stored = Array.isArray(content.quotes) ? content.quotes : [];
+    for (const item of stored) {
+      if (!item || typeof item !== 'object') continue;
+      for (const [legacy, slot] of LEGACY_ITEM_PORTRAIT_KEYS) {
+        if (!own(item, legacy)) continue;
+        if (!str(item[slot])) item[slot] = item[legacy];
+        delete item[legacy];
+      }
+    }
+    if (!FLAT_QUOTE_KEYS.some((key) => own(content, key))) continue;
+
+    const first = {};
+    for (const key of FLAT_QUOTE_KEYS) {
+      if (own(content, key) && content[key] != null) first[key] = content[key];
+      delete content[key];
+    }
+    content.quotes = [first, ...stored];
+
+    const styles = content.textStyles;
+    if (styles && typeof styles === 'object') {
+      const next = {};
+      for (const [key, value] of Object.entries(styles)) {
+        const shifted = shiftQuoteStyleKey(key);
+        if (shifted) {
+          next[shifted] = value;
+        } else if (FLAT_QUOTE_KEYS.includes(key)) {
+          if (!value || typeof value !== 'object') continue;
+          // The v5 -> v6 sweep could not see these as quote-block members
+          // (the current schema has them only as item fields), so their inert
+          // `align` is dropped here; colour and size move with the field.
+          const rest = { ...value };
+          delete rest.align;
+          if (Object.keys(rest).length) next[`quotes.0.${key}`] = rest;
+        } else {
+          next[key] = value;
+        }
+      }
+      if (Object.keys(next).length) content.textStyles = next;
+      else delete content.textStyles;
+    }
+
+    const bindings = slide.dataSource?.bindings;
+    if (Array.isArray(bindings)) {
+      for (const binding of bindings) {
+        const target = String(binding?.target || '');
+        const shifted = shiftQuoteBindingTarget(target);
+        if (shifted) binding.target = shifted;
+        else if (FLAT_QUOTE_KEYS.includes(target))
+          binding.target = `quotes[0].${target}`;
+      }
+    }
+  }
+  return pres;
+}
+
+/**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
  * still allowed into the one version `i + 1` requires. No stamp is stored (see
  * the module docstring), so every step runs on every deck, every time - which
@@ -1301,6 +1417,10 @@ export const SCHEMA_MIGRATIONS = [
   // was printed in front of, so the canvas edits one stored line (B599). See
   // foldKpiDeltaIntoNote.
   foldKpiDeltaIntoNote,
+
+  // v16 -> v17: quote-slide keeps every quote in `quotes[]`, the first
+  // included, with one portrait spelling (D314). See foldQuoteSlideIntoQuotes.
+  foldQuoteSlideIntoQuotes,
 ];
 
 /**

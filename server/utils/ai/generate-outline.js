@@ -240,9 +240,13 @@ function resolveStructuralSlide(slide) {
       originalIndex: index,
       type: 'quote-slide',
       content: {
-        quote,
-        authorName: authorName || 'Unknown',
-        authorTitle: authorTitle || '',
+        quotes: [
+          {
+            quote,
+            authorName: authorName || 'Unknown',
+            authorTitle: authorTitle || '',
+          },
+        ],
       },
       reasoning: 'Structural: quote resolved directly',
       presenterNotes: presenterNotes || '',

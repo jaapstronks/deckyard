@@ -25,7 +25,7 @@
  * `data-inline-field` attributes participate; everything else is untouched.
  */
 
-import { getInlineDescriptor } from './descriptors.js';
+import { getInlineDescriptor, resolveMediaMember } from './descriptors.js';
 import { slideTypeElementTab } from '../../../../shared/slide-types/inline-edit-companions.js';
 import {
   getByPath,
@@ -669,22 +669,39 @@ export function createInlineEditor({
    * before the ghosts, which skip a field that got one. Edit mode only: the
    * class lives on the editor canvas, never in a render.
    */
+  /** `list.0.<itemLabelField>` of a list field declared essential. */
+  function isEssentialFirstEntryLabel(def, path) {
+    const [listKey, idx, sub, ...rest] = String(path || '').split('.');
+    if (idx !== '0' || !sub || rest.length) return false;
+    const list = (def?.fields || []).find((f) => f?.key === listKey);
+    return (
+      list?.type === 'items' &&
+      list.essential === true &&
+      list.itemLabelField === sub
+    );
+  }
+
   function insertEssentialPlaceholders(root, def) {
     const slide = getSlide?.();
     if (!slide) return;
-    for (const f of def.fields || []) {
+    // Every field element on the canvas: an essential top-level field, and
+    // the first entry of an essential list, which asks for its own name
+    // (`itemLabelField`) - essential on a list means its first entry (D211),
+    // so an empty first quote reads "Add Quote" like an empty title does.
+    for (const el of root.querySelectorAll('[data-inline-field]')) {
+      const path = el.getAttribute('data-inline-field');
+      const f = fieldMetaForPath(def, path);
       // Text only: an essential image or list has its own affordance (the
       // empty frame's "+ Add image", the list's "+ Add"), shown without hover.
-      if (f?.essential !== true) continue;
+      if (f?.essential !== true && !isEssentialFirstEntryLabel(def, path))
+        continue;
       if (f.type !== 'string' && f.type !== 'markdown') continue;
-      if (!isEmptyValue(getByPath(slide.content, f.key))) continue;
-      const el = root.querySelector(`[data-inline-field="${f.key}"]`);
-      if (!el) continue;
+      if (!isEmptyValue(getByPath(slide.content, path))) continue;
       el.classList.add('ie-placeholder');
       el.setAttribute(
         'data-ie-placeholder',
         t('editor.inline.placeholder', 'Add {label}', {
-          label: fieldLabel(f.key, f),
+          label: fieldLabel(path, f),
         }),
       );
     }
@@ -1436,10 +1453,8 @@ export function createInlineEditor({
    * Resolve the slide member + field keys a photo placeholder writes to, shared
    * by the image picker (openPickerForPhoto) and the drag & drop upload handler.
    *
-   * Array mode: mutate the item at `idx` in `list`. Flat mode (no `list`):
-   * mutate slide.content directly, substituting `{n}` -> idx in the field keys
-   * (image-slide uses plain keys with idx 0; quote-slide's `authorImage{n}` /
-   * `authorImage{n}Alt` substitute the 1-based slot number).
+   * The address grammar (array, slotted array, flat) is resolveMediaMember's
+   * in ./descriptors.js.
    *
    * @returns {{slide, media, idx, member, imageField, altField, extraFields}|null}
    */
@@ -1453,32 +1468,24 @@ export function createInlineEditor({
     const idx = Number(photoEl.getAttribute('data-inline-photo'));
     if (!Number.isInteger(idx)) return null;
 
-    let member;
-    let imageField;
-    let altField;
-    let extraFields;
-    if (media.list) {
-      const arr = getByPath(slide.content, media.list);
-      if (!Array.isArray(arr)) return null;
-      // Renderers may draw placeholder cells beyond the current array (e.g.
-      // image-set rows padding to their cell count); create the item we mutate
-      // in place.
-      while (arr.length <= idx) arr.push({});
-      member = arr[idx];
-      imageField = media.imageField;
-      altField = media.altField;
-      extraFields = media.extraFields;
-    } else {
-      member = slide.content;
-      const sub = (s) => String(s).replace('{n}', String(idx));
-      imageField = sub(media.imageField);
-      altField = sub(media.altField);
-      extraFields = (media.extraFields || []).map((f) => ({
-        ...f,
-        key: sub(f.key),
-      }));
-    }
-    return { slide, media, idx, member, imageField, altField, extraFields };
+    // Renderers may draw placeholder cells beyond the current array (e.g.
+    // image-set rows padding to their cell count); create the item we mutate
+    // in place.
+    const target = resolveMediaMember(slide.content, media, idx, {
+      create: true,
+    });
+    if (!target) return null;
+    const { member, sub, imageField, altField, extraFields } = target;
+    return {
+      slide,
+      media,
+      idx,
+      member,
+      sub,
+      imageField,
+      altField,
+      extraFields,
+    };
   }
 
   // The element a canvas interaction selects, for the selection-aware

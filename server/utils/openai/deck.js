@@ -107,7 +107,7 @@ export async function generateDeckJsonFromRawContent(
     '  - When possible, use the real speaker name and role from the raw content for authorName/authorTitle.',
     '  - If speaker role/title is missing, infer it from context (company/organization + role). If still unknown, use authorTitle: "Interview".',
     '  - quote-slide format:',
-    '    { "type":"quote-slide", "content": { "quote":"...", "authorName":"(required)", "authorTitle":"(required)" } }',
+    '    { "type":"quote-slide", "content": { "quotes": [ { "quote":"...", "authorName":"(required)", "authorTitle":"(required)" } ] } }',
     '- Images: if it is reasonable to expect an image exists (interviewee headshot, company/event photo, product screenshot, location photo), you SHOULD include an image-text-slide.',
     '  - Use it as a visual break + key points: 3–6 bullets max.',
     '  - For interviews, include at least 1 image-text-slide about the interviewee (or the interview topic) near the start of the deck.',

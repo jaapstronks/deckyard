@@ -58,7 +58,7 @@ export const ESSENTIAL = {
   'process-slide.items': 'add',
   'pyramid-slide.title': 'chip',
   'pyramid-slide.levels': 'add',
-  'quote-slide.quote': 'placeholder',
+  'quote-slide.quotes': 'placeholder',
   'table-slide.title': 'placeholder',
   'table-slide.rows': 'add',
   'team-cards-slide.members': 'add',

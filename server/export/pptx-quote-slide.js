@@ -2,11 +2,11 @@
  * Editable quotes on the theme's dark ground (B588 PR 3). The solid ground
  * carries the contrast; the animated canvas gradient is not part of this
  * best-effort composition. Copy and pictures come from the semantic projection,
- * one quote at a time so extra quotes keep their own attribution and portraits.
+ * one quote at a time so each quote keeps its own attribution and portraits.
  */
 import { curlyQuote } from '../../shared/slide-types/helpers.js';
 import {
-  activeExtraQuotes,
+  displayQuotes,
   quoteFontScale,
 } from '../../shared/slide-types/types/quote-slide.js';
 import {
@@ -22,7 +22,7 @@ import {
 import { coverCrop, rasterForPptx } from './pptx-image.js';
 import { layoutBox, themeTextPt } from './pptx-theme.js';
 
-/** Project an extra item's fields through the same definition as the primary. */
+/** Project one quote as a one-quote slide of the same definition. */
 function projectQuote(slide, content, ctx) {
   const projected = slideBlocks({ ...slide, content }, ctx.def, {
     index: ctx.slideNum - 1,
@@ -69,24 +69,9 @@ function projectQuote(slide, content, ctx) {
 export async function composeQuoteSlide(pptx, slide, ctx) {
   const { spec, slideWidth, slideHeight, slideNum } = ctx;
   const content = slide?.content || {};
-  const items = [projectQuote(slide, { ...content, quotes: [] }, ctx)];
-  for (const { item } of activeExtraQuotes(content)) {
-    items.push(
-      projectQuote(
-        slide,
-        {
-          quote: item.quote,
-          authorName: item.authorName,
-          authorTitle: item.authorTitle,
-          authorImage1: item.authorImage,
-          authorImage1Alt: item.authorImageAlt,
-          authorImage2: item.authorImage2,
-          authorImage2Alt: item.authorImage2Alt,
-        },
-        ctx,
-      ),
-    );
-  }
+  const items = displayQuotes(content).map(({ item }) =>
+    projectQuote(slide, { ...content, quotes: [item] }, ctx),
+  );
   const warnings = [];
   // Quote has no corner logo on the canvas. A bare slide also avoids inheriting
   // the default surface's logo and placeholders on this dark surface.

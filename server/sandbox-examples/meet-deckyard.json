@@ -92,11 +92,15 @@
     {
       "type": "quote-slide",
       "content": {
-        "quote": "The format is the product. Once the deck is just data, everything else — editing, exporting, generating — is a view over it.",
-        "authorName": "Deckyard",
-        "authorTitle": "Design principle",
-        "authorImage1": "/client/vendor/sandbox-media/sample-portrait.svg",
-        "authorImage1Alt": "Illustrated portrait"
+        "quotes": [
+          {
+            "quote": "The format is the product. Once the deck is just data, everything else — editing, exporting, generating — is a view over it.",
+            "authorName": "Deckyard",
+            "authorTitle": "Design principle",
+            "authorImage1": "/client/vendor/sandbox-media/sample-portrait.svg",
+            "authorImage1Alt": "Illustrated portrait"
+          }
+        ]
       }
     },
     {

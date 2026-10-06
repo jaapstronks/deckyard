@@ -92,6 +92,7 @@ import {
   DOCUMENT_ELEMENT_ROLES,
 } from './text-roles.js';
 import { semanticEnumAttrs } from './semantic-enums.js';
+import { labelFieldText } from './field-lookup.js';
 import { resolveItemDefaults } from './item-defaults.js';
 import { tabularColumnCount } from './tabular.js';
 import {
@@ -223,7 +224,7 @@ export function slideHeading(slide, def, { index = 0, lang } = {}) {
   const labelDef = labelKey ? fields.find((f) => f?.key === labelKey) : null;
   const text =
     a11y ||
-    str(content[labelKey]) ||
+    labelFieldText(def, content) ||
     optionDefaultText(labelDef, fields, content, def.defaults, lang) ||
     markupHeadingText(fields, content) ||
     str(def.label) ||
@@ -350,6 +351,25 @@ function figureGroupImageField(field) {
   return readable.every((f) => f === images[0] || siblings.has(f.key))
     ? images[0]
     : null;
+}
+
+/**
+ * Whether an `items` field is a set of quotations: one of its item fields
+ * carries the `quote` role. A lone quotation is the passage itself, never a
+ * list of one, so such a field with a single item projects that item's blocks
+ * bare - the blockquote and its footer - and only two or more become a list
+ * (D314). Derived from the role, like the figure group, so a fork type of the
+ * same shape reads the same.
+ *
+ * @param {object} field
+ * @returns {boolean}
+ */
+function isQuotationSet(field) {
+  return (
+    field?.type === 'items' &&
+    Array.isArray(field.itemFields) &&
+    field.itemFields.some((f) => f?.role === 'quote')
+  );
 }
 
 /**
@@ -1038,8 +1058,9 @@ function itemHeading(
  * @param {string[]} [ctx.slideIds] - the document's slide ids, for jumps
  * @param {object} [ctx.parent] - the object holding the items field
  * @param {string} [ctx.parentKey] - the key of that items field
- * @param {'li'|'td'} [ctx.tag] - the element the item is: a list entry, or a
- *   cell of the grid an `axes` declaration makes of the items
+ * @param {'li'|'td'|null} [ctx.tag] - the element the item is: a list entry,
+ *   a cell of the grid an `axes` declaration makes of the items, or `null`
+ *   for none (a lone quotation, see quotationField)
  */
 function renderItemBlock(
   item,
@@ -1079,6 +1100,15 @@ function renderItemBlock(
   // enum resolves through the type's `defaults`: one rule, and the canvas
   // (`.matrix-cell[data-tone]`) says the same for a cell without a tone.
   const attrs = semanticEnumAttrs(itemFields, item, itemDefaults);
+  if (!tag) {
+    const bare = headingKey
+      ? [
+          `<h3${fieldAttr(headingKey)}>${escapeHtml(headingText)}</h3>`,
+          ...below,
+        ]
+      : below;
+    return bare.join('\n');
+  }
   // `reader-item` styles a list entry; a table cell has the table's own.
   const open = tag === 'li' ? `<li class="reader-item"` : `<${tag}`;
   if (headingKey && !below.length) {
@@ -1401,6 +1431,15 @@ function renderFieldValue(
             }),
           })),
           content,
+        );
+      }
+      if (value.length === 1 && isQuotationSet(field)) {
+        return renderItemBlock(
+          value[0],
+          field.itemFields,
+          field.itemLabelField,
+          resolveItemDefaults(field),
+          { lang, slideIds, parent: content, parentKey: field.key, tag: null },
         );
       }
       // A `relationField` names a per-item enum holding a typed relation to

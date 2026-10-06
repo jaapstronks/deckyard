@@ -21,7 +21,7 @@ function extractSlideTitle(slide) {
   const content = slide?.content || {};
   return (
     content.title ||
-    content.quote?.slice(0, 60) ||
+    content.quotes?.[0]?.quote?.slice(0, 60) ||
     content.tagline ||
     content.rows?.[0]?.blocks?.[0]?.title ||
     (content.items?.[0]?.title || content.items?.[0]?.text)?.slice(0, 60) ||
