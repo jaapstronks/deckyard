@@ -209,6 +209,47 @@ function fieldAttr(key) {
  */
 export function slideHeading(slide, def, { index = 0, lang } = {}) {
   if (!def) return { ...unresolvedSlideHeading(slide), ariaLabel: '' };
+  const named = namedHeading(slide, def, lang);
+  if (named) return named;
+  const text = str(def.label) || str(slide?.type) || `Slide ${index + 1}`;
+  return { text, visible: false, key: null, ariaLabel: '' };
+}
+
+/**
+ * The words a slide is titled by in a listing (a slide list, a comment's
+ * context, a notes heading, a prompt line): the text of its
+ * {@link slideHeading}, but only when the slide itself supplies it. Where the
+ * reader would fall back to the type label or the placeholder's state word
+ * this returns `''`, so a caller that shows the type beside the title does not
+ * show it twice and can pick its own fallback. One chain for every server
+ * reader (B597): a type's heading is read from its declaration, never from a
+ * private list of `title`/`heading`/`quote` keys.
+ *
+ * @param {object} slide
+ * @param {object|null|undefined} def - the resolved slide-type definition
+ * @param {object} [opts]
+ * @param {string} [opts.lang] - the deck language
+ * @returns {string}
+ */
+export function slideTitle(slide, def, { lang } = {}) {
+  if (!def) {
+    const heading = unresolvedSlideHeading(slide);
+    return heading.key ? heading.text : '';
+  }
+  return namedHeading(slide, def, lang)?.text || '';
+}
+
+/**
+ * The part of {@link slideHeading} the slide's content decides: its declared
+ * heading, else its name (`a11yTitle`, the `labelField` value, a label
+ * option's default word, a markup heading). Null when the slide supplies none.
+ *
+ * @param {object} slide
+ * @param {object} def
+ * @param {string} [lang]
+ * @returns {{ text: string, visible: boolean, key: string|null, ariaLabel: string }|null}
+ */
+function namedHeading(slide, def, lang) {
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const a11y = str(content.a11yTitle);
@@ -226,11 +267,8 @@ export function slideHeading(slide, def, { index = 0, lang } = {}) {
     a11y ||
     labelFieldText(def, content) ||
     optionDefaultText(labelDef, fields, content, def.defaults, lang) ||
-    markupHeadingText(fields, content) ||
-    str(def.label) ||
-    str(slide?.type) ||
-    `Slide ${index + 1}`;
-  return { text, visible: false, key: null, ariaLabel: '' };
+    markupHeadingText(fields, content);
+  return text ? { text, visible: false, key: null, ariaLabel: '' } : null;
 }
 
 /**

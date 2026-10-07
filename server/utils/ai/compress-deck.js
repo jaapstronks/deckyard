@@ -11,23 +11,10 @@ import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { createLogger } from '../logger.js';
+import { getSlideType } from '../../../shared/slide-types/registry.js';
+import { slideTitle } from '../../../shared/slide-types/semantic-projection.js';
 
 const log = createLogger('compress-deck');
-
-/**
- * Extract a title or summary from a slide for the compression prompt
- */
-function extractSlideTitle(slide) {
-  const content = slide?.content || {};
-  return (
-    content.title ||
-    content.quotes?.[0]?.quote?.slice(0, 60) ||
-    content.tagline ||
-    content.rows?.[0]?.blocks?.[0]?.title ||
-    (content.items?.[0]?.title || content.items?.[0]?.text)?.slice(0, 60) ||
-    'Untitled'
-  );
-}
 
 /**
  * Build the system prompt for deck compression analysis
@@ -77,7 +64,7 @@ Return ONLY valid JSON:
 /**
  * Build the user prompt for compression analysis
  */
-function buildCompressionUserPrompt({ title, slides }) {
+export function buildCompressionUserPrompt({ title, slides }) {
   const lines = [
     `PRESENTATION: ${title}`,
     `TOTAL SLIDES: ${slides.length}`,
@@ -86,9 +73,9 @@ function buildCompressionUserPrompt({ title, slides }) {
   ];
 
   slides.forEach((slide, idx) => {
-    const slideTitle = extractSlideTitle(slide);
+    const heading = slideTitle(slide, getSlideType(slide?.type)) || 'Untitled';
     const type = slide?.type || 'unknown';
-    lines.push(`[${idx}] ${type}: ${slideTitle}`);
+    lines.push(`[${idx}] ${type}: ${heading}`);
 
     // Include brief content hints for content-heavy slides
     const content = slide?.content || {};

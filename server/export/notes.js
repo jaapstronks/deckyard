@@ -1,24 +1,9 @@
 import JSZip from 'jszip';
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { getSlideType } from '../../shared/slide-types/registry.js';
+import { slideTitle } from '../../shared/slide-types/semantic-projection.js';
+import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { escapeXml } from '../../shared/xml.js';
-
-function slideTitleCandidate(slide) {
-  const c =
-    slide?.content && typeof slide.content === 'object' ? slide.content : {};
-  const candidates = [
-    c.title,
-    c.heading,
-    c.subheading,
-    c.question,
-    c.prompt,
-    c.statement,
-    Array.isArray(c.quotes) ? c.quotes[0]?.quote : '',
-  ]
-    .map((v) => (typeof v === 'string' ? v.trim() : ''))
-    .filter(Boolean);
-  if (candidates.length) return candidates[0];
-  return '';
-}
 
 function slideLabel(slide) {
   const def = SLIDE_TYPES?.[slide?.type];
@@ -26,8 +11,12 @@ function slideLabel(slide) {
   return label || String(slide?.type || 'slide');
 }
 
-export function buildNotesMarkdown(pres, { includeEmpty = true } = {}) {
+export function buildNotesMarkdown(
+  pres,
+  { includeEmpty = true, slideTypes = SLIDE_TYPES } = {},
+) {
   const title = String(pres?.title || 'Presentation').trim();
+  const lang = resolveDocLangFromPresentation(pres);
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
 
   const out = [];
@@ -40,7 +29,9 @@ export function buildNotesMarkdown(pres, { includeEmpty = true } = {}) {
   for (let i = 0; i < slides.length; i += 1) {
     const slide = slides[i];
     const n = i + 1;
-    const t = slideTitleCandidate(slide);
+    const t = slideTitle(slide, getSlideType(slide?.type, slideTypes), {
+      lang,
+    });
     const type = slideLabel(slide);
     const notes = typeof slide?.notes === 'string' ? slide.notes : '';
     const notesTrimmed = notes.trim();

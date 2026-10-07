@@ -84,18 +84,8 @@ import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 import { buildExportContext } from '../services/exports.js';
 import { normalizeLang } from '../utils/i18n.js';
 import { needsNativeComposition } from '../../shared/slide-types/fidelity.js';
-
-/**
- * Get the best display title for a slide, regardless of type.
- * Falls through: title → tagline → first quote → label → value → first non-empty string field.
- */
-function slideTitle(slide) {
-  const c = slide?.content;
-  if (!c) return '';
-  return (
-    c.title || c.tagline || c.quotes?.[0]?.quote || c.label || c.value || ''
-  );
-}
+import { getSlideType } from '../../shared/slide-types/registry.js';
+import { slideTitle } from '../../shared/slide-types/semantic-projection.js';
 
 /**
  * Build a presentation URL (edit or present mode). Edit links go to the
@@ -552,6 +542,8 @@ export function registerTools(
         await actingIdentity(effectiveOwner),
       );
 
+      const slideTypes = await sessionSlideTypes(context);
+      const deckLang = resolveDocLangFromPresentation(updated);
       const result = {
         id: updated.id,
         title: updated.title,
@@ -560,7 +552,9 @@ export function registerTools(
         slides: (updated.slides || []).map((s, i) => ({
           index: i,
           type: s.type,
-          title: slideTitle(s),
+          title: slideTitle(s, getSlideType(s.type, slideTypes), {
+            lang: deckLang,
+          }),
         })),
       };
       const editUrl = presentationUrl(updated.id, 'edit');
@@ -750,7 +744,9 @@ export function registerTools(
         slides: (updated.slides || []).map((s, i) => ({
           index: i,
           type: s.type,
-          title: slideTitle(s),
+          title: slideTitle(s, getSlideType(s.type, slideTypes), {
+            lang: resolveDocLangFromPresentation(updated),
+          }),
         })),
       };
       const editUrl = presentationUrl(updated.id, 'edit');
@@ -1086,13 +1082,14 @@ export function registerTools(
     async ({ presentationId, id }, context) => {
       const pres = await getCheckedPresentation(presentationId || id, context);
 
+      const slideTypes = await sessionSlideTypes(context);
       const validated = validateAndFixRefinedSlides(
         pres.slides.map((s) => ({
           type: s.type,
           content: s.content,
           reasoning: '',
         })),
-        { slideTypes: await sessionSlideTypes(context) },
+        { slideTypes },
       );
 
       const warnings = [];
@@ -1101,7 +1098,9 @@ export function registerTools(
           warnings.push({
             slideIndex: i,
             type: slide.type,
-            title: slideTitle(slide),
+            title: slideTitle(slide, getSlideType(slide.type, slideTypes), {
+              lang: resolveDocLangFromPresentation(pres),
+            }),
             warnings: slide._aiWarnings,
           });
         }
@@ -1209,6 +1208,7 @@ export function registerTools(
         );
       }
 
+      const slideTypes = await sessionSlideTypes(context);
       const removed = pres.slides.splice(slideIndex, 1)[0];
       await updatePresentation(
         storageScopeOf(context),
@@ -1221,7 +1221,11 @@ export function registerTools(
         removed: true,
         slideIndex,
         removedType: removed.type,
-        removedTitle: slideTitle(removed),
+        removedTitle: slideTitle(
+          removed,
+          getSlideType(removed.type, slideTypes),
+          { lang: resolveDocLangFromPresentation(pres) },
+        ),
         totalSlides: pres.slides.length,
       };
     },
@@ -1255,6 +1259,7 @@ export function registerTools(
       if (toIndex < 0 || toIndex >= len)
         throw new Error(`toIndex ${toIndex} out of range`);
 
+      const slideTypes = await sessionSlideTypes(context);
       const [slide] = pres.slides.splice(fromIndex, 1);
       pres.slides.splice(toIndex, 0, slide);
       await updatePresentation(
@@ -1266,7 +1271,12 @@ export function registerTools(
 
       return {
         moved: true,
-        slide: { type: slide.type, title: slideTitle(slide) },
+        slide: {
+          type: slide.type,
+          title: slideTitle(slide, getSlideType(slide.type, slideTypes), {
+            lang: resolveDocLangFromPresentation(pres),
+          }),
+        },
         from: fromIndex,
         to: toIndex,
       };
@@ -1346,13 +1356,14 @@ export function registerTools(
         await writeOpts(context),
       );
 
+      const slideTypes = await sessionSlideTypes(context);
       return {
         appended: newSlides.length,
         insertedAt: insertAt,
         totalSlides: pres.slides.length,
         newSlides: newSlides.map((s) => ({
           type: s.type,
-          title: slideTitle(s),
+          title: slideTitle(s, getSlideType(s.type, slideTypes), { lang }),
         })),
       };
     },
@@ -1449,6 +1460,7 @@ export function registerTools(
 
       // analyzePresentation returns { suggestions: [...], metadata: {...} }
       const suggestions = result?.suggestions || [];
+      const slideTypes = await sessionSlideTypes(context);
 
       return {
         slideCount: pres.slides.length,
@@ -1460,7 +1472,11 @@ export function registerTools(
           proposedSlide: s.proposedSlide
             ? {
                 type: s.proposedSlide.type,
-                title: slideTitle(s.proposedSlide),
+                title: slideTitle(
+                  s.proposedSlide,
+                  getSlideType(s.proposedSlide.type, slideTypes),
+                  { lang: resolveDocLangFromPresentation(pres) },
+                ),
               }
             : null,
         })),

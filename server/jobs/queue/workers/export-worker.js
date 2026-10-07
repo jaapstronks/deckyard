@@ -166,7 +166,10 @@ async function processExportJob(job) {
     }
 
     case 'notes-docx': {
-      const md = buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true });
+      const md = buildNotesMarkdown(ctx.filteredPres, {
+        includeEmpty: true,
+        slideTypes: ctx.slideTypes,
+      });
       buffer = await buildNotesDocxBuffer(md);
       contentType =
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
@@ -176,7 +179,10 @@ async function processExportJob(job) {
 
     case 'notes-md': {
       buffer = Buffer.from(
-        buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true }),
+        buildNotesMarkdown(ctx.filteredPres, {
+          includeEmpty: true,
+          slideTypes: ctx.slideTypes,
+        }),
       );
       contentType = 'text/markdown; charset=utf-8';
       extension = '-notes.md';

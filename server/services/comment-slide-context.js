@@ -8,17 +8,9 @@
  * null for comments that predate it, which the payload reports honestly).
  */
 
-/**
- * Best display title for a slide, regardless of type.
- * Falls through: title → tagline → first quote → label → value.
- */
-function deriveSlideTitle(slide) {
-  const c = slide?.content;
-  if (!c) return '';
-  return (
-    c.title || c.tagline || c.quotes?.[0]?.quote || c.label || c.value || ''
-  );
-}
+import { getSlideType } from '../../shared/slide-types/registry.js';
+import { slideTitle } from '../../shared/slide-types/semantic-projection.js';
+import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 
 /**
  * Snapshot of a slide for storage on a comment row: just the affected
@@ -55,7 +47,9 @@ export function slideContextFor(pres, slideId) {
     index,
     number: index + 1,
     type: slide?.type ?? null,
-    title: deriveSlideTitle(slide),
+    title: slideTitle(slide, getSlideType(slide?.type), {
+      lang: resolveDocLangFromPresentation(pres),
+    }),
   };
 }
 
