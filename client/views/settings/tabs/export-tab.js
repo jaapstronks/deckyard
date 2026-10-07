@@ -8,7 +8,7 @@ import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
-import { disableForSandbox } from '../sandbox-disable.js';
+import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 
 /**
  * Create the data export tab component.

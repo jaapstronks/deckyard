@@ -1,9 +1,9 @@
-import { h } from '../../lib/dom/index.js';
-import { t } from '../../lib/ui-i18n.js';
-import { getFeatures } from '../../lib/state/features.js';
+import { h } from './index.js';
+import { t } from '../ui-i18n.js';
+import { getFeatures } from '../state/features.js';
 
 /**
- * Grey out a settings surface that isn't useful in the sandbox.
+ * Grey out a surface that isn't useful in the sandbox (a settings card, a dialog body).
  *
  * The sandbox shows the full richness of Deckyard's settings, but options that
  * are irrelevant to an anonymous, throwaway guest (a data-export backup, comment
