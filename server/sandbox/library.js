@@ -10,8 +10,8 @@
  * The seed is declared as JSON under `server/sandbox-examples/library/`: one
  * file per slide (`<key>.json`: name, description, slideType, theme slug,
  * lang, content; `lang` is the language the content is written in and becomes
- * the item's `i18n.dominant`, B603) and one per collection (`collections/<key>.json`: name,
- * description, the slide keys in order). The file name is the key, and the
+ * the item's `i18n.dominant`, B603) and one per collection
+ * (`collections/<key>.json`: name, description, the slide keys in order). The file name is the key, and the
  * key fixes the row id, so a boot that finds the row updates it in place and
  * a boot that finds it unchanged writes nothing.
  *
