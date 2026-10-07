@@ -3,19 +3,18 @@
  * Processes AI-powered presentation translation jobs.
  *
  * Translation jobs are CPU/API intensive and can take significant time,
- * making them ideal candidates for background processing.
+ * making them ideal candidates for background processing. The job is an
+ * adapter like the routes: it reads its payload, calls `translatePresentation`
+ * (`server/services/translate.js`, B610) and stores the result. The service
+ * decides who may translate, refuses the pair before the model call and
+ * applies the size limit; the worker used to skip that limit and throw bare
+ * `Error`s where the routes answered 400.
  */
 
 import { registerWorker, QUEUE_NAMES } from '../connection.js';
-import {
-  getPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
-import { translatePresentationStrings } from '../../../utils/openai/translate.js';
-import { normalizeLang } from '../../../storage/presentations/i18n.js';
+import { translatePresentation } from '../../../services/translate.js';
 import { jobScope } from '../../../storage/scope.js';
 import { createLogger } from '../../../utils/logger.js';
-import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 const log = createLogger('translate-worker');
 
@@ -34,9 +33,10 @@ function storeResult(jobId, result) {
     storedAt: Date.now(),
   });
 
+  // Eviction only: the timer must not keep the process (or a test) alive.
   setTimeout(() => {
     jobResults.delete(jobId);
-  }, RESULT_TTL_MS);
+  }, RESULT_TTL_MS).unref?.();
 }
 
 /**
@@ -57,11 +57,17 @@ export function getStoredTranslationResult(jobId) {
 }
 
 /**
- * Process a translation job.
- * @param {Object} job - BullMQ job
+ * Process a translation job. Exported for the test that drives it with a
+ * job double; the queue calls it through {@link initializeTranslateWorker}.
+ *
+ * The job acts as the person who asked for it: `actorEmail` in the payload
+ * (the identity the deciders resolve, D253). A job without one has nobody to
+ * act as and is refused, not run as the operator.
+ *
+ * @param {Object} job - BullMQ job (`id`, `data`, `updateProgress`)
  * @returns {Promise<Object>} Result
  */
-async function processTranslateJob(job) {
+export async function processTranslateJob(job) {
   const {
     presentationId,
     from,
@@ -71,115 +77,30 @@ async function processTranslateJob(job) {
     actorEmail,
   } = job.data;
 
-  log.info(`Translating ${presentationId} from ${from} to ${to}`);
+  if (typeof actorEmail !== 'string' || !actorEmail) {
+    throw new Error('translate job names no actorEmail to act as');
+  }
 
+  log.info(`Translating ${presentationId} from ${from} to ${to}`);
   await job.updateProgress(10);
 
-  // Load presentation
-  const pres = await getPresentation(
-    jobScope(job.data, 'translate job'),
-    presentationId,
-  );
-  if (!pres) {
-    throw new Error('Presentation not found');
-  }
-
-  await job.updateProgress(20);
-
-  // Initialize i18n structure
-  pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
-  pres.i18n.versions =
-    pres.i18n.versions && typeof pres.i18n.versions === 'object'
-      ? pres.i18n.versions
-      : {};
-
-  // Validate languages
-  const fromLang =
-    normalizeLang(from) || normalizeLang(pres.i18n.active) || DEFAULT_DECK_LANG;
-  const toLang = normalizeLang(to) || (fromLang === 'nl' ? 'en-GB' : 'nl');
-
-  if (fromLang === toLang) {
-    throw new Error('Source and target languages must be different');
-  }
-
-  // Check if target already exists
-  if (pres.i18n.versions[toLang] && !overwrite && !fillMissing) {
-    throw new Error(`Target language version already exists (${toLang})`);
-  }
-
-  // Ensure source version exists
-  const dominant =
-    normalizeLang(pres.i18n.dominant) ||
-    normalizeLang(fromLang) ||
-    DEFAULT_DECK_LANG;
-  pres.i18n.dominant = dominant;
-
-  if (normalizeLang(fromLang)) {
-    pres.i18n.active = fromLang;
-  }
-
-  if (!pres.i18n.versions[dominant]) {
-    pres.i18n.versions[dominant] = { title: pres.title, slides: pres.slides };
-  }
-  if (!pres.i18n.versions[fromLang]) {
-    pres.i18n.versions[fromLang] = { title: pres.title, slides: pres.slides };
-  }
-
-  await job.updateProgress(30);
-
-  // Get source content
-  const src = pres.i18n.versions[fromLang] || {
-    title: pres.title,
-    slides: pres.slides,
-  };
-
-  // Get existing target for fill-missing mode
-  const existingTarget =
-    !overwrite && pres.i18n.versions[toLang]
-      ? pres.i18n.versions[toLang]
-      : null;
-
-  await job.updateProgress(40);
-
-  // Perform translation (this is the slow part)
-  const translated = await translatePresentationStrings(
-    { title: src.title, slides: src.slides },
-    {
-      from: fromLang,
-      to: toLang,
-      existingTarget,
-      fillMissing: !!fillMissing && !overwrite,
-    },
-  );
-
-  await job.updateProgress(80);
-
-  // Update presentation with translation
-  pres.i18n.versions[toLang] = {
-    title: translated.title,
-    slides: translated.slides,
-  };
-
-  // Save
-  await updatePresentation(
-    jobScope(job.data, 'translate job'),
-    presentationId,
-    pres,
-    {
-      actorEmail,
-      skipLimitCheck: true, // Skip limit check for translations
-    },
+  const scope = jobScope(job.data, 'translate job');
+  const actor = { email: actorEmail, organizationId: scope.organizationId };
+  const translated = await translatePresentation(
+    scope,
+    { actor },
+    { presentationId, from, to, overwrite, fillMissing },
   );
 
   await job.updateProgress(100);
 
   const result = {
-    from: fromLang,
-    to: toLang,
+    from: translated.from,
+    to: translated.to,
     presentationId,
     success: true,
     // Gates the download route against enumeration (security-audit H3).
-    ownerEmail: actorEmail || null,
+    ownerEmail: actorEmail,
   };
 
   storeResult(job.id, result);

@@ -1134,8 +1134,19 @@ paths:
         - Translation
       summary: Translate presentation
       description: |
-        Uses AI to translate the presentation to a target language.
-        Requires the 'ai' permission on your API key.
+        Uses AI to translate the presentation to a target language and
+        stores the result as a language version of the deck, with
+        `i18n.translation[targetLang]` marking it `done`. Requires the 'ai'
+        permission on your API key and write access to the deck.
+
+        The request is refused before the model is called, with 400
+        `invalid` and `details.field` naming the field: a missing or
+        unsupported `targetLang`, an unsupported `sourceLang` or one the
+        deck has no version of, `sourceLang` equal to `targetLang`, an
+        existing target version without `overwrite` or `fillMissing`, and
+        a non-boolean `overwrite` or `fillMissing`. The translation is a
+        save like any other: a deck over the size limit is 409
+        `limit_exceeded` and nothing is written.
       parameters:
         - name: id
           in: path
@@ -1159,7 +1170,12 @@ paths:
                   enum: [nl, en-GB, de, fr, es, pt, it, pl, fi, da, sv, 'no']
                 sourceLang:
                   type: string
-                  description: Source language code (defaults to active language)
+                  description: >-
+                    Source language code. Omitted, the deck's active language
+                    when it has a version in it, else its source (dominant)
+                    version. A language the deck has no version of is
+                    refused with 400 `invalid`, `details.field` =
+                    `sourceLang`.
                 vendor:
                   type: string
                   description: AI vendor to use
@@ -1187,6 +1203,9 @@ paths:
                     type: string
                   presentation:
                     type: object
+                    description: >-
+                      `id`, `title`, `revision` and the deck's `i18n` block
+                      after the write (its `versions` and `translation`).
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1195,6 +1214,15 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: >-
+            The deck with the new version would exceed the size limits
+            (`error: limit_exceeded`, the message names the limit). Nothing
+            is written.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '429':
           $ref: '#/components/responses/RateLimited'
         '502':

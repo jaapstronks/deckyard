@@ -1,29 +1,50 @@
 /**
  * Public API v1 - Translation endpoint.
- * Handles presentation translation via AI.
+ *
+ * `POST /presentations/{id}/translate` parses the v1 body and answers in the
+ * v1 envelope; the translation itself is `translatePresentation`
+ * (`server/services/translate.js`, B610), the same one the editor and the
+ * translate worker call.
  */
 
-import { updatePresentation } from '../../../storage/presentations/index.js';
-import { translatePresentationStrings } from '../../../utils/openai/translate.js';
+import { translatePresentation } from '../../../services/translate.js';
+import { AppError, isAppError } from '../../../utils/errors.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
+import { getOptionalString } from '../../../utils/request-validators.js';
 import {
   requirePermission,
   dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
-  getPresentationWithAccess,
   readApiV1Body,
   checkAiLimit,
   trackAiRequest,
   apiSuccess,
-  apiError,
 } from './middleware.js';
 import {
-  DEFAULT_DECK_LANG,
-  normalizeLang,
   TRANSLATION_LANGS,
   TRANSLATION_LANG_LABELS,
 } from '../../../../shared/i18n-utils.js';
+
+/**
+ * v1 spells the language pair `sourceLang` / `targetLang`; the service (and
+ * the editor's route) `from` / `to`. The body is read in v1's spelling and a
+ * refusal that names the pair is answered in it, so a caller finds the field
+ * it sent.
+ */
+const V1_FIELD = { from: 'sourceLang', to: 'targetLang' };
+
+/** The service's refusal with `details.field` in v1's spelling. */
+function inV1Spelling(err) {
+  const field = isAppError(err) ? V1_FIELD[err.details?.field] : null;
+  if (!field) return err;
+  return new AppError(
+    err.message,
+    err.statusCode,
+    { ...err.details, field },
+    err.code,
+  );
+}
 
 // ============================================================
 // ROUTE HANDLERS
@@ -40,7 +61,7 @@ import {
  * - fillMissing: Fill only missing fields (optional, default true)
  */
 async function handleTranslate(ctx, presentationId) {
-  const { storageScope, req, apiKey } = ctx;
+  const { storageScope, req, authedUser } = ctx;
 
   // Require the 'ai' permission for translation
   if (!requirePermission(ctx, 'ai')) return true;
@@ -51,130 +72,35 @@ async function handleTranslate(ctx, presentationId) {
   const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
   if (!bodyOk) return true;
 
-  // Load presentation
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
-    access: 'write',
-  });
-  if (!ok) return true;
-
-  // Validate target language
-  const targetLang = normalizeLang(body?.targetLang);
-  if (!targetLang) {
-    await apiError(
-      ctx,
-      400,
-      `Invalid targetLang. Supported languages: ${TRANSLATION_LANGS.join(', ')}`,
+  // The service loads the deck (404/403), refuses the pair before the model
+  // call and writes the version; a thrown refusal or model error is answered
+  // in the v1 envelope by the mount-level withV1ErrorHandler wrap.
+  let result;
+  try {
+    result = await translatePresentation(
+      storageScope,
+      { actor: authedUser },
+      {
+        presentationId,
+        from: body?.sourceLang,
+        to: body?.targetLang,
+        overwrite: body?.overwrite,
+        fillMissing: body?.fillMissing,
+        vendor: getOptionalString(body, 'vendor'),
+      },
     );
-    return true;
+  } catch (err) {
+    throw inV1Spelling(err);
   }
-
-  // Initialize i18n structure
-  pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
-  pres.i18n.versions =
-    pres.i18n.versions && typeof pres.i18n.versions === 'object'
-      ? pres.i18n.versions
-      : {};
-
-  // Resolve source language
-  const sourceLang =
-    normalizeLang(body?.sourceLang) ||
-    normalizeLang(pres.i18n.active) ||
-    normalizeLang(pres.i18n.dominant) ||
-    DEFAULT_DECK_LANG;
-
-  // Validate source != target
-  if (sourceLang === targetLang) {
-    await apiError(ctx, 400, 'Source and target languages must be different');
-    return true;
-  }
-
-  const overwrite = !!body?.overwrite;
-  const fillMissing = body?.fillMissing !== false; // default true
-  const vendor = body?.vendor || null;
-
-  // Ensure source version exists
-  const dominant =
-    normalizeLang(pres.i18n.dominant) ||
-    normalizeLang(sourceLang) ||
-    DEFAULT_DECK_LANG;
-  pres.i18n.dominant = dominant;
-
-  // Only update active if source is a legacy language
-  if (normalizeLang(sourceLang)) {
-    pres.i18n.active = sourceLang;
-  }
-
-  if (!pres.i18n.versions[dominant]) {
-    pres.i18n.versions[dominant] = { title: pres.title, slides: pres.slides };
-  }
-  if (!pres.i18n.versions[sourceLang]) {
-    pres.i18n.versions[sourceLang] = { title: pres.title, slides: pres.slides };
-  }
-
-  // Check if target already exists
-  if (pres.i18n.versions[targetLang] && !overwrite && !fillMissing) {
-    await apiError(
-      ctx,
-      400,
-      `Target language version already exists (${targetLang}). Set overwrite: true to replace it.`,
-    );
-    return true;
-  }
-
-  // Get source content
-  const src =
-    pres.i18n.versions[sourceLang] &&
-    typeof pres.i18n.versions[sourceLang] === 'object'
-      ? pres.i18n.versions[sourceLang]
-      : { title: pres.title, slides: pres.slides };
-
-  // Get existing target for fillMissing mode
-  const existingTarget =
-    !overwrite &&
-    pres.i18n.versions[targetLang] &&
-    typeof pres.i18n.versions[targetLang] === 'object'
-      ? pres.i18n.versions[targetLang]
-      : null;
-
-  // Perform translation (a thrown LLM/status error is answered in the v1
-  // envelope by the mount-level withV1ErrorHandler wrap).
-  const translated = await translatePresentationStrings(
-    { title: src.title, slides: src.slides },
-    {
-      from: sourceLang,
-      to: targetLang,
-      existingTarget,
-      fillMissing: !!fillMissing && !overwrite,
-      vendor,
-    },
-  );
-
-  // Store translation
-  pres.i18n.versions[targetLang] = {
-    title: translated.title,
-    slides: translated.slides,
-  };
-
-  // Update translation status
-  pres.i18n.translation = pres.i18n.translation || {};
-  pres.i18n.translation[targetLang] = {
-    status: 'done',
-    from: sourceLang,
-    updatedAt: new Date().toISOString(),
-  };
-
-  // Persist (throws answered in the v1 envelope by the wrap).
-  const updated = await updatePresentation(storageScope, presentationId, pres, {
-    actorEmail: apiKey.ownerEmail,
-  });
+  const { from, to, presentation: updated } = result;
 
   // Track AI usage
   fireAndForget(trackAiRequest(ctx), 'v1 AI usage tracking');
 
   await apiSuccess(ctx, {
     translated: true,
-    from: sourceLang,
-    to: targetLang,
+    from,
+    to,
     presentation: {
       id: updated.id,
       title: updated.title,

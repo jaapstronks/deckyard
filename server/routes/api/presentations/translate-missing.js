@@ -1,157 +1,65 @@
+/**
+ * `POST /api/presentations/:id/translate/missing` — fill the gaps of a
+ * language version. The route parses and answers; the work is the translate
+ * service's plan + run (`server/services/translate.js`, B610).
+ *
+ * `mode: 'background'` answers as soon as the plan is made (the pair refused
+ * or resolved, the gaps counted) and runs it after the response, at most
+ * once per deck and pair at a time: the presenter asks for every incomplete
+ * language when a deck opens, and a second request for the same pair would
+ * spend the tokens twice. That mode and its lock are this contract's; v1 has
+ * no background translate.
+ */
+
 import {
-  getPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
-import { translatePresentationStringsFillMissing } from '../../../utils/openai/translate.js';
-import {
-  badRequest,
   methodNotAllowed,
   serveJson,
   requireJsonBody,
 } from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';
 import {
-  buildBlankTargetFromSource,
-  computeMissingTranslation,
-  pickVersion,
-} from '../../../../shared/i18n-progress.js';
-import {
-  DEFAULT_DECK_LANG,
-  normalizeLang,
-} from '../../../../shared/i18n-utils.js';
-import { withPresentationAuth } from '../../../utils/route-middleware.js';
+  planMissingTranslation,
+  runMissingTranslation,
+} from '../../../services/translate.js';
 
 // In-process translation job lock (prevents double-spending tokens)
 const missingTranslationJobs = new Map();
 
 export async function handlePresentationTranslateMissing(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
-  const body = parsed.body;
+  const body = parsed.body || {};
   const vendor = getOptionalString(body, 'vendor');
-  const pres = await withPresentationAuth({
-    storageScope,
-    id,
-    authedUser,
-    res,
-    permission: 'write',
+  const mode = body.mode === 'background' ? 'background' : 'wait';
+  const identity = { actor: authedUser };
+
+  const plan = await planMissingTranslation(storageScope, identity, {
+    presentationId: id,
+    from: body.from,
+    to: body.to,
   });
-  if (!pres) return true;
-
-  pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
-  pres.i18n.versions =
-    pres.i18n.versions && typeof pres.i18n.versions === 'object'
-      ? pres.i18n.versions
-      : {};
-
-  const from =
-    normalizeLang(body?.from) ||
-    normalizeLang(pres.i18n.active) ||
-    normalizeLang(pres.i18n.dominant) ||
-    DEFAULT_DECK_LANG;
-  // `to` is required. It used to fall back to `otherLang(from)`, which is null
-  // off the NL/EN pair — a target the caller never named and the axis cannot
-  // guess. Naming it is the caller's job now (D72).
-  const to = normalizeLang(body?.to);
-  if (!to) return badRequest(res, 'A target language ("to") is required.');
-  const mode = body?.mode === 'background' ? 'background' : 'wait';
-
-  // Ensure from-version exists.
-  const dominant = normalizeLang(pres.i18n.dominant) || from;
-  pres.i18n.dominant = dominant;
-  pres.i18n.active = from;
-  if (!pres.i18n.versions[dominant]) {
-    pres.i18n.versions[dominant] = { title: pres.title, slides: pres.slides };
-  }
-  if (!pres.i18n.versions[from]) {
-    pres.i18n.versions[from] = { title: pres.title, slides: pres.slides };
-  }
-
-  const src = pickVersion(pres, from);
-  const tgtExisting = pres.i18n.versions[to] ? pickVersion(pres, to) : null;
-  const tgt = tgtExisting || buildBlankTargetFromSource(src);
-
-  const missingInfo = computeMissingTranslation({ source: src, target: tgt });
-  const missingCount = Number(missingInfo?.missingCount || 0) || 0;
+  const { from, to, missingCount } = plan;
   if (!missingCount) {
-    serveJson(res, 200, {
-      ok: true,
-      from,
-      to,
-      updated: false,
-      missingCount: 0,
-    });
+    serveJson(res, 200, { ok: true, from, to, updated: false, missingCount });
     return true;
   }
 
-  const jobKey = `${id}:${from}->${to}`;
-  const run = async () => {
-    // Mark "running" (best-effort, persisted)
-    pres.i18n.translation =
-      pres.i18n.translation && typeof pres.i18n.translation === 'object'
-        ? pres.i18n.translation
-        : {};
-    pres.i18n.translation[to] = {
-      status: 'running',
-      from,
-      updatedAt: new Date().toISOString(),
-      missingCount,
-    };
-    await updatePresentation(storageScope, id, pres, {
-      actorEmail: authedUser?.email || null,
-    });
-
-    const filled = await translatePresentationStringsFillMissing(
-      {
-        sourcePresentation: src,
-        targetPresentation: tgt,
-        missing: missingInfo.missing,
-      },
-      { from, to, vendor },
-    );
-
-    const fresh = await getPresentation(storageScope, id);
-    if (!fresh) return null;
-    fresh.i18n = fresh.i18n && typeof fresh.i18n === 'object' ? fresh.i18n : {};
-    fresh.i18n.versions =
-      fresh.i18n.versions && typeof fresh.i18n.versions === 'object'
-        ? fresh.i18n.versions
-        : {};
-    fresh.i18n.versions[to] = { title: filled.title, slides: filled.slides };
-    fresh.i18n.translation =
-      fresh.i18n.translation && typeof fresh.i18n.translation === 'object'
-        ? fresh.i18n.translation
-        : {};
-
-    const afterMissing = computeMissingTranslation({
-      source: pickVersion(fresh, from),
-      target: pickVersion(fresh, to),
-    });
-    fresh.i18n.translation[to] = {
-      status: 'done',
-      from,
-      updatedAt: new Date().toISOString(),
-      missingCount: Number(afterMissing?.missingCount || 0) || 0,
-    };
-
-    return await updatePresentation(storageScope, id, fresh, {
-      actorEmail: authedUser?.email || null,
-    });
-  };
-
   if (mode === 'background') {
+    const jobKey = `${id}:${from}->${to}`;
     if (!missingTranslationJobs.has(jobKey)) {
-      const p = run()
+      const job = runMissingTranslation(storageScope, identity, plan, {
+        vendor,
+      })
         .catch(() => null)
         .finally(() => {
           missingTranslationJobs.delete(jobKey);
         });
-      missingTranslationJobs.set(jobKey, p);
+      missingTranslationJobs.set(jobKey, job);
     }
     serveJson(res, 200, {
       ok: true,
@@ -164,8 +72,12 @@ export async function handlePresentationTranslateMissing(
     return true;
   }
 
-  // wait
-  const updated = await run();
+  const { presentation } = await runMissingTranslation(
+    storageScope,
+    identity,
+    plan,
+    { vendor },
+  );
   serveJson(res, 200, {
     ok: true,
     from,
@@ -173,7 +85,7 @@ export async function handlePresentationTranslateMissing(
     updated: true,
     started: false,
     missingCount,
-    presentation: updated,
+    presentation,
   });
   return true;
 }
