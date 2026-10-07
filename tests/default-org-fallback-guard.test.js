@@ -62,6 +62,12 @@ const ALLOWLIST = [
     reason: 'the sandbox is single-org by definition',
   },
   {
+    file: 'server/sandbox/library.js',
+    reason:
+      'the sandbox library seed runs at boot, before any session; the ' +
+      'sandbox is single-org by definition',
+  },
+  {
     file: 'server/auth/auth.js',
     reason: 'auth-disabled and dev-bypass synthetic users (no session org)',
   },

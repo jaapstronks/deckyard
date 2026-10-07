@@ -80,6 +80,7 @@ async function handlePersonalList({ storageScope, res, authedUser }) {
     storageScope,
     actorEmail(authedUser),
   );
+  for (const item of out.items) item.canEdit = true;
   serveJson(res, 200, out);
   return true;
 }
@@ -144,6 +145,9 @@ async function handleOrganizationList({ storageScope, res, authedUser }) {
   const out = await listOrganizationCollections(storageScope, {
     userEmail: actorEmail(authedUser),
   });
+  // The verdict of the one mutate guard, so the client derives nothing (D170).
+  const mayMutate = organizationMutateGuard(authedUser);
+  for (const item of out.items) item.canEdit = mayMutate(item);
   serveJson(res, 200, out);
   return true;
 }

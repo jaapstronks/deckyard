@@ -41,6 +41,7 @@ import {
 import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './storage/lifecycle.js';
 import { initializeThemeSeeds } from './utils/theme-seeds.js';
+import { seedSandboxLibrary } from './sandbox/library.js';
 import {
   pendingMigrationsError,
   strandedFileDataError,
@@ -313,6 +314,9 @@ async function main() {
   }
 
   await initializeThemeSeeds();
+  // Sandbox only: the example slides and collection on the organization shelf
+  // (B352). After the theme seeds, whose ids the items name.
+  await seedSandboxLibrary(repoRoot);
 
   // Data check: an empty database next to a populated file-storage data
   // directory means this install predates the Postgres default and has not been

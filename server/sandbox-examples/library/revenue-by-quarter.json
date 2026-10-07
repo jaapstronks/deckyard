@@ -1,0 +1,15 @@
+{
+  "name": "Revenue by quarter",
+  "description": "A bar chart of the year by quarter, with the data as an editable table.",
+  "slideType": "chart-slide",
+  "theme": "corporate",
+  "content": {
+    "title": "Revenue by quarter",
+    "subheading": "FY25, in millions of euro",
+    "chartType": "bar",
+    "data": "Quarter,Revenue\nQ1,9.8\nQ2,11.4\nQ3,12.9\nQ4,14.5",
+    "yLabel": "M€",
+    "showValues": "yes",
+    "background": "lime"
+  }
+}

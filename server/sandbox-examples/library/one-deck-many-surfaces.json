@@ -1,0 +1,43 @@
+{
+  "name": "One deck, many surfaces",
+  "description": "An icon card grid that explains where a Deckyard deck can show up.",
+  "slideType": "icon-card-grid-slide",
+  "theme": "editorial",
+  "content": {
+    "title": "One deck, many surfaces",
+    "subheading": "The same document, wherever it needs to show up",
+    "items": [
+      {
+        "icon": "file-text",
+        "title": "Editor",
+        "body": "Click on the canvas to write, reorder and restyle"
+      },
+      {
+        "icon": "users",
+        "title": "Live presenting",
+        "body": "Presenter view, with polls the room answers on their phones"
+      },
+      {
+        "icon": "link",
+        "title": "Public link and embed",
+        "body": "Publish once, share a URL or drop it into a page"
+      },
+      {
+        "icon": "clipboard",
+        "title": "Export",
+        "body": "PDF, PowerPoint or a self-contained HTML file"
+      },
+      {
+        "icon": "settings",
+        "title": "Agent API",
+        "body": "Agents create and edit decks through the same format"
+      },
+      {
+        "icon": "arrow-right",
+        "title": "Follow along",
+        "body": "The audience follows the slides on their own screen"
+      }
+    ],
+    "background": "lime"
+  }
+}

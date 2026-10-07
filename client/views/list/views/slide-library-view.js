@@ -8,8 +8,6 @@ import {
 } from '../../slide-library/index.js';
 import { createCollectionsBar } from '../collections/index.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { getFeatures } from '../../../lib/state/features.js';
-import { createSandboxLibraryExplainer } from './sandbox-library-explainer.js';
 import { nav } from '../../../lib/state/router.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
@@ -121,15 +119,6 @@ export function createSlideLibraryView({ api }) {
 
   async function load() {
     if (loaded) return;
-
-    // Sandbox: no team, no reusable slides — show an explainer/mockup of what
-    // the library is for in a real Deckyard instead of an empty grid.
-    if (getFeatures()?.sandboxMode) {
-      loaded = true;
-      view.innerHTML = '';
-      view.append(createSandboxLibraryExplainer());
-      return;
-    }
 
     try {
       loaded = true;
