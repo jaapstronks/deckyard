@@ -159,5 +159,20 @@
         "body": "Start from this deck, or clear it and build your own."
       }
     }
-  ]
+  ],
+  "sandbox": {
+    "analytics": {
+      "sessions": 180,
+      "days": 60,
+      "returningShare": 0.25,
+      "completion": 0.6,
+      "secondsPerSlide": 18,
+      "sources": {
+        "published": 5,
+        "share_link": 3,
+        "embed": 2,
+        "follow": 1
+      }
+    }
+  }
 }

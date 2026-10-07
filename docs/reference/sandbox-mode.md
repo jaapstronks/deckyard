@@ -29,8 +29,13 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
   `getSandboxUserFromRequest`); cookie `sb_sandbox`, synthetic
   `guest-<uuid>@sandbox.local` emails.
 - `server/routes/api/sandbox.js` — the sandbox-only API surface
-  (`GET /api/sandbox/examples`; 404 outside sandbox).
-- `server/sandbox/examples.js` — loads the seed demo decks (`listSandboxExamples`).
+  (`GET /api/sandbox/examples`, `POST /api/sandbox/examples/:id` to open one
+  as the guest's own deck; both 404 outside sandbox).
+- `server/sandbox/examples.js` — loads the seed demo decks (`listSandboxExamples`)
+  and splits each file's `sandbox` block off the deck.
+- `server/sandbox/analytics.js` + `server/storage/analytics/seeded-sessions.js`
+  — the insights seed (B353): opening an example writes the viewing history its
+  `sandbox.analytics` profile declares, so `/insights` is not empty.
 - `server/sandbox/media.js` — curated built-in sample images/logos surfaced in
   the image library because direct uploads are off (`listSandboxMedia`).
 - `server/sandbox-examples/*.json` — the seed decks (`meet-deckyard`,
@@ -102,8 +107,18 @@ Isolation is per-cookie / per-owner-email within the one org.
   `sandbox_quota_exceeded`) when a guest exceeds the deck-count or stored-byte
   cap (bytes measured via `pg_column_size`).
 - **Seed decks** — the openable examples come from `server/sandbox-examples/*.json`
-  via `GET /api/sandbox/examples`; a throwaway Postgres volume needs them loaded
-  as a deploy step.
+  via `GET /api/sandbox/examples`; opening one (`POST /api/sandbox/examples/:id`)
+  imports the server's copy through the same import as
+  `/api/presentations/import/json` (`server/services/import-json.js`), so the
+  browser never posts the deck.
+- **Seed insights** — an example file may declare, beside the deck,
+  `sandbox.analytics` (`sessions`, `days`, `returningShare`, `completion`,
+  `secondsPerSlide`, `sources` weights). Opening the example writes that many
+  view sessions with their slide views on the guest's copy, spread over the
+  window and reproducible from the copy's id, so the dashboard and the deck's
+  own analytics read like a deck that has been shared for a while. The storage
+  writer refuses without `SANDBOX_MODE` on its own; the rows cascade away with
+  the deck at the TTL.
 - **Seed library** — every boot in sandbox mode upserts the declared slides
   and collection onto the organization shelf. The file name is the key and
   fixes the row id (a name-based UUID), so an unchanged seed writes nothing and
