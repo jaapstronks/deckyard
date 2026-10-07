@@ -44,6 +44,7 @@ import {
 import { formatCanonicalId } from '../../../../shared/slide-types/type-id.js';
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
+import { acceptedTextStyles } from '../../../../shared/slide-types/text-styles.js';
 
 const GLOBAL_FIELDS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
 
@@ -216,6 +217,21 @@ function usageField(value) {
 }
 
 /**
+ * The `textStyles` half of an agent entry: the `content.textStyles` keys the
+ * type offers, each with the values its properties take
+ * (`acceptedTextStyles()`, what the write path refuses against). Present only
+ * when the type offers something, like `usage`; a key, property or value not
+ * listed is refused with a `text_style_*` reason.
+ *
+ * @param {object} def - Definition or Tier-2 record.
+ * @returns {{ textStyles?: Record<string, object> }}
+ */
+function textStylesField(def) {
+  const textStyles = acceptedTextStyles(def);
+  return Object.keys(textStyles).length ? { textStyles } : {};
+}
+
+/**
  * Build the agent-facing entry for one registered (Tier-1) type.
  * @param {string} name
  * @param {object} def
@@ -246,6 +262,7 @@ function tier1Entry(name, def, catalogEntry, lang) {
     // Always derived — a catalog entry has no say in the shape, only in the
     // prose about it. See deriveAgentSchema().
     schema: deriveAgentSchema(def?.fields),
+    ...textStylesField(def),
     example: exampleFor(def, lang),
     // false = registered and usable, but nobody has written the editorial copy.
     // Surfacing the gap beats hiding the type.
@@ -273,6 +290,7 @@ function tier2Entry(ct, lang) {
     bestFor: [],
     notFor: [],
     schema: deriveAgentSchema(ct.fields),
+    ...textStylesField(ct),
     example: exampleFor(ct, lang),
     // `documented` tracks editorial copy on the description/bestFor axis, which
     // Tier 2 has no columns for. A type with `usage` is better described, but

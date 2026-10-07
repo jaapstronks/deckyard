@@ -36,7 +36,9 @@
  *   keys bound to the slide instance rather than to its text (`pollId`), which
  *   is why they carry no field. They are known keys, and unconstrained —
  *   nothing but the creating code writes them. `validate-definition.js` reads
- *   the two declarations together for the same reason.
+ *   the two declarations together for the same reason. `textStyles` is the
+ *   third known key, on a type that offers text styling (its own declaration,
+ *   `textStyle` and friends); the write seam checks its shape.
  */
 
 import { z } from 'zod';
@@ -45,6 +47,7 @@ import {
   allowedEnumValues,
 } from '../../../../shared/slide-types/field-types.js';
 import { slideInstanceKeys } from '../../../../shared/slide-types/instance-keys.js';
+import { textStyleOffers } from '../../../../shared/slide-types/text-styles.js';
 
 /**
  * Per-definition cache: the bare derivation, and one per theme because
@@ -152,6 +155,18 @@ function objectSchema(fields, theme, extraKeys = []) {
 }
 
 /**
+ * `textStyles` is a known key on a type that offers text styling. Its shape
+ * is not checked here: the write seam (`normalizeSlides`) refuses anything
+ * outside the offer with a `text_style_*` reason, so a second check here
+ * would be a second spelling of the same rules.
+ * @param {Object} def
+ * @returns {string[]}
+ */
+function textStylesKey(def) {
+  return textStyleOffers(def).size ? ['textStyles'] : [];
+}
+
+/**
  * The Zod schema for one slide type's `content`, derived from its `fields[]`.
  *
  * Cached per definition object (and per theme), because the derivation walks
@@ -172,11 +187,10 @@ export function contentSchemaFor(def, { theme = null } = {}) {
   const themed = theme && typeof theme === 'object' ? theme : null;
   let schema = themed ? entry.byTheme.get(themed) : entry.bare;
   if (!schema) {
-    schema = objectSchema(
-      def?.fields,
-      themed,
-      Object.keys(slideInstanceKeys(def)),
-    );
+    schema = objectSchema(def?.fields, themed, [
+      ...Object.keys(slideInstanceKeys(def)),
+      ...textStylesKey(def),
+    ]);
     if (themed) entry.byTheme.set(themed, schema);
     else entry.bare = schema;
   }

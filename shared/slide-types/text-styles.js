@@ -90,6 +90,27 @@ export const TEXT_STYLE_SET_PREFIX = '@';
 const EVERY = '*';
 
 /**
+ * The `details.reason` sub-codes the write path answers a refused `textStyles`
+ * map with (400 `invalid`). One spelling: the refusals below, the published
+ * JSON Schema and `docs/openapi.yaml` all name these.
+ */
+const REASON = Object.freeze({
+  malformed: 'text_style_malformed',
+  perInstance: 'text_style_per_instance',
+  notOffered: 'text_style_not_offered',
+  propertyNotOffered: 'text_style_property_not_offered',
+  valueNotOffered: 'text_style_value_not_offered',
+});
+/** Every refusal sub-code, in the order the reference doc lists them. */
+export const TEXT_STYLE_REFUSAL_REASONS = Object.freeze([
+  REASON.perInstance,
+  REASON.notOffered,
+  REASON.propertyNotOffered,
+  REASON.valueNotOffered,
+  REASON.malformed,
+]);
+
+/**
  * @typedef {object} TextStyleOffer
  * @property {string} key - the storage key (`body`, `quotes.*.quote`, `@id`)
  * @property {'field'|'items'|'set'} scope
@@ -231,6 +252,43 @@ export function offerAlign(def, offer) {
 }
 
 /**
+ * The values each offered property accepts on the write path: for `align` the
+ * role's values plus the field's own default (a no-op the normaliser drops,
+ * never a refusal), for `size` the whole vocabulary.
+ * @param {Object} def
+ * @param {TextStyleOffer} offer
+ * @returns {{align?: string[], size?: string[]}}
+ */
+function offerValues(def, offer) {
+  /** @type {{align?: string[], size?: string[]}} */
+  const out = {};
+  if (offer.props.includes('align')) {
+    const { values, defaultAlign } = offerAlign(def, offer);
+    out.align = [...new Set([...values, defaultAlign])];
+  }
+  if (offer.props.includes('size')) out.size = [...TEXT_SIZE_VALUES];
+  return out;
+}
+
+/**
+ * What a slide type's `content.textStyles` accepts, as plain data: every
+ * offered key with the values each of its properties takes. The one answer
+ * the published surfaces read (the JSON Schema, the agent catalog behind MCP
+ * `get_slide_types`), derived from the same offers the write path refuses
+ * against, so the contract and the server cannot disagree. Empty for a type
+ * that offers nothing.
+ * @param {Object|null|undefined} def - a slide type definition
+ * @returns {Record<string, {align?: string[], size?: string[]}>}
+ */
+export function acceptedTextStyles(def) {
+  const out = {};
+  for (const offer of textStyleOffers(def).values()) {
+    out[offer.key] = offerValues(def, offer);
+  }
+  return out;
+}
+
+/**
  * Normalize a raw `textStyles` map against what the type offers: keep only
  * offered keys, offered properties and known values, and drop defaults, so
  * stored JSON never carries a no-op (a click-in-click-out leaves the deck
@@ -272,10 +330,8 @@ export function normalizeTextStyles(raw, def) {
  * @typedef {object} TextStyleRefusal
  * @property {string} key - the stored key the refusal is about (`''` for the
  *   map itself)
- * @property {string} reason - a snake_case sub-code:
- *   `text_style_malformed`, `text_style_per_instance`,
- *   `text_style_not_offered`, `text_style_property_not_offered`,
- *   `text_style_value_not_offered`
+ * @property {string} reason - a snake_case sub-code, one of
+ *   {@link TEXT_STYLE_REFUSAL_REASONS}
  * @property {string} message - the English sentence, naming the key and why
  */
 
@@ -291,7 +347,7 @@ function refuseKey(def, key) {
   if (offer && offer.key !== key) {
     return {
       key,
-      reason: 'text_style_per_instance',
+      reason: REASON.perInstance,
       message:
         `textStyles key ${JSON.stringify(key)} styles one instance of a field ` +
         `that has siblings; style them together under ` +
@@ -300,7 +356,7 @@ function refuseKey(def, key) {
   }
   return {
     key,
-    reason: 'text_style_not_offered',
+    reason: REASON.notOffered,
     message:
       `textStyles key ${JSON.stringify(key)} is not offered by this slide ` +
       `type; it offers ${describeKeys(def)}`,
@@ -332,7 +388,7 @@ export function textStyleRefusals(raw, def) {
     return [
       {
         key: '',
-        reason: 'text_style_malformed',
+        reason: REASON.malformed,
         message: 'textStyles must be an object keyed by an offered style key',
       },
     ];
@@ -348,7 +404,7 @@ export function textStyleRefusals(raw, def) {
     if (!isPlainObject(style)) {
       out.push({
         key,
-        reason: 'text_style_malformed',
+        reason: REASON.malformed,
         message: `textStyles ${JSON.stringify(key)} must be an object`,
       });
       continue;
@@ -357,7 +413,7 @@ export function textStyleRefusals(raw, def) {
       if (!offer.props.includes(prop)) {
         out.push({
           key,
-          reason: 'text_style_property_not_offered',
+          reason: REASON.propertyNotOffered,
           message:
             prop === 'color'
               ? `textStyles ${JSON.stringify(key)}: per-field text colour ` +
@@ -367,19 +423,11 @@ export function textStyleRefusals(raw, def) {
         });
         continue;
       }
-      const allowed =
-        prop === 'align'
-          ? [
-              ...new Set([
-                ...offerAlign(def, offer).values,
-                offerAlign(def, offer).defaultAlign,
-              ]),
-            ]
-          : TEXT_SIZE_VALUES;
+      const allowed = offerValues(def, offer)[prop];
       if (!allowed.includes(value)) {
         out.push({
           key,
-          reason: 'text_style_value_not_offered',
+          reason: REASON.valueNotOffered,
           message:
             `textStyles ${JSON.stringify(key)}.${prop} ` +
             `${JSON.stringify(value)} is not offered; use one of ` +

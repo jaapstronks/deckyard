@@ -10,6 +10,7 @@ import { getAppBaseUrl } from '../config/utils.js';
 import {
   listPresentations,
   getPresentation,
+  normalizeSlides,
   updatePresentation,
 } from '../storage/presentations/index.js';
 import { loadPresentationChecked, mcpActor } from './presentation-access.js';
@@ -86,6 +87,21 @@ import { normalizeLang } from '../utils/i18n.js';
 import { needsNativeComposition } from '../../shared/slide-types/fidelity.js';
 import { getSlideType } from '../../shared/slide-types/registry.js';
 import { slideTitle } from '../../shared/slide-types/semantic-projection.js';
+
+/**
+ * The one description of a `content` argument (create_presentation_from_slides,
+ * update_slide, add_slide), so the text-style contract is stated once: the
+ * keys and values come from the type's `textStyles` in get_slide_types
+ * (`acceptedTextStyles()`), and the write seam refuses the rest with an error
+ * that names the key and why (B464).
+ */
+const SLIDE_CONTENT_DESCRIPTION =
+  'Slide content matching the type schema (see get_slide_types). ' +
+  'Optional `textStyles` sets alignment and size, but only under the keys ' +
+  "and values the type's get_slide_types entry lists in `textStyles`; a type " +
+  'without that entry offers no text styling. Anything else (another key, a ' +
+  'single list item such as `quotes.1.quote`, `color`, a value not listed) ' +
+  'is refused, and the error names the key and why.';
 
 /**
  * Build a presentation URL (edit or present mode). Edit links go to the
@@ -283,7 +299,7 @@ export function registerTools(
 
   server.tool(
     'get_slide_types',
-    'List the slide types you may use, resolved for your organization (core types plus any slide types this organization defined itself, keyed `custom-<slug>`). Each entry carries its canonical `typeId`, a schema, and a working `example` content object you can copy and edit when calling create_presentation_from_slides. `documented: false` means nobody has written usage guidance for that type yet and its schema was derived from the field definitions — still usable, just less described. When an entry carries a `usage` field, it holds the rules THIS organization set for filling that slide type (sources, cut-off dates, mandatory explanations); treat it as binding and follow it when you write the content. The response also includes `globalOptions`: optional fields (background image, logo, text colour) that may be added to ANY slide type.',
+    'List the slide types you may use, resolved for your organization (core types plus any slide types this organization defined itself, keyed `custom-<slug>`). Each entry carries its canonical `typeId`, a schema, and a working `example` content object you can copy and edit when calling create_presentation_from_slides. `documented: false` means nobody has written usage guidance for that type yet and its schema was derived from the field definitions — still usable, just less described. When an entry carries a `usage` field, it holds the rules THIS organization set for filling that slide type (sources, cut-off dates, mandatory explanations); treat it as binding and follow it when you write the content. When an entry carries `textStyles`, those are the only `content.textStyles` keys that type accepts, each with the alignment and size values it takes; a type without it offers no text styling. The response also includes `globalOptions`: optional fields (background image, logo, text colour) that may be added to ANY slide type.',
     {
       type: 'object',
       properties: {
@@ -592,7 +608,7 @@ export function registerTools(
               },
               content: {
                 type: 'object',
-                description: 'Slide content matching the type schema',
+                description: SLIDE_CONTENT_DESCRIPTION,
               },
               notes: {
                 type: 'string',
@@ -702,6 +718,14 @@ export function registerTools(
         validatedSlides = inputSlides;
       }
 
+      // The write seam refuses what no validation above checks (a text style
+      // the type does not offer). Run it before the stub row exists, so a
+      // refusal leaves no empty deck behind; it is pure without a deck id.
+      normalizeSlides(
+        validatedSlides.map((s) => ({ type: s.type, content: s.content })),
+        { slideTypes },
+      );
+
       // Create stub row, then write the slide payload in one update.
       const created = await createPresentation(
         storageScopeOf(context),
@@ -771,8 +795,7 @@ export function registerTools(
         slideIndex: { type: 'number', description: 'Slide index (0-based)' },
         content: {
           type: 'object',
-          description:
-            'New content for the slide (must match slide type schema)',
+          description: SLIDE_CONTENT_DESCRIPTION,
         },
         type: {
           type: 'string',
@@ -884,7 +907,7 @@ export function registerTools(
         },
         content: {
           type: 'object',
-          description: 'Slide content matching the type schema',
+          description: SLIDE_CONTENT_DESCRIPTION,
         },
         position: {
           type: 'number',

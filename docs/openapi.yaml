@@ -2161,6 +2161,29 @@ components:
             `/api/v1/schema/slide-types/{type}.json`. Both are generated from
             the slide-type field registry, so they always match the running
             build.
+          properties:
+            textStyles:
+              type: object
+              description: >-
+                Alignment and size for the text a slide type offers styling
+                on, one key per offer: a field (`body`), every item of a list
+                at once (`quotes.*.quote`) or a declared set of fields styled
+                as one (`@<id>`). Most text offers nothing. Which keys a type
+                offers, and which `align` and `size` values each takes, is in
+                that type's content schema under `textStyles` (absent when the
+                type offers nothing). A write that asks for anything else is
+                refused, not pruned: 400 `invalid` with `details` shaped as
+                `TextStyleRefusal`, the message naming the key and why.
+              additionalProperties:
+                type: object
+                properties:
+                  align:
+                    type: string
+                    enum: [left, center, right]
+                  size:
+                    type: string
+                    enum: [sm, md, lg]
+                additionalProperties: false
           additionalProperties: true
         notes:
           type: string
@@ -2489,6 +2512,36 @@ components:
           type: integer
         hasMore:
           type: boolean
+
+    TextStyleRefusal:
+      type: object
+      description: >-
+        The `details` of a 400 `invalid` that refuses a slide's
+        `content.textStyles`, on every write that stores slides. `reason`
+        says why: `text_style_per_instance` (one item of a list, or one member
+        of a set, where the type offers the shared key; the message names it),
+        `text_style_not_offered` (a key the type offers nothing for),
+        `text_style_property_not_offered` (a property outside the offer,
+        `color` always), `text_style_value_not_offered` (a value outside the
+        vocabulary, or an alignment the field's role rules out),
+        `text_style_malformed` (`textStyles` or one of its entries is not an
+        object). Only the first refusal is reported.
+      required: [field, index, reason]
+      properties:
+        field:
+          type: string
+          enum: [slides]
+        index:
+          type: integer
+          description: Position of the refused slide in the written list.
+        reason:
+          type: string
+          enum:
+            - text_style_per_instance
+            - text_style_not_offered
+            - text_style_property_not_offered
+            - text_style_value_not_offered
+            - text_style_malformed
 
     Error:
       type: object

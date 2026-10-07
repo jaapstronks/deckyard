@@ -123,6 +123,28 @@ message naming the key and why.
 | `text_style_value_not_offered`    | a value outside the vocabulary, or an alignment the role rules out                                                |
 | `text_style_malformed`            | `textStyles` or one of its entries is not an object                                                               |
 
+## Published contract
+
+Every outside surface reads the same offers the write path refuses against,
+through `acceptedTextStyles(def)` (each offered key with the values its
+properties take) and `TEXT_STYLE_REFUSAL_REASONS`:
+
+- **JSON Schema** (`/api/v1/schema/slide-types/{type}.json`, and every type in
+  `deck.json`): a type that offers styling publishes `content.textStyles` with
+  exactly its offer keys and per key an `enum` for `align` and `size`, closed
+  with `additionalProperties: false` at both levels while `content` itself
+  stays lenient. A type that offers nothing publishes no `textStyles`.
+- **MCP**: each `get_slide_types` entry carries `textStyles` (omitted when the
+  type offers nothing); `create_presentation_from_slides`, `update_slide` and
+  `add_slide` describe the rule once. MCP returns the refusal message, which
+  names the key and why; the `details.reason` code travels on the HTTP API.
+  `create_presentation_from_slides` runs the write seam before it creates the
+  deck, so a refusal leaves nothing behind.
+- **`docs/openapi.yaml`**: `Slide.content.textStyles` and the
+  `TextStyleRefusal` details shape.
+
+`tests/text-style-api-surface.test.js` pins all of these to the derivation.
+
 ## Stored decks
 
 The v17 → v18 schema step (`foldTextStyles` in
