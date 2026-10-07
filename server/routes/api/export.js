@@ -228,7 +228,10 @@ const exportRoutes = [
     contentType: 'text/markdown; charset=utf-8',
     extension: '-notes.md',
     buildContent: (ctx) =>
-      buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true }),
+      buildNotesMarkdown(ctx.filteredPres, {
+        includeEmpty: true,
+        slideTypes: ctx.slideTypes,
+      }),
   }),
 
   // Notes DOCX export
@@ -239,7 +242,10 @@ const exportRoutes = [
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     extension: '-notes.docx',
     buildContent: async (ctx) => {
-      const md = buildNotesMarkdown(ctx.filteredPres, { includeEmpty: true });
+      const md = buildNotesMarkdown(ctx.filteredPres, {
+        includeEmpty: true,
+        slideTypes: ctx.slideTypes,
+      });
       return buildNotesDocxBuffer(md);
     },
   }),
