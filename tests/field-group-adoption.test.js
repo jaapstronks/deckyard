@@ -97,14 +97,12 @@ describe('stored per-field align on a member goes inert without migration', () =
     assert.doesNotMatch(html, /tf-align-/);
   });
 
-  it('colour and size on the same member still apply', () => {
+  it('nor does colour, or a size the type does not offer (D220, D221)', () => {
     const html = render({
       title: 'Hi',
-      textStyles: { title: { align: 'center', color: 'muted', size: 'lg' } },
+      textStyles: { title: { align: 'center', color: 'muted' } },
     });
-    assert.doesNotMatch(html, /tf-align-/);
-    assert.match(html, /tf-color-muted/);
-    assert.match(html, /tf-size-lg/);
+    assert.doesNotMatch(html, /tf-align-|tf-color-/);
   });
 });
 

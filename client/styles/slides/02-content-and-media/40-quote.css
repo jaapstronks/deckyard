@@ -45,8 +45,8 @@
   margin-top: var(--slide-space-2);
 }
 /* The inline field is the inner <p>; it inherits the .quote-text size (single
-   AND multi variants), so scale it with 1em * --tf-size-scale (per-field S/M/L,
-   default 1) here rather than touching every .quote-text size rule. */
+   AND multi variants), so scale it with 1em * --tf-size-scale (one S/M/L for
+   every quote, default 1) here rather than touching every .quote-text rule. */
 .slide-quote .quote-text > p {
   font-size: calc(1em * var(--tf-size-scale, 1));
 }
@@ -98,8 +98,8 @@
 /* ---- Centre-aligned single quote ----
    Choosing "Centred" under the toolbar's Layout chip centres the whole block in
    the slide (both axes), not just the text inside a left-hung column. The
-   renderer adds .is-align-center from the quote-block field group's `quoteAlign`
-   (legacy decks fall back to content.textStyles.quote.align). */
+   renderer adds .is-align-center from the quote-block field group's
+   `quoteAlign`. */
 .slide-quote.is-align-center .slide-inner {
   justify-content: center;
   align-items: center;

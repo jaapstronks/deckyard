@@ -93,6 +93,8 @@ export default {
     {
       key: 'body',
       essential: true,
+      // Offered on purpose (D220): the CSS scales it, see text-styles.md.
+      textStyle: ['align', 'size'],
       label: 'Body',
       type: 'markdown',
       required: true,

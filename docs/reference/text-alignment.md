@@ -1,7 +1,10 @@
 # Text alignment: who decides, and why
 
 How a piece of text on a slide gets its horizontal alignment. Two declarations
-answer that, and one resolver composes them.
+answer that, and one resolver composes them. Whether an author can set a
+field's alignment at all is a third question, answered by the type's offer
+([`text-styles.md`](text-styles.md), D220): the role and the group below only
+narrow or own what an offer may hold.
 
 This is a reference page: it describes what is, not what will change.
 
@@ -269,8 +272,9 @@ treatment. That is now the declared group, and `quoteAlign` is the **one stored
 form**. The legacy value is folded into it once by the **v4 → v5 schema
 migration** (`shared/slide-types/schema-version.js`): a stored `align` the group
 still offers moves to `quoteAlign` when that key is absent, the legacy key is
-dropped, and `color`/`size` on the same field stay put. The migration runs on
-read and persists on the next write, like every step in that chain.
+dropped, and `color`/`size` on the same field stay put (the colour went later,
+at v17 → v18, D221; see [`text-styles.md`](text-styles.md)). The migration runs
+on read and persists on the next write, like every step in that chain.
 
 The renderer keeps **no** second reading form: an un-migrated
 `textStyles.quote.align` is inert, exactly as a group member's own `align` has

@@ -305,15 +305,16 @@ test('v4->v5 keeps the group value when both forms are stored', () => {
   assert.equal(content.textStyles, undefined);
 });
 
-test('v4->v5 keeps per-field colour/size on the same field', () => {
+test('v4->v5 keeps per-field size on the same field', () => {
   const migrated = migratePresentation(
-    legacyQuoteDeck({ align: 'center', color: 'accent' }),
+    legacyQuoteDeck({ align: 'center', size: 'lg' }),
   );
   const content = migrated.slides[0].content;
   assert.equal(content.quoteAlign, 'center');
-  // v16 -> v17 then moves the field's style with it into quotes[0] (D314).
+  // v16 -> v17 then moves the field's style with it into quotes[0] (D314), and
+  // v17 -> v18 makes it the size every quote shares (B464).
   assert.deepEqual(content.textStyles, {
-    'quotes.0.quote': { color: 'accent' },
+    'quotes.*.quote': { size: 'lg' },
   });
 });
 
@@ -359,7 +360,7 @@ test('v5->v6 folds inert per-field align on every group member, across types', (
   assert.deepEqual(twice, once);
 });
 
-test('v5->v6 drops only align, keeping per-field colour/size on the same member', () => {
+test('v5->v6 drops only align, keeping per-field size on the same member', () => {
   const deck = {
     id: randomUUID(),
     schemaVersion: 5,
@@ -367,7 +368,7 @@ test('v5->v6 drops only align, keeping per-field colour/size on the same member'
     slides: [
       {
         id: randomUUID(),
-        type: 'title-slide',
+        type: 'chapter-title-slide',
         content: {
           title: 'T',
           textStyles: {
@@ -378,8 +379,9 @@ test('v5->v6 drops only align, keeping per-field colour/size on the same member'
     ],
   };
   const migrated = migratePresentation(deck);
+  // The colour goes at v17 -> v18 (D221); the size is what the type offers.
   assert.deepEqual(migrated.slides[0].content.textStyles, {
-    title: { color: 'muted', size: 'lg' },
+    title: { size: 'lg' },
   });
 });
 
@@ -390,12 +392,13 @@ test('v5->v6 leaves a non-group field and unknown types untouched, and is idempo
     title: 'Untouched',
     slides: [
       {
-        // `body` is not a group member on a text-blocks slide, so its per-field
+        // `body` is not a group member on a text slide, so its per-field
         // align is a live text-align and must survive.
         id: randomUUID(),
-        type: 'text-blocks-slide',
+        type: 'content-slide',
         content: {
-          rows: [{ blocks: [] }],
+          title: 'T',
+          body: 'B',
           textStyles: { body: { align: 'center' } },
         },
       },
@@ -2032,7 +2035,9 @@ test('the quote fold renders the deck as the two forms did', () => {
 });
 
 test('styles and bindings follow the fields they were keyed on', () => {
-  const migrated = migratePresentation(
+  // The v16 -> v17 step on its own: v17 -> v18 then folds the styles into the
+  // offer model (B464), which its own tests cover.
+  const migrated = SCHEMA_MIGRATIONS[16](
     quoteDeckAtV16(
       {
         quote: 'One.',
@@ -2068,7 +2073,7 @@ test('the quote fold is a no-op on the current shape and on a second run', () =>
   const current = quoteDeckAtV16({
     quoteAlign: 'left',
     quotes: [{ quote: 'One.', authorName: 'Ada', authorImage1: '/a.png' }],
-    textStyles: { 'quotes.0.quote': { color: 'accent' } },
+    textStyles: { 'quotes.*.quote': { size: 'lg' } },
   });
   const before = structuredClone(current.slides);
   const migrated = migratePresentation(current);
@@ -2104,4 +2109,150 @@ test('the quote fold reaches every language version', () => {
     assert.equal(content.quotes[0].quote, text, lang);
     assert.ok(!('quote' in content), lang);
   }
+});
+
+/*
+ * v17 -> v18: text styling is offered per type, at the scope its structure
+ * decides, and per-field colour is gone (B464, D220, D221).
+ */
+const FOLD_TEXT_STYLES = SCHEMA_MIGRATIONS[17];
+
+function deckAtV17(slides, i18n) {
+  return {
+    id: randomUUID(),
+    title: 't',
+    schemaVersion: 17,
+    slides,
+    ...(i18n ? { i18n } : {}),
+  };
+}
+
+test('v17->v18 drops colour, unoffered keys and per-instance keys the type never offers', () => {
+  const migrated = migratePresentation(
+    deckAtV17([
+      {
+        id: 's1',
+        type: 'content-slide',
+        content: {
+          title: 'T',
+          body: 'B',
+          textStyles: {
+            title: { color: 'accent' },
+            body: { align: 'center', color: 'muted', size: 'lg' },
+            subheading: { size: 'sm' },
+          },
+        },
+      },
+      {
+        id: 's2',
+        type: 'team-cards-slide',
+        content: {
+          members: [{ name: 'A' }, { name: 'B' }],
+          textStyles: {
+            'members.0.name': { color: 'accent', size: 'lg' },
+            title: { align: 'center' },
+          },
+        },
+      },
+    ]),
+  );
+  assert.deepEqual(migrated.slides[0].content.textStyles, {
+    body: { align: 'center', size: 'lg' },
+  });
+  // Image blocks offers nothing (D220): the map goes altogether.
+  assert.ok(!('textStyles' in migrated.slides[1].content));
+});
+
+test('v17->v18 folds per-instance quote sizes into the shared key where all agree', () => {
+  const quotes = [{ quote: 'One.' }, { quote: 'Two.' }];
+  const agree = migratePresentation(
+    deckAtV17([
+      {
+        id: 's1',
+        type: 'quote-slide',
+        content: {
+          quotes,
+          textStyles: {
+            'quotes.0.quote': { size: 'lg', color: 'accent' },
+            'quotes.1.quote': { size: 'lg' },
+          },
+        },
+      },
+    ]),
+  );
+  assert.deepEqual(agree.slides[0].content.textStyles, {
+    'quotes.*.quote': { size: 'lg' },
+  });
+  const disagree = migratePresentation(
+    deckAtV17([
+      {
+        id: 's1',
+        type: 'quote-slide',
+        content: { quotes, textStyles: { 'quotes.0.quote': { size: 'lg' } } },
+      },
+    ]),
+  );
+  // One of two stored a size: folding would restyle the other one.
+  assert.ok(!('textStyles' in disagree.slides[0].content));
+});
+
+test('v17->v18 reaches every language version and leaves unknown types their map', () => {
+  const slide = (styles) => ({
+    id: 's1',
+    type: 'content-slide',
+    content: { title: 'T', body: 'B', textStyles: styles },
+  });
+  const migrated = migratePresentation(
+    deckAtV17([slide({ body: { color: 'accent', size: 'sm' } })], {
+      versions: {
+        en: { slides: [slide({ body: { color: 'accent', size: 'sm' } })] },
+        nl: {
+          slides: [
+            slide({ body: { color: 'muted' } }),
+            {
+              id: 's2',
+              type: 'com.example.custom',
+              content: { textStyles: { x: { color: 'accent', size: 'lg' } } },
+            },
+          ],
+        },
+      },
+    }),
+  );
+  assert.deepEqual(migrated.slides[0].content.textStyles, {
+    body: { size: 'sm' },
+  });
+  assert.deepEqual(migrated.i18n.versions.en.slides[0].content.textStyles, {
+    body: { size: 'sm' },
+  });
+  const nl = migrated.i18n.versions.nl.slides;
+  assert.ok(!('textStyles' in nl[0].content));
+  assert.deepEqual(nl[1].content.textStyles, { x: { size: 'lg' } });
+});
+
+test('v17->v18 is a no-op on the current shape and on a second run', () => {
+  const current = deckAtV17([
+    {
+      id: 's1',
+      type: 'quote-slide',
+      content: {
+        quotes: [{ quote: 'One.' }, { quote: 'Two.' }],
+        textStyles: { 'quotes.*.quote': { size: 'sm' } },
+      },
+    },
+    {
+      id: 's2',
+      type: 'content-slide',
+      content: {
+        title: 'T',
+        body: 'B',
+        textStyles: { body: { align: 'right' } },
+      },
+    },
+  ]);
+  const before = structuredClone(current.slides);
+  const migrated = migratePresentation(current);
+  assert.deepEqual(migrated.slides, before);
+  const again = FOLD_TEXT_STYLES(structuredClone(migrated));
+  assert.deepEqual(again.slides, before);
 });

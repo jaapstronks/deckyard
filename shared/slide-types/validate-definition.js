@@ -44,6 +44,7 @@ import {
   isSlideFidelity,
 } from './fidelity.js';
 import { canonicalTypeName, isValidNamespace } from './type-id.js';
+import { checkTextStyleDeclarations } from './text-styles.js';
 
 /**
  * The `ai.category` vocabulary read by the custom AI catalog loader
@@ -397,6 +398,11 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
 
   // --- field homes -----------------------------------------------------------
   checkFieldHomes(def, who, out);
+
+  // --- text-style offers (B464, D220) ----------------------------------------
+  // An error, not a warning: a malformed offer shows a control without an
+  // effect, or styles one instance of a set. docs/reference/text-styles.md.
+  for (const e of checkTextStyleDeclarations(def, who)) errors.push(e);
 
   // --- fidelity --------------------------------------------------------------
   checkFidelity(def.fidelity, who, warnings);

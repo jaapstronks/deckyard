@@ -15,7 +15,7 @@ surface, slide-type curation.
 core themes and the four CIIIC-fork themes is written as a record in
 `tests/fixtures/theme-records/`, and `tests/theme-record-parity.test.js` pins
 that each renders the same `--t-*` tokens as its file form. The only file
-fields a record does not carry are the ones D208 retired: `textSwatches`, the
+fields a record does not carry are the ones D208 retired: the
 `{en, nl}` background labels, `embedFonts` (fork fonts are managed families,
 bound by name), `hiddenSlideTypes` (use `slideTypes.exclude`), `slides.*` and
 `sampleEmbedUrl`. The rule for what becomes a field: **when every theme sets

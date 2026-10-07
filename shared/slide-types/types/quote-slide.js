@@ -201,6 +201,8 @@ export default {
       minItems: 1,
       maxItems: MAX_QUOTES,
       itemLabelField: 'quote',
+      // Every quote sizes as one (D220): the quote-block group owns alignment.
+      itemTextStyle: { quote: ['size'] },
       // Seeded with placeholder copy so a quote added on the canvas renders
       // and is click-to-edit immediately - a quote past the first without
       // text is not shown. The user replaces the placeholders, or removes the
@@ -233,8 +235,7 @@ export default {
           required: true,
           maxLength: 400,
           // Alignment belongs to the quote-block group, which moves quote,
-          // byline and portraits together; `role` still governs colour/size
-          // affordances.
+          // byline and portraits together.
           role: 'quote',
           group: 'quote-block',
         },

@@ -189,18 +189,17 @@ test('the last row has no arrow: there is no next row to point at', () => {
   mount.remove();
 });
 
-test("a row selected through its text also gets that text's styling", () => {
+test("a row selected through its text also gets that text's tab", () => {
   const mount = renderInspector(textBlocksSlide(), {
     kind: 'card',
     idx: 0,
     fieldKey: 'rows.0.title',
   });
-  const labels = labelsOf(elementForm(mount));
-  assert.deepEqual(labels.slice(0, 2), ['Color', 'Arrow after row']);
-  assert.ok(
-    labels.length > 2,
-    `the "This text" controls follow the row settings (${labels})`,
-  );
+  const form = elementForm(mount);
+  assert.deepEqual(labelsOf(form), ['Color', 'Arrow after row']);
+  // A row title offers no text style (D220): the text part of the tab is the
+  // sentence, not controls.
+  assert.match(form.textContent, /follows the slide's layout/);
   mount.remove();
 });
 
@@ -269,5 +268,62 @@ test('a logo\'s name and link are in "This image"', () => {
     labels.some((l) => l.includes('link')),
     `link renders (labels: ${labels.join(', ')})`,
   );
+  mount.remove();
+});
+
+/*
+ * The "This text" tab shows what the type offers, and nothing else (B464,
+ * D220): a standalone offer, a shared offer over array items, or the sentence.
+ * No field shows a colour control (D221).
+ */
+
+const textSlide = (type, content) => ({
+  id: 's1',
+  type,
+  content: { ...structuredClone(SLIDE_TYPES[type].defaults), ...content },
+});
+
+test('"This text" on an offering field shows its offer and no colour', () => {
+  const slide = textSlide('content-slide', {});
+  const mount = renderInspector(slide, { kind: 'text', fieldKey: 'body' });
+  const form = elementForm(mount);
+  assert.deepEqual(labelsOf(form), ['Alignment', 'Text size']);
+  pick(enumField(form, 'Text size'), 'lg');
+  assert.deepEqual(slide.content.textStyles, { body: { size: 'lg' } });
+  mount.remove();
+});
+
+test('"This text" on Image blocks is the sentence, not controls', () => {
+  const slide = textSlide('team-cards-slide', {});
+  const mount = renderInspector(slide, {
+    kind: 'text',
+    fieldKey: 'members.0.name',
+  });
+  const form = elementForm(mount);
+  assert.deepEqual(labelsOf(form), []);
+  assert.match(form.textContent, /follows the slide's layout/);
+  mount.remove();
+});
+
+test('"This text" on one quote styles every quote under one key', () => {
+  const slide = textSlide('quote-slide', {
+    quotes: [{ quote: 'One.' }, { quote: 'Two.' }],
+  });
+  const mount = renderInspector(slide, {
+    kind: 'text',
+    fieldKey: 'quotes.1.quote',
+  });
+  const form = elementForm(mount);
+  // Alignment is the quote block's, shown disabled with a pointer to Layout.
+  assert.deepEqual(labelsOf(form), [
+    'All "Quote" (2)',
+    'Alignment',
+    'Text size',
+  ]);
+  assert.ok(enumField(form, 'Alignment').classList.contains('is-disabled'));
+  pick(enumField(form, 'Text size'), 'sm');
+  assert.deepEqual(slide.content.textStyles, {
+    'quotes.*.quote': { size: 'sm' },
+  });
   mount.remove();
 });
