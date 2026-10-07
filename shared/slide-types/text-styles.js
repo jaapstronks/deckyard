@@ -65,6 +65,24 @@ export const TEXT_ALIGN_VALUES = ['left', 'center', 'right'];
 /** Size vocabulary (relative scale); `md` is the default (no override). */
 export const TEXT_SIZE_VALUES = ['sm', 'md', 'lg'];
 const DEFAULT_SIZE = 'md';
+/**
+ * The scale each size step applies, as `--tf-size-scale`. The `tf-size-*`
+ * rules in `03-components/97-text-styles.css` state the same numbers
+ * (`tests/text-styles.test.js` pins the two equal); a renderer that budgets
+ * room for its text reads them here (the title slide's cover scale).
+ */
+export const TEXT_SIZE_SCALE = Object.freeze({ sm: 0.85, md: 1, lg: 1.2 });
+
+/**
+ * The scale a stored size applies; 1 for the default, an unknown value or none.
+ * @param {unknown} size
+ * @returns {number}
+ */
+export function textSizeScale(size) {
+  return typeof size === 'string' && Object.hasOwn(TEXT_SIZE_SCALE, size)
+    ? TEXT_SIZE_SCALE[size]
+    : 1;
+}
 
 /** The prefix that marks a sibling-set key: `@<set id>`. */
 export const TEXT_STYLE_SET_PREFIX = '@';

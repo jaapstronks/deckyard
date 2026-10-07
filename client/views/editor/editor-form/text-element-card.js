@@ -31,19 +31,45 @@ import {
   resolveGroupAlign,
 } from '../../../../shared/slide-types/field-groups.js';
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
+import { isListOnlyMarkdown } from '../../../../shared/markdown.js';
 import { h } from '../../../lib/dom/index.js';
 import { fieldLabel } from '../inline-edit/field-path.js';
 
 const SIZE_DEFAULT = 'md';
 
 /**
+ * Disable a rendered control wholesale and add one line saying why - a greyed
+ * control with an explanation beats a silently absent one (a missing control
+ * reads as a missing feature).
+ * @param {HTMLElement} el
+ * @param {string} help
+ * @returns {HTMLElement}
+ */
+function disableWithHelp(el, help) {
+  el.classList.add('is-disabled');
+  for (const btn of el.querySelectorAll('button, input, select')) {
+    btn.disabled = true;
+    btn.setAttribute('tabindex', '-1');
+  }
+  el.append(h('div', { class: 'help', text: help }));
+  return el;
+}
+
+/** The alignment control's field shape for a list of values. */
+function alignField(key, values) {
+  return {
+    key,
+    label: t('editor.textStyle.align', 'Alignment'),
+    options: values.map((v) => ({
+      value: v,
+      label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
+    })),
+  };
+}
+
+/**
  * The "Alignment" block for a field whose alignment belongs to its field group:
  * the real control, disabled, plus one line naming where the setting lives.
- *
- * Drawn from the same `fieldEnum` renderer as the live control so it looks
- * like the thing it stands in for, then disabled wholesale — a greyed control
- * with an explanation beats a silently absent one (a missing control reads as
- * a missing feature).
  *
  * Values and current selection come from the GROUP itself, not from a local
  * list: the group is the thing that owns them, and a second copy here would be
@@ -58,35 +84,34 @@ const SIZE_DEFAULT = 'md';
  * @returns {HTMLElement}
  */
 function renderGroupAlignHint({ fieldRenderers, group, slide }) {
-  const values = groupAlignValues(group);
-  const field = {
-    key: 'textAlignGroup',
-    label: t('editor.textStyle.align', 'Alignment'),
-    options: values.map((v) => ({
-      value: v,
-      label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
-    })),
-  };
   const el = fieldRenderers.fieldEnum(
-    field,
+    alignField('textAlignGroup', groupAlignValues(group)),
     resolveGroupAlign(group, slide?.content),
     () => {},
   );
-  el.classList.add('is-disabled');
-  for (const btn of el.querySelectorAll('button, input, select')) {
-    btn.disabled = true;
-    btn.setAttribute('tabindex', '-1');
-  }
-  el.append(
-    h('div', {
-      class: 'help',
-      text: t(
-        'editor.textStyle.align.groupOwned',
-        'This text moves with the whole block. Set its alignment under Layout in the toolbar.',
-      ),
-    }),
+  return disableWithHelp(
+    el,
+    t(
+      'editor.textStyle.align.groupOwned',
+      'This text moves with the whole block. Set its alignment under Layout in the toolbar.',
+    ),
   );
-  return el;
+}
+
+/**
+ * Whether an offered alignment would show nothing right now: a standalone
+ * markdown field whose text is only a bullet or numbered list. A list stays
+ * on its markers whatever the block does (docs/reference/text-alignment.md),
+ * so the control is shown disabled until the text has a paragraph.
+ * @param {Object} typeDef
+ * @param {import('../../../../shared/slide-types/text-styles.js').TextStyleOffer} offer
+ * @param {Object} content
+ * @returns {boolean}
+ */
+function alignHasNoEffect(typeDef, offer, content) {
+  if (offer.scope !== 'field') return false;
+  const field = resolveFieldDef(typeDef?.fields, offer.sample);
+  return field?.type === 'markdown' && isListOnlyMarkdown(content?.[offer.key]);
 }
 
 /**
@@ -208,19 +233,9 @@ export function renderTextElementCard({
     normalizeTextStyles(slide?.content?.textStyles, slideTypeDef)[offer.key] ||
     {};
   const { values: alignValues, defaultAlign } = offerAlign(slideTypeDef, offer);
-  const alignEl = alignValues.length
+  let alignEl = alignValues.length
     ? fieldEnum(
-        {
-          key: 'textAlign',
-          label: t('editor.textStyle.align', 'Alignment'),
-          options: alignValues.map((v) => ({
-            value: v,
-            label: t(
-              `editor.textStyle.align.${v}`,
-              v[0].toUpperCase() + v.slice(1),
-            ),
-          })),
-        },
+        alignField('textAlign', alignValues),
         current.align || defaultAlign,
         (v) => {
           setTextStyle(slide, offer.key, 'align', v, slideTypeDef);
@@ -228,6 +243,15 @@ export function renderTextElementCard({
         },
       )
     : null;
+  if (alignEl && alignHasNoEffect(slideTypeDef, offer, slide?.content)) {
+    alignEl = disableWithHelp(
+      alignEl,
+      t(
+        'editor.textStyle.align.listOwned',
+        'A list stays aligned with its bullets. Alignment applies once this text has a paragraph.',
+      ),
+    );
+  }
 
   const sizeEl = offer.props.includes('size')
     ? fieldEnum(

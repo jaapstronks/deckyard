@@ -28,6 +28,7 @@ import {
 import { groupAlignClass } from '../../field-groups.js';
 import { resolveThemeLogo } from '../../../theme-logo.js';
 import { TITLE_BLOCK } from './title-block.js';
+import { textSizeScale } from '../../text-styles.js';
 
 /**
  * Font scale for the cover's title and subtitle, chosen from how much text the
@@ -46,13 +47,29 @@ import { TITLE_BLOCK } from './title-block.js';
  * and meta) overflowed the frame at scale 1 and fits at the floor — at
  * `textScale` 1 and 1.1 both.
  *
- * @param {Object} content - the slide's content (title/subheading/meta)
+ * The author's S/M/L on title and subtitle (B464, `--tf-size-scale` on each
+ * element) composes on top of this scale. A larger step takes more room: a
+ * wrapped block's height grows with its length times the square of its font
+ * scale (more lines, each taller), so each field enters the ramp weighted by
+ * its step squared. Past the fullest default block that ramp has no room left,
+ * so the scale shrinks until the block's weighted area is back at the floor's
+ * budget (`HI × MIN²`): an L title still renders larger than an M one, and the
+ * fullest legal block still fits. Lengths count up to each field's maxLength,
+ * so a hostile payload clamps like the fullest legal one.
+ *
+ * @param {Object} content - the slide's content (title/subheading/meta and
+ *   the `textStyles` sizes of title and subheading)
  * @returns {number} multiplier for --slide-text-5xl / --slide-text-2xl
  */
 export function coverFontScale(content) {
-  const len = (s) => (typeof s === 'string' ? s.trim().length : 0);
+  const len = (s, max) =>
+    typeof s === 'string' ? Math.min(max, s.trim().length) : 0;
+  const step = (key) => textSizeScale(content?.textStyles?.[key]?.size) ** 2;
   const weighted =
-    len(content?.title) + 0.4 * (len(content?.subheading) + len(content?.meta));
+    len(content?.title, 120) * step('title') +
+    0.4 *
+      (len(content?.subheading, 160) * step('subheading') +
+        len(content?.meta, 160));
   // Ramp: at/below LO nothing shrinks (a typical cover — 40-char title,
   // 80-char subtitle — stays clear of it), at/above HI the floor applies
   // (HI = the fullest legal block: 120 + 0.4 * (160 + 160)).
@@ -60,7 +77,11 @@ export function coverFontScale(content) {
   const HI = 248;
   const MIN = 0.8;
   const t = Math.max(0, Math.min(1, (weighted - LO) / (HI - LO)));
-  return Math.round((1 - (1 - MIN) * t) * 1000) / 1000;
+  const ramp = 1 - (1 - MIN) * t;
+  // Only an L override can push `weighted` past HI; there the area budget
+  // binds instead of the ramp. Below HI it is always the looser of the two.
+  const fit = weighted > HI ? Math.sqrt((HI * MIN * MIN) / weighted) : 1;
+  return Math.round(Math.min(ramp, fit) * 1000) / 1000;
 }
 
 /**

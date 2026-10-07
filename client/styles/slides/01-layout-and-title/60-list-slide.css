@@ -102,13 +102,12 @@
   min-width: 0;
   flex: 1;
 }
-/* Per-item title/text are em-relative to .lijst; multiplying by
-   --tf-size-scale (per-field S/M/L, default 1) scales just the clicked item. */
+/* Per-item title/text are em-relative to .lijst. Their size is the slide's
+   `density` setting (below) and nothing else: list items offer no per-field
+   S/M/L (D241, docs/reference/text-styles.md). */
 .slide-list .item-title {
   font-family: var(--font-heading);
-  font-size: calc(
-    0.95em * var(--tf-size-scale, 1)
-  ); /* slightly smaller than body */
+  font-size: 0.95em; /* slightly smaller than body */
   line-height: var(--slide-leading-tight);
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
@@ -118,7 +117,7 @@
 }
 .slide-list .item-text {
   font-family: var(--font-body);
-  font-size: calc(0.95em * var(--tf-size-scale, 1));
+  font-size: 0.95em;
   line-height: var(--slide-leading-snug);
 }
 
@@ -131,13 +130,11 @@
   font-size: var(--slide-text-lg);
 }
 .slide-list.is-comfortable .item-title {
-  font-size: calc(
-    1.18em * var(--tf-size-scale, 1)
-  ); /* bigger titles are the main win for sparse slides */
+  font-size: 1.18em; /* bigger titles are the main win for sparse slides */
   margin-bottom: var(--slide-space-2);
 }
 .slide-list.is-comfortable .item-text {
-  font-size: calc(1em * var(--tf-size-scale, 1));
+  font-size: 1em;
 }
 .slide-list.is-comfortable .lijst-item {
   padding: var(--slide-space-8) 0;
@@ -152,10 +149,10 @@
   font-size: var(--slide-font-size-body);
 }
 .slide-list.is-compact .item-title {
-  font-size: calc(0.9em * var(--tf-size-scale, 1));
+  font-size: 0.9em;
 }
 .slide-list.is-compact .item-text {
-  font-size: calc(0.9em * var(--tf-size-scale, 1));
+  font-size: 0.9em;
 }
 .slide-list.is-compact .lijst-item {
   padding: var(--slide-space-4) 0;

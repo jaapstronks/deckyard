@@ -552,7 +552,7 @@ occurrence:
   factor itself (`97-text-styles.css`), not the base size it scales (that is the
   ladder-rung category above);
 - **em-relative sizing** — a length that scales with the text it belongs to
-  (`em`, the list indent, the markdown code size, `calc(0.9em *
+  (`em`, the list indent, the markdown code size, the quote's `calc(1em *
 var(--tf-size-scale))`). The parser recognises `em` itself, so these are not
   marked. One case cannot use `em` and is marked instead: a fraction of a
   local display size read from a sibling, where the size lives in a custom

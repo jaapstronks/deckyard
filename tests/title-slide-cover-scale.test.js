@@ -67,7 +67,7 @@ describe('coverFontScale', () => {
     assert.equal(coverFontScale(null), 1);
   });
 
-  it('never leaves [0.8, 1]', () => {
+  it('never leaves [0.8, 1] without a size override', () => {
     for (const c of [
       {},
       { title: X(120), subheading: X(160), meta: X(160) },
@@ -79,6 +79,59 @@ describe('coverFontScale', () => {
         `out of band: ${s} for ${JSON.stringify(c)}`,
       );
     }
+  });
+});
+
+describe('coverFontScale budgets the author size (B464, B277)', () => {
+  const L = { size: 'lg' };
+  const S = { size: 'sm' };
+
+  it('a short cover keeps its hero size at L: the override has room', () => {
+    const c = { title: X(30), subheading: X(80), meta: X(30) };
+    assert.equal(coverFontScale({ ...c, textStyles: { title: L } }), 1);
+  });
+
+  it('an L title enters the ramp earlier than an M one', () => {
+    const c = { title: X(100), subheading: X(60) };
+    assert.ok(
+      coverFontScale({ ...c, textStyles: { title: L } }) < coverFontScale(c),
+    );
+  });
+
+  it('an S field frees room: the scale never drops below the M scale', () => {
+    const c = { title: X(120), subheading: X(160), meta: X(160) };
+    assert.ok(
+      coverFontScale({ ...c, textStyles: { title: S, subheading: S } }) >=
+        coverFontScale(c),
+    );
+  });
+
+  it('past the fullest M block the area stays at the floor budget', () => {
+    // Weighted length times scale squared is the block's area; at the fullest
+    // M block that is 248 * 0.8^2. An L override must not exceed it.
+    const c = {
+      title: X(120),
+      subheading: X(160),
+      meta: X(160),
+      textStyles: { title: L, subheading: L },
+    };
+    const s = coverFontScale(c);
+    const area =
+      120 * (1.2 * s) ** 2 + 0.4 * (160 * (1.2 * s) ** 2 + 160 * s ** 2);
+    assert.ok(area <= 248 * 0.64 * 1.01, `area ${area} at scale ${s}`);
+    // And the L title still renders larger than the M title at its floor.
+    assert.ok(1.2 * s > 0.8, `L title ${1.2 * s} vs M 0.8`);
+  });
+
+  it('reads only a known size: anything else counts as M', () => {
+    const c = { title: X(120), subheading: X(160), meta: X(160) };
+    for (const textStyles of [
+      { title: { size: 'xl' } },
+      { title: { size: 'toString' } },
+      { title: 'lg' },
+      'lg',
+    ])
+      assert.equal(coverFontScale({ ...c, textStyles }), 0.8);
   });
 });
 

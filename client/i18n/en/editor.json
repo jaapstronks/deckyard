@@ -979,6 +979,7 @@
   "editor.textStyle.align.center": "Center",
   "editor.textStyle.align.groupOwned": "This text moves with the whole block. Set its alignment under Layout in the toolbar.",
   "editor.textStyle.align.left": "Left",
+  "editor.textStyle.align.listOwned": "A list stays aligned with its bullets. Alignment applies once this text has a paragraph.",
   "editor.textStyle.align.right": "Right",
   "editor.textStyle.followsLayout": "This text follows the slide's layout.",
   "editor.textStyle.scope.all": "All \"{label}\" ({count})",
