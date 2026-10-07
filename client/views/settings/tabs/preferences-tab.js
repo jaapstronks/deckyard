@@ -30,7 +30,7 @@ import {
 } from '../../../lib/net/settings.js';
 import { getLangShortLabel } from '../../../lib/format/lang-selector.js';
 import { createUserNotificationsSection } from '../sections/index.js';
-import { disableForSandbox } from '../sandbox-disable.js';
+import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';
 import { currentUrl, nav } from '../../../lib/state/router.js';
 import {

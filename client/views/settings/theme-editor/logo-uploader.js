@@ -11,7 +11,7 @@ import { icon } from '../../../lib/dom/icons.js';
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { featureEnabled } from '../../../lib/state/features.js';
-import { disableForSandbox } from '../sandbox-disable.js';
+import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 import { uploadImage } from './upload-image.js';
 
 /**

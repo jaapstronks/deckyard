@@ -17,7 +17,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { featureEnabled } from '../../../lib/state/features.js';
-import { disableForSandbox } from '../sandbox-disable.js';
+import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 import { uploadImage } from './upload-image.js';
 import { icon } from '../../../lib/dom/icons.js';
 

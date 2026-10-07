@@ -28,6 +28,7 @@ import {
   resolveInitialUiLocale,
   getSessionLocaleOverride,
   clearSessionLocaleOverride,
+  withSessionLocaleParam,
 } from '../client/lib/ui-i18n.js';
 
 /** Run `fn` with `fetch` stubbed to serve a locale manifest of `ids`. */
@@ -120,12 +121,86 @@ test('clearSessionLocaleOverride drops the override (explicit save supersedes ?l
   });
 });
 
-test('resolveInitialUiLocale clears the session override when no param is present', async () => {
+/** Run `fn` with a Map-backed `sessionStorage` installed on globalThis. */
+async function withSessionStorage(fn) {
+  const prev = Object.getOwnPropertyDescriptor(globalThis, 'sessionStorage');
+  const store = new Map();
+  Object.defineProperty(globalThis, 'sessionStorage', {
+    configurable: true,
+    value: {
+      getItem: (k) => (store.has(k) ? store.get(k) : null),
+      setItem: (k, v) => store.set(k, String(v)),
+      removeItem: (k) => store.delete(k),
+    },
+  });
+  try {
+    return await fn(store);
+  } finally {
+    if (prev) Object.defineProperty(globalThis, 'sessionStorage', prev);
+    else delete globalThis.sessionStorage;
+  }
+}
+
+test('without a session record, a param-less resolve has no override', async () => {
+  // No sessionStorage here (node): the override lasts one document only.
   await withManifest(['en', 'nl'], async () => {
-    // Seed an override, then confirm a param-less resolve clears it.
     await resolveInitialUiLocale('?locale=nl');
     assert.equal(getSessionLocaleOverride(), 'nl');
     await resolveInitialUiLocale('?foo=bar');
     assert.equal(getSessionLocaleOverride(), null);
+  });
+});
+
+test('the override survives a new document in the same session (reload, Present popup)', async () => {
+  // B357: a reload drops ?locale= from the URL and the Present popup is a new
+  // document; both must keep the deep-linked locale over the server default.
+  await withSessionStorage(async () => {
+    await withManifest(['en', 'nl'], async () => {
+      await resolveInitialUiLocale('?locale=nl');
+      // The next document starts with nothing in memory and no param.
+      const locale = await resolveInitialUiLocale('');
+      assert.equal(locale, 'nl');
+      assert.equal(getSessionLocaleOverride(), 'nl');
+      clearSessionLocaleOverride();
+    });
+  });
+});
+
+test('a new ?locale= replaces the recorded one', async () => {
+  await withSessionStorage(async () => {
+    await withManifest(['en', 'nl'], async () => {
+      await resolveInitialUiLocale('?locale=nl');
+      await resolveInitialUiLocale('?locale=en');
+      assert.equal(await resolveInitialUiLocale(''), 'en');
+      assert.equal(getSessionLocaleOverride(), 'en');
+      clearSessionLocaleOverride();
+    });
+  });
+});
+
+test('withSessionLocaleParam hands the override to a noopener popup URL', async () => {
+  // A noopener popup gets no copy of sessionStorage, so the Present window
+  // receives the override on its URL.
+  await withManifest(['en', 'nl'], async () => {
+    await resolveInitialUiLocale('?locale=nl');
+    const u = withSessionLocaleParam(new URL('http://x/present/1?lang=en-GB'));
+    assert.equal(u.searchParams.get('locale'), 'nl');
+    assert.equal(u.searchParams.get('lang'), 'en-GB');
+    clearSessionLocaleOverride();
+    const plain = withSessionLocaleParam(new URL('http://x/present/1'));
+    assert.equal(plain.searchParams.has('locale'), false);
+  });
+});
+
+test('clearSessionLocaleOverride also drops the session record', async () => {
+  // An explicit save in Preferences must win for the rest of the session too.
+  await withSessionStorage(async (store) => {
+    await withManifest(['en', 'nl'], async () => {
+      await resolveInitialUiLocale('?locale=nl');
+      clearSessionLocaleOverride();
+      assert.equal(store.size, 0);
+      await resolveInitialUiLocale('');
+      assert.equal(getSessionLocaleOverride(), null);
+    });
   });
 });

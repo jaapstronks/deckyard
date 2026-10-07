@@ -10,8 +10,17 @@
 import { h } from './index.js';
 import { t } from '../ui-i18n.js';
 import { getFeatures } from '../state/features.js';
+import { route } from '../state/router.js';
 
 let bannerEl = null;
+
+/**
+ * Routes whose screen the audience sees: the presenter (and its projector
+ * window) goes on the beamer, follow-along is on the audience's phones. The
+ * banner warns the person working in the sandbox; the editor around a
+ * presentation already carries it, so these screens stay clean (B357).
+ */
+const AUDIENCE_ROUTES = new Set(['present', 'presentWindow', 'follow']);
 
 /**
  * The banner copy. The hours come from the server's `SANDBOX_TTL_HOURS` (the
@@ -45,12 +54,17 @@ function buildBanner() {
 }
 
 /**
- * Mount or unmount the sandbox banner to match the current feature flags.
- * Safe to call repeatedly (e.g. after every feature-flag refresh).
+ * Mount or unmount the sandbox banner to match the current feature flags and
+ * route. Safe to call repeatedly (after every feature-flag refresh, on every
+ * route render).
+ *
+ * @param {string} [routeName] - The route being shown; defaults to the
+ *   router's current route.
  */
-export function syncSandboxBanner() {
+export function syncSandboxBanner(routeName = route().name) {
   if (typeof document === 'undefined') return;
-  const active = !!getFeatures()?.sandboxMode;
+  const active =
+    !!getFeatures()?.sandboxMode && !AUDIENCE_ROUTES.has(routeName);
 
   if (active && !bannerEl) {
     bannerEl = buildBanner();
