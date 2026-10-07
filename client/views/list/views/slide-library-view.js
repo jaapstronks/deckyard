@@ -1,10 +1,15 @@
-import { t } from '../../../lib/ui-i18n.js';
+import { t, getUiLocale } from '../../../lib/ui-i18n.js';
+import {
+  readStoredLangMode,
+  resolveInitialDeckLang,
+} from '../../../lib/format/i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import {
   createSlideLibraryPicker,
   copyLibraryItemToClipboard,
   createDeckFromLibraryItems,
+  deckLangForLibraryItems,
 } from '../../slide-library/index.js';
 import { createCollectionsBar } from '../collections/index.js';
 import { toast } from '../../../lib/dom/toast.js';
@@ -73,11 +78,14 @@ export function createSlideLibraryView({ api }) {
       if (items.length === 0) return;
 
       // Dominant language: the picker's active language (single-slide "Use"
-      // path forwards it via _selectedLang), else fall back to the picker state.
-      const selectedLang =
+      // path forwards it via _selectedLang), else the picker state, unless the
+      // slides are not written in it: then the language they share (B603).
+      const selectedLang = deckLangForLibraryItems(
+        items,
         items[0]?._selectedLang ||
-        picker?.getActiveLang?.() ||
-        DEFAULT_DECK_LANG;
+          picker?.getActiveLang?.() ||
+          DEFAULT_DECK_LANG,
+      );
       // Use the theme of the first item; with none known the server picks
       // the default (sandbox-aware), so no client-side fallback here.
       const theme = items[0]?.themeId || null;
@@ -135,7 +143,12 @@ export function createSlideLibraryView({ api }) {
         api,
         allowInsert: false, // Browse-only mode
         showLanguageSwitch: true, // Enable language switching in browse mode
-        initialLang: DEFAULT_DECK_LANG,
+        // The language a new deck would start in (stored choice, else the UI
+        // locale): an English reader is not shown an empty Dutch shelf (B603).
+        initialLang: resolveInitialDeckLang({
+          storedLang: readStoredLangMode(),
+          uiLocale: getUiLocale(),
+        }),
         onCopySlide: copySlide,
         onNewPresentation: createNewPresentation,
         onAddToCollection: (item, shelf) =>

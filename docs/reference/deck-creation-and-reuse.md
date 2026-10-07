@@ -159,6 +159,21 @@ Pinned by `tests/slide-library-compose-i18n.test.js` (both halves of the
 round-trip) and `tests/pg/slide-library-i18n-storage.pgtest.js` (create and
 read-back against real PostgreSQL, and a PATCH that cannot overwrite `i18n`).
 
+### The deck's language follows its slides
+
+A composed deck starts in the language its slides are written in.
+`deckLangForLibraryItems` (`client/views/slide-library/compose.js`) is the one
+rule for both entry points, the library page's "Use → New presentation" and the
+creation view seeded from a Home building block: the caller's preferred
+language (the library switch, or a stored/UI-derived default) holds when every
+item has content in it; otherwise the deck takes the one language the items'
+content shares (`i18n.dominant`, else `versions`). Items that share no single
+language keep the preference. In the creation view this is a derived value: it
+sets the selector without storing a preference. The library page's language
+filter starts where a new deck would (`resolveInitialDeckLang`), so a reader is
+not shown an empty shelf in a language they never chose. Pinned by
+`tests/library-deck-language.test.js` (B603).
+
 ## Changing a library item: the save contract
 
 A library item is changed through one server-authoritative route, for every

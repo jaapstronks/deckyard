@@ -3,6 +3,7 @@
   "description": "A two-column bullet list with a subheading.",
   "slideType": "list-slide",
   "theme": "playful",
+  "lang": "en-GB",
   "content": {
     "title": "The opening menu",
     "subheading": "Six flavours, rotating weekly specials",

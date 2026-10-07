@@ -3,6 +3,7 @@
   "description": "An icon card grid that explains where a Deckyard deck can show up.",
   "slideType": "icon-card-grid-slide",
   "theme": "editorial",
+  "lang": "en-GB",
   "content": {
     "title": "One deck, many surfaces",
     "subheading": "The same document, wherever it needs to show up",

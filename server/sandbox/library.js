@@ -9,8 +9,9 @@
  *
  * The seed is declared as JSON under `server/sandbox-examples/library/`: one
  * file per slide (`<key>.json`: name, description, slideType, theme slug,
- * content) and one per collection (`collections/<key>.json`: name,
- * description, the slide keys in order). The file name is the key, and the
+ * lang, content; `lang` is the language the content is written in and becomes
+ * the item's `i18n.dominant`, B603) and one per collection
+ * (`collections/<key>.json`: name, description, the slide keys in order). The file name is the key, and the
  * key fixes the row id, so a boot that finds the row updates it in place and
  * a boot that finds it unchanged writes nothing.
  *
@@ -30,6 +31,7 @@ import path from 'node:path';
 import { getDb, sql } from '../db/client.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { sandboxEnabled } from '../config/sandbox.js';
+import { normalizeLang } from '../../shared/i18n-utils.js';
 import { resolveSeedThemeSlug } from '../storage/settings.js';
 
 /** Who the seeded items name as their maker: rendered as "Deckyard". */
@@ -98,6 +100,12 @@ export async function readSandboxLibrarySeed(repoRoot) {
   const slides = (await readJsonDir(dir)).map(({ key, file, record }) => {
     for (const field of ['name', 'slideType', 'theme'])
       if (!nonEmptyString(record?.[field])) refuse(file, field);
+    // The deck-axis spelling, as a library create stores it (`en-GB`, not `en`).
+    if (
+      !nonEmptyString(record.lang) ||
+      normalizeLang(record.lang) !== record.lang
+    )
+      refuse(file, 'lang');
     if (!record.content || typeof record.content !== 'object')
       refuse(file, 'content');
     return { key, file, ...record };
@@ -145,18 +153,20 @@ export async function seedSandboxLibrary(repoRoot) {
             slide_type, theme_id, content, i18n, favorites, created_by, updated_by)
           VALUES (${seedRowId('slide', slide.key)}, ${orgId}, ${owner}, 'organization',
             ${slide.name}, ${slide.description || null}, ${slide.slideType},
-            ${themeIds.get(slide.theme)}, ${JSON.stringify(slide.content)}::jsonb, '{}'::jsonb,
+            ${themeIds.get(slide.theme)}, ${JSON.stringify(slide.content)}::jsonb,
+            ${JSON.stringify({ dominant: slide.lang })}::jsonb,
             '{}'::text[], ${owner}, ${owner})
           ON CONFLICT (id) DO UPDATE SET
             name = EXCLUDED.name, description = EXCLUDED.description,
             slide_type = EXCLUDED.slide_type, theme_id = EXCLUDED.theme_id,
-            content = EXCLUDED.content, trashed_at = NULL, trashed_by = NULL,
+            content = EXCLUDED.content, i18n = EXCLUDED.i18n, trashed_at = NULL, trashed_by = NULL,
             updated_at = now()
           WHERE (slide_library.name, slide_library.description, slide_library.slide_type,
-              slide_library.theme_id, slide_library.content, slide_library.trashed_at)
+              slide_library.theme_id, slide_library.content, slide_library.i18n,
+              slide_library.trashed_at)
             IS DISTINCT FROM
             (EXCLUDED.name, EXCLUDED.description, EXCLUDED.slide_type,
-              EXCLUDED.theme_id, EXCLUDED.content, NULL::timestamptz)
+              EXCLUDED.theme_id, EXCLUDED.content, EXCLUDED.i18n, NULL::timestamptz)
         `.execute(trx);
       }
       for (const collection of collections) {
