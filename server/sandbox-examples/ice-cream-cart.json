@@ -173,5 +173,19 @@
         "contactEmail": "hello@scoops.example"
       }
     }
-  ]
+  ],
+  "sandbox": {
+    "analytics": {
+      "sessions": 60,
+      "days": 45,
+      "returningShare": 0.2,
+      "completion": 0.45,
+      "secondsPerSlide": 22,
+      "sources": {
+        "embed": 4,
+        "published": 3,
+        "share_link": 2
+      }
+    }
+  }
 }

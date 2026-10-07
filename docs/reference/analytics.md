@@ -169,6 +169,11 @@ sourceType, sourceId?, deviceId?, viewerType?, viewerEmail?}`. The handler
   token _shape_ before hitting the database, and re-checks that the deck still
   exists and has not gone `private` (a private deck 403s even with a valid
   token). `POST …/regenerate-token` invalidates the old link.
+- **Sandbox seed** — in sandbox mode only, opening an example deck writes a
+  declared, invented viewing history for the guest's copy
+  (`insertSeededViewSessions`, B353; `docs/reference/sandbox-mode.md` § Seed
+  insights). It is the one writer besides the tracking endpoints, and it
+  refuses outside `SANDBOX_MODE`.
 - **Retention** — the daily job deletes sessions and slide views older than the
   configured session-data window and nulls `ip_address` older than the
   IP-anonymization window. Both come from `settings.analytics.retention.*` (the

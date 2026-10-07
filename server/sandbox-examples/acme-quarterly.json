@@ -181,5 +181,19 @@
         "contactEmail": "ir@acme.example"
       }
     }
-  ]
+  ],
+  "sandbox": {
+    "analytics": {
+      "sessions": 95,
+      "days": 60,
+      "returningShare": 0.4,
+      "completion": 0.7,
+      "secondsPerSlide": 32,
+      "sources": {
+        "share_link": 6,
+        "follow": 3,
+        "published": 1
+      }
+    }
+  }
 }
