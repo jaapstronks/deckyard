@@ -3,11 +3,10 @@
  * Handles publish/unpublish operations for presentations.
  */
 
-import { removePublishedEntry } from '../../../storage/published.js';
-import { updatePresentation } from '../../../storage/presentations/index.js';
 import {
   publishPresentation,
   assertPublishingEnabled,
+  unpublishPresentation,
 } from '../../../services/publish-presentation.js';
 import {
   requirePermission,
@@ -86,27 +85,11 @@ async function handleGetPublishStatus(ctx, id) {
  * DELETE /api/v1/presentations/:id/publish - Unpublish a presentation.
  */
 async function handleUnpublish(ctx, id) {
-  const { storageScope, apiKey } = ctx;
-
   if (!requirePermission(ctx, 'write')) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, id, {
-    access: 'write',
-  });
-  if (!ok) return true;
-
-  const publishId = String(pres?.published?.id || '').trim();
-  if (publishId) {
-    await removePublishedEntry(storageScope, publishId);
-  }
-
-  // Explicit null, not a deleted key: the storage layer reads an absent key
-  // as "leave this column alone", so dropping it would keep the deck published
-  // in the database.
-  const nextPres = { ...pres, published: null };
-  await updatePresentation(storageScope, id, nextPres, {
-    actorEmail: apiKey.ownerEmail,
-  });
+  // The flow is `services/publish-presentation.js`; a refusal is thrown and
+  // `withV1ErrorHandler` renders it.
+  await unpublishPresentation(ctx.storageScope, { actor: ctx.authedUser }, id);
 
   await apiSuccess(ctx, { unpublished: true });
   return true;

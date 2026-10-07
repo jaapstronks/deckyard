@@ -18,9 +18,13 @@
  *      A7.4 item (B519–B521 and what follows) lowers this count; A7.4 closes
  *      at zero.
  *
- * The test counts import statements and pins both numbers **exactly**. More is
- * a new bypass: route the call through a service instead. Fewer is progress:
- * lower the baseline here in the same PR, so the ratchet never slips back.
+ * The first kind is pinned at zero. The second is pinned **edge by edge**: each
+ * adapter file → storage module import that is still open is listed in
+ * {@link OPEN_STORAGE_EDGES} with the item that closes it (B575 gave every edge
+ * an address). A new edge is a new bypass: route the call through a service
+ * instead. A closed edge is progress: drop its line here in the same PR, so the
+ * ratchet never slips back. An edge only closes when its *last* import goes
+ * (lesson 1 of the B521 follow-ups: count edges, not symbols).
  *
  * Run with: node --test tests/service-layer-imports.test.js
  */
@@ -36,10 +40,33 @@ const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 /** The adapter trees the ratchet watches. */
 const ADAPTER_DIRS = ['server/mcp', 'server/routes/public-api/v1'];
 
-/** Current baselines. Lower them when an item removes an import; never raise. */
-const BASELINE = {
-  'server/routes/api': 0,
-  'server/storage/presentations': 10,
+/** Adapter imports into another contract's routes: none, and none to come. */
+const ROUTES_BASELINE = 0;
+
+/**
+ * The adapter → deck-storage edges still open, each with the item that closes
+ * it (brief `one-service-layer.md` § Vervolgknippen). A7.4 closes when this is
+ * empty.
+ */
+const OPEN_STORAGE_EDGES = {
+  // listPresentations (B607: one deck list on three contracts) and the PUT's
+  // plain save (B608: one deck save, shared with the editor's PUT).
+  'server/routes/public-api/v1/presentations.js -> server/storage/presentations/index.js':
+    'B607, B608',
+  // The AI wizard's update after the create (B609: a create that carries its
+  // content, shared with the internal wizards and MCP's creates).
+  'server/routes/public-api/v1/ai.js -> server/storage/presentations/index.js':
+    'B609',
+  // The translation write (B610: one translate, shared with the internal route
+  // and the translate worker).
+  'server/routes/public-api/v1/translate.js -> server/storage/presentations/index.js':
+    'B610',
+  // list_presentations (B607), the creates' update and normalizeSlides
+  // pre-check (B609), and the slide-set writes of remove_slide,
+  // reorder_slides, append_slides, compress_presentation and
+  // iterate_presentation (B611).
+  'server/mcp/tools.js -> server/storage/presentations/index.js':
+    'B607, B609, B611',
 };
 
 function listJs(dir) {
@@ -83,23 +110,37 @@ function importsInto(targetDir) {
   return hits;
 }
 
-for (const [targetDir, baseline] of Object.entries(BASELINE)) {
-  test(`adapter imports into ${targetDir} stay at ${baseline}`, () => {
-    const hits = importsInto(targetDir);
-    assert.ok(
-      hits.length <= baseline,
-      `${hits.length - baseline} new adapter import(s) into ${targetDir}; ` +
-        'go through server/services/ instead (D256):\n  ' +
-        hits.join('\n  '),
-    );
-    assert.equal(
-      hits.length,
-      baseline,
-      `Adapter imports into ${targetDir} dropped to ${hits.length}: lower ` +
-        'BASELINE in tests/service-layer-imports.test.js so the ratchet holds.',
-    );
-  });
-}
+test(`adapter imports into server/routes/api stay at ${ROUTES_BASELINE}`, () => {
+  const hits = importsInto('server/routes/api');
+  assert.equal(
+    hits.length,
+    ROUTES_BASELINE,
+    'Adapter import(s) into server/routes/api; go through server/services/ ' +
+      'instead (D256):\n  ' +
+      hits.join('\n  '),
+  );
+});
+
+test('adapter imports into server/storage/presentations are the open edges', () => {
+  const edges = [...new Set(importsInto('server/storage/presentations'))];
+  const open = Object.keys(OPEN_STORAGE_EDGES);
+  const added = edges.filter((edge) => !open.includes(edge));
+  const closed = open.filter((edge) => !edges.includes(edge));
+  assert.deepEqual(
+    added,
+    [],
+    'New adapter import(s) into server/storage/presentations; go through ' +
+      'server/services/ instead (D256):\n  ' +
+      added.join('\n  '),
+  );
+  assert.deepEqual(
+    closed,
+    [],
+    'Closed edge(s): drop them from OPEN_STORAGE_EDGES in ' +
+      'tests/service-layer-imports.test.js so the ratchet holds:\n  ' +
+      closed.join('\n  '),
+  );
+});
 
 test('the counter sees the import shapes the adapters use', () => {
   // Guard against a regex that silently matches nothing: the storage count is

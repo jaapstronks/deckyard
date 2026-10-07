@@ -9,16 +9,12 @@ import {
   getTagsForSlideLibraryItems,
   getTagsForSlideLibraryItem,
 } from '../../../storage/slide-library.js';
-import { updatePresentation } from '../../../storage/presentations/index.js';
-import { newSlide } from '../../../../shared/slide-types.js';
-import { loadDeckTheme } from '../../../utils/themes.js';
-import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+import { addSlide } from '../../../services/slides.js';
 import {
   requirePermission,
   dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
-  getPresentationWithAccess,
   readApiV1Body,
   apiSuccess,
   apiCreated,
@@ -150,7 +146,7 @@ async function handleGet(ctx, itemId) {
  * POST /api/v1/presentations/:id/slides/from-library - Add a slide from library.
  */
 async function handleAddFromLibrary(ctx, presentationId) {
-  const { repoRoot, storageScope, apiKey } = ctx;
+  const { storageScope, apiKey } = ctx;
 
   if (!requirePermission(ctx, 'write')) return true;
 
@@ -162,12 +158,6 @@ async function handleAddFromLibrary(ctx, presentationId) {
     await apiError(ctx, 400, 'libraryItemId is required');
     return true;
   }
-
-  // Load presentation
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
-    access: 'write',
-  });
-  if (!ok) return true;
 
   // Load library item
   const libraryItem = await getOrganizationLibraryItem(
@@ -183,54 +173,24 @@ async function handleAddFromLibrary(ctx, presentationId) {
     return true;
   }
 
-  // Compose the slide through the one factory, with the deck's theme and
-  // language and the library item's content as the patch — the same call the
-  // editor makes for a library insert. A key the item lacks takes the type's
-  // default (the theme ground among them); a key it carries wins. A library
-  // item saved off a slide of this organization's own custom type names a
-  // key only that organization's registry holds, so resolve in that map, not
-  // the global one.
-  const slideTypes = await buildMergedSlideTypes(storageScope);
-  const theme = await loadDeckTheme(repoRoot, pres.theme, storageScope);
-  let newSlideObj;
-  try {
-    newSlideObj = newSlide({
-      type: libraryItem.slideType,
-      slideTypes,
-      theme,
-      lang: pres?.lang,
-      presentationId: pres?.id,
-      content: libraryItem.content,
-    });
-  } catch (e) {
-    await apiError(ctx, 400, `Invalid slide type: ${libraryItem.slideType}`);
-    return true;
-  }
-
-  // Determine insertion position
-  const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
-  let insertIndex = slides.length; // Default: append at end
-
-  const atIndex = getNonNegativeNumber(body, 'atIndex');
-  if (atIndex !== null) {
-    insertIndex = Math.min(atIndex, slides.length);
-  } else if (body.afterSlideId) {
-    const afterIdx = slides.findIndex((s) => s.id === body.afterSlideId);
-    if (afterIdx >= 0) {
-      insertIndex = afterIdx + 1;
-    }
-  }
-
-  // Insert the new slide
-  slides.splice(insertIndex, 0, newSlideObj);
-
-  // Update presentation (throws answered in the v1 envelope by the wrap).
-  const updated = await updatePresentation(
+  // The insert is the slide service's add (B572, B575): the write right, the
+  // one factory (deck theme and language, the item's content as the patch,
+  // the organization's own custom types), strict validation, and a write that
+  // keeps the deck's other language versions. A refusal is thrown and
+  // `withV1ErrorHandler` renders it.
+  const {
+    slide: newSlideObj,
+    index: insertIndex,
+    presentation: updated,
+  } = await addSlide(
     storageScope,
-    presentationId,
-    { slides },
+    { actor: ctx.authedUser },
     {
-      actorEmail: apiKey.ownerEmail,
+      presentationId,
+      type: libraryItem.slideType,
+      content: libraryItem.content,
+      atIndex: getNonNegativeNumber(body, 'atIndex'),
+      afterSlideId: body.afterSlideId,
     },
   );
 

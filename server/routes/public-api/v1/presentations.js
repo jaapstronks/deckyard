@@ -25,7 +25,7 @@ import {
   apiError,
 } from './middleware.js';
 import { parsePaginationParams } from '../../../utils/request-validators.js';
-import { changePresentationTheme } from '../../../storage/presentations/change-theme.js';
+import { changeTheme } from '../../../services/theme.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   createPresentation,
@@ -262,15 +262,11 @@ async function handleUpdate(ctx, id) {
   // envelope by the mount-level withV1ErrorHandler wrap.
   let updated;
   if (switchesTheme) {
-    const result = await changePresentationTheme(storageScope, id, body, {
-      theme: body.theme,
-      actorEmail: apiKey.ownerEmail,
-    });
-    if (!result.ok) {
-      await apiError(ctx, 400, result.error, { details: { field: 'theme' } });
-      return true;
-    }
-    updated = result.presentation;
+    updated = await changeTheme(
+      storageScope,
+      { actor: ctx.authedUser },
+      { presentationId: id, theme: body.theme, changes: body },
+    );
   } else {
     updated = await updatePresentation(storageScope, id, body, {
       actorEmail: apiKey.ownerEmail,

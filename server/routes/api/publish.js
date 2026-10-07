@@ -1,5 +1,4 @@
 import {
-  removePublishedEntry,
   updatePublishedSlug,
   upsertPublishedEntry,
 } from '../../storage/published.js';
@@ -17,6 +16,7 @@ import {
   publishPresentation,
   assertPublishingEnabled,
   buildPublishOgImage,
+  unpublishPresentation,
 } from '../../services/publish-presentation.js';
 import { createLogger } from '../../utils/logger.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -54,26 +54,9 @@ async function handlePublishCreate(
 
 // DELETE /api/presentations/:id/publish — depublish (disable public link)
 async function handlePublishDelete({ storageScope, res, authedUser }, id) {
-  const pres = await withPresentationAuth({
-    storageScope,
-    id,
-    authedUser,
-    res,
-    permission: 'write',
-  });
-  if (!pres) return true;
-
-  const publishId = String(pres?.published?.id || '').trim();
-  if (publishId) await removePublishedEntry(storageScope, publishId);
-
-  // Explicit null, not a deleted key: the storage layer reads an absent key
-  // as "leave this column alone", so dropping it would keep the deck
-  // published in the database.
-  const nextPres = { ...pres, published: null };
-  await updatePresentation(storageScope, id, nextPres, {
-    actorEmail: authedUser?.email || null,
-  });
-
+  // The flow is shared with the v1 route (`services/publish-presentation.js`);
+  // a refusal is thrown and `withErrorHandler` renders it.
+  await unpublishPresentation(storageScope, { actor: authedUser }, id);
   serveJson(res, 200, { ok: true });
   return true;
 }

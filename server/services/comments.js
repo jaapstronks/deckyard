@@ -1,6 +1,6 @@
 /**
- * Comments — the one place a comment is created, and the one place its status
- * changes, on every contract (A7.4, B518, B569).
+ * Comments — the one place a comment is created, listed, and has its status
+ * changed, on every contract (A7.4, B518, B569, B575).
  *
  * The internal `/api` route (`routes/api/presentations/comments-write.js`), the
  * public v1 route (`routes/public-api/v1/comments.js`) and the MCP tools
@@ -32,6 +32,11 @@
  * the internal route decided on the session user, the other two on the actor,
  * and each answered a status the comment was not in with its own status code.
  *
+ * A deck's comments are listed in one place too ({@link listComments}, B575):
+ * the internal route read an unknown `status` as "all" while v1 refused it, and
+ * only MCP and v1 parsed `since`. The cross-deck recent list MCP offers
+ * ({@link listRecentComments}) reads under the same filter vocabulary.
+ *
  * Failures are thrown as `AppError`s (D254); each contract's error handler
  * renders them. Absent deck → 404, no comment right → 403 (D255).
  *
@@ -40,6 +45,8 @@
 
 import {
   getComment,
+  listComments as storeListComments,
+  listRecentCommentsForOwner,
   createComment as storeComment,
   resolveComment,
   reopenComment,
@@ -47,6 +54,7 @@ import {
   getOpenCommentCount,
   getCommentCountsBySlide,
 } from '../storage/presentations/comments.js';
+import { getPresentation } from '../storage/presentations/index.js';
 import { repoRootOf } from '../storage/scope.js';
 import {
   AppError,
@@ -264,6 +272,164 @@ export async function setCommentStatus(
   );
 
   return { comment: result.comment, presentation: pres };
+}
+
+/** The status filters a comment list takes; `all` is no filter. */
+export const COMMENT_LIST_STATUSES = Object.freeze([
+  'open',
+  'resolved',
+  'dismissed',
+  'all',
+]);
+
+/** The comment kinds a comment list can be narrowed to. */
+const COMMENT_TYPES = Object.freeze(['human', 'ai-suggestion']);
+
+/** The deck sets {@link listRecentComments} reads across. */
+const RECENT_OWNERSHIPS = Object.freeze(['owned', 'shared', 'all']);
+
+/**
+ * Refuse a filter value outside its vocabulary. The internal route used to
+ * read an unknown `status` as "all" without a word; v1 refused it.
+ *
+ * @param {string} field
+ * @param {*} value
+ * @param {readonly string[]} allowed
+ * @throws {AppError} 400 `invalid`, `details.field` = `field`.
+ */
+function refuseUnknownFilter(field, value, allowed) {
+  if (allowed.includes(value)) return;
+  throw new AppError(
+    `Invalid ${field} (${allowed.join('|')})`,
+    400,
+    { field },
+    'invalid',
+  );
+}
+
+/**
+ * Normalize a `since` filter to an ISO timestamp; absent is `null`.
+ *
+ * @param {*} since
+ * @returns {string|null}
+ * @throws {AppError} 400 `invalid`, `details.field` = `since`.
+ */
+function sinceOf(since) {
+  if (since === undefined || since === null || since === '') return null;
+  const parsed = new Date(since);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new AppError(
+      `Invalid since value: ${since} (use an ISO 8601 date/datetime)`,
+      400,
+      { field: 'since' },
+      'invalid',
+    );
+  }
+  return parsed.toISOString();
+}
+
+/**
+ * List the comments on one deck, newest first, on every contract (B575).
+ *
+ * Whoever may read the deck reads its comments: an actor, or (internal
+ * contract only) a share-link guest. The filters mean the same whoever asks;
+ * a value outside a filter's vocabulary is refused instead of read as "all".
+ *
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {ServiceIdentity} identity - `{ actor }`, or `{ guest, shareLink }`.
+ * @param {Object} input
+ * @param {string} input.presentationId
+ * @param {string} [input.status='all'] - One of {@link COMMENT_LIST_STATUSES}.
+ * @param {string|null} [input.slideId] - Only comments anchored to this slide.
+ * @param {*} [input.since] - Only comments created at/after this ISO date.
+ * @param {string|null} [input.commentType] - `human` or `ai-suggestion`.
+ * @param {boolean} [input.includeReplies=false] - Replies as rows of their own.
+ * @returns {Promise<{ comments: Object[], presentation: Object, since: string|null }>}
+ *   `since` is the filter as applied, normalized to ISO.
+ * @throws {import('../utils/errors.js').AppError}
+ */
+export async function listComments(
+  scope,
+  identity,
+  {
+    presentationId,
+    status = 'all',
+    slideId = null,
+    since = null,
+    commentType = null,
+    includeReplies = false,
+  },
+) {
+  refuseUnknownFilter('status', status, COMMENT_LIST_STATUSES);
+  if (commentType !== null)
+    refuseUnknownFilter('commentType', commentType, COMMENT_TYPES);
+  const sinceIso = sinceOf(since);
+
+  const presentation = await loadPresentationForActor(
+    scope,
+    identity,
+    presentationId,
+  );
+  const comments = await storeListComments(scope, presentation.id, {
+    status: status === 'all' ? undefined : status,
+    slideId: slideId || undefined,
+    since: sinceIso || undefined,
+    commentType: commentType || undefined,
+    includeReplies: includeReplies === true,
+  });
+  return { comments, presentation, since: sinceIso };
+}
+
+/**
+ * The most recent top-level comments across the decks the acting user can see
+ * (owned, shared or both), newest first, each with the deck it sits on.
+ *
+ * Only MCP offers this today; it lives here so the reading rule (which decks,
+ * which filters) is the comment service's, not a tool's. The deck set is the
+ * scope's acting user's, which every contract builds from the same actor.
+ *
+ * @param {StorageScope} scope - The caller's storage scope (its acting user
+ *   decides which decks are read).
+ * @param {Object} input
+ * @param {string} [input.ownership='all'] - `owned`, `shared` or `all`.
+ * @param {string|null} [input.authorEmail] - Only this author's comments.
+ * @param {string} [input.status='all'] - One of {@link COMMENT_LIST_STATUSES}.
+ * @param {*} [input.since] - Only comments created at/after this ISO date.
+ * @param {number} [input.limit=50] - At most this many (1..200).
+ * @returns {Promise<{ items: Array<{ comment: Object, presentation: Object|null }>, total: number }>}
+ * @throws {import('../utils/errors.js').AppError}
+ */
+export async function listRecentComments(
+  scope,
+  {
+    ownership = 'all',
+    authorEmail = null,
+    status = 'all',
+    since = null,
+    limit = 50,
+  } = {},
+) {
+  refuseUnknownFilter('ownership', ownership, RECENT_OWNERSHIPS);
+  refuseUnknownFilter('status', status, COMMENT_LIST_STATUSES);
+  const { comments, total } = await listRecentCommentsForOwner(scope, {
+    ownership,
+    authorEmail: authorEmail || null,
+    status,
+    since: sinceOf(since),
+    limit,
+  });
+
+  // Each deck once: the comments already come from decks the user can see.
+  const decks = new Map();
+  const items = [];
+  for (const comment of comments) {
+    const id = comment.presentationId;
+    if (!decks.has(id)) {
+      decks.set(id, await getPresentation(scope, id).catch(() => null));
+    }
+    items.push({ comment, presentation: decks.get(id) });
+  }
+  return { items, total };
 }
 
 /**

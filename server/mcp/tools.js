@@ -9,7 +9,6 @@ import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import {
   listPresentations,
-  getPresentation,
   normalizeSlides,
   updatePresentation,
 } from '../storage/presentations/index.js';
@@ -17,14 +16,15 @@ import { loadPresentationChecked, mcpActor } from './presentation-access.js';
 import { singleOrganizationScope } from '../storage/scope.js';
 import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
-  listComments,
-  listRecentCommentsForOwner,
-} from '../storage/presentations/comments.js';
-import {
   enrichCommentsWithSlideContext,
   slideContextFor,
 } from '../services/comment-slide-context.js';
-import { createComment, setCommentStatus } from '../services/comments.js';
+import {
+  createComment,
+  listComments,
+  listRecentComments,
+  setCommentStatus,
+} from '../services/comments.js';
 import {
   assertCreatableDeckInput,
   createPresentation,
@@ -110,21 +110,6 @@ function presentationUrl(id, mode = 'edit', { slideId } = {}) {
   const path = mode === 'edit' ? 'app' : mode;
   const anchor = slideId ? `?slideId=${encodeURIComponent(slideId)}` : '';
   return `${base}/${path}/${id}${anchor}`;
-}
-
-/**
- * Parse an optional `since` tool argument into a normalized ISO string.
- * Throws on unparseable input so the model gets a clear error.
- */
-function parseSince(since) {
-  if (!since) return null;
-  const parsed = new Date(since);
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error(
-      `Invalid since value: ${since} (use an ISO 8601 date/datetime)`,
-    );
-  }
-  return parsed.toISOString();
 }
 
 /** Render the service's conversion refusal in MCP's tool vocabulary. */
@@ -1771,16 +1756,11 @@ export function registerTools(
       },
       context,
     ) => {
-      const ctx = storageScopeOf(context);
-
-      const pres = await getCheckedPresentation(presentationId, context);
-
-      const comments = await listComments(ctx, presentationId, {
-        status: status === 'all' ? undefined : status,
-        slideId: slideId || undefined,
-        since: parseSince(since) || undefined,
-        includeReplies,
-      });
+      const { comments, presentation: pres } = await listComments(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { presentationId, status, slideId, since, includeReplies },
+      );
 
       // Slide context reflects the deck as it is now; the stored
       // slideSnapshot on each comment shows the slide at create time.
@@ -1849,35 +1829,14 @@ export function registerTools(
       context,
     ) => {
       const owner = getOwner(context);
-      const { comments, total } = await listRecentCommentsForOwner(
+      const { items: listed, total } = await listRecentComments(
         storageScopeOf(context),
-        {
-          ownership,
-          authorEmail: authorEmail || null,
-          status,
-          since: parseSince(since) || null,
-          limit,
-        },
+        { ownership, authorEmail, status, since, limit },
       );
-
-      // Load each referenced deck once for current slide context.
-      const presCache = new Map();
-      const presFor = async (id) => {
-        if (!presCache.has(id)) {
-          presCache.set(
-            id,
-            await getPresentation(storageScopeOf(context), id).catch(
-              () => null,
-            ),
-          );
-        }
-        return presCache.get(id);
-      };
 
       const slideTypes = await sessionSlideTypes(context);
       const items = [];
-      for (const c of comments) {
-        const pres = await presFor(c.presentationId);
+      for (const { comment: c, presentation: pres } of listed) {
         const item = {
           id: c.id,
           presentationId: c.presentationId,

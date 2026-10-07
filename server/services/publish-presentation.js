@@ -24,7 +24,11 @@
  * A single core is the beta-stance fix: no second publish path that "also works".
  */
 
-import { newPublishId, upsertPublishedEntry } from '../storage/published.js';
+import {
+  newPublishId,
+  removePublishedEntry,
+  upsertPublishedEntry,
+} from '../storage/published.js';
 import { updatePresentation } from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../render/og-image.js';
@@ -35,7 +39,12 @@ import { sandboxEnabled } from '../config/sandbox.js';
 import { maybeFireWebhook } from '../utils/webhooks.js';
 import { getRequestOrigin } from '../utils/request-url.js';
 import { warmDeckThumbnail } from '../render/deck-thumbnail-warm.js';
-import { ForbiddenError } from '../utils/errors.js';
+import {
+  ForbiddenError,
+  NotFoundError,
+  throwStorageFailure,
+} from '../utils/errors.js';
+import { loadPresentationForActor } from './presentations.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { assertImagesNamed } from './publish-alt-check.js';
 import { createLogger } from '../utils/logger.js';
@@ -246,4 +255,42 @@ export async function publishPresentation({
     path,
     ogImageUrl: entry.ogImageUrl || '',
   };
+}
+
+/**
+ * Take a deck's public link down, on every contract (B575): the internal
+ * `DELETE /api/presentations/:id/publish` and v1's `DELETE …/publish` each
+ * carried a copy of these three steps.
+ *
+ * Whoever may write the deck may unpublish it. The published entry goes, and
+ * the deck's `published` column is cleared with an explicit `null`: the
+ * storage layer reads an absent key as "leave this column alone", so a write
+ * without it would keep the deck published in the database. Only that column
+ * is written, so a concurrent edit to the slides is not overwritten. A deck
+ * that was not published answers the same: the link is down either way.
+ *
+ * @param {import('../storage/scope.js').StorageScope} scope - The caller's storage scope.
+ * @param {{ actor: import('./actor.js').Actor }} identity - The acting user (D253).
+ * @param {string} presentationId
+ * @returns {Promise<Object>} The deck as stored after the change.
+ * @throws {NotFoundError} No deck with this id in this scope.
+ * @throws {ForbiddenError} The actor may not write the deck.
+ */
+export async function unpublishPresentation(scope, identity, presentationId) {
+  const pres = await loadPresentationForActor(scope, identity, presentationId, {
+    access: 'write',
+  });
+
+  const publishId = String(pres.published?.id || '').trim();
+  if (publishId) await removePublishedEntry(scope, publishId);
+
+  const updated = await updatePresentation(
+    scope,
+    pres.id,
+    { published: null },
+    { actorEmail: identity.actor?.email || null },
+  );
+  if (!updated) throw new NotFoundError('Presentation not found');
+  if (updated.ok === false) throwStorageFailure(updated);
+  return updated;
 }

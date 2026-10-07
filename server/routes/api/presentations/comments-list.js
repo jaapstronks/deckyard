@@ -5,7 +5,6 @@
 
 import { methodNotAllowed, serveJson, notFound } from '../../../utils/http.js';
 import {
-  listComments,
   getComment,
   getOpenCommentCount,
   getCommentCountsBySlide,
@@ -15,15 +14,23 @@ import {
   removeClient,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
-import { withPresentationReadAuth } from '../../../utils/route-middleware.js';
+import {
+  getGuestFromRequest,
+  withPresentationReadAuth,
+} from '../../../utils/route-middleware.js';
+import { listComments } from '../../../services/comments.js';
+import { ForbiddenError } from '../../../utils/errors.js';
 import { openSseStream, sseWrite } from '../../../utils/sse.js';
 
 /**
  * List comments for a presentation.
  * GET /api/presentations/:id/comments
- * Query params: slideId, status (open|resolved|all)
+ * Query params: slideId, status (open|resolved|dismissed|all), commentType
  *
- * Supports both authenticated users and verified guests with share link access.
+ * The reading rule and the filters are `services/comments.js`; this adapter
+ * parses the query and names who is asking: the account when it may read the
+ * deck, otherwise the share-link guest session on this deck (the same
+ * fallback the create route uses).
  */
 export async function handlePresentationCommentsList(
   { storageScope, req, res, url, authedUser } = {},
@@ -31,24 +38,23 @@ export async function handlePresentationCommentsList(
 ) {
   if (req.method !== 'GET') return methodNotAllowed(res, ['GET']);
 
-  const { pres } = await withPresentationReadAuth({
-    storageScope,
-    req,
-    id,
-    authedUser,
-    res,
-  });
-  if (!pres) return true;
+  const input = {
+    presentationId: id,
+    slideId: url.searchParams.get('slideId') || null,
+    status: url.searchParams.get('status') || 'all',
+    commentType: url.searchParams.get('commentType') || null,
+  };
 
-  const slideId = url.searchParams.get('slideId') || null;
-  const status = url.searchParams.get('status') || 'all';
-  const commentType = url.searchParams.get('commentType') || null;
-
-  const comments = await listComments(storageScope, id, {
-    slideId,
-    status,
-    commentType,
-  });
+  let listed;
+  try {
+    listed = await listComments(storageScope, { actor: authedUser }, input);
+  } catch (err) {
+    if (!(err instanceof ForbiddenError)) throw err;
+    const guestInfo = await getGuestFromRequest(req);
+    if (!guestInfo) throw err;
+    listed = await listComments(storageScope, guestInfo, input);
+  }
+  const { comments } = listed;
   const openCount = await getOpenCommentCount(storageScope, id);
 
   // The AI-author address used to ship with the list so the client could
