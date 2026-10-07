@@ -28,6 +28,11 @@ import {
   CORE_SLIDE_TYPE_NAMES,
 } from '../shared/slide-types/registry.js';
 import {
+  SLIDE_TYPE_ELEMENT_TAB,
+  SLIDE_TYPE_INLINE_EDIT,
+  SLIDE_TYPE_INSPECTOR_KEEPS,
+} from '../shared/slide-types/inline-edit.js';
+import {
   formatDefinitionReport,
   slideRootClass,
   validateSlideTypeDefinition,
@@ -613,4 +618,98 @@ test('a type-level `scale` is refused when malformed and warns on an end label t
       'rating: `scale.maxLabelKey` "high" does not name a field of this type, so that end of the scale has no label',
     ],
   );
+});
+
+/**
+ * B600: the parity invariant of B450 for a fork type. Core is held to "every
+ * field has a home outside All text" by `tests/slide-type-docs.test.js`; a
+ * fork type that narrows its inspector without giving the dropped fields a
+ * canvas or element-tab home gets a warning, not a refusal.
+ */
+function narrowedDef(extra = {}) {
+  return validDef({
+    fields: [
+      { key: 'heading', type: 'string', label: 'Heading' },
+      {
+        key: 'tone',
+        type: 'enum',
+        label: 'Tone',
+        options: ['calm', 'loud'],
+      },
+      {
+        key: 'rows',
+        type: 'items',
+        label: 'Rows',
+        itemFields: [
+          { key: 'label', type: 'string', label: 'Label' },
+          {
+            key: 'color',
+            type: 'enum',
+            label: 'Colour',
+            options: ['blue', 'red'],
+          },
+        ],
+      },
+    ],
+    defaults: { heading: '', tone: 'calm', rows: [] },
+    renderHtml: (c) =>
+      `<div class="slide slide-fixture">` +
+      `<h2 data-inline-field="heading">${c.heading || ''}</h2>` +
+      (c.rows || [])
+        .map((_, i) => `<p data-inline-field="rows.${i}.label"></p>`)
+        .join('') +
+      `</div>`,
+    inline: { formText: ['heading'], cards: { field: 'rows' } },
+    inspectorKeeps: [],
+    ...extra,
+  });
+}
+
+const homeWarnings = (report) =>
+  report.warnings.filter((w) => w.includes('"All text" modal'));
+
+test('a fork type with a field only "All text" edits gets a warning', () => {
+  const report = validateSlideTypeDefinition(narrowedDef(), 'fixture');
+  assert.deepEqual(report.errors, []);
+  const [warning, ...rest] = homeWarnings(report);
+  assert.deepEqual(rest, []);
+  assert.ok(warning?.startsWith('fixture: `tone`, `rows.color` can only'));
+});
+
+test('a home on the inspector or the element tab clears the warning', () => {
+  const homed = narrowedDef({
+    inspectorKeeps: ['tone'],
+    elementTab: { card: { list: 'rows', fields: ['color'] } },
+  });
+  assert.deepEqual(
+    homeWarnings(validateSlideTypeDefinition(homed, 'fixture')),
+    [],
+  );
+  // Without a keep-list the inspector keeps every field: nothing to warn.
+  const unnarrowed = narrowedDef({ inspectorKeeps: undefined });
+  assert.deepEqual(
+    homeWarnings(validateSlideTypeDefinition(unnarrowed, 'fixture')),
+    [],
+  );
+});
+
+test('no core slide type gets the only-home warning', () => {
+  const offenders = [];
+  for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
+    // Core's companions live in the aggregator, not on the definition; attach
+    // them so the validator judges core by the same declarations the core
+    // guard reads.
+    const declared = {
+      ...def,
+      inline: SLIDE_TYPE_INLINE_EDIT[name],
+      inspectorKeeps: SLIDE_TYPE_INSPECTOR_KEEPS[name],
+      elementTab: SLIDE_TYPE_ELEMENT_TAB[name],
+    };
+    for (const candidate of [def, declared]) {
+      offenders.push(
+        ...homeWarnings(validateSlideTypeDefinition(candidate, name)),
+      );
+    }
+  }
+  assert.deepEqual(offenders, []);
 });
