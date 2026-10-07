@@ -49,7 +49,7 @@ const DEFAULT_OG_IMAGE = '/assets/images/slides-previewimage.png';
  * published URLs in sandbox mode. A guest owns their own private deck and could
  * otherwise publish arbitrary content onto the public domain — including by
  * minting an API key and calling the v1 route. Mirrors
- * canChangePresentationVisibility() returning false in sandbox.
+ * assertSharingEnabled() refusing to open a deck to the organization in sandbox.
  *
  * Called at the top of each route (before the deck is even loaded) and again as
  * a backstop inside {@link publishPresentation}, so no publish path — present or

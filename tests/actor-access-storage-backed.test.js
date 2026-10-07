@@ -60,6 +60,8 @@ const { initializeStorage, __resetStorageForTests } =
 const {
   canActorDeletePresentation,
   canActorTransferOwnership,
+  canActorChangeVisibility,
+  canActorSetViewOnly,
   canActorResolveComment,
   canActorCommentOnPresentation,
   canActorManageCollaborators,
@@ -304,6 +306,65 @@ test('canActorTransferOwnership — an address with no user row is nobody in par
   );
   assert.equal(await canActorTransferOwnership(deck('t5'), ANON), false);
   assert.equal(await canActorTransferOwnership(null, CREATOR), false);
+});
+
+// ---------------------------------------------------------------------------
+// canActorChangeVisibility / canActorSetViewOnly
+// ---------------------------------------------------------------------------
+
+const SEEDED_OWNER = { ...OWNER, email: 'seeded-owner@example.com' };
+
+test('canActorChangeVisibility — the owner, resolved from the address, may open the deck', async () => {
+  // The visibility service (B574) asks this on top of `read`; a session that
+  // carries no id still has to match the owner stamp.
+  assert.equal(
+    await canActorChangeVisibility(deck('v1'), SEEDED_OWNER, 'organization'),
+    true,
+  );
+});
+
+test("canActorChangeVisibility — widening is the owner's, narrowing is not", async () => {
+  // D49: the creator stamp does not carry visibility; organization → private
+  // is an organization admin's alone.
+  assert.equal(
+    await canActorChangeVisibility(deck('v2'), CREATOR, 'organization'),
+    false,
+  );
+  assert.equal(
+    await canActorChangeVisibility(
+      deck('v3', { visibility: 'organization' }),
+      SEEDED_OWNER,
+      'private',
+    ),
+    false,
+  );
+  assert.equal(
+    await canActorChangeVisibility(
+      deck('v4', { visibility: 'organization' }),
+      { ...STRANGER, isAdmin: true },
+      'private',
+    ),
+    true,
+  );
+});
+
+test('canActorChangeVisibility — an address with no user row is nobody in particular', async () => {
+  assert.equal(
+    await canActorChangeVisibility(deck('v5'), ADDRESS_ONLY, 'organization'),
+    false,
+  );
+  assert.equal(
+    await canActorChangeVisibility(null, SEEDED_OWNER, 'private'),
+    false,
+  );
+});
+
+test('canActorSetViewOnly — the author pair, owner or creator', async () => {
+  assert.equal(await canActorSetViewOnly(deck('w1'), SEEDED_OWNER), true);
+  assert.equal(await canActorSetViewOnly(deck('w2'), CREATOR), true);
+  assert.equal(await canActorSetViewOnly(deck('w3'), STRANGER), false);
+  assert.equal(await canActorSetViewOnly(deck('w4'), ADDRESS_ONLY), false);
+  assert.equal(await canActorSetViewOnly(null, CREATOR), false);
 });
 
 // ---------------------------------------------------------------------------

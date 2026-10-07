@@ -173,21 +173,24 @@ test('PUT with a matching If-Match still succeeds for an admin', async () => {
 
 test('POST /visibility without If-Match is 428 for an admin', async () => {
   const pres = await seedDeck();
-  const res = fakeRes();
-  await handlePresentationVisibility(
-    {
-      storageScope: testScope(),
-      req: fakeReq({
-        method: 'PATCH',
-        headers: {},
-        body: { visibility: 'organization' },
-      }),
-      res,
-      authedUser: admin,
-    },
-    pres.id,
+  // The route is an adapter over `changeVisibility` (B574): the refusal is
+  // thrown, and the presentations dispatcher's error handler renders it.
+  await assert.rejects(
+    handlePresentationVisibility(
+      {
+        storageScope: testScope(),
+        req: fakeReq({
+          method: 'PATCH',
+          headers: {},
+          body: { visibility: 'organization' },
+        }),
+        res: fakeRes(),
+        authedUser: admin,
+      },
+      pres.id,
+    ),
+    { statusCode: 428, code: 'missing_if_match' },
   );
-  assert.equal(res.statusCode, 428);
 });
 
 test('POST /restore without If-Match is 428 for an admin', async () => {

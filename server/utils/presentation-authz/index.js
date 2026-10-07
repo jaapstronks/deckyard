@@ -57,6 +57,8 @@ export {
   canActorDeletePresentation,
   canActorManageCollaborators,
   canActorTransferOwnership,
+  canActorChangeVisibility,
+  canActorSetViewOnly,
   canActorResolveComment,
   checkActorCommentAccess,
   canActorCommentOnPresentation,
