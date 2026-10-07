@@ -112,6 +112,7 @@ nothing is discoverable only by `ls`.
 | [`slide-type-removal.md`](reference/slide-type-removal.md)                   | Retiring a type without leaving rot                               |
 | [`custom-slide-types-frontend.md`](reference/custom-slide-types-frontend.md) | The in-app custom-type editor                                     |
 | [`text-alignment.md`](reference/text-alignment.md)                           | Who decides alignment, and why                                    |
+| [`text-styles.md`](reference/text-styles.md)                                 | What a type offers to style, how it is stored, what is refused    |
 | [`slide-copy-language.md`](reference/slide-copy-language.md)                 | Which language a type's built-in copy speaks                      |
 | [`logo-wall-layout.md`](reference/logo-wall-layout.md)                       | The logo wall grid rule and optical balance                       |
 | [`team-cards-original-aspect.md`](reference/team-cards-original-aspect.md)   | `imageAspect: original` layout                                    |
