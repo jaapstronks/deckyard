@@ -529,10 +529,10 @@ function renderCollectionBlockCard(col, onComposeFrom, isNew = false) {
       onclick: () => onComposeFrom?.({ collection: col }),
     },
     [
-      h('span', {
-        class: 'home-block-kicker',
-        text: t('list.home.blocks.collectionKicker', 'Collection'),
-      }),
+      renderBlockHead(
+        t('list.home.blocks.collectionKicker', 'Collection'),
+        isNew,
+      ),
       h('span', {
         class: 'home-block-name',
         text: col.name || t('slideLibrary.preview.untitled', 'Untitled'),
@@ -540,7 +540,6 @@ function renderCollectionBlockCard(col, onComposeFrom, isNew = false) {
       meta,
     ],
   );
-  if (isNew) card.append(renderNewToYouBadge());
   return card;
 }
 
@@ -560,10 +559,10 @@ function renderSlideBlockCard(item, onComposeFrom, isNew = false) {
       onclick: () => onComposeFrom?.({ items: [item] }),
     },
     [
-      h('span', {
-        class: 'home-block-kicker',
-        text: t('list.home.blocks.slideKicker', 'Reusable slide'),
-      }),
+      renderBlockHead(
+        t('list.home.blocks.slideKicker', 'Reusable slide'),
+        isNew,
+      ),
       h('span', {
         class: 'home-block-name',
         text:
@@ -573,20 +572,26 @@ function renderSlideBlockCard(item, onComposeFrom, isNew = false) {
       }),
     ],
   );
-  if (isNew) card.append(renderNewToYouBadge());
   return card;
 }
 
 /**
- * The "new to you" badge — a subtle corner flag on a shared building block the
- * current user has never started a deck from.
+ * The head row of a block card: the kicker plus, for a shared building block
+ * the current user has never started a deck from, a "new to you" badge. Both
+ * sit in flow so the badge wraps below a long kicker instead of covering it.
+ * @param {string} kicker - the card's type label
+ * @param {boolean} isNew - show the "new to you" badge
  * @returns {HTMLElement}
  */
-function renderNewToYouBadge() {
-  return h('span', {
-    class: 'home-block-new',
-    text: t('list.home.blocks.newToYou', 'New to you'),
-  });
+function renderBlockHead(kicker, isNew) {
+  return h('span', { class: 'home-block-head' }, [
+    h('span', { class: 'home-block-kicker', text: kicker }),
+    isNew &&
+      h('span', {
+        class: 'home-block-new',
+        text: t('list.home.blocks.newToYou', 'New to you'),
+      }),
+  ]);
 }
 
 /**
