@@ -5,8 +5,8 @@
  * The shared write path hard-locks `theme` (see `updatePresentation`), so a
  * stray save can never flip a deck's branding. A deliberate switch goes
  * through here: the editor's `/change-theme` route and the public API's PUT
- * (B446) both call it, so a theme change means the same thing on every
- * contract — the actor may write the deck, the theme must exist, slides the
+ * (B446, through the save service since B608) both call it, so a theme
+ * change means the same thing on every contract — the actor may write the deck, the theme must exist, slides the
  * caller asked to convert are re-seeded against the theme the deck moves
  * *to*, and the write opts in with `allowThemeChange`.
  *
@@ -39,10 +39,6 @@ const log = createLogger('change-theme');
  * @param {Object} input
  * @param {string} input.presentationId
  * @param {*} input.theme - The theme to switch to, in its one spelling.
- * @param {Object} [input.changes] - What to write with the switch (a v1 PUT
- *   body). Absent, the stored deck is written back with the new theme (the
- *   editor route). Slides are only converted and written when the written
- *   data carries a `slides` array.
  * @param {Array<{slideId: string, convertTo: string}>} [input.convertSlides]
  * @returns {Promise<Object>} The deck as stored after the switch.
  * @throws {NotFoundError} No deck with this id in this scope.
@@ -52,12 +48,39 @@ const log = createLogger('change-theme');
 export async function changeTheme(
   scope,
   identity,
-  { presentationId, theme, changes, convertSlides },
+  { presentationId, theme, convertSlides },
 ) {
   const pres = await loadPresentationForActor(scope, identity, presentationId, {
     access: 'write',
   });
+  return applyThemeChange(scope, identity, pres, { theme, convertSlides });
+}
 
+/**
+ * Switch a deck the caller already loaded for writing to another theme. The
+ * save service (B608) loads the deck once for its own refusals and switches
+ * through here, so a v1 PUT that changes the theme no longer loads it twice
+ * (D316 (3)).
+ *
+ * @param {import('../storage/scope.js').StorageScope} scope - The caller's storage scope.
+ * @param {{ actor: import('./actor.js').Actor }} identity - The acting user (D253).
+ * @param {Object} pres - The deck, loaded with `access: 'write'`.
+ * @param {Object} input
+ * @param {*} input.theme - The theme to switch to, in its one spelling.
+ * @param {Object} [input.changes] - What to write with the switch (a save's
+ *   body). Absent, the stored deck is written back with the new theme (the
+ *   editor route). Slides are only converted and written when the written
+ *   data carries a `slides` array.
+ * @param {Array<{slideId: string, convertTo: string}>} [input.convertSlides]
+ * @returns {Promise<Object>} The deck as stored after the switch.
+ * @throws {AppError} 400 `invalid`, `details.field` = `theme`: no such theme.
+ */
+export async function applyThemeChange(
+  scope,
+  identity,
+  pres,
+  { theme, changes, convertSlides },
+) {
   const repoRoot = scope?.repoRoot ?? null;
   const newTheme =
     typeof theme === 'string' && theme

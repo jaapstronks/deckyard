@@ -65,7 +65,8 @@ bundled "added N slides to a deck" event (`data: { count, slideIds, title }`)
 emitted on save for decks of any visibility (the feed filters by read access, so it
 only reaches people who can open the deck). See
 `server/services/activity-events.js` (`recordSlidesAdded`) and
-`diffAddedSlideIds` in `server/routes/api/presentations/helpers.js`.
+`diffAddedSlideIds` in `server/services/save-presentation.js` (every save,
+editor and v1 alike, since B608).
 
 ## One-request load: `GET /api/home`
 

@@ -1,9 +1,7 @@
-import { updatePresentation } from '../../../storage/presentations/index.js';
 import { deletePresentation } from '../../../services/presentations.js';
 import { getTagsForPresentation } from '../../../storage/tags.js';
 import {
   methodNotAllowed,
-  notFound,
   serveJson,
   jsonError,
   requireJsonBody,
@@ -11,19 +9,9 @@ import {
 import { getEffectivePermission } from '../../../utils/presentation-authz/index.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
-import { parseIfMatchRevision, diffAddedSlideIds } from './helpers.js';
-import {
-  recordPresentationUpdated,
-  recordSlidesAdded,
-} from '../../../services/activity-events.js';
-import { notifyDeckActivity } from '../../../services/deck-activity-notifications.js';
+import { parseIfMatchRevision, parseSlideMergeHeaders } from './helpers.js';
+import { savePresentation } from '../../../services/save-presentation.js';
 import { filterForViewOnly } from '../../../utils/public-output.js';
-import {
-  broadcastToPresentation,
-  PresentationEventTypes,
-} from '../../../services/comment-events.js';
-import { scheduleDeckThumbnailWarm } from '../../../render/deck-thumbnail-warm.js';
-import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 
 /**
@@ -126,15 +114,6 @@ export async function handlePresentationItem(
   if (req.method === 'PUT') {
     const jsonResult = await requireJsonBody(req, res);
     if (!jsonResult.ok) return true;
-    const body = jsonResult.body;
-    const existing = await withPresentationAuth({
-      storageScope,
-      id,
-      authedUser,
-      res,
-      permission: 'write',
-    });
-    if (!existing) return true;
 
     // If-Match is required for everyone, admins included. Admins used to bypass
     // the check (expectedRevision=null → blind overwrite with no merge, wiping
@@ -149,136 +128,26 @@ export async function handlePresentationItem(
         'Missing If-Match revision',
       );
 
-    // Extract modified slide IDs for slide-level merge (concurrent editing)
-    let modifiedSlideIds = null;
-    const modifiedSlidesHeader = req.headers['x-modified-slides'];
-    if (modifiedSlidesHeader) {
-      try {
-        modifiedSlideIds = JSON.parse(modifiedSlidesHeader);
-        if (!Array.isArray(modifiedSlideIds)) modifiedSlideIds = null;
-      } catch {
-        modifiedSlideIds = null;
-      }
-    }
+    // The editor sends back the whole deck it holds. Its owner and theme
+    // move through their own handlings (a transfer, /change-theme), possibly
+    // in another tab, so the copy here can be stale on them; a save never
+    // moved either, and they are not part of what the editor asks to change.
+    const { ownerEmail: _owner, theme: _theme, ...changes } = jsonResult.body;
 
-    // Base fingerprints of the modified slides (id → hash) let the merge
-    // detect slides that were also changed server-side since the client's
-    // base, instead of last-writer-wins (see shared/slide-fingerprint.js).
-    let slideBaseFingerprints = null;
-    const baseFingerprintsHeader = req.headers['x-slide-base-fingerprints'];
-    if (baseFingerprintsHeader) {
-      try {
-        const parsed = JSON.parse(baseFingerprintsHeader);
-        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-          slideBaseFingerprints = parsed;
-        }
-      } catch {
-        slideBaseFingerprints = null;
-      }
-    }
-
-    // Did the client actually reorder slides since its base? '0' keeps the
-    // server's slide order authoritative in a merge (a stale tab must not
-    // reshuffle the deck); absent header = legacy client → old behaviour.
-    let clientReordered = null;
-    const orderChangedHeader = req.headers['x-slides-order-changed'];
-    if (orderChangedHeader === '1' || orderChangedHeader === 'true') {
-      clientReordered = true;
-    } else if (orderChangedHeader === '0' || orderChangedHeader === 'false') {
-      clientReordered = false;
-    }
-
-    // Optimistic-lock failures (ConflictError/LockedError from
-    // updatePresentation) are AppErrors — the withErrorHandler wrapper on the
-    // presentations dispatcher emits them through the canonical envelope.
-    const updated = await updatePresentation(storageScope, id, body, {
-      expectedRevision,
-      actorEmail: authedUser?.email || null,
-      user: authedUser || null,
-      modifiedSlideIds,
-      slideBaseFingerprints,
-      clientReordered,
-    });
-    if (!updated) return notFound(res);
-
-    // Record activity event (non-blocking)
-    if (authedUser?.email) {
-      // Slides this actor added, for the slide.added feed event.
-      const submittedSlides = Array.isArray(body?.slides)
-        ? body.slides
-        : updated.slides;
-      const addedSlideIds = diffAddedSlideIds(
-        existing.slides,
-        submittedSlides,
-        updated.slides,
-      );
-
-      if (addedSlideIds.length > 0) {
-        // A slide-add is more specific than a generic update, so emit it
-        // instead of `presentation.updated` — and for decks of any visibility, since
-        // this is the collaborator-awareness signal. The feed enrichment
-        // filters by read access, so it never leaks to non-readers.
-        fireAndForget(
-          recordSlidesAdded({
-            presentation: updated,
-            actor: authedUser,
-            slideIds: addedSlideIds,
-            scope: storageScope,
-          }),
-          'record slides-added activity',
-        );
-        // Bundled "someone worked on your deck" bell notification for the
-        // owner/collaborators (coalesced per actor within the debounce window;
-        // the actor never notifies themselves). Fire-and-forget.
-        fireAndForget(
-          notifyDeckActivity({
-            presentation: updated,
-            actor: authedUser,
-            slideCount: addedSlideIds.length,
-            scope: storageScope,
-          }),
-          'deck-activity notification fan-out',
-        );
-      } else if (updated.visibility === 'organization') {
-        // Record general update (only for organization-visible presentations to reduce noise)
-        fireAndForget(
-          recordPresentationUpdated({
-            presentation: updated,
-            actor: authedUser,
-            changes: {
-              titleChanged: existing.title !== updated.title,
-            },
-            scope: storageScope,
-          }),
-          'record presentation-updated activity',
-        );
-      }
-    }
-
-    // Broadcast to other connected editors (non-blocking, synchronous)
-    try {
-      broadcastToPresentation(id, PresentationEventTypes.UPDATED, {
-        revision: updated.revision,
-        modifiedSlideIds: modifiedSlideIds || [],
-        // Who saved, as the only key that identifies anyone: the receiving
-        // editor compares it against its own user to skip its own saves
-        // (shared/identity-match.js). Nothing renders it, so no display name
-        // rides along and no address does either (D22).
-        actorId: authedUser?.id || null,
-      });
-    } catch {
-      // Ignore broadcast failures — SSE is best-effort
-    }
-
-    // Deck-grid raster: queue a debounced re-render when this save changed
-    // slide 1, so the next Home load is a cache hit instead of the thing that
-    // triggers the render. No-ops for every other save.
-    scheduleDeckThumbnailWarm({
-      scope: storageScope,
-      before: existing,
-      after: updated,
-    });
-
+    // Loading, the refusals, the merge and the trail (activity rows, the
+    // broadcast to other editors, the thumbnail warm) are the save service's
+    // (B608); a refusal (409 conflict, 423 lock, 400 invalid) is thrown and
+    // the presentations router's withErrorHandler renders it.
+    const updated = await savePresentation(
+      storageScope,
+      { actor: authedUser },
+      {
+        presentationId: id,
+        changes,
+        expectedRevision,
+        ...parseSlideMergeHeaders(req),
+      },
+    );
     serveJson(res, 200, updated);
     return true;
   }

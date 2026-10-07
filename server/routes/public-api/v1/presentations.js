@@ -3,7 +3,6 @@
  * Handles CRUD operations for presentations via API key authentication.
  */
 
-import { updatePresentation } from '../../../storage/presentations/index.js';
 import {
   getTagsForPresentations,
   getTagsForPresentation,
@@ -18,20 +17,17 @@ import {
   readApiV1Body,
   apiSuccess,
   apiCreated,
-  apiError,
 } from './middleware.js';
 import {
   parsePaginationParams,
   parseQueryFlag,
 } from '../../../utils/request-validators.js';
-import { changeTheme } from '../../../services/theme.js';
-import { normalizeLang } from '../../../../shared/i18n-utils.js';
+import { savePresentation } from '../../../services/save-presentation.js';
 import {
   createPresentation,
   deletePresentation,
   duplicatePresentation,
   listPresentationsForActor,
-  refuseRetiredDeckFields,
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
 
@@ -206,66 +202,25 @@ async function handleGet(ctx, id) {
  * PUT /api/v1/presentations/:id - Update a presentation.
  */
 async function handleUpdate(ctx, id) {
-  const { storageScope, apiKey } = ctx;
-
   if (!requirePermission(ctx, 'write')) return true;
-
-  const { ok, pres } = await getPresentationWithAccess(ctx, id, {
-    access: 'write',
-  });
-  if (!ok) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req, {
     requireObject: true,
   });
   if (!bodyOk) return true;
-  refuseRetiredDeckFields(body);
 
-  // Don't allow changing ownership via API
-  delete body.ownerEmail;
-  delete body.createdBy;
-
-  // The deck language is fixed at create; another language is a version of
-  // the deck, added through /translate. The same `lang` echoed back from a GET
-  // is fine; a different one is refused rather than silently dropped.
-  if (body.lang !== undefined && normalizeLang(body.lang) !== pres.lang) {
-    await apiError(
-      ctx,
-      400,
-      'lang cannot be changed: add a language version with POST /presentations/{id}/translate',
-      { details: { field: 'lang' } },
-    );
-    return true;
-  }
-
-  // A different `theme` is a theme switch, and that has one path (the
-  // editor's /change-theme route uses it too). The same theme echoed back
-  // from a GET is a plain save.
-  const switchesTheme = body.theme !== undefined && body.theme !== pres.theme;
-
-  // A thrown storage error (423 lock, 400 validation) is answered in the v1
-  // envelope by the mount-level withV1ErrorHandler wrap.
-  let updated;
-  if (switchesTheme) {
-    updated = await changeTheme(
-      storageScope,
-      { actor: ctx.authedUser },
-      { presentationId: id, theme: body.theme, changes: body },
-    );
-  } else {
-    updated = await updatePresentation(storageScope, id, body, {
-      actorEmail: apiKey.ownerEmail,
-    });
-  }
-
-  if (!updated) {
-    await apiError(ctx, 404, 'Presentation not found');
-    return true;
-  }
+  // Loading, the refusals (owner, creator, lang, retired names), a theme
+  // switch and the storage result are the save service's (B608); a refusal
+  // is answered in the v1 envelope by the mount-level withV1ErrorHandler wrap.
+  const updated = await savePresentation(
+    ctx.storageScope,
+    { actor: ctx.authedUser },
+    { presentationId: id, changes: body },
+  );
 
   const tags = await getTagsForPresentation(ctx.storageScope, id);
   await apiSuccess(ctx, {
-    presentation: sanitizePresentation(updated, tags, apiKey.ownerEmail),
+    presentation: sanitizePresentation(updated, tags, ctx.apiKey.ownerEmail),
   });
   return true;
 }
