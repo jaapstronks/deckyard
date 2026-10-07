@@ -475,11 +475,18 @@
   color: hsl(var(--app-accent-text));
 }
 
-/* "New to you": a subtle corner flag on a team block the user never used. */
+/* Kicker and "New to you" badge share the head row; the badge wraps below a
+   long kicker rather than covering it. */
+.home-block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-1) var(--ps-space-2);
+}
+
+/* "New to you": a subtle flag on a team block the user never used. */
 .home-block-new {
-  position: absolute;
-  top: var(--ps-space-2);
-  right: var(--ps-space-2);
   padding: 1px 8px;
   border-radius: var(--ps-radius-full);
   background: hsl(var(--app-accent-primary));
@@ -488,7 +495,7 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   line-height: 1.4;
-  pointer-events: none;
+  white-space: nowrap;
 }
 
 .presentation-brand {
