@@ -57,6 +57,8 @@ export default {
     {
       key: 'body',
       essential: true,
+      // Offered on purpose (D220): the CSS scales it, see text-styles.md.
+      textStyle: ['align', 'size'],
       label: 'Body',
       labelKey: 'editor.slideField.body.label',
       type: 'markdown',
@@ -77,6 +79,7 @@ export default {
       required: true,
       minItems: IMAGE_SET_MIN_IMAGES,
       maxItems: IMAGE_SET_MAX_IMAGES,
+      batchImages: true,
       itemDefaults: { src: '', alt: '' },
       itemFields: [
         { key: 'src', label: 'Image URL', type: 'image', required: false },

@@ -1,164 +1,75 @@
 /**
- * "This text" element-tab card (editing-surfaces text phase, step 3).
+ * "This text" element-tab card.
  *
- * Block-level styling for the selected text field: alignment, a theme colour
- * token and a 3-step size scale (S/M/L). Writes to the generic
- * `content.textStyles[fieldKey]` map (see shared/slide-types/text-styles.js);
- * the shared render post-pass turns that into the `tf-*` classes on the field
- * element, so the preview, present mode and exports all reflect it from one
- * code path.
+ * Shows the style controls the slide TYPE offers for the selected text field,
+ * and nothing else (B464, D220): no declaration, no control. A field that
+ * offers nothing gets one sentence instead ("follows the slide's layout"); a
+ * field whose siblings share the offer (array items, a declared set) is styled
+ * as one, and the tab says so ("All quotes (3)"). Per-field colour is gone
+ * (D221). The offer model, storage and refusals: docs/reference/text-styles.md.
  *
- * Defaults are pruned on write, so a click-to-default leaves stored JSON
- * clean (no no-op overrides). Size scaling is rolled out per slide type
- * (see docs/reference/editor-inspector.md); on a type/field that doesn't yet
- * consume `--tf-size-scale`, the control still stores cleanly but has no
- * visible effect.
+ * Writes go to `content.textStyles[<offer key>]` (`body`, `quotes.*.quote`,
+ * `@<set>`); the shared render post-pass turns that into `tf-*` classes on
+ * every covered element, so the preview, present mode and exports reflect it
+ * from one code path. Defaults are pruned on write, so a click-to-default
+ * leaves stored JSON clean.
  */
 
-import { t, getUiLocale } from '../../../lib/ui-i18n.js';
+import { t } from '../../../lib/ui-i18n.js';
 import {
-  TEXT_COLOR_SWATCH_SLOTS,
   TEXT_SIZE_VALUES,
+  instanceCount,
   normalizeTextStyles,
+  offerAlign,
+  textStyleOfferFor,
 } from '../../../../shared/slide-types/text-styles.js';
 import { fieldAlignAffordance } from '../../../../shared/slide-types/text-roles.js';
+import { resolveFieldDef } from '../../../../shared/slide-types/field-lookup.js';
 import {
   getFieldGroup,
   groupAlignValues,
   resolveGroupAlign,
 } from '../../../../shared/slide-types/field-groups.js';
 import { getSlideType } from '../../../../shared/slide-types/registry.js';
+import { isListOnlyMarkdown } from '../../../../shared/markdown.js';
 import { h } from '../../../lib/dom/index.js';
+import { fieldLabel } from '../inline-edit/field-path.js';
 
-// Alignment has no module-level default any more: it is per field, resolved by
-// fieldAlignAffordance(), because a type may centre in its own slide CSS.
-const COLOR_DEFAULT = 'default';
 const SIZE_DEFAULT = 'md';
 
-/** The three base colour tokens, always offered regardless of theme. */
-const COLOR_BASE_IDS = ['default', 'muted', 'accent'];
-
 /**
- * Resolve a theme swatch label that may be a plain string or a `{ nl, en }`
- * map (same shape as `theme.backgroundLabels`). Empty when none is usable.
- */
-function resolveThemeSwatchLabel(raw) {
-  if (typeof raw === 'string') return raw.trim();
-  if (raw && typeof raw === 'object') {
-    const ui = String(getUiLocale?.() || 'en').toLowerCase();
-    const isNl = ui === 'nl' || ui.startsWith('nl-');
-    const pick = isNl ? raw.nl : raw.en;
-    if (typeof pick === 'string') return pick.trim();
-  }
-  return '';
-}
-
-/**
- * Render the "Text colour" control as a swatch row: the three base tokens
- * (default/muted/accent) plus the theme's declared on-brand text swatches
- * (brand-1/2/3). Swatch preview colours resolve from the loaded theme's
- * cssVars and are inlined, so they show correctly even though the inspector
- * rail doesn't inherit the slide's theme variables. Returns the field element.
- *
- * @param {Object} opts
- * @param {Object} opts.slide
- * @param {string} opts.fieldKey
- * @param {Object|null} opts.theme - the loaded (normalized) theme
- * @param {{color?: string}} opts.current - the field's current style
- * @param {Function} opts.commit
+ * Disable a rendered control wholesale and add one line saying why - a greyed
+ * control with an explanation beats a silently absent one (a missing control
+ * reads as a missing feature).
+ * @param {HTMLElement} el
+ * @param {string} help
  * @returns {HTMLElement}
  */
-function renderColorControl({ slide, fieldKey, theme, current, commit }) {
-  const themeVars =
-    theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
-  const themeSwatches = (
-    Array.isArray(theme?.textSwatches) ? theme.textSwatches : []
-  ).filter((s) => TEXT_COLOR_SWATCH_SLOTS.includes(s?.id));
-
-  const currentColor = current.color || COLOR_DEFAULT;
-  const options = [...COLOR_BASE_IDS.map((id) => ({ id })), ...themeSwatches];
-  // Defensive: a stored brand the current theme no longer offers stays visible
-  // (and therefore removable) instead of being a stuck invisible override.
-  if (
-    currentColor !== COLOR_DEFAULT &&
-    !options.some((o) => o.id === currentColor)
-  ) {
-    options.push({ id: currentColor });
+function disableWithHelp(el, help) {
+  el.classList.add('is-disabled');
+  for (const btn of el.querySelectorAll('button, input, select')) {
+    btn.disabled = true;
+    btn.setAttribute('tabindex', '-1');
   }
+  el.append(h('div', { class: 'help', text: help }));
+  return el;
+}
 
-  // Preview colour for a swatch dot (null = the "auto/default" checker). These
-  // are hints; the real muted is band-aware (currentColor-derived) at render.
-  const swatchColor = (id) => {
-    if (id === 'default') return null;
-    if (id === 'muted')
-      return themeVars['--t-color-text-muted'] || 'rgba(0,0,0,0.45)';
-    if (id === 'accent') return themeVars['--t-color-accent'] || '';
-    return themeVars[`--t-color-${id}`] || '';
+/** The alignment control's field shape for a list of values. */
+function alignField(key, values) {
+  return {
+    key,
+    label: t('editor.textStyle.align', 'Alignment'),
+    options: values.map((v) => ({
+      value: v,
+      label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
+    })),
   };
-  const labelFor = (opt) =>
-    resolveThemeSwatchLabel(opt.label) ||
-    t(`editor.textStyle.color.${opt.id}`, opt.id);
-
-  const group = h('div', {
-    class: 'sb-segmented tf-color-swatches',
-    role: 'radiogroup',
-    'aria-label': t('editor.textStyle.color', 'Text colour'),
-  });
-  const setActive = (id) => {
-    for (const c of group.children) {
-      const is = c.dataset?.value === id;
-      c.classList.toggle('is-active', is);
-      c.setAttribute('aria-pressed', is ? 'true' : 'false');
-    }
-  };
-  for (const opt of options) {
-    const label = labelFor(opt);
-    const col = swatchColor(opt.id);
-    const btn = h('button', {
-      type: 'button',
-      class: 'sb-segmented-btn',
-      title: label,
-      'aria-label': label,
-      'aria-pressed': opt.id === currentColor ? 'true' : 'false',
-    });
-    btn.dataset.value = opt.id;
-    if (opt.id === currentColor) btn.classList.add('is-active');
-    const sw =
-      col == null
-        ? h('span', {
-            class: 'sb-swatch sb-swatch-transparent',
-            'aria-hidden': 'true',
-          })
-        : h('span', {
-            class: 'sb-swatch',
-            style: `--swatch:${col}`,
-            'aria-hidden': 'true',
-          });
-    btn.append(sw, h('span', { class: 'sb-swatch-label', text: label }));
-    btn.addEventListener('click', () => {
-      setActive(opt.id);
-      setTextStyle(slide, fieldKey, 'color', opt.id, COLOR_DEFAULT);
-      commit();
-    });
-    group.append(btn);
-  }
-  return h('div', { class: 'stack is-field is-field-full' }, [
-    h('div', {
-      class: 'field-label',
-      text: t('editor.textStyle.color', 'Text colour'),
-    }),
-    group,
-  ]);
 }
 
 /**
  * The "Alignment" block for a field whose alignment belongs to its field group:
  * the real control, disabled, plus one line naming where the setting lives.
- *
- * Drawn from the same `fieldEnum` renderer as the live control so it looks
- * like the thing it stands in for, then disabled wholesale — a greyed control
- * with an explanation beats a silently absent one (a missing control reads as
- * a missing feature).
  *
  * Values and current selection come from the GROUP itself, not from a local
  * list: the group is the thing that owns them, and a second copy here would be
@@ -173,64 +84,88 @@ function renderColorControl({ slide, fieldKey, theme, current, commit }) {
  * @returns {HTMLElement}
  */
 function renderGroupAlignHint({ fieldRenderers, group, slide }) {
-  const values = groupAlignValues(group);
-  const field = {
-    key: 'textAlignGroup',
-    label: t('editor.textStyle.align', 'Alignment'),
-    options: values.map((v) => ({
-      value: v,
-      label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
-    })),
-  };
   const el = fieldRenderers.fieldEnum(
-    field,
+    alignField('textAlignGroup', groupAlignValues(group)),
     resolveGroupAlign(group, slide?.content),
     () => {},
   );
-  el.classList.add('is-disabled');
-  for (const btn of el.querySelectorAll('button, input, select')) {
-    btn.disabled = true;
-    btn.setAttribute('tabindex', '-1');
-  }
-  el.append(
-    h('div', {
-      class: 'help',
-      text: t(
-        'editor.textStyle.align.groupOwned',
-        'This text moves with the whole block. Set its alignment under Layout in the toolbar.',
-      ),
-    }),
+  return disableWithHelp(
+    el,
+    t(
+      'editor.textStyle.align.groupOwned',
+      'This text moves with the whole block. Set its alignment under Layout in the toolbar.',
+    ),
   );
-  return el;
 }
 
 /**
- * Write one style property for a field, pruning defaults so the stored map
- * never carries no-op overrides. Mutates `slide.content.textStyles`.
+ * Whether an offered alignment would show nothing right now: a standalone
+ * markdown field whose text is only a bullet or numbered list. A list stays
+ * on its markers whatever the block does (docs/reference/text-alignment.md),
+ * so the control is shown disabled until the text has a paragraph.
+ * @param {Object} typeDef
+ * @param {import('../../../../shared/slide-types/text-styles.js').TextStyleOffer} offer
+ * @param {Object} content
+ * @returns {boolean}
  */
-function setTextStyle(
-  slide,
-  fieldKey,
-  prop,
-  value,
-  defaultValue,
-  typeDef = null,
-) {
+function alignHasNoEffect(typeDef, offer, content) {
+  if (offer.scope !== 'field') return false;
+  const field = resolveFieldDef(typeDef?.fields, offer.sample);
+  return field?.type === 'markdown' && isListOnlyMarkdown(content?.[offer.key]);
+}
+
+/**
+ * Write one style property under an offer key, pruning defaults so the stored
+ * map never carries no-op overrides. Mutates `slide.content.textStyles`.
+ * @param {Object} slide
+ * @param {string} key - the offer's storage key
+ * @param {'align'|'size'} prop
+ * @param {string} value
+ * @param {Object} typeDef - the slide type definition
+ */
+function setTextStyle(slide, key, prop, value, typeDef) {
   const content = slide.content || (slide.content = {});
   const map = { ...(content.textStyles || {}) };
-  const style = { ...(map[fieldKey] || {}) };
-  if (value === defaultValue || value == null || value === '')
-    delete style[prop];
-  else style[prop] = value;
-  if (Object.keys(style).length) map[fieldKey] = style;
-  else delete map[fieldKey];
+  map[key] = { ...(map[key] || {}), [prop]: value };
   const cleaned = normalizeTextStyles(map, typeDef);
   if (Object.keys(cleaned).length) content.textStyles = cleaned;
   else delete content.textStyles;
 }
 
 /**
- * Render the alignment + colour controls into `container`.
+ * The heading and help line over a shared offer: what one click styles.
+ * @param {Object} typeDef
+ * @param {import('../../../../shared/slide-types/text-styles.js').TextStyleOffer} offer
+ * @param {Object} content
+ * @returns {HTMLElement[]}
+ */
+function renderScopeHeading(typeDef, offer, content) {
+  const label = fieldLabel(
+    offer.sample,
+    resolveFieldDef(typeDef?.fields, offer.sample) || {},
+  );
+  const count = instanceCount(offer, content);
+  return [
+    h('div', {
+      class: 'field-label',
+      text: t('editor.textStyle.scope.all', 'All "{label}" ({count})', {
+        label,
+        count,
+      }),
+    }),
+    h('div', {
+      class: 'help',
+      text: t(
+        'editor.textStyle.scope.allHelp',
+        'Applies to every one on this slide.',
+      ),
+    }),
+  ];
+}
+
+/**
+ * Render the offered style controls (or the "follows the layout" sentence)
+ * into `container`.
  *
  * @param {Object} opts
  * @param {HTMLElement} opts.container - the element tab (elementForm)
@@ -246,7 +181,6 @@ export function renderTextElementCard({
   container,
   slide,
   fieldKey,
-  theme = null,
   fieldRenderers,
   markDirty,
   rerenderPreview,
@@ -255,9 +189,7 @@ export function renderTextElementCard({
   const fieldEnum = fieldRenderers?.fieldEnum;
   if (!fieldEnum || !fieldKey) return false;
   const slideTypeDef = getSlideType(slide?.type) || null;
-  const current =
-    normalizeTextStyles(slide?.content?.textStyles, slideTypeDef)[fieldKey] ||
-    {};
+  const offer = textStyleOfferFor(slideTypeDef, fieldKey);
 
   const commit = () => {
     markDirty?.();
@@ -265,92 +197,87 @@ export function renderTextElementCard({
     rerenderPreview?.();
   };
 
-  // Who owns this field's alignment is decided by one resolver over two axes
-  // (see shared/slide-types/text-roles.js): its semantic ROLE (marker-anchored
-  // list/step items can never align; a quote offers left/centre only) and its
-  // GROUP membership (a field inside a declared visual block hands alignment
-  // to that block's layout variant). No per-type hardcode.
-  // Pass the whole definition, not just its fields: the type-level
-  // `defaultAlign` is what makes the control show the alignment actually in
-  // force on a type that centres in its own slide CSS.
-  const {
-    values: roleValues,
-    owner: alignOwner,
-    groupId,
-    defaultAlign,
-  } = fieldAlignAffordance(slideTypeDef || null, fieldKey);
-  let alignValues = roleValues;
-  // A value already stored outside the allowed set stays selectable so it is
-  // never a stuck, invisible override the user can't clear. Group members are
-  // the exception: their control is inert by design, and re-offering a stale
-  // value there would hand back the very per-field choice the group replaced.
-  if (
-    alignOwner === 'field' &&
-    current.align &&
-    current.align !== defaultAlign &&
-    !alignValues.includes(current.align)
-  ) {
-    alignValues = [...alignValues, current.align];
-  }
-  const alignField = {
-    key: 'textAlign',
-    label: t('editor.textStyle.align', 'Alignment'),
-    options: alignValues.map((v) => ({
-      value: v,
-      label: t(`editor.textStyle.align.${v}`, v[0].toUpperCase() + v.slice(1)),
-    })),
-  };
-  const alignEl = alignValues.length
-    ? fieldEnum(alignField, current.align || defaultAlign, (v) => {
-        setTextStyle(slide, fieldKey, 'align', v, defaultAlign, slideTypeDef);
-        commit();
-      })
-    : null;
-
-  // Owner 'group': show the control disabled with a pointer to the Layout
-  // chip rather than hiding it. A silently missing control reads as a missing
-  // feature and sends people hunting; naming where the setting moved to is the
-  // cheaper answer. (Owner 'role' IS hidden — there the answer is "never", and
-  // a permanently dead control would be the confusing one.)
+  // A field in a declared visual block hands its alignment to the block:
+  // show the control disabled with a pointer to the Layout chip rather than
+  // hiding it, because there the answer is "elsewhere", not "never".
+  const { owner: alignOwner, groupId } = fieldAlignAffordance(
+    slideTypeDef,
+    fieldKey,
+  );
   const groupHintEl =
     alignOwner === 'group'
       ? renderGroupAlignHint({
           fieldRenderers,
-          group: getFieldGroup(getSlideType(slide?.type), groupId),
+          group: getFieldGroup(slideTypeDef, groupId),
           slide,
         })
       : null;
 
-  const colorEl = renderColorControl({
-    slide,
-    fieldKey,
-    theme,
-    current,
-    commit,
-  });
+  if (!offer) {
+    container.append(
+      ...[
+        h('div', {
+          class: 'help',
+          text: t(
+            'editor.textStyle.followsLayout',
+            "This text follows the slide's layout.",
+          ),
+        }),
+        groupHintEl,
+      ].filter(Boolean),
+    );
+    return true;
+  }
 
-  const sizeField = {
-    key: 'textSize',
-    label: t('editor.textStyle.size', 'Text size'),
-    options: TEXT_SIZE_VALUES.map((v) => ({
-      value: v,
-      label: t(`editor.textStyle.size.${v}`, v.toUpperCase()),
-    })),
-  };
-  const sizeEl = fieldEnum(sizeField, current.size || SIZE_DEFAULT, (v) => {
-    setTextStyle(slide, fieldKey, 'size', v, SIZE_DEFAULT);
-    commit();
-  });
+  const current =
+    normalizeTextStyles(slide?.content?.textStyles, slideTypeDef)[offer.key] ||
+    {};
+  const { values: alignValues, defaultAlign } = offerAlign(slideTypeDef, offer);
+  let alignEl = alignValues.length
+    ? fieldEnum(
+        alignField('textAlign', alignValues),
+        current.align || defaultAlign,
+        (v) => {
+          setTextStyle(slide, offer.key, 'align', v, slideTypeDef);
+          commit();
+        },
+      )
+    : null;
+  if (alignEl && alignHasNoEffect(slideTypeDef, offer, slide?.content)) {
+    alignEl = disableWithHelp(
+      alignEl,
+      t(
+        'editor.textStyle.align.listOwned',
+        'A list stays aligned with its bullets. Alignment applies once this text has a paragraph.',
+      ),
+    );
+  }
+
+  const sizeEl = offer.props.includes('size')
+    ? fieldEnum(
+        {
+          key: 'textSize',
+          label: t('editor.textStyle.size', 'Text size'),
+          options: TEXT_SIZE_VALUES.map((v) => ({
+            value: v,
+            label: t(`editor.textStyle.size.${v}`, v.toUpperCase()),
+          })),
+        },
+        current.size || SIZE_DEFAULT,
+        (v) => {
+          setTextStyle(slide, offer.key, 'size', v, slideTypeDef);
+          commit();
+        },
+      )
+    : null;
 
   container.append(
     ...[
-      h('div', {
-        class: 'help',
-        text: t('editor.textStyle.hint', 'Styling for this text block.'),
-      }),
+      ...(offer.scope === 'field'
+        ? []
+        : renderScopeHeading(slideTypeDef, offer, slide?.content)),
       alignEl,
       groupHintEl,
-      colorEl,
       sizeEl,
     ].filter(Boolean),
   );

@@ -20,6 +20,7 @@ export const log = createLogger('ai');
  * @property {import('http').ServerResponse} res
  * @property {URL} url
  * @property {object|null} authedUser
+ * @property {import('../../../storage/scope.js').StorageScope} storageScope
  */
 
 /**

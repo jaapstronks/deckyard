@@ -18,15 +18,17 @@ export const inlineEdit = {
   // Dual-model (logos[] or legacy logo{n}*): canonicalize to logos[] on mount
   // so the media popover and card affordances always have a stable array.
   ensure: ensureLogos,
-  // Clicking a logo (filled or empty placeholder) opens the media popover
-  // (image + alt). Logo names render only as aria-labels, so name stays in
-  // the form.
+  // Clicking a logo (filled or empty placeholder) selects it; the "This
+  // image" tab carries image + alt, and the logo's name (it renders only as an
+  // aria-label, so there is nothing to click) and link as extra fields - their
+  // only home used to be the bulk modal (B450).
   media: {
     list: 'logos',
     photoSelector:
       '.logo-wall-img[data-inline-photo], .logo-wall-placeholder[data-inline-photo]',
     imageField: 'image',
     altField: 'alt',
+    extraFields: [{ key: 'name' }, { key: 'link' }],
   },
   // Add / remove / reorder logos entirely on the canvas (like gallery). The
   // empty wall renders one placeholder cell (edit-mode), so a first logo can

@@ -1,10 +1,5 @@
-.sb-chip-text {
-  font-size: 12px;
-  font-weight: 400;
-  font-synthesis: none;
-  letter-spacing: 0.06em;
-}
-
+/* Option glyphs: an enum option that declares `icon: '<name>'` renders
+   `.sb-icon.sb-icon-<name>` (views/editor/fields/enum.js). */
 .sb-icon {
   width: 28px;
   height: 18px;
@@ -33,29 +28,6 @@
     hsl(var(--app-text-secondary) / 0.55) 52%,
     hsl(var(--app-text-secondary) / 0.55) 100%
   );
-}
-
-/* Icons: image fit */
-.sb-icon.sb-icon-fit-cover::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border-radius: 3px;
-  background: hsl(var(--app-text-secondary) / 0.3);
-}
-.sb-icon.sb-icon-fit-contain::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border-radius: 3px;
-  border: 1px solid hsl(var(--app-text-secondary) / 0.45);
-}
-.sb-icon.sb-icon-fit-contain::after {
-  content: '';
-  position: absolute;
-  inset: 6px;
-  border-radius: 2px;
-  border: 1px solid hsl(var(--app-text-secondary) / 0.35);
 }
 
 /* Icons: columns */

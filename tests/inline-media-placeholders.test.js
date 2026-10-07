@@ -198,14 +198,16 @@ test('ensureMembers keeps a populated members[]; empty stays []', () => {
   assert.deepEqual(empty.members, []);
 });
 
-test('quote: empty primary portrait slot is clickable in edit mode only', () => {
+test('quote: an empty portrait slot is clickable in edit mode only', () => {
   const def = SLIDE_TYPES['quote-slide'];
-  const content = { quote: 'Hi', authorName: 'Ada', authorTitle: 'Eng' };
+  const content = {
+    quotes: [{ quote: 'Hi', authorName: 'Ada', authorTitle: 'Eng' }],
+  };
 
   const editHtml = def.renderHtml(content, {}, { mode: 'edit' });
   assert.match(
     editHtml,
-    /class="[^"]*quote-portrait[^"]*is-empty"[^>]*data-inline-photo="1"/s,
+    /class="[^"]*quote-portrait[^"]*is-empty"[^>]*data-inline-photo="0"/s,
   );
 
   for (const ctx of [undefined, {}, { mode: 'present' }]) {
@@ -220,18 +222,28 @@ test('quote: empty primary portrait slot is clickable in edit mode only', () => 
 test('quote: a filled first portrait shows the next empty slot as the add target', () => {
   const def = SLIDE_TYPES['quote-slide'];
   const content = {
-    quote: 'Hi',
-    authorName: 'Ada',
-    authorTitle: 'Eng',
-    authorImage1: '/p.png',
+    quotes: [
+      {
+        quote: 'Hi',
+        authorName: 'Ada',
+        authorTitle: 'Eng',
+        authorImage1: '/p.png',
+      },
+      { quote: 'Second', authorName: 'Grace' },
+    ],
   };
   const html = def.renderHtml(content, {}, { mode: 'edit' });
-  // slot 1 filled (img), slot 2 offered as the empty placeholder
-  assert.match(html, /<div class="quote-portrait" data-inline-photo="1">/);
-  assert.match(
-    html,
-    /class="[^"]*quote-portrait[^"]*is-empty"[^>]*data-inline-photo="2"/s,
-  );
+  // quote 1: slot 1 filled (photo 0), slot 2 offered as the placeholder
+  // (photo 1); quote 2 offers its own first slot (photo 2).
+  assert.match(html, /<div class="quote-portrait" data-inline-photo="0">/);
+  for (const idx of [1, 2])
+    assert.match(
+      html,
+      new RegExp(
+        `class="[^"]*quote-portrait[^"]*is-empty"[^>]*data-inline-photo="${idx}"`,
+        's',
+      ),
+    );
 });
 
 /**
@@ -251,7 +263,7 @@ const ALL_PLACEHOLDER_TYPES = [
   ['image-text-slide', {}],
   ['gallery-slide', { images: [{}] }],
   ['logo-wall-slide', {}],
-  ['quote-slide', { quote: 'Hi' }],
+  ['quote-slide', { quotes: [{ quote: 'Hi' }] }],
   ['team-cards-slide', { members: [{ name: 'A' }] }],
 ];
 

@@ -9,7 +9,7 @@
  * the rendered theme field it is (logos, alt text, grounds, slide-type
  * curation).
  *
- * The fields D208 lets lapse are not compared: `textSwatches`, the `{en, nl}`
+ * The fields D208 lets lapse are not compared: the `{en, nl}`
  * background labels, `embedFonts` (the families are managed fonts here, see
  * `managed-fonts.json`), `hiddenSlideTypes` (folded into `slideTypes.exclude`),
  * `slides.*` and `sampleEmbedUrl`.

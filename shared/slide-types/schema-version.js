@@ -49,9 +49,10 @@ import {
 import { REMOVED_SLIDE_TYPES } from './removed.js';
 import { foldUnofferedEnums } from './normalize-content.js';
 import { canonicalJson } from '../slide-fingerprint.js';
+import { foldTextStylesToOffers } from './text-styles.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 15;
+export const CURRENT_SCHEMA_VERSION = 18;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -792,6 +793,214 @@ function cutImageTextPluralLayouts(pres) {
   return pres;
 }
 
+const KPI_METRICS_TYPE = 'kpi-metrics-slide';
+
+/** A concrete binding target on a metric's retired `delta` key. */
+const KPI_DELTA_TARGET = /^metrics\[(\d+)\]\.delta$/;
+
+/**
+ * Fold kpi-metrics' retired `metrics[].delta` into the metric's `note` (B599).
+ *
+ * The schema dropped `delta` long ago, but the renderer kept reading it and
+ * prepended it to the note, so a metric showed one line stored as two keys.
+ * The canvas edits the note in place; with `delta` still standing beside it,
+ * an edit would write the whole line into `note` and the delta would print
+ * twice. The note is the one form: `delta` + a space + `note`, exactly what
+ * the renderer composed, and the key is dropped.
+ *
+ * A live-data binding on `metrics[N].delta` follows the value to
+ * `metrics[N].note`. When that metric's note is bound as well, the note
+ * binding already owns the line and the delta binding is dropped: two
+ * bindings on one key would let refresh order decide what shows.
+ *
+ * Keys on the retired key only, so it is a no-op on everything the current
+ * writers produce. Idempotent.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldKpiDeltaIntoNote(pres) {
+  for (const slide of eachSlide(pres)) {
+    if (slide?.type !== KPI_METRICS_TYPE) continue;
+    const metrics = slide.content?.metrics;
+    if (Array.isArray(metrics)) {
+      for (const metric of metrics) {
+        if (!metric || typeof metric !== 'object') continue;
+        if (!Object.prototype.hasOwnProperty.call(metric, 'delta')) continue;
+        const delta = str(metric.delta);
+        const note = str(metric.note);
+        if (delta) metric.note = note ? `${delta} ${note}` : delta;
+        delete metric.delta;
+      }
+    }
+    const bindings = slide.dataSource?.bindings;
+    if (!Array.isArray(bindings)) continue;
+    const targets = new Set(bindings.map((b) => b?.target));
+    slide.dataSource.bindings = bindings.filter((binding) => {
+      const m = KPI_DELTA_TARGET.exec(String(binding?.target || ''));
+      if (!m) return true;
+      const noteTarget = `metrics[${m[1]}].note`;
+      if (targets.has(noteTarget)) return false;
+      binding.target = noteTarget;
+      targets.add(noteTarget);
+      return true;
+    });
+  }
+  return pres;
+}
+
+/**
+ * The keys a quote-slide held its first quote in, before every quote lived in
+ * `quotes[]` (D314). `imagekitFileId` rode along: the canvas popover wrote it
+ * beside whichever flat portrait it set.
+ */
+const FLAT_QUOTE_KEYS = [
+  'quote',
+  'authorName',
+  'authorTitle',
+  'authorImage1',
+  'authorImage1Alt',
+  'authorImage2',
+  'authorImage2Alt',
+  'imagekitFileId',
+];
+
+/** An extra quote's first portrait, before the slots took one spelling. */
+const LEGACY_ITEM_PORTRAIT_KEYS = [
+  ['authorImage', 'authorImage1'],
+  ['authorImageAlt', 'authorImage1Alt'],
+];
+
+/** `quotes.N.rest` (a text-style key) with N shifted by one, else null. */
+function shiftQuoteStyleKey(key) {
+  const m = /^quotes\.(\d+)\.(.+)$/.exec(key);
+  return m ? `quotes.${Number(m[1]) + 1}.${m[2]}` : null;
+}
+
+/** `quotes[N].rest` (a binding target) with N shifted by one, else null. */
+function shiftQuoteBindingTarget(target) {
+  const m = /^quotes\[(\d+)\]\.(.+)$/.exec(target);
+  return m ? `quotes[${Number(m[1]) + 1}].${m[2]}` : null;
+}
+
+/**
+ * Fold quote-slide into one storage form: every quote in `quotes[]` (D314).
+ *
+ * The first quote used to live in flat top-level keys and quotes two and three
+ * in `quotes[]`, whose portraits were spelled `authorImage` / `authorImage2`
+ * against the flat `authorImage1` / `authorImage2`. Two forms of one concept,
+ * so the canvas could reach the first quote's portraits and not the others'.
+ *
+ * The flat keys become item 0, ahead of the stored extras; an extra's
+ * `authorImage` / `authorImageAlt` become `authorImage1` / `authorImage1Alt`.
+ * Everything keyed on a field path follows: a text style on `quote` moves to
+ * `quotes.0.quote` and an extra's `quotes.N.*` to `quotes.N+1.*`; a live-data
+ * binding likewise. Render-equivalent: the first quote always showed, the
+ * others only with text, and `displayQuotes` keeps exactly that rule.
+ *
+ * Keys on the flat keys and the retired item spelling only, which no current
+ * writer produces. Idempotent.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldQuoteSlideIntoQuotes(pres) {
+  for (const slide of eachSlide(pres)) {
+    if (slide?.type !== QUOTE_SLIDE_TYPE) continue;
+    const content = slide.content;
+    if (!content || typeof content !== 'object') continue;
+    const own = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+    const stored = Array.isArray(content.quotes) ? content.quotes : [];
+    for (const item of stored) {
+      if (!item || typeof item !== 'object') continue;
+      for (const [legacy, slot] of LEGACY_ITEM_PORTRAIT_KEYS) {
+        if (!own(item, legacy)) continue;
+        if (!str(item[slot])) item[slot] = item[legacy];
+        delete item[legacy];
+      }
+    }
+    if (!FLAT_QUOTE_KEYS.some((key) => own(content, key))) continue;
+
+    const first = {};
+    for (const key of FLAT_QUOTE_KEYS) {
+      if (own(content, key) && content[key] != null) first[key] = content[key];
+      delete content[key];
+    }
+    content.quotes = [first, ...stored];
+
+    const styles = content.textStyles;
+    if (styles && typeof styles === 'object') {
+      const next = {};
+      for (const [key, value] of Object.entries(styles)) {
+        const shifted = shiftQuoteStyleKey(key);
+        if (shifted) {
+          next[shifted] = value;
+        } else if (FLAT_QUOTE_KEYS.includes(key)) {
+          if (!value || typeof value !== 'object') continue;
+          // The v5 -> v6 sweep could not see these as quote-block members
+          // (the current schema has them only as item fields), so their inert
+          // `align` is dropped here; colour and size move with the field.
+          const rest = { ...value };
+          delete rest.align;
+          if (Object.keys(rest).length) next[`quotes.0.${key}`] = rest;
+        } else {
+          next[key] = value;
+        }
+      }
+      if (Object.keys(next).length) content.textStyles = next;
+      else delete content.textStyles;
+    }
+
+    const bindings = slide.dataSource?.bindings;
+    if (Array.isArray(bindings)) {
+      for (const binding of bindings) {
+        const target = String(binding?.target || '');
+        const shifted = shiftQuoteBindingTarget(target);
+        if (shifted) binding.target = shifted;
+        else if (FLAT_QUOTE_KEYS.includes(target))
+          binding.target = `quotes[0].${target}`;
+      }
+    }
+  }
+  return pres;
+}
+
+/**
+ * Fold every stored `textStyles` map into the offer model (B464, D220, D221).
+ *
+ * Text styling used to be offered on every text field, per instance, with a
+ * colour. Now a type offers `align`/`size` on purpose, at the scope its
+ * structure decides, and colour is gone. Per slide: every `color` is dropped;
+ * per-instance keys (`quotes.2.quote`) fold into the shared key
+ * (`quotes.*.quote`) where every instance stored the same value; what the type
+ * does not offer is dropped. See `foldTextStylesToOffers` in text-styles.js.
+ *
+ * Not render-equivalent, and deliberately so: a colour or a per-instance style
+ * is exactly what D220/D221 retire. What goes is what no current control can
+ * set; the release note names it. A type the registry does not know here (a
+ * fork type on a core-only install) keeps its map minus colour, for its own
+ * reader. Keys on `color`, per-instance keys and unoffered keys, none of which
+ * a current writer produces (the write path refuses them). Idempotent.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldTextStyles(pres) {
+  for (const slide of eachSlide(pres)) {
+    const content = slide?.content;
+    if (!content || typeof content !== 'object') continue;
+    if (!Object.prototype.hasOwnProperty.call(content, 'textStyles')) continue;
+    const folded = foldTextStylesToOffers(
+      content.textStyles,
+      getSlideType(slide.type) || null,
+      content,
+    );
+    if (folded) content.textStyles = folded;
+    else delete content.textStyles;
+  }
+  return pres;
+}
+
 /**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
  * still allowed into the one version `i + 1` requires. No stamp is stored (see
@@ -1240,6 +1449,20 @@ export const SCHEMA_MIGRATIONS = [
   // not declare one, or `duo` would be folded to a singleton layout before this
   // step ever saw it. A full-funnel test pins that.
   cutImageTextPluralLayouts,
+
+  // v15 -> v16: kpi-metrics' retired `metrics[].delta` folds into the note it
+  // was printed in front of, so the canvas edits one stored line (B599). See
+  // foldKpiDeltaIntoNote.
+  foldKpiDeltaIntoNote,
+
+  // v16 -> v17: quote-slide keeps every quote in `quotes[]`, the first
+  // included, with one portrait spelling (D314). See foldQuoteSlideIntoQuotes.
+  foldQuoteSlideIntoQuotes,
+
+  // v17 -> v18: text styling is offered per type, at the scope its structure
+  // decides, and per-field colour is gone (B464, D220, D221). See
+  // foldTextStyles.
+  foldTextStyles,
 ];
 
 /**

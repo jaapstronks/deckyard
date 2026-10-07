@@ -797,7 +797,9 @@ describe('legacy shapes survive the read path in every language (#1040)', () => 
         assert.equal(stack.content.card1Title, prose.stackCardTitle, lang);
         assert.equal(stack.content.card1Body, prose.stackCardBody, lang);
         assert.equal(quote.content.subtitle, prose.quoteSubtitle, lang);
-        assert.equal(quote.content.quote, prose.quoteText, lang);
+        // The first quote folded into quotes[0] (v16 -> v17, D314): prose
+        // per version there too.
+        assert.equal(quote.content.quotes[0].quote, prose.quoteText, lang);
 
         // Undeclared non-strings stay machine values: one per deck, the
         // dominant version's.

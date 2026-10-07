@@ -1,0 +1,34 @@
+{
+  "name": "The road ahead",
+  "description": "A timeline of committed milestones for the coming year.",
+  "slideType": "timeline-slide",
+  "theme": "corporate",
+  "lang": "en-GB",
+  "content": {
+    "title": "The road to FY26",
+    "subheading": "Committed milestones for the year ahead",
+    "items": [
+      {
+        "date": "Q1",
+        "title": "EU data residency",
+        "text": "Frankfurt region goes live for enterprise accounts."
+      },
+      {
+        "date": "Q2",
+        "title": "Self-serve tier",
+        "text": "Open the SMB funnel with a no-touch onboarding path."
+      },
+      {
+        "date": "Q3",
+        "title": "Partner marketplace",
+        "text": "First ten integration partners shipped."
+      },
+      {
+        "date": "Q4",
+        "title": "70M€ run-rate",
+        "text": "Up from 58M€ at the Q4 FY25 exit rate."
+      }
+    ],
+    "background": "mist"
+  }
+}

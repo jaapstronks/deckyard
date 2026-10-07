@@ -362,7 +362,7 @@ function injectSlideLogo(html, content, ctx) {
  *
  * The `.tf-*` text-formatting classes that `injectTextStyles` merges onto the
  * same element stay; their CSS is re-anchored off the attribute (see
- * `03-components/97-text-styles.css`), so text alignment/colour/size still
+ * `03-components/97-text-styles.css`), so text alignment and size still
  * apply once `data-inline-field` is gone.
  * @param {string} html
  * @returns {string}
@@ -456,12 +456,10 @@ export function renderSlideHtml(slide, ctx = {}) {
   // is a filtered view, so unlocking restores every slide's own value.
   const content = applyLocksToContent(slide?.content || {}, ctx?.theme);
   let out = def.renderHtml(content, slide, ctx);
-  // Per-field block-level text styling (alignment/colour): adds tf-* classes
-  // to the matching data-inline-field element. Runs on the type's own output
-  // (its field elements), before the slide-wrapper injections below.
-  // The whole definition, not just its fields: a type that centres in its own
-  // slide CSS declares `defaultAlign` at type level, and that decides which
-  // stored value counts as an override worth emitting a class for.
+  // Per-field text styling (alignment, size) where the type offers it: adds
+  // tf-* classes to every data-inline-field element a stored key covers. Runs
+  // on the type's own output (its field elements), before the slide-wrapper
+  // injections below. See docs/reference/text-styles.md.
   out = injectTextStyles(out, content, def);
   out = injectSemanticEnumAttrs(out, content, def);
   out = injectSlideBackground(out, content);

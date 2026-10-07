@@ -26,6 +26,7 @@ import {
   normalizeLang,
   TRANSLATION_LANGS,
 } from '../../../shared/i18n-utils.js';
+import { contentLang, hasContentForLang } from './search.js';
 
 /**
  * Build the `slides[]` payload from library items, preserving per-language
@@ -53,6 +54,28 @@ export function buildSlidesFromLibraryItems(items) {
     if (Object.keys(contentByLang).length) slide.contentByLang = contentByLang;
     return slide;
   });
+}
+
+/**
+ * The language a deck composed from library items starts in (B603).
+ *
+ * A deck's language names the language its slides are written in, so the
+ * caller's preference (a browsing filter, a stored or UI-derived default) only
+ * holds when every item has content in it. Otherwise the deck takes the one
+ * language the items' content shares: English slides make an English deck,
+ * whatever the library switch said. Items that share no single language keep
+ * the preference; there is no truer answer to give.
+ * @param {Array<Object>} items - library items ({ content, i18n }).
+ * @param {string} [preferred] - the language the caller would pick.
+ * @returns {string} a deck-axis language code.
+ */
+export function deckLangForLibraryItems(items, preferred) {
+  const list = (Array.isArray(items) ? items : []).filter(Boolean);
+  const want = normalizeLang(preferred) || DEFAULT_DECK_LANG;
+  if (list.every((item) => hasContentForLang(item, want))) return want;
+  const langs = new Set(list.map((item) => contentLang(item)));
+  const [only] = langs;
+  return langs.size === 1 && only ? only : want;
 }
 
 /**

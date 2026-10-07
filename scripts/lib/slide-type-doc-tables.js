@@ -33,44 +33,17 @@ import {
   CORE_SLIDE_TYPE_NAMES,
 } from '../../shared/slide-types/registry.js';
 import {
+  SLIDE_TYPE_ELEMENT_TAB,
   SLIDE_TYPE_INLINE_EDIT,
   SLIDE_TYPE_INSPECTOR_KEEPS,
 } from '../../shared/slide-types/inline-edit.js';
-
-/**
- * Field keys the shared Background/Accessibility surfaces own, on every type.
- * Listed once in the docs' preamble instead of in all N rows. Mirrors
- * `isBackgroundFieldKey()` + the a11y pair routed by `editor-form/index.js`.
- */
-const SHARED_SURFACE_KEYS = new Set([
-  'background',
-  'bgCustomColor',
-  'slideBgImage',
-  'slideBgFit',
-  'slideBgFocusX',
-  'slideBgFocusY',
-  'slideBgOverlay',
-  'slideBgText',
-  'slideLogo',
-  'a11yTitle',
-  'a11ySummary',
-]);
-
-/** Placeholders for the numeric positions in a condensed key family. */
-const FAMILY_PLACEHOLDERS = ['{n}', '{m}', '{p}'];
+import {
+  bulkOnlyFields,
+  familyPattern,
+} from '../../shared/slide-types/field-homes.js';
+import { textStyleOffers } from '../../shared/slide-types/text-styles.js';
 
 const NONE = '–';
-
-/**
- * The family pattern of a key: each run of digits replaced by a positional
- * placeholder. `col2Block3Body` → `col{n}Block{m}Body`.
- * @param {string} key
- * @returns {string}
- */
-export function familyPattern(key) {
-  let i = 0;
-  return key.replace(/\d+/g, () => FAMILY_PLACEHOLDERS[i++] ?? '{x}');
-}
 
 /**
  * Collapse numbered key families to one entry, preserving order.
@@ -108,22 +81,6 @@ function codeList(keys) {
 }
 
 /**
- * The schema fields that reach an editing surface at all: `hidden` fields are
- * carried data and `deprecated` ones are legacy mirrors, and `editor-form/index.js`
- * renders neither. Shared Background/Accessibility keys are dropped here too —
- * they are stated once in the docs' preamble.
- *
- * @param {Object} def - composed slide-type definition
- * @returns {string[]} field keys, in schema order
- */
-function surfacedFieldKeys(def) {
-  return (def?.fields || [])
-    .filter((f) => f && !f.hidden)
-    .map((f) => String(f.key))
-    .filter((k) => !SHARED_SURFACE_KEYS.has(k));
-}
-
-/**
  * Every markdown-typed key a type owns, including nested item subfields, as the
  * dotted paths the inline layer uses (`rows.blocks.body`).
  * @param {Object} def
@@ -144,103 +101,31 @@ function markdownFieldKeys(def) {
 }
 
 /**
- * Content keys the descriptor claims as ELEMENT properties rather than form
- * fields: the flat media keys the popover writes, and the ImageRef axes the
- * "This image" card renders off the same declaration (focus / fit / bleed).
- *
- * They are named with a `{n}` token in flat mode (`col{n}Image`), and in array
- * mode they name *item* keys instead. Rather than branch on that, every
- * candidate is matched against the type's own schema by family pattern: an item
- * key like `focusX` simply is not a top-level field and drops out.
- *
- * @param {Object|null} d - inline descriptor
- * @param {Object} def - composed slide-type definition
- * @returns {Set<string>} matching top-level schema keys
- */
-function descriptorElementKeys(d, def) {
-  const candidates = [];
-  if (d?.media && !d.media.list) {
-    candidates.push(d.media.imageField, d.media.altField);
-    for (const extra of d.media.extraFields || []) candidates.push(extra.key);
-  }
-  candidates.push(
-    d?.focus?.xField,
-    d?.focus?.yField,
-    d?.fit?.field,
-    d?.bleed?.field,
-  );
-  const wanted = new Set(candidates.filter(Boolean).map(String));
-  const out = new Set();
-  for (const f of def?.fields || []) {
-    const key = String(f.key);
-    if (
-      wanted.has(key) ||
-      wanted.has(familyPattern(key).replace(/\{m\}|\{p\}/g, '{n}'))
-    ) {
-      out.add(key);
-    }
-  }
-  return out;
-}
-
-/**
- * Content keys whose canonical control is the canvas **Layout chip**, not a
- * form field: the keys a declared layout variant writes, and the alignment key
- * of a declared field group.
- *
- * Both are type-definition declarations (`layoutVariants`, `fieldGroups`), which
- * is what makes "chip-only" checkable instead of a convention. `tests/
- * field-group-adoption.test.js` asserts the other half — that an alignment key
- * is never *also* an inspector keep.
- *
- * @param {Object} def - composed slide-type definition
- * @returns {Set<string>}
- */
-function layoutChipKeys(def) {
-  const out = new Set();
-  for (const variant of def?.layoutVariants || []) {
-    for (const key of Object.keys(variant?.set || {})) out.add(key);
-  }
-  for (const group of def?.fieldGroups || []) {
-    if (group?.alignKey) out.add(String(group.alignKey));
-  }
-  return out;
-}
-
-/**
  * One row's worth of facts about a type's editing surfaces.
  *
- * `bulkOnly` is the interesting derivation: the bulk "Edit all text" modal
- * renders every surfaced field by construction, so a field *relies* on it
- * exactly when nothing else claims it — not the canvas (`formText`, the
- * descriptor's element knobs, the Layout chip) and not the inspector keep-list.
- * An inactive legacy alias collection is skipped the way `editor-form/index.js` skips
- * it: the renderer reads one of the two keys, never both.
+ * `bulkOnly` and `itemBulkOnly` are the interesting derivations: the fields
+ * whose only home is the bulk "Edit all text" modal. They are computed by
+ * `bulkOnlyFields()` in `shared/slide-types/field-homes.js`, which the
+ * definition validator also asks about a fork type (B600); here it gets core's
+ * aggregator entries.
  *
  * @param {string} type
  * @returns {{type: string, def: Object, descriptor: Object|null, keeps: string[]|null,
- *   formText: string[], bulkOnly: string[], markdown: string[]}}
+ *   formText: string[], bulkOnly: string[], itemBulkOnly: string[],
+ *   markdown: string[]}}
  */
 export function coverageFor(type) {
   const def = CORE_SLIDE_TYPE_DEFS[type] || {};
   const descriptor = SLIDE_TYPE_INLINE_EDIT[type] || null;
   const keeps = SLIDE_TYPE_INSPECTOR_KEEPS[type] || null;
-  const formText = Array.isArray(descriptor?.formText)
-    ? descriptor.formText
-    : [];
-  const covered = new Set([
-    ...formText,
-    ...(keeps || []),
-    ...descriptorElementKeys(descriptor, def),
-    ...layoutChipKeys(def),
-  ]);
+  const tab = SLIDE_TYPE_ELEMENT_TAB[type] || null;
   return {
     type,
     def,
     descriptor,
     keeps,
-    formText,
-    bulkOnly: surfacedFieldKeys(def).filter((k) => !covered.has(k)),
+    formText: Array.isArray(descriptor?.formText) ? descriptor.formText : [],
+    ...bulkOnlyFields(def, { descriptor, keeps, tab }),
     markdown: markdownFieldKeys(def),
   };
 }
@@ -315,6 +200,41 @@ function mediaCell(d) {
   return parts.length ? parts.join('; ') : NONE;
 }
 
+/**
+ * A type's text-style offers as table entries: the field a reader recognises
+ * (`quotes[].quote`, a set by its members) and what it offers at which scope.
+ * Derived from the same `textStyleOffers()` the renderer, the inspector and
+ * the write path read, so the docs cannot list an offer the type does not
+ * make (B464).
+ * @param {Object} def
+ * @returns {{field: string, props: string[], scope: string}[]}
+ */
+function textStyleOfferEntries(def) {
+  return [...textStyleOffers(def).values()].map((o) => ({
+    field:
+      o.scope === 'set'
+        ? o.members.map((m) => `\`${m}\``).join(' + ')
+        : `\`${o.key.replaceAll('.*.', '[].')}\``,
+    props: o.props,
+    scope: { field: 'this field', items: 'every item', set: 'the set' }[
+      o.scope
+    ],
+  }));
+}
+
+/** The text-style cell of the coverage table. */
+function textStyleCell(def) {
+  const entries = textStyleOfferEntries(def);
+  return entries.length
+    ? entries
+        .map(
+          (e) =>
+            `${e.field}: ${e.props.join(', ')}${e.scope === 'this field' ? '' : ` (${e.scope})`}`,
+        )
+        .join('; ')
+    : NONE;
+}
+
 /** Markdown table rows share this shape; keeps the two renderers honest. */
 function table(header, rows) {
   return [
@@ -335,10 +255,17 @@ export function renderCoverageTable() {
       r.keeps === null
         ? '*(no declaration — conservative fallback)*'
         : codeList(r.keeps);
-    return `| \`${r.type}\` | ${codeList(r.formText)} | ${codeList(r.bulkOnly)} | ${keeps} |`;
+    const onlyHome = codeList([...r.bulkOnly, ...r.itemBulkOnly]);
+    return `| \`${r.type}\` | ${codeList(r.formText)} | ${onlyHome} | ${keeps} | ${textStyleCell(r.def)} |`;
   });
   return table(
-    ['Type', 'Canvas (wysiwyg)', 'Bulk modal (only home)', 'Inspector keeps'],
+    [
+      'Type',
+      'Canvas (wysiwyg)',
+      'Bulk modal (only home)',
+      'Inspector keeps',
+      'Text style offer',
+    ],
     rows,
   ).join('\n');
 }

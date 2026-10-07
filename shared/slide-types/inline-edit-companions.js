@@ -75,6 +75,17 @@ export function slideTypeInspectorKeeps(type, def = null) {
  *                        ceiling, so a range says more. Kept for custom and
  *                        fork types that need the open answer.
  *
+ * A `card` entry with a `list` may add what its tab renders and is called:
+ *
+ *   { list: 'rows', fields: ['color', 'arrow'],
+ *     labelKey: 'editor.inspector.tab.row', label: 'This row' }
+ *
+ *   `fields` names the item fields the shared "This card" card renders for the
+ *   selected item (client/views/editor/editor-form/item-element-card.js) -
+ *   the item settings that have no control on the canvas. `labelKey`/`label`
+ *   name the tab; without them it is "This card". A text click inside an item
+ *   of that list selects the item (B450, D313).
+ *
  * Read through this function rather than off the map: the definition is asked
  * first, so a fork type declaring `elementTab` is heard — the same precedence
  * (and the same wire half on `GET /api/slide-types`) as

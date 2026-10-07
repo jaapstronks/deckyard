@@ -255,7 +255,7 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   doorway to everything settable); the selected text field gets the same solid
   ring (`.ie-ol-outline.is-selected`). Because the ring is drawn from the
   controller state rather than from focus, it survives the edit's blur and the
-  preview remount a sidebar change (alignment, colour) triggers - the user can
+  preview remount a sidebar change (alignment, size) triggers - the user can
   see which field the "This text" tab is acting on.
 - **Rendering** (`editor-form/index.js`): when the selection applies to the slide
   (`elementAppliesToSlide`), per-element widgets render into `elementForm`
@@ -295,62 +295,17 @@ The element tab surfaces the controls directly; the old
 ### "This text" tab (block-level text styling)
 
 A click on a text field selects `{kind:'text', fieldKey}` (a card's text still
-selects the card; chart-data/csv selects nothing), which shows a type-agnostic
-**"This text"** element tab: **alignment**, a **theme colour token** and a
-3-step **size** scale (S/M/L, default M) (`text-element-card.js`). It writes a
-generic, additive override map keyed by the field's `data-inline-field` value:
+selects the card; chart-data/csv selects nothing), which opens the **"This
+text"** element tab (`text-element-card.js`). It shows the style controls the
+slide type **offers** for that field - alignment, a 3-step size (S/M/L) - and
+nothing else: a field without an offer gets one sentence, "This text follows
+the slide's layout". A field whose siblings share the offer (array items, a
+declared set) is styled as one, under a heading such as "All "Quote" (3)".
+There is no per-field colour (D221).
 
-```json
-content.textStyles = { "body": { "align": "center", "color": "accent", "size": "lg" } }
-```
-
-`normalizeTextStyles` (`shared/slide-types/text-styles.js`) prunes defaults, so
-a click-to-default leaves stored JSON unchanged. The shared `renderSlideHtml`
-runs a string post-pass (`injectTextStyles`, mirroring `injectSlideBackground`)
-that adds `tf-*` classes to the matching field element — **one code path**, so
-the editor canvas, present mode and exports all reflect it. Styles live outside
-the markdown, so the WYSIWYG round-trip gate is untouched.
-
-**Colour tokens (`tf-color-muted/-accent`).** Base values: `default` (no
-override — follows the slide's automatic, background-aware text colour),
-`muted` and `accent`. `muted` is derived from **`currentColor`** — the field's
-inherited text colour — dimmed to 72%, so it is band-aware: a mid-grey on a
-light slide, a dimmed white on a dark band (quote/chapter, whose text is white
-via the `--slide-on-bg-dark` role and which bypass the `--color-text` system). A fixed
-light-theme muted grey rendered ~1.5:1 (unreadable) there. `accent` is the
-brand accent (`--t-color-accent`); on a same-hue coloured band it can be
-low-contrast — a deliberate-choice caveat, not a bug. A former `inverse` =
-background-colour token was **dropped** (rollout QA): on text sitting directly
-on the slide background it is invisible by construction; old `inverse` values
-prune to no override. Alignment (`tf-align-*`) is generic and needs no per-type
-work — no core type sets a competing `text-align` on its primary fields.
-
-**Theme text swatches (`tf-color-brand-1/-2/-3`).** The colour control is a
-swatch row: the three base tokens above plus any on-brand text colours the
-active theme declares via **`theme.textSwatches`** — a list of fixed slots
-(`brand-1`/`brand-2`/`brand-3`) each backed by a `--t-color-<slot>` token, with
-an optional label (string or `{ nl, en }`, like `backgroundLabels`). Rationale
-for a curated theme palette rather than exposing the background swatches
-directly: the `--t-slide-bg-*` swatches are _surface fills_ (e.g. `lime` is
-often white), so they fail as text colours — a theme picks legible on-brand
-colours here instead. Normalization (`normalizeTheme`) keeps only slots the
-theme actually coloured, so the control never shows a swatch that would resolve
-to a no-op `currentColor`; a theme that declares none leaves the three base
-tokens. Stored values stay portable tokens: a deck carrying `brand-1` on a
-theme that never defined it falls back to the default text colour (the
-`currentColor` fallback in the `tf-color-brand-*` CSS), not a broken colour.
-
-**Size scale (`tf-size-sm/lg`).** A plain `em` multiplier would _replace_ the
-font-size a type sets for that element (the content body's per-density step,
-say) with a fraction of the parent size, shrinking rather than scaling. Instead `tf-size-*`
-only set a `--tf-size-scale` custom property on the field element (`sm` 0.85,
-`lg` 1.2, `md` = no class → fallback 1), and each primary text element
-expresses its `font-size` as `calc(<base> * var(--tf-size-scale, 1))`, rolled
-out **per type**. Types wired so far: **content** (heading + body, all density
-steps), **image-text** (body, all width/density steps), **list** (per-item
-title + text, all density steps), **quote** (quote text), **chapter-title**
-(title). Other types/fields store the value cleanly but do not yet scale — add
-the `calc()` to their primary text element to enable it.
+The offer model, the `content.textStyles` storage keys, the refusals on the
+write path and which core fields offer what are normative in
+**[`text-styles.md`](text-styles.md)**.
 
 ## Per-type coverage audit
 
@@ -378,25 +333,41 @@ Column semantics:
   partly (an icon picker, a KPI delta) is deliberately absent, so this column
   is a coverage claim rather than a list of what is clickable.
 - **Bulk modal (only home)**: the fields that _rely_ on the "Edit all text"
-  modal - surfaced by the schema and claimed by nothing else. Four claimants
-  are subtracted, each from a declaration: `formText`, the keep-list, the
-  descriptor's element knobs (`media` in flat mode, `focus`, `fit`, `bleed` -
-  the ImageRef axes the "This image" card renders), and the **Layout chip**
-  (every key a `layoutVariants` entry writes, plus a field group's `alignKey`).
-  **A settings/config/metadata key appearing in this column is a parity
-  violation** (see the invariant above) - as generated, the column holds only
-  content collections, which is the invariant holding rather than being
-  asserted.
+  modal - surfaced by the schema and claimed by nothing else, measured down to
+  the **item field** (`rows.arrow`, `metrics.note`). Top-level claimants, each
+  from a declaration: `formText`, the keep-list, the descriptor's element knobs
+  (`media` in flat mode, `focus`, `fit`, `bleed` - the ImageRef axes the "This
+  image" card renders), the **Layout chip** (every key a `layoutVariants`
+  entry writes, plus a field group's `alignKey`), and a collection the canvas
+  adds to and removes from (the `cards` list, a list-mode `media` list). An
+  item field is homed when the canvas edits it (a `data-inline-field` or
+  `data-inline-icon` the type's renderer emits, read off a render with every
+  item field filled), when a declaration claims it (`itemGhosts`, a nested
+  level's ghosts, the list-mode `media` keys and `extraFields`, a `card`
+  element tab's `fields` - the "This card" tab), or when its whole list is an
+  inspector keep. **Any entry is a parity violation** (see the invariant
+  above); the generated column is asserted empty by
+  `tests/slide-type-docs.test.js` (B450). The derivation is
+  `bulkOnlyFields()` in `shared/slide-types/field-homes.js`; the definition
+  validator asks it about a fork type's own `inline`, `inspectorKeeps` and
+  `elementTab` and logs a boot **warning** for every field it finds, not a
+  refusal (B600). A fork type without `inspectorKeeps` keeps every field in
+  the inspector, so it never warns.
 - **Inspector keeps**: the `inspectorKeeps` declaration - the settings/design
   fields the rail retains (enums, icons, URLs-as-config, chart config). An
   empty list is a real answer: the canvas covers everything.
+- **Text style offer**: what the "This text" tab offers per field and at
+  which scope (`textStyle`, `itemTextStyle`, `textStyleSets`, read through
+  `textStyleOffers()`); a dash means every text field of the type follows the
+  layout. What each offer promises and how the render guard proves it:
+  [`text-styles.md`](text-styles.md).
 
 One limit worth knowing: the per-type widgets in `renderInspectorExtrasByType`
-(the image-set "Images" section, per-column image settings, icon-card icon +
-link) route imperatively rather than through a declaration, so a collection they
-render can still show up in the bulk-modal column. That is a property of the
-routing, not of this table - the widgets are the open half of the same
-consolidation.
+(the image-set collection manager, the icon-card all-cards overview, the
+list-slide text-size note) route imperatively rather than through a
+declaration, so the derivation cannot count what they render. Item settings
+therefore go through the `card` element tab's `fields` (a declaration the
+column reads) rather than a new widget.
 
 Not repeated per row, because they are the same for all
 <!--gen:slide-type-count-->34<!--/gen:slide-type-count--> types: `slideBgImage`,
@@ -412,42 +383,42 @@ rather than getting a home of its own.
 
 <!--gen:slide-type-coverage-->
 
-| Type                   | Canvas (wysiwyg)                                                                                         | Bulk modal (only home) | Inspector keeps                                                                                                             |
-| ---------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `title-slide`          | `title`, `subheading`, `meta`                                                                            | –                      | `logoCorner`                                                                                                                |
-| `chapter-title-slide`  | `title`, `subheading`                                                                                    | –                      | `layout`                                                                                                                    |
-| `content-slide`        | `title`, `subheading`, `body`                                                                            | –                      | `layout`, `density`, `actions`, `asideVariant`, `asideText`                                                                 |
-| `callout-slide`        | `label`, `body`, `source`                                                                                | –                      | `variant`                                                                                                                   |
-| `table-slide`          | `title`, `caption`                                                                                       | `rows`                 | `headerRow`, `tableStyle`, `animateByCell`, `cornerCell`                                                                    |
-| `list-slide`           | `title`, `subheading`, `items`                                                                           | –                      | `variant`, `layout`, `density`, `asideVariant`, `asideText`                                                                 |
-| `kpi-metrics-slide`    | `title`, `subheading`, `bottomSubheading`                                                                | `metrics`              | `accent`, `countUp`                                                                                                         |
-| `image-text-slide`     | `title`, `caption`, `body`                                                                               | –                      | `imageRole`, `density`, `imageSide`, `imageWidth`, `imageBackground`, `actions`, `asideVariant`, `asideText`                |
-| `image-set-slide`      | `title`, `caption`, `body`                                                                               | `images`               | `imageRole`, `density`, `textColumns`, `imageSide`, `imageWidth`, `imageBackground`, `actions`, `asideVariant`, `asideText` |
-| `video-slide`          | `title`                                                                                                  | –                      | `source`, `transcript`, `autoplay`, `bunnyLibraryId`, `watchUrl`                                                            |
-| `team-cards-slide`     | `title`, `subheading`, `bottomSubheading`, `subheading2`                                                 | `members`              | `textPosition`, `imageShape`, `imageAspect`, `showPhotoFrame`, `columnSplit`                                                |
-| `logo-wall-slide`      | `title`, `subheading`                                                                                    | `logos`                | –                                                                                                                           |
-| `icon-card-grid-slide` | `title`, `subheading`, `bottomSubheading`                                                                | `items`                | `layout`                                                                                                                    |
-| `payoff-slide`         | –                                                                                                        | –                      | –                                                                                                                           |
-| `quote-slide`          | `quote`, `authorName`, `authorTitle`                                                                     | `quotes`               | –                                                                                                                           |
-| `image-slide`          | `title`, `subheading`, `bottomSubheading`, `caption`                                                     | –                      | `imageRole`, `zoomSteps`, `zoomLevel`, `zoomPositions`                                                                      |
-| `embed-slide`          | `title`                                                                                                  | –                      | `embedUrl`, `aspectRatio`, `sandbox`                                                                                        |
-| `countdown-slide`      | `title`                                                                                                  | –                      | `durationMinutes`, `durationSeconds`, `autoStart`, `flashOnZero`, `soundOnZero`, `zeroText`                                 |
-| `poll-slide`           | `question`, `options`                                                                                    | –                      | `onClose`, `onCloseTarget`                                                                                                  |
-| `likert-slide`         | `question`, `options`                                                                                    | –                      | `onClose`, `onCloseTarget`                                                                                                  |
-| `likert-slider-slide`  | `question`, `minLabel`, `maxLabel`                                                                       | –                      | –                                                                                                                           |
-| `feedback-slide`       | `question`                                                                                               | –                      | `placeholder`                                                                                                               |
-| `follow-invite-slide`  | –                                                                                                        | –                      | –                                                                                                                           |
-| `chart-slide`          | `title`, `subheading`, `bottomSubheading`                                                                | –                      | `chartType`, `data`, `showLegend`, `showValues`, `pieLabelMode`, `xLabel`, `yLabel`, `series{n}Label`                       |
-| `text-blocks-slide`    | `title`, `subheading`, `bottomSubheading`                                                                | `rows`                 | –                                                                                                                           |
-| `comparison-slide`     | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | –                      | `variant`                                                                                                                   |
-| `process-slide`        | `title`, `subheading`, `bottomSubheading`, `items`                                                       | –                      | `direction`                                                                                                                 |
-| `timeline-slide`       | `title`, `subheading`, `bottomSubheading`, `items`                                                       | –                      | –                                                                                                                           |
-| `matrix-slide`         | `title`, `subheading`, `bottomSubheading`, `cells`                                                       | –                      | `xAxis`, `yAxis`                                                                                                            |
-| `funnel-slide`         | `title`, `subheading`, `bottomSubheading`, `items`                                                       | –                      | –                                                                                                                           |
-| `pyramid-slide`        | `title`, `subheading`, `bottomSubheading`, `levels`                                                      | –                      | –                                                                                                                           |
-| `cycle-slide`          | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items`                                        | –                      | –                                                                                                                           |
-| `gallery-slide`        | `title`, `subheading`, `bottomSubheading`                                                                | `images`               | `layout`                                                                                                                    |
-| `end-slide`            | `title`, `body`, `contactName`, `contactEmail`, `contactPhone`                                           | –                      | `contactUrl`, `social{n}Label`, `social{n}Url`                                                                              |
+| Type                   | Canvas (wysiwyg)                                                                                         | Bulk modal (only home) | Inspector keeps                                                                                                             | Text style offer                          |
+| ---------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| `title-slide`          | `title`, `subheading`, `meta`                                                                            | –                      | `logoCorner`                                                                                                                | `title`: size; `subheading`: size         |
+| `chapter-title-slide`  | `title`, `subheading`                                                                                    | –                      | `layout`                                                                                                                    | `title`: size                             |
+| `content-slide`        | `title`, `subheading`, `body`                                                                            | –                      | `layout`, `density`, `actions`, `asideVariant`, `asideText`                                                                 | `title`: align, size; `body`: align, size |
+| `callout-slide`        | `label`, `body`, `source`                                                                                | –                      | `variant`                                                                                                                   | `body`: align, size                       |
+| `table-slide`          | `title`, `caption`                                                                                       | –                      | `headerRow`, `tableStyle`, `animateByCell`, `cornerCell`                                                                    | –                                         |
+| `list-slide`           | `title`, `subheading`, `items`                                                                           | –                      | `variant`, `layout`, `density`, `asideVariant`, `asideText`                                                                 | –                                         |
+| `kpi-metrics-slide`    | `title`, `subheading`, `bottomSubheading`, `metrics`                                                     | –                      | `accent`, `countUp`                                                                                                         | –                                         |
+| `image-text-slide`     | `title`, `caption`, `body`                                                                               | –                      | `imageRole`, `density`, `imageSide`, `imageWidth`, `imageBackground`, `actions`, `asideVariant`, `asideText`                | `body`: align, size                       |
+| `image-set-slide`      | `title`, `caption`, `body`                                                                               | –                      | `imageRole`, `density`, `textColumns`, `imageSide`, `imageWidth`, `imageBackground`, `actions`, `asideVariant`, `asideText` | `body`: align, size                       |
+| `video-slide`          | `title`                                                                                                  | –                      | `source`, `transcript`, `autoplay`, `bunnyLibraryId`, `watchUrl`                                                            | –                                         |
+| `team-cards-slide`     | `title`, `subheading`, `bottomSubheading`, `subheading2`                                                 | –                      | `textPosition`, `imageShape`, `imageAspect`, `showPhotoFrame`, `columnSplit`                                                | –                                         |
+| `logo-wall-slide`      | `title`, `subheading`                                                                                    | –                      | –                                                                                                                           | –                                         |
+| `icon-card-grid-slide` | `title`, `subheading`, `bottomSubheading`                                                                | –                      | `layout`                                                                                                                    | –                                         |
+| `payoff-slide`         | –                                                                                                        | –                      | –                                                                                                                           | –                                         |
+| `quote-slide`          | –                                                                                                        | –                      | –                                                                                                                           | `quotes[].quote`: size (every item)       |
+| `image-slide`          | `title`, `subheading`, `bottomSubheading`, `caption`                                                     | –                      | `imageRole`, `zoomSteps`, `zoomLevel`, `zoomPositions`                                                                      | –                                         |
+| `embed-slide`          | `title`                                                                                                  | –                      | `embedUrl`, `aspectRatio`, `sandbox`                                                                                        | –                                         |
+| `countdown-slide`      | `title`                                                                                                  | –                      | `durationMinutes`, `durationSeconds`, `autoStart`, `flashOnZero`, `soundOnZero`, `zeroText`                                 | –                                         |
+| `poll-slide`           | `question`, `options`                                                                                    | –                      | `onClose`, `onCloseTarget`                                                                                                  | –                                         |
+| `likert-slide`         | `question`, `options`                                                                                    | –                      | `onClose`, `onCloseTarget`                                                                                                  | –                                         |
+| `likert-slider-slide`  | `question`, `minLabel`, `maxLabel`                                                                       | –                      | –                                                                                                                           | –                                         |
+| `feedback-slide`       | `question`                                                                                               | –                      | `placeholder`                                                                                                               | –                                         |
+| `follow-invite-slide`  | –                                                                                                        | –                      | –                                                                                                                           | –                                         |
+| `chart-slide`          | `title`, `subheading`, `bottomSubheading`                                                                | –                      | `chartType`, `data`, `showLegend`, `showValues`, `pieLabelMode`, `xLabel`, `yLabel`, `series{n}Label`                       | –                                         |
+| `text-blocks-slide`    | `title`, `subheading`, `bottomSubheading`                                                                | –                      | –                                                                                                                           | –                                         |
+| `comparison-slide`     | `title`, `subheading`, `bottomSubheading`, `leftTitle`, `leftBody`, `rightTitle`, `rightBody`, `verdict` | –                      | `variant`                                                                                                                   | –                                         |
+| `process-slide`        | `title`, `subheading`, `bottomSubheading`, `items`                                                       | –                      | `direction`                                                                                                                 | –                                         |
+| `timeline-slide`       | `title`, `subheading`, `bottomSubheading`, `items`                                                       | –                      | –                                                                                                                           | –                                         |
+| `matrix-slide`         | `title`, `subheading`, `bottomSubheading`, `cells`                                                       | –                      | `xAxis`, `yAxis`                                                                                                            | –                                         |
+| `funnel-slide`         | `title`, `subheading`, `bottomSubheading`, `items`                                                       | –                      | –                                                                                                                           | –                                         |
+| `pyramid-slide`        | `title`, `subheading`, `bottomSubheading`, `levels`                                                      | –                      | –                                                                                                                           | –                                         |
+| `cycle-slide`          | `title`, `subheading`, `bottomSubheading`, `centerLabel`, `items`                                        | –                      | –                                                                                                                           | –                                         |
+| `gallery-slide`        | `title`, `subheading`, `bottomSubheading`                                                                | –                      | `layout`                                                                                                                    | –                                         |
+| `end-slide`            | `title`, `body`, `contactName`, `contactEmail`, `contactPhone`                                           | –                      | `contactUrl`, `social{n}Label`, `social{n}Url`                                                                              | –                                         |
 
 <!--/gen:slide-type-coverage-->
 

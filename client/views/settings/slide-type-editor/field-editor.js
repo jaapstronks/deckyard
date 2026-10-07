@@ -392,6 +392,35 @@ export function createFieldListEditor({
       );
     }
 
+    // The slide's heading (D129): the reader makes this field the section's
+    // visible <h2>; without one, the title of a DB type sits in the body as a
+    // paragraph. One field per slide may say so, so the control behaves like
+    // a radio across the top-level text rows: marking one unmarks the rest.
+    // Items head themselves (`itemLabelField`), so a nested list offers none.
+    if (!nested && field.type === 'string') {
+      body.append(
+        createCheckboxRow({
+          checked: field.role === 'heading',
+          text: t('settings.slideTypes.fields.heading', 'Slide heading'),
+          onChange: (checked) => {
+            for (const other of currentFields) {
+              if (other.role === 'heading') delete other.role;
+            }
+            if (checked) field.role = 'heading';
+            notify();
+            render();
+          },
+        }),
+        h('p', {
+          class: 'help',
+          text: t(
+            'settings.slideTypes.fields.headingHelp',
+            'The reader and the reflowable export show this field as the visible title of the slide. One field per slide.',
+          ),
+        }),
+      );
+    }
+
     // maxLength (string, markdown)
     if (field.type === 'string' || field.type === 'markdown') {
       const maxRow = h('div', { class: 'field-list-field-row' });
@@ -644,6 +673,31 @@ export function createFieldListEditor({
         }),
       );
       body.append(foldRow);
+
+      // An enum whose value means something (D130b): the reader and the
+      // exports publish it as `data-<key>` on the slide or the item, so a
+      // tone or a verdict survives outside the slide's styling.
+      body.append(
+        createCheckboxRow({
+          checked: field.semantic === true,
+          text: t(
+            'settings.slideTypes.fields.semantic',
+            'This choice carries meaning',
+          ),
+          onChange: (checked) => {
+            if (checked) field.semantic = true;
+            else delete field.semantic;
+            notify();
+          },
+        }),
+        h('p', {
+          class: 'help',
+          text: t(
+            'settings.slideTypes.fields.semanticHelp',
+            'Tick it when the choice says something (a verdict, a tone), not just how it looks. The reader and the exports keep it as data.',
+          ),
+        }),
+      );
     }
 
     // Items sub-fields (nested)

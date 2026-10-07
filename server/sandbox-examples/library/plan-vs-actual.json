@@ -1,0 +1,16 @@
+{
+  "name": "Plan vs actual",
+  "description": "Two columns side by side: what was planned and what happened.",
+  "slideType": "comparison-slide",
+  "theme": "corporate",
+  "lang": "en-GB",
+  "content": {
+    "title": "Plan vs actual",
+    "leftTitle": "What we planned",
+    "leftBody": "- 44M€ revenue target\n- 29% gross margin\n- Two new regions (DACH, Nordics)\n- Flat headcount",
+    "rightTitle": "What we delivered",
+    "rightBody": "- **48.6M€** revenue (+11% over target)\n- **31%** gross margin\n- Three regions live (DACH, Nordics, Benelux)\n- +14 net hires in sales",
+    "verdict": "Ahead of plan",
+    "background": "mist"
+  }
+}

@@ -11,12 +11,39 @@ import {
   slideInstanceKeys,
 } from '../../../shared/slide-types/instance-keys.js';
 import { normalizeDataSource } from '../../../shared/data-source.js';
-import { ValidationError } from '../../utils/errors.js';
+import { textStyleRefusals } from '../../../shared/slide-types/text-styles.js';
+import { AppError, ValidationError } from '../../utils/errors.js';
 
 // An example canonical id for the error message, read from the registry so it
 // can never drift from the spelling the format actually publishes.
 const EXAMPLE_CANONICAL_ID =
   getSlideTypeId('title-slide') || 'eu.deckyard.slide.title';
+
+/**
+ * Refuse a `content.textStyles` map that asks for a style the slide's type does
+ * not offer (B464, D220, D221): a key the type does not offer, a per-instance
+ * key for a field that has siblings (`members.3.name`), any `color`, or a
+ * property or value outside the offer. Refused, not pruned: an agent that sent
+ * it learns the style did not land. Stored decks were folded into this shape
+ * by the v17 -> v18 schema step, so no current writer sends one.
+ *
+ * @param {unknown} textStyles
+ * @param {object|null} def - the slide's resolved type
+ * @param {number} index - the slide's position in the written list
+ * @throws {AppError} 400 `invalid`, `details` `{ field: 'slides', index,
+ *   reason }` with the refusal's `text_style_*` sub-code; the message names
+ *   the key and why
+ */
+function refuseUnofferedTextStyles(textStyles, def, index) {
+  const [first] = textStyleRefusals(textStyles, def);
+  if (!first) return;
+  throw new AppError(
+    `slides[${index}].content.${first.message}`,
+    400,
+    { field: 'slides', index, reason: first.reason },
+    'invalid',
+  );
+}
 
 /**
  * The one write-seam every stored slide passes through: it validates the slide
@@ -65,6 +92,8 @@ const EXAMPLE_CANONICAL_ID =
  *   resolve here too. See the note above.
  * @returns {Array<object>}
  * @throws {ValidationError} 400 when a slide names an unresolvable type.
+ * @throws {AppError} 400 `invalid` when a slide's `textStyles` asks for a
+ *   style its type does not offer (see {@link refuseUnofferedTextStyles}).
  */
 export function normalizeSlides(
   slides,
@@ -89,9 +118,10 @@ export function normalizeSlides(
       id: typeof s?.id === 'string' && s.id ? s.id : crypto.randomUUID(),
       content: s?.content,
     };
+    const def = getSlideType(type, slideTypes);
+    refuseUnofferedTextStyles(s?.content?.textStyles, def, index);
     // Instance keys, from the type's declaration. Copied first so the write
     // lands on this slide's own content object rather than the caller's.
-    const def = getSlideType(type, slideTypes);
     if (Object.keys(slideInstanceKeys(def)).length) {
       normalized.content = {
         ...(s?.content && typeof s.content === 'object' ? s.content : {}),

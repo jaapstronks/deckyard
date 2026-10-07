@@ -24,8 +24,12 @@
 import { renderFocusGridField } from './focus-picker.js';
 import { renderImagePositionPicker } from './image-position-picker.js';
 import { imageFitOptions } from '../fields/image-fit.js';
-import { getInlineDescriptor } from '../inline-edit/descriptors.js';
+import {
+  getInlineDescriptor,
+  resolveMediaMember,
+} from '../inline-edit/descriptors.js';
 import { t } from '../../../lib/ui-i18n.js';
+import { renderItemFieldWidget } from './item-field-widget.js';
 
 /**
  * Resolve where the image element at `idx` reads/writes, from the type's inline
@@ -46,29 +50,10 @@ function resolveImageElement(slide, def, idx) {
   const media = descriptor?.media;
   if (!slide || !media || !Number.isInteger(idx)) return null;
 
-  const sub = (s) => (media.list ? s : String(s).replace('{n}', String(idx)));
-
-  let member;
-  let imageField;
-  let altField;
-  let extraFields;
-  if (media.list) {
-    const arr = slide.content?.[media.list];
-    if (!Array.isArray(arr) || idx < 0 || idx >= arr.length) return null;
-    member = arr[idx];
-    imageField = media.imageField;
-    altField = media.altField;
-    extraFields = Array.isArray(media.extraFields) ? media.extraFields : [];
-  } else {
-    member = slide.content;
-    imageField = sub(media.imageField);
-    altField = sub(media.altField);
-    extraFields = (media.extraFields || []).map((f) => ({
-      ...f,
-      key: sub(f.key),
-    }));
-  }
-  if (!member || typeof member !== 'object') return null;
+  // Never pads: the inspector reads a selection, it does not make one.
+  const target = resolveMediaMember(slide.content, media, idx);
+  if (!target) return null;
+  const { member, sub, imageField, altField, extraFields } = target;
 
   let focus = null;
   if (descriptor.focus) {
@@ -118,6 +103,7 @@ function resolveImageElement(slide, def, idx) {
  * @param {Function} opts.rerenderEditor
  * @param {Function} opts.rerenderPreview
  * @param {Function} opts.scheduleUiRefresh
+ * @param {Array<Object>} [opts.deckSlides] - options for a card-link extra
  * @returns {boolean} whether anything was rendered
  */
 export function renderImageElementCard({
@@ -130,6 +116,7 @@ export function renderImageElementCard({
   rerenderEditor,
   rerenderPreview,
   scheduleUiRefresh,
+  deckSlides = [],
 } = {}) {
   const resolved = resolveImageElement(slide, def, idx);
   if (!resolved) return false;
@@ -180,9 +167,43 @@ export function renderImageElementCard({
     );
   }
 
-  // Extra per-item metadata (e.g. a team member's LinkedIn URL).
-  if (hasImage && typeof fieldText === 'function') {
+  // Extra per-item metadata (a team member's LinkedIn URL, a logo's name and
+  // link). In list mode the key is an item field, so it renders through the
+  // shared per-item widget and gets its declared editor (a logo link is a
+  // `card-link`); the descriptor's label, when given, wins.
+  if (hasImage) {
+    const media = getInlineDescriptor(slide?.type, def)?.media;
+    const itemSchema = media?.list
+      ? new Map(
+          (
+            (def?.fields || []).find((f) => f.key === media.list)?.itemFields ||
+            []
+          ).map((f) => [String(f.key), f]),
+        )
+      : new Map();
     for (const f of extraFields) {
+      const schema = itemSchema.get(String(f.key));
+      if (schema) {
+        const widget = renderItemFieldWidget({
+          field: f.label
+            ? { ...schema, label: f.label, labelKey: f.i18nKey }
+            : schema,
+          item: member,
+          setItemKey: (k, v) => {
+            member[k] = v;
+            markDirty?.();
+            rerenderPreview?.();
+            scheduleUiRefresh?.();
+          },
+          slide,
+          def,
+          fieldRenderers,
+          deckSlides,
+        });
+        if (widget) container.append(widget);
+        continue;
+      }
+      if (typeof fieldText !== 'function') continue;
       container.append(
         fieldText(
           t(f.i18nKey, f.label || f.key),

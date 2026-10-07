@@ -224,9 +224,9 @@ function createFallbackSlide(originalSlide) {
       originalIndex: originalSlide.index,
       type: 'quote-slide',
       content: {
-        quote: quote.trim(),
-        authorName: 'Unknown',
-        authorTitle: '',
+        quotes: [
+          { quote: quote.trim(), authorName: 'Unknown', authorTitle: '' },
+        ],
       },
       reasoning: 'Fallback: Phase 2 failed, created basic quote slide',
       presenterNotes,

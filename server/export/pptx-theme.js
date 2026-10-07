@@ -38,6 +38,7 @@
  * value like any other and is honoured.
  */
 
+import { hexToRgb } from '../../shared/color-utils.js';
 import { resolveThemeLogo } from '../../shared/theme-logo.js';
 import { resolveSlideBgHex } from '../../shared/slide-surface-tone.js';
 import { escapeXml } from '../../shared/xml.js';
@@ -64,14 +65,19 @@ const LOGO_INSET_X_PX = 56;
 const LOGO_INSET_Y_PX = 52;
 
 /**
- * The type scale, in reference pixels, from `00-tokens.css`. Only the four
- * steps the layouts below actually use.
+ * The type scale, in reference pixels, from `00-tokens.css`, keyed by the
+ * step's own name (`--slide-text-<step>`) so a composition asks for the step
+ * its canvas CSS sets. Only the steps the layouts and mappers use.
  */
 const TEXT_PX = Object.freeze({
-  title: 80, // --slide-text-5xl, the deck's cover
-  subtitle: 28, // --slide-text-lg
-  heading: 44, // --slide-text-2xl
-  body: 20, // --slide-text-base
+  '4xl': 64, // quote and chapter title
+  '5xl': 80, // the deck's cover title
+  '2xl': 44, // a slide heading
+  '3xl': 52, // the KPI slide heading
+  xl: 34,
+  lg: 28, // most slide text, and the cover subtitle
+  md: 24,
+  base: 20, // a template's empty body box
 });
 
 /**
@@ -263,7 +269,8 @@ function pptxColor(hex, fallback) {
  * @param {object|null} theme - the active normalized theme
  * @returns {{groundId: string, background: string, text: string, textMuted: string,
  *   headFont: string, bodyFont: string, logoUrl: string, logoAlt: string,
- *   label: string, textScale: number}}
+ *   label: string, textScale: number, darkBackground: string, darkText: string,
+ *   darkAccent: string, monoFont: string}}
  */
 export function resolveThemeMaster(theme) {
   const vars =
@@ -288,6 +295,19 @@ export function resolveThemeMaster(theme) {
 
   return {
     groundId,
+    darkBackground: pptxColor(vars['--t-slide-bg-dark'], '212121'),
+    darkText: pptxColor(
+      vars['--t-slide-bg-dark-text'] || vars['--t-text-color-light'],
+      'FFFFFF',
+    ),
+    accent: pptxColor(vars['--t-color-accent'], '385C5C'),
+    darkAccent: pptxColor(
+      vars['--t-color-accent-on-dark'] || vars['--t-color-link-on-dark'],
+      vars['--t-slide-bg-dark-text'] ||
+        vars['--t-text-color-light'] ||
+        'FFFFFF',
+    ),
+    monoFont: pptxTypeface(theme, vars, '--t-font-mono') || 'Courier New',
     background: pptxColor(resolveSlideBgHex(content, theme), FALLBACK_GROUND),
     text: pptxColor(declaredText || vars['--t-color-text'], FALLBACK_TEXT),
     // A muted colour is often `rgba(...)`, which pptxgenjs cannot take; the
@@ -411,8 +431,8 @@ export function themeLayoutDefinitions(spec, logo = null) {
       title: PPTX_LAYOUTS.title,
       background,
       objects: [
-        heading('title', 'title'),
-        body('title', 'subtitle', 'subtitle', spec.textMuted),
+        heading('title', '5xl'),
+        body('title', 'subtitle', 'lg', spec.textMuted),
         ...logoObject,
       ],
     },
@@ -420,8 +440,8 @@ export function themeLayoutDefinitions(spec, logo = null) {
       title: PPTX_LAYOUTS.headingBody,
       background,
       objects: [
-        heading('headingBody', 'heading'),
-        body('headingBody', 'body', 'body', spec.text),
+        heading('headingBody', '2xl'),
+        body('headingBody', 'body', 'base', spec.text),
         ...logoObject,
       ],
     },
@@ -429,7 +449,7 @@ export function themeLayoutDefinitions(spec, logo = null) {
       title: PPTX_LAYOUTS.headingImageBody,
       background,
       objects: [
-        heading('headingImageBody', 'heading'),
+        heading('headingImageBody', '2xl'),
         {
           placeholder: {
             options: {
@@ -439,7 +459,7 @@ export function themeLayoutDefinitions(spec, logo = null) {
             },
           },
         },
-        body('headingImageBody', 'body', 'body', spec.text),
+        body('headingImageBody', 'body', 'base', spec.text),
         ...logoObject,
       ],
     },
@@ -520,4 +540,18 @@ export async function createWidePptx() {
   const pptx = new PptxGen();
   pptx.layout = 'LAYOUT_WIDE';
   return pptx;
+}
+
+/** Flatten a translucent canvas colour into an opaque PowerPoint colour. */
+export function mixPptxColors(a, b, share) {
+  const left = hexToRgb(a);
+  const right = hexToRgb(b);
+  return ['r', 'g', 'b']
+    .map((channel) =>
+      Math.round(left[channel] * share + right[channel] * (1 - share))
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')
+    .toUpperCase();
 }

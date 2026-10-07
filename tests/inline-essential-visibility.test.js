@@ -240,12 +240,19 @@ for (const [row, expect] of Object.entries(ESSENTIAL)) {
     const def = CORE_SLIDE_TYPE_DEFS[type];
     const field = def.fields.find((f) => f.key === key);
     const content = structuredClone(def.defaults || {});
-    content[key] = field.type === 'items' ? [] : '';
+    // A list that always draws its first entry (quote-slide) asks for that
+    // entry's name in-box; any other list is emptied and asks with "+ Add".
+    const firstEntry =
+      field.type === 'items' && expect === 'placeholder'
+        ? `${key}.0.${field.itemLabelField}`
+        : null;
+    if (firstEntry) content[key][0][field.itemLabelField] = '';
+    else content[key] = field.type === 'items' ? [] : '';
     const env = mount({ id: 's', type, content });
     try {
       const q = (sel) => env.thumb.querySelector(sel);
       if (expect === 'placeholder') {
-        const el = q(`[data-inline-field="${key}"]`);
+        const el = q(`[data-inline-field="${firstEntry || key}"]`);
         assert.ok(
           el?.classList.contains('ie-placeholder'),
           'in-box placeholder',

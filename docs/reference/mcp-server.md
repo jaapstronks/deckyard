@@ -103,16 +103,15 @@ Details, payload shape and the matching REST endpoints:
 
 ### Previewing & exporting
 
-| Tool                   | Description                                                                                |
-| ---------------------- | ------------------------------------------------------------------------------------------ |
-| `preview_slide`        | Render one slide as self-contained HTML (display as an artifact)                           |
-| `preview_presentation` | Render a slide range as self-contained HTML (visual gallery)                               |
-| `export_presentation`  | Get a download URL for a finished export (PDF, PPTX, HTML, JSON, or zipped per-slide PNGs) |
+| Tool                   | Description                                                                                                          |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `preview_slide`        | Render one slide as self-contained HTML (display as an artifact)                                                     |
+| `preview_presentation` | Render a slide range as self-contained HTML (visual gallery)                                                         |
+| `export_presentation`  | Get a download URL for a finished export (PDF, pixel-perfect or editable PPTX, HTML, JSON, or zipped per-slide PNGs) |
 
-`export_presentation` returns a URL the user opens in a browser signed in to
-Deckyard; the server renders the file on demand (PDF/PPTX/PNG take a few seconds
-for large decks). Use `preview_presentation` instead when you want an inline
-visual preview rather than a downloadable file.
+`export_presentation` returns a URL the user opens in a browser signed in to Deckyard; the server renders the file on demand (PDF/PPTX/PNG take a few seconds for large decks). Use `preview_presentation` instead when you want an inline visual preview rather than a downloadable file.
+
+Use `format: "pptx"` for pixel-perfect PowerPoint (slides as images, videos playable), or `format: "pptx-editable"` for editable text and pictures where the slide type supports them. The editable result includes `imageSlides`, an array of 1-based slide numbers in the exported file that remain whole-slide images (`[]` when none do). This describes the deck at the time of the tool call, after language projection and removal of live-only slides; downloading the URL uses the current deck and the same builder as the v1 editable export. The optional `lang` applies to both the download and the reported slide numbers. Without a configured `APP_URL` or `DOMAIN`, the tool returns a configuration note instead of a download URL or image-slide report.
 
 ### Deleting
 

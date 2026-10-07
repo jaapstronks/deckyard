@@ -92,6 +92,7 @@ import {
   DOCUMENT_ELEMENT_ROLES,
 } from './text-roles.js';
 import { semanticEnumAttrs } from './semantic-enums.js';
+import { labelFieldText } from './field-lookup.js';
 import { resolveItemDefaults } from './item-defaults.js';
 import { tabularColumnCount } from './tabular.js';
 import {
@@ -208,6 +209,47 @@ function fieldAttr(key) {
  */
 export function slideHeading(slide, def, { index = 0, lang } = {}) {
   if (!def) return { ...unresolvedSlideHeading(slide), ariaLabel: '' };
+  const named = namedHeading(slide, def, lang);
+  if (named) return named;
+  const text = str(def.label) || str(slide?.type) || `Slide ${index + 1}`;
+  return { text, visible: false, key: null, ariaLabel: '' };
+}
+
+/**
+ * The words a slide is titled by in a listing (a slide list, a comment's
+ * context, a notes heading, a prompt line): the text of its
+ * {@link slideHeading}, but only when the slide itself supplies it. Where the
+ * reader would fall back to the type label or the placeholder's state word
+ * this returns `''`, so a caller that shows the type beside the title does not
+ * show it twice and can pick its own fallback. One chain for every server
+ * reader (B597): a type's heading is read from its declaration, never from a
+ * private list of `title`/`heading`/`quote` keys.
+ *
+ * @param {object} slide
+ * @param {object|null|undefined} def - the resolved slide-type definition
+ * @param {object} [opts]
+ * @param {string} [opts.lang] - the deck language
+ * @returns {string}
+ */
+export function slideTitle(slide, def, { lang } = {}) {
+  if (!def) {
+    const heading = unresolvedSlideHeading(slide);
+    return heading.key ? heading.text : '';
+  }
+  return namedHeading(slide, def, lang)?.text || '';
+}
+
+/**
+ * The part of {@link slideHeading} the slide's content decides: its declared
+ * heading, else its name (`a11yTitle`, the `labelField` value, a label
+ * option's default word, a markup heading). Null when the slide supplies none.
+ *
+ * @param {object} slide
+ * @param {object} def
+ * @param {string} [lang]
+ * @returns {{ text: string, visible: boolean, key: string|null, ariaLabel: string }|null}
+ */
+function namedHeading(slide, def, lang) {
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
   const a11y = str(content.a11yTitle);
@@ -223,13 +265,10 @@ export function slideHeading(slide, def, { index = 0, lang } = {}) {
   const labelDef = labelKey ? fields.find((f) => f?.key === labelKey) : null;
   const text =
     a11y ||
-    str(content[labelKey]) ||
+    labelFieldText(def, content) ||
     optionDefaultText(labelDef, fields, content, def.defaults, lang) ||
-    markupHeadingText(fields, content) ||
-    str(def.label) ||
-    str(slide?.type) ||
-    `Slide ${index + 1}`;
-  return { text, visible: false, key: null, ariaLabel: '' };
+    markupHeadingText(fields, content);
+  return text ? { text, visible: false, key: null, ariaLabel: '' } : null;
 }
 
 /**
@@ -350,6 +389,25 @@ function figureGroupImageField(field) {
   return readable.every((f) => f === images[0] || siblings.has(f.key))
     ? images[0]
     : null;
+}
+
+/**
+ * Whether an `items` field is a set of quotations: one of its item fields
+ * carries the `quote` role. A lone quotation is the passage itself, never a
+ * list of one, so such a field with a single item projects that item's blocks
+ * bare - the blockquote and its footer - and only two or more become a list
+ * (D314). Derived from the role, like the figure group, so a fork type of the
+ * same shape reads the same.
+ *
+ * @param {object} field
+ * @returns {boolean}
+ */
+function isQuotationSet(field) {
+  return (
+    field?.type === 'items' &&
+    Array.isArray(field.itemFields) &&
+    field.itemFields.some((f) => f?.role === 'quote')
+  );
 }
 
 /**
@@ -1038,8 +1096,9 @@ function itemHeading(
  * @param {string[]} [ctx.slideIds] - the document's slide ids, for jumps
  * @param {object} [ctx.parent] - the object holding the items field
  * @param {string} [ctx.parentKey] - the key of that items field
- * @param {'li'|'td'} [ctx.tag] - the element the item is: a list entry, or a
- *   cell of the grid an `axes` declaration makes of the items
+ * @param {'li'|'td'|null} [ctx.tag] - the element the item is: a list entry,
+ *   a cell of the grid an `axes` declaration makes of the items, or `null`
+ *   for none (a lone quotation, see quotationField)
  */
 function renderItemBlock(
   item,
@@ -1079,6 +1138,15 @@ function renderItemBlock(
   // enum resolves through the type's `defaults`: one rule, and the canvas
   // (`.matrix-cell[data-tone]`) says the same for a cell without a tone.
   const attrs = semanticEnumAttrs(itemFields, item, itemDefaults);
+  if (!tag) {
+    const bare = headingKey
+      ? [
+          `<h3${fieldAttr(headingKey)}>${escapeHtml(headingText)}</h3>`,
+          ...below,
+        ]
+      : below;
+    return bare.join('\n');
+  }
   // `reader-item` styles a list entry; a table cell has the table's own.
   const open = tag === 'li' ? `<li class="reader-item"` : `<${tag}`;
   if (headingKey && !below.length) {
@@ -1401,6 +1469,15 @@ function renderFieldValue(
             }),
           })),
           content,
+        );
+      }
+      if (value.length === 1 && isQuotationSet(field)) {
+        return renderItemBlock(
+          value[0],
+          field.itemFields,
+          field.itemLabelField,
+          resolveItemDefaults(field),
+          { lang, slideIds, parent: content, parentKey: field.key, tag: null },
         );
       }
       // A `relationField` names a per-item enum holding a typed relation to

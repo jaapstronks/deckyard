@@ -2,7 +2,7 @@
  * Pluggable image-picker seam.
  *
  * Deckyard historically injected TWO picker functions — the native image
- * library (`openImageLibrary`) and ImageKit (`openImageKit`) — that every image
+ * library (`openImageLibrary`) and ImageKit — that every image
  * call site had to wire and duck-type separately. New entry points kept
  * forgetting one: the inline WYSIWYG media popover silently dropped ImageKit,
  * so in an ImageKit-only deployment the in-canvas "change image" button ignored
@@ -23,7 +23,8 @@
  * flattens it onto the (unchanged) flat `slide.content` storage model.
  */
 import { t } from '../../../lib/ui-i18n.js';
-import { createQuickModal } from '../../../lib/dom/modal.js';
+import { createModal, createQuickModal } from '../../../lib/dom/modal.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { h } from '../../../lib/dom/index.js';
 import { featureEnabled } from '../../../lib/state/features.js';
 
@@ -68,6 +69,31 @@ import { featureEnabled } from '../../../lib/state/features.js';
  * @returns {PickerProvider}
  */
 function libraryProvider(openLibraryRaw, { canUpload = false } = {}) {
+  const normalize = (it, applyCaptionCredit = false) => {
+    const url = typeof it?.url === 'string' ? it.url.trim() : '';
+    if (!url) return null;
+    const photographer =
+      typeof it?.photographer === 'string' ? it.photographer.trim() : '';
+    return {
+      url,
+      alts: it?.alts && typeof it.alts === 'object' ? it.alts : undefined,
+      name: it?.name,
+      tags: Array.isArray(it?.tags) ? it.tags : undefined,
+      caption:
+        applyCaptionCredit && photographer
+          ? t('editor.image.photoCredit', 'Photo: {photographer}', {
+              photographer,
+            })
+          : undefined,
+      meta: {
+        photographer: photographer || undefined,
+        source: it?.source,
+        sourceUrl: it?.sourceUrl,
+        id: it?.id,
+        description: it?.description,
+      },
+    };
+  };
   const openWith = (opts, { upload = false } = {}) =>
     openLibraryRaw({
       upload,
@@ -75,28 +101,8 @@ function libraryProvider(openLibraryRaw, { canUpload = false } = {}) {
       allowCaptionCredit: !!opts.allowCaptionCredit,
       context: opts.context,
       onPick: (it, { applyCaptionCredit } = {}) => {
-        const url = typeof it?.url === 'string' ? it.url.trim() : '';
-        if (!url) return;
-        const photographer =
-          typeof it?.photographer === 'string' ? it.photographer.trim() : '';
-        opts.onPick?.({
-          url,
-          alts: it?.alts && typeof it.alts === 'object' ? it.alts : undefined,
-          tags: Array.isArray(it?.tags) ? it.tags : undefined,
-          caption:
-            applyCaptionCredit && photographer
-              ? t('editor.image.photoCredit', 'Photo: {photographer}', {
-                  photographer,
-                })
-              : undefined,
-          meta: {
-            photographer: photographer || undefined,
-            source: it?.source,
-            sourceUrl: it?.sourceUrl,
-            id: it?.id,
-            description: it?.description,
-          },
-        });
+        const picked = normalize(it, applyCaptionCredit);
+        if (picked) opts.onPick?.(picked);
       },
     });
   return {
@@ -110,6 +116,19 @@ function libraryProvider(openLibraryRaw, { canUpload = false } = {}) {
     // The direct route from an image field (B579): file dialog first, no
     // source chooser. Only where this deployment stores uploads.
     upload: canUpload ? (opts) => openWith(opts, { upload: true }) : undefined,
+    uploadMany: canUpload
+      ? (opts) =>
+          openLibraryRaw({
+            batch: true,
+            spec: opts.spec,
+            capacity: opts.capacity,
+            validateDestination: opts.validateDestination,
+            onPickMany: (items) =>
+              opts.onPickMany?.(
+                items.map((item) => normalize(item)).filter(Boolean),
+              ),
+          })
+      : undefined,
   };
 }
 
@@ -140,16 +159,45 @@ function bundledGradientsProvider(openBundledRaw) {
 }
 
 /**
- * Adapter: ImageKit DAM picker.
+ * @typedef {{ ok: true } | { ok: false, error: string }} PickOutcome
+ *   What a DAM panel's `onPick` resolves to. It never rejects: a refused copy
+ *   is an outcome the seam has already shown, not an exception to catch.
+ */
+
+/**
+ * @typedef {Object} DamPanelOpts  What the seam hands a DAM panel.
+ * @property {(picked: {url: string, fileId?: string, altSeed?: string,
+ *   tags?: string[]}) => Promise<PickOutcome>} onPick
+ *   Copies the pick into own media and, only when that succeeds, closes the
+ *   dialog and tells the call site. Await it to keep the panel busy meanwhile.
+ * @property {() => void} cancel   Close the dialog without a pick (ignored
+ *   while a copy runs).
+ * @property {HTMLElement} refusal The seam's refusal message. Place it beside
+ *   the panel's own "use" button; left unplaced, the seam shows it above the
+ *   panel.
+ * @property {string} note         One line to show when picks cannot succeed
+ *   here (no own media), else ''.
+ * @property {string} [docId]
+ * @property {Object} [context]
+ */
+
+/**
+ * Adapter: ImageKit DAM picker (or the external picker a fork puts in its
+ * slot, B410).
  *
- * Copy into own media before notifying the caller. Refusals propagate to the
- * picker so it can keep the dialog open without mutating the slide.
+ * The seam owns the dialog, not the panel: it opens the modal, mounts the
+ * panel's `el`, copies a pick into own media before notifying the caller,
+ * holds the dialog busy while it copies, shows a refused copy in its own
+ * inline message and closes only on success. A panel therefore has no way to
+ * close on a refused copy or to mutate the slide: it never gets the close,
+ * and the call site's `onPick` runs only after the copy.
  *
- * @param {Function} openImageKitRaw - bound `openImageKitPicker`
+ * @param {(opts: DamPanelOpts) => {el: HTMLElement, detach?: () => void}} createPanelRaw
+ *   - bound `createImageKitPanel`
  * @param {((pick: {fileId: string, url: string}) => Promise<{url: string}>)} [importToOwnMedia]
  * @returns {PickerProvider}
  */
-function imagekitProvider(openImageKitRaw, importToOwnMedia) {
+function imagekitProvider(createPanelRaw, importToOwnMedia, root) {
   const canCopy = typeof importToOwnMedia === 'function';
   const unavailableMessage = canCopy
     ? ''
@@ -157,7 +205,40 @@ function imagekitProvider(openImageKitRaw, importToOwnMedia) {
         'editor.image.imagekit.noCopyNote',
         'This image cannot be used because copying it into your own media requires image uploads to be enabled.',
       );
-  return {
+  // One sentence for every refused copy (B412): the server's message is not
+  // display text, and an answer without a URL is the same failure as an
+  // error envelope.
+  const copyFailed = () =>
+    t(
+      'editor.image.imagekit.copyFailed',
+      'This image could not be copied into your own media. Try again or choose another image.',
+    );
+
+  /**
+   * Copy into own media. Resolves the own URL, or throws the sentence to show.
+   * @param {{url?: string, fileId?: string}} picked
+   * @returns {Promise<string>}
+   */
+  async function copyToOwnMedia(picked) {
+    const url = typeof picked?.url === 'string' ? picked.url.trim() : '';
+    if (!url)
+      throw new Error(t('imagekit.use.failed', 'Could not use this image.'));
+    if (!canCopy) throw new Error(unavailableMessage);
+    let stored;
+    try {
+      stored = await importToOwnMedia({
+        fileId: picked?.fileId || undefined,
+        url,
+      });
+    } catch {
+      throw new Error(copyFailed());
+    }
+    const copied = typeof stored?.url === 'string' ? stored.url.trim() : '';
+    if (!copied) throw new Error(copyFailed());
+    return copied;
+  }
+
+  const provider = {
     id: 'imagekit',
     label: t('editor.image.source.imagekit', 'ImageKit'),
     description: t(
@@ -168,48 +249,71 @@ function imagekitProvider(openImageKitRaw, importToOwnMedia) {
     // only exists once ImageKit is configured.
     primary: true,
     open(opts) {
-      openImageKitRaw({
-        title: opts.title,
+      let panel = null;
+      const dialog = createModal({
+        // The label, not a constant: a fork that relabels the provider
+        // (its own DAM) gets its own dialog title with it.
+        title: opts.title || provider.label,
+        modalClass: 'imagekit-modal',
+        fill: true,
+        onClose: () => panel?.detach?.(),
+      });
+      const refusal = createInlineError({ callout: true });
+      let copying = false;
+
+      /** @returns {Promise<PickOutcome>} */
+      const onPick = async (picked) => {
+        // A second pick while a copy runs (an iframe can post twice) is not
+        // a new attempt.
+        if (copying) return { ok: false, error: '' };
+        copying = true;
+        refusal.clear();
+        dialog.setBusy(true);
+        let url;
+        try {
+          url = await copyToOwnMedia(picked);
+        } catch (err) {
+          dialog.setBusy(false);
+          copying = false;
+          const error = err.message;
+          refusal.show(error);
+          return { ok: false, error };
+        }
+        dialog.setBusy(false);
+        copying = false;
+        dialog.close();
+        opts.onPick?.({
+          url,
+          alt: typeof picked?.altSeed === 'string' ? picked.altSeed : undefined,
+          tags: Array.isArray(picked?.tags) ? picked.tags : undefined,
+          providerId: picked?.fileId || undefined,
+        });
+        return { ok: true };
+      };
+
+      panel = createPanelRaw({
         docId: opts.docId,
         context: opts.context,
         note: unavailableMessage,
-        onPick: async (picked) => {
-          const url = typeof picked?.url === 'string' ? picked.url.trim() : '';
-          if (!url) return;
-          const fileId = picked?.fileId || undefined;
-
-          if (!canCopy) throw new Error(unavailableMessage);
-          // One sentence for every refused copy (B412): the server's message
-          // is not display text, and an answer without a URL is the same
-          // failure as an error envelope.
-          const copyFailed = () =>
-            new Error(
-              t(
-                'editor.image.imagekit.copyFailed',
-                'This image could not be copied into your own media. Try again or choose another image.',
-              ),
-            );
-          let stored;
-          try {
-            stored = await importToOwnMedia({ fileId, url });
-          } catch {
-            throw copyFailed();
-          }
-          const copied =
-            typeof stored?.url === 'string' ? stored.url.trim() : '';
-          if (!copied) throw copyFailed();
-
-          opts.onPick?.({
-            url: copied,
-            alt:
-              typeof picked?.altSeed === 'string' ? picked.altSeed : undefined,
-            tags: Array.isArray(picked?.tags) ? picked.tags : undefined,
-            providerId: fileId,
-          });
+        refusal: refusal.el,
+        onPick,
+        cancel: () => {
+          if (!copying) dialog.close();
         },
       });
+      if (!(panel?.el instanceof HTMLElement)) {
+        throw new Error(
+          'image picker: the ImageKit slot takes a panel factory returning { el, detach } (B410)',
+        );
+      }
+      dialog.append(panel.el);
+      // Unplaced, the refusal goes above the panel: a panel cannot make it
+      // invisible by forgetting it.
+      if (!panel.el.contains(refusal.el)) panel.el.before(refusal.el);
+      dialog.show(root || document.body);
     },
   };
+  return provider;
 }
 
 /**
@@ -297,7 +401,7 @@ function openSourceChooser({ root, providers, hint, onChoose }) {
  *   (which `IMAGEKIT_ONLY` already forces);
  * - the bundled gradients are enabled whenever their raw opener is provided
  *   (the caller resolves the `stockMedia.bundled.enabled` toggle);
- * - ImageKit is enabled whenever its raw opener is provided, and is primary.
+ * - ImageKit is enabled whenever its panel factory is provided, and is primary.
  *
  * `providers` is the live table: its order is the chooser's order, with the
  * primary source first.
@@ -307,12 +411,15 @@ function openSourceChooser({ root, providers, hint, onChoose }) {
  * @param {Object} [args.features]
  * @param {Function} [args.openImageLibrary]     - bound `openImageLibraryPicker`
  * @param {Function} [args.openBundledGradients] - bound `openBundledGradientPicker`
- * @param {Function} [args.openImageKit]         - bound `openImageKitPicker`
+ * @param {Function} [args.createImageKitPanel]  - bound `createImageKitPanel`:
+ *   the DAM panel the seam mounts in its own dialog (B410). A fork's external
+ *   picker fills this slot with the same `{ el, detach }` factory.
  * @param {Function} [args.importImageKitToOwnMedia] - copies a picked ImageKit
  *   asset into own media; absent when this deployment has no own media.
  * @returns {((opts: PickerOpts) => void) & {
  *   providers: PickerProvider[],
  *   upload: ((opts: PickerOpts) => void) | null,
+ *   uploadMany: ((opts: PickerOpts) => void) | null,
  * }}
  */
 export function createImagePickerSeam({
@@ -320,9 +427,17 @@ export function createImagePickerSeam({
   features = {},
   openImageLibrary,
   openBundledGradients,
-  openImageKit,
+  createImageKitPanel,
   importImageKitToOwnMedia,
+  ...rest
 } = {}) {
+  // The opener that closed its own dialog is gone (B410); a fork still
+  // passing it would otherwise lose its DAM without a word.
+  if ('openImageKit' in rest) {
+    throw new Error(
+      'image picker: openImageKit was replaced by createImageKitPanel, a panel factory the seam mounts in its own dialog (B410)',
+    );
+  }
   const flags = features && typeof features === 'object' ? features : {};
   const providers = [];
   if (flags.enableImageLibrary && typeof openImageLibrary === 'function') {
@@ -335,8 +450,10 @@ export function createImagePickerSeam({
   if (typeof openBundledGradients === 'function') {
     providers.push(bundledGradientsProvider(openBundledGradients));
   }
-  if (typeof openImageKit === 'function') {
-    providers.push(imagekitProvider(openImageKit, importImageKitToOwnMedia));
+  if (typeof createImageKitPanel === 'function') {
+    providers.push(
+      imagekitProvider(createImageKitPanel, importImageKitToOwnMedia, root),
+    );
   }
   orderProviders(providers);
 
@@ -360,6 +477,9 @@ export function createImagePickerSeam({
   const uploader = providers.find((p) => typeof p.upload === 'function');
   openImagePicker.upload = uploader
     ? (opts = {}) => uploader.upload(opts)
+    : null;
+  openImagePicker.uploadMany = uploader?.uploadMany
+    ? (opts = {}) => uploader.uploadMany(opts)
     : null;
 
   openImagePicker.providers = providers;

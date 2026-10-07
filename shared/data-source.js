@@ -114,11 +114,6 @@ export const BINDABLE_SLIDE_TYPES = {
         sourceHint: 'cell or property',
       },
       {
-        target: 'metrics[*].delta',
-        label: 'Metric delta',
-        sourceHint: 'cell or property',
-      },
-      {
         target: 'metrics[*].unit',
         label: 'Metric unit',
         sourceHint: 'cell or property',
@@ -159,17 +154,18 @@ export const BINDABLE_SLIDE_TYPES = {
   'quote-slide': {
     label: 'Quote',
     fields: [
-      { target: 'quote', label: 'Quote text', sourceHint: 'block or cell' },
       {
-        // Same defect as chart's `csvData` was: the type splits attribution
-        // into `authorName` and `authorTitle`, and never had an
-        // `attribution` field for a binding to land in.
-        target: 'authorName',
+        target: 'quotes[*].quote',
+        label: 'Quote text',
+        sourceHint: 'block or cell',
+      },
+      {
+        target: 'quotes[*].authorName',
         label: 'Author name',
         sourceHint: 'block or cell',
       },
       {
-        target: 'authorTitle',
+        target: 'quotes[*].authorTitle',
         label: 'Author role / title',
         sourceHint: 'block or cell',
       },

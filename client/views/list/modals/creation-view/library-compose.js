@@ -279,6 +279,7 @@ export function createLibraryCompose({
     } else {
       setStatus('');
     }
+    return resolved;
   };
 
   const renderCollectionsChooser = (collections) => {
@@ -465,6 +466,7 @@ export function createLibraryCompose({
     selectedOrder = items.map((it) => it.id);
     renderTray();
     syncUI();
+    return items;
   };
 
   return {
@@ -474,9 +476,9 @@ export function createLibraryCompose({
     ensurePicker,
     /** Lazily load and render the collections chooser. */
     ensureCollectionsChooser,
-    /** Seed the tray from a saved collection (async). */
+    /** Seed the tray from a saved collection (async); resolves to the seeded items. */
     seedCollection,
-    /** Seed the tray from a resolved item list. */
+    /** Seed the tray from a resolved item list; returns the seeded items. */
     seedItems,
     /** Force the active source ('all' | 'collections') without switch side effects. */
     setMode: (mode) => {

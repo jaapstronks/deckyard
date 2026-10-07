@@ -138,10 +138,12 @@ export function createLangSelector({
     wrap,
     syncUi,
     getLang: () => langMode,
-    setLang: (lang) => {
+    // `persist: false` sets a derived language, which like `initialLang` is
+    // never written back as a stored preference.
+    setLang: (lang, { persist = true } = {}) => {
       if (supported.has(lang)) {
         langMode = lang;
-        writeLangMode(langMode);
+        if (persist) writeLangMode(langMode);
         syncUi();
       }
     },

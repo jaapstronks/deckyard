@@ -71,7 +71,7 @@ test('bundled gradients register as a third source when their opener is injected
     features: { enableImageLibrary: true, imagekitConfigured: true },
     openImageLibrary: spyOpener().open,
     openBundledGradients: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   assert.deepEqual(
     seam.providers.map((p) => p.id),
@@ -207,7 +207,7 @@ test('a configured ImageKit is primary and ordered first; the rest keep their or
     features: { enableImageLibrary: true },
     openImageLibrary: spyOpener().open,
     openBundledGradients: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   assert.deepEqual(
     seam.providers.map((p) => [p.id, p.primary === true]),
@@ -229,7 +229,7 @@ test('library + ImageKit: two cards with a description, ImageKit on top, primary
     root,
     features: { enableImageLibrary: true },
     openImageLibrary: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   seam({ onPick: noop });
   const chooser = root.querySelector('.image-source-chooser');
@@ -258,7 +258,7 @@ test('a fork sets label, description and primary on the providers without patchi
     features: { enableImageLibrary: true },
     openImageLibrary: lib.open,
     openBundledGradients: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   // What a fork's image-pickers.js does after building the seam.
   const dam = seam.providers.find((p) => p.id === 'imagekit');
@@ -304,7 +304,7 @@ test('two primary sources are refused, not silently ordered', () => {
     root,
     features: { enableImageLibrary: true },
     openImageLibrary: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   seam.providers.find((p) => p.id === 'local-library').primary = true;
   assert.throws(() => seam({ onPick: noop }), /at most one primary source/);
@@ -345,7 +345,7 @@ test('the direct upload route exists only where the library takes uploads (B579)
   const imagekitOnly = createImagePickerSeam({
     root,
     features: {},
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   assert.equal(imagekitOnly.upload, null);
   setFeatures(null);
@@ -371,5 +371,65 @@ test('the direct upload route skips the chooser and asks the library for the fil
   seam({ onPick: noop });
   const chooser = root.querySelector('.image-source-chooser');
   assert.ok(chooser, 'two sources: the ordinary route shows the chooser');
+  setFeatures(null);
+});
+
+test('batch upload is offered only by an upload-capable library', () => {
+  const root = document.createElement('div');
+  setFeatures({ enableUploads: false, sandboxMode: true });
+  const sandbox = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: spyOpener().open,
+  });
+  assert.equal(sandbox.uploadMany, null);
+  setFeatures({ enableUploads: true });
+  const noLibrary = createImagePickerSeam({
+    root,
+    features: {},
+    openImageLibrary: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
+  });
+  assert.equal(noLibrary.uploadMany, null);
+  setFeatures(null);
+});
+
+test('batch upload skips the source chooser and normalizes once before onPickMany', () => {
+  const root = document.createElement('div');
+  const lib = spyOpener();
+  const picks = [];
+  setFeatures({ enableUploads: true });
+  const seam = createImagePickerSeam({
+    root,
+    features: { enableImageLibrary: true },
+    openImageLibrary: lib.open,
+    createImageKitPanel: spyOpener().open,
+  });
+  seam.uploadMany({
+    spec: { fieldKey: 'logos' },
+    capacity: () => 30,
+    onPickMany: (batch) => {
+      picks.push(batch);
+      return false;
+    },
+  });
+  assert.equal(root.querySelector('.image-source-chooser'), null);
+  assert.equal(lib.calls.length, 1);
+  assert.equal(lib.calls[0].batch, true);
+  assert.deepEqual(lib.calls[0].spec, { fieldKey: 'logos' });
+  assert.equal(lib.calls[0].capacity(), 30);
+  const result = lib.calls[0].onPickMany([
+    { url: '/one.png', alts: { nl: 'Eén' }, name: 'One', id: 'a' },
+    { url: '', alts: { nl: 'skip' } },
+    { url: '/two.png', alts: { nl: 'Twee' }, name: 'Two', id: 'b' },
+  ]);
+  assert.equal(result, false);
+  assert.deepEqual(
+    picks[0].map((pick) => [pick.url, pick.name, pick.alts.nl, pick.meta.id]),
+    [
+      ['/one.png', 'One', 'Eén', 'a'],
+      ['/two.png', 'Two', 'Twee', 'b'],
+    ],
+  );
   setFeatures(null);
 });

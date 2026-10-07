@@ -89,8 +89,16 @@ export default {
       type: 'enum',
       required: false,
       options: [
-        { value: 'off', label: 'Off (presenter starts)' },
-        { value: 'on', label: 'On (start when slide opens)' },
+        {
+          value: 'off',
+          label: 'Off',
+          title: 'The presenter starts the countdown',
+        },
+        {
+          value: 'on',
+          label: 'On',
+          title: 'The countdown starts when the slide opens',
+        },
       ],
     },
     {

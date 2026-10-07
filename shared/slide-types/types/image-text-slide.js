@@ -3,7 +3,6 @@ import {
   escapeHtml,
   imagePlaceholderHtml,
   objectPositionStyleAttrFromFocus,
-  pickAltText,
   BACKGROUND_FIELD,
   IMAGE_ROLE_FIELD,
   IMAGE_SIDE_FIELD,
@@ -20,6 +19,7 @@ import {
   renderAsideHtml,
 } from '../aside-field.js';
 import {
+  imageTextAltText,
   resolveImageTextImage,
   IMAGE_TEXT_IMAGE_DEFAULTS,
 } from './image-text-slide/image.js';
@@ -30,7 +30,7 @@ import {
 export default {
   structure: 'singleton',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   label: 'Image + text',
   fields: [
     // Text first: `fields[]` order IS the form order on both surfaces (the
@@ -49,6 +49,8 @@ export default {
     {
       key: 'body',
       essential: true,
+      // Offered on purpose (D220): the CSS scales it, see text-styles.md.
+      textStyle: ['align', 'size'],
       label: 'Body',
       labelKey: 'editor.slideField.body.label',
       type: 'markdown',
@@ -345,22 +347,8 @@ export default {
     // class - the single CSS mechanism for fit (frame padding). Whether the fit
     // came from the slide or the type default is invisible in the emitted HTML
     // (see docs/reference/image-property-ownership.md).
-    const {
-      src,
-      alt: altExplicit,
-      fit,
-      focusX,
-      focusY,
-    } = resolveImageTextImage(content);
-    const alt =
-      imageRole === 'decorative'
-        ? ''
-        : pickAltText({
-            explicit: altExplicit,
-            src,
-            fallbacks: [content?.caption, content?.title],
-            hardFallback: 'Image',
-          });
+    const { src, fit, focusX, focusY } = resolveImageTextImage(content);
+    const alt = imageTextAltText(content);
     // For cover this controls crop focus; for contain, alignment.
     const focusStyle = objectPositionStyleAttrFromFocus({ focusX, focusY });
     const fitClass = fit === 'contain' ? ' is-fit-contain' : ' is-fit-cover';

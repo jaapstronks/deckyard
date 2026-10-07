@@ -126,6 +126,7 @@ export default {
       required: false,
       minItems: 0,
       maxItems: MAX_LOGOS,
+      batchImages: true,
       collapsible: true, // item-rich: per-logo collapse in the editor
       itemDefaults: { image: '', name: '', alt: '', link: '' },
       itemFields: [

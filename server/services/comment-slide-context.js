@@ -8,15 +8,10 @@
  * null for comments that predate it, which the payload reports honestly).
  */
 
-/**
- * Best display title for a slide, regardless of type.
- * Falls through: title → tagline → quote → label → value.
- */
-function deriveSlideTitle(slide) {
-  const c = slide?.content;
-  if (!c) return '';
-  return c.title || c.tagline || c.quote || c.label || c.value || '';
-}
+import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { getSlideType } from '../../shared/slide-types/registry.js';
+import { slideTitle } from '../../shared/slide-types/semantic-projection.js';
+import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
 
 /**
  * Snapshot of a slide for storage on a comment row: just the affected
@@ -39,10 +34,17 @@ export function buildSlideSnapshot(slide) {
  * Current-state context for the slide a comment is anchored to.
  * @param {Object} pres - The presentation (with slides[])
  * @param {string|null} slideId - The comment's slideId
+ * @param {Object} [options]
+ * @param {Object} [options.slideTypes] - The org's merged registry
+ *   (`buildMergedSlideTypes`), so an org-owned type yields its own heading
  * @returns {Object|null} - null when the comment has no slide anchor;
  *   `{ deleted: true }` when the slide no longer exists.
  */
-export function slideContextFor(pres, slideId) {
+export function slideContextFor(
+  pres,
+  slideId,
+  { slideTypes = SLIDE_TYPES } = {},
+) {
   if (!slideId) return null;
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   const index = slides.findIndex((s) => s?.id === slideId);
@@ -53,7 +55,9 @@ export function slideContextFor(pres, slideId) {
     index,
     number: index + 1,
     type: slide?.type ?? null,
-    title: deriveSlideTitle(slide),
+    title: slideTitle(slide, getSlideType(slide?.type, slideTypes), {
+      lang: resolveDocLangFromPresentation(pres),
+    }),
   };
 }
 
@@ -63,15 +67,17 @@ export function slideContextFor(pres, slideId) {
  * Returns new objects; does not mutate the input.
  * @param {Array} comments
  * @param {Object} pres - The presentation the comments belong to
+ * @param {Object} [options]
+ * @param {Object} [options.slideTypes] - The org's merged registry
  * @returns {Array}
  */
-export function enrichCommentsWithSlideContext(comments, pres) {
+export function enrichCommentsWithSlideContext(comments, pres, options = {}) {
   if (!Array.isArray(comments)) return [];
   return comments.map((comment) => ({
     ...comment,
-    slide: slideContextFor(pres, comment?.slideId),
+    slide: slideContextFor(pres, comment?.slideId, options),
     replies: Array.isArray(comment?.replies)
-      ? enrichCommentsWithSlideContext(comment.replies, pres)
+      ? enrichCommentsWithSlideContext(comment.replies, pres, options)
       : [],
   }));
 }

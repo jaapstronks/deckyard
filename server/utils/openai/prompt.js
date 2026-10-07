@@ -31,8 +31,9 @@ export function summarizeDeckForPrompt(deck, { maxSlides = 60 } = {}) {
       (typeof c.subheading === 'string' && c.subheading.trim()) || '';
     if (subheadingVal)
       summaryBits.push(`subheading="${truncateForPrompt(subheadingVal, 120)}"`);
-    if (typeof c.quote === 'string' && c.quote.trim())
-      summaryBits.push(`quote="${truncateForPrompt(c.quote, 180)}"`);
+    const quote = Array.isArray(c.quotes) ? c.quotes[0]?.quote : '';
+    if (typeof quote === 'string' && quote.trim())
+      summaryBits.push(`quote="${truncateForPrompt(quote, 180)}"`);
     if (typeof c.caption === 'string' && c.caption.trim())
       summaryBits.push(`caption="${truncateForPrompt(c.caption, 160)}"`);
     if (typeof c.layout === 'string' && c.layout.trim())

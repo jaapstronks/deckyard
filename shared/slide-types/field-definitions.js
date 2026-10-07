@@ -86,6 +86,11 @@ import { isSlideCopyKey } from './option-default.js';
  *   scalar property, the only type its value may have. A value of another type
  *   is refused (`property_wrong_type`, D219) rather than dropped on the way to
  *   storage.
+ * @property {Record<string, Array<string|boolean>>} [values] - Per property,
+ *   the only values it may have on this surface. A property whose meaning is a
+ *   closed choice (`role`, `semantic`) is offered only as far as the surface
+ *   has a control for it; any other value is refused
+ *   (`property_value_not_offered`), not dropped.
  */
 
 /**
@@ -367,6 +372,12 @@ export function walkFieldDefinitions(fields, profile) {
           headingKey = key;
         }
       }
+      // On an item sub-field the declaration has no reader: the projection
+      // reads it at the top level only, so it is refused on every surface
+      // rather than stored as a promise nothing keeps.
+      if (at.depth > 0 && field.role === 'heading') {
+        at2('heading_role_on_item_field', 'error');
+      }
 
       // `essential` on a list means its first entry (D211); there is no
       // per-entry flag, because every entry after the first is optional by
@@ -419,6 +430,22 @@ export function walkFieldDefinitions(fields, profile) {
             at2('property_wrong_type', 'error', { property, expected: want });
           }
         }
+        // A closed choice the surface offers only in part: the builder has a
+        // control for `role: 'heading'`, not for the other text roles, so a
+        // stored row may say only that.
+        for (const [property, allowed] of Object.entries(
+          propertyKeys.values || {},
+        )) {
+          const value = field[property];
+          if (value === undefined || !offered.has(property)) continue;
+          if (!allowed.includes(value)) {
+            at2('property_value_not_offered', 'error', {
+              property,
+              value,
+              offered: allowed,
+            });
+          }
+        }
         // Only worth reading when `mediaRef` itself is offered here: on a row
         // that may not carry one at all, the property is the finding.
         if (offered.has('mediaRef') && isPlainObject(field.mediaRef)) {
@@ -442,7 +469,30 @@ export function walkFieldDefinitions(fields, profile) {
         }
       }
 
+      if (field.batchImages !== undefined && type !== 'items') {
+        at2('batch_images_invalid', 'error');
+      }
       if (type === 'items') {
+        if (field.batchImages !== undefined) {
+          const itemFields = Array.isArray(field.itemFields)
+            ? field.itemFields
+            : [];
+          const imageFields = itemFields.filter(
+            (item) => item?.type === 'image',
+          );
+          const altFields = itemFields.filter(
+            (item) => item?.key === 'alt' && item?.type === 'string',
+          );
+          if (
+            field.batchImages !== true ||
+            !Number.isSafeInteger(field.maxItems) ||
+            field.maxItems < 1 ||
+            imageFields.length !== 1 ||
+            altFields.length !== 1
+          ) {
+            at2('batch_images_invalid', 'error');
+          }
+        }
         if (!Array.isArray(field.itemFields) || field.itemFields.length === 0) {
           at2('items_without_item_fields', 'error');
         } else {
@@ -833,6 +883,8 @@ const FINDING_MESSAGES = {
   items_without_item_fields: (where) =>
     `${where} is an items field with no \`itemFields\` — add at least one, so ` +
     `something describes the shape of an item.`,
+  batch_images_invalid: (where) =>
+    `${where} declares \`batchImages\` without one image field, one string alt field and a positive integer \`maxItems\`. Set it to true on that items collection only.`,
   unknown_property: (where, f) =>
     `${where} declares \`${f?.detail?.property}\`, which is not part of what ` +
     `a stored field definition may say — the properties accepted here are: ` +
@@ -841,6 +893,14 @@ const FINDING_MESSAGES = {
     `${where} gives \`${f?.detail?.property}\` a value that is not a ` +
     `${f?.detail?.expected} — a stored field definition only accepts a ` +
     `${f?.detail?.expected} there.`,
+  property_value_not_offered: (where, f) =>
+    `${where} gives \`${f?.detail?.property}\` the value ` +
+    `${JSON.stringify(f?.detail?.value)} — a stored field definition accepts ` +
+    `only ${(f?.detail?.offered || []).map((v) => JSON.stringify(v)).join(', ')} there.`,
+  heading_role_on_item_field: (where) =>
+    `${where} declares \`role: 'heading'\` on an item sub-field — the slide's ` +
+    `heading is a top-level field, and an item heads itself through the ` +
+    `list's \`itemLabelField\`, so declare it there instead.`,
   essential_on_item_field: (where) =>
     `${where} declares \`essential\` on an item sub-field — a list is ` +
     `essential as a whole, which means its first entry, so declare it on the ` +

@@ -97,14 +97,12 @@ describe('stored per-field align on a member goes inert without migration', () =
     assert.doesNotMatch(html, /tf-align-/);
   });
 
-  it('colour and size on the same member still apply', () => {
+  it('nor does colour, or a size the type does not offer (D220, D221)', () => {
     const html = render({
       title: 'Hi',
-      textStyles: { title: { align: 'center', color: 'muted', size: 'lg' } },
+      textStyles: { title: { align: 'center', color: 'muted' } },
     });
-    assert.doesNotMatch(html, /tf-align-/);
-    assert.match(html, /tf-color-muted/);
-    assert.match(html, /tf-size-lg/);
+    assert.doesNotMatch(html, /tf-align-|tf-color-/);
   });
 });
 
@@ -150,11 +148,15 @@ describe('the layout switcher is the group control', () => {
 
 describe('quote-slide: the hardcode is now the declared group', () => {
   const QUOTE = SLIDE_TYPES['quote-slide'];
-  const base = { quote: 'Q', authorName: 'N', authorTitle: 'T' };
+  const base = { quotes: [{ quote: 'Q', authorName: 'N', authorTitle: 'T' }] };
   const q = (extra) => QUOTE.renderHtml({ ...base, ...extra }, { id: 's' }, {});
 
   it('quote, name and role are one group', () => {
-    for (const key of ['quote', 'authorName', 'authorTitle']) {
+    for (const key of [
+      'quotes.0.quote',
+      'quotes.0.authorName',
+      'quotes.0.authorTitle',
+    ]) {
       assert.equal(
         fieldAlignAffordance(QUOTE.fields, key).groupId,
         'quote-block',
@@ -173,14 +175,14 @@ describe('quote-slide: the hardcode is now the declared group', () => {
     // un-migrated value is inert here. Covered from the migration side in
     // tests/schema-version.test.js.
     assert.doesNotMatch(
-      q({ textStyles: { quote: { align: 'center' } } }),
+      q({ textStyles: { 'quotes.0.quote': { align: 'center' } } }),
       /is-align-center/,
     );
   });
 
   it('a group member emits no per-field align class', () => {
     assert.doesNotMatch(
-      q({ textStyles: { quote: { align: 'center' } } }),
+      q({ textStyles: { 'quotes.0.quote': { align: 'center' } } }),
       /tf-align-/,
     );
   });
@@ -196,7 +198,11 @@ describe('every adopting type behaves the same way', () => {
     ['chart-slide', 'headerAlign', ['title', 'subheading']],
     ['kpi-metrics-slide', 'headerAlign', ['title', 'subheading']],
     ['text-blocks-slide', 'headerAlign', ['title', 'subheading']],
-    ['quote-slide', 'quoteAlign', ['quote', 'authorName', 'authorTitle']],
+    [
+      'quote-slide',
+      'quoteAlign',
+      ['quotes.0.quote', 'quotes.0.authorName', 'quotes.0.authorTitle'],
+    ],
   ];
 
   for (const [type, alignKey, members] of ADOPTERS) {

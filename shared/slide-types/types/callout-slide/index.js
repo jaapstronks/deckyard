@@ -21,7 +21,7 @@ import { ADMONITION_META } from '../../admonitions.js';
 export default {
   structure: 'singleton',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   // Tier 2, so it names the tier-1 contract that holds its content without
   // losing any (shared/slide-types/tiers.js): an eyebrow, a body and an
   // attribution line are a title plus prose, which is content-slide.
@@ -93,6 +93,8 @@ export default {
     {
       key: 'body',
       essential: true,
+      // Offered on purpose (D220): the CSS scales it, see text-styles.md.
+      textStyle: ['align', 'size'],
       label: 'Body',
       type: 'markdown',
       required: true,

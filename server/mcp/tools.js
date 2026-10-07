@@ -10,6 +10,7 @@ import { getAppBaseUrl } from '../config/utils.js';
 import {
   listPresentations,
   getPresentation,
+  normalizeSlides,
   updatePresentation,
 } from '../storage/presentations/index.js';
 import { loadPresentationChecked, mcpActor } from './presentation-access.js';
@@ -77,16 +78,26 @@ import {
   TRANSLATION_LANGS,
 } from '../../shared/i18n-utils.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
+import { buildExportContext } from '../services/exports.js';
+import { normalizeLang } from '../utils/i18n.js';
+import { needsNativeComposition } from '../../shared/slide-types/fidelity.js';
+import { getSlideType } from '../../shared/slide-types/registry.js';
+import { slideTitle } from '../../shared/slide-types/semantic-projection.js';
 
 /**
- * Get the best display title for a slide, regardless of type.
- * Falls through: title → tagline → quote → label → value → first non-empty string field.
+ * The one description of a `content` argument (create_presentation_from_slides,
+ * update_slide, add_slide), so the text-style contract is stated once: the
+ * keys and values come from the type's `textStyles` in get_slide_types
+ * (`acceptedTextStyles()`), and the write seam refuses the rest with an error
+ * that names the key and why (B464).
  */
-function slideTitle(slide) {
-  const c = slide?.content;
-  if (!c) return '';
-  return c.title || c.tagline || c.quote || c.label || c.value || '';
-}
+const SLIDE_CONTENT_DESCRIPTION =
+  'Slide content matching the type schema (see get_slide_types). ' +
+  'Optional `textStyles` sets alignment and size, but only under the keys ' +
+  "and values the type's get_slide_types entry lists in `textStyles`; a type " +
+  'without that entry offers no text styling. Anything else (another key, a ' +
+  'single list item such as `quotes.1.quote`, `color`, a value not listed) ' +
+  'is refused, and the error names the key and why.';
 
 /**
  * Build a presentation URL (edit or present mode). Edit links go to the
@@ -278,7 +289,7 @@ export function registerTools(
 
   server.tool(
     'get_slide_types',
-    'List the slide types you may use, resolved for your organization (core types plus any slide types this organization defined itself, keyed `custom-<slug>`). Each entry carries its canonical `typeId`, a schema, and a working `example` content object you can copy and edit when calling create_presentation_from_slides. `documented: false` means nobody has written usage guidance for that type yet and its schema was derived from the field definitions — still usable, just less described. When an entry carries a `usage` field, it holds the rules THIS organization set for filling that slide type (sources, cut-off dates, mandatory explanations); treat it as binding and follow it when you write the content. The response also includes `globalOptions`: optional fields (background image, logo, text colour) that may be added to ANY slide type.',
+    'List the slide types you may use, resolved for your organization (core types plus any slide types this organization defined itself, keyed `custom-<slug>`). Each entry carries its canonical `typeId`, a schema, and a working `example` content object you can copy and edit when calling create_presentation_from_slides. `documented: false` means nobody has written usage guidance for that type yet and its schema was derived from the field definitions — still usable, just less described. When an entry carries a `usage` field, it holds the rules THIS organization set for filling that slide type (sources, cut-off dates, mandatory explanations); treat it as binding and follow it when you write the content. When an entry carries `textStyles`, those are the only `content.textStyles` keys that type accepts, each with the alignment and size values it takes; a type without it offers no text styling. The response also includes `globalOptions`: optional fields (background image, logo, text colour) that may be added to ANY slide type.',
     {
       type: 'object',
       properties: {
@@ -537,6 +548,8 @@ export function registerTools(
         await actingIdentity(effectiveOwner),
       );
 
+      const slideTypes = await sessionSlideTypes(context);
+      const deckLang = resolveDocLangFromPresentation(updated);
       const result = {
         id: updated.id,
         title: updated.title,
@@ -545,7 +558,9 @@ export function registerTools(
         slides: (updated.slides || []).map((s, i) => ({
           index: i,
           type: s.type,
-          title: slideTitle(s),
+          title: slideTitle(s, getSlideType(s.type, slideTypes), {
+            lang: deckLang,
+          }),
         })),
       };
       const editUrl = presentationUrl(updated.id, 'edit');
@@ -583,7 +598,7 @@ export function registerTools(
               },
               content: {
                 type: 'object',
-                description: 'Slide content matching the type schema',
+                description: SLIDE_CONTENT_DESCRIPTION,
               },
               notes: {
                 type: 'string',
@@ -693,6 +708,14 @@ export function registerTools(
         validatedSlides = inputSlides;
       }
 
+      // The write seam refuses what no validation above checks (a text style
+      // the type does not offer). Run it before the stub row exists, so a
+      // refusal leaves no empty deck behind; it is pure without a deck id.
+      normalizeSlides(
+        validatedSlides.map((s) => ({ type: s.type, content: s.content })),
+        { slideTypes },
+      );
+
       // Create stub row, then write the slide payload in one update.
       const created = await createPresentation(
         storageScopeOf(context),
@@ -735,7 +758,9 @@ export function registerTools(
         slides: (updated.slides || []).map((s, i) => ({
           index: i,
           type: s.type,
-          title: slideTitle(s),
+          title: slideTitle(s, getSlideType(s.type, slideTypes), {
+            lang: resolveDocLangFromPresentation(updated),
+          }),
         })),
       };
       const editUrl = presentationUrl(updated.id, 'edit');
@@ -760,8 +785,7 @@ export function registerTools(
         slideIndex: { type: 'number', description: 'Slide index (0-based)' },
         content: {
           type: 'object',
-          description:
-            'New content for the slide (must match slide type schema)',
+          description: SLIDE_CONTENT_DESCRIPTION,
         },
         type: {
           type: 'string',
@@ -848,7 +872,7 @@ export function registerTools(
         },
         content: {
           type: 'object',
-          description: 'Slide content matching the type schema',
+          description: SLIDE_CONTENT_DESCRIPTION,
         },
         position: {
           type: 'number',
@@ -1037,13 +1061,14 @@ export function registerTools(
     async ({ presentationId, id }, context) => {
       const pres = await getCheckedPresentation(presentationId || id, context);
 
+      const slideTypes = await sessionSlideTypes(context);
       const validated = validateAndFixRefinedSlides(
         pres.slides.map((s) => ({
           type: s.type,
           content: s.content,
           reasoning: '',
         })),
-        { slideTypes: await sessionSlideTypes(context) },
+        { slideTypes },
       );
 
       const warnings = [];
@@ -1052,7 +1077,9 @@ export function registerTools(
           warnings.push({
             slideIndex: i,
             type: slide.type,
-            title: slideTitle(slide),
+            title: slideTitle(slide, getSlideType(slide.type, slideTypes), {
+              lang: resolveDocLangFromPresentation(pres),
+            }),
             warnings: slide._aiWarnings,
           });
         }
@@ -1160,6 +1187,7 @@ export function registerTools(
         );
       }
 
+      const slideTypes = await sessionSlideTypes(context);
       const removed = pres.slides.splice(slideIndex, 1)[0];
       await updatePresentation(
         storageScopeOf(context),
@@ -1172,7 +1200,11 @@ export function registerTools(
         removed: true,
         slideIndex,
         removedType: removed.type,
-        removedTitle: slideTitle(removed),
+        removedTitle: slideTitle(
+          removed,
+          getSlideType(removed.type, slideTypes),
+          { lang: resolveDocLangFromPresentation(pres) },
+        ),
         totalSlides: pres.slides.length,
       };
     },
@@ -1206,6 +1238,7 @@ export function registerTools(
       if (toIndex < 0 || toIndex >= len)
         throw new Error(`toIndex ${toIndex} out of range`);
 
+      const slideTypes = await sessionSlideTypes(context);
       const [slide] = pres.slides.splice(fromIndex, 1);
       pres.slides.splice(toIndex, 0, slide);
       await updatePresentation(
@@ -1217,7 +1250,12 @@ export function registerTools(
 
       return {
         moved: true,
-        slide: { type: slide.type, title: slideTitle(slide) },
+        slide: {
+          type: slide.type,
+          title: slideTitle(slide, getSlideType(slide.type, slideTypes), {
+            lang: resolveDocLangFromPresentation(pres),
+          }),
+        },
         from: fromIndex,
         to: toIndex,
       };
@@ -1297,13 +1335,14 @@ export function registerTools(
         await writeOpts(context),
       );
 
+      const slideTypes = await sessionSlideTypes(context);
       return {
         appended: newSlides.length,
         insertedAt: insertAt,
         totalSlides: pres.slides.length,
         newSlides: newSlides.map((s) => ({
           type: s.type,
-          title: slideTitle(s),
+          title: slideTitle(s, getSlideType(s.type, slideTypes), { lang }),
         })),
       };
     },
@@ -1346,6 +1385,7 @@ export function registerTools(
       const recommendations = await analyzeForCompression(pres, {
         targetReduction: intensity,
         vendor: vendor || null,
+        slideTypes: await sessionSlideTypes(context),
       });
 
       if (
@@ -1400,6 +1440,7 @@ export function registerTools(
 
       // analyzePresentation returns { suggestions: [...], metadata: {...} }
       const suggestions = result?.suggestions || [];
+      const slideTypes = await sessionSlideTypes(context);
 
       return {
         slideCount: pres.slides.length,
@@ -1411,7 +1452,11 @@ export function registerTools(
           proposedSlide: s.proposedSlide
             ? {
                 type: s.proposedSlide.type,
-                title: slideTitle(s.proposedSlide),
+                title: slideTitle(
+                  s.proposedSlide,
+                  getSlideType(s.proposedSlide.type, slideTypes),
+                  { lang: resolveDocLangFromPresentation(pres) },
+                ),
               }
             : null,
         })),
@@ -1497,16 +1542,16 @@ export function registerTools(
 
   server.tool(
     'export_presentation',
-    'Get a download URL for a finished export of a deck (PDF, PPTX, self-contained HTML, deck JSON, or a zip of per-slide PNGs). Returns a URL the user opens in a browser where they are signed in to Deckyard; the server renders the file on demand. Use this to deliver a downloadable file. For an inline visual preview instead, use preview_presentation.',
+    'Get a download URL for a finished export of a deck (PDF, pixel-perfect or editable PPTX, self-contained HTML, deck JSON, or a zip of per-slide PNGs). Returns a URL the user opens in a browser where they are signed in to Deckyard; the server renders the file on demand. Use this to deliver a downloadable file. For an inline visual preview instead, use preview_presentation.',
     {
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
         format: {
           type: 'string',
-          enum: ['pdf', 'pptx', 'html', 'json', 'png-zip'],
+          enum: ['pdf', 'pptx', 'pptx-editable', 'html', 'json', 'png-zip'],
           description:
-            'Export format. pdf = server-rendered PDF; pptx = PowerPoint; html = self-contained HTML; json = deck source; png-zip = one PNG per slide, zipped.',
+            'Export format. pdf = server-rendered PDF; pptx = pixel-perfect PowerPoint (video plays); pptx-editable = editable PowerPoint, with imageSlides listing the 1-based exported slide numbers that remain images; html = self-contained HTML; json = deck source; png-zip = one PNG per slide, zipped.',
         },
         lang: {
           type: 'string',
@@ -1523,6 +1568,7 @@ export function registerTools(
       const EXPORT_PATHS = {
         pdf: 'export/pdf-slides.pdf',
         pptx: 'export/pptx',
+        'pptx-editable': 'export/pptx-editable',
         html: 'export/html',
         json: 'export/json',
         'png-zip': 'export/png.zip',
@@ -1544,6 +1590,22 @@ export function registerTools(
         };
       }
 
+      // Describe the same projected, filtered deck the download route builds,
+      // without rendering it twice or counting a download before it happens.
+      let imageSlides;
+      if (format === 'pptx-editable') {
+        const { filteredPres, slideTypes } = await buildExportContext(
+          storageScopeOf(context),
+          pres,
+          { exportLang: normalizeLang(lang), stripLiveOnly: true },
+        );
+        imageSlides = filteredPres.slides.flatMap((slide, index) =>
+          needsNativeComposition(slideTypes[slide.type], 'pptx')
+            ? []
+            : [index + 1],
+        );
+      }
+
       let downloadUrl = `${base}/api/presentations/${presentationId}/${relPath}`;
       if (lang) downloadUrl += `?lang=${encodeURIComponent(lang)}`;
 
@@ -1552,6 +1614,7 @@ export function registerTools(
         title: pres.title,
         format,
         downloadUrl,
+        ...(imageSlides ? { imageSlides } : {}),
         note: 'Open this URL in a browser signed in to Deckyard to download the file. PDF/PPTX/PNG are rendered on demand and may take a few seconds for large decks.',
       };
     },
@@ -1721,14 +1784,15 @@ export function registerTools(
 
       // Slide context reflects the deck as it is now; the stored
       // slideSnapshot on each comment shows the slide at create time.
-      const enriched = enrichCommentsWithSlideContext(comments, pres).map(
-        (c) => ({
-          ...c,
-          editUrl: presentationUrl(presentationId, 'edit', {
-            slideId: c.slideId,
-          }),
+      const slideTypes = await sessionSlideTypes(context);
+      const enriched = enrichCommentsWithSlideContext(comments, pres, {
+        slideTypes,
+      }).map((c) => ({
+        ...c,
+        editUrl: presentationUrl(presentationId, 'edit', {
+          slideId: c.slideId,
         }),
-      );
+      }));
 
       return {
         presentationId,
@@ -1810,6 +1874,7 @@ export function registerTools(
         return presCache.get(id);
       };
 
+      const slideTypes = await sessionSlideTypes(context);
       const items = [];
       for (const c of comments) {
         const pres = await presFor(c.presentationId);
@@ -1818,7 +1883,9 @@ export function registerTools(
           presentationId: c.presentationId,
           presentationTitle: c.presentationTitle,
           slideId: c.slideId,
-          slide: slideContextFor(pres || { slides: [] }, c.slideId),
+          slide: slideContextFor(pres || { slides: [] }, c.slideId, {
+            slideTypes,
+          }),
           slideSnapshot: c.slideSnapshot ?? null,
           // The author, named rather than addressed — the same shape the app
           // API uses since D22 (docs/reference/identity-in-responses.md).
@@ -1880,7 +1947,9 @@ export function registerTools(
       ok: true,
       comment: {
         ...comment,
-        slide: slideContextFor(presentation, comment.slideId),
+        slide: slideContextFor(presentation, comment.slideId, {
+          slideTypes: await sessionSlideTypes(context),
+        }),
         editUrl: presentationUrl(presentationId, 'edit', {
           slideId: comment.slideId,
         }),

@@ -17,7 +17,6 @@ import {
   normalizeSlideBackgrounds,
   slideBackgroundCssVars,
 } from './theme-slide-backgrounds.js';
-import { TEXT_COLOR_SWATCH_SLOTS } from './slide-types/text-styles.js';
 import { TITLE_LAYOUTS, DEFAULT_TITLE_LAYOUT } from './theme-config-schema.js';
 import { hexToRgb, pickTextColorForBg } from './color-utils.js';
 
@@ -25,34 +24,6 @@ import { hexToRgb, pickTextColorForBg } from './color-utils.js';
 // editor's variants section imports pickTextColorForBg here, and the tests
 // import hexToRgb here.
 export { hexToRgb, pickTextColorForBg };
-
-/**
- * Normalize a theme's `textSwatches`: the extra on-brand text colours the
- * "This text" tab offers beyond default/muted/accent. Each entry names a fixed
- * slot (`brand-1`/`brand-2`/`brand-3`) the theme has also given a colour via
- * the matching `--t-color-<slot>` token. Entries with an unknown slot, a
- * duplicate, or no declared token are dropped — so the UI never shows a swatch
- * that would resolve to `currentColor` (a no-op). Label may be a string or a
- * `{ nl, en }` map (resolved by the UI, like `backgroundLabels`).
- * @param {unknown} raw
- * @param {Object} vars - the theme's cssVars
- * @returns {Array<{id: string, label?: unknown}>}
- */
-function normalizeTextSwatches(raw, vars) {
-  if (!Array.isArray(raw)) return [];
-  const allowed = new Set(TEXT_COLOR_SWATCH_SLOTS);
-  const seen = new Set();
-  const out = [];
-  for (const e of raw) {
-    const id = typeof e === 'string' ? cleanStr(e) : cleanStr(e?.id);
-    if (!allowed.has(id) || seen.has(id)) continue;
-    if (!cleanStr(vars?.[`--t-color-${id}`])) continue;
-    seen.add(id);
-    const label = e && typeof e === 'object' ? e.label : undefined;
-    out.push(label != null ? { id, label } : { id });
-  }
-  return out;
-}
 
 function rgba(hex, a) {
   const c = hexToRgb(hex);
@@ -67,8 +38,7 @@ const cssVar = (vars, key) => String(vars[key] || '').trim();
  * Fill the brand colour slots from the theme's `brandColors` array.
  *
  * `--t-color-brand-{1..3}` are the role-shaped brand slots (`--slide-brand-*`
- * reads them: countdown's brand background variants, the tf-color-brand-*
- * text styles). A theme may set a slot explicitly (playful does, and that
+ * reads them: countdown's brand background variants). A theme may set a slot explicitly (playful does, and that
  * always wins); for the rest, slot N is brandColors[N-1] — the same list the
  * theme already declares, so the slots follow the theme without a second
  * spelling. The legacy `--t-primary`/`--t-accent`/`--t-bg-dark`/`--t-brand-*`
@@ -103,14 +73,7 @@ export function normalizeTheme(theme) {
   out.slideBackgrounds = normalizeSlideBackgrounds(out.slideBackgrounds);
   Object.assign(vars, slideBackgroundCssVars(out.slideBackgrounds));
 
-  // Brand slots before swatch validation: normalizeTextSwatches keeps a
-  // swatch only when its slot token resolves, and brandColors-fed slots
-  // count as coloured.
   applyBrandSlots(vars, out);
-
-  // Extra on-brand text-colour swatches for the "This text" tab (beyond
-  // default/muted/accent). Kept only for slots the theme actually coloured.
-  out.textSwatches = normalizeTextSwatches(out.textSwatches, vars);
 
   // Slide type visibility. `slideTypes.exclude` is the only spelling; the
   // legacy `hiddenSlideTypes` alias is folded in here and then dropped, so no

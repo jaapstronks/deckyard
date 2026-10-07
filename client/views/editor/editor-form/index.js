@@ -75,7 +75,8 @@ export function createRerenderEditor({
   // field renderers, so no surface can drift from what the form can edit.
   // Required: a caller that names no surface throws, like an unknown name.
   surface,
-  // Selection-aware inspector: () => {kind:'image'|'card', idx} | null. When an
+  // Selection-aware inspector: () => {kind:'image'|'card'|'text', idx,
+  // fieldKey} | null. When an
   // element is selected the inspector grows a [This element | Slide] tab bar.
   getSelectedElement,
   // Opens the bottom-panel Data tab for a chart slide (editing-surfaces §4.3).
@@ -97,6 +98,7 @@ export function createRerenderEditor({
     fieldImage,
     fieldTitleBgImage,
     fieldImages,
+    openImagePicker,
   } = fieldRenderers || {};
 
   // Track detachers for cleanup between re-renders. The header's actions
@@ -455,6 +457,7 @@ export function createRerenderEditor({
 
     const renderField = createRenderField({
       pres,
+      getSelectedSlideId,
       slide,
       def,
       PARTNER_LOGOS,
@@ -473,6 +476,7 @@ export function createRerenderEditor({
         fieldImage,
         fieldTitleBgImage,
         fieldImages,
+        openImagePicker,
       },
       markDirty,
       rerenderEditor,
@@ -585,6 +589,7 @@ export function createRerenderEditor({
       // The deck, for forms that need the active language version rather than
       // anything stored on the slide (follow-invite's copy labels).
       pres,
+      getSelectedSlideId,
       // Selection-aware inspector: element-scoped widgets render into
       // elementForm for the selected element; slide-wide stays in form.
       elementForm,
@@ -608,6 +613,7 @@ export function createRerenderEditor({
         fieldIconPicker,
         fieldImage,
         fieldTitleBgImage,
+        openImagePicker,
       },
       markDirty,
       rerenderEditor,
@@ -626,13 +632,18 @@ export function createRerenderEditor({
       // below renders the remaining keeps.
       renderInspectorExtrasByType(formTypeCtx);
       // Type-agnostic: a selected text field gets a "This text" element tab
-      // with block-level alignment/colour (editing-surfaces text step 3).
-      if (elementActive && selectedElement?.kind === 'text') {
+      // with the style controls its type offers, or a sentence when it offers
+      // none (B464). Text clicked inside a card carries its field on the card
+      // selection, so the card tab ends with the same controls (D313).
+      if (
+        elementActive &&
+        (selectedElement?.kind === 'text' ||
+          (selectedElement?.kind === 'card' && selectedElement.fieldKey))
+      ) {
         renderTextElementCard({
           container: elementForm,
           slide,
           fieldKey: selectedElement.fieldKey,
-          theme,
           fieldRenderers: { fieldEnum },
           markDirty,
           rerenderPreview,
@@ -698,7 +709,10 @@ export function createRerenderEditor({
         });
       };
       tabBar.append(
-        mkTab(elementTabLabel(selectedElement), true),
+        mkTab(
+          elementTabLabel(selectedElement, { slide, slideTypes: SLIDE_TYPES }),
+          true,
+        ),
         mkTab(t('editor.inspector.tab.slide', 'Slide'), false),
       );
       editorMount.append(tabBar);

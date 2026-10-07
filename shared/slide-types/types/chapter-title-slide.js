@@ -23,7 +23,7 @@ const TITLE_BLOCK = alignGroup('title-block', 'titleBlockAlign', {
 export default {
   structure: 'singleton',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   label: 'Section title',
   fieldGroups: [TITLE_BLOCK.group],
   layoutVariants: TITLE_BLOCK.variants,
@@ -37,6 +37,8 @@ export default {
       labelKey: 'editor.slideField.title.label',
       type: 'string',
       group: 'title-block',
+      // Size only: the title block owns alignment (D220, text-styles.md).
+      textStyle: ['size'],
       required: true,
       maxLength: 140,
     },

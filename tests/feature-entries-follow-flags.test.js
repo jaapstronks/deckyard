@@ -127,6 +127,11 @@ const ENTRIES = {
       gate: 'client/views/editor/image-library/picker.js',
     },
     {
+      entry: 'Image batch: generate missing alt text with consent',
+      calls: ['client/views/editor/image-library/batch-alts.js'],
+      gate: 'client/views/editor/image-library/batch-alts.js',
+    },
+    {
       entry: 'Presenter: follow-along translation fill',
       calls: ['client/views/presenter/translate-fill.js'],
       gate: 'client/views/presenter/index.js',

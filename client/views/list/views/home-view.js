@@ -1,5 +1,5 @@
 import { t } from '../../../lib/ui-i18n.js';
-import { getFeatures } from '../../../lib/state/features.js';
+import { getFeatures, sharingEnabled } from '../../../lib/state/features.js';
 import { buildSectionHeader } from './section-header.js';
 import {
   createEmptyState,
@@ -56,6 +56,43 @@ export function createHomeView({
     api,
   });
 
+  // Building-blocks shelf — the create affordance, backed by reusable slide
+  // collections + individual organization slides. Replaces the theme-picker "start
+  // something new" zone: on a returning Home, "start from a building block" is
+  // the more useful create path now that starter kits are gone.
+  const homeBlocksSection = h('div', {
+    class: 'presentation-section',
+    'data-section': 'building-blocks',
+  });
+  const homeBlocksList = h('div', { class: 'home-blocks-grid' });
+  const homeBlocksLoading = h('div', {
+    class: 'help',
+    text: t('list.home.blocks.loading', 'Loading building blocks…'),
+  });
+
+  homeBlocksSection.append(
+    buildSectionHeader({
+      icon: 'blocks',
+      title: t('list.home.blocks.title', 'Building blocks'),
+      badge: '',
+      onViewAll: () => setView('slideLibrary'),
+    }),
+    homeBlocksLoading,
+  );
+
+  // Single aggregation fetch shared by all three section loaders, so Home
+  // hydrates in one round-trip instead of 3-4. Memoized: the loaders are fired
+  // together on mount and await the same promise. A null result (endpoint
+  // missing or failed) makes each loader fall back to its own endpoint, so
+  // `/api/home` stays a pure convenience over the still-live individual routes.
+  let homeAggregatePromise = null;
+  function fetchHomeAggregate() {
+    if (!homeAggregatePromise) {
+      homeAggregatePromise = api('/api/home').catch(() => null);
+    }
+    return homeAggregatePromise;
+  }
+
   const isSandbox = !!getFeatures()?.sandboxMode;
 
   // First run: a brand-new user with nothing yet. Foreground one clear create
@@ -78,6 +115,7 @@ export function createHomeView({
           onPrimary: onCreate,
         }),
         createSandboxExamplesSection({ api, detachThumbs }),
+        homeBlocksSection,
       );
     } else {
       homeView.append(
@@ -89,17 +127,20 @@ export function createHomeView({
           ),
           onCreate,
         }),
+        homeBlocksSection,
       );
     }
     if (onboardingChecklist) homeView.append(onboardingChecklist);
 
     // Activity/popular loaders are no-ops here (their sections aren't mounted),
-    // but keep the same return shape so the caller doesn't branch.
+    // but keep the same return shape so the caller doesn't branch. Building
+    // blocks are a way to start, so a first run shows them when the
+    // organization shelf has any (a new teammate, or the seeded sandbox, B352).
     return {
       el: homeView,
       loadActivityPreview: async () => {},
       loadPopularPresentations: async () => {},
-      loadBuildingBlocks: async () => {},
+      loadBuildingBlocks,
     };
   }
 
@@ -185,30 +226,6 @@ export function createHomeView({
     homeActivityLoading,
   );
 
-  // Building-blocks shelf — the create affordance, backed by reusable slide
-  // collections + individual organization slides. Replaces the theme-picker "start
-  // something new" zone: on a returning Home, "start from a building block" is
-  // the more useful create path now that starter kits are gone.
-  const homeBlocksSection = h('div', {
-    class: 'presentation-section',
-    'data-section': 'building-blocks',
-  });
-  const homeBlocksList = h('div', { class: 'home-blocks-grid' });
-  const homeBlocksLoading = h('div', {
-    class: 'help',
-    text: t('list.home.blocks.loading', 'Loading building blocks…'),
-  });
-
-  homeBlocksSection.append(
-    buildSectionHeader({
-      icon: 'blocks',
-      title: t('list.home.blocks.title', 'Building blocks'),
-      badge: '',
-      onViewAll: () => setView('slideLibrary'),
-    }),
-    homeBlocksLoading,
-  );
-
   // Greeting header — a real page anchor at the top of the column, replacing
   // the old orphan "Welcome" heading that labelled nothing.
   const homeHeader = buildHomeHeader({ user, count: allByDate.length });
@@ -227,36 +244,24 @@ export function createHomeView({
     'aria-label': t('list.home.activityFromOthers', 'From others'),
   });
 
-  if (isSandbox) {
-    // Sandbox: keep the examples shelf reachable after the first deck (a guest
-    // wants to try the other examples too), and drop Popular / Building blocks
-    // / the activity rail — a throwaway guest has no library, no popularity
-    // signal, and no collaborators, so those sections are permanently empty.
-    homeMain.append(
-      createSandboxExamplesSection({ api, detachThumbs }),
-      homeRecentSection,
-    );
-    homeColumns.append(homeMain);
-    homeColumns.classList.add('is-single-column');
-  } else {
+  // Sandbox: keep the examples shelf reachable after the first deck (a guest
+  // wants to try the other examples too).
+  if (isSandbox)
+    homeMain.append(createSandboxExamplesSection({ api, detachThumbs }));
+  // Popular and the activity rail show what other people did, so they are
+  // only there where people share work (D181); Building blocks reads the
+  // organization shelf, which the sandbox seeds (B352), so it is always there.
+  const sharing = sharingEnabled();
+  if (sharing) {
     homeMain.append(homeRecentSection, homePopularSection, homeBlocksSection);
     homeRail.append(homeActivitySection);
     homeColumns.append(homeMain, homeRail);
+  } else {
+    homeMain.append(homeRecentSection, homeBlocksSection);
+    homeColumns.append(homeMain);
+    homeColumns.classList.add('is-single-column');
   }
   homeView.append(homeHeader, homeColumns);
-
-  // Single aggregation fetch shared by all three section loaders, so Home
-  // hydrates in one round-trip instead of 3-4. Memoized: the loaders are fired
-  // together on mount and await the same promise. A null result (endpoint
-  // missing or failed) makes each loader fall back to its own endpoint, so
-  // `/api/home` stays a pure convenience over the still-live individual routes.
-  let homeAggregatePromise = null;
-  function fetchHomeAggregate() {
-    if (!homeAggregatePromise) {
-      homeAggregatePromise = api('/api/home').catch(() => null);
-    }
-    return homeAggregatePromise;
-  }
 
   // Popular presentations loading
   async function loadPopularPresentations() {
@@ -387,7 +392,14 @@ export function createHomeView({
       // Reserve most of the shelf for collections; fill the rest with slides.
       const slideBudget = Math.max(2, 6 - shownCols.length);
 
-      homeBlocksList.append(renderBlankBlockCard(onCreate));
+      // A first run with nothing on the shelves keeps its one create CTA:
+      // an empty shelf would only repeat it.
+      if (isFirstRun && !cols.length && !organizationSlides.length) {
+        homeBlocksSection.remove();
+        return;
+      }
+      // The first-run empty state already leads with a create button.
+      if (!isFirstRun) homeBlocksList.append(renderBlankBlockCard(onCreate));
       for (const col of shownCols) {
         homeBlocksList.append(
           renderCollectionBlockCard(col, onComposeFrom, isNewCollection(col)),
@@ -419,14 +431,14 @@ export function createHomeView({
     }
   }
 
-  // In sandbox those three sections aren't mounted, so their loaders would just
-  // fetch and append into detached nodes — skip them entirely.
+  // Without sharing, Popular and the activity rail aren't mounted, so their
+  // loaders would just fetch and append into detached nodes — skip them.
   const noop = async () => {};
   return {
     el: homeView,
-    loadActivityPreview: isSandbox ? noop : loadActivityPreview,
-    loadPopularPresentations: isSandbox ? noop : loadPopularPresentations,
-    loadBuildingBlocks: isSandbox ? noop : loadBuildingBlocks,
+    loadActivityPreview: sharing ? loadActivityPreview : noop,
+    loadPopularPresentations: sharing ? loadPopularPresentations : noop,
+    loadBuildingBlocks,
   };
 }
 
@@ -517,10 +529,10 @@ function renderCollectionBlockCard(col, onComposeFrom, isNew = false) {
       onclick: () => onComposeFrom?.({ collection: col }),
     },
     [
-      h('span', {
-        class: 'home-block-kicker',
-        text: t('list.home.blocks.collectionKicker', 'Collection'),
-      }),
+      renderBlockHead(
+        t('list.home.blocks.collectionKicker', 'Collection'),
+        isNew,
+      ),
       h('span', {
         class: 'home-block-name',
         text: col.name || t('slideLibrary.preview.untitled', 'Untitled'),
@@ -528,7 +540,6 @@ function renderCollectionBlockCard(col, onComposeFrom, isNew = false) {
       meta,
     ],
   );
-  if (isNew) card.append(renderNewToYouBadge());
   return card;
 }
 
@@ -548,10 +559,10 @@ function renderSlideBlockCard(item, onComposeFrom, isNew = false) {
       onclick: () => onComposeFrom?.({ items: [item] }),
     },
     [
-      h('span', {
-        class: 'home-block-kicker',
-        text: t('list.home.blocks.slideKicker', 'Reusable slide'),
-      }),
+      renderBlockHead(
+        t('list.home.blocks.slideKicker', 'Reusable slide'),
+        isNew,
+      ),
       h('span', {
         class: 'home-block-name',
         text:
@@ -561,20 +572,26 @@ function renderSlideBlockCard(item, onComposeFrom, isNew = false) {
       }),
     ],
   );
-  if (isNew) card.append(renderNewToYouBadge());
   return card;
 }
 
 /**
- * The "new to you" badge — a subtle corner flag on a shared building block the
- * current user has never started a deck from.
+ * The head row of a block card: the kicker plus, for a shared building block
+ * the current user has never started a deck from, a "new to you" badge. Both
+ * sit in flow so the badge wraps below a long kicker instead of covering it.
+ * @param {string} kicker - the card's type label
+ * @param {boolean} isNew - show the "new to you" badge
  * @returns {HTMLElement}
  */
-function renderNewToYouBadge() {
-  return h('span', {
-    class: 'home-block-new',
-    text: t('list.home.blocks.newToYou', 'New to you'),
-  });
+function renderBlockHead(kicker, isNew) {
+  return h('span', { class: 'home-block-head' }, [
+    h('span', { class: 'home-block-kicker', text: kicker }),
+    isNew &&
+      h('span', {
+        class: 'home-block-new',
+        text: t('list.home.blocks.newToYou', 'New to you'),
+      }),
+  ]);
 }
 
 /**

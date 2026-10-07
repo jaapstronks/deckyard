@@ -57,7 +57,7 @@ export default {
   // point of a comparison; content-slide would flatten it into one body.
   fallback: 'table-slide',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   label: 'Comparison',
   fields: [
     {

@@ -35,6 +35,10 @@ isolation model in [`tenant-isolation.md`](tenant-isolation.md).
   the image library because direct uploads are off (`listSandboxMedia`).
 - `server/sandbox-examples/*.json` — the seed decks (`meet-deckyard`,
   `acme-quarterly`, `ice-cream-cart`).
+- `server/sandbox/library.js` + `server/sandbox-examples/library/` — the
+  library seed (B352): example slides (`<key>.json`) and a collection
+  (`collections/<key>.json`) written onto the organization shelf at boot
+  (`seedSandboxLibrary`), under the maker `deckyard@sandbox.local`.
 - `server/storage/presentations/sandbox.js` — `attachSandboxMeta()` /
   `isSandboxEphemeralPresentation()`; stamps `sandbox.expires` on ephemeral decks.
 - `server/storage/presentations/sandbox-quota.js` — per-guest deck/byte quota;
@@ -100,6 +104,12 @@ Isolation is per-cookie / per-owner-email within the one org.
 - **Seed decks** — the openable examples come from `server/sandbox-examples/*.json`
   via `GET /api/sandbox/examples`; a throwaway Postgres volume needs them loaded
   as a deploy step.
+- **Seed library** — every boot in sandbox mode upserts the declared slides
+  and collection onto the organization shelf. The file name is the key and
+  fixes the row id (a name-based UUID), so an unchanged seed writes nothing and
+  a drifted or trashed row is restored. Guests read and use the items; the
+  shelf is read-only for everyone while sharing is off (D181), so `canEdit` is
+  false on every item and collection. Off sandbox mode the seed is a no-op.
 
 ## Guest identity
 

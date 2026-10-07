@@ -32,3 +32,18 @@ export const inlineEdit = {
 // The axes (D139): an empty axis draws nothing on the canvas, so there is
 // nothing to click; the inspector is where one is named.
 export const inspectorKeeps = ['xAxis', 'yAxis'];
+
+/**
+ * The cell is this type's sub-element: the "This cell" tab carries its tone,
+ * the good-news/bad-news setting the canvas has no control for (B450, D313).
+ * Grammar: shared/slide-types/inline-edit-companions.js.
+ * @type {Object}
+ */
+export const elementTab = {
+  card: {
+    list: 'cells',
+    fields: ['tone'],
+    labelKey: 'editor.inspector.tab.cell',
+    label: 'This cell',
+  },
+};

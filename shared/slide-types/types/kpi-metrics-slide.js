@@ -36,7 +36,7 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
  * @returns {{tone: string, highlight: string, rest: string}} `highlight` is the
  *   coloured prefix, `rest` the remainder of the note.
  */
-function parseNoteTone(noteRaw) {
+export function parseNoteTone(noteRaw) {
   const n = String(noteRaw || '').trim();
   if (!n) return { tone: 'default', highlight: '', rest: '' };
   // Match leading +/-/− followed by digits/punctuation, up to first space
@@ -54,11 +54,27 @@ function parseNoteTone(noteRaw) {
   return { tone, highlight: prefix, rest };
 }
 
+/** The cards displayed by this type. */
+export function displayMetrics(content) {
+  const metrics = (Array.isArray(content?.metrics) ? content.metrics : [])
+    .filter((metric) => metric && typeof metric === 'object')
+    .slice(0, 4)
+    .map((metric) => ({
+      value: String(metric.value || '').trim(),
+      unit: String(metric.unit || '').trim(),
+      label: String(metric.label || '').trim(),
+      note: String(metric.note || '').trim(),
+    }));
+  return metrics.length
+    ? metrics
+    : [{ value: '', unit: '', label: '', note: '' }];
+}
+
 export default {
   structure: 'collection',
   fallback: 'list-slide',
   runtime: 'static',
-  fidelity: { pptx: 'raster' },
+  fidelity: { pptx: 'native' },
   fieldGroups: [HEADER_BLOCK.group],
   layoutVariants: HEADER_BLOCK.variants,
   label: 'KPI',
@@ -178,8 +194,6 @@ export default {
           required: false,
           maxLength: 100,
         },
-        // BACK-COMPAT: 'delta' field removed from schema but still read
-        // in renderHtml for existing slides. See migration script.
       ],
     },
     // Last, because it has no primary home in the form: the toolbar "Layout"
@@ -317,31 +331,22 @@ export default {
     const countUpOn =
       content?.countUp === 'on' && (mode === 'present' || mode === 'follow');
 
-    let metrics = Array.isArray(content?.metrics) ? content.metrics : [];
-    if (!Array.isArray(metrics)) metrics = [];
-    metrics = metrics.filter((m) => m && typeof m === 'object').slice(0, 4);
+    const metrics = displayMetrics(content);
     const count = clampInt(metrics.length, 1, 4, 1);
 
     const cards = [];
     for (let i = 0; i < count; i += 1) {
       const m = metrics[i] || {};
-      const value = String(m?.value || '').trim();
-      const unit = String(m?.unit || '').trim();
-      const label = String(m?.label || '').trim();
+      const { value, unit, label, note } = m;
 
-      // BACK-COMPAT: merge legacy 'delta' into 'note' at render time
-      const legacyDelta = String(m?.delta || '').trim();
-      const rawNote = String(m?.note || '').trim();
-      const effectiveNote = legacyDelta
-        ? `${legacyDelta}${rawNote ? ` ${rawNote}` : ''}`
-        : rawNote;
-
-      const { tone, highlight, rest } = parseNoteTone(effectiveNote);
+      const { tone, highlight, rest } = parseNoteTone(note);
 
       const aria = escapeHtml(label || `Metric ${i}`);
-      const meta = effectiveNote
+      // The note is the whole line: its +/- prefix is a coloured run of the
+      // same value, so the canvas edits the stored note, not the parts.
+      const meta = note
         ? `
-              <div class="kpi-meta">
+              <div class="kpi-meta" data-inline-field="metrics.${i}.note" dir="auto">
                 ${highlightHtml(highlight, { tone })}
                 ${rest ? `<span dir="auto">${escapeHtml(rest)}</span>` : ''}
               </div>

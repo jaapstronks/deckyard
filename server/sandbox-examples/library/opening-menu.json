@@ -1,0 +1,40 @@
+{
+  "name": "The opening menu",
+  "description": "A two-column bullet list with a subheading.",
+  "slideType": "list-slide",
+  "theme": "playful",
+  "lang": "en-GB",
+  "content": {
+    "title": "The opening menu",
+    "subheading": "Six flavours, rotating weekly specials",
+    "variant": "bullets",
+    "layout": "two-column",
+    "items": [
+      {
+        "title": "Sea Salt Caramel",
+        "text": "Our signature — always on the cart"
+      },
+      {
+        "title": "Stracciatella",
+        "text": "Fresh cream, shards of dark chocolate"
+      },
+      {
+        "title": "Wild Strawberry",
+        "text": "Local fruit, minimal sugar"
+      },
+      {
+        "title": "Pistachio",
+        "text": "Sicilian nuts, no colouring"
+      },
+      {
+        "title": "Espresso Chip",
+        "text": "For the evening concert crowd"
+      },
+      {
+        "title": "Lemon Sorbet",
+        "text": "Dairy-free, the heatwave hero"
+      }
+    ],
+    "background": "lime"
+  }
+}

@@ -1,6 +1,7 @@
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { optionCopy } from './option-copy.js';
+import { enumControl } from './enum-fit.js';
 
 /**
  * The translated visible label for an enum field. Enum fields resolve their
@@ -16,71 +17,19 @@ function enumFieldLabel(field) {
 }
 
 export function createEnumFields({ fieldSelect } = {}) {
-  const iconEl = (cls) =>
-    h('span', {
-      class: `sb-icon ${cls}`,
-      'aria-hidden': 'true',
-    });
+  // An option that declares an `icon` (`sb-icon-<icon>`, 40-option-icons.css)
+  // draws that glyph; its label stays the button's title and accessible name.
+  const enumButtonContent = (opt) =>
+    opt.icon
+      ? h('span', {
+          class: `sb-icon sb-icon-${opt.icon}`,
+          'aria-hidden': 'true',
+        })
+      : h('span', { text: opt.label ?? opt.value });
 
-  const swatchEl = (cssVar) =>
-    h('span', {
-      class: 'sb-swatch',
-      style: `--swatch:${cssVar}`,
-      'aria-hidden': 'true',
-    });
-
-  const swatchTransparentEl = () =>
-    h('span', {
-      class: 'sb-swatch sb-swatch-transparent',
-      'aria-hidden': 'true',
-    });
-
-  const enumButtonContent = (field, optionValue, optionLabel) => {
-    const key = String(field?.key || '');
-    if (key === 'background') {
-      if (optionValue === 'lime') return swatchEl('var(--slide-bg-lime)');
-      if (optionValue === 'mist') return swatchEl('var(--slide-bg-mist)');
-      if (optionValue === 'transparent') return swatchTransparentEl();
-      return h('span', { text: optionLabel ?? optionValue });
-    }
-    if (key === 'imageSide') {
-      if (optionValue === 'left') return iconEl('sb-icon-side-left');
-      if (optionValue === 'right') return iconEl('sb-icon-side-right');
-      return h('span', { text: optionLabel ?? optionValue });
-    }
-    if (key === 'imageFit') {
-      if (optionValue === 'cover') return iconEl('sb-icon-fit-cover');
-      if (optionValue === 'contain') return iconEl('sb-icon-fit-contain');
-      return h('span', { text: optionLabel ?? optionValue });
-    }
-    if (key === 'layout') {
-      if (optionValue === 'two-column') return iconEl('sb-icon-cols-2');
-      if (optionValue === 'one-column') return iconEl('sb-icon-cols-1');
-      return h('span', { text: optionLabel ?? optionValue });
-    }
-    if (key === 'autoplay') {
-      return h('span', {
-        class: 'sb-toggle-text',
-        text: optionLabel ?? optionValue,
-      });
-    }
-    if (key === 'lang') {
-      return h('span', {
-        class: 'sb-chip-text',
-        text: String(optionValue).toUpperCase(),
-      });
-    }
-    return h('span', { text: optionLabel ?? optionValue });
-  };
-
-  const fieldSegmented = (field, value, options, onChange) => {
-    const key = String(field?.key || '');
-    const isToggle = key === 'autoplay' && options.length === 2;
-    const isHalf = key === 'background' && options.length === 2;
+  const fieldSegmented = (field, value, options, onChange, sizeClass) => {
     const group = h('div', {
-      class: `sb-segmented${isToggle ? ' is-toggle' : ''}${
-        isHalf ? ' is-half' : ''
-      }`,
+      class: 'sb-segmented',
       role: 'radiogroup',
       'aria-label': enumFieldLabel(field) || field?.key || 'Options',
     });
@@ -94,8 +43,7 @@ export function createEnumFields({ fieldSelect } = {}) {
       }
     };
 
-    for (const raw of options) {
-      const opt = optionCopy(raw);
+    for (const opt of options) {
       const btn = h('button', {
         type: 'button',
         class: 'sb-segmented-btn',
@@ -109,43 +57,33 @@ export function createEnumFields({ fieldSelect } = {}) {
       });
       btn.dataset.value = opt.value;
       if (String(value ?? '') === opt.value) btn.classList.add('is-active');
-      btn.append(enumButtonContent(field, opt.value, opt.label));
+      btn.append(enumButtonContent(opt));
       group.append(btn);
     }
     // Use `stack is-field` so label/control spacing matches other editor fields
     // (e.g. background picker) and doesn't inherit the larger default stack gap.
-    // Size intent for the responsive row, scaled to the button count:
-    //   2 options  → default: a plain toggle pairs happily beside a neighbour.
-    //   3-4 options → `is-field-wide`: takes its own line on a narrow column,
-    //     pairs up again on a wide one - always enough room for one button row.
-    //   5+ options  → `is-field-full`: always its own full-width line, because
-    //     even a paired "wide" cell is too tight for that many buttons and they
-    //     would wrap onto a second row.
-    const optionCount = options.length;
-    const sizeClass =
-      optionCount >= 5
-        ? ' is-field-full'
-        : optionCount >= 3
-          ? ' is-field-wide'
-          : '';
     return h('div', { class: `stack is-field${sizeClass}` }, [
       h('div', { class: 'field-label', text: enumFieldLabel(field) }),
       group,
     ]);
   };
 
+  // The control follows from what the options need (enum-fit.js): one
+  // segmented row when it fits the narrowest inspector column, a dropdown
+  // otherwise, and the size intent from the same width estimate.
   const fieldEnum = (field, value, onChange) => {
-    const options = Array.isArray(field?.options) ? field.options : [];
-    const v = value ?? '';
-    if (options.length > 0 && options.length <= 6) {
-      return fieldSegmented(field, v, options, onChange);
-    }
-    return fieldSelect(
-      enumFieldLabel(field),
-      v,
-      options.map(optionCopy),
-      onChange,
+    const options = (Array.isArray(field?.options) ? field.options : []).map(
+      optionCopy,
     );
+    const v = value ?? '';
+    const { control, size } = enumControl(options);
+    const sizeClass = size ? ` is-field-${size}` : '';
+    if (control === 'segmented') {
+      return fieldSegmented(field, v, options, onChange, sizeClass);
+    }
+    const el = fieldSelect(enumFieldLabel(field), v, options, onChange);
+    if (size) el.classList.add(`is-field-${size}`);
+    return el;
   };
 
   // A responsive row of fields. Columns are no longer fixed: `.field-grid` is a

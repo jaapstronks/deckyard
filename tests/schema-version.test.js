@@ -305,13 +305,17 @@ test('v4->v5 keeps the group value when both forms are stored', () => {
   assert.equal(content.textStyles, undefined);
 });
 
-test('v4->v5 keeps per-field colour/size on the same field', () => {
+test('v4->v5 keeps per-field size on the same field', () => {
   const migrated = migratePresentation(
-    legacyQuoteDeck({ align: 'center', color: 'accent' }),
+    legacyQuoteDeck({ align: 'center', size: 'lg' }),
   );
   const content = migrated.slides[0].content;
   assert.equal(content.quoteAlign, 'center');
-  assert.deepEqual(content.textStyles, { quote: { color: 'accent' } });
+  // v16 -> v17 then moves the field's style with it into quotes[0] (D314), and
+  // v17 -> v18 makes it the size every quote shares (B464).
+  assert.deepEqual(content.textStyles, {
+    'quotes.*.quote': { size: 'lg' },
+  });
 });
 
 test('v4->v5 drops an align the group never offered without inventing a value', () => {
@@ -356,7 +360,7 @@ test('v5->v6 folds inert per-field align on every group member, across types', (
   assert.deepEqual(twice, once);
 });
 
-test('v5->v6 drops only align, keeping per-field colour/size on the same member', () => {
+test('v5->v6 drops only align, keeping per-field size on the same member', () => {
   const deck = {
     id: randomUUID(),
     schemaVersion: 5,
@@ -364,7 +368,7 @@ test('v5->v6 drops only align, keeping per-field colour/size on the same member'
     slides: [
       {
         id: randomUUID(),
-        type: 'title-slide',
+        type: 'chapter-title-slide',
         content: {
           title: 'T',
           textStyles: {
@@ -375,8 +379,9 @@ test('v5->v6 drops only align, keeping per-field colour/size on the same member'
     ],
   };
   const migrated = migratePresentation(deck);
+  // The colour goes at v17 -> v18 (D221); the size is what the type offers.
   assert.deepEqual(migrated.slides[0].content.textStyles, {
-    title: { color: 'muted', size: 'lg' },
+    title: { size: 'lg' },
   });
 });
 
@@ -387,12 +392,13 @@ test('v5->v6 leaves a non-group field and unknown types untouched, and is idempo
     title: 'Untouched',
     slides: [
       {
-        // `body` is not a group member on a text-blocks slide, so its per-field
+        // `body` is not a group member on a text slide, so its per-field
         // align is a live text-align and must survive.
         id: randomUUID(),
-        type: 'text-blocks-slide',
+        type: 'content-slide',
         content: {
-          rows: [{ blocks: [] }],
+          title: 'T',
+          body: 'B',
           textStyles: { body: { align: 'center' } },
         },
       },
@@ -1880,4 +1886,373 @@ test('every declared lossless rename names a registered successor', () => {
     );
     assert.equal(REMOVED_SLIDE_TYPES[old].losslessRename, true);
   }
+});
+
+/* ------------------------------------------------------------------ *
+ * v15 -> v16: kpi-metrics' retired delta folds into the note (B599)
+ * ------------------------------------------------------------------ */
+
+/** A deck at v15 holding one kpi-metrics slide. */
+function kpiDeckAtV15(metrics, dataSource) {
+  return {
+    id: randomUUID(),
+    title: 'kpi',
+    lang: 'nl',
+    schemaVersion: 15,
+    slides: [
+      {
+        id: 's1',
+        type: 'kpi-metrics-slide',
+        content: { title: 'T', metrics },
+        ...(dataSource ? { dataSource } : {}),
+      },
+    ],
+  };
+}
+
+test('a stored kpi delta becomes the front of its note, as it rendered', () => {
+  const migrated = migratePresentation(
+    kpiDeckAtV15([
+      { value: '1', label: 'A', delta: '-5%', note: 'vs plan' },
+      { value: '2', label: 'B', delta: '+3pp' },
+      { value: '3', label: 'C', delta: '', note: 'flat' },
+      { value: '4', label: 'D', note: '+1 kept' },
+    ]),
+  );
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(
+    migrated.slides[0].content.metrics.map((m) => [m.note, 'delta' in m]),
+    [
+      ['-5% vs plan', false],
+      ['+3pp', false],
+      ['flat', false],
+      ['+1 kept', false],
+    ],
+  );
+});
+
+test('a delta binding moves to the note, unless the note is bound already', () => {
+  const migrated = migratePresentation(
+    kpiDeckAtV15([{ value: '1' }, { value: '2' }], {
+      provider: 'csv-url',
+      config: {},
+      bindings: [
+        { target: 'metrics[0].delta', source: 'B1' },
+        { target: 'metrics[1].note', source: 'C2' },
+        { target: 'metrics[1].delta', source: 'B2' },
+      ],
+    }),
+  );
+  assert.deepEqual(migrated.slides[0].dataSource.bindings, [
+    { target: 'metrics[0].note', source: 'B1' },
+    { target: 'metrics[1].note', source: 'C2' },
+  ]);
+});
+
+/* ------------------------------------------------------------------ *
+ * v16 -> v17: every quote of a quote-slide lives in quotes[] (D314)
+ * ------------------------------------------------------------------ */
+
+/** A deck at v16 holding one quote-slide. */
+function quoteDeckAtV16(content, dataSource) {
+  return {
+    id: randomUUID(),
+    title: 'quotes',
+    lang: 'nl',
+    schemaVersion: 16,
+    slides: [
+      {
+        id: 's1',
+        type: 'quote-slide',
+        content,
+        ...(dataSource ? { dataSource } : {}),
+      },
+    ],
+  };
+}
+
+test('the flat first quote becomes quotes[0], ahead of the stored extras', () => {
+  const migrated = migratePresentation(
+    quoteDeckAtV16({
+      quoteAlign: 'center',
+      quote: 'One.',
+      authorName: 'Ada',
+      authorTitle: 'Eng',
+      authorImage1: '/a.png',
+      authorImage1Alt: 'Ada',
+      authorImage2: '/b.png',
+      authorImage2Alt: '',
+      quotes: [
+        {
+          quote: 'Two.',
+          authorName: 'Grace',
+          authorImage: '/g.png',
+          authorImageAlt: 'Grace',
+          authorImage2: '/h.png',
+        },
+      ],
+    }),
+  );
+  assert.equal(migrated.schemaVersion, CURRENT_SCHEMA_VERSION);
+  assert.deepEqual(migrated.slides[0].content, {
+    quoteAlign: 'center',
+    quotes: [
+      {
+        quote: 'One.',
+        authorName: 'Ada',
+        authorTitle: 'Eng',
+        authorImage1: '/a.png',
+        authorImage1Alt: 'Ada',
+        authorImage2: '/b.png',
+        authorImage2Alt: '',
+      },
+      {
+        quote: 'Two.',
+        authorName: 'Grace',
+        authorImage1: '/g.png',
+        authorImage1Alt: 'Grace',
+        authorImage2: '/h.png',
+      },
+    ],
+  });
+});
+
+test('the quote fold renders the deck as the two forms did', () => {
+  const html = (content) =>
+    SLIDE_TYPES['quote-slide'].renderHtml(content, { id: 's' }, {});
+  const migrated = migratePresentation(
+    quoteDeckAtV16({
+      quote: 'One.',
+      authorName: 'Ada',
+      quotes: [{ quote: '' }, { quote: 'Three.', authorName: 'Lin' }],
+    }),
+  );
+  const out = html(migrated.slides[0].content);
+  // The first always shows, an extra only with text: two quotes.
+  assert.match(out, /data-quote-count="2"/);
+  assert.match(out, /One\./);
+  assert.match(out, /Three\./);
+});
+
+test('styles and bindings follow the fields they were keyed on', () => {
+  // The v16 -> v17 step on its own: v17 -> v18 then folds the styles into the
+  // offer model (B464), which its own tests cover.
+  const migrated = SCHEMA_MIGRATIONS[16](
+    quoteDeckAtV16(
+      {
+        quote: 'One.',
+        quotes: [{ quote: 'Two.' }],
+        textStyles: {
+          quote: { color: 'accent', align: 'center' },
+          authorName: { align: 'center' },
+          'quotes.0.quote': { size: 'lg' },
+        },
+      },
+      {
+        provider: 'csv-url',
+        config: {},
+        bindings: [
+          { target: 'quote', source: 'A1' },
+          { target: 'quotes[0].authorName', source: 'B2' },
+        ],
+      },
+    ),
+  );
+  const slide = migrated.slides[0];
+  assert.deepEqual(slide.content.textStyles, {
+    'quotes.0.quote': { color: 'accent' },
+    'quotes.1.quote': { size: 'lg' },
+  });
+  assert.deepEqual(slide.dataSource.bindings, [
+    { target: 'quotes[0].quote', source: 'A1' },
+    { target: 'quotes[1].authorName', source: 'B2' },
+  ]);
+});
+
+test('the quote fold is a no-op on the current shape and on a second run', () => {
+  const current = quoteDeckAtV16({
+    quoteAlign: 'left',
+    quotes: [{ quote: 'One.', authorName: 'Ada', authorImage1: '/a.png' }],
+    textStyles: { 'quotes.*.quote': { size: 'lg' } },
+  });
+  const before = structuredClone(current.slides);
+  const migrated = migratePresentation(current);
+  assert.deepEqual(migrated.slides, before);
+  const again = SCHEMA_MIGRATIONS[16](structuredClone(migrated));
+  assert.deepEqual(again.slides, before);
+});
+
+test('the quote fold reaches every language version', () => {
+  const slide = (quote) => ({
+    id: 's1',
+    type: 'quote-slide',
+    content: { quote, authorName: 'Ada' },
+  });
+  const migrated = migratePresentation({
+    id: randomUUID(),
+    title: 'q',
+    lang: 'nl',
+    schemaVersion: 16,
+    slides: [slide('Een.')],
+    i18n: {
+      versions: {
+        nl: { slides: [slide('Een.')] },
+        'en-GB': { slides: [slide('One.')] },
+      },
+    },
+  });
+  for (const [lang, text] of [
+    ['nl', 'Een.'],
+    ['en-GB', 'One.'],
+  ]) {
+    const content = migrated.i18n.versions[lang].slides[0].content;
+    assert.equal(content.quotes[0].quote, text, lang);
+    assert.ok(!('quote' in content), lang);
+  }
+});
+
+/*
+ * v17 -> v18: text styling is offered per type, at the scope its structure
+ * decides, and per-field colour is gone (B464, D220, D221).
+ */
+const FOLD_TEXT_STYLES = SCHEMA_MIGRATIONS[17];
+
+function deckAtV17(slides, i18n) {
+  return {
+    id: randomUUID(),
+    title: 't',
+    schemaVersion: 17,
+    slides,
+    ...(i18n ? { i18n } : {}),
+  };
+}
+
+test('v17->v18 drops colour, unoffered keys and per-instance keys the type never offers', () => {
+  const migrated = migratePresentation(
+    deckAtV17([
+      {
+        id: 's1',
+        type: 'content-slide',
+        content: {
+          title: 'T',
+          body: 'B',
+          textStyles: {
+            title: { color: 'accent' },
+            body: { align: 'center', color: 'muted', size: 'lg' },
+            subheading: { size: 'sm' },
+          },
+        },
+      },
+      {
+        id: 's2',
+        type: 'team-cards-slide',
+        content: {
+          members: [{ name: 'A' }, { name: 'B' }],
+          textStyles: {
+            'members.0.name': { color: 'accent', size: 'lg' },
+            title: { align: 'center' },
+          },
+        },
+      },
+    ]),
+  );
+  assert.deepEqual(migrated.slides[0].content.textStyles, {
+    body: { align: 'center', size: 'lg' },
+  });
+  // Image blocks offers nothing (D220): the map goes altogether.
+  assert.ok(!('textStyles' in migrated.slides[1].content));
+});
+
+test('v17->v18 folds per-instance quote sizes into the shared key where all agree', () => {
+  const quotes = [{ quote: 'One.' }, { quote: 'Two.' }];
+  const agree = migratePresentation(
+    deckAtV17([
+      {
+        id: 's1',
+        type: 'quote-slide',
+        content: {
+          quotes,
+          textStyles: {
+            'quotes.0.quote': { size: 'lg', color: 'accent' },
+            'quotes.1.quote': { size: 'lg' },
+          },
+        },
+      },
+    ]),
+  );
+  assert.deepEqual(agree.slides[0].content.textStyles, {
+    'quotes.*.quote': { size: 'lg' },
+  });
+  const disagree = migratePresentation(
+    deckAtV17([
+      {
+        id: 's1',
+        type: 'quote-slide',
+        content: { quotes, textStyles: { 'quotes.0.quote': { size: 'lg' } } },
+      },
+    ]),
+  );
+  // One of two stored a size: folding would restyle the other one.
+  assert.ok(!('textStyles' in disagree.slides[0].content));
+});
+
+test('v17->v18 reaches every language version and leaves unknown types their map', () => {
+  const slide = (styles) => ({
+    id: 's1',
+    type: 'content-slide',
+    content: { title: 'T', body: 'B', textStyles: styles },
+  });
+  const migrated = migratePresentation(
+    deckAtV17([slide({ body: { color: 'accent', size: 'sm' } })], {
+      versions: {
+        en: { slides: [slide({ body: { color: 'accent', size: 'sm' } })] },
+        nl: {
+          slides: [
+            slide({ body: { color: 'muted' } }),
+            {
+              id: 's2',
+              type: 'com.example.custom',
+              content: { textStyles: { x: { color: 'accent', size: 'lg' } } },
+            },
+          ],
+        },
+      },
+    }),
+  );
+  assert.deepEqual(migrated.slides[0].content.textStyles, {
+    body: { size: 'sm' },
+  });
+  assert.deepEqual(migrated.i18n.versions.en.slides[0].content.textStyles, {
+    body: { size: 'sm' },
+  });
+  const nl = migrated.i18n.versions.nl.slides;
+  assert.ok(!('textStyles' in nl[0].content));
+  assert.deepEqual(nl[1].content.textStyles, { x: { size: 'lg' } });
+});
+
+test('v17->v18 is a no-op on the current shape and on a second run', () => {
+  const current = deckAtV17([
+    {
+      id: 's1',
+      type: 'quote-slide',
+      content: {
+        quotes: [{ quote: 'One.' }, { quote: 'Two.' }],
+        textStyles: { 'quotes.*.quote': { size: 'sm' } },
+      },
+    },
+    {
+      id: 's2',
+      type: 'content-slide',
+      content: {
+        title: 'T',
+        body: 'B',
+        textStyles: { body: { align: 'right' } },
+      },
+    },
+  ]);
+  const before = structuredClone(current.slides);
+  const migrated = migratePresentation(current);
+  assert.deepEqual(migrated.slides, before);
+  const again = FOLD_TEXT_STYLES(structuredClone(migrated));
+  assert.deepEqual(again.slides, before);
 });

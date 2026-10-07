@@ -30,3 +30,25 @@ export function resolveFieldDef(fields, key) {
   }
   return field;
 }
+
+/**
+ * The text a type's `labelField` names for one slide: the field's value, or,
+ * when the label driver is a collection (quote-slide's `quotes`), its first
+ * item's `itemLabelField`. Empty string when there is none, so every consumer
+ * falls through to its own fallbacks.
+ * @param {Object} def - a slide type definition (or its editor metadata)
+ * @param {Object} content - slide content
+ * @returns {string}
+ */
+export function labelFieldText(def, content) {
+  const key = typeof def?.labelField === 'string' ? def.labelField.trim() : '';
+  if (!key) return '';
+  const value = content?.[key];
+  if (Array.isArray(value)) {
+    const fields = Array.isArray(def.fields) ? def.fields : [];
+    const sub = fields.find((f) => f?.key === key)?.itemLabelField;
+    const text = typeof sub === 'string' ? value[0]?.[sub] : null;
+    return typeof text === 'string' ? text.trim() : '';
+  }
+  return typeof value === 'string' ? value.trim() : '';
+}

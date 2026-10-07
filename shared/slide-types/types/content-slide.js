@@ -24,6 +24,8 @@ export default {
       key: 'title',
       essential: true,
       role: 'heading',
+      // Offered on purpose (D220): the CSS scales it, see text-styles.md.
+      textStyle: ['align', 'size'],
       label: 'Title',
       labelKey: 'editor.slideField.title.label',
       type: 'string',
@@ -51,16 +53,22 @@ export default {
       type: 'enum',
       required: false,
       options: [
-        sharedOption(
-          'editor.slideField.layout.option.two-column',
-          'two-column',
-          'Two columns',
-        ),
-        sharedOption(
-          'editor.slideField.layout.option.one-column',
-          'one-column',
-          'One column',
-        ),
+        {
+          ...sharedOption(
+            'editor.slideField.layout.option.two-column',
+            'two-column',
+            'Two columns',
+          ),
+          icon: 'cols-2',
+        },
+        {
+          ...sharedOption(
+            'editor.slideField.layout.option.one-column',
+            'one-column',
+            'One column',
+          ),
+          icon: 'cols-1',
+        },
       ],
     },
     // Two of the three shared stands: `auto` keeps the default sizing and
@@ -71,6 +79,8 @@ export default {
     {
       key: 'body',
       essential: true,
+      // Offered on purpose (D220): the CSS scales it, see text-styles.md.
+      textStyle: ['align', 'size'],
       label: 'Body',
       labelKey: 'editor.slideField.body.label',
       type: 'markdown',

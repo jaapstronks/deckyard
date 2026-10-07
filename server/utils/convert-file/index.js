@@ -39,6 +39,8 @@ export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
  * @param {boolean} options.enableLogging - Enable AI conversation logging (default: true)
  * @param {function} options.onStatusMessage - Callback for status messages during conversion
  * @param {function} options.onOutlineComplete - Callback when outline is ready (with statusMessages)
+ * @param {function} options.onGroupDone - ({ done, total }) => void, called as
+ *   each section group finishes (real progress, for streaming UIs)
  * @param {AbortSignal} [options.signal] - Cancels the conversion: it reaches
  *   both model phases and is checked before every image upload, so a caller
  *   whose reader left stops instead of converting for nobody.
@@ -53,6 +55,7 @@ export async function convertFile(buffer, options = {}) {
     enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
+    onGroupDone = null,
     signal = null,
   } = options;
 
@@ -192,6 +195,7 @@ export async function convertFile(buffer, options = {}) {
       enableLogging,
       onStatusMessage,
       onOutlineComplete,
+      onGroupDone,
       firstSlideContent, // Pass first slide content for title detection
       imageOnlySlides, // Pass image-only slides to merge back in
       aiSlideIndexOffset, // Offset to apply to AI slide indices for correct ordering

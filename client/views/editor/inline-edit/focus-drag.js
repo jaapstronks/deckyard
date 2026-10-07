@@ -62,8 +62,7 @@ export function createFocusDrag({
       : null;
     const focus = descriptor?.focus;
     if (!focus) return null;
-    const { idx, member, media } = base;
-    const sub = (s) => (media.list ? s : String(s).replace('{n}', String(idx)));
+    const { idx, member, sub } = base;
     const xKey = sub(focus.xField);
     const yKey = sub(focus.yField);
     const cropMode =

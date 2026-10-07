@@ -42,7 +42,12 @@ function extractSlideText(slide) {
   if (content.description) texts.push(content.description);
 
   // Quote and attribution
-  if (content.quote) texts.push(content.quote);
+  if (Array.isArray(content.quotes)) {
+    for (const q of content.quotes) {
+      if (q?.quote) texts.push(q.quote);
+      if (q?.authorName) texts.push(q.authorName);
+    }
+  }
   if (content.attribution) texts.push(content.attribution);
 
   // List items

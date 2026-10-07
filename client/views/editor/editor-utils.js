@@ -1,5 +1,6 @@
 // Small, shared helpers for the editor view.
 import { t } from '../../lib/ui-i18n.js';
+import { labelFieldText } from '../../../shared/slide-types/field-lookup.js';
 
 // Scroll locking for overlay modals (ref-counted; safe for nested modals).
 let sbScrollLockCount = 0;
@@ -35,9 +36,8 @@ export function slideLabel(slide, slideTypes) {
 
   // The type's declared label driver (quote, question, caption, …), then the
   // shared title fallback. No per-type branches: the declaration is the table.
-  if (def?.labelField && content[def.labelField]) {
-    return content[def.labelField];
-  }
+  const declared = labelFieldText(def, content);
+  if (declared) return declared;
 
   const title = String(content.title || '').trim();
   if (title) return title;

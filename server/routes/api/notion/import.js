@@ -28,6 +28,11 @@ import { createLogger } from '../../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import { clientDisconnectSignal } from '../../../utils/client-disconnect.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import {
+  OUTLINE_CREEP_MS,
+  PROGRESS,
+  REFINE_CREEP_MS,
+} from '../../../utils/import-progress.js';
 const log = createLogger('import');
 
 /**
@@ -204,19 +209,24 @@ export async function handleNotionImportStream({
       ];
 
   try {
-    let progress = 5;
-    const progressStep = Math.floor(20 / initialMessages.length);
+    // Handed to the client's rotator rather than paced here with sleeps: the
+    // fetch and the outline call start immediately (B595).
+    signal.throwIfAborted();
+    sseWrite(res, {
+      event: 'messages',
+      data: { statusMessages: initialMessages, intervalMs: 6000, loop: true },
+    });
+    sseWrite(res, {
+      event: 'status',
+      data: {
+        message: initialMessages[0],
+        phase: 'fetch',
+        progress: PROGRESS.parse,
+      },
+    });
 
-    for (const msg of initialMessages) {
-      signal.throwIfAborted();
-      sseWrite(res, {
-        event: 'status',
-        data: { message: msg, phase: 'fetch', progress },
-      });
-      progress += progressStep;
-      await new Promise((r) => setTimeout(r, 1200));
-    }
-
+    // Fetching plus the outline call is one long stretch without events, so
+    // the bar creeps toward the refine floor instead of standing still.
     sseWrite(res, {
       event: 'status',
       data: {
@@ -224,7 +234,9 @@ export async function handleNotionImportStream({
           ? 'Inhoud converteren naar slides...'
           : 'Converting content to slides...',
         phase: 'convert',
-        progress: 28,
+        progress: PROGRESS.parse,
+        creepTo: PROGRESS.refineFloor,
+        creepMs: OUTLINE_CREEP_MS,
       },
     });
 
@@ -243,14 +255,12 @@ export async function handleNotionImportStream({
       signal,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
+        // Message only: the bar is owned by the creep until the first section
+        // group finishes, so an arriving message may not move it.
         if (!statusMessagesSent) {
           sseWrite(res, {
             event: 'status',
-            data: {
-              message: msg,
-              phase: 'convert',
-              progress: Math.min(25 + statusMessages.length * 3, 75),
-            },
+            data: { message: msg, phase: 'convert' },
           });
         }
       },
@@ -261,7 +271,35 @@ export async function handleNotionImportStream({
             event: 'messages',
             data: { statusMessages: outline.statusMessages },
           });
+          // The outline is a real milestone, so the bar lands on the refine
+          // floor; from there the phase creeps until a group reports.
+          sseWrite(res, {
+            event: 'status',
+            data: {
+              phase: 'refine',
+              progress: PROGRESS.refineFloor,
+              creepTo: PROGRESS.refineCeiling,
+              creepMs: REFINE_CREEP_MS,
+            },
+          });
         }
+      },
+      // Real progress: one event per finished section group.
+      onGroupDone: ({ done, total }) => {
+        sseWrite(res, {
+          event: 'status',
+          data: {
+            message: isNl
+              ? `Sectie ${done} van ${total} geschreven…`
+              : `Wrote section ${done} of ${total}…`,
+            progress: Math.round(
+              PROGRESS.refineFloor +
+                (done / total) *
+                  (PROGRESS.refineCeiling - PROGRESS.refineFloor),
+            ),
+            phase: 'refine-progress',
+          },
+        });
       },
     });
 
@@ -285,27 +323,27 @@ export async function handleNotionImportStream({
         message: isNl
           ? `${slideCount} slide${slideCount !== 1 ? 's' : ''} gegenereerd`
           : `Generated ${slideCount} slide${slideCount !== 1 ? 's' : ''}`,
-        progress: 85,
+        progress: PROGRESS.refineCeiling,
         phase: 'finalize',
       },
     });
-    await new Promise((r) => setTimeout(r, 300));
+    await new Promise((r) => setTimeout(r, 500));
 
     sseWrite(res, {
       event: 'status',
       data: {
         message: isNl ? 'Presentatie opbouwen...' : 'Building presentation...',
-        progress: 90,
+        progress: PROGRESS.building,
         phase: 'finalize',
       },
     });
-    await new Promise((r) => setTimeout(r, 200));
+    await new Promise((r) => setTimeout(r, 500));
 
     sseWrite(res, {
       event: 'status',
       data: {
         message: isNl ? 'Opslaan in bibliotheek...' : 'Saving to library...',
-        progress: 95,
+        progress: PROGRESS.save,
         phase: 'save',
       },
     });

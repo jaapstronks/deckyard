@@ -112,6 +112,7 @@ nothing is discoverable only by `ls`.
 | [`slide-type-removal.md`](reference/slide-type-removal.md)                   | Retiring a type without leaving rot                               |
 | [`custom-slide-types-frontend.md`](reference/custom-slide-types-frontend.md) | The in-app custom-type editor                                     |
 | [`text-alignment.md`](reference/text-alignment.md)                           | Who decides alignment, and why                                    |
+| [`text-styles.md`](reference/text-styles.md)                                 | What a type offers to style, how it is stored, what is refused    |
 | [`slide-copy-language.md`](reference/slide-copy-language.md)                 | Which language a type's built-in copy speaks                      |
 | [`logo-wall-layout.md`](reference/logo-wall-layout.md)                       | The logo wall grid rule and optical balance                       |
 | [`team-cards-original-aspect.md`](reference/team-cards-original-aspect.md)   | `imageAspect: original` layout                                    |
@@ -160,6 +161,7 @@ nothing is discoverable only by `ls`.
 | [`ai-pipeline.md`](reference/ai-pipeline.md)             | The two-phase generation pipeline: LLM transport, prompts, catalogue, validate-and-fix   |
 | [`ai-wizard-prompts.md`](reference/ai-wizard-prompts.md) | The deck-generation prompts                                                              |
 | [`ai-slide-review.md`](reference/ai-slide-review.md)     | Deck grid, batch review, section refine                                                  |
+| [`import-progress.md`](reference/import-progress.md)     | The one progress model the streaming imports share: phases, creep, monotonicity          |
 | [`api-error-format.md`](reference/api-error-format.md)   | The internal API error envelope                                                          |
 | [`feedback-surfaces.md`](reference/feedback-surfaces.md) | Which message goes where: toast, inline refusal, chip — place, lifetime, content, focus  |
 | [`route-dispatch.md`](reference/route-dispatch.md)       | The `ROUTES`-table dispatch norm for `/api/*` modules                                    |

@@ -441,9 +441,16 @@ export function createBasicFields() {
             ? {
                 value: String(o.value ?? ''),
                 label: String(o.label ?? o.value ?? ''),
+                title: o.title && o.title !== o.label ? String(o.title) : '',
               }
             : { value: '', label: '' };
-      sel.append(h('option', { value: opt.value, text: opt.label }));
+      sel.append(
+        h('option', {
+          value: opt.value,
+          text: opt.label,
+          ...(opt.title ? { title: opt.title } : {}),
+        }),
+      );
     }
     sel.value = String(value ?? '');
     sel.addEventListener('change', () => onChange(sel.value));

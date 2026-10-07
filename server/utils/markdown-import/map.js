@@ -315,9 +315,9 @@ function buildQuoteSlide(parsed, overrides = {}) {
   return slide(
     'quote-slide',
     {
-      quote: quoteText || 'Quote',
-      authorName: authorName,
-      authorTitle: authorTitle,
+      quotes: [
+        { quote: quoteText || 'Quote', authorName: authorName, authorTitle },
+      ],
       ...overrides,
     },
     parsed.notes,

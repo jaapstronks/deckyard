@@ -15,7 +15,7 @@ import { createUiModeSwitcher } from '../ui-mode-switcher.js';
  *   uiMode: { el: HTMLElement, detach?: () => void }, refollowBtn: HTMLElement,
  *   presenterHint: HTMLElement, previewControls: HTMLElement,
  *   previewPrevBtn: HTMLElement, previewNextBtn: HTMLElement, previewMeta: HTMLElement,
- *   previewWrap: HTMLElement, nextLabel: HTMLElement, nextPreviewWrap: HTMLElement,
+ *   previewWrap: HTMLElement, previewStage: HTMLElement, nextLabel: HTMLElement, nextPreviewWrap: HTMLElement,
  *   notesWrap: HTMLElement, notesTitle: HTMLElement, notesBody: HTMLElement,
  *   notesEditBtn: HTMLElement, notesEditor: HTMLElement,
  *   notesTextarea: HTMLTextAreaElement, notesSaveBtn: HTMLElement,
@@ -80,6 +80,10 @@ export function buildNotesLayout() {
   const previewWrap = h('div', {
     class: 'notes-preview thumb',
   });
+  // The stage is the box the current slide is fitted into, on both axes
+  // (attachThumbScaleContain): the preview never grows past the height the
+  // shell leaves it, so the slide is never cut off.
+  const previewStage = h('div', { class: 'notes-stage' }, [previewWrap]);
 
   // "Up next" preview: the slide after the current view. Lets the presenter
   // see what's coming without peeking ahead (which detaches from the live deck).
@@ -156,15 +160,18 @@ export function buildNotesLayout() {
   const qaBody = h('div', { class: 'stack' });
   qaWrap.append(qaTitle, qaBody);
 
-  shell.append(
-    topbar,
-    presenterHint,
+  // Two zones: the current slide, and what the presenter reads beside it.
+  // Wide screens put them side by side, phones stack them (60-notes.css).
+  const main = h('div', { class: 'notes-main' }, [
     previewControls,
-    previewWrap,
+    previewStage,
+  ]);
+  const side = h('div', { class: 'notes-side' }, [
     nextPreview,
     notesWrap,
     qaWrap,
-  );
+  ]);
+  shell.append(topbar, presenterHint, main, side);
 
   return {
     shell,
@@ -178,6 +185,7 @@ export function buildNotesLayout() {
     previewNextBtn,
     previewMeta,
     previewWrap,
+    previewStage,
     nextLabel,
     nextPreviewWrap,
     notesWrap,

@@ -107,10 +107,11 @@
 }
 
 /* One step below the body on every host, so the inset reads as commentary on
-   the text rather than a competing block of it. */
+   the text rather than a competing block of it. The aside offers no S/M/L
+   (docs/reference/text-styles.md), so it does not read --tf-size-scale. */
 .slide-aside .slide-aside-body {
   font-family: var(--font-body);
-  font-size: calc(var(--slide-text-base) * var(--tf-size-scale, 1));
+  font-size: var(--slide-text-base);
   line-height: var(--slide-leading-normal);
   color: var(--slide-on-surface-muted);
 }

@@ -25,7 +25,11 @@ const pres = {
   id: 'p1',
   slides: [
     { id: 's1', type: 'title-slide', content: { title: 'Welcome' } },
-    { id: 's2', type: 'quote-slide', content: { quote: 'To be or not to be' } },
+    {
+      id: 's2',
+      type: 'quote-slide',
+      content: { quotes: [{ quote: 'To be or not to be' }] },
+    },
   ],
 };
 

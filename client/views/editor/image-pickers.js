@@ -1,5 +1,5 @@
 import { openImageLibraryPicker } from './image-library-picker.js';
-import { openImageKitPicker } from './imagekit-picker/index.js';
+import { createImageKitPanel } from './imagekit-picker/index.js';
 import { openBundledGradientPicker } from './bundled-gradients/picker.js';
 import { createImagePickerSeam } from './media/picker-provider.js';
 import { featureEnabled } from '../../lib/state/features.js';
@@ -41,9 +41,9 @@ export async function createImagePickers({ root, user, api, features }) {
   // Only offer ImageKit as a source when the server reports it's actually
   // configured — otherwise the chooser shows an "ImageKit" button that leads
   // straight to a "not configured" error. Undefined keeps ImageKit off.
-  const openImageKit = features?.imagekitConfigured
+  const imageKitPanel = features?.imagekitConfigured
     ? (opts) =>
-        openImageKitPicker({
+        createImageKitPanel({
           ...opts,
           api,
           root,
@@ -75,7 +75,7 @@ export async function createImagePickers({ root, user, api, features }) {
     features,
     openImageLibrary,
     openBundledGradients,
-    openImageKit,
+    createImageKitPanel: imageKitPanel,
     importImageKitToOwnMedia,
   });
 

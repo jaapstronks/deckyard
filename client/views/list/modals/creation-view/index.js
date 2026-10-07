@@ -23,6 +23,7 @@ import { markRequired } from '../../../../lib/dom/required-mark.js';
 import { featureEnabled, getFeatures } from '../../../../lib/state/features.js';
 import { createVisualThemePicker } from '../../../theme-select.js';
 import { createLangSelector } from '../../../../lib/format/lang-selector.js';
+import { deckLangForLibraryItems } from '../../../slide-library/index.js';
 import { createLibraryCompose } from './library-compose.js';
 import { createContentCompose } from './content-compose.js';
 import { createImportCompose } from './import-compose.js';
@@ -50,9 +51,6 @@ export function openCreationView({
   preselect,
 } = {}) {
   const features = getFeatures() || {};
-  // Sandbox guests have no slide library of their own, so "From the library"
-  // has nothing to compose from — hide the method entirely there.
-  const libraryDisabled = !!features.sandboxMode;
 
   // ===== State =====
   let method = 'blank'; // blank | library | content | import
@@ -126,16 +124,15 @@ export function openCreationView({
     t('list.creationView.method.blank', 'Blank'),
   );
   rail.append(blankItem);
-  if (!libraryDisabled) {
-    const libraryItem = makeRailItem(
+  rail.append(
+    makeRailItem(
       'library',
       t('list.creationView.method.library', 'From the library'),
       {
         desc: t('list.creationView.method.libraryDesc', 'Reusable slides'),
       },
-    );
-    rail.append(libraryItem);
-  }
+    ),
+  );
   if (featureEnabled('ai')) {
     rail.append(
       makeRailItem(
@@ -539,21 +536,29 @@ export function openCreationView({
   // the library compose flow with the building block seeded.
   const hasPreselectItems =
     Array.isArray(preselect?.items) && preselect.items.some(Boolean);
-  if (!libraryDisabled && (preselect?.collection || hasPreselectItems)) {
+  if (preselect?.collection || hasPreselectItems) {
     method = 'library';
     // Seed via the collections source, whose tray is the source of truth (so a
     // seeded slide can be removed without a picker round-trip).
     library.setMode('collections');
     syncThemeDefaultOpen();
     syncUI();
+    // The deck starts in the language the seeded slides are written in, when
+    // the derived default is not one of theirs (B603). A derived value, so it
+    // is not stored as the user's preference.
+    const followSlides = (items) =>
+      langSelect.setLang(deckLangForLibraryItems(items, langSelect.getLang()), {
+        persist: false,
+      });
     if (preselect.collection) {
       // Render the chooser first so seedCollection can flag the active card.
       library
         .ensureCollectionsChooser()
-        .then(() => library.seedCollection(preselect.collection));
+        .then(() => library.seedCollection(preselect.collection))
+        .then(followSlides);
     } else {
       library.ensureCollectionsChooser();
-      library.seedItems(preselect.items.filter(Boolean));
+      followSlides(library.seedItems(preselect.items.filter(Boolean)));
     }
   } else {
     // On a frame: the focus trap claims initial focus on the next frame, so a

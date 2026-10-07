@@ -248,6 +248,7 @@ describe('MCP Tool Schemas', () => {
       'pdf',
       'png-zip',
       'pptx',
+      'pptx-editable',
     ]);
   });
 

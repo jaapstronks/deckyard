@@ -52,7 +52,7 @@
     "run": "2026-10-04_12-13-30",
     "caseId": "philips-q4-2024",
     "type": "quote-slide",
-    "path": ["quote"],
+    "path": ["quotes", 0, "quote"],
     "clippedText": "We delivered better care for more people by enhancing execution and focusing on driving improvements in profitability and cash flow, as well as order and sales growth. We strengthened our fundamentals and resolved significant US litigation relating to the R..."
   }
 ]

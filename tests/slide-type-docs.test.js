@@ -17,12 +17,17 @@ import {
   buildAllDocs,
 } from '../scripts/generate-slide-type-docs.js';
 import { DECLARED_SLIDE_TYPE_NAMES } from '../shared/slide-types/tiers.js';
+import { initSanitizer } from '../shared/sanitize.js';
 import {
   condenseKeys,
   coverageFor,
   coverageRows,
-  familyPattern,
 } from '../scripts/lib/slide-type-doc-tables.js';
+import { familyPattern } from '../shared/slide-types/field-homes.js';
+
+// The item-level coverage renders every core type once to read the canvas's
+// `data-inline-field` paths; without DOMPurify the markdown fields would warn.
+await initSanitizer();
 
 /**
  * The slide-type inventory doc, the type counts in prose and the two per-type
@@ -221,6 +226,27 @@ test('no settings-shaped field relies on the bulk modal alone', () => {
     'parity violation — a settings field must render in the inspector (or be ' +
       'claimed by the Layout chip / an element knob), never in the bulk modal only:\n' +
       offenders.join('\n'),
+  );
+});
+
+/**
+ * The parity invariant one level down (B450): an ITEM field whose only home is
+ * the bulk modal. The list-level check above counted a collection as homed once
+ * the list was, which is how text-blocks' row arrows and colours stayed
+ * modal-only. The ratchet that pinned the leftovers reached zero with B599, so
+ * any entry fails: give the field a home - canvas for content, the "This card"
+ * tab or the inspector for settings.
+ */
+test('no item field has the bulk modal as its only home', () => {
+  const actual = coverageRows().flatMap((r) =>
+    r.itemBulkOnly.map((p) => `${r.type}.${p}`),
+  );
+  assert.deepEqual(
+    actual,
+    [],
+    'these item fields render nowhere but the bulk modal - give each a home ' +
+      '(docs/reference/editing-surfaces.md):\n' +
+      actual.join('\n'),
   );
 });
 
