@@ -165,7 +165,6 @@
   "imagekit.tags.more": "+{count} more",
   "imagekit.tags.placeholder": "tags (comma-separated)",
   "imagekit.tags.showLess": "Show less",
-  "imagekit.title": "ImageKit",
   "imagekit.transform": "Transform",
   "imagekit.transform.help": "Optional: adds ?tr=n-<name> to the URL.",
   "imagekit.transform.original": "Original",

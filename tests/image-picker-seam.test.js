@@ -71,7 +71,7 @@ test('bundled gradients register as a third source when their opener is injected
     features: { enableImageLibrary: true, imagekitConfigured: true },
     openImageLibrary: spyOpener().open,
     openBundledGradients: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   assert.deepEqual(
     seam.providers.map((p) => p.id),
@@ -207,7 +207,7 @@ test('a configured ImageKit is primary and ordered first; the rest keep their or
     features: { enableImageLibrary: true },
     openImageLibrary: spyOpener().open,
     openBundledGradients: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   assert.deepEqual(
     seam.providers.map((p) => [p.id, p.primary === true]),
@@ -229,7 +229,7 @@ test('library + ImageKit: two cards with a description, ImageKit on top, primary
     root,
     features: { enableImageLibrary: true },
     openImageLibrary: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   seam({ onPick: noop });
   const chooser = root.querySelector('.image-source-chooser');
@@ -258,7 +258,7 @@ test('a fork sets label, description and primary on the providers without patchi
     features: { enableImageLibrary: true },
     openImageLibrary: lib.open,
     openBundledGradients: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   // What a fork's image-pickers.js does after building the seam.
   const dam = seam.providers.find((p) => p.id === 'imagekit');
@@ -304,7 +304,7 @@ test('two primary sources are refused, not silently ordered', () => {
     root,
     features: { enableImageLibrary: true },
     openImageLibrary: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   seam.providers.find((p) => p.id === 'local-library').primary = true;
   assert.throws(() => seam({ onPick: noop }), /at most one primary source/);
@@ -345,7 +345,7 @@ test('the direct upload route exists only where the library takes uploads (B579)
   const imagekitOnly = createImagePickerSeam({
     root,
     features: {},
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   assert.equal(imagekitOnly.upload, null);
   setFeatures(null);
@@ -388,7 +388,7 @@ test('batch upload is offered only by an upload-capable library', () => {
     root,
     features: {},
     openImageLibrary: spyOpener().open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   assert.equal(noLibrary.uploadMany, null);
   setFeatures(null);
@@ -403,7 +403,7 @@ test('batch upload skips the source chooser and normalizes once before onPickMan
     root,
     features: { enableImageLibrary: true },
     openImageLibrary: lib.open,
-    openImageKit: spyOpener().open,
+    createImageKitPanel: spyOpener().open,
   });
   seam.uploadMany({
     spec: { fieldKey: 'logos' },

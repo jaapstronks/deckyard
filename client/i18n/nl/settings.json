@@ -165,7 +165,6 @@
   "imagekit.tags.more": "+{count} meer",
   "imagekit.tags.placeholder": "labels (komma-gescheiden)",
   "imagekit.tags.showLess": "Minder tonen",
-  "imagekit.title": "ImageKit",
   "imagekit.transform": "Transformatie",
   "imagekit.transform.help": "Optioneel: voegt ?tr=n-<name> toe aan de URL.",
   "imagekit.transform.original": "Origineel",
