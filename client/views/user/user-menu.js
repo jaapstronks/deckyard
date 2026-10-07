@@ -28,6 +28,11 @@ export function createUserMenu({ user, onLogout } = {}) {
 
   const email = user?.email || '';
   const isAnonymous = email === 'anonymous';
+  // A sandbox guest has a generated address (`guest-<hash>@sandbox.local`)
+  // and no account behind it: the header says what they are instead of that
+  // address, and there is no Sign out, which would only land them back here
+  // as the same guest.
+  const isSandboxGuest = !!user?.isSandboxGuest;
   const displayName = user?.name || displayNameFromEmail(email);
 
   // Create avatar
@@ -75,9 +80,14 @@ export function createUserMenu({ user, onLogout } = {}) {
     { class: 'user-menu-header' },
     [
       h('div', { class: 'user-menu-name', text: displayName }),
-      email && !isAnonymous
-        ? h('div', { class: 'user-menu-email', text: email })
-        : null,
+      isSandboxGuest
+        ? h('div', {
+            class: 'user-menu-email',
+            text: t('sandbox.guest.identity', 'Anonymous guest'),
+          })
+        : email && !isAnonymous
+          ? h('div', { class: 'user-menu-email', text: email })
+          : null,
     ].filter(Boolean),
   );
   menuItems.push(userInfo);
@@ -125,8 +135,8 @@ export function createUserMenu({ user, onLogout } = {}) {
     menuItems.push(linkHelp);
   }
 
-  // Sign out (only for authenticated users)
-  if (!isAnonymous) {
+  // Sign out (only for authenticated users with an account to leave)
+  if (!isAnonymous && !isSandboxGuest) {
     menuItems.push(h('div', { class: 'dropdown-sep' }));
 
     const btnLogout = h('button', {

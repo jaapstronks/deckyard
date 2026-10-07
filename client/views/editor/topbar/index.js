@@ -273,7 +273,9 @@ export function createEditorTopbar({
         isDirty,
         theme,
       }),
-    onLogout: () => logout(),
+    // A sandbox guest has no account to sign out of: Sign out would land them
+    // back in the editor as the same guest, so the item is absent (B357).
+    onLogout: user?.isSandboxGuest ? null : () => logout(),
     onToggleTheme: toggleTheme,
     // Stand-ins for the Export and Share buttons at the widths where the bar
     // folds them away. Same openers, so there is one action per concept.

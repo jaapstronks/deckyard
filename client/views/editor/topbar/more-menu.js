@@ -21,6 +21,8 @@ export function createEditorTopbarMoreMenu({
   // so it is asked again every time the menu opens.
   canTranslate = () => true,
   onVersions,
+  // Absent for a sandbox guest, who has no account to sign out of, and so is
+  // the Sign out item.
   onLogout,
   // Responsive overflow item (shown at narrow widths via CSS)
   onToggleTheme,
@@ -326,18 +328,20 @@ export function createEditorTopbarMoreMenu({
     onclick: () => run(onToggleTheme),
   });
 
-  const btnLogout = menuItem({
-    class: 'dropdown-item is-danger',
-    text: t('common.signOut', 'Sign out'),
-    onclick: async () => {
-      try {
-        await onLogout?.();
-      } catch (e) {
-        console.error('Logout failed:', e);
-      }
-      nav('/login');
-    },
-  });
+  const btnLogout = onLogout
+    ? menuItem({
+        class: 'dropdown-item is-danger',
+        text: t('common.signOut', 'Sign out'),
+        onclick: async () => {
+          try {
+            await onLogout();
+          } catch (e) {
+            console.error('Logout failed:', e);
+          }
+          nav('/login');
+        },
+      })
+    : null;
 
   // Close the "more" menu on outside click / Escape (capture-phase; robust
   // against stopPropagation()).

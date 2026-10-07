@@ -15,6 +15,7 @@ import {
 } from '../../user/index.js';
 import { displayNameFromEmail } from '../../../lib/format/user-format.js';
 import { createPasswordSection } from '../sections/index.js';
+import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 import {
   fetchMySettings,
   updateMySettings,
@@ -181,6 +182,18 @@ export function createAccountTab({ user }) {
     imageStatus,
     imageError.el,
   );
+  // The photo controls get their own wrapper so the sandbox note sits above
+  // the row instead of inside its flex layout, and the display name below
+  // stays editable: a guest can name itself, but has no account to hang a
+  // photo on (the server refuses the upload).
+  const profilePhoto = h('div', {}, [profileImageWrap]);
+  disableForSandbox({
+    content: profilePhoto,
+    message: t(
+      'sandbox.settings.profilePhoto',
+      'A guest has no account, so no profile photo. In your own Deckyard you sign in with your own account.',
+    ),
+  });
 
   // Profile name input
   const profileName = h('input', {
@@ -195,7 +208,7 @@ export function createAccountTab({ user }) {
       'Used as your name in the app (instead of the auth name).',
     ),
   });
-  profileCard.append(profileImageWrap, profileName, profileHint);
+  profileCard.append(profilePhoto, profileName, profileHint);
 
   // Save button for profile
   const profileActions = h('div', {
@@ -216,6 +229,13 @@ export function createAccountTab({ user }) {
 
   // Password section
   const passwordSection = createPasswordSection();
+  disableForSandbox({
+    content: passwordSection.el,
+    message: t(
+      'sandbox.settings.password',
+      'A guest has no password to change. In your own Deckyard you sign in with your own account.',
+    ),
+  });
 
   const cards = h('div', { class: 'settings-tab-cards' }, [
     profileCard,
