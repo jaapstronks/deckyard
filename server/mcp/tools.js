@@ -1406,6 +1406,7 @@ export function registerTools(
       const recommendations = await analyzeForCompression(pres, {
         targetReduction: intensity,
         vendor: vendor || null,
+        slideTypes: await sessionSlideTypes(context),
       });
 
       if (
@@ -1804,14 +1805,15 @@ export function registerTools(
 
       // Slide context reflects the deck as it is now; the stored
       // slideSnapshot on each comment shows the slide at create time.
-      const enriched = enrichCommentsWithSlideContext(comments, pres).map(
-        (c) => ({
-          ...c,
-          editUrl: presentationUrl(presentationId, 'edit', {
-            slideId: c.slideId,
-          }),
+      const slideTypes = await sessionSlideTypes(context);
+      const enriched = enrichCommentsWithSlideContext(comments, pres, {
+        slideTypes,
+      }).map((c) => ({
+        ...c,
+        editUrl: presentationUrl(presentationId, 'edit', {
+          slideId: c.slideId,
         }),
-      );
+      }));
 
       return {
         presentationId,
@@ -1893,6 +1895,7 @@ export function registerTools(
         return presCache.get(id);
       };
 
+      const slideTypes = await sessionSlideTypes(context);
       const items = [];
       for (const c of comments) {
         const pres = await presFor(c.presentationId);
@@ -1901,7 +1904,9 @@ export function registerTools(
           presentationId: c.presentationId,
           presentationTitle: c.presentationTitle,
           slideId: c.slideId,
-          slide: slideContextFor(pres || { slides: [] }, c.slideId),
+          slide: slideContextFor(pres || { slides: [] }, c.slideId, {
+            slideTypes,
+          }),
           slideSnapshot: c.slideSnapshot ?? null,
           // The author, named rather than addressed — the same shape the app
           // API uses since D22 (docs/reference/identity-in-responses.md).
@@ -1963,7 +1968,9 @@ export function registerTools(
       ok: true,
       comment: {
         ...comment,
-        slide: slideContextFor(presentation, comment.slideId),
+        slide: slideContextFor(presentation, comment.slideId, {
+          slideTypes: await sessionSlideTypes(context),
+        }),
         editUrl: presentationUrl(presentationId, 'edit', {
           slideId: comment.slideId,
         }),
