@@ -40,15 +40,15 @@ See [`security-posture.md`](security-posture.md).
 
 Fire sites (each names the event it fires):
 
-| Event                                 | Fired from                                      |
-| ------------------------------------- | ----------------------------------------------- |
-| `presentation.moved_to_organization`  | `server/routes/api/presentations/visibility.js` |
-| `presentation.published`              | `server/routes/api/publish.js`                  |
-| `slide.added_to_organization_library` | `server/routes/api/slide-library.js`            |
-| `comment.created`                     | `server/services/comment-notifications.js`      |
-| `interaction.poll_closed`             | `server/storage/interactions.js`                |
-| `interaction.likert_closed`           | `server/storage/interactions.js`                |
-| `interaction.feedback_submitted`      | `server/storage/feedback.js`                    |
+| Event                                 | Fired from                                 |
+| ------------------------------------- | ------------------------------------------ |
+| `presentation.moved_to_organization`  | `server/services/visibility.js`            |
+| `presentation.published`              | `server/routes/api/publish.js`             |
+| `slide.added_to_organization_library` | `server/routes/api/slide-library.js`       |
+| `comment.created`                     | `server/services/comment-notifications.js` |
+| `interaction.poll_closed`             | `server/storage/interactions.js`           |
+| `interaction.likert_closed`           | `server/storage/interactions.js`           |
+| `interaction.feedback_submitted`      | `server/storage/feedback.js`               |
 
 ## Data model
 

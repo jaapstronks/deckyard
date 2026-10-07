@@ -75,6 +75,10 @@ Enforcement seam and the routes that hand grants out:
 - `server/services/ownership.js` — `transferOwnership` (the hand-over: loads
   with `access: 'transfer'`, refuses the input before the write, leaves the
   activity row and the new owner's notification; B573).
+- `server/services/visibility.js` — `changeVisibility` (private ↔
+  organization and the view-only flag: loads with `read`, then asks the
+  transition decider, refuses the input before the write, leaves the
+  activity row and the webhook when a deck is opened; B574).
 - `server/utils/route-middleware.js` — `withPresentationAuth` (the internal
   adapter: the service's refusal as a 404/403 response) and
   `withPresentationReadAuth` (the same, plus a guest-session fallback).
@@ -237,8 +241,16 @@ Where the deciders differ from that shape, they differ deliberately:
 - **`canChangePresentationVisibility`** is a transition check, not a level check:
   same-visibility is a no-op and always allowed; an admin may make any
   transition; otherwise only the owner, and only `private → organization`.
+  Because it takes the transition it is not a right in the loader's table:
+  `changeVisibility` loads with `read` and asks it on top
+  (`canActorChangeVisibility`), so read is its floor like every other deck
+  right, and an admin cannot change a deck they cannot read (B574). The
+  view-only flag is `isPresentationAuthor`'s (`canActorSetViewOnly`): it is
+  the deck-wide author lock, the same mark as a slide lock, so under D49 it
+  stays with the author pair rather than moving to the owner alone (decided
+  at the B574 review).
   It does not read sandbox mode: where sharing is declared off (sandbox,
-  D181) the route refuses `→ organization` before the decider runs, for
+  D181) the service refuses `→ organization` before the decider runs, for
   everyone.
   `organization → private` is admin-only. "Admin" here is the **organization**
   admin — see _Admin means admin of the organization you are in_ below.
@@ -344,7 +356,8 @@ the usual mistake:
 3. **Instance and organization roles** — `isAdmin` (instance) and the
    organization role. These govern admin _screens_ and organization
    membership, and they deliberately do **not** grant deck read or write:
-   an admin can change a deck's visibility and moderate its comments, but
+   an admin can change the visibility of a deck they can read and moderate
+   its comments, but
    `canReadPresentation` never consults `isAdmin`. Organization roles are in
    `tenant-isolation.md` § _The organization UI_.
 

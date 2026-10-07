@@ -44,6 +44,8 @@ import {
   canDeletePresentation,
   canManageCollaborators,
   canTransferOwnership,
+  canChangePresentationVisibility,
+  isPresentationAuthor,
 } from './presentations.js';
 import { canResolveComment } from './comments.js';
 
@@ -180,6 +182,45 @@ export async function canActorTransferOwnership(pres, actor) {
   if (!pres || typeof pres !== 'object') return false;
   const actorUserId = await resolveActorUserId(actor);
   return canTransferOwnership({ user: actorUser(actor, actorUserId), pres });
+}
+
+/**
+ * Async check: may an actor move a presentation to `nextVisibility`?
+ *
+ * The decider takes the transition, not just the deck, so it cannot be a right
+ * in the loader's table: the visibility service loads with `read` and asks this
+ * on top (B574). The actor's id is resolved first, as for every other
+ * ownership-scoped check here.
+ *
+ * @param {Object} pres - The presentation object
+ * @param {Actor} actor - The acting person
+ * @param {string} nextVisibility - `'private'` or `'organization'`
+ * @returns {Promise<boolean>}
+ */
+export async function canActorChangeVisibility(pres, actor, nextVisibility) {
+  if (!pres || typeof pres !== 'object') return false;
+  const actorUserId = await resolveActorUserId(actor);
+  return canChangePresentationVisibility({
+    user: actorUser(actor, actorUserId),
+    pres,
+    nextVisibility,
+  });
+}
+
+/**
+ * Async check: may an actor set or clear a presentation's view-only flag?
+ *
+ * The author pair (owner or creator), as `isPresentationAuthor` decides it,
+ * with the actor's id resolved first.
+ *
+ * @param {Object} pres - The presentation object
+ * @param {Actor} actor - The acting person
+ * @returns {Promise<boolean>}
+ */
+export async function canActorSetViewOnly(pres, actor) {
+  if (!pres || typeof pres !== 'object') return false;
+  const actorUserId = await resolveActorUserId(actor);
+  return isPresentationAuthor({ user: actorUser(actor, actorUserId), pres });
 }
 
 /**

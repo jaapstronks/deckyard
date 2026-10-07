@@ -1,115 +1,43 @@
+/**
+ * API endpoint for moving a deck between private and the organization.
+ *
+ * PATCH /api/presentations/:id/visibility
+ * Headers: If-Match: <revision>
+ * Body: { visibility: "private" | "organization", isViewOnly?: boolean }
+ *
+ * An adapter: it parses the request and answers. Who may change a deck's
+ * visibility, and to what, is decided in `server/services/visibility.js`
+ * (B574).
+ */
+
+import { changeVisibility } from '../../../services/visibility.js';
 import {
-  getPresentation,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
-import {
-  badRequest,
   methodNotAllowed,
-  notFound,
   serveJson,
-  unauthorized,
-  jsonError,
   requireJsonBody,
-  forbidden,
 } from '../../../utils/http.js';
-import {
-  canChangePresentationVisibility,
-  isPresentationAuthor,
-} from '../../../utils/presentation-authz/index.js';
-import { maybeFireWebhook } from '../../../utils/webhooks.js';
-import { getRequestOrigin } from '../../../utils/request-url.js';
 import { parseIfMatchRevision } from './helpers.js';
-import { getOptionalBoolean } from '../../../utils/request-validators.js';
-import { assertSharingEnabled } from '../../../sandbox/sharing.js';
 
 export async function handlePresentationVisibility(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
 ) {
   if (req.method !== 'PATCH') return methodNotAllowed(res, ['PATCH']);
-  const existing = await getPresentation(storageScope, id);
-  if (!existing) return notFound(res);
-  if (!authedUser) return unauthorized(res);
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
-  const body = parsed.body;
-  const nextVisibility =
-    body?.visibility === 'organization'
-      ? 'organization'
-      : body?.visibility === 'private'
-        ? 'private'
-        : null;
-  if (!nextVisibility) return badRequest(res, 'Invalid visibility');
-  // Opening a deck to the organization is sharing; moving one back to private is
-  // not, so only the widening direction asks the declaration (D181).
-  if (nextVisibility === 'organization') assertSharingEnabled();
-  if (
-    !canChangePresentationVisibility({
-      user: authedUser,
-      pres: existing,
-      nextVisibility,
-    })
-  )
-    return forbidden(res);
+  const body = parsed.body || {};
 
-  // Handle isViewOnly flag (only when sharing to the organization)
-  let nextIsViewOnly = existing.isViewOnly || false;
-  const isViewOnly = getOptionalBoolean(body, 'isViewOnly');
-  if (isViewOnly !== null) {
-    // Only owner/creator can toggle view-only status
-    if (!isPresentationAuthor({ user: authedUser, pres: existing })) {
-      return forbidden(res, 'Only the owner can set view-only status');
-    }
-    // View-only requires organization visibility
-    if (isViewOnly && nextVisibility !== 'organization') {
-      return badRequest(
-        res,
-        'View-only presentations must be visible to the organization',
-      );
-    }
-    nextIsViewOnly = isViewOnly;
-  }
-
-  // If moving to private, automatically remove view-only status
-  if (nextVisibility === 'private') {
-    nextIsViewOnly = false;
-  }
-
-  // If-Match required for everyone, admins included (escape hatch removed).
-  const expectedRevision = parseIfMatchRevision(req);
-  if (expectedRevision == null)
-    return jsonError(res, 428, 'missing_if_match', 'Missing If-Match revision');
-
-  const nextPres = {
-    ...existing,
-    visibility: nextVisibility,
-    isViewOnly: nextIsViewOnly,
-  };
-  // Optimistic-lock failures (ConflictError/LockedError from
-  // updatePresentation) are AppErrors — the withErrorHandler wrapper on the
-  // presentations dispatcher emits them through the canonical envelope.
-  const updated = await updatePresentation(storageScope, id, nextPres, {
-    expectedRevision,
-    actorEmail: authedUser?.email || null,
-    allowVisibilityChange: true,
-    allowViewOnlyChange: true,
-  });
-
-  if (
-    existing?.visibility !== 'organization' &&
-    updated?.visibility === 'organization'
-  ) {
-    await maybeFireWebhook(repoRoot, getRequestOrigin(req), {
-      event: 'presentation.moved_to_organization',
-      pres: updated,
-      authedUser,
-      extra: {
-        fromVisibility: existing?.visibility || 'private',
-        toVisibility: 'organization',
-      },
-    });
-  }
+  const updated = await changeVisibility(
+    storageScope,
+    { actor: authedUser },
+    {
+      presentationId: id,
+      visibility: body.visibility,
+      isViewOnly: body.isViewOnly,
+      expectedRevision: parseIfMatchRevision(req),
+    },
+  );
   serveJson(res, 200, updated);
   return true;
 }

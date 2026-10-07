@@ -14,7 +14,6 @@ import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { parseIfMatchRevision, diffAddedSlideIds } from './helpers.js';
 import {
   recordPresentationUpdated,
-  recordPresentationMovedToOrganization,
   recordSlidesAdded,
 } from '../../../services/activity-events.js';
 import { notifyDeckActivity } from '../../../services/deck-activity-notifications.js';
@@ -214,21 +213,7 @@ export async function handlePresentationItem(
         updated.slides,
       );
 
-      // Check if visibility changed to organization
-      if (
-        existing.visibility !== updated.visibility &&
-        updated.visibility === 'organization'
-      ) {
-        fireAndForget(
-          recordPresentationMovedToOrganization({
-            presentation: updated,
-            actor: authedUser,
-            previousVisibility: existing.visibility,
-            scope: storageScope,
-          }),
-          'record presentation-moved activity',
-        );
-      } else if (addedSlideIds.length > 0) {
+      if (addedSlideIds.length > 0) {
         // A slide-add is more specific than a generic update, so emit it
         // instead of `presentation.updated` — and for decks of any visibility, since
         // this is the collaborator-awareness signal. The feed enrichment
