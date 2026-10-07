@@ -3,7 +3,6 @@
  * Handles AI generation features via API key authentication.
  */
 
-import { updatePresentation } from '../../../storage/presentations/index.js';
 import {
   assertCreatableDeckInput,
   createPresentation,
@@ -127,52 +126,40 @@ async function handleWizard(ctx) {
 
     const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
 
+    // One create carries the generated slides (B609): the factory seeds the
+    // language version from them. A storage refusal (the size limit) is the
+    // service's `AppError`, rendered below like every other refusal.
     const created = await createPresentation(
       storageScope,
       { actor: ctx.authedUser },
-      { title: parts.title, theme: effectiveTheme, lang: lang || undefined },
-    );
-
-    // Build i18n structure for the active language
-    const activeLang =
-      created?.i18n?.active ||
-      created?.i18n?.dominant ||
-      lang ||
-      DEFAULT_DECK_LANG;
-    const updatedI18n = {
-      ...created.i18n,
-      versions: {
-        ...created.i18n?.versions,
-        [activeLang]: {
-          title: parts.title,
-          slides: parts.slides,
-        },
+      {
+        title: parts.title,
+        slides: parts.slides,
+        theme: effectiveTheme,
+        lang: lang || undefined,
       },
-    };
-
-    // Update with generated content
-    const updated = await updatePresentation(storageScope, created.id, {
-      ...created,
-      title: parts.title,
-      slides: parts.slides,
-      i18n: updatedI18n,
-    });
+    );
 
     await apiCreated(ctx, {
       presentation: {
-        id: updated.id,
-        title: updated.title,
-        slideCount: Array.isArray(updated.slides) ? updated.slides.length : 0,
-        theme: updated.theme,
-        lang: updated.lang || activeLang,
-        ...publicDeckTimestamps(updated),
+        id: created.id,
+        title: created.title,
+        slideCount: Array.isArray(created.slides) ? created.slides.length : 0,
+        theme: created.theme,
+        lang: created.lang || created.i18n?.dominant || DEFAULT_DECK_LANG,
+        ...publicDeckTimestamps(created),
       },
     });
     return true;
   } catch (e) {
     log.error('[Public API AI Wizard] Error:', e);
     const statusCode = e?.statusCode || 500;
-    await apiError(ctx, statusCode, e?.message || 'Deck generation failed');
+    // A refusal keeps its machine code and details (409 `limit_exceeded` from
+    // the create, say), as `withV1ErrorHandler` would render it.
+    await apiError(ctx, statusCode, e?.message || 'Deck generation failed', {
+      code: e?.code,
+      details: e?.details ?? undefined,
+    });
     return true;
   }
 }

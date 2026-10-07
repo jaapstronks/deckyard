@@ -1,4 +1,3 @@
-import { updatePresentation } from '../../../storage/presentations/index.js';
 import { createPresentation } from '../../../services/presentations.js';
 import {
   loadDisabledSlideTypes,
@@ -6,7 +5,6 @@ import {
 } from '../../../utils/org-slide-types.js';
 import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
-import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 /** Shared logger for all AI route handlers. */
 export const log = createLogger('ai');
@@ -117,45 +115,41 @@ export function reattachAiMeta(normalizedSlides, sourceSlides) {
 }
 
 /**
- * Create a presentation and initialize its i18n structure with the generated slides.
- * Consolidates the repeated create→update-with-i18n pattern used across wizard endpoints.
+ * Create the deck an AI wizard generated, content and all, in one create.
+ *
+ * The wizards used to create an empty deck and then write the generated
+ * slides into it with a second storage call, building the i18n block by hand
+ * in between. `createPresentation` takes the slides itself: the factory seeds
+ * the language version from them, re-keys their ids and instance keys against
+ * the new deck and runs them through the write seam, so a refused slide
+ * leaves no empty deck behind (B609).
+ *
+ * @param {import('../../../storage/scope.js').StorageScope} storageScope
+ * @param {Object} input
+ * @param {{ title: string, slides: Object[] }} input.parts - the generated
+ *   deck as `deckToPresentationParts` normalized it
+ * @param {string|null|undefined} input.lang - the deck language, or absent
+ *   for the installation default
+ * @param {Object} input.authedUser - the creating actor
+ * @param {string} input.theme - the settled theme id
+ * @param {Object} [input.settings]
+ * @param {string} [input.notionSourcePageId]
+ * @returns {Promise<Object>} The created presentation.
  */
-export async function createPresentationWithI18n(
+export function createDeckFromParts(
   storageScope,
   { parts, lang, authedUser, theme, settings, notionSourcePageId },
 ) {
-  const created = await createPresentation(
+  return createPresentation(
     storageScope,
     { actor: authedUser },
     {
       title: parts.title,
+      slides: parts.slides,
       theme,
       lang: lang || undefined,
       ...(settings ? { settings } : {}),
       ...(notionSourcePageId ? { notionSourcePageId } : {}),
     },
   );
-
-  const activeLang =
-    created?.i18n?.active ||
-    created?.i18n?.dominant ||
-    lang ||
-    DEFAULT_DECK_LANG;
-  const updatedI18n = {
-    ...created.i18n,
-    versions: {
-      ...created.i18n?.versions,
-      [activeLang]: {
-        title: parts.title,
-        slides: parts.slides,
-      },
-    },
-  };
-
-  return updatePresentation(storageScope, created.id, {
-    ...created,
-    title: parts.title,
-    slides: parts.slides,
-    i18n: updatedI18n,
-  });
 }

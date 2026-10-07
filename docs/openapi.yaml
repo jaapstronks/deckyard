@@ -1640,6 +1640,14 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+        '409':
+          description: >-
+            The generated deck would exceed the size limits (`error:
+            limit_exceeded`, the message names the limit). Nothing is written.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '429':
           $ref: '#/components/responses/RateLimited'
         '502':

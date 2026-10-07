@@ -8,7 +8,7 @@ import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { assertCreatableDeckInput } from '../../../services/presentations.js';
 import { generateDeckJsonFromRawContent } from '../../../utils/openai/deck.js';
 import { getDisplayNameForUser } from '../../../utils/user-name.js';
-import { loadSlideTypeContext, createPresentationWithI18n } from './shared.js';
+import { loadSlideTypeContext, createDeckFromParts } from './shared.js';
 
 /**
  * POST /api/ai/wizard — generate a deck from raw input and create a new presentation.
@@ -55,7 +55,7 @@ export async function handleAiWizard({
   // Settled before normalizing: the slides compose against this theme.
   const parts = deckToPresentationParts(deck, { theme, lang });
 
-  const updated = await createPresentationWithI18n(storageScope, {
+  const updated = await createDeckFromParts(storageScope, {
     parts,
     lang,
     authedUser,

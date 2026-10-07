@@ -104,6 +104,13 @@ export async function prepareNewPresentation(
   // lands at the top level rather than pointing at a slide of some other deck.
   // Content is deep-copied first — the rekey pass below writes into it, and two
   // slides of one request may well name the same object.
+  //
+  // Everything else a slide carries (`visibility`, `duration`, `dataSource`,
+  // the AI wizard's `_aiReasoning` / `_aiAlternatives` the editor's review
+  // grid reads) rides along as it would through an update: the write seam
+  // (`normalizeSlides`, which `normalizeI18n` runs on every version below)
+  // keeps unknown keys, and a create that carries its content (B609) must not
+  // drop what the update-after-create used to keep.
   const providedSlidesRaw =
     Array.isArray(body?.slides) && body.slides.length > 0 ? body.slides : null;
 
@@ -128,7 +135,9 @@ export async function prepareNewPresentation(
       if (s?.contentByLang !== undefined) {
         refuseMalformedContentByLang(s.contentByLang, i);
       }
+      const { contentByLang: _byLang, ...rest } = isPlainObject(s) ? s : {};
       return {
+        ...rest,
         id: mapped || cryptoUuid(),
         parentId:
           (typeof s?.parentId === 'string' && idMap.get(s.parentId)) || null,
@@ -153,29 +162,23 @@ export async function prepareNewPresentation(
     }
 
     const contentFor = (s, lang) => s.contentByLang?.[lang] ?? s.content;
+    const withoutByLang = (s, content) => {
+      const { contentByLang: _byLang, ...slide } = s;
+      return { ...slide, content };
+    };
 
     if (langSet.size > 0) {
       // Always include the dominant language so the top-level version exists.
       langSet.add(initialLang);
       providedVersions = {};
       for (const lang of langSet) {
-        providedVersions[lang] = base.map((s) => ({
-          id: s.id,
-          parentId: s.parentId,
-          type: s.type,
-          content: contentFor(s, lang),
-          notes: s.notes,
-        }));
+        providedVersions[lang] = base.map((s) =>
+          withoutByLang(s, contentFor(s, lang)),
+        );
       }
       providedSlides = providedVersions[initialLang];
     } else {
-      providedSlides = base.map((s) => ({
-        id: s.id,
-        parentId: s.parentId,
-        type: s.type,
-        content: s.content,
-        notes: s.notes,
-      }));
+      providedSlides = base.map((s) => withoutByLang(s, s.content));
     }
   }
 
