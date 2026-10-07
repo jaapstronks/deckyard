@@ -553,7 +553,8 @@ export function validatePresentation(pres, opts = {}) {
 export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
   const errors = [];
   if (!slide || typeof slide !== 'object') return ['Slide must be an object'];
-  if (!isUuid(slide.id)) errors.push('Slide.id must be a UUID');
+  if (!isNonEmptyString(slide.id))
+    errors.push('Slide.id must be a non-empty string');
   if (!isNonEmptyString(slide.type) || !getSlideType(slide.type, slideTypes))
     errors.push(
       `Slide.type must be a known slide type (got: ${JSON.stringify(
@@ -564,9 +565,8 @@ export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
     errors.push('Slide.content must be an object');
   if (slide.notes != null && typeof slide.notes !== 'string')
     errors.push('Slide.notes must be a string');
-  // parentId validation: must be null or a valid UUID
-  if (slide.parentId != null && !isUuid(slide.parentId))
-    errors.push('Slide.parentId must be null or a valid UUID');
+  if (slide.parentId != null && !isNonEmptyString(slide.parentId))
+    errors.push('Slide.parentId must be null or a non-empty string');
   // Per-slide duration override validation
   if (slide.duration != null) {
     const d = Number(slide.duration);

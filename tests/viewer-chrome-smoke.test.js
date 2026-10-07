@@ -326,7 +326,13 @@ test(
       // The shared whole-page state, not a class matching /error/: a page
       // state carries no `*-error` name — that vocabulary belongs to
       // createInlineError() (B213, and the feedback-surfaces guard).
-      const hasUnavailableCard = await page.$('.page-unavailable');
+      const hasUnavailableCard = await page.waitForSelector(
+        '.page-unavailable',
+        {
+          visible: true,
+          timeout: 10000,
+        },
+      );
       assert.ok(
         hasUnavailableCard,
         'the page-unavailable state should render for an unknown token',

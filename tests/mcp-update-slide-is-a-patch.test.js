@@ -34,6 +34,8 @@ const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
 const { registerTools } = await import('../server/mcp/tools.js');
+const { updateSlide: updateSlideAsActor } =
+  await import('../server/services/slides.js');
 
 /** A deck with one title slide, in Dutch, on the default theme. */
 async function installDb() {
@@ -130,6 +132,26 @@ test('a content update is a patch: what is not sent stays', async () => {
   assert.equal(slide.content.meta, 'M');
 });
 
+test('an update preserves author-chosen slide ids and existing slide fields', async () => {
+  const db = await installDb();
+  Object.assign(stored(db), {
+    id: 'intro',
+    parentId: 'chapter-one',
+    notes: 'Speaker notes',
+    duration: 45,
+    lockedByAuthor: true,
+  });
+
+  await updateSlide({ content: { subheading: 'Nieuw' } });
+  const slide = stored(db);
+  assert.equal(slide.id, 'intro');
+  assert.equal(slide.parentId, 'chapter-one');
+  assert.equal(slide.notes, 'Speaker notes');
+  assert.equal(slide.duration, 45);
+  assert.equal(slide.lockedByAuthor, true);
+  assert.equal(slide.content.subheading, 'Nieuw');
+});
+
 test('a type change is a conversion: what maps carries over, the rest is re-seeded', async () => {
   const db = await installDb();
   const result = await updateSlide({
@@ -184,6 +206,34 @@ test('a type change the model has no mapping for is refused, not stored', async 
   );
   assert.equal(stored(db).type, 'title-slide');
   assert.equal(stored(db).content.title, 'Hoi');
+});
+
+test('AI conversion may replace an unmapped type only with valid complete content', async () => {
+  const db = await installDb();
+  const scope = { repoRoot: process.cwd(), organizationId: ORG };
+  const identity = {
+    actor: { id: userIdFor(OWNER), email: OWNER, organizationId: ORG },
+  };
+  const input = {
+    presentationId: DECK_ID,
+    slideId: SLIDE_ID,
+    type: 'content-slide',
+    conversion: 'replace',
+    content: { title: 'Nieuwe inhoud', body: '<p>Tekst</p>' },
+  };
+
+  await assert.rejects(
+    updateSlideAsActor(scope, identity, {
+      ...input,
+      content: { title: 'Nieuwe inhoud', body: { invalid: true } },
+    }),
+    (err) => err.statusCode === 400 && err.details?.errors?.length > 0,
+  );
+  assert.equal(stored(db).type, 'title-slide', 'invalid output was not stored');
+
+  const { slide } = await updateSlideAsActor(scope, identity, input);
+  assert.equal(slide.type, 'content-slide');
+  assert.equal(stored(db).content.body, '<p>Tekst</p>');
 });
 
 // B260 / D117: the refusal is not a dead end. It names the action that does

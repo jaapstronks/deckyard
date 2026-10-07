@@ -3,18 +3,14 @@
  * Handles CRUD operations for individual slides within presentations.
  */
 
-import { updatePresentation } from '../../../storage/presentations/index.js';
 import { publicDeckTimestamps } from '../../../services/presentations.js';
 import {
-  newSlide,
-  validateSlide,
-  resolveSlideTypeName,
-  canonicalSlideType,
-  convertSlideToType,
-  UnsupportedConversionError,
-} from '../../../../shared/slide-types.js';
-import { loadDeckTheme } from '../../../utils/themes.js';
-import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
+  updateSlide,
+  addSlide,
+  removeSlide,
+  reorderSlides,
+} from '../../../services/slides.js';
+import { canonicalSlideType } from '../../../../shared/slide-types.js';
 import {
   requirePermission,
   dispatchV1Routes,
@@ -81,118 +77,29 @@ async function handleGetSlide(ctx, presentationId, slideId) {
  * a full replacement, or with `type` and no `content` a conversion (B458).
  */
 async function handleUpdateSlide(ctx, presentationId, slideId) {
-  const { repoRoot, storageScope, req, apiKey } = ctx;
-
   if (!requirePermission(ctx, 'write')) return true;
-
-  const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
-
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
-    access: 'write',
-  });
-  if (!ok) return true;
-
-  const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
-  const index = slides.findIndex((s) => s?.id === slideId);
-
-  if (index < 0) {
-    await apiError(ctx, 404, 'Slide not found');
-    return true;
-  }
-
-  const existingSlide = slides[index];
-
-  // This organization's registry: core and file-based types plus its published
-  // custom ones, the same map the storage write seam resolves against. Built
-  // once per request and never cached across organizations.
-  const slideTypes = await buildMergedSlideTypes(storageScope);
-
-  // Validate slide type, and store the canonical registry key regardless of the
-  // spelling the caller sent (title-slide / core/title-slide / eu.deckyard.slide.title).
-  const rawType = body.type || existingSlide.type;
-  const slideType = resolveSlideTypeName(rawType, slideTypes);
-  if (!slideType) {
-    await apiError(ctx, 400, `Unknown slide type: ${rawType}`);
-    return true;
-  }
-
-  // A type change without new content is a conversion (D97), the same one MCP
-  // `update_slide` and the editor run: the content is re-seeded for the target
-  // type and what maps carries over. A pair the model has no mapping for is
-  // refused rather than leaving the old type's content under the new name.
-  // With `content` the caller replaces the slide outright, so nothing converts.
-  let content = body.content || existingSlide.content || {};
-  if (slideType !== existingSlide.type && !body.content) {
-    try {
-      ({ content } = convertSlideToType(existingSlide, slideType, {
-        slideTypes,
-        lang: pres?.lang,
-        theme: await loadDeckTheme(repoRoot, pres.theme, storageScope),
-      }));
-    } catch (err) {
-      if (!(err instanceof UnsupportedConversionError)) throw err;
-      const { from, to, convertible } = err.details;
-      await apiError(
-        ctx,
-        400,
-        `Cannot change slide type from ${canonicalSlideType(from)} to ${canonicalSlideType(to)}: no conversion is declared for that pair. ` +
-          'Send `content` for the new type to replace the slide, or create a new slide of that type.',
-        {
-          code: 'unsupported_conversion',
-          details: {
-            from: canonicalSlideType(from),
-            to: canonicalSlideType(to),
-            convertible: convertible.map(canonicalSlideType),
-          },
-        },
-      );
-      return true;
-    }
-  }
-
-  // Build updated slide, keeping id and parentId from existing
-  const updatedSlide = {
-    id: slideId,
-    type: slideType,
-    parentId: existingSlide.parentId || null,
-    content,
-    notes: getOptionalString(body, 'notes') ?? (existingSlide.notes || ''),
-    visibility: body.visibility || existingSlide.visibility || {},
-  };
-  // Preserve the author-lock flag: the public API cannot toggle it, and
-  // dropping it here would silently unlock the slide on every update.
-  if (typeof existingSlide.lockedByAuthor === 'boolean') {
-    updatedSlide.lockedByAuthor = existingSlide.lockedByAuthor;
-  }
-
-  // Validate the slide
-  const errors = validateSlide(updatedSlide, { slideTypes });
-  if (errors.length > 0) {
-    await apiError(ctx, 400, 'Invalid slide data', { details: { errors } });
-    return true;
-  }
-
-  // Replace slide in array
-  slides[index] = updatedSlide;
-
-  // Update presentation (a thrown storage error — 423 lock, 400 validation — is
-  // answered in the v1 envelope by the mount-level withV1ErrorHandler wrap).
-  const updated = await updatePresentation(
-    storageScope,
-    presentationId,
-    { slides },
+  const { slide, presentation } = await updateSlide(
+    ctx.storageScope,
+    { actor: ctx.authedUser },
     {
-      actorEmail: apiKey.ownerEmail,
+      presentationId,
+      slideId,
+      type: body.type,
+      content: body.content,
+      conversion: body.content ? 'replace' : 'mapped',
+      notes: getOptionalString(body, 'notes') ?? undefined,
+      visibility: body.visibility,
     },
   );
 
   await apiSuccess(ctx, {
-    slide: sanitizeSlide(updatedSlide),
+    slide: sanitizeSlide(slide),
     presentation: {
-      id: updated.id,
-      revision: updated.revision || 0,
-      updatedAt: publicDeckTimestamps(updated).updatedAt,
+      id: presentation.id,
+      revision: presentation.revision || 0,
+      updatedAt: publicDeckTimestamps(presentation).updatedAt,
     },
   });
   return true;
@@ -202,107 +109,30 @@ async function handleUpdateSlide(ctx, presentationId, slideId) {
  * POST /api/v1/presentations/:presentationId/slides - Create a new slide.
  */
 async function handleCreateSlide(ctx, presentationId) {
-  const { repoRoot, storageScope, req, apiKey } = ctx;
-
   if (!requirePermission(ctx, 'write')) return true;
-
-  const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
-
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
-    access: 'write',
-  });
-  if (!ok) return true;
-
-  // This organization's registry, as above.
-  const slideTypes = await buildMergedSlideTypes(storageScope);
-
-  // Validate slide type, resolving any accepted spelling to the registry key.
-  const slideType = body.type
-    ? resolveSlideTypeName(body.type, slideTypes)
-    : '';
-  if (!slideType) {
-    await apiError(ctx, 400, `Unknown or missing slide type: ${body.type}`);
-    return true;
-  }
-
-  // The deck's theme supplies the background presets for types that auto-assign
-  // one; without it a new title slide would come out flat.
-  const theme = await loadDeckTheme(repoRoot, pres.theme, storageScope);
-
-  // Create new slide. Caller-supplied content goes in as the factory's patch
-  // rather than being assigned over the result, so the composition steps that
-  // read content (the background seed, the instance keys) see what the caller
-  // actually sent.
-  let newSlideObj;
-  try {
-    newSlideObj = newSlide({
-      type: slideType,
-      theme,
-      slideTypes,
-      lang: pres?.lang,
-      presentationId: pres?.id,
-      content: getOptionalObject(body, 'content'),
-    });
-  } catch (e) {
-    await apiError(ctx, 400, `Failed to create slide: ${e.message}`);
-    return true;
-  }
-
-  // Set notes if provided
-  const notes = getOptionalString(body, 'notes');
-  if (notes !== null) {
-    newSlideObj.notes = notes;
-  }
-
-  // Set visibility if provided
-  const visibilityPatch = getOptionalObject(body, 'visibility');
-  if (visibilityPatch) {
-    newSlideObj.visibility = visibilityPatch;
-  }
-
-  // Validate the new slide
-  const errors = validateSlide(newSlideObj, { slideTypes });
-  if (errors.length > 0) {
-    await apiError(ctx, 400, 'Invalid slide data', { details: { errors } });
-    return true;
-  }
-
-  // Determine insertion position
-  const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
-  let insertIndex = slides.length; // Default: append at end
-
-  const atIndex = getNonNegativeNumber(body, 'atIndex');
-  if (atIndex !== null) {
-    insertIndex = Math.min(atIndex, slides.length);
-  } else if (body.afterSlideId) {
-    const afterIdx = slides.findIndex((s) => s.id === body.afterSlideId);
-    if (afterIdx >= 0) {
-      insertIndex = afterIdx + 1;
-    }
-  }
-
-  // Insert the new slide
-  slides.splice(insertIndex, 0, newSlideObj);
-
-  // Update presentation (a thrown storage error — 423 lock, 400 validation — is
-  // answered in the v1 envelope by the mount-level withV1ErrorHandler wrap).
-  const updated = await updatePresentation(
-    storageScope,
-    presentationId,
-    { slides },
+  const { slide, index, presentation } = await addSlide(
+    ctx.storageScope,
+    { actor: ctx.authedUser },
     {
-      actorEmail: apiKey.ownerEmail,
+      presentationId,
+      type: body.type,
+      content: getOptionalObject(body, 'content'),
+      notes: getOptionalString(body, 'notes') ?? undefined,
+      visibility: getOptionalObject(body, 'visibility') ?? undefined,
+      atIndex: getNonNegativeNumber(body, 'atIndex'),
+      afterSlideId: body.afterSlideId,
     },
   );
 
   await apiCreated(ctx, {
-    slide: sanitizeSlide(newSlideObj),
-    index: insertIndex,
+    slide: sanitizeSlide(slide),
+    index,
     presentation: {
-      id: updated.id,
-      slideCount: updated.slides?.length || 0,
-      revision: updated.revision || 0,
+      id: presentation.id,
+      slideCount: presentation.slides?.length || 0,
+      revision: presentation.revision || 0,
     },
   });
   return true;
@@ -312,49 +142,19 @@ async function handleCreateSlide(ctx, presentationId) {
  * DELETE /api/v1/presentations/:presentationId/slides/:slideId - Delete a slide.
  */
 async function handleDeleteSlide(ctx, presentationId, slideId) {
-  const { storageScope, apiKey } = ctx;
-
   if (!requirePermission(ctx, 'write')) return true;
-
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
-    access: 'write',
-  });
-  if (!ok) return true;
-
-  const slides = Array.isArray(pres.slides) ? [...pres.slides] : [];
-  const index = slides.findIndex((s) => s?.id === slideId);
-
-  if (index < 0) {
-    await apiError(ctx, 404, 'Slide not found');
-    return true;
-  }
-
-  // Prevent deleting the last slide
-  if (slides.length <= 1) {
-    await apiError(ctx, 400, 'Cannot delete the last slide in a presentation');
-    return true;
-  }
-
-  // Remove the slide
-  slides.splice(index, 1);
-
-  // Update presentation (a thrown storage error — 423 lock, 400 validation — is
-  // answered in the v1 envelope by the mount-level withV1ErrorHandler wrap).
-  const updated = await updatePresentation(
-    storageScope,
-    presentationId,
-    { slides },
-    {
-      actorEmail: apiKey.ownerEmail,
-    },
+  const { presentation } = await removeSlide(
+    ctx.storageScope,
+    { actor: ctx.authedUser },
+    { presentationId, slideId },
   );
 
   await apiSuccess(ctx, {
     deleted: true,
     presentation: {
-      id: updated.id,
-      slideCount: updated.slides?.length || 0,
-      revision: updated.revision || 0,
+      id: presentation.id,
+      slideCount: presentation.slides?.length || 0,
+      revision: presentation.revision || 0,
     },
   });
   return true;
@@ -364,64 +164,17 @@ async function handleDeleteSlide(ctx, presentationId, slideId) {
  * POST /api/v1/presentations/:presentationId/slides/reorder - Reorder slides.
  */
 async function handleReorderSlides(ctx, presentationId) {
-  const { storageScope, req, apiKey } = ctx;
-
   if (!requirePermission(ctx, 'write')) return true;
-
-  const { ok: bodyOk, body } = await readApiV1Body(ctx, req);
+  const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
-
-  const slideIds = body?.slideIds;
-  if (!Array.isArray(slideIds)) {
-    await apiError(ctx, 400, 'slideIds must be an array');
-    return true;
-  }
-
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId, {
-    access: 'write',
-  });
-  if (!ok) return true;
-
-  const existingSlides = Array.isArray(pres.slides) ? pres.slides : [];
-  const slideMap = new Map(existingSlides.map((s) => [s.id, s]));
-
-  // Validate that all provided IDs exist
-  const missingIds = slideIds.filter((id) => !slideMap.has(id));
-  if (missingIds.length > 0) {
-    await apiError(ctx, 400, `Unknown slide IDs: ${missingIds.join(', ')}`);
-    return true;
-  }
-
-  // Build reordered array (preserving any slides not mentioned)
-  const reorderedSlides = [];
-  const usedIds = new Set();
-
-  for (const id of slideIds) {
-    if (!usedIds.has(id)) {
-      reorderedSlides.push(slideMap.get(id));
-      usedIds.add(id);
-    }
-  }
-
-  // Append any slides that weren't in the reorder list
-  for (const slide of existingSlides) {
-    if (!usedIds.has(slide.id)) {
-      reorderedSlides.push(slide);
-    }
-  }
-
-  // Update presentation (throws answered in the v1 envelope by the wrap).
-  const updated = await updatePresentation(
-    storageScope,
-    presentationId,
-    { slides: reorderedSlides },
-    {
-      actorEmail: apiKey.ownerEmail,
-    },
+  const { slides, presentation } = await reorderSlides(
+    ctx.storageScope,
+    { actor: ctx.authedUser },
+    { presentationId, slideIds: body?.slideIds },
   );
 
   // Return summary of new order
-  const slidesSummary = reorderedSlides.map((s, idx) => ({
+  const slidesSummary = slides.map((s, idx) => ({
     id: s.id,
     type: canonicalSlideType(s.type),
     index: idx,
@@ -430,8 +183,8 @@ async function handleReorderSlides(ctx, presentationId) {
   await apiSuccess(ctx, {
     slides: slidesSummary,
     presentation: {
-      id: updated.id,
-      revision: updated.revision || 0,
+      id: presentation.id,
+      revision: presentation.revision || 0,
     },
   });
   return true;

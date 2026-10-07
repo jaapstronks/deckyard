@@ -32,13 +32,13 @@ import {
   duplicatePresentation,
   publicDeckTimestamps,
 } from '../services/presentations.js';
+import { updateSlide, addSlide } from '../services/slides.js';
 import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
-  convertSlideToType,
   deckToPresentationParts,
   newSlide,
   presentationToDeck,
-  UnsupportedConversionError,
+  resolveSlideTypeName,
 } from '../../shared/slide-types.js';
 import {
   VISIBILITY_PRESETS,
@@ -59,11 +59,7 @@ import {
 import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
-import {
-  loadDeckTheme,
-  loadThemeAssets,
-  settleNewDeckTheme,
-} from '../utils/themes.js';
+import { loadThemeAssets, settleNewDeckTheme } from '../utils/themes.js';
 import { listThemes } from '../storage/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
@@ -131,28 +127,22 @@ function parseSince(since) {
   return parsed.toISOString();
 }
 
-/**
- * The refusal of a type change `update_slide` has no conversion for (D97),
- * worded for the agent: the pair, what this slide does convert to, and the
- * action that does fit - a new slide of the target type, with the old one
- * removed or parked as a draft (D117). Still a refusal: nothing is stored.
- *
- * @param {import('../../shared/slide-types/convert.js').UnsupportedConversionError} err
- * @param {number} slideIndex
- * @returns {Error}
- */
-function refusedTypeChange(err, slideIndex) {
-  const { from, to, convertible } = err.details;
+/** Render the service's conversion refusal in MCP's tool vocabulary. */
+function mcpConversionRefusal(err, slideIndex, slideTypes) {
+  const name = (value) => resolveSlideTypeName(value, slideTypes) || value;
+  const from = name(err.details.from);
+  const to = name(err.details.to);
+  const convertible = err.details.convertible.map(name);
   const converts = convertible.length
     ? `A ${from} converts only to: ${convertible.join(', ')}.`
     : `A ${from} converts to no other type.`;
-  const refused = new Error(
+  const refusal = new Error(
     `Cannot change slide ${slideIndex} from ${from} to ${to}: no conversion is declared for that pair, so its content would not carry over. ${converts} ` +
       `To replace it, add a ${to} slide with add_slide, then either remove this one with remove_slide or keep it as a draft with update_slide ` +
       `(visibility: ${JSON.stringify(VISIBILITY_PRESETS.draft)}), which hides it from the presentation, exports and published pages.`,
   );
-  refused.details = err.details;
-  return refused;
+  refusal.details = { from, to, convertible };
+  return refusal;
 }
 
 /**
@@ -822,8 +812,6 @@ export function registerTools(
         );
       }
 
-      const slideTypes = await sessionSlideTypes(context);
-      let slide = pres.slides[slideIndex];
       if (visibility !== undefined) {
         const errors = validateVisibility(visibility);
         if (visibility === null || errors.length > 0) {
@@ -832,54 +820,31 @@ export function registerTools(
           );
         }
       }
-      // A type change is a conversion, not a new slide: the same
-      // `convertSlideToType` the editor uses re-seeds the content for the
-      // target type and carries over what maps, and it refuses a pair the
-      // model has no mapping for rather than leaving the old type's content
-      // under a new name. An update is then a patch on that slide — it is not
-      // composed through the factory, which is where a slide is *born*
-      // (defaults, theme seed, instance keys) and must not run again on
-      // something that already exists.
-      if (type && type !== slide.type) {
-        try {
-          slide = convertSlideToType(slide, type, {
-            slideTypes,
-            lang: pres?.lang,
-            theme: await loadDeckTheme(
-              repoRoot,
-              pres?.theme,
-              storageScopeOf(context),
-            ),
-          });
-        } catch (err) {
-          if (err instanceof UnsupportedConversionError) {
-            throw refusedTypeChange(err, slideIndex);
-          }
-          throw err;
-        }
-        pres.slides[slideIndex] = slide;
-      }
-      slide.content = { ...slide.content, ...content };
-      if (visibility !== undefined) slide.visibility = { ...visibility };
-
-      // Validate the updated slide
-      const [validated] = validateAndFixRefinedSlides(
-        [
+      let slide;
+      try {
+        ({ slide } = await updateSlide(
+          storageScopeOf(context),
+          { actor: actorOf(context) },
           {
-            type: slide.type,
-            content: slide.content,
+            presentationId,
+            slideId: pres.slides[slideIndex].id,
+            type,
+            content,
+            contentMode: 'merge',
+            visibility,
+            normalizeContent: (candidate, slideTypes) =>
+              validateAndFixRefinedSlides([candidate], { slideTypes })[0]
+                .content,
           },
-        ],
-        { slideTypes },
-      );
-      slide.content = validated.content;
-
-      await updatePresentation(
-        storageScopeOf(context),
-        presentationId,
-        pres,
-        await writeOpts(context),
-      );
+        ));
+      } catch (err) {
+        if (err.code !== 'unsupported_conversion') throw err;
+        throw mcpConversionRefusal(
+          err,
+          slideIndex,
+          await sessionSlideTypes(context),
+        );
+      }
 
       return {
         updated: true,
@@ -917,40 +882,28 @@ export function registerTools(
       required: ['presentationId', 'type', 'content'],
     },
     async ({ presentationId, type, content, position }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, {
+      await getCheckedPresentation(presentationId, context, {
         access: 'write',
       });
-
       // Validate the new slide
       const slideTypes = await sessionSlideTypes(context);
       const [validated] = validateAndFixRefinedSlides([{ type, content }], {
         slideTypes,
       });
 
-      const added = newSlide({
-        type: validated.type,
-        content: validated.content,
-        slideTypes,
-        theme: await loadDeckTheme(
-          repoRoot,
-          pres?.theme,
-          storageScopeOf(context),
-        ),
-        lang: pres?.lang,
-        presentationId,
-      });
-
-      const insertAt =
-        position != null
-          ? Math.max(0, Math.min(pres.slides.length, position))
-          : pres.slides.length;
-
-      pres.slides.splice(insertAt, 0, added);
-      await updatePresentation(
+      const {
+        slide: added,
+        index: insertAt,
+        presentation,
+      } = await addSlide(
         storageScopeOf(context),
-        presentationId,
-        pres,
-        await writeOpts(context),
+        { actor: actorOf(context) },
+        {
+          presentationId,
+          type: validated.type,
+          content: validated.content,
+          position,
+        },
       );
 
       return {
@@ -958,7 +911,7 @@ export function registerTools(
         slideId: added.id,
         position: insertAt,
         type: added.type,
-        totalSlides: pres.slides.length,
+        totalSlides: presentation.slides.length,
       };
     },
     { permission: 'write' },
@@ -1005,21 +958,24 @@ export function registerTools(
         throw new Error('Conversion failed — no content returned');
 
       const fromType = slide.type;
-      slide.type = result.type || targetType;
-      slide.content = result.content;
-      await updatePresentation(
+      const { slide: converted } = await updateSlide(
         storageScopeOf(context),
-        presentationId,
-        pres,
-        await writeOpts(context),
+        { actor: actorOf(context) },
+        {
+          presentationId,
+          slideId: slide.id,
+          type: result.type || targetType,
+          content: result.content,
+          conversion: 'replace',
+        },
       );
 
       return {
         converted: true,
         slideIndex,
         fromType,
-        toType: slide.type,
-        content: slide.content,
+        toType: converted.type,
+        content: converted.content,
       };
     },
     { permission: 'ai', feature: 'ai' },
