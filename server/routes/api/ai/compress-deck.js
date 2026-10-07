@@ -13,6 +13,7 @@ import {
   analyzeForCompression,
   applyCompression,
 } from '../../../utils/ai/compress-deck.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/compress-deck — analyze a presentation for consolidation
@@ -21,7 +22,7 @@ import {
  */
 export const handleAiCompressDeck = withErrorHandler(
   'ai-compress-deck',
-  async ({ req, res }) => {
+  async ({ req, res, authedUser }) => {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -38,6 +39,7 @@ export const handleAiCompressDeck = withErrorHandler(
     const recommendations = await analyzeForCompression(presentation, {
       targetReduction,
       vendor,
+      slideTypes: await buildMergedSlideTypes(authedUser),
     });
 
     if (

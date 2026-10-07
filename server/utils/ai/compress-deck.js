@@ -11,7 +11,9 @@ import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { createLogger } from '../logger.js';
+import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { getSlideType } from '../../../shared/slide-types/registry.js';
+import { resolveDocLangFromPresentation } from '../doc-lang.js';
 import { slideTitle } from '../../../shared/slide-types/semantic-projection.js';
 
 const log = createLogger('compress-deck');
@@ -62,9 +64,20 @@ Return ONLY valid JSON:
 }
 
 /**
- * Build the user prompt for compression analysis
+ * Build the user prompt for compression analysis.
+ * @param {Object} input
+ * @param {string} input.title
+ * @param {Array} input.slides
+ * @param {Object} [input.slideTypes] - The org's merged registry, so an
+ *   org-owned type yields its own heading
+ * @param {string} [input.lang] - The deck language the heading resolves in
  */
-export function buildCompressionUserPrompt({ title, slides }) {
+export function buildCompressionUserPrompt({
+  title,
+  slides,
+  slideTypes = SLIDE_TYPES,
+  lang,
+}) {
   const lines = [
     `PRESENTATION: ${title}`,
     `TOTAL SLIDES: ${slides.length}`,
@@ -73,7 +86,9 @@ export function buildCompressionUserPrompt({ title, slides }) {
   ];
 
   slides.forEach((slide, idx) => {
-    const heading = slideTitle(slide, getSlideType(slide?.type)) || 'Untitled';
+    const heading =
+      slideTitle(slide, getSlideType(slide?.type, slideTypes), { lang }) ||
+      'Untitled';
     const type = slide?.type || 'unknown';
     lines.push(`[${idx}] ${type}: ${heading}`);
 
@@ -173,11 +188,16 @@ function normalizeCompressionOutput(parsed, slideCount) {
  * @param {Object} options
  * @param {string} options.targetReduction - 'moderate' or 'aggressive'
  * @param {string} options.vendor - LLM vendor override
+ * @param {Object} [options.slideTypes] - The org's merged registry
  * @returns {Promise<Object>} Compression recommendations
  */
 export async function analyzeForCompression(
   presentation,
-  { targetReduction = 'moderate', vendor = null } = {},
+  {
+    targetReduction = 'moderate',
+    vendor = null,
+    slideTypes = SLIDE_TYPES,
+  } = {},
 ) {
   const startTime = Date.now();
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
@@ -197,7 +217,12 @@ export async function analyzeForCompression(
   }
 
   const systemPrompt = buildCompressionSystemPrompt({ targetReduction });
-  const userPrompt = buildCompressionUserPrompt({ title, slides });
+  const userPrompt = buildCompressionUserPrompt({
+    title,
+    slides,
+    slideTypes,
+    lang: resolveDocLangFromPresentation(presentation),
+  });
 
   const messages = [
     { role: 'system', content: systemPrompt },

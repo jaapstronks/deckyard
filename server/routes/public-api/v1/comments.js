@@ -10,6 +10,7 @@
  */
 
 import { getAppBaseUrl } from '../../../config/utils.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { listComments } from '../../../storage/presentations/comments.js';
 import {
   enrichCommentsWithSlideContext,
@@ -68,15 +69,20 @@ function sanitizeComment(comment, pres) {
 
 /**
  * Add slide context + editUrl to a list of comments (and replies).
+ * @param {Array} comments
+ * @param {Object} pres
+ * @param {Object} slideTypes - The org's merged registry
  */
-function decorateComments(comments, pres) {
-  return enrichCommentsWithSlideContext(comments, pres).map((c) => ({
-    ...sanitizeComment(c, pres),
-    replies: (c.replies || []).map((r) => ({
-      ...sanitizeComment(r, pres),
-      editUrl: commentEditUrl(pres.id, r.slideId || c.slideId),
-    })),
-  }));
+function decorateComments(comments, pres, slideTypes) {
+  return enrichCommentsWithSlideContext(comments, pres, { slideTypes }).map(
+    (c) => ({
+      ...sanitizeComment(c, pres),
+      replies: (c.replies || []).map((r) => ({
+        ...sanitizeComment(r, pres),
+        editUrl: commentEditUrl(pres.id, r.slideId || c.slideId),
+      })),
+    }),
+  );
 }
 
 /**
@@ -138,7 +144,11 @@ async function handleListComments(ctx, presentationId) {
   await apiSuccess(ctx, {
     presentationId,
     presentationTitle: pres.title || 'Untitled',
-    comments: decorateComments(comments, pres),
+    comments: decorateComments(
+      comments,
+      pres,
+      await buildMergedSlideTypes(ctx.storageScope),
+    ),
     total: comments.length,
     since: sinceResult.since,
   });
@@ -175,7 +185,9 @@ async function handleCreateComment(ctx, presentationId) {
     ok: true,
     comment: {
       ...sanitizeComment(comment, presentation),
-      slide: slideContextFor(presentation, comment.slideId),
+      slide: slideContextFor(presentation, comment.slideId, {
+        slideTypes: await buildMergedSlideTypes(ctx.storageScope),
+      }),
     },
   });
   return true;
@@ -205,7 +217,9 @@ async function handleCommentStatus(ctx, commentId) {
     ok: true,
     comment: {
       ...sanitizeComment(comment, presentation),
-      slide: slideContextFor(presentation, comment.slideId),
+      slide: slideContextFor(presentation, comment.slideId, {
+        slideTypes: await buildMergedSlideTypes(ctx.storageScope),
+      }),
     },
   });
   return true;
