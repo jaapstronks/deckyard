@@ -22,8 +22,8 @@ import {
   condenseKeys,
   coverageFor,
   coverageRows,
-  familyPattern,
 } from '../scripts/lib/slide-type-doc-tables.js';
+import { familyPattern } from '../shared/slide-types/field-homes.js';
 
 // The item-level coverage renders every core type once to read the canvas's
 // `data-inline-field` paths; without DOMPurify the markdown fields would warn.

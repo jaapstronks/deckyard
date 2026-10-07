@@ -391,9 +391,13 @@ Column semantics:
   level's ghosts, the list-mode `media` keys and `extraFields`, a `card`
   element tab's `fields` - the "This card" tab), or when its whole list is an
   inspector keep. **Any entry is a parity violation** (see the invariant
-  above); the generated column is asserted by a shrink-only guard in
-  `tests/slide-type-docs.test.js` (B450), which pins the entries that still
-  exist and fails on a new one and on a pinned one that found a home.
+  above); the generated column is asserted empty by
+  `tests/slide-type-docs.test.js` (B450). The derivation is
+  `bulkOnlyFields()` in `shared/slide-types/field-homes.js`; the definition
+  validator asks it about a fork type's own `inline`, `inspectorKeeps` and
+  `elementTab` and logs a boot **warning** for every field it finds, not a
+  refusal (B600). A fork type without `inspectorKeeps` keeps every field in
+  the inspector, so it never warns.
 - **Inspector keeps**: the `inspectorKeeps` declaration - the settings/design
   fields the rail retains (enums, icons, URLs-as-config, chart config). An
   empty list is a real answer: the canvas covers everything.

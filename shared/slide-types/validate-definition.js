@@ -35,6 +35,7 @@ import {
   walkFieldDefinitions,
 } from './field-definitions.js';
 import { FIELD_TYPE_NAMES } from './field-types.js';
+import { bulkOnlyFields } from './field-homes.js';
 import {
   DEFAULT_FIDELITY,
   FIDELITY_TARGETS,
@@ -394,6 +395,9 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
     }
   }
 
+  // --- field homes -----------------------------------------------------------
+  checkFieldHomes(def, who, out);
+
   // --- fidelity --------------------------------------------------------------
   checkFidelity(def.fidelity, who, warnings);
 
@@ -477,6 +481,47 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
   }
 
   return out;
+}
+
+/**
+ * Warn about fields whose only editing home is the bulk "All text" modal: not
+ * on the canvas, not in the inspector, not in an element tab. Core is held to
+ * that by a test (`tests/slide-type-docs.test.js`, B450); a fork type gets a
+ * warning instead, because the type renders fine and an editor can still
+ * reach the field, just not where they look for it (B600).
+ *
+ * Only the definition's own declarations count (`inline`, `inspectorKeeps`,
+ * `elementTab`), the ones that travel on `GET /api/slide-types`. A type that
+ * declares no `inspectorKeeps` keeps every field in the inspector, so it never
+ * warns here; the gap opens when a keep-list narrows the pane and the canvas
+ * does not pick up what it dropped. A renderer that throws on sample items
+ * skips the check, as it skips the markup checks.
+ *
+ * @param {object} def
+ * @param {string} who - the registry key, already trimmed.
+ * @param {{errors: string[], warnings: string[]}} out
+ */
+function checkFieldHomes(def, who, out) {
+  if (typeof def.renderHtml !== 'function') return;
+  let gaps;
+  try {
+    gaps = bulkOnlyFields(def, {
+      descriptor: isPlainObject(def.inline) ? def.inline : null,
+      keeps: Array.isArray(def.inspectorKeeps) ? def.inspectorKeeps : null,
+      tab: isPlainObject(def.elementTab) ? def.elementTab : null,
+    });
+  } catch {
+    return;
+  }
+  const paths = [...gaps.bulkOnly, ...gaps.itemBulkOnly];
+  if (!paths.length) return;
+  out.warnings.push(
+    `${who}: ${paths.map((p) => `\`${p}\``).join(', ')} can only be edited ` +
+      `in the "All text" modal — give each a home: canvas text ` +
+      `(\`inline.formText\` or a \`data-inline-field\` in the markup), ` +
+      `\`inspectorKeeps\`, or an \`elementTab.card.fields\` entry for an ` +
+      `item setting`,
+  );
 }
 
 /** True for a non-array object. */
