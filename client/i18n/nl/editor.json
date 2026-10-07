@@ -979,6 +979,7 @@
   "editor.textStyle.align.center": "Midden",
   "editor.textStyle.align.groupOwned": "Deze tekst beweegt mee met het hele blok. Stel de uitlijning in onder Layout in de werkbalk.",
   "editor.textStyle.align.left": "Links",
+  "editor.textStyle.align.listOwned": "Een opsomming blijft uitgelijnd op de opsommingstekens. Uitlijning werkt zodra deze tekst een alinea heeft.",
   "editor.textStyle.align.right": "Rechts",
   "editor.textStyle.followsLayout": "Deze tekst volgt de opmaak van de slide.",
   "editor.textStyle.scope.all": "Alle \"{label}\" ({count})",

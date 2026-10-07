@@ -9,7 +9,10 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { readFileSync } from 'node:fs';
+
 import {
+  TEXT_SIZE_SCALE,
   TEXT_STYLE_PROPS,
   checkTextStyleDeclarations,
   foldTextStylesToOffers,
@@ -19,7 +22,9 @@ import {
   textStyleOfferFor,
   textStyleOffers,
   textStyleRefusals,
+  textSizeScale,
 } from '../shared/slide-types/text-styles.js';
+import { isListOnlyMarkdown } from '../shared/markdown.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { validateSlideTypeDefinition } from '../shared/slide-types/validate-definition.js';
 
@@ -453,5 +458,64 @@ describe('the pilot: Image blocks offers nothing (D220)', () => {
       SLIDE_TYPES['team-cards-slide'],
     );
     assert.equal(r.reason, 'text_style_not_offered');
+  });
+});
+
+describe('size scale (B464 PR 2)', () => {
+  const read = (rel) =>
+    readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8');
+
+  it('the CSS states the same scale per step as TEXT_SIZE_SCALE', () => {
+    const css = read('client/styles/slides/03-components/97-text-styles.css');
+    for (const step of ['sm', 'lg']) {
+      const m = css.match(
+        new RegExp(
+          `\\.tf-size-${step}[^{]*\\{\\s*--tf-size-scale:\\s*([0-9.]+)`,
+        ),
+      );
+      assert.ok(m, `no rule for tf-size-${step}`);
+      assert.equal(Number(m[1]), TEXT_SIZE_SCALE[step]);
+    }
+    assert.equal(TEXT_SIZE_SCALE.md, 1);
+  });
+
+  it('textSizeScale reads a known step and nothing else', () => {
+    assert.equal(textSizeScale('lg'), 1.2);
+    assert.equal(textSizeScale('sm'), 0.85);
+    for (const v of ['md', 'xl', 'toString', '__proto__', null, undefined, 3])
+      assert.equal(textSizeScale(v), 1);
+  });
+
+  it('title slide: title and subtitle offer size, meta nothing (D241)', () => {
+    const offers = textStyleOffers(SLIDE_TYPES['title-slide']);
+    assert.deepEqual(
+      [...offers.values()].map((o) => [o.key, o.props]),
+      [
+        ['title', ['size']],
+        ['subheading', ['size']],
+      ],
+    );
+  });
+
+  it('list slide: density is the only size; its CSS reads no field scale', () => {
+    assert.equal(textStyleOffers(SLIDE_TYPES['list-slide']).size, 0);
+    const css = read(
+      'client/styles/slides/01-layout-and-title/60-list-slide.css',
+    );
+    assert.ok(!/var\(--tf-size-scale/.test(css));
+  });
+});
+
+describe('isListOnlyMarkdown', () => {
+  it('is true when every non-blank line is a list item', () => {
+    assert.equal(isListOnlyMarkdown('- a\n- b'), true);
+    assert.equal(isListOnlyMarkdown('1. a\n\n  - b\n2. c'), true);
+  });
+
+  it('is false with a paragraph, or with no text', () => {
+    assert.equal(isListOnlyMarkdown('Intro\n\n- a'), false);
+    assert.equal(isListOnlyMarkdown('Just prose'), false);
+    assert.equal(isListOnlyMarkdown(''), false);
+    assert.equal(isListOnlyMarkdown(null), false);
   });
 });

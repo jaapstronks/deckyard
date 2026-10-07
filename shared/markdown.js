@@ -254,6 +254,25 @@ function parseListItem(line) {
 }
 
 /**
+ * Whether a markdown value renders as list items and nothing else: every
+ * non-blank line is a list item (`- `, `* `, `+ `, `1. `), at any depth.
+ *
+ * Such a value renders as bare `<ul>`/`<ol>` only, and a marker-anchored list
+ * never takes block alignment (`00-base.css`, docs/reference/text-alignment.md
+ * § A marker-anchored list never inherits alignment). The editor asks this
+ * before it offers an alignment that would have no visible effect.
+ *
+ * @param {unknown} markdown
+ * @returns {boolean}
+ */
+export function isListOnlyMarkdown(markdown) {
+  const lines = String(markdown ?? '')
+    .split(/\r?\n/)
+    .filter((l) => l.trim());
+  return lines.length > 0 && lines.every((l) => LIST_ITEM_RE.test(l));
+}
+
+/**
  * Build (possibly nested) list HTML from a run of list-item lines.
  * Nesting is derived from each line's leading indentation: a more-indented item
  * opens a child list inside the previous <li>; a less-indented item closes back

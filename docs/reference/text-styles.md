@@ -135,16 +135,33 @@ minus colour, for its own reader.
 
 ## What core offers
 
-Everything not listed offers nothing.
+Everything not listed offers nothing. The per-type list is generated, not
+kept here: the **Text style offer** column of the coverage table in
+[`editor-inspector.md`](editor-inspector.md) § Per-type coverage audit, derived
+by `scripts/generate-slide-type-docs.js` from the same `textStyleOffers()` the
+renderer, the inspector and the write path read. Today that is: content
+`title` and `body`, callout, image-text and image-set `body` (align, size);
+title-slide `title` and `subheading`, chapter-title `title`, and quote
+`quotes[].quote` as one set (size).
 
-| Type                | Field            | Offer                                             |
-| ------------------- | ---------------- | ------------------------------------------------- |
-| content-slide       | `title`, `body`  | align, size                                       |
-| callout-slide       | `body`           | align, size                                       |
-| image-text-slide    | `body`           | align, size                                       |
-| image-set-slide     | `body`           | align, size                                       |
-| chapter-title-slide | `title`          | size (the title block owns alignment)             |
-| quote-slide         | `quotes[].quote` | size, as one set (the quote block owns alignment) |
+On the title slide, chapter title and quote the block owns alignment (the
+Layout chip), so those fields offer size only. The title slide's size composes
+with its content-aware cover scale: `coverFontScale()` budgets room for an L
+title or subtitle, so the fullest legal block still fits the frame; its meta
+line offers nothing (D241). The list slide offers no text-style size: its
+slide-level `density` setting is the one size control for list items (D241).
 
-The list slide offers no text-style size: its slide-level `density` setting is
-the one size control for list items (D241).
+### No control without an effect
+
+`tests/text-style-render-guard.test.js` renders every core offer in a real
+browser and measures it: an offered size makes every covered element smaller
+at S and larger at L and leaves every other field alone; every offered
+alignment value lands as the computed alignment of every covered element. The
+title slide's fullest block is checked with title and subtitle at L across the
+six core themes and three `titleLayout`s.
+
+One alignment case is content-dependent: a markdown field whose text is only a
+bullet or numbered list stays on its markers whatever the block does
+([`text-alignment.md`](text-alignment.md)). The inspector then shows the
+alignment control disabled with that reason, and live again once the text has a
+paragraph (`isListOnlyMarkdown()` in `shared/markdown.js`).

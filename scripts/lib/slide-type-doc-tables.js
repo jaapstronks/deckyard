@@ -41,6 +41,7 @@ import {
   bulkOnlyFields,
   familyPattern,
 } from '../../shared/slide-types/field-homes.js';
+import { textStyleOffers } from '../../shared/slide-types/text-styles.js';
 
 const NONE = '–';
 
@@ -199,6 +200,41 @@ function mediaCell(d) {
   return parts.length ? parts.join('; ') : NONE;
 }
 
+/**
+ * A type's text-style offers as table entries: the field a reader recognises
+ * (`quotes[].quote`, a set by its members) and what it offers at which scope.
+ * Derived from the same `textStyleOffers()` the renderer, the inspector and
+ * the write path read, so the docs cannot list an offer the type does not
+ * make (B464).
+ * @param {Object} def
+ * @returns {{field: string, props: string[], scope: string}[]}
+ */
+function textStyleOfferEntries(def) {
+  return [...textStyleOffers(def).values()].map((o) => ({
+    field:
+      o.scope === 'set'
+        ? o.members.map((m) => `\`${m}\``).join(' + ')
+        : `\`${o.key.replaceAll('.*.', '[].')}\``,
+    props: o.props,
+    scope: { field: 'this field', items: 'every item', set: 'the set' }[
+      o.scope
+    ],
+  }));
+}
+
+/** The text-style cell of the coverage table. */
+function textStyleCell(def) {
+  const entries = textStyleOfferEntries(def);
+  return entries.length
+    ? entries
+        .map(
+          (e) =>
+            `${e.field}: ${e.props.join(', ')}${e.scope === 'this field' ? '' : ` (${e.scope})`}`,
+        )
+        .join('; ')
+    : NONE;
+}
+
 /** Markdown table rows share this shape; keeps the two renderers honest. */
 function table(header, rows) {
   return [
@@ -220,10 +256,16 @@ export function renderCoverageTable() {
         ? '*(no declaration — conservative fallback)*'
         : codeList(r.keeps);
     const onlyHome = codeList([...r.bulkOnly, ...r.itemBulkOnly]);
-    return `| \`${r.type}\` | ${codeList(r.formText)} | ${onlyHome} | ${keeps} |`;
+    return `| \`${r.type}\` | ${codeList(r.formText)} | ${onlyHome} | ${keeps} | ${textStyleCell(r.def)} |`;
   });
   return table(
-    ['Type', 'Canvas (wysiwyg)', 'Bulk modal (only home)', 'Inspector keeps'],
+    [
+      'Type',
+      'Canvas (wysiwyg)',
+      'Bulk modal (only home)',
+      'Inspector keeps',
+      'Text style offer',
+    ],
     rows,
   ).join('\n');
 }

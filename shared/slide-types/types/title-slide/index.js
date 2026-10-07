@@ -30,6 +30,9 @@ export default {
       essential: true,
       maxLength: 120,
       group: 'title-block',
+      // Size only: the title block owns alignment (Layout chip). Composes with
+      // the content-aware cover scale (render.js coverFontScale) - B277.
+      textStyle: ['size'],
     },
     {
       key: 'subheading',
@@ -38,6 +41,7 @@ export default {
       required: false,
       maxLength: 160,
       group: 'title-block',
+      textStyle: ['size'],
     },
     {
       // One generic meta line (author · date · organisation). Rendered in the
@@ -51,6 +55,7 @@ export default {
       // Author, date, organisation: a byline, so the reader's <footer>.
       role: 'attribution',
       group: 'title-block',
+      // No text-style offer: the byline stays at its label size (D241).
     },
     // Background image is the generic, type-agnostic `slideBgImage` field
     // (added by withGlobalSlideFields, rendered by injectSlideBackground). The

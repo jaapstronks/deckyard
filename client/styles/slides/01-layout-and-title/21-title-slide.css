@@ -187,8 +187,12 @@
      much text the block carries: a short cover stays at 1, a full one steps
      down to 0.8 — exactly one type step, back to 4xl — so the fullest legal
      block (120-char title, 160-char subtitle and meta) never leaves the
-     frame. The subtitle below shares the same scale. */
-  font-size: calc(var(--slide-text-5xl) * var(--cover-scale, 1));
+     frame. The subtitle below shares the same scale. --tf-size-scale is the
+     author's S/M/L on this field (97-text-styles.css); coverFontScale budgets
+     room for it, so the two compose (B277). */
+  font-size: calc(
+    var(--slide-text-5xl) * var(--cover-scale, 1) * var(--tf-size-scale, 1)
+  );
   line-height: var(--slide-leading-tight);
   letter-spacing: -0.02em;
   font-weight: var(--heading-weight, 600);
@@ -210,8 +214,10 @@
   max-width: 900px;
   font-family: var(--font-body);
   /* Shares --cover-scale with the title (see above), so the title/subtitle
-     ratio holds while a full block shrinks. */
-  font-size: calc(var(--slide-text-2xl) * var(--cover-scale, 1));
+     ratio holds while a full block shrinks; its own S/M/L composes on top. */
+  font-size: calc(
+    var(--slide-text-2xl) * var(--cover-scale, 1) * var(--tf-size-scale, 1)
+  );
   line-height: var(--slide-leading-snug);
   color: var(--slide-on-surface-muted);
   text-wrap: pretty;
