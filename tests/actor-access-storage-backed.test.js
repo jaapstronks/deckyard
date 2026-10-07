@@ -59,6 +59,7 @@ const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
 const {
   canActorDeletePresentation,
+  canActorTransferOwnership,
   canActorResolveComment,
   canActorCommentOnPresentation,
   canActorManageCollaborators,
@@ -270,6 +271,39 @@ test('canActorDeletePresentation — no presentation, no decision', async () => 
       String(absent),
     );
   }
+});
+
+// ---------------------------------------------------------------------------
+// canActorTransferOwnership
+// ---------------------------------------------------------------------------
+
+test('canActorTransferOwnership — the owner, resolved from the address, may hand the deck over', async () => {
+  // The loader's `transfer` right (B573) asks this decider, so an actor that
+  // arrives with an address and no id — every machine contract — has to be
+  // resolved before the owner stamp is compared, as for delete.
+  assert.equal(
+    await canActorTransferOwnership(deck('t1'), {
+      ...OWNER,
+      email: 'seeded-owner@example.com',
+    }),
+    true,
+  );
+});
+
+test('canActorTransferOwnership — the creator stamp alone does not carry transfer', async () => {
+  // D43: `created_by` is create-only, so a creator-inclusive grant would let
+  // the person who made a deck take it straight back after handing it over.
+  assert.equal(await canActorTransferOwnership(deck('t2'), CREATOR), false);
+  assert.equal(await canActorTransferOwnership(deck('t3'), STRANGER), false);
+});
+
+test('canActorTransferOwnership — an address with no user row is nobody in particular', async () => {
+  assert.equal(
+    await canActorTransferOwnership(deck('t4'), ADDRESS_ONLY),
+    false,
+  );
+  assert.equal(await canActorTransferOwnership(deck('t5'), ANON), false);
+  assert.equal(await canActorTransferOwnership(null, CREATOR), false);
 });
 
 // ---------------------------------------------------------------------------

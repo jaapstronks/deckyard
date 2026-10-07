@@ -56,7 +56,7 @@ import {
   canActorCommentOnPresentation,
   canActorResolveComment,
   canRestorePresentation,
-  canTransferOwnership,
+  canActorTransferOwnership,
   canGuestComment,
 } from '../utils/presentation-authz/index.js';
 import {
@@ -102,9 +102,10 @@ const ACTOR_RIGHTS = {
     refusal:
       'Only the owner or an admin collaborator can manage this presentation',
   },
-  // Hand the deck to someone else: the owner stamp alone (D43, B573).
+  // Hand the deck to someone else: the owner stamp alone (D43, B573), with
+  // the actor's id resolved like every other ownership-scoped right here.
   transfer: {
-    allows: (pres, actor) => canTransferOwnership({ user: actor, pres }),
+    allows: canActorTransferOwnership,
     refusal: 'Only the presentation owner can transfer ownership',
   },
   comment: {

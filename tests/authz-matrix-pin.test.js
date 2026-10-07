@@ -1002,6 +1002,8 @@ const NOT_PINNED_HERE = {
     'async and storage-backed; delegates to canDeletePresentation, pinned above. The wrapper — identity resolution included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
   canActorManageCollaborators:
     'async and storage-backed (identity resolution + a collaborator lookup); delegates to canManageCollaborators, pinned above. The wrapper — the admin-collaborator row included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
+  canActorTransferOwnership:
+    'async and storage-backed; delegates to canTransferOwnership, pinned above. The wrapper — identity resolution included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
   canActorResolveComment:
     'async and storage-backed; delegates to canResolveComment, pinned above. The wrapper — identity resolution included — is pinned directly in tests/actor-access-storage-backed.test.js, which needs a database double and so cannot live in a pure matrix.',
   canActorCommentOnPresentation:

@@ -43,6 +43,7 @@ import {
   canCommentOnPresentation,
   canDeletePresentation,
   canManageCollaborators,
+  canTransferOwnership,
 } from './presentations.js';
 import { canResolveComment } from './comments.js';
 
@@ -160,6 +161,25 @@ export async function canActorDeletePresentation(pres, actor) {
   if (!pres || typeof pres !== 'object') return false;
   const actorUserId = await resolveActorUserId(actor);
   return canDeletePresentation({ user: actorUser(actor, actorUserId), pres });
+}
+
+/**
+ * Async check: may an actor hand a presentation to someone else?
+ *
+ * Transfer reads the owner stamp alone (D43) and consults no collaborator row,
+ * so this is `canTransferOwnership` with the actor's identity resolved to a
+ * `users.id` first — the same shape as {@link canActorDeletePresentation}.
+ * Without the resolution an actor known only by its address would match no
+ * ownership stamp and the real owner would be refused (B573).
+ *
+ * @param {Object} pres - The presentation object
+ * @param {Actor} actor - The acting client
+ * @returns {Promise<boolean>}
+ */
+export async function canActorTransferOwnership(pres, actor) {
+  if (!pres || typeof pres !== 'object') return false;
+  const actorUserId = await resolveActorUserId(actor);
+  return canTransferOwnership({ user: actorUser(actor, actorUserId), pres });
 }
 
 /**
