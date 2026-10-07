@@ -1,7 +1,10 @@
 import { api } from '../../lib/api.js';
 import { h } from '../../lib/dom/index.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
-import { attachThumbScale } from '../../lib/slide-runtime/thumb-scale.js';
+import {
+  attachThumbScale,
+  attachThumbScaleContain,
+} from '../../lib/slide-runtime/thumb-scale.js';
 import {
   cleanupSlideRuntimes,
   mountSlideInto,
@@ -45,6 +48,7 @@ export async function renderNotes(root, sessionId) {
     previewNextBtn,
     previewMeta,
     previewWrap,
+    previewStage,
     nextLabel,
     nextPreviewWrap,
     notesWrap,
@@ -55,8 +59,8 @@ export async function renderNotes(root, sessionId) {
   root.append(shell);
 
   let detachThumb = () => {};
-  detachThumb = attachThumbScale(previewWrap, {
-    virtualWidth: 1600,
+  detachThumb = attachThumbScaleContain(previewWrap, {
+    containerEl: previewStage,
   });
   let detachNextThumb = () => {};
   detachNextThumb = attachThumbScale(nextPreviewWrap, {

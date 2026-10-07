@@ -5,10 +5,40 @@
 }
 .notes-shell {
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
   background: hsl(var(--app-bg-base));
+}
+
+/* Two zones (layout.js): `.notes-main` holds the current slide, `.notes-side`
+   the up-next preview, notes and Q&A. Phones stack them and scroll the side
+   zone; from md up they sit side by side and each takes the full height. */
+.notes-main {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.notes-side {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+/* The box the current slide is fitted into. attachThumbScaleContain() scales
+   the slide to the smaller of the stage's width and height, so the slide is
+   never cut off. Margin, not padding: the fit measures clientWidth and
+   clientHeight, which include padding. Stacked, the stage is 16:9 but never
+   more than half the screen, leaving room for the notes underneath. */
+.notes-stage {
+  margin: var(--ps-space-3) var(--ps-space-3-5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  max-height: 50vh;
+  min-height: 0;
 }
 .notes-topbar {
   position: sticky;
@@ -76,8 +106,9 @@
   color: hsl(var(--app-text-primary));
   font-size: var(--ps-text-sm);
 }
+/* The fit sets width and height inline to the scaled 16:9 box. */
 .notes-preview {
-  padding: var(--ps-space-3) var(--ps-space-3-5);
+  flex: 0 0 auto;
 }
 
 /* "Up next" preview: secondary, smaller than the current-slide preview. */
@@ -109,11 +140,45 @@
     max-width: 70%;
   }
 }
+@media (min-width: 769px) {
+  .notes-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 30vw, 480px);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas:
+      'top top'
+      'hint hint'
+      'main side';
+  }
+  .notes-topbar {
+    grid-area: top;
+  }
+  .notes-hint {
+    grid-area: hint;
+  }
+  .notes-main {
+    grid-area: main;
+    min-height: 0;
+  }
+  .notes-side {
+    grid-area: side;
+    border-left: 1px solid hsl(var(--app-border-default));
+  }
+  .notes-stage {
+    flex: 1 1 auto;
+    aspect-ratio: auto;
+    max-height: none;
+  }
+  /* The side column is already narrow: the up-next slide takes its width. */
+  .notes-next {
+    padding-top: var(--ps-space-3);
+  }
+  .notes-next-preview {
+    max-width: 100%;
+  }
+}
 .notes-panel {
-  flex: 1;
-  min-height: 0;
   padding: var(--ps-space-3) var(--ps-space-3-5) var(--ps-space-5);
-  overflow: auto;
   border-top: 1px solid hsl(var(--app-border-default));
 }
 .notes-panel-title {
