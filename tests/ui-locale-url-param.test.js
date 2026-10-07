@@ -28,6 +28,7 @@ import {
   resolveInitialUiLocale,
   getSessionLocaleOverride,
   clearSessionLocaleOverride,
+  withSessionLocaleParam,
 } from '../client/lib/ui-i18n.js';
 
 /** Run `fn` with `fetch` stubbed to serve a locale manifest of `ids`. */
@@ -174,6 +175,20 @@ test('a new ?locale= replaces the recorded one', async () => {
       assert.equal(getSessionLocaleOverride(), 'en');
       clearSessionLocaleOverride();
     });
+  });
+});
+
+test('withSessionLocaleParam hands the override to a noopener popup URL', async () => {
+  // A noopener popup gets no copy of sessionStorage, so the Present window
+  // receives the override on its URL.
+  await withManifest(['en', 'nl'], async () => {
+    await resolveInitialUiLocale('?locale=nl');
+    const u = withSessionLocaleParam(new URL('http://x/present/1?lang=en-GB'));
+    assert.equal(u.searchParams.get('locale'), 'nl');
+    assert.equal(u.searchParams.get('lang'), 'en-GB');
+    clearSessionLocaleOverride();
+    const plain = withSessionLocaleParam(new URL('http://x/present/1'));
+    assert.equal(plain.searchParams.has('locale'), false);
   });
 });
 

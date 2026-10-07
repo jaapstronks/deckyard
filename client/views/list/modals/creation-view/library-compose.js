@@ -21,6 +21,7 @@ import {
   createSlideLibraryPicker,
   createDeckFromLibraryItems,
 } from '../../../slide-library/index.js';
+import { readLangMode } from '../../../../lib/format/i18n.js';
 import { createCollectionsApi } from '../../collections/index.js';
 import { h } from '../../../../lib/dom/index.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
@@ -206,6 +207,10 @@ export function createLibraryCompose({
       allowInsert: false,
       compose: true,
       initialShelf: 'organization',
+      // Previews render in the app's deck language (stored choice, else the
+      // UI locale), not the picker's hardcoded default: an English reader
+      // was shown Dutch chart descriptions here (B357).
+      initialLang: readLangMode(),
       onSelectionChange: (items) => reconcileSelection(items),
     });
     try {

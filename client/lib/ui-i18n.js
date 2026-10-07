@@ -32,7 +32,9 @@ let sessionParamLocale = null;
 // default (`en`) won again — editor Dutch, presenter window English (B357). The
 // override is therefore mirrored into sessionStorage, which survives a reload
 // and which a `window.open` child inherits from its opener, and read back when
-// a document starts without the param.
+// a document starts without the param. A `noopener` popup does not inherit
+// sessionStorage; its opener hands the override over on the URL instead
+// (`withSessionLocaleParam()`).
 const SS_UI_LOCALE_SESSION = 'ps-ui-locale-session';
 
 function readSessionLocaleRecord() {
@@ -47,8 +49,9 @@ function writeSessionLocaleRecord(locale) {
   try {
     if (locale) sessionStorage.setItem(SS_UI_LOCALE_SESSION, locale);
     else sessionStorage.removeItem(SS_UI_LOCALE_SESSION);
+    /* eslint-disable-next-line no-restricted-syntax -- No sessionStorage (blocked storage, a bare test): nothing to record and nothing lost but the cross-document carry; the override still holds for this document. */
   } catch {
-    // No sessionStorage (private mode, node): the override lasts one document.
+    // See the disable above.
   }
 }
 
@@ -70,6 +73,24 @@ export function getSessionLocaleOverride() {
  * for the rest of the session (a reload with the param still in the URL
  * re-establishes it via resolveInitialUiLocale).
  */
+/**
+ * Carry the session's UI-locale override onto a URL that opens a new window.
+ *
+ * A popup opened with `noopener` (the Present window) gets a fresh
+ * sessionStorage, not a copy of the opener's, so the override would not reach
+ * it; naming it as `?locale=` on the URL hands it over explicitly, and the new
+ * document records it for itself. No-op without an override.
+ *
+ * @param {URL} url - mutated in place
+ * @returns {URL}
+ */
+export function withSessionLocaleParam(url) {
+  if (sessionParamLocale && url?.searchParams) {
+    url.searchParams.set(UI_LOCALE_PARAM_KEY, sessionParamLocale);
+  }
+  return url;
+}
+
 export function clearSessionLocaleOverride() {
   sessionParamLocale = null;
   writeSessionLocaleRecord(null);

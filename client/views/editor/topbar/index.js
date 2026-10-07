@@ -17,7 +17,7 @@ import { logout } from '../../../lib/state/auth.js';
 import { createEditorTopbarMoreMenu } from './more-menu.js';
 import { openSubscriptionModal } from '../modals/subscription-modal.js';
 import { createLanguageMode } from './language-mode.js';
-import { t } from '../../../lib/ui-i18n.js';
+import { t, withSessionLocaleParam } from '../../../lib/ui-i18n.js';
 import {
   createAvatar,
   updateAvatar,
@@ -389,6 +389,9 @@ export function createEditorTopbar({
       if (slideId) u.searchParams.set('slideId', slideId);
       const deckLang = normalizeLang(pres?.i18n?.active);
       if (deckLang) u.searchParams.set('lang', deckLang);
+      // The popup is noopener, so it gets no copy of this session's storage:
+      // a deep-linked ?locale= travels on the URL instead (B357).
+      withSessionLocaleParam(u);
       window.open(u.pathname + u.search, '_blank', 'noopener,noreferrer');
 
       try {
