@@ -11,22 +11,23 @@
 
 import { getAppBaseUrl } from '../../../config/utils.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
-import { listComments } from '../../../storage/presentations/comments.js';
 import {
   enrichCommentsWithSlideContext,
   slideContextFor,
 } from '../../../services/comment-slide-context.js';
-import { createComment, setCommentStatus } from '../../../services/comments.js';
+import {
+  createComment,
+  listComments,
+  setCommentStatus,
+} from '../../../services/comments.js';
 import {
   requirePermission,
   dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
-  getPresentationWithAccess,
   readApiV1Body,
   apiSuccess,
   apiCreated,
-  apiError,
 } from './middleware.js';
 
 /**
@@ -85,72 +86,42 @@ function decorateComments(comments, pres, slideTypes) {
   );
 }
 
-/**
- * Parse and validate an optional `since` query param (ISO date/datetime).
- * Returns { ok, since } where since is a normalized ISO string or null.
- */
-function parseSinceParam(url) {
-  const raw = url.searchParams.get('since');
-  if (!raw) return { ok: true, since: null };
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) {
-    return { ok: false };
-  }
-  return { ok: true, since: parsed.toISOString() };
-}
-
 // ============================================================
 // ROUTE HANDLERS
 // ============================================================
 
 /**
  * GET /api/v1/presentations/:id/comments - List comments.
- * Query: status (open|resolved|dismissed|all), slideId, since (ISO date).
+ * Query: status (open|resolved|dismissed|all), slideId, since (ISO date). The
+ * reading rule and the filters are `services/comments.js`; a refusal is
+ * thrown and `withV1ErrorHandler` renders it.
  */
 async function handleListComments(ctx, presentationId) {
   const { url } = ctx;
 
   if (!requirePermission(ctx, 'comments:read')) return true;
 
-  const { ok, pres } = await getPresentationWithAccess(ctx, presentationId);
-  if (!ok) return true;
-
-  const status = url.searchParams.get('status') || 'all';
-  if (!['open', 'resolved', 'dismissed', 'all'].includes(status)) {
-    await apiError(
-      ctx,
-      400,
-      'Invalid status filter (open|resolved|dismissed|all)',
-    );
-    return true;
-  }
-
-  const sinceResult = parseSinceParam(url);
-  if (!sinceResult.ok) {
-    await apiError(
-      ctx,
-      400,
-      'Invalid since parameter (use an ISO 8601 date/datetime)',
-    );
-    return true;
-  }
-
-  const comments = await listComments(ctx.storageScope, presentationId, {
-    status: status === 'all' ? undefined : status,
-    slideId: url.searchParams.get('slideId') || undefined,
-    since: sinceResult.since || undefined,
-  });
+  const { comments, presentation, since } = await listComments(
+    ctx.storageScope,
+    { actor: ctx.authedUser },
+    {
+      presentationId,
+      status: url.searchParams.get('status') || 'all',
+      slideId: url.searchParams.get('slideId') || null,
+      since: url.searchParams.get('since') || null,
+    },
+  );
 
   await apiSuccess(ctx, {
     presentationId,
-    presentationTitle: pres.title || 'Untitled',
+    presentationTitle: presentation.title || 'Untitled',
     comments: decorateComments(
       comments,
-      pres,
+      presentation,
       await buildMergedSlideTypes(ctx.storageScope),
     ),
     total: comments.length,
-    since: sinceResult.since,
+    since,
   });
   return true;
 }

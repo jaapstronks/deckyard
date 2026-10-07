@@ -1889,7 +1889,14 @@ paths:
                     format: date-time
                     nullable: true
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: |
+            A `status` outside its values or a `since` that is not a date is
+            refused with 400 `invalid`, `details.field` naming the parameter
+            (the same refusal the app and MCP give).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
