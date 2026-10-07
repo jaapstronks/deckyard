@@ -8,5 +8,6 @@ export { createSlideLibraryPicker } from './picker.js';
 export {
   copyLibraryItemToClipboard,
   createDeckFromLibraryItems,
+  deckLangForLibraryItems,
 } from './compose.js';
 export { contentLang, sortByPinnedThenName } from './search.js';

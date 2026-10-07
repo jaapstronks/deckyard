@@ -3,6 +3,7 @@
   "description": "Two columns side by side: what was planned and what happened.",
   "slideType": "comparison-slide",
   "theme": "corporate",
+  "lang": "en-GB",
   "content": {
     "title": "Plan vs actual",
     "leftTitle": "What we planned",

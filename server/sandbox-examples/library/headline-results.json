@@ -3,6 +3,7 @@
   "description": "Four KPI tiles with a one-line note each, for the opening of a business review.",
   "slideType": "kpi-metrics-slide",
   "theme": "corporate",
+  "lang": "en-GB",
   "content": {
     "title": "Headline results",
     "subheading": "Full year FY25",

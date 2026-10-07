@@ -92,6 +92,8 @@ pgDescribe('sandbox library seed (real PostgreSQL)', () => {
       assert.equal(item.ownerEmail, SANDBOX_LIBRARY_OWNER);
       assert.equal(item.createdBy?.displayName, 'Deckyard');
       assert.ok(item.themeId, `${item.name} has a theme record id`);
+      // B603: the content's language travels with the item.
+      assert.equal(item.i18n?.dominant, 'en-GB', `${item.name} is English`);
     }
 
     const collections = await listOrganizationCollections(scope(), {

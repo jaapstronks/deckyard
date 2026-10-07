@@ -3,6 +3,7 @@
   "description": "A timeline of committed milestones for the coming year.",
   "slideType": "timeline-slide",
   "theme": "corporate",
+  "lang": "en-GB",
   "content": {
     "title": "The road to FY26",
     "subheading": "Committed milestones for the year ahead",

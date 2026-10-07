@@ -3,6 +3,7 @@
   "description": "A bar chart of the year by quarter, with the data as an editable table.",
   "slideType": "chart-slide",
   "theme": "corporate",
+  "lang": "en-GB",
   "content": {
     "title": "Revenue by quarter",
     "subheading": "FY25, in millions of euro",
