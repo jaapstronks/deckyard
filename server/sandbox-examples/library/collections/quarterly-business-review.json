@@ -1,0 +1,10 @@
+{
+  "name": "Quarterly business review",
+  "description": "The core of a quarterly review: results, revenue, plan against actual and the year ahead.",
+  "slides": [
+    "headline-results",
+    "revenue-by-quarter",
+    "plan-vs-actual",
+    "road-ahead"
+  ]
+}

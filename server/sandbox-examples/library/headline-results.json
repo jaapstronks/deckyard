@@ -1,0 +1,38 @@
+{
+  "name": "Headline results",
+  "description": "Four KPI tiles with a one-line note each, for the opening of a business review.",
+  "slideType": "kpi-metrics-slide",
+  "theme": "corporate",
+  "content": {
+    "title": "Headline results",
+    "subheading": "Full year FY25",
+    "background": "mist",
+    "accent": "highlight-best",
+    "metrics": [
+      {
+        "value": "48.6",
+        "unit": "M€",
+        "label": "Annual revenue",
+        "note": "+18% vs FY24"
+      },
+      {
+        "value": "31",
+        "unit": "%",
+        "label": "Gross margin",
+        "note": "+2pp vs FY24"
+      },
+      {
+        "value": "62",
+        "unit": "",
+        "label": "NPS",
+        "note": "+7 vs FY24"
+      },
+      {
+        "value": "94",
+        "unit": "%",
+        "label": "Net revenue retention",
+        "note": "-1pp vs plan"
+      }
+    ]
+  }
+}

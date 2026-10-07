@@ -114,12 +114,17 @@
   color: hsl(var(--app-text-secondary));
 }
 
-.collection-chip-action:hover {
+.collection-chip-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.collection-chip-action:not(:disabled):hover {
   background: hsl(var(--app-bg-hover));
   color: hsl(var(--app-text-primary));
 }
 
-.collection-chip-action.is-danger:hover {
+.collection-chip-action.is-danger:not(:disabled):hover {
   background: hsl(var(--app-danger) / 0.12);
   color: hsl(var(--app-danger));
 }

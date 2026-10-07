@@ -133,6 +133,15 @@ export function createCollectionsBar({ api, root }) {
       }),
     );
 
+    // Rename and delete read the server's verdict (`canEdit`, D170): a
+    // shared collection you may not change keeps them, greyed out with why.
+    const canEdit = col.canEdit === true;
+    const refusal = canEdit
+      ? null
+      : t(
+          'slideLibrary.collections.notAllowed',
+          'Only its maker or an admin can change this shared collection.',
+        );
     const actions = h('div', { class: 'collection-chip-actions' });
     actions.append(
       h(
@@ -140,8 +149,9 @@ export function createCollectionsBar({ api, root }) {
         {
           class: 'collection-chip-action',
           type: 'button',
-          title: t('slideLibrary.collections.rename', 'Rename'),
+          title: refusal || t('slideLibrary.collections.rename', 'Rename'),
           'aria-label': t('slideLibrary.collections.rename', 'Rename'),
+          disabled: !canEdit,
           onclick: () =>
             openCollectionEditModal({
               root,
@@ -158,8 +168,9 @@ export function createCollectionsBar({ api, root }) {
         {
           class: 'collection-chip-action is-danger',
           type: 'button',
-          title: t('common.delete', 'Delete'),
+          title: refusal || t('common.delete', 'Delete'),
           'aria-label': t('common.delete', 'Delete'),
+          disabled: !canEdit,
           onclick: async () => {
             const ok = await confirmModal(root, {
               title: t(

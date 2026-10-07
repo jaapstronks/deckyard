@@ -19,7 +19,14 @@ There is deliberately **no statistics strip**: engagement stats are only
 meaningful for publicly shared decks and read as noise for private drafts.
 
 First-run (zero decks) skips all of this and shows the theme picker + a single
-create CTA instead of empty sections that read as "broken".
+create CTA instead of empty sections that read as "broken". It does show the
+Building blocks shelf when the shelves hold anything (a new teammate, or the
+seeded sandbox), without the Blank card the CTA already covers; with nothing
+there the section removes itself.
+
+`Popular` and the "From others" rail show other people's work, so they mount
+only where sharing is on (`sharingEnabled()`, D181); without it Home is one
+column of Recent and Building blocks.
 
 ## Building-blocks shelf
 
