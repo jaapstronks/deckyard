@@ -8,7 +8,6 @@
 import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import {
-  listPresentations,
   normalizeSlides,
   updatePresentation,
 } from '../storage/presentations/index.js';
@@ -30,10 +29,11 @@ import {
   createPresentation,
   deletePresentation,
   duplicatePresentation,
+  DECK_LIST_OWNERSHIPS,
+  listPresentationsForActor,
   publicDeckTimestamps,
 } from '../services/presentations.js';
 import { updateSlide, addSlide } from '../services/slides.js';
-import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   deckToPresentationParts,
   newSlide,
@@ -323,57 +323,31 @@ export function registerTools(
 
   server.tool(
     'list_presentations',
-    'List presentations you can access. Returns id, title, theme, creation date, and slide count for each. Use `ownership` to include decks shared with you (collaborator access): "owned" (default), "shared", or "all".',
+    'List presentations you can access. Returns id, title, theme, creation date, and slide count for each, newest first. Use `ownership` to choose which decks: "owned" (default; decks you own or made), "collection" (yours plus every organization-visible deck, as on Home), "shared" (decks shared with you as a collaborator), or "all" (every deck you can open).',
     {
       type: 'object',
       properties: {
         limit: {
           type: 'number',
-          description: 'Max results (default: 50)',
+          description: 'Max results, a whole number from 1 (default: 50)',
         },
         ownership: {
           type: 'string',
           description:
-            'Which decks to include: "owned" (default), "shared" (decks shared with you), or "all" (union). Shared decks require the DB storage backend.',
-          enum: ['owned', 'shared', 'all'],
+            'Which decks to include: "owned" (default), "collection" (owned plus organization-visible), "shared" (decks shared with you), or "all" (collection plus shared). Any other value is refused.',
+          enum: [...DECK_LIST_OWNERSHIPS],
         },
       },
     },
     async ({ limit = 50, ownership = 'owned' } = {}, context) => {
       const owner = getOwner(context);
-      const validOwnership = ['owned', 'shared', 'all'].includes(ownership)
-        ? ownership
-        : 'owned';
-      const ctx = storageScopeOf(context);
+      const { presentations, total } = await listPresentationsForActor(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { ownership, limit },
+      );
 
-      // Collect owned and/or shared decks, de-duplicated by id (a deck could
-      // appear in both lists in edge cases). Shared lookups are DB-only and
-      // resolve to [] in file mode.
-      const decks = [];
-      const seen = new Set();
-
-      if (validOwnership === 'owned' || validOwnership === 'all') {
-        const all = await listPresentations(storageScopeOf(context));
-        const owned = owner ? all.filter((p) => p.ownerEmail === owner) : all;
-        for (const p of owned) {
-          if (!seen.has(p.id)) {
-            seen.add(p.id);
-            decks.push(p);
-          }
-        }
-      }
-
-      if ((validOwnership === 'shared' || validOwnership === 'all') && owner) {
-        const shared = await listPresentationsSharedWithUser(ctx, owner);
-        for (const p of shared) {
-          if (!seen.has(p.id)) {
-            seen.add(p.id);
-            decks.push(p);
-          }
-        }
-      }
-
-      const items = decks.slice(0, limit).map((p) => {
+      const items = presentations.map((p) => {
         // slideCount: try slides array, then slideCount property, else omit.
         // list sources may not include the full slides array (too heavy).
         const slideCount = Array.isArray(p.slides)
@@ -398,9 +372,9 @@ export function registerTools(
 
       return {
         presentations: items,
-        total: decks.length,
+        total,
         ownerFilter: owner || null,
-        ownership: validOwnership,
+        ownership,
       };
     },
     { readOnly: true, permission: 'read' },

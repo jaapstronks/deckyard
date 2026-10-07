@@ -235,4 +235,4 @@ await apiError(ctx, 400, 'Validation failed', { details: errors });
 - Keys can be revoked instantly via soft delete (`revoked_at` timestamp)
 - Rate limiting prevents abuse
 - Per-key permissions limit access
-- Presentations are filtered by ownership (API key owner email)
+- Presentations are listed through the key owner's collection (`listPresentationsForActor`: decks they own or made, matched on `users.id`, plus organization-visible decks)

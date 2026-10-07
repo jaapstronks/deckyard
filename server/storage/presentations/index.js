@@ -749,9 +749,10 @@ async function listPresentationRows(ctx) {
     // Full organization-scoped set. B79 inherited applyPagination()'s default
     // 100-row cap as a literal .limit(100), silently dropping the tail for orgs
     // with >100 decks; B85 removed it. Consumers treat this as the complete list
-    // (public-api paginates over it in-memory, search scans it, MCP filters it,
-    // bulk-export backs it up), so a hard cap corrupted their totals and dropped
-    // data. DB-level pagination is a future deliberate feature, not this cap.
+    // (listPresentationsForActor filters, searches and pages it in memory for
+    // every contract; bulk-export backs it up), so a hard cap corrupted their
+    // totals and dropped data. DB-level pagination is a future deliberate
+    // feature, not this cap.
     // See docs/reference/storage-layer.md § List reads.
     .execute();
 

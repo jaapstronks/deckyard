@@ -37,19 +37,30 @@
  * was the only contract to leave an activity row; MCP answered `deleted: true`
  * for a deck that was already in the trash.
  *
+ * And a list of decks is one ({@link listPresentationsForActor}, B607). Home,
+ * search, v1 and MCP each read the organization's rows and decided who sees
+ * what on their own; MCP compared a bare address and missed the creator and
+ * every organization-visible deck, and an unknown filter value read as none.
+ *
  * @module server/services/presentations
  */
 
 import {
   getPresentation,
+  listPresentations as storeListPresentations,
   createPresentation as storeNewPresentation,
   duplicatePresentation as storeDuplicate,
   deletePresentation as storeTrash,
   restorePresentation as storeRestore,
 } from '../storage/presentations/index.js';
 import { recordSlideLibraryUsage } from '../storage/slide-library-usage.js';
+import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
 import {
+  belongsInCollection,
+  isOwnerOrCreator,
+  isUnrestricted,
+  resolveActorUserId,
   canActorAccessPresentation,
   canActorDeletePresentation,
   canActorManageCollaborators,
@@ -66,6 +77,11 @@ import {
   throwStorageFailure,
 } from '../utils/errors.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
+import {
+  metadataMatchLocations,
+  normalizeForSearch,
+  slideMatchLocation,
+} from './deck-search.js';
 import {
   recordPresentationCreated,
   recordPresentationDeleted,
@@ -211,6 +227,213 @@ export async function loadPresentationForActor(
 export async function mayOnPresentation(pres, identity, access = 'read') {
   if (!pres || typeof pres !== 'object') return false;
   return (await refusal(pres, identity, access)) === null;
+}
+
+/**
+ * Which decks a list includes by source (`ownership`, the register word in
+ * docs/reference/vocabulary.md):
+ *
+ *   - `collection` — the decks the actor owns or made, plus every
+ *     organization-visible deck: what Home and the v1 list show;
+ *   - `owned` — only the decks the actor owns or made;
+ *   - `shared` — the decks shared with the actor through a collaborator row;
+ *   - `all` — `collection` and `shared` together: every deck the actor can
+ *     open.
+ *
+ * The auth-off operator (`unrestricted`) owns no row but may open every deck,
+ * so `owned`, `collection` and `all` list them all.
+ */
+export const DECK_LIST_OWNERSHIPS = Object.freeze([
+  'collection',
+  'owned',
+  'shared',
+  'all',
+]);
+
+/** A refusal of one list input, named in `details.field` (les 3, B575). */
+function invalidListInput(field, message) {
+  return new AppError(message, 400, { field }, 'invalid');
+}
+
+/**
+ * Refuse a list input outside the vocabulary before any deck is read. An
+ * unknown value is never read as "no filter" (les 3).
+ *
+ * @param {Object} input
+ * @returns {{ ownership: string, viewOnly?: boolean, query: string|null, deep: boolean, limit?: number, offset: number }}
+ */
+function parseListInput(input) {
+  const {
+    ownership = 'collection',
+    viewOnly,
+    q,
+    deep,
+    limit,
+    offset,
+  } = input ?? {};
+  if (!DECK_LIST_OWNERSHIPS.includes(ownership)) {
+    throw invalidListInput(
+      'ownership',
+      `Invalid ownership (${DECK_LIST_OWNERSHIPS.join('|')})`,
+    );
+  }
+  if (viewOnly !== undefined && typeof viewOnly !== 'boolean') {
+    throw invalidListInput('viewOnly', 'Invalid viewOnly (true|false)');
+  }
+  if (deep !== undefined && typeof deep !== 'boolean') {
+    throw invalidListInput('deep', 'Invalid deep (true|false)');
+  }
+  let query = null;
+  if (q !== undefined) {
+    query = typeof q === 'string' ? normalizeForSearch(q.trim()) : '';
+    if (query.length < 2) {
+      throw invalidListInput(
+        'q',
+        'Search query (q) must be at least 2 characters',
+      );
+    }
+  }
+  if (limit !== undefined && !(Number.isInteger(limit) && limit >= 1)) {
+    throw invalidListInput('limit', 'Invalid limit (a whole number from 1)');
+  }
+  if (offset !== undefined && !(Number.isInteger(offset) && offset >= 0)) {
+    throw invalidListInput('offset', 'Invalid offset (a whole number from 0)');
+  }
+  return { ownership, viewOnly, query, deep: deep === true, limit, offset };
+}
+
+/** Newest first: last change, then creation. */
+function byModifiedDesc(a, b) {
+  const time = (p) => new Date(p.modified || p.created || 0).getTime() || 0;
+  return time(b) - time(a);
+}
+
+/**
+ * The decks of one list, before filters: the organization's rows through the
+ * collection predicate, and the collaborator rows for `shared`/`all`. A deck
+ * that is in both is listed once, as its organization row.
+ *
+ * @param {StorageScope} scope
+ * @param {Actor} actor
+ * @param {string} ownership
+ * @returns {Promise<Object[]>}
+ */
+async function listedDecks(scope, actor, ownership) {
+  // The row predicates key on `users.id` (D22); MCP's actor carries only its
+  // address, so resolve it once for the whole list, as the by-id deciders do
+  // per deck.
+  if (actor && !actor.id && actor.email) {
+    actor = { ...actor, id: await resolveActorUserId(actor) };
+  }
+  const decks = [];
+  const seen = new Set();
+  const add = (pres) => {
+    if (seen.has(pres.id)) return;
+    seen.add(pres.id);
+    decks.push(pres);
+  };
+
+  if (ownership !== 'shared') {
+    const listed =
+      ownership === 'owned'
+        ? (pres) => isUnrestricted(actor) || isOwnerOrCreator(actor, pres)
+        : (pres) => belongsInCollection({ user: actor, pres });
+    for (const pres of await storeListPresentations(scope)) {
+      if (listed(pres)) add(pres);
+    }
+  }
+  if ((ownership === 'shared' || ownership === 'all') && actor?.email) {
+    for (const pres of await listPresentationsSharedWithUser(
+      scope,
+      actor.email,
+    )) {
+      add(pres);
+    }
+  }
+  return decks.sort(byModifiedDesc);
+}
+
+/**
+ * Where a deck matches a search query, or `null` when it does not. Metadata
+ * always; slide text only on a deep search, and only when the metadata did not
+ * match already. A deck that cannot be loaded for its slides does not match.
+ */
+async function searchMatch(scope, pres, query, deep) {
+  const locations = metadataMatchLocations(pres, query);
+  if (locations.length > 0) return locations;
+  if (!deep) return null;
+  try {
+    const full = await getPresentation(scope, pres.id);
+    const slide = slideMatchLocation(full, query);
+    return slide ? [slide] : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * List the decks an actor sees, on every contract (B607). Home and search
+ * (internal), `GET /api/v1/presentations` and MCP `list_presentations` used to
+ * read the organization's rows and decide on their own who sees what: each with
+ * its own predicate, MCP on a bare e-mail comparison, and each reading an
+ * unknown filter value as "no filter". Now the predicate is one
+ * ({@link belongsInCollection}, a list predicate over rows, D288 (7)), the
+ * filters have one vocabulary, and a value outside it is refused.
+ *
+ * The rows come back as storage projects them; each contract keeps its own
+ * projection (v1 `sanitizePresentation`, MCP `publicDeckTimestamps`, the
+ * internal deck-card fields).
+ *
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {{ actor: Actor }} identity
+ * @param {Object} [input]
+ * @param {'collection'|'owned'|'shared'|'all'} [input.ownership='collection']
+ *   Which decks by source ({@link DECK_LIST_OWNERSHIPS}).
+ * @param {boolean} [input.viewOnly] - Only view-only decks (`true`) or only
+ *   decks that are not (`false`).
+ * @param {string} [input.q] - Search query, at least 2 characters; matches
+ *   title, description and owner address. Each listed deck then carries
+ *   `_matchLocations`, and title matches sort first.
+ * @param {boolean} [input.deep=false] - With `q`: also search slide text.
+ * @param {number} [input.limit] - Page size; all decks when absent.
+ * @param {number} [input.offset=0] - Page start.
+ * @returns {Promise<{ presentations: Object[], total: number }>} One page of
+ *   decks, newest first, and the number of decks before paging.
+ * @throws {AppError} 400 `invalid`, `details.field` naming the refused input.
+ */
+export async function listPresentationsForActor(
+  scope,
+  { actor } = {},
+  input = {},
+) {
+  const { ownership, viewOnly, query, deep, limit, offset } =
+    parseListInput(input);
+
+  let decks = await listedDecks(scope, actor, ownership);
+  if (viewOnly !== undefined) {
+    decks = decks.filter((pres) => !!pres.isViewOnly === viewOnly);
+  }
+
+  if (query) {
+    const matched = [];
+    for (const pres of decks) {
+      const locations = await searchMatch(scope, pres, query, deep);
+      if (locations) matched.push({ ...pres, _matchLocations: locations });
+    }
+    const inTitle = (pres) => pres._matchLocations.includes('title');
+    decks = matched.sort(
+      (a, b) => inTitle(b) - inTitle(a) || byModifiedDesc(a, b),
+    );
+  }
+
+  const start = offset ?? 0;
+  return {
+    presentations: decks.slice(
+      start,
+      limit === undefined ? undefined : start + limit,
+    ),
+    total: decks.length,
+  };
 }
 
 /** Retired spelling → the one name the deck field has (B446). */

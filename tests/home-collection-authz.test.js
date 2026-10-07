@@ -12,7 +12,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-import { belongsInCollection } from '../server/routes/api/presentations/list.js';
+import { belongsInCollection } from '../server/utils/presentation-authz/index.js';
 
 const OWNER = 'owner@example.com';
 const OTHER = 'other@example.com';

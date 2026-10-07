@@ -21,6 +21,7 @@ export {
 export {
   normalizePresentationVisibility,
   canReadPresentation,
+  belongsInCollection,
   canWritePresentation,
   canDeletePresentation,
   canRestorePresentation,
@@ -54,6 +55,7 @@ export {
 export {
   checkActorAccess,
   canActorAccessPresentation,
+  resolveActorUserId,
   canActorDeletePresentation,
   canActorManageCollaborators,
   canActorTransferOwnership,

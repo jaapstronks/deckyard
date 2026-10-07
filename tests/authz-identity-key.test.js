@@ -39,12 +39,8 @@ const {
   isOwnerOrCreator,
   matchesIdentity,
   hasIdentity,
+  belongsInCollection,
 } = await import('../server/utils/presentation-authz/index.js');
-
-const { belongsInCollection } =
-  await import('../server/routes/api/presentations/list.js');
-const { canAccessPresentation } =
-  await import('../server/routes/public-api/v1/middleware.js');
 
 const OWNER_ID = '11111111-1111-4111-8111-111111111111';
 const OTHER_ID = '22222222-2222-4222-8222-222222222222';
@@ -178,12 +174,11 @@ describe('a matching email is not an identity', () => {
       false,
     );
   });
-  it('the email twin is not shown the deck in a collection or an API listing', () => {
+  it('the email twin is not shown the deck in any deck list', () => {
     assert.equal(
       belongsInCollection({ user: emailTwin, pres: dualKeyDeck }),
       false,
     );
-    assert.equal(canAccessPresentation(dualKeyDeck, emailTwin), false);
   });
 });
 
@@ -213,7 +208,6 @@ describe('a mismatched email does not remove an identity', () => {
       belongsInCollection({ user: renamedOwner, pres: dualKeyDeck }),
       true,
     );
-    assert.equal(canAccessPresentation(dualKeyDeck, renamedOwner), true);
   });
 });
 

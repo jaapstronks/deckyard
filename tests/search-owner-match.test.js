@@ -10,7 +10,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { metadataMatchLocations } from '../server/routes/api/presentations/search.js';
+import { metadataMatchLocations } from '../server/services/deck-search.js';
 import { matchesQuery } from '../client/views/list/views/search-view.js';
 
 const DECK = {
