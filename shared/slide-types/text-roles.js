@@ -1,6 +1,6 @@
 /**
- * Semantic text ROLE of a stylable field — the affordance model behind the
- * "This text" style controls (align / colour / size).
+ * Semantic text ROLE of a field — which alignment values make sense for it
+ * where its type offers alignment (text-styles.js).
  *
  * The distinguishing axis for "which style options make sense here" is NOT the
  * field's data TYPE (a heading and a list item are both `type:'string'`) but
@@ -15,8 +15,8 @@
  * field that titles the slide declares it, because the reader projection makes
  * that field the section's visible `<h2>` (semantic-projection.js
  * `slideHeading`, D129), and the field walk refuses a second one per type.
- * `ROLE_AFFORDANCES` is the single source both the editor (which controls to
- * show) and the renderer (which `tf-*` classes to emit) read.
+ * `ROLE_AFFORDANCES` is the single source both the editor (which alignment
+ * values to offer) and the renderer (which `tf-align-*` classes to emit) read.
  *
  * The role has a SECOND reader: the semantic projection makes it the element a
  * field becomes in the reader document (D128) — `quote` a `<blockquote>`,
@@ -88,37 +88,37 @@ export const DEFAULT_TEXT_ROLE = 'prose';
 const ALL_ALIGNS = ['left', 'center', 'right'];
 
 /**
- * role -> which style affordances the field offers.
- *   `align`: the allowed alignment VALUES (subset of left/center/right). `[]`
- *            means no alignment at all (marker-anchored text: the control is
- *            hidden and no `tf-align-*` class is emitted). Expressing align as a
- *            value set lets one table both hide alignment for list items AND
- *            drop `right` for a quote — no per-type hardcode.
- *   `color`/`size`: booleans (all roles allow them today; kept explicit so a
- *            future per-role difference is one table edit, not a new flag).
+ * role -> the alignment VALUES the field may take (subset of
+ * left/center/right). `[]` means no alignment at all (marker-anchored text: no
+ * control and no `tf-align-*` class). Expressing align as a value set lets one
+ * table both hide alignment for list items AND drop `right` for a quote — no
+ * per-type hardcode.
+ *
+ * The role narrows values; it never decides whether a control exists. That is
+ * the type's offer (`textStyle`, `itemTextStyle`, `textStyleSets`;
+ * text-styles.js, D220): a field offers nothing unless its type says so.
  *
  * The `quote` entry keeps its left/centre set as a ROLE statement (right is
  * wrong for a pull quote wherever one appears). On `quote-slide` itself the
  * field is a `quote-block` group member, so the group decides its alignment
- * and no per-field class is emitted — the former "quote reads its own align to
- * centre the whole block" hardcode is gone (field-groups.js).
+ * and no per-field class is emitted (field-groups.js).
  */
 export const ROLE_AFFORDANCES = {
-  heading: { align: ALL_ALIGNS, color: true, size: true },
-  prose: { align: ALL_ALIGNS, color: true, size: true },
-  'list-item': { align: [], color: true, size: true },
-  quote: { align: ['left', 'center'], color: true, size: true },
-  caption: { align: ALL_ALIGNS, color: true, size: true },
-  label: { align: ALL_ALIGNS, color: true, size: true },
-  attribution: { align: ALL_ALIGNS, color: true, size: true },
-  aside: { align: ALL_ALIGNS, color: true, size: true },
+  heading: { align: ALL_ALIGNS },
+  prose: { align: ALL_ALIGNS },
+  'list-item': { align: [] },
+  quote: { align: ['left', 'center'] },
+  caption: { align: ALL_ALIGNS },
+  label: { align: ALL_ALIGNS },
+  attribution: { align: ALL_ALIGNS },
+  aside: { align: ALL_ALIGNS },
 };
 
 /**
  * The affordances for a role, falling back to the safe default for unknown or
  * absent roles.
  * @param {string} [role]
- * @returns {{align: string[], color: boolean, size: boolean}}
+ * @returns {{align: string[]}}
  */
 function roleAffordances(role) {
   return ROLE_AFFORDANCES[role] || ROLE_AFFORDANCES[DEFAULT_TEXT_ROLE];

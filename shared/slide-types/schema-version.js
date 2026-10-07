@@ -49,9 +49,10 @@ import {
 import { REMOVED_SLIDE_TYPES } from './removed.js';
 import { foldUnofferedEnums } from './normalize-content.js';
 import { canonicalJson } from '../slide-fingerprint.js';
+import { foldTextStylesToOffers } from './text-styles.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 17;
+export const CURRENT_SCHEMA_VERSION = 18;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -965,6 +966,42 @@ function foldQuoteSlideIntoQuotes(pres) {
 }
 
 /**
+ * Fold every stored `textStyles` map into the offer model (B464, D220, D221).
+ *
+ * Text styling used to be offered on every text field, per instance, with a
+ * colour. Now a type offers `align`/`size` on purpose, at the scope its
+ * structure decides, and colour is gone. Per slide: every `color` is dropped;
+ * per-instance keys (`quotes.2.quote`) fold into the shared key
+ * (`quotes.*.quote`) where every instance stored the same value; what the type
+ * does not offer is dropped. See `foldTextStylesToOffers` in text-styles.js.
+ *
+ * Not render-equivalent, and deliberately so: a colour or a per-instance style
+ * is exactly what D220/D221 retire. What goes is what no current control can
+ * set; the release note names it. A type the registry does not know here (a
+ * fork type on a core-only install) keeps its map minus colour, for its own
+ * reader. Keys on `color`, per-instance keys and unoffered keys, none of which
+ * a current writer produces (the write path refuses them). Idempotent.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldTextStyles(pres) {
+  for (const slide of eachSlide(pres)) {
+    const content = slide?.content;
+    if (!content || typeof content !== 'object') continue;
+    if (!Object.prototype.hasOwnProperty.call(content, 'textStyles')) continue;
+    const folded = foldTextStylesToOffers(
+      content.textStyles,
+      getSlideType(slide.type) || null,
+      content,
+    );
+    if (folded) content.textStyles = folded;
+    else delete content.textStyles;
+  }
+  return pres;
+}
+
+/**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
  * still allowed into the one version `i + 1` requires. No stamp is stored (see
  * the module docstring), so every step runs on every deck, every time - which
@@ -1421,6 +1458,11 @@ export const SCHEMA_MIGRATIONS = [
   // v16 -> v17: quote-slide keeps every quote in `quotes[]`, the first
   // included, with one portrait spelling (D314). See foldQuoteSlideIntoQuotes.
   foldQuoteSlideIntoQuotes,
+
+  // v17 -> v18: text styling is offered per type, at the scope its structure
+  // decides, and per-field colour is gone (B464, D220, D221). See
+  // foldTextStyles.
+  foldTextStyles,
 ];
 
 /**

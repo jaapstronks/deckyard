@@ -30,7 +30,6 @@ import {
 } from '../shared/slide-types/text-roles.js';
 import {
   normalizeTextStyles,
-  textStyleClasses,
   injectTextStyles,
 } from '../shared/slide-types/text-styles.js';
 
@@ -151,13 +150,20 @@ test("a declared default outside the role's allowed set is ignored", () => {
 
 // --- Storage and emission agree with the declaration ------------------------
 
+// A centring type that offers alignment on its body. No core type does both
+// today (end-slide centres but offers nothing, D220), so the pair is a
+// fixture: the rule is about the declaration, not about one type.
+const CENTRING = {
+  defaultAlign: 'center',
+  fields: [{ key: 'body', type: 'markdown', textStyle: ['align'] }],
+};
+
 test('on a centring type, "left" is a real override and survives normalisation', () => {
-  const def = SLIDE_TYPES['end-slide'];
-  const kept = normalizeTextStyles({ body: { align: 'left' } }, def);
+  const kept = normalizeTextStyles({ body: { align: 'left' } }, CENTRING);
   assert.deepEqual(kept, { body: { align: 'left' } });
 
   // …and "center" is the no-op that gets pruned.
-  const pruned = normalizeTextStyles({ body: { align: 'center' } }, def);
+  const pruned = normalizeTextStyles({ body: { align: 'center' } }, CENTRING);
   assert.deepEqual(pruned, {});
 });
 
@@ -170,32 +176,11 @@ test('on an ordinary type the reverse holds, unchanged', () => {
 });
 
 test('"left" on a centring type emits a class that can beat the slide rule', () => {
-  assert.equal(
-    textStyleClasses({ align: 'left' }, { defaultAlign: 'center' }),
-    'tf-align-left',
-  );
-  assert.equal(
-    textStyleClasses({ align: 'center' }, { defaultAlign: 'center' }),
-    '',
-  );
-  // Unchanged for everything else.
-  assert.equal(textStyleClasses({ align: 'left' }), '');
-  assert.equal(textStyleClasses({ align: 'center' }), 'tf-align-center');
-});
-
-test('the renderer wires the type default through end to end', () => {
-  const def = SLIDE_TYPES['end-slide'];
-  const html = def.renderHtml(
-    { title: 'Thanks', body: 'hello', textStyles: { body: { align: 'left' } } },
-    { type: 'end-slide' },
-    {},
-  );
-  const withStyles = injectTextStyles(
-    html,
-    { textStyles: { body: { align: 'left' } } },
-    def,
-  );
-  assert.match(withStyles, /tf-align-left/);
+  const html = '<div data-inline-field="body">x</div>';
+  const inject = (align) =>
+    injectTextStyles(html, { textStyles: { body: { align } } }, CENTRING);
+  assert.match(inject('left'), /tf-align-left/);
+  assert.equal(inject('center'), html);
 });
 
 test('an untouched deck stays byte-identical', () => {

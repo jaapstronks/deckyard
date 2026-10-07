@@ -37,6 +37,8 @@ export default {
       labelKey: 'editor.slideField.title.label',
       type: 'string',
       group: 'title-block',
+      // Size only: the title block owns alignment (D220, text-styles.md).
+      textStyle: ['size'],
       required: true,
       maxLength: 140,
     },

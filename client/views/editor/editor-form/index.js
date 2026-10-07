@@ -632,9 +632,9 @@ export function createRerenderEditor({
       // below renders the remaining keeps.
       renderInspectorExtrasByType(formTypeCtx);
       // Type-agnostic: a selected text field gets a "This text" element tab
-      // with block-level alignment/colour (editing-surfaces text step 3). Text
-      // clicked inside a card carries its field on the card selection, so the
-      // card tab ends with the same controls (D313).
+      // with the style controls its type offers, or a sentence when it offers
+      // none (B464). Text clicked inside a card carries its field on the card
+      // selection, so the card tab ends with the same controls (D313).
       if (
         elementActive &&
         (selectedElement?.kind === 'text' ||
@@ -644,7 +644,6 @@ export function createRerenderEditor({
           container: elementForm,
           slide,
           fieldKey: selectedElement.fieldKey,
-          theme,
           fieldRenderers: { fieldEnum },
           markDirty,
           rerenderPreview,

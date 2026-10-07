@@ -73,8 +73,8 @@ test('brand slots fill from brandColors, slot N = brandColors[N-1]', () => {
     brandColors: ['#5b21b6', '#7c3aed', '#a78bfa', '#c4b5fd'],
   });
 
-  // Countdown's brand background variants and the tf-color-brand-* text
-  // styles read these through --slide-brand-{1..3}.
+  // Countdown's brand background variants read these through
+  // --slide-brand-{1..3}.
   assert.equal(out.cssVars['--t-color-brand-1'], '#5b21b6');
   assert.equal(out.cssVars['--t-color-brand-2'], '#7c3aed');
   assert.equal(out.cssVars['--t-color-brand-3'], '#a78bfa');
@@ -327,55 +327,6 @@ test('pickTextColorForBg honours custom poles when measuring', () => {
     pickTextColorForBg('#000000', { light: '#333333', dark: '#ffffff' }),
     '#ffffff',
   );
-});
-
-test('a textSwatch backed only by the brandColors fill survives', () => {
-  // Brand slots fill before swatch validation: a theme that declares
-  // brandColors but no explicit --t-color-brand-* still gets its swatch —
-  // the slot token resolves, so the swatch would not render as currentColor.
-  const out = normalizeTheme({
-    ...baseTheme(),
-    brandColors: ['#5b21b6'],
-    textSwatches: [{ id: 'brand-1' }, { id: 'brand-2' }],
-  });
-  assert.deepEqual(out.textSwatches, [{ id: 'brand-1' }]);
-});
-
-test('normalizeTheme keeps only valid, token-backed textSwatches', () => {
-  const out = normalizeTheme({
-    id: 't',
-    label: 'T',
-    cssVars: {
-      '--t-color-accent': '#7c3aed',
-      '--t-color-brand-1': '#db2777',
-      '--t-color-brand-2': '#c2410c',
-    },
-    textSwatches: [
-      { id: 'brand-1', label: { en: 'Pink', nl: 'Roze' } }, // valid + token present
-      'brand-2', // string form, token present
-      { id: 'brand-3' }, // valid slot but NO token → dropped
-      { id: 'brand-1' }, // duplicate → dropped
-      { id: 'accent' }, // not a swatch slot → dropped
-      { id: 'lime' }, // unknown slot → dropped
-      'garbage',
-    ],
-  });
-  assert.deepEqual(out.textSwatches, [
-    { id: 'brand-1', label: { en: 'Pink', nl: 'Roze' } },
-    { id: 'brand-2' },
-  ]);
-});
-
-test('normalizeTheme defaults textSwatches to an empty array', () => {
-  const out = normalizeTheme({ id: 't', label: 'T', cssVars: {} });
-  assert.deepEqual(out.textSwatches, []);
-  const out2 = normalizeTheme({
-    id: 't',
-    label: 'T',
-    cssVars: {},
-    textSwatches: 'nope',
-  });
-  assert.deepEqual(out2.textSwatches, []);
 });
 
 test('normalizeTheme defaults titleLayout to bottom and validates the token', () => {

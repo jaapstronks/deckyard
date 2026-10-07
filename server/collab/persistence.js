@@ -34,6 +34,7 @@ import {
   setYDocState as defaultSetYDocState,
 } from '../storage/presentations/ydocs.js';
 import { singleOrganizationScope } from '../storage/scope.js';
+import { migratePresentation } from '../../shared/slide-types/schema-version.js';
 
 /**
  * Create the Hocuspocus persistence hooks.
@@ -178,7 +179,13 @@ export function createCollabPersistence({
     // so no expectedRevision (no conflict check); locks don't apply to
     // collab-managed saves.
     try {
-      const projected = codec.projectDocToPresentation(document);
+      // Through the read funnel first: a doc binary stored before a schema
+      // step still holds the old shapes, and the write seam refuses some of
+      // them (an unoffered text style, B464). Folding here is what every read
+      // of the stored JSON does too.
+      const projected = migratePresentation(
+        codec.projectDocToPresentation(document),
+      );
       // Skip the JSON write when the doc already equals the stored deck —
       // notably right after the server-as-collaborator seam applied a fresh
       // server save to the doc (live-apply.js flushes this hook on

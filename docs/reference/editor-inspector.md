@@ -255,7 +255,7 @@ there is no tab bar - just the slide form (identical to the pre-tab pane).
   doorway to everything settable); the selected text field gets the same solid
   ring (`.ie-ol-outline.is-selected`). Because the ring is drawn from the
   controller state rather than from focus, it survives the edit's blur and the
-  preview remount a sidebar change (alignment, colour) triggers - the user can
+  preview remount a sidebar change (alignment, size) triggers - the user can
   see which field the "This text" tab is acting on.
 - **Rendering** (`editor-form/index.js`): when the selection applies to the slide
   (`elementAppliesToSlide`), per-element widgets render into `elementForm`
@@ -295,62 +295,17 @@ The element tab surfaces the controls directly; the old
 ### "This text" tab (block-level text styling)
 
 A click on a text field selects `{kind:'text', fieldKey}` (a card's text still
-selects the card; chart-data/csv selects nothing), which shows a type-agnostic
-**"This text"** element tab: **alignment**, a **theme colour token** and a
-3-step **size** scale (S/M/L, default M) (`text-element-card.js`). It writes a
-generic, additive override map keyed by the field's `data-inline-field` value:
+selects the card; chart-data/csv selects nothing), which opens the **"This
+text"** element tab (`text-element-card.js`). It shows the style controls the
+slide type **offers** for that field - alignment, a 3-step size (S/M/L) - and
+nothing else: a field without an offer gets one sentence, "This text follows
+the slide's layout". A field whose siblings share the offer (array items, a
+declared set) is styled as one, under a heading such as "All "Quote" (3)".
+There is no per-field colour (D221).
 
-```json
-content.textStyles = { "body": { "align": "center", "color": "accent", "size": "lg" } }
-```
-
-`normalizeTextStyles` (`shared/slide-types/text-styles.js`) prunes defaults, so
-a click-to-default leaves stored JSON unchanged. The shared `renderSlideHtml`
-runs a string post-pass (`injectTextStyles`, mirroring `injectSlideBackground`)
-that adds `tf-*` classes to the matching field element — **one code path**, so
-the editor canvas, present mode and exports all reflect it. Styles live outside
-the markdown, so the WYSIWYG round-trip gate is untouched.
-
-**Colour tokens (`tf-color-muted/-accent`).** Base values: `default` (no
-override — follows the slide's automatic, background-aware text colour),
-`muted` and `accent`. `muted` is derived from **`currentColor`** — the field's
-inherited text colour — dimmed to 72%, so it is band-aware: a mid-grey on a
-light slide, a dimmed white on a dark band (quote/chapter, whose text is white
-via the `--slide-on-bg-dark` role and which bypass the `--color-text` system). A fixed
-light-theme muted grey rendered ~1.5:1 (unreadable) there. `accent` is the
-brand accent (`--t-color-accent`); on a same-hue coloured band it can be
-low-contrast — a deliberate-choice caveat, not a bug. A former `inverse` =
-background-colour token was **dropped** (rollout QA): on text sitting directly
-on the slide background it is invisible by construction; old `inverse` values
-prune to no override. Alignment (`tf-align-*`) is generic and needs no per-type
-work — no core type sets a competing `text-align` on its primary fields.
-
-**Theme text swatches (`tf-color-brand-1/-2/-3`).** The colour control is a
-swatch row: the three base tokens above plus any on-brand text colours the
-active theme declares via **`theme.textSwatches`** — a list of fixed slots
-(`brand-1`/`brand-2`/`brand-3`) each backed by a `--t-color-<slot>` token, with
-an optional label (string or `{ nl, en }`, like `backgroundLabels`). Rationale
-for a curated theme palette rather than exposing the background swatches
-directly: the `--t-slide-bg-*` swatches are _surface fills_ (e.g. `lime` is
-often white), so they fail as text colours — a theme picks legible on-brand
-colours here instead. Normalization (`normalizeTheme`) keeps only slots the
-theme actually coloured, so the control never shows a swatch that would resolve
-to a no-op `currentColor`; a theme that declares none leaves the three base
-tokens. Stored values stay portable tokens: a deck carrying `brand-1` on a
-theme that never defined it falls back to the default text colour (the
-`currentColor` fallback in the `tf-color-brand-*` CSS), not a broken colour.
-
-**Size scale (`tf-size-sm/lg`).** A plain `em` multiplier would _replace_ the
-font-size a type sets for that element (the content body's per-density step,
-say) with a fraction of the parent size, shrinking rather than scaling. Instead `tf-size-*`
-only set a `--tf-size-scale` custom property on the field element (`sm` 0.85,
-`lg` 1.2, `md` = no class → fallback 1), and each primary text element
-expresses its `font-size` as `calc(<base> * var(--tf-size-scale, 1))`, rolled
-out **per type**. Types wired so far: **content** (heading + body, all density
-steps), **image-text** (body, all width/density steps), **list** (per-item
-title + text, all density steps), **quote** (quote text), **chapter-title**
-(title). Other types/fields store the value cleanly but do not yet scale — add
-the `calc()` to their primary text element to enable it.
+The offer model, the `content.textStyles` storage keys, the refusals on the
+write path and which core fields offer what are normative in
+**[`text-styles.md`](text-styles.md)**.
 
 ## Per-type coverage audit
 

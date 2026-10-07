@@ -22,22 +22,6 @@
     }
   },
   "brandColors": ["#db2777", "#ea580c", "#f59e0b", "#fb7185"],
-  "textSwatches": [
-    {
-      "id": "brand-1",
-      "label": {
-        "en": "Pink",
-        "nl": "Roze"
-      }
-    },
-    {
-      "id": "brand-2",
-      "label": {
-        "en": "Rust",
-        "nl": "Roest"
-      }
-    }
-  ],
   "gradient": {
     "enabled": false
   },

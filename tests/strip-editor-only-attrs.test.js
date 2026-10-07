@@ -20,14 +20,12 @@ const slide = {
     title: 'T',
     variant: 'bullets',
     items: [{ title: 'a' }, { title: 'b' }],
-    textStyles: { title: { color: 'accent' } },
   },
 };
 
 /**
- * Alignment needs a field that still owns it: `list-slide.title` joined the
- * header-block field group, so its alignment comes from the group and no
- * tf-align-* class is emitted for it. `content-slide.body` is standalone.
+ * A text style needs a field whose type offers it (D220): `list-slide` offers
+ * none, `content-slide.body` offers alignment and size.
  */
 const alignedSlide = {
   id: 's2',
@@ -35,7 +33,7 @@ const alignedSlide = {
   content: {
     title: 'T',
     body: 'Body text',
-    textStyles: { body: { align: 'center', color: 'accent' } },
+    textStyles: { body: { align: 'center', size: 'lg' } },
   },
 };
 
@@ -45,22 +43,20 @@ test('editor render keeps inline-edit hooks', () => {
   assert.match(html, /data-inline-item/);
 });
 
-test('output render strips inline-edit hooks but keeps morph + tf-* classes', () => {
+test('output render strips inline-edit hooks but keeps morph roles', () => {
   const html = renderSlideHtml(slide, { stripEditorAttrs: true });
   assert.doesNotMatch(html, /data-inline-field/);
   assert.doesNotMatch(html, /data-inline-item/);
   assert.doesNotMatch(html, /data-inline-item-index/);
   // morph role survives
   assert.match(html, /data-morph-role="title"/);
-  // user text formatting survives (CSS is re-anchored off the attribute)
-  assert.match(html, /class="heading tf-color-accent"/);
 });
 
-test('output render keeps a standalone field tf-align-* class', () => {
+test('output render keeps the tf-* classes (CSS is re-anchored off the attribute)', () => {
   const html = renderSlideHtml(alignedSlide, { stripEditorAttrs: true });
   assert.doesNotMatch(html, /data-inline-field/);
   assert.match(html, /tf-align-center/);
-  assert.match(html, /tf-color-accent/);
+  assert.match(html, /tf-size-lg/);
 });
 
 test('stripEditorOnlyAttrs leaves data-morph-role and other attrs intact', () => {
