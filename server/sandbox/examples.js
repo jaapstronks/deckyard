@@ -5,9 +5,15 @@
  * server/sandbox-examples/) that a first-time sandbox visitor can open and edit
  * — the fastest way to try the editor without building a deck from scratch.
  *
- * These are templates: the sandbox Home lists them, and instantiating one goes
- * through the normal /api/presentations/import/json path so the guest gets
+ * These are templates: the sandbox Home lists them, and opening one
+ * (`POST /api/sandbox/examples/:id`) imports the server's copy of the file
+ * through the same import as /api/presentations/import/json, so the guest gets
  * their own editable copy. Nothing here writes to storage.
+ *
+ * Beside the deck, a file may carry a `sandbox` block (today only
+ * `sandbox.analytics`, the viewing profile of B353, see
+ * `server/sandbox/analytics.js`). It is split off here: the deck that reaches
+ * the browser and the import is the deck alone.
  *
  * An example file names its theme by seed slug (`editorial`), because a
  * record UUID differs per installation and cannot be committed. That slug is
@@ -54,7 +60,7 @@ function deriveDescription(deck) {
  * A file that fails to parse, or whose theme slug names no seed, is skipped
  * rather than breaking the whole list.
  * @param {string} repoRoot
- * @returns {Promise<Array<{id:string,title:string,description:string,theme:string,slideCount:number,deck:object}>>}
+ * @returns {Promise<Array<{id:string,title:string,description:string,theme:string,slideCount:number,deck:object,analytics:object|null}>>}
  */
 export async function listSandboxExamples(repoRoot) {
   const dir = path.join(repoRoot, EXAMPLES_DIRNAME);
@@ -70,7 +76,7 @@ export async function listSandboxExamples(repoRoot) {
   for (const file of jsonFiles) {
     try {
       const raw = await fs.readFile(path.join(dir, file), 'utf8');
-      const example = JSON.parse(raw);
+      const { sandbox, ...example } = JSON.parse(raw);
       const id = file.replace(/\.json$/i, '');
       const theme = await resolveSeedThemeSlug(example?.theme);
       if (!theme) {
@@ -87,6 +93,7 @@ export async function listSandboxExamples(repoRoot) {
         theme,
         slideCount: Array.isArray(deck.slides) ? deck.slides.length : 0,
         deck,
+        analytics: sandbox?.analytics ?? null,
       });
     } catch {
       // Skip an unreadable/invalid example; the others still load.
@@ -97,4 +104,14 @@ export async function listSandboxExamples(repoRoot) {
     (a, b) => orderIndex(a.id) - orderIndex(b.id) || a.id.localeCompare(b.id),
   );
   return examples;
+}
+
+/**
+ * One example by id, as {@link listSandboxExamples} reads it, or `null`.
+ * @param {string} repoRoot
+ * @param {string} id
+ */
+export async function getSandboxExample(repoRoot, id) {
+  const examples = await listSandboxExamples(repoRoot);
+  return examples.find((example) => example.id === id) ?? null;
 }

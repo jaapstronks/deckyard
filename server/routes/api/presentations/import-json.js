@@ -1,14 +1,5 @@
-import { updatePresentation } from '../../../storage/presentations/index.js';
-import { createPresentation } from '../../../services/presentations.js';
+import { importJsonDeck } from '../../../services/import-json.js';
 import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
-import {
-  deckImportLang,
-  deckToPresentationParts,
-} from '../../../../shared/slide-types.js';
-import { settleNewDeckTheme } from '../../../utils/themes.js';
-import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
-import { createLogger } from '../../../utils/logger.js';
-const log = createLogger('import-json');
 
 // Error handling lives in the `withErrorHandler` wrapper on the presentations
 // dispatcher: typed AppErrors (sandbox quota, validation) surface their own
@@ -21,96 +12,22 @@ export async function handlePresentationsImportJson({
   res,
   authedUser,
 } = {}) {
-  log.info('[import-json] Starting import...');
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
 
-  const deck = body?.deck || body;
-  const resolved = deckImportLang(deck, body?.lang);
-  if (!resolved.ok) {
-    badRequest(res, resolved.message);
+  const result = await importJsonDeck({
+    repoRoot,
+    storageScope,
+    actor: authedUser,
+    deck: body?.deck || body,
+    lang: body?.lang,
+  });
+  if (!result.ok) {
+    badRequest(res, result.message);
     return true;
   }
-  const { lang } = resolved;
-  log.info('[import-json] Language:', lang);
-  log.info('[import-json] Deck title:', deck?.title);
-  log.info(
-    '[import-json] Deck slides count:',
-    Array.isArray(deck?.slides) ? deck.slides.length : 'not an array',
-  );
 
-  // The deck's theme, so imported slides compose against it (background
-  // presets, theme slide-background variants). A theme this instance does not
-  // have is refused like on every create (B486); a `.deck` bundle is the
-  // format that carries its theme along.
-  const { themeId, theme: themeConfig } = await settleNewDeckTheme(
-    repoRoot,
-    deck?.theme,
-    storageScope,
-  );
-
-  // The organization's own registry, so a slide of one of its database types
-  // imports as itself rather than as the placeholder.
-  const parts = deckToPresentationParts(deck, {
-    theme: themeConfig,
-    lang,
-    slideTypes: await buildMergedSlideTypes(storageScope),
-  });
-  log.info(
-    '[import-json] Parsed parts - title:',
-    parts.title,
-    'theme:',
-    parts.theme,
-    'slides:',
-    parts.slides?.length,
-  );
-
-  const created = await createPresentation(
-    storageScope,
-    { actor: authedUser },
-    {
-      title: parts.title,
-      theme: themeId,
-      extensions: parts.extensions,
-      lang,
-    },
-  );
-  log.info('[import-json] Created presentation:', created.id);
-
-  // Build the update payload with proper i18n structure.
-  // We need to update i18n.versions[lang] with the imported slides,
-  // otherwise normalizeI18n will overwrite our slides with the default ones.
-  // The deck's translations land as the other language versions (D89).
-  const i18n = {
-    dominant: lang,
-    active: lang,
-    versions: {
-      ...parts.translations,
-      [lang]: {
-        title: parts.title,
-        slides: parts.slides,
-      },
-    },
-  };
-
-  const updated = await updatePresentation(
-    storageScope,
-    created.id,
-    {
-      title: parts.title,
-      theme: themeId,
-      extensions: parts.extensions,
-      lang,
-      slides: parts.slides,
-      i18n,
-    },
-    {
-      actorEmail: authedUser?.email || null,
-    },
-  );
-  log.info('[import-json] Updated presentation successfully');
-
-  serveJson(res, 201, updated);
+  serveJson(res, 201, result.presentation);
   return true;
 }

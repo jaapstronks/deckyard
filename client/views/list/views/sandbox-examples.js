@@ -16,8 +16,8 @@ import { normalizeLang } from '../../../../shared/i18n-utils.js';
  *
  * A row of ready-made demo decks a guest can open and edit — the fastest way to
  * try the editor without starting from a blank deck. Each card previews the
- * deck's first slide (rendered with its theme); clicking it instantiates an
- * editable copy via the normal import path and jumps into the editor.
+ * deck's first slide (rendered with its theme); clicking it opens an editable
+ * copy (`POST /api/sandbox/examples/:id`) and jumps into the editor.
  *
  * Only mounted in sandbox mode; the caller gates on `features.sandboxMode`.
  *
@@ -58,9 +58,8 @@ export function createSandboxExamplesSection({ api, detachThumbs }) {
   let busy = false;
 
   // Sandbox examples are authored in English; a deck that names its own axis
-  // language keeps it. One answer, read by both the import below and the
-  // thumbnail — the preview a guest clicks must speak the language of the deck
-  // that click creates.
+  // language keeps it. The thumbnail reads it, and so does the editor URL when
+  // the created deck carries no language of its own.
   const exampleLang = (example) =>
     normalizeLang(example?.deck?.lang) || 'en-GB';
 
@@ -68,14 +67,15 @@ export function createSandboxExamplesSection({ api, detachThumbs }) {
     if (busy) return;
     busy = true;
     try {
-      const lang = exampleLang(example);
-      const created = await api('/api/presentations/import/json', {
-        method: 'POST',
-        body: { deck: example.deck, lang },
-      });
+      // The server opens its own copy of the example, so it can also write
+      // the viewing history the example declares (B353).
+      const created = await api(
+        `/api/sandbox/examples/${encodeURIComponent(example.id)}`,
+        { method: 'POST' },
+      );
       if (created?.id) {
         nav(
-          `/app/${created.id}?lang=${encodeURIComponent(created.lang || lang)}`,
+          `/app/${created.id}?lang=${encodeURIComponent(created.lang || exampleLang(example))}`,
         );
       } else {
         throw new Error('no id');

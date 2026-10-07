@@ -1,8 +1,8 @@
 /**
  * Analytics storage facade — the sole public seam over this folder.
  *
- * `server/storage/analytics/` is a decomposed store: seven concern modules
- * (view sessions and their GDPR paths, slide views, dashboard queries, ad-hoc
+ * `server/storage/analytics/` is a decomposed store: eight concern modules
+ * (view sessions, their GDPR paths and the sandbox seed, slide views, dashboard queries, ad-hoc
  * aggregations, saved reports, the weekly digest) behind one barrel. Consumers
  * import `server/storage/analytics/index.js`; the concern files are internal
  * (`AGENTS.md` § _Module layout: one folder = one seam_).
@@ -25,6 +25,9 @@ export {
   deleteOldViewSessions,
   countAnalyticsRows,
 } from './view-sessions.js';
+
+// The seeded view history of a sandbox guest's example copy (B353).
+export { insertSeededViewSessions } from './seeded-sessions.js';
 
 // GDPR paths over those sessions (right to access, right to erasure, IP retention).
 export {
