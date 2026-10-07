@@ -20,7 +20,7 @@ import {
   canCommentOnPresentation,
   getEffectivePermission,
 } from '../server/utils/presentation-authz/index.js';
-import { belongsInCollection } from '../server/routes/api/presentations/list.js';
+import { belongsInCollection } from '../server/utils/presentation-authz/index.js';
 
 const OPERATOR = {
   email: 'anonymous',

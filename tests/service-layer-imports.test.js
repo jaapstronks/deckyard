@@ -49,10 +49,9 @@ const ROUTES_BASELINE = 0;
  * empty.
  */
 const OPEN_STORAGE_EDGES = {
-  // listPresentations (B607: one deck list on three contracts) and the PUT's
-  // plain save (B608: one deck save, shared with the editor's PUT).
+  // The PUT's plain save (B608: one deck save, shared with the editor's PUT).
   'server/routes/public-api/v1/presentations.js -> server/storage/presentations/index.js':
-    'B607, B608',
+    'B608',
   // The AI wizard's update after the create (B609: a create that carries its
   // content, shared with the internal wizards and MCP's creates).
   'server/routes/public-api/v1/ai.js -> server/storage/presentations/index.js':
@@ -61,12 +60,10 @@ const OPEN_STORAGE_EDGES = {
   // and the translate worker).
   'server/routes/public-api/v1/translate.js -> server/storage/presentations/index.js':
     'B610',
-  // list_presentations (B607), the creates' update and normalizeSlides
-  // pre-check (B609), and the slide-set writes of remove_slide,
-  // reorder_slides, append_slides, compress_presentation and
-  // iterate_presentation (B611).
-  'server/mcp/tools.js -> server/storage/presentations/index.js':
-    'B607, B609, B611',
+  // The creates' update and normalizeSlides pre-check (B609), and the
+  // slide-set writes of remove_slide, reorder_slides, append_slides,
+  // compress_presentation and iterate_presentation (B611).
+  'server/mcp/tools.js -> server/storage/presentations/index.js': 'B609, B611',
 };
 
 function listJs(dir) {

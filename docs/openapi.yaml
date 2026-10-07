@@ -274,10 +274,13 @@ paths:
             default: 0
         - name: viewOnly
           in: query
-          description: Filter to view-only presentations only
+          description: >-
+            `true` lists only view-only presentations, `false` only the
+            others. Any other value is refused with 400 `invalid` and
+            `details.field: viewOnly`.
           schema:
             type: string
-            enum: ['true']
+            enum: ['true', 'false']
       responses:
         '200':
           description: List of presentations

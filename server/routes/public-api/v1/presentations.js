@@ -3,10 +3,7 @@
  * Handles CRUD operations for presentations via API key authentication.
  */
 
-import {
-  listPresentations,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
+import { updatePresentation } from '../../../storage/presentations/index.js';
 import {
   getTagsForPresentations,
   getTagsForPresentation,
@@ -17,20 +14,23 @@ import {
   dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
-  canAccessPresentation,
   getPresentationWithAccess,
   readApiV1Body,
   apiSuccess,
   apiCreated,
   apiError,
 } from './middleware.js';
-import { parsePaginationParams } from '../../../utils/request-validators.js';
+import {
+  parsePaginationParams,
+  parseQueryFlag,
+} from '../../../utils/request-validators.js';
 import { changeTheme } from '../../../services/theme.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   createPresentation,
   deletePresentation,
   duplicatePresentation,
+  listPresentationsForActor,
   refuseRetiredDeckFields,
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
@@ -38,15 +38,6 @@ import {
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
-
-/**
- * Filter presentations to only those accessible to the API key owner.
- * @param {Object[]} presentations
- * @param {Object} actor - The acting API-key owner (`ctx.authedUser`: `{id, email}`)
- */
-function filterByOwner(presentations, actor) {
-  return presentations.filter((p) => canAccessPresentation(p, actor));
-}
 
 /**
  * Strip internal fields from presentation for API response.
@@ -129,28 +120,22 @@ function sanitizeForList(pres, tags = [], requesterEmail = null) {
  * Query parameters:
  * - limit: max results per page (default 50, max 100)
  * - offset: pagination offset (default 0)
- * - viewOnly: if 'true', only return view-only presentations
+ * - viewOnly: 'true' only view-only presentations, 'false' only the others;
+ *   any other value is 400 `invalid` (`details.field: 'viewOnly'`)
  */
 async function handleList(ctx) {
   const { storageScope, apiKey, authedUser, url } = ctx;
 
   if (!requirePermission(ctx, 'read')) return true;
 
-  const list = await listPresentations(storageScope);
-  let filtered = filterByOwner(list, authedUser);
-
-  // Optional filters
-  const viewOnlyFilter = url.searchParams.get('viewOnly');
-
-  if (viewOnlyFilter === 'true') {
-    filtered = filtered.filter((p) => p?.isViewOnly === true);
-  }
-
+  // The page size keeps its documented clamp (default 50, max 100); who sees
+  // what and the viewOnly filter are the service's (B607).
   const { limit, offset } = parsePaginationParams(url.searchParams);
-
-  // Apply pagination
-  const total = filtered.length;
-  const paginated = filtered.slice(offset, offset + limit);
+  const { presentations: paginated, total } = await listPresentationsForActor(
+    storageScope,
+    { actor: authedUser },
+    { viewOnly: parseQueryFlag(url.searchParams, 'viewOnly'), limit, offset },
+  );
 
   // Fetch tags for all presentations
   const presentationIds = paginated.map((p) => p.id);

@@ -115,7 +115,7 @@ function actorUser(actor, actorUserId = null) {
  * @param {Actor} [actor]
  * @returns {Promise<string|null>}
  */
-async function resolveActorUserId(actor) {
+export async function resolveActorUserId(actor) {
   // Already resolved at the request boundary (the public API resolves the key
   // owner once per request) — no reason to ask the database again.
   if (actor?.id) return actor.id;

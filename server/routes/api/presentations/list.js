@@ -1,46 +1,25 @@
-import { listPresentations } from '../../../storage/presentations/index.js';
+import { listPresentationsForActor } from '../../../services/presentations.js';
 import { getTagsForPresentations } from '../../../storage/tags.js';
 import { serveJson } from '../../../utils/http.js';
-import {
-  normalizePresentationVisibility,
-  isUnrestricted,
-  hasIdentity,
-  isOwnerOrCreator,
-} from '../../../utils/presentation-authz/index.js';
 import { withDeckCardFields } from '../../../utils/deck-card-fields.js';
 import { withDbGuard } from '../../../storage/utils/index.js';
 import { getOrgId } from '../../../utils/context.js';
 
-// Filter for what appears in a user's collection (not authorization).
-// Invariant: a deck card is only shown when canReadPresentation would also
-// let the user open it — so no ownerless-legacy exception here (the view
-// route would refuse those anyway, leaving a dead card).
-export function belongsInCollection({ user, pres } = {}) {
-  if (!pres || typeof pres !== 'object') return false;
-  // Auth-off single operator sees every deck (matches canReadPresentation).
-  if (isUnrestricted(user)) return true;
-  const visibility = normalizePresentationVisibility(pres?.visibility);
-  if (visibility === 'organization') return true;
-
-  if (!hasIdentity(user)) return false;
-
-  // User owns or created the presentation (decided on users.id; see
-  // shared/identity-match.js).
-  return isOwnerOrCreator(user, pres);
-}
-
+/**
+ * GET /api/presentations — the session user's collection (Home), with this
+ * route's own enrichment. Who sees what is decided in
+ * `listPresentationsForActor` (B607).
+ */
 export async function handlePresentationsList({
   repoRoot,
   storageScope,
   res,
   authedUser,
 } = {}) {
-  const list = await listPresentations(storageScope);
-  // Filter to show only the user's own presentations + organization-visible presentations.
-  // Admin status doesn't change what appears in their collection.
-  const filtered = authedUser
-    ? list.filter((p) => belongsInCollection({ user: authedUser, pres: p }))
-    : list;
+  const { presentations: filtered } = await listPresentationsForActor(
+    storageScope,
+    { actor: authedUser },
+  );
 
   // Fetch tags for all presentations in the list
   const presentationIds = filtered.map((p) => p.id);
