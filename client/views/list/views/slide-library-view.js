@@ -1,4 +1,8 @@
-import { t } from '../../../lib/ui-i18n.js';
+import { t, getUiLocale } from '../../../lib/ui-i18n.js';
+import {
+  readStoredLangMode,
+  resolveInitialDeckLang,
+} from '../../../lib/format/i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import {
@@ -139,7 +143,12 @@ export function createSlideLibraryView({ api }) {
         api,
         allowInsert: false, // Browse-only mode
         showLanguageSwitch: true, // Enable language switching in browse mode
-        initialLang: DEFAULT_DECK_LANG,
+        // The language a new deck would start in (stored choice, else the UI
+        // locale): an English reader is not shown an empty Dutch shelf (B603).
+        initialLang: resolveInitialDeckLang({
+          storedLang: readStoredLangMode(),
+          uiLocale: getUiLocale(),
+        }),
         onCopySlide: copySlide,
         onNewPresentation: createNewPresentation,
         onAddToCollection: (item, shelf) =>

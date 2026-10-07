@@ -51,9 +51,6 @@ export function openCreationView({
   preselect,
 } = {}) {
   const features = getFeatures() || {};
-  // Sandbox guests have no slide library of their own, so "From the library"
-  // has nothing to compose from — hide the method entirely there.
-  const libraryDisabled = !!features.sandboxMode;
 
   // ===== State =====
   let method = 'blank'; // blank | library | content | import
@@ -127,16 +124,15 @@ export function openCreationView({
     t('list.creationView.method.blank', 'Blank'),
   );
   rail.append(blankItem);
-  if (!libraryDisabled) {
-    const libraryItem = makeRailItem(
+  rail.append(
+    makeRailItem(
       'library',
       t('list.creationView.method.library', 'From the library'),
       {
         desc: t('list.creationView.method.libraryDesc', 'Reusable slides'),
       },
-    );
-    rail.append(libraryItem);
-  }
+    ),
+  );
   if (featureEnabled('ai')) {
     rail.append(
       makeRailItem(
@@ -540,7 +536,7 @@ export function openCreationView({
   // the library compose flow with the building block seeded.
   const hasPreselectItems =
     Array.isArray(preselect?.items) && preselect.items.some(Boolean);
-  if (!libraryDisabled && (preselect?.collection || hasPreselectItems)) {
+  if (preselect?.collection || hasPreselectItems) {
     method = 'library';
     // Seed via the collections source, whose tray is the source of truth (so a
     // seeded slide can be removed without a picker round-trip).
