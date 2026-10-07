@@ -28,12 +28,12 @@ Two pieces, both at a single chokepoint:
 2. **Each field carries a size intent** - its natural minimum width - as an
    `is-field-*` class on its wrapper. `--field-basis` is the wrap threshold:
 
-   | Class             | `--field-basis` | Used for                                      |
-   | ----------------- | --------------- | --------------------------------------------- |
-   | _(default)_       | `10rem`         | text inputs, selects, 2-option toggles        |
-   | `is-field-narrow` | `7rem`          | number inputs                                 |
-   | `is-field-wide`   | `17rem`         | 3-4 option segmented controls                 |
-   | `is-field-full`   | `100%`          | textareas, markdown, code, 5+ option controls |
+   | Class             | `--field-basis` | Used for                                |
+   | ----------------- | --------------- | --------------------------------------- |
+   | _(default)_       | `10rem`         | text inputs, enums estimated at ≤ 160px |
+   | `is-field-narrow` | `7rem`          | number inputs                           |
+   | `is-field-wide`   | `17rem`         | enums estimated at ≤ 272px              |
+   | `is-field-full`   | `100%`          | textareas, markdown, code, wider enums  |
 
    The class is **inert outside a `.field-grid`** (the flex rules are scoped to
    direct children), so renderers can stamp it unconditionally.
@@ -48,15 +48,25 @@ row below the breakpoint).
 
 - `client/views/editor/fields/basic.js` - `fieldNumber` → narrow;
   `fieldTextarea` / `fieldMarkdown` / `fieldCode` → full.
-- `client/views/editor/fields/enum.js` - `fieldSegmented` derives the class
-  from the option count (2 → default, 3-4 → wide, 5+ → full). `fieldGrid()`
+- `client/views/editor/fields/enum.js` - `fieldEnum` asks `enumControl()`
+  (`client/views/editor/fields/enum-fit.js`, B457) for both the control and the class. It estimates the
+  width of the options' translated labels (an `icon` option counts as a
+  fixed-width glyph): one segmented row that fits the 279px column at the
+  minimum inspector width stays segmented, anything wider becomes a dropdown,
+  and the estimated width picks the class against the bases above. The option
+  count plays no part, and neither does the field key: a glyph is declared on
+  the option (`icon: 'side-left'` → `.sb-icon-side-left`). `fieldGrid()`
   builds the row; its legacy `cols` argument is accepted for backward
   compatibility but **no longer drives layout** - grouping is purely semantic
   ("these fields belong together").
 
 ## Adding a field
 
-You normally do nothing: group related fields with `fieldGrid([...])` and the
+You normally do nothing. An enum option's `label` is a name; an explanation
+goes in its `title` (the button tooltip, the dropdown option's title).
+`tests/enum-fit.test.js` walks every built-in enum in English and Dutch and
+fails on a declaration whose longest label does not fit the column even as a
+dropdown, or whose options share a label. For layout: group related fields with `fieldGrid([...])` and the
 row arranges itself. Only reach for an explicit size intent if a custom control
 has an unusual minimum width - add `is-field-narrow` / `is-field-wide` /
 `is-field-full` to its wrapper's class. Do **not** reintroduce a fixed column

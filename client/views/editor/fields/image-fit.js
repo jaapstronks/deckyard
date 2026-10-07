@@ -2,12 +2,13 @@
  * The `image-fit` widget (field-editors.js vocabulary): the cover/contain
  * choice for an ImageRef `fit` field.
  *
- * What makes it a widget rather than a plain `enum`: the empty option's LABEL
- * is derived from the declaring type's `imageDefaults.fit` config, so it shows
- * what "follow the type" currently resolves to ("Default · Fill (crop)") and
- * doubles as back-to-default by emptying the field. Empty is never stamped
- * into the data, which is what keeps a later default change reaching old decks
- * (docs/reference/image-property-ownership.md).
+ * What makes it a widget rather than a plain `enum`: the empty option says
+ * "Default" and its title what that resolves to under the declaring type's
+ * `imageDefaults.fit` config, and it doubles as back-to-default by emptying
+ * the field. Its label never repeats a real option's label (B457: "Default ·
+ * Fill (crop)" beside "Fill (crop)" read as the same button twice). Empty is
+ * never stamped into the data, which is what keeps a later default change
+ * reaching old decks (docs/reference/image-property-ownership.md).
  *
  * One module, three call sites: the top-level field loop (render-field.js),
  * the per-item loop of the generic collection editor (collection-editor.js)
@@ -26,22 +27,37 @@ import { t } from '../../../lib/ui-i18n.js';
  * @returns {Array<{value: string, label: string, title?: string}>}
  */
 export function imageFitOptions({ typeDefault } = {}) {
-  const coverLabel = t('editor.imageText.fitCover', 'Fill (crop)');
-  const containLabel = t('editor.imageText.fitContain', 'Fit (no crop)');
+  const coverTitle = t(
+    'editor.imageText.fitCoverTitle',
+    'Fill the frame; the edges may be cropped',
+  );
+  const containTitle = t(
+    'editor.imageText.fitContainTitle',
+    'Show the whole image; nothing is cropped',
+  );
+  const coverLabel = t('editor.imageText.fitCover', 'Fill');
+  const containLabel = t('editor.imageText.fitContain', 'Fit');
   const options = [
-    { value: 'cover', label: coverLabel },
-    { value: 'contain', label: containLabel },
+    {
+      value: 'cover',
+      label: coverLabel,
+      title: coverTitle,
+    },
+    {
+      value: 'contain',
+      label: containLabel,
+      title: containTitle,
+    },
   ];
   if (typeDefault !== 'cover' && typeDefault !== 'contain') return options;
   return [
     {
       value: '',
-      label: t('editor.imageText.fitDefaultType', 'Default · {fit}', {
-        fit: typeDefault === 'contain' ? containLabel : coverLabel,
-      }),
+      label: t('editor.imageText.fitDefaultType', 'Default'),
       title: t(
         'editor.imageText.fitDefaultTypeTitle',
-        'Follow the slide type default',
+        'Follow the slide type default: {fit}',
+        { fit: typeDefault === 'contain' ? containLabel : coverLabel },
       ),
     },
     ...options,
