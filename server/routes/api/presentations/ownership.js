@@ -3,149 +3,37 @@
  *
  * POST /api/presentations/:id/transfer-ownership
  * Body: { newOwnerEmail: "user@example.com", keepAsCollaborator?: boolean }
+ *
+ * An adapter: it parses the body and answers. Who may hand a deck over, and
+ * to whom, is decided in `server/services/ownership.js` (B573).
  */
 
-import { getPresentation } from '../../../storage/presentations/index.js';
-import { transferPresentationOwnership } from '../../../storage/presentations/ownership.js';
-import { listUsers } from '../../../storage/users.js';
-import { canTransferOwnership } from '../../../utils/presentation-authz/index.js';
+import { transferOwnership } from '../../../services/ownership.js';
 import {
   methodNotAllowed,
-  notFound,
   serveJson,
-  badRequest,
   requireJsonBody,
-  jsonError,
-  forbidden,
 } from '../../../utils/http.js';
-import { normalizeEmail } from '../../../utils/normalize.js';
-import {
-  createActivityEvent,
-  EVENT_TYPES,
-  ENTITY_TYPES,
-} from '../../../storage/activity-events.js';
-import { createNotification } from '../../../storage/notifications.js';
-import {
-  broadcastToUser,
-  NotificationEventTypes,
-} from '../../../services/notification-events.js';
-import { createLogger } from '../../../utils/logger.js';
-import { assertSharingEnabled } from '../../../sandbox/sharing.js';
-const log = createLogger('ownership');
 
 export async function handleOwnershipTransfer(
   { storageScope, req, res, authedUser } = {},
   id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
-  // Handing a deck to someone else is sharing it (D181).
-  assertSharingEnabled();
-
-  const pres = await getPresentation(storageScope, id);
-  if (!pres) return notFound(res);
-
-  // Transfer is owner-scoped: `canTransferOwnership` never consults the
-  // collaborator ladder, so there is nothing to fetch for it.
-  if (!canTransferOwnership({ user: authedUser, pres })) {
-    return forbidden(res);
-  }
 
   const jsonResult = await requireJsonBody(req, res);
   if (!jsonResult.ok) return true;
-  const body = jsonResult.body;
+  const body = jsonResult.body || {};
 
-  const newOwnerEmail = normalizeEmail(body?.newOwnerEmail);
-  if (!newOwnerEmail || !newOwnerEmail.includes('@')) {
-    return badRequest(res, 'Valid newOwnerEmail is required');
-  }
-
-  // Prevent transferring to self
-  // The owner stamp is the only one that still carries an address (D22).
-  const currentOwner = normalizeEmail(pres?.ownerEmail);
-  if (newOwnerEmail === currentOwner) {
-    return badRequest(res, 'Cannot transfer ownership to the current owner');
-  }
-
-  // Verify new owner exists in organization
-  const users = await listUsers(storageScope);
-
-  const newOwnerUser = users.find(
-    (u) => normalizeEmail(u.email) === newOwnerEmail,
+  const result = await transferOwnership(
+    storageScope,
+    { actor: authedUser },
+    {
+      presentationId: id,
+      newOwnerEmail: body.newOwnerEmail,
+      keepAsCollaborator: body.keepAsCollaborator,
+    },
   );
-  if (!newOwnerUser) {
-    return badRequest(res, 'New owner must be a member of the organization');
-  }
-
-  // Whether to keep old owner as collaborator
-  const keepAsCollaborator = body?.keepAsCollaborator !== false; // Default true
-
-  const result = await transferPresentationOwnership(storageScope, id, {
-    newOwnerEmail,
-    previousOwnerEmail: currentOwner,
-    keepAsCollaborator,
-    actorEmail: authedUser?.email,
-  });
-
-  if (!result.ok) {
-    return jsonError(res, 400, result.reason, 'Ownership transfer failed');
-  }
-
-  // Create activity event (non-blocking)
-  try {
-    await createActivityEvent(storageScope, {
-      eventType: EVENT_TYPES.OWNERSHIP_TRANSFERRED,
-      entityType: ENTITY_TYPES.PRESENTATION,
-      entityId: id,
-      presentationId: id,
-      actorEmail: authedUser?.email,
-      actorName: authedUser?.name,
-      data: {
-        previousOwner: currentOwner,
-        newOwner: newOwnerEmail,
-        presentationTitle: pres.title,
-      },
-    });
-  } catch (err) {
-    log.error('[ownership] Failed to create activity event:', err);
-  }
-
-  // Notify new owner (non-blocking)
-  try {
-    const host = req.headers.host || 'localhost';
-    const protocol = req.headers['x-forwarded-proto'] || 'http';
-    const editUrl = `${protocol}://${host}/app/${id}`;
-
-    const notifResult = await createNotification(storageScope, {
-      userEmail: newOwnerEmail,
-      notificationType: 'ownership_received',
-      title: `${authedUser?.name || authedUser?.email} transferred ownership to you`,
-      body: `You are now the owner of "${pres.title || 'Untitled presentation'}".`,
-      presentationId: id,
-      actorEmail: authedUser?.email,
-      actorName: authedUser?.name,
-      actionUrl: editUrl,
-      data: { presentationTitle: pres.title },
-    });
-
-    if (notifResult.ok) {
-      broadcastToUser(
-        newOwnerEmail,
-        NotificationEventTypes.NEW,
-        notifResult.notification,
-      );
-    }
-  } catch (err) {
-    log.error('[ownership] Failed to create notification:', err);
-  }
-
-  serveJson(res, 200, {
-    ok: true,
-    presentation: result.presentation,
-    previousOwner: currentOwner,
-    newOwner: newOwnerEmail,
-    previousOwnerKeptAsCollaborator:
-      keepAsCollaborator && result.collaboratorAdded,
-  });
-
+  serveJson(res, 200, { ok: true, ...result });
   return true;
 }

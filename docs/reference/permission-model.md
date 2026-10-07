@@ -69,9 +69,12 @@ Storage and cache:
 Enforcement seam and the routes that hand grants out:
 
 - `server/services/presentations.js` — `loadPresentationForActor` (load +
-  decide, for `read` / `write` / `delete` / `manage` / `comment`, on every
-  contract) and `mayOnPresentation` (the same decision on a deck already
-  loaded, as a boolean).
+  decide, for `read` / `write` / `delete` / `manage` / `transfer` /
+  `comment` / `moderate`, on every contract) and `mayOnPresentation` (the
+  same decision on a deck already loaded, as a boolean).
+- `server/services/ownership.js` — `transferOwnership` (the hand-over: loads
+  with `access: 'transfer'`, refuses the input before the write, leaves the
+  activity row and the new owner's notification; B573).
 - `server/utils/route-middleware.js` — `withPresentationAuth` (the internal
   adapter: the service's refusal as a 404/403 response) and
   `withPresentationReadAuth` (the same, plus a guest-session fallback).
@@ -191,6 +194,7 @@ public API through `getPresentationWithAccess`, MCP through
    found".
 3. Then the requested right on top (`write` → `canWritePresentation`,
    `delete` → `canDeletePresentation`, `manage` → `canManageCollaborators`,
+   `transfer` → `canTransferOwnership`,
    `comment` → `canCommentOnPresentation`, with the collaborator row wherever
    the decider reads one). `false` → **403**.
 4. Return the presentation.

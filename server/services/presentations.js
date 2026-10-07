@@ -56,6 +56,7 @@ import {
   canActorCommentOnPresentation,
   canActorResolveComment,
   canRestorePresentation,
+  canTransferOwnership,
   canGuestComment,
 } from '../utils/presentation-authz/index.js';
 import {
@@ -74,7 +75,7 @@ import {
  * @typedef {import('./actor.js').Actor} Actor
  * @typedef {import('./actor.js').ServiceIdentity} ServiceIdentity
  * @typedef {import('../storage/scope.js').StorageScope} StorageScope
- * @typedef {'read'|'write'|'delete'|'manage'|'comment'|'moderate'} PresentationAccess
+ * @typedef {'read'|'write'|'delete'|'manage'|'transfer'|'comment'|'moderate'} PresentationAccess
  */
 
 /**
@@ -100,6 +101,11 @@ const ACTOR_RIGHTS = {
     allows: canActorManageCollaborators,
     refusal:
       'Only the owner or an admin collaborator can manage this presentation',
+  },
+  // Hand the deck to someone else: the owner stamp alone (D43, B573).
+  transfer: {
+    allows: (pres, actor) => canTransferOwnership({ user: actor, pres }),
+    refusal: 'Only the presentation owner can transfer ownership',
   },
   comment: {
     allows: canActorCommentOnPresentation,
