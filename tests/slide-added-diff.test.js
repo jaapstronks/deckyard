@@ -12,7 +12,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert';
 
-import { diffAddedSlideIds } from '../server/routes/api/presentations/helpers.js';
+import { diffAddedSlideIds } from '../server/services/save-presentation.js';
 
 const S = (...ids) => ids.map((id) => ({ id }));
 

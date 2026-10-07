@@ -49,9 +49,6 @@ const ROUTES_BASELINE = 0;
  * empty.
  */
 const OPEN_STORAGE_EDGES = {
-  // The PUT's plain save (B608: one deck save, shared with the editor's PUT).
-  'server/routes/public-api/v1/presentations.js -> server/storage/presentations/index.js':
-    'B608',
   // The AI wizard's update after the create (B609: a create that carries its
   // content, shared with the internal wizards and MCP's creates).
   'server/routes/public-api/v1/ai.js -> server/storage/presentations/index.js':
