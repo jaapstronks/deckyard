@@ -1,7 +1,6 @@
 import { lockDocumentScroll } from '../editor-utils.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { confirmModal, createModal } from '../../../lib/dom/modal.js';
-import { createInlineError } from '../../../lib/dom/inline-error.js';
+import { confirmModal } from '../../../lib/dom/modal.js';
 import {
   cleanStr,
   uniq,
@@ -14,21 +13,37 @@ import { aiAltTextEnabled } from '../../../lib/state/features.js';
 import { defaultLang } from '../../../lib/format/i18n.js';
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 
-export function openImageKitPicker({
-  title = t('imagekit.title', 'ImageKit'),
+/**
+ * The ImageKit panel: search, browse and pick one asset. It is the content of
+ * the dialog the picker seam opens (`media/picker-provider.js`), not a dialog
+ * of its own (B410): the seam copies the pick into own media, shows a refused
+ * copy in `refusal` and closes on success. The panel only awaits `onPick` to
+ * stay busy meanwhile.
+ *
+ * @param {Object} opts
+ * @param {Function} opts.api
+ * @param {HTMLElement} opts.root - host for the panel's own confirm dialogs
+ * @param {Object|null} [opts.context]
+ * @param {string} [opts.docId]
+ * @param {string} [opts.note] - shown in the detail pane when picks cannot succeed
+ * @param {HTMLElement} opts.refusal - the seam's refusal message, placed beside "Use"
+ * @param {(picked: Object) => Promise<{ok: boolean, error?: string}>} opts.onPick
+ * @returns {{ el: HTMLElement, detach: () => void }}
+ */
+export function createImageKitPanel({
   api,
   root,
   context = null,
   docId = '',
   note = '',
+  refusal,
   onPick,
 } = {}) {
   if (typeof api !== 'function')
-    throw new Error('openImageKitPicker: api is required');
-  if (!root) throw new Error('openImageKitPicker: root is required');
+    throw new Error('createImageKitPanel: api is required');
+  if (!root) throw new Error('createImageKitPanel: root is required');
 
   const unlockScroll = lockDocumentScroll();
-  let closed = false;
 
   // ImageKit stores a single ALT string per asset, so this picker seeds one
   // language rather than the library's full map. Which one is not "English" by
@@ -36,20 +51,6 @@ export function openImageKitPicker({
   // subset (D72 #5); the label and the AI request both read it off that.
   const seedLang = defaultLang();
   const seedLangName = getLangDisplayName(seedLang);
-
-  const modal = createModal({
-    title,
-    modalClass: 'imagekit-modal',
-    fill: true,
-    onClose: () => {
-      closed = true;
-      unlockScroll();
-    },
-  });
-  const close = () => {
-    if (closed) return;
-    modal.close();
-  };
 
   const statusLine = h('div', { class: 'help ui-status-line' });
 
@@ -423,8 +424,6 @@ export function openImageKitPicker({
     });
     updateAltCheckbox.checked = altKey && !existingAltSeed;
 
-    const useError = createInlineError();
-
     let submitting = false;
     const btnUse = h('button', {
       class: 'btn btn-primary',
@@ -435,7 +434,6 @@ export function openImageKitPicker({
         submitting = true;
         btnUse.disabled = true;
         try {
-          useError.clear();
           const seed = cleanStr(altTa.value);
           if (!seed) {
             const ok = await confirmModal(root, {
@@ -473,34 +471,21 @@ export function openImageKitPicker({
             }
           }
 
-          // Keep the dialog open until the copy succeeds.
-          let failure = null;
+          // The seam copies, shows a refusal and closes on success; the
+          // panel only stays busy until it has answered.
           try {
             setBusy(true);
             statusLine.textContent = t('imagekit.use.working', 'One moment…');
-            await onPick?.({
+            await onPick({
               url: cleanStr(urlOut.value) || cleanStr(selected?.url),
               fileId: cleanStr(selected?.fileId),
               altSeed: seed,
               tags: uniq(selected?.tags),
             });
-          } catch (e) {
-            failure = e;
           } finally {
             setBusy(false);
-            btnUse.disabled = false;
             statusLine.textContent = '';
           }
-          // After setBusy(false), so the button the refusal names can take focus.
-          if (failure) {
-            useError.show(
-              cleanStr(failure?.message) ||
-                t('imagekit.use.failed', 'Could not use this image.'),
-              { control: btnUse },
-            );
-            return;
-          }
-          close();
         } finally {
           submitting = false;
           btnUse.disabled = false;
@@ -578,7 +563,7 @@ export function openImageKitPicker({
         { class: 'imagekit-detail-actions' },
         [btnGenerateAlt, btnUse].filter(Boolean),
       ),
-      useError.el,
+      refusal,
     );
   };
 
@@ -681,9 +666,6 @@ export function openImageKitPicker({
     h('div', { class: 'imagekit-detail-pane' }, [detail]),
   ]);
 
-  modal.append(layout);
-  modal.show(root);
-
   // Initial boot
   (async () => {
     try {
@@ -719,4 +701,6 @@ export function openImageKitPicker({
       setBusy(false);
     }
   })();
+
+  return { el: layout, detach: unlockScroll };
 }

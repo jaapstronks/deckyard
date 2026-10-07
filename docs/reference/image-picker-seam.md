@@ -8,8 +8,8 @@ the inline WYSIWYG popover) through its own DAM.
 ## The shape
 
 `client/views/editor/media/picker-provider.js` exports
-`createImagePickerSeam({ h, root, features, openImageLibrary,
-openBundledGradients, openImageKit })`, which returns a single
+`createImagePickerSeam({ root, features, openImageLibrary,
+openBundledGradients, createImageKitPanel, importImageKitToOwnMedia })`, which returns a single
 `openImagePicker(opts)` function (with a `.providers` array attached for
 feature-detection at call sites).
 
@@ -32,9 +32,11 @@ Enabled providers, in chooser order:
   `openImageLibraryPicker` (local/S3 upload + Unsplash/Giphy).
 - **bundled gradients** (`bundled`) — enabled whenever its raw opener is
   injected. See [`bundled-gradients.md`](bundled-gradients.md).
-- **ImageKit** (`imagekit`) — enabled whenever its raw opener is injected. Its
-  pick is [copied into own media](#copy-on-pick-imagekit) before it reaches a
-  slide.
+- **ImageKit** (`imagekit`) — enabled whenever its panel factory is injected.
+  Its pick is [copied into own media](#copy-on-pick-imagekit) before it reaches
+  a slide, and the seam owns its dialog ([the DAM slot](#the-dam-slot-createimagekitpanel)).
+  `openImageKit` (an opener with a dialog of its own) is retired; passing it
+  throws.
 
 Two different kinds of gate decide whether an opener is injected, and
 `createImagePickers` (`client/views/editor/image-pickers.js`) resolves both:
@@ -105,13 +107,52 @@ so a failure leaves the slide exactly as it was.
 - **Failure** — the adapter throws one sentence for every refused copy
   (`editor.image.imagekit.copyFailed`), whatever the server said or whether it
   answered no URL at all; the server's message is not display text.
-  `openImageKitPicker` shows that sentence as an inline refusal beside "Use this image" and keeps the dialog open, one
-  click from a retry. There is no fallback to the external URL: a silent
+  The seam shows that sentence as an inline refusal in its dialog (the
+  in-app panel places it beside "Use this image") and keeps the dialog open,
+  one click from a retry. There is no fallback to the external URL: a silent
   hot-link is the outcome the feature exists to prevent.
 - **No own media** (`IMAGEKIT_ONLY`, uploads off): `importImageKitToOwnMedia` is not injected. The adapter refuses the pick, the picker explains that uploads must be enabled, and the slide remains unchanged. A direct request to the endpoint is also refused with `uploads_disabled`. There is no external-URL fallback.
 
 The server half (which URL it will fetch, and why that is not a proxy) is in
 [`media-library.md`](media-library.md) § _Flows_.
+
+## The DAM slot (`createImageKitPanel`)
+
+The `imagekit` slot takes a **panel factory**, not a dialog: the in-app
+`createImageKitPanel` (`client/views/editor/imagekit-picker/index.js`), or the
+external picker a fork mounts there (an iframe on its own DAM). The seam owns
+the dialog around it, so the refusal contract holds for any panel without the
+panel having to learn it (B410; before, a fork's picker fired `onPick`, closed
+its own dialog, and a refused copy vanished without a word).
+
+```js
+createImageKitPanel({ docId, context, note, refusal, onPick, cancel })
+  → { el, detach }
+```
+
+- **`onPick(picked)`** — async and refusable. It resolves
+  `{ ok: true }` or `{ ok: false, error }` and never rejects. On `ok` the seam
+  has closed the dialog and told the call site; on a refusal the dialog is
+  still open, the slide is unchanged and the seam already shows `error`. A
+  panel awaits it only to stay busy; one that does not await it gets the same
+  outcome.
+- **`refusal`** — the seam's inline message (`createInlineError`, callout).
+  Place it beside the panel's "use" button; a panel that leaves it unplaced
+  gets it above the panel, so a refusal cannot go unseen
+  ([feedback-surfaces.md](feedback-surfaces.md): a refusal of the form on
+  screen is inline).
+- **`cancel()`** — close without a pick. Ignored while a copy runs; the
+  dialog is busy then, so Escape, the backdrop and the close button wait too.
+- **`note`** — the sentence to show when no pick can succeed here (no own
+  media), else `''`.
+- **The panel never closes the dialog.** It has no handle to it. A second
+  pick while a copy runs is ignored by the seam, not copied twice.
+- **`detach()`** runs when the dialog closes, however it closes.
+
+The dialog title is `opts.title` from the call site, else the provider's
+`label`, so a fork that relabels the provider titles its dialog with it.
+Pinned by `tests/imagekit-copy-on-pick-seam.test.js`, including a stub panel
+that neither awaits `onPick` nor places the refusal.
 
 ## Adding a provider (fork or upstream)
 
