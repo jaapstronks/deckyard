@@ -4,7 +4,7 @@
  */
 
 import { createUiModeSwitcher } from '../ui-mode-switcher.js';
-import { t } from '../../lib/ui-i18n.js';
+import { t, withSessionLocaleParam } from '../../lib/ui-i18n.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { h } from '../../lib/dom/index.js';
 import { nav } from '../../lib/state/router.js';
@@ -116,6 +116,7 @@ export function createViewerTopbar({
       const u = new URL(`/present/${id}`, location.origin);
       const deckLang = normalizeLang(pres?.i18n?.active);
       if (deckLang) u.searchParams.set('lang', deckLang);
+      withSessionLocaleParam(u);
       window.open(u.pathname + u.search, '_blank', 'noopener,noreferrer');
     },
   });

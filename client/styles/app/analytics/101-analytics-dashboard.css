@@ -235,15 +235,18 @@
 }
 
 /* Bottom Row */
+/* `minmax(0, …)`, not a bare `fr`: a bare track never shrinks below its
+   content's min-content, so on a phone the Top-Performing table widened the
+   one column, and with it the page, past the viewport (B357). */
 .dashboard-bottom-row {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: var(--ps-space-4);
 }
 
 @media (max-width: 1024px) {
   .dashboard-bottom-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -303,6 +306,19 @@
 
 .dashboard-top-row:last-child td {
   border-bottom: none;
+}
+
+/* A table never wraps below its min-content: should the four columns still
+   not fit, the card scrolls them sideways rather than the page. */
+.dashboard-top-card {
+  overflow-x: auto;
+}
+
+@media (max-width: 640px) {
+  .dashboard-top-table th,
+  .dashboard-top-table td {
+    padding-inline: var(--ps-space-2);
+  }
 }
 
 /* Source Breakdown */

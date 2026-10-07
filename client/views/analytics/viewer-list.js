@@ -238,7 +238,7 @@ function createSessionRow(session) {
   viewerText = session.viewerEmail
     ? session.viewerEmail
     : session.deviceId
-      ? t('analytics.deviceLabel', 'Device {{id}}…', {
+      ? t('analytics.deviceLabel', 'Device {id}…', {
           id: session.deviceId.substring(0, 8),
         })
       : t('analytics.anonymous', 'Anonymous');
@@ -253,7 +253,7 @@ function createSessionRow(session) {
   // Exit slide display
   const exitSlide =
     session.exitSlideIndex != null
-      ? t('analytics.slideNumber', 'Slide {{num}}', {
+      ? t('analytics.slideNumber', 'Slide {num}', {
           num: session.exitSlideIndex + 1,
         })
       : '-';

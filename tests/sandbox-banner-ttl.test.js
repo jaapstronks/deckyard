@@ -13,6 +13,9 @@
  *   3. **No locale hardcodes a number** in `sandbox.banner.text`; every one
  *      carries `{hours}`.
  *
+ * Plus where it is mounted: not on the presenter or follow-along screens the
+ * audience sees (B357).
+ *
  * Run with: node --test tests/sandbox-banner-ttl.test.js
  */
 
@@ -123,6 +126,21 @@ test('the banner shows the configured TTL in the shipped EN and NL copy', async 
   setFeatures({ sandboxMode: false });
   syncSandboxBanner();
   assert.equal(document.querySelector('.sandbox-banner'), null);
+});
+
+test('the banner stays off the screens the audience sees (B357)', () => {
+  setFeatures({ sandboxMode: true, sandboxTtlHours: 24 });
+  for (const name of ['present', 'presentWindow', 'follow']) {
+    syncSandboxBanner(name);
+    assert.equal(document.querySelector('.sandbox-banner'), null, name);
+  }
+  // Back in the editor it is mounted again, once.
+  syncSandboxBanner('edit');
+  assert.equal(document.querySelectorAll('.sandbox-banner').length, 1);
+  // Navigating to the presenter unmounts the banner that was there.
+  syncSandboxBanner('present');
+  assert.equal(document.querySelector('.sandbox-banner'), null);
+  setFeatures({ sandboxMode: false });
 });
 
 test('no locale hardcodes the TTL in sandbox.banner.text', async () => {

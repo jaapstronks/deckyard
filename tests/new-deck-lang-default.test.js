@@ -22,7 +22,9 @@ import {
   resolveInitialDeckLang,
   setSupportedLangs,
   defaultLang,
+  readLangMode,
 } from '../client/lib/format/i18n.js';
+import { setUiLocale } from '../client/lib/ui-i18n.js';
 
 // setSupportedLangs is module-level state; restore the NL/EN default after any
 // test that narrows it so ordering can't leak.
@@ -107,4 +109,26 @@ test('locale mapping returns null for a language the organization lacks', () => 
   assert.equal(langFromUiLocale('pt-BR'), null);
   assert.equal(langFromUiLocale(''), null);
   assert.equal(langFromUiLocale(null), null);
+});
+
+// readLangMode() is the app-wide deck language (Preferences, library previews,
+// imports). It used to fall straight back to defaultLang(), so an English
+// sandbox guest with nothing stored saw NL everywhere but the new-deck modal
+// (B357). It now follows the same precedence, reading the live UI locale.
+test('readLangMode follows the UI locale when nothing is stored', async () => {
+  const prevFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({ ok: true, json: async () => ({}) });
+  try {
+    // No localStorage in node, so there is no stored preference.
+    await setUiLocale('en', { persist: false });
+    assert.equal(readLangMode(), 'en-GB');
+    await setUiLocale('nl', { persist: false });
+    assert.equal(readLangMode(), 'nl');
+    // A UI locale with no matching deck language falls back to the workspace.
+    await setUiLocale('de', { persist: false });
+    assert.equal(readLangMode(), defaultLang());
+  } finally {
+    await setUiLocale('nl', { persist: false });
+    globalThis.fetch = prevFetch;
+  }
 });

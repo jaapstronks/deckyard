@@ -7,6 +7,7 @@
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
+import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 
 const LEVELS = [
   {
@@ -135,7 +136,7 @@ export async function openSubscriptionModal({ api, toast, presentationId }) {
   }
   syncSelected();
 
-  modalApi.content.append(
+  const body = h('div', { class: 'stack' }, [
     h('div', {
       class: 'help',
       text: t(
@@ -144,6 +145,17 @@ export async function openSubscriptionModal({ api, toast, presentationId }) {
       ),
     }),
     list,
-  );
+  ]);
+  // The same greyed-out "why" as the notification card in Preferences: a
+  // sandbox guest has no account to notify, so a per-deck level does nothing.
+  disableForSandbox({
+    content: body,
+    message: t(
+      'sandbox.settings.notifications',
+      'Notifications are off in the sandbox — a guest has no account to notify. In your own Deckyard, get email or Slack/Teams alerts when someone comments.',
+    ),
+  });
+
+  modalApi.content.append(body);
   modalApi.show(document.body);
 }

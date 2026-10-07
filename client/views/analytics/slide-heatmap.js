@@ -74,7 +74,7 @@ export function createSlideHeatmap({ slides, presentation }) {
       role: 'list',
       'aria-label': t(
         'analytics.heatmapAriaLabel',
-        'Slide engagement heatmap showing {{count}} slides',
+        'Slide engagement heatmap showing {count} slides',
         { count: slideData.length },
       ),
     });
@@ -97,7 +97,7 @@ export function createSlideHeatmap({ slides, presentation }) {
         role: 'listitem',
         'aria-label': t(
           'analytics.slideCardAriaLabel',
-          'Slide {{num}}: {{title}}, {{views}} views, {{time}} average time, {{engagement}}% engagement',
+          'Slide {num}: {title}, {views} views, {time} average time, {engagement}% engagement',
           {
             num: slideIndex + 1,
             title: slideTitle,

@@ -82,7 +82,7 @@ export function createTimelineChart({ data }) {
         h('desc', {
           text: t(
             'analytics.chartDescription',
-            'Chart showing {{count}} data points with {{total}} total views',
+            'Chart showing {count} data points with {total} total views',
             {
               count: chartData.length,
               total: totalViews,
@@ -149,7 +149,7 @@ export function createTimelineChart({ data }) {
         'data-views': String(d.views),
         'data-date': d.date,
         role: 'graphics-symbol',
-        'aria-label': t('analytics.barAriaLabel', '{{date}}: {{views}} views', {
+        'aria-label': t('analytics.barAriaLabel', '{date}: {views} views', {
           date: formatDateShort(d.date),
           views: d.views,
         }),
