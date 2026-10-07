@@ -68,12 +68,6 @@ export function getSessionLocaleOverride() {
 }
 
 /**
- * Drop the per-session URL-param override. An explicit in-session locale save
- * supersedes the deep-link param, so the stored preference regains authority
- * for the rest of the session (a reload with the param still in the URL
- * re-establishes it via resolveInitialUiLocale).
- */
-/**
  * Carry the session's UI-locale override onto a URL that opens a new window.
  *
  * A popup opened with `noopener` (the Present window) gets a fresh
@@ -91,6 +85,12 @@ export function withSessionLocaleParam(url) {
   return url;
 }
 
+/**
+ * Drop the per-session URL-param override. An explicit in-session locale save
+ * supersedes the deep-link param, so the stored preference regains authority
+ * for the rest of the session (a reload with the param still in the URL
+ * re-establishes it via resolveInitialUiLocale).
+ */
 export function clearSessionLocaleOverride() {
   sessionParamLocale = null;
   writeSessionLocaleRecord(null);
