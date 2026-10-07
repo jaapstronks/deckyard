@@ -22,6 +22,10 @@ import { DECK_FORMAT_ID } from './deck-format-id.js';
 import { isTextField } from './text-fields.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 import {
+  TEXT_STYLE_REFUSAL_REASONS,
+  acceptedTextStyles,
+} from './text-styles.js';
+import {
   CORE_NAMESPACE,
   TYPE_ID_PATTERN,
   canonicalTypeName,
@@ -180,11 +184,51 @@ function itemsToJsonSchema(field) {
 }
 
 /**
+ * JSON Schema for `content.textStyles`: exactly the keys the type offers, and
+ * per key exactly the properties and values it takes (`acceptedTextStyles()`,
+ * the derivation the write path refuses against). Closed at both levels while
+ * `content` stays lenient, because the server refuses rather than prunes here:
+ * an unoffered key, property or value is a 400, so the contract says so.
+ * Null for a type that offers nothing; it then publishes no `textStyles`.
+ * @param {any} def - the slide-type definition
+ * @returns {object|null}
+ */
+function textStylesJsonSchema(def) {
+  const accepted = acceptedTextStyles(def);
+  const keys = Object.keys(accepted);
+  if (!keys.length) return null;
+  const properties = {};
+  for (const key of keys) {
+    const props = {};
+    for (const [prop, values] of Object.entries(accepted[key])) {
+      props[prop] = { enum: values };
+    }
+    properties[key] = {
+      type: 'object',
+      properties: props,
+      additionalProperties: false,
+    };
+  }
+  return {
+    type: 'object',
+    description:
+      'Alignment and size for the text this slide type offers styling on, ' +
+      'one key per offer: a field (`body`), every item of a list ' +
+      '(`quotes.*.quote`) or a set of fields styled as one (`@<id>`). ' +
+      'Anything else is refused with 400 `invalid` and `details.reason` ' +
+      `one of ${TEXT_STYLE_REFUSAL_REASONS.map((r) => `\`${r}\``).join(', ')}.`,
+    properties,
+    additionalProperties: false,
+  };
+}
+
+/**
  * JSON Schema for one slide type's `content` object.
  *
  * Only fields that pass `isPublishedField()` become `properties`: a `hidden`
  * field is a representation the editor still reads, not something the
- * published contract should promise.
+ * published contract should promise. A type that offers text styling also
+ * publishes `textStyles` ({@link textStylesJsonSchema}).
  * @param {string} typeName
  * @param {any} def - the slide-type definition (with `fields[]`)
  * @param {{withMeta?: boolean}} [opts] - withMeta adds `$id`/`$schema` (for a
@@ -201,6 +245,8 @@ export function slideTypeContentSchema(typeName, def, opts = {}) {
     properties[field.key] = fieldToJsonSchema(field);
     if (field.required) required.push(field.key);
   }
+  const textStyles = textStylesJsonSchema(def);
+  if (textStyles) properties.textStyles = textStyles;
   /** @type {any} */
   const schema = {
     title: `${typeName} slide content`,

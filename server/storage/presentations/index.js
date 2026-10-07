@@ -57,6 +57,12 @@ const STALE_REVISION_MESSAGE =
   'Conflict: this presentation was updated by someone else. Reload and try again.';
 
 /**
+ * The slide write seam, for a caller that must know a write will pass before
+ * it creates anything (MCP `create_presentation_from_slides`).
+ */
+export { normalizeSlides };
+
+/**
  * List the presentations of the storageScope's organization.
  * @param {import('../scope.js').StorageScope} storageScope
  * @returns {Promise<Array>}
