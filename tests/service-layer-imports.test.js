@@ -49,18 +49,14 @@ const ROUTES_BASELINE = 0;
  * empty.
  */
 const OPEN_STORAGE_EDGES = {
-  // The AI wizard's update after the create (B609: a create that carries its
-  // content, shared with the internal wizards and MCP's creates).
-  'server/routes/public-api/v1/ai.js -> server/storage/presentations/index.js':
-    'B609',
   // The translation write (B610: one translate, shared with the internal route
   // and the translate worker).
   'server/routes/public-api/v1/translate.js -> server/storage/presentations/index.js':
     'B610',
-  // The creates' update and normalizeSlides pre-check (B609), and the
-  // slide-set writes of remove_slide, reorder_slides, append_slides,
-  // compress_presentation and iterate_presentation (B611).
-  'server/mcp/tools.js -> server/storage/presentations/index.js': 'B609, B611',
+  // The slide-set writes of remove_slide, reorder_slides, append_slides,
+  // compress_presentation and iterate_presentation (B611). The creates'
+  // update and normalizeSlides pre-check went with B609.
+  'server/mcp/tools.js -> server/storage/presentations/index.js': 'B611',
 };
 
 function listJs(dir) {

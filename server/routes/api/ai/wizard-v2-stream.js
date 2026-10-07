@@ -35,7 +35,7 @@ import {
   loadSlideTypeContext,
   loadAiThemeContext,
   reattachAiMeta,
-  createPresentationWithI18n,
+  createDeckFromParts,
 } from './shared.js';
 
 /**
@@ -258,7 +258,7 @@ export async function handleAiWizardV2Stream({
       },
     });
 
-    const updated = await createPresentationWithI18n(storageScope, {
+    const updated = await createDeckFromParts(storageScope, {
       parts,
       lang,
       authedUser,

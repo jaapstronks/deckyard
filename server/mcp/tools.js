@@ -7,10 +7,7 @@
 
 import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
-import {
-  normalizeSlides,
-  updatePresentation,
-} from '../storage/presentations/index.js';
+import { updatePresentation } from '../storage/presentations/index.js';
 import { loadPresentationChecked, mcpActor } from './presentation-access.js';
 import { singleOrganizationScope } from '../storage/scope.js';
 import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
@@ -468,7 +465,6 @@ export function registerTools(
       // Refused before the generation, so a refused call costs no LLM call;
       // the deck is the session owner's (B521).
       assertCreatableDeckInput(args);
-      const effectiveOwner = getOwner(context);
       // Checked before the generation, so an unknown theme costs no LLM call.
       const { themeId: theme, theme: themeObj } = await settleNewDeckTheme(
         repoRoot,
@@ -486,35 +482,30 @@ export function registerTools(
         vendor: vendor || null,
       });
 
-      // Create and save the presentation
+      // One create carries the generated slides (B609); no empty deck is
+      // written first and filled afterwards.
       const parts = deckToPresentationParts(deck, { theme: themeObj, lang });
       if (title) parts.title = title;
 
       const created = await createPresentation(
         storageScopeOf(context),
         { actor: actorOf(context) },
-        { title: parts.title, theme, lang: lang || undefined },
-      );
-
-      const updated = await updatePresentation(
-        storageScopeOf(context),
-        created.id,
         {
-          ...created,
-          slides: parts.slides,
           title: parts.title,
+          slides: parts.slides,
+          theme,
+          lang: lang || undefined,
         },
-        await actingIdentity(effectiveOwner),
       );
 
       const slideTypes = await sessionSlideTypes(context);
-      const deckLang = resolveDocLangFromPresentation(updated);
+      const deckLang = resolveDocLangFromPresentation(created);
       const result = {
-        id: updated.id,
-        title: updated.title,
+        id: created.id,
+        title: created.title,
         theme,
-        slideCount: updated.slides?.length || 0,
-        slides: (updated.slides || []).map((s, i) => ({
+        slideCount: created.slides?.length || 0,
+        slides: (created.slides || []).map((s, i) => ({
           index: i,
           type: s.type,
           title: slideTitle(s, getSlideType(s.type, slideTypes), {
@@ -522,8 +513,8 @@ export function registerTools(
           }),
         })),
       };
-      const editUrl = presentationUrl(updated.id, 'edit');
-      const presentUrl = presentationUrl(updated.id, 'present');
+      const editUrl = presentationUrl(created.id, 'edit');
+      const presentUrl = presentationUrl(created.id, 'present');
       if (editUrl) result.editUrl = editUrl;
       if (presentUrl) result.presentUrl = presentUrl;
       return result;
@@ -607,8 +598,6 @@ export function registerTools(
       }
       assertCreatableDeckInput(args);
 
-      const effectiveOwner = getOwner(context);
-
       // Strip incoming `id` fields so storage assigns fresh UUIDs; preserve type/content/notes.
       let inputSlides = slides.map((s) => ({
         type: s?.type,
@@ -667,27 +656,18 @@ export function registerTools(
         validatedSlides = inputSlides;
       }
 
-      // The write seam refuses what no validation above checks (a text style
-      // the type does not offer). Run it before the stub row exists, so a
-      // refusal leaves no empty deck behind; it is pure without a deck id.
-      normalizeSlides(
-        validatedSlides.map((s) => ({ type: s.type, content: s.content })),
-        { slideTypes },
-      );
-
-      // Create stub row, then write the slide payload in one update.
+      // One create carries the slides (B609). The write seam inside it
+      // refuses what no validation above checks (a text style the type does
+      // not offer) before any row exists, so a refusal leaves no empty deck
+      // behind; the factory re-keys ids and `presentation-id` instance keys
+      // against the new deck, so the slide factory needs no deck id here.
       const created = await createPresentation(
         storageScopeOf(context),
         { actor: actorOf(context) },
-        { title, theme, lang },
-      );
-
-      const updated = await updatePresentation(
-        storageScopeOf(context),
-        created.id,
         {
-          ...created,
           title,
+          theme,
+          lang,
           slides: validatedSlides.map((s) => ({
             ...newSlide({
               type: s.type,
@@ -695,35 +675,28 @@ export function registerTools(
               slideTypes,
               theme: themeObj,
               lang,
-              presentationId: created.id,
             }),
             notes: s.notes || '',
           })),
         },
-        await actingIdentity(effectiveOwner),
       );
-      if (updated?.ok === false) {
-        throw new Error(
-          `updatePresentation failed: ${updated.reason || 'unknown'}`,
-        );
-      }
 
       const result = {
-        id: updated.id,
-        title: updated.title,
+        id: created.id,
+        title: created.title,
         theme,
         lang,
-        slideCount: updated.slides?.length || 0,
-        slides: (updated.slides || []).map((s, i) => ({
+        slideCount: created.slides?.length || 0,
+        slides: (created.slides || []).map((s, i) => ({
           index: i,
           type: s.type,
           title: slideTitle(s, getSlideType(s.type, slideTypes), {
-            lang: resolveDocLangFromPresentation(updated),
+            lang: resolveDocLangFromPresentation(created),
           }),
         })),
       };
-      const editUrl = presentationUrl(updated.id, 'edit');
-      const presentUrl = presentationUrl(updated.id, 'present');
+      const editUrl = presentationUrl(created.id, 'edit');
+      const presentUrl = presentationUrl(created.id, 'present');
       if (editUrl) result.editUrl = editUrl;
       if (presentUrl) result.presentUrl = presentUrl;
       if (validation === 'fix') result.appliedFixes = appliedFixes;

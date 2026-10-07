@@ -116,7 +116,7 @@ Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 - `server/routes/api/ai/shared.js` — the `AiContext` typedef and the
   shared helpers: `loadSlideTypeContext` (org disabled + custom types),
   `loadAiThemeContext` (backgrounds, brand colours, presets),
-  `reattachAiMeta`, `createPresentationWithI18n`.
+  `reattachAiMeta`, `createDeckFromParts`.
 - `wizard.js` (50) — `POST /api/ai/wizard`, the v1 one-shot path.
 - `wizard-v2-stream.js` (257) — `POST /api/ai/wizard-v2/stream`, the two-phase
   path. The one wizard-v2 route: the non-streaming `wizard-v2` and
@@ -164,7 +164,7 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
   type, structured content, presenter notes and a presenter-facing reasoning
   per slide; `validateAndFixRefinedSlides` repairs the result;
   `assembleDeck` prepends a title slide and emits a `deckyard.deck` document;
-  `createPresentationWithI18n` persists it. Progress is streamed as SSE status
+  `createDeckFromParts` persists it. Progress is streamed as SSE status
   events, then the finished presentation.
 - **One-shot generation** (`POST /api/ai/wizard`) — the v1 path, still used by
   the "new presentation" modal: a single prompt via
