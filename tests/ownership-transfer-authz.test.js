@@ -1,5 +1,5 @@
 /**
- * Ownership transfer — behaviour through the route (B115).
+ * Ownership transfer — behaviour through the route (B115, B573).
  *
  * `server/routes/api/presentations/ownership.js` carries the heaviest write a
  * deck has: it moves the deck out of one person's hands into another's, and
@@ -14,6 +14,11 @@
  * grant either; that is the same design B114 pinned on the guest surface:
  * `isAdmin` is a flag on the actor, `isUnrestricted` is the operator bypass,
  * and only the second one opens ownership-scoped gates.
+ *
+ * The decision lives in `transferOwnership` (`server/services/ownership.js`,
+ * B573); the route only parses and answers. The internal contract is the only
+ * one that offers the handling (no v1 or MCP transfer), so this file is the
+ * test per contract.
  *
  * The endpoint is singular. The B115 item speaks of "transfer/claim endpoints";
  * there is no claim endpoint — `POST /api/presentations/:id/transfer-ownership`
@@ -332,10 +337,10 @@ test('the new owner is notified, and the deck records the transfer', async () =>
   );
   assert.ok(received, 'the new owner hears about it');
   assert.equal(received.presentationId, pres.id);
-  assert.match(
-    String(received.actionUrl),
-    /^http:\/\/decks\.example\.test\/app\//,
-    'the link is built from the request host',
+  assert.equal(
+    received.actionUrl,
+    `/app/${pres.id}`,
+    'the link is relative, as every in-app notification link is; the request host never reaches it',
   );
 
   const { events } = await listActivityEvents(testScope(), {
@@ -477,6 +482,8 @@ test('a transfer with no newOwnerEmail is a 400', async () => {
     body: {},
   });
   assert.equal(res.statusCode, 400);
+  assert.equal(jsonBody(res).error, 'invalid');
+  assert.equal(jsonBody(res).details?.field, 'newOwnerEmail');
   await assertStillOwnedBy(pres.id, OWNER, 'nothing moved');
 });
 
@@ -497,7 +504,8 @@ test('transferring to yourself is a 400, whatever the casing', async () => {
     body: { newOwnerEmail: 'OWNER@EXAMPLE.COM' },
   });
   assert.equal(res.statusCode, 400);
-  assert.equal(jsonBody(res).error, 'bad_request');
+  assert.equal(jsonBody(res).error, 'invalid');
+  assert.equal(jsonBody(res).details?.field, 'newOwnerEmail');
   assert.match(String(jsonBody(res).message), /current owner/i);
   await assertStillOwnedBy(pres.id, OWNER, 'nothing moved');
 });
@@ -509,7 +517,46 @@ test('transferring to a non-member is a 400, and names no user', async () => {
     body: { newOwnerEmail: 'outsider@elsewhere.test' },
   });
   assert.equal(res.statusCode, 400);
+  assert.equal(jsonBody(res).error, 'invalid');
+  assert.equal(jsonBody(res).details?.field, 'newOwnerEmail');
+  assert.match(String(jsonBody(res).message), /member of the organization/);
   await assertStillOwnedBy(pres.id, OWNER, 'nothing moved');
+});
+
+test('a keepAsCollaborator that is not a boolean is a 400, not a guess', async () => {
+  // The route used to read anything but `false` as "keep": a string "false"
+  // kept the previous owner on the deck. One meaning per value (B573).
+  const pres = await seed();
+  const { res } = await call('POST', transferPath(pres.id), {
+    as: OWNER,
+    body: { newOwnerEmail: HEIR.email, keepAsCollaborator: 'false' },
+  });
+  assert.equal(res.statusCode, 400);
+  assert.equal(jsonBody(res).error, 'invalid');
+  assert.equal(jsonBody(res).details?.field, 'keepAsCollaborator');
+  await assertStillOwnedBy(pres.id, OWNER, 'nothing moved');
+  const notes = await listNotifications(testScope(), HEIR.email);
+  assert.equal(
+    notes.filter((n) => n.presentationId === pres.id).length,
+    0,
+    'and a refused transfer notifies nobody',
+  );
+});
+
+test('a refusal names who may transfer, and leaves no trail', async () => {
+  const pres = await seed();
+  const { res } = await call('POST', transferPath(pres.id), {
+    as: EDITOR,
+    body: { newOwnerEmail: HEIR.email },
+  });
+  assert.equal(res.statusCode, 403);
+  assert.equal(jsonBody(res).error, 'forbidden');
+  assert.match(String(jsonBody(res).message), /owner can transfer/);
+  const { events } = await listActivityEvents(testScope(), {
+    presentationId: pres.id,
+    eventType: 'presentation.ownership_transferred',
+  });
+  assert.equal(events.length, 0, 'no activity row for a refused transfer');
 });
 
 // ===========================================================================

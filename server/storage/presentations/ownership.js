@@ -61,6 +61,10 @@ export async function transferPresentationOwnership(
     log.error('[ownership] Failed to update presentation:', err);
     return { ok: false, reason: 'update_failed' };
   }
+  // A refused update is not a transfer: hand the refusal on instead of
+  // reporting success over an owner that did not move.
+  if (!updated) return { ok: false, reason: 'not_found' };
+  if (updated.ok === false) return updated;
 
   // Remove new owner from collaborators if they were one
   try {
