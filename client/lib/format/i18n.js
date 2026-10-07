@@ -1,5 +1,6 @@
 import { storage } from '../storage.js';
 import { queryString } from '../state/router.js';
+import { getUiLocale } from '../ui-i18n.js';
 import {
   DEFAULT_DECK_LANG,
   DEFAULT_SUPPORTED_DECK_LANGS,
@@ -84,8 +85,20 @@ export function readStoredLangMode() {
   return normalized && supportedSet.has(normalized) ? normalized : null;
 }
 
+/**
+ * The deck language the app works in: the stored preference, else the UI
+ * locale mapped onto a supported deck language, else the workspace's first
+ * supported language. The same precedence as `resolveInitialDeckLang()`, so a
+ * visitor with no stored choice who reads the app in English gets English
+ * library previews, an English import and "EN" in Preferences, rather than
+ * the head of `supportedSlideLangs` (B357).
+ * @returns {string}
+ */
 export function readLangMode() {
-  return readStoredLangMode() || defaultLang();
+  return resolveInitialDeckLang({
+    storedLang: readStoredLangMode(),
+    uiLocale: getUiLocale(),
+  });
 }
 
 // The query-string key that carries a **deck** language. `?lang=` is the oldest

@@ -26,6 +26,32 @@ let manifestCache = null;
 // URL's choice winning over a saved preference for the session.
 let sessionParamLocale = null;
 
+// "The whole session" outlives one document: a reload drops the param from the
+// URL, and the Present popup is a new document opened with `window.open`. Both
+// started with `sessionParamLocale = null`, so the sandbox guest's server
+// default (`en`) won again — editor Dutch, presenter window English (B357). The
+// override is therefore mirrored into sessionStorage, which survives a reload
+// and which a `window.open` child inherits from its opener, and read back when
+// a document starts without the param.
+const SS_UI_LOCALE_SESSION = 'ps-ui-locale-session';
+
+function readSessionLocaleRecord() {
+  try {
+    return normalizeUiLocale(sessionStorage.getItem(SS_UI_LOCALE_SESSION));
+  } catch {
+    return null;
+  }
+}
+
+function writeSessionLocaleRecord(locale) {
+  try {
+    if (locale) sessionStorage.setItem(SS_UI_LOCALE_SESSION, locale);
+    else sessionStorage.removeItem(SS_UI_LOCALE_SESSION);
+  } catch {
+    // No sessionStorage (private mode, node): the override lasts one document.
+  }
+}
+
 /**
  * The per-session UI-locale override from a `?locale=` URL param, or
  * null when the session was not deep-linked with a valid locale. Lets callers
@@ -46,6 +72,7 @@ export function getSessionLocaleOverride() {
  */
 export function clearSessionLocaleOverride() {
   sessionParamLocale = null;
+  writeSessionLocaleRecord(null);
 }
 
 // Component files that make up the full translation dictionary — the `ui`-loader
@@ -131,7 +158,8 @@ export function readUiLocaleParam(search) {
  * session, and recorded as the session override (see getSessionLocaleOverride)
  * so it also outranks the server-side `uiLocale` once settings load. Otherwise
  * the stored/default locale is used. Precedence:
- * URL param (known) > server preference > localStorage > default.
+ * URL param (known) > the session's recorded param (sessionStorage) > server
+ * preference > localStorage > default.
  *
  * The URL param therefore takes priority for the whole session — chiefly the
  * sandbox guest, whose default `uiLocale` is English and would otherwise clobber
@@ -154,9 +182,18 @@ export async function resolveInitialUiLocale(search) {
     if (match) {
       const id = String(match.id).trim();
       sessionParamLocale = id;
+      writeSessionLocaleRecord(id);
       writeUiLocale(id);
       return id;
     }
+  }
+  // No (valid) param on this document: an override recorded earlier in the
+  // session — before a reload, or in the window that opened this one — still
+  // holds.
+  const recorded = readSessionLocaleRecord();
+  if (recorded) {
+    sessionParamLocale = recorded;
+    return recorded;
   }
   return readUiLocale();
 }
