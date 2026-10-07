@@ -132,8 +132,13 @@ export async function changeVisibility(scope, identity, input = {}) {
     if (typeof isViewOnly !== 'boolean') {
       throw invalid('isViewOnly', 'isViewOnly must be a boolean');
     }
+    // The author pair, not the owner alone: view-only is the deck-wide
+    // author lock, the same mark as a slide lock (D49), so the refusal names
+    // the pair as the decider reads it.
     if (!(await canActorSetViewOnly(pres, actor))) {
-      throw new ForbiddenError('Only the owner can set view-only status');
+      throw new ForbiddenError(
+        'Only an author (owner or creator) can set view-only status',
+      );
     }
     if (isViewOnly && visibility !== 'organization') {
       throw invalid(

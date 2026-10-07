@@ -245,7 +245,10 @@ Where the deciders differ from that shape, they differ deliberately:
   `changeVisibility` loads with `read` and asks it on top
   (`canActorChangeVisibility`), so read is its floor like every other deck
   right, and an admin cannot change a deck they cannot read (B574). The
-  view-only flag is `isPresentationAuthor`'s (`canActorSetViewOnly`).
+  view-only flag is `isPresentationAuthor`'s (`canActorSetViewOnly`): it is
+  the deck-wide author lock, the same mark as a slide lock, so under D49 it
+  stays with the author pair rather than moving to the owner alone (decided
+  at the B574 review).
   It does not read sandbox mode: where sharing is declared off (sandbox,
   D181) the service refuses `→ organization` before the decider runs, for
   everyone.
