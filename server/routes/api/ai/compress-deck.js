@@ -22,7 +22,7 @@ import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.
  */
 export const handleAiCompressDeck = withErrorHandler(
   'ai-compress-deck',
-  async ({ req, res, authedUser }) => {
+  async ({ req, res, storageScope }) => {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -39,7 +39,7 @@ export const handleAiCompressDeck = withErrorHandler(
     const recommendations = await analyzeForCompression(presentation, {
       targetReduction,
       vendor,
-      slideTypes: await buildMergedSlideTypes(authedUser),
+      slideTypes: await buildMergedSlideTypes(storageScope),
     });
 
     if (
