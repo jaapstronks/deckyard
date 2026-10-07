@@ -53,16 +53,22 @@ export default {
       type: 'enum',
       required: false,
       options: [
-        sharedOption(
-          'editor.slideField.layout.option.two-column',
-          'two-column',
-          'Two columns',
-        ),
-        sharedOption(
-          'editor.slideField.layout.option.one-column',
-          'one-column',
-          'One column',
-        ),
+        {
+          ...sharedOption(
+            'editor.slideField.layout.option.two-column',
+            'two-column',
+            'Two columns',
+          ),
+          icon: 'cols-2',
+        },
+        {
+          ...sharedOption(
+            'editor.slideField.layout.option.one-column',
+            'one-column',
+            'One column',
+          ),
+          icon: 'cols-1',
+        },
       ],
     },
     // Two of the three shared stands: `auto` keeps the default sizing and

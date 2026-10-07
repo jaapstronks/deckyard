@@ -143,14 +143,14 @@ export const IMAGE_ROLE_FIELD = {
   options: [
     {
       value: 'content',
-      label: 'Meaningful (needs alt text)',
+      label: 'Meaningful',
       labelKey: 'editor.slideField.imageRole.option.content.label',
       title: 'This image conveys information and should have alt text.',
       titleKey: 'editor.slideField.imageRole.option.content.title',
     },
     {
       value: 'decorative',
-      label: 'Decorative (no alt)',
+      label: 'Decorative',
       labelKey: 'editor.slideField.imageRole.option.decorative.label',
       title: 'This image is decorative; it will be hidden from screen readers.',
       titleKey: 'editor.slideField.imageRole.option.decorative.title',
@@ -176,8 +176,22 @@ export const IMAGE_SIDE_FIELD = {
   type: 'enum',
   required: false,
   options: [
-    sharedOption('editor.slideField.imageSide.option.left', 'left', 'Left'),
-    sharedOption('editor.slideField.imageSide.option.right', 'right', 'Right'),
+    {
+      ...sharedOption(
+        'editor.slideField.imageSide.option.left',
+        'left',
+        'Left',
+      ),
+      icon: 'side-left',
+    },
+    {
+      ...sharedOption(
+        'editor.slideField.imageSide.option.right',
+        'right',
+        'Right',
+      ),
+      icon: 'side-right',
+    },
   ],
   formLayout: 'pair',
 };

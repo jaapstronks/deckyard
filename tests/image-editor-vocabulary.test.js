@@ -144,14 +144,14 @@ test('image-slide: the fit control offers the default derived from imageDefaults
   const { editorMount } = renderForm({ type: 'image-slide' });
   const options = optionsFor(editorMount, 'fit');
   assert.ok(options, 'fit control renders');
-  // imageDefaults.fit is 'cover', so the empty option names Fill (crop).
-  assert.ok(
-    options.some((o) => o.startsWith('Default') && o.includes('Fill')),
-    `derived default option, got ${JSON.stringify(options)}`,
-  );
-  assert.ok(
-    options.some((o) => o.includes('Fit (no crop)')),
-    'contain option',
+  // Three distinct names (B457); what Default resolves to (imageDefaults.fit
+  // is 'cover') is the default option's title, not a repeat of "Fill".
+  assert.deepEqual(options, ['Default', 'Fill', 'Fit']);
+  const field = fieldFor(editorMount, 'fit');
+  assert.match(
+    field.querySelector('[data-value=""]').getAttribute('title'),
+    /Fill/,
+    'the default names what it resolves to',
   );
 });
 
@@ -278,9 +278,10 @@ test('image-set: images render through the generic collection editor', () => {
   const options = Array.from(
     fitControls[0].querySelectorAll('.sb-segmented-btn'),
   ).map((el) => el.textContent.trim());
-  assert.ok(
-    options.some((o) => o.startsWith('Default') && o.includes('Fill')),
-    `the item widget also carries the derived default, got ${JSON.stringify(options)}`,
+  assert.deepEqual(
+    options,
+    ['Default', 'Fill', 'Fit'],
+    'the item widget also carries the default option',
   );
   const labels = labelsOf(editorMount);
   assert.ok(

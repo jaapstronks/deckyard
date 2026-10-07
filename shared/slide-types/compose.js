@@ -111,16 +111,24 @@ function withGlobalSlideFields(def) {
       label: 'Background fit',
       required: false,
       options: [
-        sharedOption(
-          'editor.slideField.slideBgFit.option.cover',
-          'cover',
-          'Fill (crop)',
-        ),
-        sharedOption(
-          'editor.slideField.slideBgFit.option.contain',
-          'contain',
-          'Fit (no crop)',
-        ),
+        {
+          ...sharedOption(
+            'editor.slideField.slideBgFit.option.cover',
+            'cover',
+            'Fill',
+          ),
+          title: 'Fill the slide; the edges may be cropped',
+          titleKey: 'editor.slideField.slideBgFit.title.cover',
+        },
+        {
+          ...sharedOption(
+            'editor.slideField.slideBgFit.option.contain',
+            'contain',
+            'Fit',
+          ),
+          title: 'Show the whole image; nothing is cropped',
+          titleKey: 'editor.slideField.slideBgFit.title.contain',
+        },
       ],
     });
   }

@@ -113,11 +113,20 @@ const enumField = (el, label) =>
   [...el.querySelectorAll('.is-field')].find(
     (f) => f.querySelector('.field-label')?.textContent.trim() === label,
   );
-const pick = (field, value) =>
+// A segmented button or a dropdown, whichever the options fit (B457).
+const pick = (field, value) => {
+  const select = field.querySelector('select');
+  if (select) {
+    select.value = value;
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+    return;
+  }
   field
     .querySelector(`[data-value="${value}"]`)
     .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+};
 const picked = (field) =>
+  field.querySelector('select')?.value ??
   field.querySelector('[aria-pressed="true"]')?.getAttribute('data-value');
 
 test('a click on a row title selects the row and names the clicked text', () => {

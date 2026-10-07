@@ -939,35 +939,3 @@ table.csv-grid {
   width: 34px;
   padding: var(--ps-space-1-5) 0;
 }
-
-.sb-swatch {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  /* Hook: set inline by `views/editor/fields/enum.js`. */
-  background: var(--swatch, transparent);
-  box-shadow: 0 0 0 1px hsl(var(--app-border-default));
-}
-
-.sb-swatch.sb-swatch-transparent {
-  background:
-    linear-gradient(
-      45deg,
-      hsl(var(--app-text-secondary) / 0.18) 25%,
-      transparent 25%,
-      transparent 75%,
-      hsl(var(--app-text-secondary) / 0.18) 75%
-    ),
-    linear-gradient(
-      45deg,
-      hsl(var(--app-text-secondary) / 0.18) 25%,
-      transparent 25%,
-      transparent 75%,
-      hsl(var(--app-text-secondary) / 0.18) 75%
-    );
-  background-position:
-    0 0,
-    6px 6px;
-  background-size: 12px 12px;
-  background-color: hsl(var(--app-bg-sunken));
-}
