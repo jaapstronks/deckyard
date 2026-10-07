@@ -550,7 +550,9 @@ export function createSaveManager({
     } catch (e) {
       savingToast?.dismiss?.();
       // Conflict: someone else saved a newer version. Stop autosave spam and ask user to reload.
-      if (Number(e?.statusCode) === 409) {
+      // Only the revision conflict blocks: another 409 (a deck over the size
+      // limit) is a refusal of this save, shown like any other error.
+      if (e?.code === 'conflict') {
         blockedByConflict = true;
         lastError = t(
           'editor.save.conflict',

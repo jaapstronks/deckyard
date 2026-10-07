@@ -8,8 +8,6 @@
 import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
 import {
-  listPresentations,
-  getPresentation,
   normalizeSlides,
   updatePresentation,
 } from '../storage/presentations/index.js';
@@ -17,23 +15,25 @@ import { loadPresentationChecked, mcpActor } from './presentation-access.js';
 import { singleOrganizationScope } from '../storage/scope.js';
 import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
-  listComments,
-  listRecentCommentsForOwner,
-} from '../storage/presentations/comments.js';
-import {
   enrichCommentsWithSlideContext,
   slideContextFor,
 } from '../services/comment-slide-context.js';
-import { createComment, setCommentStatus } from '../services/comments.js';
+import {
+  createComment,
+  listComments,
+  listRecentComments,
+  setCommentStatus,
+} from '../services/comments.js';
 import {
   assertCreatableDeckInput,
   createPresentation,
   deletePresentation,
   duplicatePresentation,
+  DECK_LIST_OWNERSHIPS,
+  listPresentationsForActor,
   publicDeckTimestamps,
 } from '../services/presentations.js';
 import { updateSlide, addSlide } from '../services/slides.js';
-import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import {
   deckToPresentationParts,
   newSlide,
@@ -110,21 +110,6 @@ function presentationUrl(id, mode = 'edit', { slideId } = {}) {
   const path = mode === 'edit' ? 'app' : mode;
   const anchor = slideId ? `?slideId=${encodeURIComponent(slideId)}` : '';
   return `${base}/${path}/${id}${anchor}`;
-}
-
-/**
- * Parse an optional `since` tool argument into a normalized ISO string.
- * Throws on unparseable input so the model gets a clear error.
- */
-function parseSince(since) {
-  if (!since) return null;
-  const parsed = new Date(since);
-  if (Number.isNaN(parsed.getTime())) {
-    throw new Error(
-      `Invalid since value: ${since} (use an ISO 8601 date/datetime)`,
-    );
-  }
-  return parsed.toISOString();
 }
 
 /** Render the service's conversion refusal in MCP's tool vocabulary. */
@@ -338,57 +323,31 @@ export function registerTools(
 
   server.tool(
     'list_presentations',
-    'List presentations you can access. Returns id, title, theme, creation date, and slide count for each. Use `ownership` to include decks shared with you (collaborator access): "owned" (default), "shared", or "all".',
+    'List presentations you can access. Returns id, title, theme, creation date, and slide count for each, newest first. Use `ownership` to choose which decks: "owned" (default; decks you own or made), "collection" (yours plus every organization-visible deck, as on Home), "shared" (decks shared with you as a collaborator), or "all" (every deck you can open).',
     {
       type: 'object',
       properties: {
         limit: {
           type: 'number',
-          description: 'Max results (default: 50)',
+          description: 'Max results, a whole number from 1 (default: 50)',
         },
         ownership: {
           type: 'string',
           description:
-            'Which decks to include: "owned" (default), "shared" (decks shared with you), or "all" (union). Shared decks require the DB storage backend.',
-          enum: ['owned', 'shared', 'all'],
+            'Which decks to include: "owned" (default), "collection" (owned plus organization-visible), "shared" (decks shared with you), or "all" (collection plus shared). Any other value is refused.',
+          enum: [...DECK_LIST_OWNERSHIPS],
         },
       },
     },
     async ({ limit = 50, ownership = 'owned' } = {}, context) => {
       const owner = getOwner(context);
-      const validOwnership = ['owned', 'shared', 'all'].includes(ownership)
-        ? ownership
-        : 'owned';
-      const ctx = storageScopeOf(context);
+      const { presentations, total } = await listPresentationsForActor(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { ownership, limit },
+      );
 
-      // Collect owned and/or shared decks, de-duplicated by id (a deck could
-      // appear in both lists in edge cases). Shared lookups are DB-only and
-      // resolve to [] in file mode.
-      const decks = [];
-      const seen = new Set();
-
-      if (validOwnership === 'owned' || validOwnership === 'all') {
-        const all = await listPresentations(storageScopeOf(context));
-        const owned = owner ? all.filter((p) => p.ownerEmail === owner) : all;
-        for (const p of owned) {
-          if (!seen.has(p.id)) {
-            seen.add(p.id);
-            decks.push(p);
-          }
-        }
-      }
-
-      if ((validOwnership === 'shared' || validOwnership === 'all') && owner) {
-        const shared = await listPresentationsSharedWithUser(ctx, owner);
-        for (const p of shared) {
-          if (!seen.has(p.id)) {
-            seen.add(p.id);
-            decks.push(p);
-          }
-        }
-      }
-
-      const items = decks.slice(0, limit).map((p) => {
+      const items = presentations.map((p) => {
         // slideCount: try slides array, then slideCount property, else omit.
         // list sources may not include the full slides array (too heavy).
         const slideCount = Array.isArray(p.slides)
@@ -413,9 +372,9 @@ export function registerTools(
 
       return {
         presentations: items,
-        total: decks.length,
+        total,
         ownerFilter: owner || null,
-        ownership: validOwnership,
+        ownership,
       };
     },
     { readOnly: true, permission: 'read' },
@@ -1771,16 +1730,11 @@ export function registerTools(
       },
       context,
     ) => {
-      const ctx = storageScopeOf(context);
-
-      const pres = await getCheckedPresentation(presentationId, context);
-
-      const comments = await listComments(ctx, presentationId, {
-        status: status === 'all' ? undefined : status,
-        slideId: slideId || undefined,
-        since: parseSince(since) || undefined,
-        includeReplies,
-      });
+      const { comments, presentation: pres } = await listComments(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { presentationId, status, slideId, since, includeReplies },
+      );
 
       // Slide context reflects the deck as it is now; the stored
       // slideSnapshot on each comment shows the slide at create time.
@@ -1849,35 +1803,14 @@ export function registerTools(
       context,
     ) => {
       const owner = getOwner(context);
-      const { comments, total } = await listRecentCommentsForOwner(
+      const { items: listed, total } = await listRecentComments(
         storageScopeOf(context),
-        {
-          ownership,
-          authorEmail: authorEmail || null,
-          status,
-          since: parseSince(since) || null,
-          limit,
-        },
+        { ownership, authorEmail, status, since, limit },
       );
-
-      // Load each referenced deck once for current slide context.
-      const presCache = new Map();
-      const presFor = async (id) => {
-        if (!presCache.has(id)) {
-          presCache.set(
-            id,
-            await getPresentation(storageScopeOf(context), id).catch(
-              () => null,
-            ),
-          );
-        }
-        return presCache.get(id);
-      };
 
       const slideTypes = await sessionSlideTypes(context);
       const items = [];
-      for (const c of comments) {
-        const pres = await presFor(c.presentationId);
+      for (const { comment: c, presentation: pres } of listed) {
         const item = {
           id: c.id,
           presentationId: c.presentationId,

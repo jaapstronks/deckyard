@@ -1,34 +1,3 @@
-/**
- * Ids of slides this actor added in a save: present in the client's submitted
- * deck, absent from the server's pre-save deck, and surviving into the saved
- * result. Diffing the *submitted* slides (not the merged result) keeps a
- * concurrent editor's merge-appended slides out of this actor's "added" set,
- * and intersecting with the result drops slides the merge rejected.
- *
- * @param {Array<{id?: string}>} existingSlides - deck before the save
- * @param {Array<{id?: string}>} submittedSlides - deck the client sent
- * @param {Array<{id?: string}>} updatedSlides - deck after the save
- * @returns {string[]} newly added slide ids (deduped, order of first appearance)
- */
-export function diffAddedSlideIds(
-  existingSlides,
-  submittedSlides,
-  updatedSlides,
-) {
-  const ids = (arr) =>
-    (Array.isArray(arr) ? arr : []).map((s) => s?.id).filter(Boolean);
-  const existingIds = new Set(ids(existingSlides));
-  const updatedIds = new Set(ids(updatedSlides));
-  const seen = new Set();
-  const added = [];
-  for (const sid of ids(submittedSlides)) {
-    if (existingIds.has(sid) || !updatedIds.has(sid) || seen.has(sid)) continue;
-    seen.add(sid);
-    added.push(sid);
-  }
-  return added;
-}
-
 export function parseIfMatchRevision(req) {
   const raw = String(req?.headers?.['if-match'] || '').trim();
   if (!raw) return null;
@@ -37,4 +6,50 @@ export function parseIfMatchRevision(req) {
   if (!m) return null;
   const n = Number(m[1]);
   return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * The slide-level merge inputs an editor save sends as headers, parsed into
+ * the save service's input (B608). A malformed header reads as absent, so the
+ * merge falls back to the plain revision check.
+ *
+ *   - `X-Modified-Slides`: JSON array of the slide ids this save changed;
+ *   - `X-Slide-Base-Fingerprints`: JSON object id → hash of each modified
+ *     slide's base, so the merge detects slides also changed server-side since
+ *     (shared/slide-fingerprint.js) instead of last-writer-wins;
+ *   - `X-Slides-Order-Changed`: whether the client reordered since its base;
+ *     `0` keeps the server's order authoritative (a stale tab must not
+ *     reshuffle the deck), absent means a legacy client and the old behaviour.
+ *
+ * @param {import('node:http').IncomingMessage} req
+ * @returns {{ modifiedSlideIds: string[]|null, slideBaseFingerprints: Object|null, clientReordered: boolean|null }}
+ */
+export function parseSlideMergeHeaders(req) {
+  const json = (name) => {
+    const raw = req?.headers?.[name];
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  };
+  const modified = json('x-modified-slides');
+  const fingerprints = json('x-slide-base-fingerprints');
+  const orderChanged = req?.headers?.['x-slides-order-changed'];
+  let clientReordered = null;
+  if (orderChanged === '1' || orderChanged === 'true') clientReordered = true;
+  else if (orderChanged === '0' || orderChanged === 'false') {
+    clientReordered = false;
+  }
+  return {
+    modifiedSlideIds: Array.isArray(modified) ? modified : null,
+    slideBaseFingerprints:
+      fingerprints &&
+      typeof fingerprints === 'object' &&
+      !Array.isArray(fingerprints)
+        ? fingerprints
+        : null,
+    clientReordered,
+  };
 }

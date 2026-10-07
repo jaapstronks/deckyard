@@ -4,10 +4,6 @@
  */
 
 import {
-  listPresentations,
-  updatePresentation,
-} from '../../../storage/presentations/index.js';
-import {
   getTagsForPresentations,
   getTagsForPresentation,
 } from '../../../storage/tags.js';
@@ -17,36 +13,27 @@ import {
   dispatchV1Routes,
   v1MethodNotAllowed,
   withV1ErrorHandler,
-  canAccessPresentation,
   getPresentationWithAccess,
   readApiV1Body,
   apiSuccess,
   apiCreated,
-  apiError,
 } from './middleware.js';
-import { parsePaginationParams } from '../../../utils/request-validators.js';
-import { changePresentationTheme } from '../../../storage/presentations/change-theme.js';
-import { normalizeLang } from '../../../../shared/i18n-utils.js';
+import {
+  parsePaginationParams,
+  parseQueryFlag,
+} from '../../../utils/request-validators.js';
+import { savePresentation } from '../../../services/save-presentation.js';
 import {
   createPresentation,
   deletePresentation,
   duplicatePresentation,
-  refuseRetiredDeckFields,
+  listPresentationsForActor,
   publicDeckTimestamps,
 } from '../../../services/presentations.js';
 
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
-
-/**
- * Filter presentations to only those accessible to the API key owner.
- * @param {Object[]} presentations
- * @param {Object} actor - The acting API-key owner (`ctx.authedUser`: `{id, email}`)
- */
-function filterByOwner(presentations, actor) {
-  return presentations.filter((p) => canAccessPresentation(p, actor));
-}
 
 /**
  * Strip internal fields from presentation for API response.
@@ -129,28 +116,22 @@ function sanitizeForList(pres, tags = [], requesterEmail = null) {
  * Query parameters:
  * - limit: max results per page (default 50, max 100)
  * - offset: pagination offset (default 0)
- * - viewOnly: if 'true', only return view-only presentations
+ * - viewOnly: 'true' only view-only presentations, 'false' only the others;
+ *   any other value is 400 `invalid` (`details.field: 'viewOnly'`)
  */
 async function handleList(ctx) {
   const { storageScope, apiKey, authedUser, url } = ctx;
 
   if (!requirePermission(ctx, 'read')) return true;
 
-  const list = await listPresentations(storageScope);
-  let filtered = filterByOwner(list, authedUser);
-
-  // Optional filters
-  const viewOnlyFilter = url.searchParams.get('viewOnly');
-
-  if (viewOnlyFilter === 'true') {
-    filtered = filtered.filter((p) => p?.isViewOnly === true);
-  }
-
+  // The page size keeps its documented clamp (default 50, max 100); who sees
+  // what and the viewOnly filter are the service's (B607).
   const { limit, offset } = parsePaginationParams(url.searchParams);
-
-  // Apply pagination
-  const total = filtered.length;
-  const paginated = filtered.slice(offset, offset + limit);
+  const { presentations: paginated, total } = await listPresentationsForActor(
+    storageScope,
+    { actor: authedUser },
+    { viewOnly: parseQueryFlag(url.searchParams, 'viewOnly'), limit, offset },
+  );
 
   // Fetch tags for all presentations
   const presentationIds = paginated.map((p) => p.id);
@@ -221,70 +202,25 @@ async function handleGet(ctx, id) {
  * PUT /api/v1/presentations/:id - Update a presentation.
  */
 async function handleUpdate(ctx, id) {
-  const { storageScope, apiKey } = ctx;
-
   if (!requirePermission(ctx, 'write')) return true;
-
-  const { ok, pres } = await getPresentationWithAccess(ctx, id, {
-    access: 'write',
-  });
-  if (!ok) return true;
 
   const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req, {
     requireObject: true,
   });
   if (!bodyOk) return true;
-  refuseRetiredDeckFields(body);
 
-  // Don't allow changing ownership via API
-  delete body.ownerEmail;
-  delete body.createdBy;
-
-  // The deck language is fixed at create; another language is a version of
-  // the deck, added through /translate. The same `lang` echoed back from a GET
-  // is fine; a different one is refused rather than silently dropped.
-  if (body.lang !== undefined && normalizeLang(body.lang) !== pres.lang) {
-    await apiError(
-      ctx,
-      400,
-      'lang cannot be changed: add a language version with POST /presentations/{id}/translate',
-      { details: { field: 'lang' } },
-    );
-    return true;
-  }
-
-  // A different `theme` is a theme switch, and that has one path (the
-  // editor's /change-theme route uses it too). The same theme echoed back
-  // from a GET is a plain save.
-  const switchesTheme = body.theme !== undefined && body.theme !== pres.theme;
-
-  // A thrown storage error (423 lock, 400 validation) is answered in the v1
-  // envelope by the mount-level withV1ErrorHandler wrap.
-  let updated;
-  if (switchesTheme) {
-    const result = await changePresentationTheme(storageScope, id, body, {
-      theme: body.theme,
-      actorEmail: apiKey.ownerEmail,
-    });
-    if (!result.ok) {
-      await apiError(ctx, 400, result.error, { details: { field: 'theme' } });
-      return true;
-    }
-    updated = result.presentation;
-  } else {
-    updated = await updatePresentation(storageScope, id, body, {
-      actorEmail: apiKey.ownerEmail,
-    });
-  }
-
-  if (!updated) {
-    await apiError(ctx, 404, 'Presentation not found');
-    return true;
-  }
+  // Loading, the refusals (owner, creator, lang, retired names), a theme
+  // switch and the storage result are the save service's (B608); a refusal
+  // is answered in the v1 envelope by the mount-level withV1ErrorHandler wrap.
+  const updated = await savePresentation(
+    ctx.storageScope,
+    { actor: ctx.authedUser },
+    { presentationId: id, changes: body },
+  );
 
   const tags = await getTagsForPresentation(ctx.storageScope, id);
   await apiSuccess(ctx, {
-    presentation: sanitizePresentation(updated, tags, apiKey.ownerEmail),
+    presentation: sanitizePresentation(updated, tags, ctx.apiKey.ownerEmail),
   });
   return true;
 }

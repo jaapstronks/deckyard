@@ -8,11 +8,6 @@ import {
   TIER_LIMITS,
   hasPermission,
 } from '../../../storage/api-keys.js';
-import {
-  normalizePresentationVisibility,
-  hasIdentity,
-  isOwnerOrCreator,
-} from '../../../utils/presentation-authz/index.js';
 import { resolveIdentityByEmail } from '../../../storage/identity-resolver.js';
 import {
   incrementUsage,
@@ -152,33 +147,6 @@ export function requirePermission(ctx, permission) {
 // ============================================================
 // AUTHORIZATION HELPERS
 // ============================================================
-
-/**
- * Synchronous ownership/visibility filter for presentation *listings* only: a
- * list predicate, not a per-deck right. A route that addresses one deck by id
- * asks {@link getPresentationWithAccess} (the service's
- * `loadPresentationForActor`) instead. Returns true if:
- * - Presentation has organization visibility
- * - API key owner matches presentation owner or creator
- *
- * No ownerless-legacy exception: per-deck reads would refuse those decks
- * anyway, so listing them only leaks titles (same invariant as the Home
- * collection filter).
- *
- * Note: this deliberately ignores the collaborator table (checking it per
- * deck in a list would be N queries); the per-deck check is collaborator-aware.
- * @param {Object} presentation - The presentation object
- * @param {Object} actor - The acting API-key owner (`ctx.authedUser`: `{id, email}`)
- * @returns {boolean}
- */
-export function canAccessPresentation(presentation, actor) {
-  if (!hasIdentity(actor)) return false;
-
-  const visibility = normalizePresentationVisibility(presentation?.visibility);
-  if (visibility === 'organization') return true;
-
-  return isOwnerOrCreator(actor, presentation);
-}
 
 /**
  * Fetch a presentation and verify access in one call — the v1 adapter over

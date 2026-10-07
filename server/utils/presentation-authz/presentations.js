@@ -119,6 +119,34 @@ export function canReadPresentation({
 }
 
 /**
+ * Whether a deck row belongs in a person's collection: the list predicate every
+ * deck list asks (`listPresentationsForActor` in server/services/presentations.js,
+ * B607), on all three contracts.
+ *
+ * It is {@link canReadPresentation} minus the two things a row in a list cannot
+ * carry cheaply: the collaborator row (one query per deck; decks shared with
+ * the person are listed from the collaborator table instead) and the
+ * organization stamp (the list query is already scoped on `organization_id`).
+ * So a card is only shown when opening it would succeed: no ownerless-legacy
+ * exception, which would only leave a dead card.
+ *
+ * @param {Object} params
+ * @param {Object} [params.user] - The actor.
+ * @param {Object} [params.pres] - A deck row as the list projects it.
+ * @returns {boolean}
+ */
+export function belongsInCollection({ user, pres } = {}) {
+  if (!pres || typeof pres !== 'object') return false;
+  // Auth-off single operator sees every deck (matches canReadPresentation).
+  if (isUnrestricted(user)) return true;
+  if (!hasIdentity(user)) return false;
+  if (normalizePresentationVisibility(pres.visibility) === 'organization') {
+    return true;
+  }
+  return isOwnerOrCreator(user, pres);
+}
+
+/**
  * Check if a user can write/edit a presentation.
  */
 export function canWritePresentation({

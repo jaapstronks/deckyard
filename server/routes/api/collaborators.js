@@ -15,8 +15,8 @@ import {
   listCollaborators,
   removeCollaborator,
   updateCollaboratorPermission,
-  listPresentationsSharedWithUser,
 } from '../../storage/collaborators.js';
+import { listPresentationsForActor } from '../../services/presentations.js';
 import { listUsers } from '../../storage/users.js';
 import { sendCollaboratorInviteEmail } from '../../integrations/brevo.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -83,9 +83,10 @@ async function handleSharedWithMe({ repoRoot, storageScope, res, authedUser }) {
     return unauthorized(res);
   }
 
-  const presentations = await listPresentationsSharedWithUser(
+  const { presentations } = await listPresentationsForActor(
     storageScope,
-    authedUser.email,
+    { actor: authedUser },
+    { ownership: 'shared' },
   );
 
   // Batch-fetch first slides for all presentations (avoids N+1 queries).

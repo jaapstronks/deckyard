@@ -274,10 +274,13 @@ paths:
             default: 0
         - name: viewOnly
           in: query
-          description: Filter to view-only presentations only
+          description: >-
+            `true` lists only view-only presentations, `false` only the
+            others. Any other value is refused with 400 `invalid` and
+            `details.field: viewOnly`.
           schema:
             type: string
-            enum: ['true']
+            enum: ['true', 'false']
       responses:
         '200':
           description: List of presentations
@@ -430,8 +433,14 @@ paths:
         - Presentations
       summary: Update a presentation
       description: >-
-        Updates an existing presentation. As on create, `themeId` and
-        `language` are refused with a 400 naming `theme` and `lang`.
+        Updates an existing presentation. A save never moves the owner or the
+        creator and never changes the deck language: the values a GET handed
+        out (`ownerEmail` as the owner's own address or `null`, the deck's
+        `lang`) are accepted as a plain save, and a different value is refused
+        with 400 `invalid` and `details.field` naming the field. As on create,
+        `themeId` and `language` are refused with a 400 naming `theme` and
+        `lang`. The same save backs the editor, so the same refusals hold
+        there.
       parameters:
         - name: id
           in: path
@@ -465,7 +474,7 @@ paths:
                   description: >-
                     Read-only after create. The deck's current `lang`, echoed
                     back from a GET, is accepted; a different value is refused
-                    with a 400. Add a language version with
+                    with 400 `invalid`, `details.field` = `lang`. Add a language version with
                     `POST /presentations/{id}/translate`.
                 slides:
                   type: array
@@ -489,6 +498,14 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: >-
+            The deck would exceed the size limits (`error: limit_exceeded`,
+            the message names the limit). Nothing is written.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '423':
           $ref: '#/components/responses/SlideLocked'
         '429':
@@ -1889,7 +1906,14 @@ paths:
                     format: date-time
                     nullable: true
         '400':
-          $ref: '#/components/responses/BadRequest'
+          description: |
+            A `status` outside its values or a `since` that is not a date is
+            refused with 400 `invalid`, `details.field` naming the parameter
+            (the same refusal the app and MCP give).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':

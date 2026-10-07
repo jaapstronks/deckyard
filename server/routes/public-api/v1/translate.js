@@ -7,11 +7,6 @@ import { updatePresentation } from '../../../storage/presentations/index.js';
 import { translatePresentationStrings } from '../../../utils/openai/translate.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import {
-  normalizeLang,
-  TRANSLATION_LANGS,
-  TRANSLATION_LANG_LABELS,
-} from '../../../storage/presentations/i18n.js';
-import {
   requirePermission,
   dispatchV1Routes,
   v1MethodNotAllowed,
@@ -23,7 +18,12 @@ import {
   apiSuccess,
   apiError,
 } from './middleware.js';
-import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  normalizeLang,
+  TRANSLATION_LANGS,
+  TRANSLATION_LANG_LABELS,
+} from '../../../../shared/i18n-utils.js';
 
 // ============================================================
 // ROUTE HANDLERS

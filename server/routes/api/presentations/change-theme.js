@@ -3,11 +3,10 @@
  * Analyzes theme compatibility and applies theme changes.
  */
 
-import { changePresentationTheme } from '../../../storage/presentations/change-theme.js';
+import { changeTheme } from '../../../services/theme.js';
 import {
   serveJson,
   methodNotAllowed,
-  notFound,
   badRequest,
   requireJsonBody,
 } from '../../../utils/http.js';
@@ -168,15 +167,6 @@ export async function handleChangeTheme(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const pres = await withPresentationAuth({
-    storageScope,
-    id,
-    authedUser,
-    res,
-    permission: 'write',
-  });
-  if (!pres) return true;
-
   // Parse request body
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
@@ -187,16 +177,13 @@ export async function handleChangeTheme(
     return badRequest(res, 'newThemeId is required');
   }
 
-  const result = await changePresentationTheme(storageScope, id, pres, {
-    theme: newThemeId,
-    convertSlides,
-    actorEmail: authedUser?.email,
-  });
-  if (!result.ok) return badRequest(res, result.error);
-  if (!result.presentation) return notFound(res);
+  // Loading, the write right and the switch are `services/theme.js`; a
+  // refusal is thrown and `withErrorHandler` renders it.
+  const presentation = await changeTheme(
+    storageScope,
+    { actor: authedUser },
+    { presentationId: id, theme: newThemeId, convertSlides },
+  );
 
-  return serveJson(res, 200, {
-    success: true,
-    presentation: result.presentation,
-  });
+  return serveJson(res, 200, { success: true, presentation });
 }

@@ -231,6 +231,23 @@ export function validatePermission(permission, res) {
 // ============================================================
 
 /**
+ * A boolean query flag as a service reads it: `true`/`false`, absent as
+ * `undefined`, and any other value passed on unchanged so the service refuses
+ * it with the field named, instead of this parser reading it as "off".
+ *
+ * @param {URLSearchParams} searchParams
+ * @param {string} key
+ * @returns {boolean|string|undefined}
+ */
+export function parseQueryFlag(searchParams, key) {
+  const raw = searchParams.get(key);
+  if (raw === null) return undefined;
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  return raw;
+}
+
+/**
  * Parse pagination parameters from URL search params.
  * Provides consistent parsing with configurable defaults and limits.
  *
