@@ -105,6 +105,9 @@ async function render() {
   const myGen = ++renderGen;
   const r = route();
   const root = $('#app');
+  // The banner lives outside the view root, so the route decides it here:
+  // it stays off the presenter and follow-along screens the audience sees.
+  syncSandboxBanner(r.name);
 
   /**
    * Await a view's mount and take ownership of its cleanup.
