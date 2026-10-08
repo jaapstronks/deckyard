@@ -123,8 +123,6 @@
   transition:
     border-color var(--ps-transition-fast),
     box-shadow var(--ps-transition-fast);
-  /* Enable container queries for dynamic thumb scaling */
-  container-type: inline-size;
 }
 
 .ps-lib-card:hover {

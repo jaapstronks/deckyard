@@ -387,6 +387,14 @@
   padding: var(--ps-space-3) 0 var(--ps-space-4);
 }
 
+/* On a phone the 180px minimum leaves one column, and six full-width previews
+   turn a secondary shelf into a long scroll; two columns keep it a shelf. */
+@media (max-width: 640px) {
+  .home-blocks-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 .home-block-card {
   position: relative;
   display: flex;
