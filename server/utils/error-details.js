@@ -24,7 +24,9 @@
  *   quota that was hit (`resource`, `limit`, `used`); `missing_alt` the first
  *   picture publishing refused (`lang`, `slideIndex`, `slideId`, `field`,
  *   `itemIndex`, `itemField`) and how many there are (`count`); `in_use` the
- *   count of what still uses a custom slide type being deleted (`usage`).
+ *   count of what still uses a custom slide type being deleted (`usage`);
+ *   `unsupported_conversion` the refused type pair and the types the source
+ *   does convert to (`from`, `to`, `convertible`).
  *
  * Enforcement sits at the two emission points that know the code —
  * `jsonError()` (`server/utils/http.js`) and `AppError.toJSON()`
@@ -81,6 +83,9 @@ export const PAYLOAD_KEYS = Object.freeze({
   maintenance: Object.freeze(['active', 'reason', 'retryAfter']),
   sandbox_quota_exceeded: Object.freeze(['resource', 'limit', 'used']),
   in_use: Object.freeze(['usage']),
+  // The pair a slide-type change refused and what the source type does
+  // convert to (`refuseUnsupportedConversion`, services/slides.js; B624).
+  unsupported_conversion: Object.freeze(['from', 'to', 'convertible']),
   missing_alt: Object.freeze([
     'lang',
     'slideIndex',

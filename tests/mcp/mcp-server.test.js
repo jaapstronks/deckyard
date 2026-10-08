@@ -319,8 +319,12 @@ describe('McpServer', () => {
         }),
       );
 
+      // An unexpected failure answers with a fixed sentence; the message is
+      // internal detail and goes to the log only (B624).
       assert.ok(resp.result.isError);
-      assert.ok(resp.result.content[0].text.includes('Something went wrong'));
+      const { text } = resp.result.content[0];
+      assert.ok(text.includes('Internal server error'));
+      assert.ok(!text.includes('Something went wrong'));
     });
 
     it('works with empty arguments', async () => {

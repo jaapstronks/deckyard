@@ -45,6 +45,11 @@ import {
   VISIBILITY_PRESETS,
   validateVisibility,
 } from '../../shared/slide-visibility.js';
+import {
+  AppError,
+  UnauthorizedError,
+  ValidationError,
+} from '../utils/errors.js';
 import { generateDeckV2 } from '../utils/ai/index.js';
 import {
   validateAndFixRefinedSlides,
@@ -126,13 +131,14 @@ function mcpConversionRefusal(err, slideIndex, slideTypes) {
   const converts = convertible.length
     ? `A ${from} converts only to: ${convertible.join(', ')}.`
     : `A ${from} converts to no other type.`;
-  const refusal = new Error(
+  return new AppError(
     `Cannot change slide ${slideIndex} from ${from} to ${to}: no conversion is declared for that pair, so its content would not carry over. ${converts} ` +
       `To replace it, add a ${to} slide with add_slide, then either remove this one with remove_slide or keep it as a draft with update_slide ` +
       `(visibility: ${JSON.stringify(VISIBILITY_PRESETS.draft)}), which hides it from the presentation, exports and published pages.`,
+    err.statusCode,
+    { from, to, convertible },
+    err.code,
   );
-  refusal.details = { from, to, convertible };
-  return refusal;
 }
 
 /**
@@ -566,7 +572,7 @@ export function registerTools(
         auto_prepend_title = false,
       } = args;
       if (!Array.isArray(slides) || slides.length === 0) {
-        throw new Error('"slides" must be a non-empty array');
+        throw new ValidationError('"slides" must be a non-empty array');
       }
       assertCreatableDeckInput(args);
 
@@ -619,9 +625,11 @@ export function registerTools(
           );
         } catch (err) {
           if (err instanceof RawSlideValidationError) {
-            const wrapped = new Error(`Validation failed: ${err.message}`);
-            wrapped.details = err.details;
-            throw wrapped;
+            // The issue under the one list strict slide validation uses
+            // (`bad_request`'s `errors`), so a caller reads it the same way.
+            throw new ValidationError(`Validation failed: ${err.message}`, {
+              errors: [err.message],
+            });
           }
           throw err;
         }
@@ -711,7 +719,7 @@ export function registerTools(
         access: 'write',
       });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
-        throw new Error(
+        throw new ValidationError(
           `Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`,
         );
       }
@@ -719,7 +727,7 @@ export function registerTools(
       if (visibility !== undefined) {
         const errors = validateVisibility(visibility);
         if (visibility === null || errors.length > 0) {
-          throw new Error(
+          throw new ValidationError(
             `Invalid visibility: ${errors.join('; ') || 'must be an object'}`,
           );
         }
@@ -847,7 +855,7 @@ export function registerTools(
         access: 'write',
       });
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
-        throw new Error(`Slide index ${slideIndex} out of range`);
+        throw new ValidationError(`Slide index ${slideIndex} out of range`);
       }
 
       const slide = pres.slides[slideIndex];
@@ -859,7 +867,9 @@ export function registerTools(
       });
 
       if (!result?.content)
-        throw new Error('Conversion failed — no content returned');
+        // The provider answered without a slide: an upstream failure whose
+        // sentence is still worth showing.
+        throw new AppError('Conversion failed — no content returned', 502);
 
       const fromType = slide.type;
       const { slide: converted } = await updateSlide(
@@ -1466,7 +1476,7 @@ export function registerTools(
       };
       const relPath = EXPORT_PATHS[format];
       if (!relPath) {
-        throw new Error(
+        throw new ValidationError(
           `Unsupported format "${format}". Use one of: ${Object.keys(EXPORT_PATHS).join(', ')}.`,
         );
       }
@@ -1533,7 +1543,7 @@ export function registerTools(
     async ({ presentationId, slideIndex }, context) => {
       const pres = await getCheckedPresentation(presentationId, context);
       if (slideIndex < 0 || slideIndex >= pres.slides.length) {
-        throw new Error(
+        throw new ValidationError(
           `Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`,
         );
       }
@@ -1787,7 +1797,7 @@ export function registerTools(
   function requireCommentActor(context) {
     const owner = getOwner(context);
     if (!owner) {
-      throw new Error(
+      throw new UnauthorizedError(
         'This tool needs an acting user email to attribute the comment to. Configure the MCP owner email (stdio) or use an API-key session (HTTP).',
       );
     }

@@ -7,6 +7,8 @@
  * `update_slide` read `Invalid slide data` without saying which field. The
  * renderer now puts the same envelope below the human line, for every tool.
  *
+ * B624: and like v1 it keeps an unexpected failure's message to the log.
+ *
  * Run with: node --test tests/mcp/mcp-tool-error-details.test.js
  */
 
@@ -31,6 +33,7 @@ const { __setTestDb } = await import('../../server/db/client.js');
 const { initializeStorage } = await import('../../server/storage/lifecycle.js');
 const { McpServer } = await import('../../server/mcp/protocol.js');
 const { registerTools } = await import('../../server/mcp/tools.js');
+const { NotFoundError } = await import('../../server/utils/errors.js');
 
 async function installDb() {
   __setTestDb(
@@ -110,14 +113,15 @@ test('update_slide with an invalid slide names the failing fields', async () => 
   });
 });
 
-test('an error without a machine code stays one line', async () => {
+/** Call a one-off tool that throws `err`, as a client reads the failure. */
+async function throwFromTool(err) {
   const server = new McpServer();
   server.tool(
     'boom',
-    'Throws a plain error',
+    'Throws the given error',
     { type: 'object', properties: {} },
     async () => {
-      throw new Error('Something broke');
+      throw err;
     },
     { permission: 'read', readOnly: true },
   );
@@ -127,7 +131,108 @@ test('an error without a machine code stays one line', async () => {
     method: 'tools/call',
     params: { name: 'boom', arguments: {} },
   });
-  const { line, envelope } = readToolError(JSON.parse(raw).result);
-  assert.equal(line, 'Error: Something broke');
-  assert.equal(envelope, null);
+  return readToolError(JSON.parse(raw).result);
+}
+
+/** Run `fn` with `console.error` captured, so a logged failure stays quiet. */
+async function capturingErrors(fn) {
+  const logged = [];
+  const original = console.error;
+  console.error = (...args) => logged.push(args);
+  try {
+    return { result: await fn(), logged };
+  } finally {
+    console.error = original;
+  }
+}
+
+// B624: the same rule as v1's `withV1ErrorHandler`. An unexpected failure's
+// message is internal detail; the caller gets a fixed sentence, the log the
+// rest. A sentence written for the caller (any `AppError`) still reaches it.
+
+test('a plain error does not leak its message', async () => {
+  const { result, logged } = await capturingErrors(() =>
+    throwFromTool(new Error('connect ECONNREFUSED 10.0.0.5:5432')),
+  );
+  assert.equal(result.line, 'Error: Internal server error');
+  assert.equal(result.envelope, null);
+  assert.ok(
+    logged.some((args) => args.some((a) => a?.message?.includes('10.0.0.5'))),
+    'the internal failure is logged',
+  );
+});
+
+test('a 5xx error that is not an AppError does not leak its message', async () => {
+  const err = Object.assign(new Error('pool exhausted at db-2'), {
+    statusCode: 503,
+  });
+  const { result } = await capturingErrors(() => throwFromTool(err));
+  assert.equal(result.line, 'Error: Internal server error');
+  assert.equal(result.envelope, null);
+});
+
+test('a 4xx AppError keeps its sentence and envelope', async () => {
+  const { line, envelope } = await throwFromTool(
+    new NotFoundError('Presentation not found'),
+  );
+  assert.equal(line, 'Error: Presentation not found');
+  assert.deepEqual(envelope, {
+    error: 'not_found',
+    message: 'Presentation not found',
+  });
+});
+
+test('a tool refusal with a meant sentence travels as a 4xx', async () => {
+  await installDb();
+  const { line, envelope } = readToolError(
+    await callTool('update_slide', {
+      presentationId: DECK_ID,
+      slideIndex: 5,
+      content: { title: 'Hi' },
+    }),
+  );
+  assert.equal(line, 'Error: Slide index 5 out of range (0-0)');
+  assert.equal(envelope.error, 'bad_request');
+
+  const missing = readToolError(
+    await callTool('update_slide', { slideIndex: 0, content: {} }),
+  );
+  assert.equal(
+    missing.line,
+    'Error: A presentation id is required (pass `id` or `presentationId`).',
+  );
+  assert.equal(missing.envelope.error, 'bad_request');
+});
+
+test('a refused slide-type change names the pair in its details', async () => {
+  await installDb();
+  const { envelope } = readToolError(
+    await callTool('update_slide', {
+      presentationId: DECK_ID,
+      slideIndex: 0,
+      type: 'quote-slide',
+      content: { quote: 'Hi' },
+    }),
+  );
+  assert.equal(envelope.error, 'unsupported_conversion');
+  assert.deepEqual(Object.keys(envelope.details).sort(), [
+    'convertible',
+    'from',
+    'to',
+  ]);
+});
+
+test('a strict-validation refusal lists its issue under errors', async () => {
+  await installDb();
+  const { line, envelope } = readToolError(
+    await callTool('create_presentation_from_slides', {
+      title: 'Strict',
+      slides: [{ type: 'title-slide', content: {} }],
+    }),
+  );
+  assert.match(line, /^Error: Validation failed: /);
+  assert.equal(envelope.error, 'bad_request');
+  assert.deepEqual(envelope.details, {
+    errors: [line.replace('Error: Validation failed: ', '')],
+  });
 });

@@ -24,9 +24,11 @@ import {
   isJsonObject,
 } from '../../../utils/http.js';
 import {
+  INTERNAL_ERROR_MESSAGE,
   codeForStatus,
   getStatusCode,
   isAppError,
+  isInternalFailure,
 } from '../../../utils/errors.js';
 import { logError } from '../../../utils/logger.js';
 import { loadPresentationForActor } from '../../../services/presentations.js';
@@ -588,15 +590,14 @@ export function withV1ErrorHandler(moduleName, handler) {
       }
 
       const status = getStatusCode(err);
-      const { message, ...opts } =
-        status >= 500 && !isAppError(err)
-          ? // Never leak internal detail on an unexpected server-side failure.
-            { message: 'Internal server error', code: codeForStatus(status) }
-          : {
-              message: err?.message,
-              code: err?.code || codeForStatus(status),
-              details: err?.details ?? undefined,
-            };
+      const { message, ...opts } = isInternalFailure(err)
+        ? // Never leak internal detail on an unexpected server-side failure.
+          { message: INTERNAL_ERROR_MESSAGE, code: codeForStatus(status) }
+        : {
+            message: err?.message,
+            code: err?.code || codeForStatus(status),
+            details: err?.details ?? undefined,
+          };
       try {
         await apiError(ctx, status, message, opts);
       } catch (headerErr) {

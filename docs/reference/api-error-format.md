@@ -60,6 +60,7 @@ The internal `/api/*` routes return errors in one canonical envelope:
   | `maintenance`            | 503    | `{ active, reason, retryAfter }` — the same object `GET /api/maintenance` returns.                                                                                                                                                                                                                                       |
   | `sandbox_quota_exceeded` | 429    | `{ resource, limit, used }` with `resource` `decks` or `bytes`.                                                                                                                                                                                                                                                          |
   | `in_use`                 | 409    | `{ usage }` — what still uses the custom slide type a delete refused for: `{ slides, decks, libraryItems, versions }`. `DELETE /api/custom-slide-types/:id?force=true` is the explicit second step (B414).                                                                                                               |
+  | `unsupported_conversion` | 400    | `{ from, to, convertible }` — a slide-type change no conversion is declared for: the refused pair and the types the source does convert to (B624).                                                                                                                                                                       |
   | `missing_alt`            | 422    | `{ lang, slideIndex, slideId, field, itemIndex?, itemField?, count }` — the first picture a publish refused for having no alt text (D137): its language version (`null` without versions), its slide, its field and, inside an item, which item and sub-field; `count` is how many pictures in the deck need one.        |
 
   The register is **enforced**, at the two emission points that know the code:
@@ -209,8 +210,13 @@ Error: Invalid slide data
 }
 ```
 
-A plain `Error` and a policy refusal (permission, quota, maintenance) carry the
-human line only. Pinned by `tests/mcp/mcp-tool-error-details.test.js` (B621).
+A policy refusal (permission, quota, maintenance) carries the human line only.
+An unexpected failure (a plain `Error`, or a 5xx that is not an `AppError`) is
+logged and answered as `Error: Internal server error`, the rule
+`withV1ErrorHandler` follows too: both ask `isInternalFailure()` in
+`server/utils/errors.js`. A tool that means its sentence for the caller throws
+an `AppError` with the fitting status. Pinned by
+`tests/mcp/mcp-tool-error-details.test.js` (B621, B624).
 
 ## Scope
 

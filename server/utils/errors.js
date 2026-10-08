@@ -204,6 +204,22 @@ export function getStatusCode(err) {
   return 500;
 }
 
+/** What a contract shows instead of an {@link isInternalFailure}'s message. */
+export const INTERNAL_ERROR_MESSAGE = 'Internal server error';
+
+/**
+ * Whether a thrown error is an unexpected server-side failure whose message
+ * must not reach the caller: a 5xx that no `AppError` was built for (a plain
+ * `Error`, a driver or library failure). An `AppError`'s message was written
+ * for the caller, whatever its status. Every contract's error handler asks
+ * this one question (`withV1ErrorHandler`, the MCP `toolError`; B624).
+ * @param {unknown} err
+ * @returns {boolean}
+ */
+export function isInternalFailure(err) {
+  return getStatusCode(err) >= 500 && !isAppError(err);
+}
+
 /**
  * Convert any error to the canonical error envelope
  * (`{ ok:false, error:'<code>', message:'<human>' }`).
