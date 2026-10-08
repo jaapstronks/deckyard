@@ -9,11 +9,17 @@ import { createSandboxExamplesSection } from './sandbox-examples.js';
 import { createOnboardingChecklist } from '../onboarding-checklist.js';
 import { displayNameFromEmail } from '../../../lib/format/user-format.js';
 import { createCollectionsApi } from '../collections/index.js';
+import {
+  createLibraryThemeResolver,
+  renderLibraryThumb,
+} from '../../slide-library/index.js';
+import { readLangMode } from '../../../lib/format/i18n.js';
 import { renderSlideElement } from '../../../lib/slide-runtime/slide-render.js';
 import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
+import { debugLog } from '../../../lib/util/debug.js';
 
 /**
  * Create the home view with recent presentations and activity preview
@@ -388,6 +394,16 @@ export function createHomeView({
         .filter((it) => it?.id && !it.isTrashed && !it.trashedAt)
         .sort((a, b) => blockTimestamp(b) - blockTimestamp(a));
 
+      // Each card previews its slide exactly as the library does (B616); a
+      // collection shows its first slide when that is a team slide.
+      const preview = {
+        resolveTheme: createLibraryThemeResolver(),
+        lang: readLangMode(),
+      };
+      const slideById = new Map(organizationSlides.map((it) => [it.id, it]));
+      const firstSlideOf = (col) =>
+        slideById.get(Array.isArray(col.slideIds) ? col.slideIds[0] : null);
+
       const shownCols = cols.slice(0, 4);
       // Reserve most of the shelf for collections; fill the rest with slides.
       const slideBudget = Math.max(2, 6 - shownCols.length);
@@ -402,12 +418,15 @@ export function createHomeView({
       if (!isFirstRun) homeBlocksList.append(renderBlankBlockCard(onCreate));
       for (const col of shownCols) {
         homeBlocksList.append(
-          renderCollectionBlockCard(col, onComposeFrom, isNewCollection(col)),
+          renderCollectionBlockCard(col, onComposeFrom, isNewCollection(col), {
+            ...preview,
+            item: firstSlideOf(col),
+          }),
         );
       }
       for (const item of organizationSlides.slice(0, slideBudget)) {
         homeBlocksList.append(
-          renderSlideBlockCard(item, onComposeFrom, isNewSlide(item)),
+          renderSlideBlockCard(item, onComposeFrom, isNewSlide(item), preview),
         );
       }
       homeBlocksSection.append(homeBlocksList);
@@ -499,8 +518,10 @@ function renderBlankBlockCard(onCreate) {
  * @param {object} col - collection ({ id, shelf, name, slideIds, slideCount })
  * @param {Function} [onComposeFrom]
  * @param {boolean} [isNew] - show a "new to you" badge (shared item, never used).
+ * @param {object} [preview] - `renderBlockPreview()` options plus `item`, the
+ *   collection's first slide when Home has it.
  */
-function renderCollectionBlockCard(col, onComposeFrom, isNew = false) {
+function renderCollectionBlockCard(col, onComposeFrom, isNew, preview) {
   const count =
     col.slideCount ?? (Array.isArray(col.slideIds) ? col.slideIds.length : 0);
   const meta = h('span', { class: 'home-block-meta' });
@@ -529,6 +550,7 @@ function renderCollectionBlockCard(col, onComposeFrom, isNew = false) {
       onclick: () => onComposeFrom?.({ collection: col }),
     },
     [
+      renderBlockPreview(preview?.item, preview),
       renderBlockHead(
         t('list.home.blocks.collectionKicker', 'Collection'),
         isNew,
@@ -549,8 +571,9 @@ function renderCollectionBlockCard(col, onComposeFrom, isNew = false) {
  * @param {object} item - library item ({ id, name, slideType })
  * @param {Function} [onComposeFrom]
  * @param {boolean} [isNew] - show a "new to you" badge (shared item, never used).
+ * @param {object} [preview] - `renderBlockPreview()` options.
  */
-function renderSlideBlockCard(item, onComposeFrom, isNew = false) {
+function renderSlideBlockCard(item, onComposeFrom, isNew, preview) {
   const card = h(
     'button',
     {
@@ -559,6 +582,7 @@ function renderSlideBlockCard(item, onComposeFrom, isNew = false) {
       onclick: () => onComposeFrom?.({ items: [item] }),
     },
     [
+      renderBlockPreview(item, preview),
       renderBlockHead(
         t('list.home.blocks.slideKicker', 'Reusable slide'),
         isNew,
@@ -573,6 +597,31 @@ function renderSlideBlockCard(item, onComposeFrom, isNew = false) {
     ],
   );
   return card;
+}
+
+/**
+ * The preview strip of a block card: the library's own thumb of `item`, so a
+ * building block looks the same on Home as on the library page (B616). The
+ * strip is always there, so cards in a row stay level; it stays blank when
+ * there is no item or the thumb fails to render.
+ * @param {object|undefined} item - library item to preview
+ * @param {object} [opts]
+ * @param {(item: object) => Promise<object>} [opts.resolveTheme]
+ * @param {string} [opts.lang] - preview language
+ * @returns {HTMLElement}
+ */
+function renderBlockPreview(item, { resolveTheme, lang } = {}) {
+  const wrap = h('span', {
+    class: 'ps-lib-thumb-wrap home-block-preview',
+    'aria-hidden': 'true',
+  });
+  if (item && resolveTheme) {
+    renderLibraryThumb(item, { resolveTheme, lang })
+      .then((thumb) => thumb && wrap.append(thumb))
+      // A thumb that fails to render just stays blank, as in the library.
+      .catch((err) => debugLog('[home] building-block thumb failed', err));
+  }
+  return wrap;
 }
 
 /**

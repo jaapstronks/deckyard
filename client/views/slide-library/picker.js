@@ -11,15 +11,9 @@
 
 import { t } from '../../lib/ui-i18n.js';
 import { confirmModal } from '../../lib/dom/modal.js';
-import {
-  RENDER_VIA_THEME,
-  renderSlideElement,
-} from '../../lib/slide-runtime/slide-render.js';
-import { loadThemeById } from '../../lib/theme/theme.js';
 import { cleanStr } from '../../../shared/string-utils.js';
 import { icon } from '../../lib/dom/icons.js';
 import { h, installDismissOnOutside } from '../../lib/dom/index.js';
-import { DEFAULT_THEME_REF } from '../../../shared/constants/themes.js';
 import {
   sortByPinnedThenName,
   sortByTrashedThenName,
@@ -28,6 +22,7 @@ import {
 } from './search.js';
 
 import { createSlideLibraryState } from './state.js';
+import { createLibraryThemeResolver, renderLibraryThumb } from './thumb.js';
 import { createSlideLibraryApi } from './api.js';
 import { createSlideLibraryModals } from './modals.js';
 import { createSlideLibraryControls } from './controls.js';
@@ -60,7 +55,6 @@ export function createSlideLibraryPicker({
   onAddToCollection = null,
 } = {}) {
   const themeIdNorm = cleanStr(themeId);
-  const themeCache = new Map();
 
   const notifySelection = () => {
     if (compose) onSelectionChange?.(state.getSelectedItemsInOrder());
@@ -74,15 +68,10 @@ export function createSlideLibraryPicker({
   });
 
   // Theme resolver
-  const resolveThemeForItem = async (it) => {
-    if (themeObj && typeof themeObj === 'object') return themeObj;
-    const tid = cleanStr(it?.themeId || '');
-    const key = tid || themeIdNorm || DEFAULT_THEME_REF;
-    if (themeCache.has(key)) return themeCache.get(key);
-    const loaded = await loadThemeById(key);
-    themeCache.set(key, loaded);
-    return loaded;
-  };
+  const resolveThemeForItem = createLibraryThemeResolver({
+    theme: themeObj,
+    themeId: themeIdNorm,
+  });
 
   // Initialize API operations
   const apiOps = createSlideLibraryApi({ api, state, themeIdNorm });
@@ -111,12 +100,11 @@ export function createSlideLibraryPicker({
   let updateSelectionBar = null;
 
   const makeThumbEl = async (it, { onClickPreview } = {}) => {
-    const type = cleanStr(it?.slideType);
-    if (!type) return null;
-    const slide = modals.makeSlideObj(it);
-    const th = h('div');
-    th.className = 'thumb ps-lib-thumb';
-    if (onClickPreview) {
+    const th = await renderLibraryThumb(it, {
+      resolveTheme: resolveThemeForItem,
+      lang: state.getLang(),
+    });
+    if (th && onClickPreview) {
       th.style.cursor = 'pointer';
       th.title = t('slideLibrary.action.preview', 'Click to preview');
       th.addEventListener('click', (e) => {
@@ -124,14 +112,6 @@ export function createSlideLibraryPicker({
         onClickPreview();
       });
     }
-    const thTheme = await resolveThemeForItem(it);
-    const el = renderSlideElement(slide, {
-      mode: 'thumb',
-      theme: thTheme,
-      renderVia: RENDER_VIA_THEME,
-      lang: state.getLang?.(),
-    });
-    th.appendChild(el);
     return th;
   };
 
