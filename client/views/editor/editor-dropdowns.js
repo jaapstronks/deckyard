@@ -20,8 +20,9 @@ import { isOrganizationAdmin } from '../../../shared/organization-role.js';
  * @param {object} options.user - Current user
  * @param {Record<string, object>} options.slideTypes - The editor's slide-type
  *   registry (names a refused publish's field by its label)
- * @param {Function} [options.onPublishedChange] - Called whenever the deck's
- *   published state may have changed (publish, unpublish, slug)
+ * @param {Function} [options.onShareStateChange] - Called whenever the deck's
+ *   share state may have changed (publish, unpublish, slug, a share link
+ *   created or revoked)
  * @returns {object} Dropdown elements and cleanup
  */
 export function createEditorDropdowns({
@@ -34,7 +35,7 @@ export function createEditorDropdowns({
   editorState,
   user,
   slideTypes,
-  onPublishedChange,
+  onShareStateChange,
 }) {
   // Share dropdown (sharing + publishing)
   const {
@@ -56,7 +57,7 @@ export function createEditorDropdowns({
     currentUserEmail: user?.email,
     isAdmin: isOrganizationAdmin(user),
     slideTypes,
-    onPublishedChange,
+    onShareStateChange,
   });
 
   // Export dropdown (file downloads)

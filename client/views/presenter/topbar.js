@@ -57,7 +57,7 @@ export function buildPresenterTopbar({
     drawBtn,
     consoleToggle,
     h('button', {
-      class: 'btn btn-secondary',
+      class: 'btn btn-secondary presenter-projector-btn',
       text: t('presenter.projector.open', 'Second screen'),
       title: t(
         'presenter.projector.openTitle',

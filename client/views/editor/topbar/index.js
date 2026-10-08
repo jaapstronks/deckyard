@@ -330,14 +330,22 @@ export function createEditorTopbar({
     moreMenu.setAnalyticsAvailable(available);
   };
 
-  const isPublished = !!pres?.published?.id;
-  if (!hasAnalytics) {
+  /**
+   * Decide whether the deck has an audience to count, from its share state
+   * *now*. Runs at mount and again whenever that state changes (publish,
+   * unpublish, a share link created or revoked) through the editor's share
+   * seam, so the control follows the Share dialog without a reload (B617).
+   *
+   * @returns {void}
+   */
+  const syncAnalyticsAvailability = () => {
     // No cluster, no control to show or hide.
-  } else if (isPublished) {
-    setAnalyticsAvailable(true);
-  } else {
+    if (!hasAnalytics) return;
+    if (pres?.published?.id) {
+      setAnalyticsAvailable(true);
+      return;
+    }
     // Not published: the deck may still have an audience through a share link.
-    setAnalyticsAvailable(false);
     api(`/api/presentations/${id}/share-links`)
       .then((resp) => {
         setAnalyticsAvailable(
@@ -345,9 +353,11 @@ export function createEditorTopbar({
         );
       })
       .catch(() => {
-        // On error, keep hidden
+        // On error, keep the current state.
       });
-  }
+  };
+  if (hasAnalytics) setAnalyticsAvailable(false);
+  syncAnalyticsAvailability();
 
   // ============================================================
   // PRESENT BUTTON
@@ -594,6 +604,7 @@ export function createEditorTopbar({
     setPresenceNames,
     syncLangUi: languageMode.syncLangUi,
     syncUndoButtons,
+    syncAnalyticsAvailability,
     openNotesQr,
     detach,
   };

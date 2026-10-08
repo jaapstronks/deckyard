@@ -1,4 +1,4 @@
-import { t } from '../../../lib/ui-i18n.js';
+import { getUiLocale, t } from '../../../lib/ui-i18n.js';
 import { getFeatures, sharingEnabled } from '../../../lib/state/features.js';
 import { buildSectionHeader } from './section-header.js';
 import {
@@ -663,7 +663,9 @@ function buildHomeHeader({ user, count }) {
 
   let dateLabel = '';
   try {
-    dateLabel = new Intl.DateTimeFormat(undefined, {
+    // The interface language, not the browser's: a Dutch Home said
+    // "Wednesday 7 October" on an English browser (B617).
+    dateLabel = new Intl.DateTimeFormat(getUiLocale(), {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -672,9 +674,10 @@ function buildHomeHeader({ user, count }) {
     dateLabel = '';
   }
 
-  const countLabel = t('list.home.greetingCount', '{count} presentations', {
-    count,
-  });
+  const countLabel =
+    count === 1
+      ? t('list.home.greetingCount.one', '1 presentation')
+      : t('list.home.greetingCount.many', '{count} presentations', { count });
   const subtitleText = dateLabel ? `${dateLabel} · ${countLabel}` : countLabel;
 
   return h('header', { class: 'home-header' }, [
