@@ -21,6 +21,7 @@ import { updatePresentation } from '../storage/presentations/index.js';
 import { findTheme } from '../utils/themes.js';
 import { convertSlideToType } from '../../shared/slide-types/convert.js';
 import { SLIDE_TYPES } from '../../shared/slide-types/registry.js';
+import { normalizeLang } from '../../shared/i18n-utils.js';
 import {
   AppError,
   NotFoundError,
@@ -146,8 +147,13 @@ export async function applyThemeChange(
         refuseFailedConversion(slide, conversion, err);
       }
     });
+  // The top level is a version too: the one on screen in a save's body (the
+  // seam writes it to `versions[active]`), the dominant one in a loaded deck.
+  const topLang =
+    normalizeLang(changes ? data?.i18n?.active : data?.i18n?.dominant) ||
+    data?.lang;
   const slides = Array.isArray(data?.slides)
-    ? convert(data.slides, data.lang)
+    ? convert(data.slides, topLang)
     : data?.slides;
   const i18n = conversionMap.size
     ? mapVersionSlides(data?.i18n, convert)

@@ -240,6 +240,42 @@ test('a theme switch with a save body converts a slide in every language version
   assertConvertedEverywhere(row, 'chapter-title-slide');
 });
 
+test('a save body converts the version on screen with its own language (B623)', async () => {
+  const db = await installDb();
+  const other = (await seedRow('amethyst')).id;
+  const pres = await loadPresentationForActor(
+    scope(),
+    { actor: OWNER },
+    DECK_ID,
+    { access: 'write' },
+  );
+
+  // The German version sits at the top level, so its conversion seeds the
+  // target's German defaults (`image-text-slide` has a Dutch set without
+  // `density`, and falls back to its base set with it), not those of the
+  // deck's language the body also carries.
+  await applyThemeChange(scope(), { actor: OWNER }, pres, {
+    theme: other,
+    changes: {
+      lang: 'nl',
+      title: DE.title,
+      slides: structuredClone(DE.slides),
+      i18n: {
+        dominant: 'nl',
+        active: 'de',
+        versions: { nl: structuredClone(NL), de: structuredClone(DE) },
+      },
+    },
+    convertSlides: [{ slideId: 'slide-2', convertTo: 'image-text-slide' }],
+  });
+
+  const row = storedDeck(db);
+  assert.equal(row.i18n.versions.de.slides[1].type, 'image-text-slide');
+  assert.equal(row.i18n.versions.de.slides[1].content.density, 'auto');
+  assert.equal(row.i18n.versions.nl.slides[1].type, 'image-text-slide');
+  assert.equal('density' in row.i18n.versions.nl.slides[1].content, false);
+});
+
 test('a conversion that fails in a version other than the dominant one refuses the switch (B623)', async () => {
   const db = await installDb();
   const other = (await seedRow('amethyst')).id;
