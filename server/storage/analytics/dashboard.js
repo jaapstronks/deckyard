@@ -358,10 +358,29 @@ export async function getSourceBreakdown(userEmail, organizationId, opts = {}) {
 }
 
 /**
+ * How `getPresentationsWithAnalytics()` can order its rows, keyed by the
+ * `sort` value. Every order is one SQL `ORDER BY` over the joined sessions, so
+ * the page is cut in the database. Completion is not here: it comes from
+ * `slide_views` after the page is cut (`getCompletionCounts`), so ordering on
+ * it would mean reading every deck's completion first (B622).
+ */
+const LIST_ORDERS = {
+  views: (query) =>
+    query.orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc'),
+  duration: (query) =>
+    query.orderBy((eb) => eb.fn.avg('view_sessions.duration_seconds'), 'desc'),
+  recent: (query) => query.orderBy('presentations.modified_at', 'desc'),
+};
+
+/** The `sort` values `getPresentationsWithAnalytics()` accepts. */
+export const ANALYTICS_LIST_SORTS = Object.freeze(Object.keys(LIST_ORDERS));
+
+/**
  * Get presentations list with analytics summary for the dashboard.
  * @param {string} userEmail - The user's email
  * @param {string} organizationId - The user's organization ID
- * @param {Object} opts - Query options
+ * @param {Object} opts - Query options; `sort` is one of
+ *   `ANALYTICS_LIST_SORTS` (default `views`), anything else throws.
  * @returns {Promise<Array>}
  */
 export async function getPresentationsWithAnalytics(
@@ -371,6 +390,8 @@ export async function getPresentationsWithAnalytics(
 ) {
   const period = opts.period || '30d';
   const sort = opts.sort || 'views';
+  const order = LIST_ORDERS[sort];
+  if (!order) throw new Error(`Unknown analytics list sort: ${sort}`);
   const limit = opts.limit || 20;
   const offset = opts.offset || 0;
   const dateRange = getPeriodDateRange(period);
@@ -420,23 +441,7 @@ export async function getPresentationsWithAnalytics(
         'presentations.modified_at',
       ]);
 
-    // Apply sorting
-    switch (sort) {
-      case 'views':
-        query = query.orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc');
-        break;
-      case 'duration':
-        query = query.orderBy(
-          (eb) => eb.fn.avg('view_sessions.duration_seconds'),
-          'desc',
-        );
-        break;
-      case 'recent':
-        query = query.orderBy('presentations.modified_at', 'desc');
-        break;
-      default:
-        query = query.orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc');
-    }
+    query = order(query);
 
     query = query.limit(limit).offset(offset);
 

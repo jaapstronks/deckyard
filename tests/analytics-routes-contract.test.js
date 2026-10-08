@@ -70,6 +70,8 @@ const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 const { AUTH_RATE_LIMITS } = await import('../server/config/rate-limits.js');
 const { handleDashboard, handlePresentationsList } =
   await import('../server/routes/api/analytics/dashboard.js');
+const { ANALYTICS_LIST_SORTS, getPresentationsWithAnalytics } =
+  await import('../server/storage/analytics/index.js');
 const {
   handleOverview,
   handleSlides,
@@ -450,7 +452,7 @@ test('dashboard refuses an unauthenticated caller with a 401', async () => {
   assert.deepEqual(db.__queryLog, [], 'the 401 is returned before any query');
 });
 
-test('dashboard rejects an unknown period with a 400', async () => {
+test('dashboard rejects an unknown period as invalid, naming it', async () => {
   await seed();
   const { res } = await call(
     handleDashboard,
@@ -462,7 +464,8 @@ test('dashboard rejects an unknown period with a 400', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.error, 'bad_request');
+  assert.equal(res.body.error, 'invalid');
+  assert.deepEqual(res.body.details, { field: 'period' });
 });
 
 test('presentations list refuses an unauthenticated caller with a 401', async () => {
@@ -488,16 +491,39 @@ test('presentations list rejects an unknown period and an unknown sort', async (
     },
   );
   assert.equal(badPeriod.res.statusCode, 400);
+  assert.equal(badPeriod.res.body.error, 'invalid');
+  assert.deepEqual(badPeriod.res.body.details, { field: 'period' });
 
-  const badSort = await call(
-    handlePresentationsList,
-    'GET',
-    '/api/analytics/presentations?sort=alphabetical',
-    {
-      as: ACTORS.owner,
-    },
+  // `completion` used to be accepted and silently sorted on views (B622).
+  for (const sort of ['alphabetical', 'completion']) {
+    const badSort = await call(
+      handlePresentationsList,
+      'GET',
+      `/api/analytics/presentations?sort=${sort}`,
+      {
+        as: ACTORS.owner,
+      },
+    );
+    assert.equal(badSort.res.statusCode, 400, sort);
+    assert.equal(badSort.res.body.error, 'invalid', sort);
+    assert.deepEqual(badSort.res.body.details, { field: 'sort' }, sort);
+    assert.deepEqual(db.__queryLog, [], `${sort}: refused before any query`);
+  }
+});
+
+test('the list sorts are the orders storage can cut a page on', () => {
+  // The orderings themselves run against Postgres
+  // (tests/pg/analytics-completion-rate.pgtest.js); this pins the vocabulary.
+  assert.deepEqual([...ANALYTICS_LIST_SORTS], ['views', 'duration', 'recent']);
+});
+
+test('the storage reader throws on a sort it cannot order on', async () => {
+  await assert.rejects(
+    getPresentationsWithAnalytics('owner@example.com', null, {
+      sort: 'completion',
+    }),
+    /Unknown analytics list sort: completion/,
   );
-  assert.equal(badSort.res.statusCode, 400);
 });
 
 // ===========================================================================
