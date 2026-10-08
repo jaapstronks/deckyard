@@ -6,6 +6,7 @@
 import { sql } from 'kysely';
 import { withDbGuard } from '../utils/index.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
+import { completionRate, getCompletionCounts } from './aggregations.js';
 
 // ============================================================
 // PERIOD HELPERS
@@ -135,6 +136,12 @@ export async function getDashboardSummary(
 
       const previousResult = await previousQuery.executeTakeFirst();
 
+      const completion = await getCompletionCounts(
+        db,
+        userPresentations,
+        dateRange,
+      );
+
       const currentViews = Number(currentResult?.total_views) || 0;
       const previousViews = Number(previousResult?.total_views) || 0;
 
@@ -158,7 +165,7 @@ export async function getDashboardSummary(
           avgDurationSeconds: Math.round(
             Number(currentResult?.avg_duration) || 0,
           ),
-          completionRate: 0, // TODO: Calculate from slide views
+          completionRate: completionRate(completion.values()),
         },
         trend: {
           percentChange: Math.abs(percentChange),
@@ -263,6 +270,11 @@ export async function getTopPresentations(
     query = applyDateFilters(query, dateRange, 'view_sessions.started_at');
 
     const rows = await query.execute();
+    const completion = await getCompletionCounts(
+      db,
+      rows.map((row) => row.id),
+      dateRange,
+    );
 
     return rows.map((row) => ({
       id: row.id,
@@ -270,7 +282,7 @@ export async function getTopPresentations(
       views: Number(row.views) || 0,
       uniqueViewers: Number(row.unique_viewers) || 0,
       avgDurationSeconds: Math.round(Number(row.avg_duration) || 0),
-      completionRate: 0, // TODO: Calculate from slide views
+      completionRate: deckCompletionRate(completion, row.id),
     }));
   });
 }
@@ -394,7 +406,7 @@ export async function getPresentationsWithAnalytics(
       .select([
         'presentations.id',
         'presentations.title',
-        'presentations.updated_at',
+        'presentations.modified_at',
         (eb) => eb.fn.count('view_sessions.id').as('views'),
         sql`COUNT(DISTINCT COALESCE(view_sessions.device_id, view_sessions.id::text))`.as(
           'unique_viewers',
@@ -405,7 +417,7 @@ export async function getPresentationsWithAnalytics(
       .groupBy([
         'presentations.id',
         'presentations.title',
-        'presentations.updated_at',
+        'presentations.modified_at',
       ]);
 
     // Apply sorting
@@ -420,7 +432,7 @@ export async function getPresentationsWithAnalytics(
         );
         break;
       case 'recent':
-        query = query.orderBy('presentations.updated_at', 'desc');
+        query = query.orderBy('presentations.modified_at', 'desc');
         break;
       default:
         query = query.orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc');
@@ -429,16 +441,21 @@ export async function getPresentationsWithAnalytics(
     query = query.limit(limit).offset(offset);
 
     const rows = await query.execute();
+    const completion = await getCompletionCounts(
+      db,
+      rows.map((row) => row.id),
+      dateRange,
+    );
 
     return {
       presentations: rows.map((row) => ({
         id: row.id,
         title: row.title || 'Untitled',
-        updatedAt: row.updated_at,
+        updatedAt: row.modified_at,
         views: Number(row.views) || 0,
         uniqueViewers: Number(row.unique_viewers) || 0,
         avgDurationSeconds: Math.round(Number(row.avg_duration) || 0),
-        completionRate: 0,
+        completionRate: deckCompletionRate(completion, row.id),
       })),
       total,
       limit,
@@ -450,6 +467,17 @@ export async function getPresentationsWithAnalytics(
 // ============================================================
 // HELPER FUNCTIONS
 // ============================================================
+
+/**
+ * One deck's completion rate out of a `getCompletionCounts()` map.
+ * @param {Map<string, {sessions: number, completed: number}>} completion
+ * @param {string} id - The presentation ID.
+ * @returns {number}
+ */
+function deckCompletionRate(completion, id) {
+  const counts = completion.get(id);
+  return completionRate(counts ? [counts] : []);
+}
 
 /**
  * Get presentation IDs that a user has access to (owned + shared with edit/admin).
