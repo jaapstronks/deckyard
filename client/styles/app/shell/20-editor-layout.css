@@ -335,6 +335,9 @@
 .is-editor .preview-panel {
   background: hsl(var(--app-bg-base));
   border-left: 1px solid hsl(var(--app-border-default));
+  /* The generic .panel border would draw a hairline right under the slide
+     bar; bar and canvas are one surface (B614). */
+  border-top: none;
 }
 
 /* Slide bar (Option A): the bar above the working area, scoped to the current
