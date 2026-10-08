@@ -25,6 +25,7 @@ import {
   withV1ErrorHandler,
 } from '../server/routes/public-api/v1/middleware.js';
 import { LockedError, ValidationError } from '../server/utils/errors.js';
+import { LlmError } from '../server/utils/llm/error.js';
 import { handleApi } from '../server/routes/api/index.js';
 import {
   setMaintenanceActive,
@@ -170,7 +171,7 @@ test('withV1ErrorHandler keeps a 4xx AppError message (only 5xx is made generic)
   });
 });
 
-test('withV1ErrorHandler maps a bare statusCode-bearing throw by status', async () => {
+test('withV1ErrorHandler maps a bare statusCode-bearing throw by status, generic from 500 up', async () => {
   const res = makeRes();
   const wrapped = withV1ErrorHandler('test', async () => {
     const e = new Error('upstream boom');
@@ -186,6 +187,28 @@ test('withV1ErrorHandler maps a bare statusCode-bearing throw by status', async 
   assert.deepEqual(bodyOf(res), {
     error: 'bad_gateway',
     message: 'Internal server error',
+  });
+});
+
+test('withV1ErrorHandler keeps the sentence of a 5xx AppError (B619)', async () => {
+  // An `AppError` is written for the caller at any status: a failing model
+  // (`LlmError`, 502) says what failed upstream instead of "Internal server
+  // error"; only a throw that is not an `AppError` is made generic.
+  const res = makeRes();
+  const wrapped = withV1ErrorHandler('test', async () => {
+    throw new LlmError('openai did not return valid deck JSON.', {
+      response: 'raw model output that stays in the log',
+    });
+  });
+  await wrapped({
+    res,
+    req: { method: 'POST' },
+    url: new URL('http://x/api/v1/ai/wizard'),
+  });
+  assert.equal(res.statusCode, 502);
+  assert.deepEqual(bodyOf(res), {
+    error: 'bad_gateway',
+    message: 'openai did not return valid deck JSON.',
   });
 });
 

@@ -547,9 +547,16 @@ export async function apiError(
  * public API had zero wrappers and hand-rolled try/catch per handler (B39 deel
  * 3, bevinding 11 — the "third envelope grows back" risk). Wrapping the
  * mount-level dispatch covers every sub-handler it routes to (including any
- * that forgot a catch). A thrown `AppError`/status-bearing error keeps its
- * status, machine code and details; anything ≥500 answers a generic
- * `internal_error` without leaking internals.
+ * that forgot a catch). It is the one v1 error renderer: no sub-handler
+ * catches a throw to answer it itself (B619).
+ *
+ * The rule is the internal handler's: an `AppError` carries a sentence written
+ * for the caller and keeps it with its status, machine code and details, at
+ * any status (a 502 from the model, `LlmError`, says what failed upstream); any
+ * other throw keeps its message below 500 and answers a generic "Internal
+ * server error" from 500 up, so an unexpected failure leaks nothing. The
+ * answer goes through {@link apiError}, so it carries the key's rate-limit
+ * headers like every other v1 answer.
  *
  * @param {string} moduleName - Label for the error log.
  * @param {Function} handler - Async dispatch function `(ctx, …) => Promise<boolean>`.
@@ -581,16 +588,21 @@ export function withV1ErrorHandler(moduleName, handler) {
       }
 
       const status = getStatusCode(err);
-      if (status >= 500) {
-        // Never leak internal detail on a server-side failure.
-        sendV1Error(res, status, 'Internal server error', {
-          code: codeForStatus(status),
-        });
-      } else {
-        sendV1Error(res, status, err?.message, {
-          code: err?.code || codeForStatus(status),
-          details: err?.details ?? undefined,
-        });
+      const { message, ...opts } =
+        status >= 500 && !isAppError(err)
+          ? // Never leak internal detail on an unexpected server-side failure.
+            { message: 'Internal server error', code: codeForStatus(status) }
+          : {
+              message: err?.message,
+              code: err?.code || codeForStatus(status),
+              details: err?.details ?? undefined,
+            };
+      try {
+        await apiError(ctx, status, message, opts);
+      } catch (headerErr) {
+        // The rate-limit lookup failed too (storage down): answer without it.
+        logError(moduleName, 'Rate-limit headers unavailable:', headerErr);
+        sendV1Error(res, status, message, opts);
       }
       return true;
     }
