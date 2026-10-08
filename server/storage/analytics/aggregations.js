@@ -8,6 +8,89 @@ import { withDbGuard } from '../utils/index.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
 
 // ============================================================
+// COMPLETION
+// ============================================================
+
+/**
+ * Completion counts per presentation: how many sessions in the window reached
+ * the deck's last slide. The last slide is the highest slide index any session
+ * of that deck ever reached (over all time, not just the window), so a deck
+ * nobody finished still has a last slide. This is the one completion
+ * definition: the per-deck overview, the viewer journey and the dashboard all
+ * read it, through `completionRate()`.
+ *
+ * @param {import('kysely').Kysely<any>} db - Database connection.
+ * @param {string[]} presentationIds - The decks to count.
+ * @param {Object} [opts] - Date window, applied to `slide_views.entered_at`.
+ * @param {string} [opts.since]
+ * @param {string} [opts.until]
+ * @returns {Promise<Map<string, {sessions: number, completed: number}>>}
+ *   Decks without a slide view in the window are absent.
+ */
+export async function getCompletionCounts(db, presentationIds, opts = {}) {
+  if (!presentationIds.length) return new Map();
+
+  let sessions = db
+    .selectFrom('slide_views')
+    .select([
+      'presentation_id',
+      'view_session_id',
+      (eb) => eb.fn.max('slide_index').as('max_index'),
+    ])
+    .where('presentation_id', 'in', presentationIds)
+    .groupBy(['presentation_id', 'view_session_id']);
+  sessions = applyDateFilters(sessions, opts, 'entered_at');
+
+  const lastSlide = db
+    .selectFrom('slide_views')
+    .select([
+      'presentation_id',
+      (eb) => eb.fn.max('slide_index').as('last_index'),
+    ])
+    .where('presentation_id', 'in', presentationIds)
+    .groupBy('presentation_id');
+
+  const rows = await db
+    .selectFrom(sessions.as('s'))
+    .innerJoin(lastSlide.as('l'), 'l.presentation_id', 's.presentation_id')
+    .select([
+      's.presentation_id',
+      (eb) => eb.fn.countAll().as('sessions'),
+      sql`COUNT(*) FILTER (WHERE s.max_index >= l.last_index)`.as('completed'),
+    ])
+    .groupBy('s.presentation_id')
+    .execute();
+
+  return new Map(
+    rows.map((row) => [
+      row.presentation_id,
+      {
+        sessions: Number(row.sessions) || 0,
+        completed: Number(row.completed) || 0,
+      },
+    ]),
+  );
+}
+
+/**
+ * The share of sessions that reached the last slide, rounded to two decimals.
+ * Several decks' counts pool: the dashboard's rate is all completed sessions
+ * over all sessions, not an average of per-deck rates.
+ *
+ * @param {Iterable<{sessions: number, completed: number}>} counts
+ * @returns {number} 0..1, and 0 without sessions.
+ */
+export function completionRate(counts) {
+  let sessions = 0;
+  let completed = 0;
+  for (const c of counts) {
+    sessions += c.sessions;
+    completed += c.completed;
+  }
+  return sessions > 0 ? Math.round((completed / sessions) * 100) / 100 : 0;
+}
+
+// ============================================================
 // COMPREHENSIVE OVERVIEW
 // ============================================================
 
@@ -86,11 +169,13 @@ export async function getPresentationAnalyticsOverview(
       sourceTypesQuery = applyDateFilters(sourceTypesQuery, opts);
       const sourceTypesRows = await sourceTypesQuery.execute();
 
+      const completion = await getCompletionCounts(db, [presId], opts);
+
       return {
         totalViews: Number(metrics?.total_views) || 0,
         uniqueViewers: Number(metrics?.unique_viewers) || 0,
         avgDurationSeconds: Math.round(Number(metrics?.avg_duration) || 0),
-        completionRate: 0, // Calculate separately based on slide progression
+        completionRate: completionRate(completion.values()),
         viewsByDay: viewsByDayRows.map((row) => ({
           date: row.date?.toISOString?.()?.split('T')[0] || String(row.date),
           views: Number(row.views) || 0,
@@ -309,7 +394,7 @@ export async function getViewerJourneyData(presentationId, opts = {}) {
 
       const avgCompletionIndex = totalMaxIndex / sessionRows.length;
 
-      // Get total slides in presentation for completion rate
+      // The deck's length as far as viewers got, for the progression
       let slidesQuery = db
         .selectFrom('slide_views')
         .select((eb) => eb.fn.max('slide_index').as('max_slide'))
@@ -318,13 +403,7 @@ export async function getViewerJourneyData(presentationId, opts = {}) {
       const slidesResult = await slidesQuery.executeTakeFirst();
       const totalSlides = (Number(slidesResult?.max_slide) || 0) + 1;
 
-      // Count sessions that reached the last slide
-      const lastSlideIndex = totalSlides - 1;
-      const completedSessions = sessionRows.filter(
-        (r) => Number(r.max_index) >= lastSlideIndex,
-      ).length;
-      const completionRate =
-        sessionRows.length > 0 ? completedSessions / sessionRows.length : 0;
+      const completion = await getCompletionCounts(db, [presId], opts);
 
       // Build progression array
       const slideProgression = [];
@@ -342,7 +421,7 @@ export async function getViewerJourneyData(presentationId, opts = {}) {
       return {
         slideProgression,
         avgCompletionIndex: Math.round(avgCompletionIndex * 10) / 10,
-        completionRate: Math.round(completionRate * 100) / 100,
+        completionRate: completionRate(completion.values()),
       };
     },
   );
