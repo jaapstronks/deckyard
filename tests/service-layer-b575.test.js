@@ -15,7 +15,8 @@
  *     internal and v1 each carried the three steps.
  *   - **switching theme** (`changeTheme`, `services/theme.js`): the editor's
  *     `/change-theme` and v1's PUT; it lived in the storage tree while both
- *     routes decided the deck themselves.
+ *     routes decided the deck themselves. A requested slide conversion that
+ *     fails refuses the whole switch (B612) instead of keeping the slide.
  *
  * Every refusal of a write is asserted against the store, not read off the
  * status code: a refused change leaves the deck as it was.
@@ -535,6 +536,47 @@ test('internal change-theme: the owner switches; an unknown theme and a stranger
   assert.equal(ok.body.presentation.theme, AMETHYST);
   assert.equal(storedDeck(db).theme, AMETHYST);
   assert.equal(storedDeck(db).slides.length, 2, 'the slides stay');
+});
+
+test('internal change-theme: a failed slide conversion is refused and changes nothing (B612)', async () => {
+  const db = await installDb();
+  const path = `/api/presentations/${DECK_ID}/change-theme`;
+  const before = structuredClone(storedDeck(db));
+
+  // slide-1 converts fine; slide-2 asks for a type that does not exist. The
+  // whole switch is refused: neither the theme nor slide-1 is written.
+  const refused = await internal(handleInternalPresentations, 'POST', path, {
+    as: OWNER,
+    body: {
+      newThemeId: AMETHYST,
+      convertSlides: [
+        { slideId: 'slide-1', convertTo: 'chapter-title-slide' },
+        { slideId: 'slide-2', convertTo: 'no-such-type' },
+      ],
+    },
+  });
+  assert.equal(refused.statusCode, 400);
+  assert.equal(refused.body.error, 'invalid');
+  assert.equal(refused.body.details.field, 'convertSlides');
+  assert.equal(refused.body.details.index, 1, 'the entry that failed');
+  assert.match(refused.body.message, /slide-2/, 'the message names the slide');
+  assertUnchanged(db, before, 'a failed conversion is refused');
+  assert.deepEqual(
+    storedDeck(db).slides,
+    before.slides,
+    'no slide was converted',
+  );
+
+  const ok = await internal(handleInternalPresentations, 'POST', path, {
+    as: OWNER,
+    body: {
+      newThemeId: AMETHYST,
+      convertSlides: [{ slideId: 'slide-1', convertTo: 'chapter-title-slide' }],
+    },
+  });
+  assert.equal(ok.statusCode, 200);
+  assert.equal(storedDeck(db).theme, AMETHYST);
+  assert.equal(storedDeck(db).slides[0].type, 'chapter-title-slide');
 });
 
 test('v1 PUT theme: an unknown theme and a foreign deck change nothing', async () => {
