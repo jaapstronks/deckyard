@@ -15,6 +15,7 @@ import {
   isToolVisible,
 } from './authorization.js';
 import { countInstanceHealth } from '../storage/instance-health.js';
+import { AppError } from '../utils/errors.js';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const SERVER_NAME = 'deckyard';
@@ -43,13 +44,26 @@ export function jsonRpcError(id, code, message, data) {
  * a successful JSON-RPC response carrying `isError`, not a JSON-RPC error and
  * not an HTTP status — see `docs/reference/api-error-format.md` § 401 versus 403.
  *
+ * A thrown error that carries a machine code (an `AppError`, e.g. a service's
+ * `ValidationError` or `throwStorageFailure`) also travels as the v1 envelope
+ * — `{ error, message, details? }` — below the human line, so an agent reads
+ * the same reasons (which field, which index) a v1 caller gets (B621).
+ *
  * @param {string|number} id - JSON-RPC request id
- * @param {string} message - Human-readable reason, shown to the calling agent
+ * @param {string|Error} reason - Human-readable reason, or the thrown error
  * @returns {string} JSON-RPC response string
  */
-function toolError(id, message) {
+function toolError(id, reason) {
+  const message = typeof reason === 'string' ? reason : reason?.message;
+  let text = `Error: ${message}`;
+  if (reason instanceof AppError) {
+    // `toJSON()` is the register-checked emission point (error-details.js);
+    // the JSON-RPC result has no `ok`, `isError` says it.
+    const { ok: _ok, ...envelope } = reason.toJSON();
+    text += `\n${JSON.stringify(envelope, null, 2)}`;
+  }
   return jsonRpcResponse(id, {
-    content: [{ type: 'text', text: `Error: ${message}` }],
+    content: [{ type: 'text', text }],
     isError: true,
   });
 }
@@ -349,7 +363,7 @@ export class McpServer {
         ],
       });
     } catch (err) {
-      return toolError(id, err.message);
+      return toolError(id, err);
     }
   }
 
