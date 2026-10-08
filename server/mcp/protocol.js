@@ -57,8 +57,9 @@ function toolError(id, reason) {
   const message = typeof reason === 'string' ? reason : reason?.message;
   let text = `Error: ${message}`;
   if (reason instanceof AppError) {
-    const envelope = { error: reason.code, message };
-    if (reason.details != null) envelope.details = reason.details;
+    // `toJSON()` is the register-checked emission point (error-details.js);
+    // the JSON-RPC result has no `ok`, `isError` says it.
+    const { ok: _ok, ...envelope } = reason.toJSON();
     text += `\n${JSON.stringify(envelope, null, 2)}`;
   }
   return jsonRpcResponse(id, {
