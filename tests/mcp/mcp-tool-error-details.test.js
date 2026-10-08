@@ -221,3 +221,18 @@ test('a refused slide-type change names the pair in its details', async () => {
     'to',
   ]);
 });
+
+test('a strict-validation refusal lists its issue under errors', async () => {
+  await installDb();
+  const { line, envelope } = readToolError(
+    await callTool('create_presentation_from_slides', {
+      title: 'Strict',
+      slides: [{ type: 'title-slide', content: {} }],
+    }),
+  );
+  assert.match(line, /^Error: Validation failed: /);
+  assert.equal(envelope.error, 'bad_request');
+  assert.deepEqual(envelope.details, {
+    errors: [line.replace('Error: Validation failed: ', '')],
+  });
+});

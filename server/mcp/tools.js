@@ -625,7 +625,11 @@ export function registerTools(
           );
         } catch (err) {
           if (err instanceof RawSlideValidationError) {
-            throw new ValidationError(`Validation failed: ${err.message}`);
+            // The issue under the one list strict slide validation uses
+            // (`bad_request`'s `errors`), so a caller reads it the same way.
+            throw new ValidationError(`Validation failed: ${err.message}`, {
+              errors: [err.message],
+            });
           }
           throw err;
         }
