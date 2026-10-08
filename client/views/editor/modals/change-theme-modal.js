@@ -13,6 +13,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { downloadBlob } from '../../../lib/dom/download.js';
 import { DEFAULT_THEME_REF } from '../../../../shared/constants/themes.js';
 import { h } from '../../../lib/dom/index.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 
 /**
  * Open the change theme warning modal.
@@ -190,13 +191,18 @@ function openChangeThemeModal({
 
   btnRow.append(btnCancel, btnApply);
 
-  modal.content.append(slidesList, optionsContainer, btnRow);
+  // A refused switch (a conversion that failed, B612) is a refusal of this
+  // dialog: it stays beside Apply with the server's sentence.
+  const applyError = createInlineError({ callout: true });
+
+  modal.content.append(slidesList, optionsContainer, applyError.el, btnRow);
 
   /**
    * Handle the apply button click based on selected action
    */
   async function handleApply() {
     if (isApplying) return;
+    applyError.clear();
     isApplying = true;
     btnApply.disabled = true;
     btnCancel.disabled = true;
@@ -232,8 +238,9 @@ function openChangeThemeModal({
           break;
       }
     } catch (err) {
-      console.error('[change-theme] Error:', err);
-      toast?.(t('editor.changeTheme.error', 'Failed to change theme'));
+      applyError.show(
+        err?.message || t('editor.changeTheme.error', 'Failed to change theme'),
+      );
       isApplying = false;
       btnApply.disabled = false;
       btnCancel.disabled = false;

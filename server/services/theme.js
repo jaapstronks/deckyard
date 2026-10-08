@@ -26,10 +26,22 @@ import {
   NotFoundError,
   throwStorageFailure,
 } from '../utils/errors.js';
-import { createLogger } from '../utils/logger.js';
 import { loadPresentationForActor } from './presentations.js';
 
-const log = createLogger('change-theme');
+/**
+ * The caller chose this conversion in the compatibility dialog; a switch that
+ * quietly kept the slide unconverted would answer a choice it did not honour
+ * (B612, the B572 rule). Every conversion runs before the one write, so a
+ * refusal leaves the deck as it was.
+ */
+function refuseFailedConversion(slide, { convertTo, index }, err) {
+  throw new AppError(
+    `Cannot convert slide ${slide.id} to ${convertTo}: ${err.message}`,
+    400,
+    { field: 'convertSlides', index },
+    'invalid',
+  );
+}
 
 /**
  * Switch a deck to another theme, writing `changes` along with it.
@@ -43,7 +55,8 @@ const log = createLogger('change-theme');
  * @returns {Promise<Object>} The deck as stored after the switch.
  * @throws {NotFoundError} No deck with this id in this scope.
  * @throws {import('../utils/errors.js').ForbiddenError} The actor may not write the deck.
- * @throws {AppError} 400 `invalid`, `details.field` = `theme`: no such theme.
+ * @throws {AppError} 400 `invalid`, `details.field` = `theme`: no such theme;
+ *   `details.field` = `convertSlides`: a requested slide conversion failed.
  */
 export async function changeTheme(
   scope,
@@ -73,7 +86,9 @@ export async function changeTheme(
  *   data carries a `slides` array.
  * @param {Array<{slideId: string, convertTo: string}>} [input.convertSlides]
  * @returns {Promise<Object>} The deck as stored after the switch.
- * @throws {AppError} 400 `invalid`, `details.field` = `theme`: no such theme.
+ * @throws {AppError} 400 `invalid`, `details.field` = `theme`: no such theme;
+ *   `details.field` = `convertSlides` (with `index` into it): a requested
+ *   slide conversion failed, and nothing was written.
  */
 export async function applyThemeChange(
   scope,
@@ -97,11 +112,11 @@ export async function applyThemeChange(
 
   const conversionMap = new Map();
   if (Array.isArray(convertSlides)) {
-    for (const conv of convertSlides) {
+    convertSlides.forEach((conv, index) => {
       if (conv?.slideId && conv?.convertTo) {
-        conversionMap.set(conv.slideId, conv.convertTo);
+        conversionMap.set(conv.slideId, { convertTo: conv.convertTo, index });
       }
-    }
+    });
   }
 
   // Stored as named: findTheme admits only the canonical spelling, and
@@ -111,20 +126,19 @@ export async function applyThemeChange(
   const updateData = { ...data, theme };
   if (Array.isArray(data?.slides)) {
     updateData.slides = data.slides.map((slide) => {
-      const targetType = conversionMap.get(slide?.id);
-      if (!targetType) return slide;
+      const conversion = conversionMap.get(slide?.id);
+      if (!conversion) return slide;
       try {
         // The converted slide is re-seeded for its new type, and that seed
         // reads the theme (ground, background presets): the theme the deck
         // is moving to, not the one it leaves.
-        return convertSlideToType(slide, targetType, {
+        return convertSlideToType(slide, conversion.convertTo, {
           slideTypes: SLIDE_TYPES,
           lang: data.lang || null,
           theme: newTheme,
         });
       } catch (err) {
-        log.warn(`Failed to convert slide ${slide.id}:`, err.message);
-        return slide; // Keep original if conversion fails
+        refuseFailedConversion(slide, conversion, err);
       }
     });
   }
