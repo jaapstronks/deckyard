@@ -398,11 +398,21 @@
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-xl);
   background: hsl(var(--app-bg-elevated));
+  overflow: hidden;
   cursor: pointer;
   transition:
     border-color var(--ps-transition-fast),
     background var(--ps-transition-fast),
     transform var(--ps-transition-fast);
+}
+
+/* The slide preview (the library's own thumb, B616) bleeds to the card's
+   top and side edges, above the kicker. */
+.home-block-card .home-block-preview {
+  width: auto;
+  margin: calc(-1 * var(--ps-space-3)) calc(-1 * var(--ps-space-4))
+    var(--ps-space-1);
+  border-bottom: 1px solid hsl(var(--app-border-default));
 }
 
 .home-block-card:hover {

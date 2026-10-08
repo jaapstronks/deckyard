@@ -14,6 +14,7 @@ import { icon } from '../../lib/dom/icons.js';
 import { createModal } from '../../lib/dom/modal.js';
 import { createTagEditor } from '../list/tag-editor.js';
 import { getContentForLang } from './search.js';
+import { libraryItemSlide } from './thumb.js';
 import { openEditModal } from './edit-modal.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
 import { h } from '../../lib/dom/index.js';
@@ -42,15 +43,8 @@ export function createSlideLibraryModals({
   onCopySlide = null,
   onNewPresentation = null,
 }) {
-  const makeSlideObj = (it, { lang = null } = {}) => ({
-    id: 'lib-preview',
-    type: cleanStr(it?.slideType),
-    content: getContentForLang(it, lang || state.getLang()),
-    notes: '',
-  });
-
   const openLightbox = async (it, { rerender, updateUrl = true } = {}) => {
-    const slide = makeSlideObj(it);
+    const slide = libraryItemSlide(it, state.getLang());
     const thTheme = await resolveThemeForItem(it);
     const shelf = state.getShelf();
 
@@ -328,7 +322,6 @@ export function createSlideLibraryModals({
   };
 
   return {
-    makeSlideObj,
     openLightbox,
     openUseSlideModal,
   };

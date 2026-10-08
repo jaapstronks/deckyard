@@ -135,13 +135,17 @@
   border-color: hsl(var(--app-accent-primary) / 0.5);
 }
 
-/* Thumbnail wrapper - contains thumb and overlay */
+/* Thumbnail wrapper - contains thumb and overlay. It is the size container
+   the scale ladder below reads, so the thumb scales wherever it is mounted
+   (library cards, Home's building blocks). */
 .ps-lib-thumb-wrap {
   position: relative;
+  display: block;
   width: 100%;
   aspect-ratio: 16 / 9;
   overflow: hidden;
   background: hsl(var(--app-bg-elevated));
+  container-type: inline-size;
 }
 
 /* Thumbnail inside library cards - fills wrapper completely */
@@ -163,13 +167,33 @@
   left: 0;
   width: 1600px;
   height: 900px;
-  transform: scale(var(--thumb-scale, 0.15));
+  transform: scale(var(--thumb-scale, 0.09));
   transform-origin: top left;
 }
 
 /* Dynamic scale based on card width using container queries.
    Breakpoints offset by -8px so slide slightly overflows (clipped) rather than underflows.
    Scale 0.01 = 16px of slide width, so max overflow is ~8px. */
+@container (min-width: 152px) {
+  .ps-lib-thumb.thumb .slide {
+    --thumb-scale: 0.1;
+  }
+}
+@container (min-width: 168px) {
+  .ps-lib-thumb.thumb .slide {
+    --thumb-scale: 0.11;
+  }
+}
+@container (min-width: 184px) {
+  .ps-lib-thumb.thumb .slide {
+    --thumb-scale: 0.12;
+  }
+}
+@container (min-width: 200px) {
+  .ps-lib-thumb.thumb .slide {
+    --thumb-scale: 0.13;
+  }
+}
 @container (min-width: 216px) {
   .ps-lib-thumb.thumb .slide {
     --thumb-scale: 0.14;
