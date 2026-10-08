@@ -42,6 +42,28 @@ export function alignToActiveVersion(body) {
 }
 
 /**
+ * An i18n block with every language version's slides passed through
+ * `mapSlides`, for a change that holds per slide id in every language (a
+ * theme switch's conversions, B623). The block is copied, not changed; a
+ * block without versions comes back as it was.
+ *
+ * @param {Object|null|undefined} i18n - A deck's or a write body's `i18n`.
+ * @param {(slides: Array, lang: string) => Array} mapSlides - Answers the
+ *   new slides of the version in `lang`.
+ * @returns {Object|null|undefined} The i18n block with mapped versions.
+ */
+export function mapVersionSlides(i18n, mapSlides) {
+  if (!i18n?.versions || typeof i18n.versions !== 'object') return i18n;
+  const versions = {};
+  for (const [lang, version] of Object.entries(i18n.versions)) {
+    versions[lang] = Array.isArray(version?.slides)
+      ? { ...version, slides: mapSlides(version.slides, lang) }
+      : version;
+  }
+  return { ...i18n, versions };
+}
+
+/**
  * The write body for a new dominant slide buffer on a loaded deck: the
  * dominant version gets `slides`, every other version and deck column stays
  * as stored.
