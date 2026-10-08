@@ -193,9 +193,13 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
     const commentIndicator = h('div', {
       class: 'slide-comment-indicator',
       text: String(commentCount),
-      title: t('editor.slideList.commentsOnSlide', '{n} comment(s)', {
-        n: commentCount,
-      }),
+      title: t(
+        'editor.slideList.commentsOnSlide',
+        { one: '1 comment', many: '{count} comments' },
+        {
+          count: commentCount,
+        },
+      ),
     });
     thumbMini.append(commentIndicator);
   }
@@ -298,9 +302,13 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
       const childrenCountBadge = h('div', {
         class: 'slide-children-count',
         text: String(childCount),
-        title: t('editor.slideList.childrenCount', '{n} nested slide(s)', {
-          n: childCount,
-        }),
+        title: t(
+          'editor.slideList.childrenCount',
+          { one: '1 nested slide', many: '{count} nested slides' },
+          {
+            count: childCount,
+          },
+        ),
       });
       thumbMini.append(childrenCountBadge);
     }

@@ -683,9 +683,13 @@ function getVisibilityIndicator(p, t) {
     return indicator(
       'shared',
       'link',
-      t('list.visibility.shared', 'Shared with {count} people', {
-        count: p.collaboratorCount,
-      }),
+      t(
+        'list.visibility.shared',
+        { one: 'Shared with 1 person', many: 'Shared with {count} people' },
+        {
+          count: p.collaboratorCount,
+        },
+      ),
     );
   }
   return indicator('private', 'lock', t('list.visibility.private', 'Private'));

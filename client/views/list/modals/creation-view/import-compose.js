@@ -216,7 +216,10 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
           class: 'help modal-hint',
           text: t(
             'list.newPresentation.importMarkdown.warningsIntro',
-            'Import succeeded, but {count} issue(s) were detected:',
+            {
+              one: 'Import succeeded, but 1 issue was detected:',
+              many: 'Import succeeded, but {count} issues were detected:',
+            },
             { count: warnings.length },
           ),
         }),

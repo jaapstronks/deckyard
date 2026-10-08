@@ -155,7 +155,7 @@ export function openVersionCompareModal({
         if (insightCount > 0) {
           aiStatus.textContent = t(
             'editor.versions.compare.insightsAdded',
-            '{count} insights added',
+            { one: '1 insight added', many: '{count} insights added' },
             { count: insightCount },
           );
           aiButton.style.display = 'none';

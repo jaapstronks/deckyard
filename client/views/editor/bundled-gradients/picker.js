@@ -132,7 +132,7 @@ export function openBundledGradientPicker({
     }
     statusLine.textContent = t(
       'stockMedia.gradients.count',
-      '{count} gradients',
+      { one: '1 gradient', many: '{count} gradients' },
       { count: items.length },
     );
   };

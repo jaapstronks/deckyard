@@ -352,9 +352,13 @@ export function createShareLinksSection({
         meta.append(
           h('span', {
             class: 'share-link-uses',
-            text: t('share.link.uses', '{count} uses', {
-              count: link.useCount,
-            }),
+            text: t(
+              'share.link.uses',
+              { one: '1 use', many: '{count} uses' },
+              {
+                count: link.useCount,
+              },
+            ),
           }),
         );
       }

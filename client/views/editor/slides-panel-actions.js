@@ -89,9 +89,13 @@ export function createSlidesPanelActions({
       const slidesToCopy = (pres.slides || []).filter((s) => toCopy.has(s.id));
       if (copySlides(slidesToCopy)) {
         toast?.success?.(
-          t('editor.slides.copiedToClipboard', '{n} slide(s) copied', {
-            n: slidesToCopy.length,
-          }),
+          t(
+            'editor.slides.copiedToClipboard',
+            { one: '1 slide copied', many: '{count} slides copied' },
+            {
+              count: slidesToCopy.length,
+            },
+          ),
         );
         updateBulkActionBar();
       }
@@ -115,14 +119,20 @@ export function createSlidesPanelActions({
       if (childCount > 0) {
         confirmMsg = t(
           'editor.slides.bulkDeleteConfirmWithChildren',
-          'Delete {n} selected slides and {c} nested slides?',
-          { n: selected.size, c: childCount },
+          {
+            one: 'Delete 1 selected slide and {c} nested slides?',
+            many: 'Delete {count} selected slides and {c} nested slides?',
+          },
+          { count: selected.size, c: childCount },
         );
       } else {
         confirmMsg = t(
           'editor.slides.bulkDeleteConfirm',
-          'Delete {n} selected slides?',
-          { n: selected.size },
+          {
+            one: 'Delete 1 selected slide?',
+            many: 'Delete {count} selected slides?',
+          },
+          { count: selected.size },
         );
       }
 

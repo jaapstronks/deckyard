@@ -77,9 +77,13 @@ export function createViewerSlidesPanel({
         const commentIndicator = h('div', {
           class: 'slide-comment-indicator',
           text: String(commentCount),
-          title: t('editor.slideList.commentsOnSlide', '{n} comment(s)', {
-            n: commentCount,
-          }),
+          title: t(
+            'editor.slideList.commentsOnSlide',
+            { one: '1 comment', many: '{count} comments' },
+            {
+              count: commentCount,
+            },
+          ),
         });
         thumbMini.append(commentIndicator);
       }

@@ -73,7 +73,7 @@ export function openVersionPreviewModal({
 
       status.textContent = t(
         'editor.versions.preview.slideCount',
-        '{count} slides',
+        { one: '1 slide', many: '{count} slides' },
         {
           count: slides.length,
         },

@@ -190,7 +190,11 @@ export function pasteSlidesFromClipboard({
   onMultiSelectionChange?.();
 
   toast?.success?.(
-    t('editor.slides.pasted', '{n} slide(s) pasted', { n: newSlides.length }),
+    t(
+      'editor.slides.pasted',
+      { one: '1 slide pasted', many: '{count} slides pasted' },
+      { count: newSlides.length },
+    ),
   );
   return newSlides.length;
 }

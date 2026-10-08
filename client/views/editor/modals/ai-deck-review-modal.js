@@ -230,9 +230,16 @@ export function openAiDeckReviewModal({
       grid.render();
       toast.success(
         resp?.rationale ||
-          t('editor.deckReview.revised', 'Section replaced ({count} slides)', {
-            count: revised.length,
-          }),
+          t(
+            'editor.deckReview.revised',
+            {
+              one: 'Section replaced (1 slide)',
+              many: 'Section replaced ({count} slides)',
+            },
+            {
+              count: revised.length,
+            },
+          ),
         { id: 'ai-deck-review-revised', durationMs: 7000 },
       );
     } catch (e) {

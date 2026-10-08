@@ -181,9 +181,13 @@ export function attachSlideListKeyNavigation({
       const slidesToCopy = (pres?.slides || []).filter((s) => toCopy.has(s.id));
       if (slidesToCopy.length > 0 && copySlides(slidesToCopy)) {
         toast?.success?.(
-          t('editor.slides.copiedToClipboard', '{n} slide(s) copied', {
-            n: slidesToCopy.length,
-          }),
+          t(
+            'editor.slides.copiedToClipboard',
+            { one: '1 slide copied', many: '{count} slides copied' },
+            {
+              count: slidesToCopy.length,
+            },
+          ),
         );
         onMultiSelectionChange?.();
       }

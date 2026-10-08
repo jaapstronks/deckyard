@@ -115,9 +115,13 @@ export function openVersionsModal({
         const metaParts = [who, when];
         if (slideCount !== null) {
           metaParts.push(
-            t('editor.versions.slideCount', '{count} slides', {
-              count: slideCount,
-            }),
+            t(
+              'editor.versions.slideCount',
+              { one: '1 slide', many: '{count} slides' },
+              {
+                count: slideCount,
+              },
+            ),
           );
         }
         const left = h('div', { class: 'stack is-gap-xs' }, [

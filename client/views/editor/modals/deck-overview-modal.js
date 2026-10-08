@@ -33,7 +33,10 @@ export function openDeckOverviewModal({
     title: t('editor.deckGrid.title', 'Slide overview'),
     hint: t(
       'editor.deckGrid.hint',
-      'All {count} slides at a glance. Click a slide to jump to it in the editor.',
+      {
+        one: '1 slide at a glance. Click it to jump to it in the editor.',
+        many: 'All {count} slides at a glance. Click a slide to jump to it in the editor.',
+      },
       { count },
     ),
     modalClass: 'modal-deck-grid',

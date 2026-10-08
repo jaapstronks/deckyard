@@ -536,9 +536,13 @@ function renderCollectionBlockCard(col, onComposeFrom, isNew, preview) {
   meta.append(
     h('span', {
       class: 'home-block-count',
-      text: t('list.creationView.library.collectionCount', '{count} slides', {
-        count: String(count),
-      }),
+      text: t(
+        'list.creationView.library.collectionCount',
+        { one: '1 slide', many: '{count} slides' },
+        {
+          count,
+        },
+      ),
     }),
   );
 
@@ -762,9 +766,13 @@ function renderActivityPreviewItem({ event, count }, detachThumbs) {
       break;
     case 'slide.added': {
       const n = Number(event.data?.count) || 1;
-      actionText = t('activity.slidesAdded', 'added {count} slides to', {
-        count: n,
-      });
+      actionText = t(
+        'activity.slidesAdded',
+        { one: 'added 1 slide to', many: 'added {count} slides to' },
+        {
+          count: n,
+        },
+      );
       break;
     }
     default:

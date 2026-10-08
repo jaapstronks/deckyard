@@ -75,10 +75,8 @@ export function createTagFilter({ api, onFilterChange }) {
     } else {
       filterBtn.textContent = t(
         'tags.filter.buttonActive',
-        '{count} tag(s) selected',
-        {
-          count: String(count),
-        },
+        { one: '1 tag selected', many: '{count} tags selected' },
+        { count },
       );
       filterBtn.classList.add('has-selection');
     }

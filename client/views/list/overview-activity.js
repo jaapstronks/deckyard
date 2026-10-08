@@ -162,9 +162,13 @@ function createActivityItem(event) {
   // other types use the static action map.
   const actionText =
     event.eventType === 'slide.added'
-      ? t('activity.action.addedNSlidesTo', 'added {count} slides to', {
-          count: Number(event.data?.count) || 1,
-        })
+      ? t(
+          'activity.action.addedNSlidesTo',
+          { one: 'added 1 slide to', many: 'added {count} slides to' },
+          {
+            count: Number(event.data?.count) || 1,
+          },
+        )
       : getActionText(event.eventType);
 
   const action = h('span', {

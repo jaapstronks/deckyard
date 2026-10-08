@@ -562,9 +562,13 @@ export function createSlideLibraryPicker({
         const insertAllBtn = h('button', {
           class: 'btn btn-primary btn-sm',
           type: 'button',
-          text: t('slideLibrary.selection.insertAll', 'Insert {count} slides', {
-            count: String(count),
-          }),
+          text: t(
+            'slideLibrary.selection.insertAll',
+            { one: 'Insert 1 slide', many: 'Insert {count} slides' },
+            {
+              count,
+            },
+          ),
           onclick: async () => {
             const items = state.getSelectedItems();
             for (const item of items) {
@@ -618,8 +622,11 @@ export function createSlideLibraryPicker({
               title: t('slideLibrary.selection.trash', 'Move to trash'),
               message: t(
                 'slideLibrary.selection.trashConfirm',
-                'Move {count} slide(s) to trash?',
-                { count: String(items.length) },
+                {
+                  one: 'Move 1 slide to trash?',
+                  many: 'Move {count} slides to trash?',
+                },
+                { count: items.length },
               ),
               confirmLabel: t('slideLibrary.selection.trash', 'Move to trash'),
               danger: true,

@@ -64,7 +64,10 @@ export function createBatchAlts({
     }
     generate.textContent = t(
       'imageLibrary.batch.aiGenerate',
-      'Generate missing alt text for {count} images',
+      {
+        one: 'Generate missing alt text for 1 image',
+        many: 'Generate missing alt text for {count} images',
+      },
       { count: eligible.length },
     );
     generate.disabled = running || !canStart() || !eligible.length;
@@ -83,7 +86,10 @@ export function createBatchAlts({
         title: t('imageLibrary.batch.aiTitle', 'Generate alt text with AI?'),
         message: t(
           'imageLibrary.batch.aiConsent',
-          '{count} images and their context (tags and photographer) will be sent to OpenAI. This may incur AI costs, depending on the configured model and image usage. Generate missing alt text?',
+          {
+            one: '1 image and its context (tags and photographer) will be sent to OpenAI. This may incur AI costs, depending on the configured model and image usage. Generate missing alt text?',
+            many: '{count} images and their context (tags and photographer) will be sent to OpenAI. This may incur AI costs, depending on the configured model and image usage. Generate missing alt text?',
+          },
           { count: jobs.length },
         ),
       });
