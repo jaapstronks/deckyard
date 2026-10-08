@@ -1694,15 +1694,15 @@ export function registerTools(
 
   server.tool(
     'list_recent_comments',
-    'List the most recent comments across all your presentations (newest first), optionally filtered to one reviewer or a since-date. Answers "what are the latest comments on my decks?". Each row carries the deck title, current slide context, create-time slide snapshot and a slide-anchored edit URL so it reads standalone. Requires the DB storage backend (returns empty in file mode).',
+    'List the most recent comments across the presentations you can open (newest first; `ownership` narrows the decks), optionally filtered to one reviewer or a since-date. Answers "what are the latest comments on my decks?". Each row carries the deck title, current slide context, create-time slide snapshot and a slide-anchored edit URL so it reads standalone. Requires the DB storage backend (returns empty in file mode).',
     {
       type: 'object',
       properties: {
         ownership: {
           type: 'string',
           description:
-            'Which decks to include: owned, shared, or all (default: all)',
-          enum: ['owned', 'shared', 'all'],
+            'Which decks to include, as in list_presentations: "owned" (decks you own or made), "collection" (owned plus organization-visible), "shared" (decks shared with you), or "all" (default; every deck you can open). Any other value is refused.',
+          enum: [...DECK_LIST_OWNERSHIPS],
         },
         authorEmail: {
           type: 'string',
@@ -1737,6 +1737,7 @@ export function registerTools(
       const owner = getOwner(context);
       const { items: listed, total } = await listRecentComments(
         storageScopeOf(context),
+        { actor: actorOf(context) },
         { ownership, authorEmail, status, since, limit },
       );
 

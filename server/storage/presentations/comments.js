@@ -8,8 +8,6 @@ import { norm, normalizeEmail, nowIso } from '../../utils/normalize.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
 import { toStorageContext } from '../scope.js';
 import { withDbGuard } from '../utils/index.js';
-import { listPresentations } from './index.js';
-import { listPresentationsSharedWithUser } from '../collaborators.js';
 import { resolveIdentityByEmail } from '../identity-resolver.js';
 import { getAiIdentity } from '../settings.js';
 import { isAiAuthorEmail } from '../../../shared/constants/ai.js';
@@ -325,54 +323,18 @@ export async function markThreadsRead(scope, presentationId, commentIds) {
 }
 
 /**
- * Resolve the presentations the acting user may see, as `{ id, title }` refs.
- * Owned decks come from `listPresentations` (filtered by `ownerEmail`); shared
- * decks from `listPresentationsSharedWithUser`.
- * Built once so callers avoid per-comment N+1 title lookups.
+ * List the most recent top-level comments on a given set of decks, newest
+ * first. Powers cross-deck review queries ("latest comments on my decks",
+ * optionally by one reviewer) that the per-deck listComments() can't answer.
  *
- * @param {import('../scope.js').StorageScope} scope - `actorEmail`/`ownerEmail`
- *   is the acting user, `organizationId` scopes shared lookups.
- * @param {'owned'|'shared'|'all'} [ownership='all'] - Which decks to include.
- * @returns {Promise<Array<{ id: string, title: string }>>}
- */
-export async function listAccessiblePresentationRefs(scope, ownership = 'all') {
-  toStorageContext(scope, 'listAccessiblePresentationRefs');
-  const owner = normalizeEmail(scope?.actorEmail || scope?.ownerEmail);
-  if (!owner) return [];
-
-  const wantOwned = ownership === 'owned' || ownership === 'all';
-  const wantShared = ownership === 'shared' || ownership === 'all';
-
-  const titleById = new Map();
-
-  if (wantOwned) {
-    const all = await listPresentations(scope);
-    for (const p of all) {
-      if (normalizeEmail(p.ownerEmail) === owner) {
-        titleById.set(p.id, p.title || 'Untitled');
-      }
-    }
-  }
-
-  if (wantShared) {
-    const shared = await listPresentationsSharedWithUser(scope, owner);
-    for (const p of shared) {
-      if (!titleById.has(p.id)) titleById.set(p.id, p.title || 'Untitled');
-    }
-  }
-
-  return [...titleById.entries()].map(([id, title]) => ({ id, title }));
-}
-
-/**
- * List the most recent top-level comments across every presentation the acting
- * user can see (owned and/or shared), newest first. Powers cross-deck review
- * queries ("latest comments on my decks", optionally by one reviewer) that the
- * per-deck listComments() can't answer.
+ * Which decks those are is not decided here: the comment service asks
+ * `listPresentationsForActor` for the deck set under the caller's `ownership`
+ * (B618), the one list every contract reads (B607, D317).
  *
- * @param {import('../scope.js').StorageScope} scope - Acting user + org, as above.
+ * @param {import('../scope.js').StorageScope} scope - The caller's org scope.
+ * @param {Array<{ id: string, title?: string }>} decks - The decks to read
+ *   across; each row is enriched with its deck's title.
  * @param {Object} [opts]
- * @param {'owned'|'shared'|'all'} [opts.ownership='all'] - Which decks to include.
  * @param {string|null} [opts.authorEmail=null] - Filter to one comment author.
  * @param {'open'|'resolved'|'dismissed'|'all'} [opts.status='all']
  * @param {string|null} [opts.since=null] - Only comments created at/after this ISO timestamp.
@@ -380,11 +342,8 @@ export async function listAccessiblePresentationRefs(scope, ownership = 'all') {
  * @returns {Promise<{ comments: Array, total: number }>} Comments enriched with
  *   `presentationTitle`; `total` is the number returned.
  */
-export async function listRecentCommentsForOwner(scope, opts = {}) {
-  toStorageContext(scope, 'listRecentCommentsForOwner');
-  const ownership = ['owned', 'shared', 'all'].includes(opts?.ownership)
-    ? opts.ownership
-    : 'all';
+export async function listRecentCommentsOnDecks(scope, decks, opts = {}) {
+  toStorageContext(scope, 'listRecentCommentsOnDecks');
   const authorEmail = opts?.authorEmail
     ? normalizeEmail(opts.authorEmail)
     : null;
@@ -393,11 +352,11 @@ export async function listRecentCommentsForOwner(scope, opts = {}) {
     : 'all';
   const limit = Math.max(1, Math.min(200, Number(opts?.limit) || 50));
 
-  const refs = await listAccessiblePresentationRefs(scope, ownership);
-  if (refs.length === 0) return { comments: [], total: 0 };
-
-  const titleById = new Map(refs.map((r) => [r.id, r.title]));
-  const ids = refs.map((r) => r.id);
+  const titleById = new Map(
+    (decks || []).map((d) => [d.id, d.title || 'Untitled']),
+  );
+  if (titleById.size === 0) return { comments: [], total: 0 };
+  const ids = [...titleById.keys()];
 
   return withDbGuard({ comments: [], total: 0 }, async (db) => {
     const orgId = getOrgId(scope);
