@@ -7,10 +7,8 @@
 
 import { repoRoot } from '../config/paths.js';
 import { getAppBaseUrl } from '../config/utils.js';
-import { updatePresentation } from '../storage/presentations/index.js';
 import { loadPresentationChecked, mcpActor } from './presentation-access.js';
 import { singleOrganizationScope } from '../storage/scope.js';
-import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
   enrichCommentsWithSlideContext,
   slideContextFor,
@@ -30,7 +28,13 @@ import {
   listPresentationsForActor,
   publicDeckTimestamps,
 } from '../services/presentations.js';
-import { updateSlide, addSlide } from '../services/slides.js';
+import {
+  addSlide,
+  removeSlide,
+  reorderSlides,
+  replaceSlides,
+  updateSlide,
+} from '../services/slides.js';
 import {
   deckToPresentationParts,
   newSlide,
@@ -56,7 +60,11 @@ import {
 import { analyzePresentation } from '../utils/ai/analyze-presentation.js';
 import { convertSlideWithAi } from '../utils/openai/convert-slide.js';
 import { generateSlidesToAppendFromRawContent } from '../utils/openai/append.js';
-import { loadThemeAssets, settleNewDeckTheme } from '../utils/themes.js';
+import {
+  loadDeckTheme,
+  loadThemeAssets,
+  settleNewDeckTheme,
+} from '../utils/themes.js';
 import { listThemes } from '../storage/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
@@ -229,42 +237,6 @@ export function registerTools(
       getOwner(context),
       options,
     );
-  }
-
-  /**
-   * The acting identity for a storage write, both halves of it.
-   *
-   * The slide-lock policy decides authorship on the stable `users.id`
-   * (shared/identity-match.js), so the session's address is resolved to one
-   * here — the boundary — exactly as the public API resolves its API-key owner.
-   * An owner with no `users` row resolves to null and is simply not an author.
-   *
-   * @param {string} ownerEmail - The acting session owner's address
-   * @returns {Promise<{actorEmail: string, actorUserId: string|null}>}
-   */
-  async function actingIdentity(ownerEmail) {
-    const resolution = await resolveIdentityByEmail(ownerEmail);
-    return {
-      actorEmail: ownerEmail,
-      actorUserId: resolution?.userId || null,
-    };
-  }
-
-  /**
-   * Write options for updatePresentation calls: attribute
-   * the write to the acting session owner so the slide-lock policy
-   * (enforceSlideWritePolicy) can tell authors from non-authors. Without an
-   * actor the policy fails closed and author-locked slides reject even their
-   * own author. No owner configured = trusted local (stdio) session: per-deck
-   * access checks are already skipped for it (see presentation-access.js), so
-   * lock enforcement is skipped too instead of failing closed on an anonymous
-   * actor.
-   * @param {Object} [context] - Per-request context (SSE session)
-   * @returns {Promise<Object>} opts for the storage write call
-   */
-  async function writeOpts(context) {
-    const owner = getOwner(context);
-    return owner ? actingIdentity(owner) : { bypassLockCheck: true };
   }
 
   // ─── get_slide_types ────────────────────────────────────────────────────
@@ -950,13 +922,10 @@ export function registerTools(
         vendor: vendor || null,
       });
 
-      // Save the modified deck
-      pres.slides = newDeck.slides;
-      await updatePresentation(
+      const { presentation } = await replaceSlides(
         storageScopeOf(context),
-        presentationId,
-        pres,
-        await writeOpts(context),
+        { actor: actorOf(context) },
+        { presentationId, slides: newDeck.slides },
       );
 
       return {
@@ -969,7 +938,7 @@ export function registerTools(
             action: m.action,
             reasoning: m.reasoning,
           })) || [],
-        totalSlides: pres.slides.length,
+        totalSlides: presentation.slides.length,
       };
     },
     { permission: 'ai', feature: 'ai' },
@@ -1097,7 +1066,7 @@ export function registerTools(
 
   server.tool(
     'remove_slide',
-    'Remove a slide from a presentation by index.',
+    'Remove a slide from a presentation by index. The last slide of a presentation cannot be removed.',
     {
       type: 'object',
       properties: {
@@ -1110,24 +1079,13 @@ export function registerTools(
       required: ['presentationId', 'slideIndex'],
     },
     async ({ presentationId, slideIndex }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, {
-        access: 'write',
-      });
-      if (slideIndex < 0 || slideIndex >= pres.slides.length) {
-        throw new Error(
-          `Slide index ${slideIndex} out of range (0-${pres.slides.length - 1})`,
-        );
-      }
-
-      const slideTypes = await sessionSlideTypes(context);
-      const removed = pres.slides.splice(slideIndex, 1)[0];
-      await updatePresentation(
+      const { slide: removed, presentation } = await removeSlide(
         storageScopeOf(context),
-        presentationId,
-        pres,
-        await writeOpts(context),
+        { actor: actorOf(context) },
+        { presentationId, slideIndex },
       );
 
+      const slideTypes = await sessionSlideTypes(context);
       return {
         removed: true,
         slideIndex,
@@ -1135,9 +1093,9 @@ export function registerTools(
         removedTitle: slideTitle(
           removed,
           getSlideType(removed.type, slideTypes),
-          { lang: resolveDocLangFromPresentation(pres) },
+          { lang: resolveDocLangFromPresentation(presentation) },
         ),
-        totalSlides: pres.slides.length,
+        totalSlides: presentation.slides.length,
       };
     },
     { permission: 'write' },
@@ -1161,31 +1119,21 @@ export function registerTools(
       required: ['presentationId', 'fromIndex', 'toIndex'],
     },
     async ({ presentationId, fromIndex, toIndex }, context) => {
-      const pres = await getCheckedPresentation(presentationId, context, {
-        access: 'write',
-      });
-      const len = pres.slides.length;
-      if (fromIndex < 0 || fromIndex >= len)
-        throw new Error(`fromIndex ${fromIndex} out of range`);
-      if (toIndex < 0 || toIndex >= len)
-        throw new Error(`toIndex ${toIndex} out of range`);
+      const { slides, presentation } = await reorderSlides(
+        storageScopeOf(context),
+        { actor: actorOf(context) },
+        { presentationId, move: { fromIndex, toIndex } },
+      );
 
       const slideTypes = await sessionSlideTypes(context);
-      const [slide] = pres.slides.splice(fromIndex, 1);
-      pres.slides.splice(toIndex, 0, slide);
-      await updatePresentation(
-        storageScopeOf(context),
-        presentationId,
-        pres,
-        await writeOpts(context),
-      );
+      const slide = slides[toIndex];
 
       return {
         moved: true,
         slide: {
           type: slide.type,
           title: slideTitle(slide, getSlideType(slide.type, slideTypes), {
-            lang: resolveDocLangFromPresentation(pres),
+            lang: resolveDocLangFromPresentation(presentation),
           }),
         },
         from: fromIndex,
@@ -1236,6 +1184,24 @@ export function registerTools(
       if (!newSlides?.length)
         return { appended: 0, totalSlides: pres.slides.length };
 
+      // The model answers in the portable deck format: compose its slides the
+      // way the editor's append route does (factory defaults, ids, the deck's
+      // theme), then fix what the lenient pass can before the service's strict
+      // validation.
+      const slideTypes = await sessionSlideTypes(context);
+      const parts = deckToPresentationParts(newSlides, {
+        theme: await loadDeckTheme(
+          repoRoot,
+          pres.theme,
+          storageScopeOf(context),
+        ),
+        lang,
+        slideTypes,
+      });
+      const slidesToInsert = validateAndFixRefinedSlides(parts.slides || [], {
+        slideTypes,
+      });
+
       // Find insert position: before structural closing slides (payoff, end, follow-invite)
       const closingTypes = new Set([
         'payoff-slide',
@@ -1251,28 +1217,19 @@ export function registerTools(
         }
       }
 
-      const slidesToInsert = newSlides.map((s) => ({
-        id: crypto.randomUUID(),
-        type: s.type,
-        content: s.content,
-        notes: '',
-      }));
-
-      pres.slides.splice(insertAt, 0, ...slidesToInsert);
-
-      await updatePresentation(
+      const slides = [...pres.slides];
+      slides.splice(insertAt, 0, ...slidesToInsert);
+      const { presentation } = await replaceSlides(
         storageScopeOf(context),
-        presentationId,
-        pres,
-        await writeOpts(context),
+        { actor: actorOf(context) },
+        { presentationId, slides },
       );
 
-      const slideTypes = await sessionSlideTypes(context);
       return {
-        appended: newSlides.length,
+        appended: slidesToInsert.length,
         insertedAt: insertAt,
-        totalSlides: pres.slides.length,
-        newSlides: newSlides.map((s) => ({
+        totalSlides: presentation.slides.length,
+        newSlides: slidesToInsert.map((s) => ({
           type: s.type,
           title: slideTitle(s, getSlideType(s.type, slideTypes), { lang }),
         })),
@@ -1320,19 +1277,21 @@ export function registerTools(
         slideTypes: await sessionSlideTypes(context),
       });
 
+      let slidesAfter = pres.slides.length;
       if (
         apply &&
         (recommendations.merges.length > 0 ||
           recommendations.removals.length > 0)
       ) {
-        const compressed = applyCompression(pres, recommendations);
-        pres.slides = compressed.slides;
-        await updatePresentation(
+        const { presentation } = await replaceSlides(
           storageScopeOf(context),
-          presentationId,
-          pres,
-          await writeOpts(context),
+          { actor: actorOf(context) },
+          {
+            presentationId,
+            slides: applyCompression(pres, recommendations).slides,
+          },
         );
+        slidesAfter = presentation.slides.length;
       }
 
       return {
@@ -1340,7 +1299,7 @@ export function registerTools(
         merges: recommendations.merges?.length || 0,
         removals: recommendations.removals?.length || 0,
         recommendations,
-        slidesAfter: apply ? pres.slides.length : undefined,
+        slidesAfter: apply ? slidesAfter : undefined,
       };
     },
     { permission: 'ai', feature: 'ai' },
