@@ -285,7 +285,7 @@ session is built, so it needs no exception.
 
 Machine clients (public API keys, MCP sessions) hold an address and no id, so
 the boundary resolves it once — `middleware.js` for the public API,
-`actingIdentity()` for MCP tools, `actor-access.js` for the shared checks —
+`mcpActor()` plus the services' write options for MCP tools, `actor-access.js` for the shared checks —
 rather than per deck. An address with no `users` row resolves to a defined NULL,
 and such an actor reaches only what being _a_ user grants (organization
 visibility), never what being _the_ owner does.

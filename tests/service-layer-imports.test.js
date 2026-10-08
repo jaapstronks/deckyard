@@ -14,11 +14,11 @@
  *      This one is at zero and stays there.
  *   2. **into the deck storage** — the same two trees importing from
  *      `server/storage/presentations/**`. Every such import is a deck operation
- *      the adapter composes itself, where a service should decide it. Each
- *      A7.4 item (B519–B521 and what follows) lowers this count; A7.4 closes
- *      at zero.
+ *      the adapter composes itself, where a service should decide it. The
+ *      A7.4 items (B519–B521 and B568–B611) lowered this count to zero; B611
+ *      closed the last edge.
  *
- * The first kind is pinned at zero. The second is pinned **edge by edge**: each
+ * Both kinds are at zero. The second is pinned **edge by edge**: each
  * adapter file → storage module import that is still open is listed in
  * {@link OPEN_STORAGE_EDGES} with the item that closes it (B575 gave every edge
  * an address). A new edge is a new bypass: route the call through a service
@@ -49,12 +49,9 @@ const ROUTES_BASELINE = 0;
  * empty.
  */
 const OPEN_STORAGE_EDGES = {
-  // The slide-set writes of remove_slide, reorder_slides, append_slides,
-  // compress_presentation and iterate_presentation (B611). The creates'
-  // update and normalizeSlides pre-check went with B609; the translation
-  // write went with B610 (one translate, shared with the internal routes and
-  // the translate worker).
-  'server/mcp/tools.js -> server/storage/presentations/index.js': 'B611',
+  // Empty since B611: MCP's slide-set writes (remove_slide, reorder_slides,
+  // append_slides, compress_presentation, iterate_presentation) went through
+  // services/slides.js and closed the last edge. Keep it empty.
 };
 
 function listJs(dir) {
@@ -131,11 +128,16 @@ test('adapter imports into server/storage/presentations are the open edges', () 
 });
 
 test('the counter sees the import shapes the adapters use', () => {
-  // Guard against a regex that silently matches nothing: the storage count is
-  // nonzero today, and MCP's own storage import must be among the hits.
-  const hits = importsInto('server/storage/presentations');
+  // Guard against a regex that silently matches nothing, now that both counts
+  // are zero: the same counter must see the adapters' service imports, MCP's
+  // own and v1's among them.
+  const hits = importsInto('server/services');
   assert.ok(
     hits.some((h) => h.startsWith('server/mcp/tools.js -> ')),
+    hits.join('\n'),
+  );
+  assert.ok(
+    hits.some((h) => h.startsWith('server/routes/public-api/v1/')),
     hits.join('\n'),
   );
 });
