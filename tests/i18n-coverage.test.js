@@ -1,8 +1,8 @@
 /**
  * i18n drift guard.
  *
- * Deckyard ships Dutch as the *default* UI locale and English as the reference,
- * so both must be complete: a key missing from nl/ silently renders the English
+ * Deckyard's Tier-1 locales are English (the reference and the default, D322)
+ * and Dutch, so both must be complete: a key missing from nl/ silently renders the English
  * fallback baked into the t() call, which looks like working software while
  * being untranslated. This test fails the build when that drift reappears.
  *

@@ -22,11 +22,6 @@
       "count": 1
     }
   },
-  "client/go.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/lib/api.js": {
     "no-useless-assignment": {
       "count": 1

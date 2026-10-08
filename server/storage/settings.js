@@ -46,6 +46,7 @@ import {
   DEFAULT_AI_NAME,
   DEFAULT_AI_EMAIL,
 } from '../../shared/constants/ai.js';
+import { DEFAULT_UI_LOCALE } from '../../shared/constants/ui-locale.js';
 import { getAppName } from '../config/branding.js';
 import { envStr } from '../config/utils.js';
 import {
@@ -684,7 +685,7 @@ export function defaultUserSettings() {
       name: '',
       imageUrl: '', // URL to uploaded profile image
     },
-    uiLocale: 'en', // UI language for app chrome
+    uiLocale: DEFAULT_UI_LOCALE, // UI language for app chrome
     uiLang: null, // 'nl' | 'en-GB' | null
     notifications: {
       emailEnabled: true, // Receive email notifications (channel master switch)
