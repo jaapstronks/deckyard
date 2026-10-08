@@ -216,20 +216,23 @@ export async function publishPresentation({
   });
 
   // Persist the publish state back onto the presentation document (handy for
-  // exports/UI).
-  const nextPres = {
-    ...pres,
-    published: {
-      id: entry.publishId,
-      slug: entry.slug,
-      ogImageUrl: entry.ogImageUrl || '',
-      created: entry.created,
-      modified: entry.modified,
-    },
+  // exports/UI). Only the publication column moves, as on unpublish: writing
+  // the loaded deck back whole would overwrite the active language version
+  // with the dominant text and a concurrent slide edit with the load (B620).
+  const published = {
+    id: entry.publishId,
+    slug: entry.slug,
+    ogImageUrl: entry.ogImageUrl || '',
+    created: entry.created,
+    modified: entry.modified,
   };
-  const updated = await updatePresentation(storageScope, pres.id, nextPres, {
-    actorEmail,
-  });
+  const nextPres = { ...pres, published };
+  const updated = await updatePresentation(
+    storageScope,
+    pres.id,
+    { published },
+    { actorEmail },
+  );
 
   // Warm the deck-grid thumbnail for the post-publish revision so the next list
   // view shows the raster immediately (fire-and-forget, non-blocking).

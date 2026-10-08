@@ -13,16 +13,12 @@ import {
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { loadDeckTheme } from '../utils/themes.js';
 import {
-  DEFAULT_DECK_LANG,
-  normalizeLang,
-  TRANSLATION_LANGS,
-} from '../../shared/i18n-utils.js';
-import {
   AppError,
   NotFoundError,
   ValidationError,
   throwStorageFailure,
 } from '../utils/errors.js';
+import { dominantSlidesBody } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
 async function writeOptions({ actor }) {
@@ -70,41 +66,6 @@ function refuseUnsupportedConversion(err) {
     },
     'unsupported_conversion',
   );
-}
-
-/**
- * The write body for a new dominant slide buffer on a loaded deck. Storage
- * reads top-level slides as the active language on input, then projects the
- * dominant language back to the top level; a loaded deck carries the dominant
- * buffer at the top level and can retain a different active language. So the
- * active version's unchanged buffer goes through the input fields while the
- * dominant version is updated explicitly (D320 (6); B620 moves this into one
- * helper for every whole-deck write).
- */
-function dominantSlidesBody(pres, slides) {
-  const i18n = pres.i18n;
-  if (!i18n?.versions || Object.keys(i18n.versions).length === 0)
-    return { slides };
-  const dominant =
-    normalizeLang(i18n.dominant) ||
-    normalizeLang(i18n.active) ||
-    TRANSLATION_LANGS.find((lang) => i18n.versions[lang]) ||
-    DEFAULT_DECK_LANG;
-  const active = normalizeLang(i18n.active);
-  const copy = structuredClone(i18n);
-  const versions = copy.versions;
-  versions[dominant] = {
-    ...(versions[dominant] || {}),
-    title: pres.title,
-    slides,
-  };
-  const activeVersion = active && active !== dominant ? versions[active] : null;
-  return {
-    id: pres.id,
-    title: activeVersion?.title ?? pres.title,
-    slides: activeVersion?.slides ?? slides,
-    i18n: copy,
-  };
 }
 
 /**
