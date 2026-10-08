@@ -26,14 +26,14 @@ import {
   NotFoundError,
   throwStorageFailure,
 } from '../utils/errors.js';
-import { dominantSlidesBody } from './deck-versions.js';
+import { dominantSlidesBody, mapVersionSlides } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
 /**
  * The caller chose this conversion in the compatibility dialog; a switch that
  * quietly kept the slide unconverted would answer a choice it did not honour
- * (B612, the B572 rule). Every conversion runs before the one write, so a
- * refusal leaves the deck as it was.
+ * (B612, the B572 rule), in any language version (B623). Every conversion
+ * runs before the one write, so a refusal leaves the deck as it was.
  */
 function refuseFailedConversion(slide, { convertTo, index }, err) {
   throw new AppError(
@@ -84,8 +84,9 @@ export async function changeTheme(
  * @param {Object} [input.changes] - What to write with the switch (a save's
  *   body). Absent, the stored deck's slides are written back as its dominant
  *   version with the new theme (the editor route), the other language
- *   versions untouched. Slides are only converted and written when the
- *   written data carries a `slides` array.
+ *   versions as stored. Slides are only converted and written when the
+ *   written data carries a `slides` array; a conversion applies to that
+ *   slide id in every language version the written data carries.
  * @param {Array<{slideId: string, convertTo: string}>} [input.convertSlides]
  * @returns {Promise<Object>} The deck as stored after the switch.
  * @throws {AppError} 400 `invalid`, `details.field` = `theme`: no such theme;
@@ -125,9 +126,11 @@ export async function applyThemeChange(
   // `default` must stay `default` so the deck keeps following the
   // installation's default instead of freezing to today's id (D232).
   const data = changes ?? pres;
-  let slides = data?.slides;
-  if (Array.isArray(slides)) {
-    slides = slides.map((slide) => {
+  // A conversion is asked per slide id, and a slide id names the same slide
+  // in every language version: each version converts it with its own text,
+  // so no language keeps the old type (B623).
+  const convert = (slides, lang) =>
+    slides.map((slide) => {
       const conversion = conversionMap.get(slide?.id);
       if (!conversion) return slide;
       try {
@@ -136,23 +139,33 @@ export async function applyThemeChange(
         // is moving to, not the one it leaves.
         return convertSlideToType(slide, conversion.convertTo, {
           slideTypes: SLIDE_TYPES,
-          lang: data.lang || null,
+          lang: lang || null,
           theme: newTheme,
         });
       } catch (err) {
         refuseFailedConversion(slide, conversion, err);
       }
     });
-  }
+  const slides = Array.isArray(data?.slides)
+    ? convert(data.slides, data.lang)
+    : data?.slides;
+  const i18n = conversionMap.size
+    ? mapVersionSlides(data?.i18n, convert)
+    : data?.i18n;
 
   // A save's body carries the edited version at the top level, as the seam
   // reads it. The stored deck carries the dominant one there, so it is
   // written back as a new dominant buffer and every other language version
-  // stays as stored (B620).
+  // stays as stored (B620), converted like the dominant one.
   const updateData = changes
-    ? { ...changes, theme, ...(Array.isArray(slides) ? { slides } : {}) }
+    ? {
+        ...changes,
+        theme,
+        ...(Array.isArray(slides) ? { slides } : {}),
+        ...(changes.i18n ? { i18n } : {}),
+      }
     : Array.isArray(slides)
-      ? { ...dominantSlidesBody(pres, slides), theme }
+      ? { ...dominantSlidesBody({ ...pres, i18n }, slides), theme }
       : { theme };
 
   const updated = await updatePresentation(scope, pres.id, updateData, {

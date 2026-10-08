@@ -11,6 +11,10 @@
  * `persistSlides` and the translate writers share, and a publish writes only
  * the publication column, as an unpublish does (B575).
  *
+ * B623: a theme switch that converts a slide converts it in every language
+ * version, on both paths (with and without a save body), and a conversion
+ * that fails in any version refuses the switch, as B612 does.
+ *
  * The store: OWNER's Dutch deck with a German version, edited last in German
  * (`active = de`). Assertions read the stored row, in the shape of B610's
  * "keeps that version" test.
@@ -39,7 +43,8 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { testScope } = await import('./helpers/storage-scope.js');
-const { changeTheme } = await import('../server/services/theme.js');
+const { changeTheme, applyThemeChange } =
+  await import('../server/services/theme.js');
 const { publishPresentation } =
   await import('../server/services/publish-presentation.js');
 const { loadPresentationForActor } =
@@ -168,4 +173,103 @@ test('a publish keeps the active version and writes only the publication column'
   const row = storedDeck(db);
   assert.equal(row.published?.id, result.publishId);
   assertVersionsKept(row);
+});
+
+const types = (version) => version.slides.map((s) => s.type);
+
+/** Every version and the top level carry `type` for slide-1, each its own text. */
+function assertConvertedEverywhere(row, type) {
+  assert.deepEqual(types(row.i18n.versions.nl), [type, 'content-slide']);
+  assert.deepEqual(types(row.i18n.versions.de), [type, 'content-slide']);
+  assert.deepEqual(types({ slides: row.slides }), [type, 'content-slide']);
+  assert.equal(row.i18n.versions.nl.slides[0].content.title, 'Hoi');
+  assert.equal(row.i18n.versions.de.slides[0].content.title, 'Hallo');
+  assert.equal(row.slides[0].content.title, 'Hoi');
+  assert.equal(row.i18n.active, 'de');
+  assert.equal(row.i18n.dominant, 'nl');
+}
+
+test('a theme switch without a save body converts a slide in every language version (B623)', async () => {
+  const db = await installDb();
+  const other = (await seedRow('amethyst')).id;
+
+  await changeTheme(
+    scope(),
+    { actor: OWNER },
+    {
+      presentationId: DECK_ID,
+      theme: other,
+      convertSlides: [{ slideId: 'slide-1', convertTo: 'chapter-title-slide' }],
+    },
+  );
+
+  const row = storedDeck(db);
+  assert.equal(row.theme, other);
+  // Only the dominant buffer was converted; the German version on screen
+  // kept `title-slide` for the same slide id.
+  assertConvertedEverywhere(row, 'chapter-title-slide');
+});
+
+test('a theme switch with a save body converts a slide in every language version (B623)', async () => {
+  const db = await installDb();
+  const other = (await seedRow('amethyst')).id;
+  const pres = await loadPresentationForActor(
+    scope(),
+    { actor: OWNER },
+    DECK_ID,
+    { access: 'write' },
+  );
+
+  // The editor's shape: the version on screen (German) at the top level.
+  await applyThemeChange(scope(), { actor: OWNER }, pres, {
+    theme: other,
+    changes: {
+      title: DE.title,
+      slides: structuredClone(DE.slides),
+      i18n: {
+        dominant: 'nl',
+        active: 'de',
+        versions: { nl: structuredClone(NL), de: structuredClone(DE) },
+      },
+    },
+    convertSlides: [{ slideId: 'slide-1', convertTo: 'chapter-title-slide' }],
+  });
+
+  const row = storedDeck(db);
+  assert.equal(row.theme, other);
+  assertConvertedEverywhere(row, 'chapter-title-slide');
+});
+
+test('a conversion that fails in a version other than the dominant one refuses the switch (B623)', async () => {
+  const db = await installDb();
+  const other = (await seedRow('amethyst')).id;
+  // A slide only the German version carries: the dominant buffer never sees
+  // it, so the switch used to skip the conversion and report success.
+  storedDeck(db).i18n.versions.de.slides.push(
+    slide('slide-de', 'Nur hier', 'content-slide'),
+  );
+  const before = structuredClone(storedDeck(db));
+
+  await assert.rejects(
+    changeTheme(
+      scope(),
+      { actor: OWNER },
+      {
+        presentationId: DECK_ID,
+        theme: other,
+        convertSlides: [
+          { slideId: 'slide-1', convertTo: 'chapter-title-slide' },
+          { slideId: 'slide-de', convertTo: 'no-such-type' },
+        ],
+      },
+    ),
+    (err) => {
+      assert.equal(err.status ?? err.statusCode, 400);
+      assert.equal(err.details.field, 'convertSlides');
+      assert.equal(err.details.index, 1, 'the entry that failed');
+      assert.match(err.message, /slide-de/);
+      return true;
+    },
+  );
+  assert.deepEqual(storedDeck(db), before, 'nothing was written');
 });
