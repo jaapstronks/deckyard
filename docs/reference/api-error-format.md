@@ -191,6 +191,27 @@ If a client ever does need to branch on the cause, add
 `error: '<snake_case_code>'` next to `message`, with the same meaning it has
 here. That upgrade is additive; it never renames a field a client reads.
 
+## MCP tool errors
+
+A refused or failed MCP tool call is a successful JSON-RPC response with
+`isError: true` (see § 401 versus 403), rendered in one place: `toolError` in
+`server/mcp/protocol.js`. Its single text item starts with the human line
+`Error: <message>`. When the tool threw an `AppError` (a service refusal, a
+`throwStorageFailure`), the v1 envelope follows on the next lines as JSON, so an
+agent reads the same machine code and the same `details` a v1 caller gets:
+
+```text
+Error: Invalid slide data
+{
+  "error": "bad_request",
+  "message": "Invalid slide data",
+  "details": { "errors": ["Slide.content.title is required"] }
+}
+```
+
+A plain `Error` and a policy refusal (permission, quota, maintenance) carry the
+human line only. Pinned by `tests/mcp/mcp-tool-error-details.test.js` (B621).
+
 ## Scope
 
 - The public **`/api/v1/*`** surface keeps its own openapi-documented error schema
