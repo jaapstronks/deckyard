@@ -4,6 +4,28 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.55.0](https://github.com/jaapstronks/deckyard/compare/v1.54.0...v1.55.0) (2026-10-08)
+
+
+### Added
+
+* opening a sandbox example fills insights with its declared viewing history (B353) ([#1485](https://github.com/jaapstronks/deckyard/issues/1485)) ([f3aa2f2](https://github.com/jaapstronks/deckyard/commit/f3aa2f20c26435512bf9b7494a4632599deeff7f))
+
+
+### Fixed
+
+* a deck from library slides starts in the language they are written in (B603) ([#1481](https://github.com/jaapstronks/deckyard/issues/1481)) ([bf3b70c](https://github.com/jaapstronks/deckyard/commit/bf3b70c1290857533b5c41b0ff76f937fab78820))
+* analytics list refuses sort=completion instead of sorting on views (B622) ([#1499](https://github.com/jaapstronks/deckyard/issues/1499)) ([c8c091d](https://github.com/jaapstronks/deckyard/commit/c8c091dfc51a792374b7a09e2b3ee052a7a344a4))
+* completion rate on /insights reads the journey definition (B606) ([#1493](https://github.com/jaapstronks/deckyard/issues/1493)) ([3a5cf52](https://github.com/jaapstronks/deckyard/commit/3a5cf52c9bb66d28903e243f6f9708970df54367))
+* Home building-block cards show the library's slide preview (B616) ([#1500](https://github.com/jaapstronks/deckyard/issues/1500)) ([797190c](https://github.com/jaapstronks/deckyard/commit/797190c3fcf2bf3fe03670465656847723783782))
+* list_recent_comments reads the actor's deck list (B618) ([#1497](https://github.com/jaapstronks/deckyard/issues/1497)) ([e41e55f](https://github.com/jaapstronks/deckyard/commit/e41e55f868089c7580185e0ebd4616af0f3abcaa))
+* MCP tool errors carry the v1 envelope with details (B621) ([#1496](https://github.com/jaapstronks/deckyard/issues/1496)) ([db62b31](https://github.com/jaapstronks/deckyard/commit/db62b313f8b787abd5d260c31a83ff19454a73d1))
+* sandbox round B357: honest guest account, language fallbacks, i18n braces ([#1488](https://github.com/jaapstronks/deckyard/issues/1488)) ([14e8bf6](https://github.com/jaapstronks/deckyard/commit/14e8bf66a968a31c26e0ed250e6bd8228524c3d6))
+* the new-to-you badge sits in the card head row beside the kicker (B602) ([#1480](https://github.com/jaapstronks/deckyard/issues/1480)) ([44395d1](https://github.com/jaapstronks/deckyard/commit/44395d1f408aa3c78425ca7d03418c21ee5b32c5))
+* theme change refuses a failed slide conversion (B612) ([#1494](https://github.com/jaapstronks/deckyard/issues/1494)) ([0adad73](https://github.com/jaapstronks/deckyard/commit/0adad7372f6972d99d1b08bbb5d1b20f157c1915))
+* v1 errors have one renderer; a model 502 keeps its sentence (B619) ([#1498](https://github.com/jaapstronks/deckyard/issues/1498)) ([866cb0a](https://github.com/jaapstronks/deckyard/commit/866cb0a02e4553f5bceb0939c272ab74c227f7d8))
+* whole-deck writes keep the active language version (B620) ([#1495](https://github.com/jaapstronks/deckyard/issues/1495)) ([4bb344d](https://github.com/jaapstronks/deckyard/commit/4bb344dbdc446427096604090b8ed90e6c48b082))
+
 ## [1.54.0](https://github.com/jaapstronks/deckyard/compare/v1.53.0...v1.54.0) (2026-10-07)
 
 
