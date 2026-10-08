@@ -138,7 +138,7 @@
   "presenter.shortcuts.title": "Skróty klawiaturowe",
   "presenter.start.fullscreen": "Uruchom na pełnym ekranie",
   "presenter.start.hint": "←/→ nawigacja · F pełny ekran · Esc wyjście",
-  "presenter.start.slides": "slajdów: {n}",
+  "presenter.start.slides.many": "slajdów: {count}",
   "presenter.start.windowed": "Uruchom w oknie",
   "presenter.strictNav": "Tylko licznik — ręczna nawigacja jest wyłączona",
   "presenter.timesUp": "Czas minął",

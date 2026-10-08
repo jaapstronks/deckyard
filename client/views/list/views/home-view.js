@@ -674,10 +674,11 @@ function buildHomeHeader({ user, count }) {
     dateLabel = '';
   }
 
-  const countLabel =
-    count === 1
-      ? t('list.home.greetingCount.one', '1 presentation')
-      : t('list.home.greetingCount.many', '{count} presentations', { count });
+  const countLabel = t(
+    'list.home.greetingCount',
+    { one: '1 presentation', many: '{count} presentations' },
+    { count },
+  );
   const subtitleText = dateLabel ? `${dateLabel} · ${countLabel}` : countLabel;
 
   return h('header', { class: 'home-header' }, [

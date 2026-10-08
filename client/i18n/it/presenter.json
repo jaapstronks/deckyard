@@ -135,7 +135,7 @@
   "presenter.shortcuts.title": "Scorciatoie da tastiera",
   "presenter.start.fullscreen": "Avvia a schermo intero",
   "presenter.start.hint": "←/→ per navigare · F per lo schermo intero · Esc per uscire",
-  "presenter.start.slides": "{n} slide",
+  "presenter.start.slides.many": "{count} slide",
   "presenter.start.windowed": "Avvia in una finestra",
   "presenter.strictNav": "Solo timer — la navigazione manuale è disattivata",
   "presenter.timesUp": "Tempo scaduto",

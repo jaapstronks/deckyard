@@ -81,7 +81,6 @@
   "list.bulk.restore.done": "{count} Präsentation(en) wiederhergestellt.",
   "list.bulk.restore.failed": "{count} Präsentation(en) konnten nicht wiederhergestellt werden.",
   "list.bulk.selected": "{count} ausgewählt",
-  "list.count": "{count} Präsentationen",
   "list.creationView.library.collectionCount": "{count} Folien",
   "list.creationView.library.collectionEmpty": "Diese Sammlung enthält keine verfügbaren Folien.",
   "list.creationView.library.collectionsError": "Sammlungen konnten nicht geladen werden.",

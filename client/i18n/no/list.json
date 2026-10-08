@@ -82,7 +82,6 @@
   "list.bulk.restore.done": "{count} presentasjoner gjenopprettet.",
   "list.bulk.restore.failed": "Klarte ikke å gjenopprette {count} presentasjoner.",
   "list.bulk.selected": "{count} valgt",
-  "list.count": "{count} presentasjoner",
   "list.creationView.library.collectionCount": "{count} lysbilder",
   "list.creationView.library.collectionEmpty": "Denne samlingen har ingen tilgjengelige lysbilder.",
   "list.creationView.library.collectionsError": "Klarte ikke å laste inn samlingene.",

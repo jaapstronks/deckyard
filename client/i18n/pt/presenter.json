@@ -137,7 +137,7 @@
   "presenter.shortcuts.title": "Atalhos de teclado",
   "presenter.start.fullscreen": "Começar em ecrã inteiro",
   "presenter.start.hint": "←/→ para navegar · F para ecrã inteiro · Esc para sair",
-  "presenter.start.slides": "{n} diapositivos",
+  "presenter.start.slides.many": "{count} diapositivos",
   "presenter.start.windowed": "Começar numa janela",
   "presenter.strictNav": "Só temporizador — a navegação manual está desativada",
   "presenter.timesUp": "O tempo acabou",

@@ -82,7 +82,6 @@
   "list.bulk.restore.done": "{count} presentationer återställda.",
   "list.bulk.restore.failed": "Det gick inte att återställa {count} presentationer.",
   "list.bulk.selected": "{count} valda",
-  "list.count": "{count} presentationer",
   "list.creationView.library.collectionEmpty": "Den här samlingen har inga tillgängliga slides.",
   "list.creationView.library.collectionsError": "Det gick inte att läsa in samlingarna.",
   "list.creationView.library.collectionsHelp": "Välj en samling som fyller presentationen i förväg. Ändra ordning på eller ta bort slides nedan, och skapa sedan presentationen.",

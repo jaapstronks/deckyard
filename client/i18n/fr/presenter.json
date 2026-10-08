@@ -134,7 +134,7 @@
   "presenter.shortcuts.title": "Raccourcis clavier",
   "presenter.start.fullscreen": "Démarrer en plein écran",
   "presenter.start.hint": "←/→ pour naviguer · F pour le plein écran · Échap pour quitter",
-  "presenter.start.slides": "{n} diapositives",
+  "presenter.start.slides.many": "{count} diapositives",
   "presenter.start.windowed": "Démarrer en fenêtre",
   "presenter.strictNav": "Minuteur seul — la navigation manuelle est désactivée",
   "presenter.timesUp": "Temps écoulé",

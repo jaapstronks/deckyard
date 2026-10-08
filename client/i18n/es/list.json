@@ -82,7 +82,6 @@
   "list.bulk.restore.done": "{count} presentación(es) restaurada(s).",
   "list.bulk.restore.failed": "No se pudieron restaurar {count} presentación(es).",
   "list.bulk.selected": "{count} seleccionadas",
-  "list.count": "{count} presentaciones",
   "list.creationView.library.collectionCount": "{count} diapositivas",
   "list.creationView.library.collectionEmpty": "Esta colección no tiene diapositivas disponibles.",
   "list.creationView.library.collectionsError": "No se pudieron cargar las colecciones.",

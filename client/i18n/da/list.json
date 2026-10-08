@@ -81,7 +81,6 @@
   "list.bulk.restore.done": "{count} præsentationer gendannet.",
   "list.bulk.restore.failed": "{count} præsentationer kunne ikke gendannes.",
   "list.bulk.selected": "{count} valgt",
-  "list.count": "{count} præsentationer",
   "list.creationView.library.collectionEmpty": "Denne samling har ingen tilgængelige slides.",
   "list.creationView.library.collectionsError": "Samlingerne kunne ikke indlæses.",
   "list.creationView.library.collectionsHelp": "Vælg en samling, der udfylder præsentationen på forhånd. Omarrangér eller fjern slides nedenfor, og opret så præsentationen.",

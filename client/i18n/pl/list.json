@@ -82,7 +82,6 @@
   "list.bulk.restore.done": "Przywrócono prezentacji: {count}.",
   "list.bulk.restore.failed": "Nie udało się przywrócić prezentacji: {count}.",
   "list.bulk.selected": "zaznaczono: {count}",
-  "list.count": "prezentacji: {count}",
   "list.creationView.library.collectionCount": "slajdów: {count}",
   "list.creationView.library.collectionEmpty": "Ta kolekcja nie zawiera dostępnych slajdów.",
   "list.creationView.library.collectionsError": "Nie udało się wczytać kolekcji.",

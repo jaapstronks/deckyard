@@ -121,12 +121,11 @@ export function createSearchView({
       );
     } else {
       // Show count
-      const countText =
-        results.length === 1
-          ? t('list.search.resultCount.one', '1 presentation found')
-          : t('list.search.resultCount.many', '{count} presentations found', {
-              count: results.length,
-            });
+      const countText = t(
+        'list.search.resultCount',
+        { one: '1 presentation found', many: '{count} presentations found' },
+        { count: results.length },
+      );
 
       statusSlot.append(
         h('div', { class: 'search-result-count', text: countText }),

@@ -137,7 +137,7 @@
   "presenter.shortcuts.title": "Atajos de teclado",
   "presenter.start.fullscreen": "Empezar en pantalla completa",
   "presenter.start.hint": "←/→ para navegar · F para pantalla completa · Esc para salir",
-  "presenter.start.slides": "{n} diapositivas",
+  "presenter.start.slides.many": "{count} diapositivas",
   "presenter.start.windowed": "Empezar en una ventana",
   "presenter.strictNav": "Solo temporizador: la navegación manual está desactivada",
   "presenter.timesUp": "Se acabó el tiempo",

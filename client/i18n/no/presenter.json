@@ -134,7 +134,7 @@
   "presenter.shortcuts.title": "Hurtigtaster",
   "presenter.start.fullscreen": "Start i fullskjerm",
   "presenter.start.hint": "←/→ for å navigere · F for fullskjerm · Esc for å avslutte",
-  "presenter.start.slides": "{n} lysbilder",
+  "presenter.start.slides.many": "{count} lysbilder",
   "presenter.start.windowed": "Start i vindu",
   "presenter.strictNav": "Bare timer — manuell navigering er av",
   "presenter.timesUp": "Tiden er ute",

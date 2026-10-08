@@ -138,7 +138,7 @@
   "presenter.shortcuts.title": "Näppäinoikotiet",
   "presenter.start.fullscreen": "Aloita koko näytöllä",
   "presenter.start.hint": "←/→ liikkuminen · F koko näyttö · Esc poistuminen",
-  "presenter.start.slides": "{n} diaa",
+  "presenter.start.slides.many": "{count} diaa",
   "presenter.start.windowed": "Aloita ikkunassa",
   "presenter.strictNav": "Vain ajastin — käsin liikkuminen on pois käytöstä",
   "presenter.timesUp": "Aika loppui",

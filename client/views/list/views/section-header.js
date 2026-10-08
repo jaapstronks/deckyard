@@ -26,9 +26,11 @@ export function buildSectionHeader({
   const badgeText =
     badge !== undefined
       ? badge
-      : count === 1
-        ? t('list.section.count.one', '1 presentation')
-        : t('list.section.count.many', '{count} presentations', { count });
+      : t(
+          'list.section.count',
+          { one: '1 presentation', many: '{count} presentations' },
+          { count },
+        );
 
   return h('div', { class: 'presentation-section-header' }, [
     h('div', { class: 'presentation-section-title' }, [
