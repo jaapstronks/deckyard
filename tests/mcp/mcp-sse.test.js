@@ -198,6 +198,7 @@ describe('MCP SSE Transport — Protocol', () => {
 
     it('tool error returns isError with context', async () => {
       const { McpServer } = await import('../../server/mcp/protocol.js');
+      const { ValidationError } = await import('../../server/utils/errors.js');
       const server = new McpServer();
 
       server.tool(
@@ -205,7 +206,7 @@ describe('MCP SSE Transport — Protocol', () => {
         'Fails',
         { type: 'object', properties: {} },
         async () => {
-          throw new Error('Deliberate test error');
+          throw new ValidationError('Deliberate test error');
         },
       );
 

@@ -17,6 +17,7 @@
  */
 
 import { loadPresentationForActor } from '../services/presentations.js';
+import { ValidationError } from '../utils/errors.js';
 
 /**
  * Load a presentation by id and enforce the owner's access to it.
@@ -32,7 +33,7 @@ import { loadPresentationForActor } from '../services/presentations.js';
  * @param {Object} [options]
  * @param {'read'|'write'|'delete'|'manage'|'comment'} [options.access='read'] - Required access level
  * @returns {Promise<Object>} The presentation
- * @throws {Error} Without an id; `NotFoundError` / `ForbiddenError` from the service
+ * @throws {ValidationError} Without an id; `NotFoundError` / `ForbiddenError` from the service
  */
 export async function loadPresentationChecked(
   storageScope,
@@ -41,7 +42,7 @@ export async function loadPresentationChecked(
   { access = 'read' } = {},
 ) {
   if (!presentationId) {
-    throw new Error(
+    throw new ValidationError(
       'A presentation id is required (pass `id` or `presentationId`).',
     );
   }
