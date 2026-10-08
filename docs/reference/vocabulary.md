@@ -63,10 +63,11 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
 - **Listing filter — done (B53 sweep (a), 2026-08-17).** The MCP
   `list_presentations` / `list_recent_comments` filter and the client
   presentations view now spell the owned/shared/all source filter
-  **`ownership`**. The storage helper's `visibility` option
-  (`listAccessiblePresentationRefs`, `listRecentCommentsForOwner` in
-  `server/storage/presentations/comments.js`) — a second homonym for the same
-  concept — was renamed with it. This was a breaking change to the MCP tool
+  **`ownership`**. The storage helper's `visibility` option in
+  `server/storage/presentations/comments.js` — a second homonym for the same
+  concept — was renamed with it; since B618 that helper no longer picks decks
+  at all, and `list_recent_comments` reads the deck list of
+  `listPresentationsForActor` under the same four values. This was a breaking change to the MCP tool
   schema, shipped deliberately with no back-compat alias; MCP clients re-read
   the schema each session.
 - **Shelf axis — done (B53 sweep (b), 2026-08-17).** The slide-library /

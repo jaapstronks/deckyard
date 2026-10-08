@@ -46,7 +46,7 @@
 import {
   getComment,
   listComments as storeListComments,
-  listRecentCommentsForOwner,
+  listRecentCommentsOnDecks,
   createComment as storeComment,
   resolveComment,
   reopenComment,
@@ -71,7 +71,10 @@ import {
   recordCommentResolved,
   recordCommentReopened,
 } from './activity-events.js';
-import { loadPresentationForActor } from './presentations.js';
+import {
+  listPresentationsForActor,
+  loadPresentationForActor,
+} from './presentations.js';
 import {
   broadcastToPresentation,
   CommentEventTypes,
@@ -285,9 +288,6 @@ export const COMMENT_LIST_STATUSES = Object.freeze([
 /** The comment kinds a comment list can be narrowed to. */
 const COMMENT_TYPES = Object.freeze(['human', 'ai-suggestion']);
 
-/** The deck sets {@link listRecentComments} reads across. */
-const RECENT_OWNERSHIPS = Object.freeze(['owned', 'shared', 'all']);
-
 /**
  * Refuse a filter value outside its vocabulary. The internal route used to
  * read an unknown `status` as "all" without a word; v1 refused it.
@@ -381,17 +381,21 @@ export async function listComments(
 }
 
 /**
- * The most recent top-level comments across the decks the acting user can see
- * (owned, shared or both), newest first, each with the deck it sits on.
+ * The most recent top-level comments across the decks the actor sees, newest
+ * first, each with the deck it sits on.
  *
  * Only MCP offers this today; it lives here so the reading rule (which decks,
  * which filters) is the comment service's, not a tool's. The deck set is the
- * scope's acting user's, which every contract builds from the same actor.
+ * actor's deck list under `ownership` ({@link listPresentationsForActor}, B618):
+ * the same four values, matched on `users.id` and maker, as every deck list
+ * (D317). It used to be a list of its own that matched `owned` on an e-mail
+ * string and left organization-visible decks out of `all`.
  *
- * @param {StorageScope} scope - The caller's storage scope (its acting user
- *   decides which decks are read).
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {{ actor: Actor }} identity
  * @param {Object} input
- * @param {string} [input.ownership='all'] - `owned`, `shared` or `all`.
+ * @param {string} [input.ownership='all'] - Which decks by source
+ *   (`collection`, `owned`, `shared` or `all`); refused outside that list.
  * @param {string|null} [input.authorEmail] - Only this author's comments.
  * @param {string} [input.status='all'] - One of {@link COMMENT_LIST_STATUSES}.
  * @param {*} [input.since] - Only comments created at/after this ISO date.
@@ -401,6 +405,7 @@ export async function listComments(
  */
 export async function listRecentComments(
   scope,
+  identity,
   {
     ownership = 'all',
     authorEmail = null,
@@ -409,13 +414,17 @@ export async function listRecentComments(
     limit = 50,
   } = {},
 ) {
-  refuseUnknownFilter('ownership', ownership, RECENT_OWNERSHIPS);
   refuseUnknownFilter('status', status, COMMENT_LIST_STATUSES);
-  const { comments, total } = await listRecentCommentsForOwner(scope, {
-    ownership,
+  const sinceIso = sinceOf(since);
+  const { presentations: listed } = await listPresentationsForActor(
+    scope,
+    identity,
+    { ownership },
+  );
+  const { comments, total } = await listRecentCommentsOnDecks(scope, listed, {
     authorEmail: authorEmail || null,
     status,
-    since: sinceOf(since),
+    since: sinceIso,
     limit,
   });
 
