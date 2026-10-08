@@ -574,6 +574,7 @@ export function createRerenderEditor({
     const background = caps.background
       ? buildBackgroundControls({
           slide,
+          def,
           pres,
           theme,
           fieldByKey,

@@ -205,6 +205,39 @@ test('the background image section stays collapsed but never hides an active ima
   );
 });
 
+test('the background image section opens by default on a type where the image is the first impression (B500)', () => {
+  // A type declaring `autoBackgroundPreset` (the title slide) opens the
+  // section; every other type keeps it closed. Each half has its own sticky
+  // preference, so closing it on a content slide leaves the cover alone.
+  const section = (type) =>
+    renderForm({ type }).querySelector('.editor-bg-section');
+  localStorage.clear();
+  try {
+    assert.equal(SLIDE_TYPES['title-slide'].autoBackgroundPreset, true);
+    assert.equal(section('title-slide').open, true, 'cover: open by default');
+    assert.equal(section('content-slide').open, false, 'others: closed');
+
+    localStorage.setItem('editor.bgImageSection.open', '0');
+    assert.equal(
+      section('title-slide').open,
+      true,
+      "the other types' preference does not close the cover",
+    );
+
+    localStorage.setItem('editor.bgImageSection.imageFirst.open', '0');
+    assert.equal(
+      section('title-slide').open,
+      false,
+      'the cover remembers its own',
+    );
+    localStorage.setItem('editor.bgImageSection.open', '1');
+    assert.equal(section('content-slide').open, true);
+    assert.equal(section('title-slide').open, false);
+  } finally {
+    localStorage.clear();
+  }
+});
+
 test('chart inspector keeps the data editor but drops text and axis labels', () => {
   const mount = renderForm({ type: 'chart-slide' });
   const labels = fieldLabels(mount);

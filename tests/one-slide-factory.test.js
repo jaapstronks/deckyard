@@ -123,51 +123,65 @@ test("a theme background is the type's declaration, on every route (D92)", () =>
   // chapter-title → title, so an imported or converted title slide wore a
   // theme photo an inserted one did not.
   const chapter = { type: 'chapter-title-slide', content: { title: 'Ch.' } };
-  assert.ok(!SLIDE_TYPES['title-slide'].autoBackgroundPreset);
+
+  // The core title type declares the flag (B500), so it is seeded on all three
+  // routes alike.
+  assert.equal(SLIDE_TYPES['title-slide'].autoBackgroundPreset, true);
+  assert.equal(
+    newSlide({ type: 'title-slide', theme: THEME }).content.slideBgImage,
+    THEME.backgroundPresets[0],
+    'insert',
+  );
+  assert.equal(
+    deckToPresentationParts(
+      { slides: [{ type: 'title-slide', content: {} }] },
+      { theme: THEME },
+    ).slides[0].content.slideBgImage,
+    THEME.backgroundPresets[0],
+    'import',
+  );
+  assert.equal(
+    convertSlideToType(chapter, 'title-slide', { theme: THEME }).content
+      .slideBgImage,
+    THEME.backgroundPresets[0],
+    'convert',
+  );
+
+  // And the declaration is the whole rule: a registry whose title type drops
+  // it seeds nothing on any route, so no route seeds by type name.
+  const undeclared = {
+    ...SLIDE_TYPES,
+    'title-slide': {
+      ...SLIDE_TYPES['title-slide'],
+      autoBackgroundPreset: false,
+    },
+  };
   assert.ok(
-    !newSlide({ type: 'title-slide', theme: THEME }).content.slideBgImage,
-    'insert: the core title type declares nothing, so nothing is seeded',
+    !newSlide({ type: 'title-slide', theme: THEME, slideTypes: undeclared })
+      .content.slideBgImage,
+    'insert: no seed by name',
   );
   assert.ok(
     !deckToPresentationParts(
       { slides: [{ type: 'title-slide', content: {} }] },
-      { theme: THEME },
+      { theme: THEME, slideTypes: undeclared },
     ).slides[0].content.slideBgImage,
     'import: no seed by name',
   );
   assert.ok(
-    !convertSlideToType(chapter, 'title-slide', { theme: THEME }).content
-      .slideBgImage,
+    !convertSlideToType(chapter, 'title-slide', {
+      theme: THEME,
+      slideTypes: undeclared,
+    }).content.slideBgImage,
     'convert: no seed by name',
   );
 
-  // The declaration is enough: a registry whose title type declares the flag
-  // is seeded on the same three routes, and a background carried into a
-  // conversion is not overwritten.
-  const declared = {
-    ...SLIDE_TYPES,
-    'title-slide': {
-      ...SLIDE_TYPES['title-slide'],
-      autoBackgroundPreset: true,
-    },
-  };
-  assert.equal(
-    newSlide({ type: 'title-slide', theme: THEME, slideTypes: declared })
-      .content.slideBgImage,
-    THEME.backgroundPresets[0],
-  );
-  assert.equal(
-    convertSlideToType(chapter, 'title-slide', {
-      theme: THEME,
-      slideTypes: declared,
-    }).content.slideBgImage,
-    THEME.backgroundPresets[0],
-  );
+  // A background carried into a conversion is not overwritten.
   assert.equal(
     convertSlideToType(
       { ...chapter, content: { ...chapter.content, slideBgImage: '/own.jpg' } },
       'title-slide',
-      { theme: THEME, slideTypes: declared },
+      { theme: THEME },
     ).content.slideBgImage,
     '/own.jpg',
   );
