@@ -32,7 +32,8 @@
  * (`normalizeI18n`), while a loaded deck carries the dominant version there.
  * Writing a loaded deck back with `active` pointing elsewhere would overwrite
  * that version with the dominant text; {@link writeTranslatedDeck} aligns the
- * top-level fields to the active version before every write.
+ * top-level fields to the active version before every write
+ * (`alignToActiveVersion`, B620).
  *
  * @module server/services/translate
  */
@@ -60,6 +61,7 @@ import {
   NotFoundError,
   throwStorageFailure,
 } from '../utils/errors.js';
+import { alignToActiveVersion } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
 /**
@@ -230,15 +232,15 @@ function markTranslation(i18n, to, { status, from, missingCount }) {
  * @returns {Promise<Object>} The deck as stored.
  */
 async function writeTranslatedDeck(scope, actor, pres) {
-  const active = normalizeLang(pres.i18n?.active) || storedDominant(pres);
-  const buffer = pickVersion(pres, active);
-  pres.title = buffer.title;
-  pres.slides = buffer.slides;
-
-  const updated = await updatePresentation(scope, pres.id, pres, {
-    actorEmail: actor?.email || null,
-    user: actor || null,
-  });
+  const updated = await updatePresentation(
+    scope,
+    pres.id,
+    alignToActiveVersion(pres),
+    {
+      actorEmail: actor?.email || null,
+      user: actor || null,
+    },
+  );
   if (!updated) throw new NotFoundError('Presentation not found');
   if (updated.ok === false) {
     throwStorageFailure(

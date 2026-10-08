@@ -26,6 +26,7 @@ import {
   NotFoundError,
   throwStorageFailure,
 } from '../utils/errors.js';
+import { dominantSlidesBody } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
 /**
@@ -81,9 +82,10 @@ export async function changeTheme(
  * @param {Object} input
  * @param {*} input.theme - The theme to switch to, in its one spelling.
  * @param {Object} [input.changes] - What to write with the switch (a save's
- *   body). Absent, the stored deck is written back with the new theme (the
- *   editor route). Slides are only converted and written when the written
- *   data carries a `slides` array.
+ *   body). Absent, the stored deck's slides are written back as its dominant
+ *   version with the new theme (the editor route), the other language
+ *   versions untouched. Slides are only converted and written when the
+ *   written data carries a `slides` array.
  * @param {Array<{slideId: string, convertTo: string}>} [input.convertSlides]
  * @returns {Promise<Object>} The deck as stored after the switch.
  * @throws {AppError} 400 `invalid`, `details.field` = `theme`: no such theme;
@@ -123,9 +125,9 @@ export async function applyThemeChange(
   // `default` must stay `default` so the deck keeps following the
   // installation's default instead of freezing to today's id (D232).
   const data = changes ?? pres;
-  const updateData = { ...data, theme };
-  if (Array.isArray(data?.slides)) {
-    updateData.slides = data.slides.map((slide) => {
+  let slides = data?.slides;
+  if (Array.isArray(slides)) {
+    slides = slides.map((slide) => {
       const conversion = conversionMap.get(slide?.id);
       if (!conversion) return slide;
       try {
@@ -142,6 +144,16 @@ export async function applyThemeChange(
       }
     });
   }
+
+  // A save's body carries the edited version at the top level, as the seam
+  // reads it. The stored deck carries the dominant one there, so it is
+  // written back as a new dominant buffer and every other language version
+  // stays as stored (B620).
+  const updateData = changes
+    ? { ...changes, theme, ...(Array.isArray(slides) ? { slides } : {}) }
+    : Array.isArray(slides)
+      ? { ...dominantSlidesBody(pres, slides), theme }
+      : { theme };
 
   const updated = await updatePresentation(scope, pres.id, updateData, {
     actorEmail: identity.actor?.email || null,
