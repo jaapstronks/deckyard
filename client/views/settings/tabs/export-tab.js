@@ -250,9 +250,13 @@ export function createExportTab({ user }) {
     const parts = [];
     if (stats?.presentations != null) {
       parts.push(
-        t('settings.export.presentationCount', '{count} presentation(s)', {
-          count: stats.presentations,
-        }),
+        t(
+          'settings.export.presentationCount',
+          { one: '1 presentation', many: '{count} presentations' },
+          {
+            count: stats.presentations,
+          },
+        ),
       );
     }
     if (stats?.size) {

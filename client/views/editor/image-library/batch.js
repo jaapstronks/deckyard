@@ -212,7 +212,10 @@ export function openImageBatch({
       if (!busy && stopped) {
         message.textContent = t(
           'imageLibrary.batch.stopped',
-          '{count} images were saved to the shared library and remain there. The slide was not changed.',
+          {
+            one: '1 image was saved to the shared library and remains there. The slide was not changed.',
+            many: '{count} images were saved to the shared library and remain there. The slide was not changed.',
+          },
           { count: countStored() },
         );
         cancel.textContent = t('common.close', 'Close');
@@ -236,18 +239,32 @@ export function openImageBatch({
       ? t('imageLibrary.batch.stopping', 'Stopping after current requests…')
       : t(
           'imageLibrary.batch.count',
-          '{count} images selected; {free} places available',
+          {
+            one: '1 image selected; {free} places available',
+            many: '{count} images selected; {free} places available',
+          },
           { count: n, free: capacity() },
         );
     save.textContent = onPickMany
-      ? t('imageLibrary.batch.saveAndAdd', 'Save and add {count} images', {
-          count: n,
-        })
-      : t('imageLibrary.batch.save', 'Save {count} images', { count: n });
+      ? t(
+          'imageLibrary.batch.saveAndAdd',
+          { one: 'Save and add 1 image', many: 'Save and add {count} images' },
+          {
+            count: n,
+          },
+        )
+      : t(
+          'imageLibrary.batch.save',
+          { one: 'Save 1 image', many: 'Save {count} images' },
+          { count: n },
+        );
     if (useOnly)
       useOnly.textContent = t(
         'imageLibrary.batch.useOnly',
-        'Use {count} images without library saving',
+        {
+          one: 'Use 1 image without library saving',
+          many: 'Use {count} images without library saving',
+        },
         { count: n },
       );
     continueButton.hidden =
@@ -255,7 +272,10 @@ export function openImageBatch({
     continueButton.disabled = phaseBusy || stopped || applied;
     continueButton.textContent = t(
       'imageLibrary.batch.continue',
-      'Continue with {count} saved images',
+      {
+        one: 'Continue with 1 saved image',
+        many: 'Continue with {count} saved images',
+      },
       { count: successful.length },
     );
     save.disabled =
@@ -574,7 +594,10 @@ export function openImageBatch({
       title: t('imageLibrary.alt.missingTitle', 'Alt text missing'),
       message: t(
         'imageLibrary.batch.missingAlt',
-        'Alt text is missing for {count} image-language fields ({langs}). Use these images as drafts anyway?',
+        {
+          one: 'Alt text is missing for 1 image-language field ({langs}). Use these images as drafts anyway?',
+          many: 'Alt text is missing for {count} image-language fields ({langs}). Use these images as drafts anyway?',
+        },
         {
           count: missing.reduce((sum, entry) => sum + entry.count, 0),
           langs: missing
@@ -686,7 +709,10 @@ export function openImageBatch({
       showError(
         t(
           'imageLibrary.batch.partial',
-          '{count} images could not be confirmed. Retry failed rows or continue with saved images.',
+          {
+            one: '1 image could not be confirmed. Retry the failed row or continue with saved images.',
+            many: '{count} images could not be confirmed. Retry failed rows or continue with saved images.',
+          },
           { count: failures.length },
         ),
       );

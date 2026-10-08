@@ -86,7 +86,7 @@ test('missing fonts and failed assets are reported', () => {
   });
   assert.equal(outcome.type, 'warning');
   assert.match(outcome.sentences[1], /default font is used: Brand Sans\./);
-  assert.match(outcome.sentences[2], /1 file\(s\) could not be imported\./);
+  assert.match(outcome.sentences[2], /1 file could not be imported\./);
 });
 
 test('missing extension names warn that custom features may be absent', () => {

@@ -6,7 +6,8 @@
 // Conventions:
 // - Use stable keys: t('settings.title', 'Settings')
 // - Keep fallbacks in English.
-// - Use simple {var} interpolation: t('list.count', '{count} presentations', { count })
+// - Use simple {var} interpolation: t('editor.remoteMerge.slideN', 'Slide {n}', { n })
+// - Counted nouns pass both forms: t('list.section.count', { one: '1 presentation', many: '{count} presentations' }, { count })
 
 import { storage } from './storage.js';
 import { queryString } from './state/router.js';
@@ -227,9 +228,60 @@ function interpolate(str, vars) {
   });
 }
 
+// One Intl.PluralRules per locale; PluralRules construction is not free and
+// t() runs on every render.
+const pluralRulesCache = new Map();
+
+/**
+ * The plural form a count takes in a locale, folded onto the two suffixes the
+ * dictionaries carry: `one` where the language's rules say so, `many` for
+ * every other category (`other`, `few`, `zero`, …). Two forms are what the
+ * Tier-1 locales need; a language with more keeps its richer `many` wording
+ * until a third suffix earns its place.
+ *
+ * @param {string} locale
+ * @param {number} count
+ * @returns {'one'|'many'}
+ */
+export function pluralForm(locale, count) {
+  let rules = pluralRulesCache.get(locale);
+  if (!rules) {
+    try {
+      rules = new Intl.PluralRules(locale);
+    } catch {
+      rules = new Intl.PluralRules('en');
+    }
+    pluralRulesCache.set(locale, rules);
+  }
+  return rules.select(Number(count)) === 'one' ? 'one' : 'many';
+}
+
+/**
+ * Translate a UI string.
+ *
+ * `fallback` is the English the call site renders when the dictionary lacks
+ * the key (D73: an untranslated key is absent). A **plural** key passes it as
+ * `{ one, many }` and a numeric `vars.count`: the form is chosen with
+ * `pluralForm()` on the UI locale and looked up as `<key>.one` / `<key>.many`.
+ * A locale without that form gets the English of the same form, never the
+ * other form of its own — Swedish `1 presentation` is absent from `sv/`
+ * because it equals the English (B617, D73), and its `many` would render
+ * "1 presentationer".
+ *
+ * @param {string} key
+ * @param {string|{ one: string, many: string }} [fallback]
+ * @param {Record<string, unknown>} [vars]
+ * @returns {string}
+ */
 export function t(key, fallback, vars) {
   const k = String(key || '').trim();
   if (!k) return '';
+  if (fallback && typeof fallback === 'object') {
+    const form = pluralForm(currentLocale, vars?.count);
+    const value = dict[`${k}.${form}`];
+    const raw = typeof value === 'string' ? value : fallback[form];
+    return interpolate(typeof raw === 'string' ? raw : `${k}.${form}`, vars);
+  }
   const has = dict && typeof dict === 'object' && typeof dict[k] === 'string';
   const raw = has ? dict[k] : typeof fallback === 'string' ? fallback : k;
   return interpolate(raw, vars);

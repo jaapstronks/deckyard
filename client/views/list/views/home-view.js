@@ -536,9 +536,13 @@ function renderCollectionBlockCard(col, onComposeFrom, isNew, preview) {
   meta.append(
     h('span', {
       class: 'home-block-count',
-      text: t('list.creationView.library.collectionCount', '{count} slides', {
-        count: String(count),
-      }),
+      text: t(
+        'list.creationView.library.collectionCount',
+        { one: '1 slide', many: '{count} slides' },
+        {
+          count,
+        },
+      ),
     }),
   );
 
@@ -674,10 +678,11 @@ function buildHomeHeader({ user, count }) {
     dateLabel = '';
   }
 
-  const countLabel =
-    count === 1
-      ? t('list.home.greetingCount.one', '1 presentation')
-      : t('list.home.greetingCount.many', '{count} presentations', { count });
+  const countLabel = t(
+    'list.home.greetingCount',
+    { one: '1 presentation', many: '{count} presentations' },
+    { count },
+  );
   const subtitleText = dateLabel ? `${dateLabel} · ${countLabel}` : countLabel;
 
   return h('header', { class: 'home-header' }, [
@@ -761,9 +766,13 @@ function renderActivityPreviewItem({ event, count }, detachThumbs) {
       break;
     case 'slide.added': {
       const n = Number(event.data?.count) || 1;
-      actionText = t('activity.slidesAdded', 'added {count} slides to', {
-        count: n,
-      });
+      actionText = t(
+        'activity.slidesAdded',
+        { one: 'added 1 slide to', many: 'added {count} slides to' },
+        {
+          count: n,
+        },
+      );
       break;
     }
     default:

@@ -153,9 +153,13 @@ export function createFontsTab({ user } = {}) {
       meta.append(badge);
 
       const variantCount = family.variants?.length || family.variantCount || 0;
-      const variantText = t('fonts.variantCount', '{count} variant(s)', {
-        count: variantCount,
-      });
+      const variantText = t(
+        'fonts.variantCount',
+        { one: '1 variant', many: '{count} variants' },
+        {
+          count: variantCount,
+        },
+      );
       meta.append(h('span', { text: variantText }));
       meta.append(h('span', { text: family.category }));
 

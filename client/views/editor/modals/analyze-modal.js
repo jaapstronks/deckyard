@@ -187,10 +187,8 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
         if (data.phase === 'analyzing') {
           statusText.textContent = t(
             'editor.analyzeModal.analyzing',
-            'Analyzing {count} slides…',
-            {
-              count: String(data.slideCount || 0),
-            },
+            { one: 'Analyzing 1 slide…', many: 'Analyzing {count} slides…' },
+            { count: data.slideCount || 0 },
           );
           progressFill.style.width = '30%';
         } else if (data.phase === 'parsing') {
@@ -248,10 +246,11 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
         } else {
           statusText.textContent = t(
             'editor.analyzeModal.complete',
-            'Analysis complete! {count} suggestions added as comments.',
             {
-              count: String(data.suggestionCount),
+              one: 'Analysis complete! 1 suggestion added as a comment.',
+              many: 'Analysis complete! {count} suggestions added as comments.',
             },
+            { count: data.suggestionCount },
           );
         }
 

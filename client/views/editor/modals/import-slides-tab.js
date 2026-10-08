@@ -256,8 +256,12 @@ export function createImportSlidesTab({
                 showStatus(
                   t(
                     'editor.importSlides.success',
-                    '{count} slides imported',
-                  ).replace('{count}', String(parsed.slidesAdded || 0)),
+                    {
+                      one: '1 slide imported',
+                      many: '{count} slides imported',
+                    },
+                    { count: parsed.slidesAdded || 0 },
+                  ),
                 );
                 onComplete?.(parsed);
                 return;

@@ -412,9 +412,13 @@ export function openCreationView({
     if (mode === 'library') {
       const count = library.getSelectedCount();
       btnAction.textContent = count
-        ? t('list.creationView.library.create', 'Create · {count} slides', {
-            count: String(count),
-          })
+        ? t(
+            'list.creationView.library.create',
+            { one: 'Create · 1 slide', many: 'Create · {count} slides' },
+            {
+              count,
+            },
+          )
         : t('common.create', 'Create');
       btnAction.disabled = busy || count === 0;
     } else if (mode) {

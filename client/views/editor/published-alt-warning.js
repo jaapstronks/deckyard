@@ -99,18 +99,14 @@ export function createPublishedAltWarning({ pres, slideTypes, onGoToSlide }) {
       slide: first.slideIndex + 1,
       lang: first.lang || '',
     };
-    text.textContent =
-      missing.length > 1
-        ? t(
-            'editor.publishedAltWarning.many',
-            'This deck is published, and {count} images on it have no alt text.',
-            vars,
-          )
-        : t(
-            'editor.publishedAltWarning.one',
-            'This deck is published, and an image on it has no alt text.',
-            vars,
-          );
+    text.textContent = t(
+      'editor.publishedAltWarning',
+      {
+        one: 'This deck is published, and an image on it has no alt text.',
+        many: 'This deck is published, and {count} images on it have no alt text.',
+      },
+      vars,
+    );
     goBtn.textContent =
       first.lang && first.lang !== active
         ? t(

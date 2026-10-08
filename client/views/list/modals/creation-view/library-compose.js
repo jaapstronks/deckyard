@@ -333,12 +333,11 @@ export function createLibraryCompose({
           class: 'creation-collection-card-count',
           text: t(
             'list.creationView.library.collectionCount',
-            '{count} slides',
+            { one: '1 slide', many: '{count} slides' },
             {
-              count: String(
+              count:
                 col.slideCount ??
-                  (Array.isArray(col.slideIds) ? col.slideIds.length : 0),
-              ),
+                (Array.isArray(col.slideIds) ? col.slideIds.length : 0),
             },
           ),
         }),

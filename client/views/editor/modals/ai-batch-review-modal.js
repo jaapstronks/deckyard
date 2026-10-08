@@ -137,9 +137,13 @@ export function openAiBatchReviewModal({
     type: 'button',
   });
   const syncAcceptLabel = () => {
-    btnAccept.textContent = t('editor.aiReview.acceptN', 'Add {count} slides', {
-      count: slides.length,
-    });
+    btnAccept.textContent = t(
+      'editor.aiReview.acceptN',
+      { one: 'Add 1 slide', many: 'Add {count} slides' },
+      {
+        count: slides.length,
+      },
+    );
   };
   syncAcceptLabel();
 
@@ -204,9 +208,16 @@ export function openAiBatchReviewModal({
       syncAcceptLabel();
       grid.render();
       toast.info(
-        t('editor.aiReview.adjusted', 'Batch updated ({count} slides)', {
-          count: slides.length,
-        }),
+        t(
+          'editor.aiReview.adjusted',
+          {
+            one: 'Batch updated (1 slide)',
+            many: 'Batch updated ({count} slides)',
+          },
+          {
+            count: slides.length,
+          },
+        ),
         { id: 'ai-review-adjusted' },
       );
     } catch (e) {

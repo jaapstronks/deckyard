@@ -101,7 +101,10 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
             class: 'font-discover-family-variants',
             text: t(
               'fonts.variantCountList',
-              '{count} variant(s): {variants}',
+              {
+                one: '1 variant: {variants}',
+                many: '{count} variants: {variants}',
+              },
               {
                 count: family.variants.length,
                 variants: family.variants

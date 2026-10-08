@@ -287,7 +287,10 @@ export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
       toast.success(
         t(
           'slideLibrary.addedToTeamCount',
-          'Added {count} slides to team library.',
+          {
+            one: 'Added 1 slide to team library.',
+            many: 'Added {count} slides to team library.',
+          },
           {
             count: successCount,
           },

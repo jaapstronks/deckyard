@@ -85,9 +85,13 @@ export function duplicateSlides({
   onMultiSelectionChange?.();
 
   toast?.success?.(
-    t('editor.slides.duplicated', '{n} slide(s) duplicated', {
-      n: newSlides.length,
-    }),
+    t(
+      'editor.slides.duplicated',
+      { one: '1 slide duplicated', many: '{count} slides duplicated' },
+      {
+        count: newSlides.length,
+      },
+    ),
   );
   return newSlides.length;
 }
@@ -118,16 +122,20 @@ export async function deleteSlides({
   } else if (childCount > 0) {
     confirmMsg = t(
       'editor.slides.bulkDeleteConfirmWithChildren',
-      'Delete {n} selected slides and {c} nested slides?',
-      { n: selectedIds.size, c: childCount },
+      {
+        one: 'Delete 1 selected slide and {c} nested slides?',
+        many: 'Delete {count} selected slides and {c} nested slides?',
+      },
+      { count: selectedIds.size, c: childCount },
     );
   } else {
     confirmMsg = t(
       'editor.slides.bulkDeleteConfirm',
-      'Delete {n} selected slides?',
       {
-        n: selectedIds.size,
+        one: 'Delete 1 selected slide?',
+        many: 'Delete {count} selected slides?',
       },
+      { count: selectedIds.size },
     );
   }
 

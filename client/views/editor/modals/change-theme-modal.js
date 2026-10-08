@@ -45,10 +45,11 @@ function openChangeThemeModal({
   const modal = createPromiseModal({
     title: t(
       'editor.changeTheme.warningTitle',
-      '{count} slides may be affected',
       {
-        count: String(slideCount),
+        one: '1 slide may be affected',
+        many: '{count} slides may be affected',
       },
+      { count: slideCount },
     ),
     hint: t(
       'editor.changeTheme.warningHint',
@@ -126,10 +127,11 @@ function openChangeThemeModal({
       id: 'convert',
       label: t(
         'editor.changeTheme.optionConvert',
-        'Convert {count} compatible slides',
         {
-          count: String(convertibleSlides.length),
+          one: 'Convert 1 compatible slide',
+          many: 'Convert {count} compatible slides',
         },
+        { count: convertibleSlides.length },
       ),
       description: t(
         'editor.changeTheme.optionConvertDesc',

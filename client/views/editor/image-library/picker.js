@@ -587,7 +587,11 @@ function openLibraryModal({
       renderMobileNav();
       updateSectionHeader();
       setStatus(
-        t('imageLibrary.count', '{count} items', { count: items.length }),
+        t(
+          'imageLibrary.count',
+          { one: '1 item', many: '{count} items' },
+          { count: items.length },
+        ),
       );
       gridComponent.renderGrid();
 

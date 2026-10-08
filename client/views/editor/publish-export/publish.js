@@ -142,18 +142,14 @@ export function missingAltMessage(err, { pres, slideTypes } = {}) {
         'Slide {slide}: the image "{field}" has no alt text.',
         vars,
       );
-  const fix =
-    d.count > 1
-      ? t(
-          'editor.publish.missingAlt.fixMany',
-          'Add alt text or mark the image decorative, then publish again. {count} images in this deck need it.',
-          vars,
-        )
-      : t(
-          'editor.publish.missingAlt.fixOne',
-          'Add alt text or mark the image decorative, then publish again.',
-          vars,
-        );
+  const fix = t(
+    'editor.publish.missingAlt.fix',
+    {
+      one: 'Add alt text or mark the image decorative, then publish again.',
+      many: 'Add alt text or mark the image decorative, then publish again. {count} images in this deck need it.',
+    },
+    vars,
+  );
   return `${sentence} ${fix}`;
 }
 

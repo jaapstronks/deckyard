@@ -134,9 +134,13 @@ export function createSandboxExamplesSection({ api, detachThumbs }) {
     meta.append(
       h('span', {
         class: 'sandbox-example-count',
-        text: t('sandbox.examples.count', '{count} slides', {
-          count: String(example.slideCount || 0),
-        }),
+        text: t(
+          'sandbox.examples.count',
+          { one: '1 slide', many: '{count} slides' },
+          {
+            count: example.slideCount || 0,
+          },
+        ),
       }),
     );
     card.append(renderThumb(example), meta);

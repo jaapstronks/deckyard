@@ -164,8 +164,11 @@ export function deckImportOutcome(created) {
     sentences.push(
       t(
         'list.deckImport.assetsFailed',
-        '{count} file(s) could not be imported.',
-        { count: String(failed.length) },
+        {
+          one: '1 file could not be imported.',
+          many: '{count} files could not be imported.',
+        },
+        { count: failed.length },
       ),
     );
   }
