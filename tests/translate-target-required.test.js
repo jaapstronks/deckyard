@@ -11,9 +11,12 @@
  * afterwards. The axis is open (D61) and cannot guess a target, so naming one
  * is the caller's job.
  *
- * House shape: the exported handler is called directly with a req/res double
- * over `tests/helpers/fake-db.js`. Both branches asserted here return before
- * any LLM call, so no vendor is reached.
+ * House shape: the module-level dispatcher (`handlePresentations`, which
+ * wraps every route in `withErrorHandler`) is called with a req/res double
+ * over `tests/helpers/fake-db.js`, so a refusal the translate service throws
+ * (B610: 400 `invalid`, `details.field` = `to`) is rendered as the route
+ * answers it. Both branches asserted here return before any LLM call, so no
+ * vendor is reached.
  *
  * Run with: node --test tests/translate-target-required.test.js
  */
@@ -24,17 +27,15 @@ import assert from 'node:assert/strict';
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
-const DECK = 'deck-de';
+const DECK = 'd0000de0-0000-4000-8000-00000000de00';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
-const { handlePresentationTranslateMissing } =
-  await import('../server/routes/api/presentations/translate-missing.js');
-const { handlePresentationTranslateFields } =
-  await import('../server/routes/api/presentations/translate-fields.js');
+const { handlePresentations } =
+  await import('../server/routes/api/presentations/index.js');
 
 const AUTHOR = {
   id: 'user-author',
@@ -141,7 +142,7 @@ function makeRes() {
   };
 }
 
-async function call(handler, body) {
+async function call(path, body) {
   const payload = JSON.stringify(body);
   const req = {
     method: 'POST',
@@ -152,43 +153,39 @@ async function call(handler, body) {
     },
   };
   const res = makeRes();
-  const handled = await handler(
-    {
-      repoRoot: process.cwd(),
-      storageScope: createStorageScope(AUTHOR, { repoRoot: process.cwd() }),
-      req,
-      res,
-      authedUser: AUTHOR,
-    },
-    DECK,
-  );
+  const handled = await handlePresentations({
+    repoRoot: process.cwd(),
+    storageScope: createStorageScope(AUTHOR, { repoRoot: process.cwd() }),
+    req,
+    res,
+    url: new URL(`http://decks.example.test/api/presentations/${DECK}/${path}`),
+    authedUser: AUTHOR,
+  });
   return { handled, res };
 }
 
 test('translate/missing refuses a request without a target language', async () => {
   seed();
-  const { res } = await call(handlePresentationTranslateMissing, {
-    from: 'de',
-  });
+  const { res } = await call('translate/missing', { from: 'de' });
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body?.error, 'bad_request');
+  assert.equal(res.body?.error, 'invalid');
+  assert.equal(res.body?.details?.field, 'to');
   assert.match(String(res.body?.message || ''), /target language/i);
 });
 
 test('translate/missing refuses an off-axis target rather than guessing', async () => {
   seed();
-  const { res } = await call(handlePresentationTranslateMissing, {
-    from: 'de',
-    to: 'zz',
-  });
+  const { res } = await call('translate/missing', { from: 'de', to: 'zz' });
 
   assert.equal(res.statusCode, 400);
+  assert.equal(res.body?.error, 'invalid');
+  assert.equal(res.body?.details?.field, 'to');
 });
 
 test('translate/fields refuses a request without a target language', async () => {
   seed();
-  const { res } = await call(handlePresentationTranslateFields, {
+  const { res } = await call('translate/fields', {
     from: 'de',
     fields: { title: 'Der Plan' },
   });

@@ -49,13 +49,11 @@ const ROUTES_BASELINE = 0;
  * empty.
  */
 const OPEN_STORAGE_EDGES = {
-  // The translation write (B610: one translate, shared with the internal route
-  // and the translate worker).
-  'server/routes/public-api/v1/translate.js -> server/storage/presentations/index.js':
-    'B610',
   // The slide-set writes of remove_slide, reorder_slides, append_slides,
   // compress_presentation and iterate_presentation (B611). The creates'
-  // update and normalizeSlides pre-check went with B609.
+  // update and normalizeSlides pre-check went with B609; the translation
+  // write went with B610 (one translate, shared with the internal routes and
+  // the translate worker).
   'server/mcp/tools.js -> server/storage/presentations/index.js': 'B611',
 };
 

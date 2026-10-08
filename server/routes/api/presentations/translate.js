@@ -1,108 +1,45 @@
-import { updatePresentation } from '../../../storage/presentations/index.js';
-import { translatePresentationStrings } from '../../../utils/openai/translate.js';
+/**
+ * `POST /api/presentations/:id/translate` — translate a deck into another
+ * language. The route parses and answers; the translation is
+ * `translatePresentation` (`server/services/translate.js`, B610).
+ */
+
 import {
-  badRequest,
   methodNotAllowed,
   serveJson,
   requireJsonBody,
 } from '../../../utils/http.js';
-import { normalizeLang } from '../../../storage/presentations/i18n.js';
-import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
-import { withPresentationAuth } from '../../../utils/route-middleware.js';
+import { getOptionalString } from '../../../utils/request-validators.js';
+import { translatePresentation } from '../../../services/translate.js';
 
+/**
+ * Body: `to` (required), `from` (defaults to the version on screen, else the
+ * source version), `overwrite`, `fillMissing`, `vendor`. A refusal is the
+ * service's 400 `invalid` naming the field; the module-level error handler
+ * renders it.
+ */
 export async function handlePresentationTranslate(
-  { repoRoot, storageScope, req, res, authedUser } = {},
+  { storageScope, req, res, authedUser } = {},
   id,
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
   const parsed = await requireJsonBody(req, res, { allowEmpty: true });
   if (!parsed.ok) return true;
-  const body = parsed.body;
-  const pres = await withPresentationAuth({
+  const body = parsed.body || {};
+
+  const { from, to, presentation } = await translatePresentation(
     storageScope,
-    id,
-    authedUser,
-    res,
-    permission: 'write',
-  });
-  if (!pres) return true;
-
-  pres.i18n = pres.i18n && typeof pres.i18n === 'object' ? pres.i18n : {};
-  pres.i18n.versions =
-    pres.i18n.versions && typeof pres.i18n.versions === 'object'
-      ? pres.i18n.versions
-      : {};
-
-  // Resolve source language: use body.from if valid, else fall back to pres active/dominant
-  const from =
-    normalizeLang(body?.from) ||
-    normalizeLang(pres.i18n.active) ||
-    normalizeLang(pres.i18n.dominant) ||
-    DEFAULT_DECK_LANG;
-
-  // Resolve target language: use body.to if valid, else default to opposite of source
-  const to =
-    normalizeLang(body?.to) ||
-    (from === 'nl' ? 'en-GB' : from === 'en-GB' ? 'nl' : 'en-GB');
-
-  // Validate that from and to are different
-  if (from === to) {
-    return badRequest(res, 'Source and target languages must be different.');
-  }
-
-  const overwrite = !!body?.overwrite;
-  const fillMissing = body?.fillMissing !== false; // default true
-
-  // Ensure from-version exists (back-compat: store current top-level as the dominant version).
-  // dominant/active only support nl/en-GB, so we only set them if 'from' is a legacy language.
-  const dominant =
-    normalizeLang(pres.i18n.dominant) ||
-    normalizeLang(from) ||
-    DEFAULT_DECK_LANG;
-  pres.i18n.dominant = dominant;
-  // Only update active if 'from' is a legacy language (nl/en-GB)
-  if (normalizeLang(from)) {
-    pres.i18n.active = from;
-  }
-  if (!pres.i18n.versions[dominant]) {
-    pres.i18n.versions[dominant] = { title: pres.title, slides: pres.slides };
-  }
-  if (!pres.i18n.versions[from]) {
-    pres.i18n.versions[from] = { title: pres.title, slides: pres.slides };
-  }
-
-  if (pres.i18n.versions[to] && !overwrite && !fillMissing)
-    return badRequest(
-      res,
-      `Target language version already exists (${to}). Pass { overwrite: true } to replace it.`,
-    );
-
-  const src =
-    pres.i18n.versions[from] && typeof pres.i18n.versions[from] === 'object'
-      ? pres.i18n.versions[from]
-      : { title: pres.title, slides: pres.slides };
-
-  const existingTarget =
-    !overwrite &&
-    pres.i18n.versions[to] &&
-    typeof pres.i18n.versions[to] === 'object'
-      ? pres.i18n.versions[to]
-      : null;
-  const translated = await translatePresentationStrings(
-    { title: src.title, slides: src.slides },
-    { from, to, existingTarget, fillMissing: !!fillMissing && !overwrite },
+    { actor: authedUser },
+    {
+      presentationId: id,
+      from: body.from,
+      to: body.to,
+      overwrite: body.overwrite,
+      fillMissing: body.fillMissing,
+      vendor: getOptionalString(body, 'vendor'),
+    },
   );
-
-  pres.i18n.versions[to] = {
-    title: translated.title,
-    slides: translated.slides,
-  };
-
-  // Persist (server-side update will keep top-level aligned to dominant)
-  const updated = await updatePresentation(storageScope, id, pres, {
-    actorEmail: authedUser?.email || null,
-  });
-  serveJson(res, 200, { ok: true, from, to, presentation: updated });
+  serveJson(res, 200, { ok: true, from, to, presentation });
   return true;
 }
