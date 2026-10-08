@@ -22,8 +22,6 @@ import {
   loadCustomSlideTypes,
 } from '../../../utils/org-slide-types.js';
 import { getOptionalObject } from '../../../utils/request-validators.js';
-import { createLogger } from '../../../utils/logger.js';
-const log = createLogger('ai');
 import {
   requirePermission,
   dispatchV1Routes,
@@ -110,58 +108,48 @@ async function handleWizard(ctx) {
   // Track AI request
   await trackAiRequest(ctx);
 
-  try {
-    // Generate deck using AI
-    const [disabledSlideTypes, customSlideTypes] = await Promise.all([
-      loadDisabledSlideTypes(apiKey),
-      loadCustomSlideTypes(apiKey),
-    ]);
-    const deck = await generateDeckJsonFromRawContent(raw, {
-      userName: apiKey.name || 'API User',
-      targetLang: lang,
-      vendor,
-      disabledSlideTypes,
-      customSlideTypes,
-    });
+  // A failure below (the model, or a refusal of the create such as 409
+  // `limit_exceeded`) is rendered by `withV1ErrorHandler` (B619).
+  // Generate deck using AI
+  const [disabledSlideTypes, customSlideTypes] = await Promise.all([
+    loadDisabledSlideTypes(apiKey),
+    loadCustomSlideTypes(apiKey),
+  ]);
+  const deck = await generateDeckJsonFromRawContent(raw, {
+    userName: apiKey.name || 'API User',
+    targetLang: lang,
+    vendor,
+    disabledSlideTypes,
+    customSlideTypes,
+  });
 
-    const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
+  const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
 
-    // One create carries the generated slides (B609): the factory seeds the
-    // language version from them. A storage refusal (the size limit) is the
-    // service's `AppError`, rendered below like every other refusal.
-    const created = await createPresentation(
-      storageScope,
-      { actor: ctx.authedUser },
-      {
-        title: parts.title,
-        slides: parts.slides,
-        theme: effectiveTheme,
-        lang: lang || undefined,
-      },
-    );
+  // One create carries the generated slides (B609): the factory seeds the
+  // language version from them. A storage refusal (the size limit) is the
+  // service's `AppError`, rendered below like every other refusal.
+  const created = await createPresentation(
+    storageScope,
+    { actor: ctx.authedUser },
+    {
+      title: parts.title,
+      slides: parts.slides,
+      theme: effectiveTheme,
+      lang: lang || undefined,
+    },
+  );
 
-    await apiCreated(ctx, {
-      presentation: {
-        id: created.id,
-        title: created.title,
-        slideCount: Array.isArray(created.slides) ? created.slides.length : 0,
-        theme: created.theme,
-        lang: created.lang || created.i18n?.dominant || DEFAULT_DECK_LANG,
-        ...publicDeckTimestamps(created),
-      },
-    });
-    return true;
-  } catch (e) {
-    log.error('[Public API AI Wizard] Error:', e);
-    const statusCode = e?.statusCode || 500;
-    // A refusal keeps its machine code and details (409 `limit_exceeded` from
-    // the create, say), as `withV1ErrorHandler` would render it.
-    await apiError(ctx, statusCode, e?.message || 'Deck generation failed', {
-      code: e?.code,
-      details: e?.details ?? undefined,
-    });
-    return true;
-  }
+  await apiCreated(ctx, {
+    presentation: {
+      id: created.id,
+      title: created.title,
+      slideCount: Array.isArray(created.slides) ? created.slides.length : 0,
+      theme: created.theme,
+      lang: created.lang || created.i18n?.dominant || DEFAULT_DECK_LANG,
+      ...publicDeckTimestamps(created),
+    },
+  });
+  return true;
 }
 
 /**
@@ -202,62 +190,56 @@ async function handleAppendSlides(ctx) {
   // Track AI request
   await trackAiRequest(ctx);
 
-  try {
-    const [disabledSlideTypes, customSlideTypes] = await Promise.all([
-      loadDisabledSlideTypes(apiKey),
-      loadCustomSlideTypes(apiKey),
-    ]);
-    const { slides: generatedSlides } =
-      await generateSlidesToAppendFromRawContent(raw, {
-        existingDeck,
-        targetLang: lang,
-        vendor,
-        disabledSlideTypes,
-        customSlideTypes,
-      });
-
-    // Normalize into internal slide format, against the theme of the deck the
-    // slides are being appended to.
-    const parts = deckToPresentationParts(generatedSlides, {
-      theme: await loadDeckTheme(
-        repoRoot,
-        deckThemeId(existingDeck),
-        storageScope,
-      ),
-      lang: lang || existingDeck?.lang,
+  // A model failure below is rendered by `withV1ErrorHandler` (B619).
+  const [disabledSlideTypes, customSlideTypes] = await Promise.all([
+    loadDisabledSlideTypes(apiKey),
+    loadCustomSlideTypes(apiKey),
+  ]);
+  const { slides: generatedSlides } =
+    await generateSlidesToAppendFromRawContent(raw, {
+      existingDeck,
+      targetLang: lang,
+      vendor,
+      disabledSlideTypes,
+      customSlideTypes,
     });
-    const slides = Array.isArray(parts?.slides) ? parts.slides : [];
 
-    // Ensure required image URLs are never blank
-    for (const s of slides) {
-      if (!s || typeof s !== 'object') continue;
-      if (
-        (s.type === 'image-slide' || s.type === 'image-text-slide') &&
-        (!s.content ||
-          typeof s.content !== 'object' ||
-          typeof s.content.image !== 'string' ||
-          !s.content.image.trim())
-      ) {
-        s.content = s.content && typeof s.content === 'object' ? s.content : {};
-        s.content.image = '/assets/images/backgrounds/demo-aurora.jpg';
-      }
+  // Normalize into internal slide format, against the theme of the deck the
+  // slides are being appended to.
+  const parts = deckToPresentationParts(generatedSlides, {
+    theme: await loadDeckTheme(
+      repoRoot,
+      deckThemeId(existingDeck),
+      storageScope,
+    ),
+    lang: lang || existingDeck?.lang,
+  });
+  const slides = Array.isArray(parts?.slides) ? parts.slides : [];
+
+  // Ensure required image URLs are never blank
+  for (const s of slides) {
+    if (!s || typeof s !== 'object') continue;
+    if (
+      (s.type === 'image-slide' || s.type === 'image-text-slide') &&
+      (!s.content ||
+        typeof s.content !== 'object' ||
+        typeof s.content.image !== 'string' ||
+        !s.content.image.trim())
+    ) {
+      s.content = s.content && typeof s.content === 'object' ? s.content : {};
+      s.content.image = '/assets/images/backgrounds/demo-aurora.jpg';
     }
-
-    await apiSuccess(ctx, {
-      slides: slides.map((slide) => ({
-        id: slide.id,
-        type: slide.type,
-        content: slide.content,
-      })),
-      slideCount: slides.length,
-    });
-    return true;
-  } catch (e) {
-    log.error('[Public API AI Append] Error:', e);
-    const statusCode = e?.statusCode || 500;
-    await apiError(ctx, statusCode, e?.message || 'Slide generation failed');
-    return true;
   }
+
+  await apiSuccess(ctx, {
+    slides: slides.map((slide) => ({
+      id: slide.id,
+      type: slide.type,
+      content: slide.content,
+    })),
+    slideCount: slides.length,
+  });
+  return true;
 }
 
 // ============================================================

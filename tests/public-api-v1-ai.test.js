@@ -12,7 +12,10 @@
  * The generation success paths are NOT covered: both call the configured LLM
  * vendor and there is no vendor seam to observe without one — noted as an
  * explicit opt-out in the B40 brief's Opt-out-log, like the translation
- * endpoint (same seam). Everything up to that call is pinned.
+ * endpoint (same seam). Everything up to that call is pinned, and so is a
+ * failing model: a local `openai-compat` endpoint that answers 500 makes both
+ * generation endpoints answer through `withV1ErrorHandler`, the one v1 error
+ * renderer (B619).
  *
  * Handler-import level against the database double, like the neighbours
  * (tests/public-api-partial-write.test.js). Negative assertions pin the
@@ -24,6 +27,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
+import http from 'node:http';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
   .join('-')
@@ -251,6 +255,65 @@ test('POST /ai/append-slides without raw content answers 400', async () => {
     );
   }
 });
+
+// ---------------------------------------------------------------------------
+// A failing model — one renderer (B619)
+// ---------------------------------------------------------------------------
+
+/**
+ * Point the `openai-compat` vendor at a local endpoint that refuses every
+ * call with a 500 whose body must never reach the API caller.
+ * @param {import('node:test').TestContext} t
+ */
+async function failingModel(t) {
+  const server = http.createServer((req, res) => {
+    res.writeHead(500, { 'content-type': 'application/json' });
+    res.end('{"error":"upstream secret detail"}');
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const saved = {
+    endpoint: process.env.OPENAI_COMPAT_ENDPOINT,
+    model: process.env.OPENAI_COMPAT_MODEL,
+  };
+  process.env.OPENAI_COMPAT_ENDPOINT = `http://127.0.0.1:${server.address().port}/v1`;
+  process.env.OPENAI_COMPAT_MODEL = 'test-model';
+  t.after(() => {
+    server.close();
+    for (const [key, value] of [
+      ['OPENAI_COMPAT_ENDPOINT', saved.endpoint],
+      ['OPENAI_COMPAT_MODEL', saved.model],
+    ]) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+}
+
+for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
+  test(`POST ${pathname}: a 502 from the model keeps its sentence, with rate-limit headers`, async (t) => {
+    await installDb();
+    await failingModel(t);
+    const ctx = makeCtx('POST', pathname, {
+      body: { raw: 'A deck about tests', vendor: 'openai-compat' },
+    });
+    assert.equal(await handleAi(ctx), true);
+
+    assert.equal(ctx.res.statusCode, 502);
+    // The `LlmError` sentence, not the wrapper's "Internal server error".
+    assert.deepEqual(ctx.res.body, {
+      error: 'bad_gateway',
+      message: 'openai-compat request failed (500)',
+    });
+    assert.ok(
+      !JSON.stringify(ctx.res.body).includes('upstream secret detail'),
+      "the provider's body stays in the log",
+    );
+    assert.ok(
+      ctx.res.headers['X-RateLimit-Limit'],
+      'an error answer carries the rate-limit headers like any v1 answer',
+    );
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Routing

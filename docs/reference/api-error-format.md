@@ -221,7 +221,12 @@ human line only. Pinned by `tests/mcp/mcp-tool-error-details.test.js` (B621).
   public surface's discriminator). Produced through `sendV1Error`/`apiError` and
   the `withV1ErrorHandler` wrap in
   `server/routes/public-api/v1/middleware.js` — B61 converged the three shapes it
-  used to speak into this one. Don't change it here.
+  used to speak into this one. Don't change it here. The wrap is the one v1
+  error renderer (B619): no sub-handler catches a throw to answer it itself.
+  It follows `withErrorHandler`'s rule: an `AppError` keeps its sentence, code
+  and details at any status (a failing model is a 502 `bad_gateway` that says
+  so), any other throw from 500 up answers "Internal server error", and every
+  answer carries the key's rate-limit headers.
 - Enforced/covered by `tests/api-error-envelope.test.js`.
 - A handful of ad-hoc `serveJson(res, status, { error: err.message })` sites (AI,
   media, uploads, notion) still put prose in `error`; the client tolerates both,

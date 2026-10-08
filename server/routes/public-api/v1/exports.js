@@ -19,10 +19,8 @@ import {
   withV1ErrorHandler,
   checkExportLimit,
   trackExportRequest,
-  apiError,
 } from './middleware.js';
 import { prepareExportContext } from '../../../services/exports.js';
-import { isAppError } from '../../../utils/errors.js';
 import { getRateLimitHeaders } from '../../../storage/api-usage.js';
 
 // ============================================================
@@ -30,32 +28,26 @@ import { getRateLimitHeaders } from '../../../storage/api-usage.js';
 // ============================================================
 
 /**
- * The export context for a v1 request: the key owner asks, `?lang=` names the
- * language, and a refusal is answered in the v1 envelope here.
+ * The export context for a v1 request: the key owner asks and `?lang=` names
+ * the language. A refusal throws; `withV1ErrorHandler` renders it (B619), as
+ * it does a failed build in the handlers below.
  *
  * @param {Object} ctx - Request context
  * @param {string} presentationId
  * @param {{ format: string, allLanguages?: boolean }} options
- * @returns {Promise<import('../../../services/exports.js').ExportContext|null>}
- *   The context, or `null` when the refusal was already answered.
+ * @returns {Promise<import('../../../services/exports.js').ExportContext>}
  */
-async function exportContextFor(ctx, presentationId, { format, allLanguages }) {
-  try {
-    return await prepareExportContext(
-      ctx.storageScope,
-      { actor: ctx.authedUser },
-      {
-        presentationId,
-        format,
-        lang: ctx.url?.searchParams?.get('lang'),
-        allLanguages,
-      },
-    );
-  } catch (err) {
-    if (!isAppError(err)) throw err;
-    await apiError(ctx, err.statusCode, err.message, { code: err.code });
-    return null;
-  }
+function exportContextFor(ctx, presentationId, { format, allLanguages }) {
+  return prepareExportContext(
+    ctx.storageScope,
+    { actor: ctx.authedUser },
+    {
+      presentationId,
+      format,
+      lang: ctx.url?.searchParams?.get('lang'),
+      allLanguages,
+    },
+  );
 }
 
 /**
@@ -103,7 +95,6 @@ async function handleJsonExport(ctx, id) {
     format: 'json',
     allLanguages: true,
   });
-  if (!exportCtx) return true;
 
   // Track export
   await trackExportRequest(ctx);
@@ -133,27 +124,21 @@ async function handleHtmlExport(ctx, id) {
 
   const { repoRoot } = ctx;
   const exportCtx = await exportContextFor(ctx, id, { format: 'html' });
-  if (!exportCtx) return true;
 
   await trackExportRequest(ctx);
 
-  try {
-    const html = await buildStandaloneHtml(repoRoot, exportCtx.filteredPres, {
-      theme: exportCtx.theme,
-      slideTypes: exportCtx.slideTypes,
-    });
+  const html = await buildStandaloneHtml(repoRoot, exportCtx.filteredPres, {
+    theme: exportCtx.theme,
+    slideTypes: exportCtx.slideTypes,
+  });
 
-    await sendExportResponse(ctx, {
-      contentType: 'text/html; charset=utf-8',
-      filename: `${exportCtx.title}${exportCtx.langSuffix}`,
-      extension: '.html',
-      data: html,
-    });
-    return true;
-  } catch (e) {
-    await apiError(ctx, 500, `Export failed: ${e.message}`);
-    return true;
-  }
+  await sendExportResponse(ctx, {
+    contentType: 'text/html; charset=utf-8',
+    filename: `${exportCtx.title}${exportCtx.langSuffix}`,
+    extension: '.html',
+    data: html,
+  });
+  return true;
 }
 
 /**
@@ -167,27 +152,21 @@ async function handlePdfExport(ctx, id) {
 
   const { repoRoot } = ctx;
   const exportCtx = await exportContextFor(ctx, id, { format: 'pdf' });
-  if (!exportCtx) return true;
 
   await trackExportRequest(ctx);
 
-  try {
-    const html = await buildPrintHtml(repoRoot, exportCtx.filteredPres, {
-      theme: exportCtx.theme,
-      slideTypes: exportCtx.slideTypes,
-    });
+  const html = await buildPrintHtml(repoRoot, exportCtx.filteredPres, {
+    theme: exportCtx.theme,
+    slideTypes: exportCtx.slideTypes,
+  });
 
-    await sendExportResponse(ctx, {
-      contentType: 'text/html; charset=utf-8',
-      filename: `${exportCtx.title}${exportCtx.langSuffix}-print`,
-      extension: '.html',
-      data: html,
-    });
-    return true;
-  } catch (e) {
-    await apiError(ctx, 500, `Export failed: ${e.message}`);
-    return true;
-  }
+  await sendExportResponse(ctx, {
+    contentType: 'text/html; charset=utf-8',
+    filename: `${exportCtx.title}${exportCtx.langSuffix}-print`,
+    extension: '.html',
+    data: html,
+  });
+  return true;
 }
 
 /**
@@ -208,7 +187,6 @@ function pptxExportHandler({ format, extension, build, reportImageSlides }) {
 
     const { repoRoot, url } = ctx;
     const exportCtx = await exportContextFor(ctx, id, { format });
-    if (!exportCtx) return true;
 
     await trackExportRequest(ctx);
 
@@ -216,28 +194,21 @@ function pptxExportHandler({ format, extension, build, reportImageSlides }) {
     const scaleParam = url.searchParams.get('scale');
     const scale = Math.max(1, Math.min(3, Number(scaleParam) || 2));
 
-    try {
-      const result = await build(repoRoot, exportCtx.filteredPres, {
-        scale,
-        theme: exportCtx.theme,
-        slideTypes: exportCtx.slideTypes,
-      });
+    const result = await build(repoRoot, exportCtx.filteredPres, {
+      scale,
+      theme: exportCtx.theme,
+      slideTypes: exportCtx.slideTypes,
+    });
 
-      await sendExportResponse(ctx, {
-        contentType:
-          'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        filename: `${exportCtx.title}${exportCtx.langSuffix}`,
-        extension,
-        data: result.buffer,
-        headers: reportImageSlides
-          ? imageSlidesHeaders(result.imageSlides)
-          : {},
-      });
-      return true;
-    } catch (e) {
-      await apiError(ctx, 500, `Export failed: ${e.message}`);
-      return true;
-    }
+    await sendExportResponse(ctx, {
+      contentType:
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      filename: `${exportCtx.title}${exportCtx.langSuffix}`,
+      extension,
+      data: result.buffer,
+      headers: reportImageSlides ? imageSlidesHeaders(result.imageSlides) : {},
+    });
+    return true;
   };
 }
 
