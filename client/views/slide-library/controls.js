@@ -8,6 +8,7 @@ import { cleanStr } from '../../../shared/string-utils.js';
 import { h } from '../../lib/dom/index.js';
 import { getSupportedLangs } from '../../lib/format/i18n.js';
 import { getLangShortLabel } from '../../lib/format/lang-selector.js';
+import { hasContentForLang } from './search.js';
 
 /**
  * Create UI control renderers for the slide library
@@ -27,6 +28,21 @@ export function createSlideLibraryControls({
   const typeLabel = (type) => {
     const def = SLIDE_TYPES?.[type];
     return t(def?.labelKey || `slideType.${type}.label`, def?.label || type);
+  };
+
+  /**
+   * The items the language switch leaves in view: every item when the picker
+   * has no switch, else those with content in the active language. The one
+   * place that scope is decided, so the list and the filter counts above it
+   * cannot disagree on which items there are (B617).
+   *
+   * @param {Array<object>} items
+   * @returns {Array<object>}
+   */
+  const inLanguageScope = (items) => {
+    if (!showLanguageSwitch) return items;
+    const lang = state.getLang();
+    return items.filter((it) => hasContentForLang(it, lang));
   };
 
   const renderShelfControls = (mount, rerender) => {
@@ -116,8 +132,10 @@ export function createSlideLibraryControls({
     const activeTypeFilter = state.getTypeFilter();
     const activeTagFilter = state.getTagFilter();
 
-    // Only show non-trashed items for counting
-    const activeItems = items.filter((it) => !(it?.isTrashed || it?.trashedAt));
+    // Count what the list can show: live items in the active language.
+    const activeItems = inLanguageScope(
+      items.filter((it) => !(it?.isTrashed || it?.trashedAt)),
+    );
 
     // Count items per type
     const typeCounts = new Map();
@@ -234,6 +252,7 @@ export function createSlideLibraryControls({
 
   return {
     typeLabel,
+    inLanguageScope,
     renderShelfControls,
     renderViewControls,
     renderLangControls,

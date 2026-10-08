@@ -232,41 +232,23 @@ export function createVisualThemePicker({
   }
 
   /**
-   * Resolve preview CSS vars for a theme entry from the /api/themes list.
-   * System themes are loaded in full via loadThemeById; custom themes use
-   * the inline colors/fonts already present in the list response.
+   * Resolve preview CSS vars for a theme entry from the /api/themes list by
+   * loading the theme itself: the resolved variables are what a slide in that
+   * theme paints, so the card cannot disagree with the deck. A preview rebuilt
+   * here from the record's raw colours always set the text to `textDark`, and
+   * a dark theme's "Aa" came out black on black (Midnight, B617).
    */
   async function resolvePreviewData(theme) {
-    if (theme.type === 'system') {
-      try {
-        const full = await loadThemeById(theme.id);
-        return {
-          ...theme,
-          cssVars: full?.cssVars || {},
-          embedFonts: full?.embedFonts || [],
-        };
-      } catch {
-        return { ...theme, cssVars: {}, embedFonts: [] };
-      }
+    try {
+      const full = await loadThemeById(theme.id);
+      return {
+        ...theme,
+        cssVars: full?.cssVars || {},
+        embedFonts: full?.embedFonts || [],
+      };
+    } catch {
+      return { ...theme, cssVars: {}, embedFonts: [] };
     }
-    // Custom themes: construct preview vars from inline colors/fonts
-    return {
-      ...theme,
-      cssVars: {
-        '--t-color-background': theme.colors?.background || '#ffffff',
-        '--t-color-accent': theme.colors?.primary || '#3B82F6',
-        '--t-color-text': theme.colors?.textDark || '#1f2937',
-        '--t-font-heading': theme.fonts?.heading
-          ? `'${theme.fonts.heading}', sans-serif`
-          : 'Inter, sans-serif',
-        '--t-font-body': theme.fonts?.body
-          ? `'${theme.fonts.body}', sans-serif`
-          : 'Inter, sans-serif',
-        '--t-heading-weight': '700',
-        '--t-heading-transform': 'none',
-      },
-      embedFonts: [],
-    };
   }
 
   /** Inject @font-face rules so heading/body fonts render in cards. */

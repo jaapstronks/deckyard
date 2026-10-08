@@ -326,6 +326,30 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   margin: 0;
 }
 
+/* A phone (sm): the bar's 358px row cannot hold the title beside eight
+   controls, and it wrapped to four lines with the title cut to "Mee…" (B617).
+   Measured budget, not taste: the title takes a row of its own and is read
+   whole, and the two controls a phone has no use for leave, the keyboard
+   shortcut hint (no keyboard) and Second screen (one screen, no window to
+   place on a projector). What stays fits two rows below the title. */
+@media (max-width: 640px) {
+  .presenter-topbar {
+    flex-wrap: wrap;
+    row-gap: var(--ps-space-2);
+  }
+  .presenter-title {
+    flex-basis: 100%;
+  }
+  .presenter-actions {
+    flex-basis: 100%;
+    justify-content: flex-start;
+  }
+  .presenter-actions > .presenter-help,
+  .presenter-actions > .presenter-projector-btn {
+    display: none;
+  }
+}
+
 /* Highlighter toolbar buttons */
 .presenter-highlighter-btn.is-active {
   background: hsl(var(--app-accent-primary));
