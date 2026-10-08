@@ -18,7 +18,7 @@ import {
   renderSlideElement,
 } from '../../lib/slide-runtime/slide-render.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
-import { t } from '../../lib/ui-i18n.js';
+import { applyViewerUiLocale, t } from '../../lib/ui-i18n.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import {
   createAnalyticsTracker,
@@ -48,6 +48,9 @@ let guestSession = null;
  */
 export async function renderShareViewer(root, token) {
   document.documentElement.classList.add('is-share-viewer');
+  // No deck yet (password prompt, error screens): the visitor's browser
+  // decides; renderDeck() switches to the deck's language once it has it (D322).
+  await applyViewerUiLocale();
 
   // Extract email from URL for pre-filling guest join form
   const prefillEmail = (queryParam('email') || '').trim();
@@ -153,6 +156,7 @@ export async function renderShareViewer(root, token) {
    * @param {Object|null} deck - Viewer-safe deck from the verify response.
    */
   async function renderDeck(deck) {
+    if (deck) await applyViewerUiLocale({ deckLang: resolveDeckLang(deck) });
     shell.innerHTML = '';
 
     const loading = h('div', { class: 'share-viewer-loading' }, [
