@@ -81,7 +81,6 @@ export async function generateDeckJsonFromRawContent(
           '  - Keep proper names (people/companies) unchanged.',
         ]),
     '- The first slide MUST be a title-slide.',
-    '- Do NOT output follow-invite-slide.',
     ...(userName
       ? [`- The title-slide.subheading MUST be exactly: "${userName}"`]
       : []),

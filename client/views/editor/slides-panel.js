@@ -17,6 +17,10 @@ import { isInsertableSlideType } from '../../../shared/slide-types/policy.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
+import {
+  isLiveInviteSlideType,
+  liveInviteSlideType,
+} from '../../../shared/slide-types/live-session.js';
 import { applyInstanceKeyRekey } from '../../../shared/slide-types/instance-keys.js';
 import {
   followInvitePlacements,
@@ -35,10 +39,14 @@ function isInteractiveSlideType(type) {
   return isLiveSlideType(type);
 }
 
+// Whether the deck already has a way in for the audience. The type is asked,
+// not named (`liveInvite: true`, shared/slide-types/live-session.js); an
+// installation without an invite type has nothing to suggest, so it counts as
+// provided for.
 function hasFollowInviteSlide(slides) {
+  if (!liveInviteSlideType()) return true;
   return (
-    Array.isArray(slides) &&
-    slides.some((s) => s?.type === 'follow-invite-slide')
+    Array.isArray(slides) && slides.some((s) => isLiveInviteSlideType(s?.type))
   );
 }
 
@@ -273,7 +281,7 @@ export function createSlidesPanel({
 
   // Helper to insert a follow-invite slide at a specific position
   const insertFollowInviteSlide = (afterSlideId) => {
-    const s = insertedSlide('follow-invite-slide');
+    const s = insertedSlide(liveInviteSlideType());
     // No language on the content: the invite renders in the language of the
     // version it sits in, derived from the render context.
     insertSlideObject(s, { afterSlideId });

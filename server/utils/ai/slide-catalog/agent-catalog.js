@@ -88,6 +88,34 @@ export function isAgentOptOut(def) {
 }
 
 /**
+ * The registered types deliberately withheld from agents, by name.
+ *
+ * @param {Record<string, object>} [slideTypes] - registry to enumerate
+ * @returns {string[]}
+ */
+export function agentWithheldTypeNames(slideTypes = SLIDE_TYPES) {
+  return Object.keys(slideTypes).filter((name) =>
+    isAgentOptOut(slideTypes[name]),
+  );
+}
+
+/**
+ * The prompt rule that forbids those types by name, or `''` when nothing is
+ * withheld. The catalog already leaves them out; this is the explicit
+ * prohibition every generating prompt ends with, derived from the
+ * declarations (`ai: false`, `deprecated: true`) so that the prompts stopped
+ * naming the follow-along invite themselves (B413).
+ *
+ * @param {Record<string, object>} [slideTypes] - registry to enumerate
+ * @returns {string}
+ */
+export function agentWithheldTypesRule(slideTypes = SLIDE_TYPES) {
+  const names = agentWithheldTypeNames(slideTypes);
+  if (!names.length) return '';
+  return `IMPORTANT: Do NOT output ${names.map((n) => `"${n}"`).join(', ')}.`;
+}
+
+/**
  * True when a single field definition is outside the agent contract.
  *
  * Two markers:

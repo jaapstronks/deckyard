@@ -475,6 +475,38 @@ and both sides ask it: the editor disables "Save to slide library…" (the flag
 travels on `/api/slide-types`), and the library create routes refuse the type
 with 400 `invalid`, field `slideType`.
 
+### Tying a type to the live session
+
+Two declarations, both `true` only, both read through
+`shared/slide-types/live-session.js`:
+
+```javascript
+export default {
+  label: 'Follow-along invite',
+  // Only meaningful while a session is live: every output that outlives it
+  // (reader, exports, published view, preview image) leaves this slide out.
+  liveOnly: true,
+  // The audience's way into the session: the editor suggests and inserts
+  // this type when an interactive slide lands in a deck without one.
+  liveInvite: true,
+  // …
+};
+```
+
+`liveOnly` is read by `isLiveOnlySlideType()`: `stripLiveOnlySlidesFromPresentation()`
+and `firstPublicSlide()` in `server/utils/public-output.js` (the strip behind
+every export and the published view, and the slide a preview image is rendered
+from), and the alt-text census. `liveInvite` is read by `isLiveInviteSlideType()`
+and `liveInviteSlideType()`: the editor's invite suggestion and what it inserts,
+the presenter (join codes go to the invite and to live slides; an invite whose
+author switched it off in place, `content.enabled === false`, is skipped), the
+follow view (shows the joined-confirmation in its place) and the save path
+(normalizes its content). An invite is live-only by definition; `liveInvite`
+without `liveOnly` is a validator warning. No module branches on the invite's
+name — `tests/follow-invite-declares-itself.test.js` pins that, with the
+registries, the bespoke form registration and the two display-order hints as
+the only places that spell it.
+
 ### The agent-facing schema is derived — and so is withholding a _field_
 
 An `ai` block carries prose only: `description`, `bestFor`, `notFor`,

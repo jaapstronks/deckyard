@@ -1212,12 +1212,12 @@ export function registerTools(
         slideTypes,
       });
 
-      // Find insert position: before structural closing slides (payoff, end, follow-invite)
-      const closingTypes = new Set([
-        'payoff-slide',
-        'end-slide',
-        'follow-invite-slide',
-      ]);
+      // Find insert position: before structural closing slides (payoff, end).
+      // The follow-along invite used to be listed here too, against its own
+      // declaration: it sits anywhere in the deck and claims no closing beat
+      // (shared/slide-types/types/follow-invite-slide.js), so a trailing one
+      // is appended after like any other slide (B413).
+      const closingTypes = new Set(['payoff-slide', 'end-slide']);
       let insertAt = pres.slides.length;
       for (let i = pres.slides.length - 1; i >= 0; i--) {
         if (closingTypes.has(pres.slides[i].type)) {

@@ -10,8 +10,17 @@ export default {
   fallback: 'content-slide',
   // Only meaningful while a session is live: the invite points an audience at
   // a join code, so every output that outlives the session (reader, exports,
-  // published view) leaves it out. Read by server/utils/public-output.js.
+  // published view, the preview image) leaves it out. Read through
+  // `isLiveOnlySlideType()` in shared/slide-types/live-session.js.
   liveOnly: true,
+  // The audience's way into the session. The editor suggests and inserts this
+  // type when an interactive slide lands in a deck without one, the presenter
+  // hands it the join codes and skips it when `content.enabled` is false, the
+  // follow view shows the joined-confirmation in its place and the save path
+  // normalizes its content — all by asking this declaration, never the name
+  // (B413). Readers: `isLiveInviteSlideType()` / `liveInviteSlideType()` in
+  // shared/slide-types/live-session.js. Implies `liveOnly`.
+  liveInvite: true,
   // `static`: the join code it renders is a render input the session hands
   // over (ctx.followCodes), not state the session keeps for this slide.
   runtime: 'static',

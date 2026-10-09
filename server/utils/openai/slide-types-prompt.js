@@ -19,6 +19,7 @@ import { SLIDE_TYPE_CATALOG } from '../ai/slide-type-catalog.js';
 import { getSlideTypeExamples } from '../ai/slide-catalog/examples.js';
 import {
   isAgentOptOut,
+  agentWithheldTypesRule,
   deriveAgentSchema,
 } from '../ai/slide-catalog/agent-catalog.js';
 
@@ -421,7 +422,10 @@ export function buildSlideTypesPrompt({
     }
   }
 
-  lines.push('IMPORTANT: Do NOT output "follow-invite-slide".');
+  // The types the catalog left out, forbidden by name as well; derived from
+  // the same declarations the loop above honours.
+  const withheld = agentWithheldTypesRule();
+  if (withheld) lines.push(withheld);
 
   return lines.join('\n');
 }
