@@ -18,7 +18,13 @@
  *
  * The two deltas are small text on the same tile and owe AA-body as well
  * (B631): each is its tone mixed with the tile text, at a smaller tone share
- * on a ground flagged dark, and the last test resolves both mixes per ground.
+ * when that text is light. The last test resolves both mixes on every ground
+ * a built-in theme ships, flat surfaces and layered backgrounds alike. A KPI
+ * slide offers lime, mist and the layered ones, not `dark`; but lime and mist
+ * are whatever colour a theme gives them (midnight's are dark), so each
+ * theme's dark surface stands in for the dark lime a custom theme can ship.
+ * Flat surfaces carry no luminance class, and the red on playful's rust read
+ * 3.35:1 at half tone (B633).
  *
  * Run with: node --test tests/kpi-tile-contrast.test.js
  */
@@ -57,6 +63,26 @@ function over(fg, alpha, bg) {
 
 const ratio = (a, b) =>
   contrastRatioFromLuminance(getRelativeLuminance(a), getRelativeLuminance(b));
+
+/** The oklch lightness of an opaque colour: the step the CSS reads (L 0.6). */
+function oklchL(hex) {
+  const lin = (c) => {
+    const v = c / 255;
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  const { r, g, b } = parseColor(hex).rgb;
+  const [lr, lg, lb] = [lin(r), lin(g), lin(b)];
+  const l = Math.cbrt(
+    0.4122214708 * lr + 0.5363329296 * lg + 0.0514459929 * lb,
+  );
+  const m = Math.cbrt(
+    0.2119034982 * lr + 0.6806995457 * lg + 0.1073969566 * lb,
+  );
+  const s = Math.cbrt(
+    0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb,
+  );
+  return 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+}
 
 /** `#fafafa` or `rgba(250, 250, 250, 0.64)` → `{ rgb, alpha }`. */
 function parseColor(value) {
@@ -123,9 +149,6 @@ function darkGrounds() {
     text: calm.textColor,
     muted: calm.textColorMuted,
     accent: brand.cssVars['--t-color-accent'],
-    // A layered background declares its luminance as a class
-    // (slideBackgroundContrastClass); the midnight surfaces carry none.
-    flagged: true,
   }));
   for (const surface of ['lime', 'mist', 'dark']) {
     grounds.push({
@@ -170,42 +193,84 @@ function tileFailures(ground, alpha) {
   return failures;
 }
 
-/** The tile rule a dark ground's luminance class adds (`has-slide-bg-light-text`). */
-const flaggedTileCss = (() => {
-  const m =
-    /^\.has-slide-bg-light-text\.slide-kpi-metrics \.kpi-metric \{([^}]*)\}/m.exec(
-      kpiCss,
-    );
-  assert.ok(m, 'the flagged-dark-ground tile rule is gone');
-  return m[1];
-})();
+const SEEDS = [
+  'amethyst',
+  'brand',
+  'corporate',
+  'editorial',
+  'midnight',
+  'playful',
+];
 
 /**
- * A delta colour: `color-mix(in srgb, var(--<tone>) N%, var(--kpi-tile-fg))`,
- * resolved for `ground`. The accent is the theme's; the danger red is the
- * token, which no theme overrides.
+ * Every ground a built-in theme ships: the three flat surfaces and the pixels
+ * of each layered background. The deltas read their tone share off the tile
+ * text, so each ground is judged by its text, light or dark.
+ */
+async function everyGround() {
+  const grounds = [];
+  for (const slug of SEEDS) {
+    const theme = slug === 'brand' ? brand : await seedThemeConfig(slug);
+    const vars = theme.cssVars;
+    const accent = vars['--t-color-accent'];
+    for (const surface of ['lime', 'mist', 'dark']) {
+      grounds.push({
+        name: `${slug}/${surface}`,
+        px: parseColor(vars[`--t-slide-bg-${surface}`]).rgb,
+        text: vars[`--t-slide-bg-${surface}-text`],
+        accent,
+      });
+    }
+    for (const bg of theme.slideBackgrounds ?? []) {
+      groundPixels(bg.value).forEach((px, i) => {
+        grounds.push({
+          name: `${slug}/${bg.id} #${i}`,
+          px,
+          text: bg.textColor,
+          accent,
+        });
+      });
+    }
+  }
+  return grounds;
+}
+
+/**
+ * A delta colour, resolved for `ground`: its tone mixed N% into the tile
+ * text, then mixed M% with a copy of the text that is opaque only when the
+ * text is light (`--kpi-delta-dark-ground`), and set opaque again. On a light
+ * text that is N·M% tone, on a dark text N%. The accent is the theme's; the
+ * danger red is the token, which no theme overrides.
  */
 function deltaColour(name, ground) {
-  const raw = tokenValue(ground.flagged ? flaggedTileCss : kpiCss, name);
+  const raw = tokenValue(kpiCss, name);
   const m =
-    /^color-mix\( in srgb, var\(--(slide-accent|slide-color-danger)\) (\d+)%, var\(--kpi-tile-fg\) \)$/.exec(
+    /^rgb\( from color-mix\( in srgb, color-mix\(in srgb, var\(--(slide-accent|slide-color-danger)\) (\d+)%, var\(--kpi-tile-fg\)\) (\d+)%, var\(--kpi-delta-dark-ground\) \) r g b \/ 1 \)$/.exec(
       raw,
     );
   assert.ok(
     m,
     `--${name} is no longer a tone mixed with the tile text: ${raw}`,
   );
+  assert.equal(
+    tokenValue(kpiCss, 'kpi-delta-dark-ground'),
+    'oklch( from var(--kpi-tile-fg) l c h / clamp(0, (l - 0.6) * 100, 1) )',
+    'the dark-ground pull must be opaque on light text and clear on dark',
+  );
   const tone =
     m[1] === 'slide-accent' ? ground.accent : tokenValue(tokens, m[1]);
-  return over(
-    parseColor(tone).rgb,
-    Number(m[2]) / 100,
-    parseColor(ground.text).rgb,
-  );
+  const share =
+    (Number(m[2]) / 100) * (oklchL(ground.text) > 0.6 ? Number(m[3]) / 100 : 1);
+  return over(parseColor(tone).rgb, share, parseColor(ground.text).rgb);
 }
 
 /** Both deltas are small text on the tile, so they owe AA-body (B631). */
-function deltaFailures(ground, alpha) {
+function deltaFailures(ground) {
+  const alpha = tileAlpha(
+    oklchL(ground.text) > 0.6
+      ? 'kpi-tile-glass-dark-ground'
+      : 'kpi-tile-glass-light-ground',
+  );
   const tile = over(WHITE, alpha, ground.px);
   return ['kpi-delta-pos', 'kpi-delta-neg'].flatMap((name) => {
     const got = ratio(deltaColour(name, ground), tile);
@@ -251,24 +316,6 @@ test('the dark-ground text of these themes sits above the oklch step', () => {
   // The CSS steps at oklch L 0.6. Light text far above it and dark text far
   // below it is what makes the step safe; a theme that ships mid-grey text
   // would land on the wrong glass and belongs in this test.
-  const oklchL = (hex) => {
-    const lin = (c) => {
-      const v = c / 255;
-      return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-    };
-    const { r, g, b } = parseColor(hex).rgb;
-    const [lr, lg, lb] = [lin(r), lin(g), lin(b)];
-    const l = Math.cbrt(
-      0.4122214708 * lr + 0.5363329296 * lg + 0.0514459929 * lb,
-    );
-    const m = Math.cbrt(
-      0.2119034982 * lr + 0.6806995457 * lg + 0.1073969566 * lb,
-    );
-    const s = Math.cbrt(
-      0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb,
-    );
-    return 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
-  };
   for (const g of darkGrounds()) {
     assert.ok(oklchL(g.text) > 0.6, `${g.name}: ${g.text} is not light text`);
   }
@@ -277,15 +324,13 @@ test('the dark-ground text of these themes sits above the oklch step', () => {
   }
 });
 
-test('both deltas clear AA-body on calm, midnight and the light grounds', () => {
-  const failures = [
-    ...darkGrounds().flatMap((g) =>
-      deltaFailures(g, tileAlpha('kpi-tile-glass-dark-ground')),
-    ),
-    ...lightGrounds().flatMap((g) =>
-      deltaFailures(g, tileAlpha('kpi-tile-glass-light-ground')),
-    ),
-  ];
+test('both deltas clear AA-body on every ground a built-in theme ships', async () => {
+  const grounds = await everyGround();
+  assert.ok(
+    grounds.some((g) => g.name === 'playful/dark'),
+    'the rust ground that measured 3.35:1 (B633) is no longer covered',
+  );
+  const failures = grounds.flatMap(deltaFailures);
   assert.deepEqual(
     failures,
     [],
