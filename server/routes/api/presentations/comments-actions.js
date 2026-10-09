@@ -39,6 +39,7 @@ import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { newSlide } from '../../../../shared/slide-types/presentation.js';
+import { insertAfterAnchor } from '../../../services/slides.js';
 import { resolveSlideTypeName } from '../../../../shared/slide-types/registry.js';
 
 /**
@@ -160,9 +161,13 @@ export async function handlePresentationCommentApply(
     content: comment.proposedSlide.content,
   });
 
-  // Insert the new slide after the original slide
+  // Insert the new slide after the original slide, in its group (D325)
   const updatedSlides = [...slides];
-  updatedSlides.splice(originalSlideIndex + 1, 0, proposed);
+  const newSlideIndex = insertAfterAnchor(
+    updatedSlides,
+    proposed,
+    originalSlideIndex,
+  );
 
   // Update the presentation
   fullPres.slides = updatedSlides;
@@ -189,7 +194,7 @@ export async function handlePresentationCommentApply(
     newSlideId: proposed.id,
     originalSlideId: comment.slideId,
     originalSlideIndex,
-    newSlideIndex: originalSlideIndex + 1,
+    newSlideIndex,
   });
   return true;
 }
