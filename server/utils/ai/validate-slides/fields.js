@@ -6,7 +6,10 @@
  * log content loss (for prompt improvement) and to report unknown fields.
  */
 
-import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
+import {
+  DERIVED_SLIDE_CONTENT_KEYS,
+  SLIDE_TYPES,
+} from '../../../../shared/slide-types/registry.js';
 import { GLOBAL_A11Y_FIELDS } from './constants.js';
 import { logValidation } from './logging.js';
 
@@ -16,6 +19,9 @@ const fieldKeysCache = new Map();
 /**
  * Extract all valid field keys from a slide type definition
  * Includes fields from the slide type's fields array plus global a11y fields
+ * and the derived contrast keys (`DERIVED_SLIDE_CONTENT_KEYS`): no author
+ * writes those, but a settled slide carries them, and a validator that called
+ * them unknown would warn on every slide the editor or the write seam measured.
  *
  * @param {string} slideType - The slide type name (e.g., 'content-slide')
  * @returns {Set<string>} Set of valid field keys
@@ -26,7 +32,7 @@ function getValidFieldKeys(slideType) {
   }
 
   const typeDef = SLIDE_TYPES[slideType];
-  const keys = new Set(GLOBAL_A11Y_FIELDS);
+  const keys = new Set([...GLOBAL_A11Y_FIELDS, ...DERIVED_SLIDE_CONTENT_KEYS]);
 
   if (typeDef && Array.isArray(typeDef.fields)) {
     for (const field of typeDef.fields) {

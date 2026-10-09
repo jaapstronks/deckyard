@@ -36,6 +36,21 @@ export const GLOBAL_SLIDE_FIELD_KEYS = [
   'slideLogo',
 ];
 
+// Content keys every slide may carry that no field declares and no author
+// writes: the text-contrast verdict over `slideBgImage`, measured by the
+// editor (`runBgContrastDetection`) or the storage write seam
+// (`settleBgTextContrast`, B627) and keyed on the image it was measured for.
+// They ride with the image — a lock on the background strips them, a type
+// conversion carries them, and the validators know them as the type's own —
+// so a settled slide round-trips over MCP without an `unknown_field` and
+// without being measured again (B628). Declared once, here, next to the field
+// they derive from; every consumer reads this list.
+export const DERIVED_SLIDE_CONTENT_KEYS = [
+  'slideBgAutoFor',
+  'slideBgTextAuto',
+  'slideBgNeedsScrim',
+];
+
 // Both a11y fields share the placeholder text "Optional" — same text, same key.
 const OPTIONAL_PLACEHOLDER_KEY = 'editor.slideField.optionalPlaceholder';
 

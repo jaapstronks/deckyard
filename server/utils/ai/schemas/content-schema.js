@@ -38,7 +38,11 @@
  *   nothing but the creating code writes them. `validate-definition.js` reads
  *   the two declarations together for the same reason. `textStyles` is the
  *   third known key, on a type that offers text styling (its own declaration,
- *   `textStyle` and friends); the write seam checks its shape.
+ *   `textStyle` and friends); the write seam checks its shape. The derived
+ *   contrast keys (`DERIVED_SLIDE_CONTENT_KEYS`, `compose.js`) are the fourth,
+ *   on every type: the editor and the write seam store them next to
+ *   `slideBgImage`, so a settled slide an agent reads back and writes again
+ *   must pass as it is (B628).
  */
 
 import { z } from 'zod';
@@ -46,6 +50,7 @@ import {
   FIELD_TYPES,
   allowedEnumValues,
 } from '../../../../shared/slide-types/field-types.js';
+import { DERIVED_SLIDE_CONTENT_KEYS } from '../../../../shared/slide-types/compose.js';
 import { slideInstanceKeys } from '../../../../shared/slide-types/instance-keys.js';
 import { textStyleOffers } from '../../../../shared/slide-types/text-styles.js';
 
@@ -190,6 +195,7 @@ export function contentSchemaFor(def, { theme = null } = {}) {
     schema = objectSchema(def?.fields, themed, [
       ...Object.keys(slideInstanceKeys(def)),
       ...textStylesKey(def),
+      ...DERIVED_SLIDE_CONTENT_KEYS,
     ]);
     if (themed) entry.byTheme.set(themed, schema);
     else entry.bare = schema;
