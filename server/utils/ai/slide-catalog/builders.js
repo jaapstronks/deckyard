@@ -7,7 +7,7 @@
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
 import { getSlideTypeExamples } from './examples.js';
 import { buildGlobalOptionsPromptSection } from './global-options.js';
-import { isAgentOptOut } from './agent-catalog.js';
+import { isAgentOptOut, agentWithheldTypesRule } from './agent-catalog.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 
 /**
@@ -102,6 +102,9 @@ export function buildPhase2CatalogPrompt({
 } = {}) {
   const phase2Types = getPhase2SlideTypes(disabledSlideTypes);
   const sections = phase2Types.map((type) => buildSlideTypeDescription(type));
+  // The withheld types, forbidden by name at the end — same derivation as the
+  // Phase 1 catalog (buildSlideTypesPrompt), so neither prompt names a type.
+  const withheldRule = agentWithheldTypesRule();
 
   // Build custom type descriptions
   const disabled = new Set(
@@ -214,5 +217,5 @@ CUSTOM SLIDE TYPES (organization-specific)
 
 ${customSections.join('\n')}`
       : ''
-  }`;
+  }${withheldRule ? `\n\n${withheldRule}` : ''}`;
 }

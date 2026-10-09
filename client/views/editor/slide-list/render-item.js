@@ -7,6 +7,7 @@ import { icon } from '../../../lib/dom/icons.js';
 import { oneLine, slideLabel, slidePrimaryLabel } from '../editor-utils.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { getVisibilityPreset } from '../../../../shared/slide-visibility.js';
+import { isLiveInviteSlideType } from '../../../../shared/slide-types/live-session.js';
 import {
   createVisibilityBadge,
   createVisibilityToggle,
@@ -134,8 +135,9 @@ export function createSlideItem({ slide, match, options = {}, context = {} }) {
     }),
   );
 
+  // An invite its author switched off in place stays in the list, greyed out.
   const isDisabled =
-    s?.type === 'follow-invite-slide' &&
+    isLiveInviteSlideType(s?.type) &&
     s?.content &&
     typeof s.content === 'object' &&
     s.content.enabled === false;

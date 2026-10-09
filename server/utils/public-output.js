@@ -1,7 +1,7 @@
 // Helpers for outputs that must not include "live-only" slides.
 
 import { filterSlidesForContext } from '../../shared/slide-visibility.js';
-import { getSlideType } from '../../shared/slide-types/registry.js';
+import { isLiveOnlySlideType } from '../../shared/slide-types/live-session.js';
 import { isFeatureEnabled } from '../config/flags-snapshot.js';
 
 /**
@@ -16,12 +16,28 @@ export function stripLiveOnlySlidesFromPresentation(pres) {
   if (!pres || typeof pres !== 'object') return pres;
   const slides = Array.isArray(pres.slides) ? pres.slides : [];
   const filtered = slides.filter(
-    (s) =>
-      !(s && typeof s === 'object' && getSlideType(s.type)?.liveOnly === true),
+    (s) => !(s && typeof s === 'object' && isLiveOnlySlideType(s.type)),
   );
   // Avoid cloning big objects unless we actually changed something.
   if (filtered.length === slides.length) return pres;
   return { ...pres, slides: filtered };
+}
+
+/**
+ * The first slide an output that outlives the session can show: what the
+ * preview image of a published or shared deck is rendered from. The same
+ * `liveOnly` declaration as the strip above, asked once instead of by three
+ * callers in their own words (B413).
+ * @param {Object} pres - Presentation object
+ * @returns {Object|null} the slide, or `null` when every slide is live-only
+ */
+export function firstPublicSlide(pres) {
+  const slides = Array.isArray(pres?.slides) ? pres.slides : [];
+  return (
+    slides.find(
+      (s) => s && typeof s === 'object' && !isLiveOnlySlideType(s.type),
+    ) || null
+  );
 }
 
 /**

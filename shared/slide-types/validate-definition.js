@@ -420,6 +420,24 @@ export function validateSlideTypeDefinition(def, name, options = {}) {
     );
   }
 
+  // --- live session ----------------------------------------------------------
+  // `liveOnly` and `liveInvite` take `true` only (absent is the default), and
+  // an invite into a session is by definition live-only (B413,
+  // shared/slide-types/live-session.js).
+  for (const key of ['liveOnly', 'liveInvite']) {
+    if (def[key] !== undefined && def[key] !== true) {
+      warnings.push(
+        `${who}: \`${key}\` only takes \`true\` — ${JSON.stringify(def[key])} is ignored`,
+      );
+    }
+  }
+  if (def.liveInvite === true && def.liveOnly !== true) {
+    warnings.push(
+      `${who}: \`liveInvite: true\` without \`liveOnly: true\` — an invite into ` +
+        `a session would outlive it in exports and the published view`,
+    );
+  }
+
   // --- defaults --------------------------------------------------------------
   // `defaults` is the language-less seed, not an archive: the paths that have no
   // deck language — `newSlide()` in deck.js, presentation.js, the enum repair in

@@ -1,4 +1,5 @@
 import { SLIDE_TYPES } from '../../shared/slide-types.js';
+import { firstPublicSlide } from '../utils/public-output.js';
 
 function firstNonEmptyString(arr) {
   for (const v of arr || []) {
@@ -8,9 +9,8 @@ function firstNonEmptyString(arr) {
 }
 
 export function pickOgImageUrlFromPresentation(pres) {
-  const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-  const first = slides.find((s) => s?.type !== 'follow-invite-slide') || null;
-  if (!first || typeof first !== 'object') return '';
+  const first = firstPublicSlide(pres);
+  if (!first) return '';
 
   const type = String(first.type || '');
   const content =
