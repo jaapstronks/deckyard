@@ -1249,12 +1249,14 @@ renders:
 import {
   resolveTitleView,
   renderTitleView,
+  titleInlineEdit,
 } from '../../shared/slide-types/core-layouts.js';
 
 export default {
   label: 'Acme title',
   fields: [/* … title, subheading, meta, your own options … */],
   defaults: {/* … */},
+  inline: titleInlineEdit, // core's markup, so core's descriptor
   renderHtml: (content, slide, ctx) => {
     const view = resolveTitleView(content, slide, ctx);
     view.classes.push('slide-acme-title'); // your root, for custom/styles/
@@ -1276,15 +1278,26 @@ Three rules make it hold:
 - **Never escape.** `render…View` escapes every string in the view: texts,
   `alt`s, URLs, class names and style values. Put raw values in.
 
+Two more things come through the seam, so your file still names no core class:
+
+- **The inline-edit descriptor.** Core's markup means core's descriptor: set
+  `inline: titleInlineEdit` (also from `core-layouts.js`) instead of copying
+  one whose anchors name `tsu-*` classes.
+- **No ground.** `view.background = null` renders the root without any
+  `slide-bg-*` class, for a ground nothing in the deck paints (a transparent
+  background, or a variant the deck's theme does not declare). Any other value
+  goes through `bgClass()`, which falls back to `lime`; core itself never
+  resolves to `null`.
+
 The view is documented as a JSDoc typedef next to its functions
 (`TitleView` in `shared/slide-types/types/title-slide/render.js`, re-exported
 by `core-layouts.js`). A renamed view field breaks
 `tests/fixtures/fork-slide-types/fork-title-slide.js` in core's own fork CI
 lane, so it is a release-notes moment, not a silent break in your fork.
 
-Today `title-slide` offers this (`resolveTitleView` / `renderTitleView`). Other
-types get the same shape when a fork needs one: ask upstream, rather than
-copying the renderer in the meantime.
+Today `title-slide` offers this (`resolveTitleView` / `renderTitleView`, plus
+`titleInlineEdit`). Other types get the same shape when a fork needs one: ask
+upstream, rather than copying the renderer in the meantime.
 
 ---
 
