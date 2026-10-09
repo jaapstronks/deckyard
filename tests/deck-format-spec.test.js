@@ -28,9 +28,10 @@ import {
 } from '../shared/slide-types/deck.js';
 import {
   DECK_FORMAT_ID,
-  LEGACY_DECK_FORMAT_IDS,
+  RETIRED_DECK_FORMAT_ID,
   isDeckFormatId,
 } from '../shared/slide-types/deck-format-id.js';
+import { migratePresentation } from '../shared/slide-types/schema-version.js';
 import {
   getSlideType,
   resolveSlideTypeName,
@@ -141,17 +142,35 @@ test('local asset refs use the /uploads/ convention; external URLs stay external
   assert.ok(!json.includes('assets/'), 'portable deck has no bundle refs');
 });
 
-test('the historical `slidecreator.deck` sentinel is still recognised and still imports', () => {
+test('the retired `slidecreator.deck` sentinel folds to the current one on read (B257-A)', () => {
   // The name was a placeholder from before this project was called Deckyard.
-  // Decks written with it are in the wild; a published format keeps reading its
-  // own past, so the legacy sentinel is accepted forever — it is just no longer
-  // written. See shared/slide-types/deck-format-id.js.
-  assert.ok(LEGACY_DECK_FORMAT_IDS.includes('slidecreator.deck'));
-  assert.ok(isDeckFormatId('slidecreator.deck'), 'legacy sentinel is accepted');
+  // Decks written with it are in the wild, so they still import — through the
+  // read funnel, which rewrites the sentinel, not through a second accepted
+  // value. `isDeckFormatId` knows one spelling (D121 B8).
+  assert.equal(RETIRED_DECK_FORMAT_ID, 'slidecreator.deck');
+  assert.ok(
+    !isDeckFormatId(RETIRED_DECK_FORMAT_ID),
+    'retired sentinel is not an id',
+  );
   assert.ok(isDeckFormatId(DECK_FORMAT_ID), 'current sentinel is accepted');
   assert.ok(!isDeckFormatId('acme.deck'), 'a foreign sentinel is not');
 
-  const legacy = { ...example, format: 'slidecreator.deck' };
+  const folded = migratePresentation({
+    format: RETIRED_DECK_FORMAT_ID,
+    slides: [],
+  });
+  assert.equal(
+    folded.format,
+    DECK_FORMAT_ID,
+    'the funnel rewrites the sentinel',
+  );
+  assert.equal(
+    migratePresentation({ slides: [] }).format,
+    undefined,
+    'a stored deck gains no format',
+  );
+
+  const legacy = { ...example, format: RETIRED_DECK_FORMAT_ID };
   const parts = deckToPresentationParts(legacy);
   assert.equal(parts.slides.length, example.slides.length);
   // Re-exporting a legacy deck stamps it with the current sentinel.

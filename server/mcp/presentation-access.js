@@ -43,7 +43,7 @@ export async function loadPresentationChecked(
 ) {
   if (!presentationId) {
     throw new ValidationError(
-      'A presentation id is required (pass `id` or `presentationId`).',
+      'A presentation id is required (pass `presentationId`).',
     );
   }
   return loadPresentationForActor(

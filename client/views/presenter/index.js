@@ -467,7 +467,7 @@ export async function renderPresenter(root, id) {
 
   const syncInteractionUi = () => interactionCtl?.sync();
 
-  const startSlideId = queryParam('slideId') || queryParam('s') || '';
+  const startSlideId = queryParam('slideId') || '';
   deckCtl.setPresentation(pres, {
     keepCurrentSlideId: startSlideId,
   });

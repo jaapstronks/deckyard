@@ -239,7 +239,7 @@ describe('MCP over SSE — organization scope', () => {
     const sessionId = await openSession();
     const { isError, text } = await callTool(
       'get_presentation',
-      { id: foreignDeckId },
+      { presentationId: foreignDeckId },
       sessionId,
     );
 

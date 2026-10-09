@@ -50,9 +50,10 @@ import { REMOVED_SLIDE_TYPES } from './removed.js';
 import { foldUnofferedEnums } from './normalize-content.js';
 import { canonicalJson } from '../slide-fingerprint.js';
 import { foldTextStylesToOffers } from './text-styles.js';
+import { DECK_FORMAT_ID, RETIRED_DECK_FORMAT_ID } from './deck-format-id.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 18;
+export const CURRENT_SCHEMA_VERSION = 19;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -1463,6 +1464,18 @@ export const SCHEMA_MIGRATIONS = [
   // decides, and per-field colour is gone (B464, D220, D221). See
   // foldTextStyles.
   foldTextStyles,
+
+  // v18 -> v19: the portable envelope's `format` sentinel has one spelling.
+  // The historical `slidecreator.deck` (a placeholder from before the product
+  // had its name) folds to `deckyard.deck` here, on import, instead of being
+  // a second value every reader accepts forever (B257-A, D121 B8). A stored
+  // deck carries no `format`, so the step is a no-op on storage reads.
+  (pres) => {
+    if (pres && pres.format === RETIRED_DECK_FORMAT_ID) {
+      pres.format = DECK_FORMAT_ID;
+    }
+    return pres;
+  },
 ];
 
 /**

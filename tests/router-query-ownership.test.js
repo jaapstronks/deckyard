@@ -25,7 +25,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
-  url: 'http://localhost/app/deck-1?lang=nl&s=old#notes',
+  url: 'http://localhost/app/deck-1?lang=nl&tab=old#notes',
 });
 globalThis.window = dom.window;
 globalThis.document = dom.window.document;
@@ -39,19 +39,19 @@ const { queryParam, queryString, currentUrl, urlWithQuery, setQueryParams } =
 
 test('reads params off the live location', () => {
   assert.equal(queryParam('lang'), 'nl');
-  assert.equal(queryParam('s'), 'old');
+  assert.equal(queryParam('tab'), 'old');
   assert.equal(queryParam('absent'), null, 'a missing param reads as null');
-  assert.equal(queryString(), '?lang=nl&s=old');
+  assert.equal(queryString(), '?lang=nl&tab=old');
 });
 
 test('currentUrl is path + query + hash — what nav() re-enters', () => {
-  assert.equal(currentUrl(), '/app/deck-1?lang=nl&s=old#notes');
+  assert.equal(currentUrl(), '/app/deck-1?lang=nl&tab=old#notes');
 });
 
 test('urlWithQuery builds a destination without navigating', () => {
   const before = location.href;
   assert.equal(
-    urlWithQuery({ lang: 'en-GB', slideId: 'x1', s: null }),
+    urlWithQuery({ lang: 'en-GB', slideId: 'x1', tab: null }),
     '/app/deck-1?lang=en-GB&slideId=x1#notes',
   );
   assert.equal(location.href, before, 'building a URL does not navigate');
@@ -59,12 +59,12 @@ test('urlWithQuery builds a destination without navigating', () => {
 
 test('setQueryParams replaces: no history entry, path and hash untouched', () => {
   const depth = history.length;
-  setQueryParams({ slideId: 'slide-42', s: null });
+  setQueryParams({ slideId: 'slide-42', tab: null });
 
   const u = new URL(location.href);
   assert.equal(u.searchParams.get('slideId'), 'slide-42');
   assert.equal(u.searchParams.get('lang'), 'nl', 'unrelated param preserved');
-  assert.equal(u.searchParams.get('s'), null, 'null deletes the param');
+  assert.equal(u.searchParams.get('tab'), null, 'null deletes the param');
   assert.equal(u.pathname, '/app/deck-1', 'pathname untouched');
   assert.equal(u.hash, '#notes', 'hash untouched');
   assert.equal(history.length, depth, 'replaceState: no new history entry');
@@ -226,4 +226,16 @@ test('replaceHash swaps the hash in place: no history entry, path and query kept
   assert.equal(history.length, depth, 'no new history entry');
   replaceHash('');
   assert.equal(currentUrl(), '/settings?x=1');
+});
+
+test('guard: the selected slide has one query spelling, `slideId` (B257-A, D157)', () => {
+  // `?s=` was a read-only alias on load that nothing ever wrote; a second
+  // spelling without a producer. Three controllers read it; none may again.
+  const offenders = [];
+  for (const file of walk(path.join(repoRoot, 'client'))) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    const src = fs.readFileSync(file, 'utf8');
+    if (/queryParam\(\s*['"]s['"]\s*\)/.test(src)) offenders.push(rel);
+  }
+  assert.deepEqual(offenders, []);
 });

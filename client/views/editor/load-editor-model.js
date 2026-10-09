@@ -1,4 +1,4 @@
-import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-schemas.js';
+import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { api as defaultApi } from '../../lib/api.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import {
