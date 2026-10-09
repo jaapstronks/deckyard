@@ -16,29 +16,46 @@ make it work.
 | `slideBgText`                     | `auto` \| `light` \| `dark`                                                  | Text colour over the image. `auto` is the default.    |
 | `slideBgOverlay`                  | `auto` \| `none` \| `light` \| `dark` \| `gradient-top` \| `gradient-bottom` | Scrim/gradient over the image. `auto` is the default. |
 
-Two derived, code-written fields are stored on the slide (not user-editable):
-`slideBgTextAuto` (`light`/`dark`) and `slideBgNeedsScrim` (bool). They are the
-persisted result of the edit-time detection described below.
+Three derived, code-written fields are stored on the slide (not user-editable):
+`slideBgTextAuto` (`light`/`dark`), `slideBgNeedsScrim` (bool) and
+`slideBgAutoFor` (the image URL they were measured on). They are the persisted
+result of the detection described below.
 
 ## How `auto` text colour works
 
-When `slideBgText` is `auto`, the editor samples the image in the title region
-on a canvas (`client/lib/slide-authoring/bg-contrast.js`), computes the WCAG contrast of the
-theme's two candidate text colours against it, and stores the winner in
-`slideBgTextAuto`. At render time (editor, presenter, exports) the slide gets
-`has-slide-bg-light-text` or `has-slide-bg-dark-text` accordingly.
+When `slideBgText` is `auto`, the image's title region is sampled, the WCAG
+contrast of the theme's two candidate text colours is computed against it, and
+the winner is stored in `slideBgTextAuto`. At render time (editor, presenter,
+exports) the slide gets `has-slide-bg-light-text` or `has-slide-bg-dark-text`
+accordingly.
+
+Two samplers, one rule (B627). The rule — region, sample size, threshold,
+scrim fraction — is `shared/bg-image-contrast.js`; both samplers cut the same
+region, scale it to the same square and hand the pixels to it:
+
+- **The storage write seam** (`server/utils/bg-image-contrast.js`, sharp) runs
+  on every create and every write that carries slides, for each slide whose
+  `slideBgAutoFor` does not name its current image. It sets the three fields
+  and turns an unset `slideBgText` into `auto`, so a deck that never meets the
+  editor — made over MCP, imported, generated — presents, shares and exports
+  with a readable title. It runs after the slide-lock check, so the verdict
+  never reads as an edit of a locked slide, and skips saves that come from the
+  collab doc (the editor measures those itself).
+- **The editor** (`client/lib/slide-authoring/bg-contrast.js`, a canvas)
+  measures when it shows a slide whose image has no verdict yet.
 
 Key properties:
 
 - **The choice is between the theme's own colours**, not hard-coded black/white
   (see "What a theme must define"). A dark image under a light-on-dark theme
   simply re-picks light — no spurious swap.
-- **Detection runs once, at edit time, and is persisted.** Server-side renders
-  (PDF/PNG/PPTX/standalone HTML) cannot sample pixels, so they read the stored
-  `slideBgTextAuto`. Re-pick by changing the image or toggling the field.
-- **Cross-origin images can't be sampled** (tainted canvas). Detection then
-  no-ops and the slide falls back to the theme default. Uploaded images and
-  theme presets are same-origin, so they always work.
+- **Detection runs once per image and is persisted.** Renders (PDF/PNG/PPTX/
+  standalone HTML) never sample pixels; they read the stored `slideBgTextAuto`.
+  Re-pick by changing the image or toggling the field.
+- **Only local images are measured.** The server reads what this installation
+  serves from disk (uploads, `/assets/`, `/custom/assets/`); the editor cannot
+  sample a cross-origin image (tainted canvas). An image neither can read keeps
+  no verdict and the slide falls back to the theme default.
 
 `light` / `dark` skip detection and force the theme's light / dark text colour.
 

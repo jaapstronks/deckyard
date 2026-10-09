@@ -6,7 +6,10 @@
  * and whether a scrim/overlay is still needed because neither candidate clears
  * the WCAG target. The result is meant to be persisted on slide content
  * (`slideBgTextAuto`, `slideBgNeedsScrim`) at edit time, so the server render
- * (export/PDF/PNG) can honour it without re-sampling pixels.
+ * (export/PDF/PNG) can honour it without re-sampling pixels. The server's
+ * write seam settles the same keys for decks that never reach the editor
+ * (`server/utils/bg-image-contrast.js`); the rule both use is
+ * `shared/bg-image-contrast.js`.
  *
  * Browser-only (uses <canvas>). Same-origin images (uploads, theme presets)
  * work; a cross-origin image taints the canvas, in which case we return
@@ -14,27 +17,12 @@
  */
 
 import {
-  hexToRgb,
-  getRelativeLuminance,
-  contrastRatioFromLuminance,
-} from '../theme/color-utils.js';
-import { WCAG_THRESHOLDS } from '../../../shared/contrast.js';
+  BG_SAMPLE_SIZE,
+  BG_TEXT_FALLBACKS,
+  bgSampleRect,
+  judgeBgTextContrast,
+} from '../../../shared/bg-image-contrast.js';
 import { h } from '../dom/index.js';
-
-const SAMPLE_SIZE = 32; // downscaled sampling canvas edge, px
-// Per-pixel pass threshold. Titles over a background image are large text, so
-// the large-text AA bar applies — taken from the shared threshold table rather
-// than restated here, so it sits next to the 4.5 that body text needs.
-const CONTRAST_TARGET = WCAG_THRESHOLDS.large.aa;
-// Fraction of the title region that may fail the chosen colour before we
-// recommend a scrim. Above this the image is "busy" (mixed light+dark), where
-// no single flat text colour reads everywhere and an overlay is warranted.
-const SCRIM_FAIL_FRACTION = 0.25;
-
-// Region of the image (normalized 0-1) where slide titles/body usually sit.
-// Weighted toward the upper-left, which handles "dark top / bright bottom"
-// photos far better than a whole-image average.
-const REGION = { x: 0, y: 0, w: 0.7, h: 0.62 };
 
 /**
  * @param {string} url - Background image URL (same-origin recommended).
@@ -43,7 +31,7 @@ const REGION = { x: 0, y: 0, w: 0.7, h: 0.62 };
  */
 export async function detectBgTextContrast(
   url,
-  { light = '#ffffff', dark = '#212121' } = {},
+  { light = BG_TEXT_FALLBACKS.light, dark = BG_TEXT_FALLBACKS.dark } = {},
 ) {
   if (typeof document === 'undefined' || !url) return { ok: false };
 
@@ -54,70 +42,37 @@ export async function detectBgTextContrast(
     return { ok: false };
   }
 
-  const canvas = h('canvas', { width: SAMPLE_SIZE, height: SAMPLE_SIZE });
+  const canvas = h('canvas', { width: BG_SAMPLE_SIZE, height: BG_SAMPLE_SIZE });
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   if (!ctx) return { ok: false };
 
   const iw = img.naturalWidth || img.width;
   const ih = img.naturalHeight || img.height;
   if (!iw || !ih) return { ok: false };
-
-  const sx = Math.max(0, Math.floor(iw * REGION.x));
-  const sy = Math.max(0, Math.floor(ih * REGION.y));
-  const sw = Math.max(1, Math.floor(iw * REGION.w));
-  const sh = Math.max(1, Math.floor(ih * REGION.h));
+  const r = bgSampleRect(iw, ih);
 
   let data;
   try {
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, SAMPLE_SIZE, SAMPLE_SIZE);
-    data = ctx.getImageData(0, 0, SAMPLE_SIZE, SAMPLE_SIZE).data;
+    ctx.drawImage(
+      img,
+      r.left,
+      r.top,
+      r.width,
+      r.height,
+      0,
+      0,
+      BG_SAMPLE_SIZE,
+      BG_SAMPLE_SIZE,
+    );
+    data = ctx.getImageData(0, 0, BG_SAMPLE_SIZE, BG_SAMPLE_SIZE).data;
   } catch {
     // Tainted canvas (cross-origin image) — cannot read pixels.
     return { ok: false };
   }
 
-  // Distribution-based decision: for each sampled pixel, does the light / dark
-  // candidate clear the contrast target against it? Pick the colour that leaves
-  // the FEWEST failing pixels (robust to busy images, where a single average
-  // colour is misleading), and recommend a scrim when even the winner still
-  // fails on a meaningful fraction of the region.
-  const lLight = candidateLuminance(light, '#ffffff');
-  const lDark = candidateLuminance(dark, '#212121');
-
-  let failLight = 0;
-  let failDark = 0;
-  let total = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    const a = data[i + 3] / 255;
-    if (a === 0) continue;
-    const lPx = getRelativeLuminance({
-      r: data[i],
-      g: data[i + 1],
-      b: data[i + 2],
-    });
-    if (contrastRatioFromLuminance(lLight, lPx) < CONTRAST_TARGET)
-      failLight += a;
-    if (contrastRatioFromLuminance(lDark, lPx) < CONTRAST_TARGET) failDark += a;
-    total += a;
-  }
-  if (total === 0) return { ok: false };
-
-  const fracFailLight = failLight / total;
-  const fracFailDark = failDark / total;
-  const useLight = fracFailLight <= fracFailDark;
-  const chosenFail = useLight ? fracFailLight : fracFailDark;
-
-  return {
-    ok: true,
-    text: useLight ? 'light' : 'dark',
-    needsScrim: chosenFail > SCRIM_FAIL_FRACTION,
-    failFraction: Math.round(chosenFail * 100) / 100,
-  };
-}
-
-function candidateLuminance(hex, fallback) {
-  const rgb = hexToRgb(hex) || hexToRgb(fallback);
-  return getRelativeLuminance(rgb);
+  // The rule itself is shared with the server's write seam, so both say the
+  // same thing about the same image (B627).
+  return judgeBgTextContrast(data, { light, dark });
 }
 
 function loadImage(url) {

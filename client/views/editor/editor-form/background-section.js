@@ -22,6 +22,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
 import { detectBgTextContrast } from '../../../lib/slide-authoring/bg-contrast.js';
 import { isLocked } from '../../../../shared/theme-locks.js';
+import { bgTextCandidates } from '../../../../shared/bg-image-contrast.js';
 import { renderFocusGridField } from './focus-picker.js';
 import { h } from '../../../lib/dom/index.js';
 
@@ -99,10 +100,7 @@ async function runBgContrastDetection(
   }
   let result;
   try {
-    result = await detectBgTextContrast(url, {
-      light: theme?.textColorLight || '#ffffff',
-      dark: theme?.textColorDark || '#212121',
-    });
+    result = await detectBgTextContrast(url, bgTextCandidates(theme));
   } catch {
     result = { ok: false };
   }

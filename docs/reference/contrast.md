@@ -27,8 +27,8 @@ unexplained literals in two different files.
   sees a hex string, which is exactly why it used to keep a private copy.
 
 Three consumers use it: the text-pole derivation (`pickTextColorForBg`), the
-background-image detection (`client/lib/slide-authoring/bg-contrast.js`), and
-the theme editor's contrast readout.
+background-image detection (`shared/bg-image-contrast.js`, fed by the editor's
+canvas and the server's write seam), and the theme editor's contrast readout.
 
 ## Thresholds
 
