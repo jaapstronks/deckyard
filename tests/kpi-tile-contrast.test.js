@@ -16,6 +16,10 @@
  * value was made for, and requires AA for the label, the figure and the muted
  * note. The photo branch (`--slide-scrim-card`) is slide-photo-scrim.test.js.
  *
+ * The two deltas are small text on the same tile and owe AA-body as well
+ * (B631): each is its tone mixed with the tile text, at a smaller tone share
+ * on a ground flagged dark, and the last test resolves both mixes per ground.
+ *
  * Run with: node --test tests/kpi-tile-contrast.test.js
  */
 
@@ -118,6 +122,10 @@ function darkGrounds() {
     px,
     text: calm.textColor,
     muted: calm.textColorMuted,
+    accent: brand.cssVars['--t-color-accent'],
+    // A layered background declares its luminance as a class
+    // (slideBackgroundContrastClass); the midnight surfaces carry none.
+    flagged: true,
   }));
   for (const surface of ['lime', 'mist', 'dark']) {
     grounds.push({
@@ -125,6 +133,7 @@ function darkGrounds() {
       px: parseColor(midnight.cssVars[`--t-slide-bg-${surface}`]).rgb,
       text: midnight.cssVars[`--t-slide-bg-${surface}-text`],
       muted: midnight.cssVars['--t-color-text-muted'],
+      accent: midnight.cssVars['--t-color-accent'],
     });
   }
   return grounds;
@@ -136,6 +145,7 @@ function lightGrounds() {
     px: parseColor(brand.cssVars[`--t-slide-bg-${surface}`]).rgb,
     text: brand.cssVars[`--t-slide-bg-${surface}-text`],
     muted: brand.cssVars['--t-color-text-muted'],
+    accent: brand.cssVars['--t-color-accent'],
   }));
 }
 
@@ -158,6 +168,51 @@ function tileFailures(ground, alpha) {
   check('figure', ground.text, WCAG_THRESHOLDS.large.aa);
   check('note', ground.muted, WCAG_THRESHOLDS.body.aa);
   return failures;
+}
+
+/** The tile rule a dark ground's luminance class adds (`has-slide-bg-light-text`). */
+const flaggedTileCss = (() => {
+  const m =
+    /^\.has-slide-bg-light-text\.slide-kpi-metrics \.kpi-metric \{([^}]*)\}/m.exec(
+      kpiCss,
+    );
+  assert.ok(m, 'the flagged-dark-ground tile rule is gone');
+  return m[1];
+})();
+
+/**
+ * A delta colour: `color-mix(in srgb, var(--<tone>) N%, var(--kpi-tile-fg))`,
+ * resolved for `ground`. The accent is the theme's; the danger red is the
+ * token, which no theme overrides.
+ */
+function deltaColour(name, ground) {
+  const raw = tokenValue(ground.flagged ? flaggedTileCss : kpiCss, name);
+  const m =
+    /^color-mix\( in srgb, var\(--(slide-accent|slide-color-danger)\) (\d+)%, var\(--kpi-tile-fg\) \)$/.exec(
+      raw,
+    );
+  assert.ok(
+    m,
+    `--${name} is no longer a tone mixed with the tile text: ${raw}`,
+  );
+  const tone =
+    m[1] === 'slide-accent' ? ground.accent : tokenValue(tokens, m[1]);
+  return over(
+    parseColor(tone).rgb,
+    Number(m[2]) / 100,
+    parseColor(ground.text).rgb,
+  );
+}
+
+/** Both deltas are small text on the tile, so they owe AA-body (B631). */
+function deltaFailures(ground, alpha) {
+  const tile = over(WHITE, alpha, ground.px);
+  return ['kpi-delta-pos', 'kpi-delta-neg'].flatMap((name) => {
+    const got = ratio(deltaColour(name, ground), tile);
+    return got < WCAG_THRESHOLDS.body.aa
+      ? [`${ground.name} --${name}: ${got.toFixed(2)}:1`]
+      : [];
+  });
 }
 
 test('the tile fill is read off the tile text colour, not a fixed white', () => {
@@ -220,4 +275,20 @@ test('the dark-ground text of these themes sits above the oklch step', () => {
   for (const g of lightGrounds()) {
     assert.ok(oklchL(g.text) < 0.6, `${g.name}: ${g.text} is not dark text`);
   }
+});
+
+test('both deltas clear AA-body on calm, midnight and the light grounds', () => {
+  const failures = [
+    ...darkGrounds().flatMap((g) =>
+      deltaFailures(g, tileAlpha('kpi-tile-glass-dark-ground')),
+    ),
+    ...lightGrounds().flatMap((g) =>
+      deltaFailures(g, tileAlpha('kpi-tile-glass-light-ground')),
+    ),
+  ];
+  assert.deepEqual(
+    failures,
+    [],
+    `a delta mixes too much of its tone into the tile text:\n${failures.join('\n')}`,
+  );
 });

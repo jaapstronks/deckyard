@@ -79,16 +79,20 @@
   );
   --kpi-tile-value: var(--kpi-tile-fg);
   --kpi-tile-border: rgba(0, 0, 0, 0.16);
-  /* Deltas read against the tile, not the slide, so both stay legible on
-     every fill. */
+  /* Deltas read against the tile, not the slide: each is its tone mixed
+     with the tile text, so it leans light on a dark ground and dark on a
+     light one without a colour per theme (B631). At 75%/80% tone the danger
+     red measured 2.9:1 on midnight; half clears AA-body on every midnight
+     surface and keeps the tone visible on the light grounds. A flagged dark
+     ground takes less tone below. Pinned by tests/kpi-tile-contrast.test.js. */
   --kpi-delta-pos: color-mix(
     in srgb,
-    var(--slide-accent) 75%,
+    var(--slide-accent) 50%,
     var(--kpi-tile-fg)
   );
   --kpi-delta-neg: color-mix(
     in srgb,
-    var(--slide-color-danger) 80%,
+    var(--slide-color-danger) 50%,
     var(--kpi-tile-fg)
   );
 
@@ -118,9 +122,21 @@
 /* On a dark ground a filled tile sits too close to the background to read as
    its own block, so give every tile a rim in its own text colour. Keyed on the
    luminance the ground declares (theme-slide-backgrounds.md), not on a
-   background name. */
+   background name. The same flag carries the deltas further toward the
+   text: calm's radial centres lift the tile until a half-tone delta reads
+   3.0:1 (B631). */
 .has-slide-bg-light-text.slide-kpi-metrics .kpi-metric {
   border-color: color-mix(in srgb, var(--kpi-tile-fg) 26%, transparent);
+  --kpi-delta-pos: color-mix(
+    in srgb,
+    var(--slide-accent) 30%,
+    var(--kpi-tile-fg)
+  );
+  --kpi-delta-neg: color-mix(
+    in srgb,
+    var(--slide-color-danger) 30%,
+    var(--kpi-tile-fg)
+  );
 }
 /* On a background IMAGE the rim is not the problem: the fill is. A dark ground
    has redirected --kpi-tile-fg (== --slide-on-surface) to white, and the glass
