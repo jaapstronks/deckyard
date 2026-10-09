@@ -48,10 +48,9 @@ import { loadPresentationForActor } from './presentations.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { assertImagesNamed } from './publish-alt-check.js';
 import { createLogger } from '../utils/logger.js';
+import { getOgImageUrl } from '../config/branding.js';
 
 const log = createLogger('publish');
-
-const DEFAULT_OG_IMAGE = '/assets/images/slides-previewimage.png';
 
 /**
  * The publishing policy gate, shared by every publish entry point: no public
@@ -124,7 +123,7 @@ export async function buildPublishOgImage({
   actorEmail,
   publishId,
 }) {
-  let ogImageUrl = DEFAULT_OG_IMAGE;
+  let ogImageUrl = getOgImageUrl();
   try {
     // First slide that isn't a follow-invite-slide (those are internal).
     const firstSlide = Array.isArray(pres?.slides)

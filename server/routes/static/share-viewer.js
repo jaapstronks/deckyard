@@ -3,11 +3,12 @@ import { dispatchRoutes } from '../../utils/router.js';
 import { getPresentation } from '../../storage/presentations/index.js';
 import { countDeckView } from '../../storage/instance-health.js';
 import { getShareLinkByToken } from '../../storage/share-links/index.js';
-import { getAppName } from '../../config/branding.js';
+import { getAppName, getOgImageUrl } from '../../config/branding.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 import {
   readIndexHtml,
   injectSeoDebugAnalytics,
+  injectLinkPreview,
   ensureSandboxCookie,
   serveShellHtml,
 } from './app-shell.js';
@@ -46,10 +47,7 @@ async function serveShareLink({ repoRoot, req, res, url, clientDir }, token) {
         const host = req.headers.host || 'localhost';
         const origin = `${proto}://${host}`;
         const canonicalUrl = new URL(url.pathname, origin).href;
-        const ogImageAbs = new URL(
-          '/assets/images/slides-previewimage.png',
-          origin,
-        ).href;
+        const ogImageAbs = new URL(getOgImageUrl(), origin).href;
 
         const title = escapeHtml(pres.title || 'Presentation');
         const rawDesc =
@@ -85,20 +83,20 @@ async function serveShareLink({ repoRoot, req, res, url, clientDir }, token) {
   }
 
   // Serve app shell with injected og: tags if available
-  let html = await readIndexHtml(clientDir);
+  let html = injectLinkPreview(await readIndexHtml(clientDir));
 
   // Replace default og: tags with presentation-specific ones
   if (ogHeadHtml) {
     // Remove existing meta description
-    html = html.replace(/<meta name="description"[^>]*>/gi, '');
+    html = html.replace(/<meta\s+name="description"[^>]*>/gi, '');
     // Remove existing Open Graph tags
     html = html.replace(
       /<!-- Open Graph -->[\s\S]*?<!-- Twitter -->/i,
       '<!-- Open Graph -->\n  <!-- Twitter -->',
     );
-    html = html.replace(/<meta property="og:[^"]*"[^>]*>/gi, '');
-    // Remove existing Twitter tags
-    html = html.replace(/<meta name="twitter:[^"]*"[^>]*>/gi, '');
+    html = html.replace(/<meta\s+property="og:[^"]*"[^>]*>/gi, '');
+    // Remove existing Twitter tags; the shell wraps the long ones over lines
+    html = html.replace(/<meta\s+name="twitter:[^"]*"[^>]*>/gi, '');
     // Inject presentation-specific tags
     html = html.replace('</head>', `  ${ogHeadHtml}\n</head>`);
   }

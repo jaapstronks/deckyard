@@ -799,6 +799,38 @@ test('a valid share token serves the shell with escaped og: metadata', async () 
   assert.doesNotMatch(html, /content="<script>alert\(1\)<\/script> deck"/);
 });
 
+test('a share link keeps the deck title and takes the instance preview image (B186)', async () => {
+  const saved = { name: process.env.APP_NAME, img: process.env.OG_IMAGE_URL };
+  process.env.APP_NAME = 'Acme Slides';
+  process.env.OG_IMAGE_URL = '/custom/assets/images/acme-card.png';
+  try {
+    const { token } = await seedShareLink('Quarterly review');
+    const { res } = await callShare({ token });
+    const html = String(res.body || '');
+    assert.match(html, /og:title" content="Quarterly review"/);
+    assert.match(html, /og:site_name" content="Acme Slides"/);
+    assert.match(
+      html,
+      /og:image" content="http[^"]*\/custom\/assets\/images\/acme-card\.png"/,
+    );
+    assert.doesNotMatch(html, /slides-previewimage|content="Deckyard"/);
+    // The shell's own preview tags are gone, multi-line ones included.
+    for (const key of [
+      'description',
+      'twitter:description',
+      'twitter:image',
+      'og:image',
+    ]) {
+      assert.equal(html.split(`"${key}"`).length - 1, 1, key);
+    }
+  } finally {
+    if (saved.name === undefined) delete process.env.APP_NAME;
+    else process.env.APP_NAME = saved.name;
+    if (saved.img === undefined) delete process.env.OG_IMAGE_URL;
+    else process.env.OG_IMAGE_URL = saved.img;
+  }
+});
+
 test('an unknown share token serves the shell but leaks no presentation', async () => {
   // A real deck exists, but we request a token that resolves to nothing.
   await seedShareLink('Secret quarterly numbers');
