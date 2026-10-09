@@ -20,6 +20,7 @@ import { loadDeckTheme } from '../../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { newSlide } from '../../../../shared/slide-types/presentation.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
+import { insertAfterAnchor } from '../../../services/slides.js';
 const log = createLogger('import-slides-as-images');
 
 /**
@@ -227,21 +228,23 @@ export async function handlePresentationImportSlidesAsImages(
       total: images.length,
     });
 
-    // Insert slides at the correct position
+    // Insert slides at the correct position: after the anchor, in its group
+    // (D325), else at the end of the deck. Each slide anchors the next, so a
+    // run after a child stays one run of sibling children.
     const existingSlides = Array.isArray(pres.slides) ? [...pres.slides] : [];
+    const afterIdx = insertAfterSlideId
+      ? existingSlides.findIndex((s) => s?.id === insertAfterSlideId)
+      : -1;
     let insertIndex = existingSlides.length; // Default: end of deck
-
-    if (insertAfterSlideId) {
-      const afterIdx = existingSlides.findIndex(
-        (s) => s?.id === insertAfterSlideId,
-      );
-      if (afterIdx >= 0) {
-        insertIndex = afterIdx + 1;
+    if (afterIdx >= 0) {
+      insertIndex = afterIdx + 1;
+      let anchor = afterIdx;
+      for (const slide of newSlides) {
+        anchor = insertAfterAnchor(existingSlides, slide, anchor);
       }
+    } else {
+      existingSlides.push(...newSlides);
     }
-
-    // Insert the new slides
-    existingSlides.splice(insertIndex, 0, ...newSlides);
 
     // Update the presentation
     const updated = await updatePresentation(
