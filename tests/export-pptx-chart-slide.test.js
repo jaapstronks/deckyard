@@ -113,6 +113,22 @@ test('line chart keeps two named series and the legend setting', async () => {
   assert.deepEqual(built.result.warnings, []);
 });
 
+test('a line series without a name is named in the deck language', async () => {
+  const built = await exportChart(
+    {
+      title: 'Trend',
+      chartType: 'line',
+      data: 'Jaar,,\n2024,10,8\n2025,15,12',
+      showLegend: 'yes',
+    },
+    'nl',
+  );
+  assert.equal((built.chart.match(/<c:ser>/g) || []).length, 2);
+  assert.match(built.chart, /Reeks 1/);
+  assert.match(built.chart, /Reeks 2/);
+  assert.doesNotMatch(built.chart, /Series \d/);
+});
+
 test('pie chart carries theme slice colours and value-plus-percent labels', async () => {
   const built = await exportChart({
     title: 'Share',

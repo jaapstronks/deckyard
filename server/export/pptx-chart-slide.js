@@ -9,6 +9,7 @@ import {
   parseChartData,
 } from '../../shared/slide-types/types/chart-slide/parse.js';
 import { chartErrorMessages } from '../../shared/slide-types/types/chart-slide/error.js';
+import { getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import { themeChartPalette } from '../../shared/slide-types/types/chart-slide/palette.js';
 import { chartSummary } from '../../shared/slide-types/types/chart-slide/summary.js';
 import {
@@ -48,8 +49,9 @@ function addText(pptxSlide, text, box, options, warnings, slideNum) {
   return h;
 }
 
-function chartData(parsed, content) {
+function chartData(parsed, content, lang) {
   const { dataset } = parsed;
+  const copy = getSlideCopy(lang);
   if (parsed.kind !== 'line') {
     return [{ name: 'Value', labels: dataset.labels, values: dataset.values }];
   }
@@ -57,14 +59,14 @@ function chartData(parsed, content) {
   const second = String(content.series2Label || '').trim();
   const series = [
     {
-      name: first || dataset.series1Label || 'Series 1',
+      name: first || dataset.series1Label || copy.chartEncodingSeries1,
       labels: dataset.x,
       values: dataset.y1,
     },
   ];
   if (dataset.y2?.some((value) => value != null)) {
     series.push({
-      name: second || dataset.series2Label || 'Series 2',
+      name: second || dataset.series2Label || copy.chartEncodingSeries2,
       labels: dataset.x,
       values: dataset.y2,
     });
@@ -268,7 +270,7 @@ export async function composeChartSlide(pptx, slide, ctx) {
         : pptx.ChartType.pie;
   pptxSlide.addChart(
     type,
-    chartData(parsed, content),
+    chartData(parsed, content, ctx.docLang),
     chartOptions(
       parsed,
       content,
