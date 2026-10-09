@@ -30,8 +30,7 @@ export function startRouter() {
 }
 
 export function nav(to) {
-  let dest = String(to || '/');
-  history.pushState(null, '', dest);
+  writeUrl(String(to || '/'), { push: true });
   renderFn();
 }
 
@@ -64,21 +63,21 @@ function writePath(path, { push = false } = {}) {
   const url = liveUrl();
   if (!url || url.pathname === path) return;
   url.pathname = path;
-  writeUrl(url, { push });
+  writeUrl(relativeUrl(url), { push });
 }
 
 /**
- * Write `url` to the address bar: the one place in the client that calls
+ * Write `dest` to the address bar: the one place in the client that calls
  * `history.pushState`/`replaceState` (guarded in
- * `tests/router-query-ownership.test.js`).
- * @param {URL} url
+ * `tests/router-query-ownership.test.js`). A replace keeps `history.state`.
+ * @param {string} dest - a relative URL (path, query, hash)
  * @param {{ push?: boolean }} [opts]
  */
-function writeUrl(url, { push = false } = {}) {
+function writeUrl(dest, { push = false } = {}) {
   try {
-    if (push) history.pushState(null, '', relativeUrl(url));
-    else history.replaceState(history.state, '', relativeUrl(url));
-    /* eslint-disable-next-line no-restricted-syntax -- Same as setQueryParams(): a history-less environment is a bare test or a sandboxed embed, and the view already shows the state; only the address bar lags. */
+    if (push) history.pushState(null, '', dest);
+    else history.replaceState(history.state, '', dest);
+    /* eslint-disable-next-line no-restricted-syntax -- Nothing to record with: the debug logger reads `?debugLog=` through `queryString()` below, so importing it here would be a cycle. A history-less environment is a bare test or a sandboxed embed; the view already shows the state and only the address bar lags. */
   } catch {
     // See the disable above.
   }
@@ -112,7 +111,7 @@ export function replaceHash(hash) {
   const next = hash ? `#${hash}` : '';
   if (!url || url.hash === next) return;
   url.hash = next;
-  writeUrl(url);
+  writeUrl(relativeUrl(url));
 }
 
 /**
@@ -195,12 +194,7 @@ export function urlWithQuery(patch) {
  * @param {Record<string, string|number|null|undefined>} patch
  */
 export function setQueryParams(patch) {
-  try {
-    history.replaceState(history.state, '', urlWithQuery(patch));
-    /* eslint-disable-next-line no-restricted-syntax -- Nothing to record with: the debug logger reads `?debugLog=` through `queryString()` below, so importing it here would be a cycle. A history-less environment is a bare test or a sandboxed embed; the caller's state change stands either way and only the address bar lags. */
-  } catch {
-    // See the disable above.
-  }
+  writeUrl(urlWithQuery(patch));
 }
 
 export function route() {
