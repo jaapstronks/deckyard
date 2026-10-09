@@ -11,7 +11,14 @@
  * `render…View(view)` returns the markup. A fork's own `renderHtml` resolves
  * core's view, sets its own values in it (another logo, an extra root class
  * or modifier) and renders. It never writes a core class name and never
- * escapes: the render function escapes every string in the view.
+ * escapes: the render function escapes every string in the view. Setting
+ * `view.background` to `null` asks for no `slide-bg-*` class at all, for a
+ * ground nothing in the deck paints.
+ *
+ * A type that offers its layout also offers its inline-edit descriptor here
+ * (`titleInlineEdit`), so a fork that lends the markup sets
+ * `inline: titleInlineEdit` instead of copying a descriptor whose anchors name
+ * core classes.
  *
  * Types are added on request, one at a time (a fork asks through a briefing):
  * `title-slide` is the first because a fork measured the cost of copying it.
@@ -24,5 +31,6 @@ export {
   resolveTitleView,
   renderTitleView,
 } from './types/title-slide/render.js';
+export { inlineEdit as titleInlineEdit } from './types/title-slide/inline-edit.js';
 
 /** @typedef {import('./types/title-slide/render.js').TitleView} TitleView */
