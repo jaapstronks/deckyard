@@ -71,7 +71,7 @@
     "lucide-static": "^1.52.0",
     "mammoth": "^1.13.0",
     "openid-client": "^6.8.8",
-    "pdfjs-dist": "5.7.284",
+    "pdfjs-dist": "5.4.296",
     "pg": "^8.23.1",
     "prismjs": "1.30.0",
     "sharp": "^0.35.5",
