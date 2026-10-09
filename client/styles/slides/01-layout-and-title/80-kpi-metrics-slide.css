@@ -57,8 +57,26 @@
    chart palette (--slide-chart-*) is the one numbered series palette; a
    future coloured-tile design draws from it instead of a type-named set. */
 .slide-kpi-metrics .kpi-metric {
-  --kpi-tile-bg: rgba(255, 255, 255, 0.45);
   --kpi-tile-fg: var(--slide-on-surface);
+  /* The fill is white glass whose alpha follows the ground (D123, B218). The
+     tile text colour is the ground's answer to "how dark am I", so the alpha
+     is read off its lightness: dark text means a light ground and the full
+     light-ground glass; light text means a dark ground, where 45% white would
+     lift the tile to mid grey under white text (3.1:1 on calm, 4.3:1 on
+     midnight). This has to be read from the colour, not from a class:
+     `has-slide-bg-light-text` marks calm, but a dark THEME such as midnight
+     carries light text on every ground without it. The step sits at mid grey
+     (oklch L 0.6). Both alphas are pinned by tests/kpi-tile-contrast.test.js. */
+  --kpi-tile-glass-light-ground: 0.45;
+  --kpi-tile-glass-dark-ground: var(--slide-opacity-subtle);
+  --kpi-tile-bg: oklch(
+    from var(--kpi-tile-fg) 1 0 0 /
+      clamp(
+        var(--kpi-tile-glass-dark-ground),
+        (0.6 - l) * 100,
+        var(--kpi-tile-glass-light-ground)
+      )
+  );
   --kpi-tile-value: var(--kpi-tile-fg);
   --kpi-tile-border: rgba(0, 0, 0, 0.16);
   /* Deltas read against the tile, not the slide, so both stay legible on
@@ -104,14 +122,14 @@
 .has-slide-bg-light-text.slide-kpi-metrics .kpi-metric {
   border-color: color-mix(in srgb, var(--kpi-tile-fg) 26%, transparent);
 }
-/* On a background IMAGE the rim is not the problem: the fill is. A 45%-white
-   tile is a LIGHT surface, and a dark ground has already redirected
-   --kpi-tile-fg (== --slide-on-surface) to white — over a bright part of a photo
-   that composites to white-on-white, 1.0:1. The flat dark ground gets away with
-   it because 45% white over a near-black theme colour still lands mid-grey;
-   a photo carries no such guarantee. So on a photo the tile takes the same
-   scrim the timeline card takes (00-tokens.css § --slide-scrim-card), which is
-   the surface its already-white text was paired with all along. */
+/* On a background IMAGE the rim is not the problem: the fill is. A dark ground
+   has redirected --kpi-tile-fg (== --slide-on-surface) to white, and the glass
+   above then thins to --kpi-tile-glass-dark-ground; that is safe on a flat
+   dark colour, but over a bright part of a photo white text on a near-clear
+   tile composites to white-on-white. A photo carries no guarantee about what
+   lies under the tile, so there the tile takes the same scrim the timeline
+   card takes (00-tokens.css § --slide-scrim-card), which is the surface its
+   already-white text was paired with all along. */
 .has-slide-bg.has-slide-bg-light-text.slide-kpi-metrics .kpi-metric {
   --kpi-tile-bg: var(--slide-scrim-card);
 }
