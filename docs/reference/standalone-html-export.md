@@ -15,12 +15,12 @@ The runtime reads its options from the URL, so **one exported file serves every
 case** — full-page at `/p/`, chrome-less in an iframe, kiosk loop on a screen —
 without re-exporting. They apply to the downloaded `.html` and to `/p/` alike.
 
-| Param      | Values                                                | Effect                                                                                                      |
-| ---------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `ui`       | `min`                                                 | Hide the topbar and the control row; the scaled stage fills the frame. Anything else is the default chrome. |
-| `loop`     | `1`/`0` (also `true`/`false`, `on`/`off`, `yes`/`no`) | Autoplay and restart at the end. Overrides the deck's auto-advance setting.                                 |
-| `autoplay` | same                                                  | Autoplay without looping at the end.                                                                        |
-| `interval` | `1`–`300`                                             | Seconds per slide; overrides per-slide and deck defaults.                                                   |
+| Param      | Values                                                | Effect                                                                                                                                                                            |
+| ---------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ui`       | `min`, `strip`                                        | `min` hides the topbar and the control row; the scaled stage fills the frame. `strip` drops the topbar and puts one toolbar below the stage. Anything else is the default chrome. |
+| `loop`     | `1`/`0` (also `true`/`false`, `on`/`off`, `yes`/`no`) | Autoplay and restart at the end. Overrides the deck's auto-advance setting.                                                                                                       |
+| `autoplay` | same                                                  | Autoplay without looping at the end.                                                                                                                                              |
+| `interval` | `1`–`300`                                             | Seconds per slide; overrides per-slide and deck defaults.                                                                                                                         |
 
 The `#slide=N` hash deep-links to a slide and is kept in sync while navigating;
 it combines with the params above (`?ui=min#slide=2`).
@@ -53,6 +53,18 @@ Two deliberate choices about what "min" keeps:
   at narrow widths and the host page can render its own; the loop bar is an
   operator control, not reader information.
 
+### `ui=strip`
+
+The stage on top, edge to edge, and one toolbar of `--controls-strip-height` (48px, on `:root`) below it, B268/D102. The hosted embed has the same strip in the same places, so a site that iframes either one can drop its own arrows over the slide.
+
+- **What is in it:** Previous, Next and the counter on the left, Fullscreen on the right, as icon buttons. The buttons keep their ids (`btnPrev`, `btnNext`, `btnFs`) and their `aria-label` as the accessible name; the icons are `aria-hidden`. Height and icons come from one module, `server/utils/controls-strip.js`, which the embed reads too.
+- **Loop controls only when the deck loops:** the Loop button and the seconds field show when the deck's auto-advance is on or the URL asks for `?loop=1`/`?autoplay=1`. The default row keeps offering them always.
+- **The progress fill** becomes a 2px line along the strip's top edge; the topbar is gone.
+- **Sizing the iframe:** 16:9 plus the strip, for example `height: calc(var(--w) * 9 / 16 + 48px)`. The strip is a fixed height, so it does not rot the way the default chrome's wrapping rows do.
+- **In fullscreen** the strip is the bottom bar of the contract below: its row collapses, and it returns as an overlay on pointer activity.
+
+The default control row also has a Fullscreen button now (it used to hang on the `F` key only).
+
 ### Fullscreen
 
 The page shares one fullscreen contract with the in-app presenter (D111). The two presenter modules, `client/views/presenter/fullscreen.js` and `client/views/presenter/chrome-autohide.js`, are inlined by the script chain (`clientModules` in `server/utils/script-chain.js`), not copied:
@@ -60,6 +72,7 @@ The page shares one fullscreen contract with the in-app presenter (D111). The tw
 - **Fullscreen is one class, `html.is-fullscreen`**, set when the Fullscreen API is active (`F`, which fullscreens the `.presenter-shell`) or when the window covers the whole screen (Safari's green button, F11). The CSS keys on that class only.
 - **Both bars become overlays.** The chrome rows collapse, the stage fills the viewport and the root cannot scroll. The top bar and the control row are hidden on entry, appear on pointer movement, touch, or keyboard focus inside a bar, stay while the pointer rests on one, and fade out (with the cursor) after about 2.6 s idle.
 - **Navigation keys do not reveal them**, so a clicker does not flash the bars on every slide.
+- **`ui=strip` is in it**: the strip is the bar that hides and returns, from the bottom edge.
 - **`ui=min` stays out of it**: there are no bars to show, so the page wires neither the class nor the autohide and only keeps `F`.
 
 A known edge: at a browser zoom below 100% a window that nearly fills the screen can measure as screen-filling. The bars then behave as in fullscreen but stay reachable with the mouse.

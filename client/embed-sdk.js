@@ -124,7 +124,9 @@
    * - start?: number (default 0)
    * - loop?: boolean (default false)
    * - allowFullscreen?: boolean (default true)
-   * - ui?: "min"|"default" (default "default")
+   * - ui?: "min"|"strip"|"default" (default "default"); "strip" puts the
+   *   controls in a 48px strip below the slide, which aspectRatio does not
+   *   include
    * - aspectRatio?: number (default 16/9)
    * - allowedOrigins?: string[] (default [location.origin])
    * - onReady?, onSlideChange?, onError? callbacks
