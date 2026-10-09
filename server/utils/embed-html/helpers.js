@@ -30,13 +30,18 @@ export function parseBoolParam(v, fallback) {
   return fallback;
 }
 
+/**
+ * The embed's chrome shapes, the same vocabulary as the standalone export's
+ * `?ui=`: `default` (toolbar above the stage), `min` (no chrome) and `strip`
+ * (one toolbar below the stage, B268).
+ */
+export const EMBED_UI_MODES = Object.freeze(['default', 'min', 'strip']);
+
 export function parseUiParam(v, fallback = 'default') {
   const s = String(v || '')
     .trim()
     .toLowerCase();
-  if (s === 'min') return 'min';
-  if (s === 'default') return 'default';
-  return fallback;
+  return EMBED_UI_MODES.includes(s) ? s : fallback;
 }
 
 export function parseAllowedOriginsParam(v) {

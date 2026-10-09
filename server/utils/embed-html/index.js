@@ -97,7 +97,7 @@ export function buildEmbedHtml(
       controls: !!controls,
       loop: !!loop,
       start: Number(start || 0) || 0,
-      ui: ui === 'min' ? 'min' : 'default',
+      ui: parseUiParam(ui),
       allowFullscreen: !!allowFullscreen,
       allowedOrigins: Array.isArray(allowedOrigins) ? allowedOrigins : [],
       langSwitch: !!langSwitch,
