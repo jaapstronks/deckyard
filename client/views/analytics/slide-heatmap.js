@@ -74,7 +74,10 @@ export function createSlideHeatmap({ slides, presentation }) {
       role: 'list',
       'aria-label': t(
         'analytics.heatmapAriaLabel',
-        'Slide engagement heatmap showing {count} slides',
+        {
+          one: 'Slide engagement heatmap showing 1 slide',
+          many: 'Slide engagement heatmap showing {count} slides',
+        },
         { count: slideData.length },
       ),
     });

@@ -13,6 +13,8 @@
  *      render "1 presentationer".
  *   3. **The presenter start screen says "1 slide"**, the case that minted
  *      the item.
+ *   4. **Screen-reader text counts too** (B626): the analytics heatmap label
+ *      and the timeline chart description read "1 slide" / "1 data point".
  *
  * Run with: node --test tests/ui-i18n-plural.test.js
  */
@@ -96,6 +98,37 @@ test('the presenter start screen says "1 slide"', async () => {
   assert.equal(start(12), '12 slides');
   await setUiLocale('nl', { persist: false });
   assert.equal(start(1), '1 slide');
+});
+
+test('the analytics screen-reader texts count one slide and one data point', async () => {
+  const heatmap = (count) =>
+    t(
+      'analytics.heatmapAriaLabel',
+      {
+        one: 'Slide engagement heatmap showing 1 slide',
+        many: 'Slide engagement heatmap showing {count} slides',
+      },
+      { count },
+    );
+  const chart = (count) =>
+    t(
+      'analytics.chartDescription',
+      {
+        one: 'Chart showing 1 data point with {total} total views',
+        many: 'Chart showing {count} data points with {total} total views',
+      },
+      { count, total: 9 },
+    );
+  await setUiLocale('en', { persist: false });
+  assert.equal(heatmap(1), 'Slide engagement heatmap showing 1 slide');
+  assert.equal(heatmap(3), 'Slide engagement heatmap showing 3 slides');
+  assert.equal(chart(1), 'Chart showing 1 data point with 9 total views');
+  assert.equal(chart(4), 'Chart showing 4 data points with 9 total views');
+  await setUiLocale('nl', { persist: false });
+  assert.equal(heatmap(1), 'Heatmap van slidebetrokkenheid met 1 slide');
+  assert.equal(heatmap(3), 'Heatmap van slidebetrokkenheid met 3 slides');
+  assert.equal(chart(1), 'Diagram met 1 datapunt en 9 weergaven in totaal');
+  assert.equal(chart(4), 'Diagram met 4 datapunten en 9 weergaven in totaal');
 });
 
 test('a key the dictionary lacks renders the English of the chosen form', async () => {
