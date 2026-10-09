@@ -235,7 +235,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
           voterId: 'dev-b',
         })
       ).reason,
-      'locked',
+      'closed',
     );
     assert.equal(
       (
@@ -244,7 +244,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
           authorId: 'dev-a',
         })
       ).reason,
-      'locked',
+      'closed',
     );
     assert.equal(
       (
@@ -253,7 +253,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
           removedBy: 'mod',
         })
       ).reason,
-      'locked',
+      'closed',
     );
     // Promoting twice is idempotent, not an error.
     assert.deepEqual(
