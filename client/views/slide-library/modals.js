@@ -43,15 +43,13 @@ export function createSlideLibraryModals({
   onCopySlide = null,
   onNewPresentation = null,
 }) {
-  const openLightbox = async (it, { rerender, updateUrl = true } = {}) => {
+  const openLightbox = async (it, { rerender } = {}) => {
     const slide = libraryItemSlide(it, state.getLang());
     const thTheme = await resolveThemeForItem(it);
     const shelf = state.getShelf();
 
-    // Notify URL change for permalink support
-    if (updateUrl && onSlideOpen) {
-      onSlideOpen({ shelf, slideId: it.id });
-    }
+    // The host owns the address (permalink support).
+    onSlideOpen?.({ shelf, slideId: it.id });
 
     const titleText =
       cleanStr(it?.name) || t('slideLibrary.preview.untitled', 'Untitled');
@@ -62,8 +60,7 @@ export function createSlideLibraryModals({
       onClose: () => {
         window.removeEventListener('resize', updateScale);
         tagEditor.detach?.();
-        // Notify URL change for permalink support
-        if (updateUrl && onSlideClose) onSlideClose();
+        onSlideClose?.();
       },
     });
     modal.header.classList.add('ps-modal-header');
@@ -86,7 +83,7 @@ export function createSlideLibraryModals({
           // the modal already shows it, and this lightbox is gone.
           if (!saved || itemShelf !== shelf) return;
           close();
-          openLightbox(item, { rerender, updateUrl });
+          openLightbox(item, { rerender });
         },
       });
 

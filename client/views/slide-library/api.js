@@ -62,17 +62,30 @@ function copyPayload(item, themeIdNorm) {
 export function createSlideLibraryApi({ api, state, themeIdNorm = '' }) {
   if (!api) throw new Error('Missing api');
 
-  const fetchShelf = async (shelf) => {
+  // One fetch per shelf at a time. A second caller awaits the fetch already
+  // under way instead of returning at once: the permalink opened a slide in a
+  // shelf that the first render was still loading, found it empty and gave up
+  // without a word (B285).
+  const inFlight = new Map();
+
+  const fetchShelf = (shelf) => {
     const s = shelf === 'organization' ? 'organization' : 'personal';
-    if (state.isLoading(s)) return;
+    if (inFlight.has(s)) return inFlight.get(s);
     state.setLoading(s, true);
-    try {
-      const qs = themeIdNorm ? `?theme=${encodeURIComponent(themeIdNorm)}` : '';
-      const r = await api(`/api/slide-library/${s}${qs}`);
-      state.setCache(s, Array.isArray(r?.items) ? r.items : []);
-    } finally {
-      state.setLoading(s, false);
-    }
+    const run = (async () => {
+      try {
+        const qs = themeIdNorm
+          ? `?theme=${encodeURIComponent(themeIdNorm)}`
+          : '';
+        const r = await api(`/api/slide-library/${s}${qs}`);
+        state.setCache(s, Array.isArray(r?.items) ? r.items : []);
+      } finally {
+        state.setLoading(s, false);
+        inFlight.delete(s);
+      }
+    })();
+    inFlight.set(s, run);
+    return run;
   };
 
   const toggleFavorite = async (shelf, item, { rerender } = {}) => {

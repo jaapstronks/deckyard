@@ -6,6 +6,7 @@
  */
 
 import { storage } from '../../lib/storage.js';
+import { slideLibraryPath } from '../../lib/state/router.js';
 
 export const LOCAL_STORAGE_KEY_VIEW = 'ps:presentation-list-view';
 const SESSION_KEY_FRESH_LOGIN = 'ps:fresh-login-pending';
@@ -50,4 +51,21 @@ export function resolveInitialView() {
   const raw = storage.get(LOCAL_STORAGE_KEY_VIEW, '').trim();
   const redirected = LEGACY_VIEW_REDIRECT[raw] || raw;
   return VALID_VIEWS.includes(redirected) ? redirected : 'home';
+}
+
+/**
+ * The address a list view should show, or `null` when the current one already
+ * fits. The slide library has its own (`/app/slide-library`, which an opened
+ * slide extends); every other tab lives at `/app`; search keeps whatever
+ * address the view it searches from had (B285).
+ * @param {string} viewKey
+ * @param {{ name: string }} current - `route()` of the current address
+ * @returns {string|null}
+ */
+export function addressForView(viewKey, current) {
+  if (viewKey === 'search') return null;
+  if (viewKey === 'slideLibrary') {
+    return current?.name === 'slideLibrary' ? null : slideLibraryPath();
+  }
+  return current?.name === 'list' ? null : '/app';
 }
