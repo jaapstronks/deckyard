@@ -47,6 +47,13 @@ const { getPresentation } =
   await import('../server/storage/presentations/index.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
 const { registerTools } = await import('../server/mcp/tools.js');
+const { clearValidationLogs, getRecentValidationLogs, getUnknownFields } =
+  await import('../server/utils/ai/validate-slides/index.js');
+const { validateSlideContent } =
+  await import('../server/utils/ai/schemas/index.js');
+const { DERIVED_SLIDE_CONTENT_KEYS, SLIDE_TYPES } =
+  await import('../shared/slide-types.js');
+const { LOCKED_CONTENT_KEYS } = await import('../shared/theme-locks.js');
 
 test.before(async () => {
   __setTestDb(
@@ -220,4 +227,80 @@ test('an MCP deck on a theme photo presents with a readable title, without an ed
   assert.equal(pres.slides[0].content.slideBgAutoFor, PAPER);
   assert.equal(pres.slides[0].content.slideBgTextAuto, 'dark');
   assert.match(renderSlideHtml(pres.slides[0]), /has-slide-bg-dark-text/);
+});
+
+// B628: the verdict is content no author writes, and every reader of a slide's
+// keys knows it as the type's own — one declaration, next to the field it
+// derives from.
+const SETTLED = {
+  title: 'Hoi',
+  slideBgImage: MOSS,
+  slideBgAutoFor: MOSS,
+  slideBgTextAuto: 'light',
+  slideBgNeedsScrim: false,
+  slideBgText: 'auto',
+};
+
+test('the validators and the background lock read the one declaration of the derived keys', () => {
+  assert.deepEqual(DERIVED_SLIDE_CONTENT_KEYS, [
+    'slideBgAutoFor',
+    'slideBgTextAuto',
+    'slideBgNeedsScrim',
+  ]);
+  for (const key of DERIVED_SLIDE_CONTENT_KEYS) {
+    assert.ok(LOCKED_CONTENT_KEYS.background.includes(key), key);
+  }
+  assert.deepEqual(getUnknownFields('title-slide', SETTLED), []);
+  assert.equal(
+    validateSlideContent(SLIDE_TYPES['content-slide'], {
+      ...SETTLED,
+      body: 'Tekst',
+    }).valid,
+    true,
+  );
+});
+
+test('a settled slide round-trips over MCP without a warning and without being measured again', async () => {
+  // The stored verdict contradicts what the sampler says about the moss
+  // photo ('light'): it survives only when nothing measures the image again.
+  const settled = { ...SETTLED, slideBgTextAuto: 'dark' };
+  const created = await mcp('create_presentation_from_slides', {
+    title: 'Teruggeschreven',
+    theme: BRAND,
+    validation: 'strict',
+    slides: [{ type: 'title-slide', content: settled }],
+  });
+  const scope = testScope(ROOT);
+  let pres = await getPresentation(scope, created.id);
+  assert.equal(pres.slides[0].content.slideBgTextAuto, 'dark');
+
+  clearValidationLogs();
+  await mcp('update_slide', {
+    presentationId: created.id,
+    slideIndex: 0,
+    content: { title: 'Dag' },
+  });
+  assert.deepEqual(
+    getRecentValidationLogs().filter((e) => e.event === 'unknown-fields'),
+    [],
+  );
+  pres = await getPresentation(scope, created.id);
+  const { title, ...rest } = pres.slides[0].content;
+  assert.equal(title, 'Dag');
+  for (const [key, value] of Object.entries(settled)) {
+    if (key !== 'title') assert.equal(rest[key], value, key);
+  }
+
+  // A type change carries the verdict with the image, so the seam has
+  // nothing to measure there either.
+  await mcp('update_slide', {
+    presentationId: created.id,
+    slideIndex: 0,
+    type: 'chapter-title-slide',
+    content: {},
+  });
+  pres = await getPresentation(scope, created.id);
+  assert.equal(pres.slides[0].type, 'chapter-title-slide');
+  assert.equal(pres.slides[0].content.slideBgAutoFor, MOSS);
+  assert.equal(pres.slides[0].content.slideBgTextAuto, 'dark');
 });

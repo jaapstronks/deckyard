@@ -230,7 +230,11 @@ fix it. `validation: "fix"` logs the same finding instead of throwing.
 
 A field the type declares but withholds from you (`ai: false` or `hidden`) is
 not in the `schema` you are shown, but it is still a key the
-type has — writing it is accepted, not "unknown".
+type has — writing it is accepted, not "unknown". The same goes for the three
+derived contrast keys every slide may carry (`slideBgAutoFor`,
+`slideBgTextAuto`, `slideBgNeedsScrim`): the editor and the write seam store
+them next to `slideBgImage`, so a slide you read with `get_presentation` and
+write back as it is passes, and keeps its verdict without being measured again.
 
 ## Which slide types an agent sees
 

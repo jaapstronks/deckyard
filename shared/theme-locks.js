@@ -20,6 +20,8 @@
  */
 
 /** Brand properties a theme can lock. Order is the order the editor shows them. */
+import { DERIVED_SLIDE_CONTENT_KEYS } from './slide-types/compose.js';
+
 export const LOCKABLE_PROPERTIES = ['background', 'logo'];
 
 /**
@@ -28,8 +30,9 @@ export const LOCKABLE_PROPERTIES = ['background', 'logo'];
  * `background` covers the whole background section the editor presents as one
  * control: the colour/variant, the custom colour, the per-slide background
  * image and everything that positions or scrims it — including the derived
- * contrast keys the editor writes when it samples an image, which would
- * otherwise survive as stale hints for an image that no longer renders.
+ * contrast keys (`DERIVED_SLIDE_CONTENT_KEYS`) the editor or the write seam
+ * stores when it samples an image, which would otherwise survive as stale
+ * hints for an image that no longer renders.
  */
 export const LOCKED_CONTENT_KEYS = {
   background: [
@@ -42,9 +45,7 @@ export const LOCKED_CONTENT_KEYS = {
     'slideBgFocusY',
     'slideBgOverlay',
     'slideBgText',
-    'slideBgTextAuto',
-    'slideBgNeedsScrim',
-    'slideBgAutoFor',
+    ...DERIVED_SLIDE_CONTENT_KEYS,
   ],
   logo: ['slideLogo'],
 };
