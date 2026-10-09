@@ -624,7 +624,7 @@ paths:
                   description: Insert at this index (0-based)
                 afterSlideId:
                   type: string
-                  description: Insert after this slide ID
+                  description: Insert after this slide ID, in its group (after a child slide the new slide is a child of the same parent)
       responses:
         '201':
           description: Slide created
@@ -956,7 +956,7 @@ paths:
                   description: Insert at this index
                 afterSlideId:
                   type: string
-                  description: Insert after this slide ID
+                  description: Insert after this slide ID, in its group (after a child slide the new slide is a child of the same parent)
       responses:
         '201':
           description: Slide added from library

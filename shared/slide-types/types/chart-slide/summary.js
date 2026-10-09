@@ -17,6 +17,17 @@ const KIND_COPY_KEYS = {
 };
 
 /**
+ * The name of a chart kind in the deck's language ("Staafdiagram", "Bar
+ * chart"): the summary's subject and the SVG's accessible name.
+ * @param {string} kind - `bar` | `pie` | `line`
+ * @param {string} [lang] - the deck language
+ * @returns {string} the name, or `''` for an unknown kind
+ */
+export function chartKindName(kind, lang) {
+  return getSlideCopy(lang)[KIND_COPY_KEYS[kind]] || '';
+}
+
+/**
  * @param {object} parsed - the result of `parseChartData()`
  * @param {string} [lang] - the deck language
  * @returns {string} the summary, or `''` for a chart with nothing to summarise
@@ -24,7 +35,7 @@ const KIND_COPY_KEYS = {
 export function chartSummary(parsed, lang) {
   if (!parsed?.ok) return '';
   const copy = getSlideCopy(lang);
-  const kind = copy[KIND_COPY_KEYS[parsed.kind]];
+  const kind = chartKindName(parsed.kind, lang);
   if (!kind) return '';
   if (parsed.kind === 'bar' || parsed.kind === 'pie') {
     const { labels, values } = parsed.dataset;

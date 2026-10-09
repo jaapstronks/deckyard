@@ -25,7 +25,13 @@ function niceStep(raw) {
   return nf * pow10;
 }
 
-function makeTicks({ min, max, desired = 6, forceMinZero = false } = {}) {
+function makeTicks({
+  min,
+  max,
+  desired = 6,
+  forceMinZero = false,
+  minStep = 0,
+} = {}) {
   let mn = Number(min);
   let mx = Number(max);
   if (!Number.isFinite(mn)) mn = 0;
@@ -33,7 +39,10 @@ function makeTicks({ min, max, desired = 6, forceMinZero = false } = {}) {
   if (forceMinZero) mn = 0;
   if (mx === mn) mx = mn + 1;
 
-  const step = niceStep((mx - mn) / Math.max(2, desired - 1));
+  const step = Math.max(
+    niceStep((mx - mn) / Math.max(2, desired - 1)),
+    minStep,
+  );
   const start = forceMinZero ? 0 : Math.floor(mn / step) * step;
   const end = Math.ceil(mx / step) * step;
   const ticks = [];
@@ -55,6 +64,8 @@ function makeTicks({ min, max, desired = 6, forceMinZero = false } = {}) {
  * @param {number} spec.height Plot height in pixels.
  * @param {number} [spec.desired=6] Preferred number of ticks.
  * @param {boolean} [spec.forceMinZero=false] Pin the ladder's foot at zero.
+ * @param {number} [spec.minStep=0] Smallest step the ladder may take; pass 1
+ *   for counts, so a maximum of 1 does not label a gridline 0.5.
  * @returns {{ ticks: number[], toY: (v: number) => number, domainMin: number, domainMax: number }}
  */
 export function makeAxis({
@@ -64,8 +75,9 @@ export function makeAxis({
   height,
   desired = 6,
   forceMinZero = false,
+  minStep = 0,
 }) {
-  const ticks = makeTicks({ min, max, desired, forceMinZero });
+  const ticks = makeTicks({ min, max, desired, forceMinZero, minStep });
   const domainMin = ticks[0];
   const domainMax = ticks[ticks.length - 1];
   const span = domainMax - domainMin || 1;

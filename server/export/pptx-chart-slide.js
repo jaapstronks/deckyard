@@ -4,7 +4,12 @@ import {
   resolveSlideBgTone,
 } from '../../shared/slide-surface-tone.js';
 import { hexToRgb } from '../../shared/color-utils.js';
-import { parseChartData } from '../../shared/slide-types/types/chart-slide/parse.js';
+import {
+  CHART_ERROR,
+  parseChartData,
+} from '../../shared/slide-types/types/chart-slide/parse.js';
+import { chartErrorMessages } from '../../shared/slide-types/types/chart-slide/error.js';
+import { getSlideCopy } from '../../shared/slide-types/slide-copy.js';
 import { themeChartPalette } from '../../shared/slide-types/types/chart-slide/palette.js';
 import { chartSummary } from '../../shared/slide-types/types/chart-slide/summary.js';
 import {
@@ -44,8 +49,9 @@ function addText(pptxSlide, text, box, options, warnings, slideNum) {
   return h;
 }
 
-function chartData(parsed, content) {
+function chartData(parsed, content, lang) {
   const { dataset } = parsed;
+  const copy = getSlideCopy(lang);
   if (parsed.kind !== 'line') {
     return [{ name: 'Value', labels: dataset.labels, values: dataset.values }];
   }
@@ -53,14 +59,14 @@ function chartData(parsed, content) {
   const second = String(content.series2Label || '').trim();
   const series = [
     {
-      name: first || dataset.series1Label || 'Series 1',
+      name: first || dataset.series1Label || copy.chartEncodingSeries1,
       labels: dataset.x,
       values: dataset.y1,
     },
   ];
   if (dataset.y2?.some((value) => value != null)) {
     series.push({
-      name: second || dataset.series2Label || 'Series 2',
+      name: second || dataset.series2Label || copy.chartEncodingSeries2,
       labels: dataset.x,
       values: dataset.y2,
     });
@@ -174,7 +180,7 @@ export async function composeChartSlide(pptx, slide, ctx) {
   const chartType = String(content.chartType || 'bar');
   const parsed = ['bar', 'line', 'pie'].includes(chartType)
     ? parseChartData({ chartType, data: content.data || '' })
-    : { ok: false, errors: ['Unknown chart type.'] };
+    : { ok: false, errors: [CHART_ERROR.unknownType] };
   const pptxSlide = pptx.addSlide({ masterName: PPTX_LAYOUTS.headingBody });
   const warnings = [];
   const ground = resolveSlideBgHex(content, theme);
@@ -241,7 +247,10 @@ export async function composeChartSlide(pptx, slide, ctx) {
     h: slideHeight - pad - bottomH - (bottom ? 0.12 : 0) - chartY,
   };
   if (!parsed.ok || !['bar', 'line', 'pie'].includes(parsed.kind)) {
-    const message = parsed.errors?.join(' ') || 'Unknown chart type.';
+    const message = chartErrorMessages(
+      parsed.errors?.length ? parsed.errors : [CHART_ERROR.unknownType],
+      ctx.docLang,
+    ).join(' ');
     addText(
       pptxSlide,
       message,
@@ -261,7 +270,7 @@ export async function composeChartSlide(pptx, slide, ctx) {
         : pptx.ChartType.pie;
   pptxSlide.addChart(
     type,
-    chartData(parsed, content),
+    chartData(parsed, content, ctx.docLang),
     chartOptions(
       parsed,
       content,

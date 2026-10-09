@@ -97,6 +97,25 @@ export const SLIDE_COPY = {
     chartEncodingY: 'Y-as',
     chartEncodingSeries1: 'Reeks 1',
     chartEncodingSeries2: 'Reeks 2',
+    // The chart's fallback name when it has no title, and its error card:
+    // the parser answers in codes (`chart-slide/error.js` maps them here), so
+    // the canvas and the PPTX export say the refusal in the deck's language.
+    chartTitleFallback: 'Diagram',
+    chartErrorsLabel: 'Fouten in het diagram',
+    chartErrorTitle: 'Kan het diagram niet tekenen',
+    chartErrorEmpty: 'Data is leeg. Plak CSV/TSV-data.',
+    chartErrorTooFewRows:
+      'Niet genoeg rijen. Voeg een kolomnamen-rij plus minstens 2 datarijen toe.',
+    chartErrorTooFewDataRows:
+      'Niet genoeg datarijen. Voeg minstens 2 datapunten toe.',
+    chartErrorNoNumbers: 'Geen numerieke waarden gevonden.',
+    chartErrorPieNegative:
+      'Cirkeldiagram: negatieve waarden zijn niet toegestaan.',
+    chartErrorTooFewPoints:
+      'Niet genoeg datapunten. Voeg minstens 2 punten toe.',
+    chartErrorLineNumbers:
+      'Een lijndiagram vraagt minstens 2 numerieke punten.',
+    chartErrorUnknownType: 'Onbekend diagramtype.',
 
     // Agenda/Timeline slide
     timelineLabel: 'Tijdlijn',
@@ -208,6 +227,19 @@ export const SLIDE_COPY = {
     chartEncodingY: 'Y axis',
     chartEncodingSeries1: 'Series 1',
     chartEncodingSeries2: 'Series 2',
+    chartTitleFallback: 'Chart',
+    chartErrorsLabel: 'Chart errors',
+    chartErrorTitle: 'Cannot render the chart',
+    chartErrorEmpty: 'The data is empty. Paste CSV/TSV data.',
+    chartErrorTooFewRows:
+      'Not enough rows. Add a row of column names plus at least 2 data rows.',
+    chartErrorTooFewDataRows:
+      'Not enough data rows. Add at least 2 data points.',
+    chartErrorNoNumbers: 'No numeric values found.',
+    chartErrorPieNegative: 'Pie chart: negative values are not allowed.',
+    chartErrorTooFewPoints: 'Not enough data points. Add at least 2 points.',
+    chartErrorLineNumbers: 'A line chart needs at least 2 numeric points.',
+    chartErrorUnknownType: 'Unknown chart type.',
 
     // Agenda/Timeline slide
     timelineLabel: 'Timeline',
