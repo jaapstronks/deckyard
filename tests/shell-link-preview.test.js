@@ -1,10 +1,10 @@
 /**
- * B186 L1: the SPA shell's link preview (Open Graph + Twitter tags) follows
- * the branding knobs, so a fork's shared `/app/…` link no longer unfurls with
- * the Deckyard card. With every knob unset the shell is byte-identical to
- * `client/index.html`. Covers `injectLinkPreview` in
- * server/routes/static/app-shell.js and `getOgImageUrl` / `getOgDescription`
- * in server/config/branding.js.
+ * B186 L1 + B630: the SPA shell's link preview (Open Graph + Twitter tags,
+ * and the plain description tag) follows the branding knobs, so a fork's
+ * shared `/app/…` link no longer unfurls with the Deckyard card. With every
+ * knob unset the shell is byte-identical to `client/index.html`. Covers
+ * `injectLinkPreview` in server/routes/static/app-shell.js and
+ * `getOgImageUrl` / `getOgDescription` in server/config/branding.js.
  *
  * Run with: node --test tests/shell-link-preview.test.js
  */
@@ -49,6 +49,11 @@ function previewTags(html) {
   return tags;
 }
 
+/** The content of the plain `<meta name="description">`. */
+function plainDescription(html) {
+  return html.match(/<meta\s+name="description"\s+content="([^"]*)"/)?.[1];
+}
+
 test('with no knobs set the shell is byte-identical to client/index.html', async () => {
   const raw = await readIndexHtml(clientDir);
   assert.equal(injectLinkPreview(raw), raw);
@@ -57,6 +62,7 @@ test('with no knobs set the shell is byte-identical to client/index.html', async
 test('every preview tag the shell carries is rewritten exactly once', async () => {
   const raw = await readIndexHtml(clientDir);
   for (const key of [
+    'description',
     'og:site_name',
     'og:title',
     'og:description',
@@ -89,6 +95,19 @@ test('with the knobs set no Deckyard asset or text is left in the preview', asyn
   for (const value of Object.values(tags)) {
     assert.doesNotMatch(value, /deckyard|slides-previewimage/i);
   }
+});
+
+test('the plain description tag follows OG_DESCRIPTION, else the default (B630)', async () => {
+  const raw = await readIndexHtml(clientDir);
+  assert.equal(
+    plainDescription(injectLinkPreview(raw)),
+    getOgDescription(),
+    'default',
+  );
+  process.env.OG_DESCRIPTION = 'Decks by Acme.';
+  const html = injectLinkPreview(raw);
+  assert.equal(plainDescription(html), 'Decks by Acme.');
+  assert.doesNotMatch(html, /Create and present professional slides/);
 });
 
 test('values are escaped and a $ is text, not a replacement pattern', () => {
