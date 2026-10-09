@@ -181,3 +181,49 @@ test('guard: unrelated location reads stay legal', () => {
     );
   }
 });
+
+// ------------------------------------------------- address-bar writes (B638)
+
+/** A direct history write; the router's `writeUrl()` is the only caller. */
+const HISTORY_WRITE = /\bhistory\s*\.\s*(?:pushState|replaceState)\s*\(/;
+
+test('guard: only the router writes the address bar', () => {
+  const allowed = new Set(ALLOWLIST.map((a) => a.file));
+  const violations = [];
+
+  for (const file of walk(path.join(repoRoot, 'client'))) {
+    const rel = path.relative(repoRoot, file).split(path.sep).join('/');
+    if (allowed.has(rel)) continue;
+    const lines = fs.readFileSync(file, 'utf8').split('\n');
+    lines.forEach((line, i) => {
+      const trimmed = line.trimStart();
+      if (trimmed.startsWith('//') || trimmed.startsWith('*')) return;
+      if (HISTORY_WRITE.test(line)) {
+        violations.push(`${rel}:${i + 1}  ${trimmed.trim()}`);
+      }
+    });
+  }
+
+  assert.deepEqual(
+    violations,
+    [],
+    'write the URL through setQueryParams()/replacePath()/pushPath()/' +
+      'replaceHash() from client/lib/state/router.js, or nav() to re-route',
+  );
+  assert.ok(
+    HISTORY_WRITE.test("history.replaceState(null, '', `/settings#x`);") &&
+      HISTORY_WRITE.test("window.history.pushState({}, '', '/a');"),
+    'the pattern flags the shapes it retired',
+  );
+});
+
+test('replaceHash swaps the hash in place: no history entry, path and query kept', async () => {
+  const { replaceHash } = await import('../client/lib/state/router.js');
+  history.replaceState(null, '', '/settings?x=1#general');
+  const depth = history.length;
+  replaceHash('api-keys');
+  assert.equal(currentUrl(), '/settings?x=1#api-keys');
+  assert.equal(history.length, depth, 'no new history entry');
+  replaceHash('');
+  assert.equal(currentUrl(), '/settings?x=1');
+});
