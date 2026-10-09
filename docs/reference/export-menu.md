@@ -107,10 +107,7 @@ Pictures are fetched the way the other exports fetch them: local assets from dis
 
 ## The theme's PPTX template
 
-Not an export-menu row: the template is an artifact of a theme, not of a
-deck, so it is downloaded from Settings → Themes and documented with the
-theme (B274). What it carries and what it deliberately does not promise:
-[`theme-config.md` § The PPTX template](theme-config.md#the-pptx-template).
+Not an export-menu row: the template is an artifact of a theme, not of a deck, so it is downloaded from Settings → Themes and documented with the theme (B274). What it carries and what it deliberately does not promise: [`theme-config.md` § The PPTX template](theme-config.md#the-pptx-template).
 
 ## Speaker notes in the PPTX
 

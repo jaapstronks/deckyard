@@ -249,12 +249,15 @@ async function handleThemeTemplateExport(ctx, themeId) {
 
   if (!(await checkExportLimit(ctx))) return true;
 
-  await trackExportRequest(ctx);
-
+  // Resolve before counting, like the deck routes: a 404 must not spend the
+  // key's export limit. The seam resolves and builds in one call, so the count
+  // lands after the build rather than between the two.
   const { buffer, label } = await prepareThemeTemplate(
     ctx.storageScope,
     themeId,
   );
+
+  await trackExportRequest(ctx);
 
   await sendExportResponse(ctx, {
     contentType:
