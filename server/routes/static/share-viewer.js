@@ -88,15 +88,15 @@ async function serveShareLink({ repoRoot, req, res, url, clientDir }, token) {
   // Replace default og: tags with presentation-specific ones
   if (ogHeadHtml) {
     // Remove existing meta description
-    html = html.replace(/<meta name="description"[^>]*>/gi, '');
+    html = html.replace(/<meta\s+name="description"[^>]*>/gi, '');
     // Remove existing Open Graph tags
     html = html.replace(
       /<!-- Open Graph -->[\s\S]*?<!-- Twitter -->/i,
       '<!-- Open Graph -->\n  <!-- Twitter -->',
     );
-    html = html.replace(/<meta property="og:[^"]*"[^>]*>/gi, '');
-    // Remove existing Twitter tags
-    html = html.replace(/<meta name="twitter:[^"]*"[^>]*>/gi, '');
+    html = html.replace(/<meta\s+property="og:[^"]*"[^>]*>/gi, '');
+    // Remove existing Twitter tags; the shell wraps the long ones over lines
+    html = html.replace(/<meta\s+name="twitter:[^"]*"[^>]*>/gi, '');
     // Inject presentation-specific tags
     html = html.replace('</head>', `  ${ogHeadHtml}\n</head>`);
   }

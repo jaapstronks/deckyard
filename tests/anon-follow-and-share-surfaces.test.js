@@ -814,6 +814,15 @@ test('a share link keeps the deck title and takes the instance preview image (B1
       /og:image" content="http[^"]*\/custom\/assets\/images\/acme-card\.png"/,
     );
     assert.doesNotMatch(html, /slides-previewimage|content="Deckyard"/);
+    // The shell's own preview tags are gone, multi-line ones included.
+    for (const key of [
+      'description',
+      'twitter:description',
+      'twitter:image',
+      'og:image',
+    ]) {
+      assert.equal(html.split(`"${key}"`).length - 1, 1, key);
+    }
   } finally {
     if (saved.name === undefined) delete process.env.APP_NAME;
     else process.env.APP_NAME = saved.name;
