@@ -17,6 +17,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { JSDOM } from 'jsdom';
@@ -386,4 +387,86 @@ test('embed: allowFullscreen=false still gates the toggle', async (t) => {
     new window.KeyboardEvent('keydown', { key: 'f', bubbles: true }),
   );
   assert.equal(requested, false);
+});
+
+// The host-page SDK sizes the iframe box. Under `ui=strip` the toolbar sits
+// below the slide, so the box is the slide's ratio plus the strip (B629).
+function sdkWindow({ aspectRatioSupport }) {
+  const dom = new JSDOM('<!doctype html><div id="host"></div>', {
+    url: 'https://host.example/page',
+    runScripts: 'outside-only',
+  });
+  const { window } = dom;
+  window.CSS = { supports: () => aspectRatioSupport };
+  window.eval(
+    fs.readFileSync(path.join(repoRoot, 'client/embed-sdk.js'), 'utf8'),
+  );
+  return window;
+}
+
+// JSDOM folds calc(); compare against the same value set on a scratch node.
+function css(window, prop, value) {
+  const node = window.document.createElement('div');
+  node.style[prop] = value;
+  return node.style[prop];
+}
+
+function sdkEmbed(window, options) {
+  return window.PresentationSystemEmbed.createDeckEmbed({
+    el: window.document.getElementById('host'),
+    publishId: 'pub1',
+    options: { baseUrl: 'https://deck.example', ...options },
+  });
+}
+
+for (const aspectRatioSupport of [true, false]) {
+  test(`embed SDK: the strip adds its height to the box (aspect-ratio ${aspectRatioSupport ? 'native' : 'fallback'})`, (t) => {
+    const window = sdkWindow({ aspectRatioSupport });
+    t.after(() => window.close());
+
+    const plain = sdkEmbed(window, {})._wrapper.style;
+    if (aspectRatioSupport) {
+      assert.equal(
+        plain.aspectRatio,
+        css(window, 'aspectRatio', String(16 / 9)),
+      );
+      assert.equal(plain.paddingTop, '');
+    } else {
+      assert.equal(
+        plain.paddingTop,
+        css(window, 'paddingTop', `calc(100% / ${16 / 9})`),
+      );
+    }
+
+    const strip = sdkEmbed(window, { ui: 'strip', aspectRatio: 4 / 3 })._wrapper
+      .style;
+    assert.equal(strip.aspectRatio, '');
+    assert.equal(
+      strip.paddingTop,
+      css(
+        window,
+        'paddingTop',
+        `calc(100% / ${4 / 3} + ${CONTROLS_STRIP_HEIGHT})`,
+      ),
+    );
+  });
+}
+
+test('embed SDK: setOptions resizes the box for every ui the embed accepts', (t) => {
+  const window = sdkWindow({ aspectRatioSupport: true });
+  t.after(() => window.close());
+  const embed = sdkEmbed(window, {});
+  const box = embed._wrapper.style;
+  const hasStrip = () => box.paddingTop.includes(CONTROLS_STRIP_HEIGHT);
+
+  for (const ui of EMBED_UI_MODES) {
+    embed.setOptions({ ui: 'strip' });
+    assert.equal(hasStrip(), true);
+    embed.setOptions({ ui });
+    assert.equal(hasStrip(), ui === 'strip', `ui=${ui}`);
+  }
+  // A value the embed ignores leaves the box as it is.
+  embed.setOptions({ ui: 'strip' });
+  embed.setOptions({ ui: 'sideways' });
+  assert.equal(hasStrip(), true);
 });

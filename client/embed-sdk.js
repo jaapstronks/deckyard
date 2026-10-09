@@ -3,6 +3,15 @@
 
   const EMBED_SOURCE = 'presentation-system-embed';
 
+  // Height of the `ui=strip` toolbar below the slide. This file has no
+  // imports by design, so it is a copy of CONTROLS_STRIP_HEIGHT
+  // (server/utils/controls-strip.js); tests/ui-strip.test.js pins the two
+  // equal.
+  const STRIP_HEIGHT = '48px';
+  // The `ui` values the embed accepts; a copy of EMBED_UI_MODES
+  // (server/utils/embed-html/helpers.js), pinned by the same test.
+  const UI_MODES = ['default', 'min', 'strip'];
+
   function isEl(x) {
     return !!x && typeof x === 'object' && x.nodeType === 1;
   }
@@ -125,9 +134,10 @@
    * - loop?: boolean (default false)
    * - allowFullscreen?: boolean (default true)
    * - ui?: "min"|"strip"|"default" (default "default"); "strip" puts the
-   *   controls in a 48px strip below the slide, which aspectRatio does not
-   *   include
-   * - aspectRatio?: number (default 16/9)
+   *   controls in a 48px strip below the slide, and the box grows by that
+   *   strip so the slide keeps its aspectRatio
+   * - aspectRatio?: number (default 16/9), the ratio of the slide, not of
+   *   the box
    * - allowedOrigins?: string[] (default [location.origin])
    * - onReady?, onSlideChange?, onError? callbacks
    */
@@ -163,14 +173,23 @@
     } catch (e) {
       supportsAspectRatio = false;
     }
-    if (supportsAspectRatio) {
-      wrap.style.aspectRatio = String(aspectRatio);
-      wrap.style.paddingTop = '';
-    } else {
-      // Old-school intrinsic ratio box fallback
-      wrap.style.aspectRatio = '';
-      wrap.style.paddingTop = `calc(100% / ${aspectRatio})`;
+    // The slide fills the box at aspectRatio; under `ui=strip` the toolbar
+    // sits below it, so the box is the slide plus the strip. aspect-ratio
+    // cannot add a fixed length, so the strip always takes the padding box.
+    function sizeBox(ui) {
+      if (ui === 'strip') {
+        wrap.style.aspectRatio = '';
+        wrap.style.paddingTop = `calc(100% / ${aspectRatio} + ${STRIP_HEIGHT})`;
+      } else if (supportsAspectRatio) {
+        wrap.style.aspectRatio = String(aspectRatio);
+        wrap.style.paddingTop = '';
+      } else {
+        // Old-school intrinsic ratio box fallback
+        wrap.style.aspectRatio = '';
+        wrap.style.paddingTop = `calc(100% / ${aspectRatio})`;
+      }
     }
+    sizeBox(opt.ui);
 
     const inner = document.createElement('div');
     inner.style.position = 'absolute';
@@ -301,6 +320,16 @@
       },
       getState() {
         return { ...lastState };
+      },
+      /**
+       * Change options of the running embed (SET_OPTIONS): controls, loop,
+       * allowFullscreen, ui, langSwitch, allowedOrigins, start. A change of
+       * `ui` also resizes the box, so the slide keeps its ratio.
+       */
+      setOptions(patch) {
+        const p = patch && typeof patch === 'object' ? patch : {};
+        if (UI_MODES.includes(p.ui)) sizeBox(p.ui);
+        postToIframe('SET_OPTIONS', p);
       },
       destroy() {
         try {
