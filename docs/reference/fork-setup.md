@@ -466,6 +466,26 @@ Leave it unset to offer every theme. Admins can override it per instance in
 Settings → Themes; see `docs/reference/deck-creation-and-reuse.md` § Theme
 default and the allowlist.
 
+### Name, logo and link previews
+
+Branding that is not a theme lives in the environment, so a fork sets it per
+deployment instead of patching code (`server/config/branding.js`; examples in
+`.env.example`, Branding):
+
+| Variable         | What it changes                                                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `APP_NAME`       | The tab title, logo alt text, email sender name, and the title and site name of a link preview. Default `Deckyard`.                                     |
+| `APP_LOGO_URL`   | The logo in the overview topbar and above the sign-in card.                                                                                             |
+| `HELP_URL`       | Adds a "Help & docs" link to the user menu.                                                                                                             |
+| `OG_IMAGE_URL`   | The preview image of a shared app link (`/app/…`, `/login`, …), and the fallback image of a share link or a published deck without an image of its own. |
+| `OG_DESCRIPTION` | The line under the title in that preview.                                                                                                               |
+
+`APP_LOGO_URL` and `OG_IMAGE_URL` take an absolute http(s) URL or a
+root-relative path such as a file under `custom/assets/`; anything else is
+ignored with a boot warning. With the three preview knobs set, no link to the
+app unfurls with Deckyard's card or text. A published deck keeps the preview it
+was published with until it is published again.
+
 ### Step 5: Commit Your Customizations
 
 ```bash

@@ -17,7 +17,11 @@ import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../../utils/org-settings.js';
 import { OVERRIDDEN_CORE_SLIDE_TYPE_NAMES } from '../../../shared/slide-types.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
-import { getAppName } from '../../config/branding.js';
+import {
+  getAppName,
+  getOgDescription,
+  getOgImageUrl,
+} from '../../config/branding.js';
 import { escapeHtml } from '../../../shared/slide-types/helpers.js';
 
 /**
@@ -57,6 +61,39 @@ export function injectAppName(html) {
       /<meta name="application-name" content="[^"]*" \/>/,
       () => `<meta name="application-name" content="${name}" />`,
     );
+}
+
+/**
+ * Put the instance's link preview into the shell's Open Graph and Twitter
+ * tags: `APP_NAME` as site name and title, `OG_DESCRIPTION` and
+ * `OG_IMAGE_URL` (`server/config/branding.js`). Only the `content` value is
+ * rewritten, so with every knob unset the shell comes out byte-identical to
+ * `client/index.html`. Each tag is there exactly once. Applied to the raw
+ * shell, before a share-link response swaps in the deck's own tags, so it
+ * never rewrites those.
+ * @param {string} html
+ * @returns {string}
+ */
+export function injectLinkPreview(html) {
+  const name = escapeHtml(getAppName());
+  const description = escapeHtml(getOgDescription());
+  const image = escapeHtml(getOgImageUrl());
+  const values = [
+    ['property', 'og:site_name', name],
+    ['property', 'og:title', name],
+    ['property', 'og:description', description],
+    ['property', 'og:image', image],
+    ['name', 'twitter:title', name],
+    ['name', 'twitter:description', description],
+    ['name', 'twitter:image', image],
+  ];
+  for (const [attr, key, value] of values) {
+    html = html.replace(
+      new RegExp(`(<meta\\s+${attr}="${key}"\\s+content=")[^"]*(")`),
+      (_, open, close) => `${open}${value}${close}`,
+    );
+  }
+  return html;
 }
 
 /** Read the SPA shell (client/index.html). */
@@ -189,7 +226,7 @@ export async function injectFeedDiscovery(html, repoRoot) {
  * @param {import('./static-files.js').StaticContext} ctx
  */
 export async function serveAppIndex({ repoRoot, req, res, url, clientDir }) {
-  let html = await readIndexHtml(clientDir);
+  let html = injectLinkPreview(await readIndexHtml(clientDir));
   const shell = await injectSeoDebugAnalytics(html, { req, url, repoRoot });
   html = await injectFeedDiscovery(shell.html, repoRoot);
   ensureSandboxCookie(req, res);

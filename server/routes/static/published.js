@@ -9,7 +9,7 @@ import { buildDocumentCspHeader } from '../../utils/document-csp.js';
 import { buildReaderHtml } from '../../export/reader.js';
 import { loadThemeAssets } from '../../utils/themes.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
-import { getAppName } from '../../config/branding.js';
+import { getAppName, getOgImageUrl } from '../../config/branding.js';
 import { sandboxEnabled } from '../../config/sandbox.js';
 import {
   projectPresentationForLang,
@@ -162,7 +162,7 @@ async function servePublishedPage(
   ).href;
   const ogImageAbs = entry.ogImageUrl
     ? new URL(entry.ogImageUrl, origin).href
-    : new URL('/assets/images/slides-previewimage.png', origin).href;
+    : new URL(getOgImageUrl(), origin).href;
 
   const title = escapeHtml(projected.title || 'Presentation');
   const rawDesc =

@@ -13,9 +13,18 @@
  *   (instead of the Deckyard logo) and above the sign-in card (which shows no
  *   logo when unset). An absolute http(s) URL or a root-relative path such as
  *   `/custom/assets/images/logo.svg`.
+ * - OG_IMAGE_URL: the preview image a link to the app shows when it is shared
+ *   (Slack, mail, social), on every shell route and as the fallback for a
+ *   share or published link whose deck has no image of its own. Same form as
+ *   APP_LOGO_URL. Defaults to the Deckyard preview card.
+ * - OG_DESCRIPTION: the line under the title in that preview. Defaults to the
+ *   Deckyard one-liner.
  */
 
 const DEFAULT_APP_NAME = 'Deckyard';
+const DEFAULT_OG_IMAGE_URL = '/assets/images/slides-previewimage.png';
+const DEFAULT_OG_DESCRIPTION =
+  'Create and present professional slides in your browser. Self-hosted, templates, export to HTML/PDF.';
 
 /**
  * The configured application name, or the default.
@@ -58,6 +67,26 @@ export function getAppLogoUrl() {
 }
 
 /**
+ * The configured link-preview image, or the Deckyard card when unset or
+ * unusable. Root-relative paths stay relative; a caller that needs an absolute
+ * URL resolves it against the request origin.
+ * @returns {string}
+ */
+export function getOgImageUrl() {
+  const v = (process.env.OG_IMAGE_URL || '').trim();
+  return v && isLogoUrl(v) ? v : DEFAULT_OG_IMAGE_URL;
+}
+
+/**
+ * The configured link-preview description, or the Deckyard one-liner.
+ * @returns {string}
+ */
+export function getOgDescription() {
+  const v = (process.env.OG_DESCRIPTION || '').trim();
+  return v || DEFAULT_OG_DESCRIPTION;
+}
+
+/**
  * Boot warnings for branding values that are set but unusable. They do not
  * block boot (a missing logo or help link is cosmetic), but an operator who
  * set one should hear why it does not show instead of finding out on screen.
@@ -75,6 +104,12 @@ export function brandingConfigWarnings() {
   if (logo && !getAppLogoUrl()) {
     warnings.push(
       `APP_LOGO_URL="${logo}" is neither an absolute http(s) URL nor a root-relative path; the default logo is shown.`,
+    );
+  }
+  const ogImage = (process.env.OG_IMAGE_URL || '').trim();
+  if (ogImage && !isLogoUrl(ogImage)) {
+    warnings.push(
+      `OG_IMAGE_URL="${ogImage}" is neither an absolute http(s) URL nor a root-relative path; link previews keep the default image.`,
     );
   }
   return warnings;
