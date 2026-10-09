@@ -19,9 +19,9 @@
  * a switch that does nothing.
  */
 
-/** Brand properties a theme can lock. Order is the order the editor shows them. */
 import { DERIVED_SLIDE_CONTENT_KEYS } from './slide-types/compose.js';
 
+/** Brand properties a theme can lock. Order is the order the editor shows them. */
 export const LOCKABLE_PROPERTIES = ['background', 'logo'];
 
 /**
