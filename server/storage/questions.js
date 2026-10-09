@@ -367,7 +367,7 @@ export async function upvoteQuestion(
 
   const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
-  if (q.status === 'promoted') return { ok: false, reason: 'locked' };
+  if (q.status === 'promoted') return { ok: false, reason: 'closed' };
   if (!ACTIVE_STATUSES.includes(q.status))
     return { ok: false, reason: 'inactive' };
   if (q.authorId === vid) return { ok: false, reason: 'own_question' };
@@ -405,7 +405,7 @@ async function transitionQuestion(sessionId, questionId, set) {
       .set(set)
       .where('id', '=', questionId)
       .where('session_id', '=', sessionId)
-      // 'promoted' is a lock: it is not cancellable, removable or re-promotable.
+      // 'promoted' is closed: not cancellable, removable or re-promotable (D122).
       .where('status', '=', 'active')
       .returning('id')
       .executeTakeFirst();
@@ -440,7 +440,7 @@ export async function cancelQuestion(
 
   const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
-  if (q.status === 'promoted') return { ok: false, reason: 'locked' };
+  if (q.status === 'promoted') return { ok: false, reason: 'closed' };
   if (q.authorId !== aid) return { ok: false, reason: 'forbidden' };
   if (!ACTIVE_STATUSES.includes(q.status))
     return { ok: false, reason: 'inactive' };
@@ -475,7 +475,7 @@ export async function removeQuestion(
 
   const q = await getQuestion(scope, sid, qid);
   if (!q) return { ok: false, reason: 'not_found' };
-  if (q.status === 'promoted') return { ok: false, reason: 'locked' };
+  if (q.status === 'promoted') return { ok: false, reason: 'closed' };
   if (!ACTIVE_STATUSES.includes(q.status))
     return { ok: false, reason: 'inactive' };
 
@@ -493,7 +493,7 @@ export async function removeQuestion(
 }
 
 /**
- * Promote a question onto a slide. Promoting locks it: no more votes, no
+ * Promote a question onto a slide. Promoting closes it (`closed`, D122): no more votes, no
  * cancellation, no removal.
  *
  * @param {import('./scope.js').StorageScope} scope

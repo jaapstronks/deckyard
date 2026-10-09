@@ -104,8 +104,9 @@ function throwOnViolation() {
 
 /**
  * The keys `code` may send, or `null` when it may send no `details` at all.
- * A storage reason that also has a payload entry (`locked` is both a 409
- * storage reason and the 423 `LockedError`) may send either family.
+ * A storage reason may send the location shape; one that also has a payload
+ * entry (`held`, `invalid`, `in_use`) adds its payload keys to it. A code is
+ * one meaning: `locked` is only the 423 slide lock, never a reason (D122).
  * @param {string} code
  * @returns {Set<string>|null}
  */
