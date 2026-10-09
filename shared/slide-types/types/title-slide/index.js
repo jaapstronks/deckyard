@@ -17,6 +17,12 @@ export default {
   runtime: 'static',
   fidelity: { pptx: 'native' },
   label: 'Title slide',
+  // The cover is where a background image is the first impression, not a
+  // detail: a new title slide takes one from the theme's `backgroundPresets`
+  // (shared/theme-background-presets.js), and the inspector opens its
+  // Background image section by default. A theme without presets leaves the
+  // slide flat. B500.
+  autoBackgroundPreset: true,
   fieldGroups: [TITLE_BLOCK.group],
   fields: [
     {
