@@ -8,6 +8,7 @@ import {
   CORE_SLIDE_TYPE_NAMES,
   CUSTOM_SLIDE_TYPE_NAMES,
 } from '../shared/slide-types/registry.js';
+import { planSync } from '../scripts/i18n-sync.js';
 
 /**
  * Guard against orphaned slide-type i18n keys.
@@ -23,6 +24,13 @@ import {
  * naming the locale and the id. It iterates the registry rather than enumerating
  * type names, so adding or removing a type is covered for free — the same
  * discipline as tests/slide-type-docs.test.js.
+ *
+ * The namespace check misses a dead key inside a live type: a field that moved
+ * to a shared `labelKey` leaves its own `slideType.<id>.field.*.label` behind
+ * (B635, `icon-card-grid-slide`). The second test asks the prune of
+ * `i18n:sync` itself (`planSync()`), so the gate and the fix read one set of
+ * live keys and a wees never reaches a release, where a fork's merge round
+ * stalls on it.
  */
 
 const REPO_ROOT = fileURLToPath(new URL('../', import.meta.url));
@@ -69,6 +77,19 @@ test('no locale carries slide-type i18n keys for a type that no longer exists', 
     orphans,
     [],
     'orphaned slide-type i18n namespaces (delete the keys, or `npm run i18n:sync`):\n' +
+      orphans.join('\n'),
+  );
+});
+
+test('no locale carries a slideType key the registry no longer produces', async () => {
+  const orphans = (await planSync()).edits.flatMap((e) =>
+    e.pruned.map((key) => `${e.locale}/${e.module}.json → ${key}`),
+  );
+
+  assert.deepEqual(
+    orphans,
+    [],
+    'orphaned slideType i18n keys (`npm run i18n:sync:apply` prunes them):\n' +
       orphans.join('\n'),
   );
 });
