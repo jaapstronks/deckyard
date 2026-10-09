@@ -1,8 +1,8 @@
 /**
  * i18n drift guard.
  *
- * Deckyard ships Dutch as the *default* UI locale and English as the reference,
- * so both must be complete: a key missing from nl/ silently renders the English
+ * Deckyard's Tier-1 locales are English (the reference and the default, D322)
+ * and Dutch, so both must be complete: a key missing from nl/ silently renders the English
  * fallback baked into the t() call, which looks like working software while
  * being untranslated. This test fails the build when that drift reappears.
  *
@@ -41,6 +41,7 @@ import {
   extractUsedKeys,
   isDynamicKey,
   findLegacyDescriptorPairs,
+  findUnreadablePluralSites,
   collectFallbackSites,
 } from '../scripts/lib/i18n-keys.js';
 import { loadLocale } from '../scripts/lib/i18n-fs.js';
@@ -312,6 +313,20 @@ describe('i18n coverage', () => {
       offenders.map((o) => o.replace(repoRoot + '/', '')).sort(),
       [],
       'Descriptor pairs are spelled `<x>Key: …, <x>: …` — rename the `<x>Default` half:\n' +
+        offenders.map((o) => `  ${o.replace(repoRoot + '/', '')}`).join('\n'),
+    );
+  });
+
+  it('plural call sites spell { one, many } as two literals', async () => {
+    // B625: `t('k', { one, many }, { count })` reads `k.one` / `k.many`, and
+    // the extractor only sees them through PLURAL_CALL. A site it cannot read
+    // (a variable, a third form, `many` first) would hide both keys from the
+    // coverage check above, so it fails here instead.
+    const offenders = await findUnreadablePluralSites(clientDir);
+    assert.deepStrictEqual(
+      offenders.map((o) => o.replace(repoRoot + '/', '')).sort(),
+      [],
+      "Write a plural fallback as `{ one: '…', many: '…' }`:\n" +
         offenders.map((o) => `  ${o.replace(repoRoot + '/', '')}`).join('\n'),
     );
   });

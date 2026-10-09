@@ -309,7 +309,7 @@ test('stopping during metadata save preserves stored record and skips remaining 
   await until(() => posts === 1);
   action(4).click();
   firstPost.resolve({ id: 'stored-before-stop' });
-  await until(() => dialog()?.textContent.includes('1 images were saved'));
+  await until(() => dialog()?.textContent.includes('1 image was saved'));
   assert.equal(posts, 1);
   assert.equal(applied, 0);
   closeAndClean(batch);
@@ -407,7 +407,10 @@ test('30-image consent, concurrency two, missing languages only and explicit row
     const retry = aiButton('Retry AI for this image');
     assert.equal(retry.hidden, false);
     retry.click();
-    assert.match(document.body.lastElementChild.textContent, /1 images/);
+    assert.match(
+      document.body.lastElementChild.textContent,
+      /1 image and its context/,
+    );
     consent(true);
     await until(
       () => calls.length === 30 && aiButton().disabled && !action(0).disabled,

@@ -44,7 +44,8 @@ import {
  * @param {Function} options.isDirty - Returns true if there are unsaved edits
  * @param {Function} options.requestSave - Persists pending edits
  * @param {Object} options.editorState - Editor state (refreshAll)
- * @param {Function} options.syncShareUi - Refresh topbar share button
+ * @param {Function} options.syncShareUi - Refresh what reads the deck's
+ *   share state: the topbar share button, the Analytics control
  * @param {Function} options.openDescriptionModal - Opens the description modal
  * @param {Function} options.doPublish - Runs the publish flow
  * @param {Record<string, Object>} [options.slideTypes] - The editor's
@@ -154,6 +155,7 @@ export function openShareModal({
     copyToClipboard,
     toast,
     modalRoot: root,
+    onChange: syncShareUi,
   });
   const guestsPanel = h(
     'div',

@@ -38,12 +38,17 @@ import { applyCapabilitiesToStage, showFollowMessage } from './stage-ui.js';
 import { renderFollowSlide } from './render-slide.js';
 import { createVideoLayer } from '../../lib/slide-runtime/video-layer.js';
 import { buildFollowLayout } from './layout.js';
+import { createUiModeSwitcher } from '../ui-mode-switcher.js';
+import { applyViewerUiLocale } from '../../lib/ui-i18n.js';
 import { setQueryParams } from '../../lib/state/router.js';
 
 export async function renderFollow(root, presentationId) {
   let lang = readDeckLangParam() || DEFAULT_DECK_LANG;
   let meta = { dominantLang: null, availableLangs: [] };
   let copy = await createFollowCopy(lang);
+  // The few strings this page takes from the app dictionary (the appearance
+  // switch) follow the deck language too, not an installation default (D322).
+  await applyViewerUiLocale({ deckLang: lang });
 
   document.documentElement.classList.add('is-follow');
 
@@ -53,7 +58,7 @@ export async function renderFollow(root, presentationId) {
     langWrap,
     eraseSlot,
     status,
-    uiMode,
+    uiMode: initialUiMode,
     stageWrap,
     slideWrap,
     interactionWrap,
@@ -65,6 +70,7 @@ export async function renderFollow(root, presentationId) {
     qaAskBtn,
     qaList,
   } = buildFollowLayout({ getCopy: () => copy });
+  let uiMode = initialUiMode;
 
   const videoLayer = createVideoLayer({
     containerEl: stageWrap,
@@ -165,6 +171,13 @@ export async function renderFollow(root, presentationId) {
       onSelect: async (code) => {
         lang = code;
         copy = await createFollowCopy(lang);
+        await applyViewerUiLocale({ deckLang: lang });
+        const nextUiMode = createUiModeSwitcher({
+          className: 'follow-ui-mode',
+        });
+        uiMode.el.replaceWith(nextUiMode.el);
+        uiMode.detach?.();
+        uiMode = nextUiMode;
         title.textContent = copy.title;
         qaTitle.textContent = copy.qaTitle;
         qaAskBtn.textContent = copy.qaAsk;

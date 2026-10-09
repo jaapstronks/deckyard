@@ -102,14 +102,14 @@ export function createSlideLibraryView({ api }) {
         lang: selectedLang,
       });
 
-      const msg =
-        items.length === 1
-          ? t('slideLibrary.newPresentation.done', 'Presentation created!')
-          : t(
-              'slideLibrary.newPresentation.doneMultiple',
-              'Presentation created with {count} slides!',
-              { count: String(items.length) },
-            );
+      const msg = t(
+        'slideLibrary.newPresentation.done',
+        {
+          one: 'Presentation created!',
+          many: 'Presentation created with {count} slides!',
+        },
+        { count: items.length },
+      );
       toast.success(msg);
 
       if (result?.id) {

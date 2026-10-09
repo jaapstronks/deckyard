@@ -83,8 +83,62 @@ export function isRuntimeBuiltKey(key) {
 // The fallback alternates on the delimiter rather than using one character
 // class, so a fallback may contain the *other* quote: t('k', "Logo's") and
 // t('k', 'A "quoted" phrase') both extract correctly.
+//
+// A plural call site (`t('k', { one: '…', many: '…' }, { count })`) is not a
+// T_CALL — the lookahead leaves it to PLURAL_CALL, which records the two keys
+// the runtime actually reads, `k.one` and `k.many` (B625).
 const T_CALL =
-  /\bt\(\s*(['"])([\w.-]+)\1\s*(?:,\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"))?/g;
+  /\bt\(\s*(['"])([\w.-]+)\1(?!\s*,\s*\{)\s*(?:,\s*(?:'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"))?/g;
+
+// t( '<key>', { one: '<English>', many: '<English>' } — the plural seam in
+// client/lib/ui-i18n.js. One spelling: `one` before `many`, both quoted, so a
+// site the regex cannot read is a site PLURAL_OPENING reports.
+const LIT = `(?:'((?:[^'\\\\]|\\\\.)*)'|"((?:[^"\\\\]|\\\\.)*)")`;
+const PLURAL_CALL = new RegExp(
+  `\\bt\\(\\s*(['"])([\\w.-]+)\\1\\s*,\\s*\\{\\s*one:\\s*${LIT}\\s*,\\s*many:\\s*${LIT}\\s*,?\\s*\\}`,
+  'g',
+);
+
+// Every t( '<key>', { opening, readable or not.
+const PLURAL_OPENING = /\bt\(\s*(['"])([\w.-]+)\1\s*,\s*\{/g;
+
+/**
+ * Each plural call site in a source text, as the two `(key, fallback)` pairs
+ * it stands for.
+ * @param {string} src
+ * @returns {Array<{ key: string, raw: string, index: number }>}
+ */
+function pluralSites(src) {
+  const out = [];
+  for (const m of src.matchAll(PLURAL_CALL)) {
+    out.push({ key: `${m[2]}.one`, raw: m[3] ?? m[4], index: m.index });
+    out.push({ key: `${m[2]}.many`, raw: m[5] ?? m[6], index: m.index });
+  }
+  return out;
+}
+
+/**
+ * Plural call sites whose fallback object PLURAL_CALL cannot read — a third
+ * form, a different order, a variable instead of a literal. Their keys would
+ * be invisible to the coverage gate, so the gate fails on them instead.
+ * @param {string} dir - absolute path to a tree to scan (client/)
+ * @returns {Promise<string[]>} `<file>:<line>  <key>` per unreadable site
+ */
+export async function findUnreadablePluralSites(dir) {
+  const offenders = [];
+  for await (const file of walkJs(dir)) {
+    const src = await fs.readFile(file, 'utf8');
+    const readable = new Set(
+      [...src.matchAll(PLURAL_CALL)].map((m) => m.index),
+    );
+    for (const m of src.matchAll(PLURAL_OPENING)) {
+      if (readable.has(m.index)) continue;
+      const line = src.slice(0, m.index).split('\n').length;
+      offenders.push(`${file}:${line}  ${m[2]}`);
+    }
+  }
+  return offenders;
+}
 
 // <x>Key: '<key>', <x>: '<English fallback>' — a descriptor-table entry whose
 // two halves are handed to t() elsewhere. The prefix backreference is what
@@ -114,6 +168,7 @@ export async function extractUsedKeys(clientDir) {
     const src = await fs.readFile(file, 'utf8');
     for (const m of src.matchAll(T_CALL))
       record(m[2], m[3] ?? m[4] ?? null, file);
+    for (const p of pluralSites(src)) record(p.key, p.raw, file);
     for (const m of src.matchAll(DESCRIPTOR_PAIR))
       record(m[3], m[4] ?? m[5] ?? null, file);
   }
@@ -188,6 +243,7 @@ export async function collectFallbackSites(dir) {
     };
     for (const m of src.matchAll(T_CALL))
       record(m[2], m[3] ?? m[4] ?? null, m.index);
+    for (const p of pluralSites(src)) record(p.key, p.raw, p.index);
     for (const m of src.matchAll(DESCRIPTOR_PAIR))
       record(m[3], m[4] ?? m[5] ?? null, m.index);
   }

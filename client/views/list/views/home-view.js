@@ -1,4 +1,4 @@
-import { t } from '../../../lib/ui-i18n.js';
+import { getUiLocale, t } from '../../../lib/ui-i18n.js';
 import { getFeatures, sharingEnabled } from '../../../lib/state/features.js';
 import { buildSectionHeader } from './section-header.js';
 import {
@@ -536,9 +536,13 @@ function renderCollectionBlockCard(col, onComposeFrom, isNew, preview) {
   meta.append(
     h('span', {
       class: 'home-block-count',
-      text: t('list.creationView.library.collectionCount', '{count} slides', {
-        count: String(count),
-      }),
+      text: t(
+        'list.creationView.library.collectionCount',
+        { one: '1 slide', many: '{count} slides' },
+        {
+          count,
+        },
+      ),
     }),
   );
 
@@ -663,7 +667,9 @@ function buildHomeHeader({ user, count }) {
 
   let dateLabel = '';
   try {
-    dateLabel = new Intl.DateTimeFormat(undefined, {
+    // The interface language, not the browser's: a Dutch Home said
+    // "Wednesday 7 October" on an English browser (B617).
+    dateLabel = new Intl.DateTimeFormat(getUiLocale(), {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -672,9 +678,11 @@ function buildHomeHeader({ user, count }) {
     dateLabel = '';
   }
 
-  const countLabel = t('list.home.greetingCount', '{count} presentations', {
-    count,
-  });
+  const countLabel = t(
+    'list.home.greetingCount',
+    { one: '1 presentation', many: '{count} presentations' },
+    { count },
+  );
   const subtitleText = dateLabel ? `${dateLabel} · ${countLabel}` : countLabel;
 
   return h('header', { class: 'home-header' }, [
@@ -758,9 +766,13 @@ function renderActivityPreviewItem({ event, count }, detachThumbs) {
       break;
     case 'slide.added': {
       const n = Number(event.data?.count) || 1;
-      actionText = t('activity.slidesAdded', 'added {count} slides to', {
-        count: n,
-      });
+      actionText = t(
+        'activity.slidesAdded',
+        { one: 'added 1 slide to', many: 'added {count} slides to' },
+        {
+          count: n,
+        },
+      );
       break;
     }
     default:

@@ -66,15 +66,25 @@ export function createImageLibraryDetail({
       const lines = [];
       if (usedBy) {
         lines.push(
-          t('imageLibrary.delete.usedBy', 'Used by {count} presentation(s).', {
-            count: usedBy,
-          }),
+          t(
+            'imageLibrary.delete.usedBy',
+            {
+              one: 'Used by 1 presentation.',
+              many: 'Used by {count} presentations.',
+            },
+            {
+              count: usedBy,
+            },
+          ),
         );
         if (usedByPublished) {
           lines.push(
             t(
               'imageLibrary.delete.usedByPublished',
-              'Warning: {count} of those are published on the web.',
+              {
+                one: 'Warning: 1 of those is published on the web.',
+                many: 'Warning: {count} of those are published on the web.',
+              },
               {
                 count: usedByPublished,
               },
@@ -403,7 +413,10 @@ export function createImageLibraryDetail({
             text: usedByCount
               ? t(
                   'imageLibrary.usage.summary',
-                  'Used by {count} presentation(s) ({published} published).',
+                  {
+                    one: 'Used by 1 presentation ({published} published).',
+                    many: 'Used by {count} presentations ({published} published).',
+                  },
                   {
                     count: usedByCount,
                     published: publishedCount,

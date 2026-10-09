@@ -464,17 +464,24 @@ export function createCollaboratorsSection({
         } else {
           toast?.success(
             t(
-              'share.collaborators.invitedMultiple',
-              '{count} invitations sent',
+              'share.collaborators.invited',
+              { one: 'Invitation sent', many: '{count} invitations sent' },
               { count: successful },
             ),
             { durationMs: 2500 },
           );
         }
       } else {
-        toast?.success(t('share.collaborators.invited', 'Invitation sent'), {
-          durationMs: 2500,
-        });
+        toast?.success(
+          t(
+            'share.collaborators.invited',
+            { one: 'Invitation sent', many: '{count} invitations sent' },
+            { count: 1 },
+          ),
+          {
+            durationMs: 2500,
+          },
+        );
       }
     } catch (e) {
       // Branch on the machine code, never on the message: `api()` puts the

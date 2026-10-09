@@ -1,4 +1,5 @@
-import { escapeHtml } from './helpers.js';
+import { escapeHtml, parseUiParam } from './helpers.js';
+import { CONTROLS_STRIP_CSS, controlsStripIcon } from '../controls-strip.js';
 import { repoRoot as defaultRepoRoot } from '../../config/paths.js';
 import { buildCssChain } from '../css-chain.js';
 import { buildDocumentHead } from '../head-chain.js';
@@ -24,9 +25,11 @@ const EMBED_SHELL_CSS = `
         overflow: hidden;
       }
       .ps-embed {
+        position: relative; /* containing block for the fullscreen overlay */
         height: 100%;
         display: flex;
         flex-direction: column;
+        overflow: hidden;
       }
       .ps-embed.ui-min .ps-embed-controls {
         display: none;
@@ -41,6 +44,11 @@ const EMBED_SHELL_CSS = `
         border-bottom: 1px solid rgba(255, 255, 255, 0.12);
         backdrop-filter: blur(10px);
       }
+      .ps-embed-controls .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
       .ps-embed-controls .row {
         display: flex;
         gap: 10px;
@@ -48,6 +56,10 @@ const EMBED_SHELL_CSS = `
         flex-wrap: wrap;
       }
       .ps-embed-progress {
+        /* The toolbar is dark in every theme; the counter used to inherit
+           black and vanish into it. */
+        color: #fff;
+        font-family: var(--ps-font-sans);
         font-size: 13px;
         opacity: 0.9;
         padding: 0 8px;
@@ -96,12 +108,64 @@ const EMBED_SHELL_CSS = `
       .deck-slide.is-active {
         display: block;
       }
+
+      /* ui=strip: the stage on top, edge to edge, and the same toolbar as one
+         strip of --controls-strip-height below it (B268/D102). The host page
+         sizes the iframe as 16:9 plus that height. */
+      .ps-embed.ui-strip .ps-embed-deck-wrap {
+        order: 1;
+      }
+      .ps-embed.ui-strip .ps-embed-controls {
+        order: 2;
+        box-sizing: border-box;
+        height: var(--controls-strip-height);
+        padding: 0 8px;
+        border-bottom: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+      }
+      .ps-embed.ui-strip .ps-embed-controls .btn {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+      }
+
+      /* Fullscreen: the presenter's contract (D111), read through the same
+         client modules as the export. html.is-fullscreen comes from
+         fullscreen.js, .is-chrome-active from chrome-autohide.js: the toolbar
+         leaves the layout, the stage fills the screen and the toolbar returns
+         as an overlay on pointer activity, from the edge it sits on. */
+      html.is-fullscreen .ps-embed-controls {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        z-index: 60;
+        opacity: 0;
+        pointer-events: none;
+        transform: translateY(-100%);
+        transition:
+          opacity 200ms ease,
+          transform 200ms ease;
+      }
+      html.is-fullscreen .ps-embed.ui-strip .ps-embed-controls {
+        top: auto;
+        bottom: 0;
+        transform: translateY(100%);
+      }
+      html.is-fullscreen .ps-embed.is-chrome-active .ps-embed-controls {
+        opacity: 1;
+        transform: translateY(0);
+        pointer-events: auto;
+      }
+      html.is-fullscreen .ps-embed:not(.is-chrome-active) {
+        cursor: none;
+      }
 `;
 
 /**
  * The embed runtime: one slide at a time inside an iframe, driven by the host
  * page over postMessage (NEXT/PREV/GOTO/GET_STATE/SET_OPTIONS) and by the bar
- * of controls above the stage.
+ * of controls above the stage (below it under `ui=strip`).
  *
  * Path-specific, so it is a body handed to the script chain rather than part
  * of it. Video embeds and stage scaling used to sit inside here as a
@@ -130,7 +194,8 @@ const EMBED_RUNTIME_JS = `
       let controls = options.controls !== false;
       let loop = !!options.loop;
       let allowFullscreen = options.allowFullscreen !== false;
-      let ui = options.ui === 'min' ? 'min' : 'default';
+      const UI_MODES = ['default', 'min', 'strip'];
+      let ui = UI_MODES.includes(options.ui) ? options.ui : 'default';
       let allowedOrigins = Array.isArray(options.allowedOrigins)
         ? options.allowedOrigins.map((x) => String(x || '').trim()).filter(Boolean)
         : [];
@@ -138,7 +203,11 @@ const EMBED_RUNTIME_JS = `
 
       // Apply initial UI toggles
       const root = document.querySelector('.ps-embed');
-      if (root) root.classList.toggle('ui-min', ui === 'min');
+      function applyUi() {
+        if (!root) return;
+        for (const m of UI_MODES) root.classList.toggle('ui-' + m, ui === m);
+      }
+      applyUi();
       const controlsEl = document.querySelector('.ps-embed-controls');
       if (controlsEl) controlsEl.style.display = controls ? '' : 'none';
 
@@ -226,16 +295,15 @@ const EMBED_RUNTIME_JS = `
         show(Number(i || 0) || 0);
       }
 
+      // Fullscreen: the presenter's own contract (D111), the same client
+      // modules the export inlines. The embed shell is the element that goes
+      // fullscreen, and its toolbar is the chrome that hides and returns.
+      const fullscreenCtl = createPresenterFullscreenController({ shell: root });
+      fullscreenCtl.attach();
+      createChromeAutoHide({ shell: root });
       function toggleFullscreen() {
         if (!allowFullscreen) return;
-        const el = document.documentElement;
-        if (!document.fullscreenElement) {
-          const p = el.requestFullscreen && el.requestFullscreen();
-          if (p && p.catch) p.catch(() => {});
-        } else {
-          const p = document.exitFullscreen && document.exitFullscreen();
-          if (p && p.catch) p.catch(() => {});
-        }
+        fullscreenCtl.toggleFullscreen();
       }
 
       if (btnPrev) btnPrev.addEventListener('click', () => prev());
@@ -307,12 +375,12 @@ const EMBED_RUNTIME_JS = `
             if (typeof payload.controls === 'boolean') controls = payload.controls;
             if (typeof payload.loop === 'boolean') loop = payload.loop;
             if (typeof payload.allowFullscreen === 'boolean') allowFullscreen = payload.allowFullscreen;
-            if (payload.ui === 'min' || payload.ui === 'default') ui = payload.ui;
+            if (UI_MODES.includes(payload.ui)) ui = payload.ui;
             if (Array.isArray(payload.allowedOrigins))
               allowedOrigins = payload.allowedOrigins.map((x) => String(x || '').trim()).filter(Boolean);
             if (typeof payload.langSwitch === 'boolean') langSwitch = payload.langSwitch;
 
-            if (root) root.classList.toggle('ui-min', ui === 'min');
+            applyUi();
             if (controlsEl) controlsEl.style.display = controls ? '' : 'none';
             if (btnFs) btnFs.style.display = allowFullscreen ? '' : 'none';
             syncLangUi();
@@ -351,7 +419,7 @@ export function renderEmbedHtmlDocument({
   watermarkHtml = '',
   boot = {},
 } = {}) {
-  const mode = ui === 'min' ? 'min' : 'default';
+  const mode = parseUiParam(ui);
   const safeTotalSlides = Math.max(0, Number(totalSlides || 0) || 0);
   const safeBoot = {
     publishId: String(boot?.publishId || publishId || ''),
@@ -424,20 +492,20 @@ export function renderEmbedHtmlDocument({
     ],
     styles: [
       { id: 'ps-theme-vars', css: themeVars },
-      buildCssChain(repoRoot, [EMBED_SHELL_CSS, wmCss]),
+      buildCssChain(repoRoot, [CONTROLS_STRIP_CSS, EMBED_SHELL_CSS, wmCss]),
     ],
   })}
   <body>
     <div class="ps-embed ui-${escapeHtml(mode)}">
-      <div class="ps-embed-controls" role="toolbar" aria-label="Presentation controls">
+      <div class="ps-embed-controls" role="toolbar" aria-label="Presentation controls" data-presenter-chrome>
         <div class="row">
-          <button id="btnPrev" class="btn btn-secondary" type="button" aria-label="Previous slide">←</button>
-          <button id="btnNext" class="btn btn-secondary" type="button" aria-label="Next slide">→</button>
+          <button id="btnPrev" class="btn btn-secondary" type="button" aria-label="Previous slide">${controlsStripIcon('prev')}</button>
+          <button id="btnNext" class="btn btn-secondary" type="button" aria-label="Next slide">${controlsStripIcon('next')}</button>
           <div id="progress" class="ps-embed-progress" aria-live="polite"></div>
         </div>
         <div class="row">
           ${langSwitchHtml}
-          <button id="btnFs" class="btn btn-secondary" type="button" aria-label="Fullscreen">⛶</button>
+          <button id="btnFs" class="btn btn-secondary" type="button" aria-label="Fullscreen">${controlsStripIcon('fullscreen')}</button>
         </div>
       </div>
       <div class="ps-embed-deck-wrap">
@@ -458,6 +526,7 @@ export function renderEmbedHtmlDocument({
       module: true,
       needs: highlightNeeds,
       slideNeeds: detectSlideRuntimeNeeds(slidesHtml),
+      clientModules: ['presenter-fullscreen', 'chrome-autohide'],
       body: EMBED_RUNTIME_JS,
     })}
   </body>

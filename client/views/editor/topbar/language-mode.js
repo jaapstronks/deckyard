@@ -223,8 +223,11 @@ export function createLanguageMode({
           }),
           title: t(
             'editor.lang.missingCountTitle',
-            '{n} texts the {source} version has and this one does not.',
-            { n: String(missing), source },
+            {
+              one: '1 text the {source} version has and this one does not.',
+              many: '{count} texts the {source} version has and this one does not.',
+            },
+            { count: missing, source },
           ),
         }),
       );

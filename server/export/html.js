@@ -19,6 +19,10 @@ import { buildCssChain } from '../utils/css-chain.js';
 import { buildDocumentHead } from '../utils/head-chain.js';
 import { inlineLocalFontUrls } from '../utils/embed-fonts.js';
 import {
+  CONTROLS_STRIP_CSS,
+  controlsStripIcon,
+} from '../utils/controls-strip.js';
+import {
   getSlideEffectiveDuration,
   DEFAULT_ADVANCE_INTERVAL_SECONDS,
 } from '../../shared/slide-timing.js';
@@ -26,7 +30,7 @@ import {
 /**
  * Chrome the standalone/published page adds on top of the deck bundle: the
  * letterboxed 1600x900 stage, the visible nav controls, and the `?ui=min`
- * embed shape. A layer of the same chain, so the fork seam still lands last
+ * and `?ui=strip` embed shapes. A layer of the same chain, so the fork seam still lands last
  * (server/utils/css-chain.js).
  */
 const STANDALONE_CSS = `
@@ -65,6 +69,11 @@ const STANDALONE_CSS = `
         display: inline-flex;
         align-items: center;
         gap: 8px;
+      }
+      /* The loop controls are toggled with the hidden attribute, which the
+         .btn primitive's display would otherwise override. */
+      .ps-standalone-nav [hidden] {
+        display: none;
       }
       .ps-standalone-loop {
         display: inline-flex;
@@ -111,6 +120,15 @@ const STANDALONE_CSS = `
       .ps-standalone-loop-bar.is-paused .ps-standalone-loop-bar-fill {
         opacity: 0.4;
       }
+      .ps-standalone-row-end {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      /* The strip's icons stand in for the button labels under ui=strip only. */
+      .ps-standalone-progress-row .controls-strip-icon {
+        display: none;
+      }
       /* Override presenter default spacing when we put the progress text in a row. */
       .presenter-progress .presenter-progress-text {
         margin-bottom: 0;
@@ -152,6 +170,72 @@ const STANDALONE_CSS = `
         height: 3px;
         border-radius: 0;
         background: transparent;
+      }
+
+      /* ?ui=strip — the stage on top, edge to edge, and one toolbar of
+         --controls-strip-height below it (B268/D102): Previous, Next and the
+         counter on the left, Fullscreen on the right, icons in place of the
+         labels (the aria-labels stay the accessible names). The topbar goes,
+         the progress fill becomes a 2px line along the strip's top edge. In
+         fullscreen the strip is the presenter's overlay like any bottom bar
+         (D111): its row collapses and it shows on pointer activity. */
+      html.ui-strip .presenter-shell {
+        --presenter-topbar-height: 0px;
+        --presenter-progress-height: var(--controls-strip-height);
+      }
+      html.ui-strip.is-fullscreen .presenter-shell {
+        --presenter-progress-height: 0px;
+      }
+      html.ui-strip .presenter-topbar {
+        display: none;
+      }
+      html.ui-strip .presenter-progress {
+        display: flex;
+        align-items: center;
+        box-sizing: border-box;
+        height: var(--controls-strip-height);
+        padding: 0 var(--ps-space-2);
+      }
+      html.ui-strip:not(.is-fullscreen) .presenter-progress {
+        position: relative;
+      }
+      html.ui-strip .ps-standalone-progress-row {
+        flex: 1;
+        min-width: 0;
+        margin-bottom: 0;
+        justify-content: flex-start;
+      }
+      /* The counter follows Next, Fullscreen takes the far end: the same
+         places as in the hosted embed's strip. */
+      html.ui-strip .ps-standalone-row-end {
+        display: contents;
+      }
+      html.ui-strip #btnFs {
+        margin-left: auto;
+      }
+      html.ui-strip .ps-standalone-progress-row .btn:has(.controls-strip-icon) {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+      }
+      html.ui-strip .ps-standalone-progress-row .controls-strip-icon {
+        display: block;
+      }
+      html.ui-strip .ps-standalone-btn-label {
+        display: none;
+      }
+      html.ui-strip .presenter-progress-bar,
+      html.ui-strip .ps-standalone-loop-bar {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        height: 2px;
+        margin: 0;
+        border-radius: 0;
       }
 `;
 
@@ -243,9 +327,9 @@ function deckRuntimeJs({ autoAdvanceJson }) {
         function next() { show(idx + 1); }
         function prev() { show(idx - 1); }
         // Fullscreen: the presenter's own contract (D111), inlined from
-        // client/views/presenter/ by the script chain. Both bars become
-        // overlays that show on pointer activity. ?ui=min has no bars, so it
-        // keeps only the F key.
+        // client/views/presenter/ by the script chain. Both bars (the strip,
+        // under ?ui=strip) become overlays that show on pointer activity.
+        // ?ui=min has no bars, so it keeps only the F key.
         const shellEl = document.querySelector('.presenter-shell');
         const fullscreenCtl = createPresenterFullscreenController({ shell: shellEl });
         if (window.__DECK_UI__ !== 'min') {
@@ -253,8 +337,10 @@ function deckRuntimeJs({ autoAdvanceJson }) {
           createChromeAutoHide({ shell: shellEl });
         }
         const toggleFullscreen = fullscreenCtl.toggleFullscreen;
+        const btnFs = document.getElementById('btnFs');
         if (btnPrev) btnPrev.addEventListener('click', () => prev());
         if (btnNext) btnNext.addEventListener('click', () => next());
+        if (btnFs) btnFs.addEventListener('click', () => toggleFullscreen());
         document.addEventListener('keydown', (e) => {
           const target = e.target;
           const tag =
@@ -321,8 +407,11 @@ function deckRuntimeJs({ autoAdvanceJson }) {
           const loopBar = document.getElementById('loopBar');
           const loopBarFill = document.getElementById('loopBarFill');
 
-          if (btnLoop) btnLoop.hidden = false;
-          if (loopIntervalWrap) loopIntervalWrap.hidden = false;
+          // The strip only carries the loop controls when the deck loops or
+          // autoplays; the default row always offers them.
+          const showLoopUi = window.__DECK_UI__ !== 'strip' || shouldAutoplay || loopAtEnd;
+          if (btnLoop) btnLoop.hidden = !showLoopUi;
+          if (loopIntervalWrap) loopIntervalWrap.hidden = !showLoopUi;
           if (loopIntervalInput) {
             loopIntervalInput.value = String(intervalOverride != null ? intervalOverride : baseInterval);
           }
@@ -580,6 +669,7 @@ export async function buildStandaloneHtml(
           css.themeVarsCss,
           slidesCss,
           css.wmCss,
+          CONTROLS_STRIP_CSS,
           STANDALONE_CSS,
         ],
         { customCss: css.customCss },
@@ -588,18 +678,20 @@ export async function buildStandaloneHtml(
   })}
   <body class="export-body">
     <script>
-      // ?ui=min: hide the presenter chrome (see the .ui-min rules above). Read
-      // before the shell renders so an embedded deck never flashes a topbar it
-      // is about to drop. Same param name and meaning as buildEmbedHtml's ui
-      // option, so the two runtimes keep one vocabulary.
+      // ?ui=min hides the presenter chrome, ?ui=strip puts one toolbar below
+      // the stage (see the .ui-min and .ui-strip rules above). Read before the
+      // shell renders so an embedded deck never flashes a topbar it is about
+      // to drop. Same param name and meaning as buildEmbedHtml's ui option,
+      // so the two runtimes keep one vocabulary.
       (function () {
         var ui = 'default';
         try {
-          var raw = new URLSearchParams(location.search).get('ui');
-          if (String(raw || '').toLowerCase().trim() === 'min') ui = 'min';
+          var raw = String(new URLSearchParams(location.search).get('ui') || '').toLowerCase().trim();
+          if (raw === 'min' || raw === 'strip') ui = raw;
         } catch (e) {}
         window.__DECK_UI__ = ui;
         if (ui === 'min') document.documentElement.classList.add('ui-min');
+        if (ui === 'strip') document.documentElement.classList.add('ui-strip');
       })();
     </script>
     <a class="skip-link" href="#deck">Skip to slides</a>
@@ -624,15 +716,18 @@ export async function buildStandaloneHtml(
         <div id="loopBar" class="ps-standalone-loop-bar"><div id="loopBarFill" class="ps-standalone-loop-bar-fill"></div></div>
         <div class="ps-standalone-progress-row">
           <nav class="ps-standalone-nav" aria-label="Slide navigation">
-            <button id="btnPrev" class="btn btn-secondary btn-sm" type="button" aria-label="Previous slide">Previous</button>
-            <button id="btnNext" class="btn btn-secondary btn-sm" type="button" aria-label="Next slide">Next</button>
+            <button id="btnPrev" class="btn btn-secondary btn-sm" type="button" aria-label="Previous slide">${controlsStripIcon('prev')}<span class="ps-standalone-btn-label">Previous</span></button>
+            <button id="btnNext" class="btn btn-secondary btn-sm" type="button" aria-label="Next slide">${controlsStripIcon('next')}<span class="ps-standalone-btn-label">Next</span></button>
             <button id="btnLoop" class="btn btn-secondary btn-sm" type="button" aria-label="Auto-loop" aria-pressed="false" hidden>▶ Loop</button>
             <label class="ps-standalone-loop" hidden id="loopIntervalWrap">
               <input id="loopInterval" class="ps-standalone-loop-interval" type="number" min="1" max="300" step="1" aria-label="Seconds per slide" />
               <span>s</span>
             </label>
           </nav>
-          <div id="progressText" class="presenter-progress-text" aria-live="polite"></div>
+          <div class="ps-standalone-row-end">
+            <div id="progressText" class="presenter-progress-text" aria-live="polite"></div>
+            <button id="btnFs" class="btn btn-secondary btn-sm" type="button" aria-label="Fullscreen">${controlsStripIcon('fullscreen')}<span class="ps-standalone-btn-label">Fullscreen</span></button>
+          </div>
         </div>
         <div class="presenter-progress-bar"><div id="progressFill" class="presenter-progress-fill"></div></div>
       </footer>

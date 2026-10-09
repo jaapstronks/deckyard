@@ -517,7 +517,6 @@ const deckLangLiteralAllowlist = [
   'client/views/editor/slide-type-sample-content.js',
   'client/views/list/views/sandbox-examples.js',
   // UI-locale axis, not the deck axis
-  'client/lib/ui-i18n.js',
   'client/views/editor/fields/background.js',
   'client/views/settings/tabs/integrations-tab.js',
   'client/views/settings/tabs/preferences-tab.js',

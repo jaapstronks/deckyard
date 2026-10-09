@@ -22,6 +22,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
 import { detectBgTextContrast } from '../../../lib/slide-authoring/bg-contrast.js';
 import { isLocked } from '../../../../shared/theme-locks.js';
+import { bgTextCandidates } from '../../../../shared/bg-image-contrast.js';
 import { renderFocusGridField } from './focus-picker.js';
 import { h } from '../../../lib/dom/index.js';
 
@@ -54,19 +55,37 @@ export function isBackgroundFieldKey(key) {
 // image announces itself through the summary thumbnail instead of by forcing
 // the panel open. Deliberately a new key — the old one carried the opposite
 // default, so inheriting its values would reopen the panel for everyone.
+//
+// The exception is a type declaring `autoBackgroundPreset` (the title slide):
+// there the image IS the first impression, so the section defaults OPEN. It
+// keeps a preference of its own, so closing the section on a content slide
+// does not also close it on the cover (B500).
 const BG_IMAGE_SECTION_OPEN_KEY = 'editor.bgImageSection.open';
+const BG_IMAGE_FIRST_SECTION_OPEN_KEY = 'editor.bgImageSection.imageFirst.open';
 
-function readBgImageSectionOpen() {
+/**
+ * The sticky preference that governs the image section for a slide type.
+ * @param {Object} [def] - the slide type definition
+ * @returns {{ key: string, openByDefault: boolean }}
+ */
+export function bgImageSectionPreference(def) {
+  return def?.autoBackgroundPreset
+    ? { key: BG_IMAGE_FIRST_SECTION_OPEN_KEY, openByDefault: true }
+    : { key: BG_IMAGE_SECTION_OPEN_KEY, openByDefault: false };
+}
+
+function readBgImageSectionOpen({ key, openByDefault }) {
   try {
-    return localStorage.getItem(BG_IMAGE_SECTION_OPEN_KEY) === '1';
+    const stored = localStorage.getItem(key);
+    return stored === null ? openByDefault : stored === '1';
   } catch {
-    return false;
+    return openByDefault;
   }
 }
 
-function storeBgImageSectionOpen(open) {
+function storeBgImageSectionOpen({ key }, open) {
   try {
-    localStorage.setItem(BG_IMAGE_SECTION_OPEN_KEY, open ? '1' : '0');
+    localStorage.setItem(key, open ? '1' : '0');
   } catch {
     /* ignore */
   }
@@ -99,10 +118,7 @@ async function runBgContrastDetection(
   }
   let result;
   try {
-    result = await detectBgTextContrast(url, {
-      light: theme?.textColorLight || '#ffffff',
-      dark: theme?.textColorDark || '#212121',
-    });
+    result = await detectBgTextContrast(url, bgTextCandidates(theme));
   } catch {
     result = { ok: false };
   }
@@ -158,6 +174,8 @@ function deferImagesUntilOpen(details, body) {
  *
  * @param {Object} ctx
  * @param {Object} ctx.slide
+ * @param {Object} [ctx.def] - the slide's type definition; decides whether the
+ *   image section opens by default (see bgImageSectionPreference)
  * @param {Object} ctx.pres
  * @param {Object|null} ctx.theme - active theme, for its override locks
  * @param {Map<string, Object>} ctx.fieldByKey
@@ -171,6 +189,7 @@ function deferImagesUntilOpen(details, body) {
  */
 export function buildBackgroundControls({
   slide,
+  def = null,
   pres,
   theme = null,
   fieldByKey,
@@ -242,9 +261,10 @@ export function buildBackgroundControls({
     const details = h('details', {
       class: 'editor-advanced editor-bg-section',
     });
-    if (readBgImageSectionOpen()) details.open = true;
+    const pref = bgImageSectionPreference(def);
+    if (readBgImageSectionOpen(pref)) details.open = true;
     details.addEventListener('toggle', () =>
-      storeBgImageSectionOpen(details.open),
+      storeBgImageSectionOpen(pref, details.open),
     );
 
     const summary = h('summary', {

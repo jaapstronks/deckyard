@@ -138,8 +138,11 @@ export function createBackgroundsSection({ config, onChange }) {
         addError.show(
           t(
             'settings.themes.config.backgroundsSomeSkipped',
-            'Only {count} more images fit; the rest were skipped.',
-            { count: String(room) },
+            {
+              one: 'Only 1 more image fits; the rest were skipped.',
+              many: 'Only {count} more images fit; the rest were skipped.',
+            },
+            { count: room },
           ),
           { focus: false },
         );

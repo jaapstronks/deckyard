@@ -15,7 +15,12 @@ import {
   isToolVisible,
 } from './authorization.js';
 import { countInstanceHealth } from '../storage/instance-health.js';
-import { AppError } from '../utils/errors.js';
+import {
+  AppError,
+  INTERNAL_ERROR_MESSAGE,
+  isInternalFailure,
+} from '../utils/errors.js';
+import { logError } from '../utils/logger.js';
 
 const PROTOCOL_VERSION = '2024-11-05';
 const SERVER_NAME = 'deckyard';
@@ -49,12 +54,20 @@ export function jsonRpcError(id, code, message, data) {
  * — `{ error, message, details? }` — below the human line, so an agent reads
  * the same reasons (which field, which index) a v1 caller gets (B621).
  *
+ * An unexpected server-side failure (a 5xx no `AppError` was built for) is
+ * logged and answered with a fixed sentence, as v1 does: its message is
+ * internal detail, not something written for the caller (B624).
+ *
  * @param {string|number} id - JSON-RPC request id
  * @param {string|Error} reason - Human-readable reason, or the thrown error
  * @returns {string} JSON-RPC response string
  */
 function toolError(id, reason) {
-  const message = typeof reason === 'string' ? reason : reason?.message;
+  let message = typeof reason === 'string' ? reason : reason?.message;
+  if (typeof reason !== 'string' && isInternalFailure(reason)) {
+    logError('mcp', 'Tool call failed:', reason);
+    message = INTERNAL_ERROR_MESSAGE;
+  }
   let text = `Error: ${message}`;
   if (reason instanceof AppError) {
     // `toJSON()` is the register-checked emission point (error-details.js);

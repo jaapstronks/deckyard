@@ -364,6 +364,9 @@ export async function createEditorController({
   // Re-reads the published-alt warning (B331). Reassigned once it exists; a
   // save transition or a publish/unpublish may change what it says.
   let syncPublishedAltWarning = () => {};
+  // Bound to the topbar once it exists; the share dropdown fires its first
+  // sync before that, and the topbar runs its own at mount.
+  let syncAnalyticsAvailability = () => {};
 
   const saveManager = createSaveManager({
     api,
@@ -621,7 +624,10 @@ export async function createEditorController({
     editorState,
     user,
     slideTypes: SLIDE_TYPES,
-    onPublishedChange: () => syncPublishedAltWarning(),
+    onShareStateChange: () => {
+      syncPublishedAltWarning();
+      syncAnalyticsAvailability();
+    },
   });
   cleanup.register('dropdowns', dropdowns.detach);
 
@@ -716,6 +722,7 @@ export async function createEditorController({
   });
 
   topbarTitle = topbarApi.topbarTitleEl;
+  syncAnalyticsAvailability = topbarApi.syncAnalyticsAvailability;
   cleanup.register('topbar', topbarApi.detach);
   shell.append(topbarApi.topbarEl);
 

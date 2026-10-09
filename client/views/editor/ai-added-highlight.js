@@ -52,12 +52,11 @@ export function highlightAiInsertedSlides({
     }),
   );
 
-  const message =
-    ids.length === 1
-      ? t('editor.aiAppend.addedOne', 'Added 1 slide')
-      : t('editor.aiAppend.addedN', 'Added {count} slides', {
-          count: ids.length,
-        });
+  const message = t(
+    'editor.aiAppend.added',
+    { one: 'Added 1 slide', many: 'Added {count} slides' },
+    { count: ids.length },
+  );
   toast.success(message, {
     id: 'ai-append-added',
     durationMs: 6500,

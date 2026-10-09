@@ -23,6 +23,9 @@ import { h } from '../../../../lib/dom/index.js';
  * @param {Function} options.copyToClipboard - Clipboard copy function
  * @param {Object} options.toast - Toast notification service
  * @param {HTMLElement} options.modalRoot - Root element for nested modals
+ * @param {Function} [options.onChange] - Called after a link is created or
+ *   revoked: the deck's audience changed, so the editor re-reads what depends
+ *   on it (the Analytics control, B617)
  * @returns {Object} { element, loadShareLinks }
  */
 export function createShareLinksSection({
@@ -31,6 +34,7 @@ export function createShareLinksSection({
   copyToClipboard,
   toast,
   modalRoot,
+  onChange,
 }) {
   let shareLinks = [];
   let isCreating = false;
@@ -268,6 +272,7 @@ export function createShareLinksSection({
 
       // Refresh list
       await loadShareLinks();
+      onChange?.();
     } catch (e) {
       toast?.error(e, { durationMs: 3000 });
     } finally {
@@ -347,9 +352,13 @@ export function createShareLinksSection({
         meta.append(
           h('span', {
             class: 'share-link-uses',
-            text: t('share.link.uses', '{count} uses', {
-              count: link.useCount,
-            }),
+            text: t(
+              'share.link.uses',
+              { one: '1 use', many: '{count} uses' },
+              {
+                count: link.useCount,
+              },
+            ),
           }),
         );
       }
@@ -386,6 +395,7 @@ export function createShareLinksSection({
               },
             );
             await loadShareLinks();
+            onChange?.();
             toast?.success(t('share.link.revoked', 'Link revoked'), {
               durationMs: 2000,
             });

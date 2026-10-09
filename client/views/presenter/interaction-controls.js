@@ -162,22 +162,25 @@ export function createPresenterInteractionControls({
       interactionType === 'feedback'
         ? t(
             'presenter.interaction.feedbackStatus',
-            'Feedback: {state} · {total} responses',
             {
-              state,
-              total,
+              one: 'Feedback: {state} · 1 response',
+              many: 'Feedback: {state} · {count} responses',
             },
+            { state, count: total },
           )
         : t(
             'presenter.interaction.voteStatus',
-            '{label}: {state} · {total} votes',
+            {
+              one: '{label}: {state} · 1 vote',
+              many: '{label}: {state} · {count} votes',
+            },
             {
               label:
                 interactionType === 'likert'
                   ? t('presenter.interaction.likert', 'Likert')
                   : t('presenter.interaction.poll', 'Poll'),
               state,
-              total,
+              count: total,
             },
           );
   };

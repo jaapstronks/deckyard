@@ -212,7 +212,7 @@
   "stockMedia.download.error": "Hentningen mislykkedes",
   "stockMedia.download.success": "Tilføjet til biblioteket",
   "stockMedia.giphy.trending": "Populært lige nu",
-  "stockMedia.gradients.count": "{count} gradienter",
+  "stockMedia.gradients.count.many": "{count} gradienter",
   "stockMedia.gradients.empty": "Ingen gradienter tilgængelige.",
   "stockMedia.gradients.hint": "Abstrakte baggrunde genereret ud fra de indbyggede temaer. Kildeangivelse er ikke nødvendig.",
   "stockMedia.gradients.loadFailed": "Gradientbiblioteket kunne ikke indlæses.",

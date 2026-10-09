@@ -1,20 +1,23 @@
 // UI i18n (application chrome / screens)
-// - Default language is Dutch (nl).
+// - Default language is DEFAULT_UI_LOCALE (`en`, shared with the server).
+// - Pages without a session (share link, follow, /go) resolve their language
+//   through resolveViewerUiLocale(): the visitor's deck, then browser (D322).
 // - Translations live in /client/i18n/<locale>/<component>.json (modular structure)
 // - Component files: auth, common, editor, list, presenter, settings, share, slide-types
 //
 // Conventions:
 // - Use stable keys: t('settings.title', 'Settings')
 // - Keep fallbacks in English.
-// - Use simple {var} interpolation: t('list.count', '{count} presentations', { count })
+// - Use simple {var} interpolation: t('editor.remoteMerge.slideN', 'Slide {n}', { n })
+// - Counted nouns pass both forms: t('list.section.count', { one: '1 presentation', many: '{count} presentations' }, { count })
 
 import { storage } from './storage.js';
 import { queryString } from './state/router.js';
+import { DEFAULT_UI_LOCALE } from '../../shared/constants/ui-locale.js';
 
 const LS_UI_LOCALE = 'ps-ui-locale';
-const DEFAULT_LOCALE = 'nl';
 
-let currentLocale = DEFAULT_LOCALE;
+let currentLocale = DEFAULT_UI_LOCALE;
 let dict = Object.create(null);
 let dictLoadedFor = null;
 let manifestCache = null;
@@ -125,9 +128,9 @@ export function getUiLocale() {
   return currentLocale;
 }
 
-function readUiLocale() {
-  const raw = storage.get(LS_UI_LOCALE, null);
-  return normalizeUiLocale(raw) || DEFAULT_LOCALE;
+/** The saved interface preference, or null when this browser has none. */
+function readStoredUiLocale() {
+  return normalizeUiLocale(storage.get(LS_UI_LOCALE, null));
 }
 
 function writeUiLocale(locale) {
@@ -180,7 +183,7 @@ export function readUiLocaleParam(search) {
  * so it also outranks the server-side `uiLocale` once settings load. Otherwise
  * the stored/default locale is used. Precedence:
  * URL param (known) > the session's recorded param (sessionStorage) > server
- * preference > localStorage > default.
+ * preference > localStorage > DEFAULT_UI_LOCALE.
  *
  * The URL param therefore takes priority for the whole session — chiefly the
  * sandbox guest, whose default `uiLocale` is English and would otherwise clobber
@@ -189,6 +192,19 @@ export function readUiLocaleParam(search) {
  * @returns {Promise<string>}
  */
 export async function resolveInitialUiLocale(search) {
+  return (await resolveChosenUiLocale(search)) || DEFAULT_UI_LOCALE;
+}
+
+/**
+ * The locale someone chose, or null when nobody did: a manifest-known
+ * `?locale=` (recorded as the session override), the override recorded
+ * earlier in the session, or the saved preference. The shared head of
+ * resolveInitialUiLocale() and resolveViewerUiLocale(); they differ only in
+ * what they derive when this is null.
+ * @param {string} [search]
+ * @returns {Promise<string|null>}
+ */
+async function resolveChosenUiLocale(search) {
   sessionParamLocale = null;
   const param = readUiLocaleParam(search);
   if (param) {
@@ -216,7 +232,99 @@ export async function resolveInitialUiLocale(search) {
     sessionParamLocale = recorded;
     return recorded;
   }
-  return readUiLocale();
+  return readStoredUiLocale();
+}
+
+/**
+ * The manifest id a language tag lands on, or null: the exact id (any case),
+ * else the id of its primary subtag, so the deck axis's `en-GB` and a
+ * browser's `pt-BR` both find the manifest's `en` and `pt`.
+ * @param {string} tag
+ * @param {string[]} known - manifest locale ids
+ * @returns {string|null}
+ */
+export function matchUiLocale(tag, known) {
+  const s = normalizeUiLocale(tag)?.toLowerCase();
+  if (!s) return null;
+  const ids = (known || []).map((id) => String(id || '').trim());
+  const exact = ids.find((id) => id.toLowerCase() === s);
+  if (exact) return exact;
+  const primary = s.split('-')[0];
+  return ids.find((id) => id.toLowerCase() === primary) || null;
+}
+
+/**
+ * The interface language of a page without a session (D322), as a pure
+ * decision: a chosen locale wins; then the deck's language, because the
+ * chrome belongs with the content on screen; then the first browser
+ * language the manifest knows; then DEFAULT_UI_LOCALE.
+ * @param {{ chosen?: string|null, deckLang?: string|null,
+ *   browserLangs?: readonly string[], known?: string[] }} input
+ * @returns {string}
+ */
+export function pickViewerUiLocale({
+  chosen = null,
+  deckLang = null,
+  browserLangs = [],
+  known = [],
+} = {}) {
+  if (chosen) return chosen;
+  const fromDeck = deckLang ? matchUiLocale(deckLang, known) : null;
+  if (fromDeck) return fromDeck;
+  for (const tag of browserLangs || []) {
+    const match = matchUiLocale(tag, known);
+    if (match) return match;
+  }
+  return DEFAULT_UI_LOCALE;
+}
+
+function readBrowserLangs() {
+  try {
+    const nav = globalThis.navigator;
+    if (Array.isArray(nav?.languages) && nav.languages.length) {
+      return nav.languages;
+    }
+    return nav?.language ? [nav.language] : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Resolve the interface language for a page a visitor reaches without a
+ * session: the share viewer, follow-along and `/go` (D322). See
+ * pickViewerUiLocale() for the order. The derived language is never written
+ * to localStorage — one visited share link must not set the language of the
+ * app shell for later.
+ * @param {{ deckLang?: string|null, search?: string,
+ *   browserLangs?: readonly string[] }} [options]
+ * @returns {Promise<string>}
+ */
+export async function resolveViewerUiLocale({
+  deckLang = null,
+  search,
+  browserLangs = readBrowserLangs(),
+} = {}) {
+  const chosen = await resolveChosenUiLocale(search);
+  if (chosen) return chosen;
+  const manifest = await fetchUiLocaleManifest();
+  const known = Array.isArray(manifest?.locales)
+    ? manifest.locales.map((l) => l?.id)
+    : [];
+  return pickViewerUiLocale({ deckLang, browserLangs, known });
+}
+
+/**
+ * Put a viewer page in its resolved language before it builds its chrome.
+ * Quiet: the page is about to render in it, so no `ui-locale-changed`
+ * (which would make the router mount the page a second time).
+ * @param {{ deckLang?: string|null }} [options]
+ * @returns {Promise<string>} the applied locale
+ */
+export async function applyViewerUiLocale({ deckLang = null } = {}) {
+  const locale = await resolveViewerUiLocale({ deckLang });
+  await setUiLocale(locale, { persist: false, announce: false });
+  return locale;
 }
 
 function interpolate(str, vars) {
@@ -227,9 +335,60 @@ function interpolate(str, vars) {
   });
 }
 
+// One Intl.PluralRules per locale; PluralRules construction is not free and
+// t() runs on every render.
+const pluralRulesCache = new Map();
+
+/**
+ * The plural form a count takes in a locale, folded onto the two suffixes the
+ * dictionaries carry: `one` where the language's rules say so, `many` for
+ * every other category (`other`, `few`, `zero`, …). Two forms are what the
+ * Tier-1 locales need; a language with more keeps its richer `many` wording
+ * until a third suffix earns its place.
+ *
+ * @param {string} locale
+ * @param {number} count
+ * @returns {'one'|'many'}
+ */
+export function pluralForm(locale, count) {
+  let rules = pluralRulesCache.get(locale);
+  if (!rules) {
+    try {
+      rules = new Intl.PluralRules(locale);
+    } catch {
+      rules = new Intl.PluralRules('en');
+    }
+    pluralRulesCache.set(locale, rules);
+  }
+  return rules.select(Number(count)) === 'one' ? 'one' : 'many';
+}
+
+/**
+ * Translate a UI string.
+ *
+ * `fallback` is the English the call site renders when the dictionary lacks
+ * the key (D73: an untranslated key is absent). A **plural** key passes it as
+ * `{ one, many }` and a numeric `vars.count`: the form is chosen with
+ * `pluralForm()` on the UI locale and looked up as `<key>.one` / `<key>.many`.
+ * A locale without that form gets the English of the same form, never the
+ * other form of its own — Swedish `1 presentation` is absent from `sv/`
+ * because it equals the English (B617, D73), and its `many` would render
+ * "1 presentationer".
+ *
+ * @param {string} key
+ * @param {string|{ one: string, many: string }} [fallback]
+ * @param {Record<string, unknown>} [vars]
+ * @returns {string}
+ */
 export function t(key, fallback, vars) {
   const k = String(key || '').trim();
   if (!k) return '';
+  if (fallback && typeof fallback === 'object') {
+    const form = pluralForm(currentLocale, vars?.count);
+    const value = dict[`${k}.${form}`];
+    const raw = typeof value === 'string' ? value : fallback[form];
+    return interpolate(typeof raw === 'string' ? raw : `${k}.${form}`, vars);
+  }
   const has = dict && typeof dict === 'object' && typeof dict[k] === 'string';
   const raw = has ? dict[k] : typeof fallback === 'string' ? fallback : k;
   return interpolate(raw, vars);
@@ -256,8 +415,18 @@ export async function fetchUiLocaleManifest() {
   }
 }
 
-export async function setUiLocale(locale, { persist = true } = {}) {
-  const next = normalizeUiLocale(locale) || DEFAULT_LOCALE;
+/**
+ * Switch the interface language and load its dictionary.
+ * @param {string} locale
+ * @param {{ persist?: boolean, announce?: boolean }} [options] - `persist`
+ *   saves it as this browser's preference; `announce` fires
+ *   `ui-locale-changed` (the app re-renders the route) when the locale changed.
+ */
+export async function setUiLocale(
+  locale,
+  { persist = true, announce = true } = {},
+) {
+  const next = normalizeUiLocale(locale) || DEFAULT_UI_LOCALE;
   if (persist) writeUiLocale(next);
   const prev = currentLocale;
   currentLocale = next;
@@ -298,7 +467,7 @@ export async function setUiLocale(locale, { persist = true } = {}) {
 
   try {
     // Only notify when the locale changes; otherwise we risk render loops.
-    if (prev !== next) {
+    if (announce && prev !== next) {
       window.dispatchEvent(
         new CustomEvent('ui-locale-changed', { detail: { locale: next } }),
       );

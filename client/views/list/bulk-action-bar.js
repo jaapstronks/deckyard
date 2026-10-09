@@ -122,7 +122,10 @@ export function createBulkActionBar({
 
       const confirmMsg = t(
         'list.bulk.deleteConfirm',
-        'Move {count} presentation(s) to trash?',
+        {
+          one: 'Move 1 presentation to trash?',
+          many: 'Move {count} presentations to trash?',
+        },
         { count: state.count },
       );
       if (
@@ -154,7 +157,10 @@ export function createBulkActionBar({
           toast.success(
             t(
               'list.bulk.delete.done',
-              '{count} presentation(s) moved to trash.',
+              {
+                one: '1 presentation moved to trash.',
+                many: '{count} presentations moved to trash.',
+              },
               { count: successCount },
             ),
             { id: 'bulk-delete', durationMs: 2500 },
@@ -164,7 +170,10 @@ export function createBulkActionBar({
           toast.error(
             t(
               'list.bulk.delete.failed',
-              'Failed to delete {count} presentation(s).',
+              {
+                one: 'Failed to delete 1 presentation.',
+                many: 'Failed to delete {count} presentations.',
+              },
               { count: failCount },
             ),
             { id: 'bulk-delete-error', durationMs: 3000 },
@@ -206,9 +215,16 @@ export function createBulkActionBar({
 
         if (successCount > 0) {
           toast.success(
-            t('list.bulk.restore.done', '{count} presentation(s) restored.', {
-              count: successCount,
-            }),
+            t(
+              'list.bulk.restore.done',
+              {
+                one: '1 presentation restored.',
+                many: '{count} presentations restored.',
+              },
+              {
+                count: successCount,
+              },
+            ),
             { id: 'bulk-restore', durationMs: 2500 },
           );
         }
@@ -216,7 +232,10 @@ export function createBulkActionBar({
           toast.error(
             t(
               'list.bulk.restore.failed',
-              'Failed to restore {count} presentation(s).',
+              {
+                one: 'Failed to restore 1 presentation.',
+                many: 'Failed to restore {count} presentations.',
+              },
               { count: failCount },
             ),
             { id: 'bulk-restore-error', durationMs: 3000 },
@@ -243,7 +262,10 @@ export function createBulkActionBar({
 
       const confirmMsg = t(
         'list.bulk.deletePermanentlyConfirm',
-        'Permanently delete {count} presentation(s)? This cannot be undone.',
+        {
+          one: 'Permanently delete 1 presentation? This cannot be undone.',
+          many: 'Permanently delete {count} presentations? This cannot be undone.',
+        },
         { count: state.count },
       );
       if (
@@ -278,7 +300,10 @@ export function createBulkActionBar({
           toast.success(
             t(
               'list.bulk.deletePermanently.done',
-              '{count} presentation(s) permanently deleted.',
+              {
+                one: '1 presentation permanently deleted.',
+                many: '{count} presentations permanently deleted.',
+              },
               { count: successCount },
             ),
             { id: 'bulk-permanent-delete', durationMs: 2500 },
@@ -288,7 +313,10 @@ export function createBulkActionBar({
           toast.error(
             t(
               'list.bulk.deletePermanently.failed',
-              'Failed to delete {count} presentation(s).',
+              {
+                one: 'Failed to delete 1 presentation.',
+                many: 'Failed to delete {count} presentations.',
+              },
               { count: failCount },
             ),
             { id: 'bulk-permanent-delete-error', durationMs: 3000 },

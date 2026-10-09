@@ -86,8 +86,9 @@ export async function prepareNewPresentation(
   // Default title slide differs per theme. The theme also rides into
   // newPresentation and on to newSlide, so that a slide type opting in via
   // `autoBackgroundPreset` can draw a background from the theme's own presets.
-  // That declaration is the only rule, on every route (D92); no core type sets
-  // it today, so the default title slide stays flat.
+  // That declaration is the only rule, on every route (D92); the core title
+  // slide carries it (B500), so it opens on a theme photo when the theme has
+  // presets and stays flat when it has none.
   const defaultTitleSlide = themeConfig?.defaultTitleSlide || 'title-slide';
 
   // If slides are provided in the body, use them instead of the default title slide.

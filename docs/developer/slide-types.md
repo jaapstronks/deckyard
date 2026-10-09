@@ -706,8 +706,12 @@ scripts/migrate-legacy-bg-image.js` does the same in bulk, on either storage
 - Do declare an `image` field for an image that is _content_ — a portrait, a
   chart, one cell of a grid. That is a different thing from the backdrop.
 
-`autoBackgroundPreset: true` still works and seeds `slideBgImage` from
-`theme.backgroundPresets` on a newly created slide.
+`autoBackgroundPreset: true` seeds `slideBgImage` from
+`theme.backgroundPresets` on a newly created slide, and opens the inspector's
+Background image section by default for that type (it has its own remembered
+open/closed state). The core `title-slide` declares it: the cover is where a
+background image is the first impression. A theme without presets leaves the
+slide flat.
 
 ### Structured Fields
 
@@ -920,9 +924,9 @@ Two things are deliberately _not_ the factory's (D92):
   slide takes a `slideBgImage` from `theme.backgroundPresets` is
   `autoBackgroundPreset` on the type and nothing else. Import used to seed the
   core `title-slide` by name on top of that, and the converter did the same
-  for chapter-title → title; both are gone. No core type declares the flag
-  today, so a core title slide is flat on every route — declaring it is a
-  one-line product choice, not a second rule.
+  for chapter-title → title; both are gone. The core `title-slide` declares
+  the flag (B500), so it is seeded alike on every route; a fork type that
+  replaces it decides for itself, in the same one line.
 - **An update is not a birth.** MCP `update_slide` is a patch plus validation;
   a `type` on it is a _conversion_ through `convertSlideToType` — the editor's
   converter — which carries over what maps, re-seeds the rest for the target
@@ -1061,7 +1065,7 @@ subset is what the fold measures against.
 | ---------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `themeOnly`            | boolean | Require explicit inclusion in the active theme config                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `labelField`           | string  | Which content field to use as the slide label (default: checks for `title`)                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `autoBackgroundPreset` | boolean | Seed `slideBgImage` from `theme.backgroundPresets` when a slide of this type is created                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `autoBackgroundPreset` | boolean | Seed `slideBgImage` from `theme.backgroundPresets` when a slide of this type is created, and open the inspector's Background image section by default                                                                                                                                                                                                                                                                                                                                                                     |
 | `sampleContent`        | object  | Sample content for the slide type picker thumbnail                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `defaultsByLang`       | object  | Localized default content: `{ nl: {...}, 'en-GB': {...} }`. Wins wherever a deck language is known; `defaults` stays the language-less seed for paths without one, and must carry the same keys (see `defaults` in `shared/slide-types/validate-definition.js`)                                                                                                                                                                                                                                                           |
 | `ai`                   | object  | AI wizard metadata (see AI Wizard Integration section)                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |

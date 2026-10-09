@@ -18,7 +18,6 @@ import {
   sortByPinnedThenName,
   sortByTrashedThenName,
   filterItems,
-  hasContentForLang,
 } from './search.js';
 
 import { createSlideLibraryState } from './state.js';
@@ -27,7 +26,10 @@ import { createSlideLibraryApi } from './api.js';
 import { createSlideLibraryModals } from './modals.js';
 import { createSlideLibraryControls } from './controls.js';
 import { canEditLibraryItem, refuseEdit } from './permissions.js';
-import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import {
+  DEFAULT_DECK_LANG,
+  getLangDisplayName,
+} from '../../../shared/i18n-utils.js';
 
 export function createSlideLibraryPicker({
   api,
@@ -115,6 +117,43 @@ export function createSlideLibraryPicker({
     return th;
   };
 
+  /**
+   * Say why the list is empty, naming the narrowest cause: an empty shelf, a
+   * language with no slides on it, or filters nothing matches. A shelf with
+   * slides is never called empty because a filter hid them (B617).
+   *
+   * @param {object} p
+   * @param {string} p.shelf
+   * @param {string} p.activeView
+   * @param {string} p.activeLang
+   * @param {Array<object>} p.onShelf - the shelf's items for the active view
+   * @param {Array<object>} p.inView - those left by the language switch
+   * @returns {string}
+   */
+  const emptyNote = ({ shelf, activeView, activeLang, onShelf, inView }) => {
+    if (activeView === 'trash')
+      return t('slideLibrary.empty.trash', 'Trash is empty.');
+    if (!onShelf.length)
+      return shelf === 'organization'
+        ? t('slideLibrary.empty.team', 'No slides in the team library yet.')
+        : t(
+            'slideLibrary.empty.personal',
+            'No slides in your personal library yet.',
+          );
+    if (!inView.length)
+      return t(
+        'slideLibrary.empty.lang',
+        'No slides in this language yet ({language}).',
+        {
+          language: getLangDisplayName(activeLang),
+        },
+      );
+    return t(
+      'slideLibrary.empty.noMatch',
+      'No slides match the selected filters.',
+    );
+  };
+
   const renderList = async (
     mount,
     shelf,
@@ -127,15 +166,14 @@ export function createSlideLibraryPicker({
     const activeTagFilter = state.getTagFilter();
     const q = state.getQuery();
 
-    let inView = items.filter((it) => {
+    const onShelf = items.filter((it) => {
       const isTrashed = !!(it?.isTrashed || it?.trashedAt);
       return activeView === 'trash' ? isTrashed : !isTrashed;
     });
 
-    // Filter by language when language switch is enabled (browse-only mode)
-    if (showLanguageSwitch && activeView !== 'trash') {
-      inView = inView.filter((it) => hasContentForLang(it, activeLang));
-    }
+    // Narrow to the active language when the picker has a language switch.
+    const inView =
+      activeView === 'trash' ? onShelf : controls.inLanguageScope(onShelf);
 
     // Filter by tags first (if any are selected)
     let tagFiltered = inView;
@@ -164,18 +202,7 @@ export function createSlideLibraryPicker({
       mount.append(
         h('div', {
           class: 'empty-note',
-          text:
-            activeView === 'trash'
-              ? t('slideLibrary.empty.trash', 'Trash is empty.')
-              : shelf === 'organization'
-                ? t(
-                    'slideLibrary.empty.team',
-                    'No slides in the team library yet.',
-                  )
-                : t(
-                    'slideLibrary.empty.personal',
-                    'No slides in your personal library yet.',
-                  ),
+          text: emptyNote({ shelf, activeView, activeLang, onShelf, inView }),
         }),
       );
       return;
@@ -535,9 +562,13 @@ export function createSlideLibraryPicker({
         const insertAllBtn = h('button', {
           class: 'btn btn-primary btn-sm',
           type: 'button',
-          text: t('slideLibrary.selection.insertAll', 'Insert {count} slides', {
-            count: String(count),
-          }),
+          text: t(
+            'slideLibrary.selection.insertAll',
+            { one: 'Insert 1 slide', many: 'Insert {count} slides' },
+            {
+              count,
+            },
+          ),
           onclick: async () => {
             const items = state.getSelectedItems();
             for (const item of items) {
@@ -591,8 +622,11 @@ export function createSlideLibraryPicker({
               title: t('slideLibrary.selection.trash', 'Move to trash'),
               message: t(
                 'slideLibrary.selection.trashConfirm',
-                'Move {count} slide(s) to trash?',
-                { count: String(items.length) },
+                {
+                  one: 'Move 1 slide to trash?',
+                  many: 'Move {count} slides to trash?',
+                },
+                { count: items.length },
               ),
               confirmLabel: t('slideLibrary.selection.trash', 'Move to trash'),
               danger: true,
@@ -647,8 +681,21 @@ export function createSlideLibraryPicker({
       renderSlideLibraryPicker(mount, { afterSlideId, onPicked });
     };
 
-    // List-only rerender
+    // The type and tag filters count what the list shows, so they follow every
+    // list rerender (a language switch changes the counts, a filter click its
+    // active state). Hidden while there is nothing to filter.
+    const renderFilters = () => {
+      filtersRow.innerHTML = '';
+      if (state.getView() !== 'trash')
+        controls.renderTypeFilters(filtersRow, state.getShelf(), {
+          rerenderList,
+        });
+      filtersRow.hidden = filtersRow.children.length === 0;
+    };
+
+    // List-only rerender (plus the filters that count it)
     const rerenderList = async () => {
+      renderFilters();
       listContainer.innerHTML = '';
       const shelf = state.getShelf();
       if (state.isLoading(shelf)) {
@@ -672,15 +719,8 @@ export function createSlideLibraryPicker({
     controls.renderSearch(headerRow, { rerenderList });
 
     const shelf = state.getShelf();
-    header.append(headerRow);
-
-    // Filters row
-    if (state.getView() !== 'trash') {
-      controls.renderTypeFilters(filtersRow, shelf, { rerenderList });
-      if (filtersRow.children.length > 0) {
-        header.append(filtersRow);
-      }
-    }
+    header.append(headerRow, filtersRow);
+    renderFilters();
 
     // Selection bar — in compose mode the host (creation view) owns the action
     // bar, so we skip the built-in one (and its management actions).
@@ -714,11 +754,7 @@ export function createSlideLibraryPicker({
       return;
     }
 
-    await renderList(listContainer, shelf, {
-      afterSlideId,
-      onPicked,
-      rerender,
-    });
+    await rerenderList();
   };
 
   const openSlideById = async (shelf, slideId) => {
