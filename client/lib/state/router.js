@@ -64,6 +64,17 @@ function writePath(path, { push = false } = {}) {
   const url = liveUrl();
   if (!url || url.pathname === path) return;
   url.pathname = path;
+  writeUrl(url, { push });
+}
+
+/**
+ * Write `url` to the address bar: the one place in the client that calls
+ * `history.pushState`/`replaceState` (guarded in
+ * `tests/router-query-ownership.test.js`).
+ * @param {URL} url
+ * @param {{ push?: boolean }} [opts]
+ */
+function writeUrl(url, { push = false } = {}) {
   try {
     if (push) history.pushState(null, '', relativeUrl(url));
     else history.replaceState(history.state, '', relativeUrl(url));
@@ -88,6 +99,20 @@ export function pushPath(path) {
  */
 export function replacePath(path) {
   writePath(path);
+}
+
+/**
+ * Replace the current hash (without `#`; empty clears it) without a history
+ * entry or re-route. A no-op when the hash is already current. Settings keeps
+ * its tab here.
+ * @param {string} hash
+ */
+export function replaceHash(hash) {
+  const url = liveUrl();
+  const next = hash ? `#${hash}` : '';
+  if (!url || url.hash === next) return;
+  url.hash = next;
+  writeUrl(url);
 }
 
 /**
