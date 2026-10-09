@@ -408,3 +408,29 @@ Only properties with a real per-slide control are lockable. `imageRadius` and
 offers a per-slide radius or shadow, so a switch for them would have done
 nothing; they are rejected by `validateThemeConfig`. Add them back together with
 the control they would guard.
+
+## The PPTX template
+
+A theme hands back a `.pptx` (`server/export/pptx-theme.js`): its three layouts, and one sample slide on each. Its promise is deliberately the smaller one: ground, fonts, text colours and logo come from the theme and are applied per slide; it is not a master that restyles an existing deck. That wording is the promise, not a hedge — see D106 in `docs/plans/done/decisions.md` for the decision and the measurement behind it.
+
+The reason is the library. pptxgenjs 4.0.1's `defineSlideMaster` does not write an OOXML master at all; it writes a _layout_, and a placeholder's options are copied into the run properties of every slide built on it rather than inherited from it. Editing the layout afterwards therefore moves nothing that already exists — precisely the handling most people mean by "template". A genuinely restyling template means writing `slideMaster1.xml` by hand alongside pptxgenjs, and is its own piece of work. The word "master" belongs in this file only where it names the layout.
+
+Three consequences are visible in the output, and each is pinned by `tests/export-pptx-theme-master.test.js`:
+
+- **Every placeholder names its own colour.** There is no theme text colour in OOXML: `pptx.theme` carries font faces and nothing else, and a run that names no colour is written as hard-coded black — invisible on a dark ground. Any later layer that writes runs onto these layouts must do the same.
+- **The logo travels as a raster.** pptxgenjs writes an SVG twice: behind the modern `asvg:svgBlip` extension, and as a "PNG" fallback that is the same SVG bytes under a `.png` name. PowerPoint takes the first; everything else draws a broken-image box. The mark is rendered to real PNG bytes here, sized to its own aspect ratio, or left out entirely.
+- **The ground is read, not assumed.** It is the theme's `defaultBackground` when it declares one and the `lime` slot otherwise, resolved through `resolveSlideBgHex` — the same reader the slide surface uses, because `lime` is near-black under `midnight` and white under `deckyard`.
+
+The three layouts are `Title`, `Heading and body` and `Heading, image and body` (`PPTX_LAYOUTS`). Their boxes and type sizes are expressed in the slide's own 1600x900 reference pixels and converted once, so they sit where the theme's padding and type scale put them; `--t-slide-text-scale` is honoured like any other theme value. Two things in the file are the library's, not the theme's: PowerPoint's layout gallery also lists pptxgenjs' own blank `DEFAULT` layout, which the writer always emits first; and the image slot of the third layout is an untyped content placeholder rather than a picture placeholder, because pptxgenjs 4.0.1 never writes `type="pic"` (it maps `image` to `pic` and then looks `pic` up again). PowerPoint offers such a slot for a picture as readily as for text, and a later layer addresses it by name (`image`), so nothing is lost, but the box is not picture-only.
+
+The file opens on its sample slides, one per layout, in the layouts' own order: the theme's name on `Title`, then a slide that says what each layout is for, with a dashed frame where the picture goes on the third. That is not decoration but the only way the layouts are visible on opening. A package of layouts with no slides in it opens on nothing of its own: PowerPoint shows the first layout, but Keynote adds a slide on a black `Default` layout it writes itself, so the first impression is an empty black rectangle and the theme's layouts stay hidden until you insert a slide (B637; D126 had already measured the `Default` Keynote adds). Before and after in Keynote: `docs/reports/b637-theme-template/README.md`.
+
+The sample copy is English and not translated, for the reason the layout names are not: each line names the layout it sits on. Its sizes ride in the runs rather than on the text box, because pptxgenjs takes a box addressed by `placeholder` from the layout and drops the options given beside it — the same reason the editable export carries its sizes per run. The word in the picture slot goes in the placeholder itself rather than in a box over it: pptxgenjs writes every placeholder a slide leaves empty onto that slide, and PowerPoint fills such a one with its own "Click to add text" and insert icons, which a second box over the same rectangle runs straight through.
+
+The pixel-perfect PPTX does not use these layouts; the editable one puts each slide's content onto them ([`export-menu.md` § What the editable PPTX hands back](export-menu.md#what-the-editable-pptx-hands-back)).
+
+### Where it is downloaded
+
+Two routes, both addressed by theme because the bytes depend on the theme alone (B274): `GET /api/themes/:id/template.pptx` for the session — the **Download PPTX template** item on a theme card in Settings → Themes — and `GET /api/v1/themes/{id}/template.pptx` for an API key, which spends the export right and the export limit like any other v1 export. Both resolve the theme through `loadThemeAssets`, so a theme the caller cannot see answers the same 404 as one that does not exist, and both build through `prepareThemeTemplate` (`server/services/exports.js`), which is where the `pptx-template` count on the instance-health `export` axis happens.
+
+Until B274 the template hung off a deck (`GET /api/presentations/:id/export/pptx-template`, a row in the editor's export menu), because the deck was what named the theme. That route is gone: one artifact, one address.

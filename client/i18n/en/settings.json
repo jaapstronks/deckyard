@@ -854,6 +854,7 @@
   "settings.themes.deleteSuccess": "Theme deleted.",
   "settings.themes.derivedColors": "Derived accent colors:",
   "settings.themes.description": "Choose from built-in themes or create a theme for your organization.",
+  "settings.themes.downloadTemplate": "Download PPTX template",
   "settings.themes.dropLogoHere": "Drop logo here or click to upload",
   "settings.themes.duplicate": "Duplicate",
   "settings.themes.duplicateSuccess": "Theme duplicated.",
