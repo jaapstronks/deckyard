@@ -6,6 +6,7 @@ import { t } from '../../lib/ui-i18n.js';
 import { formatDate } from '../../lib/format/analytics-format.js';
 import { createEmptyState } from '../../lib/dom/empty-state.js';
 import { h } from '../../lib/dom/index.js';
+import { makeAxis } from '../../../shared/slide-types/types/chart-slide/ticks.js';
 
 /**
  * Format date for chart display (short format: M/D).
@@ -60,8 +61,18 @@ export function createTimelineChart({ data }) {
     const innerWidth = CHART_WIDTH - PADDING.left - PADDING.right;
     const innerHeight = CHART_HEIGHT - PADDING.top - PADDING.bottom;
 
-    // Get data bounds
+    // One axis for gridlines, labels and bars: the slide chart's makeAxis, so
+    // a label always names the line it sits on (a 0–7 range used to label its
+    // second gridline "1" at a height of 1.4). Views are counts: whole steps.
     const maxViews = Math.max(...chartData.map((d) => d.views), 1);
+    const axis = makeAxis({
+      min: 0,
+      max: maxViews,
+      top: 0,
+      height: innerHeight,
+      forceMinZero: true,
+      minStep: 1,
+    });
 
     // Create SVG with accessibility attributes (h() routes SVG tag names
     // through createElementNS; the `text` key sets textContent).
@@ -101,10 +112,8 @@ export function createTimelineChart({ data }) {
     });
 
     // Draw Y-axis gridlines
-    const yTicks = 5;
-    for (let i = 0; i <= yTicks; i++) {
-      const y = innerHeight - (i / yTicks) * innerHeight;
-      const value = Math.round((i / yTicks) * maxViews);
+    for (const value of axis.ticks) {
+      const y = axis.toY(value);
 
       // Gridline
       g.append(
@@ -138,9 +147,9 @@ export function createTimelineChart({ data }) {
 
     // Draw bars
     chartData.forEach((d, i) => {
-      const barHeight = (d.views / maxViews) * innerHeight;
+      const y = axis.toY(d.views);
+      const barHeight = axis.toY(0) - y;
       const x = barGap + i * (barWidth + barGap);
-      const y = innerHeight - barHeight;
 
       // Bar with accessibility
       const rect = h('rect', {
