@@ -28,6 +28,12 @@
  *     does before returning a download link. No export has been requested yet,
  *     so this neither repeats the access check nor counts an export.
  *
+ * Beside them, {@link prepareThemeTemplate} — the one export that is not a
+ * deck's. The theme template is an artifact of a theme (B274, D126), so it
+ * asks for a theme id and no presentation, but it is still an export: it is
+ * counted on the same axis, under the same `pptx-template` key, from the
+ * internal route and the v1 route alike.
+ *
  * @module server/services/exports
  */
 
@@ -38,6 +44,7 @@ import { repoRootOf } from '../storage/scope.js';
 import { normalizeLang, projectPresentationForLang } from '../utils/i18n.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { loadThemeAssets } from '../utils/themes.js';
+import { buildThemeTemplateBuffer } from '../export/pptx-theme.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { NotFoundError } from '../utils/errors.js';
 
@@ -166,4 +173,35 @@ export async function prepareQueuedExportContext(
     exportLang: normalizeLang(lang),
     stripLiveOnly,
   });
+}
+
+/**
+ * Prepare the PPTX template of a theme.
+ *
+ * The artifact belongs to the theme, not to a deck: the same theme hands back
+ * the same bytes whichever presentation happens to use it. Until B274 it hung
+ * off a deck anyway, because the deck was what named the theme; now the theme
+ * is asked for directly and the deck route is gone.
+ *
+ * Authorization is {@link loadThemeAssets}' own: a session scope sees its
+ * organization's themes and the seeds, and an id outside that throws the 404
+ * it throws for an unknown theme — the same answer, which is what a caller
+ * probing for other organizations' theme ids should get.
+ *
+ * @param {StorageScope} scope - The caller's storage scope.
+ * @param {string} themeId - The theme's UUID.
+ * @returns {Promise<{ buffer: Buffer, label: string }>} The template and the
+ *   theme's label, for the filename.
+ * @throws {import('../utils/errors.js').AppError} No such theme in this scope.
+ */
+export async function prepareThemeTemplate(scope, themeId) {
+  const repoRoot = repoRootOf(scope);
+  const theme = await loadThemeAssets(repoRoot, themeId, scope);
+  countInstanceHealth([{ axis: 'export', key: 'pptx-template' }]);
+  return {
+    buffer: await buildThemeTemplateBuffer(repoRoot, theme),
+    // The same fallback the template titles itself with, so the filename and
+    // the document's title cannot disagree.
+    label: String(theme?.label || theme?.id || 'Theme'),
+  };
 }

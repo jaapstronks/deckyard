@@ -95,7 +95,6 @@ test('every export route gates its presentation id', async () => {
     'png/1.png',
     'pptx',
     'pptx-editable',
-    'pptx-template',
     'handoff.zip',
     'notes.md',
     'notes.docx',
@@ -140,6 +139,9 @@ test('the swept tables gate every uuid capture, not just the first', async () =>
     [handleThemes, 'GET', '/api/themes/nope'],
     // Hex-and-dashes but not a uuid: the old pattern let this reach storage.
     [handleThemes, 'GET', '/api/themes/abc-123'],
+    // The theme template is addressed by theme id since B274, so it is gated
+    // here rather than on the export table.
+    [handleThemes, 'GET', '/api/themes/nope/template.pptx'],
   ];
   for (const [handler, method, pathname] of cases) {
     const ctx = await statusOf(handler, method, pathname);
@@ -170,6 +172,7 @@ test('v1 gates every uuid capture, and only those', async () => {
     [handleV1Comments, 'GET', '/api/v1/presentations/foo/comments'],
     [handleV1Comments, 'POST', '/api/v1/comments/nope/status'],
     [handleV1SlideLibrary, 'GET', '/api/v1/slide-library/nope'],
+    [handleV1Exports, 'GET', '/api/v1/themes/nope/template.pptx'],
     // The deck id is gated; the slide id (author-chosen text) is not.
     [handleV1Slides, 'GET', '/api/v1/presentations/foo/slides/s1'],
   ];
