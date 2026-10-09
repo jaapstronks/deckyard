@@ -57,8 +57,26 @@
    chart palette (--slide-chart-*) is the one numbered series palette; a
    future coloured-tile design draws from it instead of a type-named set. */
 .slide-kpi-metrics .kpi-metric {
-  --kpi-tile-bg: rgba(255, 255, 255, 0.45);
   --kpi-tile-fg: var(--slide-on-surface);
+  /* The fill is white glass whose alpha follows the ground (D123, B218). The
+     tile text colour is the ground's answer to "how dark am I", so the alpha
+     is read off its lightness: dark text means a light ground and the full
+     light-ground glass; light text means a dark ground, where 45% white would
+     lift the tile to mid grey under white text (3.1:1 on calm, 4.3:1 on
+     midnight). This has to be read from the colour, not from a class:
+     `has-slide-bg-light-text` marks calm, but a dark THEME such as midnight
+     carries light text on every ground without it. The step sits at mid grey
+     (oklch L 0.6). Both alphas are pinned by tests/kpi-tile-contrast.test.js. */
+  --kpi-tile-glass-light-ground: 0.45;
+  --kpi-tile-glass-dark-ground: var(--slide-opacity-subtle);
+  --kpi-tile-bg: oklch(
+    from var(--kpi-tile-fg) 1 0 0 /
+      clamp(
+        var(--kpi-tile-glass-dark-ground),
+        (0.6 - l) * 100,
+        var(--kpi-tile-glass-light-ground)
+      )
+  );
   --kpi-tile-value: var(--kpi-tile-fg);
   --kpi-tile-border: rgba(0, 0, 0, 0.16);
   /* Deltas read against the tile, not the slide, so both stay legible on
