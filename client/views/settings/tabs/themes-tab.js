@@ -441,6 +441,18 @@ export function createThemesTab({ user }) {
     });
     menu.append(duplicateItem);
 
+    // The PPTX template: a starting document on this theme's layouts. A plain
+    // link, because the answer is an attachment and the browser is better at
+    // saving one than any fetch-and-revoke dance would be (B274).
+    const templateItem = h('a', {
+      class: 'dropdown-item',
+      href: `/api/themes/${theme.id}/template.pptx`,
+      download: '',
+      text: t('settings.themes.downloadTemplate', 'Download PPTX template'),
+      onclick: closeMenu,
+    });
+    menu.append(templateItem);
+
     if (theme.source !== 'seed') {
       const deleteItem = h('button', {
         class: 'dropdown-item is-danger',

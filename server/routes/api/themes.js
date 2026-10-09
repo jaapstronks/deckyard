@@ -11,6 +11,7 @@
  * PUT /api/themes/:id - Update an organization theme (designer only)
  * DELETE /api/themes/:id - Delete an organization theme (designer only)
  * GET /api/themes/:id/config - Build the render configuration
+ * GET /api/themes/:id/template.pptx - Download the theme's PPTX template
  */
 
 import {
@@ -37,6 +38,11 @@ import {
   getFontsByCategory,
 } from '../../../shared/theme-fonts.js';
 import { buildThemeConfig } from '../../utils/theme-builder.js';
+import { prepareThemeTemplate } from '../../services/exports.js';
+import {
+  handleExportError,
+  sendExportResponse,
+} from '../../export/pipeline.js';
 import { THEME_FIELD_PROBLEMS } from '../../../shared/theme-config-schema.js';
 import { listAllFontFamiliesWithVariants } from '../../storage/font-families.js';
 import {
@@ -360,6 +366,30 @@ async function handleCustomThemeConfig(
 }
 
 /**
+ * GET /api/themes/:id/template.pptx — the theme's PPTX template.
+ *
+ * A download of the theme, not of a deck (B274): the bytes depend on the
+ * theme alone, so this is where the artifact lives and the themes overview is
+ * where it is offered. The read right is the service's: an id this scope
+ * cannot see answers the same 404 as an id that does not exist.
+ */
+async function handleThemeTemplate({ storageScope, res }, themeId) {
+  try {
+    const { buffer, label } = await prepareThemeTemplate(storageScope, themeId);
+    sendExportResponse(res, {
+      contentType:
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      filename: label,
+      extension: '-template.pptx',
+      data: buffer,
+    });
+  } catch (e) {
+    handleExportError(res, e);
+  }
+  return true;
+}
+
+/**
  * Declarative route table for `/api/themes*` (A7.19 C8). Order matches the
  * previous if-chain: exact paths precede the UUID capture. Mutations require
  * the designer capability in their handlers.
@@ -402,6 +432,12 @@ export const ROUTES = [
     pattern: /^\/api\/themes\/([^/]+)\/config$/,
     captures: ['uuid'],
     handler: handleCustomThemeConfig,
+  },
+  {
+    method: 'GET',
+    pattern: /^\/api\/themes\/([^/]+)\/template\.pptx$/,
+    captures: ['uuid'],
+    handler: handleThemeTemplate,
   },
 ];
 

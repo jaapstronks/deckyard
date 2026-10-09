@@ -1772,6 +1772,42 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimited'
 
+  /themes/{id}/template.pptx:
+    get:
+      operationId: exportThemeTemplate
+      tags:
+        - Exports
+      summary: Download a theme's PPTX template
+      description: >-
+        Returns a PPTX holding the theme's layouts and one sample slide on
+        each: a starting document for building a deck on this theme in
+        PowerPoint or Keynote. It is not a master that restyles an existing
+        deck. The bytes depend on the theme alone, so the same theme always
+        hands back the same file.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: PowerPoint template
+          content:
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
   /slide-types:
     get:
       operationId: listSlideTypes
