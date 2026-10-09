@@ -205,7 +205,10 @@ because they are **chrome** (`fields: []`) and their renderers never read
 `content` — the one draws the theme's payoff logo, the other its own
 per-language copy plus the session's join code. A type with no content fields
 has nothing to exemplify, and the samples they used to carry named keys nothing
-declared, rendered or stored.
+declared, rendered or stored. `video-slide` is not exempt but borrows the
+`embed-slide` reasoning for one field: its sample leaves `source` blank on
+purpose (D107), so its previews show an empty video frame instead of loading a
+live third-party player.
 
 **A sample names only keys the type declares** — a field, a global slide field,
 or an instance key. It has to be said, because a sample that names something
