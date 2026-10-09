@@ -41,13 +41,13 @@ function extractThemeContext(theme) {
 
   const ctx = {};
 
-  // Available slide background options (lime, mist, dark are standard)
-  const bgOptions = [];
-  const vars = theme.cssVars || {};
-  if (vars['--t-slide-bg-lime']) bgOptions.push('lime');
-  if (vars['--t-slide-bg-mist']) bgOptions.push('mist');
-  if (vars['--t-slide-bg-dark']) bgOptions.push('dark');
-  if (bgOptions.length) ctx.backgroundOptions = bgOptions;
+  // The theme's slide-background variants. Which grounds a slide can take is
+  // decided per type (its `background` field joined with these), so the prompt
+  // derives that offer itself; carrying the variants keeps the context present
+  // for every theme, also one that only has the declared options.
+  ctx.slideBackgrounds = Array.isArray(theme.slideBackgrounds)
+    ? theme.slideBackgrounds
+    : [];
 
   // Brand colors
   if (theme.brandColors?.length) {
@@ -59,7 +59,7 @@ function extractThemeContext(theme) {
     ctx.hasBackgroundImages = true;
   }
 
-  return Object.keys(ctx).length ? ctx : null;
+  return ctx;
 }
 
 /**
