@@ -66,7 +66,9 @@ export function injectAppName(html) {
 /**
  * Put the instance's link preview into the shell's Open Graph and Twitter
  * tags: `APP_NAME` as site name and title, `OG_DESCRIPTION` and
- * `OG_IMAGE_URL` (`server/config/branding.js`). Only the `content` value is
+ * `OG_IMAGE_URL` (`server/config/branding.js`). The plain
+ * `<meta name="description">` takes the same description, so a crawler that
+ * reads it instead of `og:description` sees the instance's text too. Only the `content` value is
  * rewritten, so with every knob unset the shell comes out byte-identical to
  * `client/index.html`. Each tag is there exactly once. Applied to the raw
  * shell, before a share-link response swaps in the deck's own tags, so it
@@ -79,6 +81,7 @@ export function injectLinkPreview(html) {
   const description = escapeHtml(getOgDescription());
   const image = escapeHtml(getOgImageUrl());
   const values = [
+    ['name', 'description', description],
     ['property', 'og:site_name', name],
     ['property', 'og:title', name],
     ['property', 'og:description', description],
