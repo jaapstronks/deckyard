@@ -82,7 +82,10 @@ export function createTimelineChart({ data }) {
         h('desc', {
           text: t(
             'analytics.chartDescription',
-            'Chart showing {count} data points with {total} total views',
+            {
+              one: 'Chart showing 1 data point with {total} total views',
+              many: 'Chart showing {count} data points with {total} total views',
+            },
             {
               count: chartData.length,
               total: totalViews,
