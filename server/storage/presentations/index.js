@@ -44,6 +44,8 @@ import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js'
 import { createLogger } from '../../utils/logger.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import { extensionNames } from '../../../shared/extension-provenance.js';
+import { settleBgTextContrast } from '../../utils/bg-image-contrast.js';
+import { loadDeckTheme } from '../../utils/themes.js';
 const log = createLogger('presentations');
 
 // Only the single-deck read may skip the organization filter, and only for a
@@ -111,6 +113,15 @@ export async function createPresentation(storageScope, body) {
   const preparedPresentation = await prepareNewPresentation(repoRoot, body, {
     slideTypes: await buildMergedSlideTypes(storageScope),
     storageScope,
+  });
+
+  // Text colour over a background image is settled before the deck is
+  // stored, so a deck that never meets the editor (MCP, import, AI) presents
+  // with a readable title (B627).
+  await settleBgTextContrast(preparedPresentation, {
+    repoRoot,
+    loadTheme: () =>
+      loadDeckTheme(repoRoot, preparedPresentation.theme, storageScope),
   });
 
   // Validate size limits before creating
@@ -306,7 +317,10 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
     }
 
     const result = migratePresentation(
-      await updatePresentationRow(id, normalized, ctx, opts),
+      await updatePresentationRow(id, normalized, ctx, opts, {
+        repoRoot: repoRootOf(storageScope),
+        storageScope,
+      }),
     );
 
     // Attach warnings to the result if any
@@ -322,7 +336,10 @@ async function updatePresentationUncached(storageScope, id, body, opts) {
   // comparing a write result against a read (the collab live-apply guard)
   // see a permanent schemaVersion difference and never converge.
   return migratePresentation(
-    await updatePresentationRow(id, normalized, ctx, opts),
+    await updatePresentationRow(id, normalized, ctx, opts, {
+      repoRoot: repoRootOf(storageScope),
+      storageScope,
+    }),
   );
 }
 
@@ -905,8 +922,12 @@ async function createPresentationRow(data, ctx) {
  * @param {object} data
  * @param {object} ctx - Storage context
  * @param {object} [opts]
+ * @param {{ repoRoot?: string|null, storageScope?: Object }} [seam] - what the
+ *   facade knows that the row write does not: where the installation's files
+ *   are and the caller's scope, for settling background contrast (B627).
+ *   Without it nothing is settled.
  */
-async function updatePresentationRow(id, data, ctx, opts = {}) {
+async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -993,6 +1014,21 @@ async function updatePresentationRow(id, data, ctx, opts = {}) {
     bypassLockCheck: !!opts?.bypassLockCheck,
     ctx,
   });
+
+  // Text colour over a background image (B627). After the lock policy, not
+  // before: the verdict is derived from the image, not authored, and must
+  // not read as an edit of a slide someone else holds or the author locked.
+  // A save that came from the collab doc is the editor's own, which measures
+  // in the browser; settling it here would only fork the JSON from the doc.
+  if ((data.slides !== undefined || data.i18n) && opts?.reason !== 'collab') {
+    const themeId =
+      (opts?.allowThemeChange && data.theme) || existing.theme || null;
+    await settleBgTextContrast(data, {
+      repoRoot: seam.repoRoot ?? null,
+      loadTheme: () =>
+        loadDeckTheme(seam.repoRoot, themeId, seam.storageScope ?? ctx),
+    });
+  }
 
   // Partial writes: a caller may speak about only part of the document.
   // The public API's slide handlers pass `{ slides }` and nothing else, so

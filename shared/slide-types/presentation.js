@@ -194,8 +194,9 @@ function sanitizeBgUrl(url) {
 // Resolve which text-contrast class (if any) to apply for a background image.
 // - 'light' / 'dark': author forces the theme's light/dark text colour
 //   (--t-text-color-light / --t-text-color-dark).
-// - 'auto': use the recommendation detected and stored at edit time
-//   (content.slideBgTextAuto) by client/lib/bg-contrast.js. If it's absent
+// - 'auto': use the recommendation detected and stored on the slide
+//   (content.slideBgTextAuto) by the editor or the server write seam
+//   (shared/bg-image-contrast.js, B627). If it's absent
 //   (old slide, or detection couldn't run, e.g. a cross-origin image), leave
 //   the theme default so nothing regresses.
 // - 'default' / absent (legacy): no override.
@@ -217,7 +218,7 @@ function resolveBgTextClass(content) {
 // - 'gradient-top' / 'gradient-bottom': directional gradient scrim (manual).
 // - 'auto' (default) or absent: add a subtle scrim ONLY when auto text-detection
 //   flagged the image as low-contrast behind the title (content.slideBgNeedsScrim,
-//   set by client/lib/bg-contrast.js) and a text colour was chosen. Its tint
+//   settled by shared/bg-image-contrast.js) and a text colour was chosen. Its tint
 //   follows the resolved text colour (dark scrim under light text, and vice
 //   versa) via CSS.
 // - 'none': explicitly opt out, even when a scrim was suggested.
