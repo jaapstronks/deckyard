@@ -4,7 +4,11 @@ import {
   resolveSlideBgTone,
 } from '../../shared/slide-surface-tone.js';
 import { hexToRgb } from '../../shared/color-utils.js';
-import { parseChartData } from '../../shared/slide-types/types/chart-slide/parse.js';
+import {
+  CHART_ERROR,
+  parseChartData,
+} from '../../shared/slide-types/types/chart-slide/parse.js';
+import { chartErrorMessages } from '../../shared/slide-types/types/chart-slide/error.js';
 import { themeChartPalette } from '../../shared/slide-types/types/chart-slide/palette.js';
 import { chartSummary } from '../../shared/slide-types/types/chart-slide/summary.js';
 import {
@@ -174,7 +178,7 @@ export async function composeChartSlide(pptx, slide, ctx) {
   const chartType = String(content.chartType || 'bar');
   const parsed = ['bar', 'line', 'pie'].includes(chartType)
     ? parseChartData({ chartType, data: content.data || '' })
-    : { ok: false, errors: ['Unknown chart type.'] };
+    : { ok: false, errors: [CHART_ERROR.unknownType] };
   const pptxSlide = pptx.addSlide({ masterName: PPTX_LAYOUTS.headingBody });
   const warnings = [];
   const ground = resolveSlideBgHex(content, theme);
@@ -241,7 +245,10 @@ export async function composeChartSlide(pptx, slide, ctx) {
     h: slideHeight - pad - bottomH - (bottom ? 0.12 : 0) - chartY,
   };
   if (!parsed.ok || !['bar', 'line', 'pie'].includes(parsed.kind)) {
-    const message = parsed.errors?.join(' ') || 'Unknown chart type.';
+    const message = chartErrorMessages(
+      parsed.errors?.length ? parsed.errors : [CHART_ERROR.unknownType],
+      ctx.docLang,
+    ).join(' ');
     addText(
       pptxSlide,
       message,

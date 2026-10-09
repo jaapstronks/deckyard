@@ -1,3 +1,5 @@
+import { escapeHtml } from '../../helpers.js';
+import { chartKindName } from './summary.js';
 import { makeAxis } from './ticks.js';
 import { truncateLabel, formatTick } from './strings.js';
 import { svgText } from './svg.js';
@@ -18,6 +20,7 @@ export function renderLineSvg(
     showLegend = false, // kept for API parity even though legend is HTML (rendered above)
     xAxisLabel = '',
     yAxisLabel = '',
+    lang,
   } = {},
 ) {
   void showLegend;
@@ -171,7 +174,7 @@ export function renderLineSvg(
   `;
 
   return `
-    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Line chart">
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(chartKindName('line', lang))}">
       ${axes}
       ${frags}
       ${axisTitles}

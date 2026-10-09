@@ -1,10 +1,12 @@
+import { escapeHtml } from '../../helpers.js';
+import { chartKindName } from './summary.js';
 import { makeAxis } from './ticks.js';
 import { truncateLabel, formatTick } from './strings.js';
 import { svgText } from './svg.js';
 
 export function renderBarSvg(
   { labels, values },
-  { showValues = false, xAxisLabel = '', yAxisLabel = '' } = {},
+  { showValues = false, xAxisLabel = '', yAxisLabel = '', lang } = {},
 ) {
   const W = 1600;
   const H = 620;
@@ -134,7 +136,7 @@ export function renderBarSvg(
   `;
 
   return `
-    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bar chart">
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(chartKindName('bar', lang))}">
       ${axes}
       ${bars}
       ${axisTitles}

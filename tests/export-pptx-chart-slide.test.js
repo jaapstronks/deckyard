@@ -12,13 +12,13 @@ const { themeChartPalette } =
   await import('../shared/slide-types/types/chart-slide/palette.js');
 const theme = await seedThemeConfig('midnight');
 
-async function exportChart(content) {
+async function exportChart(content, lang = 'en-GB') {
   const result = await buildEditablePptxBuffer(
     '.',
     {
       id: 'chart-test',
       title: 'Chart test',
-      lang: 'en-GB',
+      lang,
       slides: [{ id: 'chart-1', type: 'chart-slide', content }],
     },
     { theme },
@@ -133,6 +133,11 @@ test('pie chart carries theme slice colours and value-plus-percent labels', asyn
   assert.deepEqual(built.result.imageSlides, []);
 });
 
+test('the invalid-data text follows the deck language', async () => {
+  const built = await exportChart({ chartType: 'bar', data: '' }, 'nl');
+  assert.match(built.slide, /Data is leeg/);
+});
+
 test('optional labels and a negative bar use their own chart settings', async () => {
   const bar = await exportChart({
     chartType: 'bar',
@@ -162,7 +167,7 @@ test('invalid data remains editable text and has no broken chart part', async ()
   assert.equal(built.chartName, undefined);
   assert.equal(built.workbookName, undefined);
   assert.match(built.slide, /Empty chart/);
-  assert.match(built.slide, /Data is leeg/);
+  assert.match(built.slide, /The data is empty/);
   assert.match(built.result.warnings.join(' '), /chart data is invalid/);
   assert.deepEqual(built.result.imageSlides, []);
 });
