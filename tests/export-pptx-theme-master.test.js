@@ -22,6 +22,7 @@ import {
   rasterThemeLogo,
   resolveThemeMaster,
   themeLayoutDefinitions,
+  themeSampleSlides,
 } from '../server/export/pptx-theme.js';
 import { seedThemeConfig } from './helpers/theme-seed.js';
 
@@ -40,6 +41,25 @@ async function layoutXml(zip) {
     .filter((f) => /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(f))
     .sort();
   return Promise.all(names.map((n) => zip.file(n).async('string')));
+}
+
+/** Every slide part, in deck order. */
+function slideNames(zip) {
+  return Object.keys(zip.files)
+    .filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f))
+    .sort((a, b) => Number(a.match(/\d+/)[0]) - Number(b.match(/\d+/)[0]));
+}
+
+/**
+ * The name of the layout a slide is built on, read through its relationship
+ * part — the only place that says which of the four layouts it points at.
+ */
+async function layoutNameOfSlide(zip, name) {
+  const file = name.split('/').pop();
+  const rels = await zip.file(`ppt/slides/_rels/${file}.rels`).async('string');
+  const target = rels.match(/slideLayouts\/(slideLayout\d+\.xml)/)?.[1];
+  const xml = await zip.file(`ppt/slideLayouts/${target}`).async('string');
+  return xml.match(/<p:cSld name="([^"]*)"/)?.[1];
 }
 
 test('the theme names the layouts, and there are three of them', async () => {
@@ -147,12 +167,69 @@ test('the logo travels as real PNG bytes, never as SVG', async () => {
   }
 });
 
-test('the template holds layouts and no slides', async () => {
+test('the template opens on one sample slide per theme layout', async () => {
+  // B637: a package of layouts and nothing else opens on an empty black
+  // rectangle in Keynote, which writes a "Default" layout of its own for the
+  // slide it adds. The sample slides are what makes the layouts visible.
   const { zip } = await midnightZip();
-  const slides = Object.keys(zip.files).filter((f) =>
-    /^ppt\/slides\/slide\d+\.xml$/.test(f),
+  const names = slideNames(zip);
+  assert.equal(names.length, Object.keys(PPTX_LAYOUTS).length);
+
+  const layouts = [];
+  for (const name of names) layouts.push(await layoutNameOfSlide(zip, name));
+  assert.deepEqual(
+    layouts,
+    Object.values(PPTX_LAYOUTS),
+    "every sample slide sits on a theme layout, in the layouts' own order — never on pptxgenjs' blank DEFAULT",
   );
-  assert.deepEqual(slides, [], 'a template is a starting document, not a deck');
+});
+
+test('every sample run carries the theme, so nothing renders black', async () => {
+  const { theme, zip } = await midnightZip();
+  const spec = resolveThemeMaster(theme);
+  for (const name of slideNames(zip)) {
+    const xml = await zip.file(name).async('string');
+    const runs = [...xml.matchAll(/<a:rPr[\s\S]*?<\/a:rPr>/g)].map((m) => m[0]);
+    assert.ok(runs.length, `${name} should carry text`);
+    for (const rpr of runs) {
+      assert.match(
+        rpr,
+        new RegExp(`<a:srgbClr val="(${spec.text}|${spec.textMuted})"/>`),
+        `${name}: a run without the theme's text colour renders hard-coded black`,
+      );
+      assert.match(
+        rpr,
+        new RegExp(`<a:latin typeface="(${spec.headFont}|${spec.bodyFont})"`),
+        `${name}: a run should name one of the theme's faces`,
+      );
+    }
+  }
+});
+
+test('the sample text is the theme type scale, not the layouts own body step', async () => {
+  // The trap: pptxgenjs takes a text box's options from the placeholder it is
+  // addressed by, so a size passed beside `placeholder` is dropped. The sizes
+  // live in the runs, and this is what proves they arrive.
+  const { zip } = await midnightZip();
+  const first = await zip.file(slideNames(zip)[0]).async('string');
+  // 80 and 28 reference px under midnight's scale of 1: the cover title and
+  // the subtitle step, in hundredths of a point.
+  assert.match(first, /<a:rPr lang="[^"]*" sz="4800"/);
+  assert.match(first, /<a:rPr lang="[^"]*" sz="1680"/);
+});
+
+test('a theme that names nothing still yields sample slides', async () => {
+  // The fork case again: no label, no fonts, no ground. The copy still has to
+  // come out, and the slide that names the theme falls back to a label.
+  const spec = resolveThemeMaster({});
+  const samples = themeSampleSlides(spec);
+  assert.equal(samples.length, Object.keys(PPTX_LAYOUTS).length);
+  assert.equal(samples[0].heading, 'Theme');
+  for (const sample of samples) {
+    assert.ok(sample.body.length, `${sample.layout} should carry sample copy`);
+    for (const paragraph of sample.body)
+      assert.equal(typeof paragraph, 'string');
+  }
 });
 
 test('a theme that names no ground, fonts or mark still yields layouts', async () => {

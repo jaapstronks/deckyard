@@ -86,6 +86,12 @@ const TEXT_PX = Object.freeze({
  */
 const FALLBACK_TYPEFACE = 'Arial';
 
+/**
+ * The gap after a paragraph of a sample slide, as a share of its own size —
+ * the share the deck export uses, so the sample reads like an exported slide.
+ */
+const SAMPLE_PARA_SPACE = 0.5;
+
 /** The text colour a ground falls back to when the theme names none. */
 const FALLBACK_TEXT = '#0b0b0b';
 /** The ground a theme falls back to when it declares no `defaultBackground`. */
@@ -495,12 +501,182 @@ export async function applyThemeToPptx(pptx, theme, { repoRoot = '.' } = {}) {
 }
 
 /**
- * A `.pptx` holding the theme's layouts and nothing else — the "theme as a
- * template" download.
+ * The sample slides a template opens on: one per theme layout, each filled
+ * with text that says what its layout is for.
  *
- * Empty is the point: the file is a starting document, so it carries the
- * layouts and no slides. PowerPoint opens it on the first layout; Keynote
- * imports the layouts as its own.
+ * Why a template carries slides at all. A `.pptx` that holds only layouts
+ * opens on nothing of its own. PowerPoint shows the first layout, but Keynote
+ * adds a slide on a "Default" layout it writes itself, which is black and
+ * carries no placeholder, so the first thing you see is an empty black
+ * rectangle and the theme's layouts stay hidden until you insert a slide
+ * (measured in Keynote on 2026-10-09, B637; D126 had already recorded the
+ * black "Default" Keynote adds). One sample slide per layout is what a
+ * PowerPoint or Keynote template conventionally carries, and it leaves D106's
+ * promise exactly as it was: these are slides *on* the layouts, never a master
+ * that restyles a deck.
+ *
+ * Every run names its own size, face and colour, like the placeholders they
+ * sit in and for the same reason: there is no theme text colour in OOXML, so a
+ * run that names none is written as hard-coded black.
+ *
+ * The copy is English and not run through i18n, for the reason
+ * {@link PPTX_LAYOUTS} is: each line names the layout it sits on, and that name
+ * is an identifier read in PowerPoint's own layout gallery.
+ *
+ * The body sits at the theme's `lg` step, not the `base` the layout's own empty
+ * body box carries, for the reason the deck export starts there too: `base` is
+ * the size of an empty template box, and a handful of lines set at it read as
+ * small type stranded in a large one.
+ *
+ * @param {ReturnType<typeof resolveThemeMaster>} spec
+ * @returns {Array<{layout: keyof typeof PPTX_LAYOUTS, heading: string,
+ *   headingStep: keyof typeof TEXT_PX, body: string[],
+ *   bodyName: string, bodyStep: keyof typeof TEXT_PX, bodyMuted: boolean,
+ *   picture?: string}>}
+ */
+export function themeSampleSlides(spec) {
+  return [
+    {
+      layout: 'title',
+      // The theme's own name, in its heading face at the cover size: the first
+      // thing the file shows says which theme it is.
+      heading: spec.label,
+      headingStep: '5xl',
+      bodyName: 'subtitle',
+      bodyStep: 'lg',
+      bodyMuted: true,
+      body: [
+        `Template. This slide is on the ${PPTX_LAYOUTS.title} layout, for a cover, a chapter opener or a closing word.`,
+        'Replace the text; the ground, the type and the mark come from the theme.',
+      ],
+    },
+    {
+      layout: 'headingBody',
+      heading: PPTX_LAYOUTS.headingBody,
+      headingStep: '2xl',
+      bodyName: 'body',
+      bodyStep: 'lg',
+      bodyMuted: false,
+      body: [
+        'The layout most slides use: a heading above, text below.',
+        'The heading is set in the theme heading face, this text in its body face, both at the size the theme type scale gives them.',
+        `The other layouts are ${PPTX_LAYOUTS.title} and ${PPTX_LAYOUTS.headingImageBody}; add a slide and pick one.`,
+      ],
+    },
+    {
+      layout: 'headingImageBody',
+      heading: PPTX_LAYOUTS.headingImageBody,
+      headingStep: '2xl',
+      bodyName: 'body',
+      bodyStep: 'lg',
+      bodyMuted: false,
+      body: [
+        'Text beside a picture.',
+        'Drop an image in the frame and keep the words in this column.',
+      ],
+      picture: 'Picture',
+    },
+  ];
+}
+
+/**
+ * Write {@link themeSampleSlides} onto a pptxgenjs instance whose layouts are
+ * already defined.
+ *
+ * Only the template download does this. The deck exports write their own
+ * slides onto the same layouts (`pptx-generic.js`), and a sample slide in front
+ * of them would be a slide the deck does not have.
+ *
+ * @param {object} pptx - a pptxgenjs instance, its layouts already defined
+ * @param {ReturnType<typeof resolveThemeMaster>} spec
+ * @returns {void}
+ */
+function addThemeSampleSlides(pptx, spec) {
+  for (const sample of themeSampleSlides(spec)) {
+    const slide = pptx.addSlide({ masterName: PPTX_LAYOUTS[sample.layout] });
+    slide.addText(
+      sampleRuns([sample.heading], {
+        pt: themeTextPt(spec, sample.headingStep),
+        color: spec.text,
+        face: spec.headFont,
+      }),
+      { placeholder: 'title' },
+    );
+    slide.addText(
+      sampleRuns(sample.body, {
+        pt: themeTextPt(spec, sample.bodyStep),
+        color: sample.bodyMuted ? spec.textMuted : spec.text,
+        face: spec.bodyFont,
+      }),
+      { placeholder: sample.bodyName },
+    );
+    if (!sample.picture) continue;
+    // The picture slot, drawn as a dashed frame with the word in it — the
+    // vocabulary the deck export already uses for a frame with no picture.
+    // The word goes *in* the placeholder rather than in a box of its own:
+    // pptxgenjs writes every placeholder a slide leaves empty onto that slide,
+    // and PowerPoint fills such a one with its own "Click to add text" and its
+    // insert icons, which a second text box over the same rectangle then runs
+    // straight through (PowerPoint 16, 2026-10-09). Filling it leaves the frame
+    // as the only thing to draw, and that frame is what Keynote needs: there an
+    // empty placeholder shows nothing at all, so the column would read as a
+    // hole beside the text.
+    slide.addShape(pptx.ShapeType.rect, {
+      ...layoutBox(sample.layout, 'image'),
+      fill: { type: 'none' },
+      line: { color: spec.textMuted, width: 0.75, dashType: 'dash' },
+    });
+    slide.addText(
+      sampleRuns([sample.picture], {
+        pt: themeTextPt(spec, 'base'),
+        color: spec.textMuted,
+        face: spec.bodyFont,
+        italic: true,
+        align: 'center',
+      }),
+      { placeholder: 'image', valign: 'middle' },
+    );
+  }
+}
+
+/**
+ * Paragraphs as pptxgenjs text runs, each naming its own size, face and
+ * colour.
+ *
+ * Run level, not box level: a text box addressed by `placeholder` takes its
+ * geometry *and its text options* from the layout, so a size passed beside the
+ * placeholder is dropped and the layout's own step comes back. The deck export
+ * carries its sizes in the runs for the same reason.
+ *
+ * @param {string[]} paragraphs
+ * @param {{pt: number, color: string, face?: string, italic?: boolean,
+ *   align?: string}} style
+ * @returns {Array<{text: string, options: object}>}
+ */
+function sampleRuns(paragraphs, style) {
+  return paragraphs.map((text, i) => ({
+    text,
+    options: {
+      fontSize: style.pt,
+      color: style.color,
+      ...(style.face ? { fontFace: style.face } : {}),
+      ...(style.italic ? { italic: true } : {}),
+      ...(style.align ? { align: style.align } : {}),
+      paraSpaceAfter: Math.round(style.pt * SAMPLE_PARA_SPACE),
+      bullet: false,
+      ...(i < paragraphs.length - 1 ? { breakLine: true } : {}),
+    },
+  }));
+}
+
+/**
+ * A `.pptx` holding the theme's layouts and a sample slide on each — the
+ * "theme as a template" download.
+ *
+ * The file is a starting document: the layouts are what it hands over, and the
+ * sample slides are there so opening it shows them. See
+ * {@link addThemeSampleSlides} for why a layout set with no slides in it opens
+ * on a black rectangle in Keynote.
  *
  * @param {string} repoRoot
  * @param {object|null} theme
@@ -511,6 +687,7 @@ export async function buildThemeTemplateBuffer(repoRoot, theme) {
   const spec = await applyThemeToPptx(pptx, theme, { repoRoot });
   pptx.title = `${spec.label} template`;
   pptx.subject = `${spec.label} theme layouts`;
+  addThemeSampleSlides(pptx, spec);
 
   return pptx.write('nodebuffer');
 }
