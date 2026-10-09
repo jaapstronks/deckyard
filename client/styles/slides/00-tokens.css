@@ -239,7 +239,10 @@
   /* Series palette: the numbered accent colours (charts, poll bars, matrix
      planes; the KPI tiles joined this palette when their per-tile tokens were
      removed — B3). The only numbered palette; --t-chart-{0..7} is its theme
-     contract. */
+     contract. The fallbacks mirror CHART_FALLBACK_PALETTE in
+     shared/slide-types/types/chart-slide/palette.js (the JS side needs them for
+     PPTX and the pie-label contrast); tests/chart-slide-styles.test.js
+     keeps the two equal. */
   --slide-chart-0: var(--t-chart-0, var(--slide-accent));
   --slide-chart-1: var(--t-chart-1, #5d989a);
   --slide-chart-2: var(--t-chart-2, #848f52);
