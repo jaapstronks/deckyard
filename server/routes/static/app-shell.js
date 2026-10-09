@@ -68,11 +68,11 @@ export function injectAppName(html) {
  * tags: `APP_NAME` as site name and title, `OG_DESCRIPTION` and
  * `OG_IMAGE_URL` (`server/config/branding.js`). The plain
  * `<meta name="description">` takes the same description, so a crawler that
- * reads it instead of `og:description` sees the instance's text too. Only the `content` value is
- * rewritten, so with every knob unset the shell comes out byte-identical to
- * `client/index.html`. Each tag is there exactly once. Applied to the raw
- * shell, before a share-link response swaps in the deck's own tags, so it
- * never rewrites those.
+ * reads it instead of `og:description` sees the instance's text too. Only the
+ * `content` value is rewritten, so with every knob unset the shell comes out
+ * byte-identical to `client/index.html`. Each tag is there exactly once.
+ * Applied to the raw shell, before a share-link response swaps in the deck's
+ * own tags, so it never rewrites those.
  * @param {string} html
  * @returns {string}
  */
