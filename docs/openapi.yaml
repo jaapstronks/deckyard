@@ -2613,8 +2613,8 @@ components:
           description: >-
             Stable lowercase snake_case machine code. Branch on this, not on
             `message`. One code answers per HTTP status by default (e.g.
-            `not_found`, `forbidden`, `rate_limited`), with domain codes such as
-            `locked` where a status carries more than one meaning.
+            `not_found`, `forbidden`, `rate_limited`), plus domain codes such
+            as `locked` for a 423 or `maintenance` for a 503.
           example: not_found
         message:
           type: string

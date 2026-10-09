@@ -27,7 +27,7 @@ import {
   createApiKeysTab,
   createHealthTab,
 } from './tabs/index.js';
-import { nav } from '../../lib/state/router.js';
+import { nav, replaceHash } from '../../lib/state/router.js';
 import { featureEnabled } from '../../lib/state/features.js';
 import { icon } from '../../lib/dom/icons.js';
 
@@ -114,10 +114,7 @@ function getTabFromHash({
  * @param {string} tab - Tab key
  */
 function setTabHash(tab) {
-  const newHash = `#${tab}`;
-  if (location.hash !== newHash) {
-    history.replaceState(null, '', `/settings${newHash}`);
-  }
+  replaceHash(tab);
 }
 
 /**

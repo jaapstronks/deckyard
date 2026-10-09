@@ -11,6 +11,7 @@
  */
 
 import { SLIDE_TYPES } from '../../../../../shared/slide-types/registry.js';
+import { allowedEnumValues } from '../../../../../shared/slide-types/field-types.js';
 import { buildPhase2CatalogPrompt } from '../../slide-type-catalog.js';
 
 /**
@@ -118,30 +119,41 @@ CONTENT TIPS:
 - team-cards-slide: members[] array, each with {name, byline, body, image}; body is an optional short bio in markdown
 - logo-wall-slide: logos[] array, each with {name, image}
 
-REMINDER: All slide content (titles, body text, etc.) MUST be written in ${langLabel}.${buildThemeContextSection(themeContext)}`;
+REMINDER: All slide content (titles, body text, etc.) MUST be written in ${langLabel}.${buildThemeContextSection(themeContext, disabledSlideTypes, customSlideTypes)}`;
 }
 
 /**
  * Build a theme context section for the system prompt.
- * Tells the AI about available backgrounds, brand colors, and slide background options.
+ * Tells the AI which backgrounds each slide type offers, the brand colors, and
+ * whether the theme has background images.
+ *
+ * The background offer is per type: the union the editor's picker shows
+ * (`allowedEnumValues`, D88), never one fixed list for every type (B244).
  *
  * Internal helper of `buildPhase2SystemPrompt` — intentionally NOT part of the
  * fork override set (not re-exported from `base/index.js`). It's called as a
  * module-local sibling above, so a registry override would never fire; forks
  * override `buildPhase2SystemPrompt` to change this section.
  */
-export function buildThemeContextSection(themeContext) {
+export function buildThemeContextSection(
+  themeContext,
+  disabledSlideTypes = [],
+  customSlideTypes = [],
+) {
   if (!themeContext) return '';
 
   const parts = [];
 
-  if (themeContext.backgroundOptions?.length) {
+  const offers = buildBackgroundOffers(
+    themeContext,
+    disabledSlideTypes,
+    customSlideTypes,
+  );
+  if (offers) {
     parts.push(
-      `Available slide backgrounds: ${themeContext.backgroundOptions.join(', ')}`,
+      'Slide backgrounds: set "background" only to a value its slide type offers:',
     );
-    parts.push(
-      'When a slide type supports a "background" field, choose from these options.',
-    );
+    parts.push(offers);
   }
 
   if (themeContext.brandColors?.length) {
@@ -224,14 +236,42 @@ function buildLengthContract(disabled = [], custom = []) {
       if (field.itemFields) walk(field.itemFields, `${path}[].`, caps);
     }
   }
-  for (const [type, def] of [
-    ...Object.entries(SLIDE_TYPES),
-    ...custom.map((ct) => [`custom-${ct.slug}`, ct]),
-  ]) {
-    if (disabled.includes(type)) continue;
+  for (const [type, def] of offeredTypeDefs(disabled, custom)) {
     const caps = [];
     walk(def.fields, '', caps);
     if (caps.length) lines.push(`   - ${type}: ${caps.join('; ')}`);
   }
   return lines.join('\n');
+}
+
+/**
+ * The backgrounds each type offers under the theme, one line per distinct
+ * offer: `- lime, mist: content-slide, list-slide`. Grouping keeps the prompt
+ * short; 29 types share a handful of offers.
+ */
+function buildBackgroundOffers(themeContext, disabled = [], custom = []) {
+  const theme = { slideBackgrounds: themeContext.slideBackgrounds || [] };
+  const byOffer = new Map();
+  for (const [type, def] of offeredTypeDefs(disabled, custom)) {
+    const field = (def.fields || []).find(
+      (f) => f.key === 'background' && f.type === 'enum',
+    );
+    if (!field) continue;
+    const values = allowedEnumValues(field, theme);
+    if (!values.length) continue;
+    const key = values.join(', ');
+    if (!byOffer.has(key)) byOffer.set(key, []);
+    byOffer.get(key).push(type);
+  }
+  return [...byOffer]
+    .map(([offer, types]) => `- ${offer}: ${types.join(', ')}`)
+    .join('\n');
+}
+
+/** Core and custom type definitions the org has not disabled, as `[name, def]`. */
+function offeredTypeDefs(disabled = [], custom = []) {
+  return [
+    ...Object.entries(SLIDE_TYPES),
+    ...custom.map((ct) => [`custom-${ct.slug}`, ct]),
+  ].filter(([type]) => !disabled.includes(type));
 }
