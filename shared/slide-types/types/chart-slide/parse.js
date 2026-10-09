@@ -134,9 +134,30 @@ export function parseCsvToGrid(text) {
   return parseDelimited(raw, detectDelimiter(raw));
 }
 
+/**
+ * The reasons {@link parseChartData} refuses data, as stable codes. The parser
+ * knows no language; `chartErrorMessages()` (error.js) says a code in the
+ * deck's language, so the canvas and the PPTX export word it the same way.
+ */
+export const CHART_ERROR = Object.freeze({
+  empty: 'empty',
+  tooFewRows: 'too_few_rows',
+  tooFewDataRows: 'too_few_data_rows',
+  noNumbers: 'no_numbers',
+  pieNegative: 'pie_negative',
+  tooFewPoints: 'too_few_points',
+  lineNumbers: 'line_numbers',
+  unknownType: 'unknown_type',
+});
+
+/**
+ * @param {{chartType: string, data: string}} input
+ * @returns {{ok: true, kind: string, dataset: object} | {ok: false, errors: string[]}}
+ *   `errors` holds {@link CHART_ERROR} codes, never prose.
+ */
 export function parseChartData({ chartType, data }) {
   const raw = String(data || '').trim();
-  if (!raw) return { ok: false, errors: ['Data is leeg. Plak CSV/TSV data.'] };
+  if (!raw) return { ok: false, errors: [CHART_ERROR.empty] };
 
   const delimiter = detectDelimiter(raw);
   const rows = parseDelimited(raw, delimiter);
@@ -149,9 +170,7 @@ export function parseChartData({ chartType, data }) {
   if (rows.length < 3) {
     return {
       ok: false,
-      errors: [
-        'Niet genoeg rijen. Voeg een kolomnamen-rij plus minstens 2 datarijen toe.',
-      ],
+      errors: [CHART_ERROR.tooFewRows],
     };
   }
   const body = rows.slice(1);
@@ -171,16 +190,16 @@ export function parseChartData({ chartType, data }) {
     if (labels.length < 2) {
       return {
         ok: false,
-        errors: ['Niet genoeg datarijen. Voeg minstens 2 datapunten toe.'],
+        errors: [CHART_ERROR.tooFewDataRows],
       };
     }
     if (!numeric.length) {
-      return { ok: false, errors: ['Geen numerieke waarden gevonden.'] };
+      return { ok: false, errors: [CHART_ERROR.noNumbers] };
     }
     if (chartType === 'pie' && numeric.some((v) => v < 0)) {
       return {
         ok: false,
-        errors: ['Pie chart: negatieve waarden zijn niet toegestaan.'],
+        errors: [CHART_ERROR.pieNegative],
       };
     }
     return { ok: true, kind: chartType, dataset: { labels, values } };
@@ -208,7 +227,7 @@ export function parseChartData({ chartType, data }) {
   if (x.length < 2) {
     return {
       ok: false,
-      errors: ['Niet genoeg datapunten. Voeg minstens 2 punten toe.'],
+      errors: [CHART_ERROR.tooFewPoints],
     };
   }
   const y1Count = y1.filter((v) => v != null).length;
@@ -216,7 +235,7 @@ export function parseChartData({ chartType, data }) {
   if (y1Count < 2 && y2Count < 2) {
     return {
       ok: false,
-      errors: ['Line chart vereist minstens 2 numerieke punten.'],
+      errors: [CHART_ERROR.lineNumbers],
     };
   }
 
