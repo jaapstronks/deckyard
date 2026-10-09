@@ -2,7 +2,7 @@ import {
   mapItemTexts,
   perLanguageKeys,
   textFieldSpecForType,
-  translatableItemsFieldsForType,
+  translatableItemsFields,
   valueAtPath,
 } from '../../../shared/slide-types/text-fields.js';
 import { getLlmConfig } from '../llm/config.js';
@@ -57,14 +57,22 @@ function translateKeysForSlide(slide, ...others) {
 }
 
 /**
- * Get items fields info for a slide type: `{ key, itemKeys, itemsFields? }`
- * for each `items` field that carries translatable text, at any depth. This is
- * the shape the model sees as `slideMeta.itemsFields`.
- * @param {string} type - Slide type name
+ * The `items` fields to translate on one stored slide, as the model sees them
+ * in `slideMeta.itemsFields`: `{ key, itemKeys, itemsFields? }` per items field
+ * that carries prose at any depth. Read across the language versions, so an
+ * undeclared string inside an entry is listed like the top-level remnants
+ * `translateKeysForSlide` lists (D116).
+ * @param {Object} slide - Stored slide, in the language being read
+ * @param {...Object} [others] - The same slide in other language versions
  * @returns {{key: string, itemKeys: string[], itemsFields?: Object[]}[]}
  */
-function itemsFieldsForSlideType(type) {
-  return translatableItemsFieldsForType(type);
+function itemsFieldsForSlide(slide, ...others) {
+  const type = typeof slide?.type === 'string' ? slide.type : '';
+  return translatableItemsFields(
+    textFieldSpecForType(type),
+    slide?.content,
+    ...others.map((s) => s?.content),
+  );
 }
 
 export async function translatePresentationStrings(
@@ -99,7 +107,7 @@ export async function translatePresentationStrings(
     id: typeof s?.id === 'string' ? s.id : '',
     type: typeof s?.type === 'string' ? s.type : '',
     translateKeys: translateKeysForSlide(s, targetById.get(s?.id)),
-    itemsFields: itemsFieldsForSlideType(s?.type),
+    itemsFields: itemsFieldsForSlide(s, targetById.get(s?.id)),
   }));
 
   const system = [
@@ -399,7 +407,7 @@ export async function translatePresentationStringsFillMissing(
     id: typeof s?.id === 'string' ? s.id : '',
     type: typeof s?.type === 'string' ? s.type : '',
     translateKeys: translateKeysForSlide(s, tgtById.get(s?.id)),
-    itemsFields: itemsFieldsForSlideType(s?.type),
+    itemsFields: itemsFieldsForSlide(s, tgtById.get(s?.id)),
   }));
 
   const system = [

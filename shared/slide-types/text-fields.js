@@ -364,11 +364,22 @@ export function applyContentTranslation(spec, base, translation) {
   return out;
 }
 
-function itemsFieldsJson(spec) {
+function itemsFieldsJson(spec, groups) {
   const out = [];
   for (const [key, sub] of spec.items) {
-    const itemKeys = [...sub.textKeys];
-    const itemsFields = itemsFieldsJson(sub);
+    // One group per item position: the entries the language versions hold at
+    // that index, matched the way `mapItemTexts` matches them in the merge.
+    const entryGroups = [];
+    for (const group of groups) {
+      const arrays = group.map((o) => (Array.isArray(o?.[key]) ? o[key] : []));
+      const len = Math.max(0, ...arrays.map((a) => a.length));
+      for (let i = 0; i < len; i++) entryGroups.push(arrays.map((a) => a[i]));
+    }
+    const keys = new Set(sub.textKeys);
+    for (const entries of entryGroups)
+      for (const k of perLanguageKeys(sub, ...entries)) keys.add(k);
+    const itemKeys = [...keys];
+    const itemsFields = itemsFieldsJson(sub, entryGroups);
     // An items field with no prose anywhere below it has nothing to say.
     if (!itemKeys.length && !itemsFields.length) continue;
     const entry = { key, itemKeys };
@@ -379,14 +390,33 @@ function itemsFieldsJson(spec) {
 }
 
 /**
- * A type's translatable `items` fields as plain JSON, for prompts and wire
+ * One slide's translatable `items` fields as plain JSON, for prompts and wire
  * formats: `[{ key, itemKeys, itemsFields? }]`, recursive. `itemsFields` is
  * present only where a nested items field carries text, so the common flat
  * type keeps its flat shape.
+ *
+ * `itemKeys` is per field, not per entry (D116): the declared text keys plus
+ * every key `perLanguageKeys` reads as prose in any entry of any version, so
+ * an undeclared string inside an item — reported missing by the scan (D79) —
+ * is offered to the translator and the fill job can close it. Pass no
+ * contents and the answer is the type's alone.
+ *
+ * @param {{textKeys: Set<string>, items: Map<string, Object>}} spec - Text spec for the slide's type
+ * @param {...Object} contents - The slide's content in each language version
+ * @returns {{key: string, itemKeys: string[], itemsFields?: Object[]}[]}
+ */
+export function translatableItemsFields(spec, ...contents) {
+  const objects = contents.filter(isPlainObject);
+  return itemsFieldsJson(spec, objects.length ? [objects] : []);
+}
+
+/**
+ * A type's translatable `items` fields, read from its declaration alone:
+ * `translatableItemsFields` without any stored content.
  * @param {string} type - Slide type name
  * @param {Object} [slideTypes] - Slide-type registry (forks/tests override)
  * @returns {{key: string, itemKeys: string[], itemsFields?: Object[]}[]}
  */
 export function translatableItemsFieldsForType(type, slideTypes = SLIDE_TYPES) {
-  return itemsFieldsJson(textFieldSpecForType(type, slideTypes));
+  return translatableItemsFields(textFieldSpecForType(type, slideTypes));
 }
