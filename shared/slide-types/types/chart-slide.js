@@ -160,7 +160,9 @@ export default {
         { value: 'no', label: 'No' },
       ],
       formLayout: 'pair',
-      visibleWhen: { field: 'chartType', in: ['bar'] },
+      // Bar and line both draw value labels (canvas and PPTX); pie has its
+      // own "Pie labels" control.
+      visibleWhen: { field: 'chartType', in: ['bar', 'line'] },
     },
     {
       key: 'xLabel',

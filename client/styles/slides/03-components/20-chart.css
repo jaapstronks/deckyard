@@ -69,10 +69,11 @@
   gap: var(--slide-space-3);
   padding: var(--slide-space-2) var(--slide-space-3);
   border-radius: var(--slide-radius-full);
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.35);
-  /* Use theme text color for the legend label. */
+  /* Use theme text color for the legend label; the chip's edge and plane
+     derive from it, so the chip reads on a dark ground too. */
   color: var(--slide-on-surface);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: color-mix(in srgb, var(--slide-surface) 10%, transparent);
 }
 .slide-chart .chart-legend-swatch {
   width: 14px;
@@ -83,7 +84,7 @@
   border-radius: 4px;
   display: inline-block;
   flex: 0 0 auto;
-  border: 1px solid rgba(0, 0, 0, 0.12);
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
   opacity: 0.92;
 }
 .slide-chart .chart-legend-name {
@@ -102,17 +103,6 @@
   font-weight: 700;
   color: inherit;
   opacity: 1;
-}
-
-/* If supported, derive legend borders from the current text color so it works on dark themes too. */
-@supports (color: color-mix(in srgb, white 50%, black)) {
-  .slide-chart .chart-legend-item {
-    border-color: color-mix(in srgb, currentColor 18%, transparent);
-    background: color-mix(in srgb, var(--slide-surface) 10%, transparent);
-  }
-  .slide-chart .chart-legend-swatch {
-    border-color: color-mix(in srgb, currentColor 18%, transparent);
-  }
 }
 
 /* Line swatches */
@@ -244,22 +234,22 @@
   box-sizing: border-box;
   border-radius: var(--slide-radius-md);
   padding: var(--slide-space-5);
-  border: 1px solid rgba(0, 0, 0, 0.16);
-  background: rgba(255, 255, 255, 0.7);
+  /* The card takes the ground's text colour and tints its edge and plane from
+     it, so it reads on a light, a dark and a themed ground alike (B639). */
+  border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+  background: color-mix(in srgb, currentColor 6%, transparent);
   overflow: auto;
 }
 .slide-chart .chart-error-title {
   font-family: var(--font-heading);
   font-size: var(--slide-text-md);
   margin-bottom: var(--slide-space-3);
-  color: var(--slide-on-light);
 }
 .slide-chart .chart-error-list {
   margin: 0;
   padding-left: 1.2em;
   font-size: var(--slide-text-base);
   line-height: var(--slide-leading-normal);
-  color: var(--slide-on-light);
 }
 
 /* Header-block alignment (author-driven, horizontal axis). `is-align-center`
