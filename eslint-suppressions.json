@@ -17,9 +17,6 @@
   "client/embed-sdk.js": {
     "no-restricted-syntax": {
       "count": 6
-    },
-    "no-useless-assignment": {
-      "count": 1
     }
   },
   "client/lib/api.js": {
