@@ -4,6 +4,25 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.56.0](https://github.com/jaapstronks/deckyard/compare/v1.55.0...v1.56.0) (2026-10-09)
+
+
+### Added
+
+* export and hosted embed carry a controls strip below the slide (B268) ([#1511](https://github.com/jaapstronks/deckyard/issues/1511)) ([5bd818f](https://github.com/jaapstronks/deckyard/commit/5bd818ffc9c03152960d39daf19564451ff033e1))
+
+
+### Fixed
+
+* a new title slide opens on a theme background (B500) ([#1509](https://github.com/jaapstronks/deckyard/issues/1509)) ([2c4ab6b](https://github.com/jaapstronks/deckyard/commit/2c4ab6bc841860c2f446b95191fbbccddea434ca))
+* an MCP tool's server failure no longer leaks its message (B624) ([#1505](https://github.com/jaapstronks/deckyard/issues/1505)) ([e8c68e8](https://github.com/jaapstronks/deckyard/commit/e8c68e891d153c7bb70bf3b543f06c157d11527a))
+* counted nouns use one plural seam in t() (B625) ([#1506](https://github.com/jaapstronks/deckyard/issues/1506)) ([0a09e37](https://github.com/jaapstronks/deckyard/commit/0a09e37f3d4d2db8359b78dd6efc3b6df2f04f59))
+* five small sandbox-round nits in editor, library, Home, theme picker and presenter (B617) ([#1502](https://github.com/jaapstronks/deckyard/issues/1502)) ([1baa953](https://github.com/jaapstronks/deckyard/commit/1baa953ab9a9ed2b7134889716cff4cc9eb17864))
+* settle text contrast over a background image on the server write seam (B627) ([#1510](https://github.com/jaapstronks/deckyard/issues/1510)) ([7101094](https://github.com/jaapstronks/deckyard/commit/7101094bca1246f0deafa048c9438ce6b487da86))
+* slide toolbar shares the canvas surface instead of the deck chrome (B614) ([#1508](https://github.com/jaapstronks/deckyard/issues/1508)) ([f36d1d9](https://github.com/jaapstronks/deckyard/commit/f36d1d94e4faece899af066c115d82b151e7d5e6))
+* theme switch converts a slide in every language version (B623) ([#1504](https://github.com/jaapstronks/deckyard/issues/1504)) ([55c5dea](https://github.com/jaapstronks/deckyard/commit/55c5deaa52707ededcaa973edb1e2983e36b1f30))
+* viewer pages speak the deck's language, then the browser's (B615) ([#1507](https://github.com/jaapstronks/deckyard/issues/1507)) ([8f3c21d](https://github.com/jaapstronks/deckyard/commit/8f3c21d9f2aba48bd419e0ac73c111a43bb5bf16))
+
 ## [1.55.0](https://github.com/jaapstronks/deckyard/compare/v1.54.0...v1.55.0) (2026-10-08)
 
 
