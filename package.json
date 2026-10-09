@@ -84,7 +84,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1146.0",
     "@hocuspocus/server": "^4.7.0",
     "bullmq": "^6.3.11",
-    "crossws": "^0.4.12",
+    "crossws": "^0.4.14",
     "ioredis": "^6.0.0",
     "pdf-parse": "^2.4.5",
     "pptxgenjs": "^4.0.1",
