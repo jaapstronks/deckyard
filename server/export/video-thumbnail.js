@@ -29,6 +29,7 @@ import { debugLog } from '../utils/debug-log.js';
 import {
   parseVideoSource,
   getBunnyConfig,
+  resolveBunnyLibraryId,
   buildBunnyThumbnailUrl,
   buildYouTubeThumbnailUrl,
   buildVimeoThumbnailUrl,
@@ -236,7 +237,7 @@ export async function resolveVideoThumbnailDataUrl(
 ) {
   const source = String(content?.source || '').trim();
   if (!source) return null;
-  const bunnyLibraryId = String(content?.bunnyLibraryId || '366590').trim();
+  const bunnyLibraryId = resolveBunnyLibraryId(content);
 
   const request = await resolveVideoThumbnailRequest(source, bunnyLibraryId);
   if (!request) return null;

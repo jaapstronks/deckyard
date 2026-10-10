@@ -29,6 +29,7 @@ import {
   buildBunnyMp4Url,
   fetchVideoBuffer,
   getBunnyConfig,
+  resolveBunnyLibraryId,
 } from './video-helpers.js';
 import { IMAGE_SLIDES_HEADER } from '../../shared/export-headers.js';
 
@@ -427,7 +428,7 @@ async function composeVideo(
   const content = slide?.content || {};
   const source = String(content.source || '').trim();
   const title = String(content.title || '').trim();
-  const bunnyLibraryId = String(content.bunnyLibraryId || '366590').trim();
+  const bunnyLibraryId = resolveBunnyLibraryId(content);
   const background = content.background === 'lime' ? 'DBFF00' : 'E8F0F0'; // lime or mist
   const copy = getSlideCopy(docLang);
 
