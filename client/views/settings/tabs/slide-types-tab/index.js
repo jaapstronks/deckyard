@@ -483,11 +483,6 @@ export function createSlideTypesTab({ user } = {}) {
         method: 'PUT',
         body: { isPublished: !ct.isPublished },
       });
-      toast.success(
-        ct.isPublished
-          ? t('settings.slideTypes.unpublished', 'Slide type unpublished.')
-          : t('settings.slideTypes.publishedMsg', 'Slide type published.'),
-      );
       await reloadCustomTypes();
     } catch (err) {
       toast.error(err);
@@ -499,9 +494,6 @@ export function createSlideTypesTab({ user } = {}) {
       await api(`/api/custom-slide-types/${ct.id}/duplicate`, {
         method: 'POST',
       });
-      toast.success(
-        t('settings.slideTypes.duplicateSuccess', 'Slide type duplicated.'),
-      );
       await reloadCustomTypes();
     } catch (err) {
       toast.error(err);
@@ -570,12 +562,6 @@ export function createSlideTypesTab({ user } = {}) {
           method: 'POST',
           body: { ...def, slug },
         });
-        toast.success(
-          t(
-            'settings.slideTypes.importSuccess',
-            'Slide type imported as a draft.',
-          ),
-        );
         await reloadCustomTypes();
       } catch (err) {
         toast.error(err);
@@ -632,9 +618,6 @@ export function createSlideTypesTab({ user } = {}) {
       await api(`/api/custom-slide-types/${ct.id}${query}`, {
         method: 'DELETE',
       });
-      toast.success(
-        t('settings.slideTypes.deleteSuccess', 'Slide type deleted.'),
-      );
       await reloadCustomTypes();
     } catch (err) {
       if (err?.code === 'in_use' && err.details?.usage && !force) {
@@ -709,9 +692,6 @@ export function createSlideTypesTab({ user } = {}) {
             method: 'POST',
             body: data,
           });
-          toast.success(
-            t('settings.slideTypes.createSuccess', 'Slide type created.'),
-          );
         }
         await reloadCustomTypes();
         closeEditor();

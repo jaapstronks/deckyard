@@ -417,13 +417,6 @@ export function createCardRenderer({
             await api(`/api/presentations/${p.id}/permanent`, {
               method: 'DELETE',
             });
-            toast.success(
-              t('list.deletePermanently.done', 'Permanently deleted.'),
-              {
-                id: 'list-permanent-delete',
-                durationMs: 1800,
-              },
-            );
             // Remove from trash list
             item.remove();
           } catch (err) {
@@ -458,10 +451,6 @@ export function createCardRenderer({
           try {
             const created = await api(`/api/presentations/${p.id}/duplicate`, {
               method: 'POST',
-            });
-            toast.success(t('list.duplicate.done', 'Duplicated.'), {
-              id: 'list-duplicate',
-              durationMs: 1800,
             });
             onDeckDuplicated?.(created);
           } catch (err) {

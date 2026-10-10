@@ -6,7 +6,6 @@ import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/dom/toast.js';
 import { revokeApiKey } from './actions.js';
 
 /**
@@ -89,9 +88,6 @@ export function showRevokeModal(key, onSuccess) {
     const result = await revokeApiKey(key.id);
 
     if (result.success) {
-      toast.success(
-        t('settings.apiKeys.revokeModal.success', 'API key revoked.'),
-      );
       modal.setBusy(false);
       modal.close();
       onSuccess();

@@ -136,10 +136,6 @@ export function createAccountTab({ user }) {
         currentImageUrl = resp.imageUrl;
         updateAvatar(avatarEl, { imageUrl: currentImageUrl });
         removeBtn.style.display = '';
-        toast.success(
-          t('settings.profile.imageUploaded', 'Profile photo updated.'),
-          { id: 'profile-image', durationMs: 2000 },
-        );
         invalidateProfile(user?.id);
       }
     } catch (err) {
@@ -162,10 +158,6 @@ export function createAccountTab({ user }) {
       currentImageUrl = '';
       updateAvatar(avatarEl, { imageUrl: '' });
       removeBtn.style.display = 'none';
-      toast.success(
-        t('settings.profile.imageRemoved', 'Profile photo removed.'),
-        { id: 'profile-image', durationMs: 2000 },
-      );
       invalidateProfile(user?.id);
     } catch (err) {
       toast.error(err, { id: 'profile-image' });
