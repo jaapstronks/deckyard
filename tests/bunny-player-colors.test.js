@@ -111,9 +111,10 @@ test('the rendered embed carries the theme colours', () => {
 
 test('the rendered embed of an unthemed deck names no colour at all', () => {
   const src = renderedSrc(null);
-  assert.ok(src.includes('iframe.mediadelivery.net'), 'it is a Bunny embed');
+  assert.equal(new URL(src).hostname, 'iframe.mediadelivery.net');
+  const params = new URL(src).searchParams;
   for (const param of ['primaryColor', 'controlsColor', 'accentColor']) {
-    assert.ok(!src.includes(param), `${param} is absent`);
+    assert.equal(params.has(param), false, `${param} is absent`);
   }
 });
 
