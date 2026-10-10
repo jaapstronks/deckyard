@@ -2,6 +2,7 @@ import { h } from '../../lib/dom/index.js';
 import { createInViewLoader } from '../../lib/dom/in-view.js';
 import { toast } from '../../lib/dom/toast.js';
 import { confirmModal } from '../../lib/dom/modal.js';
+import { planRowRemoval } from '../../lib/dom/row-removal.js';
 import { displayNameFromEmail } from '../../lib/format/user-format.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
 import { t } from '../../lib/ui-i18n.js';
@@ -413,12 +414,24 @@ export function createCardRenderer({
             }))
           )
             return;
+          // The menu item is in the card that is about to go, so the trash
+          // list says where focus lands and what a screen reader hears (B647).
+          const list = item.parentElement;
+          const land = planRowRemoval(list, {
+            index: list ? Array.from(list.children).indexOf(item) : 0,
+            fallback: () =>
+              list?.parentElement?.querySelector('.presentation-grid-title') ||
+              null,
+          });
           try {
             await api(`/api/presentations/${p.id}/permanent`, {
               method: 'DELETE',
             });
             // Remove from trash list
             item.remove();
+            land(
+              t('common.rowRemoved', '{label} removed.', { label: p.title }),
+            );
           } catch (err) {
             toast.error(err, {
               id: 'list-permanent-delete',
