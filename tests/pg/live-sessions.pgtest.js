@@ -235,10 +235,17 @@ pgDescribe('live-session storage (real PostgreSQL)', () => {
   it('deletes the row when the session closes', async () => {
     const created = await createLiveSession(testScope(), { presentationId });
     assert.equal(closeSession(created.sessionId, 'closed'), true);
-    // The delete is fire-and-forget; give it the event-loop turn it needs.
-    await new Promise((resolve) => setTimeout(resolve, 50));
-
-    const rows = await db.selectFrom('present_sessions').selectAll().execute();
+    // The delete is fire-and-forget, so wait for the row to go rather than for
+    // a fixed turn: 50 ms was too short on a slow runner (B644). The bound is
+    // generous because only a delete that never lands should fail here.
+    const readRows = () =>
+      db.selectFrom('present_sessions').selectAll().execute();
+    const deadline = Date.now() + 5_000;
+    let rows = await readRows();
+    while (rows.length > 0 && Date.now() < deadline) {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      rows = await readRows();
+    }
     assert.equal(rows.length, 0);
     assert.equal(await getLiveSession(testScope(), created.sessionId), null);
   });
