@@ -12,6 +12,7 @@
  */
 
 import { isRedisConfigured, getRedisClient } from '../../utils/redis-client.js';
+import { withRecordedFailures } from './job-failure.js';
 import { createLogger } from '../../utils/logger.js';
 import { envStr, envInt } from '../../config/utils.js';
 
@@ -178,6 +179,12 @@ export async function addJob(queueName, jobName, data, options = {}) {
 
 /**
  * Get job status.
+ *
+ * No `failedReason`: the raw message of whatever the worker threw is a
+ * server-side fact (the `failed` log line below, and BullMQ's own record for
+ * an operator). What a failed job may *say* comes from
+ * [`job-failure.js`](job-failure.js) (B646).
+ *
  * @param {string} queueName - Queue name
  * @param {string} jobId - Job ID
  * @returns {Promise<Object|null>} Job status or null if not found
@@ -200,7 +207,6 @@ export async function getJobStatus(queueName, jobId) {
       progress,
       data: job.data,
       returnvalue: job.returnvalue,
-      failedReason: job.failedReason,
       attemptsMade: job.attemptsMade,
       timestamp: job.timestamp,
       finishedOn: job.finishedOn,
@@ -227,11 +233,18 @@ export async function registerWorker(queueName, processor, options = {}) {
     const { Worker } = await import('bullmq');
     const connection = getConnectionOptions();
 
-    const worker = new Worker(queueName, processor, {
-      connection,
-      concurrency: options.concurrency || 2,
-      ...options,
-    });
+    // Every worker records what its failures may tell the caller (B646); the
+    // wrap rethrows, so `failedReason`, the retries and the backoff are the
+    // processor's own.
+    const worker = new Worker(
+      queueName,
+      withRecordedFailures(queueName, processor),
+      {
+        connection,
+        concurrency: options.concurrency || 2,
+        ...options,
+      },
+    );
 
     worker.on('completed', (job) => {
       log.info(`[worker:${queueName}] Job ${job.id} completed`);
