@@ -7,6 +7,7 @@ import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { fetchApiKeys } from './actions.js';
 import { renderKeyList } from './key-list.js';
+import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 import { showCreateModal } from './create-modal.js';
 import { showRevokeModal } from './revoke-modal.js';
 import { showUsagePanel } from './usage-panel.js';
@@ -114,7 +115,21 @@ export function renderApiKeysPanel({ user }) {
    * @param {Object} key - The key to revoke
    */
   const handleRevoke = (key) => {
-    showRevokeModal(key, loadKeys);
+    // The Revoke button is in the row and disappears with the revoke (the row
+    // itself only when revoked keys are hidden), so focus has to be put back
+    // in the list by hand (B647). No sentence: a revoke is not a removal - the
+    // record survives and the row shows it when revoked keys are shown - and
+    // the row that takes its place is read on focus.
+    const index = keys.findIndex((k) => k.id === key.id);
+    // The header is the list's first child, so a key row sits one further.
+    const land = planRowRemoval(keysList, {
+      index: index < 0 ? 0 : index + 1,
+      fallback: () => keysList.parentElement?.querySelector('button') || null,
+    });
+    showRevokeModal(key, async () => {
+      await loadKeys();
+      land();
+    });
   };
 
   /**

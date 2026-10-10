@@ -9,6 +9,7 @@ import { api } from '../../../../lib/api.js';
 import { toast } from '../../../../lib/dom/toast.js';
 import { downloadBlob } from '../../../../lib/dom/download.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
+import { planRowRemoval } from '../../../../lib/dom/row-removal.js';
 import { readFileAsText } from '../../../../lib/util/file.js';
 import { createSlideTypeEditor } from '../../slide-type-editor/index.js';
 import { createEmptyState } from '../../../../lib/dom/empty-state.js';
@@ -614,11 +615,22 @@ export function createSlideTypesTab({ user } = {}) {
    */
   async function deleteCustomType(ct, { force }) {
     const query = force ? '?force=true' : '';
+    // The delete item lived in the card that is about to go, so focus has to be
+    // put back in the list by hand (B647). The section is rebuilt per render,
+    // hence the getters.
+    const land = planRowRemoval(
+      () => customTypesSection.querySelector('.custom-types-grid'),
+      {
+        index: customTypes.findIndex((x) => x.id === ct.id),
+        fallback: () => customTypesSection.querySelector('.btn-primary'),
+      },
+    );
     try {
       await api(`/api/custom-slide-types/${ct.id}${query}`, {
         method: 'DELETE',
       });
       await reloadCustomTypes();
+      land(t('common.rowRemoved', '{label} removed.', { label: ct.label }));
     } catch (err) {
       if (err?.code === 'in_use' && err.details?.usage && !force) {
         await confirmDeleteInUse(ct, err.details.usage);

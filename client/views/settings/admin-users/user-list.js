@@ -5,6 +5,7 @@
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmDelete, resendInvitation } from './actions.js';
+import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 
 /**
  * Render a single user card.
@@ -12,9 +13,11 @@ import { confirmDelete, resendInvitation } from './actions.js';
  * @param {Object} currentUser - Current logged-in user
  * @param {Function} onEdit - Callback when edit is clicked
  * @param {Function} onRefresh - Callback to refresh the list
+ * @param {() => ((message?: string) => void)} [planRemoval] - Plans where focus
+ *   and the announcement land once this card is gone (B647)
  * @returns {HTMLElement}
  */
-function renderUserCard(u, currentUser, onEdit, onRefresh) {
+function renderUserCard(u, currentUser, onEdit, onRefresh, planRemoval) {
   const card = h('div', { class: 'admin-user-card' });
 
   // Main row: info + actions
@@ -167,7 +170,15 @@ function renderUserCard(u, currentUser, onEdit, onRefresh) {
       title: t('admin.users.delete', 'Delete'),
     });
     deleteBtn.append(h('span', { text: t('admin.users.delete', 'Delete') }));
-    deleteBtn.onclick = () => confirmDelete(u, onRefresh);
+    deleteBtn.onclick = () => {
+      // The button is in the card that is about to go, so the list says where
+      // focus lands and what a screen reader hears (B647).
+      const land = planRemoval?.();
+      confirmDelete(u, async () => {
+        await onRefresh();
+        land?.(t('common.rowRemoved', '{label} removed.', { label: u.email }));
+      });
+    };
     actionsWrap.append(deleteBtn);
   }
 
@@ -206,8 +217,15 @@ export function renderUsersList(
 
   const list = h('div', { class: 'admin-users-grid' });
 
-  for (const u of users) {
-    const card = renderUserCard(u, currentUser, onEdit, onRefresh);
+  for (const [index, u] of users.entries()) {
+    // The grid is rebuilt by every render, so the planner looks it up again in
+    // the container, which is not. No fallback: a user cannot delete their own
+    // account here, so the list never empties through this button.
+    const card = renderUserCard(u, currentUser, onEdit, onRefresh, () =>
+      planRowRemoval(() => container.querySelector('.admin-users-grid'), {
+        index,
+      }),
+    );
     list.append(card);
   }
 

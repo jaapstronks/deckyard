@@ -17,6 +17,7 @@
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
+import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 import {
   canChangeRole,
   canRemove,
@@ -97,9 +98,11 @@ function renderRoleControl(member, handlers) {
  * @param {Object} member - Member row
  * @param {Object} currentUser - Current logged-in user
  * @param {Object} handlers - Action handlers from the panel
+ * @param {() => ((message?: string) => void)} [planRemoval] - Plans where focus
+ *   and the announcement land once this row is gone (B647)
  * @returns {HTMLElement|null}
  */
-function renderMemberActions(member, currentUser, handlers) {
+function renderMemberActions(member, currentUser, handlers, planRemoval) {
   const wrap = h('div', { class: 'admin-user-actions' });
   let any = false;
 
@@ -164,9 +167,19 @@ function renderMemberActions(member, currentUser, handlers) {
         danger: true,
       });
       if (!confirmed) return;
+      // The button is in the row that is about to go, so the list says where
+      // focus lands and what a screen reader hears (B647). Leaving yourself
+      // reloads the page, which places focus itself.
+      const land = self ? null : planRemoval?.();
       btn.disabled = true;
       const ok = await handlers.onRemove(member, self);
       if (!ok) btn.disabled = false;
+      else
+        land?.(
+          t('common.rowRemoved', '{label} removed.', {
+            label: memberName(member),
+          }),
+        );
     };
     wrap.append(btn);
     any = true;
@@ -195,9 +208,11 @@ function renderMemberActions(member, currentUser, handlers) {
  * @param {Object} member - Member from `GET /api/organizations/:id/members`
  * @param {Object} currentUser - Current logged-in user
  * @param {Object|null} handlers - Action handlers, or null for a read-only list
+ * @param {() => ((message?: string) => void)} [planRemoval] - Plans where focus
+ *   and the announcement land once this row is gone (B647)
  * @returns {HTMLElement}
  */
-function renderMemberCard(member, currentUser, handlers) {
+function renderMemberCard(member, currentUser, handlers, planRemoval) {
   const person = member?.user || {};
   const card = h('div', { class: 'admin-user-card' });
   const mainRow = h('div', { class: 'admin-user-main' });
@@ -261,7 +276,7 @@ function renderMemberCard(member, currentUser, handlers) {
   mainRow.append(info);
 
   const actions = handlers
-    ? renderMemberActions(member, currentUser, handlers)
+    ? renderMemberActions(member, currentUser, handlers, planRemoval)
     : null;
   if (actions) mainRow.append(actions);
 
@@ -297,9 +312,17 @@ export function renderMembersList(
   }
 
   const list = h('div', { class: 'admin-users-grid' });
-  for (const member of members) {
+  for (const [index, member] of members.entries()) {
+    // The grid is rebuilt by every render, so the planner looks it up again in
+    // the container, which is not. An emptied page steps back a page, so there
+    // is a row to land on; the heading catches the case where there is not.
     list.append(
-      renderMemberCard(member, currentUser, options.handlers || null),
+      renderMemberCard(member, currentUser, options.handlers || null, () =>
+        planRowRemoval(() => container.querySelector('.admin-users-grid'), {
+          index,
+          fallback: () => container.parentElement?.querySelector('h3') || null,
+        }),
+      ),
     );
   }
   container.append(list);

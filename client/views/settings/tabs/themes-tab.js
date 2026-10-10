@@ -9,6 +9,7 @@ import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
+import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 import {
   fetchOrgSettings,
   updateOrgSettings,
@@ -561,10 +562,18 @@ export function createThemesTab({ user }) {
     });
     if (!confirmed) return;
 
+    // The delete button lived in the card that is about to go, so focus has to
+    // be put back in the list by hand (B647).
+    const land = planRowRemoval(themeList, {
+      index: themes.findIndex((x) => x.id === theme.id),
+      fallback: createBtn,
+    });
+
     try {
       await api(`/api/themes/${theme.id}`, { method: 'DELETE' });
       invalidateTheme(theme.id);
       await loadThemes();
+      land(t('common.rowRemoved', '{label} removed.', { label: theme.label }));
     } catch (err) {
       toast.error(err);
     }
