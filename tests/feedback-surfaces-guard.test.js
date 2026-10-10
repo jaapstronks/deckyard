@@ -64,23 +64,34 @@ const TOAST_SITES = [
   // file ×2), a 200 that reports a partial outcome (invitation mail not sent
   // ×2), and copy translated on the status (an export already running, a
   // member who is gone) — the "translation on top" the doctrine allows.
-  // --- background failures that expire in a toast (B206) ---
-  {
-    file: 'client/views/settings/tabs/export-tab.js',
-    total: 3,
-    background: 1,
-  },
-  {
-    file: 'client/views/settings/tabs/slide-types-tab/index.js',
-    total: 9,
-    background: 1,
-  },
-  { file: 'client/views/slide-library/modals.js', total: 2, background: 2 },
-  { file: 'client/views/notes/notes-editor.js', total: 1, background: 1 },
+  // --- background failures that expire in a toast (B206): at zero ---
+  // The five went to the carrier that sits at the state they describe, each a
+  // `createInlineError({ live: 'polite' })` shown with `focus: false` and
+  // cleared on the next success — the in-place form the doctrine already had
+  // for "a list or panel that did not load". A bulk export that fails while
+  // polling (its progress bar and status line are hidden by
+  // `setExporting(false)`, so a message there would vanish with them), a
+  // custom-slide-type list whose reload fails after a successful action, the
+  // description and tags of a library item autosaving on blur, and the
+  // companion's speaker notes — whose per-slide status line cannot carry it
+  // at all, because the presenter may have moved on to another slide.
+  //
+  // Settings deliberately did **not** get a panel-wide carrier of its own
+  // (B206's call, which the doctrine left to this item): the table's `Where`
+  // column asks for the message to sit *at the state it describes*, and a
+  // chip in the panel header would take it away from the list or the export
+  // it is about. The two surface-wide banners stay what they are — the editor
+  // save-failure banner and `maintenance-banner.js` — because the state they
+  // carry is the surface's, not one panel's.
 ];
 
-/** The burndown as the TODO items state it; each PR lowers both. */
-const BURNDOWN = { refusals: 0, discarded: 0, background: 5 };
+/**
+ * The burndown as the TODO items state it; each PR lowers both. All three are
+ * at zero: the keys stay so a new one has to be argued for rather than
+ * counted. A pass-through toast for an action with no form on screen is the
+ * right carrier and needs no entry here.
+ */
+const BURNDOWN = { refusals: 0, discarded: 0, background: 0 };
 
 /**
  * `toast.error` as the whole answer of a guard clause. Every one of these is

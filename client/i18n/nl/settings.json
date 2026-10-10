@@ -737,6 +737,7 @@
   "settings.slideTypes.publishLabel": "Beschikbaar maken in de slide-kiezer",
   "settings.slideTypes.published": "Gepubliceerd",
   "settings.slideTypes.publishedMsg": "Slide-type gepubliceerd.",
+  "settings.slideTypes.reloadStale": "De lijst hieronder kan verouderd zijn; herlaad de pagina om hem te zien zoals hij is.",
   "settings.slideTypes.saveError": "Opslaan van instellingen mislukt.",
   "settings.slideTypes.saved": "Instellingen voor slide-types opgeslagen.",
   "settings.slideTypes.slug": "Slug",

@@ -1,5 +1,5 @@
 import { markdownToSafeHtml } from '../../../shared/markdown.js';
-import { toast } from '../../lib/dom/toast.js';
+import { createInlineError } from '../../lib/dom/inline-error.js';
 import { t } from '../../lib/ui-i18n.js';
 import { normalizeNotes } from './utils.js';
 
@@ -64,6 +64,15 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     notesStatus.textContent = text;
   };
 
+  /**
+   * A failed autosave is a state, not a passing message (B206): the companion
+   * follows the presenter, so the slide whose notes did not save is often no
+   * longer the slide on screen — which is exactly why the per-slide status line
+   * cannot carry it. This stays until a save succeeds.
+   */
+  const saveFailure = createInlineError({ live: 'polite' });
+  notesStatus.after(saveFailure.el);
+
   const isDirty = () => editing && notesTextarea.value !== stored;
 
   const renderBody = () => {
@@ -93,9 +102,9 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
    * flush triggered by a slide change still writes to the slide the text was
    * typed on.
    *
-   * Never rejects: every failure is caught below and surfaced via toast and
-   * status line, so fire-and-forget callers call it bare, without `void` or
-   * a `.catch` (B150).
+   * Never rejects: every failure is caught below and surfaced in the failure
+   * message beside the status line, so fire-and-forget callers call it bare,
+   * without `void` or a `.catch` (B150).
    */
   const save = async (targetSlideId, value) => {
     if (!targetSlideId || destroyed) return;
@@ -106,6 +115,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
         `/api/live-sessions/${encodeURIComponent(sessionId)}/notes/${encodeURIComponent(targetSlideId)}`,
         { method: 'PUT', body: { notes: value } },
       );
+      saveFailure.clear();
       if (targetSlideId === slideId) {
         stored = value;
         renderBody();
@@ -125,8 +135,8 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
                 'Too many changes at once — try again in a moment.',
               )
             : t('notes.edit.failed', 'Could not save the notes.');
-      toast.error(msg, { id: 'notes-save' });
-      if (targetSlideId === slideId) setStatus(msg);
+      saveFailure.show(msg, { focus: false });
+      if (targetSlideId === slideId) setStatus('');
     } finally {
       saving = false;
     }

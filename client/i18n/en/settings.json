@@ -737,6 +737,7 @@
   "settings.slideTypes.publishLabel": "Make available in slide picker",
   "settings.slideTypes.published": "Published",
   "settings.slideTypes.publishedMsg": "Slide type published.",
+  "settings.slideTypes.reloadStale": "The list below may be out of date; reload the page to see it as it is.",
   "settings.slideTypes.saveError": "Failed to save settings.",
   "settings.slideTypes.saved": "Slide type settings saved.",
   "settings.slideTypes.slug": "Slug",
