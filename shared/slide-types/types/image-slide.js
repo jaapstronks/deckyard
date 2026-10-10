@@ -12,7 +12,6 @@ import {
 import { getSlideCopy } from '../slide-copy.js';
 import {
   resolveImageSlideImage,
-  ensureImageSlideImage,
   imageSlideAltText,
   IMAGE_SLIDE_IMAGE_DEFAULTS,
 } from './image-slide/image.js';
@@ -60,9 +59,8 @@ export default {
       // ...but an empty frame reads as unfinished, not as a choice (D211).
       essential: true,
       // A picked image that would be heavily cropped switches to `contain`,
-      // unless the author already chose a fit — through `fit`, or through the
-      // legacy `layout` enum it superseded.
-      autoFit: { fit: 'fit', legacy: { key: 'layout', default: 'full' } },
+      // unless the author already chose a fit.
+      autoFit: { fit: 'fit' },
     },
     IMAGE_ROLE_FIELD,
     {
@@ -142,20 +140,6 @@ export default {
       type: 'boolean',
       required: false,
       formLayout: 'pair',
-    },
-    {
-      // LEGACY conflated fit+frame enum. Since datamodel step 3 the canonical
-      // axes are `fit` + `bleed` above (full -> cover, bleed -> cover+bleed,
-      // centered -> contain); this field stays declared so old decks keep
-      // validating and rendering, and the editor folds it on touch
-      // (ensureImageSlideImage).
-      key: 'layout',
-      label: 'Layout',
-      labelKey: 'editor.slideField.layout.label',
-      type: 'enum',
-      hidden: true,
-      required: false,
-      options: ['full', 'bleed', 'centered'],
     },
     BACKGROUND_FIELD,
     {
@@ -239,10 +223,6 @@ export default {
   // slide): an image without its own fit/bleed follows these. See
   // IMAGE_SLIDE_IMAGE_DEFAULTS + docs/reference/image-property-ownership.md.
   imageDefaults: IMAGE_SLIDE_IMAGE_DEFAULTS,
-  // Legacy-to-canonical fold, run by the editor on open
-  // (shared/slide-types/normalize-content.js): the conflated `layout` enum
-  // becomes the ImageRef axes fit + bleed.
-  normalizeContent: ensureImageSlideImage,
   defaults: {
     title: '',
     subheading: '',
@@ -262,9 +242,8 @@ export default {
     const copy = getSlideCopy(ctx?.lang);
     // Two orthogonal axis classes (is-fit-* + is-bleed) replace the old
     // conflated slide-image-{full,bleed,centered} layout class. Resolution
-    // (own value -> legacy `layout` -> type default) lives in
-    // resolveImageSlideImage - the single authority render, the editor
-    // controls and the conversion seam share.
+    // (own value -> type default) lives in resolveImageSlideImage - the single
+    // authority render, the editor controls and the conversion seam share.
     const { fit, bleed } = resolveImageSlideImage(content);
     const title = content?.title
       ? `<h2 class="img-title" data-inline-field="title" dir="auto">${escapeHtml(content.title)}</h2>`

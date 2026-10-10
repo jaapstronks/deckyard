@@ -113,7 +113,6 @@ export async function processImageOnlySlides(slides, options = {}) {
               alt: '',
               imageRole: 'content',
               caption: '',
-              layout: 'full',
               zoomSteps: '', // Empty string = disabled (user can enable for infographics)
               zoomLevel: 2,
             },

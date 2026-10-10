@@ -15,9 +15,8 @@
  * expressible (image fits, frame runs to the slide edge) - a legitimate state
  * the three-value enum could not represent.
  *
- * `layout` stays a read-only render fallback for un-migrated decks (renderHtml
- * is pure and never migrates); `ensureImageSlideImage` folds it on edit, the
- * same pattern as image-set's `ensureImageSetImages`.
+ * The read funnel folds a stored `layout` and deletes it (schema v19 -> v20,
+ * B257-A2), so nothing past it ever sees the enum.
  */
 
 import { pickAltText } from '../../helpers.js';
@@ -40,9 +39,8 @@ export const IMAGE_SLIDE_IMAGE_DEFAULTS = Object.freeze({
 
 /**
  * Single authority for the image-slide fit/bleed resolution. Resolution per
- * axis: own value -> legacy `layout` (un-migrated decks, read-only) -> type
- * default. renderHtml, the editor controls and the conversion seam all read
- * through this, so the surfaces cannot drift.
+ * axis: own value -> type default. renderHtml, the editor controls and the
+ * conversion seam all read through this, so the surfaces cannot drift.
  *
  * @param {Object} content - slide content
  * @returns {{
@@ -53,49 +51,13 @@ export const IMAGE_SLIDE_IMAGE_DEFAULTS = Object.freeze({
  * }}
  */
 export function resolveImageSlideImage(content) {
-  const legacy = String(content?.layout || '').trim();
   const fitExplicit = content?.fit === 'cover' || content?.fit === 'contain';
   const bleedExplicit = typeof content?.bleed === 'boolean';
-  const fit = fitExplicit
-    ? content.fit
-    : legacy === 'centered'
-      ? 'contain'
-      : IMAGE_SLIDE_IMAGE_DEFAULTS.fit;
+  const fit = fitExplicit ? content.fit : IMAGE_SLIDE_IMAGE_DEFAULTS.fit;
   const bleed = bleedExplicit
     ? content.bleed
-    : legacy === 'bleed'
-      ? true
-      : IMAGE_SLIDE_IMAGE_DEFAULTS.bleed;
+    : IMAGE_SLIDE_IMAGE_DEFAULTS.bleed;
   return { fit, bleed, fitExplicit, bleedExplicit };
-}
-
-/**
- * Editor-side migration (mutates content): fold the legacy `layout` into the
- * canonical `fit`/`bleed` and clear it. Values equal to the type default are
- * dropped, not stamped (empty keeps meaning "follow the type"); an explicit
- * own value always wins over the folded legacy one. Idempotent.
- * @param {Object} content
- * @returns {Object} the same content object
- */
-export function ensureImageSlideImage(content) {
-  if (!content || typeof content !== 'object') return content;
-  const legacy = String(content.layout || '').trim();
-  if (!legacy) return content;
-  const { fit, bleed } = resolveImageSlideImage(content);
-  if (
-    fit !== IMAGE_SLIDE_IMAGE_DEFAULTS.fit &&
-    !(content.fit === 'cover' || content.fit === 'contain')
-  ) {
-    content.fit = fit;
-  }
-  if (
-    bleed !== IMAGE_SLIDE_IMAGE_DEFAULTS.bleed &&
-    typeof content.bleed !== 'boolean'
-  ) {
-    content.bleed = bleed;
-  }
-  content.layout = '';
-  return content;
 }
 
 /**

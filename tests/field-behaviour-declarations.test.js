@@ -116,21 +116,19 @@ test('image-slide: contain unless the author already chose a fit', () => {
   assert.equal(fresh.fit, 'contain');
 
   // The old branch's `explicit` guard, value by value.
-  for (const content of [
-    { fit: 'cover' },
-    { fit: 'contain' },
-    { layout: 'centered' },
-    { layout: 'bleed' },
-  ]) {
+  for (const content of [{ fit: 'cover' }, { fit: 'contain' }]) {
     const before = structuredClone(content);
     assert.equal(applyAutoContainFit(content, decl), false);
     assert.deepEqual(content, before);
   }
 
-  // `full` is the old default: not a choice, so auto-fit still applies.
-  const legacyDefault = { layout: 'full' };
-  assert.equal(applyAutoContainFit(legacyDefault, decl), true);
-  assert.equal(legacyDefault.fit, 'contain');
+  // The retired `layout` enum is folded and deleted by the read funnel
+  // (schema v20, B257-A2), so the declaration names no legacy key: a stray
+  // value is not a choice.
+  assert.equal(Object.hasOwn(decl, 'legacy'), false);
+  const stray = { layout: 'centered' };
+  assert.equal(applyAutoContainFit(stray, decl), true);
+  assert.equal(stray.fit, 'contain');
 });
 
 test('image-text: the fit lands on the one flat sink, like image-slide', () => {

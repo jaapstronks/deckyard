@@ -308,16 +308,16 @@ test('convert: image-slide -> image-text writes the flat keys, not a collection'
   assert.equal(next.content.focusX, 25);
   assert.equal(next.content.focusY, 75);
   assert.equal(next.content.images, undefined, 'no images[] on a singleton');
-  // full/bleed map to cover = the type default, so no fit is written (empty
-  // keeps meaning "follow the type").
+  // No own fit resolves to cover = the type default, so no fit is written
+  // (empty keeps meaning "follow the type").
   assert.equal(next.content.fit ?? '', '');
 });
 
-test('convert: a centered image-slide lands as an explicit contain', () => {
+test('convert: a contain image-slide lands as an explicit contain', () => {
   const next = convertSlideToType(
     slideOf('image-slide', {
       image: '/diagram.png',
-      layout: 'centered',
+      fit: 'contain',
       title: 'T',
     }),
     'image-text-slide',

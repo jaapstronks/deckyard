@@ -72,11 +72,9 @@ export function fieldToolbars(field) {
  *   item   — `{ list, fit }` when the canonical fit lives on the first item of
  *            an ImageRef collection; `fit` above is then the pre-migration
  *            fallback sink, written when the collection is still empty
- *   legacy — `{ key, default }` for a superseded enum whose non-default value
- *            also counts as "the author already chose" (image-slide's `layout`)
  *
  * @param {Object} field - one entry of a type's `fields[]`
- * @returns {{fit: string, item?: {list: string, fit: string}, legacy?: {key: string, default: string}}|null}
+ * @returns {{fit: string, item?: {list: string, fit: string}}|null}
  */
 export function fieldAutoFit(field) {
   const d = field?.autoFit;
@@ -91,16 +89,6 @@ export function fieldAutoFit(field) {
     typeof d.item.fit === 'string'
   ) {
     out.item = { list: d.item.list, fit: d.item.fit };
-  }
-  if (
-    d.legacy &&
-    typeof d.legacy === 'object' &&
-    typeof d.legacy.key === 'string'
-  ) {
-    out.legacy = {
-      key: d.legacy.key,
-      default: typeof d.legacy.default === 'string' ? d.legacy.default : '',
-    };
   }
   return out;
 }
@@ -127,12 +115,7 @@ function hasChosenFit(content, decl) {
     const first = items[0] && typeof items[0] === 'object' ? items[0] : null;
     return Boolean(first?.[decl.item.fit] || c[decl.fit]);
   }
-  if (c[decl.fit]) return true;
-  if (decl.legacy) {
-    const legacy = c[decl.legacy.key];
-    if (legacy && legacy !== decl.legacy.default) return true;
-  }
-  return false;
+  return Boolean(c[decl.fit]);
 }
 
 /**
