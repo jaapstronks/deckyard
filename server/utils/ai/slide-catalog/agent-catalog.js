@@ -42,6 +42,7 @@ import {
   GLOBAL_SLIDE_FIELD_KEYS,
 } from '../../../../shared/slide-types/registry.js';
 import { formatCanonicalId } from '../../../../shared/slide-types/type-id.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
 import { acceptedTextStyles } from '../../../../shared/slide-types/text-styles.js';
@@ -343,7 +344,7 @@ function tier2Entry(ct, lang) {
  * @returns {Object<string, object>} Entries keyed by slide-type name.
  */
 export function resolveAgentSlideTypes({
-  lang = 'nl',
+  lang = DEFAULT_DECK_LANG,
   category = 'all',
   disabledSlideTypes = [],
   customSlideTypes = [],

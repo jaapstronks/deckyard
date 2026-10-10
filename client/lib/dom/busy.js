@@ -33,13 +33,7 @@
  * @returns {Object} Busy manager with isBusy(), setBusy(), run() methods
  */
 export function createBusyManager(options = {}) {
-  // Back-compat: also accept a positional array of elements, the shape the
-  // former modal.js createBusyManager used.
-  const {
-    elements = [],
-    onBusyChange = null,
-    initialBusy = false,
-  } = Array.isArray(options) ? { elements: options } : options;
+  const { elements = [], onBusyChange = null, initialBusy = false } = options;
   let busy = initialBusy;
 
   const updateElements = () => {
@@ -117,9 +111,6 @@ export function createBusyManager(options = {}) {
     setBusy,
     addElements,
     removeElements,
-    // Singular aliases for back-compat with the former modal.js manager.
-    addElement: (el) => addElements(el),
-    removeElement: (el) => removeElements(el),
     run,
   };
 }

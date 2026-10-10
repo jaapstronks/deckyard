@@ -17,8 +17,11 @@
  *
  * A published format is named after its publisher (compare
  * `application/vnd.oasis.opendocument.presentation`), so the current identity
- * is `deckyard.deck`. The JSON/Markdown envelope still accepts its historical
- * format id; the v4 bundle requires the current MIME type.
+ * is `deckyard.deck`. The historical id is not a second accepted value: the
+ * read funnel (`schema-version.js`, v18 -> v19) rewrites it to the current one
+ * before anything reads `format`, so a deck written under the old name imports
+ * and re-exports under the new one. The v4 bundle requires the current MIME
+ * type.
  *
  * The **file extension is unaffected**. A downloaded bundle has always been
  * `<title>.deck` and stays that way; the namespace lives before the dot, never
@@ -32,10 +35,10 @@
 export const DECK_FORMAT_ID = 'deckyard.deck';
 
 /**
- * Format sentinels written by earlier versions. Accepted on read, never
- * written. Removing an entry here breaks decks that are already in the wild.
+ * The format sentinel earlier versions wrote. Folded to `DECK_FORMAT_ID` by
+ * the read funnel, so no reader after the funnel ever sees it (B257, D121).
  */
-export const LEGACY_DECK_FORMAT_IDS = Object.freeze(['slidecreator.deck']);
+export const RETIRED_DECK_FORMAT_ID = 'slidecreator.deck';
 
 /**
  * The MIME type a `.deck` bundle declares. Registered with IANA in the vendor
@@ -46,12 +49,11 @@ export const LEGACY_DECK_FORMAT_IDS = Object.freeze(['slidecreator.deck']);
 export const DECK_MIMETYPE = 'application/vnd.deckyard.deck';
 
 /**
- * Is this the `format` sentinel of a deck envelope, current or historical?
+ * Is this the `format` sentinel of a deck envelope? One spelling: the funnel
+ * has already folded the retired one by the time a reader asks.
  * @param {unknown} value
  * @returns {boolean}
  */
 export function isDeckFormatId(value) {
-  if (typeof value !== 'string') return false;
-  const v = value.trim();
-  return v === DECK_FORMAT_ID || LEGACY_DECK_FORMAT_IDS.includes(v);
+  return typeof value === 'string' && value.trim() === DECK_FORMAT_ID;
 }

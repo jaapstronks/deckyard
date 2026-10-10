@@ -157,12 +157,12 @@ describe('MCP Tool Schemas', () => {
     }
   });
 
-  it('get_presentation accepts id and presentationId (alias)', async () => {
+  it('get_presentation takes presentationId, the one spelling (B257-A)', async () => {
     const server = new McpServer();
     registerTools(server, {});
     const tool = server.tools.get('get_presentation');
-    assert.ok('id' in tool.inputSchema.properties);
-    assert.ok('presentationId' in tool.inputSchema.properties);
+    assert.ok(!('id' in tool.inputSchema.properties));
+    assert.deepEqual(tool.inputSchema.required, ['presentationId']);
   });
 
   it('add_comment requires presentationId and body', async () => {
@@ -405,37 +405,26 @@ describe('MCP Tools custom seam', () => {
 });
 
 // ============================================================================
-// presentationId ↔ id alias (self-install-ux round 3)
+// presentationId has one spelling (B257-A, D121 B6)
 // ============================================================================
 
-describe('MCP presentationId / id alias', () => {
-  // Every deck-scoped tool now advertises `id` as an alias, so agents that
-  // guess `id` (a common default) are no longer silently ignored — and the
-  // shared "pass `id` or `presentationId`" error message tells the truth.
-  it('all presentationId tools also expose an id alias', () => {
+describe('MCP presentationId spelling', () => {
+  // The `id` alias (three tools declared it, protocol.js then advertised it on
+  // every deck-scoped tool) is retired: a tool that takes a deck takes
+  // `presentationId`, and the schema says so. The alias was a tolerance path
+  // without a producer, and two names for one argument is two contracts.
+  it('no deck-scoped tool exposes an id alias', () => {
     const server = new McpServer();
     registerTools(server, {});
     for (const [name, tool] of server.tools) {
       const props = tool.inputSchema.properties || {};
       if (props.presentationId) {
-        assert.ok('id' in props, `${name} should expose an id alias`);
+        assert.ok(!('id' in props), `${name} must not expose an id alias`);
       }
     }
   });
 
-  it('delete_presentation exposes an id alias', () => {
-    const server = new McpServer();
-    registerTools(server, {});
-    const tool = server.tools.get('delete_presentation');
-    assert.ok(
-      'id' in tool.inputSchema.properties,
-      'delete_presentation must accept id',
-    );
-  });
-
-  it('handler coalesces id into presentationId when only id is passed', () => {
-    // Register a throwaway tool through the same seam and confirm the wrapper
-    // fills presentationId from id before the handler runs.
+  it('the registration seam passes params through untouched', () => {
     const server = new McpServer();
     let seen = null;
     server.tool(
@@ -448,49 +437,8 @@ describe('MCP presentationId / id alias', () => {
       },
     );
     server.tools.get('probe').handler({ id: 'deck-xyz', confirm: true });
-    assert.strictEqual(seen.presentationId, 'deck-xyz');
-    assert.strictEqual(seen.confirm, true);
-  });
-
-  it('does not override an explicit presentationId with id', () => {
-    const server = new McpServer();
-    let seen = null;
-    server.tool(
-      'probe2',
-      'probe2',
-      { type: 'object', properties: { presentationId: { type: 'string' } } },
-      (params) => {
-        seen = params;
-        return params;
-      },
-    );
-    server.tools
-      .get('probe2')
-      .handler({ presentationId: 'real', id: 'ignored' });
-    assert.strictEqual(seen.presentationId, 'real');
-  });
-
-  it('leaves tools that declare their own id untouched (no double-wrap)', () => {
-    const server = new McpServer();
-    let seen = null;
-    server.tool(
-      'probe3',
-      'probe3',
-      {
-        type: 'object',
-        properties: {
-          presentationId: { type: 'string' },
-          id: { type: 'string', description: 'own id' },
-        },
-      },
-      (params) => {
-        seen = params;
-        return params;
-      },
-    );
-    // Own-id tools coalesce themselves; the wrapper must not touch params.
-    server.tools.get('probe3').handler({ id: 'own' });
     assert.strictEqual(seen.presentationId, undefined);
-    assert.strictEqual(seen.id, 'own');
+    assert.strictEqual(seen.id, 'deck-xyz');
+    assert.ok(!('id' in server.tools.get('probe').inputSchema.properties));
   });
 });

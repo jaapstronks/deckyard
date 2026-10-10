@@ -40,16 +40,16 @@ exercised by `tests/deck-format-spec.test.js` (the CI gate behind this spec).
 }
 ```
 
-| Field          | Type    | Notes                                                                                                                                                                                     |
-| -------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `format`       | string  | Always `"deckyard.deck"`. The magic sentinel that identifies the format. A conforming reader also accepts the historical `"slidecreator.deck"` (see [Legacy sentinel](#legacy-sentinel)). |
-| `version`      | integer | Format version. `1` today. Bumped only on a breaking envelope change (see [Versioning](#versioning)).                                                                                     |
-| `title`        | string  | Human title of the deck, in `lang`.                                                                                                                                                       |
-| `lang`         | string  | Optional. BCP 47 tag of the language `title` and every slide's `content` and `notes` are in. A deck carries **one** base language; the others are `translations`.                         |
-| `translations` | object  | Optional. The deck title per other language: `{ "<lang>": { "title": "…" } }`. See [Languages](#languages).                                                                               |
-| `theme`        | string  | Optional in the JSON envelope: the theme id the deck was authored against (e.g. `"default"`). Bundle v4 omits it and uses `theme.json` instead.                                           |
-| `extensions`   | array   | Sorted unique installation extension names retained as provenance. Core exports `[]`. Names do not grant rights or load code.                                                             |
-| `slides`       | array   | Ordered list of slides, each `{ type, content }`.                                                                                                                                         |
+| Field          | Type    | Notes                                                                                                                                                                                |
+| -------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `format`       | string  | Always `"deckyard.deck"`. The magic sentinel that identifies the format. The historical `"slidecreator.deck"` is folded to it on import (see [Retired sentinel](#retired-sentinel)). |
+| `version`      | integer | Format version. `1` today. Bumped only on a breaking envelope change (see [Versioning](#versioning)).                                                                                |
+| `title`        | string  | Human title of the deck, in `lang`.                                                                                                                                                  |
+| `lang`         | string  | Optional. BCP 47 tag of the language `title` and every slide's `content` and `notes` are in. A deck carries **one** base language; the others are `translations`.                    |
+| `translations` | object  | Optional. The deck title per other language: `{ "<lang>": { "title": "…" } }`. See [Languages](#languages).                                                                          |
+| `theme`        | string  | Optional in the JSON envelope: the theme id the deck was authored against (e.g. `"default"`). Bundle v4 omits it and uses `theme.json` instead.                                      |
+| `extensions`   | array   | Sorted unique installation extension names retained as provenance. Core exports `[]`. Names do not grant rights or load code.                                                        |
+| `slides`       | array   | Ordered list of slides, each `{ type, content }`.                                                                                                                                    |
 
 The envelope is **lenient**: unknown top-level keys are ignored by the importer,
 not rejected. This keeps forward-compatibility — a newer producer can add fields
@@ -304,12 +304,14 @@ When the badge comes off, the window closes and the rule binds absolutely.
   type a different type (see the evolution rule: a real change of meaning would
   have taken a new name).
 
-## Legacy sentinel
+## Retired sentinel
 
 Before the format took its publisher's name, the JSON/Markdown envelope used
 `"slidecreator.deck"`. That name predates the product: it was invented when the
-package was still called `presentation-system`. The JSON/Markdown importer
-continues to accept that envelope id and re-export stamps the current one.
+package was still called `presentation-system`. It is not a second accepted
+value: the read funnel rewrites it to `"deckyard.deck"` on import (schema step
+v18 -> v19), so a deck written under the old name imports and re-exports under
+the current one, and nothing after the funnel reads the old spelling.
 
 The v4 `.deck` bundle has one MIME sentinel:
 `application/vnd.deckyard.deck`. Earlier bundle versions and the historical

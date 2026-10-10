@@ -36,7 +36,7 @@ export async function createViewerController({
   const theme = await loadThemeById(pres?.theme);
 
   // Handle initial slide from URL
-  const initialSlideId = queryParam('slideId') || queryParam('s') || '';
+  const initialSlideId = queryParam('slideId') || '';
   let selectedSlideId = pres.slides?.[0]?.id || null;
   if (initialSlideId && Array.isArray(pres?.slides)) {
     const exists = pres.slides.some((s) => s?.id === initialSlideId);
