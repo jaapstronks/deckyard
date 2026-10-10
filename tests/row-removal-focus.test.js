@@ -9,10 +9,11 @@
  * (B643). For a keyboard or screen-reader user the list is left, the position
  * is lost and nothing is said.
  *
- * Pinned here: the planner's three cases (a next row, the last row, an emptied
- * list), the shared polite region, and the themes tab as the one real list
- * driven end to end — a theme deleted through the tab's own menu leaves focus
- * on the card that took its place, not on `<body>`.
+ * Pinned here: the four places focus can land (the next row, the last row, the
+ * list's own empty note, the control the caller names), a list the render
+ * rebuilt, the shared polite region, and the defect itself through the real
+ * `confirmModal` — the dialog hands focus back to the button in the row, the
+ * re-render takes it away, and the planner puts it back in the list.
  *
  * Run with: node --test tests/row-removal-focus.test.js
  */
