@@ -324,7 +324,6 @@
   "slideLibrary.newPresentation.defaultTitle": "Nowa prezentacja",
   "slideLibrary.newPresentation.done.many": "Utworzono prezentację ze slajdami ({count})!",
   "slideLibrary.newPresentation.done.one": "Prezentacja utworzona!",
-  "slideLibrary.newPresentation.failed": "Nie udało się utworzyć prezentacji.",
   "slideLibrary.preview.untitled": "Bez tytułu",
   "slideLibrary.search.aria": "Szukaj w bibliotece slajdów",
   "slideLibrary.search.placeholder": "Szukaj w bibliotece slajdów…",

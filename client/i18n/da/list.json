@@ -320,7 +320,6 @@
   "slideLibrary.newPresentation.defaultTitle": "Ny præsentation",
   "slideLibrary.newPresentation.done.many": "Præsentationen er oprettet med {count} slides!",
   "slideLibrary.newPresentation.done.one": "Præsentationen er oprettet!",
-  "slideLibrary.newPresentation.failed": "Præsentationen kunne ikke oprettes.",
   "slideLibrary.preview.untitled": "Uden titel",
   "slideLibrary.search.aria": "Søg i slide-bibliotek",
   "slideLibrary.search.placeholder": "Søg i slide-bibliotek…",

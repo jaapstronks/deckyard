@@ -323,7 +323,6 @@
   "slideLibrary.newPresentation.defaultTitle": "Nuova presentazione",
   "slideLibrary.newPresentation.done.many": "Presentazione creata con {count} slide!",
   "slideLibrary.newPresentation.done.one": "Presentazione creata!",
-  "slideLibrary.newPresentation.failed": "Impossibile creare la presentazione.",
   "slideLibrary.preview.untitled": "Senza titolo",
   "slideLibrary.search.aria": "Cerca nella libreria slide",
   "slideLibrary.search.placeholder": "Cerca nella libreria slide…",

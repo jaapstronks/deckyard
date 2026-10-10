@@ -159,17 +159,23 @@ production — the client's counterpart to the server's
 `NODE_ENV !== 'production'` guard. Every UI primitive draws the line there,
 not in a copy of its own.
 
-## Implementation status (2026-09-02)
+## Implementation status (2026-10-10)
 
-The primitive and the helper meet the rules above. Two rows of call sites do
+The primitive and the helper meet the rules above. One row of call sites does
 not yet:
 
 | Burndown                                                               | Count   | Item |
 | ---------------------------------------------------------------------- | ------- | ---- |
 | Refusals of the form on screen reported in a `toast.error`             | 0       | B204 |
 | Hand-rolled inline error classes (message idioms)                      | 0 files | B204 |
-| `catch` blocks that discard the server sentence for generic `t()` copy | 24      | B205 |
-| Background failures that expire in a toast                             | 10      | B206 |
+| `catch` blocks that discard the server sentence for generic `t()` copy | 0       | B205 |
+| Background failures that expire in a toast                             | 5       | B206 |
+
+B205 is done too: a `catch` that has the caught error hands it over, and a
+bulk action puts the first failure's sentence after its count. What is still
+translated client copy has no server sentence behind it (a guard with no
+request, a browser failure, a 200 that reports a partial outcome) or is copy
+looked up on the status.
 
 B204 is done. No refusal of a form on screen is toasted any more — the 16 local
 validations went to the helper in PR 1, the 13 API refusals caught in a save

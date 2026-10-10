@@ -36,7 +36,6 @@
   "admin.users.addUser": "Añadir usuario",
   "admin.users.delete": "Eliminar",
   "admin.users.deleteConfirm": "¿Seguro que quiere eliminar este usuario? Esta acción no se puede deshacer.",
-  "admin.users.deleteError": "No se pudo eliminar el usuario.",
   "admin.users.deleteSuccess": "Usuario eliminado correctamente.",
   "admin.users.designerCapability": "Diseñador",
   "admin.users.designerHelp": "Puede gestionar temas y tipos de diapositivas. Los administradores y propietarios lo tienen por defecto.",

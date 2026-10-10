@@ -36,7 +36,6 @@
   "admin.users.addUser": "Tilføj bruger",
   "admin.users.delete": "Slet",
   "admin.users.deleteConfirm": "Er du sikker på, at du vil slette denne bruger? Det kan ikke fortrydes.",
-  "admin.users.deleteError": "Brugeren kunne ikke slettes.",
   "admin.users.deleteSuccess": "Brugeren blev slettet.",
   "admin.users.designerHelp": "Kan administrere temaer og slidetyper. Administratorer og ejere har det som standard.",
   "admin.users.edit": "Redigér",

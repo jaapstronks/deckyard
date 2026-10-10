@@ -316,7 +316,6 @@
   "slideLibrary.newPresentation.defaultTitle": "Neue Präsentation",
   "slideLibrary.newPresentation.done.many": "Präsentation mit {count} Folien erstellt!",
   "slideLibrary.newPresentation.done.one": "Präsentation erstellt!",
-  "slideLibrary.newPresentation.failed": "Die Präsentation konnte nicht erstellt werden.",
   "slideLibrary.preview.untitled": "Ohne Titel",
   "slideLibrary.search.aria": "Folienbibliothek durchsuchen",
   "slideLibrary.search.placeholder": "Folienbibliothek durchsuchen…",

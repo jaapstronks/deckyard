@@ -324,7 +324,6 @@
   "slideLibrary.newPresentation.defaultTitle": "Uusi esitys",
   "slideLibrary.newPresentation.done.many": "Esitys luotiin, {count} diaa!",
   "slideLibrary.newPresentation.done.one": "Esitys luotu!",
-  "slideLibrary.newPresentation.failed": "Esityksen luominen epäonnistui.",
   "slideLibrary.preview.untitled": "Nimetön",
   "slideLibrary.search.aria": "Etsi diakirjastosta",
   "slideLibrary.search.placeholder": "Etsi diakirjastosta…",

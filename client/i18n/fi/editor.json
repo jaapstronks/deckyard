@@ -321,7 +321,6 @@
   "editor.export.langLabel": "Kieli",
   "editor.export.notes": "Muistiinpanot",
   "editor.export.pdfBusy": "Luodaan PDF-tiedostoa…",
-  "editor.export.pdfError": "PDF-tiedoston luonti ei onnistunut.",
   "editor.export.pdfFailed": "PDF-tiedoston muodostus epäonnistui tai aikakatkaistiin. Tulosta se sen sijaan selaimessa:",
   "editor.export.pdfFallbackBtn": "Tulosta selaimessa",
   "editor.export.publicHint": "Tarvitaanko linkki, joka pysyy ajan tasalla, tai upotus Notioniin tai sivustollesi? ",

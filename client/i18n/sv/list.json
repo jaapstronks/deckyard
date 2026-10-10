@@ -321,7 +321,6 @@
   "slideLibrary.newPresentation.defaultTitle": "Ny presentation",
   "slideLibrary.newPresentation.done.many": "Presentationen skapades med {count} slides!",
   "slideLibrary.newPresentation.done.one": "Presentationen har skapats!",
-  "slideLibrary.newPresentation.failed": "Det gick inte att skapa presentationen.",
   "slideLibrary.preview.untitled": "Utan titel",
   "slideLibrary.search.aria": "Sök i slide-bibliotek",
   "slideLibrary.search.placeholder": "Sök i slide-bibliotek…",

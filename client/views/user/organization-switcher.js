@@ -162,17 +162,16 @@ export function createOrganizationSection({
     try {
       await switchTo(organizationId);
     } catch (err) {
-      const message =
+      // A 403 has translated copy; anything else is the server's sentence,
+      // never a generic "failed" in its place (B205).
+      toast.error(
         err?.statusCode === 403
           ? t(
               'common.organizationSwitchForbidden',
               'You cannot switch to this organization.',
             )
-          : t(
-              'common.organizationSwitchFailed',
-              'Could not switch organization.',
-            );
-      toast.error(message);
+          : err,
+      );
       return;
     }
     reload();

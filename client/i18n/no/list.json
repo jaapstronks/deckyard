@@ -323,7 +323,6 @@
   "slideLibrary.newPresentation.defaultTitle": "Ny presentasjon",
   "slideLibrary.newPresentation.done.many": "Presentasjonen ble opprettet med {count} lysbilder!",
   "slideLibrary.newPresentation.done.one": "Presentasjonen er opprettet!",
-  "slideLibrary.newPresentation.failed": "Klarte ikke å opprette presentasjonen.",
   "slideLibrary.preview.untitled": "Uten tittel",
   "slideLibrary.search.aria": "Søk i lysbilde-bibliotek",
   "slideLibrary.search.placeholder": "Søk i lysbilde-bibliotek…",

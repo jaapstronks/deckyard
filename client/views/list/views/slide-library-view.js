@@ -130,12 +130,8 @@ export function createSlideLibraryView({ api, initialShelf = 'organization' }) {
         nav(`/app/${result.id}`);
       }
     } catch (e) {
-      toast.error(
-        t(
-          'slideLibrary.newPresentation.failed',
-          'Failed to create presentation.',
-        ),
-      );
+      // The server's sentence (a size limit, a refused type), not generic copy.
+      toast.error(e);
     }
   }
 

@@ -316,7 +316,6 @@
   "editor.export.langLabel": "Språk",
   "editor.export.notes": "Anteckningar",
   "editor.export.pdfBusy": "Skapar PDF…",
-  "editor.export.pdfError": "Det gick inte att skapa PDF-filen.",
   "editor.export.pdfFailed": "PDF-renderingen misslyckades eller tog för lång tid. Skriv ut den i webbläsaren i stället:",
   "editor.export.pdfFallbackBtn": "Skriv ut i webbläsaren",
   "editor.export.publicHint": "Vill du ha en länk som hålls uppdaterad, eller en inbäddning för Notion eller din webbplats? ",

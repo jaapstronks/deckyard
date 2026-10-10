@@ -314,7 +314,6 @@
   "editor.export.langLabel": "Sprog",
   "editor.export.notes": "Noter",
   "editor.export.pdfBusy": "Genererer PDF…",
-  "editor.export.pdfError": "PDF'en kunne ikke genereres.",
   "editor.export.pdfFailed": "PDF-gengivelsen mislykkedes eller fik timeout. Udskriv den i browseren i stedet:",
   "editor.export.pdfFallbackBtn": "Udskriv i browseren",
   "editor.export.publicHint": "Vil du have et link, der forbliver opdateret, eller en indlejring til Notion eller dit website? ",

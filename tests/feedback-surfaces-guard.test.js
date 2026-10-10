@@ -53,80 +53,34 @@ const repoRoot = path.join(here, '..');
  * stays in `BURNDOWN` so a new one has to be argued for rather than counted.
  */
 const TOAST_SITES = [
-  // --- the server's sentence thrown away for generic copy (B205) ---
-  {
-    file: 'client/views/slide-library/edit-modal.js',
-    total: 1,
-    discarded: 1,
-  },
-  {
-    file: 'client/views/editor/inline-edit/inline-editor.js',
-    total: 2,
-    discarded: 1,
-  },
-  {
-    file: 'client/views/editor/modals/json-debug-modal.js',
-    total: 3,
-    discarded: 3,
-  },
-  {
-    file: 'client/views/user/organization-switcher.js',
-    total: 1,
-    discarded: 1,
-  },
-  {
-    file: 'client/views/analytics/erase-button.js',
-    total: 1,
-    discarded: 1,
-  },
+  // --- the server's sentence thrown away for generic copy (B205): at zero ---
+  // Ten sites now hand over the caught error (inline drop upload, organization
+  // switch, analytics erase, admin delete, the three bulk actions with their
+  // first failure's sentence after the count, new deck from the library,
+  // sandbox example, PDF export). Thirteen were counted here but had no server
+  // sentence to discard: a guard with no request (unsupported slide type, no
+  // slide selected, the save before present/duplicate that already shows its
+  // own banner), a browser failure (clipboard ×3, reading or parsing a local
+  // file ×2), a 200 that reports a partial outcome (invitation mail not sent
+  // ×2), and copy translated on the status (an export already running, a
+  // member who is gone) — the "translation on top" the doctrine allows.
+  // --- background failures that expire in a toast (B206) ---
   {
     file: 'client/views/settings/tabs/export-tab.js',
     total: 3,
-    discarded: 1,
     background: 1,
   },
   {
     file: 'client/views/settings/tabs/slide-types-tab/index.js',
     total: 9,
-    discarded: 2,
     background: 1,
   },
-  {
-    file: 'client/views/settings/organization-members/actions.js',
-    total: 3,
-    discarded: 1,
-  },
-  {
-    file: 'client/views/settings/admin-users/add-modal.js',
-    total: 1,
-    discarded: 1,
-  },
-  {
-    file: 'client/views/settings/admin-users/actions.js',
-    total: 3,
-    discarded: 2,
-  },
-  { file: 'client/views/list/bulk-action-bar.js', total: 3, discarded: 3 },
-  {
-    file: 'client/views/list/views/slide-library-view.js',
-    total: 2,
-    discarded: 2,
-  },
-  {
-    file: 'client/views/list/views/sandbox-examples.js',
-    total: 1,
-    discarded: 1,
-  },
-  { file: 'client/views/editor/topbar/index.js', total: 2, discarded: 1 },
-  { file: 'client/views/editor/topbar/more-menu.js', total: 3, discarded: 1 },
-  { file: 'client/views/editor/export-modal.js', total: 1, discarded: 1 },
-  // --- background failures that expire in a toast (B206) ---
   { file: 'client/views/slide-library/modals.js', total: 2, background: 2 },
   { file: 'client/views/notes/notes-editor.js', total: 1, background: 1 },
 ];
 
 /** The burndown as the TODO items state it; each PR lowers both. */
-const BURNDOWN = { refusals: 0, discarded: 23, background: 5 };
+const BURNDOWN = { refusals: 0, discarded: 0, background: 5 };
 
 /**
  * `toast.error` as the whole answer of a guard clause. Every one of these is

@@ -117,7 +117,6 @@
   "common.open": "Öffnen",
   "common.organization": "Organisation",
   "common.organizationCurrent": "Aktuelle Organisation",
-  "common.organizationSwitchFailed": "Organisation konnte nicht gewechselt werden.",
   "common.organizationSwitchForbidden": "Sie können nicht zu dieser Organisation wechseln.",
   "common.organizationSwitchTo": "Zu {name} wechseln",
   "common.pangram": "Franz jagt im komplett verwahrlosten Taxi quer durch Bayern",

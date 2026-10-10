@@ -315,7 +315,6 @@
   "editor.export.handoff": "ZIP de remise",
   "editor.export.langLabel": "Langue",
   "editor.export.pdfBusy": "Génération du PDF…",
-  "editor.export.pdfError": "Impossible de générer le PDF.",
   "editor.export.pdfFailed": "Le rendu du PDF a échoué ou a expiré. Imprimez-le plutôt depuis le navigateur :",
   "editor.export.pdfFallbackBtn": "Imprimer dans le navigateur",
   "editor.export.publicHint": "Vous voulez un lien qui reste à jour, ou une intégration pour Notion ou votre site ? ",

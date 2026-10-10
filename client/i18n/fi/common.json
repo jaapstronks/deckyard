@@ -119,7 +119,6 @@
   "common.open": "Avaa",
   "common.organization": "Organisaatio",
   "common.organizationCurrent": "Nykyinen organisaatio",
-  "common.organizationSwitchFailed": "Organisaation vaihtaminen epäonnistui.",
   "common.organizationSwitchForbidden": "Et voi vaihtaa tähän organisaatioon.",
   "common.organizationSwitchTo": "Vaihda organisaatioon {name}",
   "common.pangram": "Albert osti fagotin ja töräytti puhkuvan melodian",

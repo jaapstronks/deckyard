@@ -331,7 +331,8 @@ async function exportPdf({ id, getLang, title, button, fallbackWrap }) {
     );
     fallbackWrap.hidden = false;
     if (err?.name !== 'AbortError') {
-      toast.error(t('editor.export.pdfError', 'Could not generate the PDF.'));
+      // downloadExport throws the envelope's sentence when the server sent one.
+      toast.error(err);
     }
   } finally {
     clearTimeout(timer);
