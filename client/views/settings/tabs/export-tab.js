@@ -313,9 +313,14 @@ export function createExportTab({ user }) {
       if (status.state === 'failed') {
         stopPolling();
         setExporting(false);
+        // Not `status.error`: that is the job's `failedReason`, the raw
+        // exception the worker threw (`Unknown export type: …`, an `ENOENT`
+        // with a server path). The doctrine's "the server's sentence" means
+        // the error envelope's `message`, which is display text by contract
+        // (docs/reference/api-error-format.md); a job has no such sentence
+        // yet, so this says what did not happen until it does (B646).
         exportFailure.show(
-          status.error ||
-            t('settings.export.failed', 'Export failed. Please try again.'),
+          t('settings.export.failed', 'Export failed. Please try again.'),
           { focus: false },
         );
         return;

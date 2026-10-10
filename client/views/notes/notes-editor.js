@@ -68,10 +68,18 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
    * A failed autosave is a state, not a passing message (B206): the companion
    * follows the presenter, so the slide whose notes did not save is often no
    * longer the slide on screen — which is exactly why the per-slide status line
-   * cannot carry it. This stays until a save succeeds.
+   * cannot carry it.
+   *
+   * It sits in the notes panel, *after* the edit form rather than inside it:
+   * the form is hidden the moment editing ends, and leaving edit mode is what
+   * triggers the last flush, so a message inside it would be hidden by the
+   * very action that produced it. It stays until the state it describes is
+   * gone — a save succeeds, or the buffer it was typed into is replaced
+   * (slide change, Cancel, re-entering edit mode, all of which reset the
+   * textarea to `stored`).
    */
   const saveFailure = createInlineError({ live: 'polite' });
-  notesStatus.after(saveFailure.el);
+  notesEditor.after(saveFailure.el);
 
   const isDirty = () => editing && notesTextarea.value !== stored;
 
@@ -175,6 +183,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     notesTextarea.value = stored;
     editing = false;
     setStatus('');
+    saveFailure.clear();
     applyEditingState();
   });
 
@@ -190,6 +199,7 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     editing = true;
     notesTextarea.value = stored;
     setStatus('');
+    saveFailure.clear();
     applyEditingState();
     notesTextarea.focus();
   });
@@ -217,8 +227,12 @@ export function createNotesEditor({ api, sessionId, ui, onSaved } = {}) {
     }
 
     // The slide changed. Anything unsaved belongs to the previous slide, so
-    // write it there before adopting the new one.
+    // write it there before adopting the new one. A failure still on screen
+    // belongs to a slide we are leaving: drop it, or it would read as a
+    // failure of the notes now in the textarea. The flush started just above
+    // reports its own failure when it lands, after this clear.
     if (isDirty()) save(slideId, notesTextarea.value);
+    saveFailure.clear();
     clearTimer();
 
     slideId = nextId;

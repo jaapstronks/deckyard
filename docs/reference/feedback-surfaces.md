@@ -124,6 +124,16 @@ second form of it but a different scope — the editor save-failure banner and
 `maintenance-banner.js` carry a state of the whole surface, where no single
 panel is the right address.
 
+"In its own place" is measured against what the failing action does to the
+screen, not against what is nearest the code: **the message may not sit in a
+container that the action itself hides or rebuilds**. The bulk export's
+progress bar is hidden the moment the job fails, the custom-slide-type list
+rewrites its own `innerHTML` on every render, and the companion's notes form
+is put away by the Done that triggers the last flush — a message in any of
+those three would be taken away by the very event it reports. One step out
+(the card, the panel) is the address; a state that survives its container is
+how you know you picked the wrong one.
+
 ## Live regions and focus
 
 - The toast stack has two regions that exist from page load: `role="status"`
