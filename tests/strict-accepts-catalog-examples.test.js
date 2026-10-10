@@ -27,7 +27,10 @@ import {
 } from '../server/utils/ai/validate-slides/strict.js';
 import { toRuntimeSlideType } from '../server/utils/custom-slide-type-runtime.js';
 import { contentSchemaFor } from '../server/utils/ai/schemas/content-schema.js';
-import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
+import {
+  CORE_SLIDE_TYPE_DEFS,
+  SLIDE_TYPES,
+} from '../shared/slide-types/registry.js';
 import { slideTypeSample } from '../shared/slide-types/authoring-companions.js';
 
 /** The offer, in one language: `{ [typeName]: example }` for everything with one. */
@@ -69,7 +72,7 @@ test('every core sample passes its own content schema, video-slide excepted (D10
   // D119: the sample is what a good slide of this type looks like, so the type
   // must accept it. The one exception is deliberate and named: video-slide's
   // sample leaves `source` blank so a picker tile loads no live player (D107).
-  const refused = Object.entries(SLIDE_TYPES)
+  const refused = Object.entries(CORE_SLIDE_TYPE_DEFS)
     .filter(([name, def]) => {
       const sample = slideTypeSample(name, def);
       return sample && !contentSchemaFor(def).safeParse(sample).success;
@@ -81,7 +84,7 @@ test('every core sample passes its own content schema, video-slide excepted (D10
 test('the example an agent gets is the sample; defaults only where there is none it can use', () => {
   const offered = resolveAgentSlideTypes({ lang: 'nl' });
   const fromDefaults = [];
-  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+  for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
     if (!offered[name]) continue;
     const sample = slideTypeSample(name, def);
     if (offered[name].example === sample) continue;
