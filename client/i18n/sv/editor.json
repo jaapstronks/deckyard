@@ -66,7 +66,7 @@
   "comments.unknownAuthor": "Okänd",
   "comments.unread": "Ny aktivitet",
   "dataSource.bindings": "Fältkopplingar",
-  "dataSource.bindings.hint": "Koppla källdata till slidens fält. Använd row[0].EgenskapsNamn för databaser eller A1/B2 för CSV-celler.",
+  "dataSource.bindings.hint": "Koppla källdata till slidens fält. Använd row[0].EgenskapsNamn för databaser eller A1/B2 för CSV-celler. Ett område som A1:B10 fyller ett diagram med en tabell.",
   "dataSource.connect": "Anslut",
   "dataSource.connect.title": "Koppla den här sliden till livedata från Notion, CSV eller ett API",
   "dataSource.connected": "Ansluten till {provider}",

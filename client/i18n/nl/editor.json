@@ -70,7 +70,7 @@
   "comments.unknownAuthor": "Onbekend",
   "comments.unread": "Nieuwe activiteit",
   "dataSource.bindings": "Veldkoppelingen",
-  "dataSource.bindings.hint": "Koppel brondata aan velden van de slide. Gebruik row[0].PropertyName voor databases, of A1/B2 voor CSV-cellen.",
+  "dataSource.bindings.hint": "Koppel brondata aan velden van de slide. Gebruik row[0].PropertyName voor databases, of A1/B2 voor CSV-cellen. Een bereik zoals A1:B10 vult een grafiek met een tabel.",
   "dataSource.connect": "Koppelen",
   "dataSource.connect.title": "Koppel deze slide aan live data uit Notion, CSV of een API",
   "dataSource.connected": "Gekoppeld aan {provider}",

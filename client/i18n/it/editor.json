@@ -67,7 +67,7 @@
   "comments.unknownAuthor": "Sconosciuto",
   "comments.unread": "Nuova attività",
   "dataSource.bindings": "Associazioni dei campi",
-  "dataSource.bindings.hint": "Associa i dati di origine ai campi della slide. Usa row[0].NomeProprietà per i database oppure A1/B2 per le celle CSV.",
+  "dataSource.bindings.hint": "Associa i dati di origine ai campi della slide. Usa row[0].NomeProprietà per i database oppure A1/B2 per le celle CSV. Un intervallo come A1:B10 riempie un grafico con una tabella.",
   "dataSource.connect": "Connetti",
   "dataSource.connect.title": "Collega questa slide a dati in tempo reale da Notion, CSV o un'API",
   "dataSource.connected": "Connesso a {provider}",

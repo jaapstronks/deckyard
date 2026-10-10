@@ -67,7 +67,7 @@
   "comments.unknownAuthor": "Inconnu",
   "comments.unread": "Nouvelle activité",
   "dataSource.bindings": "Liaisons de champs",
-  "dataSource.bindings.hint": "Associez les données source aux champs de la diapositive. Utilisez row[0].NomDePropriete pour les bases de données, ou A1/B2 pour les cellules CSV.",
+  "dataSource.bindings.hint": "Associez les données source aux champs de la diapositive. Utilisez row[0].NomDePropriete pour les bases de données, ou A1/B2 pour les cellules CSV. Une plage comme A1:B10 remplit un graphique avec un tableau.",
   "dataSource.connect": "Connecter",
   "dataSource.connect.title": "Lier cette diapositive à des données en direct depuis Notion, un CSV ou une API",
   "dataSource.connected": "Connecté à {provider}",

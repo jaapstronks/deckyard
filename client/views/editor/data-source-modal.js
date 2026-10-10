@@ -262,7 +262,7 @@ export function openDataSourceConfigModal({
       class: 'help',
       text: t(
         'dataSource.bindings.hint',
-        'Map source data to slide fields. Use row[0].PropertyName for databases, or A1/B2 for CSV cells.',
+        'Map source data to slide fields. Use row[0].PropertyName for databases, or A1/B2 for CSV cells. A range such as A1:B10 fills a chart with a table.',
       ),
     });
     bindingSection.append(heading, hint);

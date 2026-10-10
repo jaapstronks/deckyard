@@ -67,7 +67,7 @@
   "comments.unknownAuthor": "Nieznany",
   "comments.unread": "Nowa aktywność",
   "dataSource.bindings": "Powiązania pól",
-  "dataSource.bindings.hint": "Przypisz dane źródłowe do pól slajdu. Dla baz danych użyj row[0].NazwaWłaściwości, a dla komórek CSV — A1/B2.",
+  "dataSource.bindings.hint": "Przypisz dane źródłowe do pól slajdu. Dla baz danych użyj row[0].NazwaWłaściwości, a dla komórek CSV — A1/B2. Zakres, np. A1:B10, wypełnia wykres tabelą.",
   "dataSource.connect": "Połącz",
   "dataSource.connect.title": "Powiąż ten slajd z danymi na żywo z Notion, pliku CSV lub API",
   "dataSource.connected": "Połączono z {provider}",

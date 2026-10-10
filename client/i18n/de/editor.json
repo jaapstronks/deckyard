@@ -67,7 +67,7 @@
   "comments.unknownAuthor": "Unbekannt",
   "comments.unread": "Neue Aktivität",
   "dataSource.bindings": "Feldzuordnungen",
-  "dataSource.bindings.hint": "Ordnen Sie Quelldaten den Folienfeldern zu. Verwenden Sie row[0].PropertyName für Datenbanken oder A1/B2 für CSV-Zellen.",
+  "dataSource.bindings.hint": "Ordnen Sie Quelldaten den Folienfeldern zu. Verwenden Sie row[0].PropertyName für Datenbanken oder A1/B2 für CSV-Zellen. Ein Bereich wie A1:B10 füllt ein Diagramm mit einer Tabelle.",
   "dataSource.connect": "Verbinden",
   "dataSource.connect.title": "Diese Folie mit Live-Daten aus Notion, CSV oder einer API verbinden",
   "dataSource.connected": "Verbunden mit {provider}",

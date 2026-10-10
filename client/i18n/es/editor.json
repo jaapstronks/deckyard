@@ -69,7 +69,7 @@
   "comments.unknownAuthor": "Desconocido",
   "comments.unread": "Nueva actividad",
   "dataSource.bindings": "Asignación de campos",
-  "dataSource.bindings.hint": "Asigne los datos de origen a los campos de la diapositiva. Use row[0].NombreDePropiedad para bases de datos, o A1/B2 para celdas CSV.",
+  "dataSource.bindings.hint": "Asigne los datos de origen a los campos de la diapositiva. Use row[0].NombreDePropiedad para bases de datos, o A1/B2 para celdas CSV. Un rango como A1:B10 llena un gráfico con una tabla.",
   "dataSource.connect": "Conectar",
   "dataSource.connect.title": "Vincular esta diapositiva a datos en vivo de Notion, un CSV o una API",
   "dataSource.connected": "Conectado a {provider}",

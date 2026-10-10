@@ -4,13 +4,15 @@
  * Fetches CSV from a URL (including Google Sheets public CSV exports)
  * and maps cell references to slide content fields.
  *
- * Source key format: cell references like `A1`, `B2`, `C10`, or
+ * Source key format: cell references like `A1`, `B2`, `C10`, a range like
+ * `A1:B10` (the block as CSV text, for a chart's `data`), or
  * `row[N].colName` for named columns (first row as header).
  */
 
 import { createDataSourceProvider } from '../provider-base.js';
 import { assertPublicHttpUrl } from '../../ssrf-guard.js';
 import { ValidationError } from '../../errors.js';
+import { serializeCsv } from '../../../../shared/slide-types/types/chart-slide/parse.js';
 
 const BLOCKED_HEADERS = new Set([
   'host',
@@ -86,6 +88,40 @@ function parseCellRef(ref) {
 }
 
 /**
+ * Parse a range like "A1:B10" into its corners (0-indexed, inclusive), in
+ * either order: "B10:A1" names the same block.
+ */
+function parseRangeRef(ref) {
+  const [from, to, extra] = String(ref).split(':');
+  if (extra !== undefined || !to) return null;
+  const a = parseCellRef(from);
+  const b = parseCellRef(to);
+  if (!a || !b) return null;
+  return {
+    top: Math.min(a.row, b.row),
+    bottom: Math.max(a.row, b.row),
+    left: Math.min(a.col, b.col),
+    right: Math.max(a.col, b.col),
+  };
+}
+
+/**
+ * The cells of a range as CSV text. The range's first row is the header, as a
+ * chart reads it (D83). Rows past the end of the sheet are left out, so
+ * `A1:B100` on a ten-row sheet is the ten rows; a short row is padded.
+ */
+function rangeToCsv(grid, range) {
+  const rows = [];
+  for (let r = range.top; r <= range.bottom && r < grid.length; r++) {
+    const row = grid[r] || [];
+    const cells = [];
+    for (let c = range.left; c <= range.right; c++) cells.push(row[c] ?? '');
+    rows.push(cells);
+  }
+  return serializeCsv(rows);
+}
+
+/**
  * Fetch CSV from URL.
  *
  * The URL is user-controlled and the fetched body is returned to the caller, so
@@ -135,9 +171,10 @@ export async function fetchCsvData(config) {
 /**
  * Map CSV data to binding source keys.
  *
- * Supports two source key formats:
+ * Supports three source key formats:
  * 1. Cell reference: `A1`, `B3`, `C10` (Excel-style, 1-indexed rows)
- * 2. Named column: `row[N].colName` (uses first row as headers)
+ * 2. Range: `A1:B10`, the block as CSV text with its first row as header
+ * 3. Named column: `row[N].colName` (uses first row as headers)
  */
 function parseCsvResponse(grid, bindings) {
   const result = {};
@@ -152,6 +189,13 @@ function parseCsvResponse(grid, bindings) {
 
   for (const binding of bindings) {
     const source = binding.source;
+
+    // Range: A1:B10, the block as CSV text.
+    const range = parseRangeRef(source);
+    if (range) {
+      result[source] = rangeToCsv(grid, range);
+      continue;
+    }
 
     // Cell reference: A1, B3, etc.
     const cellRef = parseCellRef(source);

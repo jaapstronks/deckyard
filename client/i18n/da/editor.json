@@ -64,7 +64,7 @@
   "comments.unknownAuthor": "Ukendt",
   "comments.unread": "Ny aktivitet",
   "dataSource.bindings": "Feltbindinger",
-  "dataSource.bindings.hint": "Knyt kildedata til slidens felter. Brug row[0].EgenskabsNavn til databaser eller A1/B2 til CSV-celler.",
+  "dataSource.bindings.hint": "Knyt kildedata til slidens felter. Brug row[0].EgenskabsNavn til databaser eller A1/B2 til CSV-celler. Et område som A1:B10 fylder et diagram med en tabel.",
   "dataSource.connect": "Forbind",
   "dataSource.connect.title": "Bind denne slide til live data fra Notion, CSV eller et API",
   "dataSource.connected": "Forbundet til {provider}",

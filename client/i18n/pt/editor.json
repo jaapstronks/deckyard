@@ -68,7 +68,7 @@
   "comments.unknownAuthor": "Desconhecido",
   "comments.unread": "Nova atividade",
   "dataSource.bindings": "Associação de campos",
-  "dataSource.bindings.hint": "Associe os dados de origem aos campos do diapositivo. Use row[0].NomeDaPropriedade para bases de dados, ou A1/B2 para células CSV.",
+  "dataSource.bindings.hint": "Associe os dados de origem aos campos do diapositivo. Use row[0].NomeDaPropriedade para bases de dados, ou A1/B2 para células CSV. Um intervalo como A1:B10 preenche um gráfico com uma tabela.",
   "dataSource.connect": "Ligar",
   "dataSource.connect.title": "Ligar este diapositivo a dados em direto do Notion, de um CSV ou de uma API",
   "dataSource.connected": "Ligado a {provider}",
