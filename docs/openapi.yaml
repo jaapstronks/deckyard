@@ -2568,8 +2568,8 @@ components:
         format:
           type: string
           description: >-
-            Format sentinel. Written as `deckyard.deck`; the historical
-            `slidecreator.deck` is still accepted on import.
+            Format sentinel. Always `deckyard.deck`; an import carrying the
+            historical `slidecreator.deck` is folded to it on read.
           example: 'deckyard.deck'
         version:
           type: integer

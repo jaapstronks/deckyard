@@ -30,7 +30,7 @@ import {
 export function newPresentation({
   title = 'Untitled presentation',
   theme = 'default',
-  lang = 'nl',
+  lang = DEFAULT_DECK_LANG,
   defaultTitleSlide = 'title-slide',
   // The loaded theme object, when the caller has one. `theme` above is just the
   // id that gets stored on the deck; this is what supplies background presets.

@@ -3,10 +3,7 @@
  * Used for revoking share links, removing collaborators, and trashing presentations.
  */
 
-import {
-  createPromiseModal,
-  createBusyManager,
-} from '../../../lib/dom/modal.js';
+import { createPromiseModal } from '../../../lib/dom/modal.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 
@@ -155,9 +152,6 @@ export function openRevokeMessageModal({ root, context, targetName }) {
       modal.close({ ok: true, message });
     },
   });
-
-  // Busy manager for disabling during async operations (if needed later)
-  createBusyManager([btnCancel, btnConfirm, textarea]);
 
   btnRow.append(btnCancel, btnConfirm);
 

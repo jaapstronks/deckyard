@@ -2,7 +2,6 @@ import { t } from '../ui-i18n.js';
 import { h, createFocusTrap } from './index.js';
 import { icon } from './icons.js';
 import { takeEscape } from './escape.js';
-export { createBusyManager } from './busy.js';
 
 /**
  * Marks a backdrop as an open overlay. Escape belongs to the overlay on top,
@@ -778,9 +777,6 @@ export function createModalActions({
     },
   };
 }
-
-// createBusyManager now lives in ./busy.js (single implementation). Re-exported
-// below so existing `import { createBusyManager } from '.../modal.js'` keeps working.
 
 /**
  * Internal helper to create a form element (input or textarea) with validation.

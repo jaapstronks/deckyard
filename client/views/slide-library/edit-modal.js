@@ -15,7 +15,7 @@ import { createInlineError } from '../../lib/dom/inline-error.js';
 import { createModal } from '../../lib/dom/modal.js';
 import { contentLang } from './search.js';
 import { cleanStr } from '../../../shared/string-utils.js';
-import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-schemas.js';
+import { SLIDE_TYPES as LOCAL_SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { createSingleSlideEditor } from '../editor/single-slide-editor.js';
 import { loadSlideTypes } from '../editor/bootstrap.js';
 import { meWithMeta } from '../../lib/state/auth.js';

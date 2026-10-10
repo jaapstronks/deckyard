@@ -199,7 +199,7 @@ test('a tool refusal with a meant sentence travels as a 4xx', async () => {
   );
   assert.equal(
     missing.line,
-    'Error: A presentation id is required (pass `id` or `presentationId`).',
+    'Error: A presentation id is required (pass `presentationId`).',
   );
   assert.equal(missing.envelope.error, 'bad_request');
 });
