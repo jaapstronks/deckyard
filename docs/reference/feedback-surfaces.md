@@ -226,9 +226,16 @@ file input or textarea, cleared at the next attempt. The footer status line of
 the creation view only carries progress.
 
 The counts are the allowlists in `tests/feedback-surfaces-guard.test.js`; each
-item lowers them and the test refuses a rise. Alongside: `toast.info` used as a
-progress indicator with a 60–120 s lifetime (4 sites) is a status chip in
-disguise and folds into the items above.
+item lowers them and the test refuses a rise.
+
+Progress is a state, not a message (B645). A toast held open for a minute
+("Saving changes…", "Uploading…") is a status chip in disguise, so progress
+shows where the state lives: the editor's save status line says "Saving
+changes…" once a save runs longer than 1.5 s (a quick autosave stays quiet and
+ends in "Saved"), and an image that a dropped file is uploading into carries
+`aria-busy` and dims. A toast with an action ("Converting with AI…" + Cancel)
+never expires, so it needs no duration. Guard 4 refuses a literal `durationMs`
+of 30 s or more anywhere in `client/`.
 
 A confirmation that only repeats what the screen already shows is gone (B643):
 a row that appears or disappears, a badge that flips, an avatar that changes, a

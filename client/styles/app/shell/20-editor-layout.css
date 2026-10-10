@@ -218,11 +218,33 @@
   display: none;
 }
 
-.is-editor .editor-save-failure:not([hidden]) {
+/* A slow save floats in the corner opposite the toasts, so the editor does not
+   shift while you type; a failure is a banner in the flow, because it stays
+   until the save recovers (B645). */
+.is-editor .editor-save-status:not([hidden]) {
+  position: fixed;
+  left: calc(var(--ps-space-3) + env(safe-area-inset-left, 0px));
+  bottom: calc(var(--ps-space-3) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-header);
+  padding: var(--ps-space-1) var(--ps-space-3);
+  font-size: var(--ps-text-sm);
+  color: hsl(var(--app-text-secondary));
+  background: hsl(var(--app-bg-elevated));
+  border: 1px solid hsl(var(--app-border-default));
+  border-radius: var(--ps-radius-full);
+  box-shadow: var(--app-shadow-md);
+}
+
+.is-editor .editor-save-status.is-failure:not([hidden]) {
+  position: static;
   padding: var(--ps-space-2) var(--ps-space-3);
+  font-size: inherit;
   color: hsl(var(--app-danger));
   background: hsl(var(--app-danger) / 0.1);
+  border: 0;
   border-bottom: 1px solid hsl(var(--app-danger) / 0.4);
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .is-editor .slides-search-stats {

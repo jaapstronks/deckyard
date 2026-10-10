@@ -708,6 +708,29 @@
   cursor: pointer;
 }
 
+/* A dropped file uploading into this image: the state sits on the image it
+   changes, not in a toast that outlives it (B645). */
+.thumb.is-inline-edit [data-inline-photo][aria-busy='true'] {
+  cursor: progress;
+  animation: ie-photo-busy 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes ie-photo-busy {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.45;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thumb.is-inline-edit [data-inline-photo][aria-busy='true'] {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+
 .ie-overlay .ie-ol-outline.is-selected {
   opacity: 1;
   border-style: solid;
