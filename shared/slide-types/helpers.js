@@ -567,13 +567,6 @@ export function bunnyEmbedUrlFromInput(input, { libraryId = '366590' } = {}) {
   return '';
 }
 
-export const BUNNY_PLAYER_COLORS = {
-  // Brand palette (hex without #) for Bunny Stream embeds.
-  primaryColor: 'dbff00',
-  controlsColor: 'dbff00',
-  accentColor: '375c5d',
-};
-
 export function curlyQuote(raw) {
   // Wrap in curly double quotes, but avoid double-wrapping if the user already typed quotes.
   let t = String(raw || '').trim();

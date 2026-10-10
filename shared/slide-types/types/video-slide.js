@@ -1,7 +1,6 @@
 import {
   appendQuery,
   bgClass,
-  BUNNY_PLAYER_COLORS,
   bunnyEmbedUrlFromInput,
   cryptoUuid,
   escapeHtml,
@@ -10,6 +9,7 @@ import {
   youtubeEmbedUrl,
   BACKGROUND_FIELD,
 } from '../helpers.js';
+import { bunnyPlayerColors } from './video-slide/player-colors.js';
 
 export default {
   structure: 'singleton',
@@ -161,6 +161,9 @@ export default {
       embedAutoplay = appendQuery(vm, { autoplay: 1, muted: 1 });
     } else if (bunny) {
       provider = 'bunny';
+      // Slide chrome, so the player reads the theme like every other slide
+      // colour; a theme that names none keeps Bunny's own default (B648).
+      const playerColors = bunnyPlayerColors(ctx?.theme);
       embedNoAutoplay = appendQuery(bunny, {
         // Thumbnails must never produce sound (or autoplay).
         ...(isThumb
@@ -168,7 +171,7 @@ export default {
           : { autoplay: 'false' }),
         preload: 'true',
         responsive: 'true',
-        ...BUNNY_PLAYER_COLORS,
+        ...playerColors,
       });
       embedAutoplay = appendQuery(bunny, {
         autoplay: 'true',
@@ -176,7 +179,7 @@ export default {
         muted: 'true',
         preload: 'true',
         responsive: 'true',
-        ...BUNNY_PLAYER_COLORS,
+        ...playerColors,
       });
       needsPlayerJs = !isThumb;
     }
