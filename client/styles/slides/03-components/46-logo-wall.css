@@ -3,7 +3,7 @@
   /* --slide-bg is set by the slide-bg-<value> class (mist by default; lime or
      a theme-defined variant when the author picks one). */
   background: var(--slide-bg, var(--slide-bg-mist));
-  color: var(--slide-on-surface, #0b0b0b);
+  color: var(--slide-on-surface);
   /* The inline half of this inset feeds the fluid type unit, so it is stated
      as --slide-padding rather than written into the shorthand — see
      00-tokens.css § THE FLUID BASIS. */

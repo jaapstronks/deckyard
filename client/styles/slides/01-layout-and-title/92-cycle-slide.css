@@ -60,7 +60,7 @@
   position: absolute;
   width: 140px;
   height: 140px;
-  background: var(--slide-bg-mist, #f4f4ef);
+  background: var(--slide-bg-mist);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -81,7 +81,7 @@
   font-size: var(--slide-text-sm);
   line-height: var(--slide-leading-compact);
   font-weight: var(--heading-weight, 400);
-  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
+  color: var(--slide-on-surface-muted);
 }
 
 /* ===========================================
@@ -97,7 +97,7 @@
   justify-content: center;
   /* Position on the ring, pointing clockwise tangent */
   transform: rotate(var(--arrow-angle)) translateY(-160px) rotate(90deg);
-  color: var(--slide-accent, #375c5d);
+  color: var(--slide-accent);
 }
 
 .slide-cycle .cycle-arrow svg {
@@ -106,7 +106,7 @@
 }
 
 .slide-cycle.slide-bg-lime .cycle-arrow {
-  color: var(--slide-on-surface, #0b0b0b);
+  color: var(--slide-on-surface);
 }
 
 /* ===========================================
@@ -152,7 +152,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--slide-bg-lime, #e2fe52);
+  background: var(--slide-bg-lime);
   /* The number sits on the lime disc, not on the slide, so it reads the
      surface's own text colour. See docs/reference/nested-surfaces.md. */
   --slide-on-surface: var(--slide-on-lime);
@@ -162,7 +162,7 @@
 }
 
 .slide-cycle.slide-bg-lime .stage-node {
-  background: var(--slide-accent, #375c5d);
+  background: var(--slide-accent);
   color: var(--slide-on-accent);
 }
 
@@ -188,14 +188,14 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
-  color: var(--slide-on-surface, #0b0b0b);
+  color: var(--slide-on-surface);
 }
 
 .slide-cycle .cycle-text {
   font-family: var(--font-body);
   font-size: var(--slide-font-size-card-body);
   line-height: var(--slide-leading-compact);
-  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.7));
+  color: var(--slide-on-surface-muted);
 }
 
 /* ===========================================

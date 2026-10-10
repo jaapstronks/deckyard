@@ -64,12 +64,12 @@
 
 /* Loading state for custom slide types (rendered server-side) */
 .slide.slide-loading {
-  background: var(--slide-bg-mist, #e0e6e2);
+  background: var(--slide-bg-mist);
   opacity: 0.7;
 }
 .slide.slide-loading .heading {
   font-family: var(--font-mono, monospace);
-  font-size: var(--slide-text-sm, 18px);
+  font-size: var(--slide-text-sm);
   opacity: 0.5;
 }
 
@@ -84,11 +84,11 @@
    move the content by hand.
    ============================================================================ */
 .slide.slide-unresolved {
-  background: var(--slide-bg-mist, #e0e6e2);
+  background: var(--slide-bg-mist);
 }
 .slide.slide-unresolved .slide-inner {
   justify-content: flex-start;
-  gap: var(--slide-space-6, 24px);
+  gap: var(--slide-space-6);
   overflow: hidden;
 }
 /* The eyebrow is the shared `.slide-eyebrow` partial (00-patterns.css), which
@@ -113,35 +113,35 @@
 .slide.slide-unresolved .unresolved-note,
 .slide.slide-unresolved .unresolved-more {
   margin: 0;
-  font-size: var(--slide-text-md, 24px);
-  line-height: var(--slide-leading-snug, 1.2);
-  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.65));
+  font-size: var(--slide-text-md);
+  line-height: var(--slide-leading-snug);
+  color: var(--slide-on-surface-muted);
   max-width: 75ch;
 }
 .slide.slide-unresolved .unresolved-content {
   margin: 0;
   display: grid;
-  gap: var(--slide-space-4, 16px);
-  border-top: 2px solid var(--slide-on-surface-muted, rgba(11, 11, 11, 0.25));
-  padding-top: var(--slide-space-5, 20px);
+  gap: var(--slide-space-4);
+  border-top: 2px solid var(--slide-on-surface-muted);
+  padding-top: var(--slide-space-5);
   min-height: 0;
   overflow: hidden;
 }
 .slide.slide-unresolved .unresolved-row {
   display: grid;
   grid-template-columns: minmax(6ch, 18ch) 1fr;
-  gap: var(--slide-space-6, 24px);
+  gap: var(--slide-space-6);
   align-items: baseline;
 }
 .slide.slide-unresolved .unresolved-row dt {
   font-family: var(--font-mono, monospace);
-  font-size: var(--slide-text-sm, 16px);
-  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.65));
+  font-size: var(--slide-text-sm);
+  color: var(--slide-on-surface-muted);
 }
 .slide.slide-unresolved .unresolved-row dd {
   margin: 0;
-  font-size: var(--slide-text-md, 24px);
-  line-height: var(--slide-leading-snug, 1.2);
+  font-size: var(--slide-text-md);
+  line-height: var(--slide-leading-snug);
   overflow-wrap: anywhere;
 }
 
@@ -159,7 +159,7 @@
   font-size: var(--slide-text-xl);
   line-height: var(--slide-leading-snug);
   margin: var(--slide-space-3) 0 0;
-  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.65));
+  color: var(--slide-on-surface-muted);
   max-width: 75ch;
 }
 
@@ -174,7 +174,7 @@
   margin-top: auto;
   margin-bottom: 0;
   padding-top: var(--slide-space-4);
-  color: var(--slide-on-surface-muted, rgba(11, 11, 11, 0.65));
+  color: var(--slide-on-surface-muted);
   max-width: 90ch;
 }
 

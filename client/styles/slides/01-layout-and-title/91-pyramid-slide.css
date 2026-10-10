@@ -85,7 +85,7 @@
   font-weight: var(--heading-weight, 400);
   text-transform: var(--heading-transform, none);
   font-synthesis: none;
-  color: var(--slide-on-surface, #0b0b0b);
+  color: var(--slide-on-surface);
 }
 
 .slide-pyramid .level-text {
@@ -95,7 +95,7 @@
   /* Full-strength, not the muted role: every bar is a coloured surface, and on
      the mid-tone mixes the muted text drops under 4.5:1. Size and face carry
      the label/text hierarchy. */
-  color: var(--slide-on-surface, #0b0b0b);
+  color: var(--slide-on-surface);
 }
 
 /* ===========================================
@@ -168,34 +168,22 @@
    accent's own pair to the lime-led mixes. Levels from 4 share the 60% bar,
    as a lime slide's levels from 4 share the accent. */
 .slide-pyramid .pyramid-level:nth-child(1) .level-bar {
-  background: var(--slide-accent, #375c5d);
+  background: var(--slide-accent);
   --surface-text: var(--slide-on-accent);
 }
 
 .slide-pyramid .pyramid-level:nth-child(2) .level-bar {
-  background: color-mix(
-    in srgb,
-    var(--slide-bg-lime, #e2fe52) 40%,
-    var(--slide-accent, #375c5d)
-  );
+  background: color-mix(in srgb, var(--slide-bg-lime) 40%, var(--slide-accent));
   --surface-text: var(--slide-on-lime);
 }
 
 .slide-pyramid .pyramid-level:nth-child(3) .level-bar {
-  background: color-mix(
-    in srgb,
-    var(--slide-bg-lime, #e2fe52) 50%,
-    var(--slide-accent, #375c5d)
-  );
+  background: color-mix(in srgb, var(--slide-bg-lime) 50%, var(--slide-accent));
   --surface-text: var(--slide-on-lime);
 }
 
 .slide-pyramid .pyramid-level:nth-child(n + 4) .level-bar {
-  background: color-mix(
-    in srgb,
-    var(--slide-bg-lime, #e2fe52) 60%,
-    var(--slide-accent, #375c5d)
-  );
+  background: color-mix(in srgb, var(--slide-bg-lime) 60%, var(--slide-accent));
   --surface-text: var(--slide-on-lime);
 }
 
@@ -208,34 +196,22 @@
    (the white-lime themes drop to 3.3:1), so the step goes straight to the
    accent's own pair. */
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(1) .level-bar {
-  background: color-mix(
-    in srgb,
-    var(--slide-bg-lime, #e2fe52) 70%,
-    var(--slide-accent, #375c5d)
-  );
+  background: color-mix(in srgb, var(--slide-bg-lime) 70%, var(--slide-accent));
   --surface-text: var(--slide-on-lime);
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(2) .level-bar {
-  background: color-mix(
-    in srgb,
-    var(--slide-bg-lime, #e2fe52) 55%,
-    var(--slide-accent, #375c5d)
-  );
+  background: color-mix(in srgb, var(--slide-bg-lime) 55%, var(--slide-accent));
   --surface-text: var(--slide-on-lime);
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(3) .level-bar {
-  background: color-mix(
-    in srgb,
-    var(--slide-bg-lime, #e2fe52) 40%,
-    var(--slide-accent, #375c5d)
-  );
+  background: color-mix(in srgb, var(--slide-bg-lime) 40%, var(--slide-accent));
   --surface-text: var(--slide-on-lime);
 }
 
 .slide-pyramid.slide-bg-lime .pyramid-level:nth-child(n + 4) .level-bar {
-  background: var(--slide-accent, #375c5d);
+  background: var(--slide-accent);
   --surface-text: var(--slide-on-accent);
 }
 
