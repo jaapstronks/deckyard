@@ -69,16 +69,18 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    title: 'Leadership Team',
-    subheading: 'Meet our experts',
-    members: [
-      { image: '', name: 'Jane Smith', byline: 'CEO' },
-      { image: '', name: 'John Doe', byline: 'CTO' },
-      { image: '', name: 'Alice Johnson', byline: 'COO' },
-    ],
+    content: {
+      title: 'Leadership Team',
+      subheading: 'Meet our experts',
+      members: [
+        { image: '', name: 'Jane Smith', byline: 'CEO' },
+        { image: '', name: 'John Doe', byline: 'CTO' },
+        { image: '', name: 'Alice Johnson', byline: 'COO' },
+      ],
+    },
   },
 ];

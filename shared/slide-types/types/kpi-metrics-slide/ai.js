@@ -60,16 +60,23 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    title: 'Key Results',
-    background: 'lime',
-    metrics: [
-      { value: '85', unit: '%', label: 'Customer Satisfaction', note: '+12%' },
-      { value: '2.5', unit: 'M', label: 'Users Reached', note: '+500K' },
-      { value: '40', unit: '%', label: 'Cost Reduction' },
-    ],
+    content: {
+      title: 'Key Results',
+      background: 'lime',
+      metrics: [
+        {
+          value: '85',
+          unit: '%',
+          label: 'Customer Satisfaction',
+          note: '+12%',
+        },
+        { value: '2.5', unit: 'M', label: 'Users Reached', note: '+500K' },
+        { value: '40', unit: '%', label: 'Cost Reduction' },
+      ],
+    },
   },
 ];

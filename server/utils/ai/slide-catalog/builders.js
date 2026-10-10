@@ -68,19 +68,15 @@ export function buildSlideTypeDescription(type) {
     if (examples.length === 1) {
       lines.push('EXACT CONTENT SCHEMA:');
       lines.push('```json');
-      lines.push(JSON.stringify(examples[0], null, 2));
+      lines.push(JSON.stringify(examples[0].content, null, 2));
       lines.push('```');
     } else {
       lines.push(`CONTENT SCHEMA VARIATIONS (${examples.length} patterns):`);
       examples.forEach((ex, idx) => {
-        const variationName = ex._variation || `Variation ${idx + 1}`;
-        // Remove the _variation field from the actual example
-        const cleanExample = { ...ex };
-        delete cleanExample._variation;
         lines.push('');
-        lines.push(`--- ${variationName} ---`);
+        lines.push(`--- ${ex.variation || `Variation ${idx + 1}`} ---`);
         lines.push('```json');
-        lines.push(JSON.stringify(cleanExample, null, 2));
+        lines.push(JSON.stringify(ex.content, null, 2));
         lines.push('```');
       });
     }

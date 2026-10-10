@@ -61,14 +61,16 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    title: 'Our Approach',
-    body: '- User-centered design process\n- Iterative development cycles\n- Continuous feedback integration',
-    image: '',
-    imageSide: 'right',
-    background: 'lime',
+    content: {
+      title: 'Our Approach',
+      body: '- User-centered design process\n- Iterative development cycles\n- Continuous feedback integration',
+      image: '',
+      imageSide: 'right',
+      background: 'lime',
+    },
   },
 ];
