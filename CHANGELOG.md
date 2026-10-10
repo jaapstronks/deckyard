@@ -4,6 +4,51 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.57.0](https://github.com/jaapstronks/deckyard/compare/v1.56.0...v1.57.0) (2026-10-10)
+
+
+### Added
+
+* **export:** the theme template opens on a sample slide per layout (B637) ([#1536](https://github.com/jaapstronks/deckyard/issues/1536)) ([ecd0b3b](https://github.com/jaapstronks/deckyard/commit/ecd0b3b2b63203ca5036a7bb6fa3fd7a18206d54))
+* link previews of the app shell follow the instance branding (B186) ([905ca8c](https://github.com/jaapstronks/deckyard/commit/905ca8c59b673f432b8380fb1a02ce7a925b14d4))
+* **slide-types:** the title-view seam carries the inline descriptor and a view without a ground ([#1530](https://github.com/jaapstronks/deckyard/issues/1530)) ([64f9da4](https://github.com/jaapstronks/deckyard/commit/64f9da42b8cbda276c749167191eb60d27249cbd))
+* **themes:** the PPTX template is downloaded from the theme, not from a deck ([#1537](https://github.com/jaapstronks/deckyard/issues/1537)) ([b1d43db](https://github.com/jaapstronks/deckyard/commit/b1d43db645df6964c0b050bf0b258c924f2131a7))
+
+
+### Fixed
+
+* a background failure stays at the state it describes (B206) ([#1549](https://github.com/jaapstronks/deckyard/issues/1549)) ([b9bf974](https://github.com/jaapstronks/deckyard/commit/b9bf9745130161ec3beaf6addb283dfa54a9bd6f))
+* a chart binding takes a range and gets a table (B238) ([#1545](https://github.com/jaapstronks/deckyard/issues/1545)) ([6e3e07f](https://github.com/jaapstronks/deckyard/commit/6e3e07f7755bedd4023fa6810d0ca29481f2ed34))
+* a confirmation does not repeat what the screen shows (B643) ([#1552](https://github.com/jaapstronks/deckyard/issues/1552)) ([f5b6dec](https://github.com/jaapstronks/deckyard/commit/f5b6dec08fb46d24c5ac9b57cc95dff2ec7468d9))
+* a failed action shows the server's reason, not generic copy (B205) ([#1546](https://github.com/jaapstronks/deckyard/issues/1546)) ([9b42443](https://github.com/jaapstronks/deckyard/commit/9b424434d0898d4e90add3807c2c81809672bad6))
+* a failed job says why in display text, or not at all (B646) ([#1554](https://github.com/jaapstronks/deckyard/issues/1554)) ([3fe5bfb](https://github.com/jaapstronks/deckyard/commit/3fe5bfb3e4adf87ed9ec3e6eee36c34f5a5d69cb))
+* a prompt example passes its own type's schema (B246) ([#1550](https://github.com/jaapstronks/deckyard/issues/1550)) ([5ca57fd](https://github.com/jaapstronks/deckyard/commit/5ca57fdc8a3a48943039db528f52a0969a737439))
+* a row that disappears hands focus back to its list (B647) ([#1555](https://github.com/jaapstronks/deckyard/issues/1555)) ([06f0c95](https://github.com/jaapstronks/deckyard/commit/06f0c95f2e446e8e4dc28ed843f6f000fcc5b44e))
+* a slide inserted after a child slide joins the child's group (B429) ([#1535](https://github.com/jaapstronks/deckyard/issues/1535)) ([2889d93](https://github.com/jaapstronks/deckyard/commit/2889d9321a881c679c876b834d89fdfb5889ddf5))
+* a slide role has one default, in the token layer (B640) ([#1548](https://github.com/jaapstronks/deckyard/issues/1548)) ([672e45e](https://github.com/jaapstronks/deckyard/commit/672e45ed398365d02b589c7a68f4fd411b5a0cab))
+* **a11y:** analytics screen-reader texts use the plural seam (B626) ([#1515](https://github.com/jaapstronks/deckyard/issues/1515)) ([a0811eb](https://github.com/jaapstronks/deckyard/commit/a0811ebac23e67ed024e7072f478146b5fe6cd3a))
+* **ai:** the prompt offers each slide type the grounds its picker offers (B244) ([#1531](https://github.com/jaapstronks/deckyard/issues/1531)) ([33fcac2](https://github.com/jaapstronks/deckyard/commit/33fcac2d4a37545e2e51d577e238ca62d5904c03))
+* **ai:** the slide validators know the derived contrast keys (B628) ([#1520](https://github.com/jaapstronks/deckyard/issues/1520)) ([10f401a](https://github.com/jaapstronks/deckyard/commit/10f401ad6a0d3228a740a2ab137a25b4ef7efa1b))
+* **ai:** the translate prompt offers every string in an items entry (B219) ([#1524](https://github.com/jaapstronks/deckyard/issues/1524)) ([826ff9f](https://github.com/jaapstronks/deckyard/commit/826ff9f3b829f176272c5255d4404c18a06b8a94))
+* **analytics:** the views timeline labels each gridline with its own value (B236) ([#1539](https://github.com/jaapstronks/deckyard/issues/1539)) ([8bb45ab](https://github.com/jaapstronks/deckyard/commit/8bb45ab0587dbbf16bcab5db3539d0a9112dcc8a))
+* **api:** a promoted question answers `closed`, `locked` is the slide lock only (B215) ([#1525](https://github.com/jaapstronks/deckyard/issues/1525)) ([620f0d6](https://github.com/jaapstronks/deckyard/commit/620f0d627bc728260d5d52bddb7688e0171af707))
+* **embed:** the SDK box grows by the strip under ui=strip (B629) ([#1516](https://github.com/jaapstronks/deckyard/issues/1516)) ([2d2c773](https://github.com/jaapstronks/deckyard/commit/2d2c773d819f865c5809fc115cfdaa76010dbaaf))
+* fold the image-slide layout enum into fit + bleed (B257-A2) ([#1543](https://github.com/jaapstronks/deckyard/issues/1543)) ([af1a8fe](https://github.com/jaapstronks/deckyard/commit/af1a8fe876a937022d6136001e3d893b126a040e))
+* **i18n:** a dead slideType key fails the suite before it ships (B635) ([#1532](https://github.com/jaapstronks/deckyard/issues/1532)) ([1595004](https://github.com/jaapstronks/deckyard/commit/15950040f6c50a5b7d38d4d6f2a97bbc48729423))
+* progress shows at its state, not in a minute-long toast (B645) ([#1553](https://github.com/jaapstronks/deckyard/issues/1553)) ([8523920](https://github.com/jaapstronks/deckyard/commit/8523920a9294eb9f765760f43d4f2a4b866f1bd1))
+* retire dead tolerance (B257-A) ([#1541](https://github.com/jaapstronks/deckyard/issues/1541)) ([dada398](https://github.com/jaapstronks/deckyard/commit/dada398f53a41befdacacea47b806fe87d858cd3))
+* settings keeps its tab through the router, openapi drops the two-meaning locked (B638) ([#1533](https://github.com/jaapstronks/deckyard/issues/1533)) ([df5dbb7](https://github.com/jaapstronks/deckyard/commit/df5dbb76d0da4c1f55fd3ea70d9886733c95765d))
+* **shell:** the plain description tag follows the instance (B630) ([#1522](https://github.com/jaapstronks/deckyard/issues/1522)) ([756f64f](https://github.com/jaapstronks/deckyard/commit/756f64f7fb77401cc60af4996a23a06f08c41d61))
+* **slides:** the KPI deltas clear AA on a dark ground (B631) ([#1526](https://github.com/jaapstronks/deckyard/issues/1526)) ([1aaac9d](https://github.com/jaapstronks/deckyard/commit/1aaac9d52274f77df58ae501f635149142ed104b))
+* **slides:** the KPI deltas take less tone on any dark ground (B633) ([#1527](https://github.com/jaapstronks/deckyard/issues/1527)) ([79f02b9](https://github.com/jaapstronks/deckyard/commit/79f02b923260eb26d8787d41100cf5eb4efe8b8f))
+* **slides:** the KPI tile glass follows the ground, AA on dark (B218) ([#1523](https://github.com/jaapstronks/deckyard/issues/1523)) ([9f1fe7c](https://github.com/jaapstronks/deckyard/commit/9f1fe7c920e177c933019cab9e491410dddcde4e))
+* the Bunny player takes its colours from the theme (B648) ([#1556](https://github.com/jaapstronks/deckyard/issues/1556)) ([1eb9359](https://github.com/jaapstronks/deckyard/commit/1eb9359b7ff788154ebc27e87ffb6fc149876fd4))
+* the chart error card and SVG names speak the deck language (B235) ([#1538](https://github.com/jaapstronks/deckyard/issues/1538)) ([e2c760a](https://github.com/jaapstronks/deckyard/commit/e2c760adb7fb34197a96cda8ac27e508cb4782df))
+* the chart error card reads the slide's ground, not a fixed light plate (B639) ([#1540](https://github.com/jaapstronks/deckyard/issues/1540)) ([06e8afb](https://github.com/jaapstronks/deckyard/commit/06e8afbbf2aca6766a5c9ec8f328818957d6c1b9))
+* the example an agent gets is the type's sample, not its empty defaults (B245) ([#1547](https://github.com/jaapstronks/deckyard/issues/1547)) ([e327ca8](https://github.com/jaapstronks/deckyard/commit/e327ca838d482d8de5afe1b55af98581e30799a9))
+* the live-session close test waits for the delete, not 50 ms (B644) ([#1551](https://github.com/jaapstronks/deckyard/issues/1551)) ([c5c1c59](https://github.com/jaapstronks/deckyard/commit/c5c1c5907c18439d819823cd5bd479d95277c234))
+* the slide library has its own address and a slide permalink opens the slide (B285) ([#1529](https://github.com/jaapstronks/deckyard/issues/1529)) ([fa270a9](https://github.com/jaapstronks/deckyard/commit/fa270a99003eb037c2a04e42a3b30fbc1833f4a4))
+
 ## [1.56.0](https://github.com/jaapstronks/deckyard/compare/v1.55.0...v1.56.0) (2026-10-09)
 
 
