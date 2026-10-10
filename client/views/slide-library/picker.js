@@ -757,18 +757,30 @@ export function createSlideLibraryPicker({
     await rerenderList();
   };
 
+  /**
+   * Open one slide's lightbox by id (the permalink). Waits for the shelf if it
+   * is still loading. Answers whether the slide was found, so the host can say
+   * so instead of showing the library as if nothing was asked.
+   * @param {'organization'|'personal'} shelf
+   * @param {string} slideId
+   * @returns {Promise<boolean>}
+   */
   const openSlideById = async (shelf, slideId) => {
     const s = shelf === 'organization' ? 'organization' : 'personal';
     state.setShelf(s);
 
-    if (!state.getCache(s).length && !state.isLoading(s)) {
-      await apiOps.fetchShelf(s);
+    if (!state.getCache(s).length) {
+      try {
+        await apiOps.fetchShelf(s);
+      } catch {
+        return false;
+      }
     }
 
     const item = state.getCache(s).find((it) => it.id === slideId);
-    if (item) {
-      await modals.openLightbox(item, { updateUrl: false });
-    }
+    if (!item) return false;
+    await modals.openLightbox(item);
+    return true;
   };
 
   // Re-sync one card's checkbox UI to the selection state (no-op if not shown).

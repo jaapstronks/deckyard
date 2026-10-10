@@ -12,9 +12,10 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import JSZip from 'jszip';
 import { testScope } from './helpers/storage-scope.js';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
-import { brandSeedRow } from './helpers/theme-seed.js';
+import { brandSeedRow, seedThemeConfig } from './helpers/theme-seed.js';
 import { healthKeys } from './helpers/instance-health.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
@@ -28,8 +29,13 @@ const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
 const { createPresentation } =
   await import('../server/storage/presentations/index.js');
-const { prepareExportContext, prepareQueuedExportContext } =
-  await import('../server/services/exports.js');
+const {
+  prepareExportContext,
+  prepareQueuedExportContext,
+  prepareThemeTemplate,
+} = await import('../server/services/exports.js');
+const { buildThemeTemplateBuffer } =
+  await import('../server/export/pptx-theme.js');
 const { ForbiddenError, NotFoundError } =
   await import('../server/utils/errors.js');
 
@@ -157,4 +163,54 @@ test('the queued worker builds the same context and counts nothing', async () =>
     }),
     NotFoundError,
   );
+});
+
+// ---------------------------------------------------------------------------
+// The theme template (B274): the one export addressed by theme, not by deck.
+// ---------------------------------------------------------------------------
+
+test('a theme template is counted on the export axis and named after its theme', async () => {
+  const theme = await seedThemeConfig('brand');
+  const direct = Buffer.from(await buildThemeTemplateBuffer('.', theme));
+  db.__tables.instance_health = [];
+
+  const { buffer, label } = await prepareThemeTemplate(scope(), brandSeed.id);
+
+  assert.deepEqual(await healthKeys(db), ['export:pptx-template']);
+  assert.equal(label, brandSeed.label);
+  // The same package the deck-scoped route used to hand back: the move changed
+  // who is asked, not what is built.
+  assert.deepEqual(await pptxParts(buffer), await pptxParts(direct));
+});
+
+/**
+ * Every part of a PPTX package as text, with the build time taken out. The
+ * bytes of two builds are not comparable: JSZip dates every entry and
+ * `docProps/core.xml` stamps `dcterms:created`/`modified` to the second, so two
+ * builds a second apart differ (B642). What must match is everything else.
+ *
+ * @param {Uint8Array} bytes
+ * @returns {Promise<Record<string, string>>}
+ */
+async function pptxParts(bytes) {
+  const zip = await JSZip.loadAsync(bytes);
+  const parts = {};
+  for (const name of Object.keys(zip.files).sort()) {
+    const entry = zip.files[name];
+    if (entry.dir) continue;
+    const text = await entry.async('string');
+    parts[name] =
+      name === 'docProps/core.xml'
+        ? text.replace(/(<dcterms:(?:created|modified)\b[^>]*>)[^<]*/g, '$1')
+        : text;
+  }
+  return parts;
+}
+
+test('a theme this scope cannot see is a 404, not someone else’s template', async () => {
+  await assert.rejects(
+    prepareThemeTemplate(scope(), '00000000-0000-4000-8000-000000000404'),
+    (err) => err.statusCode === 404,
+  );
+  assert.deepEqual(await healthKeys(db), []);
 });

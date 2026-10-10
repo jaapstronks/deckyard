@@ -58,17 +58,19 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    title: 'Before and after',
-    body: '- The old flow took four screens\n- The new one takes two',
-    images: [
-      { src: '', alt: 'The old flow' },
-      { src: '', alt: 'The new flow' },
-    ],
-    layout: 'top',
-    background: 'lime',
+    content: {
+      title: 'Before and after',
+      body: '- The old flow took four screens\n- The new one takes two',
+      images: [
+        { src: '', alt: 'The old flow' },
+        { src: '', alt: 'The new flow' },
+      ],
+      layout: 'top',
+      background: 'lime',
+    },
   },
 ];

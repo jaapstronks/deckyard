@@ -178,7 +178,6 @@ export function createUploadPanel({
           currentVariants.push(result);
           renderGrid();
           if (onVariantChange) onVariantChange(currentVariants);
-          toast.success(t('fonts.variantUploaded', 'Font variant uploaded.'));
         } catch (err) {
           toast.error(
             err.message ||
@@ -200,7 +199,6 @@ export function createUploadPanel({
       currentVariants = currentVariants.filter((v) => v.id !== variantId);
       renderGrid();
       if (onVariantChange) onVariantChange(currentVariants);
-      toast.success(t('fonts.variantRemoved', 'Font variant removed.'));
     } catch (err) {
       toast.error(
         err.message || t('fonts.removeError', 'Failed to remove variant.'),

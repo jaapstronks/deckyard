@@ -5,7 +5,7 @@
  * A named wrapper over the router's `setQueryParams` (which replaces rather
  * than pushes, so there is no history entry per slide and no re-route): this
  * file is where "the selected slide lives in `?slideId=`" is written down. The
- * load side lives in the controllers (?slideId= / ?s= → initialSlideId).
+ * load side lives in the controllers (?slideId= → initialSlideId).
  */
 import { setQueryParams } from '../../lib/state/router.js';
 
@@ -14,9 +14,5 @@ import { setQueryParams } from '../../lib/state/router.js';
  * @param {string|null} slideId - Selected slide id; falsy removes the param.
  */
 export function syncSlideIdInUrl(slideId) {
-  setQueryParams({
-    slideId: slideId || null,
-    // `s` is a read-only alias on load; drop it so the two can't disagree.
-    s: null,
-  });
+  setQueryParams({ slideId: slideId || null });
 }

@@ -55,45 +55,51 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    _variation: 'Pros and cons comparison',
-    title: 'Build vs Buy Decision',
-    variant: 'pros-cons',
-    leftTitle: 'Build In-House',
-    leftBody:
-      '- Full customization possible\n- Complete ownership of IP\n- Higher upfront investment\n- Longer time to market\n- Requires dedicated team',
-    rightTitle: 'Buy Solution',
-    rightBody:
-      '- Faster deployment\n- Lower initial cost\n- Proven reliability\n- Vendor dependency\n- Limited customization',
-    verdict: 'Recommended: Buy for MVP, build later',
-    background: 'lime',
+    variation: 'Pros and cons comparison',
+    content: {
+      title: 'Build vs Buy Decision',
+      variant: 'pros-cons',
+      leftTitle: 'Build In-House',
+      leftBody:
+        '- Full customization possible\n- Complete ownership of IP\n- Higher upfront investment\n- Longer time to market\n- Requires dedicated team',
+      rightTitle: 'Buy Solution',
+      rightBody:
+        '- Faster deployment\n- Lower initial cost\n- Proven reliability\n- Vendor dependency\n- Limited customization',
+      verdict: 'Recommended: Buy for MVP, build later',
+      background: 'lime',
+    },
   },
   {
-    _variation: 'Before and after transformation',
-    title: 'Digital Transformation Impact',
-    variant: 'before-after',
-    leftTitle: 'Before',
-    leftBody:
-      '- Manual data entry\n- Paper-based workflows\n- Siloed departments\n- 2-week processing time\n- High error rate (15%)',
-    rightTitle: 'After',
-    rightBody:
-      '- Automated pipelines\n- Digital-first processes\n- Connected systems\n- Same-day processing\n- Near-zero errors (<1%)',
-    background: 'mist',
+    variation: 'Before and after transformation',
+    content: {
+      title: 'Digital Transformation Impact',
+      variant: 'before-after',
+      leftTitle: 'Before',
+      leftBody:
+        '- Manual data entry\n- Paper-based workflows\n- Siloed departments\n- 2-week processing time\n- High error rate (15%)',
+      rightTitle: 'After',
+      rightBody:
+        '- Automated pipelines\n- Digital-first processes\n- Connected systems\n- Same-day processing\n- Near-zero errors (<1%)',
+      background: 'mist',
+    },
   },
   {
-    _variation: 'Two options read off against criteria',
-    title: 'Postgres or SQLite',
-    variant: 'tradeoff',
-    leftTitle: 'Postgres',
-    leftBody:
-      '- Concurrency: many writers\n- Operations: a server to run\n- Scale: grows with the team',
-    rightTitle: 'SQLite',
-    rightBody:
-      '- Concurrency: one writer\n- Operations: a file to copy\n- Scale: one machine',
-    verdict: 'SQLite until the second writer',
-    background: 'mist',
+    variation: 'Two options read off against criteria',
+    content: {
+      title: 'Postgres or SQLite',
+      variant: 'tradeoff',
+      leftTitle: 'Postgres',
+      leftBody:
+        '- Concurrency: many writers\n- Operations: a server to run\n- Scale: grows with the team',
+      rightTitle: 'SQLite',
+      rightBody:
+        '- Concurrency: one writer\n- Operations: a file to copy\n- Scale: one machine',
+      verdict: 'SQLite until the second writer',
+      background: 'mist',
+    },
   },
 ];

@@ -53,17 +53,19 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    title: 'Our Partners',
-    subheading: 'Trusted collaborators',
-    logos: [
-      { image: '', name: 'Acme Corporation' },
-      { image: '', name: 'Globex Industries' },
-      { image: '', name: 'Initech' },
-      { image: '', name: 'Umbrella Corp' },
-    ],
+    content: {
+      title: 'Our Partners',
+      subheading: 'Trusted collaborators',
+      logos: [
+        { image: '', name: 'Acme Corporation' },
+        { image: '', name: 'Globex Industries' },
+        { image: '', name: 'Initech' },
+        { image: '', name: 'Umbrella Corp' },
+      ],
+    },
   },
 ];

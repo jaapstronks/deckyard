@@ -768,6 +768,48 @@ test('an applied suggestion is composed by the slide factory (B272)', async () =
   );
 });
 
+test('a suggestion next to a child slide lands as a child of the same parent (D325)', async () => {
+  const db2 = await seed();
+  db2.__tables.presentations[0].slides = [
+    { id: 's0', type: 'content-slide', content: { title: 'Parent' } },
+    {
+      id: 's1',
+      type: 'content-slide',
+      content: { title: 'Child' },
+      parentId: 's0',
+    },
+    { id: 's2', type: 'content-slide', content: { title: 'Next' } },
+  ];
+
+  const { res } = await call(handlePresentationCommentApply, 'POST', {
+    as: ACTORS.owner,
+    args: [DECK, 'cm-ai'],
+  });
+
+  assert.equal(res.statusCode, 200);
+  const slides = db2.__tables.presentations[0].slides;
+  assert.deepEqual(
+    slides.map((s) => s.id),
+    ['s0', 's1', res.body.newSlideId, 's2'],
+  );
+  assert.equal(res.body.newSlideIndex, 2);
+  assert.equal(slides[2].parentId, 's0', 'the proposal joins the group');
+});
+
+test('a suggestion next to a top-level slide stays top level (D325)', async () => {
+  const db2 = await seed();
+  const { res } = await call(handlePresentationCommentApply, 'POST', {
+    as: ACTORS.owner,
+    args: [DECK, 'cm-ai'],
+  });
+
+  assert.equal(res.statusCode, 200);
+  const slide = db2.__tables.presentations[0].slides.find(
+    (s) => s.id === res.body.newSlideId,
+  );
+  assert.equal(slide.parentId ?? null, null);
+});
+
 test('a suggestion proposing a type the org does not have is refused', async () => {
   const db2 = await seed();
   commentById('cm-ai').proposed_slide = {

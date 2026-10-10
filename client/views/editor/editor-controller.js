@@ -185,7 +185,7 @@ export async function createEditorController({
   // EDITOR STATE
   // ============================================================
 
-  const initialSlideId = queryParam('slideId') || queryParam('s') || '';
+  const initialSlideId = queryParam('slideId') || '';
   const shouldScrollSelectionOnLoad = !!initialSlideId;
 
   let selectedSlideId = pres.slides?.[0]?.id || null;

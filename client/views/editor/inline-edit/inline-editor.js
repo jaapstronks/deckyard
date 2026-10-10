@@ -1419,7 +1419,14 @@ export function createInlineEditor({
     });
     try {
       const { url } = await uploadFile(api, file);
-      if (!url) throw new Error('no url');
+      if (!url) {
+        throw new Error(
+          t(
+            'editor.inline.media.dropFailed',
+            'Upload failed. Please try again.',
+          ),
+        );
+      }
       target.member[target.imageField] = url;
       // Raw uploads carry no provider metadata, so clear any stale ImageKit id
       // and leave alt empty for the user to fill or AI-generate.
@@ -1428,10 +1435,10 @@ export function createInlineEditor({
       requestSave?.();
       rerenderEditor?.();
       rerenderPreview?.();
-    } catch {
-      toast.error(
-        t('editor.inline.media.dropFailed', 'Upload failed. Please try again.'),
-      );
+    } catch (err) {
+      // The server's sentence (too large, wrong type, storage full), not a
+      // generic "failed" in its place (B205).
+      toast.error(err);
     } finally {
       uploading?.dismiss?.();
     }

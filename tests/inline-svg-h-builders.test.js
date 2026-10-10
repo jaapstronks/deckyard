@@ -104,8 +104,11 @@ test('timeline chart renders bars as SVG rects with data attributes', () => {
   assert.equal(bars[1].getAttribute('data-date'), '2026-07-02');
   assert.equal(bars[0].namespaceURI, SVG_NS);
 
-  // Y-axis labels are SVG <text> (6 gridline ticks: 0..5).
-  assert.equal(svg.querySelectorAll('text.analytics-chart-label-y').length, 6);
+  // Y-axis labels are SVG <text>, one per gridline (0..8 in steps of 2 for a
+  // maximum of 7; the ladder itself is pinned in analytics-timeline-axis).
+  const labels = svg.querySelectorAll('text.analytics-chart-label-y');
+  assert.equal(labels.length, 5);
+  assert.equal(labels[0].namespaceURI, SVG_NS);
 });
 
 test('timeline chart bar hover wires the tooltip handler through h()', () => {

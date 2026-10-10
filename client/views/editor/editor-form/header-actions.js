@@ -236,9 +236,6 @@ export function buildHeaderActions({
                 if (resp.slide.notes) slide.notes = resp.slide.notes;
                 converting.dismiss();
                 editorState.dirtyRefreshWithItem();
-                toast.success(
-                  t('editor.slide.aiConvert.done', 'Converted successfully!'),
-                );
               } else {
                 throw new Error(
                   resp?.error || t('common.unknownError', 'Unknown error'),

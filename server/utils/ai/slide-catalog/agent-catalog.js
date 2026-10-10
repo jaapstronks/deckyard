@@ -42,9 +42,12 @@ import {
   GLOBAL_SLIDE_FIELD_KEYS,
 } from '../../../../shared/slide-types/registry.js';
 import { formatCanonicalId } from '../../../../shared/slide-types/type-id.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
 import { acceptedTextStyles } from '../../../../shared/slide-types/text-styles.js';
+import { slideTypeSample } from '../../../../shared/slide-types/authoring-companions.js';
+import { contentSchemaFor } from '../schemas/content-schema.js';
 
 const GLOBAL_FIELDS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
 
@@ -85,6 +88,34 @@ const FIELD_TYPE_TO_SCHEMA_TYPE = {
 export function isAgentOptOut(def) {
   if (!def || typeof def !== 'object') return true;
   return def.deprecated === true || def.ai === false;
+}
+
+/**
+ * The registered types deliberately withheld from agents, by name.
+ *
+ * @param {Record<string, object>} [slideTypes] - registry to enumerate
+ * @returns {string[]}
+ */
+export function agentWithheldTypeNames(slideTypes = SLIDE_TYPES) {
+  return Object.keys(slideTypes).filter((name) =>
+    isAgentOptOut(slideTypes[name]),
+  );
+}
+
+/**
+ * The prompt rule that forbids those types by name, or `''` when nothing is
+ * withheld. The catalog already leaves them out; this is the explicit
+ * prohibition every generating prompt ends with, derived from the
+ * declarations (`ai: false`, `deprecated: true`) so that the prompts stopped
+ * naming the follow-along invite themselves (B413).
+ *
+ * @param {Record<string, object>} [slideTypes] - registry to enumerate
+ * @returns {string}
+ */
+export function agentWithheldTypesRule(slideTypes = SLIDE_TYPES) {
+  const names = agentWithheldTypeNames(slideTypes);
+  if (!names.length) return '';
+  return `IMPORTANT: Do NOT output ${names.map((n) => `"${n}"`).join(', ')}.`;
 }
 
 /**
@@ -169,12 +200,27 @@ export function deriveAgentSchema(fields) {
 }
 
 /**
- * Pick the example content object for a type in the requested language.
+ * The example content an agent gets for a type: its sample (D119), what a good
+ * slide of this type looks like. `defaults` is the empty slide the editor
+ * starts from, which is a template, not an example.
+ *
+ * A sample the type's own content schema refuses is not handed out: an agent
+ * copies the example, and strict validation would then refuse the copy (D87).
+ * That is one type today, on purpose: `video-slide`'s sample leaves `source`
+ * blank so a picker tile does not load a live player (D107). It, and a type
+ * with no sample (`embed-slide`, `payoff-slide`, a Tier-2 type), offers its
+ * defaults in the requested language instead.
+ * tests/strict-accepts-catalog-examples.test.js pins both halves.
+ *
+ * @param {string|null} name - Registry name for a core type; null for Tier 2,
+ *   whose slug must not pick up a core type's sample.
  * @param {object} def - Definition or Tier-2 record (both carry defaults*).
  * @param {string} lang
  * @returns {object|null}
  */
-function exampleFor(def, lang) {
+function exampleFor(name, def, lang) {
+  const sample = slideTypeSample(name, def);
+  if (sample && contentSchemaFor(def).safeParse(sample).success) return sample;
   return (
     def?.defaultsByLang?.[lang] ||
     def?.defaultsByLang?.nl ||
@@ -263,7 +309,7 @@ function tier1Entry(name, def, catalogEntry, lang) {
     // prose about it. See deriveAgentSchema().
     schema: deriveAgentSchema(def?.fields),
     ...textStylesField(def),
-    example: exampleFor(def, lang),
+    example: exampleFor(name, def, lang),
     // false = registered and usable, but nobody has written the editorial copy.
     // Surfacing the gap beats hiding the type.
     documented,
@@ -291,7 +337,7 @@ function tier2Entry(ct, lang) {
     notFor: [],
     schema: deriveAgentSchema(ct.fields),
     ...textStylesField(ct),
-    example: exampleFor(ct, lang),
+    example: exampleFor(null, ct, lang),
     // `documented` tracks editorial copy on the description/bestFor axis, which
     // Tier 2 has no columns for. A type with `usage` is better described, but
     // not documented in that sense - overloading the flag would make it mean two
@@ -315,7 +361,7 @@ function tier2Entry(ct, lang) {
  * @returns {Object<string, object>} Entries keyed by slide-type name.
  */
 export function resolveAgentSlideTypes({
-  lang = 'nl',
+  lang = DEFAULT_DECK_LANG,
   category = 'all',
   disabledSlideTypes = [],
   customSlideTypes = [],

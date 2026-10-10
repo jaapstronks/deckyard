@@ -161,6 +161,24 @@ export async function updateSlide(scope, identity, input) {
   return { slide, index, presentation };
 }
 
+/**
+ * Insert `slide` right after the slide at `anchorIndex`, in the anchor's
+ * group: next to a child it lands as a sibling child, next to a top-level
+ * slide it stays top level (D325, the same rule as the editor's insert row).
+ * Mutates `slides` and answers the new slide's index.
+ *
+ * @param {Array<Object>} slides
+ * @param {Object} slide
+ * @param {number} anchorIndex
+ * @returns {number}
+ */
+export function insertAfterAnchor(slides, slide, anchorIndex) {
+  const parentId = slides[anchorIndex]?.parentId || null;
+  if (parentId) slide.parentId = parentId;
+  slides.splice(anchorIndex + 1, 0, slide);
+  return anchorIndex + 1;
+}
+
 /** Add one factory-composed slide, with the same final validation on both contracts. */
 export async function addSlide(scope, identity, input) {
   const {
@@ -198,18 +216,21 @@ export async function addSlide(scope, identity, input) {
   assertValidSlide(slide, slideTypes);
 
   const slides = [...(pres.slides || [])];
-  let index = slides.length;
-  if (atIndex !== undefined && atIndex !== null)
+  const after = afterSlideId
+    ? slides.findIndex((candidate) => candidate.id === afterSlideId)
+    : -1;
+  let index;
+  if (atIndex !== undefined && atIndex !== null) {
     index = Math.min(atIndex, slides.length);
-  else if (position !== undefined && position !== null)
+    slides.splice(index, 0, slide);
+  } else if (position !== undefined && position !== null) {
     index = Math.max(0, Math.min(position, slides.length));
-  else if (afterSlideId) {
-    const after = slides.findIndex(
-      (candidate) => candidate.id === afterSlideId,
-    );
-    if (after >= 0) index = after + 1;
+    slides.splice(index, 0, slide);
+  } else if (after >= 0) {
+    index = insertAfterAnchor(slides, slide, after);
+  } else {
+    index = slides.push(slide) - 1;
   }
-  slides.splice(index, 0, slide);
   const presentation = await persistSlides(scope, identity, pres, slides);
   return { slide, index, presentation };
 }

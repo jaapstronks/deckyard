@@ -11,7 +11,10 @@
  *  2. the tracked fork fixture (`fork-title-slide.js`) gets core's `tsu-*`
  *     structure plus its own additions while its source names no `tsu-` class;
  *  3. `renderTitleView` escapes every string in the view, so a fork never has
- *     to.
+ *     to;
+ *  4. the seam carries what else a fork needs to lend the layout without a
+ *     core class name: the inline-edit descriptor, and a view that asks for
+ *     no ground class (B636).
  *
  * Runs in the plain core suite: the fixture is imported from a copy (see
  * `tests/helpers/fork-slide-type-fixtures.js`), not from `custom/`.
@@ -25,7 +28,9 @@ import { join } from 'node:path';
 import {
   resolveTitleView,
   renderTitleView,
+  titleInlineEdit,
 } from '../shared/slide-types/core-layouts.js';
+import { inlineEdit as coreTitleInlineEdit } from '../shared/slide-types/types/title-slide/inline-edit.js';
 import { CORE_SLIDE_TYPE_DEFS } from '../shared/slide-types/registry.js';
 import {
   FORK_FIXTURE_DIR,
@@ -161,4 +166,45 @@ test('content text reaching the view is escaped on the core path too', () => {
   assert.match(html, /&lt;b&gt;T&lt;\/b&gt;/);
   assert.match(html, /S &amp; &quot;s&quot;/);
   assert.match(html, /M&#039;m/);
+});
+
+test("the seam exports title-slide's inline descriptor and the fork uses it", async () => {
+  assert.equal(titleInlineEdit, coreTitleInlineEdit);
+  const fork = await forkTitle();
+  assert.equal(fork.inline, titleInlineEdit);
+});
+
+test('a view with background null renders no slide-bg class', async () => {
+  const view = { ...resolveTitleView(CONTENT, {}, {}), background: null };
+  const [root] = classAttrs(renderTitleView(view));
+  assert.ok(root.includes('slide-title'));
+  assert.equal(
+    root.some((name) => name.startsWith('slide-bg-')),
+    false,
+    root.join(' '),
+  );
+
+  // Core never resolves to null: empty and unknown grounds still fall back.
+  for (const background of [undefined, '', 'mist']) {
+    const [coreRoot] = classAttrs(
+      core.renderHtml({ ...CONTENT, background }, {}, {}),
+    );
+    assert.ok(
+      coreRoot.some((name) => name.startsWith('slide-bg-')),
+      String(background),
+    );
+  }
+
+  const fork = await forkTitle();
+  const [bare] = classAttrs(
+    fork.renderHtml({ ...CONTENT, background: 'transparent' }, {}, {}),
+  );
+  assert.equal(
+    bare.some((name) => name.startsWith('slide-bg-')),
+    false,
+  );
+  const [painted] = classAttrs(
+    fork.renderHtml({ ...CONTENT, background: 'mist' }, {}, {}),
+  );
+  assert.ok(painted.includes('slide-bg-mist'));
 });

@@ -47,10 +47,10 @@ export async function confirmDelete(targetUser, onSuccess) {
 
   try {
     await api(`/api/admin/users/${targetUser.id}`, { method: 'DELETE' });
-    toast.success(t('admin.users.deleteSuccess', 'User deleted successfully.'));
     onSuccess();
   } catch (e) {
-    toast.error(t('admin.users.deleteError', 'Failed to delete user.'));
+    // The server's sentence ("cannot delete the last admin", …) is the reason.
+    toast.error(e);
   }
 }
 

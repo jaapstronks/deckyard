@@ -1,6 +1,12 @@
 /**
  * Public API v1 - Export endpoints.
- * Handles presentation exports via API key authentication.
+ *
+ * Handles presentation exports via API key authentication, plus the one
+ * export that is not a presentation's: a theme's PPTX template (B274). It
+ * lives here rather than beside the other `/themes` routes because what it
+ * needs is this module's — the export right, the export limit, the counted
+ * request and the attachment response — and none of that belongs in the
+ * read-only catalogue.
  */
 
 import { buildStandaloneHtml } from '../../../export/html.js';
@@ -20,7 +26,10 @@ import {
   checkExportLimit,
   trackExportRequest,
 } from './middleware.js';
-import { prepareExportContext } from '../../../services/exports.js';
+import {
+  prepareExportContext,
+  prepareThemeTemplate,
+} from '../../../services/exports.js';
 import { getRateLimitHeaders } from '../../../storage/api-usage.js';
 
 // ============================================================
@@ -228,11 +237,44 @@ const handleEditablePptxExport = pptxExportHandler({
   reportImageSlides: true,
 });
 
+/**
+ * GET /api/v1/themes/:id/template.pptx — the theme's PPTX template.
+ *
+ * Addressed by theme because that is what the bytes depend on (B274, D126).
+ * A theme the key's organization cannot see answers 404, like one that does
+ * not exist; `withV1ErrorHandler` renders that throw (B619).
+ */
+async function handleThemeTemplateExport(ctx, themeId) {
+  if (!requirePermission(ctx, 'export')) return true;
+
+  if (!(await checkExportLimit(ctx))) return true;
+
+  // Resolve before counting, like the deck routes: a 404 must not spend the
+  // key's export limit. The seam resolves and builds in one call, so the count
+  // lands after the build rather than between the two.
+  const { buffer, label } = await prepareThemeTemplate(
+    ctx.storageScope,
+    themeId,
+  );
+
+  await trackExportRequest(ctx);
+
+  await sendExportResponse(ctx, {
+    contentType:
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    filename: label,
+    extension: '-template.pptx',
+    data: buffer,
+  });
+  return true;
+}
+
 // ============================================================
 // MAIN HANDLER
 // ============================================================
 
-/** The five export formats, one row each; any other method answers 405. */
+/** The five deck formats plus the theme template, one row each; any other
+ * method answers 405. */
 export const ROUTES = [
   {
     method: 'GET',
@@ -272,6 +314,18 @@ export const ROUTES = [
   {
     pattern:
       /^\/api\/v1\/presentations\/([^/]+)\/export\/(?:json|html|pdf|pptx|pptx-editable)$/,
+    captures: ['uuid'],
+    handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
+  },
+  {
+    method: 'GET',
+    id: 'exportThemeTemplate',
+    pattern: /^\/api\/v1\/themes\/([^/]+)\/template\.pptx$/,
+    captures: ['uuid'],
+    handler: handleThemeTemplateExport,
+  },
+  {
+    pattern: /^\/api\/v1\/themes\/([^/]+)\/template\.pptx$/,
     captures: ['uuid'],
     handler: ({ res }) => v1MethodNotAllowed(res, ['GET']),
   },

@@ -174,3 +174,32 @@ test('a failed erase leaves the button clickable again', async () => {
   assert.equal(btn.disabled, false, 're-enabled after the failure');
   assert.equal(erasedFired, 0, 'onErased did not fire on failure');
 });
+
+test("a refused erase shows the server's sentence, not generic copy (B205)", async () => {
+  const refusal = Object.assign(
+    new Error('Too many requests. Try again in a minute.'),
+    { statusCode: 429, code: 'rate_limited' },
+  );
+  const tracker = {
+    erase: async () => {
+      throw refusal;
+    },
+  };
+  const btn = createEraseMyDataButton({ tracker, labels: LABELS });
+  document.body.appendChild(btn);
+
+  btn.click();
+  await tick();
+  modalActions()
+    .find((b) => b.classList.contains('btn-danger'))
+    .click();
+  await tick();
+  await tick();
+
+  const texts = [...document.querySelectorAll('.toast .toast-text')].map(
+    (el) => el.textContent,
+  );
+  assert.ok(texts.includes(refusal.message), 'the toast carries the sentence');
+  assert.ok(btn.isConnected, 'the button stays so the viewer can retry');
+  assert.equal(btn.disabled, false, 're-enabled after the refusal');
+});

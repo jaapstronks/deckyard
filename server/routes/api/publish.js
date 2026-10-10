@@ -12,6 +12,7 @@ import {
 } from '../../utils/http.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
 import { isMediaProviderInitialized } from '../../media/index.js';
+import { firstPublicSlide } from '../../utils/public-output.js';
 import {
   publishPresentation,
   assertPublishingEnabled,
@@ -137,12 +138,9 @@ async function handlePreviewRegenerate(
     return true;
   }
 
-  // Nothing to render a preview from (every slide is an internal follow-invite).
-  const firstSlide = Array.isArray(pres?.slides)
-    ? pres.slides.find((s) => s?.type !== 'follow-invite-slide')
-    : null;
-
-  if (!firstSlide) {
+  // Nothing to render a preview from (every slide is live-only, e.g. a deck
+  // that holds only a follow-along invite).
+  if (!firstPublicSlide(pres)) {
     badRequest(res, 'No slides to preview');
     return true;
   }

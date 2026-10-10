@@ -134,7 +134,6 @@ export function createFontEditor({ fontFamily, onSave, onCancel, onDelete }) {
           await api(`/api/font-families/${fontFamily.id}`, {
             method: 'DELETE',
           });
-          toast.success(t('fonts.deleted', 'Font family deleted.'));
           if (onDelete) onDelete();
         } catch (err) {
           toast.error(

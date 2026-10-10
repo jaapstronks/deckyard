@@ -43,15 +43,13 @@ export function createSlideLibraryModals({
   onCopySlide = null,
   onNewPresentation = null,
 }) {
-  const openLightbox = async (it, { rerender, updateUrl = true } = {}) => {
+  const openLightbox = async (it, { rerender } = {}) => {
     const slide = libraryItemSlide(it, state.getLang());
     const thTheme = await resolveThemeForItem(it);
     const shelf = state.getShelf();
 
-    // Notify URL change for permalink support
-    if (updateUrl && onSlideOpen) {
-      onSlideOpen({ shelf, slideId: it.id });
-    }
+    // The host owns the address (permalink support).
+    onSlideOpen?.({ shelf, slideId: it.id });
 
     const titleText =
       cleanStr(it?.name) || t('slideLibrary.preview.untitled', 'Untitled');
@@ -62,8 +60,7 @@ export function createSlideLibraryModals({
       onClose: () => {
         window.removeEventListener('resize', updateScale);
         tagEditor.detach?.();
-        // Notify URL change for permalink support
-        if (updateUrl && onSlideClose) onSlideClose();
+        onSlideClose?.();
       },
     });
     modal.header.classList.add('ps-modal-header');
@@ -86,7 +83,7 @@ export function createSlideLibraryModals({
           // the modal already shows it, and this lightbox is gone.
           if (!saved || itemShelf !== shelf) return;
           close();
-          openLightbox(item, { rerender, updateUrl });
+          openLightbox(item, { rerender });
         },
       });
 
@@ -154,6 +151,14 @@ export function createSlideLibraryModals({
     // Metadata section (description + tags)
     const metaSection = h('div', { class: 'ps-lib-lightbox-meta' });
 
+    /**
+     * Description and tags autosave on blur/change, so a failure there is a
+     * background failure (B206): nobody pressed Save, and the field keeps the
+     * text the server did not take. One message for the pair, beside the
+     * fields it describes, staying until the next attempt succeeds.
+     */
+    const metaFailure = createInlineError({ live: 'polite' });
+
     // Description field
     const descLabel = h('label', {
       class: 'field-label',
@@ -179,11 +184,18 @@ export function createSlideLibraryModals({
       const newDesc = String(descInput.value || '').trim();
       if (newDesc === (it?.description || '')) return;
       const result = await apiOps.saveDescription(shelf, it, newDesc);
-      if (!result.ok) {
-        toast.error(
-          t('slideLibrary.descriptionSaveError', 'Failed to save description'),
+      if (result.ok) metaFailure.clear();
+      else
+        metaFailure.show(
+          String(
+            result.error?.message ||
+              t(
+                'slideLibrary.descriptionSaveError',
+                'Failed to save description',
+              ),
+          ),
+          { focus: false },
         );
-      }
       rerender?.();
     });
 
@@ -203,16 +215,22 @@ export function createSlideLibraryModals({
       readOnly: !canEdit,
       onChange: async (newTags) => {
         const result = await apiOps.saveTags(shelf, it, newTags);
-        if (!result.ok) {
-          toast.error(t('slideLibrary.tagsSaveError', 'Failed to save tags'));
-        }
+        if (result.ok) metaFailure.clear();
+        else
+          metaFailure.show(
+            String(
+              result.error?.message ||
+                t('slideLibrary.tagsSaveError', 'Failed to save tags'),
+            ),
+            { focus: false },
+          );
         rerender?.();
       },
     });
     const tagsField = h('div', { class: 'field' });
     tagsField.append(tagsLabel, tagEditor.el);
 
-    metaSection.append(descField, tagsField);
+    metaSection.append(descField, tagsField, metaFailure.el);
 
     modal.append(stage, metaSection);
     modal.show(document.body);

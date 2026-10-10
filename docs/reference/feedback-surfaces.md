@@ -9,13 +9,13 @@ normative; the implementation status at the end says how far the code is.
 
 ## The five kinds
 
-| Kind                                                                                                   | Carrier                                                                | Where                             | How long                                                                  | Says                                                                                                                                  | Focus / ARIA                                                                                                                 |
-| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| **Confirmation** — it worked, nothing to do                                                            | `toast.success` / `toast.info`                                         | global stack                      | short, expires. **Not shown at all when the result is already on screen** | one sentence                                                                                                                          | never moves focus; `role="status"`, polite region                                                                            |
-| **Refusal of what the user is doing now** — a form or dialog that will not save, local or from the API | inline: `createInlineError()` under the field and/or beside the button | at the control that has to change | until the next attempt (`clear()` at the start of every attempt)          | the sentence, naming the field. Server sentence when it came from the API; translated copy on `details.reason` when the client has it | focus to the control, else to the message; `role="alert"` on the message, `aria-invalid` + `aria-describedby` on the control |
-| **Failure of an action with no form** — delete, duplicate, copy, load                                  | `toast.error`                                                          | global stack                      | longer than a confirmation, pauses on hover/focus, closes on Escape       | the server's sentence, never a generic replacement                                                                                    | `role="alert"`, assertive region; focus stays where it was                                                                   |
-| **Background failure** — autosave, poll, sync, upload, collab bootstrap                                | a persistent chip or banner carrying the state (banner)                | at the state it describes         | until the state recovers                                                  | what did not happen and what the user can do                                                                                          | polite; repeatable, not one passing announcement                                                                             |
-| **Status change from outside** — a collaborator took the slide, the service is back                    | its own carrier (presence, chip), or an `info` toast                   | at the state                      | as long as the state lasts                                                | no error colour                                                                                                                       | polite                                                                                                                       |
+| Kind                                                                                                   | Carrier                                                                                                                                     | Where                             | How long                                                                  | Says                                                                                                                                  | Focus / ARIA                                                                                                                 |
+| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| **Confirmation** — it worked, nothing to do                                                            | `toast.success` / `toast.info`                                                                                                              | global stack                      | short, expires. **Not shown at all when the result is already on screen** | one sentence                                                                                                                          | never moves focus; `role="status"`, polite region                                                                            |
+| **Refusal of what the user is doing now** — a form or dialog that will not save, local or from the API | inline: `createInlineError()` under the field and/or beside the button                                                                      | at the control that has to change | until the next attempt (`clear()` at the start of every attempt)          | the sentence, naming the field. Server sentence when it came from the API; translated copy on `details.reason` when the client has it | focus to the control, else to the message; `role="alert"` on the message, `aria-invalid` + `aria-describedby` on the control |
+| **Failure of an action with no form** — delete, duplicate, copy, load                                  | `toast.error`                                                                                                                               | global stack                      | longer than a confirmation, pauses on hover/focus, closes on Escape       | the server's sentence, never a generic replacement                                                                                    | `role="alert"`, assertive region; focus stays where it was                                                                   |
+| **Background failure** — autosave, poll, sync, upload, collab bootstrap                                | in place: `createInlineError({ live: 'polite' })` at the state, `show(…, { focus: false })`; a banner when the state is the whole surface's | at the state it describes         | until the state recovers                                                  | what did not happen and what the user can do                                                                                          | polite; repeatable, not one passing announcement                                                                             |
+| **Status change from outside** — a collaborator took the slide, the service is back                    | its own carrier (presence, chip), or an `info` toast                                                                                        | at the state                      | as long as the state lasts                                                | no error colour                                                                                                                       | polite                                                                                                                       |
 
 Two rules that cut across the table:
 
@@ -116,8 +116,23 @@ rows would have been, `show(message, { focus: false })` — and stays until the
 next load replaces it. That is the fourth kind, a state of the list, not a
 refusal of anything the user just did, so it must not take focus. It is the one
 in-place form for that state (the share modal's three lists, the viewer's
-comments, the trash and slide-library views); whether the fourth kind gets a
-carrier of its own beyond the save-chip and the banners is B206's call.
+comments, the trash and slide-library views). **It is also the carrier for the
+fourth kind in general** (B206): the state sits where it happened, so a failed
+autosave, a poll that reports a failed job and a reload that leaves a list
+stale all say so in their own place. The two surface-wide banners are not a
+second form of it but a different scope — the editor save-failure banner and
+`maintenance-banner.js` carry a state of the whole surface, where no single
+panel is the right address.
+
+"In its own place" is measured against what the failing action does to the
+screen, not against what is nearest the code: **the message may not sit in a
+container that the action itself hides or rebuilds**. The bulk export's
+progress bar is hidden the moment the job fails, the custom-slide-type list
+rewrites its own `innerHTML` on every render, and the companion's notes form
+is put away by the Done that triggers the last flush — a message in any of
+those three would be taken away by the very event it reports. One step out
+(the card, the panel) is the address; a state that survives its container is
+how you know you picked the wrong one.
 
 ## Live regions and focus
 
@@ -159,17 +174,23 @@ production — the client's counterpart to the server's
 `NODE_ENV !== 'production'` guard. Every UI primitive draws the line there,
 not in a copy of its own.
 
-## Implementation status (2026-09-02)
+## Implementation status (2026-10-10)
 
-The primitive and the helper meet the rules above. Two rows of call sites do
+The primitive and the helper meet the rules above. One row of call sites does
 not yet:
 
 | Burndown                                                               | Count   | Item |
 | ---------------------------------------------------------------------- | ------- | ---- |
 | Refusals of the form on screen reported in a `toast.error`             | 0       | B204 |
 | Hand-rolled inline error classes (message idioms)                      | 0 files | B204 |
-| `catch` blocks that discard the server sentence for generic `t()` copy | 24      | B205 |
-| Background failures that expire in a toast                             | 10      | B206 |
+| `catch` blocks that discard the server sentence for generic `t()` copy | 0       | B205 |
+| Background failures that expire in a toast                             | 5       | B206 |
+
+B205 is done too: a `catch` that has the caught error hands it over, and a
+bulk action puts the first failure's sentence after its count. What is still
+translated client copy has no server sentence behind it (a guard with no
+request, a browser failure, a 200 that reports a partial outcome) or is copy
+looked up on the status.
 
 B204 is done. No refusal of a form on screen is toasted any more — the 16 local
 validations went to the helper in PR 1, the 13 API refusals caught in a save
@@ -207,9 +228,26 @@ the creation view only carries progress.
 The counts are the allowlists in `tests/feedback-surfaces-guard.test.js`; each
 item lowers them and the test refuses a rise. Alongside: `toast.info` used as a
 progress indicator with a 60–120 s lifetime (4 sites) is a status chip in
-disguise, and ≥ 27 success toasts announce what is already visible on screen
-("Theme deleted." as the row disappears) — both fold into the items above.
+disguise and folds into the items above.
 
-Existing carriers for the fourth kind: the editor save-failure banner below the top bar (`aria-live="polite"`) and `client/lib/dom/maintenance-banner.js`
-(`role="alert"`). Settings has no persistent carrier yet; B206 decides whether
-it gets one.
+A confirmation that only repeats what the screen already shows is gone (B643):
+a row that appears or disappears, a badge that flips, an avatar that changes, a
+card added to the top of the list, a page that opens on the result. What stays
+says something the screen does not: a save with no other sign ("Saved."), a
+mail that went out, the clipboard, another shelf or library, a count after a
+bulk action, a toast that carries an action (Restore → "Open presentation",
+"Review"), and the model's own rationale after an AI revision. An editor that
+closes after an update keeps its "updated" toast: the list it returns to does
+not show what changed.
+
+Carriers for the fourth kind: the in-place polite message at the state
+(`createInlineError({ live: 'polite' })`, five sites moved to it by B206), and
+two banners for a state of the whole surface — the editor save-failure banner
+below the top bar (`aria-live="polite"`) and
+`client/lib/dom/maintenance-banner.js` (`role="alert"`). **Settings has no
+panel-wide carrier, deliberately** (B206, revising D124): its two background
+failures are a stale list and a failed export, and both belong at the thing
+they describe rather than in the panel header. D124 chose a chip because the
+editor had one; B498 replaced that chip with a banner, so honouring D124's
+wording would have introduced the second form for one concept that D124 exists
+to prevent.

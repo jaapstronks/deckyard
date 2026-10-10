@@ -89,8 +89,10 @@ export function coverFontScale(content) {
  * nothing else; the markup and its classes are `renderTitleView`'s.
  *
  * @typedef {Object} TitleView
- * @property {string} background - background key (`lime`, `mist` or a theme
- *   background id); mapped to its `slide-bg-*` class by `bgClass()`
+ * @property {string | null} background - background key (`lime`, `mist` or a
+ *   theme background id); mapped to its `slide-bg-*` class by `bgClass()`.
+ *   `null` renders no `slide-bg-*` class at all: for a fork whose ground
+ *   nothing in the deck paints. Core never resolves to `null`.
  * @property {string[]} classes - further root classes, appended after core's
  *   own in this order. Core puts the title-block alignment class here when it
  *   is not the default; a fork adds its own root class and modifiers.
@@ -178,7 +180,7 @@ export function renderTitleView(view) {
   const rootClass = [
     'slide',
     'slide-title',
-    bgClass(view.background),
+    ...(view.background === null ? [] : [bgClass(view.background)]),
     ...(view.bgImage ? ['has-bg'] : []),
     `tsu-layout-${view.titleLayout}`,
     view.logoCorner === 'left' ? 'is-logo-left' : 'is-logo-right',

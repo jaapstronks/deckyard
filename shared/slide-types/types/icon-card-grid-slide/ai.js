@@ -83,71 +83,75 @@ export const ai = {
 
 /**
  * Filled-in examples for the generation prompt.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    _variation: '4 cards (2x2 grid)',
-    title: 'Our Strategic Pillars',
-    subheading: 'Building for the future',
-    items: [
-      {
-        icon: 'lightbulb',
-        title: 'Innovation',
-        body: 'Driving creative solutions through research',
-      },
-      {
-        icon: 'users',
-        title: 'Collaboration',
-        body: 'Working together across all teams',
-      },
-      {
-        icon: 'target',
-        title: 'Focus',
-        body: 'Prioritizing what truly matters',
-      },
-      {
-        icon: 'rocket-launch',
-        title: 'Growth',
-        body: 'Scaling our impact continuously',
-      },
-    ],
+    variation: '4 cards (2x2 grid)',
+    content: {
+      title: 'Our Strategic Pillars',
+      subheading: 'Building for the future',
+      items: [
+        {
+          icon: 'lightbulb',
+          title: 'Innovation',
+          body: 'Driving creative solutions through research',
+        },
+        {
+          icon: 'users',
+          title: 'Collaboration',
+          body: 'Working together across all teams',
+        },
+        {
+          icon: 'target',
+          title: 'Focus',
+          body: 'Prioritizing what truly matters',
+        },
+        {
+          icon: 'rocket-launch',
+          title: 'Growth',
+          body: 'Scaling our impact continuously',
+        },
+      ],
+    },
   },
   {
-    _variation: '6 cards (2x3 grid)',
-    title: 'Service Offerings',
-    subheading: 'What we provide',
-    items: [
-      {
-        icon: 'gear',
-        title: 'Consulting',
-        body: 'Strategic advice and planning',
-      },
-      {
-        icon: 'file-text',
-        title: 'Research',
-        body: 'In-depth market analysis',
-      },
-      {
-        icon: 'chart-line-up',
-        title: 'Analytics',
-        body: 'Data-driven insights',
-      },
-      {
-        icon: 'users-three',
-        title: 'Training',
-        body: 'Team capability building',
-      },
-      {
-        icon: 'shield-check',
-        title: 'Compliance',
-        body: 'Regulatory guidance',
-      },
-      {
-        icon: 'globe',
-        title: 'Global Support',
-        body: '24/7 worldwide assistance',
-      },
-    ],
+    variation: '6 cards (2x3 grid)',
+    content: {
+      title: 'Service Offerings',
+      subheading: 'What we provide',
+      items: [
+        {
+          icon: 'gear',
+          title: 'Consulting',
+          body: 'Strategic advice and planning',
+        },
+        {
+          icon: 'file-text',
+          title: 'Research',
+          body: 'In-depth market analysis',
+        },
+        {
+          icon: 'chart-line-up',
+          title: 'Analytics',
+          body: 'Data-driven insights',
+        },
+        {
+          icon: 'users-three',
+          title: 'Training',
+          body: 'Team capability building',
+        },
+        {
+          icon: 'shield-check',
+          title: 'Compliance',
+          body: 'Regulatory guidance',
+        },
+        {
+          icon: 'globe',
+          title: 'Global Support',
+          body: '24/7 worldwide assistance',
+        },
+      ],
+    },
   },
 ];

@@ -6,6 +6,7 @@
 import { notionFetchJson } from './client.js';
 import { extractPageId } from './parser.js';
 import { ValidationError } from '../errors.js';
+import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 
 /**
  * Append blocks to the bottom of a Notion page.
@@ -123,7 +124,7 @@ export function createCalloutBlock(text, emoji = '\uD83C\uDFAF') {
  */
 export async function publishEmbedToNotionPage(
   pageId,
-  { embedUrl, title, lang = 'nl' } = {},
+  { embedUrl, title, lang = DEFAULT_DECK_LANG } = {},
 ) {
   const id = extractPageId(pageId);
   if (!id) {

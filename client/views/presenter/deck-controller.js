@@ -1,5 +1,6 @@
 import { isSlideVisibleIn } from '../../../shared/slide-visibility.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
+import { isLiveInviteSlideType } from '../../../shared/slide-types/live-session.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { morphTransition } from './morph-engine.js';
 import { h } from '../../lib/dom/index.js';
@@ -8,9 +9,10 @@ import { debugLog } from '../../lib/util/debug.js';
 
 export function filterPresentSlides(presentation) {
   return (presentation?.slides || []).filter((s) => {
-    // Skip disabled follow-invite slides (original behavior)
+    // Skip an invite its author switched off in place (`content.enabled` is
+    // the one content key the invite's own form owns).
     if (
-      s?.type === 'follow-invite-slide' &&
+      isLiveInviteSlideType(s?.type) &&
       s?.content &&
       typeof s.content === 'object' &&
       s.content.enabled === false
@@ -130,7 +132,9 @@ export function createPresenterDeckController({
       // Also pass `presentationId` so slides can render follow URLs/QR codes.
       renderOptions.presentationId = presentationId;
       renderOptions.renderVia = { kind: 'deck', id: presentationId };
-      if (s?.type === 'follow-invite-slide' || isLiveSlideType(s?.type)) {
+      // The invite renders the codes themselves; a live slide shows its own
+      // beside the question.
+      if (isLiveInviteSlideType(s?.type) || isLiveSlideType(s?.type)) {
         const followCodes = getFollowCodes?.();
         if (followCodes) {
           renderOptions.followCodes = followCodes;

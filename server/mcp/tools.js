@@ -266,7 +266,7 @@ export function registerTools(
         },
       },
     },
-    async ({ category = 'all', lang = 'nl' } = {}, context) => {
+    async ({ category = 'all', lang = DEFAULT_DECK_LANG } = {}, context) => {
       // Resolve for the calling session's organization, the same way
       // /api/slide-types and the AI generator do: Tier 1 from the registry,
       // Tier 2 from the database, minus whatever the org disabled. A stdio
@@ -363,15 +363,12 @@ export function registerTools(
     {
       type: 'object',
       properties: {
-        id: { type: 'string', description: 'Presentation ID' },
-        presentationId: {
-          type: 'string',
-          description: 'Presentation ID (alias for id)',
-        },
+        presentationId: { type: 'string', description: 'Presentation ID' },
       },
+      required: ['presentationId'],
     },
-    async ({ id, presentationId }, context) => {
-      const pres = await getCheckedPresentation(id || presentationId, context);
+    async ({ presentationId }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       return {
         id: pres.id,
@@ -567,7 +564,7 @@ export function registerTools(
         title,
         slides,
         theme: requestedTheme,
-        lang = 'nl',
+        lang = DEFAULT_DECK_LANG,
         validation = 'strict',
         auto_prepend_title = false,
       } = args;
@@ -689,7 +686,7 @@ export function registerTools(
 
   server.tool(
     'update_slide',
-    "Update a specific slide's content in a presentation. You must provide the exact content structure matching the slide type schema.",
+    "Patch a slide's content: every key in `content` replaces the stored value, keys you omit stay as they are (to clear one, pass its empty value). Keys must match the slide type schema. The REST `PUT /api/v1/presentations/{id}/slides/{slideId}` replaces the whole content instead.",
     {
       type: 'object',
       properties: {
@@ -859,7 +856,7 @@ export function registerTools(
       }
 
       const slide = pres.slides[slideIndex];
-      const lang = pres.lang || 'en-GB';
+      const lang = resolveDeckLang(pres) || DEFAULT_DECK_LANG;
 
       const result = await convertSlideWithAi(slide, targetType, {
         vendor: vendor || null,
@@ -921,7 +918,7 @@ export function registerTools(
         access: 'write',
       });
 
-      const lang = pres.lang || 'en-GB';
+      const lang = resolveDeckLang(pres) || DEFAULT_DECK_LANG;
 
       const {
         deck: newDeck,
@@ -963,14 +960,11 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        id: {
-          type: 'string',
-          description: 'Presentation ID (alias for presentationId)',
-        },
       },
+      required: ['presentationId'],
     },
-    async ({ presentationId, id }, context) => {
-      const pres = await getCheckedPresentation(presentationId || id, context);
+    async ({ presentationId }, context) => {
+      const pres = await getCheckedPresentation(presentationId, context);
 
       const slideTypes = await sessionSlideTypes(context);
       const validated = validateAndFixRefinedSlides(
@@ -1178,7 +1172,7 @@ export function registerTools(
         access: 'write',
       });
 
-      const lang = pres.lang || 'en-GB';
+      const lang = resolveDeckLang(pres) || DEFAULT_DECK_LANG;
       const existingDeck = presentationToDeck(pres);
 
       const { slides: newSlides } = await generateSlidesToAppendFromRawContent(
@@ -1212,12 +1206,12 @@ export function registerTools(
         slideTypes,
       });
 
-      // Find insert position: before structural closing slides (payoff, end, follow-invite)
-      const closingTypes = new Set([
-        'payoff-slide',
-        'end-slide',
-        'follow-invite-slide',
-      ]);
+      // Find insert position: before structural closing slides (payoff, end).
+      // The follow-along invite used to be listed here too, against its own
+      // declaration: it sits anywhere in the deck and claims no closing beat
+      // (shared/slide-types/types/follow-invite-slide.js), so a trailing one
+      // is appended after like any other slide (B413).
+      const closingTypes = new Set(['payoff-slide', 'end-slide']);
       let insertAt = pres.slides.length;
       for (let i = pres.slides.length - 1; i >= 0; i--) {
         if (closingTypes.has(pres.slides[i].type)) {
@@ -1409,15 +1403,11 @@ export function registerTools(
       type: 'object',
       properties: {
         presentationId: { type: 'string', description: 'Presentation ID' },
-        id: {
-          type: 'string',
-          description: 'Presentation ID (alias for presentationId)',
-        },
       },
+      required: ['presentationId'],
     },
-    async ({ presentationId, id }, context) => {
+    async ({ presentationId }, context) => {
       // Verify it exists and is accessible
-      presentationId = presentationId || id;
       const pres = await getCheckedPresentation(presentationId, context);
 
       const base = getAppBaseUrl();

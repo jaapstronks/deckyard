@@ -214,10 +214,6 @@ export function createEditorTopbarMoreMenu({
         await api(`/api/presentations/${id}`, {
           method: 'DELETE',
         });
-        toast.success(t('editor.more.trash.done', 'Moved to trash.'), {
-          id: 'move-to-trash',
-          durationMs: 1800,
-        });
         nav('/app');
       } catch (e) {
         toast.error(e, { id: 'move-to-trash' });

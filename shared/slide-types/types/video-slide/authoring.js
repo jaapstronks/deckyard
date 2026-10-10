@@ -42,6 +42,9 @@ export default {
    */
   sample: {
     title: 'Video Content',
+    // Blank on purpose (D107): a real source would load a live third-party
+    // player into every picker tile, peek and curation tile — the reason
+    // embed-slide has no sample at all. The preview shows an empty frame.
     source: '',
     transcript:
       'Welcome to our studio. In the next two minutes we show how a deck travels from the first draft to the room.',

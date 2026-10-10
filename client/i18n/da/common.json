@@ -116,7 +116,6 @@
   "common.open": "Åbn",
   "common.organization": "Organisation",
   "common.organizationCurrent": "Nuværende organisation",
-  "common.organizationSwitchFailed": "Kunne ikke skifte organisation.",
   "common.organizationSwitchForbidden": "Du kan ikke skifte til denne organisation.",
   "common.organizationSwitchTo": "Skift til {name}",
   "common.pangram": "Quizdeltagerne spiste jordbær med fløde, mens cirkusklovnen Wolther spillede på xylofon",

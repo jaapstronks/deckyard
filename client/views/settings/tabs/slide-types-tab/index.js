@@ -12,6 +12,7 @@ import { confirmModal } from '../../../../lib/dom/modal.js';
 import { readFileAsText } from '../../../../lib/util/file.js';
 import { createSlideTypeEditor } from '../../slide-type-editor/index.js';
 import { createEmptyState } from '../../../../lib/dom/empty-state.js';
+import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import {
   serializeSlideType,
   parseImportedSlideType,
@@ -51,6 +52,14 @@ export function createSlideTypesTab({ user } = {}) {
 
   // Section containers
   const customTypesSection = h('div', { class: 'custom-types-section' });
+  /**
+   * A reload that fails after a successful action is a background failure
+   * (B206): the user is looking at the list they just changed, which is now
+   * stale, and they were not waiting on the reload. It sits beside the list it
+   * describes and stays until a reload succeeds — outside
+   * `customTypesSection`, whose render clears its own `innerHTML`.
+   */
+  const customTypesFailure = createInlineError({ live: 'polite' });
   const curationSection = h('div', { class: 'curation-section' });
   const editorSection = h('div', {
     class: 'slide-type-editor-section is-hidden',
@@ -70,7 +79,12 @@ export function createSlideTypesTab({ user } = {}) {
       }),
     );
 
-    el.append(customTypesSection, editorSection, curationSection);
+    el.append(
+      customTypesFailure.el,
+      customTypesSection,
+      editorSection,
+      curationSection,
+    );
 
     try {
       // Load all data in parallel
@@ -469,11 +483,6 @@ export function createSlideTypesTab({ user } = {}) {
         method: 'PUT',
         body: { isPublished: !ct.isPublished },
       });
-      toast.success(
-        ct.isPublished
-          ? t('settings.slideTypes.unpublished', 'Slide type unpublished.')
-          : t('settings.slideTypes.publishedMsg', 'Slide type published.'),
-      );
       await reloadCustomTypes();
     } catch (err) {
       toast.error(err);
@@ -485,9 +494,6 @@ export function createSlideTypesTab({ user } = {}) {
       await api(`/api/custom-slide-types/${ct.id}/duplicate`, {
         method: 'POST',
       });
-      toast.success(
-        t('settings.slideTypes.duplicateSuccess', 'Slide type duplicated.'),
-      );
       await reloadCustomTypes();
     } catch (err) {
       toast.error(err);
@@ -556,12 +562,6 @@ export function createSlideTypesTab({ user } = {}) {
           method: 'POST',
           body: { ...def, slug },
         });
-        toast.success(
-          t(
-            'settings.slideTypes.importSuccess',
-            'Slide type imported as a draft.',
-          ),
-        );
         await reloadCustomTypes();
       } catch (err) {
         toast.error(err);
@@ -618,9 +618,6 @@ export function createSlideTypesTab({ user } = {}) {
       await api(`/api/custom-slide-types/${ct.id}${query}`, {
         method: 'DELETE',
       });
-      toast.success(
-        t('settings.slideTypes.deleteSuccess', 'Slide type deleted.'),
-      );
       await reloadCustomTypes();
     } catch (err) {
       if (err?.code === 'in_use' && err.details?.usage && !force) {
@@ -650,9 +647,16 @@ export function createSlideTypesTab({ user } = {}) {
     try {
       const res = await api('/api/custom-slide-types');
       customTypes = res?.customSlideTypes || [];
+      customTypesFailure.clear();
       renderCustomTypesSection();
     } catch (err) {
-      toast.error(err);
+      customTypesFailure.show(
+        `${err?.message || err} ${t(
+          'settings.slideTypes.reloadStale',
+          'The list below may be out of date; reload the page to see it as it is.',
+        )}`,
+        { focus: false },
+      );
     }
   }
 
@@ -688,9 +692,6 @@ export function createSlideTypesTab({ user } = {}) {
             method: 'POST',
             body: data,
           });
-          toast.success(
-            t('settings.slideTypes.createSuccess', 'Slide type created.'),
-          );
         }
         await reloadCustomTypes();
         closeEditor();

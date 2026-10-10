@@ -175,13 +175,6 @@ test('a contained picture keeps its ratio and sits where the focus puts it', asy
   near(pic.x, box.x, 'focus 0 puts it against the left edge');
 });
 
-test('a legacy centered layout reads as contain, through the one resolution', async () => {
-  const { xml } = await exportSlide({ image: IMAGE, layout: 'centered' });
-  const pic = picture(xml);
-  assert.equal(pic.crop, null);
-  near(pic.w / pic.h, 1200 / 630, 'keeps its ratio');
-});
-
 test('a bleed picture fills the slide and its heading overlays it on a scrim', async () => {
   const { xml } = await exportSlide({
     title: 'Edge to edge',

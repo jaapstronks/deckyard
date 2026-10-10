@@ -32,7 +32,11 @@ import funnelSlide from './types/funnel-slide.js';
 import pyramidSlide from './types/pyramid-slide.js';
 import cycleSlide from './types/cycle-slide.js';
 import gallerySlide from './types/gallery-slide.js';
-import { GLOBAL_SLIDE_FIELD_KEYS, composeSlideType } from './compose.js';
+import {
+  DERIVED_SLIDE_CONTENT_KEYS,
+  GLOBAL_SLIDE_FIELD_KEYS,
+  composeSlideType,
+} from './compose.js';
 import {
   CORE_NAMESPACE,
   SLIDE_NAME_SUFFIX,
@@ -59,7 +63,7 @@ const isNode = typeof process !== 'undefined' && process.versions?.node;
 // one (B240). A leaf module is also what lets the Settings builder read the
 // injected key list without pulling all 33 core types into its bundle.
 // Re-exported here because this is where consumers have always reached for it.
-export { GLOBAL_SLIDE_FIELD_KEYS };
+export { DERIVED_SLIDE_CONTENT_KEYS, GLOBAL_SLIDE_FIELD_KEYS };
 
 // Core slide types (always available in OSS version)
 const CORE_SLIDE_TYPES = {

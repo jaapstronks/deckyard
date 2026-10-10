@@ -14,6 +14,11 @@
  * the copy gone, a renamed or removed view field breaks THIS file in core's own
  * fork lane, the day it happens, instead of in the fork after the next merge.
  *
+ * It also takes core's inline-edit descriptor from the seam (`titleInlineEdit`)
+ * instead of copying one whose anchors name core classes, and it asks for no
+ * ground class (`view.background = null`) when its own background is
+ * `transparent`, a ground nothing in the deck paints.
+ *
  * The import is written for the file's runtime home, `custom/slide-types/`
  * (two levels below the repo root), and goes through the one stable address,
  * `shared/slide-types/core-layouts.js`, never into `types/`.
@@ -23,6 +28,7 @@
 import {
   resolveTitleView,
   renderTitleView,
+  titleInlineEdit,
 } from '../../shared/slide-types/core-layouts.js';
 /* eslint-enable import-x/no-unresolved */
 
@@ -44,6 +50,8 @@ export default {
     },
   ],
   defaults: { title: '', subheading: '', meta: '', frame: 'open' },
+  // Core's markup, so core's descriptor: its anchors are core's to keep.
+  inline: titleInlineEdit,
   renderHtml: (content, slide, ctx) => {
     const view = resolveTitleView(content, slide, ctx);
     // `slide-fork-title` is this type's own root (what its custom/styles/
@@ -52,6 +60,8 @@ export default {
     view.classes.push('slide-fork-title');
     if (content?.frame === 'panel') view.classes.push('is-fork-panel');
     view.logo = { src: FORK_LOGO, alt: 'Fork' };
+    // No ground of core's: the root carries no `slide-bg-*` class at all.
+    if (content?.background === 'transparent') view.background = null;
     return renderTitleView(view);
   },
 };

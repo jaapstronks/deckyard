@@ -32,6 +32,7 @@ import {
 import { updatePresentation } from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';
 import { pickOgImageUrlFromPresentation } from '../render/og-image.js';
+import { firstPublicSlide } from '../utils/public-output.js';
 import { loadThemeAssets } from '../utils/themes.js';
 import { generateAndSaveOgPreview } from '../render/preview-image.js';
 import { isMediaProviderInitialized } from '../media/index.js';
@@ -125,10 +126,9 @@ export async function buildPublishOgImage({
 }) {
   let ogImageUrl = getOgImageUrl();
   try {
-    // First slide that isn't a follow-invite-slide (those are internal).
-    const firstSlide = Array.isArray(pres?.slides)
-      ? pres.slides.find((s) => s?.type !== 'follow-invite-slide')
-      : null;
+    // The first slide that outlives the session: a live-only slide (the
+    // follow-along invite) has nothing to show a preview of.
+    const firstSlide = firstPublicSlide(pres);
 
     if (firstSlide && isMediaProviderInitialized()) {
       const theme = await loadThemeAssets(repoRoot, pres.theme, storageScope);

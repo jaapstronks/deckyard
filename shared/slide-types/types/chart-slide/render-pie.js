@@ -1,3 +1,4 @@
+import { chartKindName } from './summary.js';
 import { escapeHtml } from '../../helpers.js';
 import { svgText } from './svg.js';
 import { pieLabelInvertClass } from './palette.js';
@@ -28,7 +29,7 @@ export function pieEntriesFromDataset({ labels, values }) {
 
 export function renderPieSvg(
   { labels, values },
-  { showLegend = true, pieLabelMode = 'percent', palette = null } = {},
+  { showLegend = true, pieLabelMode = 'percent', palette = null, lang } = {},
 ) {
   void showLegend;
 
@@ -77,7 +78,7 @@ export function renderPieSvg(
   }
 
   return `
-    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Pie chart">
+    <svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${escapeHtml(chartKindName('pie', lang))}">
       ${frags}
     </svg>
   `;

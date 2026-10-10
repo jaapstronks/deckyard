@@ -129,7 +129,6 @@
   "common.open": "Openen",
   "common.organization": "Organisatie",
   "common.organizationCurrent": "Huidige organisatie",
-  "common.organizationSwitchFailed": "Wisselen van organisatie is mislukt.",
   "common.organizationSwitchForbidden": "Je kunt niet naar deze organisatie wisselen.",
   "common.organizationSwitchTo": "Wissel naar {name}",
   "common.pangram": "Pa's wijze lynx bezag vroom het fikse aquaduct",

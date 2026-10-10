@@ -624,7 +624,7 @@ paths:
                   description: Insert at this index (0-based)
                 afterSlideId:
                   type: string
-                  description: Insert after this slide ID
+                  description: Insert after this slide ID, in its group (after a child slide the new slide is a child of the same parent)
       responses:
         '201':
           description: Slide created
@@ -956,7 +956,7 @@ paths:
                   description: Insert at this index
                 afterSlideId:
                   type: string
-                  description: Insert after this slide ID
+                  description: Insert after this slide ID, in its group (after a child slide the new slide is a child of the same parent)
       responses:
         '201':
           description: Slide added from library
@@ -1772,6 +1772,42 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimited'
 
+  /themes/{id}/template.pptx:
+    get:
+      operationId: exportThemeTemplate
+      tags:
+        - Exports
+      summary: Download a theme's PPTX template
+      description: >-
+        Returns a PPTX holding the theme's layouts and one sample slide on
+        each: a starting document for building a deck on this theme in
+        PowerPoint or Keynote. It is not a master that restyles an existing
+        deck. The bytes depend on the theme alone, so the same theme always
+        hands back the same file.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: PowerPoint template
+          content:
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
   /slide-types:
     get:
       operationId: listSlideTypes
@@ -2532,8 +2568,8 @@ components:
         format:
           type: string
           description: >-
-            Format sentinel. Written as `deckyard.deck`; the historical
-            `slidecreator.deck` is still accepted on import.
+            Format sentinel. Always `deckyard.deck`; an import carrying the
+            historical `slidecreator.deck` is folded to it on read.
           example: 'deckyard.deck'
         version:
           type: integer
@@ -2613,8 +2649,8 @@ components:
           description: >-
             Stable lowercase snake_case machine code. Branch on this, not on
             `message`. One code answers per HTTP status by default (e.g.
-            `not_found`, `forbidden`, `rate_limited`), with domain codes such as
-            `locked` where a status carries more than one meaning.
+            `not_found`, `forbidden`, `rate_limited`), plus domain codes such
+            as `locked` for a 423 or `maintenance` for a 503.
           example: not_found
         message:
           type: string

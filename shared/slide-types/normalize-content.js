@@ -24,8 +24,9 @@
  * custom type therefore cannot declare one, which is correct: it has no legacy
  * shape to migrate.
  *
- * Why it exists: the legacy-to-canonical folds (`ensureImageSlideImage`,
- * `ensureImageSetImages`, `ensureContentColumnsImages`) used to run as a SIDE
+ * Why it exists: the legacy-to-canonical folds (`ensureImageSetImages`,
+ * `ensureContentColumnsImages`, and image-slide's `layout` fold before the
+ * funnel took it over in schema v20) used to run as a SIDE
  * EFFECT of rendering a per-type form. That coupled "this type is edited by a
  * hand-built form" to "this type migrates its content", so deleting the form
  * would silently have deleted the migration too. They are separate concerns and
@@ -38,9 +39,9 @@
  * only where the values live) and safe on a null/non-object argument. It runs
  * on every editor render, so it must be cheap.
  *
- *   // shared/slide-types/types/image-slide.js
+ *   // shared/slide-types/types/image-set-slide.js
  *   export default {
- *     normalizeContent: ensureImageSlideImage,
+ *     normalizeContent: ensureImageSetImages,
  *     …
  *   }
  */

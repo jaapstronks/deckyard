@@ -70,8 +70,11 @@ export function createEraseMyDataButton({
     let result;
     try {
       result = await tracker.erase();
-    } catch {
-      result = null;
+    } catch (err) {
+      // The server's sentence (a rate limit says when to retry).
+      btn.disabled = false;
+      toast.error(err);
+      return;
     }
 
     if (result?.ok) {

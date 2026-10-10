@@ -152,6 +152,26 @@ describe('csv-url provider', () => {
     ]);
   });
 
+  it('a range resolves to the block as CSV, its first row the header', async () => {
+    stubFetch(() =>
+      fakeResponse('Metric,Revenue,Note\nQ1,100,"strong, steady"\nQ2,250\n', {
+        contentType: 'text/csv',
+      }),
+    );
+    const result = await refreshSlideData(
+      csvDataSource({
+        bindings: [
+          { target: 'data', source: 'A1:B10' }, // past the end: the rows there are
+          { target: 'body', source: 'C3:A2' }, // corners in either order, short row padded
+        ],
+      }),
+      {},
+    );
+    assert.deepEqual(result.errors, []);
+    assert.equal(result.content.data, 'Metric,Revenue\nQ1,100\nQ2,250');
+    assert.equal(result.content.body, 'Q1,100,"strong, steady"\nQ2,250,');
+  });
+
   it('forwards custom headers but strips credential-bearing ones', async () => {
     stubFetch(() => fakeResponse(CSV_TEXT, { contentType: 'text/csv' }));
     await refreshSlideData(

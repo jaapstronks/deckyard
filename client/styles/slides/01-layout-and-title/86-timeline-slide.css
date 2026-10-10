@@ -14,7 +14,7 @@
   --timeline-text: var(--slide-on-surface);
   --timeline-text-muted: color-mix(
     in srgb,
-    var(--slide-on-surface, #0b0b0b) calc(var(--slide-opacity-visible) * 100%),
+    var(--slide-on-surface) calc(var(--slide-opacity-visible) * 100%),
     transparent
   );
 }

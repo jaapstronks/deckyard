@@ -7,7 +7,7 @@
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
 import { getSlideTypeExamples } from './examples.js';
 import { buildGlobalOptionsPromptSection } from './global-options.js';
-import { isAgentOptOut } from './agent-catalog.js';
+import { isAgentOptOut, agentWithheldTypesRule } from './agent-catalog.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 
 /**
@@ -68,19 +68,15 @@ export function buildSlideTypeDescription(type) {
     if (examples.length === 1) {
       lines.push('EXACT CONTENT SCHEMA:');
       lines.push('```json');
-      lines.push(JSON.stringify(examples[0], null, 2));
+      lines.push(JSON.stringify(examples[0].content, null, 2));
       lines.push('```');
     } else {
       lines.push(`CONTENT SCHEMA VARIATIONS (${examples.length} patterns):`);
       examples.forEach((ex, idx) => {
-        const variationName = ex._variation || `Variation ${idx + 1}`;
-        // Remove the _variation field from the actual example
-        const cleanExample = { ...ex };
-        delete cleanExample._variation;
         lines.push('');
-        lines.push(`--- ${variationName} ---`);
+        lines.push(`--- ${ex.variation || `Variation ${idx + 1}`} ---`);
         lines.push('```json');
-        lines.push(JSON.stringify(cleanExample, null, 2));
+        lines.push(JSON.stringify(ex.content, null, 2));
         lines.push('```');
       });
     }
@@ -102,6 +98,9 @@ export function buildPhase2CatalogPrompt({
 } = {}) {
   const phase2Types = getPhase2SlideTypes(disabledSlideTypes);
   const sections = phase2Types.map((type) => buildSlideTypeDescription(type));
+  // The withheld types, forbidden by name at the end — same derivation as the
+  // Phase 1 catalog (buildSlideTypesPrompt), so neither prompt names a type.
+  const withheldRule = agentWithheldTypesRule();
 
   // Build custom type descriptions
   const disabled = new Set(
@@ -214,5 +213,5 @@ CUSTOM SLIDE TYPES (organization-specific)
 
 ${customSections.join('\n')}`
       : ''
-  }`;
+  }${withheldRule ? `\n\n${withheldRule}` : ''}`;
 }

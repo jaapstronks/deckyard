@@ -43,44 +43,50 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    _variation: 'PDCA improvement cycle',
-    title: 'Continuous Improvement Cycle',
-    centerLabel: 'PDCA',
-    items: [
-      { label: 'Plan', text: 'Identify and analyze' },
-      { label: 'Do', text: 'Implement solution' },
-      { label: 'Check', text: 'Evaluate results' },
-      { label: 'Act', text: 'Standardize or adjust' },
-    ],
-    background: 'lime',
+    variation: 'PDCA improvement cycle',
+    content: {
+      title: 'Continuous Improvement Cycle',
+      centerLabel: 'PDCA',
+      items: [
+        { label: 'Plan', text: 'Identify and analyze' },
+        { label: 'Do', text: 'Implement solution' },
+        { label: 'Check', text: 'Evaluate results' },
+        { label: 'Act', text: 'Standardize or adjust' },
+      ],
+      background: 'lime',
+    },
   },
   {
-    _variation: 'Agile sprint cycle',
-    title: 'Sprint Workflow',
-    centerLabel: '2 Weeks',
-    items: [
-      { label: 'Planning', text: 'Define sprint goals' },
-      { label: 'Development', text: 'Build features' },
-      { label: 'Review', text: 'Demo to stakeholders' },
-      { label: 'Retrospective', text: 'Improve process' },
-    ],
-    background: 'mist',
+    variation: 'Agile sprint cycle',
+    content: {
+      title: 'Sprint Workflow',
+      centerLabel: '2 Weeks',
+      items: [
+        { label: 'Planning', text: 'Define sprint goals' },
+        { label: 'Development', text: 'Build features' },
+        { label: 'Review', text: 'Demo to stakeholders' },
+        { label: 'Retrospective', text: 'Improve process' },
+      ],
+      background: 'mist',
+    },
   },
   {
-    _variation: 'Customer feedback loop',
-    title: 'Customer Feedback Loop',
-    centerLabel: 'Listen',
-    items: [
-      { label: 'Collect', text: 'Gather feedback' },
-      { label: 'Analyze', text: 'Identify patterns' },
-      { label: 'Prioritize', text: 'Rank improvements' },
-      { label: 'Implement', text: 'Make changes' },
-      { label: 'Communicate', text: 'Share updates' },
-    ],
-    background: 'lime',
+    variation: 'Customer feedback loop',
+    content: {
+      title: 'Customer Feedback Loop',
+      centerLabel: 'Listen',
+      items: [
+        { label: 'Collect', text: 'Gather feedback' },
+        { label: 'Analyze', text: 'Identify patterns' },
+        { label: 'Prioritize', text: 'Rank improvements' },
+        { label: 'Implement', text: 'Make changes' },
+        { label: 'Communicate', text: 'Share updates' },
+      ],
+      background: 'lime',
+    },
   },
 ];

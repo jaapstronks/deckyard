@@ -357,21 +357,23 @@ export default {
     // Example content for the AI (optional but recommended)
     examples: [
       {
-        _variation: 'Product Features',
-        title: 'Why Choose Us',
-        featureCount: '4',
-        feature1Icon: 'rocket-launch',
-        feature1Title: 'Fast Deployment',
-        feature1Description: 'Get started in minutes',
-        feature2Icon: 'shield-check',
-        feature2Title: 'Enterprise Security',
-        feature2Description: 'Bank-level protection',
-        feature3Icon: 'users',
-        feature3Title: '24/7 Support',
-        feature3Description: 'Always here to help',
-        feature4Icon: 'chart-line-up',
-        feature4Title: 'Analytics',
-        feature4Description: 'Data-driven insights',
+        variation: 'Product Features',
+        content: {
+          title: 'Why Choose Us',
+          featureCount: '4',
+          feature1Icon: 'rocket-launch',
+          feature1Title: 'Fast Deployment',
+          feature1Description: 'Get started in minutes',
+          feature2Icon: 'shield-check',
+          feature2Title: 'Enterprise Security',
+          feature2Description: 'Bank-level protection',
+          feature3Icon: 'users',
+          feature3Title: '24/7 Support',
+          feature3Description: 'Always here to help',
+          feature4Icon: 'chart-line-up',
+          feature4Title: 'Analytics',
+          feature4Description: 'Data-driven insights',
+        },
       },
     ],
   },
@@ -387,7 +389,7 @@ export default {
 | `description`     | string   | Multi-line description explaining the slide type to the AI. Include structure, visual layout, and key concepts |
 | `bestFor`         | string[] | List of use cases when this slide type is ideal                                                                |
 | `notFor`          | string[] | List of anti-patterns when NOT to use this slide type                                                          |
-| `examples`        | array    | Example content objects. Use `_variation` to label different patterns                                          |
+| `examples`        | array    | `{ variation?, content }` entries: `content` must pass the type's own schema, `variation` names the pattern    |
 | `usage`           | string   | Your organization's rules for _filling_ this type (optional, max 1000 chars)                                   |
 
 Setting `ai` to `false` instead of an object is the explicit opt-out — see
@@ -474,6 +476,38 @@ ignored. The reader is `isLibrarySlideType()` in `shared/slide-types/policy.js`,
 and both sides ask it: the editor disables "Save to slide library…" (the flag
 travels on `/api/slide-types`), and the library create routes refuse the type
 with 400 `invalid`, field `slideType`.
+
+### Tying a type to the live session
+
+Two declarations, both `true` only, both read through
+`shared/slide-types/live-session.js`:
+
+```javascript
+export default {
+  label: 'Follow-along invite',
+  // Only meaningful while a session is live: every output that outlives it
+  // (reader, exports, published view, preview image) leaves this slide out.
+  liveOnly: true,
+  // The audience's way into the session: the editor suggests and inserts
+  // this type when an interactive slide lands in a deck without one.
+  liveInvite: true,
+  // …
+};
+```
+
+`liveOnly` is read by `isLiveOnlySlideType()`: `stripLiveOnlySlidesFromPresentation()`
+and `firstPublicSlide()` in `server/utils/public-output.js` (the strip behind
+every export and the published view, and the slide a preview image is rendered
+from), and the alt-text census. `liveInvite` is read by `isLiveInviteSlideType()`
+and `liveInviteSlideType()`: the editor's invite suggestion and what it inserts,
+the presenter (join codes go to the invite and to live slides; an invite whose
+author switched it off in place, `content.enabled === false`, is skipped), the
+follow view (shows the joined-confirmation in its place) and the save path
+(normalizes its content). An invite is live-only by definition; `liveInvite`
+without `liveOnly` is a validator warning. No module branches on the invite's
+name — `tests/follow-invite-declares-itself.test.js` pins that, with the
+registries, the bespoke form registration and the two display-order hints as
+the only places that spell it.
 
 ### The agent-facing schema is derived — and so is withholding a _field_
 
@@ -1217,12 +1251,14 @@ renders:
 import {
   resolveTitleView,
   renderTitleView,
+  titleInlineEdit,
 } from '../../shared/slide-types/core-layouts.js';
 
 export default {
   label: 'Acme title',
   fields: [/* … title, subheading, meta, your own options … */],
   defaults: {/* … */},
+  inline: titleInlineEdit, // core's markup, so core's descriptor
   renderHtml: (content, slide, ctx) => {
     const view = resolveTitleView(content, slide, ctx);
     view.classes.push('slide-acme-title'); // your root, for custom/styles/
@@ -1244,15 +1280,26 @@ Three rules make it hold:
 - **Never escape.** `render…View` escapes every string in the view: texts,
   `alt`s, URLs, class names and style values. Put raw values in.
 
+Two more things come through the seam, so your file still names no core class:
+
+- **The inline-edit descriptor.** Core's markup means core's descriptor: set
+  `inline: titleInlineEdit` (also from `core-layouts.js`) instead of copying
+  one whose anchors name `tsu-*` classes.
+- **No ground.** `view.background = null` renders the root without any
+  `slide-bg-*` class, for a ground nothing in the deck paints (a transparent
+  background, or a variant the deck's theme does not declare). Any other value
+  goes through `bgClass()`, which falls back to `lime`; core itself never
+  resolves to `null`.
+
 The view is documented as a JSDoc typedef next to its functions
 (`TitleView` in `shared/slide-types/types/title-slide/render.js`, re-exported
 by `core-layouts.js`). A renamed view field breaks
 `tests/fixtures/fork-slide-types/fork-title-slide.js` in core's own fork CI
 lane, so it is a release-notes moment, not a silent break in your fork.
 
-Today `title-slide` offers this (`resolveTitleView` / `renderTitleView`). Other
-types get the same shape when a fork needs one: ask upstream, rather than
-copying the renderer in the meantime.
+Today `title-slide` offers this (`resolveTitleView` / `renderTitleView`, plus
+`titleInlineEdit`). Other types get the same shape when a fork needs one: ask
+upstream, rather than copying the renderer in the meantime.
 
 ---
 
@@ -1524,20 +1571,24 @@ export default {
 
     examples: [
       {
-        _variation: 'Product Launch',
-        headline: 'Introducing Acme Pro',
-        subheadline: 'The next generation of business tools',
-        body: 'Faster. Smarter. More powerful than ever.',
-        ctaText: 'Get Started',
-        background: 'lime',
+        variation: 'Product Launch',
+        content: {
+          headline: 'Introducing Acme Pro',
+          subheadline: 'The next generation of business tools',
+          body: 'Faster. Smarter. More powerful than ever.',
+          ctaText: 'Get Started',
+          background: 'lime',
+        },
       },
       {
-        _variation: 'Company Overview',
-        headline: 'Welcome to Acme',
-        subheadline: 'Transforming industries since 1990',
-        body: '',
-        ctaText: 'Learn More',
-        background: 'mist',
+        variation: 'Company Overview',
+        content: {
+          headline: 'Welcome to Acme',
+          subheadline: 'Transforming industries since 1990',
+          body: '',
+          ctaText: 'Learn More',
+          background: 'mist',
+        },
       },
     ],
   },

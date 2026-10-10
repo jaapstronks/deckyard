@@ -39,8 +39,12 @@ import {
 import { storage } from '../../lib/storage.js';
 import { createTopbar } from './topbar.js';
 import { loadPresentationList } from './data.js';
-import { LOCAL_STORAGE_KEY_VIEW, resolveInitialView } from './view-routing.js';
-import { nav } from '../../lib/state/router.js';
+import {
+  LOCAL_STORAGE_KEY_VIEW,
+  addressForView,
+  resolveInitialView,
+} from './view-routing.js';
+import { nav, replacePath, route } from '../../lib/state/router.js';
 
 export async function renderList(root, { user, openSlideLibrary } = {}) {
   const features = getFeatures() || {};
@@ -227,6 +231,7 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
 
   const slideLibraryViewObj = createSlideLibraryView({
     api,
+    initialShelf: openSlideLibrary?.shelf,
   });
 
   // Search view
@@ -292,6 +297,10 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
 
     clearSelectionOnViewChange();
     bulkActionBar.update?.();
+
+    // The address follows the tab, in place: a tab switch is no history entry.
+    const address = addressForView(viewKey, route());
+    if (address) replacePath(address);
 
     sidebar.setActiveView(viewKey);
     bottomTabs.setActiveView(viewKey);
@@ -371,13 +380,15 @@ export async function renderList(root, { user, openSlideLibrary } = {}) {
   // INITIAL SETUP
   // ============================================================
 
-  // Handle permalink navigation to slide library
-  if (openSlideLibrary?.shelf && openSlideLibrary?.slideId) {
+  // The library's address opens the library, a slide's address that slide.
+  if (openSlideLibrary) {
     setView('slideLibrary');
-    slideLibraryViewObj.openSlide(
-      openSlideLibrary.shelf,
-      openSlideLibrary.slideId,
-    );
+    if (openSlideLibrary.slideId) {
+      slideLibraryViewObj.openSlide(
+        openSlideLibrary.shelf,
+        openSlideLibrary.slideId,
+      );
+    }
   } else {
     setView(currentView);
   }

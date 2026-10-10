@@ -10,7 +10,8 @@
  * - description: Multi-line description for the AI
  * - bestFor: Array of use cases when this slide type is ideal
  * - notFor: Array of anti-patterns when NOT to use this slide type
- * - examples: Array of example content objects (optional)
+ * - examples: Array of `{ variation?, content }` (optional): `content` is the
+ *   slide content an agent copies, `variation` names the pattern beside it
  * - usage: String with the organization's own rules for filling this type
  *   (optional; normalized and truncated, see shared/slide-types/usage.js)
  */
@@ -119,9 +120,23 @@ export async function loadCustomAiCatalog() {
           themeOnly: def.themeOnly === true,
         };
 
-        // Store examples if provided
+        // Store examples if provided. The name of a pattern sits beside the
+        // content, not in it: an example whose content carries a key the type
+        // does not declare teaches the agent a slide the product refuses
+        // (B246). An entry without `content` is the retired bare-content form,
+        // dropped out loud rather than shown as an empty example.
         if (Array.isArray(aiDef.examples) && aiDef.examples.length > 0) {
-          examples[typeName] = aiDef.examples;
+          const usable = aiDef.examples.filter(
+            (ex) => ex?.content && typeof ex.content === 'object',
+          );
+          if (usable.length < aiDef.examples.length) {
+            log.warn(
+              `Ignoring ${aiDef.examples.length - usable.length} example(s) on ` +
+                `${typeName}: an example is \`{ variation?, content }\`, with ` +
+                'the slide content under `content` and the pattern name beside it.',
+            );
+          }
+          if (usable.length) examples[typeName] = usable;
         }
 
         log.info(`Loaded AI metadata for: ${typeName}`);

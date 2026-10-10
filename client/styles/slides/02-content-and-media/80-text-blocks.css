@@ -1,7 +1,7 @@
 /* Text blocks slide */
 .slide-text-blocks {
   background: var(--slide-bg-mist);
-  color: var(--slide-on-surface, #0b0b0b);
+  color: var(--slide-on-surface);
   padding: var(--slide-space-12) var(--slide-space-16) var(--slide-space-12);
 }
 .slide-text-blocks .slide-inner {
@@ -60,7 +60,7 @@
   font-synthesis: none;
   letter-spacing: -0.01em;
   margin: 0 0 var(--slide-space-4);
-  color: var(--slide-on-surface, #0b0b0b);
+  color: var(--slide-on-surface);
 }
 
 /* Row grid */
@@ -113,7 +113,7 @@
   min-height: 0;
 }
 .slide-text-blocks .text-block.is-yellow {
-  background: var(--slide-accent, #7c3aed);
+  background: var(--slide-accent);
   color: var(--slide-on-accent);
 }
 .slide-text-blocks .text-block.is-black {

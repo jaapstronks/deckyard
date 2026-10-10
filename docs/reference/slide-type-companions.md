@@ -205,7 +205,10 @@ because they are **chrome** (`fields: []`) and their renderers never read
 `content` — the one draws the theme's payoff logo, the other its own
 per-language copy plus the session's join code. A type with no content fields
 has nothing to exemplify, and the samples they used to carry named keys nothing
-declared, rendered or stored.
+declared, rendered or stored. `video-slide` is not exempt but borrows the
+`embed-slide` reasoning for one field: its sample leaves `source` blank on
+purpose (D107), so its previews show an empty video frame instead of loading a
+live third-party player.
 
 **A sample names only keys the type declares** — a field, a global slide field,
 or an instance key. It has to be said, because a sample that names something
@@ -219,6 +222,15 @@ core type. **And a sample is a declaration, not a draw**: `chart-slide` used to
 pick one of three chart types at random on first import, so the tile showed a
 different chart per server process and no tracked artifact could pin the
 type's example.
+
+**The sample is also what an agent copies** (D119): `get_slide_types` hands it
+out as a type's `example` (`exampleFor()` in
+`server/utils/ai/slide-catalog/agent-catalog.js`), so a sample has to pass the
+type's own content schema as well — strict validation would refuse the copy
+otherwise (D87). Where there is no sample, or the one there is leaves a required
+field blank (`video-slide`, D107), the example is the type's `defaults` in the
+requested language. `tests/strict-accepts-catalog-examples.test.js` pins both
+lists.
 
 This is why the locale-tiering work (A6 / A7.7) added **no** Dutch-sample
 obligation. It was considered — a `sampleNl` per type, gated like the other

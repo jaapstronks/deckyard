@@ -331,7 +331,10 @@ its `ai.js` replaced five hand-filed modules under `ai/slide-catalog/examples/`
 (where `timeline-slide` sat in two of them, one silently dead). The aggregator
 carries them as a second, sparse map (`SLIDE_TYPE_AI_EXAMPLES`), and
 `ai/slide-catalog/examples.js` layers the fork overlay on top — sparse by
-design: a type without examples owes none.
+design: a type without examples owes none. Each example is
+`{ variation?, content }`: the pattern's name sits beside the content, so the
+content passes the type's own schema (B246, pinned by
+`tests/strict-accepts-catalog-examples.test.js`).
 
 ## Migrating a consumer
 

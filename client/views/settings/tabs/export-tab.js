@@ -7,6 +7,7 @@ import { h } from '../../../lib/dom/index.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
 import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 
@@ -159,7 +160,15 @@ export function createExportTab({ user }) {
   });
 
   progressSection.append(progressBar, statusText);
-  optionsCard.append(progressSection);
+
+  /**
+   * A job that fails while polling is a background failure (B206): nobody is
+   * waiting at the progress bar, and `setExporting(false)` hides the bar and
+   * its status line, so a message put there would vanish with them. This sits
+   * in the card and stays until the next attempt.
+   */
+  const exportFailure = createInlineError({ live: 'polite', callout: true });
+  optionsCard.append(progressSection, exportFailure.el);
 
   // Download section (hidden initially)
   const downloadSection = h('div', {
@@ -304,9 +313,15 @@ export function createExportTab({ user }) {
       if (status.state === 'failed') {
         stopPolling();
         setExporting(false);
-        toast.error(
+        // Not `status.error`: that is the job's `failedReason`, the raw
+        // exception the worker threw (`Unknown export type: …`, an `ENOENT`
+        // with a server path). The doctrine's "the server's sentence" means
+        // the error envelope's `message`, which is display text by contract
+        // (docs/reference/api-error-format.md); a job has no such sentence
+        // yet, so this says what did not happen until it does (B646).
+        exportFailure.show(
           t('settings.export.failed', 'Export failed. Please try again.'),
-          { id: 'bulk-export' },
+          { focus: false },
         );
         return;
       }
@@ -328,6 +343,7 @@ export function createExportTab({ user }) {
    */
   function startPollingForJob(jobId, downloadUrl) {
     currentJobId = jobId;
+    exportFailure.clear();
     setExporting(true);
     progressFill.style.width = '0%';
     statusText.textContent = t(

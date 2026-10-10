@@ -1,5 +1,6 @@
 import { normalizeSlides } from './slides.js';
 import { AppError } from '../../utils/errors.js';
+import { isLiveInviteSlideType } from '../../../shared/slide-types/live-session.js';
 import { pickVersion } from '../../../shared/i18n-progress.js';
 import {
   DEFAULT_DECK_LANG,
@@ -54,9 +55,10 @@ export {
 function normalizeFollowInviteSlides(slides) {
   const arr = Array.isArray(slides) ? slides : [];
 
-  // Find all follow-invite slides and ensure their content is correct.
+  // Every invite (`liveInvite: true` on the type, asked rather than named):
+  // shed the retired language keys, default the in-place switch to on.
   for (const s of arr) {
-    if (s?.type !== 'follow-invite-slide') continue;
+    if (!isLiveInviteSlideType(s?.type)) continue;
     s.content = s.content && typeof s.content === 'object' ? s.content : {};
     delete s.content.sourceLang;
     delete s.content.targetLang;

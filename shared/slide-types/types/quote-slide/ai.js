@@ -43,16 +43,18 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    quotes: [
-      {
-        quote: 'Innovation distinguishes between a leader and a follower.',
-        authorName: 'Steve Jobs',
-        authorTitle: 'Co-founder, Apple Inc.',
-      },
-    ],
+    content: {
+      quotes: [
+        {
+          quote: 'Innovation distinguishes between a leader and a follower.',
+          authorName: 'Steve Jobs',
+          authorTitle: 'Co-founder, Apple Inc.',
+        },
+      ],
+    },
   },
 ];

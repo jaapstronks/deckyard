@@ -72,51 +72,57 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    _variation: 'one-column layout (2-4 items)',
-    title: 'Four Key Principles',
-    subheading: 'Guiding our approach',
-    variant: 'bullets',
-    layout: 'one-column',
-    items: [
-      { title: 'Transparency', text: 'Open communication at all levels' },
-      { title: 'Collaboration', text: 'Working together across teams' },
-      { title: 'Innovation', text: 'Embracing new ideas and methods' },
-      { title: 'Accountability', text: 'Taking ownership of outcomes' },
-    ],
-    background: 'lime',
+    variation: 'one-column layout (2-4 items)',
+    content: {
+      title: 'Four Key Principles',
+      subheading: 'Guiding our approach',
+      variant: 'bullets',
+      layout: 'one-column',
+      items: [
+        { title: 'Transparency', text: 'Open communication at all levels' },
+        { title: 'Collaboration', text: 'Working together across teams' },
+        { title: 'Innovation', text: 'Embracing new ideas and methods' },
+        { title: 'Accountability', text: 'Taking ownership of outcomes' },
+      ],
+      background: 'lime',
+    },
   },
   {
-    _variation: 'two-column layout (5-8 items) - USE THIS FOR 5+ ITEMS',
-    title: 'Project Success Factors',
-    subheading: 'What we need to get right',
-    variant: 'bullets',
-    layout: 'two-column',
-    items: [
-      { title: 'Clear Goals', text: 'Well-defined objectives and KPIs' },
-      { title: 'Team Alignment', text: 'Everyone understands their role' },
-      { title: 'Resources', text: 'Adequate budget and tools' },
-      { title: 'Timeline', text: 'Realistic deadlines with buffers' },
-      { title: 'Communication', text: 'Regular updates and check-ins' },
-      { title: 'Risk Management', text: 'Identifying issues early' },
-    ],
-    background: 'lime',
+    variation: 'two-column layout (5-8 items) - USE THIS FOR 5+ ITEMS',
+    content: {
+      title: 'Project Success Factors',
+      subheading: 'What we need to get right',
+      variant: 'bullets',
+      layout: 'two-column',
+      items: [
+        { title: 'Clear Goals', text: 'Well-defined objectives and KPIs' },
+        { title: 'Team Alignment', text: 'Everyone understands their role' },
+        { title: 'Resources', text: 'Adequate budget and tools' },
+        { title: 'Timeline', text: 'Realistic deadlines with buffers' },
+        { title: 'Communication', text: 'Regular updates and check-ins' },
+        { title: 'Risk Management', text: 'Identifying issues early' },
+      ],
+      background: 'lime',
+    },
   },
   {
-    _variation: 'numbered list (for ordered steps)',
-    title: 'Implementation Steps',
-    subheading: 'Follow in order',
-    variant: 'numbers',
-    layout: 'one-column',
-    items: [
-      { title: 'Assessment', text: 'Evaluate current state' },
-      { title: 'Planning', text: 'Define the roadmap' },
-      { title: 'Execution', text: 'Implement changes' },
-      { title: 'Review', text: 'Measure and adjust' },
-    ],
-    background: 'lime',
+    variation: 'numbered list (for ordered steps)',
+    content: {
+      title: 'Implementation Steps',
+      subheading: 'Follow in order',
+      variant: 'numbers',
+      layout: 'one-column',
+      items: [
+        { title: 'Assessment', text: 'Evaluate current state' },
+        { title: 'Planning', text: 'Define the roadmap' },
+        { title: 'Execution', text: 'Implement changes' },
+        { title: 'Review', text: 'Measure and adjust' },
+      ],
+      background: 'lime',
+    },
   },
 ];

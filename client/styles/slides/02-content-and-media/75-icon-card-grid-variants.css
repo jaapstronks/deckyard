@@ -224,7 +224,7 @@
   overflow: hidden;
   line-height: var(--slide-leading-normal);
   text-align: center;
-  opacity: var(--slide-opacity-prominent, 0.85);
+  opacity: var(--slide-opacity-prominent);
 }
 .slide-icon-card-grid[data-layout='tiles']
   .icon-card-grid[data-card-count='5']

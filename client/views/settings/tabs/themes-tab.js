@@ -441,6 +441,18 @@ export function createThemesTab({ user }) {
     });
     menu.append(duplicateItem);
 
+    // The PPTX template: a starting document on this theme's layouts. A plain
+    // link, because the answer is an attachment and the browser is better at
+    // saving one than any fetch-and-revoke dance would be (B274).
+    const templateItem = h('a', {
+      class: 'dropdown-item',
+      href: `/api/themes/${theme.id}/template.pptx`,
+      download: '',
+      text: t('settings.themes.downloadTemplate', 'Download PPTX template'),
+      onclick: closeMenu,
+    });
+    menu.append(templateItem);
+
     if (theme.source !== 'seed') {
       const deleteItem = h('button', {
         class: 'dropdown-item is-danger',
@@ -477,9 +489,6 @@ export function createThemesTab({ user }) {
     try {
       await updateOrgSettings({ defaultThemeId: themeId });
       invalidateSettingsCache();
-      toast.success(
-        t('settings.themes.setDefaultSuccess', 'Theme set as default.'),
-      );
       await loadThemes();
       await loadWorkspaceControls();
     } catch (err) {
@@ -494,9 +503,6 @@ export function createThemesTab({ user }) {
     try {
       await updateOrgSettings({ defaultThemeId: '' });
       invalidateSettingsCache();
-      toast.success(
-        t('settings.themes.clearDefaultSuccess', 'Default theme cleared.'),
-      );
       await loadThemes();
       await loadWorkspaceControls();
     } catch (err) {
@@ -527,7 +533,6 @@ export function createThemesTab({ user }) {
         body: newTheme,
       });
 
-      toast.success(t('settings.themes.duplicateSuccess', 'Theme duplicated.'));
       await loadThemes();
 
       // Open editor for new theme
@@ -559,7 +564,6 @@ export function createThemesTab({ user }) {
     try {
       await api(`/api/themes/${theme.id}`, { method: 'DELETE' });
       invalidateTheme(theme.id);
-      toast.success(t('settings.themes.deleteSuccess', 'Theme deleted.'));
       await loadThemes();
     } catch (err) {
       toast.error(err);
@@ -614,7 +618,6 @@ export function createThemesTab({ user }) {
             method: 'POST',
             body: themeData,
           });
-          toast.success(t('settings.themes.createSuccess', 'Theme created.'));
         }
         await loadThemes();
         closeEditor();

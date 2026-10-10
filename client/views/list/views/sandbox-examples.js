@@ -78,15 +78,17 @@ export function createSandboxExamplesSection({ api, detachThumbs }) {
           `/app/${created.id}?lang=${encodeURIComponent(created.lang || exampleLang(example))}`,
         );
       } else {
-        throw new Error('no id');
+        throw new Error(
+          t(
+            'sandbox.examples.error',
+            'Could not open that example. Please try again.',
+          ),
+        );
       }
-    } catch {
-      toast.error(
-        t(
-          'sandbox.examples.error',
-          'Could not open that example. Please try again.',
-        ),
-      );
+    } catch (err) {
+      // The server's sentence (a rate limit, a retired example) when it sent
+      // one; the copy above only when the answer carried no deck (B205).
+      toast.error(err);
       busy = false;
     }
   }

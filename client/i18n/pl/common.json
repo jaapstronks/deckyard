@@ -119,7 +119,6 @@
   "common.open": "Otwórz",
   "common.organization": "Organizacja",
   "common.organizationCurrent": "Bieżąca organizacja",
-  "common.organizationSwitchFailed": "Nie udało się przełączyć organizacji.",
   "common.organizationSwitchForbidden": "Przełączenie na tę organizację nie jest możliwe.",
   "common.organizationSwitchTo": "Przełącz na {name}",
   "common.pangram": "Pchnąć w tę łódź jeża lub ośm skrzyń fig",

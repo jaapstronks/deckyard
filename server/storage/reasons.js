@@ -87,11 +87,12 @@ export const REASONS = Object.freeze(
     already_voted: { status: 409, kind: 'caller' },
     slug_exists: { status: 409, kind: 'caller' },
     external_id_exists: { status: 409, kind: 'caller' },
+    // A closed vote, session or promoted question (D122). `locked` is not a
+    // reason: it is the 423 slide lock (`LockedError`), one meaning only.
     closed: { status: 409, kind: 'caller' },
     disabled: { status: 409, kind: 'caller' },
     held: { status: 409, kind: 'caller' },
     inactive: { status: 409, kind: 'caller' },
-    locked: { status: 409, kind: 'caller' },
     // The deck exists but is not in the trash; permanent deletion is the second
     // step of trashing, never a shortcut past it.
     not_trashed: { status: 409, kind: 'caller' },

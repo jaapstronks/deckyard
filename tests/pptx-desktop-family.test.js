@@ -199,6 +199,16 @@ test('the template writes the desktop name, never the CSS alias', async () => {
     themeXml,
     /<a:majorFont><a:latin typeface="GT America LCG Ext Md"\/>/,
   );
+  // The sample slides name their own face too (B637), so the alias must not
+  // reach them either.
+  const slides = await Promise.all(
+    Object.keys(zip.files)
+      .filter((f) => /^ppt\/slides\/slide\d+\.xml$/.test(f))
+      .map((f) => zip.file(f).async('string')),
+  );
+  assert.ok(slides.length, 'the template carries sample slides');
+  for (const xml of slides)
+    assert.doesNotMatch(xml, /typeface="GT America Extended"/);
 });
 
 test('an uploaded family without a desktop name is written as Arial', async () => {

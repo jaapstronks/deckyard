@@ -22,7 +22,7 @@ const HEADER_BLOCK = alignGroup('header-block', 'headerAlign', {
 });
 import { getSlideCopy } from '../slide-copy.js';
 
-import { parseChartData } from './chart-slide/parse.js';
+import { CHART_ERROR, parseChartData } from './chart-slide/parse.js';
 import { themeChartPalette } from './chart-slide/palette.js';
 import { truncateLabel } from './chart-slide/strings.js';
 import { chartErrorHtml } from './chart-slide/error.js';
@@ -160,7 +160,9 @@ export default {
         { value: 'no', label: 'No' },
       ],
       formLayout: 'pair',
-      visibleWhen: { field: 'chartType', in: ['bar'] },
+      // Bar and line both draw value labels (canvas and PPTX); pie has its
+      // own "Pie labels" control.
+      visibleWhen: { field: 'chartType', in: ['bar', 'line'] },
     },
     {
       key: 'xLabel',
@@ -309,20 +311,21 @@ export default {
     let svg = '';
     let legendHtml = '';
     if (!parsed.ok) {
-      svg = chartErrorHtml(parsed.errors);
+      svg = chartErrorHtml(parsed.errors, ctx?.lang);
     } else if (parsed.kind === 'bar') {
       svg = renderBarSvg(parsed.dataset, {
         showValues,
         xAxisLabel,
         yAxisLabel,
+        lang: ctx?.lang,
       });
     } else if (parsed.kind === 'line') {
       const ds = parsed.dataset || {};
       // Override series labels if user provided explicit labels.
       const s1 = String(content?.series1Label || '').trim();
       const s2 = String(content?.series2Label || '').trim();
-      const series1Name = s1 || ds.series1Label || 'Series 1';
-      const series2Name = s2 || ds.series2Label || 'Series 2';
+      const series1Name = s1 || ds.series1Label || copy.chartEncodingSeries1;
+      const series2Name = s2 || ds.series2Label || copy.chartEncodingSeries2;
       const hasY2 = Array.isArray(ds?.y2) && ds.y2.some((v) => v != null);
       if (showLegend) {
         legendHtml = `
@@ -354,7 +357,7 @@ export default {
           series1Label: series1Name,
           series2Label: series2Name,
         },
-        { showLegend, showValues, xAxisLabel, yAxisLabel },
+        { showLegend, showValues, xAxisLabel, yAxisLabel, lang: ctx?.lang },
       );
     } else if (parsed.kind === 'pie') {
       const pieLabelModeRaw = String(content?.pieLabelMode || '').trim();
@@ -372,6 +375,7 @@ export default {
         showLegend,
         pieLabelMode,
         palette,
+        lang: ctx?.lang,
       });
       if (showLegend) {
         const entries = pieEntriesFromDataset(parsed.dataset);
@@ -412,11 +416,11 @@ export default {
         `;
       }
     } else {
-      svg = chartErrorHtml(['Onbekend chart type.']);
+      svg = chartErrorHtml([CHART_ERROR.unknownType], ctx?.lang);
     }
 
     const desc = chartSummary(parsed, ctx?.lang);
-    const a11yTitle = title || 'Chart';
+    const a11yTitle = title || copy.chartTitleFallback;
 
     // Note: we keep SVG inline for export safety.
     const alignClass = groupAlignClass(HEADER_BLOCK.group, content);

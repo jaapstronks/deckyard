@@ -143,7 +143,8 @@ test('chart: visibleWhen shows only the controls the chart type draws', () => {
   assert.ok(!has('bar', 'Series 1 label'), 'bar: no series labels');
 
   assert.ok(has('line', 'Legend'), 'line: legend toggle');
-  assert.ok(!has('line', 'Show values'), 'line: no show-values');
+  assert.ok(has('line', 'Show values'), 'line: show-values toggle');
+  assert.ok(!has('pie', 'Show values'), 'pie: no show-values');
   assert.ok(has('line', 'Series 1 label'), 'line: series labels');
   assert.ok(has('line', 'X label'), 'line: axis labels');
 

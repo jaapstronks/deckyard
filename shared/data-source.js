@@ -146,7 +146,9 @@ export const BINDABLE_SLIDE_TYPES = {
         // corner of the content and the chart kept its old data.
         target: 'data',
         label: 'Chart data (CSV)',
-        sourceHint: 'range or URL',
+        // A range (`A1:B10`) is the one source that yields a table: the
+        // csv-url provider hands it back as CSV with its first row as header.
+        sourceHint: 'range (A1:B10)',
       },
       { target: 'title', label: 'Title', sourceHint: 'cell or property' },
     ],

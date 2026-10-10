@@ -32,7 +32,7 @@ globalThis.window = dom.window;
 globalThis.document = dom.window.document;
 globalThis.localStorage = dom.window.localStorage;
 
-// Scripted fetch double: each sendTrack call is recorded and answered by the
+// Scripted fetch double: each request is recorded and answered by the
 // current responder. No retries trigger in these tests (4xx is never retried).
 let fetchCalls = [];
 // Response-like enough for api(): the layer reads status and content-type.
@@ -87,9 +87,11 @@ test('a failed erase leaves the tracker live and the device id in place', async 
   assert.ok(deviceId, 'a device id was minted on start');
 
   respond = refuse(429);
-  const result = await tracker.erase();
-
-  assert.equal(result, null, 'the refusal surfaces as a null result');
+  await assert.rejects(
+    tracker.erase(),
+    (err) => err.statusCode === 429 && err.message === 'refused',
+    "the refusal surfaces as the server's error",
+  );
   assert.equal(tracker.isTracking(), true, 'the tracker is still live');
   assert.equal(tracker.getSessionToken(), TOKEN, 'the session token survives');
   assert.equal(storage.get(DEVICE_ID_KEY), deviceId, 'the device id survives');

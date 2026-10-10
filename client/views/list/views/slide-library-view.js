@@ -13,17 +13,28 @@ import {
 } from '../../slide-library/index.js';
 import { createCollectionsBar } from '../collections/index.js';
 import { toast } from '../../../lib/dom/toast.js';
-import { nav } from '../../../lib/state/router.js';
+import {
+  nav,
+  pushPath,
+  replacePath,
+  route,
+  slideLibraryPath,
+} from '../../../lib/state/router.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 
 /**
  * Create the slide library view (lazy-loaded)
  *
+ * The view owns its address: `/app/slide-library`, and
+ * `/app/slide-library/<shelf>/<slideId>` while a slide is open (B285).
+ *
  * @param {object} opts
  * @param {Function} opts.api - API client
+ * @param {'organization'|'personal'} [opts.initialShelf] - The shelf to open
+ *   on; a permalink names it, so the first render already loads that shelf
  * @returns {object} - { el, load, refresh, openSlide }
  */
-export function createSlideLibraryView({ api }) {
+export function createSlideLibraryView({ api, initialShelf = 'organization' }) {
   const view = h('div', { class: 'sidebar-view', 'data-view': 'slideLibrary' });
   const title = h('h2', {
     class: 'presentation-grid-title',
@@ -42,7 +53,10 @@ export function createSlideLibraryView({ api }) {
     text: t('common.loading', 'Loading…'),
   });
 
-  let loaded = false;
+  // A permalink to a slide that is not there: a state of the view, said in
+  // place of the slide (inline-error doctrine, not a toast).
+  const notFound = createInlineError({ live: 'polite' });
+  let rendered = null;
   let picker = null;
   let collectionsBar = null;
 
@@ -102,40 +116,34 @@ export function createSlideLibraryView({ api }) {
         lang: selectedLang,
       });
 
-      const msg = t(
-        'slideLibrary.newPresentation.done',
-        {
-          one: 'Presentation created!',
-          many: 'Presentation created with {count} slides!',
-        },
-        { count: items.length },
-      );
-      toast.success(msg);
-
       if (result?.id) {
         nav(`/app/${result.id}`);
       }
     } catch (e) {
-      toast.error(
-        t(
-          'slideLibrary.newPresentation.failed',
-          'Failed to create presentation.',
-        ),
-      );
+      // The server's sentence (a size limit, a refused type), not generic copy.
+      toast.error(e);
     }
   }
 
-  async function load() {
-    if (loaded) return;
+  /**
+   * Render the library once. Every caller gets the same promise, so whoever
+   * comes second (the permalink, after the tab switch started the render)
+   * waits for the list instead of finding it half built.
+   * @returns {Promise<void>}
+   */
+  function load() {
+    rendered ??= render();
+    return rendered;
+  }
 
+  async function render() {
     try {
-      loaded = true;
       view.innerHTML = '';
 
       // Collections management sits above the grid; membership add hangs off the
       // per-card more-menu via onAddToCollection.
       collectionsBar = createCollectionsBar({ api, root: document.body });
-      view.append(title, hint, collectionsBar.el, mount);
+      view.append(title, hint, notFound.el, collectionsBar.el, mount);
       collectionsBar.refresh();
 
       // Create the slide library picker in browse-only mode with language switching
@@ -145,6 +153,7 @@ export function createSlideLibraryView({ api }) {
         showLanguageSwitch: true, // Enable language switching in browse mode
         // The language a new deck would start in (stored choice, else the UI
         // locale): an English reader is not shown an empty Dutch shelf (B603).
+        initialShelf,
         initialLang: resolveInitialDeckLang({
           storedLang: readStoredLangMode(),
           uiLocale: getUiLocale(),
@@ -153,14 +162,15 @@ export function createSlideLibraryView({ api }) {
         onNewPresentation: createNewPresentation,
         onAddToCollection: (item, shelf) =>
           collectionsBar?.openAddTo({ ...item, _shelf: shelf }),
-        // Permalink support: update URL when slide opens/closes
-        onSlideOpen: ({ shelf, slideId }) => {
-          const url = `/app/slide-library/${shelf}/${slideId}`;
-          history.pushState(null, '', url);
-        },
+        // An opened slide is a history entry: back closes it. A permalink
+        // that opened it is already that address, so nothing is pushed.
+        onSlideOpen: ({ shelf, slideId }) =>
+          pushPath(slideLibraryPath(shelf, slideId)),
+        // Closing returns to the library in place. Only while the address
+        // is still this slide's: a view teardown closes the modal too, after
+        // the router has already moved on to another page.
         onSlideClose: () => {
-          // Return to the base slide library URL
-          history.pushState(null, '', '/app');
+          if (route().slideId) replacePath(slideLibraryPath());
         },
       });
 
@@ -178,19 +188,29 @@ export function createSlideLibraryView({ api }) {
   }
 
   /**
-   * Open a specific slide by ID (for permalink navigation)
+   * Open a specific slide by ID (for permalink navigation). A slide that is
+   * gone, or that the viewer may not see, leaves the library open with a
+   * notice and the library's own address.
    * @param {string} shelf - 'organization' or 'personal'
    * @param {string} slideId - The slide ID to open
    */
   async function openSlide(shelf, slideId) {
     await load();
-    if (picker?.openSlideById) {
-      await picker.openSlideById(shelf, slideId);
-    }
+    if (!picker) return;
+    notFound.clear();
+    if (await picker.openSlideById(shelf, slideId)) return;
+    replacePath(slideLibraryPath());
+    notFound.show(
+      t(
+        'slideLibrary.permalink.notFound',
+        'This slide is not in the library, or you do not have access to it.',
+      ),
+      { focus: false },
+    );
   }
 
   function refresh() {
-    loaded = false;
+    rendered = null;
     mount.innerHTML = '';
     load();
   }

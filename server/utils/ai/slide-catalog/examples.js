@@ -24,8 +24,15 @@
 import { SLIDE_TYPE_AI_EXAMPLES } from './type-ai.js';
 
 /**
+ * One prompt example. `content` is the slide content and passes the type's own
+ * content schema; `variation` names the pattern and sits beside it, so the
+ * content an agent copies carries no key the product would refuse (B246).
+ * @typedef {{ variation?: string, content: Object }} AiExample
+ */
+
+/**
  * All slide type examples combined (core + custom)
- * @type {Record<string, Array<Object>>}
+ * @type {Record<string, Array<AiExample>>}
  */
 export let SLIDE_TYPE_EXAMPLES = { ...SLIDE_TYPE_AI_EXAMPLES };
 
@@ -46,7 +53,7 @@ export function mergeCustomExamples(customExamples) {
 /**
  * Get all example variations for a slide type
  * @param {string} type - Slide type name
- * @returns {Array|null} Array of examples or null if not found
+ * @returns {Array<AiExample>|null} Array of examples or null if not found
  */
 export function getSlideTypeExamples(type) {
   return SLIDE_TYPE_EXAMPLES[type] || null;

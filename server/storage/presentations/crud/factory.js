@@ -2,7 +2,7 @@
  * Presentation factory - create new presentation objects.
  */
 
-import { newPresentation } from '../../../../shared/slide-schemas.js';
+import { newPresentation } from '../../../../shared/slide-types.js';
 import { cryptoUuid } from '../../../../shared/slide-types/helpers.js';
 import { normalizeI18n, refuseNonCanonicalVersionKeys } from '../i18n.js';
 import {

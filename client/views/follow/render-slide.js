@@ -4,6 +4,7 @@ import {
 } from '../../lib/slide-runtime/slide-render.js';
 import { slideByIdOrIndex } from './slides.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
+import { isLiveInviteSlideType } from '../../../shared/slide-types/live-session.js';
 import { h } from '../../lib/dom/index.js';
 import { applyStepVisibilityForMode } from '../presenter/step.js';
 
@@ -42,9 +43,10 @@ export function renderFollowSlide({
 
   if (!slide) return;
 
-  // When the presenter is on the follow-invite slide, show a success message instead
-  // of the slide itself (which would just show the QR code they already scanned).
-  if (slide.type === 'follow-invite-slide' && followInviteMessage) {
+  // When the presenter is on the invite, show the joined-confirmation instead
+  // of the slide itself (which would just show the QR code they already
+  // scanned). The role is declared on the type (`liveInvite`), not named here.
+  if (isLiveInviteSlideType(slide.type) && followInviteMessage) {
     if (slideWrap) {
       slideWrap.innerHTML = '';
       const msgSlide = h('div', { class: 'slide follow-message-slide' });

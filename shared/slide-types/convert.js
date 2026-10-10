@@ -1,4 +1,8 @@
-import { SLIDE_TYPES, GLOBAL_SLIDE_FIELD_KEYS } from './registry.js';
+import {
+  SLIDE_TYPES,
+  GLOBAL_SLIDE_FIELD_KEYS,
+  DERIVED_SLIDE_CONTENT_KEYS,
+} from './registry.js';
 import { seedAutoBackgroundPreset } from '../theme-background-presets.js';
 import { normalizeLang } from '../i18n-utils.js';
 import { resolveTypeDefaults } from './type-defaults.js';
@@ -32,10 +36,12 @@ function defaultsForType(
   return resolveTypeDefaults(def, normalizeLang(lang), theme);
 }
 
+// The derived contrast verdict rides with `slideBgImage`: a conversion that
+// dropped it would have the write seam measure the same image again (B628).
 function preserveGlobalFields({ fromContent, toContent }) {
   if (!fromContent || typeof fromContent !== 'object') return;
   if (!toContent || typeof toContent !== 'object') return;
-  for (const k of GLOBAL_SLIDE_FIELD_KEYS) {
+  for (const k of [...GLOBAL_SLIDE_FIELD_KEYS, ...DERIVED_SLIDE_CONTENT_KEYS]) {
     if (fromContent[k] != null) toContent[k] = fromContent[k];
   }
 }
@@ -390,7 +396,7 @@ export function convertSlideToType(
   if (fromType === 'image-slide' && targetType === 'image-text-slide') {
     // Both types spell the single image the same way since D100, so the flat
     // ImageRef keys are written directly. Fit resolves through the image-slide
-    // authority (own fit -> legacy `layout` -> type default) and is written
+    // authority (own fit -> type default) and is written
     // only when it deviates from the image-text default (empty keeps meaning
     // "follow the type"). `bleed` is deliberately DROPPED: image-text renders
     // no edge-to-edge frame, and a carried-but-unrendered key is a hidden

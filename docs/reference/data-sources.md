@@ -62,9 +62,11 @@ The `dataSource` object lives on the slide (validated by
   `title`, `metrics[0].value`, `rows[2].c3`. Missing intermediate
   objects/arrays are created.
 - **`source`** is provider-specific:
-  - csv-url: an Excel-style cell ref (`B2`, 1-indexed rows) or
-    `row[N].colName` (first CSV row is the header, `N` is 0-indexed into the
-    data rows);
+  - csv-url: an Excel-style cell ref (`B2`, 1-indexed rows), a range
+    (`A1:B10`, the block as CSV text with its first row as the header; rows
+    past the end of the sheet are left out; the one source that fills a
+    chart's `data`), or `row[N].colName` (first CSV row is the header, `N` is
+    0-indexed into the data rows);
   - notion-database: `row[N].PropertyName` (property values are flattened to
     strings — numbers, selects, dates, formulas, rollups all arrive as text);
   - notion-block: `block[N]`, `block[N].text` or `block[N].type` (only blocks

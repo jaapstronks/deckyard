@@ -48,7 +48,7 @@ inspector write path that disagrees with the render read path.
 
 | Type                                     | Level                             | Field(s)                                                           | Render reads                                                                                                                             | Inspector writes                                                                                                               | Default                                                                                |
 | ---------------------------------------- | --------------------------------- | ------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
-| image-slide                              | S (single image = the element) ✅ | `fit` + `bleed` canonical (split from `layout`, step 3)            | `resolveImageSlideImage` → `is-fit-*`/`is-bleed` classes; legacy `layout` is a read-only fallback, folded on edit                        | fit/bleed on the shared "This image" element card, declared via the inline descriptor's `fit`/`bleed` axes (silent-default UX) | `cover`/`false` (`IMAGE_SLIDE_IMAGE_DEFAULTS`, live)                                   |
+| image-slide                              | S (single image = the element) ✅ | `fit` + `bleed` canonical (split from `layout`, step 3)            | `resolveImageSlideImage` → `is-fit-*`/`is-bleed` classes; legacy `layout` folded and deleted by the read funnel (v19 → v20)              | fit/bleed on the shared "This image" element card, declared via the inline descriptor's `fit`/`bleed` axes (silent-default UX) | `cover`/`false` (`IMAGE_SLIDE_IMAGE_DEFAULTS`, live)                                   |
 | image-text                               | S (single image = the element) ✅ | `fit` canonical (flat, since D100)                                 | `resolveImageTextImage` → the one `.frame` carries its effective `is-fit-*` class; no legacy fallback, the schema funnel (v15) folded it | fit on the shared "This image" element card, declared via the inline descriptor's `fit` axis                                   | `cover` (type default `IMAGE_TEXT_IMAGE_DEFAULTS.fit`, live)                           |
 | image-set                                | **I** ✅                          | item `fit` canonical                                               | `resolveImageSetCell` → every `.frame` carries its effective `is-fit-*` class (one mechanism); no slide-level fit exists on this type    | element card (inspector) + the `editor: 'image-fit'` item widget in the bulk modal's collection editor                         | `cover` (type default `IMAGE_SET_IMAGE_DEFAULTS.fit`, live)                            |
 | content-columns                          | N (resolved to ImageRef) ✅       | `col{n}ImageFit`                                                   | `resolveContentColumnImage` (own value → type default, step 4)                                                                           | silent-default fit controls (form + inspector + element card)                                                                  | `cover` (`CONTENT_COLUMNS_IMAGE_DEFAULTS.fit`, live — no longer stamped into defaults) |
@@ -229,10 +229,12 @@ imageDefaults = {
 ### The fit/bleed split (part of `ImageRef`)
 
 > ✅ **Shipped — step 3, PR #185 (2026-07-20).** Everything below is live:
-> `resolveImageSlideImage` resolves own `fit`/`bleed` → legacy `layout` →
+> `resolveImageSlideImage` resolves own `fit`/`bleed` →
 > `IMAGE_SLIDE_IMAGE_DEFAULTS`; the renderer emits orthogonal
-> `is-fit-*`/`is-bleed` classes; `contain + bleed` renders; the editor fold
-> (`ensureImageSlideImage`) retires `layout` on touch.
+> `is-fit-*`/`is-bleed` classes; `contain + bleed` renders. The stored
+> `layout` is folded and deleted by the read funnel (schema v19 → v20,
+> `foldImageSlideLayout`, B257-A2); until then an editor fold on open and a
+> read fallback in the resolver carried it.
 
 `ImageRef.fit`/`bleed` replace `image-slide`'s conflated `layout`. Split it into
 two orthogonal, uniformly-named axes and drop the word:
@@ -329,10 +331,10 @@ property.
    `textColumns`, `altNl` and `altEn` — from every image-text slide, so it is
    no longer read anywhere.
 3. ~~**Split image-slide `layout` → `ImageRef.fit` + `bleed`.**~~ ✅ **Shipped —
-   PR #185 (2026-07-20).** `resolveImageSlideImage` (own value → legacy
-   `layout` → `IMAGE_SLIDE_IMAGE_DEFAULTS`) is the single read authority;
-   `ensureImageSlideImage` folds `layout` on edit (default-equal values
-   dropped, not stamped); the renderer emits orthogonal `is-fit-*`/`is-bleed`
+   PR #185 (2026-07-20).** `resolveImageSlideImage` (own value →
+   `IMAGE_SLIDE_IMAGE_DEFAULTS`) is the single read authority; the read
+   funnel folds `layout` and deletes it (v19 → v20, B257-A2; default-equal
+   values dropped, not stamped); the renderer emits orthogonal `is-fit-*`/`is-bleed`
    classes (CSS restructured per axis); `contain + bleed` is expressible and
    renders; conversion to image-text carries the ImageRef (`bleed` travelled on
    it until D100 dropped it — see "Conversion becomes lossless" above).

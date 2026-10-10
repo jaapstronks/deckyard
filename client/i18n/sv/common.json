@@ -115,7 +115,6 @@
   "common.open": "Öppna",
   "common.organization": "Organisation",
   "common.organizationCurrent": "Nuvarande organisation",
-  "common.organizationSwitchFailed": "Det gick inte att byta organisation.",
   "common.organizationSwitchForbidden": "Du kan inte byta till den här organisationen.",
   "common.organizationSwitchTo": "Byt till {name}",
   "common.pangram": "Flygande bäckasiner söka hwila på mjuka tuvor",

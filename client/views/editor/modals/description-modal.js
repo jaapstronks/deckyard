@@ -1,7 +1,5 @@
-import {
-  createPromiseModal,
-  createBusyManager,
-} from '../../../lib/dom/modal.js';
+import { createPromiseModal } from '../../../lib/dom/modal.js';
+import { createBusyManager } from '../../../lib/dom/busy.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 import { featureEnabled } from '../../../lib/state/features.js';
@@ -159,9 +157,9 @@ export function openDescriptionModal({
   });
 
   // Use busy manager to control all interactive elements
-  const busyManager = createBusyManager(
-    [btnCancel, btnContinue, btnGenerate, ta].filter(Boolean),
-  );
+  const busyManager = createBusyManager({
+    elements: [btnCancel, btnContinue, btnGenerate, ta].filter(Boolean),
+  });
 
   btnRow.append(...[btnGenerate, btnCancel, btnContinue].filter(Boolean));
 

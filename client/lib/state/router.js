@@ -30,9 +30,88 @@ export function startRouter() {
 }
 
 export function nav(to) {
-  let dest = String(to || '/');
-  history.pushState(null, '', dest);
+  writeUrl(String(to || '/'), { push: true });
   renderFn();
+}
+
+/** The slide library's own address; the bare form is the library itself. */
+const SLIDE_LIBRARY_PATH = '/app/slide-library';
+
+/**
+ * The address of the slide library, or of one slide in it (the permalink
+ * `route()` answers with `{ name: 'slideLibrary', shelf, slideId }`).
+ * @param {'organization'|'personal'} [shelf]
+ * @param {string} [slideId]
+ * @returns {string}
+ */
+export function slideLibraryPath(shelf, slideId) {
+  if (!shelf || !slideId) return SLIDE_LIBRARY_PATH;
+  return `${SLIDE_LIBRARY_PATH}/${shelf}/${encodeURIComponent(slideId)}`;
+}
+
+/**
+ * Point the address bar at `path` for a state the view already shows: a
+ * library tab, an opened slide. Unlike `nav()` it does not re-route, because
+ * nothing needs rendering; query and hash stay. A no-op when the path is
+ * already current.
+ * @param {string} path
+ * @param {{ push?: boolean }} [opts] - `push` adds a history entry the back
+ *   button returns from (opening a slide); the default replaces (switching a
+ *   tab, closing the slide)
+ */
+function writePath(path, { push = false } = {}) {
+  const url = liveUrl();
+  if (!url || url.pathname === path) return;
+  url.pathname = path;
+  writeUrl(relativeUrl(url), { push });
+}
+
+/**
+ * Write `dest` to the address bar: the one place in the client that calls
+ * `history.pushState`/`replaceState` (guarded in
+ * `tests/router-query-ownership.test.js`). A replace keeps `history.state`.
+ * @param {string} dest - a relative URL (path, query, hash)
+ * @param {{ push?: boolean }} [opts]
+ */
+function writeUrl(dest, { push = false } = {}) {
+  try {
+    if (push) history.pushState(null, '', dest);
+    else history.replaceState(history.state, '', dest);
+    /* eslint-disable-next-line no-restricted-syntax -- Nothing to record with: the debug logger reads `?debugLog=` through `queryString()` below, so importing it here would be a cycle. A history-less environment is a bare test or a sandboxed embed; the view already shows the state and only the address bar lags. */
+  } catch {
+    // See the disable above.
+  }
+}
+
+/**
+ * Push `path` as a new history entry without re-routing (see `writePath`).
+ * @param {string} path
+ */
+export function pushPath(path) {
+  writePath(path, { push: true });
+}
+
+/**
+ * Replace the current path without a history entry or re-route (see
+ * `writePath`).
+ * @param {string} path
+ */
+export function replacePath(path) {
+  writePath(path);
+}
+
+/**
+ * Replace the current hash (without `#`; empty clears it) without a history
+ * entry or re-route. A no-op when the hash is already current. Settings keeps
+ * its tab here.
+ * @param {string} hash
+ */
+export function replaceHash(hash) {
+  const url = liveUrl();
+  const next = hash ? `#${hash}` : '';
+  if (!url || url.hash === next) return;
+  url.hash = next;
+  writeUrl(relativeUrl(url));
 }
 
 /**
@@ -115,12 +194,7 @@ export function urlWithQuery(patch) {
  * @param {Record<string, string|number|null|undefined>} patch
  */
 export function setQueryParams(patch) {
-  try {
-    history.replaceState(history.state, '', urlWithQuery(patch));
-    /* eslint-disable-next-line no-restricted-syntax -- Nothing to record with: the debug logger reads `?debugLog=` through `queryString()` below, so importing it here would be a cycle. A history-less environment is a bare test or a sandboxed embed; the caller's state change stands either way and only the address bar lags. */
-  } catch {
-    // See the disable above.
-  }
+  writeUrl(urlWithQuery(patch));
 }
 
 export function route() {
@@ -133,11 +207,22 @@ export function route() {
   if (p === '/magic-login') return { name: 'magicLogin' };
   if (p === '/settings') return { name: 'settings' };
   if (p === '/insights') return { name: 'insights' };
-  // Slide library permalink: /app/slide-library/:shelf/:id
+  // The slide library, and a slide in it: /app/slide-library[/:shelf/:id].
+  // Matched before `/app/:id`, or the bare library would open as a deck.
+  if (p === SLIDE_LIBRARY_PATH) return { name: 'slideLibrary' };
   const slm = p.match(
     /^\/app\/slide-library\/(organization|personal)\/([^/]+)$/,
   );
-  if (slm) return { name: 'slideLibrary', shelf: slm[1], slideId: slm[2] };
+  if (slm) {
+    let slideId = slm[2];
+    try {
+      slideId = decodeURIComponent(slideId);
+      /* eslint-disable-next-line no-restricted-syntax -- A malformed escape is a hand-mangled link: keep the raw segment, the library then reports the slide as not found. */
+    } catch {
+      // See the disable above.
+    }
+    return { name: 'slideLibrary', shelf: slm[1], slideId };
+  }
   const m = p.match(/^\/app\/([^/]+)$/);
   if (m) return { name: 'edit', id: m[1] };
   const pwm = p.match(/^\/present\/([^/]+)\/window$/);

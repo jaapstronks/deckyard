@@ -12,6 +12,7 @@
  */
 
 import { getSlideType } from './slide-types/registry.js';
+import { isLiveOnlySlideType } from './slide-types/live-session.js';
 import { imagesMissingAlt } from './slide-types/semantic-projection.js';
 import { isSlideVisibleIn } from './slide-visibility.js';
 import { existingVersionLangs, pickVersion } from './i18n-progress.js';
@@ -48,7 +49,7 @@ export function findUnnamedImages(pres, slideTypes) {
       if (!slide || typeof slide !== 'object') return;
       if (!isSlideVisibleIn(slide, 'published')) return;
       const def = getSlideType(slide.type, slideTypes);
-      if (!def || def.liveOnly === true) return;
+      if (!def || isLiveOnlySlideType(slide.type, slideTypes)) return;
       for (const hit of imagesMissingAlt(slide, def)) {
         out.push({
           lang,

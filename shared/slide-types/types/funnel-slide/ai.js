@@ -42,31 +42,35 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    _variation: 'Sales funnel with metrics',
-    title: 'Sales Pipeline',
-    items: [
-      { label: 'Awareness', value: '10,000', text: 'Website visitors' },
-      { label: 'Interest', value: '2,500', text: 'Newsletter signups' },
-      { label: 'Consideration', value: '800', text: 'Demo requests' },
-      { label: 'Intent', value: '200', text: 'Proposals sent' },
-      { label: 'Purchase', value: '50', text: 'Closed deals' },
-    ],
-    background: 'lime',
+    variation: 'Sales funnel with metrics',
+    content: {
+      title: 'Sales Pipeline',
+      items: [
+        { label: 'Awareness', value: '10,000', text: 'Website visitors' },
+        { label: 'Interest', value: '2,500', text: 'Newsletter signups' },
+        { label: 'Consideration', value: '800', text: 'Demo requests' },
+        { label: 'Intent', value: '200', text: 'Proposals sent' },
+        { label: 'Purchase', value: '50', text: 'Closed deals' },
+      ],
+      background: 'lime',
+    },
   },
   {
-    _variation: 'Recruitment funnel',
-    title: 'Hiring Pipeline',
-    items: [
-      { label: 'Applications', value: '500', text: 'Total received' },
-      { label: 'Screened', value: '150', text: 'Met basic criteria' },
-      { label: 'Interviewed', value: '40', text: 'Phone + onsite' },
-      { label: 'Offers', value: '8', text: 'Extended offers' },
-      { label: 'Hired', value: '5', text: 'Accepted and started' },
-    ],
-    background: 'mist',
+    variation: 'Recruitment funnel',
+    content: {
+      title: 'Hiring Pipeline',
+      items: [
+        { label: 'Applications', value: '500', text: 'Total received' },
+        { label: 'Screened', value: '150', text: 'Met basic criteria' },
+        { label: 'Interviewed', value: '40', text: 'Phone + onsite' },
+        { label: 'Offers', value: '8', text: 'Extended offers' },
+        { label: 'Hired', value: '5', text: 'Accepted and started' },
+      ],
+      background: 'mist',
+    },
   },
 ];

@@ -12,13 +12,13 @@ const { themeChartPalette } =
   await import('../shared/slide-types/types/chart-slide/palette.js');
 const theme = await seedThemeConfig('midnight');
 
-async function exportChart(content) {
+async function exportChart(content, lang = 'en-GB') {
   const result = await buildEditablePptxBuffer(
     '.',
     {
       id: 'chart-test',
       title: 'Chart test',
-      lang: 'en-GB',
+      lang,
       slides: [{ id: 'chart-1', type: 'chart-slide', content }],
     },
     { theme },
@@ -113,6 +113,22 @@ test('line chart keeps two named series and the legend setting', async () => {
   assert.deepEqual(built.result.warnings, []);
 });
 
+test('a line series without a name is named in the deck language', async () => {
+  const built = await exportChart(
+    {
+      title: 'Trend',
+      chartType: 'line',
+      data: 'Jaar,,\n2024,10,8\n2025,15,12',
+      showLegend: 'yes',
+    },
+    'nl',
+  );
+  assert.equal((built.chart.match(/<c:ser>/g) || []).length, 2);
+  assert.match(built.chart, /Reeks 1/);
+  assert.match(built.chart, /Reeks 2/);
+  assert.doesNotMatch(built.chart, /Series \d/);
+});
+
 test('pie chart carries theme slice colours and value-plus-percent labels', async () => {
   const built = await exportChart({
     title: 'Share',
@@ -131,6 +147,11 @@ test('pie chart carries theme slice colours and value-plus-percent labels', asyn
   assert.match(built.sharedStrings, /Alpha/);
   assert.match(built.sharedStrings, /Beta/);
   assert.deepEqual(built.result.imageSlides, []);
+});
+
+test('the invalid-data text follows the deck language', async () => {
+  const built = await exportChart({ chartType: 'bar', data: '' }, 'nl');
+  assert.match(built.slide, /Data is leeg/);
 });
 
 test('optional labels and a negative bar use their own chart settings', async () => {
@@ -162,7 +183,7 @@ test('invalid data remains editable text and has no broken chart part', async ()
   assert.equal(built.chartName, undefined);
   assert.equal(built.workbookName, undefined);
   assert.match(built.slide, /Empty chart/);
-  assert.match(built.slide, /Data is leeg/);
+  assert.match(built.slide, /The data is empty/);
   assert.match(built.result.warnings.join(' '), /chart data is invalid/);
   assert.deepEqual(built.result.imageSlides, []);
 });

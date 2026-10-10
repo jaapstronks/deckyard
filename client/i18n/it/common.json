@@ -117,7 +117,6 @@
   "common.open": "Apri",
   "common.organization": "Organizzazione",
   "common.organizationCurrent": "Organizzazione corrente",
-  "common.organizationSwitchFailed": "Impossibile cambiare organizzazione.",
   "common.organizationSwitchForbidden": "Non puoi passare a questa organizzazione.",
   "common.organizationSwitchTo": "Passa a {name}",
   "common.pangram": "Pranzo d'acqua fa volti sghembi",

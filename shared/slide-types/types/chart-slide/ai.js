@@ -60,50 +60,58 @@ export const ai = {
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from. `data` is TSV: tabs between columns, newlines
  * between rows.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    _variation: 'Bar chart with categories',
-    title: 'Revenue by Product Line',
-    subheading: 'FY 2024 breakdown',
-    chartType: 'bar',
-    data: 'Product\tRevenue\nElectronics\t450000\nSoftware\t380000\nServices\t290000\nAccessories\t180000',
-    xLabel: 'Product Line',
-    yLabel: 'Revenue',
+    variation: 'Bar chart with categories',
+    content: {
+      title: 'Revenue by Product Line',
+      subheading: 'FY 2024 breakdown',
+      chartType: 'bar',
+      data: 'Product\tRevenue\nElectronics\t450000\nSoftware\t380000\nServices\t290000\nAccessories\t180000',
+      xLabel: 'Product Line',
+      yLabel: 'Revenue',
+    },
   },
   {
-    _variation: 'Line chart showing trend over time',
-    title: 'Monthly Active Users',
-    subheading: 'Growth trajectory 2024',
-    chartType: 'line',
-    data: 'Month\tUsers (K)\nJan\t120\nFeb\t135\nMar\t148\nApr\t162\nMay\t185\nJun\t210',
-    xLabel: 'Month',
-    yLabel: 'Users (thousands)',
+    variation: 'Line chart showing trend over time',
+    content: {
+      title: 'Monthly Active Users',
+      subheading: 'Growth trajectory 2024',
+      chartType: 'line',
+      data: 'Month\tUsers (K)\nJan\t120\nFeb\t135\nMar\t148\nApr\t162\nMay\t185\nJun\t210',
+      xLabel: 'Month',
+      yLabel: 'Users (thousands)',
+    },
   },
   {
-    _variation: 'Pie chart for distribution',
-    title: 'Market Share Distribution',
-    subheading: 'Current competitive landscape',
-    chartType: 'pie',
-    data: 'Segment\tShare\nOur Company\t35\nCompetitor A\t28\nCompetitor B\t22\nOthers\t15',
+    variation: 'Pie chart for distribution',
+    content: {
+      title: 'Market Share Distribution',
+      subheading: 'Current competitive landscape',
+      chartType: 'pie',
+      data: 'Segment\tShare\nOur Company\t35\nCompetitor A\t28\nCompetitor B\t22\nOthers\t15',
+    },
   },
   {
     // Two series, and therefore a line chart: `parse.js` reads a third column
     // for line only. The same data as a bar chart silently lost the 2024
     // column, so this example used to promise a grouped bar that no renderer
     // draws.
-    _variation: 'Two-series line chart',
-    title: 'Quarterly Comparison',
-    subheading: 'Year-over-year performance',
-    chartType: 'line',
-    // Bare years, on purpose: the header is the first row by form (D83), so a
-    // numeric column name is a column name. This example had to say "FY 2023"
-    // while a heuristic still read a numeric second cell as data.
-    data: 'Quarter\t2023\t2024\nQ1\t1200\t1450\nQ2\t1350\t1620\nQ3\t1480\t1890\nQ4\t1550\t2100',
-    xLabel: 'Quarter',
-    yLabel: 'Revenue (K)',
-    series1Label: '2023',
-    series2Label: '2024',
+    variation: 'Two-series line chart',
+    content: {
+      title: 'Quarterly Comparison',
+      subheading: 'Year-over-year performance',
+      chartType: 'line',
+      // Bare years, on purpose: the header is the first row by form (D83), so a
+      // numeric column name is a column name. This example had to say "FY 2023"
+      // while a heuristic still read a numeric second cell as data.
+      data: 'Quarter\t2023\t2024\nQ1\t1200\t1450\nQ2\t1350\t1620\nQ3\t1480\t1890\nQ4\t1550\t2100',
+      xLabel: 'Quarter',
+      yLabel: 'Revenue (K)',
+      series1Label: '2023',
+      series2Label: '2024',
+    },
   },
 ];

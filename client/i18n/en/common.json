@@ -129,7 +129,6 @@
   "common.open": "Open",
   "common.organization": "Organization",
   "common.organizationCurrent": "Current organization",
-  "common.organizationSwitchFailed": "Could not switch organization.",
   "common.organizationSwitchForbidden": "You cannot switch to this organization.",
   "common.organizationSwitchTo": "Switch to {name}",
   "common.pangram": "The quick brown fox jumps over the lazy dog",

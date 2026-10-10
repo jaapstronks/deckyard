@@ -79,9 +79,6 @@ export function createCollectionsBar({ api, root }) {
             mode: 'create',
             collectionsApi,
             onSaved: () => {
-              toast.success(
-                t('slideLibrary.collections.created', 'Collection created.'),
-              );
               afterChange();
             },
           }),
@@ -188,9 +185,6 @@ export function createCollectionsBar({ api, root }) {
             if (!ok) return;
             try {
               await collectionsApi.remove(col.shelf, col.id);
-              toast.success(
-                t('slideLibrary.collections.deleted', 'Collection deleted.'),
-              );
               afterChange();
             } catch (e) {
               toast.error(e);
