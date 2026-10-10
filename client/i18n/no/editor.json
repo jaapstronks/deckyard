@@ -66,7 +66,7 @@
   "comments.unknownAuthor": "Ukjent",
   "comments.unread": "Ny aktivitet",
   "dataSource.bindings": "Feltkoblinger",
-  "dataSource.bindings.hint": "Koble kildedata til lysbildets felter. Bruk row[0].EgenskapsNavn for databaser, eller A1/B2 for CSV-celler.",
+  "dataSource.bindings.hint": "Koble kildedata til lysbildets felter. Bruk row[0].EgenskapsNavn for databaser, eller A1/B2 for CSV-celler. Et område som A1:B10 fyller et diagram med en tabell.",
   "dataSource.connect": "Koble til",
   "dataSource.connect.title": "Koble dette lysbildet til sanntidsdata fra Notion, CSV eller et API",
   "dataSource.connected": "Koblet til {provider}",

@@ -69,7 +69,7 @@
   "comments.unknownAuthor": "Tuntematon",
   "comments.unread": "Uutta toimintaa",
   "dataSource.bindings": "Kenttäsidokset",
-  "dataSource.bindings.hint": "Yhdistä lähdetiedot dian kenttiin. Käytä tietokannoissa muotoa row[0].OminaisuudenNimi ja CSV-soluissa A1/B2.",
+  "dataSource.bindings.hint": "Yhdistä lähdetiedot dian kenttiin. Käytä tietokannoissa muotoa row[0].OminaisuudenNimi ja CSV-soluissa A1/B2. Alue, kuten A1:B10, täyttää kaavion taulukolla.",
   "dataSource.connect": "Yhdistä",
   "dataSource.connect.title": "Sido tämä dia reaaliaikaiseen dataan Notionista, CSV-tiedostosta tai rajapinnasta",
   "dataSource.connected": "Yhdistetty lähteeseen {provider}",
