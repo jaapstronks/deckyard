@@ -221,10 +221,10 @@ async function collectGraph(entryFsPath, scopeDir) {
     const src = fs.readFileSync(fsPath, 'utf8');
     const [imports] = parseModule(src, fsPath);
     for (const imp of imports) {
-      // `n` is undefined for a dynamic import with a computed specifier —
+      // `specifier` is unset for a dynamic import with a computed specifier —
       // nothing static to follow.
-      if (!imp.n) continue;
-      const resolved = resolveImport(imp.n, path.dirname(fsPath));
+      if (!imp.specifier) continue;
+      const resolved = resolveImport(imp.specifier, path.dirname(fsPath));
       if (!resolved) continue;
       // Out of scope: not hashed, and not walked either. Following it would
       // drag in `shared/` and `server/`, whose churn would mark every recipe
