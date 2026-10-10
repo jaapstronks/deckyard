@@ -38,6 +38,17 @@ Two consequences, both machine-checkable once the sweep lands:
 - **A new slide type cannot introduce a theme dependency** without touching the
   contract file, which makes it a deliberate, reviewable diff.
 
+A third follows from the direction: **a role's default lives where the role is
+declared.** `var(--slide-accent, #375c5d)` reads as a safety net but is never
+substituted — the token layer declares `--slide-accent` on every `.slide`
+before any other sheet loads — so the second value is a dead form that drifts
+away from the real one unseen. A `var()` on a role the token layer declares
+carries no fallback; the literal belongs in that declaration, beside the
+`--t-*` lever it reads. A role bound _per context_ instead of in the token
+layer (`--slide-tone` per status pattern, `--slide-bg` per background variant)
+is the opposite case: it is genuinely unset on a plain slide, so there the
+fallback is the value that renders.
+
 ## Snapping a value to the scale
 
 Every axis below carries a step scale, and the census keeps finding values that
@@ -629,6 +640,12 @@ sizing, and both are
 already allowlisted categories. A literal _inside_ such an expression is not
 covered by that allowlist: the multiplier is allowed, the number it multiplies
 is still a value on the axis.
+
+`tests/slide-role-fallbacks.test.js` — no `var()` on a role the token layer
+declares carries a fallback (B640). It asks the token layer which roles those
+are rather than going by file name, so a contextually bound role keeps its
+fallback and the two contract files are themselves inside the gate for the
+roles they _read_.
 
 The same file carries the end-state contract check: **no `var(--t-…)`
 anywhere in the slide bundle outside `00-tokens.css`** (grown from the

@@ -137,7 +137,7 @@
    light body text instead of the hardcoded near-black the old literal
    painted dark-on-dark. */
 .slide-table .md-table--panel {
-  --table-bg: var(--slide-bg-mist, #e0e6e2);
+  --table-bg: var(--slide-bg-mist);
   --table-text: var(--slide-on-mist);
   --table-header-bg: var(--slide-emphasis);
   --table-header-text: var(--slide-on-emphasis);
