@@ -2,9 +2,10 @@
  * B241 / D87: what `get_slide_types` hands an agent, `create_presentation_from_slides`
  * accepts.
  *
- * The catalog's `example` for a type is its own `defaults` — the shape the
- * definition itself calls a slide of this type. Strict validation refusing one
- * is not a strict rule doing its job; it is two descriptions of the same type
+ * The catalog's `example` for a type is its sample (D119, B245) — what the
+ * definition itself calls a good slide of this type — or its `defaults` where
+ * there is no sample the type accepts. Strict validation refusing one is not a
+ * strict rule doing its job; it is two descriptions of the same type
  * disagreeing, and the agent is the one told it is wrong.
  *
  * This is the test D87 pins: strict is **one derivation from `fields[]`**, so
@@ -26,7 +27,11 @@ import {
 } from '../server/utils/ai/validate-slides/strict.js';
 import { toRuntimeSlideType } from '../server/utils/custom-slide-type-runtime.js';
 import { contentSchemaFor } from '../server/utils/ai/schemas/content-schema.js';
-import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
+import {
+  CORE_SLIDE_TYPE_DEFS,
+  SLIDE_TYPES,
+} from '../shared/slide-types/registry.js';
+import { slideTypeSample } from '../shared/slide-types/authoring-companions.js';
 
 /** The offer, in one language: `{ [typeName]: example }` for everything with one. */
 function offeredExamples(lang) {
@@ -61,6 +66,42 @@ test('every core type offers an example at all', () => {
     .filter(([, entry]) => !entry.example)
     .map(([type]) => type);
   assert.deepEqual(withoutExample, []);
+});
+
+test('every core sample passes its own content schema, video-slide excepted (D107)', () => {
+  // D119: the sample is what a good slide of this type looks like, so the type
+  // must accept it. The one exception is deliberate and named: video-slide's
+  // sample leaves `source` blank so a picker tile loads no live player (D107).
+  const refused = Object.entries(CORE_SLIDE_TYPE_DEFS)
+    .filter(([name, def]) => {
+      const sample = slideTypeSample(name, def);
+      return sample && !contentSchemaFor(def).safeParse(sample).success;
+    })
+    .map(([name]) => name);
+  assert.deepEqual(refused, ['video-slide']);
+});
+
+test('the example an agent gets is the sample; defaults only where there is none it can use', () => {
+  const offered = resolveAgentSlideTypes({ lang: 'nl' });
+  const fromDefaults = [];
+  for (const [name, def] of Object.entries(CORE_SLIDE_TYPE_DEFS)) {
+    if (!offered[name]) continue;
+    const sample = slideTypeSample(name, def);
+    if (offered[name].example === sample) continue;
+    assert.deepEqual(
+      offered[name].example,
+      def.defaultsByLang?.nl || def.defaults,
+      `${name}: not the sample, so its defaults`,
+    );
+    fromDefaults.push(name);
+  }
+  // No sample at all (embed-slide for the same reason as D107), or one the type
+  // refuses (video-slide). A new entry here is a sample to write or to fix.
+  assert.deepEqual(fromDefaults.sort(), [
+    'embed-slide',
+    'payoff-slide',
+    'video-slide',
+  ]);
 });
 
 test('a published DB type validates against its own stored fields', () => {

@@ -223,6 +223,15 @@ pick one of three chart types at random on first import, so the tile showed a
 different chart per server process and no tracked artifact could pin the
 type's example.
 
+**The sample is also what an agent copies** (D119): `get_slide_types` hands it
+out as a type's `example` (`exampleFor()` in
+`server/utils/ai/slide-catalog/agent-catalog.js`), so a sample has to pass the
+type's own content schema as well — strict validation would refuse the copy
+otherwise (D87). Where there is no sample, or the one there is leaves a required
+field blank (`video-slide`, D107), the example is the type's `defaults` in the
+requested language. `tests/strict-accepts-catalog-examples.test.js` pins both
+lists.
+
 This is why the locale-tiering work (A6 / A7.7) added **no** Dutch-sample
 obligation. It was considered — a `sampleNl` per type, gated like the other
 companions — and rejected: it would make every future slide type owe a second
