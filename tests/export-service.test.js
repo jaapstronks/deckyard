@@ -12,6 +12,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import JSZip from 'jszip';
 import { testScope } from './helpers/storage-scope.js';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow, seedThemeConfig } from './helpers/theme-seed.js';
@@ -177,11 +178,34 @@ test('a theme template is counted on the export axis and named after its theme',
 
   assert.deepEqual(await healthKeys(db), ['export:pptx-template']);
   assert.equal(label, brandSeed.label);
-  // The same bytes the deck-scoped route used to hand back: the move changed
-  // who is asked, not what is built. pptxgenjs stamps no timestamp, so the
-  // package is byte-stable for a given theme.
-  assert.deepEqual(Buffer.from(buffer), direct);
+  // The same package the deck-scoped route used to hand back: the move changed
+  // who is asked, not what is built.
+  assert.deepEqual(await pptxParts(buffer), await pptxParts(direct));
 });
+
+/**
+ * Every part of a PPTX package as text, with the build time taken out. The
+ * bytes of two builds are not comparable: JSZip dates every entry and
+ * `docProps/core.xml` stamps `dcterms:created`/`modified` to the second, so two
+ * builds a second apart differ (B642). What must match is everything else.
+ *
+ * @param {Uint8Array} bytes
+ * @returns {Promise<Record<string, string>>}
+ */
+async function pptxParts(bytes) {
+  const zip = await JSZip.loadAsync(bytes);
+  const parts = {};
+  for (const name of Object.keys(zip.files).sort()) {
+    const entry = zip.files[name];
+    if (entry.dir) continue;
+    const text = await entry.async('string');
+    parts[name] =
+      name === 'docProps/core.xml'
+        ? text.replace(/(<dcterms:(?:created|modified)\b[^>]*>)[^<]*/g, '$1')
+        : text;
+  }
+  return parts;
+}
 
 test('a theme this scope cannot see is a 404, not someone else’s template', async () => {
   await assert.rejects(
