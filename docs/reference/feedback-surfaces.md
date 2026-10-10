@@ -147,6 +147,18 @@ how you know you picked the wrong one.
   on a keyboard dismissal so the tab position is not lost.
 - An inline refusal _does_ move focus, to where the fix is. That is the whole
   point of naming the field.
+- **A row that disappears hands focus back to its list.** "The result is on
+  screen, so no toast" is only true for the eye: the control that was clicked
+  lived in the row, the confirm dialog hands focus back to it, and the
+  re-render leaves focus on `<body>` — out of the list, position lost, nothing
+  said. So a confirmed removal lands focus on whatever took that row's place —
+  the next row, the list's own empty note, or, when nothing is left, the "new"
+  button or heading the caller names — and says one polite sentence with the
+  label, through `planRowRemoval()`
+  (`client/lib/dom/row-removal.js`, B647). One shared sentence,
+  `common.rowRemoved`: a per-site success key is the thing B643 removed.
+  Removing a row by navigating away (a deck moved to trash) needs neither —
+  the route places focus.
 
 ## Stacking: toasts above modals
 

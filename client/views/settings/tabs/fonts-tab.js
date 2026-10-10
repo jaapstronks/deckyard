@@ -8,6 +8,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { confirmModal } from '../../../lib/dom/modal.js';
+import { planRowRemoval } from '../../../lib/dom/row-removal.js';
 import { createFontEditor } from '../font-editor/index.js';
 import { createEmptyState } from '../../../lib/dom/empty-state.js';
 import {
@@ -242,9 +243,20 @@ export function createFontsTab({ user } = {}) {
       danger: true,
     });
     if (!confirmed) return;
+    // The delete button lived in the card that is about to go, so focus has to
+    // be put back in the list by hand (B647). The grid is rebuilt per render,
+    // hence the getters.
+    const land = planRowRemoval(
+      () => listSection.querySelector('.font-families-grid'),
+      {
+        index: families.findIndex((x) => x.id === family.id),
+        fallback: () => listSection.querySelector('.btn-primary'),
+      },
+    );
     try {
       await api(`/api/font-families/${family.id}`, { method: 'DELETE' });
       await loadFamilies();
+      land(t('common.rowRemoved', '{label} removed.', { label: family.name }));
     } catch (err) {
       toast.error(
         err.message || t('fonts.deleteError', 'Failed to delete font family.'),
