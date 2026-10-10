@@ -99,6 +99,8 @@ export default {
       type: 'string',
       required: false,
       maxLength: 20,
+      helpText:
+        'The video library in your own Bunny Stream account (Stream > Video Library). A pasted Bunny play or embed URL already carries one; a bare video UUID needs this.',
       // Infrastructure, not content: the id belongs to whoever owns the Bunny
       // account, and an invented one silently yields an empty player. Agents
       // supply `source` and inherit the configured library.
@@ -116,7 +118,14 @@ export default {
     source: '3045cc09-605c-40d9-aa76-9ace93e7f637',
     background: 'mist',
     autoplay: 'off',
-    bunnyLibraryId: '366590',
+    // No library: this one named one fork's Bunny account, so a new slide in
+    // any other instance played from a stranger's library (B650). Without one
+    // the bare UUID above embeds nothing and the slide shows its own "paste a
+    // link" state. The UUID itself is still that fork's and `source` is a
+    // required field, and an instance cannot declare its own library as the
+    // default for every new slide, so what a new video slide should pre-fill
+    // is its own question — B653.
+    bunnyLibraryId: '',
   },
   renderHtml: (content, slide, ctx) => {
     const bg = bgClass(content?.background || 'mist');
@@ -128,11 +137,12 @@ export default {
         : '';
 
     const sourceRaw = String(content?.source || '').trim();
+    // No fallback: a library id is instance configuration, and core has none
+    // to lend (B650). Without one a bare UUID embeds nothing.
     const libId =
-      typeof content?.bunnyLibraryId === 'string' &&
-      content.bunnyLibraryId.trim()
+      typeof content?.bunnyLibraryId === 'string'
         ? content.bunnyLibraryId.trim()
-        : '366590';
+        : '';
 
     const yt = youtubeEmbedUrl(sourceRaw);
     const vm = vimeoEmbedUrl(sourceRaw);
