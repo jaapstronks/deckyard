@@ -14,6 +14,7 @@ import {
   getQueueStats,
   QUEUE_NAMES,
 } from '../../jobs/queue/connection.js';
+import { getJobFailureMessage } from '../../jobs/queue/job-failure.js';
 import { getStoredResult } from '../../jobs/queue/workers/export-worker.js';
 import { getStoredTranslationResult } from '../../jobs/queue/workers/translate-worker.js';
 import { getStoredBulkResult } from '../../jobs/queue/workers/bulk-export-worker.js';
@@ -132,9 +133,15 @@ async function handleGetJobStatus({ res, authedUser }, fullJobId) {
     }
   }
 
-  // Add error info if failed
+  // Say why it failed, when the failure left a sentence for the caller. Never
+  // the job's `failedReason`: that is the raw message of whatever the worker
+  // threw, and `message` is display text by contract
+  // (docs/reference/api-error-format.md). An internal failure leaves none, so
+  // the field is absent and the surface falls back to its own wording — the
+  // same posture a 500 takes (B646, `jobs/queue/job-failure.js`).
   if (status.state === 'failed') {
-    response.error = status.failedReason;
+    const message = getJobFailureMessage(queueName, id);
+    if (message) response.message = message;
   }
 
   serveJson(res, 200, response);

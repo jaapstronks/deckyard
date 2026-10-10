@@ -192,6 +192,32 @@ If a client ever does need to branch on the cause, add
 `error: '<snake_case_code>'` next to `message`, with the same meaning it has
 here. That upgrade is additive; it never renames a field a client reads.
 
+## Failed background jobs
+
+`GET /api/jobs/:id` answers 200 for a job that failed: reading the status
+succeeded, the work did not. So it is not the envelope either, and it carries
+the one field that means display text:
+
+```json
+{ "id": "heavy-7", "state": "failed", "message": "Presentation not found" }
+```
+
+- **No `error` key** — nothing branches on a cause here, and `error` would
+  claim the envelope's meaning (machine code) for text. This is where the job's
+  raw `failedReason` used to go: the message of whatever the worker threw
+  (`Unknown export type: …`, an `ENOENT` carrying a server path), untranslated
+  and written for nobody (B646).
+- **`message` is present only when the failure left a sentence**, decided by
+  the predicate every contract uses: `isInternalFailure()`. An `AppError` was
+  written for the caller whatever its status, so its sentence travels; any
+  other throw is ours and the job says nothing, the way a 500 stays generic.
+  The surface then uses its own wording (the export panel's "Export failed.
+  Please try again.").
+- The rule and the recording that carries it from worker to route live in
+  [`server/jobs/queue/job-failure.js`](../../server/jobs/queue/job-failure.js);
+  pinned by `tests/job-failure-message.test.js`. The raw reason stays
+  server-side, in the worker's failure log and the queue's own record.
+
 ## MCP tool errors
 
 A refused or failed MCP tool call is a successful JSON-RPC response with

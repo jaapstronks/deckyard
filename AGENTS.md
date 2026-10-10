@@ -106,7 +106,9 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
   - Where an error is shown is decided by its kind (see _Feedback_ under
     Frontend patterns). SSE `error` events are not the envelope: they carry
     `{ message }`, no `ok`, no `error` key (`docs/reference/api-error-format.md`
-    § SSE error events).
+    § SSE error events), and neither is a failed background job: it carries
+    `message` only when the failure left a sentence for the caller (§ Failed
+    background jobs).
 
 - **Safety: HTML escaping and markdown**
   - User text into HTML goes through `escapeHtml()` (`shared/slide-types/helpers.js`)
