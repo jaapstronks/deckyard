@@ -36,7 +36,6 @@
   "admin.users.addUser": "Dodaj użytkownika",
   "admin.users.delete": "Usuń",
   "admin.users.deleteConfirm": "Na pewno usunąć tego użytkownika? Tej operacji nie można cofnąć.",
-  "admin.users.deleteError": "Nie udało się usunąć użytkownika.",
   "admin.users.deleteSuccess": "Użytkownik został usunięty pomyślnie.",
   "admin.users.designerCapability": "Projektant",
   "admin.users.designerHelp": "Może zarządzać motywami i typami slajdów. Administratorzy i właściciele mają to uprawnienie domyślnie.",

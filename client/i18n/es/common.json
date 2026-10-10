@@ -120,7 +120,6 @@
   "common.open": "Abrir",
   "common.organization": "Organización",
   "common.organizationCurrent": "Organización actual",
-  "common.organizationSwitchFailed": "No se pudo cambiar de organización.",
   "common.organizationSwitchForbidden": "No puede cambiar a esta organización.",
   "common.organizationSwitchTo": "Cambiar a {name}",
   "common.pangram": "El veloz murciélago hindú comía feliz cardillo y kiwi",

@@ -34,7 +34,6 @@
   "admin.users.addUser": "Benutzer hinzufügen",
   "admin.users.delete": "Löschen",
   "admin.users.deleteConfirm": "Möchten Sie diesen Benutzer wirklich löschen? Das kann nicht rückgängig gemacht werden.",
-  "admin.users.deleteError": "Benutzer konnte nicht gelöscht werden.",
   "admin.users.deleteSuccess": "Benutzer erfolgreich gelöscht.",
   "admin.users.designerHelp": "Kann Themes und Folientypen verwalten. Admins und Eigentümer haben das standardmäßig.",
   "admin.users.edit": "Bearbeiten",

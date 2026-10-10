@@ -35,7 +35,6 @@
   "admin.users.addUser": "Lägg till användare",
   "admin.users.delete": "Ta bort",
   "admin.users.deleteConfirm": "Är du säker på att du vill ta bort den här användaren? Det går inte att ångra.",
-  "admin.users.deleteError": "Det gick inte att ta bort användaren.",
   "admin.users.deleteSuccess": "Användaren togs bort.",
   "admin.users.designerHelp": "Kan hantera teman och slidetyper. Administratörer och ägare har det som standard.",
   "admin.users.edit": "Redigera",

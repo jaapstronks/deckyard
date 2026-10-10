@@ -36,7 +36,6 @@
   "admin.users.addUser": "Legg til bruker",
   "admin.users.delete": "Slett",
   "admin.users.deleteConfirm": "Er du sikker på at du vil slette denne brukeren? Det kan ikke angres.",
-  "admin.users.deleteError": "Klarte ikke å slette brukeren.",
   "admin.users.deleteSuccess": "Brukeren ble slettet.",
   "admin.users.designerHelp": "Kan administrere temaer og lysbildetyper. Administratorer og eiere har det som standard.",
   "admin.users.edit": "Rediger",

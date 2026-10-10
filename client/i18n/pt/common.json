@@ -119,7 +119,6 @@
   "common.open": "Abrir",
   "common.organization": "Organização",
   "common.organizationCurrent": "Organização atual",
-  "common.organizationSwitchFailed": "Não foi possível mudar de organização.",
   "common.organizationSwitchForbidden": "Não é possível mudar para esta organização.",
   "common.organizationSwitchTo": "Mudar para {name}",
   "common.pangram": "Um pequeno jabuti xereta viu dez cegonhas felizes",

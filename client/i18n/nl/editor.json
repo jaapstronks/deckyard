@@ -339,7 +339,6 @@
   "editor.export.notes": "Notities",
   "editor.export.notesWordShort": "Word",
   "editor.export.pdfBusy": "PDF genereren…",
-  "editor.export.pdfError": "Kon de PDF niet genereren.",
   "editor.export.pdfFailed": "PDF-render mislukt of duurde te lang. Print in plaats daarvan in de browser:",
   "editor.export.pdfFallbackBtn": "In browser printen",
   "editor.export.pptx": "PowerPoint",

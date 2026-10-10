@@ -421,7 +421,6 @@
   "slideLibrary.newPresentation.defaultTitle": "New Presentation",
   "slideLibrary.newPresentation.done.many": "Presentation created with {count} slides!",
   "slideLibrary.newPresentation.done.one": "Presentation created!",
-  "slideLibrary.newPresentation.failed": "Failed to create presentation.",
   "slideLibrary.permalink.notFound": "This slide is not in the library, or you do not have access to it.",
   "slideLibrary.preview.untitled": "Untitled",
   "slideLibrary.search.aria": "Search slide library",

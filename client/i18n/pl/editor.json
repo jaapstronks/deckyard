@@ -319,7 +319,6 @@
   "editor.export.langLabel": "Język",
   "editor.export.notes": "Notatki",
   "editor.export.pdfBusy": "Generowanie pliku PDF…",
-  "editor.export.pdfError": "Nie udało się wygenerować pliku PDF.",
   "editor.export.pdfFailed": "Renderowanie pliku PDF nie powiodło się lub przekroczyło limit czasu. Zamiast tego wydrukuj go w przeglądarce:",
   "editor.export.pdfFallbackBtn": "Drukuj w przeglądarce",
   "editor.export.publicHint": "Potrzebny link, który pozostaje aktualny, albo osadzenie dla Notion lub własnej strony? ",

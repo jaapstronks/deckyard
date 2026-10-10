@@ -318,7 +318,6 @@
   "editor.export.langLabel": "Språk",
   "editor.export.notes": "Notater",
   "editor.export.pdfBusy": "Lager PDF…",
-  "editor.export.pdfError": "Klarte ikke å lage PDF-en.",
   "editor.export.pdfFailed": "PDF-gjengivelsen mislyktes eller tok for lang tid. Skriv den ut i nettleseren i stedet:",
   "editor.export.pdfFallbackBtn": "Skriv ut i nettleseren",
   "editor.export.publicHint": "Vil du ha en lenke som holdes oppdatert, eller en innbygging for Notion eller nettstedet ditt? ",

@@ -36,7 +36,6 @@
   "admin.users.addUser": "Adicionar utilizador",
   "admin.users.delete": "Eliminar",
   "admin.users.deleteConfirm": "De certeza que quer eliminar este utilizador? Esta ação não pode ser anulada.",
-  "admin.users.deleteError": "Não foi possível eliminar o utilizador.",
   "admin.users.deleteSuccess": "Utilizador eliminado com sucesso.",
   "admin.users.designerHelp": "Pode gerir temas e tipos de diapositivo. Os administradores e proprietários têm esta permissão por omissão.",
   "admin.users.edit": "Editar",

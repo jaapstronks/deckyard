@@ -316,7 +316,6 @@
   "editor.export.langLabel": "Sprache",
   "editor.export.notes": "Notizen",
   "editor.export.pdfBusy": "PDF wird erstellt…",
-  "editor.export.pdfError": "Das PDF konnte nicht erstellt werden.",
   "editor.export.pdfFailed": "Die PDF-Erstellung ist fehlgeschlagen oder hat zu lange gedauert. Drucken Sie stattdessen im Browser:",
   "editor.export.pdfFallbackBtn": "Im Browser drucken",
   "editor.export.publicHint": "Möchten Sie einen Link, der aktuell bleibt, oder eine Einbettung für Notion oder Ihre Website? ",

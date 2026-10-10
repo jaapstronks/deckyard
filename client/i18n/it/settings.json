@@ -35,7 +35,6 @@
   "admin.users.addUser": "Aggiungi utente",
   "admin.users.delete": "Elimina",
   "admin.users.deleteConfirm": "Vuoi davvero eliminare questo utente? L'operazione non può essere annullata.",
-  "admin.users.deleteError": "Impossibile eliminare l'utente.",
   "admin.users.deleteSuccess": "Utente eliminato con successo.",
   "admin.users.designerHelp": "Può gestire temi e tipi di slide. Amministratori e proprietari lo hanno per impostazione predefinita.",
   "admin.users.edit": "Modifica",

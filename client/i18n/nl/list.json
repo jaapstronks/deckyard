@@ -421,7 +421,6 @@
   "slideLibrary.newPresentation.defaultTitle": "Nieuwe presentatie",
   "slideLibrary.newPresentation.done.many": "Presentatie aangemaakt met {count} slides!",
   "slideLibrary.newPresentation.done.one": "Presentatie aangemaakt!",
-  "slideLibrary.newPresentation.failed": "Aanmaken van presentatie mislukt.",
   "slideLibrary.permalink.notFound": "Deze slide staat niet in de bibliotheek, of je hebt er geen toegang toe.",
   "slideLibrary.preview.untitled": "Zonder titel",
   "slideLibrary.search.aria": "Zoek in de slide-bibliotheek",

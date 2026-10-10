@@ -117,7 +117,6 @@
   "common.open": "Ouvrir",
   "common.organization": "Organisation",
   "common.organizationCurrent": "Organisation actuelle",
-  "common.organizationSwitchFailed": "Impossible de changer d'organisation.",
   "common.organizationSwitchForbidden": "Vous ne pouvez pas basculer vers cette organisation.",
   "common.organizationSwitchTo": "Basculer vers {name}",
   "common.pangram": "Portez ce vieux whisky au juge blond qui fume",

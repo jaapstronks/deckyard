@@ -320,7 +320,6 @@
   "editor.export.langLabel": "Idioma",
   "editor.export.notes": "Notas",
   "editor.export.pdfBusy": "A gerar o PDF…",
-  "editor.export.pdfError": "Não foi possível gerar o PDF.",
   "editor.export.pdfFailed": "A geração do PDF falhou ou excedeu o tempo. Imprima-o antes no navegador:",
   "editor.export.pdfFallbackBtn": "Imprimir no navegador",
   "editor.export.publicHint": "Quer um link que se mantenha atualizado ou uma incorporação para o Notion ou o seu site? ",

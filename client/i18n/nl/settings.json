@@ -36,7 +36,6 @@
   "admin.users.addUser": "Gebruiker toevoegen",
   "admin.users.delete": "Verwijderen",
   "admin.users.deleteConfirm": "Weet je zeker dat je deze gebruiker wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
-  "admin.users.deleteError": "Verwijderen van gebruiker mislukt.",
   "admin.users.deleteSuccess": "Gebruiker succesvol verwijderd.",
   "admin.users.designerCapability": "Ontwerper",
   "admin.users.designerHelp": "Kan thema's en slide-types beheren. Beheerders en eigenaren hebben dit standaard.",

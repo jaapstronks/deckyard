@@ -339,7 +339,6 @@
   "editor.export.notes": "Notes",
   "editor.export.notesWordShort": "Word",
   "editor.export.pdfBusy": "Generating PDF…",
-  "editor.export.pdfError": "Could not generate the PDF.",
   "editor.export.pdfFailed": "PDF render failed or timed out. Print it in the browser instead:",
   "editor.export.pdfFallbackBtn": "Print in browser",
   "editor.export.pptx": "PowerPoint",

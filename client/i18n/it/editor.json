@@ -319,7 +319,6 @@
   "editor.export.langLabel": "Lingua",
   "editor.export.notes": "Note",
   "editor.export.pdfBusy": "Generazione del PDF…",
-  "editor.export.pdfError": "Non è stato possibile generare il PDF.",
   "editor.export.pdfFailed": "Il rendering del PDF non è riuscito o è scaduto. Lo stampi invece dal browser:",
   "editor.export.pdfFallbackBtn": "Stampa dal browser",
   "editor.export.publicHint": "Desidera un link sempre aggiornato o un'incorporazione per Notion o il suo sito? ",

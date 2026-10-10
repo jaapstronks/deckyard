@@ -4,6 +4,19 @@ import { toast } from '../../lib/dom/toast.js';
 import { confirmModal } from '../../lib/dom/modal.js';
 
 /**
+ * A bulk failure: the client's count, then the server's sentence for the first
+ * item that failed, so the reason is not thrown away (B205).
+ *
+ * @param {string} summary - The translated "Failed to … N presentations." line.
+ * @param {Error|null} err - The first caught `api()` error, if any.
+ * @returns {string}
+ */
+function withReason(summary, err) {
+  const reason = err?.message;
+  return reason ? `${summary} ${reason}` : summary;
+}
+
+/**
  * Creates a selection state manager for bulk operations
  * @returns {Object} Selection state manager
  */
@@ -143,13 +156,15 @@ export function createBulkActionBar({
       try {
         let successCount = 0;
         let failCount = 0;
+        let firstError = null;
 
         for (const id of state.ids) {
           try {
             await api(`/api/presentations/${id}`, { method: 'DELETE' });
             successCount++;
-          } catch {
+          } catch (err) {
             failCount++;
+            firstError ??= err;
           }
         }
 
@@ -168,13 +183,16 @@ export function createBulkActionBar({
         }
         if (failCount > 0) {
           toast.error(
-            t(
-              'list.bulk.delete.failed',
-              {
-                one: 'Failed to delete 1 presentation.',
-                many: 'Failed to delete {count} presentations.',
-              },
-              { count: failCount },
+            withReason(
+              t(
+                'list.bulk.delete.failed',
+                {
+                  one: 'Failed to delete 1 presentation.',
+                  many: 'Failed to delete {count} presentations.',
+                },
+                { count: failCount },
+              ),
+              firstError,
             ),
             { id: 'bulk-delete-error', durationMs: 3000 },
           );
@@ -203,13 +221,15 @@ export function createBulkActionBar({
       try {
         let successCount = 0;
         let failCount = 0;
+        let firstError = null;
 
         for (const id of state.ids) {
           try {
             await api(`/api/presentations/${id}/restore`, { method: 'POST' });
             successCount++;
-          } catch {
+          } catch (err) {
             failCount++;
+            firstError ??= err;
           }
         }
 
@@ -230,13 +250,16 @@ export function createBulkActionBar({
         }
         if (failCount > 0) {
           toast.error(
-            t(
-              'list.bulk.restore.failed',
-              {
-                one: 'Failed to restore 1 presentation.',
-                many: 'Failed to restore {count} presentations.',
-              },
-              { count: failCount },
+            withReason(
+              t(
+                'list.bulk.restore.failed',
+                {
+                  one: 'Failed to restore 1 presentation.',
+                  many: 'Failed to restore {count} presentations.',
+                },
+                { count: failCount },
+              ),
+              firstError,
             ),
             { id: 'bulk-restore-error', durationMs: 3000 },
           );
@@ -284,6 +307,7 @@ export function createBulkActionBar({
       try {
         let successCount = 0;
         let failCount = 0;
+        let firstError = null;
 
         for (const id of state.ids) {
           try {
@@ -291,8 +315,9 @@ export function createBulkActionBar({
               method: 'DELETE',
             });
             successCount++;
-          } catch {
+          } catch (err) {
             failCount++;
+            firstError ??= err;
           }
         }
 
@@ -311,13 +336,16 @@ export function createBulkActionBar({
         }
         if (failCount > 0) {
           toast.error(
-            t(
-              'list.bulk.deletePermanently.failed',
-              {
-                one: 'Failed to delete 1 presentation.',
-                many: 'Failed to delete {count} presentations.',
-              },
-              { count: failCount },
+            withReason(
+              t(
+                'list.bulk.deletePermanently.failed',
+                {
+                  one: 'Failed to delete 1 presentation.',
+                  many: 'Failed to delete {count} presentations.',
+                },
+                { count: failCount },
+              ),
+              firstError,
             ),
             { id: 'bulk-permanent-delete-error', durationMs: 3000 },
           );

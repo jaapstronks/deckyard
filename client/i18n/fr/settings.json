@@ -35,7 +35,6 @@
   "admin.users.addUser": "Ajouter un utilisateur",
   "admin.users.delete": "Supprimer",
   "admin.users.deleteConfirm": "Voulez-vous vraiment supprimer cet utilisateur ? Cette action est irréversible.",
-  "admin.users.deleteError": "Impossible de supprimer l'utilisateur.",
   "admin.users.deleteSuccess": "Utilisateur supprimé avec succès.",
   "admin.users.designerHelp": "Peut gérer les thèmes et les types de diapositives. Les admins et les propriétaires l'ont par défaut.",
   "admin.users.edit": "Modifier",

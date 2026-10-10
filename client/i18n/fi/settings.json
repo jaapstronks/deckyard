@@ -36,7 +36,6 @@
   "admin.users.addUser": "Lisää käyttäjä",
   "admin.users.delete": "Poista",
   "admin.users.deleteConfirm": "Poistetaanko tämä käyttäjä? Toimintoa ei voi kumota.",
-  "admin.users.deleteError": "Käyttäjän poistaminen epäonnistui.",
   "admin.users.deleteSuccess": "Käyttäjä poistettu onnistuneesti.",
   "admin.users.designerCapability": "Suunnittelija",
   "admin.users.designerHelp": "Voi hallita teemoja ja diatyyppejä. Järjestelmänvalvojilla ja omistajilla tämä on oletuksena.",

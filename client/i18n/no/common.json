@@ -118,7 +118,6 @@
   "common.open": "Åpne",
   "common.organization": "Organisasjon",
   "common.organizationCurrent": "Nåværende organisasjon",
-  "common.organizationSwitchFailed": "Kunne ikke bytte organisasjon.",
   "common.organizationSwitchForbidden": "Du kan ikke bytte til denne organisasjonen.",
   "common.organizationSwitchTo": "Bytt til {name}",
   "common.pangram": "Vår sære Zulu fra badeøya spilte jo whist og quickstep i min taxi",
