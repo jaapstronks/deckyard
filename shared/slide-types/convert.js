@@ -396,7 +396,7 @@ export function convertSlideToType(
   if (fromType === 'image-slide' && targetType === 'image-text-slide') {
     // Both types spell the single image the same way since D100, so the flat
     // ImageRef keys are written directly. Fit resolves through the image-slide
-    // authority (own fit -> legacy `layout` -> type default) and is written
+    // authority (own fit -> type default) and is written
     // only when it deviates from the image-text default (empty keeps meaning
     // "follow the type"). `bleed` is deliberately DROPPED: image-text renders
     // no edge-to-edge frame, and a carried-but-unrendered key is a hidden

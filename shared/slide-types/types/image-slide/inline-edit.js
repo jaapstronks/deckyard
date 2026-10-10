@@ -53,8 +53,8 @@ export const inlineEdit = {
   // contain (no crop) has nothing to move, so the point stays hidden there
   // and the element card offers the alignment picker instead (measured
   // against containSelector).
-  // Effective fit comes from resolveImageSlideImage (own `fit` -> legacy
-  // `layout` -> type default), the single authority the render shares.
+  // Effective fit comes from resolveImageSlideImage (own `fit` -> type
+  // default), the single authority the render shares.
   focus: {
     xField: 'focusX',
     yField: 'focusY',

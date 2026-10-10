@@ -53,7 +53,7 @@ import { foldTextStylesToOffers } from './text-styles.js';
 import { DECK_FORMAT_ID, RETIRED_DECK_FORMAT_ID } from './deck-format-id.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 19;
+export const CURRENT_SCHEMA_VERSION = 20;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -1003,6 +1003,52 @@ function foldTextStyles(pres) {
 }
 
 /**
+ * The image-slide fit/bleed a retired `layout` value stood for. `full` is the
+ * type default on both axes and so maps to nothing. Copied, not imported from
+ * the type, for the reason the other folds here are: a step is frozen at the
+ * shape it retires, and the live resolver no longer knows the enum.
+ */
+const IMAGE_SLIDE_LAYOUT_AXES = new Map([
+  ['bleed', { bleed: true }],
+  ['centered', { fit: 'contain' }],
+]);
+
+/**
+ * v19 -> v20: image-slide's `layout` enum carried two axes under one word
+ * (`full`/`centered` a fit, `bleed` a frame), split into the ImageRef `fit` +
+ * `bleed` in datamodel step 3. Until now the split was a fold the editor ran on
+ * open (`normalizeContent`) plus a read fallback in the resolver, so a deck
+ * nobody opened kept the enum and every reader carried the third spelling.
+ *
+ * Here the fold runs once, on every copy of every slide: a value the author
+ * set on an axis of its own wins, a deviating legacy value fills an axis that
+ * is still empty, and the type default is never stamped (empty keeps meaning
+ * "follow the type"). The key is deleted either way, an empty or unknown value
+ * included. Render-equivalent by construction: the resolver applied the same
+ * precedence. Idempotent: after one run no image-slide carries `layout`.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldImageSlideLayout(pres) {
+  for (const slide of eachSlide(pres)) {
+    if (!slide || slide.type !== 'image-slide') continue;
+    const content = slide.content;
+    if (!content || typeof content !== 'object') continue;
+    if (!Object.prototype.hasOwnProperty.call(content, 'layout')) continue;
+    const axes =
+      IMAGE_SLIDE_LAYOUT_AXES.get(String(content.layout ?? '').trim()) || {};
+    const ownFit = content.fit === 'cover' || content.fit === 'contain';
+    if (axes.fit && !ownFit) content.fit = axes.fit;
+    if (axes.bleed && typeof content.bleed !== 'boolean') {
+      content.bleed = axes.bleed;
+    }
+    delete content.layout;
+  }
+  return pres;
+}
+
+/**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
  * still allowed into the one version `i + 1` requires. No stamp is stored (see
  * the module docstring), so every step runs on every deck, every time - which
@@ -1476,6 +1522,11 @@ export const SCHEMA_MIGRATIONS = [
     }
     return pres;
   },
+
+  // v19 -> v20: image-slide's conflated `layout` enum folds into the ImageRef
+  // axes `fit` + `bleed` and is deleted (B257-A2, D121 B1). See
+  // foldImageSlideLayout.
+  foldImageSlideLayout,
 ];
 
 /**

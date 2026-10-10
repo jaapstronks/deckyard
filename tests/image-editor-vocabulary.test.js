@@ -290,18 +290,6 @@ test('image-set: images render through the generic collection editor', () => {
   );
 });
 
-test('normalizeContent folds the legacy layout enum when the editor opens', () => {
-  const { slide } = renderForm({
-    type: 'image-slide',
-    content: {
-      ...structuredClone(SLIDE_TYPES['image-slide'].defaults),
-      layout: 'centered',
-    },
-  });
-  assert.equal(slide.content.fit, 'contain', 'centered became the contain fit');
-  assert.equal(slide.content.layout, '', 'the legacy enum is cleared');
-});
-
 test('normalizeSlideContent degrades instead of breaking the editor', () => {
   assert.doesNotThrow(() => normalizeSlideContent('nope', undefined, { a: 1 }));
   assert.doesNotThrow(() => normalizeSlideContent('image-slide', {}, null));
@@ -322,16 +310,19 @@ test('the hook is found on the bundled registry when the def cannot carry it', (
   // What the editor actually holds is the /api/slide-types response: JSON, so
   // no functions. Resolution has to fall back to the registry or the migration
   // silently stops running in the real app (which is how it was caught).
-  const wireDef = JSON.parse(JSON.stringify(SLIDE_TYPES['image-slide']));
+  const wireDef = JSON.parse(JSON.stringify(SLIDE_TYPES['image-set-slide']));
   assert.equal(
     wireDef.normalizeContent,
     undefined,
     'a function cannot survive JSON',
   );
-  const content = { layout: 'centered' };
-  normalizeSlideContent('image-slide', wireDef, content);
-  assert.equal(content.fit, 'contain', 'the registry hook still ran');
-  assert.equal(content.layout, '');
+  const content = { images: [null] };
+  normalizeSlideContent('image-set-slide', wireDef, content);
+  assert.deepEqual(
+    content.images[0],
+    { src: '', alt: '' },
+    'the registry hook still ran',
+  );
 });
 
 test('imageDefaults travels on the /api/slide-types projection', async () => {

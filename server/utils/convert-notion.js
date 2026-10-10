@@ -473,7 +473,6 @@ function insertImageSlides(deck, images, richContent) {
         alt: img.caption || '',
         imageRole: 'content',
         caption: '',
-        layout: 'full',
         zoomSteps: '',
         zoomLevel: 2,
       },
