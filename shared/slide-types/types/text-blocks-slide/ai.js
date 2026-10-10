@@ -71,134 +71,142 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    _variation: 'Programme activities A, B, C -> Outputs (IDEAL FOR CAUSALITY)',
-    title: 'Human Capital Development',
-    subheading: 'How our instruments produce results',
-    rows: [
-      {
-        title: 'Instruments',
-        color: 'yellow',
-        arrow: 'down',
-        blocks: [
-          {
-            title: 'A) Learning Communities',
-            body: 'For students, researchers and practitioners',
-          },
-          {
-            title: 'B) Education Modules',
-            body: 'Lifelong learning and upskilling',
-          },
-          {
-            title: 'C) Training Vouchers',
-            body: 'Professional skills development',
-          },
-        ],
-      },
-      {
-        title: 'Outputs',
-        color: 'black',
-        arrow: 'none',
-        blocks: [
-          { title: '12 Communities', body: 'Active learning networks' },
-          { title: '30 Modules', body: 'Training programmes' },
-          { title: '10,000 Professionals', body: 'Educated and upskilled' },
-        ],
-      },
-    ],
+    variation: 'Programme activities A, B, C -> Outputs (IDEAL FOR CAUSALITY)',
+    content: {
+      title: 'Human Capital Development',
+      subheading: 'How our instruments produce results',
+      rows: [
+        {
+          title: 'Instruments',
+          color: 'yellow',
+          arrow: 'down',
+          blocks: [
+            {
+              title: 'A) Learning Communities',
+              body: 'For students, researchers and practitioners',
+            },
+            {
+              title: 'B) Education Modules',
+              body: 'Lifelong learning and upskilling',
+            },
+            {
+              title: 'C) Training Vouchers',
+              body: 'Professional skills development',
+            },
+          ],
+        },
+        {
+          title: 'Outputs',
+          color: 'black',
+          arrow: 'none',
+          blocks: [
+            { title: '12 Communities', body: 'Active learning networks' },
+            { title: '30 Modules', body: 'Training programmes' },
+            { title: '10,000 Professionals', body: 'Educated and upskilled' },
+          ],
+        },
+      ],
+    },
   },
   {
-    _variation: 'Two rows with arrow (cause -> effect)',
-    title: 'Challenges and Solutions',
-    subheading: 'How we address key issues',
-    rows: [
-      {
-        title: '',
-        color: 'yellow',
-        arrow: 'down',
-        blocks: [
-          { title: 'Challenge A', body: 'Market uncertainty' },
-          { title: 'Challenge B', body: 'Resource constraints' },
-          { title: 'Challenge C', body: 'Technical complexity' },
-        ],
-      },
-      {
-        title: '',
-        color: 'black',
-        arrow: 'none',
-        blocks: [
-          { title: 'Solution A', body: 'Agile approach' },
-          { title: 'Solution B', body: 'Partnerships' },
-          { title: 'Solution C', body: 'Modular design' },
-        ],
-      },
-    ],
+    variation: 'Two rows with arrow (cause -> effect)',
+    content: {
+      title: 'Challenges and Solutions',
+      subheading: 'How we address key issues',
+      rows: [
+        {
+          title: '',
+          color: 'yellow',
+          arrow: 'down',
+          blocks: [
+            { title: 'Challenge A', body: 'Market uncertainty' },
+            { title: 'Challenge B', body: 'Resource constraints' },
+            { title: 'Challenge C', body: 'Technical complexity' },
+          ],
+        },
+        {
+          title: '',
+          color: 'black',
+          arrow: 'none',
+          blocks: [
+            { title: 'Solution A', body: 'Agile approach' },
+            { title: 'Solution B', body: 'Partnerships' },
+            { title: 'Solution C', body: 'Modular design' },
+          ],
+        },
+      ],
+    },
   },
   {
-    _variation: 'Three rows (input -> process -> output)',
-    title: 'Value Creation Process',
-    subheading: 'From inputs to outcomes',
-    rows: [
-      {
-        title: 'Inputs',
-        color: 'yellow',
-        arrow: 'down',
-        blocks: [
-          { title: 'Data', body: 'Raw information' },
-          { title: 'Resources', body: 'Team and tools' },
-          { title: 'Insights', body: 'Market research' },
-          { title: 'Feedback', body: 'User input' },
-        ],
-      },
-      {
-        title: 'Processing',
-        color: 'black',
-        arrow: 'down',
-        blocks: [
-          { title: 'Analysis', body: 'Deep dive into patterns' },
-          { title: 'Synthesis', body: 'Combining insights' },
-        ],
-      },
-      {
-        title: 'Outputs',
-        color: 'yellow',
-        arrow: 'none',
-        blocks: [
-          { title: 'Strategy', body: 'Clear direction' },
-          { title: 'Actions', body: 'Concrete steps' },
-          { title: 'Results', body: 'Measurable impact' },
-        ],
-      },
-    ],
+    variation: 'Three rows (input -> process -> output)',
+    content: {
+      title: 'Value Creation Process',
+      subheading: 'From inputs to outcomes',
+      rows: [
+        {
+          title: 'Inputs',
+          color: 'yellow',
+          arrow: 'down',
+          blocks: [
+            { title: 'Data', body: 'Raw information' },
+            { title: 'Resources', body: 'Team and tools' },
+            { title: 'Insights', body: 'Market research' },
+            { title: 'Feedback', body: 'User input' },
+          ],
+        },
+        {
+          title: 'Processing',
+          color: 'black',
+          arrow: 'down',
+          blocks: [
+            { title: 'Analysis', body: 'Deep dive into patterns' },
+            { title: 'Synthesis', body: 'Combining insights' },
+          ],
+        },
+        {
+          title: 'Outputs',
+          color: 'yellow',
+          arrow: 'none',
+          blocks: [
+            { title: 'Strategy', body: 'Clear direction' },
+            { title: 'Actions', body: 'Concrete steps' },
+            { title: 'Results', body: 'Measurable impact' },
+          ],
+        },
+      ],
+    },
   },
   {
-    _variation: 'Before -> after (the arrow claims the transformation)',
-    title: 'Before vs After',
-    subheading: 'The transformation',
-    rows: [
-      {
-        title: 'Before',
-        color: 'yellow',
-        arrow: 'down',
-        blocks: [
-          { title: 'Manual', body: 'Time-consuming' },
-          { title: 'Siloed', body: 'Poor collaboration' },
-          { title: 'Reactive', body: 'Waiting for issues' },
-        ],
-      },
-      {
-        title: 'After',
-        color: 'black',
-        arrow: 'none',
-        blocks: [
-          { title: 'Automated', body: 'Efficient workflows' },
-          { title: 'Connected', body: 'Seamless sharing' },
-          { title: 'Proactive', body: 'Preventing problems' },
-        ],
-      },
-    ],
+    variation: 'Before -> after (the arrow claims the transformation)',
+    content: {
+      title: 'Before vs After',
+      subheading: 'The transformation',
+      rows: [
+        {
+          title: 'Before',
+          color: 'yellow',
+          arrow: 'down',
+          blocks: [
+            { title: 'Manual', body: 'Time-consuming' },
+            { title: 'Siloed', body: 'Poor collaboration' },
+            { title: 'Reactive', body: 'Waiting for issues' },
+          ],
+        },
+        {
+          title: 'After',
+          color: 'black',
+          arrow: 'none',
+          blocks: [
+            { title: 'Automated', body: 'Efficient workflows' },
+            { title: 'Connected', body: 'Seamless sharing' },
+            { title: 'Proactive', body: 'Preventing problems' },
+          ],
+        },
+      ],
+    },
   },
 ];

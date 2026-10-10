@@ -357,21 +357,23 @@ export default {
     // Example content for the AI (optional but recommended)
     examples: [
       {
-        _variation: 'Product Features',
-        title: 'Why Choose Us',
-        featureCount: '4',
-        feature1Icon: 'rocket-launch',
-        feature1Title: 'Fast Deployment',
-        feature1Description: 'Get started in minutes',
-        feature2Icon: 'shield-check',
-        feature2Title: 'Enterprise Security',
-        feature2Description: 'Bank-level protection',
-        feature3Icon: 'users',
-        feature3Title: '24/7 Support',
-        feature3Description: 'Always here to help',
-        feature4Icon: 'chart-line-up',
-        feature4Title: 'Analytics',
-        feature4Description: 'Data-driven insights',
+        variation: 'Product Features',
+        content: {
+          title: 'Why Choose Us',
+          featureCount: '4',
+          feature1Icon: 'rocket-launch',
+          feature1Title: 'Fast Deployment',
+          feature1Description: 'Get started in minutes',
+          feature2Icon: 'shield-check',
+          feature2Title: 'Enterprise Security',
+          feature2Description: 'Bank-level protection',
+          feature3Icon: 'users',
+          feature3Title: '24/7 Support',
+          feature3Description: 'Always here to help',
+          feature4Icon: 'chart-line-up',
+          feature4Title: 'Analytics',
+          feature4Description: 'Data-driven insights',
+        },
       },
     ],
   },
@@ -387,7 +389,7 @@ export default {
 | `description`     | string   | Multi-line description explaining the slide type to the AI. Include structure, visual layout, and key concepts |
 | `bestFor`         | string[] | List of use cases when this slide type is ideal                                                                |
 | `notFor`          | string[] | List of anti-patterns when NOT to use this slide type                                                          |
-| `examples`        | array    | Example content objects. Use `_variation` to label different patterns                                          |
+| `examples`        | array    | `{ variation?, content }` entries: `content` must pass the type's own schema, `variation` names the pattern    |
 | `usage`           | string   | Your organization's rules for _filling_ this type (optional, max 1000 chars)                                   |
 
 Setting `ai` to `false` instead of an object is the explicit opt-out — see
@@ -1569,20 +1571,24 @@ export default {
 
     examples: [
       {
-        _variation: 'Product Launch',
-        headline: 'Introducing Acme Pro',
-        subheadline: 'The next generation of business tools',
-        body: 'Faster. Smarter. More powerful than ever.',
-        ctaText: 'Get Started',
-        background: 'lime',
+        variation: 'Product Launch',
+        content: {
+          headline: 'Introducing Acme Pro',
+          subheadline: 'The next generation of business tools',
+          body: 'Faster. Smarter. More powerful than ever.',
+          ctaText: 'Get Started',
+          background: 'lime',
+        },
       },
       {
-        _variation: 'Company Overview',
-        headline: 'Welcome to Acme',
-        subheadline: 'Transforming industries since 1990',
-        body: '',
-        ctaText: 'Learn More',
-        background: 'mist',
+        variation: 'Company Overview',
+        content: {
+          headline: 'Welcome to Acme',
+          subheadline: 'Transforming industries since 1990',
+          body: '',
+          ctaText: 'Learn More',
+          background: 'mist',
+        },
       },
     ],
   },

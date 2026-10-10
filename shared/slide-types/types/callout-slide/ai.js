@@ -56,34 +56,44 @@ export const ai = {
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from. One per variant, because the variant is the
  * whole decision this type asks a model to make.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    variant: 'insight',
-    body: 'Teams that ship weekly find integration bugs six times earlier than teams that ship quarterly.',
-    source: 'DORA, State of DevOps 2024',
-    background: 'mist',
+    content: {
+      variant: 'insight',
+      body: 'Teams that ship weekly find integration bugs six times earlier than teams that ship quarterly.',
+      source: 'DORA, State of DevOps 2024',
+      background: 'mist',
+    },
   },
   {
-    variant: 'warning',
-    body: 'Migrating the database without draining the queue first will drop in-flight jobs. Drain, then migrate.',
-    background: 'mist',
+    content: {
+      variant: 'warning',
+      body: 'Migrating the database without draining the queue first will drop in-flight jobs. Drain, then migrate.',
+      background: 'mist',
+    },
   },
   {
-    variant: 'definition',
-    label: 'Lead time',
-    body: 'The elapsed time from a commit landing on main to that commit running in production.',
-    background: 'mist',
+    content: {
+      variant: 'definition',
+      label: 'Lead time',
+      body: 'The elapsed time from a commit landing on main to that commit running in production.',
+      background: 'mist',
+    },
   },
   {
-    variant: 'note',
-    body: 'These figures cover the Dutch market only; the European roll-out starts in Q3.',
-    background: 'mist',
+    content: {
+      variant: 'note',
+      body: 'These figures cover the Dutch market only; the European roll-out starts in Q3.',
+      background: 'mist',
+    },
   },
   {
-    variant: 'tip',
-    body: 'Run the migration behind a feature flag so you can roll back without a deploy.',
-    background: 'mist',
+    content: {
+      variant: 'tip',
+      body: 'Run the migration behind a feature flag so you can roll back without a deploy.',
+      background: 'mist',
+    },
   },
 ];

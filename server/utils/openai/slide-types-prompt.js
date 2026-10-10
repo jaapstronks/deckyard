@@ -369,9 +369,7 @@ export function buildSlideTypesPrompt({
       const examples = getSlideTypeExamples(type);
       if (examples?.length) {
         lines.push('JSON example:');
-        const cleanExample = { ...examples[0] };
-        delete cleanExample._variation;
-        lines.push(jsonExample({ type, content: cleanExample }));
+        lines.push(jsonExample({ type, content: examples[0].content }));
       } else {
         // Last resort: defaults
         lines.push('JSON example (based on defaults):');

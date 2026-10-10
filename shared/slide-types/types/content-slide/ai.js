@@ -52,13 +52,15 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    title: 'Key Findings',
-    body: '- First important point with details\n- Second point explaining the context\n- Third point with specific examples\n- Fourth point summarizing implications',
-    layout: 'one-column',
-    background: 'lime',
+    content: {
+      title: 'Key Findings',
+      body: '- First important point with details\n- Second point explaining the context\n- Third point with specific examples\n- Fourth point summarizing implications',
+      layout: 'one-column',
+      background: 'lime',
+    },
   },
 ];

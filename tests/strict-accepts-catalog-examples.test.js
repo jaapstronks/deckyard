@@ -32,6 +32,7 @@ import {
   SLIDE_TYPES,
 } from '../shared/slide-types/registry.js';
 import { slideTypeSample } from '../shared/slide-types/authoring-companions.js';
+import { SLIDE_TYPE_AI_EXAMPLES } from '../server/utils/ai/slide-catalog/type-ai.js';
 
 /** The offer, in one language: `{ [typeName]: example }` for everything with one. */
 function offeredExamples(lang) {
@@ -79,6 +80,26 @@ test('every core sample passes its own content schema, video-slide excepted (D10
     })
     .map(([name]) => name);
   assert.deepEqual(refused, ['video-slide']);
+});
+
+test('every core aiExample passes its own content schema (B246)', () => {
+  // D119: the prompt examples are variations an agent copies field for field,
+  // so each one is a slide the type accepts. The pattern's name sits beside
+  // the content (`{ variation, content }`); inside it, `_variation` was a key
+  // no type declares, and twelve of twenty-one first examples carried it.
+  const refused = [];
+  for (const [name, examples] of Object.entries(SLIDE_TYPE_AI_EXAMPLES)) {
+    const def = CORE_SLIDE_TYPE_DEFS[name];
+    assert.ok(def, `${name}: aiExamples without a core type`);
+    examples.forEach((ex, i) => {
+      const parsed = contentSchemaFor(def).safeParse(ex.content);
+      if (!parsed.success) {
+        const issue = parsed.error.issues[0];
+        refused.push(`${name}[${i}] ${issue.path.join('.')}: ${issue.message}`);
+      }
+    });
+  }
+  assert.deepEqual(refused, []);
 });
 
 test('the example an agent gets is the sample; defaults only where there is none it can use', () => {

@@ -54,22 +54,32 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    title: 'Product Screenshots',
-    subheading: 'The dashboard at a glance',
-    layout: 'masonry',
-    images: [
-      {
-        src: '',
-        caption: 'Overview dashboard',
-        alt: 'Dashboard overview screen',
-      },
-      { src: '', caption: 'Report builder', alt: 'Report builder screen' },
-      { src: '', caption: 'Team settings', alt: 'Team settings screen' },
-    ],
-    background: 'mist',
+    content: {
+      title: 'Product Screenshots',
+      subheading: 'The dashboard at a glance',
+      layout: 'masonry',
+      images: [
+        {
+          src: 'https://picsum.photos/seed/gallery1/800/600',
+          caption: 'Overview dashboard',
+          alt: 'Dashboard overview screen',
+        },
+        {
+          src: 'https://picsum.photos/seed/gallery2/800/600',
+          caption: 'Report builder',
+          alt: 'Report builder screen',
+        },
+        {
+          src: 'https://picsum.photos/seed/gallery3/800/600',
+          caption: 'Team settings',
+          alt: 'Team settings screen',
+        },
+      ],
+      background: 'mist',
+    },
   },
 ];

@@ -44,33 +44,37 @@ export const ai = {
 /**
  * Filled-in examples for the generation prompt — the worked content an agent
  * copies the field shape from.
- * @type {Array<Object>}
+ * @type {Array<{ variation?: string, content: Object }>}
  */
 export const aiExamples = [
   {
-    _variation: 'Horizontal onboarding process',
-    title: 'New Employee Onboarding',
-    direction: 'horizontal',
-    items: [
-      { title: 'Pre-boarding', text: 'Paperwork and setup before day one' },
-      { title: 'Orientation', text: 'Company intro and team meetings' },
-      { title: 'Training', text: 'Role-specific skills and tools' },
-      { title: 'Shadowing', text: 'Learn from experienced colleagues' },
-      { title: 'Independence', text: 'Start contributing solo' },
-    ],
-    background: 'lime',
+    variation: 'Horizontal onboarding process',
+    content: {
+      title: 'New Employee Onboarding',
+      direction: 'horizontal',
+      items: [
+        { title: 'Pre-boarding', text: 'Paperwork and setup before day one' },
+        { title: 'Orientation', text: 'Company intro and team meetings' },
+        { title: 'Training', text: 'Role-specific skills and tools' },
+        { title: 'Shadowing', text: 'Learn from experienced colleagues' },
+        { title: 'Independence', text: 'Start contributing solo' },
+      ],
+      background: 'lime',
+    },
   },
   {
-    _variation: 'Vertical project phases',
-    title: 'Project Delivery Process',
-    direction: 'vertical',
-    items: [
-      { title: 'Discovery', text: 'Understand requirements and constraints' },
-      { title: 'Design', text: 'Create solution architecture' },
-      { title: 'Development', text: 'Build and test components' },
-      { title: 'Deployment', text: 'Release to production' },
-      { title: 'Support', text: 'Monitor and maintain' },
-    ],
-    background: 'mist',
+    variation: 'Vertical project phases',
+    content: {
+      title: 'Project Delivery Process',
+      direction: 'vertical',
+      items: [
+        { title: 'Discovery', text: 'Understand requirements and constraints' },
+        { title: 'Design', text: 'Create solution architecture' },
+        { title: 'Development', text: 'Build and test components' },
+        { title: 'Deployment', text: 'Release to production' },
+        { title: 'Support', text: 'Monitor and maintain' },
+      ],
+      background: 'mist',
+    },
   },
 ];
