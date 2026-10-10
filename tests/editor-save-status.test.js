@@ -8,7 +8,7 @@ globalThis.document = dom.window.document;
 
 const { createSaveManager } =
   await import('../client/views/editor/save-manager.js');
-const { createSaveStatus } =
+const { createSaveStatus, SAVING_VISIBLE_AFTER_MS } =
   await import('../client/views/editor/save-status.js');
 
 test('autosave failure stays visible through retry and clears only after success', async () => {
@@ -77,4 +77,35 @@ test('live connection failure remains visible until reconnection', () => {
   assert.match(banner.el.textContent, /Connection lost/);
   banner.setStatus('saved');
   assert.equal(banner.el.hidden, true);
+});
+
+test('a save shows as in progress only once it runs long (B645)', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const banner = createSaveStatus();
+
+  banner.setStatus('saving');
+  assert.equal(banner.el.hidden, true, 'a quick save stays quiet');
+  banner.setStatus('saved');
+  t.mock.timers.tick(SAVING_VISIBLE_AFTER_MS);
+  assert.equal(banner.el.hidden, true, 'a save that landed never shows');
+
+  banner.setStatus('saving');
+  t.mock.timers.tick(SAVING_VISIBLE_AFTER_MS);
+  assert.equal(banner.el.hidden, false);
+  assert.match(banner.el.textContent, /Saving/);
+  assert.equal(banner.el.classList.contains('is-failure'), false);
+
+  banner.setStatus('error', 'Disk full');
+  assert.equal(banner.el.classList.contains('is-failure'), true);
+  assert.match(banner.el.textContent, /Disk full/);
+  banner.setStatus('saving');
+  t.mock.timers.tick(SAVING_VISIBLE_AFTER_MS);
+  assert.match(banner.el.textContent, /Disk full/, 'the failure stays');
+
+  banner.setStatus('saved');
+  assert.equal(banner.el.hidden, true);
+  banner.setStatus('saving');
+  banner.detach();
+  t.mock.timers.tick(SAVING_VISIBLE_AFTER_MS);
+  assert.equal(banner.el.hidden, true, 'detach drops the pending wait');
 });

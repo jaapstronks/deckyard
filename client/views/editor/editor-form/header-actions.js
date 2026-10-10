@@ -201,7 +201,6 @@ export function buildHeaderActions({
               t('editor.slide.aiConvert.converting', 'Converting with AI…'),
               {
                 id: 'ai-convert',
-                durationMs: 120000,
                 action: {
                   label: t('editor.slide.aiConvert.cancel', 'Cancel'),
                   onClick: () => controller.abort(),
