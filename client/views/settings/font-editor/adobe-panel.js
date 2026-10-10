@@ -137,11 +137,6 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
                 },
               },
             );
-            toast.success(
-              t('fonts.importSuccess', 'Imported "{name}".', {
-                name: family.name,
-              }),
-            );
             importBtn.textContent = t('fonts.imported', 'Imported');
             if (onImport) onImport(imported);
           } catch (err) {

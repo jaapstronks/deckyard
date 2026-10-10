@@ -6,7 +6,6 @@ import { h } from '../../../lib/dom/index.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { toast } from '../../../lib/dom/toast.js';
 import {
   confirmModal,
   createModal,
@@ -302,12 +301,6 @@ export function showCreateModal(onSuccess) {
     if (result.key) {
       // Show the key display modal
       showKeyDisplayModal(result.key.key, () => {
-        toast.success(
-          t(
-            'settings.apiKeys.createModal.success',
-            'API key created successfully.',
-          ),
-        );
         modal.setBusy(false);
         modal.close();
         onSuccess();

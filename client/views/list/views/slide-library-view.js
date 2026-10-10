@@ -116,16 +116,6 @@ export function createSlideLibraryView({ api, initialShelf = 'organization' }) {
         lang: selectedLang,
       });
 
-      const msg = t(
-        'slideLibrary.newPresentation.done',
-        {
-          one: 'Presentation created!',
-          many: 'Presentation created with {count} slides!',
-        },
-        { count: items.length },
-      );
-      toast.success(msg);
-
       if (result?.id) {
         nav(`/app/${result.id}`);
       }

@@ -228,8 +228,17 @@ the creation view only carries progress.
 The counts are the allowlists in `tests/feedback-surfaces-guard.test.js`; each
 item lowers them and the test refuses a rise. Alongside: `toast.info` used as a
 progress indicator with a 60–120 s lifetime (4 sites) is a status chip in
-disguise, and ≥ 27 success toasts announce what is already visible on screen
-("Theme deleted." as the row disappears) — both fold into the items above.
+disguise and folds into the items above.
+
+A confirmation that only repeats what the screen already shows is gone (B643):
+a row that appears or disappears, a badge that flips, an avatar that changes, a
+card added to the top of the list, a page that opens on the result. What stays
+says something the screen does not: a save with no other sign ("Saved."), a
+mail that went out, the clipboard, another shelf or library, a count after a
+bulk action, a toast that carries an action (Restore → "Open presentation",
+"Review"), and the model's own rationale after an AI revision. An editor that
+closes after an update keeps its "updated" toast: the list it returns to does
+not show what changed.
 
 Carriers for the fourth kind: the in-place polite message at the state
 (`createInlineError({ live: 'polite' })`, five sites moved to it by B206), and

@@ -244,7 +244,6 @@ export function createFontsTab({ user } = {}) {
     if (!confirmed) return;
     try {
       await api(`/api/font-families/${family.id}`, { method: 'DELETE' });
-      toast.success(t('fonts.deleted', 'Font family deleted.'));
       await loadFamilies();
     } catch (err) {
       toast.error(
