@@ -19,9 +19,6 @@ import {
   featureEnabled,
 } from '../../../lib/state/features.js';
 
-// Re-export for backward compatibility
-export { readFileAsDataUrl } from './utils.js';
-
 // LocalStorage key for persisting last-used section
 const STORAGE_KEY_SECTION = 'deckyard.mediaLibrary.lastSection';
 

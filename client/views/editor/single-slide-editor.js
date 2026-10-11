@@ -17,7 +17,7 @@
 import { createRerenderEditor } from './editor-form/index.js';
 import { createFieldRenderers } from './fields/index.js';
 import { createImagePickers } from './image-pickers.js';
-import { readFileAsDataUrl } from './image-library-picker.js';
+import { readFileAsDataUrl } from '../../lib/util/file.js';
 import { loadEditorAssets } from './bootstrap.js';
 import { createUndoActions } from './slide-list/undo-actions.js';
 import { createEditorStateUpdater } from '../../lib/state/editor-state.js';

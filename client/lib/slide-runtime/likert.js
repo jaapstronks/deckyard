@@ -1,10 +1,7 @@
 const NS = 'http://www.w3.org/2000/svg';
 import { newId } from '../util/id.js';
+import { clamp } from '../../../shared/number-utils.js';
 import { t } from '../ui-i18n.js';
-
-function clamp(n, lo, hi) {
-  return Math.max(lo, Math.min(hi, n));
-}
 
 function catmullRomPath(points) {
   if (!Array.isArray(points) || points.length < 2) return '';
