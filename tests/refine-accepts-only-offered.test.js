@@ -1,7 +1,7 @@
 /**
  * Phase 2 accepts a slide type exactly where the catalog offered it (B663).
  *
- * B660 made every agent-facing path offer from `getOfferedSlideTypes()`, but
+ * Every agent-facing path offers from `getOfferedSlideTypes()` (B660), but
  * the refine phase derived its own acceptance list from the catalog and so
  * let a type through that the offer withheld: a definition that opted out of
  * agent use (`ai: false`, `deprecated: true`) was refused in the prompt and
