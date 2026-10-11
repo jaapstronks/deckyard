@@ -31,18 +31,15 @@
  *   would be a claim it cannot back.
  * - `itemFields` — recursively, so `rows[].blocks[]` is checked as deeply as it
  *   is declared.
- * - an undeclared key is `unknown_field`, at every level. `fields[]` is not the
- *   only declaration a type makes about its content: `instanceKeys` names the
- *   keys bound to the slide instance rather than to its text (`pollId`), which
- *   is why they carry no field. They are known keys, and unconstrained —
- *   nothing but the creating code writes them. `validate-definition.js` reads
- *   the two declarations together for the same reason. `textStyles` is the
- *   third known key, on a type that offers text styling (its own declaration,
- *   `textStyle` and friends); the write seam checks its shape. The derived
- *   contrast keys (`DERIVED_SLIDE_CONTENT_KEYS`, `compose.js`) are the fourth,
- *   on every type: the editor and the write seam store them next to
- *   `slideBgImage`, so a settled slide an agent reads back and writes again
- *   must pass as it is (B628).
+ * - an undeclared key is `unknown_field`, at every level. Which top-level keys
+ *   a type declares is not this module's question: `fields[]` is one of four
+ *   declarations (`instanceKeys`, the `textStyles` map on a type that offers
+ *   styling, the derived contrast keys of B628 are the others), and
+ *   `declaredContentKeys()` (`shared/slide-types/declared-keys.js`) reads them
+ *   together. The deck import reads the same list and drops what it does not
+ *   name (D121 B2), so a key strict refuses is a key an import loses. The
+ *   non-field keys are known and unconstrained here; the write seam checks the
+ *   shape of `textStyles`.
  */
 
 import { z } from 'zod';
@@ -50,9 +47,7 @@ import {
   FIELD_TYPES,
   allowedEnumValues,
 } from '../../../../shared/slide-types/field-types.js';
-import { DERIVED_SLIDE_CONTENT_KEYS } from '../../../../shared/slide-types/compose.js';
-import { slideInstanceKeys } from '../../../../shared/slide-types/instance-keys.js';
-import { textStyleOffers } from '../../../../shared/slide-types/text-styles.js';
+import { declaredContentKeys } from '../../../../shared/slide-types/declared-keys.js';
 
 /**
  * Per-definition cache: the bare derivation, and one per theme because
@@ -160,18 +155,6 @@ function objectSchema(fields, theme, extraKeys = []) {
 }
 
 /**
- * `textStyles` is a known key on a type that offers text styling. Its shape
- * is not checked here: the write seam (`normalizeSlides`) refuses anything
- * outside the offer with a `text_style_*` reason, so a second check here
- * would be a second spelling of the same rules.
- * @param {Object} def
- * @returns {string[]}
- */
-function textStylesKey(def) {
-  return textStyleOffers(def).size ? ['textStyles'] : [];
-}
-
-/**
  * The Zod schema for one slide type's `content`, derived from its `fields[]`.
  *
  * Cached per definition object (and per theme), because the derivation walks
@@ -192,11 +175,7 @@ export function contentSchemaFor(def, { theme = null } = {}) {
   const themed = theme && typeof theme === 'object' ? theme : null;
   let schema = themed ? entry.byTheme.get(themed) : entry.bare;
   if (!schema) {
-    schema = objectSchema(def?.fields, themed, [
-      ...Object.keys(slideInstanceKeys(def)),
-      ...textStylesKey(def),
-      ...DERIVED_SLIDE_CONTENT_KEYS,
-    ]);
+    schema = objectSchema(def?.fields, themed, [...declaredContentKeys(def)]);
     if (themed) entry.byTheme.set(themed, schema);
     else entry.bare = schema;
   }

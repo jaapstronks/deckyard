@@ -51,13 +51,26 @@ export default {
   // shared/slide-types/policy.js — the editor's Save-to-library action and the
   // library create routes both ask that one predicate.
   library: false,
-  // Intentionally no editable fields:
+  // One field, and no text:
   // - Content is derived, not authored: the join code and language come from
   //   the render context, and `presentationId` is an instance key the editor
-  //   re-points on copy (the Enabled checkbox lives in its own slide form)
+  //   re-points on copy.
+  // - `enabled` is the author's switch, read by the presenter (skip the
+  //   invite when it is `false`) and the slide list. Its control lives in the
+  //   invite's own slide form, so the field is `hidden` from the generic one;
+  //   it is declared because an undeclared key does not survive an import
+  //   (D121 B2).
   // - Our translation feature only translates fields declared as string/markdown in the slide schema;
-  //   leaving `fields` empty ensures it won't "flip" the invite language.
-  fields: [],
+  //   a boolean is neither, so it won't "flip" the invite language.
+  fields: [
+    {
+      key: 'enabled',
+      label: 'Enabled',
+      type: 'boolean',
+      required: false,
+      hidden: true,
+    },
+  ],
   // No `sourceLang`/`targetLang`: the invite's language is the language of the
   // version it is rendered in, and the render context already knows that
   // (`ctx.lang`, supplied by `resolveDeckLang()` at every call site). Storing it
