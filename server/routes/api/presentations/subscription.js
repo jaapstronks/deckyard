@@ -18,7 +18,7 @@ import {
   storageError,
   unauthorized,
 } from '../../../utils/http.js';
-import { withPresentationReadAuth } from '../../../utils/route-middleware.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import {
   getSubscription,
   setSubscription,
@@ -34,9 +34,8 @@ export async function handlePresentationSubscription(
     return methodNotAllowed(res, ['GET', 'PUT']);
   }
 
-  const { pres } = await withPresentationReadAuth({
+  const pres = await withPresentationAuth({
     storageScope,
-    req,
     id,
     authedUser,
     res,

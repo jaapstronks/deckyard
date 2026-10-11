@@ -268,7 +268,8 @@ export async function verifyGuestEmail(verificationToken) {
  * Token-authorized: the session token resolves the guest, the guest row
  * carries the organization.
  * @param {string} sessionToken - The session token
- * @returns {Promise<Object|null>} - Guest info or null
+ * @returns {Promise<{guest: Object, shareLink: Object, organizationId: string}|null>}
+ *   Guest info or null
  */
 export async function getGuestBySessionToken(sessionToken) {
   const token = norm(sessionToken);
@@ -320,6 +321,10 @@ export async function getGuestBySessionToken(sessionToken) {
         shareLink,
         await shareLinkCreatorNames([shareLink]),
       ),
+      // The organization the guest row (and so its link and deck) lives in:
+      // what a write on the guest's behalf is scoped to, since an anonymous
+      // request carries no organization of its own (storage/scope.js).
+      organizationId: guest.organization_id,
     };
   });
 }
