@@ -4,8 +4,8 @@
  *
  * `docs/plans/` is a symlink to a private sibling repo, absent on a fresh
  * clone. A reference doc that says "decided in `docs/plans/briefs/x.md`" or a
- * test header that says "B143 moved this" asks an outside reader to trust
- * something they cannot open. Decision D63 settled the form: a planning code
+ * test header that leans on a bare backlog number asks an outside reader to
+ * trust something they cannot open. Decision D63 settled the form: a planning code
  * may stand only as origin in parentheses behind a sentence that explains
  * itself (`…, because no shared ladder was chosen (A7.9)`).
  *
