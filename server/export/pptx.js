@@ -601,8 +601,8 @@ async function composeVideo(
  * Add a video placeholder slide with instructions.
  *
  * The text sits on the slide's ground, so it takes that ground's text colours
- * (`ground`, from {@link resolveGroundColors}); the dashed box is its own
- * neutral plate.
+ * (`ground`, from {@link resolveGroundColors}), the link included; the
+ * dashed box is its own neutral plate.
  */
 function addVideoPlaceholder(
   pptxSlide,
@@ -707,7 +707,7 @@ function addVideoPlaceholder(
           text: videoUrl,
           options: {
             hyperlink: { url: videoUrl },
-            color: '0066cc',
+            color: ground.text,
             fontSize: 10,
           },
         },

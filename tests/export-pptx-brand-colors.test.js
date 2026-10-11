@@ -94,6 +94,11 @@ test('a dark theme: the lime ground the slide asks for, and light text', async (
   });
   assert.equal(groundOf(xml), '0E1726');
   assert.equal(runColor(xml, 'Launch film'), 'F2F4F8');
+  assert.equal(
+    runColor(xml, YOUTUBE),
+    'F2F4F8',
+    'the link reads on the ground',
+  );
 });
 
 // ------------------------------------------------------------- the guards
