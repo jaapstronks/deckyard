@@ -306,7 +306,8 @@ property.
    slide-level `alt`/`focusX`/`focusY` into `images[0]` and clears them; the
    inspector now reads the canonical per-image focus, so the focus grid shows the
    real crop start — the **display-baseline bug is fixed**. The slide-level focus
-   picker is gone (focus is per-image). `altNl`/`altEn` stay as a read fallback.
+   picker is gone (focus is per-image). `altNl`/`altEn` were later folded and
+   dropped by the schema funnel (v15).
    Guarded by a generic write → render round-trip harness over the ImageRef
    (`tests/image-ref-round-trip.test.js`). **`fit` was deliberately _left out_ of
    this step** — see step 2b below for why.

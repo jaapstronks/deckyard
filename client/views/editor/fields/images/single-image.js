@@ -39,7 +39,7 @@ export function createFieldImage(ctx) {
     (Array.isArray(arr) ? arr : []).map(normalizeUrl).filter(Boolean);
 
   // Derive the alt field key from the image field key
-  // e.g., 'col1Image' → 'col1Alt', 'image' → 'alt', 'bgImage' → 'bgAlt'
+  // e.g., 'image' → 'alt', 'fooImage' → 'fooAlt'
   const deriveAltKey = (imageKey) => {
     if (!imageKey || typeof imageKey !== 'string') return 'alt';
     // If key ends with 'Image', replace with 'Alt'

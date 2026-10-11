@@ -122,9 +122,8 @@ function chartOptions(
         ? false
         : parsed.kind === 'pie' || (parsed.kind === 'line' && hasSecond));
   const pieMode = String(content.pieLabelMode || '%').trim();
-  const normalizedPieMode = pieMode === 'percent' ? '%' : pieMode;
-  const labels = ['none', 'value', '%', 'both'].includes(normalizedPieMode)
-    ? normalizedPieMode
+  const labels = ['none', 'value', '%', 'both'].includes(pieMode)
+    ? pieMode
     : '%';
   const values =
     parsed.kind === 'line'
