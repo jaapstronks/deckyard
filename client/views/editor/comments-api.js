@@ -11,10 +11,26 @@
  * @param {() => Promise<void>} [options.beforeCreate] - Awaited before every
  *   create. The editor stores its pending edits here, so a comment on a slide
  *   added a moment ago names a slide the stored deck already holds (B567).
+ * @param {string|null} [options.shareToken] - Set when the commenter is a
+ *   share-link guest: listing, creating, editing and deleting then go through
+ *   the guest's own routes under the token (`/api/share/:token/comments`,
+ *   D228), never the signed-in routes behind the login gate. Who comments is
+ *   decided here, once: the two bases take the same paths and bodies. The
+ *   rest (get one, resolve, reopen, counts, mark-read) is the account's alone
+ *   and stays on the deck route; a guest has no route for it.
  * @returns {Object} API methods for comment operations
  */
-export function createCommentsApi({ api, presentationId, beforeCreate }) {
+export function createCommentsApi({
+  api,
+  presentationId,
+  beforeCreate,
+  shareToken = null,
+}) {
   const pid = presentationId;
+  const deckBase = `/api/presentations/${pid}/comments`;
+  const base = shareToken
+    ? `/api/share/${encodeURIComponent(shareToken)}/comments`
+    : deckBase;
 
   const listComments = async (opts = {}) => {
     const params = new URLSearchParams();
@@ -22,7 +38,7 @@ export function createCommentsApi({ api, presentationId, beforeCreate }) {
     if (opts.status) params.set('status', opts.status);
     if (opts.commentType) params.set('commentType', opts.commentType);
     const qs = params.toString() ? `?${params.toString()}` : '';
-    const resp = await api(`/api/presentations/${pid}/comments${qs}`);
+    const resp = await api(`${base}${qs}`);
     return {
       comments: resp?.comments || [],
       openCount: resp?.openCount || 0,
@@ -56,7 +72,7 @@ export function createCommentsApi({ api, presentationId, beforeCreate }) {
       payload.positionY = positionY;
     }
     await beforeCreate?.();
-    const resp = await api(`/api/presentations/${pid}/comments`, {
+    const resp = await api(base, {
       method: 'POST',
       body: payload,
     });
@@ -64,12 +80,12 @@ export function createCommentsApi({ api, presentationId, beforeCreate }) {
   };
 
   const getComment = async (commentId) => {
-    const resp = await api(`/api/presentations/${pid}/comments/${commentId}`);
+    const resp = await api(`${deckBase}/${commentId}`);
     return resp?.comment || null;
   };
 
   const updateComment = async (commentId, { body }) => {
-    const resp = await api(`/api/presentations/${pid}/comments/${commentId}`, {
+    const resp = await api(`${base}/${commentId}`, {
       method: 'PUT',
       body: { body },
     });
@@ -77,36 +93,30 @@ export function createCommentsApi({ api, presentationId, beforeCreate }) {
   };
 
   const deleteComment = async (commentId) => {
-    const resp = await api(`/api/presentations/${pid}/comments/${commentId}`, {
+    const resp = await api(`${base}/${commentId}`, {
       method: 'DELETE',
     });
     return resp;
   };
 
   const resolveComment = async (commentId) => {
-    const resp = await api(
-      `/api/presentations/${pid}/comments/${commentId}/resolve`,
-      {
-        method: 'POST',
-        body: {},
-      },
-    );
+    const resp = await api(`${deckBase}/${commentId}/resolve`, {
+      method: 'POST',
+      body: {},
+    });
     return resp;
   };
 
   const reopenComment = async (commentId) => {
-    const resp = await api(
-      `/api/presentations/${pid}/comments/${commentId}/reopen`,
-      {
-        method: 'POST',
-        body: {},
-      },
-    );
+    const resp = await api(`${deckBase}/${commentId}/reopen`, {
+      method: 'POST',
+      body: {},
+    });
     return resp;
   };
 
   const getCommentCounts = async () => {
-    const resp = await api(`/api/presentations/${pid}/comments/counts`);
+    const resp = await api(`${deckBase}/counts`);
     return {
       counts: resp?.counts || {},
       total: resp?.total || 0,
@@ -119,7 +129,7 @@ export function createCommentsApi({ api, presentationId, beforeCreate }) {
    * @param {string[]} commentIds - Top-level comment ids
    */
   const markThreadsRead = async (commentIds) => {
-    const resp = await api(`/api/presentations/${pid}/comments/mark-read`, {
+    const resp = await api(`${deckBase}/mark-read`, {
       method: 'POST',
       body: { commentIds },
     });

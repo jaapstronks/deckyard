@@ -27,10 +27,7 @@ import {
   broadcastToPresentation,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
-import {
-  withPresentationAuth,
-  withPresentationReadAuth,
-} from '../../../utils/route-middleware.js';
+import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import {
   broadcastCommentCounts,
   setCommentStatus,
@@ -204,8 +201,7 @@ export async function handlePresentationCommentApply(
  * Body: { commentIds: string[] }
  *
  * Personal read-state, not a thread status: nothing shared changes. Guests
- * have no account and therefore no read-state; their calls are a cheap no-op
- * so the client doesn't need a special guest path.
+ * have no account and therefore no read-state, and no route here (D228).
  */
 export async function handlePresentationCommentsMarkRead(
   { storageScope, req, res, authedUser } = {},
@@ -213,9 +209,8 @@ export async function handlePresentationCommentsMarkRead(
 ) {
   if (req.method !== 'POST') return methodNotAllowed(res, ['POST']);
 
-  const { pres } = await withPresentationReadAuth({
+  const pres = await withPresentationAuth({
     storageScope,
-    req,
     id,
     authedUser,
     res,

@@ -7,6 +7,11 @@
  * POST   /api/share/:token/guest/request              - Request guest email verification
  * GET    /api/share/:token/guest/verify/:vtoken       - Verify guest email & create session
  * GET    /api/share/:token/guest/me                   - Get current guest session info
+ * GET    /api/share/:token/comments                   - A verified guest lists comments (D228)
+ * POST   /api/share/:token/comments                   - A verified guest comments (D228)
+ * PUT    /api/share/:token/comments/:id               - A guest edits their own comment
+ * DELETE /api/share/:token/comments/:id               - A guest deletes their own comment
+ *        (the four comment rows live in ./guest-comments.js)
  *
  * Form A throughout (route-dispatch.md): the old chain fell through on a
  * method mismatch, no 405. Table order mirrors the old branch order exactly.
@@ -42,6 +47,7 @@ import {
 } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
 import { canCommentWithShareLink } from '../../../utils/presentation-authz/index.js';
+import { GUEST_COMMENT_ROUTES } from './guest-comments.js';
 import {
   buildRequestUrl,
   shouldUseSecureCookies,
@@ -573,6 +579,9 @@ export const PUBLIC_ROUTES = [
     captures: ['text'],
     handler: handleShareGuestMe,
   },
+  // The guest's own comment routes (B179, D228), last: their paths are
+  // deeper than every row above, so the order changes no match.
+  ...GUEST_COMMENT_ROUTES,
 ];
 
 /**
