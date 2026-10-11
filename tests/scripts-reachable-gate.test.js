@@ -5,9 +5,8 @@
  * references — not in `package.json`, not in a workflow, not in the docs, not
  * in a test. Nothing ran it, so nothing noticed when the registry moved under
  * it: by the time it was found it emitted 1.855 keys that were already gone
- * (B140), and its
- * output directory (`docs/i18n/`) did not exist. A script nobody invokes does
- * not stay correct; it just stops being wrong out loud.
+ * (B140), and its output directory (`docs/i18n/`) did not exist. A script
+ * nobody invokes does not stay correct; it just stops being wrong out loud.
  *
  * The rule: a script is reachable when it is named in `package.json`, a
  * workflow, or the docs — the three places a human or CI would find it. Modules

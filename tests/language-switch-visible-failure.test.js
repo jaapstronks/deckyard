@@ -11,9 +11,8 @@
  *  3. while a translation runs the language menu is disabled and says why,
  *     rather than silently swallowing clicks under the busy modal's backdrop.
  *
- * The control they were reported against was a fixed NL/EN segmented toggle;
- * it is now a language menu over every version the deck has (B182, phase 2).
- * The
+ * The control they were reported against was a fixed NL/EN segmented toggle; it
+ * is now a language menu over every version the deck has (B182, phase 2). The
  * failure modes are the switch's, not the widget's, so they are pinned here in
  * the menu's shape.
  *

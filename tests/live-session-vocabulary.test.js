@@ -2,9 +2,9 @@
  * Guard: the live-session domain has one spelling in code — `live-session`.
  *
  * The `present-session` / `live-session` homonym has converged (B41-b,
- * vocabulary decision D11): everything above the
- * persistence boundary says **live-session**. This test pins the loser
- * spellings to zero so they cannot creep back in:
+ * vocabulary decision D11): everything above the persistence boundary says
+ * **live-session**. This test pins the loser spellings to zero so they cannot
+ * creep back in:
  *
  *   - the hyphen module/route/URL form  `present-session`
  *   - the identifier form                `PresentSession` (Present + Session)

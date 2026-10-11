@@ -13,8 +13,8 @@
  * The success path is NOT covered: it calls the configured LLM vendor
  * (`translatePresentationStrings`), and there is no vendor seam to observe
  * without one — a recorded, deliberate opt-out (B40), like the collaborator
- * invite e-mail. Everything up to that call is
- * pinned here, so the endpoint's contract fails loudly if the ladder changes.
+ * invite e-mail. Everything up to that call is pinned here, so the endpoint's
+ * contract fails loudly if the ladder changes.
  *
  * Handler-import level against the database double, like the neighbours
  * (tests/public-api-partial-write.test.js). Negative assertions pin the
