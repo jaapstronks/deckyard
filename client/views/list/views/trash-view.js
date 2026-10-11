@@ -79,10 +79,11 @@ export function createTrashView({ api, renderCard }) {
     }
   }
 
+  /** Reload the trash from the server; resolves once it is on screen. */
   function refresh() {
     loaded = false;
     trashList.innerHTML = '';
-    load();
+    return load();
   }
 
   return {

@@ -13,7 +13,9 @@
  * list's own empty note, the control the caller names), a list the render
  * rebuilt, the shared polite region, and the defect itself through the real
  * `confirmModal` — the dialog hands focus back to the button in the row, the
- * re-render takes it away, and the planner puts it back in the list.
+ * re-render takes it away, and the planner puts it back in the list. Restoring
+ * from the trash goes through the same seam, through the real card and trash
+ * view, after the trash refresh (B657).
  *
  * Run with: node --test tests/row-removal-focus.test.js
  */
@@ -38,6 +40,13 @@ globalThis.requestAnimationFrame = (fn) => {
   fn();
   return 0;
 };
+globalThis.history = dom.window.history;
+globalThis.ResizeObserver = class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+globalThis.IntersectionObserver = undefined;
 
 const { planRowRemoval, announcePolitely, __resetRowRemovalForTests } =
   await import('../client/lib/dom/row-removal.js');
@@ -224,4 +233,70 @@ test('the confirm dialog hands focus to a button that is about to go', async () 
     document.querySelector('[aria-live]')?.textContent,
     'row-1 removed.',
   );
+});
+
+// ------------------------------------------ restoring from the real trash
+
+/**
+ * The trash view with the real card renderer over a stub API that holds
+ * `ids`, wired the way `client/views/list/index.js` wires it.
+ * @param {string[]} ids
+ */
+async function trashWith(ids) {
+  const { createCardRenderer } =
+    await import('../client/views/list/presentation-card.js');
+  const { createTrashView } =
+    await import('../client/views/list/views/trash-view.js');
+  let trash = ids.map((id) => ({ id, title: `Deck ${id}`, hasSlides: false }));
+  const api = async (url) => {
+    if (url === '/api/presentations/trash') return trash;
+    const restored = url.match(/^\/api\/presentations\/([^/]+)\/restore$/);
+    if (restored) trash = trash.filter((p) => p.id !== restored[1]);
+    return {};
+  };
+  /** @type {{ el: HTMLElement, load: Function, refresh: Function }} */
+  let view;
+  const { renderCard } = createCardRenderer({
+    api,
+    detachThumbs: [],
+    onTrashRefresh: () => view.refresh(),
+  });
+  view = createTrashView({ api, renderCard });
+  document.body.append(view.el);
+  await view.load();
+  return view;
+}
+
+/** Click a card's Restore and wait until focus has landed somewhere new. */
+async function restore(view, id) {
+  const card = view.el.querySelector(`[data-id="${id}"]`);
+  assert.ok(card, `the trash shows ${id}`);
+  const button = /** @type {HTMLElement} */ (
+    card.querySelector('.presentation-card-menu-item:not(.is-danger)')
+  );
+  assert.equal(button.textContent, 'Restore');
+  button.focus();
+  button.click();
+  const landed = () =>
+    document.activeElement !== button &&
+    document.activeElement !== document.body;
+  for (let i = 0; i < 50 && !landed(); i += 1) await tick();
+}
+
+test('a restore lands on the card that took the place of the restored one (B657)', async () => {
+  const view = await trashWith(['a', 'b', 'c']);
+  await restore(view, 'b');
+  const focused = /** @type {HTMLElement} */ (document.activeElement);
+  assert.ok(view.el.contains(focused), 'focus stays in the trash');
+  assert.equal(focused.dataset.id, 'c');
+  view.el.remove();
+});
+
+test('restoring the last card lands on the trash heading (B657)', async () => {
+  const view = await trashWith(['a']);
+  await restore(view, 'a');
+  const focused = /** @type {HTMLElement} */ (document.activeElement);
+  assert.ok(focused.classList.contains('presentation-grid-title'));
+  assert.ok(view.el.textContent.includes('Trash is empty.'));
+  view.el.remove();
 });
