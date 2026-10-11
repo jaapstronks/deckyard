@@ -93,7 +93,6 @@ export async function handleNotionImport({
     } = await convertNotionPage(urlOrId, {
       lang,
       vendor,
-      enableLogging: true,
       signal,
       slideTypes,
       ...slideTypeOffer,
@@ -265,7 +264,6 @@ export async function handleNotionImportStream({
     } = await convertNotionPage(urlOrId, {
       lang,
       vendor,
-      enableLogging: true,
       signal,
       slideTypes,
       ...slideTypeOffer,

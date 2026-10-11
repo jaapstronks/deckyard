@@ -38,7 +38,6 @@ const log = createLogger('convert-notion');
  * @param {object} options - Conversion options
  * @param {string} options.lang - Target language ('nl' or 'en-GB' or 'auto')
  * @param {string} options.vendor - LLM vendor ('openai' or 'anthropic')
- * @param {boolean} options.enableLogging - Enable AI conversation logging (default: true)
  * @param {function} options.onStatusMessage - Callback for status messages during conversion
  * @param {function} options.onOutlineComplete - Callback when outline is ready (with statusMessages)
  * @param {function} options.onGroupDone - ({ done, total }) => void, called as
@@ -58,7 +57,6 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
   const {
     lang = 'auto',
     vendor = null,
-    enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
     onGroupDone = null,
@@ -149,7 +147,6 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       vendor,
       sectionCount: richContent.sections.length,
       metadata: report.metadata,
-      enableLogging,
       onStatusMessage,
       onOutlineComplete,
       onGroupDone,
@@ -295,7 +292,6 @@ async function convertWithAi(formattedContent, options = {}) {
     vendor = null,
     sectionCount = 0,
     metadata = {},
-    enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
     onGroupDone = null,
@@ -308,7 +304,7 @@ async function convertWithAi(formattedContent, options = {}) {
   } = options;
 
   const sessionId = generateSessionId();
-  const logger = enableLogging ? createSessionLogger(sessionId) : null;
+  const logger = createSessionLogger(sessionId);
 
   log.info(`Starting AI conversion session ${sessionId}`);
   log.info(
@@ -324,7 +320,7 @@ async function convertWithAi(formattedContent, options = {}) {
     userName: metadata?.author || '',
     targetLang: lang === 'auto' ? null : lang,
     vendor,
-    onLog: logger ? (data) => logger.logPhase1(data) : null,
+    onLog: (data) => logger.logPhase1(data),
     signal,
   });
 
@@ -369,7 +365,7 @@ async function convertWithAi(formattedContent, options = {}) {
         title: outline.title,
         summary: outline.summary,
       },
-      onLog: logger ? (data) => logger.logPhase2Call(data) : null,
+      onLog: (data) => logger.logPhase2Call(data),
       onGroupDone,
       signal,
       disabledSlideTypes,
@@ -454,13 +450,11 @@ async function convertWithAi(formattedContent, options = {}) {
   }
 
   // Finalize logging
-  if (logger) {
-    logger.finalize(deck, {
-      sessionId,
-      totalSlides: deck.slides.length,
-      source: 'notion',
-    });
-  }
+  logger.finalize(deck, {
+    sessionId,
+    totalSlides: deck.slides.length,
+    source: 'notion',
+  });
 
   return deck;
 }

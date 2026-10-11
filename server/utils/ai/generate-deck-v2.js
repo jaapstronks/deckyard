@@ -98,7 +98,6 @@ export function assembleDeck(
  * @param {string} options.vendor - LLM vendor override
  * @param {string} options.theme - Deck theme
  * @param {string} options.titleSlideType - Title slide type for the theme (default: 'title-slide')
- * @param {boolean} options.enableLogging - Enable detailed logging (default: true)
  * @param {Record<string, Object>} options.slideTypes - The organization's
  *   merged type map; the refined slides are fixed against it (B247)
  * @returns {Promise<Object>} Generated deck in deck JSON format
@@ -111,7 +110,6 @@ export async function generateDeckV2(
     vendor = null,
     theme = 'default',
     titleSlideType = 'title-slide',
-    enableLogging = true,
     reviseOutlineBeforeRefine = true,
     disabledSlideTypes = [],
     customSlideTypes = [],
@@ -121,7 +119,7 @@ export async function generateDeckV2(
 ) {
   const startTime = Date.now();
   const sessionId = generateSessionId();
-  const logger = enableLogging ? createSessionLogger(sessionId) : null;
+  const logger = createSessionLogger(sessionId);
 
   log.info(`Starting session ${sessionId}`);
 
@@ -135,7 +133,7 @@ export async function generateDeckV2(
     userName,
     targetLang,
     vendor,
-    onLog: logger ? (data) => logger.logPhase1(data) : null,
+    onLog: (data) => logger.logPhase1(data),
   });
 
   log.info(
@@ -159,7 +157,7 @@ export async function generateDeckV2(
         outline.metadata?.requestedLang ||
         outline.metadata?.detectedLang ||
         'en',
-      onLog: logger ? (data) => logger.logPhase1(data) : null,
+      onLog: (data) => logger.logPhase1(data),
     });
     outline = revised.outline;
     outlineRevision = revised.revision;
@@ -190,7 +188,7 @@ export async function generateDeckV2(
     refinedContentSlides = await refineAllSlideGroups(contentGroups, {
       lang,
       vendor,
-      onLog: logger ? (data) => logger.logPhase2Call(data) : null,
+      onLog: (data) => logger.logPhase2Call(data),
       batchSize: 6,
       presentationContext: {
         title: outline.title,
@@ -260,11 +258,9 @@ export async function generateDeckV2(
   };
 
   // Finalize logging
-  if (logger) {
-    logger.finalize(deck, {
-      totalDurationMs: Date.now() - startTime,
-    });
-  }
+  logger.finalize(deck, {
+    totalDurationMs: Date.now() - startTime,
+  });
 
   log.info(`Session ${sessionId} complete in ${Date.now() - startTime}ms`);
   log.info(
