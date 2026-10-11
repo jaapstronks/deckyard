@@ -1,5 +1,5 @@
 /**
- * B621: a tool error carries the reasons, not just the sentence.
+ * A tool error carries the reasons, not just the sentence (B621).
  *
  * A service refusal is an `AppError` with a machine code and `details`; v1
  * renders it as the envelope `{ error, message, details }`. The MCP tool error
@@ -7,7 +7,7 @@
  * `update_slide` read `Invalid slide data` without saying which field. The
  * renderer now puts the same envelope below the human line, for every tool.
  *
- * B624: and like v1 it keeps an unexpected failure's message to the log.
+ * And like v1 it keeps an unexpected failure's message to the log (B624).
  *
  * Run with: node --test tests/mcp/mcp-tool-error-details.test.js
  */

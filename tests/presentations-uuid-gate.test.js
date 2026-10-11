@@ -1,5 +1,5 @@
 /**
- * B222/B360 — the authed presentation surface shape-checks its captured ids.
+ * The authed presentation surface shape-checks its captured ids (B222, B360).
  *
  * Every `/api/presentations/:id/...` row hands the captured id to storage
  * verbatim, and storage queries Postgres `uuid` columns with it — so a

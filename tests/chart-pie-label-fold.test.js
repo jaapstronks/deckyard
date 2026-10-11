@@ -1,7 +1,7 @@
 /**
- * B257 B1-rest: a pie chart stored with the pre-1.0 `pieLabelMode: 'percent'`
- * folds to `'%'` in the schema funnel (`foldUnofferedTo` on the field), so the
- * renderer and the PPTX export keep no alias for it.
+ * A pie chart stored with the pre-1.0 `pieLabelMode: 'percent'` folds to
+ * `'%'` in the schema funnel (`foldUnofferedTo` on the field), so the
+ * renderer and the PPTX export keep no alias for it (B257 B1-rest).
  *
  * Run with: node --test tests/chart-pie-label-fold.test.js
  */

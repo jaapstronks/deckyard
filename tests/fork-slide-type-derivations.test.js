@@ -1,5 +1,5 @@
 /**
- * The fork-loaded guardrail — the node half of B23.
+ * The fork-loaded guardrail, node half (B23).
  *
  * `custom/slide-types/` is gitignored, so upstream CI only ever runs the suite
  * against the core registry. A derivation that takes exactly one branch fewer for
@@ -10,9 +10,9 @@
  *     excluded (copied from the since-retired `i18n-extract`, where the skip was
  *     right — a shared extraction template must not carry a fork's strings), so it
  *     would have deleted a fork's own translations, and a core type's keys
- *     outright once a fork registered over its name with `override: true`. B94
- *     removed the skip-set parameter altogether, so the derivation can no longer
- *     be asked the wrong question.
+ *     outright once a fork registered over its name with `override: true`. The
+ *     skip-set parameter is gone altogether, so the derivation can no longer
+ *     be asked the wrong question (B94).
  *   - #501 (→ #503): the inspector coverage audit asked every type for every
  *     keep-field, and the fallback branch of `getInspectorKeepKeys()` returns the
  *     nine globally-injected bg/a11y keys too. Every core type declares a keep

@@ -1,8 +1,9 @@
 /**
- * B576: the internal create routes refuse an unsupported `lang` before the work.
+ * The internal create routes refuse an unsupported `lang` before the work
+ * (B576).
  *
- * Since B521 the v1 wizard and the MCP create tools refuse an unsupported
- * `lang` with 400 `invalid`, `details.field: 'lang'` (D291). The internal AI
+ * The v1 wizard and the MCP create tools refuse an unsupported `lang` with
+ * 400 `invalid`, `details.field: 'lang'` (D291, B521). The internal AI
  * wizard (`/api/ai/wizard`, `/api/ai/wizard-v2/stream`), the file conversion
  * (`/api/convert`, `/api/convert/stream`) and the Notion import
  * (`/api/notion/import`, `/api/notion/import/stream`) read `lang` with

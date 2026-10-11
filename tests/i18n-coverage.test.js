@@ -23,7 +23,7 @@
  *     for the registry, so a declaration and a locale file cannot spell one
  *     meaning two ways
  * 10. no locale spells one English concept two ways — the anchor invariant the
- *     whole B133-B141 translation series leaned on, graded against
+ *     whole translation series leaned on (B133-B141), graded against
  *     scripts/i18n-anchor-allowlist.json
  * 11. no Tier-2 locale ships a carbon copy of an en/ value — since D73 an
  *     untranslated key is *absent*, not a copy of the English

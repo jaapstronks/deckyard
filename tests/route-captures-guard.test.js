@@ -1,5 +1,5 @@
 /**
- * B360/B399 — the `captures` declaration says the truth about its own pattern.
+ * The `captures` declaration says the truth about its own pattern (B360, B399).
  *
  * A route row declares what each of its capture groups holds
  * (`utils/router.js#Route.captures`), and the dispatcher answers 404 for a

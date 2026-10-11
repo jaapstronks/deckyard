@@ -10,13 +10,13 @@
  *   1. **into another contract's routes** — `server/mcp/**` or
  *      `server/routes/public-api/v1/**` importing from `server/routes/api/**`.
  *      MCP used to borrow the comment-count broadcast and the length limit from
- *      an internal route module; B518 moved both into `services/comments.js`.
- *      This one is at zero and stays there.
+ *      an internal route module; both now live in `services/comments.js`
+ *      (B518). This one is at zero and stays there.
  *   2. **into the deck storage** — the same two trees importing from
  *      `server/storage/presentations/**`. Every such import is a deck operation
  *      the adapter composes itself, where a service should decide it. The
- *      A7.4 items (B519–B521 and B568–B611) lowered this count to zero; B611
- *      closed the last edge.
+ *      service-layer items lowered this count to zero (A7.4: B519–B521 and
+ *      B568–B611).
  *
  * Both kinds are at zero. The second is pinned **edge by edge**: each
  * adapter file → storage module import that is still open is listed in

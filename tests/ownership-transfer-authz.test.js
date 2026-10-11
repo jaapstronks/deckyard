@@ -11,7 +11,7 @@
  * the owner stamp and the unrestricted operator, and to nobody else — not the
  * creator (D43: the grant has to be one the hand-over can take away), and no
  * collaborator rung reaches it, not even `admin`. An instance admin is not a
- * grant either; that is the same design B114 pinned on the guest surface:
+ * grant either; that is the same design pinned on the guest surface (B114):
  * `isAdmin` is a flag on the actor, `isUnrestricted` is the operator bypass,
  * and only the second one opens ownership-scoped gates.
  *
@@ -20,9 +20,10 @@
  * one that offers the handling (no v1 or MCP transfer), so this file is the
  * test per contract.
  *
- * The endpoint is singular. The B115 item speaks of "transfer/claim endpoints";
- * there is no claim endpoint — `POST /api/presentations/:id/transfer-ownership`
- * is the whole ownership surface (see the PR description).
+ * The endpoint is singular. There is no claim endpoint (the item this came from
+ * spoke of "transfer/claim endpoints", B115) —
+ * `POST /api/presentations/:id/transfer-ownership` is the whole ownership
+ * surface (see the PR description).
  *
  * Every refusal is asserted against the store, not read off the status code:
  * after a refused transfer the deck must still name the old owner, on both keys
