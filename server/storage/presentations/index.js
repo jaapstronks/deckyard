@@ -14,7 +14,7 @@
 import crypto from 'node:crypto';
 import { getDb, sql } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
-import { nowIso } from '../../utils/normalize.js';
+import { normalizeEmail, nowIso } from '../../utils/normalize.js';
 import { resolveIdentityByEmail } from '../identity-resolver.js';
 import {
   resolveDisplayNames,
@@ -869,7 +869,9 @@ async function createPresentationRow(data, ctx) {
   const timestamp = nowIso();
 
   const id = data.id || crypto.randomUUID();
-  const ownerEmail = data.ownerEmail || ctx?.actorEmail || null;
+  // D200: `owner_email` (and the creator/last-writer stamps beside it) is
+  // normalised here, on write, so every read compares it bare.
+  const ownerEmail = normalizeEmail(data.ownerEmail || ctx?.actorEmail);
 
   // Dual-key (T10 PR 3): stamp the stable user_id beside each email column.
   // At create the owner is also the creator and last writer, so all three
@@ -1075,7 +1077,7 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
   };
   if (updatedByEmail) {
     const updatedByResolution = await resolveIdentityByEmail(updatedByEmail);
-    updateData.updated_by = updatedByEmail;
+    updateData.updated_by = normalizeEmail(updatedByEmail);
     updateData.updated_by_user_id = updatedByResolution?.userId ?? null;
   }
   if (data.title !== undefined) updateData.title = data.title;
