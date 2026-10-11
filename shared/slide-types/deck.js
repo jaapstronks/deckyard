@@ -306,12 +306,13 @@ function importedSlideType(type, slideTypes, carriedSlideTypes) {
  *
  * Every slide is composed by `newSlide()` — import cleans the input into a
  * patch and hands it over — so a caller passes what the factory reads: the
- * loaded theme and the deck's language. Both are the caller's to know (the
- * route loads the theme, the request or manifest names the language); a guard
- * test pins that no call site leaves either out.
+ * loaded theme, the deck's language and the slide-type map. All three are the
+ * caller's to know (the route loads the theme and the organization's map, the
+ * request or manifest names the language); a guard test pins that no call site
+ * leaves one out.
  *
  * @param {Object|Array} input - a deck object, or a bare slides array
- * @param {Object} [opts]
+ * @param {Object} opts
  * @param {Object} [opts.theme] - the loaded theme. Types declaring
  *   `autoBackgroundPreset` take a background from `theme.backgroundPresets`,
  *   and a theme's slide-background variants are on offer for `background`.
@@ -319,9 +320,12 @@ function importedSlideType(type, slideTypes, carriedSlideTypes) {
  *   `defaultsByLang` composes from that variant, exactly as an editor insert.
  *   It is also the base language `translations` are read against; without it
  *   the deck's own `lang` is.
- * @param {Object} [opts.slideTypes] - the registry slide types resolve against:
- *   the importing organization's (`buildMergedSlideTypes`), so a database type
- *   it has imports as itself rather than as the placeholder
+ * @param {Object} opts.slideTypes - the registry slide types resolve against,
+ *   required: the importing organization's (`buildMergedSlideTypes`), so a
+ *   database type it has imports as itself rather than as the placeholder, and
+ *   a type's configured defaults (`configDefaults`, B653) seed its slides. The
+ *   module-wide `SLIDE_TYPES` knows neither, which is why there is no default
+ *   to fall back on (B655).
  * @param {Map<string, string|null>} [opts.carriedSlideTypes] - for each type
  *   key a `.deck` bundle carries the definition of (D91): the key it landed on
  *   in `slideTypes`, or `null` when it was not installed, in which case its
@@ -335,10 +339,15 @@ export function deckToPresentationParts(
   {
     theme: themeConfig = null,
     lang = null,
-    slideTypes = SLIDE_TYPES,
+    slideTypes,
     carriedSlideTypes = new Map(),
   } = {},
 ) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'deckToPresentationParts: pass the slide-type map the deck imports into',
+    );
+  }
   // Accept either the full object or a raw slides array (super simple use-case).
   // An imported deck is a read of unknown vintage, so it goes through the same
   // migration funnel as a stored one. The portable format carries no

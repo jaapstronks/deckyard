@@ -38,6 +38,7 @@ import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../../shared/i18n-utils.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 // ============================================================
 // VALIDATION HELPERS
@@ -123,7 +124,11 @@ async function handleWizard(ctx) {
     customSlideTypes,
   });
 
-  const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
+  const parts = deckToPresentationParts(deck, {
+    theme: themeConfig,
+    lang,
+    slideTypes: await buildMergedSlideTypes(storageScope),
+  });
 
   // One create carries the generated slides (B609): the factory seeds the
   // language version from them. A storage refusal (the size limit) is the
@@ -213,6 +218,7 @@ async function handleAppendSlides(ctx) {
       storageScope,
     ),
     lang: lang || existingDeck?.lang,
+    slideTypes: await buildMergedSlideTypes(storageScope),
   });
   const slides = Array.isArray(parts?.slides) ? parts.slides : [];
 

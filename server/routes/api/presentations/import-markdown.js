@@ -27,6 +27,7 @@ import {
   DEFAULT_DECK_LANG,
   normalizeLang,
 } from '../../../../shared/i18n-utils.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 const log = createLogger('import-markdown');
 
 export async function handlePresentationsImportMarkdown({
@@ -76,7 +77,11 @@ export async function handlePresentationsImportMarkdown({
   );
 
   // Normalize through deckToPresentationParts (same as JSON import)
-  const parts = deckToPresentationParts(deck, { theme: themeConfig, lang });
+  const parts = deckToPresentationParts(deck, {
+    theme: themeConfig,
+    lang,
+    slideTypes: await buildMergedSlideTypes(storageScope),
+  });
   log.info(
     '[import-markdown] Normalized - title:',
     parts.title,

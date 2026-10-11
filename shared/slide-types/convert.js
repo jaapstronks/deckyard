@@ -301,8 +301,13 @@ export class UnsupportedConversionError extends Error {
 export function convertSlideToType(
   slide,
   toType,
-  { slideTypes = SLIDE_TYPES, lang = null, theme = null } = {},
+  { slideTypes, lang = null, theme = null } = {},
 ) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'convertSlideToType: pass the slide-type map the slide converts in',
+    );
+  }
   const fromType = String(slide?.type || '');
   const targetType = String(toType || '');
   if (!slide || typeof slide !== 'object')

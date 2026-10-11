@@ -16,6 +16,7 @@ import { loadDeckTheme } from '../../../utils/themes.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
 import { refineSectionWithAi } from '../../../utils/ai/refine-section.js';
 import { loadSlideTypeContext } from './shared.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/refine-section — revise a contiguous range of slides from user
@@ -81,6 +82,7 @@ export const handleAiRefineSection = withErrorHandler(
     const parts = deckToPresentationParts(revisedRaw, {
       theme: await loadDeckTheme(repoRoot, presentation?.theme, storageScope),
       lang: lang || presentation?.lang,
+      slideTypes: await buildMergedSlideTypes(storageScope),
     });
     let slides = Array.isArray(parts?.slides) ? parts.slides : [];
     slides = validateAndFixRefinedSlides(slides);

@@ -39,6 +39,7 @@ import {
 } from '../shared/slide-types/registry.js';
 import { slideTypeContentSchema } from '../shared/slide-types/json-schema.js';
 import { validate } from './helpers/json-schema-validate.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURE_PATH = path.join(__dirname, 'fixtures', 'example-deck.json');
@@ -83,9 +84,9 @@ test('the example spells every type as its one published (canonical) id', () => 
 test('the example round-trips: import → export → import → export is content-stable', () => {
   // One normalization pass fills defaults and regenerates ids; from there the
   // portable projection is a fixpoint.
-  const parts1 = deckToPresentationParts(example);
+  const parts1 = deckToPresentationParts(example, { slideTypes: SLIDE_TYPES });
   const deck2 = presentationToDeck(parts1);
-  const parts2 = deckToPresentationParts(deck2);
+  const parts2 = deckToPresentationParts(deck2, { slideTypes: SLIDE_TYPES });
   const deck3 = presentationToDeck(parts2);
 
   assert.deepEqual(
@@ -111,7 +112,9 @@ test('the example round-trips: import → export → import → export is conten
 });
 
 test('every example slide validates against its generated per-type schema', () => {
-  const normalized = presentationToDeck(deckToPresentationParts(example));
+  const normalized = presentationToDeck(
+    deckToPresentationParts(example, { slideTypes: SLIDE_TYPES }),
+  );
   const failures = [];
   for (const slide of normalized.slides) {
     // slide.type is the canonical id now; resolve it to the registry key the
@@ -171,7 +174,7 @@ test('the retired `slidecreator.deck` sentinel folds to the current one on read 
   );
 
   const legacy = { ...example, format: RETIRED_DECK_FORMAT_ID };
-  const parts = deckToPresentationParts(legacy);
+  const parts = deckToPresentationParts(legacy, { slideTypes: SLIDE_TYPES });
   assert.equal(parts.slides.length, example.slides.length);
   // Re-exporting a legacy deck stamps it with the current sentinel.
   assert.equal(presentationToDeck(parts).format, DECK_FORMAT_ID);

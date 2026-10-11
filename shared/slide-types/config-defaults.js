@@ -42,13 +42,15 @@
  *
  * On the **type map**, not at the call site: {@link withConfiguredDefaults}
  * folds configuration into the `defaults` (and every `defaultsByLang` variant)
- * of the types that declare it. Every path that creates a slide already takes
- * its map from the one seam that builds it for that surface — the server's
+ * of the types that declare it. Every path that creates a slide takes its map
+ * from the one seam that builds it for that surface — the server's
  * `buildMergedSlideTypes()` and the `/api/slide-types` response the editor
- * holds — so a configured default reaches all eight `newSlide()` callers, the
- * type converter and the agent catalog without any of them being handed a
- * second argument. The env half lives in `server/config/slide-defaults.js`;
- * nothing in `shared/` reads `process.env`.
+ * holds — and the creation seams (`newSlide()`, `convertSlideToType()`,
+ * `deckToPresentationParts()`, `newPresentation()`) take that map as a
+ * required argument, so no route can fall back to the bare registry and miss
+ * the configured value (B655; `tests/one-slide-factory.test.js` pins the call
+ * sites). The env half lives in `server/config/slide-defaults.js`; nothing in
+ * `shared/` reads `process.env`.
  *
  * A key the instance has not configured keeps the type's own default. An
  * unconfigured install is therefore byte-identical to one without this module.

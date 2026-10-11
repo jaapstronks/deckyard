@@ -354,7 +354,7 @@ async function convertWithAi(formattedContent, options = {}) {
         title: outline.title,
         summary: outline.summary,
       },
-      onLog: logger ? (data) => logger.logPhase2(data) : null,
+      onLog: logger ? (data) => logger.logPhase2Call(data) : null,
       onGroupDone,
       signal,
     });

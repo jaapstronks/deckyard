@@ -38,7 +38,6 @@ export const LOCKED_CONTENT_KEYS = {
   background: [
     'background',
     'bgCustomColor',
-    'bgImage',
     'slideBgImage',
     'slideBgFit',
     'slideBgFocusX',

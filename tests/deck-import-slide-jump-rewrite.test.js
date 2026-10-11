@@ -12,6 +12,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { deckToPresentationParts } from '../shared/slide-types/deck.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 test('an action-item url jump (items -> itemFields) follows the slide to its new id', () => {
   const raw = {
@@ -33,7 +34,7 @@ test('an action-item url jump (items -> itemFields) follows the slide to its new
     ],
   };
 
-  const { slides } = deckToPresentationParts(raw);
+  const { slides } = deckToPresentationParts(raw, { slideTypes: SLIDE_TYPES });
   assert.notEqual(slides[0].id, 'old-1', 'ids are regenerated on import');
   assert.notEqual(slides[1].id, 'old-2');
   assert.equal(
@@ -60,7 +61,7 @@ test('a slide-level url jump (end-slide.contactUrl) follows the slide to its new
     ],
   };
 
-  const { slides } = deckToPresentationParts(raw);
+  const { slides } = deckToPresentationParts(raw, { slideTypes: SLIDE_TYPES });
   assert.equal(
     slides[1].content.contactUrl,
     `#slide:${slides[0].id}`,
@@ -80,7 +81,7 @@ test('a jump to an id outside the deck is left exactly as written', () => {
     ],
   };
 
-  const { slides } = deckToPresentationParts(raw);
+  const { slides } = deckToPresentationParts(raw, { slideTypes: SLIDE_TYPES });
   assert.equal(slides[0].content.contactUrl, '#slide:not-in-this-deck');
 });
 
@@ -104,7 +105,7 @@ test('a regular web address and a #N position jump are untouched', () => {
     ],
   };
 
-  const { slides } = deckToPresentationParts(raw);
+  const { slides } = deckToPresentationParts(raw, { slideTypes: SLIDE_TYPES });
   assert.equal(slides[0].content.contactUrl, 'https://example.com');
   assert.equal(slides[1].content.actions[0].url, '#1');
 });
@@ -130,7 +131,7 @@ test('a portable .deck import (no per-slide id) does not crash and rewrites noth
     ],
   };
 
-  const { slides } = deckToPresentationParts(raw);
+  const { slides } = deckToPresentationParts(raw, { slideTypes: SLIDE_TYPES });
   assert.equal(
     slides[0].content.actions[0].url,
     '#slide:old-2',

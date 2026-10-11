@@ -57,11 +57,13 @@ function refuseMalformedContentByLang(contentByLang, i) {
  *
  * @param {string} repoRoot - Repository root path (for theme loading)
  * @param {Object} body - Request body with title, lang, theme, settings, ownerEmail
- * @param {Object} [opts]
- * @param {Record<string, object>} [opts.slideTypes] - the organization's slide
- *   type registry. A deck can be created *with* slides (library insert, import,
- *   agent payload), and those go through the same write seam, so the org's
- *   DB-backed custom types have to be resolvable here as well (B129).
+ * @param {Object} opts
+ * @param {Record<string, object>} opts.slideTypes - the organization's slide
+ *   type registry, required. A deck can be created *with* slides (library
+ *   insert, import, agent payload), and those go through the same write seam,
+ *   so the org's DB-backed custom types have to be resolvable here as well
+ *   (B129); a deck created without slides composes its title slide from it, so
+ *   that slide gets the installation's configured defaults (B655).
  * @param {Object} [opts.storageScope] - the acting storage scope, so a custom
  *   theme is found only in its own organization
  * @returns {Promise<Object>} Fully prepared presentation object
@@ -189,6 +191,7 @@ export async function prepareNewPresentation(
     lang: initialLang,
     defaultTitleSlide,
     themeConfig,
+    slideTypes,
   });
   pres.lang = initialLang;
   pres.extensions = body?.extensions ?? [];

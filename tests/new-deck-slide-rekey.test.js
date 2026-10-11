@@ -27,6 +27,7 @@ import { rekeyNewDeckSlides } from '../server/storage/presentations/crud/rekey-n
 import { createFakeDb } from './helpers/fake-db.js';
 import { seedRow } from './helpers/theme-seed.js';
 import { __setTestDb } from '../server/db/client.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 const AMETHYST = (await seedRow('amethyst')).id;
 
@@ -61,12 +62,16 @@ describe('composing a deck from library items', () => {
       },
     ]);
 
-    const pres = await prepareNewPresentation(repoRoot, {
-      title: 'Composed deck',
-      slides,
-      theme: AMETHYST,
-      lang: 'nl',
-    });
+    const pres = await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Composed deck',
+        slides,
+        theme: AMETHYST,
+        lang: 'nl',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
 
     const nl = pres.i18n.versions.nl.slides[0];
     const en = pres.i18n.versions['en-GB'].slides[0];
@@ -93,11 +98,17 @@ describe('composing a deck from library items', () => {
       theme: AMETHYST,
       lang: 'nl',
     };
-    const first = await prepareNewPresentation(repoRoot, body);
-    const second = await prepareNewPresentation(repoRoot, {
-      ...body,
-      slides: buildSlidesFromLibraryItems(items),
+    const first = await prepareNewPresentation(repoRoot, body, {
+      slideTypes: SLIDE_TYPES,
     });
+    const second = await prepareNewPresentation(
+      repoRoot,
+      {
+        ...body,
+        slides: buildSlidesFromLibraryItems(items),
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
     assert.notEqual(
       first.slides[0].content.pollId,
       second.slides[0].content.pollId,
@@ -105,49 +116,61 @@ describe('composing a deck from library items', () => {
   });
 
   it('leaves a type that declares nothing alone', async () => {
-    const pres = await prepareNewPresentation(repoRoot, {
-      title: 'Composed deck',
-      slides: buildSlidesFromLibraryItems([
-        { slideType: 'content-slide', content: { title: 'Solo' } },
-      ]),
-      theme: AMETHYST,
-      lang: 'nl',
-    });
+    const pres = await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Composed deck',
+        slides: buildSlidesFromLibraryItems([
+          { slideType: 'content-slide', content: { title: 'Solo' } },
+        ]),
+        theme: AMETHYST,
+        lang: 'nl',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
     assert.deepEqual(pres.slides[0].content, { title: 'Solo' });
   });
 });
 
 describe('posting slides straight to the create path', () => {
   it('points a follow-invite slide at the deck it lands in', async () => {
-    const pres = await prepareNewPresentation(repoRoot, {
-      title: 'Agent deck',
-      slides: [
-        {
-          type: 'follow-invite-slide',
-          content: { presentationId: 'some-other-deck' },
-        },
-      ],
-      theme: AMETHYST,
-      lang: 'nl',
-    });
+    const pres = await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Agent deck',
+        slides: [
+          {
+            type: 'follow-invite-slide',
+            content: { presentationId: 'some-other-deck' },
+          },
+        ],
+        theme: AMETHYST,
+        lang: 'nl',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
     assert.equal(pres.slides[0].content.presentationId, pres.id);
   });
 
   it('keeps a nested slide nested, on the new ids', async () => {
-    const pres = await prepareNewPresentation(repoRoot, {
-      title: 'Agent deck',
-      slides: [
-        { id: 'p', type: 'content-slide', content: { title: 'P' } },
-        {
-          id: 'c',
-          parentId: 'p',
-          type: 'content-slide',
-          content: { title: 'C' },
-        },
-      ],
-      theme: AMETHYST,
-      lang: 'nl',
-    });
+    const pres = await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Agent deck',
+        slides: [
+          { id: 'p', type: 'content-slide', content: { title: 'P' } },
+          {
+            id: 'c',
+            parentId: 'p',
+            type: 'content-slide',
+            content: { title: 'C' },
+          },
+        ],
+        theme: AMETHYST,
+        lang: 'nl',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
     const [parent, child] = pres.slides;
     assert.notEqual(parent.id, 'p', 'the deck mints its own ids');
     assert.equal(parent.parentId, null);
@@ -155,14 +178,23 @@ describe('posting slides straight to the create path', () => {
   });
 
   it('detaches a child whose parent was not posted with it', async () => {
-    const pres = await prepareNewPresentation(repoRoot, {
-      title: 'Agent deck',
-      slides: [
-        { id: 'c', parentId: 'elsewhere', type: 'content-slide', content: {} },
-      ],
-      theme: AMETHYST,
-      lang: 'nl',
-    });
+    const pres = await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Agent deck',
+        slides: [
+          {
+            id: 'c',
+            parentId: 'elsewhere',
+            type: 'content-slide',
+            content: {},
+          },
+        ],
+        theme: AMETHYST,
+        lang: 'nl',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
     assert.equal(
       pres.slides[0].parentId,
       null,
@@ -171,16 +203,20 @@ describe('posting slides straight to the create path', () => {
   });
 
   it('never stores two slides under one id, even when the payload repeats one', async () => {
-    const pres = await prepareNewPresentation(repoRoot, {
-      title: 'Agent deck',
-      slides: [
-        { id: 'dup', type: 'poll-slide', content: { pollId: 'x' } },
-        { id: 'dup', type: 'poll-slide', content: { pollId: 'x' } },
-        { id: 'c', parentId: 'dup', type: 'content-slide', content: {} },
-      ],
-      theme: AMETHYST,
-      lang: 'nl',
-    });
+    const pres = await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Agent deck',
+        slides: [
+          { id: 'dup', type: 'poll-slide', content: { pollId: 'x' } },
+          { id: 'dup', type: 'poll-slide', content: { pollId: 'x' } },
+          { id: 'c', parentId: 'dup', type: 'content-slide', content: {} },
+        ],
+        theme: AMETHYST,
+        lang: 'nl',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
     const [first, second, child] = pres.slides;
     assert.notEqual(first.id, second.id, 'a repeated payload id is two slides');
     assert.notEqual(
@@ -197,12 +233,16 @@ describe('posting slides straight to the create path', () => {
 
   it('does not write into the posted slides', async () => {
     const posted = [{ type: 'poll-slide', content: { pollId: 'caller-owns' } }];
-    await prepareNewPresentation(repoRoot, {
-      title: 'Agent deck',
-      slides: posted,
-      theme: AMETHYST,
-      lang: 'nl',
-    });
+    await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Agent deck',
+        slides: posted,
+        theme: AMETHYST,
+        lang: 'nl',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
     assert.equal(posted[0].content.pollId, 'caller-owns');
   });
 });

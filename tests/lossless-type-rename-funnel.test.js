@@ -28,6 +28,7 @@ import assert from 'node:assert/strict';
 
 import { testScope } from './helpers/storage-scope.js';
 import { userRows } from './helpers/identity-fixtures.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -145,12 +146,15 @@ test('the rename reaches a stored translation, not only the dominant version', a
 test('an imported deck on the retired name arrives as its successor', async () => {
   // The seam a `scripts/` one-off cannot cover at all: an export handed to
   // this install was never in any store the script could be pointed at.
-  const parts = deckToPresentationParts({
-    title: 'Old export',
-    slides: [
-      { id: 's1', type: 'lijstje-slide', content: listContent(), notes: '' },
-    ],
-  });
+  const parts = deckToPresentationParts(
+    {
+      title: 'Old export',
+      slides: [
+        { id: 's1', type: 'lijstje-slide', content: listContent(), notes: '' },
+      ],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
 
   assert.equal(parts.slides[0].type, 'list-slide');
   assert.deepEqual(parts.slides[0].content.items, listContent().items);

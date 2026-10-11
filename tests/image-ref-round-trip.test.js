@@ -301,7 +301,7 @@ test('convert: image-slide -> image-text writes the flat keys, not a collection'
       title: 'T',
     }),
     'image-text-slide',
-    { lang: 'nl' },
+    { slideTypes: SLIDE_TYPES, lang: 'nl' },
   );
   assert.equal(next.content.image, '/photo.png');
   assert.equal(next.content.alt, 'A photo');
@@ -321,7 +321,7 @@ test('convert: a contain image-slide lands as an explicit contain', () => {
       title: 'T',
     }),
     'image-text-slide',
-    { lang: 'nl' },
+    { slideTypes: SLIDE_TYPES, lang: 'nl' },
   );
   assert.equal(next.content.fit, 'contain');
 });
@@ -354,7 +354,10 @@ test('convert: image-text -> image-set moves the flat ImageRef into images[0]', 
     imageSide: 'right',
     imageWidth: 'wide',
   });
-  const next = convertSlideToType(src, 'image-set-slide', { lang: 'nl' });
+  const next = convertSlideToType(src, 'image-set-slide', {
+    slideTypes: SLIDE_TYPES,
+    lang: 'nl',
+  });
   assert.deepEqual(next.content.images[0], {
     src: '/a.png',
     alt: 'Own alt',
@@ -378,7 +381,7 @@ test('convert: image-text -> image-set writes no fit when it equals the type def
   const next = convertSlideToType(
     slideOf('image-text-slide', { image: '/a.png' }),
     'image-set-slide',
-    { lang: 'nl' },
+    { slideTypes: SLIDE_TYPES, lang: 'nl' },
   );
   assert.equal(next.content.images[0].fit, undefined);
   assert.equal(next.content.images[0].focusX, undefined);
@@ -393,7 +396,10 @@ test('convert: image-set -> image-text flattens images[0] and keeps the area', (
     caption: 'Cap',
     imageBackground: 'match',
   });
-  const next = convertSlideToType(src, 'image-text-slide', { lang: 'nl' });
+  const next = convertSlideToType(src, 'image-text-slide', {
+    slideTypes: SLIDE_TYPES,
+    lang: 'nl',
+  });
   assert.equal(next.content.image, '/a.png');
   assert.equal(next.content.alt, 'First');
   assert.equal(next.content.fit, 'contain');
@@ -413,9 +419,12 @@ test('convert: the round trip is value-preserving for the first image', () => {
     focusY: 90,
   });
   const back = convertSlideToType(
-    convertSlideToType(start, 'image-set-slide', { lang: 'nl' }),
+    convertSlideToType(start, 'image-set-slide', {
+      slideTypes: SLIDE_TYPES,
+      lang: 'nl',
+    }),
     'image-text-slide',
-    { lang: 'nl' },
+    { slideTypes: SLIDE_TYPES, lang: 'nl' },
   );
   for (const key of ['image', 'alt', 'fit', 'focusX', 'focusY']) {
     assert.equal(back.content[key], start.content[key], `${key} survives`);

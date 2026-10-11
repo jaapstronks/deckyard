@@ -33,6 +33,7 @@ import {
   PROGRESS,
   REFINE_CREEP_MS,
 } from '../../utils/import-progress.js';
+import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 
 // POST /api/convert - Convert a file to a presentation
 async function handleConvertFile({
@@ -135,6 +136,7 @@ async function handleConvertFile({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
+      slideTypes: await buildMergedSlideTypes(storageScope),
     });
 
     // Use the detected/effective language from the deck, not the original request
@@ -472,6 +474,7 @@ async function handleConvertStream({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
+      slideTypes: await buildMergedSlideTypes(storageScope),
     });
 
     // Use the detected/effective language from the deck, not the original request

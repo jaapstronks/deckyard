@@ -35,7 +35,18 @@ export function newPresentation({
   // The loaded theme object, when the caller has one. `theme` above is just the
   // id that gets stored on the deck; this is what supplies background presets.
   themeConfig = null,
+  // The map the title slide composes from, required: the organization's
+  // (`buildMergedSlideTypes`), which carries the installation's configured
+  // defaults (B653) and its database types. A theme may name any registered
+  // type as `defaultTitleSlide`, so the module-wide registry is no fallback
+  // (B655).
+  slideTypes,
 } = {}) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'newPresentation: pass the slide-type map the deck is created in',
+    );
+  }
   const now = new Date().toISOString();
   // Use the provided default title slide, falling back to 'title-slide' if invalid.
   const titleSlideType =
@@ -92,6 +103,7 @@ export function newPresentation({
         type: titleSlideType,
         theme: themeConfig,
         lang: normalizeLang(lang) || DEFAULT_DECK_LANG,
+        slideTypes,
       }),
     ],
   };
@@ -141,9 +153,11 @@ export function newPresentation({
  *   in. What a `presentation-id` instance key resolves against; without it
  *   such a key is left alone (see `applyInstanceKeyDefaults`), and the
  *   server's save seam repairs it on first write.
- * @param {Record<string, Object>} [opts.slideTypes] - the registry the type is
- *   looked up in. Defaults to the process-wide map; an org-aware caller passes
- *   `buildMergedSlideTypes(scope)` so a DB-backed `custom-<slug>` can be
+ * @param {Record<string, Object>} opts.slideTypes - the registry the type is
+ *   looked up in, required (B655): the process-wide map knows neither the
+ *   installation's configured defaults (B653) nor the organization's types.
+ *   A server caller passes `buildMergedSlideTypes(scope)` so a DB-backed
+ *   `custom-<slug>` can be
  *   created too, and the editor passes the `/api/slide-types` metadata it
  *   already holds. `type` is a registry key here, not a spelling to resolve —
  *   callers fold spellings down with `resolveSlideTypeName()` first.
@@ -155,9 +169,14 @@ export function newSlide({
   lang = null,
   content = null,
   presentationId = '',
-  slideTypes = SLIDE_TYPES,
+  slideTypes,
 }) {
-  const def = slideTypes?.[type];
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'newSlide: pass the slide-type map the slide is made in',
+    );
+  }
+  const def = slideTypes[type];
   if (!def) throw new Error(`Unknown slide type: ${type}`);
   const composed = resolveTypeDefaults(def, normalizeLang(lang), theme);
   if (content && typeof content === 'object') Object.assign(composed, content);

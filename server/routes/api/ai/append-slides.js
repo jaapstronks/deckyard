@@ -15,6 +15,7 @@ import { loadDeckTheme } from '../../../utils/themes.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
 import { loadSlideTypeContext } from './shared.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/append-slides — generate slides to append to an existing
@@ -78,6 +79,7 @@ export async function handleAiAppendSlides({
       storageScope,
     ),
     lang: lang || existingDeck?.lang,
+    slideTypes: await buildMergedSlideTypes(storageScope),
   });
   let slides = Array.isArray(parts?.slides) ? parts.slides : [];
 

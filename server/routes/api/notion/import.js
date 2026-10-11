@@ -33,6 +33,7 @@ import {
   PROGRESS,
   REFINE_CREEP_MS,
 } from '../../../utils/import-progress.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 const log = createLogger('import');
 
 /**
@@ -107,6 +108,7 @@ export async function handleNotionImport({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: effectiveLang,
+      slideTypes: await buildMergedSlideTypes(storageScope),
     });
 
     // The write step: no deck is created for a client that already left.
@@ -357,6 +359,7 @@ export async function handleNotionImportStream({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: effectiveLang,
+      slideTypes: await buildMergedSlideTypes(storageScope),
     });
 
     const created = await createPresentation(

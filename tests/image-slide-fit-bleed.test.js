@@ -203,7 +203,10 @@ test('convert: bleed image-slide -> image-text drops bleed and keeps the fit', (
       title: 'T',
     },
   };
-  const next = convertSlideToType(src, 'image-text-slide', { lang: 'nl' });
+  const next = convertSlideToType(src, 'image-text-slide', {
+    slideTypes: SLIDE_TYPES,
+    lang: 'nl',
+  });
   assert.equal(next.content.bleed, undefined, 'bleed does not travel');
   assert.equal(
     next.content.fit ?? '',
