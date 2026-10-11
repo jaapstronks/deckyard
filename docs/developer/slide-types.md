@@ -908,9 +908,9 @@ required argument and throw without it, so a route cannot fall back to the core
 types by forgetting the map; each AI route builds the org registry once and
 hands it to phase 2, the fix pipeline and `deckToPresentationParts`, and phase 2
 lets a content slide come back as one of the org's own types, as the catalogue
-offered them (B247). What is left is on the offer side, not the map: MCP
-`create_presentation`, the file convert and the Notion import fix against the
-org map but do not yet show the model the org's types (B659).
+offered them (B247). The offer is one too: every generating path, imports and
+MCP included, loads it through `loadSlideTypeOffer()` in
+`server/utils/org-slide-types.js` (B659).
 
 ### Where a slide comes into being
 

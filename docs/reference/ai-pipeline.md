@@ -112,8 +112,7 @@ Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 - `server/routes/api/ai/index.js` — the seam: a declarative exact-path table;
   every route is a fixed method + pathname.
 - `server/routes/api/ai/shared.js` — the `AiContext` typedef and the
-  shared helpers: `loadSlideTypeContext` (org disabled + custom types),
-  `loadAiThemeContext` (backgrounds, brand colours, presets),
+  shared helpers: `loadAiThemeContext` (backgrounds, brand colours, presets),
   `reattachAiMeta`, `createDeckFromParts`.
 - `wizard.js` (50) — `POST /api/ai/wizard`, the v1 one-shot path.
 - `wizard-v2-stream.js` (257) — `POST /api/ai/wizard-v2/stream`, the two-phase
@@ -239,10 +238,14 @@ point of the seam.
   analyze, version-compare) resolve the deck through the presentation authz
   middleware first, so AI cannot reach a deck the caller could not open. The
   generation verbs create a _new_ deck in the caller's scope.
-- **Org context flows into the prompt**: `loadSlideTypeContext(authedUser)` reads
-  the caller's organization's disabled and custom slide types, so a model never
-  offers a type that organization turned off. Theme context comes from the deck's
-  resolved theme.
+- **Org context flows into the prompt**: `loadSlideTypeOffer(ctx)`
+  (`server/utils/org-slide-types.js`) reads the caller's organization's
+  disabled and published custom slide types as
+  `{ disabledSlideTypes, customSlideTypes }`, so a model never offers a type
+  that organization turned off and can choose one it published. Every
+  generating path spreads that one offer into its options: the `/api/ai/*`
+  routes, the file convert and the Notion import, the MCP tools and the public
+  v1 API. Theme context comes from the deck's resolved theme.
 - Persistence goes through the ordinary scoped presentation store; the pipeline
   itself holds no organization id. General rules:
   [`tenant-isolation.md`](tenant-isolation.md).

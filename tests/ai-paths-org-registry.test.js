@@ -2,7 +2,7 @@
  * The AI generation paths read the organization's type map (B247).
  *
  * The catalog the model reads offers an organization's published types
- * (`loadSlideTypeContext` → `customSlideTypes`), but the paths behind it fixed
+ * (`loadSlideTypeOffer` → `customSlideTypes`), but the paths behind it fixed
  * and refined the answer against the process-wide `SLIDE_TYPES`, which cannot
  * hold a DB row. Two losses followed:
  *
@@ -12,6 +12,12 @@
  * - The fix pipeline found no definition for the org type, so its own
  *   `maxLength` was never applied: overlong text the declaration refuses went
  *   through append-slides, refine-section and iterate.
+ *
+ * The paths that did not offer the org's types at all (B659): MCP
+ * `create_presentation`, `iterate_presentation` and `append_slides`,
+ * `/api/convert` and the Notion import gave the model only the core catalog,
+ * so phase 2 refused an org type there even though the fix pipeline knew it.
+ * Every path now loads the one offer, `loadSlideTypeOffer()`.
  *
  * Each path is driven end to end here against the in-memory database double,
  * with the model as `globalThis.fetch` (as in
@@ -26,12 +32,19 @@ import { EventEmitter } from 'node:events';
 
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
+import {
+  NOTION_PAGE_ID,
+  isNotionRequest,
+  minimalPptxDataUrl,
+  notionPageResponse,
+} from './helpers/import-sources.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.SANDBOX_MODE;
 process.env.LLM_VENDOR = 'openai';
 process.env.OPENAI_API = 'test-key';
 process.env.OPENAI_MODEL = 'test-model';
+process.env.NOTION_SECRET = 'test-notion-secret';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OWNER = 'owner@example.com';
@@ -54,6 +67,15 @@ const { handleAiAppendSlides } =
 const { handleAiRefineSection } =
   await import('../server/routes/api/ai/refine-section.js');
 const { handleAiIterate } = await import('../server/routes/api/ai/iterate.js');
+const { McpServer } = await import('../server/mcp/protocol.js');
+const { registerTools } = await import('../server/mcp/tools.js');
+const convertRoutes = await import('../server/routes/api/convert.js');
+const { handleNotionImport } =
+  await import('../server/routes/api/notion/import.js');
+
+const handleConvertFile = convertRoutes.ROUTES.find(
+  (r) => r.pattern === '/api/convert',
+).handler;
 const { SlideTextLengthError } =
   await import('../server/utils/ai/validate-slides/index.js');
 
@@ -126,19 +148,35 @@ function deckAnswer(title) {
   };
 }
 
-/** @param {import('node:test').TestContext} t @param {object} answer */
+/**
+ * Answer every model call with `answer`, and the Notion API with a page about
+ * partners. Returns the request bodies the model was sent.
+ * @param {import('node:test').TestContext} t
+ * @param {object} answer
+ * @returns {string[]}
+ */
 function stubModel(t, answer) {
   const saved = globalThis.fetch;
-  globalThis.fetch = async () =>
-    new Response(
+  const prompts = [];
+  globalThis.fetch = async (url, init) => {
+    if (isNotionRequest(url)) {
+      return notionPageResponse(String(url), {
+        title: 'Partners',
+        text: 'The partners we work with',
+      });
+    }
+    prompts.push(String(init?.body ?? ''));
+    return new Response(
       JSON.stringify({
         choices: [{ message: { content: JSON.stringify(answer) } }],
       }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
     );
+  };
   t.after(() => {
     globalThis.fetch = saved;
   });
+  return prompts;
 }
 
 function makeRes() {
@@ -324,4 +362,85 @@ test('iterate refuses text past the org type cap', async (t) => {
   });
   await handleAiIterate(c);
   assert.notEqual(c.res.statusCode, 200, JSON.stringify(c.res.body));
+});
+
+// ── importing and MCP paths: the org type is offered at all (B659) ─────────
+
+/** An MCP server with every tool registered, for the owner's session. */
+function mcp() {
+  const server = new McpServer();
+  registerTools(server, { defaultOwnerEmail: OWNER });
+  const session = { ownerEmail: OWNER, organizationId: ORG };
+  return (name, args) => server.tools.get(name).handler(args, session);
+}
+
+test('MCP create_presentation keeps the org type the model chose', async (t) => {
+  await setup();
+  stubModel(t, deckAnswer(SHORT));
+  await mcp()('create_presentation', {
+    content: 'The partners we work with',
+    lang: 'en',
+  });
+  assert.ok(
+    storedTypes().includes(CUSTOM_TYPE),
+    `stored types: ${storedTypes().join(', ')}`,
+  );
+});
+
+test('the convert route keeps the org type the model chose', async (t) => {
+  await setup();
+  stubModel(t, deckAnswer(SHORT));
+  const c = ctx({
+    dataUrl: await minimalPptxDataUrl('The partners we work with'),
+    filename: 'deck.pptx',
+    lang: 'en',
+  });
+  await handleConvertFile(c);
+  assert.equal(c.res.statusCode, 201, JSON.stringify(c.res.body));
+  assert.ok(
+    storedTypes().includes(CUSTOM_TYPE),
+    `stored types: ${storedTypes().join(', ')}`,
+  );
+});
+
+test('the Notion import keeps the org type the model chose', async (t) => {
+  await setup();
+  stubModel(t, deckAnswer(SHORT));
+  const c = ctx({ url: NOTION_PAGE_ID, lang: 'en' });
+  await handleNotionImport(c);
+  assert.equal(c.res.statusCode, 201, JSON.stringify(c.res.body));
+  assert.ok(
+    storedTypes().includes(CUSTOM_TYPE),
+    `stored types: ${storedTypes().join(', ')}`,
+  );
+});
+
+test('MCP iterate_presentation and append_slides offer the org type', async (t) => {
+  await setup();
+  stubModel(t, deckAnswer(SHORT));
+  const call = mcp();
+  const { id } = await call('create_presentation', {
+    content: 'The partners we work with',
+    lang: 'en',
+  });
+
+  // Iterate reads a modification plan off the answer and finds none, so only
+  // its offer is pinned; append reads `slides[]` and stores the org type.
+  for (const [name, args] of [
+    ['iterate_presentation', { presentationId: id, command: 'Add partners' }],
+    ['append_slides', { presentationId: id, content: 'More partners' }],
+  ]) {
+    const prompts = stubModel(t, deckAnswer(SHORT));
+    await call(name, args);
+    assert.ok(prompts.length > 0, `${name} sent the model nothing`);
+    assert.ok(
+      prompts.every((body) => body.includes(CUSTOM_TYPE)),
+      `${name} did not offer ${CUSTOM_TYPE}`,
+    );
+  }
+  assert.deepEqual(
+    storedTypes().filter((type) => type === CUSTOM_TYPE),
+    [CUSTOM_TYPE, CUSTOM_TYPE],
+    `stored types: ${storedTypes().join(', ')}`,
+  );
 });

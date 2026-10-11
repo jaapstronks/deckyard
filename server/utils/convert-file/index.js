@@ -47,6 +47,10 @@ export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
  * @param {Record<string, Object>} options.slideTypes - The organization's
  *   merged type map (`buildMergedSlideTypes(scope)`); the AI slides are fixed
  *   against it (B247).
+ * @param {string[]} [options.disabledSlideTypes] - Types the organization
+ *   may not insert; kept out of the catalog the model chooses from (B659).
+ * @param {Array} [options.customSlideTypes] - The organization's published
+ *   custom types, offered next to the core catalog (B659).
  * @returns {Promise<{deck: object|null, report: object}>}
  */
 export async function convertFile(buffer, options = {}) {
@@ -61,6 +65,8 @@ export async function convertFile(buffer, options = {}) {
     onGroupDone = null,
     signal = null,
     slideTypes,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
   } = options;
 
   const report = {
@@ -206,6 +212,8 @@ export async function convertFile(buffer, options = {}) {
       titleSlideCandidate, // Pre-extracted title slide from image-only first slide
       signal,
       slideTypes,
+      disabledSlideTypes,
+      customSlideTypes,
     });
 
     // Include status messages in report

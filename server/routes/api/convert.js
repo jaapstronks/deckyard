@@ -28,6 +28,7 @@ import {
   SUPPORTED_MIME_TYPES,
 } from '../../utils/convert-file/index.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
+import { loadSlideTypeOffer } from '../../utils/org-slide-types.js';
 import {
   OUTLINE_CREEP_MS,
   PROGRESS,
@@ -103,6 +104,9 @@ async function handleConvertFile({
   const signal = clientDisconnectSignal(res);
   // One map for the AI fix pipeline and the deck import (B247).
   const slideTypes = await buildMergedSlideTypes(storageScope);
+  // The catalog the model chooses from is the org's, as on every AI path
+  // (B659).
+  const slideTypeOffer = await loadSlideTypeOffer(authedUser);
 
   // Convert the file
   let converted;
@@ -114,6 +118,7 @@ async function handleConvertFile({
       vendor,
       signal,
       slideTypes,
+      ...slideTypeOffer,
     });
   } catch (e) {
     if (!signal.aborted) throw e;
@@ -367,6 +372,8 @@ async function handleConvertStream({
     let statusMessagesSent = false;
     // One map for the AI fix pipeline and the deck import (B247).
     const slideTypes = await buildMergedSlideTypes(storageScope);
+    // The catalog the model chooses from is the org's (B659).
+    const slideTypeOffer = await loadSlideTypeOffer(authedUser);
 
     const { deck, report } = await convertFile(buffer, {
       filename,
@@ -376,6 +383,7 @@ async function handleConvertStream({
       enableLogging: true,
       signal,
       slideTypes,
+      ...slideTypeOffer,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
         // Message only: the bar is owned by the creep until the first section

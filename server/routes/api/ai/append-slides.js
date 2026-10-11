@@ -14,7 +14,7 @@ import {
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { generateSlidesToAppendFromRawContent } from '../../../utils/openai/append.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
-import { loadSlideTypeContext } from './shared.js';
+import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
@@ -52,7 +52,7 @@ export async function handleAiAppendSlides({
       ? presentationToDeck(presInput)
       : null;
 
-  const slideTypeCtx = await loadSlideTypeContext(authedUser);
+  const slideTypeOffer = await loadSlideTypeOffer(authedUser);
   // The map the org's types were offered from is the one they are composed and
   // fixed in (B247).
   const slideTypes = await buildMergedSlideTypes(storageScope);
@@ -66,8 +66,7 @@ export async function handleAiAppendSlides({
     vendor,
     contentOnly,
     verbatim,
-    disabledSlideTypes: slideTypeCtx.disabled,
-    customSlideTypes: slideTypeCtx.custom,
+    ...slideTypeOffer,
     priorSlides,
     feedback,
   });
