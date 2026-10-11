@@ -942,7 +942,8 @@ The callers, and what each of them brings:
 | `newPresentation`                                   | the deck's language and loaded theme                                      |
 | public API `POST …/slides`, slide-library insert    | the org registry, the deck's theme, caller content as the patch           |
 | deck import (`normalizeDeckSlide`)                  | a cleaned patch — import _cleans_, the factory _composes_                 |
-| MCP `create_presentation_from_slides`, `add_slide`  | validated content as the patch, after validation; the deck's language     |
+| MCP `create_presentation_from_slides`               | validated content as the patch, after validation; the deck's language     |
+| MCP `add_slide`                                     | the agent's content as the patch, then `validateSlide` like the REST API  |
 
 There used to be three spellings of this composition and one route that skipped
 it, which is why an agent-created poll slide reached storage with no `pollId`
