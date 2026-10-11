@@ -15,7 +15,7 @@ import { deckToPresentationParts } from '../../../../shared/slide-types.js';
 import { loadDeckTheme } from '../../../utils/themes.js';
 import { validateAndFixRefinedSlides } from '../../../utils/ai/validate-slides/index.js';
 import { refineSectionWithAi } from '../../../utils/ai/refine-section.js';
-import { loadSlideTypeContext } from './shared.js';
+import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
@@ -59,7 +59,7 @@ export const handleAiRefineSection = withErrorHandler(
 
     const vendor = getOptionalString(body, 'vendor');
     const lang = getLang(body);
-    const slideTypeCtx = await loadSlideTypeContext(authedUser);
+    const slideTypeOffer = await loadSlideTypeOffer(authedUser);
     // The map the org's types were offered from is the one they are composed
     // and fixed in (B247).
     const slideTypes = await buildMergedSlideTypes(storageScope);
@@ -74,8 +74,7 @@ export const handleAiRefineSection = withErrorHandler(
       feedback,
       targetLang: lang,
       vendor,
-      disabledSlideTypes: slideTypeCtx.disabled,
-      customSlideTypes: slideTypeCtx.custom,
+      ...slideTypeOffer,
     });
 
     // Normalize so ids exist and content matches schemas, then re-attach the

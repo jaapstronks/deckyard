@@ -17,10 +17,7 @@ import {
   presentationToDeck,
 } from '../../../../shared/slide-types.js';
 import { loadDeckTheme, settleNewDeckTheme } from '../../../utils/themes.js';
-import {
-  loadDisabledSlideTypes,
-  loadCustomSlideTypes,
-} from '../../../utils/org-slide-types.js';
+import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { getOptionalObject } from '../../../utils/request-validators.js';
 import {
   requirePermission,
@@ -112,16 +109,12 @@ async function handleWizard(ctx) {
   // A failure below (the model, or a refusal of the create such as 409
   // `limit_exceeded`) is rendered by `withV1ErrorHandler` (B619).
   // Generate deck using AI
-  const [disabledSlideTypes, customSlideTypes] = await Promise.all([
-    loadDisabledSlideTypes(apiKey),
-    loadCustomSlideTypes(apiKey),
-  ]);
+  const slideTypeOffer = await loadSlideTypeOffer(apiKey);
   const deck = await generateDeckJsonFromRawContent(raw, {
     userName: apiKey.name || 'API User',
     targetLang: lang,
     vendor,
-    disabledSlideTypes,
-    customSlideTypes,
+    ...slideTypeOffer,
   });
 
   const parts = deckToPresentationParts(deck, {
@@ -196,17 +189,13 @@ async function handleAppendSlides(ctx) {
   await trackAiRequest(ctx);
 
   // A model failure below is rendered by `withV1ErrorHandler` (B619).
-  const [disabledSlideTypes, customSlideTypes] = await Promise.all([
-    loadDisabledSlideTypes(apiKey),
-    loadCustomSlideTypes(apiKey),
-  ]);
+  const slideTypeOffer = await loadSlideTypeOffer(apiKey);
   const { slides: generatedSlides } =
     await generateSlidesToAppendFromRawContent(raw, {
       existingDeck,
       targetLang: lang,
       vendor,
-      disabledSlideTypes,
-      customSlideTypes,
+      ...slideTypeOffer,
     });
 
   // Normalize into internal slide format, against the theme of the deck the

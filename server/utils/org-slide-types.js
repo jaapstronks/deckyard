@@ -45,6 +45,22 @@ async function loadOrgDisabledSlideTypes(ctx) {
 }
 
 /**
+ * The slide types an organization offers to the model: what it may not
+ * insert, and its published custom types. Every AI generation path offers
+ * this one catalog, imports and MCP included (B659); spread it into the
+ * generator's options.
+ * @param {Object} ctx - Object with organizationId (authedUser or apiKey)
+ * @returns {Promise<{ disabledSlideTypes: string[], customSlideTypes: Array }>}
+ */
+export async function loadSlideTypeOffer(ctx) {
+  const [disabledSlideTypes, customSlideTypes] = await Promise.all([
+    loadDisabledSlideTypes(ctx),
+    loadCustomSlideTypes(ctx),
+  ]);
+  return { disabledSlideTypes, customSlideTypes };
+}
+
+/**
  * Load published custom slide types for the given organization.
  * Used to include custom types in AI generation prompts.
  * @param {Object} ctx - Object with organizationId (authedUser or apiKey)

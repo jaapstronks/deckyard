@@ -40,6 +40,8 @@ export async function convertWithAi(formattedContent, options = {}) {
     titleSlideCandidate = null, // Pre-extracted title slide from first image-only slide
     signal = null, // Aborts both model phases when the caller's reader left
     slideTypes, // The organization's merged type map (B247)
+    disabledSlideTypes = [], // Kept out of the offered catalog (B659)
+    customSlideTypes = [], // The org's published types, offered too (B659)
   } = options;
 
   const sessionId = generateSessionId();
@@ -103,6 +105,8 @@ export async function convertWithAi(formattedContent, options = {}) {
       onStatusMessage,
       onGroupDone,
       signal,
+      disabledSlideTypes,
+      customSlideTypes,
       slideTypes,
     });
   }

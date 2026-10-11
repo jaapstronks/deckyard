@@ -48,6 +48,10 @@ const log = createLogger('convert-notion');
  *   reader left stops instead of importing for nobody.
  * @param {Record<string, Object>} options.slideTypes - The organization's
  *   merged type map; the AI slides are fixed against it (B247).
+ * @param {string[]} [options.disabledSlideTypes] - Types the organization
+ *   may not insert; kept out of the catalog the model chooses from (B659).
+ * @param {Array} [options.customSlideTypes] - The organization's published
+ *   custom types, offered next to the core catalog (B659).
  * @returns {Promise<{deck: object|null, report: object, pageId: string}>}
  */
 export async function convertNotionPage(urlOrPageId, options = {}) {
@@ -60,6 +64,8 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     onGroupDone = null,
     signal = null,
     slideTypes,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
   } = options;
 
   const report = {
@@ -151,6 +157,8 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       richContent, // Pass full content for image/table slide creation
       signal,
       slideTypes,
+      disabledSlideTypes,
+      customSlideTypes,
     });
 
     // Include status messages in report
@@ -295,6 +303,8 @@ async function convertWithAi(formattedContent, options = {}) {
     richContent = null,
     signal = null,
     slideTypes,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
   } = options;
 
   const sessionId = generateSessionId();
@@ -362,6 +372,8 @@ async function convertWithAi(formattedContent, options = {}) {
       onLog: logger ? (data) => logger.logPhase2Call(data) : null,
       onGroupDone,
       signal,
+      disabledSlideTypes,
+      customSlideTypes,
       slideTypes,
     });
   }

@@ -74,10 +74,7 @@ import { listThemes } from '../storage/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { GLOBAL_SLIDE_OPTIONS } from '../utils/ai/slide-type-catalog.js';
 import { resolveAgentSlideTypes } from '../utils/ai/slide-catalog/agent-catalog.js';
-import {
-  loadDisabledSlideTypes,
-  loadCustomSlideTypes,
-} from '../utils/org-slide-types.js';
+import { loadSlideTypeOffer } from '../utils/org-slide-types.js';
 import {
   buildSlidePreviewHtml,
   buildSingleSlidePreviewHtml,
@@ -207,6 +204,13 @@ export function registerTools(
     return buildMergedSlideTypes(storageScopeOf(context));
   }
 
+  // The catalog a generating tool offers the model: the session
+  // organization's, as on every AI path (B659). A stdio session has no
+  // organization and falls back to the default one.
+  function sessionSlideTypeOffer(context) {
+    return loadSlideTypeOffer({ organizationId: context?.organizationId });
+  }
+
   // A slide an MCP tool creates is composed by the shared slide factory like
   // every other route's: the agent's content goes in as the factory's patch,
   // so the slide arrives with the type's defaults for the keys the agent left
@@ -272,19 +276,11 @@ export function registerTools(
     async ({ category = 'all', lang = DEFAULT_DECK_LANG } = {}, context) => {
       // Resolve for the calling session's organization, the same way
       // /api/slide-types and the AI generator do: Tier 1 from the registry,
-      // Tier 2 from the database, minus whatever the org disabled. A stdio
-      // session has no organization and falls back to the default one.
-      const ctx = { organizationId: context?.organizationId };
-      const [disabledSlideTypes, customSlideTypes] = await Promise.all([
-        loadDisabledSlideTypes(ctx),
-        loadCustomSlideTypes(ctx),
-      ]);
-
+      // Tier 2 from the database, minus whatever the org disabled.
       const types = resolveAgentSlideTypes({
         lang,
         category,
-        disabledSlideTypes,
-        customSlideTypes,
+        ...(await sessionSlideTypeOffer(context)),
       });
 
       return {
@@ -460,6 +456,7 @@ export function registerTools(
         enableLogging: false,
         vendor: vendor || null,
         slideTypes,
+        ...(await sessionSlideTypeOffer(context)),
       });
 
       // One create carries the generated slides (B609); no empty deck is
@@ -933,6 +930,7 @@ export function registerTools(
         lang,
         vendor: vendor || null,
         slideTypes: await sessionSlideTypes(context),
+        ...(await sessionSlideTypeOffer(context)),
       });
 
       const { presentation } = await replaceSlides(
@@ -1195,6 +1193,7 @@ export function registerTools(
           targetLang: lang,
           contentOnly: true,
           vendor: vendor || null,
+          ...(await sessionSlideTypeOffer(context)),
         },
       );
 
