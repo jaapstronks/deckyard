@@ -1,35 +1,8 @@
 import { h } from '../lib/dom/index.js';
-import qrcode from '../vendor/qrcode-generator.js';
 import { t } from '../lib/ui-i18n.js';
 import { copyToClipboardWithPromptFallback } from '../lib/util/clipboard.js';
 import { nav } from '../lib/state/router.js';
-
-function renderQrToCanvas(canvas, text, { pad = 12 } = {}) {
-  const qr = qrcode(0, 'M');
-  qr.addData(String(text || ''));
-  qr.make();
-
-  const count = qr.getModuleCount();
-  const ctx = canvas.getContext('2d');
-
-  const maxPx = Math.min(560, Math.max(220, window.innerWidth - 40));
-  const scale = Math.max(2, Math.floor((maxPx - pad * 2) / count));
-  const size = count * scale + pad * 2;
-
-  canvas.width = size;
-  canvas.height = size;
-
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, size, size);
-
-  ctx.fillStyle = '#000';
-  for (let r = 0; r < count; r += 1) {
-    for (let c = 0; c < count; c += 1) {
-      if (!qr.isDark(r, c)) continue;
-      ctx.fillRect(pad + c * scale, pad + r * scale, scale, scale);
-    }
-  }
-}
+import { renderQrToCanvas } from '../lib/util/qr.js';
 
 export async function renderNotesJoin(root, sessionId) {
   const u = new URL(`/notes/${sessionId}`, location.origin);
@@ -93,7 +66,9 @@ export async function renderNotesJoin(root, sessionId) {
 
   const rerenderQr = () => {
     try {
-      renderQrToCanvas(canvas, url);
+      renderQrToCanvas(canvas, url, {
+        maxPx: Math.min(560, Math.max(220, window.innerWidth - 40)),
+      });
     } catch {
       // If something goes wrong, at least keep the URL visible.
     }

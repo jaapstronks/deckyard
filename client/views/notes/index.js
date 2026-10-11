@@ -12,7 +12,8 @@ import {
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
-import { clamp, normalizePresentation } from './utils.js';
+import { normalizePresentation } from './utils.js';
+import { clamp } from '../../../shared/number-utils.js';
 import { createNotesEditor } from './notes-editor.js';
 import { createNotesQaController } from './qa.js';
 import { createNotesSessionSse } from './session-sse.js';

@@ -48,19 +48,6 @@ export async function getRecommendedImageFit(url) {
 }
 
 /**
- * Read a file as a data URL
- * @param {File} file - File to read
- * @returns {Promise<string>} Data URL
- */
-export const readFileAsDataUrl = (file) =>
-  new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(file);
-  });
-
-/**
  * Check if an item matches a search query
  * @param {Object} item - Image library item
  * @param {string} query - Search query

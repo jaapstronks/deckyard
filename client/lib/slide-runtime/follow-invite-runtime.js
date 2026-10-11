@@ -1,4 +1,4 @@
-import { createQrDataUrl, renderQrToCanvas } from './poll.js';
+import { createQrDataUrl, renderQrToCanvas } from '../util/qr.js';
 import { t } from '../ui-i18n.js';
 import { api } from '../api.js';
 import { h } from '../dom/index.js';

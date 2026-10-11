@@ -10,7 +10,4 @@
  *
  * This file re-exports for backward compatibility.
  */
-export {
-  openImageLibraryPicker,
-  readFileAsDataUrl,
-} from './image-library/picker.js';
+export { openImageLibraryPicker } from './image-library/picker.js';

@@ -8,6 +8,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
+import { readFileAsDataUrl } from '../../../lib/util/file.js';
 import {
   createAvatar,
   updateAvatar,
@@ -118,13 +119,7 @@ export function createAccountTab({ user }) {
     imageStatus.textContent = t('settings.profile.uploading', 'Uploading…');
 
     try {
-      // Read file as data URL
-      const dataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const dataUrl = await readFileAsDataUrl(file);
 
       // Upload to server
       const resp = await api('/api/profile/image', {

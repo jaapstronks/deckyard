@@ -27,7 +27,7 @@ import {
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { lockDocumentScroll } from './editor-utils.js';
 import { openAiAppendWizard as openAiAppendWizardModal } from './ai-append.js';
-import { readFileAsDataUrl } from './image-library-picker.js';
+import { readFileAsDataUrl } from '../../lib/util/file.js';
 import { createImagePickers } from './image-pickers.js';
 import { createFieldRenderers } from './fields/index.js';
 import { setupSlideList } from './slide-list/index.js';
