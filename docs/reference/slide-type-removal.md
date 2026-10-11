@@ -73,9 +73,9 @@ Two things to carry into the next one:
 - **Pin the parity while both names exist.** For the list consolidation a
   dedicated test asserted that no module branched on one name without the other
   — the cheap guardrail an alias needs between rung 1 and rung 3. It was written
-  to delete itself when rung 3 lands, and did. (A general version — assertion 5
-  in `docs/plans/briefs/slide-type-structure-facet.md` — derives the set of
-  name-branching modules instead of enumerating them.)
+  to delete itself when rung 3 lands, and did. (A general version derives the
+  set of name-branching modules instead of enumerating them:
+  `tests/helpers/slide-type-name-branching.js`.)
 
 Rung 3 landed for this alias in #485, and it changed what rung 2 means. The
 surviving name is still the `successor` in `shared/slide-types/removed.js`, but

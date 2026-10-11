@@ -285,9 +285,9 @@ threshold moved.
 Two modules used to carry `promote: true` — the refine phase's per-type Zod map
 and its per-type structural validator table (`STRUCTURE_VALIDATORS`) — both
 companion-shaped (a type with no entry is silently unvalidated) and neither
-gated. Both are now **gone**: the first by D87 (B241), the second by B242 after
-a spell in the matrix as **Structural validator**. How they went is the more
-useful lesson.
+gated. Both are now **gone**: the first when the content schema came to be
+derived from `fields[]` (D87, B241), the second after a spell in the matrix as
+**Structural validator** (B242). How they went is the more useful lesson.
 
 A companion is a per-type table someone has to remember to fill in, and the gate
 exists because they forget. But a table that restates what the definition

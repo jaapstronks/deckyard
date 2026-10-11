@@ -80,8 +80,7 @@ resolved by removing the stored copy, not by annotating it. The invite's
 language is the language of the version it renders in, which the render context
 already knows (`ctx.lang`); `normalizeFollowInviteSlides()` strips the keys on
 save. A per-language annotation will be added when a field turns up that
-legitimately differs per language, with the case in hand. Decision:
-`docs/plans/briefs/collab-codec-per-language-fields.md`; locked by
+legitimately differs per language, with the case in hand. Locked by
 `tests/follow-invite-lang-derivation.test.js`.
 
 ## Bootstrap policy (JSON → doc)

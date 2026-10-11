@@ -1,6 +1,6 @@
 /**
- * B242: what `get_slide_types` offers as a good slide of a type, the refine
- * phase takes without a warning.
+ * What `get_slide_types` offers as a good slide of a type, the refine phase
+ * takes without a warning (B242).
  *
  * The refine phase logs every slide whose content does not fit its type. It
  * used to do that twice: through the content schema derived from `fields[]`
