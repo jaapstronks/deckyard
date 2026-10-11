@@ -4,11 +4,7 @@ import {
   requireJsonBody,
 } from '../../../utils/http.js';
 import { getOptionalString } from '../../../utils/request-validators.js';
-import {
-  mapItemTexts,
-  perLanguageKeys,
-  textFieldSpecForType,
-} from '../../../../shared/slide-types/text-fields.js';
+import { slideProse } from '../../../../shared/slide-types/text-fields.js';
 import { getLlmConfig } from '../../../utils/llm/config.js';
 import { requestChatCompletionContent } from '../../../utils/llm/index.js';
 import { extractJsonObject } from '../../../utils/openai/json.js';
@@ -22,53 +18,18 @@ function normalizeLangHint(v) {
   return normalizeLang(v) || DEFAULT_DECK_LANG;
 }
 
+// Alt text is usually not helpful for a meta description.
 function shouldIgnoreTextKey(key) {
-  const k = String(key || '')
-    .trim()
-    .toLowerCase();
-  if (!k) return true;
-  // Usually not helpful for a meta description.
-  if (k === 'alt' || k === 'altnl' || k === 'alten') return true;
-  return false;
+  return key === 'alt';
 }
 
 /**
- * The prose on one slide, for the description prompt: every per-language field
- * and item text, at every nesting level. An undeclared string counts — a
- * retired type or a renamed key still holds the words the deck is about — and
- * a slide of an unregistered type is no longer silently blank (D79).
+ * The prose on one slide, for the description prompt (alt text left out).
  * @param {Object} slide - Stored slide
  * @returns {string}
  */
 function extractSlideText(slide) {
-  const content =
-    slide?.content && typeof slide.content === 'object' ? slide.content : {};
-  const spec = textFieldSpecForType(
-    typeof slide?.type === 'string' ? slide.type : '',
-  );
-  const parts = [];
-  const take = (key, value) => {
-    if (shouldIgnoreTextKey(key)) return;
-    if (typeof value === 'string' && value.trim()) parts.push(value.trim());
-  };
-
-  for (const key of perLanguageKeys(spec, content)) take(key, content[key]);
-
-  // Item texts, at every nesting level: the shared walk, run read-only (the
-  // rebuilt array is discarded). Spelling it out here only reached one level
-  // deep, so `rows[].blocks[].body` never made it into the prompt.
-  for (const [arrKey, itemSpec] of spec.items) {
-    if (!Array.isArray(content[arrKey])) continue;
-    mapItemTexts(content[arrKey], itemSpec, {
-      path: [arrKey],
-      resolve: (path, srcValue) => {
-        take(path[path.length - 1], srcValue);
-        return undefined;
-      },
-    });
-  }
-
-  return parts.join('\n');
+  return slideProse(slide, { skipKey: shouldIgnoreTextKey }).join('\n');
 }
 
 function pickSlidesForPrompt(slides) {

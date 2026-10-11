@@ -17,7 +17,7 @@
  * @param {Object} options.pres - The presentation object
  * @param {Function} options.normalizeLang - Language normalizer function
  * @param {string} options.activeLang - The active language
- * @param {string} options.fieldKey - The content field key for the alt text (e.g., 'alt', 'bgAlt')
+ * @param {string} options.fieldKey - The content field key for the alt text (e.g., 'alt')
  * @returns {Function} A function that sets alt text for a given language
  */
 export function createAltSetter({

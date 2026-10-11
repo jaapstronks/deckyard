@@ -15,8 +15,8 @@ import { ensureLogos } from '../logo-wall-slide.js';
 /** @type {Object} InlineDescriptor for logo-wall-slide. */
 export const inlineEdit = {
   ghosts: HEADER_GHOSTS,
-  // Dual-model (logos[] or legacy logo{n}*): canonicalize to logos[] on mount
-  // so the media popover and card affordances always have a stable array.
+  // Guarantee at least one logos[] slot on mount so the media popover and card
+  // affordances always have a stable array.
   ensure: ensureLogos,
   // Clicking a logo (filled or empty placeholder) selects it; the "This
   // image" tab carries image + alt, and the logo's name (it renders only as an

@@ -135,6 +135,9 @@ export default {
         '%',
         { value: 'both', label: 'Both' },
       ],
+      // A stored value outside the options (the pre-1.0 `percent` spelling)
+      // folds to the default in the schema funnel, so no reader keeps an alias.
+      foldUnofferedTo: '%',
       formLayout: 'pair',
       visibleWhen: { field: 'chartType', in: ['pie'] },
     },
@@ -362,15 +365,12 @@ export default {
       );
     } else if (parsed.kind === 'pie') {
       const pieLabelModeRaw = String(content?.pieLabelMode || '').trim();
-      // Back-compat: older slides may store "percent"
-      const pieLabelModeNormalized =
-        pieLabelModeRaw === 'percent' ? '%' : pieLabelModeRaw;
       // The "Pie labels" control drives this directly (its own "none" option is
       // the off switch), so it is not gated behind "Show values". Default to %.
       const pieLabelMode = ['none', 'value', '%', 'both'].includes(
-        pieLabelModeNormalized,
+        pieLabelModeRaw,
       )
-        ? pieLabelModeNormalized
+        ? pieLabelModeRaw
         : '%';
       svg = renderPieSvg(parsed.dataset, {
         showLegend,

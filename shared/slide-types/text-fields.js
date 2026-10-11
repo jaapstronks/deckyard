@@ -271,6 +271,53 @@ export function mapItemTexts(srcArr, spec, { resolve, base, path = [] } = {}) {
   });
 }
 
+/**
+ * The prose on one slide: every per-language field and item text, at every
+ * nesting level, in declaration order. An undeclared string counts — a retired
+ * type or a renamed key still holds the words the slide is about — and a slide
+ * of an unregistered type is not silently blank (D79).
+ *
+ * The one read of "a slide's words" for the readers that want them all (the
+ * AI description prompt, deck search). It reads what the type declares, so a
+ * key no type declares any more is read by the value rule, never by a
+ * hand-kept list of field names that outlives the types it named.
+ *
+ * @param {Object} slide - Stored slide (`{ type, content }`)
+ * @param {Object} [opts]
+ * @param {(key: string) => boolean} [opts.skipKey] - Leave a key out at any level
+ * @param {Object} [opts.slideTypes] - Slide-type registry (forks/tests override)
+ * @returns {string[]} Trimmed, non-empty texts
+ */
+export function slideProse(slide, { skipKey, slideTypes } = {}) {
+  const content = isPlainObject(slide?.content) ? slide.content : {};
+  const spec = textFieldSpecForType(
+    typeof slide?.type === 'string' ? slide.type : '',
+    slideTypes,
+  );
+  const parts = [];
+  const take = (key, value) => {
+    if (skipKey?.(key)) return;
+    if (typeof value === 'string' && value.trim()) parts.push(value.trim());
+  };
+
+  for (const key of perLanguageKeys(spec, content)) take(key, content[key]);
+
+  // Item texts at every level: the shared walk, run read-only (the rebuilt
+  // array is discarded).
+  for (const [arrKey, itemSpec] of spec.items) {
+    if (!Array.isArray(content[arrKey])) continue;
+    mapItemTexts(content[arrKey], itemSpec, {
+      path: [arrKey],
+      resolve: (path, srcValue) => {
+        take(path[path.length - 1], srcValue);
+        return undefined;
+      },
+    });
+  }
+
+  return parts;
+}
+
 function isPlainObject(v) {
   return v !== null && typeof v === 'object' && !Array.isArray(v);
 }
