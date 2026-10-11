@@ -98,7 +98,6 @@ export function assembleDeck(
  * @param {string} options.vendor - LLM vendor override
  * @param {string} options.theme - Deck theme
  * @param {string} options.titleSlideType - Title slide type for the theme (default: 'title-slide')
- * @param {boolean} options.enableLogging - Enable detailed logging (default: true)
  * @param {Record<string, Object>} options.slideTypes - The organization's
  *   merged type map; the refined slides are fixed against it (B247)
  * @returns {Promise<Object>} Generated deck in deck JSON format
@@ -111,7 +110,6 @@ export async function generateDeckV2(
     vendor = null,
     theme = 'default',
     titleSlideType = 'title-slide',
-    enableLogging = true,
     reviseOutlineBeforeRefine = true,
     disabledSlideTypes = [],
     customSlideTypes = [],
@@ -121,7 +119,7 @@ export async function generateDeckV2(
 ) {
   const startTime = Date.now();
   const sessionId = generateSessionId();
-  const logger = enableLogging ? createSessionLogger(sessionId) : null;
+  const logger = createSessionLogger(sessionId);
 
   log.info(`Starting session ${sessionId}`);
 

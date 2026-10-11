@@ -453,7 +453,6 @@ export function registerTools(
         targetLang: lang || null,
         theme,
         titleSlideType,
-        enableLogging: false,
         vendor: vendor || null,
         slideTypes,
         ...(await sessionSlideTypeOffer(context)),

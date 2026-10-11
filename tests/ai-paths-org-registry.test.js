@@ -29,6 +29,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
 
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
@@ -264,7 +265,6 @@ test('the wizard stream keeps the org type the model chose', async (t) => {
   const c = ctx({
     raw: 'The partners we work with',
     lang: 'en',
-    enableLogging: false,
   });
   await handleAiWizardV2Stream(c);
   assert.ok(
@@ -279,7 +279,6 @@ test('the wizard stream holds the org type to its own cap', async (t) => {
   const c = ctx({
     raw: 'The partners we work with',
     lang: 'en',
-    enableLogging: false,
   });
   await handleAiWizardV2Stream(c);
   const stored = (db.__tables.presentations || []).flatMap((p) => p.slides);
@@ -413,6 +412,40 @@ test('the Notion import keeps the org type the model chose', async (t) => {
     storedTypes().includes(CUSTOM_TYPE),
     `stored types: ${storedTypes().join(', ')}`,
   );
+});
+
+// ── session logs: one instance setting, no switch per route (B661) ─────────
+
+/** What the instance has written under `server/logs/ai/` so far. */
+function sessionLogFiles() {
+  const dir = new URL('../server/logs/ai/', import.meta.url);
+  return fs.existsSync(dir) ? fs.readdirSync(dir).sort() : [];
+}
+
+test('convert and the Notion import write no session log with AI_SESSION_LOGS off', async (t) => {
+  const previous = process.env.AI_SESSION_LOGS;
+  process.env.AI_SESSION_LOGS = 'false';
+  t.after(() => {
+    if (previous === undefined) delete process.env.AI_SESSION_LOGS;
+    else process.env.AI_SESSION_LOGS = previous;
+  });
+  const before = sessionLogFiles();
+
+  await setup();
+  stubModel(t, deckAnswer(SHORT));
+  const convert = ctx({
+    dataUrl: await minimalPptxDataUrl('The partners we work with'),
+    filename: 'deck.pptx',
+    lang: 'en',
+  });
+  await handleConvertFile(convert);
+  assert.equal(convert.res.statusCode, 201, JSON.stringify(convert.res.body));
+
+  const notion = ctx({ url: NOTION_PAGE_ID, lang: 'en' });
+  await handleNotionImport(notion);
+  assert.equal(notion.res.statusCode, 201, JSON.stringify(notion.res.body));
+
+  assert.deepEqual(sessionLogFiles(), before);
 });
 
 test('MCP iterate_presentation and append_slides offer the org type', async (t) => {

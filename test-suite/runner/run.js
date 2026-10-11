@@ -138,6 +138,7 @@ async function main() {
   // Keep the app's own debug logging out of the repo during suite runs.
   process.env.AI_VALIDATION_LOGGING =
     process.env.AI_VALIDATION_LOGGING || 'false';
+  process.env.AI_SESSION_LOGS = process.env.AI_SESSION_LOGS || 'false';
 
   if (!process.env.CLAUDE_API && process.env.ANTHROPIC_API_KEY) {
     process.env.CLAUDE_API = process.env.ANTHROPIC_API_KEY;
@@ -204,7 +205,6 @@ async function main() {
         deck = await generateDeckV2(sourceText, {
           targetLang: testCase.language === 'nl' ? 'nl' : 'en-GB',
           vendor: options.vendor,
-          enableLogging: false,
         });
         const durationMs = Date.now() - startedGeneration;
         await fs.mkdir(caseDir, { recursive: true });

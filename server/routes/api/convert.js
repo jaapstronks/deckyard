@@ -380,7 +380,6 @@ async function handleConvertStream({
       mimeType,
       lang,
       vendor,
-      enableLogging: true,
       signal,
       slideTypes,
       ...slideTypeOffer,

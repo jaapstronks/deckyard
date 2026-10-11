@@ -5,6 +5,7 @@ server/data
 server/data-sandbox
 server/uploads
 server/uploads-sandbox
+server/logs
 client/vendor
 vendor
 assets

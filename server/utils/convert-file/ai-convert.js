@@ -30,7 +30,6 @@ export async function convertWithAi(formattedContent, options = {}) {
     vendor = null,
     slideCount = 0,
     metadata = {},
-    enableLogging = true,
     onStatusMessage = null,
     onOutlineComplete = null,
     onGroupDone = null, // ({ done, total }) => void, one tick per finished group
@@ -45,7 +44,7 @@ export async function convertWithAi(formattedContent, options = {}) {
   } = options;
 
   const sessionId = generateSessionId();
-  const logger = enableLogging ? createSessionLogger(sessionId) : null;
+  const logger = createSessionLogger(sessionId);
 
   log.info(`Starting V2 conversion, session ${sessionId}`);
 

@@ -1,7 +1,6 @@
 import { badRequest, requireJsonBody } from '../../../utils/http.js';
 import {
   getAiParams,
-  getBoolean,
   getOptionalString,
   getTrimmedString,
 } from '../../../utils/request-validators.js';
@@ -66,7 +65,6 @@ export async function handleAiWizardV2Stream({
   } = getAiParams(body);
   if (!raw.trim()) return badRequest(res, 'Expected { raw: "..." }');
   const notionSourcePageId = getTrimmedString(body, 'notionSourcePageId');
-  const enableLogging = getBoolean(body, 'enableLogging', true);
   const targetLength = getOptionalString(body, 'targetLength') || 'auto';
 
   const userName = getDisplayNameForUser(authedUser);
@@ -75,7 +73,7 @@ export async function handleAiWizardV2Stream({
   // fixed and composed in (B247).
   const slideTypes = await buildMergedSlideTypes(storageScope);
   const sessionId = generateSessionId();
-  const logger = enableLogging ? createSessionLogger(sessionId) : null;
+  const logger = createSessionLogger(sessionId);
   // Settle the theme to get the correct title slide type and theme context
   // for AI; an unknown theme is refused here, before the stream opens.
   const {

@@ -97,7 +97,8 @@ Pipeline (`server/utils/ai/`, 41 modules). The top level:
   what `get_slide_types` offers as a type's example is what
   `create_presentation_from_slides` accepts.
 - `server/utils/ai/logging.js` — full LLM conversation logs for
-  debugging/finetuning, written under `server/logs/ai/`; off in production.
+  debugging/finetuning, written under `server/logs/ai/` when the instance
+  setting `AI_SESSION_LOGS` allows it (see Config & flags).
 - `server/utils/ai/validation-logging.js` — small, production-safe
   validation-event logs (unknown fields, schema issues) plus the admin readers.
 
@@ -144,7 +145,8 @@ analysis feature delivers its output as comments, and an actionable suggestion
 carries the slide JSON it proposes.
 
 Everything else is files on disk: conversation logs under `server/logs/ai/`
-(development only) and validation-event logs alongside them.
+(`AI_SESSION_LOGS`, by default a development checkout only) and
+validation-event logs alongside them.
 
 ## Flows
 
@@ -193,7 +195,7 @@ Everything else is files on disk: conversation logs under `server/logs/ai/`
 | `DEEPSEEK_API` + `DEEPSEEK_MODEL`                                      | idem                             | Default `deepseek-chat`.                                                                                                                               |
 | `OPENAI_COMPAT_ENDPOINT` + `OPENAI_COMPAT_MODEL` + `OPENAI_COMPAT_API` | idem                             | Any OpenAI-compatible endpoint; the key is optional (local servers).                                                                                   |
 | `AI_VALIDATION_LOGGING`                                                | `utils/ai/validation-logging.js` | On unless set to `false`.                                                                                                                              |
-| `NODE_ENV`                                                             | `utils/ai/logging.js`            | Full conversation logging is disabled in production.                                                                                                   |
+| `AI_SESSION_LOGS`                                                      | `utils/ai/logging.js`            | Conversation logs in `server/logs/ai/`. Unset: on only with `NODE_ENV=development`. No route or request has its own switch.                            |
 
 Feature flags (`server/config/flags-snapshot.js`): `enableAi` — off with
 `AI_ENABLED=false`, **demo mode** or **sandbox mode**. When it is false, **every
