@@ -21,6 +21,7 @@ import { prepareNewPresentation } from '../server/storage/presentations/crud/fac
 import { createFakeDb } from './helpers/fake-db.js';
 import { seedRow } from './helpers/theme-seed.js';
 import { __setTestDb } from '../server/db/client.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 const AMETHYST = (await seedRow('amethyst')).id;
 
@@ -84,12 +85,16 @@ describe('prepareNewPresentation multilingual compose', () => {
       },
     ]);
 
-    const pres = await prepareNewPresentation(repoRoot, {
-      title: 'Composed deck',
-      slides,
-      theme: AMETHYST,
-      lang: 'nl',
-    });
+    const pres = await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Composed deck',
+        slides,
+        theme: AMETHYST,
+        lang: 'nl',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
 
     // Both language versions exist.
     assert.ok(pres.i18n.versions.nl, 'nl version present');
@@ -120,12 +125,16 @@ describe('prepareNewPresentation multilingual compose', () => {
         },
       },
     ]);
-    const pres = await prepareNewPresentation(repoRoot, {
-      title: 'Composed deck',
-      slides,
-      theme: AMETHYST,
-      lang: 'en-GB',
-    });
+    const pres = await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Composed deck',
+        slides,
+        theme: AMETHYST,
+        lang: 'en-GB',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
     assert.strictEqual(pres.i18n.dominant, 'en-GB');
     assert.strictEqual(pres.slides[0].content.title, 'Hello');
     assert.ok(pres.i18n.versions.nl, 'nl version still preserved');
@@ -135,12 +144,16 @@ describe('prepareNewPresentation multilingual compose', () => {
     const slides = buildSlidesFromLibraryItems([
       { slideType: 'content-slide', content: { title: 'Solo' } },
     ]);
-    const pres = await prepareNewPresentation(repoRoot, {
-      title: 'Composed deck',
-      slides,
-      theme: AMETHYST,
-      lang: 'nl',
-    });
+    const pres = await prepareNewPresentation(
+      repoRoot,
+      {
+        title: 'Composed deck',
+        slides,
+        theme: AMETHYST,
+        lang: 'nl',
+      },
+      { slideTypes: SLIDE_TYPES },
+    );
     assert.ok(pres.i18n.versions.nl, 'nl version present');
     assert.strictEqual(
       pres.i18n.versions['en-GB'],

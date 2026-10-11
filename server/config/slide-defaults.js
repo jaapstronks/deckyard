@@ -40,7 +40,8 @@ export function instanceSlideDefaults() {
  * hands out: `buildMergedSlideTypes()` (every server-side path that creates,
  * converts or validates a slide) and the `/api/slide-types` response (the map
  * the editor holds). Fold it in there and every creation path downstream is
- * covered without being handed an extra argument.
+ * covered, because each of them is handed that map: the creation seams take
+ * it as a required argument (B655).
  *
  * `base` is explicit so this module does not import the registry: the registry
  * is what the callers already have, and `server/config/` stays a leaf.

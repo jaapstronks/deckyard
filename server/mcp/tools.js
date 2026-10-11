@@ -462,7 +462,11 @@ export function registerTools(
 
       // One create carries the generated slides (B609); no empty deck is
       // written first and filled afterwards.
-      const parts = deckToPresentationParts(deck, { theme: themeObj, lang });
+      const parts = deckToPresentationParts(deck, {
+        theme: themeObj,
+        lang,
+        slideTypes: await sessionSlideTypes(context),
+      });
       if (title) parts.title = title;
 
       const created = await createPresentation(

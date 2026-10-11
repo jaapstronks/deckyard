@@ -132,22 +132,19 @@ export function normalizeSlideNotes(pres) {
   }
 }
 
-export async function loadSlideTypes({ api, LOCAL_SLIDE_TYPES } = {}) {
-  try {
-    return await api('/api/slide-types');
-  } catch {
-    // Back-compat fallback (older server).
-    return Object.fromEntries(
-      Object.entries(LOCAL_SLIDE_TYPES).map(([k, v]) => [
-        k,
-        {
-          label: v.label,
-          fields: v.fields,
-          defaults: v.defaults,
-        },
-      ]),
-    );
-  }
+/**
+ * The slide-type map the editor composes and edits against: the server's
+ * `/api/slide-types`, which carries the organization's own types and the
+ * installation's configured defaults (B653). There is no local fallback: the
+ * bundled registry knows neither, so a slide created from it would differ from
+ * one created on every other route (B655). A failed load fails like the deck
+ * load beside it.
+ *
+ * @param {{ api: Function }} opts
+ * @returns {Promise<Record<string, Object>>}
+ */
+export async function loadSlideTypes({ api }) {
+  return api('/api/slide-types');
 }
 
 export async function loadEditorAssets({ api } = {}) {

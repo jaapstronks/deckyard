@@ -49,7 +49,7 @@ test('the migrations array has exactly one step per version bump', () => {
 });
 
 test('newPresentation() stamps the current schema version', () => {
-  const pres = newPresentation({});
+  const pres = newPresentation({ slideTypes: SLIDE_TYPES });
   assert.equal(pres.schemaVersion, CURRENT_SCHEMA_VERSION);
 });
 
@@ -541,7 +541,7 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
 
 test('validatePresentation accepts a freshly stamped deck', () => {
   const { ok, errors } = validatePresentation(
-    newPresentation({ theme: randomUUID() }),
+    newPresentation({ slideTypes: SLIDE_TYPES, theme: randomUUID() }),
   );
   assert.equal(ok, true, `unexpected errors: ${errors.join(', ')}`);
 });
@@ -989,15 +989,18 @@ test('the import seam folds a pre-v10 export off the old `subtitle` spelling', a
   // unreachable `subtitle` and render no subheading at all.
   const { deckToPresentationParts } =
     await import('../shared/slide-types/deck.js');
-  const parts = deckToPresentationParts({
-    title: 'Old export',
-    slides: [
-      {
-        type: 'eu.deckyard.slide.title',
-        content: { title: 'Kickoff', subtitle: 'welkom' },
-      },
-    ],
-  });
+  const parts = deckToPresentationParts(
+    {
+      title: 'Old export',
+      slides: [
+        {
+          type: 'eu.deckyard.slide.title',
+          content: { title: 'Kickoff', subtitle: 'welkom' },
+        },
+      ],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   const content = parts.slides[0].content;
   assert.equal(content.subheading, 'welkom');
   assert.equal('subtitle' in content, false);
@@ -1081,7 +1084,7 @@ test('gate: no slide type carries a numbered slot family beside its canonical ar
 });
 
 test('validatePresentation rejects an out-of-range schemaVersion', () => {
-  const base = newPresentation({});
+  const base = newPresentation({ slideTypes: SLIDE_TYPES });
 
   const negative = validatePresentation({ ...base, schemaVersion: -1 });
   assert.equal(negative.ok, false);
@@ -1106,25 +1109,32 @@ test('the import seam runs the funnel: a pre-fold export keeps its cards', async
   // content with placeholders.
   const { deckToPresentationParts } =
     await import('../shared/slide-types/deck.js');
-  const parts = deckToPresentationParts({
-    title: 'Old export',
-    slides: [
-      {
-        // The published spelling: canonical reverse-DNS ids, folded to the
-        // registry key by the v3 -> v4 step before v7 -> v8 matches on it.
-        type: 'eu.deckyard.slide.icon-card-grid',
-        content: { cardCount: '2', card1Title: 'Real one', card2Title: 'Two' },
-      },
-      {
-        type: 'team-cards-slide',
-        content: { cardCount: '1', card1Name: 'Ada', card1Byline: 'Eng' },
-      },
-      {
-        type: 'logo-wall-slide',
-        content: { logoCount: '1', logo1Name: 'Acme', logo1Image: '/a.png' },
-      },
-    ],
-  });
+  const parts = deckToPresentationParts(
+    {
+      title: 'Old export',
+      slides: [
+        {
+          // The published spelling: canonical reverse-DNS ids, folded to the
+          // registry key by the v3 -> v4 step before v7 -> v8 matches on it.
+          type: 'eu.deckyard.slide.icon-card-grid',
+          content: {
+            cardCount: '2',
+            card1Title: 'Real one',
+            card2Title: 'Two',
+          },
+        },
+        {
+          type: 'team-cards-slide',
+          content: { cardCount: '1', card1Name: 'Ada', card1Byline: 'Eng' },
+        },
+        {
+          type: 'logo-wall-slide',
+          content: { logoCount: '1', logo1Name: 'Acme', logo1Image: '/a.png' },
+        },
+      ],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   const [grid, team, wall] = parts.slides.map((s) => s.content);
   assert.deepEqual(
     grid.items.map((c) => c.title),
@@ -1148,19 +1158,27 @@ test('the import seam folds a pre-v9 poll export into options[]', async () => {
   // answers beside its real, unreachable `option1..4`.
   const { deckToPresentationParts } =
     await import('../shared/slide-types/deck.js');
-  const parts = deckToPresentationParts({
-    title: 'Old export',
-    slides: [
-      {
-        type: 'eu.deckyard.slide.poll',
-        content: { question: 'Pick', option1: 'A', option2: 'B', option3: '' },
-      },
-      {
-        type: 'likert-slide',
-        content: { question: 'Agree?', option1: 'No', option2: 'Yes' },
-      },
-    ],
-  });
+  const parts = deckToPresentationParts(
+    {
+      title: 'Old export',
+      slides: [
+        {
+          type: 'eu.deckyard.slide.poll',
+          content: {
+            question: 'Pick',
+            option1: 'A',
+            option2: 'B',
+            option3: '',
+          },
+        },
+        {
+          type: 'likert-slide',
+          content: { question: 'Agree?', option1: 'No', option2: 'Yes' },
+        },
+      ],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   const [poll, likert] = parts.slides.map((s) => s.content);
   assert.deepEqual(
     poll.options.map((o) => o.text),

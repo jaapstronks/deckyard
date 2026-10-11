@@ -21,7 +21,10 @@ import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { contentSchemaFor } from '../server/utils/ai/schemas/content-schema.js';
 
 const importOne = (slide, options) =>
-  deckToPresentationParts({ title: 'T', slides: [slide] }, options).slides[0];
+  deckToPresentationParts(
+    { title: 'T', slides: [slide] },
+    { slideTypes: SLIDE_TYPES, ...options },
+  ).slides[0];
 
 test('an undeclared key is dropped, the declared content is kept', () => {
   const slide = importOne({
