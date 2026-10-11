@@ -71,7 +71,12 @@ export function buildShareViewerTopbar({
   let commentsApi = null;
 
   if (canComment && guestSession?.authenticated) {
-    commentsApi = createCommentsApi({ api, presentationId: presentation.id });
+    // A guest: their comments go through the share-token routes (D228).
+    commentsApi = createCommentsApi({
+      api,
+      presentationId: presentation.id,
+      shareToken: token,
+    });
 
     commentsToggleBtn = h('button', {
       class: 'btn btn-secondary share-viewer-comments-toggle',

@@ -132,10 +132,12 @@ Permissions are `read` | `write` | `delete` | `manage` | `comment`. The helper
 is the internal adapter over `loadPresentationForActor`
 (`server/services/presentations.js`, B519), which loads and decides on every
 contract; the helper only renders the 404/403. Sibling helpers cover the other
-shapes: `withPresentationReadAuth` (guest access via share links), `canManage`,
-and the custom-HTML capability checks. Creating a comment has no wrapper: the
-comment service asks the same load with `access: 'comment'`, for an account or
-a share-link guest (B518).
+shapes: `canManage` and the custom-HTML capability checks. Creating a comment
+has no wrapper: the comment service asks the same load with
+`access: 'comment'`, for an account or a share-link guest (B518). A guest is
+never a fallback identity on a signed-in route: their comment routes live
+under the share token (`server/routes/api/share-links/guest-comments.js`,
+D228).
 
 There is deliberately **no composition/wrapper family**. One existed alongside
 these helpers for months with zero call sites and was removed rather than
