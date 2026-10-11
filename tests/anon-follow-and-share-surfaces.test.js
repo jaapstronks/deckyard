@@ -13,11 +13,11 @@
  *   - the three `render-slide` rows (share, follow, live session) — a
  *     server-rendered type drawn for a viewer with no session (B287)
  *
- * B114 added the four handlers this file did not reach when it was written —
- * `handleFollowCancel`, `handleFollowInteractionState` and
+ * It also covers the four handlers this file did not reach when it was written
+ * (B114) — `handleFollowCancel`, `handleFollowInteractionState` and
  * `handleFollowInteractionFeedback` — which were left with only their
- * `route-dispatch-follow` shape row: a table proving a path maps to a
- * handler *name*, and nothing about what the handler does.
+ * `route-dispatch-follow` shape row: a table proving a path maps to a handler
+ * *name*, and nothing about what the handler does.
  *
  * The handlers run against the real storage layer on the in-memory database
  * double (as the live-session and authz tests do), so these assert real

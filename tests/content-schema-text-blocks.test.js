@@ -8,7 +8,7 @@
  * `blocks[]`. A hand-written schema used to require `row1Count` and know
  * nothing of `rows[]`, so every array-canonical slide — including each freshly
  * created one — failed validation. Since D87 the schema is derived from
- * `fields[]`, which since B452 declares `rows[]` alone; these pin that the
+ * `fields[]`, which now declares `rows[]` alone (B452); these pin that the
  * derivation reads it, bound and all.
  *
  * Run with: node --test tests/content-schema-text-blocks.test.js

@@ -1,10 +1,10 @@
 /**
- * B314 — import regenerates every slide id (`normalizeDeckSlide` /
+ * Import regenerates every slide id (`normalizeDeckSlide` /
  * `newSlide`), so a `#slide:<old id>` jump written into a `url`-typed field
  * (a card, an action button, a logo-wall link - at slide level or inside an
  * `items` field's `itemFields`) pointed nowhere after a JSON import. This
  * pins the fix in `deckToPresentationParts` (`shared/slide-types/deck.js`):
- * one old→new id map, rewritten via the field declaration, no key list.
+ * one old→new id map, rewritten via the field declaration, no key list (B314).
  *
  * Run with: node --test tests/deck-import-slide-jump-rewrite.test.js
  */

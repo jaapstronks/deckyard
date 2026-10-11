@@ -1,5 +1,5 @@
 /**
- * B486: every create path checks the theme the way v1 does.
+ * Every create path checks the theme the way v1 does (B486).
  *
  * v1-create/PUT and `/change-theme` looked the theme up through `findTheme()`
  * (one spelling, unknown = 400), but the editor-create, the MCP create tools

@@ -1,5 +1,5 @@
 /**
- * B567: a comment on a slide added a moment ago is stored, not refused.
+ * A comment on a slide added a moment ago is stored, not refused (B567).
  *
  * The service refuses a `slideId` the stored deck does not hold (404
  * `slide_not_found`, D287), and the editor's autosave runs a debounce behind

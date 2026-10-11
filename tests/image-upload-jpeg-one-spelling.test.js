@@ -5,8 +5,8 @@
  * paths sends it: browsers report `image/jpeg` for a .jpg/.jpeg file, the
  * Unsplash CDN answers with `image/jpeg`, and the server's own
  * `mimeFromExt` maps both extensions to `image/jpeg`. It nonetheless sat in
- * four tables, and B366 moved it into the one declared list, which made it
- * canonical. These tests pin the one spelling: the declared list carries one
+ * four tables, and moving it into the one declared list made it canonical
+ * (B366). These tests pin the one spelling: the declared list carries one
  * content type per format, every intake refuses `image/jpg`, and a guard
  * fails if the literal comes back anywhere in the source.
  *

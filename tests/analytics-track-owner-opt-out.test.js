@@ -2,11 +2,11 @@
  * The owner's analytics opt-out has one authority: the tracking route (B503).
  *
  * A deck owner can switch analytics off per deck
- * (`settings.analyticsEnabled === false`). Until B503 the share viewer read
+ * (`settings.analyticsEnabled === false`). The share viewer used to read
  * that flag itself, from a copy the share payload carried, while follow read
  * only the viewer's own preference and left the owner's rule to the server
  * (D234). Two places for one rule. Now both viewers ask only the viewer's
- * preference, the share payload no longer carries the owner's flag, and
+ * preference (B503), the share payload no longer carries the owner's flag, and
  * `POST /api/track/session/start` is where the opt-out is enforced.
  *
  * This file pins that authority for the share-link source: a valid link to an

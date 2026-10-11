@@ -15,9 +15,9 @@
  * module file into one dictionary, so a key filed in *two* module files of one
  * locale is last-wins in exactly the same way — one of the two copies is dead,
  * and editing it changes nothing. `common.close` sat in both `common.json` and
- * `editor.json` in all twelve locales until B137; the second block here keeps
- * it from growing back, and pins that every key lives in the module `en/`
- * files it in.
+ * `editor.json` in all twelve locales before the cleanup (B137); the second
+ * block here keeps it from growing back, and pins that every key lives in the
+ * module `en/` files it in.
  *
  * Run with: node --test tests/i18n-duplicate-keys.test.js
  */

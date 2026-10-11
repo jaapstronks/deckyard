@@ -1,4 +1,6 @@
-/** B598: DrawingML paragraphs keep one properties element before their runs. */
+/**
+ * DrawingML paragraphs keep one properties element before their runs (B598).
+ */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import JSZip from 'jszip';

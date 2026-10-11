@@ -1,5 +1,5 @@
 /**
- * B566: the sign-in screens title their tab with `APP_NAME`. They never fetch
+ * The sign-in screens title their tab with `APP_NAME` (B566). They never fetch
  * /me, so the name cannot come from the feature flags; the server writes it
  * into the served shell (`<title>` and `<meta name="application-name">`,
  * `injectAppName` in server/routes/static/app-shell.js) and the client reads

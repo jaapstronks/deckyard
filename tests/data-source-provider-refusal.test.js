@@ -1,5 +1,5 @@
 /**
- * B417 — a data-source provider that fails refuses in its own words.
+ * A data-source provider that fails refuses in its own words (B417).
  *
  * `createDataSourceProvider().fetch` used to wrap every failure as
  * `Data source "x" fetch failed: <err.message>` and the data-source routes put

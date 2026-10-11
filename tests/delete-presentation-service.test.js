@@ -1,5 +1,5 @@
 /**
- * B571: one move-to-trash under three contracts (A7.4).
+ * One move-to-trash under three contracts (B571, A7.4).
  *
  * The internal route, public v1 and the MCP `delete_presentation` tool each
  * loaded and trashed a deck their own way: the internal route read a `message`

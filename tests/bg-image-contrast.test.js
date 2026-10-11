@@ -1,5 +1,5 @@
 /**
- * B627: text contrast over a background image is settled on the server too.
+ * Text contrast over a background image is settled on the server too (B627).
  *
  * The editor used to be the only place that sampled a slide's background image
  * and stored which theme text colour reads over it. A deck that never met the

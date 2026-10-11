@@ -3,10 +3,10 @@
  * comment is resolved, reopened or dismissed, under the internal routes, the
  * public v1 API and MCP (A7.4, B569).
  *
- * Before B569 each contract loaded, decided and announced on its own, and they
- * had drifted: the internal routes decided moderation on the session user, v1
- * and MCP on the actor; v1 answered a transition the comment was not in with a
- * hand-picked 409, the internal routes with the reason register's 400, MCP
+ * Each contract used to load, decide and announce on its own, and they had
+ * drifted (B569): the internal routes decided moderation on the session user,
+ * v1 and MCP on the actor; v1 answered a transition the comment was not in with
+ * a hand-picked 409, the internal routes with the reason register's 400, MCP
  * with a bare error. This file pins the one flow at the service and calls it
  * through each contract once:
  *

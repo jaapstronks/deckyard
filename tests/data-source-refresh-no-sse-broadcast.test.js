@@ -1,5 +1,5 @@
 /**
- * B69 — a data-source refresh must not write to any deck's SSE stream.
+ * A data-source refresh must not write to any deck's SSE stream (B69).
  *
  * The old behaviour trusted the request body: `POST /api/data-sources/refresh`
  * with `{presentationId, slideId}` broadcast `datasource:refreshed` onto that

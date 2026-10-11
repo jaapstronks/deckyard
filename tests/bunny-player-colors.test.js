@@ -3,8 +3,8 @@
  *
  * `BUNNY_PLAYER_COLORS` put one fork's two brand hexes in the embed URL that
  * every instance builds, so a Deckyard with its own theme played its videos in
- * someone else's colors — and the accent among them was the stale value B640
- * took out of the slide CSS.
+ * someone else's colors — and the accent among them was the stale value already
+ * taken out of the slide CSS (B640).
  *
  * Pinned here: the mapping from theme token to player parameter, that a theme
  * naming no usable color leaves Bunny its own default rather than a guess, the

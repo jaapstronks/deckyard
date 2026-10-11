@@ -4,8 +4,8 @@
  * `video-slide.js` carried one fork's library id twice — as the field default
  * and as a fallback in `renderHtml` — plus that fork's video as the default
  * `source`. So a new video slide in any other instance played a stranger's
- * video, and a bare UUID an author typed resolved against a stranger's
- * library. Same class as B648 (the player colours), without the colour.
+ * video, and a bare UUID an author typed resolved against a stranger's library.
+ * Same class as the hardcoded player colours (B648), without the colour.
  *
  * Pinned here: a bare UUID without a library embeds nothing (and the slide
  * says what to paste), a pasted play or embed URL still plays because it names

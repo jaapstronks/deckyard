@@ -1,9 +1,9 @@
 /**
  * The fork seam's images reach an export only when the export can draw them.
  *
- * Since B554 every local `url()` in `custom/styles/*.css` is inlined as a data
- * URL, because an export document has no origin to resolve a root-relative
- * path against. Done for the whole seam, that put every image any fork type
+ * Every local `url()` in `custom/styles/*.css` is inlined as a data URL (B554),
+ * because an export document has no origin to resolve a root-relative path
+ * against. Done for the whole seam, that put every image any fork type
  * references into every export, used or not: ~835 KB of artwork per export in
  * the CIIIC fork, per page on the PNG path (B557). The line is now the slide
  * type's root class: a rule that can only match a type the export does not
