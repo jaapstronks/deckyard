@@ -1,5 +1,5 @@
 /**
- * B160 / D88: a theme declares the ground its slides start on.
+ * A theme declares the ground its slides start on (B160, D88).
  *
  * A slide type writes `defaults.background` theme-agnostically — it cannot know
  * which theme will carry it — so a theme whose whole design stands on another

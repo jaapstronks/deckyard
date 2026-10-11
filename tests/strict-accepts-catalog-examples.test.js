@@ -1,6 +1,6 @@
 /**
- * B241 / D87: what `get_slide_types` hands an agent, `create_presentation_from_slides`
- * accepts.
+ * What `get_slide_types` hands an agent, `create_presentation_from_slides`
+ * accepts (B241, D87).
  *
  * The catalog's `example` for a type is its sample (D119, B245) — what the
  * definition itself calls a good slide of this type — or its `defaults` where

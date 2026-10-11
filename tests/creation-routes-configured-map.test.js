@@ -2,10 +2,10 @@
  * Every route that composes slides composes them from the organization's map
  * (B655).
  *
- * B653 gave a type a way to take a default from the installation
- * (`configDefaults`, folded in by `buildMergedSlideTypes()`), but the import
- * seam `deckToPresentationParts()` fell back to the module-wide `SLIDE_TYPES`
- * and twelve of its callers never handed it the map, so an AI-generated or
+ * A type could take a default from the installation (`configDefaults`, folded
+ * in by `buildMergedSlideTypes()`; B653), but the import seam
+ * `deckToPresentationParts()` fell back to the module-wide `SLIDE_TYPES` and
+ * twelve of its callers never handed it the map, so an AI-generated or
  * imported deck came out without the configured value. The seams now take
  * `slideTypes` as a required argument; these tests drive three of those
  * routes end to end and read the value off the stored deck.

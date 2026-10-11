@@ -1,5 +1,5 @@
 /**
- * B416 — the Notion seam refuses in our own words.
+ * The Notion seam refuses in our own words (B416).
  *
  * `notionFetchJson` used to put Notion's `message` (or the raw text body, an
  * HTML error page included) into the error and forward Notion's status, and

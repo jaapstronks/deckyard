@@ -1,5 +1,5 @@
 /**
- * B461: deck search matches the owner by `ownerEmail`, on both sides — the
+ * Deck search matches the owner by `ownerEmail`, on both sides (B461): the
  * server's `/api/presentations/search` and the client's list-side filter. The
  * list projection carries no owner display name, so neither side reads
  * `ownerName`; a stale one riding along must not make a deck match.

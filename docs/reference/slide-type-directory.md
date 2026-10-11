@@ -248,8 +248,7 @@ while every server-side export drew the fork's. Reading `def.inline` first would
 then have pointed every ghost anchor and `formText` key at elements that were
 not in the document — 0 of 2 anchors resolving instead of core's 2 of 2.
 
-**Why it is now definition-first.** That split is closed
-(`docs/plans/briefs/fork-override-renderer-reach.md`): the server names its
+**Why it is now definition-first.** That split is closed: the server names its
 core-name overrides in a head global (`window.__DECK_SERVER_RENDERED_TYPES__`,
 injected by `server/routes/static/app-shell.js`) and the client routes them
 through server-side rendering (`needsServerRender()` in
@@ -367,15 +366,15 @@ convert the consumer later — which is how `group` itself got there.
 
 ### Consumers converted so far
 
-| Consumer                                                 | Fact                                                                                                                                  | Landed            |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| `client/views/editor/slide-type-schematics.js`           | schematic glyph + per-preset overrides                                                                                                | A7.1 rollout PR 1 |
-| `client/views/editor/slide-type-sample-content.js`       | picker sample content                                                                                                                 | A7.1 rollout PR 2 |
-| `client/views/editor/inline-edit/descriptors.js`         | inline-edit descriptor (35 types)                                                                                                     | A7.1 rollout PR 3 |
-| `slide-type-picker/data.js` + `settings/…/categories.js` | curated group, 33 types (two disagreeing tables collapsed into one declaration)                                                       | A7.1 rollout PR 4 |
-| `slide-type-picker/data.js` (`index.js`)                 | picker description + search aliases, 33 types (two hand-maintained tables retired)                                                    | A7.1 rollout PR 5 |
-| `server/routes/api/slide-types.js`                       | `group` / `schematic` / `sampleContent` on the wire — the seam rule above, which the three lookups now share                          | A7.1 seam fix     |
-| `server/routes/api/slide-types.js`                       | `description` / `aliases` on the wire — the same seam half, +2.9 KB raw (+1.2 KB gzipped) on the ~558 KB response                     | A7.1 rollout PR 5 |
-| `client/views/editor/editor-form/inspector-form.js`      | inspector keep-list, every core type (+ `inspectorKeeps` on the wire, so a fork type can narrow its own settings pane)                | A7.1 rollout PR 6 |
-| `server/utils/ai/slide-catalog/`                         | agent editorial copy, 31 types — five category modules collapsed into one generated import list, with the prompt order kept as a hint | A7.1 rollout PR 7 |
-| `client/views/editor/editor-form/element-tab.js`         | element-tab offer, 7 types (+ `elementTab` on the wire) — a `switch (slide.type)` replaced by a declaration beside `inspectorKeeps`   | A7.15 PR C        |
+| Consumer                                                 | Fact                                                                                                                                  | Landed in             |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| `client/views/editor/slide-type-schematics.js`           | schematic glyph + per-preset overrides                                                                                                | rollout step 1 (A7.1) |
+| `client/views/editor/slide-type-sample-content.js`       | picker sample content                                                                                                                 | rollout step 2 (A7.1) |
+| `client/views/editor/inline-edit/descriptors.js`         | inline-edit descriptor (35 types)                                                                                                     | rollout step 3 (A7.1) |
+| `slide-type-picker/data.js` + `settings/…/categories.js` | curated group, 33 types (two disagreeing tables collapsed into one declaration)                                                       | rollout step 4 (A7.1) |
+| `slide-type-picker/data.js` (`index.js`)                 | picker description + search aliases, 33 types (two hand-maintained tables retired)                                                    | rollout step 5 (A7.1) |
+| `server/routes/api/slide-types.js`                       | `group` / `schematic` / `sampleContent` on the wire — the seam rule above, which the three lookups now share                          | seam fix (A7.1)       |
+| `server/routes/api/slide-types.js`                       | `description` / `aliases` on the wire — the same seam half, +2.9 KB raw (+1.2 KB gzipped) on the ~558 KB response                     | rollout step 5 (A7.1) |
+| `client/views/editor/editor-form/inspector-form.js`      | inspector keep-list, every core type (+ `inspectorKeeps` on the wire, so a fork type can narrow its own settings pane)                | rollout step 6 (A7.1) |
+| `server/utils/ai/slide-catalog/`                         | agent editorial copy, 31 types — five category modules collapsed into one generated import list, with the prompt order kept as a hint | rollout step 7 (A7.1) |
+| `client/views/editor/editor-form/element-tab.js`         | element-tab offer, 7 types (+ `elementTab` on the wire) — a `switch (slide.type)` replaced by a declaration beside `inspectorKeeps`   | element tab (A7.15)   |

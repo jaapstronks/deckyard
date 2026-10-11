@@ -1,12 +1,12 @@
 /**
  * `client/i18n/manifest.json` is the one source of truth for the i18n tree:
  * which locales ship, which tier each sits in, which locale is the reference,
- * and which module files make up a locale directory. Before B132 the tooling
- * carried four hand-kept spellings of parts of that — two in `i18n-sync.js`,
- * one in `i18n-validate.js`, a fourth (module list) split across both — and
- * they had drifted. This test pins the manifest against every consumer that
- * still has to agree with it: the coverage gate, the sync/validate scope, the
- * runtime dictionary loader, the files actually on disk, and the policy doc.
+ * and which module files make up a locale directory. The tooling used to carry
+ * four hand-kept spellings of parts of that — two in `i18n-sync.js`, one in
+ * `i18n-validate.js`, a fourth (module list) split across both — and they had
+ * drifted (B132). This test pins the manifest against every consumer that still
+ * has to agree with it: the coverage gate, the sync/validate scope, the runtime
+ * dictionary loader, the files actually on disk, and the policy doc.
  *
  * Run with: node --test tests/i18n-locales.test.js
  */

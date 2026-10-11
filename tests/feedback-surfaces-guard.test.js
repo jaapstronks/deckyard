@@ -12,15 +12,15 @@
  *
  *  1. refuse-and-return — a `toast.error(...)` that is the whole answer of a
  *     guard clause (`if (…) { toast.error(…); return; }`). That shape *is* a
- *     refusal of the current action; the allowlist is the sites B204 moves to
- *     the helper.
+ *     refusal of the current action; the allowlist was the sites still to
+ *     move to the helper (B204).
  *  2. the ratchet — every file that still carries a discarded server message or
  *     a background failure in a toast (the B205/B206 burndown) is listed with
  *     its `toast.error` count. A rise means a new toast in a file under
- *     cleanup; lower the number when you move a site. B204's refusals are at
- *     zero, which is why no file is listed for them any more.
+ *     cleanup; lower the number when you move a site. Refusals are at zero,
+ *     which is why no file is listed for them any more.
  *  3. error classes — no `*-error` / `is-error` class applied outside the
- *     helper. The message idioms were B204's and are all gone; the state
+ *     helper. The message idioms are all gone (B204); the state
  *     markers (a thumb that failed to render) are not messages and stay.
  *  4. no progress toast — no literal `durationMs` of 30 s or more. A toast
  *     that has to live that long is a status in disguise ("Saving changes…",

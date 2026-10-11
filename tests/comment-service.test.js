@@ -2,8 +2,8 @@
  * `createComment` in `server/services/comments.js` — the one comment-create
  * flow under the internal route, the public v1 API and MCP (A7.4, B518).
  *
- * Before B518 each contract carried its own copy, and three things had
- * drifted. This file pins each of them at the service, so no contract can
+ * Each contract used to carry its own copy, and three things had drifted
+ * (B518). This file pins each of them at the service, so no contract can
  * drift again by keeping a copy:
  *
  *   1. **the slide snapshot** — the internal route stored none; now every

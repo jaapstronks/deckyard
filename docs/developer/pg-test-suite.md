@@ -4,9 +4,9 @@
 database. Every other test runs against `tests/helpers/fake-db.js`, an in-memory
 double that implements _only the query shapes the storage layer uses_, not
 Kysely or PostgreSQL as a whole. That double is deliberately incomplete, and the
-places it diverges from PostgreSQL are the ones production finds first — see
-`docs/plans/briefs/postgres-test-infra.md` for the full risk classes. This suite
-is option A from that brief, the follow-up to the migration jobs #548/#551.
+places it diverges from PostgreSQL are the ones production finds first:
+conflict targets, `jsonb` round-trips and transaction isolation. This suite
+is the follow-up to the migration jobs #548/#551.
 
 ## What it runs against
 
@@ -76,8 +76,8 @@ file suite tolerated.
 
 ## What it covers today
 
-The facade suite is the coverage that must survive the file adapter's removal
-(PR G in `docs/plans/briefs/storage-path-consolidation.md`): the storage
+The facade suite is the coverage that had to survive the file adapter's
+removal: the storage
 round-trips the file suite used to cover are now exercised on PostgreSQL through
 the same public facade the server uses in `STORAGE_MODE=postgres`.
 
@@ -116,8 +116,7 @@ For a **facade test**, also call `installFacadeStorage()` in `before` and
 seed parents from `./helpers/seed.js`. `tags-storage.pgtest.js` is the smallest
 end-to-end example.
 
-All eight `onConflict` sites from `docs/plans/briefs/postgres-test-infra.md`
-now have coverage: `slide-locks` and `api-usage` (the first suite), plus
+All eight `onConflict` sites in the storage layer now have coverage: `slide-locks` and `api-usage` (the first suite), plus
 `activity-events`, `presentation-subscriptions`, `presentation-comments`, the
 adapter-backed `presentations` (Y.Doc state), `image-favorites` (via the
 facade toggle since B79/D34 — see the table note), and `slide-library-usage`.

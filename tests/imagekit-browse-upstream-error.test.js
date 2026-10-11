@@ -1,12 +1,12 @@
 /**
- * B415 — the ImageKit browse routes refuse in our own words.
+ * The ImageKit browse routes refuse in our own words (B415).
  *
  * `fetchJsonOrThrow` used to put ImageKit's raw body into the error message on
  * a 4xx and forward ImageKit's status, so the picker showed
- * `{"message":"…","help":"For support kindly contact us at support@imagekit.io"}`
- * and a 401 on our own key reached the editor as a 401. B412 fixed the copy
- * route; these pin the rest of the surface: listing files, the tag sample, and
- * reading and writing a file's details.
+ * `{"message":"…","help":"For support kindly contact us at
+ * support@imagekit.io"}` and a 401 on our own key reached the editor as a 401.
+ * The copy route was fixed first (B412); these pin the rest of the surface:
+ * listing files, the tag sample, and reading and writing a file's details.
  *
  * Every upstream failure — a 4xx, a 5xx, no answer at all — is the same
  * answer: `502 bad_gateway` with one sentence, nothing of ImageKit's payload

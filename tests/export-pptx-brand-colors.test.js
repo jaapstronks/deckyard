@@ -5,8 +5,8 @@
  * The video placeholder set a fixed lime or mist as the slide's ground — the
  * two CIIIC hexes — whatever theme the deck wore, and wrote fixed dark greys on
  * top. The theme master kept a second copy of the `--slide-accent` default.
- * Same class as B640 (slide CSS) and B648 (`shared/`), but under `server/`,
- * where neither guard looked.
+ * Same class as the dead fallbacks in the slide CSS and the player colours in
+ * `shared/` (B640, B648), but under `server/`, where neither guard looked.
  *
  * Pinned here: the placeholder's ground and text follow the theme on a light
  * and a dark ground, no CIIIC hex survives under `server/export/`, and the

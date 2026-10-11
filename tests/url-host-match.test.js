@@ -3,7 +3,7 @@
  *
  * Every provider allow-list used to be `hostname.endsWith('youtube.com')`,
  * which `notyoutube.com` and `youtube.com.attacker.tld` both satisfy — 22 of
- * the 41 CodeQL alerts triaged in B100 were instances of exactly that. The
+ * the 41 CodeQL alerts in the triage (B100) were instances of exactly that. The
  * single `hostMatches()` helper is now the one spelling; this file pins both
  * the helper and the four surfaces that call it, so a re-introduced
  * `endsWith()` fails here rather than in a security scan months later.

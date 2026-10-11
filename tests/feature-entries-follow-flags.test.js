@@ -2,7 +2,7 @@
  * Every client entry of an installation cluster follows its flag (B346, D179,
  * D260; generalised from the AI-only gate in B522).
  *
- * The server has one answer for "cluster off" since B522 (D257): a mount or
+ * The server has one answer for "cluster off" (B522, D257): a mount or
  * row with that `feature` is not mounted, so it answers 404
  * (`tests/ai-kill-switch.test.js`, `tests/feature-declarations.test.js`).
  * D179/D260 give the client the same single answer: the entry is absent from

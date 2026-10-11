@@ -1,7 +1,7 @@
 /**
  * Feature-flag polarity (B68, D259): every renamed flag carries the canonical
  * enable form, while its legacy spelling stays recognized — with a boot
- * warning — until the removal date (2026-11-01). The three B68 kill switches
+ * warning — until the removal date (2026-11-01). The three kill switches
  * (`AI_ENABLED` / `UPLOADS_ENABLED` / `IMAGE_LIBRARY_ENABLED`) and
  * `EXTERNAL_ANALYTICS_ENABLED` default on and replace an inverted
  * `DISABLE_*`; `NOTION_ENABLED` defaults off and replaces `NOTION_FEATURE`,

@@ -1,9 +1,10 @@
 /**
- * B131: the per-slide public API and the MCP write tools know the org registry.
+ * The per-slide public API and the MCP write tools know the org registry
+ * (B131).
  *
- * B129 taught the storage write seam (`normalizeSlides`) to resolve a slide
- * type against the organization's registry rather than the process-wide
- * `SLIDE_TYPES` map, which cannot hold a per-organization DB row. Two write
+ * The storage write seam (`normalizeSlides`) resolves a slide type against
+ * the organization's registry rather than the process-wide `SLIDE_TYPES`
+ * map, which cannot hold a per-organization DB row (B129). Two write
  * surfaces in front of that seam still resolved against the global map, so a
  * type the Settings → Slide Types builder had published was refused before its
  * content was ever read:

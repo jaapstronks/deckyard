@@ -55,7 +55,6 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 | Inline-edit descriptor                                    | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type                                                                                    | no on-canvas editing; every field is side-form only                                                                                                  |
 | Inspector keep-list                                       | `shared/slide-types/types/<name>/inline-edit.js` (`inspectorKeeps`)     | sparse by design (reverse only)                                                                          | inspector shows every field the inline layer misses (the safe default)                                                                               |
 | Element-tab offer                                         | `shared/slide-types/types/<name>/inline-edit.js` (`elementTab`)         | sparse by design (reverse only)                                                                          | no "This element" tab for a selected image or card; its settings stay reachable only through the slide-level form                                    |
-| Structural validator                                      | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`)  | every agent-emittable `collection` / `fixed-collection` type                                             | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated                  |
 
 A fork-local type in `custom/slide-types/` can satisfy the agent, schematic and
 inline companions from its own definition (`ai: {}`, `schematic: {}`,
@@ -102,7 +101,7 @@ Rules and limits: `shared/slide-types/usage.js`.
 | Layer                                                 | Derived from                                                                                    |
 | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
 | Editor form, JSON schema, validation                  | `fields[]` on the definition                                                                    |
-| Agent-facing content schema (MCP + generation prompt) | `fields[]`, via `deriveAgentSchema()` — hand-written until T7-slice 3; see below                |
+| Agent-facing content schema (MCP + generation prompt) | `fields[]`, via `deriveAgentSchema()` — hand-written before (T7, slice 3); see below            |
 | i18n key scaffolding                                  | `addUiI18nKeysToSlideType()` at registry build                                                  |
 | Agent-visible type list (MCP `get_slide_types`)       | the runtime registry, since #386 — was hand-maintained, and was the biggest hole in this matrix |
 | Canonical type id (`eu.deckyard.slide.title`)         | `SLIDE_TYPE_IDS`                                                                                |
@@ -110,7 +109,8 @@ Rules and limits: `shared/slide-types/usage.js`.
 
 ### The agent-facing schema, and how a field opts out
 
-Until T7-slice 3 the AI catalog carried a hand-written `schema:` block per type —
+Before the agent schema was derived (T7, slice 3), the AI catalog carried a
+hand-written `schema:` block per type —
 a second copy of what `fields[]` already said. It drifted: of 135 field entries,
 five named something no renderer reads (`payoff-slide.tagline`,
 `video-slide.videoUrl`, and the deprecated `stages`/`steps` aliases on
@@ -172,8 +172,8 @@ are in [`slide-type-structure.md`](slide-type-structure.md) and
   per type: types share stylesheets, and a missing rule shows up the moment you
   look at the slide rather than silently.
 - **PPTX export tier** — the pattern this matrix generalizes ("no tier → the
-  build fails"), but the tier itself does not exist yet. It belongs here when
-  STRATEGY T4 lands.
+  build fails"), but the tier itself does not exist yet. It belongs here once
+  the export tiers land (T4).
 - **Behavioural subsets** — hardcoded `*-slide` arrays that answer a _behaviour_
   question rather than a coverage one: `NON_CONTENT_SLIDE_TYPES` and
   `SLIDE_ITEM_REQUIREMENTS` (`server/utils/ai/validate-slides/constants.js`),
@@ -214,11 +214,11 @@ live third-party player.
 or an instance key. It has to be said, because a sample that names something
 else does not fail anywhere: the projection and the editor form both walk
 `fields[]`, so the stray key is simply dropped and the preview quietly shows
-`defaults` where it promises an example. Four samples had drifted that way by
-B248 (a flat `metric1Value` model that had become an items field, a
-`statement`/`labelLow` trio whose fields were renamed, and the two chrome types
-above). `tests/semantic-projection-snapshot.test.js` now checks it for every
-core type. **And a sample is a declaration, not a draw**: `chart-slide` used to
+`defaults` where it promises an example. Four samples had drifted that way
+before anything checked it: a flat `metric1Value` model that had become an
+items field, a `statement`/`labelLow` trio whose fields were renamed, and the
+two chrome types above (B248). `tests/semantic-projection-snapshot.test.js`
+now checks it for every core type. **And a sample is a declaration, not a draw**: `chart-slide` used to
 pick one of three chart types at random on first import, so the tile showed a
 different chart per server process and no tracked artifact could pin the
 type's example.
@@ -284,10 +284,11 @@ produce: the count drops because knowledge moved onto the types, not because the
 threshold moved.
 
 Two modules used to carry `promote: true` — the refine phase's per-type Zod map
-and `server/utils/ai/validate-slide-structure.js` — both companion-shaped (a
-type with no entry is silently unvalidated) and neither gated. The second was
-promoted to the matrix (**Structural validator** above); the first is **gone**
-(D87, B241), and how it went is the more useful lesson.
+and its per-type structural validator table (`STRUCTURE_VALIDATORS`) — both
+companion-shaped (a type with no entry is silently unvalidated) and neither
+gated. Both are now **gone**: the first when the content schema came to be
+derived from `fields[]` (D87, B241), the second after a spell in the matrix as
+**Structural validator** (B242). How they went is the more useful lesson.
 
 A companion is a per-type table someone has to remember to fill in, and the gate
 exists because they forget. But a table that restates what the definition
@@ -300,10 +301,21 @@ check: a type has a content schema because it has fields.
 
 **Ask of a companion whether it can be derived before you gate it.** A gate on a
 derivable table is a maintained answer to a question nobody needs asked.
-**Structural validator** stays a companion because it is not derivable: it is
-owed only by the `collection` / `fixed-collection` types, and what it checks —
-whether a repeated-item array's cardinality and per-item required fields hold
-together as a _shape_ — is a judgement about the type, not a restatement of it.
+The structural validator looked like the exception and was not. It was gated
+here on the argument that cardinality and per-item required fields "hold
+together as a shape", a judgement about the type rather than a restatement of
+it. Measured against `fields[]` (B242), every check was one of three things: a
+restatement of `minItems`, `maxItems` and an item field's `required`, which the
+content schema already derives; a disagreement with them; or a rule `fields[]`
+cannot express. Five validators required item fields the type calls optional,
+and three (`funnel-slide`, `cycle-slide`, `process-slide`) checked a key the
+type does not declare, so every valid slide of those types logged a missing
+array. One rule was the third kind: `logo-wall-slide` wanted each logo to have
+a name or an image, an either-or that no single field's `required` can say. It
+went with the table on purpose, and that is a known gap: a logo with neither
+renders as the empty-image placeholder, and nothing logs it. A gate kept the
+table complete; it could not keep it true. The refine phase now logs the derived
+content schema alone.
 
 The next ungated per-type table should get `promote: true` again as the
 signpost to the following promotion.

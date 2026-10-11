@@ -1,5 +1,5 @@
 /**
- * B611: MCP's slide-set writers on the slide service.
+ * MCP's slide-set writers on the slide service (B611).
  *
  * `remove_slide`, `reorder_slides`, `append_slides`, `compress_presentation`
  * and `iterate_presentation` each loaded the deck, changed `pres.slides` and

@@ -1,5 +1,5 @@
 /**
- * B618: the cross-deck recent comments read the actor's deck list. MCP
+ * The cross-deck recent comments read the actor's deck list (B618). MCP
  * `list_recent_comments` used to build its own deck set
  * (`listAccessiblePresentationRefs`): `owned` was a bare e-mail comparison on
  * the owner column, so a deck the actor made but no longer owns was left out,

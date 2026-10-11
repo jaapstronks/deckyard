@@ -1,8 +1,9 @@
 /**
- * B62 vondst 12 — the public-API v1 presentation payload exposes `isViewOnly`.
+ * The public-API v1 presentation payload exposes `isViewOnly` (B62, finding
+ * 12).
  *
  * `GET /api/v1/presentations?viewOnly=true` filters the list on `isViewOnly`,
- * but before B62 no response payload carried that field: a consumer could
+ * but no response payload used to carry that field: a consumer could
  * filter on a property it could never see. The sanitizer now emits it, so the
  * documented filter reads a value the payload also returns.
  *

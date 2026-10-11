@@ -1,7 +1,7 @@
 /**
- * B80 — Notion import re-hosts images through the own media library when
- * ImageKit is not configured, so an imported deck survives Notion's ~1h
- * signed-URL expiry.
+ * Notion import re-hosts images through the own media library when ImageKit
+ * is not configured, so an imported deck survives Notion's ~1h signed-URL
+ * expiry (B80).
  *
  * Pins the D29-1 decision: without ImageKit, `processNotionImages` fetches each
  * Notion image and stores it via the configured media provider, rewriting the

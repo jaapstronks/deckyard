@@ -1,6 +1,6 @@
 /**
- * B257 B1-rest: deck search reads a slide's words through the type's own
- * declaration (`slideProse`), not a hand-kept list of field names. That list
+ * Deck search reads a slide's words through the type's own declaration
+ * (`slideProse`), not a hand-kept list of field names (B257 B1-rest). That list
  * read ten keys no current type declares (`cards`, `steps`, `events`, …) and
  * missed every item text that was not `title`/`text`/`label`; and the language
  * versions it searched (`pres.i18n.slides`) are a shape storage no longer has,

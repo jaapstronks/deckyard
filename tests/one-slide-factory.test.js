@@ -1,5 +1,5 @@
 /**
- * B243: one factory where a slide comes into being.
+ * One factory where a slide comes into being (B243).
  *
  * Four routes used to create a slide, with three different compositions
  * between them and one that skipped composition entirely:
@@ -15,7 +15,7 @@
  *   slide reached storage with no `pollId` at all.
  *
  * Every hook that has to hold "on both creation paths" — the preset seed, the
- * instance keys, and next the theme ground of B160 — therefore had to be
+ * instance keys, and next the theme ground (B160) — therefore had to be
  * written three times and still missed the fourth. `newSlide()` is now the one
  * composition and every route hands it what it knows.
  *

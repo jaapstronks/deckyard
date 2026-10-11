@@ -6,44 +6,22 @@
  * log content loss (for prompt improvement) and to report unknown fields.
  */
 
-import {
-  DERIVED_SLIDE_CONTENT_KEYS,
-  SLIDE_TYPES,
-} from '../../../../shared/slide-types/registry.js';
-import { GLOBAL_A11Y_FIELDS } from './constants.js';
+import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
+import { declaredContentKeys } from '../../../../shared/slide-types/declared-keys.js';
 import { logValidation } from './logging.js';
 
-// Cache for extracted field keys per slide type
-const fieldKeysCache = new Map();
-
 /**
- * Extract all valid field keys from a slide type definition
- * Includes fields from the slide type's fields array plus global a11y fields
- * and the derived contrast keys (`DERIVED_SLIDE_CONTENT_KEYS`): no author
- * writes those, but a settled slide carries them, and a validator that called
- * them unknown would warn on every slide the editor or the write seam measured.
+ * The keys a slide of this type may carry: `declaredContentKeys()`, the one
+ * predicate strict validation and the deck import read as well. A list of its
+ * own here named only `fields[]`, the a11y pair and the contrast keys, so it
+ * logged an instance key such as a poll's `pollId` as content loss on a slide
+ * strict accepts (B242).
  *
  * @param {string} slideType - The slide type name (e.g., 'content-slide')
- * @returns {Set<string>} Set of valid field keys
+ * @returns {ReadonlySet<string>}
  */
 function getValidFieldKeys(slideType) {
-  if (fieldKeysCache.has(slideType)) {
-    return fieldKeysCache.get(slideType);
-  }
-
-  const typeDef = SLIDE_TYPES[slideType];
-  const keys = new Set([...GLOBAL_A11Y_FIELDS, ...DERIVED_SLIDE_CONTENT_KEYS]);
-
-  if (typeDef && Array.isArray(typeDef.fields)) {
-    for (const field of typeDef.fields) {
-      if (field && typeof field.key === 'string') {
-        keys.add(field.key);
-      }
-    }
-  }
-
-  fieldKeysCache.set(slideType, keys);
-  return keys;
+  return declaredContentKeys(SLIDE_TYPES[slideType]);
 }
 
 /**

@@ -1,5 +1,5 @@
 /**
- * B105 gate — `sseWrite()` is the only thing that writes an SSE frame.
+ * Gate: `sseWrite()` is the only thing that writes an SSE frame (B105).
  *
  * Four private writer closures used to live next to `openSseStream` imports
  * (convert, notion import, wizard-v2 stream, MCP GET) plus five inline

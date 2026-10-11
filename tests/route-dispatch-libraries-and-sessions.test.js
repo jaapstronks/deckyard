@@ -2,15 +2,15 @@
  * A7.19 C8 fase 2 — route-table migration for the library, theming and
  * live-session modules (batch 5).
  *
- * Seven modules (docs/reference/route-dispatch.md): `themes` is all Form A
- * with per-route designer guards; `api-keys` mirrors its original 405 tail as
+ * Seven modules (docs/reference/route-dispatch.md): `themes` is all Form A with
+ * per-route designer guards; `api-keys` mirrors its original 405 tail as
  * trailing catch-alls (Form B); `font-families` mixes Form B (collection,
  * `/:id`) with Form A (Adobe + variant paths); `stock-media` splits a public
  * status row from the authed rows across two tables, all Form B;
- * `image-library` is Form B since B522 (its flag moved to the mount, so no
- * guard precedes the method any more); `jobs` is GET-only Form A; `live-sessions` is Form A on purpose
- * (the GET counterparts are public capability routes) with `/state` as a
- * guard-before-method single handler.
+ * `image-library` is Form B (B522: its flag moved to the mount, so no guard
+ * precedes the method any more); `jobs` is GET-only Form A; `live-sessions` is
+ * Form A on purpose (the GET counterparts are public capability routes) with
+ * `/state` as a guard-before-method single handler.
  *
  * Routing is asserted with `select()` over the exported ROUTES (storage-free);
  * 405/401 behaviour is asserted by invoking the entry function — which for a

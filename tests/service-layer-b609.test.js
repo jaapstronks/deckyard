@@ -1,5 +1,5 @@
 /**
- * B609: one deck create that carries its content, on every contract.
+ * One deck create that carries its content, on every contract (B609).
  *
  * The internal AI wizards (`createDeckFromParts` in `routes/api/ai/shared.js`),
  * the public v1 AI wizard and MCP's `create_presentation` /

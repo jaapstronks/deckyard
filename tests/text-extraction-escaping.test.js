@@ -1,7 +1,7 @@
 /**
  * Entity decoding and tag stripping do not un-escape what an author escaped.
  *
- * Two families out of the B100 CodeQL triage live here:
+ * Two families out of the CodeQL triage (B100) live here:
  *
  * - **double-escaping**: decoding `&amp;` *before* the other entities turns
  *   `&amp;lt;` into `&lt;` and the next replacement into `<`, so text an author

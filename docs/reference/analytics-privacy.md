@@ -11,8 +11,7 @@ an anonymous viewer is identified by a possessed session token and never by a
 bare device id_.
 
 It describes the analytics-privacy seams as they stand after the
-analytics-privacy work (decisions recorded in `docs/plans/done/decisions.md`
-§ _analytics-privacy-naden_). The tenant-isolation rules it leans on live in
+analytics-privacy work. The tenant-isolation rules it leans on live in
 [`tenant-isolation.md`](tenant-isolation.md); the wider data-subject-rights
 surface for logged-in people is the GDPR export/erase endpoint below.
 

@@ -1,7 +1,7 @@
 /**
- * The B575 cuts: four deck handlings that each contract used to compose from
- * the deck storage itself now live once in `server/services/`, and every
- * contract that offers them is an adapter (A7.4, D252–D256).
+ * Four deck handlings that each contract used to compose from the deck
+ * storage itself now live once in `server/services/`, and every contract that
+ * offers them is an adapter (B575, A7.4, D252–D256).
  *
  *   - **listing a deck's comments** (`listComments`, `services/comments.js`):
  *     internal, v1 and MCP `list_comments`. The filters had drifted: the

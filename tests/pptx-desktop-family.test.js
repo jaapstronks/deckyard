@@ -1,6 +1,6 @@
 /**
- * B289 (D126) — an uploaded font family names the font as a desktop app knows
- * it, and the PPTX export writes that name instead of the CSS alias.
+ * An uploaded font family names the font as a desktop app knows it, and the
+ * PPTX export writes that name instead of the CSS alias (B289, D126).
  *
  * The chain, end to end without a database:
  *

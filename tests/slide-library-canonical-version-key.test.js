@@ -1,12 +1,13 @@
 /**
- * B482: a library create refuses a language version under a non-canonical key.
+ * A library create refuses a language version under a non-canonical key (B482).
  *
- * B481 closed the deck seam; the library had its own. `createSlideLibraryRow`
- * wrote the `i18n` of a POST as-is, so `i18n.versions.en` landed on the shelf
- * where `pickVersion` (which reads the canonical key only) never finds it.
- * Create is the only library write that carries `i18n` (a PATCH derives it
- * from `content`, D170), and it now runs the same check as the deck seam:
- * 400 `invalid`, `details.field` = `i18n.versions`, nothing written.
+ * The deck seam already refused it (B481); the library had its own.
+ * `createSlideLibraryRow` wrote the `i18n` of a POST as-is, so
+ * `i18n.versions.en` landed on the shelf where `pickVersion` (which reads the
+ * canonical key only) never finds it. Create is the only library write that
+ * carries `i18n` (a PATCH derives it from `content`, D170), and it now runs the
+ * same check as the deck seam: 400 `invalid`, `details.field` =
+ * `i18n.versions`, nothing written.
  *
  * The canonical key `en-GB` stored and read back is pinned against real
  * PostgreSQL in tests/pg/slide-library-i18n-storage.pgtest.js (this file's

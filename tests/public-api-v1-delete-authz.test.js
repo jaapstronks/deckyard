@@ -1,6 +1,6 @@
 /**
- * B519 — `DELETE /api/v1/presentations/:id` decides on the owner, not on an
- * address.
+ * `DELETE /api/v1/presentations/:id` decides on the owner, not on an address
+ * (B519).
  *
  * The v1 route used to compare the deck's `ownerEmail` with the key owner's
  * address by hand. That ignored `ownerId`, the only key ownership is decided on

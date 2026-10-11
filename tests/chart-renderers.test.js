@@ -1,10 +1,11 @@
 /**
  * The three chart SVG renderers, pinned by shape rather than by snapshot.
  *
- * Nothing tested these before B196, which is how bar drew its bars on one
- * scale and its gridlines on another for as long as it did. The assertions
- * here are the invariants a reader of the picture relies on: a mark sits where
- * its own axis label says it does, and everything drawn stays inside the plot.
+ * Nothing tested these until this file (B196), which is how bar drew its bars
+ * on one scale and its gridlines on another for as long as it did. The
+ * assertions here are the invariants a reader of the picture relies on: a mark
+ * sits where its own axis label says it does, and everything drawn stays inside
+ * the plot.
  *
  * Run with: node --test tests/chart-renderers.test.js
  */

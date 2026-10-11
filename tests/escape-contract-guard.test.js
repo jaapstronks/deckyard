@@ -5,8 +5,8 @@
  * Escape goes through `takeEscape(e)`, which reads the mark a layer before it
  * left (`defaultPrevented`) and marks the press before its caller acts. A
  * transient layer that listens on `document` does so in the capture phase, so
- * it hears the key before the standing surface it opened over. Before B472 the
- * handlers came in three shapes — mark, read, `stopPropagation()` — and a
+ * it hears the key before the standing surface it opened over. The handlers
+ * used to come in three shapes (B472) — mark, read, `stopPropagation()` — and a
  * handler that did none of them closed its layer *and* the one under it (the
  * slide context menu in the narrow slides drawer).
  *

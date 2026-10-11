@@ -4,9 +4,9 @@
  *
  * `assertErrorDetails()` runs at the two emission points (`jsonError()` and
  * `AppError.toJSON()`), which is the real contract — but it only fires on a
- * path something actually executes. B208's own inventory measured `details:`
- * under `server/routes/**` and missed two producers that live in
- * `server/storage/**`: the slide-merge `conflict` (a fifth key) and an
+ * path something actually executes. The inventory that introduced it (B208)
+ * measured `details:` under `server/routes/**` and missed two producers that
+ * live in `server/storage/**`: the slide-merge `conflict` (a fifth key) and an
  * unregistered payload on a `ValidationError`. Both reached the client in dev
  * as a 500 the moment the assertion went in.
  *

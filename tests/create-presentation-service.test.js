@@ -1,5 +1,5 @@
 /**
- * B521: one deck create under three contracts (A7.4).
+ * One deck create under three contracts (B521, A7.4).
  *
  * The internal route, public v1 and the MCP create tools each made a deck their
  * own way: only the internal route left an activity row, only v1 refused the

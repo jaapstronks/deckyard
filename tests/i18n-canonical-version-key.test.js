@@ -1,5 +1,5 @@
 /**
- * B481: the write seam refuses a language version under a non-canonical key.
+ * The write seam refuses a language version under a non-canonical key (B481).
  *
  * `normalizeI18n` only visited the keys of `TRANSLATION_LANGS`, so a PUT with
  * `i18n.versions.en` was stored as-is. `pickVersion` reads the canonical key

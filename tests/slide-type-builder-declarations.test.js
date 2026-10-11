@@ -5,7 +5,7 @@
  * *means* — which sub-field heads an item, where a retired option's stored
  * value lands, that a string references media the document cannot embed. The
  * projection has honoured all three on any field since A2.1–A2.3, and the
- * shared walk has checked them since B231; the only thing keeping them out of a
+ * shared walk checks them too (B231); the only thing keeping them out of a
  * database type was the builder: no control wrote one, and the whitelist on the
  * way to storage dropped one that arrived by any other route.
  *

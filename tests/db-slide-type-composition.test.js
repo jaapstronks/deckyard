@@ -1,6 +1,6 @@
 /**
- * B240: a database-backed slide type is composed like every other registry
- * entry.
+ * A database-backed slide type is composed like every other registry
+ * entry (B240).
  *
  * `composeSlideType` appends the global slide fields (background, a11y, theme
  * logo) and the i18n key annotations to a type's own schema. The registry runs

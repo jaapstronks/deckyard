@@ -1,5 +1,5 @@
 /**
- * B327 / D162 — the ImageKit copy is provider-agnostic.
+ * The ImageKit copy is provider-agnostic (B327, D162).
  *
  * The companion file (`imagekit-copy-on-pick.test.js`) drives the local
  * provider end to end. The promise the feature makes is stronger than that: a

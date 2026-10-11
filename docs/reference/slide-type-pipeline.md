@@ -37,8 +37,9 @@ it touches slide types; `AGENTS.md` § Slide types points here.
   single place that knows the legacy mapping. Do not re-derive it anywhere else,
   and never add a surface that accepts a non-canonical spelling without
   normalizing through it, nor one that emits the bare key across the boundary.
-  Stored `slides[].type` still holds the bare key until the v3→v4 migration
-  lands (see `docs/plans/briefs/one-spelling.md`). See
+  Stored `slides[].type` holds the bare key: the v3→v4 step in
+  `shared/slide-types/schema-version.js` folds any other stored spelling
+  to it at read time. See
   [`docs/reference/deck-format.md`](deck-format.md) and the beta
   stance in [`docs/reference/versioning.md`](versioning.md).
 
