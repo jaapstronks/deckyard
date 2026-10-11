@@ -156,7 +156,8 @@ how you know you picked the wrong one.
   button or heading the caller names — and says one polite sentence with the
   label, through `planRowRemoval()`
   (`client/lib/dom/row-removal.js`, B647). One shared sentence,
-  `common.rowRemoved`: a per-site success key is the thing B643 removed.
+  `common.rowRemoved`: a success key per site is the repetition that the
+  removal of confirmations which only repeat the screen took out (B643).
   Removing a row by navigating away (a deck moved to trash) needs neither —
   the route places focus.
 
@@ -186,25 +187,25 @@ production — the client's counterpart to the server's
 `NODE_ENV !== 'production'` guard. Every UI primitive draws the line there,
 not in a copy of its own.
 
-## Implementation status (2026-10-10)
+## Implementation status (2026-10-11)
 
-The primitive and the helper meet the rules above. One row of call sites does
-not yet:
+The primitive, the helper and every call site meet the rules above:
 
-| Burndown                                                               | Count   | Item |
-| ---------------------------------------------------------------------- | ------- | ---- |
-| Refusals of the form on screen reported in a `toast.error`             | 0       | B204 |
-| Hand-rolled inline error classes (message idioms)                      | 0 files | B204 |
-| `catch` blocks that discard the server sentence for generic `t()` copy | 0       | B205 |
-| Background failures that expire in a toast                             | 5       | B206 |
+| Burndown                                                               | Count   |
+| ---------------------------------------------------------------------- | ------- |
+| Refusals of the form on screen reported in a `toast.error`             | 0       |
+| Hand-rolled inline error classes (message idioms)                      | 0 files |
+| `catch` blocks that discard the server sentence for generic `t()` copy | 0       |
+| Background failures that expire in a toast                             | 0       |
 
-B205 is done too: a `catch` that has the caught error hands it over, and a
-bulk action puts the first failure's sentence after its count. What is still
+No `catch` discards the server sentence any more: one that has the caught
+error hands it over, and a bulk action puts the first failure's sentence after
+its count (B205). What is still
 translated client copy has no server sentence behind it (a guard with no
 request, a browser failure, a 200 that reports a partial outcome) or is copy
 looked up on the status.
 
-B204 is done. No refusal of a form on screen is toasted any more — the 16 local
+No refusal of a form on screen is toasted any more (B204) — the 16 local
 validations went to the helper in PR 1, the 13 API refusals caught in a save
 handler in PR 2 — and no file spells the message element by hand any more: the
 last nineteen moved to `createInlineError()` in PR 3. A `*-error` class name
@@ -212,8 +213,8 @@ now means exactly one thing, so the pages that were never messages were renamed
 after what they are: `dashboard-alert-banner`, and — for the four views that
 each drew their own whole-page dead end — `access-notice-*`,
 `analytics-unavailable`, `shared-report-unavailable`, `share-viewer-card-icon`.
-Four spellings of one thing is the same drift one level up, so B213 folded them
-into one factory: `createPageUnavailable()` in
+Four spellings of one thing is the same drift one level up, so they were folded
+into one factory (B213): `createPageUnavailable()` in
 [`client/lib/dom/page-unavailable.js`](../../client/lib/dom/page-unavailable.js),
 class family `.page-unavailable*`. **A whole-page state is not a sixth kind** —
 there is no message here, only a page saying what it is; the table above is
@@ -224,8 +225,8 @@ there is a form to refuse.
 The `toast.error` calls left in the refuse-and-return allowlist are a different
 shape: a modal that refuses to open, a menu item, a card action, a file dropped
 on the canvas — an action with no form on screen, whose carrier _is_
-`toast.error`. There is no `toast.warning`: no kind maps to it, so B309
-removed the helper and its style, and every caller that had reached for it
+`toast.error`. There is no `toast.warning`: no kind maps to it, so the helper and
+its style were removed (B309), and every caller that had reached for it
 turned out to be one of the five — the slide-lock notice is a status change
 from outside (`toast.info`), a Transfer with nobody to transfer to is the
 failure of an action (`toast.error`), and a partly failed invite is a refusal
@@ -266,7 +267,8 @@ below the top bar (`aria-live="polite"`) and
 `client/lib/dom/maintenance-banner.js` (`role="alert"`). **Settings has no
 panel-wide carrier, deliberately** (B206, revising D124): its two background
 failures are a stale list and a failed export, and both belong at the thing
-they describe rather than in the panel header. D124 chose a chip because the
-editor had one; B498 replaced that chip with a banner, so honouring D124's
-wording would have introduced the second form for one concept that D124 exists
-to prevent.
+they describe rather than in the panel header. The earlier decision to give
+Settings a status chip followed the editor, which had one at the time; the
+editor has since replaced that chip with a banner (B498), so following the old
+wording would have introduced a second form for the one concept that decision
+existed to keep single.

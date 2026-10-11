@@ -109,7 +109,8 @@ the keys — array canonical, with nothing left to sync (`ensureMembers` /
 inline editor).
 `text-blocks` went the same way at **schema v1 -> v2**: the step folds the
 numbered `row{N}…`/`arrow{N}` fields into `rows[]` (up to 4 rows) and drops
-them (D216), and since B452 nothing else reads or declares the numbered shape.
+them (D216), and nothing else reads or declares the numbered shape any more
+(B452).
 `content-columns` is the exception: **numbered-only, no array**. Since step 4
 that duality is resolved the ImageRef way rather than by a storage rewrite:
 the numbered keys stay the storage shape, but every column's image _resolves_
@@ -223,8 +224,8 @@ imageDefaults = {
 > nothing in between. Step 2b's fold in `ensureImageTextImages` deliberately
 > dropped a stored base fit that equalled the default instead of stamping it
 > onto the items — exactly to preserve the empty/explicit signal described
-> above; the funnel deletes the plural keys outright since D100, so no fold is
-> left to run. `focus` was already live as a type default.
+> above; since image-text split into a one-image type and `image-set`, the
+> funnel deletes the plural keys outright, so no fold is left to run (D100). `focus` was already live as a type default.
 
 ### The fit/bleed split (part of `ImageRef`)
 
@@ -273,7 +274,8 @@ the field is cheaper.
 
 > ✅ **Shipped with step 3 (PR #185).** The image-slide → image-text seam
 > resolves fit through `resolveImageSlideImage`. It carried `bleed` on
-> `images[0]` until D100 (2026-09-09), which now **drops** it: image-text
+> `images[0]` until image-text split into a one-image type and `image-set`
+> (D100, 2026-09-09); the conversion now **drops** it: image-text
 > renders no edge-to-edge frame, and a carried-but-unrendered key is a hidden
 > field. The drop is declared in `CONSUMED_SOURCE_KEYS`
 > (`shared/slide-types/convert.js`), so it is a deliberate loss the confirm
@@ -282,7 +284,7 @@ the field is cheaper.
 
 Before the split, conversion demoted both `full` and `bleed` to `cover`; the
 edge-to-edge distinction was lost. It is still lost — but declared rather than
-silent, which is the difference D100 was after. The reverse direction
+silent, which is the difference the split was after (D100). The reverse direction
 (image-text → image-slide, currently not offered) becomes worth building — there
 is nothing left to guess.
 
@@ -296,8 +298,8 @@ property.
 
 1. ~~**Centralize precedence.**~~ ✅ **Shipped — PR #182 (2026-07-20).** One
    `resolveImageTextCell(content, idx)` was the single read authority (render +
-   canvas drag + inspector). Pure refactor, render byte-identical. D100 split
-   the type in two and the authority with it: `resolveImageTextImage(content)`
+   canvas drag + inspector). Pure refactor, render byte-identical. Splitting
+   the type in two split the authority with it (D100): `resolveImageTextImage(content)`
    (`types/image-text-slide/image.js`) for the one flat image, and
    `resolveImageSetCell(content, idx)`
    (`types/image-set-slide/images.js`) for the 2–3 of a set.
@@ -327,7 +329,7 @@ property.
    fit out to the items and simply drops a default-equal one, and the
    slide-level fit control is retired (images manager owns fit, silent-default
    UX). Legacy `imageFit` stayed a read-only render fallback for un-migrated
-   decks until D100; the v14 → v15 funnel step
+   decks until the type split (D100); the v14 → v15 funnel step
    (`cutImageTextPluralLayouts`) deletes it — along with `images`,
    `textColumns`, `altNl` and `altEn` — from every image-text slide, so it is
    no longer read anywhere.
@@ -357,8 +359,8 @@ definition, and the remaining record-level differences are storage shapes, not
 semantics. What deliberately remains outside this track: the `team-cards`
 `imageFocusX/Y` naming divergence and quote's portrait S+I split. The third
 item on this list used to be image-text not _rendering_ `bleed` while carrying
-it; D100 closed that the other way, by dropping `bleed` at the conversion and
-storing it on neither type.
+it; the type split closed that the other way, by dropping `bleed` at the
+conversion and storing it on neither type (D100).
 
 The editing-surface UI work (`docs/reference/editing-surfaces.md`) sits on top of
 step 1-2: once "This image" reads a single per-element `ImageRef`, the tab split

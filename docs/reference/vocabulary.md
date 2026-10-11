@@ -33,7 +33,7 @@ i18n JSON values and the English fallback strings inside `t()` calls may say
 "workspace"; nothing else may. When code needs to mention the label, it says
 so explicitly (e.g. "the UI labels an organization \"workspace\"").
 
-Decided as D10+D11 (2026-08-06); executed in B41-a. The public API break
+Decided 2026-08-06 and executed in one rename (D10, D11, B41-a). The public API break
 (`scope` → `visibility`, `'workspace'` → `'organization'`) shipped as a
 breaking MINOR with a stored-data migration (074) — no accepts-both reading.
 
@@ -65,8 +65,8 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   presentations view now spell the owned/shared/all source filter
   **`ownership`**. The storage helper's `visibility` option in
   `server/storage/presentations/comments.js` — a second homonym for the same
-  concept — was renamed with it; since B618 that helper no longer picks decks
-  at all, and `list_recent_comments` reads the deck list of
+  concept — was renamed with it; that helper has since stopped picking decks
+  at all (B618), and `list_recent_comments` reads the deck list of
   `listPresentationsForActor` under the same four values. This was a breaking change to the MCP tool
   schema, shipped deliberately with no back-compat alias; MCP clients re-read
   the schema each session.
@@ -79,8 +79,8 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   and the client. It never appeared in the public v1 API
   (`sanitizeLibraryItem` omits it) and still does not. "Team" survives only as a
   UI label. Deploying this requires migration 076 to run.
-  **Names finished in B90 (2026-08-18).** B53 moved the field, the values and
-  the route segment but left the _names_: the storage exports
+  **Names finished on 2026-08-18 (B90).** The sweep above had moved the
+  field, the values and the route segment but left the _names_ (B53): the storage exports
   (`listTeamLibrary`, `getTeamCollection`, …), the shelf route handlers, the
   bulk-export ZIP entry `slide-library/team.json` and the `/api/home` response
   fields (`collections.team`, `teamSlides`). All now read _organization_; the
@@ -89,9 +89,9 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   loser identifiers to zero across `server/`, `client/` and `tests/`.
   Deliberately untouched: the _tenant_ axis, where "team" means an
   organization (`getTeamWeeklyAnalytics`, `buildTeamDigestEmail`).
-  **Webhook surface done in B92 (2026-08-19, migration 077).** The settings key
+  **Webhook surface done on 2026-08-19 (B92, migration 077).** The settings key
   `slideAddedToTeamLibraryUrl` and the event `slide.added_to_team_library` were
-  the remainder B90 held back, being a stored settings key plus a public payload
+  the remainder the name sweep held back, being a stored settings key plus a public payload
   contract; they are now `slideAddedToOrganizationLibraryUrl` and
   `slide.added_to_organization_library`, with migration 077 moving the stored
   key on the model of 074 for `presentationMovedToOrganizationUrl`. It is a
