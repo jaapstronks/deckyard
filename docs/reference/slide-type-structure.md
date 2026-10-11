@@ -95,7 +95,7 @@ prevent.
 The operational test is a round-trip: flip the variant, flip it back. If a
 content-bearing field is orphaned, it was never a variant.
 
-Worked on the case the question came from — `image-text-slide` as it stood before D100 (2026-09-09), offering 8 layout tiles over ~180 renderable combinations (`layout` × `imageSide` × `imageWidth` × `textColumns` × `imageFit` × `imageBackground`):
+Worked on the case the question came from — `image-text-slide` as it stood before the cut described below (D100, 2026-09-09), offering 8 layout tiles over ~180 renderable combinations (`layout` × `imageSide` × `imageWidth` × `textColumns` × `imageFit` × `imageBackground`):
 
 | Tile                             | Fields                   | Verdict                                                                                                                    |
 | -------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
@@ -137,7 +137,7 @@ The same test applies to a render axis that is a plain enum rather than a tile s
    seam — a boundary already modelled correctly — and are out of scope.
    **4b** runs the same probe over a declared enum axis that has no tile per value (`ENUM_VARIANT_AXES`: `list-slide.variant`, `callout-slide.variant`, `comparison-slide.variant`, `gallery-slide.layout`, `icon-card-grid-slide.layout`), so a render choice picked by a dropdown is held to the same rule as one picked by a tile.
 
-Assertions 3 and 4 are gates first: assertion 3 carries one violation today, assertion 4 none since D100, and their value is what they stop from being added tomorrow. Assertion 4 checks every type with a variant set (ten, now that `image-set-slide` has one) and clears them all.
+Assertions 3 and 4 are gates first: assertion 3 carries one violation today, assertion 4 none since that cut (D100), and their value is what they stop from being added tomorrow. Assertion 4 checks every type with a variant set (ten, now that `image-set-slide` has one) and clears them all.
 
 `actions[]` is excluded from "content". `content-slide` and `image-text-slide`
 both carry an `actions[0-3]` array beside their scalar slots, and by field type
@@ -155,7 +155,7 @@ corrected the declaration to `collection`: the count is bounded (2–4 answers,
 2–10 scale points) but it is the author's, so `fixed-collection`, which means
 `minItems === maxItems`, was the wrong bucket in both directions. `matrix-slide`
 is now its only member, which is what a structure whose count really is fixed by
-the type looks like. `image-text-slide` left with D100 (schema v15): the plural layouts that made it carry `images[0-2]` under a `singleton` declaration are `image-set-slide` now, and it carries one flat image. It sits in an explicit
+the type looks like. `image-text-slide` left with the cut (D100, schema v15): the plural layouts that made it carry `images[0-2]` under a `singleton` declaration are `image-set-slide` now, and it carries one flat image. It sits in an explicit
 `BURNDOWN` map in the test — the gate is on from day one for everything new, and
 the existing violations are a shrinking list rather than a reason to weaken the
 rule (the pattern `eslint-suppressions.json` established). Recording them is the
@@ -179,7 +179,7 @@ second render and the two should merge — open, and recorded in the burndown wi
 that question attached. (Its previous entry, the List type registered under both
 `list-slide` and a Dutch alias, went at rung 3 of the list consolidation.)
 
-Assertion 4's `VARIANT_BURNDOWN` is empty since D100. Its one entry was `image-text-slide`: the tiles disagreed about how many images they rendered (`split`/`corner` one cell, `duo` two, the rows up to three), so flipping `duo` → `split` orphaned image 2 — the same finding as the structure burndown, reached from the render side instead of the schema side. That the two assertions converged on one type from opposite directions was the useful part: one boundary, two witnesses. The cut that emptied both entries is described under _The rule_ above; a type whose tiles disagree about what they read belongs in this map only until its boundary is cut, never as a permanent resident.
+Assertion 4's `VARIANT_BURNDOWN` has been empty since the cut (D100). Its one entry was `image-text-slide`: the tiles disagreed about how many images they rendered (`split`/`corner` one cell, `duo` two, the rows up to three), so flipping `duo` → `split` orphaned image 2 — the same finding as the structure burndown, reached from the render side instead of the schema side. That the two assertions converged on one type from opposite directions was the useful part: one boundary, two witnesses. The cut that emptied both entries is described under _The rule_ above; a type whose tiles disagree about what they read belongs in this map only until its boundary is cut, never as a permanent resident.
 
 ## The fifth assertion
 

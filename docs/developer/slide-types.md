@@ -877,10 +877,10 @@ means. There is exactly one builder for that —
 argument (`resolveSlideTypeName(ref, slideTypes)`,
 `getSlideType(ref, slideTypes)`). Every org-aware path uses it, reads and writes
 alike: the export pipeline, the published and embed viewers, the thumbnail and
-single-slide renderers, and — since B129 — the storage **write seam**
-(`normalizeSlides`), which the presentations facade feeds one org registry per
-write. Before that, the editor let you insert a published custom type and every
-autosave answered `400 Unknown slide type "custom-…"`.
+single-slide renderers, and the storage **write seam** (`normalizeSlides`),
+which the presentations facade feeds one org registry per write. Before the seam
+took the map, the editor let you insert a published custom type and every
+autosave answered `400 Unknown slide type "custom-…"` (B129).
 
 Two rules follow, and both are load-bearing:
 
@@ -891,8 +891,8 @@ Two rules follow, and both are load-bearing:
   default argument is there for callers that genuinely have no organization
   (schema migrations, the shared client bundle), not as a shortcut.
 
-Since B131 the two write surfaces in front of that seam say whose registry they
-mean as well: the public API's per-slide routes (`POST`/`PUT
+The two write surfaces in front of that seam say whose registry they mean as
+well (B131): the public API's per-slide routes (`POST`/`PUT
 …/presentations/:id/slides` and the from-library insert) build the org registry
 and hand it to `resolveSlideTypeName()`, `newSlide()` and `validateSlide()`, and
 the MCP write tools hand it to strict and fix validation. Strict has no
@@ -905,8 +905,8 @@ Still on the global map, and the one place left worth naming: the fix pipeline's
 callers on the AI generation path (`server/routes/api/ai/*`, and the deck
 generators under `server/utils/`). That pipeline repairs rather than refuses, so
 a custom type is not rejected there — it simply has none of its declarations
-applied (no `maxLength`, no item bounds). That is B131's leftover, tracked as
-B247.
+applied (no `maxLength`, no item bounds). That gap is what the write-surface
+work left over (B131), and it is tracked as open work (B247).
 
 ### Where a slide comes into being
 
@@ -1625,8 +1625,8 @@ This setup:
 
 ## Raw HTML in a fork type
 
-Core ships no raw-HTML slide: the escape hatch left core in A7.8b, with its
-permission path, so the product grows typed slides instead (the tombstone in
+Core ships no raw-HTML slide: the escape hatch left core with its permission
+path (A7.8b), so the product grows typed slides instead (the tombstone in
 `shared/slide-types/removed.js` records the decision and the revive path). A
 fork that wants one builds it as a `custom/slide-types/` type. What core keeps
 for that:
