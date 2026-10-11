@@ -258,9 +258,10 @@ export function getBunnyConfig() {
  * a stranger's video. A slide whose author pasted a full play or embed URL
  * does not need this at all — that URL names its own library.
  *
- * An instance cannot yet declare one library for every new slide; that needs a
- * route from configuration into a slide type's defaults, which does not exist
- * (B653).
+ * An instance that owns a library declares it once as configuration
+ * (`BUNNY_LIBRARY_ID`), which seeds the slide's own field when the slide is
+ * created (B653, shared/slide-types/config-defaults.js). So it still arrives
+ * here as content, and this reader learned nothing new.
  * @param {{bunnyLibraryId?: string}|null} [content] - The slide's content.
  * @returns {string} The library id, or `''` when the slide names none.
  */

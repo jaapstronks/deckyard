@@ -53,8 +53,9 @@ test('a bare UUID without a library embeds nothing', () => {
 test('the shipped defaults name no library, so they embed nothing', () => {
   assert.equal(videoSlide.defaults.bunnyLibraryId, '');
   // A new slide opens on its own empty state rather than on a stranger's
-  // video. The default `source` is still one fork's UUID and `source` is a
-  // required field, so what it should hold instead is B653, not this item.
+  // video. Since B653 the default `source` is blank too, and an instance that
+  // owns a library seeds this field from configuration
+  // (tests/config-seeds-type-defaults.test.js).
   assert.match(render(videoSlide.defaults), /video-empty/);
 });
 
