@@ -81,9 +81,9 @@ These are decisions, not leftovers. Each is documented where it lives:
   without such a video fetches nothing, and unlike a library this is a _service_
   seam — the script talks to Bunny's own player API, so there is nothing to
   vendor. **hls.js used to sit beside it and no longer does**: it is an ordinary
-  pinnable library, so D51(a) vendored it (`scripts/vendor-hls.js`,
-  `client/vendor/hls/`). `ensure-hls.js` is still lazy; it just loads from this
-  server, and `cdn.jsdelivr.net` left `script-src` in the same commit.
+  pinnable library, so it is vendored (`scripts/vendor-hls.js`,
+  `client/vendor/hls/`, D51). `ensure-hls.js` is still lazy; it just loads from
+  this server, and `cdn.jsdelivr.net` left `script-src` in the same commit.
 - **The Swagger UI shell** at `/api/v1/docs` loads swagger-ui-dist from
   jsDelivr. It is developer documentation, not a render path.
 
@@ -96,9 +96,10 @@ External analytics is therefore an **app-shell feature**: the operator's own
 surface, where the operator is the visitor. It used to be injected into the
 published page and the embed as well, behind `ANALYTICS_INCLUDE_EMBEDS` /
 `ANALYTICS_INCLUDE_EXPORTS`; the document CSP those pages carry has blocked
-every such tag since the policy landed, and D56 (2026-08-22) settled that the
-block is the **wanted** end state rather than a bug. The injection and both
-gates are gone; `analyticsHeadHtml()` has one caller left, the shell.
+every such tag since the policy landed, and a decision on 2026-08-22 settled
+that the block is the **wanted** end state rather than a bug (D56). The
+injection and both gates are gone; `analyticsHeadHtml()` has one caller left,
+the shell.
 
 The trade is deliberate and it costs something: an operator who wants their own
 Plausible on their own published decks cannot have it. Three things decided it.
@@ -154,7 +155,7 @@ regardless — the paths need scripts and same-origin).
 ### The served surfaces also send a header (D53(i))
 
 `/p/…` and `/embed/…` are surfaces this server hands back over HTTP, so they
-_can_ set a header — and since D53(i) they do, via
+_can_ set a header, and they do, via
 `buildDocumentCspHeader({ frameAncestors })`. It is the same policy the
 document already carries as a meta, plus the one directive a meta is specified
 to ignore. **The gain is consistency, not coverage**: every directive the meta
@@ -177,9 +178,9 @@ pins the pair.
 
 ### The app shell sends one too (D53(ii))
 
-The shell — `/`, the auth pages, the editor and presenter routes, the
-share-link viewer — is the surface the session cookie lives on, and it
-carried no policy at all until B124. It is served, never downloaded or
+The shell — `/`, the auth pages, the editor and presenter routes, the share-link
+viewer — is the surface the session cookie lives on, and it carried no policy at
+all until this header (B124). It is served, never downloaded or
 `setContent()`-ed, so it needs no meta form: the header from
 `buildAppShellCspHeader()` is its only carrier, set by `serveShellHtml()` on
 every shell 200.
@@ -196,7 +197,7 @@ Bunny's player.js for video slides), and the collab WebSocket rides
 `connect-src 'self'`, which matches same-origin `ws`/`wss` per CSP3
 (verified in Chromium, Firefox and WebKit).
 
-**`'unsafe-inline'` is the recorded answer to the B124 design question**, for
+**The shell policy keeps `'unsafe-inline'` as a recorded decision** (B124), for
 the same reason the render paths carry it: this policy is a host allowlist,
 not an inline-XSS defence. A nonce is unattainable on this surface — the
 analytics escape hatch (`ANALYTICS_HEAD_HTML`) injects operator HTML the

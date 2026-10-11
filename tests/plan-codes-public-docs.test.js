@@ -67,7 +67,7 @@ const PLAN_TREE_HOMES = [
  * that stands on its own (with the code in parentheses behind it, or gone)
  * lowers the number here in the same PR.
  */
-const BURNDOWN = { bareDocCodes: 88, bareTestCodes: 0 };
+const BURNDOWN = { bareDocCodes: 45, bareTestCodes: 0 };
 
 /** @param {string} file */
 function planTreeCitations(file) {

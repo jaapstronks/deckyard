@@ -446,7 +446,7 @@ name is legitimate in every other shape: `{ isAdmin }` destructuring, a jsdoc
 which is always a gate — is rejected.
 
 The rule covers `client/**` **and `shared/**`**: the helper moved to
-`shared/organization-role.js` in B171, and a rule that stopped at the client
+`shared/organization-role.js` (B171), and a rule that stopped at the client
 tree would have left the raw flag freely readable in exactly the place the
 gate now lives. The allowlist is exactly one file:
 `shared/organization-role.js`, where the helper reads the instance flag in
@@ -499,7 +499,7 @@ carry literals, each under one of two reasons: **bilingual chrome** (the paired
 alt-text inputs, the translate modals, the viewer's fixed NL/EN link pair —
 widening those to N languages is a UI design job, tracked separately) and
 **UI-locale axis**. The editor's own NL⇄EN toggle used to head that list; it is
-a language menu over every version the deck has since B182 fase 2.
+now a language menu over every version the deck has (B182, phase 2).
 The list may only shrink: `tests/deck-language-axis.test.js` fails when an entry
 stops matching a real literal, so a cleaned-up file cannot quietly keep its
 exemption. That same test pins the other two gates — one definition site for the
@@ -513,13 +513,13 @@ unreviewable) or downgrade the rules to warnings (no regression protection),
 those existing violations are recorded in
 [`eslint-suppressions.json`](../../eslint-suppressions.json).
 
-The same move recurs when a gate widens: B150 (empty catches + `void` on
-`client/**`, plus the `try {} catch {}` selector everywhere) baselined the
-~490 pre-existing silent catches it surfaced as `no-restricted-syntax`
-suppressions after burning down the presenter teardown cluster. One caveat
-that count carries: suppressions match per file + rule name, so a file with
-suppressed `no-restricted-syntax` entries can absorb that many violations of
-_any_ restricted-syntax selector. The burndown shrinking to zero is what
+The same move recurs when a gate widens: covering empty catches and `void` on
+`client/**`, plus the `try {} catch {}` selector everywhere, surfaced ~490
+pre-existing silent catches, and they were baselined as `no-restricted-syntax`
+suppressions after burning down the presenter teardown cluster (B150). One
+caveat that count carries: suppressions match per file + rule name, so a file
+with suppressed `no-restricted-syntax` entries can absorb that many violations
+of _any_ restricted-syntax selector. The burndown shrinking to zero is what
 closes that gap.
 
 What this buys:
@@ -601,7 +601,7 @@ Script: [`scripts/lint-dead-css.js`](../../scripts/lint-dead-css.js). Where
 no source file references — the blind spot that let `.editor-form-header-left`
 survive a header-row removal (#393) unnoticed.
 
-**A gate since B191, and deliberately conservative.** Class names here are
+**A gate, and deliberately conservative** (B191). Class names here are
 _composed_ (`slide-bg-${id}`, `is-${state}`, `tf-align-${x}`, `renderHtml`
 template builds), so a naive scanner flags every composed class as dead and is
 worse than nothing. The scanner therefore errs towards **alive**: it harvests
