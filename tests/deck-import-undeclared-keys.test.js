@@ -60,7 +60,7 @@ test('global, derived and text-style keys survive the import', () => {
   assert.deepEqual(slide.content.textStyles, { title: { align: 'center' } });
 });
 
-test("an instance key and the invite's own switch survive the import", () => {
+test("an instance key and the invite's own form keys survive the import", () => {
   const poll = importOne({
     type: 'poll-slide',
     content: { question: 'Q?', pollId: 'poll-123' },
@@ -69,9 +69,16 @@ test("an instance key and the invite's own switch survive the import", () => {
 
   const invite = importOne({
     type: 'follow-invite-slide',
-    content: { enabled: false, presentationId: 'p-1' },
+    content: {
+      enabled: false,
+      presentationId: 'p-1',
+      customTitle: 'Join in',
+      customBody: 'Scan the code',
+    },
   });
   assert.equal(invite.content.enabled, false);
+  assert.equal(invite.content.customTitle, 'Join in');
+  assert.equal(invite.content.customBody, 'Scan the code');
 });
 
 test('a legacy key the funnel folds arrives under its current name', () => {
