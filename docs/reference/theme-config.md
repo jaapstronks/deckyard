@@ -15,11 +15,12 @@ surface, slide-type curation.
 core themes and the four CIIIC-fork themes is written as a record in
 `tests/fixtures/theme-records/`, and `tests/theme-record-parity.test.js` pins
 that each renders the same `--t-*` tokens as its file form. The only file
-fields a record does not carry are the ones the record retired (D208): the
-`{en, nl}` background labels, `embedFonts` (fork fonts are managed families,
-bound by name), `hiddenSlideTypes` (use `slideTypes.exclude`), `slides.*` and
-`sampleEmbedUrl`. The rule for what becomes a field: **when every theme sets
-it, it is a field; when one theme sets it, it is a `cssVarOverrides` entry.**
+fields a record does not carry are the ones the move to records retired
+(D208): the `{en, nl}` background labels, `embedFonts` (fork fonts are managed
+families, bound by name), `hiddenSlideTypes` (use `slideTypes.exclude`),
+`slides.*` and `sampleEmbedUrl`. The rule for what becomes a field: **when
+every theme sets it, it is a field; when one theme sets it, it is a
+`cssVarOverrides` entry.**
 
 Most of this shape is editable in **Settings → Themes**, alongside the colours
 and fonts: surfaces, heading treatment, background images, named background
