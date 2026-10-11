@@ -88,9 +88,52 @@ export function buildSlideTypeDescription(type) {
 }
 
 /**
+ * Build one prompt section per organization slide type the model may use:
+ * its key, label, base type and the content schema its defaults show. The
+ * same sections serve every prompt that offers the org's types (the phase 2
+ * catalog, the analysis), so a type reads the same wherever it is offered.
+ * @param {Object} [options]
+ * @param {Array} [options.disabledSlideTypes] - Org-level disabled types to exclude
+ * @param {Array} [options.customSlideTypes] - The org's published types
+ * @returns {string[]} One section per offered type; empty when none
+ */
+export function buildCustomSlideTypeSections({
+  disabledSlideTypes = [],
+  customSlideTypes = [],
+} = {}) {
+  const disabled = new Set(
+    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
+  );
+  const sections = [];
+  for (const ct of Array.isArray(customSlideTypes) ? customSlideTypes : []) {
+    const typeKey = customSlideTypeKey(ct);
+    if (disabled.has(typeKey)) continue;
+    const label = ct.label || ct.slug || 'Custom type';
+    const lines = [];
+    lines.push(`--- ${typeKey} ---`);
+    lines.push(`Custom slide type: "${label}".`);
+    if (ct.baseType) lines.push(`Based on: ${ct.baseType}.`);
+    lines.push('');
+    const fields = Array.isArray(ct.fields) ? ct.fields : [];
+    if (fields.length) {
+      lines.push('CONTENT SCHEMA:');
+      lines.push('```json');
+      const example =
+        ct.defaults && typeof ct.defaults === 'object' ? ct.defaults : {};
+      lines.push(JSON.stringify(example, null, 2));
+      lines.push('```');
+    }
+    lines.push('');
+    sections.push(lines.join('\n'));
+  }
+  return sections;
+}
+
+/**
  * Build the full catalog prompt for Phase 2 slide refinement
  * @param {Object} [options]
  * @param {Array} [options.disabledSlideTypes] - Org-level disabled types to exclude
+ * @param {Array} [options.customSlideTypes] - The org's published types
  * @returns {string} Complete AI prompt with all slide type descriptions
  */
 export function buildPhase2CatalogPrompt({
@@ -102,35 +145,10 @@ export function buildPhase2CatalogPrompt({
   // The withheld types, forbidden by name at the end — same derivation as the
   // Phase 1 catalog (buildSlideTypesPrompt), so neither prompt names a type.
   const withheldRule = agentWithheldTypesRule();
-
-  // Build custom type descriptions
-  const disabled = new Set(
-    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
-  );
-  const customSections = [];
-  if (Array.isArray(customSlideTypes) && customSlideTypes.length > 0) {
-    for (const ct of customSlideTypes) {
-      const typeKey = customSlideTypeKey(ct);
-      if (disabled.has(typeKey)) continue;
-      const label = ct.label || ct.slug || 'Custom type';
-      const lines = [];
-      lines.push(`--- ${typeKey} ---`);
-      lines.push(`Custom slide type: "${label}".`);
-      if (ct.baseType) lines.push(`Based on: ${ct.baseType}.`);
-      lines.push('');
-      const fields = Array.isArray(ct.fields) ? ct.fields : [];
-      if (fields.length) {
-        lines.push('CONTENT SCHEMA:');
-        lines.push('```json');
-        const example =
-          ct.defaults && typeof ct.defaults === 'object' ? ct.defaults : {};
-        lines.push(JSON.stringify(example, null, 2));
-        lines.push('```');
-      }
-      lines.push('');
-      customSections.push(lines.join('\n'));
-    }
-  }
+  const customSections = buildCustomSlideTypeSections({
+    disabledSlideTypes,
+    customSlideTypes,
+  });
 
   return `SLIDE TYPE CATALOG
 ==================

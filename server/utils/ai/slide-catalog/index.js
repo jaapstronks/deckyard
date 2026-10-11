@@ -24,6 +24,7 @@ export {
   getPhase1SlideTypes,
   getPhase2SlideTypes,
   buildSlideTypeDescription,
+  buildCustomSlideTypeSections,
   buildPhase2CatalogPrompt,
 } from './builders.js';
 
