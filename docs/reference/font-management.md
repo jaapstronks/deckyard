@@ -158,10 +158,10 @@ to the browser; see _Private font variants_ below for who may ask and why.
 ## Private font variants
 
 Uploaded fonts are licensed files (a fork's GT America, say), and a public
-bucket or CDN URL is an open download for anyone who finds it. Since B510 every
-uploaded variant is a **private media object**, on every installation. There is
-no flag and no per-variant choice, because a second, public form would need its
-own URL spelling and its own rules for the same concept.
+bucket or CDN URL is an open download for anyone who finds it. Every uploaded
+variant is therefore a **private media object**, on every installation (B510).
+There is no flag and no per-variant choice, because a second, public form would
+need its own URL spelling and its own rules for the same concept.
 
 ### Where the bytes live
 
@@ -222,12 +222,12 @@ data URL, so Chrome needs no network access either.
 ### `.deck` bundles do not carry the file
 
 A managed font travels **by name** (D142a, restated in D239). The bundle holds
-no font bytes: licence terms are the owning organization's, not the
-recipient's. An import that references a family the receiving instance lacks
-reports it through the existing `fontsMissing` outcome. B510 changes nothing
+no font bytes: licence terms are the owning organization's, not the recipient's.
+An import that references a family the receiving instance lacks reports it
+through the existing `fontsMissing` outcome. Private variants change nothing
 here.
 
-### Variants uploaded before B510
+### Variants uploaded as public
 
 Migration 088 drops the stored public URL. A variant whose `filename` still
 holds a public key (`uploads/…` in a bucket, or a bare `/uploads/` file name)
@@ -255,7 +255,7 @@ A second `--apply` does nothing.
 | `server/utils/embed-fonts.js`                 | Base64-embeds font files for offline HTML exports                                               |
 | `server/media/managed-fonts.js`               | Uploaded variants: private key ↔ `/fonts/managed/` URL                                          |
 | `server/routes/static/managed-fonts.js`       | `GET /fonts/managed/<file>` — serves a private variant                                          |
-| `scripts/privatize-font-variants.js`          | One-time move of pre-B510 public variants into private storage                                  |
+| `scripts/privatize-font-variants.js`          | One-time move of variants uploaded as public into private storage                               |
 | `server/export/html.js`                       | Standalone HTML export (injects external font tags)                                             |
 | `server/utils/embed-html/index.js`            | Embed HTML builder (injects external font tags)                                                 |
 | `server/utils/embed-html/template.js`         | Embed HTML template (renders external font HTML in `<head>`)                                    |

@@ -128,11 +128,12 @@ handed out per deck:
   construction** (`server/storage/presentations/index.js` never rewrites it).
   A creator-inclusive grant is therefore one that nothing can ever take away —
   exactly wrong for a power that is supposed to be transferable, and exactly
-  right for a fact about the past. Before D49 the creator stamp still carried
-  write, delete, visibility and collaborator management, which made the
-  transfer dialog's promise ("you will become a collaborator with edit access")
-  false in the one case where it mattered: a previous owner who declined the
-  collaborator row kept strictly more than the row would have given them.
+  right for a fact about the past. Until this line was drawn (D49), the creator
+  stamp still carried write, delete, visibility and collaborator management,
+  which made the transfer dialog's promise ("you will become a collaborator with
+  edit access") false in the one case where it mattered: a previous owner who
+  declined the collaborator row kept strictly more than the row would have given
+  them.
 
   `getEffectivePermission` sits on the power side because it picks the UI
   (editor vs viewer) and so has to answer the same as `canWritePresentation`;
@@ -245,10 +246,10 @@ Where the deciders differ from that shape, they differ deliberately:
   `changeVisibility` loads with `read` and asks it on top
   (`canActorChangeVisibility`), so read is its floor like every other deck
   right, and an admin cannot change a deck they cannot read (B574). The
-  view-only flag is `isPresentationAuthor`'s (`canActorSetViewOnly`): it is
-  the deck-wide author lock, the same mark as a slide lock, so under D49 it
-  stays with the author pair rather than moving to the owner alone (decided
-  at the B574 review).
+  view-only flag is `isPresentationAuthor`'s (`canActorSetViewOnly`): it is the
+  deck-wide author lock, the same mark as a slide lock, so under the
+  creator-stamp rule above it stays with the author pair rather than moving to
+  the owner alone (D49, decided at the B574 review).
   It does not read sandbox mode: where sharing is declared off (sandbox,
   D181) the service refuses `→ organization` before the decider runs, for
   everyone.
@@ -412,9 +413,9 @@ Normative target: **one ladder, one decider per question, keyed on
   through them. Share links use a subset of the same vocabulary rather than a
   parallel one.
 - **Ownership decisions key on `users.id`** with the email as the defined
-  fallback, on both sides of the wire, since T10 PR A/C (#638, #640). The
-  client mirrors import the same module, so client and server cannot drift on
-  who an owner is.
+  fallback, on both sides of the wire (T10 PR A/C, #638, #640). The client
+  mirrors import the same module, so client and server cannot drift on who an
+  owner is.
 - **Collaborator grants still key on the email.** `user_id` exists on
   `presentation_collaborators` and is populated on every write (migration 062),
   but no read consults it: `getCollaboratorPermission`, the cache key, the
@@ -436,8 +437,8 @@ Normative target: **one ladder, one decider per question, keyed on
   passes a scope back in. It survives only because "shared with me" needs it.
 - **Revocation is asymmetric with invitation**: revoking or re-levelling writes
   no notification and no activity event, and `revocation_message` is stored but
-  never delivered, while share links do surface theirs. Open, tracked as
-  TODO B44 — an asymmetry, not a decision.
+  never delivered, while share links do surface theirs. That is an open
+  asymmetry, not a decision (B44).
 
 Pinned by `tests/authz-matrix-pin.test.js` (the whole matrix, unchanged across
 the identity rebuild), `tests/authz-identity-key.test.js`,
