@@ -845,11 +845,6 @@
       "count": 1
     }
   },
-  "server/auth/auth.js": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
   "server/collab/mount.js": {
     "no-restricted-syntax": {
       "count": 2
