@@ -76,7 +76,6 @@
   "dataSource.connected": "Gekoppeld aan {provider}",
   "dataSource.disconnect": "Ontkoppelen",
   "dataSource.disconnect.title": "Koppeling met gegevensbron verwijderen",
-  "dataSource.error": "Fout: {message}",
   "dataSource.fetching": "Data ophalen…",
   "dataSource.field.csvUrl": "CSV-URL",
   "dataSource.field.databaseId": "Database-ID of URL",

@@ -152,16 +152,22 @@ export function showAddModal(onSuccess) {
       onSuccess();
     } catch (e) {
       status.textContent = '';
-      refusal.show(
-        e.message?.includes('exists')
-          ? t(
-              'admin.users.addModal.alreadyExists',
-              'A user with this email already exists.',
-            )
-          : t('admin.users.addModal.error', 'Failed to add user.'),
-      );
+      // Enable first, so focus can land on the field the refusal names.
       modal.setBusy(false);
       setDisabled(false);
+      if (e.code === 'already_exists') {
+        refusal.show(
+          t(
+            'admin.users.addModal.alreadyExists',
+            'A user with this email already exists.',
+          ),
+          { control: emailInput },
+        );
+      } else {
+        refusal.show(
+          e.message || t('admin.users.addModal.error', 'Failed to add user.'),
+        );
+      }
     }
   }
 }

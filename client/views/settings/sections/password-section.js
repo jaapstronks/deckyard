@@ -7,6 +7,7 @@ import { api } from '../../../lib/api.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 
 /**
  * Create the password change section component.
@@ -63,7 +64,15 @@ export function createPasswordSection() {
     text: t('settings.changePassword.submit', 'Change password'),
   });
 
-  const statusEl = h('div', { class: 'help password-status' });
+  // `statusEl` carries progress only ("Changing…"). A refusal is a state of
+  // the form and goes through the inline helper, naming the field it refuses
+  // (docs/reference/feedback-surfaces.md).
+  const statusEl = h('div', { class: 'help password-status', role: 'status' });
+  const refusal = createInlineError({ callout: true });
+  const controlsByField = {
+    currentPassword: currentPasswordInput,
+    newPassword: newPasswordInput,
+  };
 
   let busy = false;
 
@@ -74,19 +83,24 @@ export function createPasswordSection() {
     const newPw = newPasswordInput.value || '';
     const confirmPw = confirmPasswordInput.value || '';
 
+    refusal.clear();
+
     // Validation
     if (newPw.length < 8) {
-      statusEl.textContent = t(
-        'settings.changePassword.tooShort',
-        'New password must be at least 8 characters.',
+      refusal.show(
+        t(
+          'settings.changePassword.tooShort',
+          'New password must be at least 8 characters.',
+        ),
+        { control: newPasswordInput },
       );
       return;
     }
 
     if (newPw !== confirmPw) {
-      statusEl.textContent = t(
-        'settings.changePassword.mismatch',
-        'New passwords do not match.',
+      refusal.show(
+        t('settings.changePassword.mismatch', 'New passwords do not match.'),
+        { control: confirmPasswordInput },
       );
       return;
     }
@@ -97,6 +111,7 @@ export function createPasswordSection() {
     newPasswordInput.disabled = true;
     confirmPasswordInput.disabled = true;
     statusEl.textContent = t('settings.changePassword.changing', 'Changing…');
+    let failure = null;
 
     try {
       await api('/api/auth/change-password', {
@@ -119,18 +134,27 @@ export function createPasswordSection() {
       confirmPasswordInput.value = '';
       statusEl.textContent = '';
     } catch (e) {
-      statusEl.textContent = e.message?.includes('incorrect')
-        ? t(
-            'settings.changePassword.incorrectCurrent',
-            'Current password is incorrect.',
-          )
-        : t('settings.changePassword.error', 'Failed to change password.');
+      statusEl.textContent = '';
+      failure = e;
     } finally {
       busy = false;
       btnChangePassword.disabled = false;
       currentPasswordInput.disabled = false;
       newPasswordInput.disabled = false;
       confirmPasswordInput.disabled = false;
+    }
+    // After the inputs are enabled again, so focus can land on the one named.
+    if (failure) {
+      refusal.show(
+        failure.code === 'current_password_incorrect'
+          ? t(
+              'settings.changePassword.incorrectCurrent',
+              'Current password is incorrect.',
+            )
+          : failure.message ||
+              t('settings.changePassword.error', 'Failed to change password.'),
+        { control: controlsByField[failure.details?.field] ?? null },
+      );
     }
   };
 
@@ -141,6 +165,7 @@ export function createPasswordSection() {
     confirmPasswordInput,
     btnChangePassword,
     statusEl,
+    refusal.el,
   );
 
   return {
