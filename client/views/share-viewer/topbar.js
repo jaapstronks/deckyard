@@ -71,7 +71,7 @@ export function buildShareViewerTopbar({
   let commentsApi = null;
 
   if (canComment && guestSession?.authenticated) {
-    // A guest: comments are created under the share token (D228).
+    // A guest: their comments go through the share-token routes (D228).
     commentsApi = createCommentsApi({
       api,
       presentationId: presentation.id,

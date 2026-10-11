@@ -81,13 +81,15 @@ Enforcement seam and the routes that hand grants out:
   activity row and the webhook when a deck is opened; B574).
 - `server/utils/route-middleware.js` — `withPresentationAuth` (the internal
   adapter: the service's refusal as a 404/403 response) and
-  `withPresentationReadAuth` (the same, plus a guest-session fallback).
+  `getGuestFromRequest` (the guest session cookie, read only by the
+  share-token routes).
 - `server/routes/api/collaborators.js` — invite, list, revoke and re-level
   collaborators.
 - `server/routes/api/share-links/management.js` — the link-based grants.
-- `server/routes/api/share-links/public.js` — the anonymous share-token
-  surface, including the guest's own comment route (see _Share-link guests
-  comment under the token_ below).
+- `server/routes/api/share-links/public.js` and
+  `server/routes/api/share-links/guest-comments.js` — the anonymous
+  share-token surface, including the guest's own comment routes (see
+  _Share-link guests comment under the token_ below).
 
 The client's advisory mirrors — which affordance to show, never whether an
 operation is allowed — are `client/views/comments/comment-authz.js`,
@@ -207,22 +209,28 @@ public API through `getPresentationWithAccess`, MCP through
    the decider reads one). `false` → **403**.
 4. Return the presentation.
 
-`withPresentationReadAuth` is the same with one extra rung: if the
-authenticated checks fail, a verified share-link guest session (cookie
-`share_guest_session`) whose link points at this deck may still read.
-
 ### Share-link guests comment under the token
 
 A share-link guest has no account, so nothing behind the login gate reaches
-them: creating a comment is its own route under the share token,
-`POST /api/share/:token/comments` (B179, D228), mounted with the rest of the
-anonymous `/api/share/*` surface. The signed-in create route
-(`POST /api/presentations/:id/comments`) takes the account and only the
-account; a guest cookie beside it is no fallback. One path per kind of
-commenter.
+them. Their comments have four routes of their own under the share token
+(B179, D228), in `server/routes/api/share-links/guest-comments.js`, mounted
+with the rest of the anonymous `/api/share/*` surface:
+
+| Route                                   | What                                                                             |
+| --------------------------------------- | -------------------------------------------------------------------------------- |
+| `GET /api/share/:token/comments`        | The deck's comments; `slideId`, `status`, `commentType` as on the signed-in list |
+| `POST /api/share/:token/comments`       | Comment or reply; same body as the signed-in create                              |
+| `PUT /api/share/:token/comments/:id`    | Edit the guest's own comment (`canGuestEditComment`)                             |
+| `DELETE /api/share/:token/comments/:id` | Delete the guest's own comment (`canGuestDeleteComment`)                         |
+
+A guest never resolves, reopens or dismisses; there is no route for it. The
+signed-in comment routes (`/api/presentations/:id/comments…`) take the account
+and only the account: a guest cookie beside it is no fallback. One path per
+kind of commenter.
 
 The token addresses the deck, the guest session cookie names who is asking,
-and `canGuestComment` is the guard. Refusals, in the internal envelope:
+and `canGuestComment` is the guard on all four. Refusals, in the internal
+envelope:
 
 | Case                                        | Status | `error`        |
 | ------------------------------------------- | ------ | -------------- |
@@ -231,15 +239,12 @@ and `canGuestComment` is the guard. Refusals, in the internal envelope:
 | Unknown token                               | 404    | `not_found`    |
 | No verified guest session for this link     | 401    | `unauthorized` |
 | Link is view-only (no `comment` permission) | 403    | `forbidden`    |
+| Edit/delete of a comment that is not theirs | 403    | `forbidden`    |
+| Comment not on the link's deck              | 404    | `not_found`    |
 
 A link's use limit is not checked: it counts opens (`verify`), and a guest
-who comments already opened the link. The write is scoped to the organization
+who comments already opened the link. Writes are scoped to the organization
 of the guest row.
-
-Only creating moved. Listing comments, and editing or deleting a guest's own
-comment (`canGuestEditComment` / `canGuestDeleteComment`), still run on the
-deck-addressed routes with a guest-session fallback; those sit behind the
-login gate too, so a guest with no account does not reach them yet.
 
 ### 2. The deciders, in order
 

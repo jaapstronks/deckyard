@@ -29,11 +29,11 @@
  * get it right as to get it wrong.
  *
  * Guest access (a share-link `share_guest_session`) is a second identity: a
- * guest creates a comment through their own route under the share token
- * (`POST /api/share/:token/comments`, D228), never through the signed-in
- * create route, and edits or deletes their own comment through the same
- * handlers as an account. Both are pinned at the bottom of this file over a
- * seeded share link and guest session, with a refusal per broken link. The fire-and-forget side effects (notifications, activity
+ * guest lists, creates, edits and deletes their own comments through their
+ * own routes under the share token (`/api/share/:token/comments`, D228),
+ * never through the signed-in routes. Both halves are pinned at the bottom of
+ * this file over a seeded share link and guest session, with a refusal per
+ * broken link. The fire-and-forget side effects (notifications, activity
  * events, SSE broadcasts) are the brief's opt-out 5: they settle after the
  * response, so asserting them at the route level is a race.
  *
@@ -71,6 +71,7 @@ const {
   handlePresentationCommentDismiss,
   handlePresentationCommentApply,
   handlePresentationCommentsMarkRead,
+  handlePresentationCommentsList,
 } = await import('../server/routes/api/presentations/comments.js');
 const { handleSharePublic } =
   await import('../server/routes/api/share-links/index.js');
@@ -444,20 +445,27 @@ async function call(
 }
 
 /**
- * POST a comment to the share-token route through the public share-link
- * mount, the way the router reaches it: anonymous, no `authedUser`, no
- * storage scope. The guest session (if any) rides in the cookie.
+ * Call a share-token comment route through the public share-link mount, the
+ * way the router reaches it: anonymous, no `authedUser`, no storage scope. The
+ * guest session (if any) rides in the cookie.
  *
+ * @param {string} method
  * @param {string} token - Share token.
- * @param {Object} body - JSON request body.
  * @param {Object} [options]
+ * @param {Object} [options.body] - JSON request body.
  * @param {string} [options.session] - Guest session token for the cookie.
+ * @param {string} [options.commentId] - Addresses `/comments/:commentId`.
+ * @param {string} [options.query] - Query string, without `?`.
  * @returns {Promise<Object>} The response double.
  */
-async function postAsGuest(token, body, { session } = {}) {
-  const payload = JSON.stringify(body);
+async function asGuestOn(
+  method,
+  token,
+  { body, session, commentId, query } = {},
+) {
+  const payload = body === undefined ? '' : JSON.stringify(body);
   const req = {
-    method: 'POST',
+    method,
     headers: {
       host: 'decks.example.test',
       'content-type': 'application/json',
@@ -465,22 +473,28 @@ async function postAsGuest(token, body, { session } = {}) {
     },
     socket: { remoteAddress: '203.0.113.9' },
     async *[Symbol.asyncIterator]() {
-      yield Buffer.from(payload, 'utf8');
+      if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
   const res = makeRes();
-  const url = new URL(
-    `http://decks.example.test/api/share/${encodeURIComponent(token)}/comments`,
-  );
+  const path =
+    `/api/share/${encodeURIComponent(token)}/comments` +
+    (commentId ? `/${commentId}` : '') +
+    (query ? `?${query}` : '');
   const handled = await handleSharePublic({
     repoRoot: process.cwd(),
     req,
     res,
-    url,
+    url: new URL(`http://decks.example.test${path}`),
     authedUser: null,
   });
   assert.equal(handled, true, 'the share-link mount answers the route');
   return res;
+}
+
+/** POST a comment to the share-token route (see {@link asGuestOn}). */
+function postAsGuest(token, body, { session } = {}) {
+  return asGuestOn('POST', token, { body, session });
 }
 
 const comments = () => db.__tables.presentation_comments;
@@ -1132,19 +1146,131 @@ test('an unknown share token is refused: 404 not_found', async () => {
   await assertGuestRefused(res, 404, 'not_found');
 });
 
-test('the signed-in create route has no guest path: a guest session there is refused', async () => {
+// The signed-in routes name the account and only the account (D228): a guest
+// cookie there is no identity, on any of them.
+test('the signed-in comment routes have no guest path: a guest session there is refused', async () => {
   await seed();
-  const { res } = await call(handlePresentationCommentsCreate, 'POST', {
+  const owned = await postAsGuest(
+    'tok-guests',
+    { body: 'Mine' },
+    { session: GUEST.sessionToken },
+  );
+  const mine = owned.body.comment.id;
+  const before = comments().length;
+
+  const create = await call(handlePresentationCommentsCreate, 'POST', {
     body: { body: 'Wrong door' },
     args: [DECK],
     ...asGuest,
   });
+  const list = await call(handlePresentationCommentsList, 'GET', {
+    args: [DECK],
+    ...asGuest,
+  });
+  const edit = await call(handlePresentationCommentUpdate, 'PUT', {
+    body: { body: 'Rewrite' },
+    args: [DECK, mine],
+    ...asGuest,
+  });
+  const del = await call(handlePresentationCommentDelete, 'DELETE', {
+    args: [DECK, mine],
+    ...asGuest,
+  });
 
-  assert.equal(res.statusCode, 403, 'the cookie is not an identity here');
-  assert.equal(comments().length, 3, 'nothing was written');
+  for (const [name, r] of Object.entries({ create, list, edit, del })) {
+    assert.equal(
+      r.res.statusCode,
+      403,
+      `${name}: the cookie is not an identity here`,
+    );
+    assert.equal(r.res.body.ok, false);
+    assert.equal(r.res.body.error, 'forbidden');
+  }
+  assert.equal(comments().length, before, 'nothing was written or removed');
+  assert.equal(commentById(mine).body, 'Mine', 'nor rewritten');
 });
 
-test("a guest can edit and delete their own comment, and nobody else's", async () => {
+// ---------------------------------------------------------------------------
+// The guest's list, edit and delete under the token
+// ---------------------------------------------------------------------------
+
+test("a guest lists the deck's comments through the share-token route", async () => {
+  await seed();
+  const res = await asGuestOn('GET', 'tok-guests', {
+    session: GUEST.sessionToken,
+  });
+
+  assert.equal(res.statusCode, 200);
+  assert.equal(res.body.ok, true);
+  assert.deepEqual(
+    res.body.comments.map((c) => c.id).sort(),
+    ['cm-ai', 'cm-open', 'cm-resolved'],
+    'every comment on the deck, as the signed-in list gives (status all)',
+  );
+  assert.equal(typeof res.body.openCount, 'number');
+});
+
+test('the guest list takes the signed-in filters: slideId and status', async () => {
+  await seed();
+  const open = await asGuestOn('GET', 'tok-guests', {
+    session: GUEST.sessionToken,
+    query: 'slideId=s1&status=resolved',
+  });
+  assert.equal(open.statusCode, 200);
+  assert.deepEqual(
+    open.body.comments.map((c) => c.id),
+    ['cm-resolved'],
+  );
+
+  const bad = await asGuestOn('GET', 'tok-guests', {
+    session: GUEST.sessionToken,
+    query: 'status=nonsense',
+  });
+  assert.equal(
+    bad.statusCode,
+    400,
+    'an unknown filter is refused, not read as all',
+  );
+});
+
+test('a view-only link refuses its guest the list too: 403 forbidden', async () => {
+  await seed();
+  const res = await asGuestOn('GET', 'tok-view', {
+    session: 'session-guest-view',
+  });
+  assert.equal(res.statusCode, 403);
+  assert.equal(res.body.error, 'forbidden');
+  assert.ok(res.body.message);
+});
+
+test('a revoked link refuses its guest the list: 410 revoked', async () => {
+  await seed();
+  const res = await asGuestOn('GET', 'tok-revoked', {
+    session: 'session-guest-revoked',
+  });
+  assert.equal(res.statusCode, 410);
+  assert.equal(res.body.error, 'revoked');
+});
+
+test('the list without a guest session is 401 unauthorized', async () => {
+  await seed();
+  const res = await asGuestOn('GET', 'tok-guests');
+  assert.equal(res.statusCode, 401);
+  assert.equal(res.body.error, 'unauthorized');
+});
+
+/** A comment by the deck owner, created through the signed-in route (a uuid id). */
+async function ownerComment(body = 'The owner speaks') {
+  const { res } = await call(handlePresentationCommentsCreate, 'POST', {
+    as: ACTORS.owner,
+    body: { body },
+    args: [DECK],
+  });
+  assert.equal(res.statusCode, 201);
+  return res.body.comment.id;
+}
+
+test("a guest edits their own comment through the share-token route, and nobody else's", async () => {
   await seed();
   const created = await postAsGuest(
     'tok-guests',
@@ -1152,26 +1278,128 @@ test("a guest can edit and delete their own comment, and nobody else's", async (
     { session: GUEST.sessionToken },
   );
   const mine = created.body.comment.id;
+  const theirs = await ownerComment();
 
-  const edit = await call(handlePresentationCommentUpdate, 'PUT', {
+  const edit = await asGuestOn('PUT', 'tok-guests', {
+    commentId: mine,
     body: { body: 'Typo fixed' },
-    args: [DECK, mine],
-    ...asGuest,
+    session: GUEST.sessionToken,
   });
-  assert.equal(edit.res.statusCode, 200, 'their own comment: editable');
+  assert.equal(edit.statusCode, 200, 'their own comment: editable');
+  assert.equal(edit.body.ok, true);
   assert.equal(commentById(mine).body, 'Typo fixed');
 
-  const other = await call(handlePresentationCommentUpdate, 'PUT', {
+  const other = await asGuestOn('PUT', 'tok-guests', {
+    commentId: theirs,
     body: { body: 'Rewrite' },
-    args: [DECK, 'cm-open'],
-    ...asGuest,
+    session: GUEST.sessionToken,
   });
-  assert.equal(other.res.statusCode, 403, "someone else's: not editable");
+  assert.equal(other.statusCode, 403, "someone else's: not editable");
+  assert.equal(other.body.error, 'forbidden');
+  assert.equal(commentById(theirs).body, 'The owner speaks');
 
-  const del = await call(handlePresentationCommentDelete, 'DELETE', {
-    args: [DECK, mine],
-    ...asGuest,
+  const empty = await asGuestOn('PUT', 'tok-guests', {
+    commentId: mine,
+    body: { body: '   ' },
+    session: GUEST.sessionToken,
   });
-  assert.equal(del.res.statusCode, 200, 'their own comment: deletable');
+  assert.equal(empty.statusCode, 400, 'an empty body is refused');
+});
+
+test("a guest deletes their own comment through the share-token route, and nobody else's", async () => {
+  await seed();
+  const created = await postAsGuest(
+    'tok-guests',
+    { body: 'Never mind' },
+    { session: GUEST.sessionToken },
+  );
+  const mine = created.body.comment.id;
+  const theirs = await ownerComment();
+
+  const other = await asGuestOn('DELETE', 'tok-guests', {
+    commentId: theirs,
+    session: GUEST.sessionToken,
+  });
+  assert.equal(other.statusCode, 403, "someone else's: not deletable");
+  assert.equal(other.body.error, 'forbidden');
+  assert.ok(commentById(theirs), 'still there');
+
+  const del = await asGuestOn('DELETE', 'tok-guests', {
+    commentId: mine,
+    session: GUEST.sessionToken,
+  });
+  assert.equal(del.statusCode, 200, 'their own comment: deletable');
   assert.equal(commentById(mine), undefined);
+});
+
+test("a comment that is not on the link's deck is absent to the guest: 404", async () => {
+  await seed();
+  const res = await asGuestOn('DELETE', 'tok-guests', {
+    commentId: '00000000-0000-4000-8000-00000000dead',
+    session: GUEST.sessionToken,
+  });
+  assert.equal(res.statusCode, 404);
+  assert.equal(res.body.error, 'not_found');
+});
+
+test('a guest whose link turned view-only can no longer edit or delete their own comment', async () => {
+  await seed();
+  const created = await postAsGuest(
+    'tok-guests',
+    { body: 'Before the change' },
+    { session: GUEST.sessionToken },
+  );
+  const mine = created.body.comment.id;
+  db.__tables.presentation_share_links.find(
+    (l) => l.id === 'link-guests',
+  ).permission = 'view';
+
+  const edit = await asGuestOn('PUT', 'tok-guests', {
+    commentId: mine,
+    body: { body: 'After' },
+    session: GUEST.sessionToken,
+  });
+  const del = await asGuestOn('DELETE', 'tok-guests', {
+    commentId: mine,
+    session: GUEST.sessionToken,
+  });
+  assert.equal(edit.statusCode, 403);
+  assert.equal(edit.body.error, 'forbidden');
+  assert.equal(del.statusCode, 403);
+  assert.equal(commentById(mine).body, 'Before the change');
+});
+
+test('a revoked link refuses edit and delete: 410 revoked', async () => {
+  await seed();
+  const res = await asGuestOn('DELETE', 'tok-revoked', {
+    commentId: '00000000-0000-4000-8000-00000000beef',
+    session: 'session-guest-revoked',
+  });
+  assert.equal(res.statusCode, 410);
+  assert.equal(res.body.error, 'revoked');
+});
+
+test('a guest has no resolve route under the token', async () => {
+  await seed();
+  const created = await postAsGuest(
+    'tok-guests',
+    { body: 'Resolve me' },
+    { session: GUEST.sessionToken },
+  );
+  const res = makeRes();
+  const handled = await handleSharePublic({
+    repoRoot: process.cwd(),
+    req: { method: 'POST', headers: {} },
+    res,
+    url: new URL(
+      `http://decks.example.test/api/share/tok-guests/comments/${created.body.comment.id}/resolve`,
+    ),
+    authedUser: null,
+  });
+  assert.equal(handled, false, 'nothing on the share surface answers it');
+  assert.equal(
+    commentById(created.body.comment.id).status,
+    'open',
+    'a guest never moderates (as before D228)',
+  );
 });

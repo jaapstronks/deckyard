@@ -337,8 +337,8 @@ const REASON_BRANCH_EXCEPTIONS = new Map([
     'adds the presentation id to the payload; the status is unaffected',
   ],
   [
-    'server/routes/api/share-links/public.js :: max_uses_exceeded',
-    'the guest comment route (B179) lets a link opened to its use limit through: the limit counts opens (verify), not comments; every refusal it does answer takes its status from the register',
+    'server/routes/api/share-links/guest-comments.js :: max_uses_exceeded',
+    'the guest comment routes (B179) let a link opened to its use limit through: the limit counts opens (verify), not comments; every refusal it does answer takes its status from the register',
   ],
   [
     'server/routes/api/presentations/slide-locks.js :: unavailable',
