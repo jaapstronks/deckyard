@@ -1,12 +1,12 @@
 /**
  * The `void someCall()` gate (B111).
  *
- * B106 closed the *silent* swallow: a rejection dropped into an empty
- * `.catch(() => {})`. This is the other half — the *absent* catch. `void
+ * The *silent* swallow is closed already: a rejection dropped into an empty
+ * `.catch(() => {})` (B106). This is the other half — the *absent* catch. `void
  * doThing()` reads as a deliberate decision and is the opposite of one: it
  * discards the promise without attaching anything, so a rejection is unhandled,
  * and under Node's default `--unhandled-rejections=throw` that takes the whole
- * process down. The B106 selector cannot see it: it looks for a `.catch` that
+ * process down. That selector cannot see it: it looks for a `.catch` that
  * is not there.
  *
  * It was a false signal half the time, too. Of the 50 sites the sweep retired,

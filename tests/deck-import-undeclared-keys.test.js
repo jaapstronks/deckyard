@@ -1,7 +1,8 @@
 /**
- * B257 B2 (D121) — the deck import drops a content key the slide type does not
- * declare, and it asks the same predicate strict validation refuses against:
- * `declaredContentKeys()` in `shared/slide-types/declared-keys.js`. Before,
+ * The deck import drops a content key the slide type does not declare, and it
+ * asks the same predicate strict validation refuses against:
+ * `declaredContentKeys()` in `shared/slide-types/declared-keys.js` (D121,
+ * B257 B2). Before,
  * `normalizeDeckSlide` let every unknown key through "forward-compatible",
  * which kept each retired key alive in every deck that once carried it.
  *

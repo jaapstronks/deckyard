@@ -1,9 +1,9 @@
 /**
- * B62 vondst 8 — the internal and public-API publish routes converge on one
- * shared core (server/services/publish-presentation.js).
+ * The internal and public-API publish routes converge on one shared core
+ * (server/services/publish-presentation.js; B62, finding 8).
  *
- * Before B62 the v1 route (`POST /api/v1/presentations/:id/publish`)
- * reimplemented a subset of the internal route and had silently dropped two
+ * The v1 route (`POST /api/v1/presentations/:id/publish`)
+ * used to reimplement a subset of the internal route and had silently dropped two
  * behaviours: the sandbox refusal (a guest could mint an API key and publish
  * onto the public domain) and the `presentation.published` webhook. These
  * tests pin the converged behaviour on both the core and the v1 route:

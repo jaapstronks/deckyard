@@ -1,5 +1,5 @@
 /**
- * B419 — a Giphy/Unsplash upstream failure is `502 bad_gateway` in our words.
+ * A Giphy/Unsplash upstream failure is `502 bad_gateway` in our words (B419).
  *
  * `apiFetch` used to throw a bare `Error` carrying the upstream status and
  * body; `withErrorHandler` in `stock-media.js` answered that as a fixed
@@ -14,9 +14,9 @@
  * handler is DB-backed (the provider toggles), so the wire is asserted through
  * the same `withErrorHandler` the stock-media mount uses.
  *
- * B420 extends the seam to the success body: an unreadable 200 is the same
- * `502`; B421 does the same for a 200 that parses into the wrong shape. Cases
- * at the bottom.
+ * The seam covers the success body too: an unreadable 200 is the same
+ * `502` (B420), and so is a 200 that parses into the wrong shape (B421).
+ * Cases at the bottom.
  *
  * Run with: node --test tests/stock-media-upstream-error.test.js
  */

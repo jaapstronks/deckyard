@@ -1,7 +1,7 @@
 /**
- * B186 L1 + B630: the SPA shell's link preview (Open Graph + Twitter tags,
- * and the plain description tag) follows the branding knobs, so a fork's
- * shared `/app/…` link no longer unfurls with the Deckyard card. With every
+ * The SPA shell's link preview (Open Graph + Twitter tags, and the plain
+ * description tag) follows the branding knobs, so a fork's shared `/app/…`
+ * link no longer unfurls with the Deckyard card (B186 L1, B630). With every
  * knob unset the shell is byte-identical to `client/index.html`. Covers
  * `injectLinkPreview` in server/routes/static/app-shell.js and
  * `getOgImageUrl` / `getOgDescription` in server/config/branding.js.

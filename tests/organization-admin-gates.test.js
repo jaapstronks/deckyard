@@ -7,14 +7,14 @@
  * membership role (`owner` / `admin` / `member`) in the organization it is
  * currently acting in (server/auth/auth.js → resolveActiveMembership).
  *
- * B144 (#965) made the UI read both, so an instance admin who is a plain
+ * The UI reads both (#965), so an instance admin who is a plain
  * member of the workspace they switched into stops being shown the admin
  * affordances. That left the client stricter than the server: six server-side
  * checks still read the bare `isAdmin`, so the button was hidden and the
  * request behind it still succeeded. This file pins the server half.
  *
  * The rule, in `shared/organization-role.js` — one declaration for both
- * halves of the stack since B171, so there is nothing left to drift:
+ * halves of the stack (B171), so there is nothing left to drift:
  *
  *   1. instance admin stays **necessary** — an organization owner who is not
  *      an instance admin gains nothing;

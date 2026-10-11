@@ -1,7 +1,7 @@
 /**
- * B482: a library create refuses a language version under a non-canonical key.
+ * A library create refuses a language version under a non-canonical key (B482).
  *
- * B481 closed the deck seam; the library had its own. `createSlideLibraryRow`
+ * The deck seam already refused it (B481); the library had its own. `createSlideLibraryRow`
  * wrote the `i18n` of a POST as-is, so `i18n.versions.en` landed on the shelf
  * where `pickVersion` (which reads the canonical key only) never finds it.
  * Create is the only library write that carries `i18n` (a PATCH derives it

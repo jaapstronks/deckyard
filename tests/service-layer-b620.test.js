@@ -1,5 +1,5 @@
 /**
- * B620: a loaded deck written back whole keeps the active language version.
+ * A loaded deck written back whole keeps the active language version (B620).
  *
  * The write seam (`normalizeI18n`) takes top-level `title`/`slides` as the
  * buffer of `i18n.active`; a loaded deck carries the dominant version there.
@@ -11,13 +11,14 @@
  * `persistSlides` and the translate writers share, and a publish writes only
  * the publication column, as an unpublish does (B575).
  *
- * B623: a theme switch that converts a slide converts it in every language
+ * A theme switch that converts a slide converts it in every language
  * version, on both paths (with and without a save body), and a conversion
- * that fails in any version refuses the switch, as B612 does.
+ * that fails in any version refuses the switch, as a failed conversion in
+ * the active version already did (B623, B612).
  *
  * The store: OWNER's Dutch deck with a German version, edited last in German
- * (`active = de`). Assertions read the stored row, in the shape of B610's
- * "keeps that version" test.
+ * (`active = de`). Assertions read the stored row, in the shape of the
+ * translate service's "keeps that version" test (B610).
  *
  * Run with: node --test tests/service-layer-b620.test.js
  */
