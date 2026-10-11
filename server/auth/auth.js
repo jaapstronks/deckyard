@@ -1,5 +1,5 @@
-import crypto from 'node:crypto';
 import { parseCookies } from '../utils/cookies.js';
+import { readSignedPayload, signPayload } from '../utils/signed-payload.js';
 import { verifyPassword as verifyDbPassword } from '../storage/password-reset.js';
 import {
   getUserByEmailGlobal,
@@ -16,20 +16,6 @@ import { DEV_BYPASS_EMAIL, resolveDevBypassUserId } from './dev-bypass.js';
 const log = createLogger('auth');
 
 const COOKIE_NAME = 'sb_session';
-
-function base64url(buf) {
-  return Buffer.from(buf)
-    .toString('base64')
-    .replaceAll('+', '-')
-    .replaceAll('/', '_')
-    .replaceAll('=', '');
-}
-
-function base64urlToBuf(s) {
-  const pad = '='.repeat((4 - (s.length % 4)) % 4);
-  const b64 = (s + pad).replaceAll('-', '+').replaceAll('_', '/');
-  return Buffer.from(b64, 'base64');
-}
 
 let warnedNoAdminEmail = false;
 
@@ -243,12 +229,6 @@ export async function devBypassUserAsync() {
   return { ...devBypassUser(), id: id || null };
 }
 
-function sign(secret, payloadB64) {
-  return base64url(
-    crypto.createHmac('sha256', secret).update(payloadB64).digest(),
-  );
-}
-
 /**
  * Parse and validate session token from request.
  * Returns payload if valid, null otherwise.
@@ -261,25 +241,10 @@ function parseSessionToken(req) {
   const token = cookies[COOKIE_NAME];
   if (!token) return null;
 
-  const [payloadB64, sig] = String(token).split('.');
-  if (!payloadB64 || !sig) return null;
-  const expected = sign(secret, payloadB64);
-  try {
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected)))
-      return null;
-  } catch {
-    return null;
-  }
-
-  let payload = null;
-  try {
-    payload = JSON.parse(base64urlToBuf(payloadB64).toString('utf8'));
-  } catch {
-    return null;
-  }
-
-  const now = Date.now();
-  if (!payload?.exp || Number(payload.exp) < now) return null;
+  // `<base64url JSON>.<sig>`, HMAC-SHA256 with AUTH_SECRET; `exp` in epoch ms,
+  // null once past. See utils/signed-payload.js.
+  const payload = readSignedPayload(String(token), secret);
+  if (!payload) return null;
   const email = String(payload?.email || '').toLowerCase();
   if (!email) return null;
 
@@ -472,9 +437,7 @@ export function setSessionCookie(
     payload.orgId = organizationId || user.organizationId;
   }
 
-  const payloadB64 = base64url(JSON.stringify(payload));
-  const sig = sign(secret, payloadB64);
-  const token = `${payloadB64}.${sig}`;
+  const token = signPayload(payload, secret);
 
   const parts = [
     `${COOKIE_NAME}=${encodeURIComponent(token)}`,
