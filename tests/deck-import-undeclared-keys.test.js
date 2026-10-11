@@ -29,13 +29,13 @@ test('an undeclared key is dropped, the declared content is kept', () => {
     content: {
       title: 'Kept',
       body: 'Also kept',
-      subtitle: 'retired spelling',
+      retiredKey: 'nothing reads this',
       step1Body: 'a stray from another type',
     },
   });
   assert.equal(slide.content.title, 'Kept');
   assert.equal(slide.content.body, 'Also kept');
-  assert.equal('subtitle' in slide.content, false);
+  assert.equal('retiredKey' in slide.content, false);
   assert.equal('step1Body' in slide.content, false);
 });
 
