@@ -8,11 +8,15 @@ import { hostMatches, hostMatchesAny } from '../../shared/url-host.js';
 
 /**
  * Parse a video source string and determine the provider and ID.
+ *
+ * A pasted Bunny play or embed URL names its own library; a bare UUID needs
+ * `bunnyLibraryId`, and without one it resolves to no library at all rather
+ * than to a library written down in core (B650).
  * @param {string} source - The video source (URL or Bunny UUID)
- * @param {string} bunnyLibraryId - The Bunny library ID (default: '366590')
+ * @param {string} [bunnyLibraryId] - The Bunny library for a bare UUID
  * @returns {{ provider: 'bunny' | 'youtube' | 'vimeo' | null, videoId: string | null, libraryId: string | null, originalUrl: string }}
  */
-export function parseVideoSource(source, bunnyLibraryId = '366590') {
+export function parseVideoSource(source, bunnyLibraryId = '') {
   const raw = String(source || '').trim();
   if (!raw) {
     return { provider: null, videoId: null, libraryId: null, originalUrl: raw };
@@ -101,7 +105,7 @@ function looksLikeUuid(s) {
 }
 
 function parseBunnySource(raw, defaultLibraryId) {
-  // Check for embed/play URL: https://iframe.mediadelivery.net/embed/366590/<uuid>
+  // Check for embed/play URL: https://iframe.mediadelivery.net/embed/<libraryId>/<uuid>
   const embedMatch = raw.match(
     /iframe\.mediadelivery\.net\/(?:embed|play)\/(\d+)\/([0-9a-f-]{36})/i,
   );
@@ -111,7 +115,9 @@ function parseBunnySource(raw, defaultLibraryId) {
 
   // Check for raw UUID
   if (looksLikeUuid(raw)) {
-    return { videoId: raw, libraryId: defaultLibraryId };
+    const lib = String(defaultLibraryId || '').trim();
+    if (!lib) return null;
+    return { videoId: raw, libraryId: lib };
   }
 
   return null;
@@ -240,4 +246,24 @@ export function getBunnyConfig() {
     pullZone,
     configured: Boolean(pullZone),
   };
+}
+
+/**
+ * The Bunny library a video slide plays against.
+ *
+ * One spelling for the four export paths that used to write
+ * `content.bunnyLibraryId || '<a fork's library>'` each (B650). There is no
+ * fallback: the library belongs to whoever owns the Bunny account, core owns
+ * none, and a bare UUID resolved against a library written down in code plays
+ * a stranger's video. A slide whose author pasted a full play or embed URL
+ * does not need this at all — that URL names its own library.
+ *
+ * An instance cannot yet declare one library for every new slide; that needs a
+ * route from configuration into a slide type's defaults, which does not exist
+ * (B653).
+ * @param {{bunnyLibraryId?: string}|null} [content] - The slide's content.
+ * @returns {string} The library id, or `''` when the slide names none.
+ */
+export function resolveBunnyLibraryId(content) {
+  return String(content?.bunnyLibraryId || '').trim();
 }
