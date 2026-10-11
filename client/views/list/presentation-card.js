@@ -50,6 +50,23 @@ export function createCardRenderer({
     thumbLoader.disconnect();
   });
 
+  /**
+   * Where focus lands when a card leaves the trash, by restore or by
+   * permanent delete. The menu item is in the card that is about to go, so
+   * the trash list says where focus lands (B647, B657). The view is read now:
+   * a refresh takes the list out of it before it puts it back.
+   *
+   * @param {HTMLElement} item - The card about to leave.
+   */
+  const planTrashRemoval = (item) => {
+    const list = item.parentElement;
+    const view = list?.parentElement || null;
+    return planRowRemoval(list, {
+      index: list ? Array.from(list.children).indexOf(item) : 0,
+      fallback: () => view?.querySelector('.presentation-grid-title') || null,
+    });
+  };
+
   // Who to show as the card's author. The last writer travels as a display
   // pair (D22); a deck nobody has written to since import falls back to its
   // owner, whose address a viewer of their own deck may still see.
@@ -370,6 +387,7 @@ export function createCardRenderer({
         onclick: async (e) => {
           e.stopPropagation();
           menu.classList.remove('is-open');
+          const land = planTrashRemoval(item);
           try {
             await api(`/api/presentations/${p.id}/restore`, {
               method: 'POST',
@@ -383,9 +401,12 @@ export function createCardRenderer({
                 onClick: () => nav(`/app/${p.id}`),
               },
             });
-            // Remove from trash list
+            // Remove from trash list. The refresh rebuilds it (and says
+            // "Trash is empty" after the last one), so focus lands once it
+            // is done; the toast already says what happened (B657).
             item.remove();
-            onTrashRefresh?.();
+            await onTrashRefresh?.();
+            land();
           } catch (err) {
             toast.error(err, { id: 'list-restore' });
           }
@@ -414,15 +435,7 @@ export function createCardRenderer({
             }))
           )
             return;
-          // The menu item is in the card that is about to go, so the trash
-          // list says where focus lands and what a screen reader hears (B647).
-          const list = item.parentElement;
-          const land = planRowRemoval(list, {
-            index: list ? Array.from(list.children).indexOf(item) : 0,
-            fallback: () =>
-              list?.parentElement?.querySelector('.presentation-grid-title') ||
-              null,
-          });
+          const land = planTrashRemoval(item);
           try {
             await api(`/api/presentations/${p.id}/permanent`, {
               method: 'DELETE',
