@@ -22,6 +22,10 @@
  *  3. error classes — no `*-error` / `is-error` class applied outside the
  *     helper. The message idioms were B204's and are all gone; the state
  *     markers (a thumb that failed to render) are not messages and stay.
+ *  4. no progress toast — no literal `durationMs` of 30 s or more. A toast
+ *     that has to live that long is a status in disguise ("Saving changes…",
+ *     60 s); progress belongs at the state it describes (B645). A toast with
+ *     an action never expires anyway, so a long number there is dead code.
  *
  * A regex over source is a heuristic. What it cannot see — an API refusal
  * caught in a save handler and toasted, which looks like any other catch —
@@ -217,13 +221,32 @@ function errorClassTokens(line) {
   return out;
 }
 
+/** A toast lifetime from which on it is a status chip, not a message. */
+const PROGRESS_TOAST_MS = 30000;
+
+/**
+ * The literal `durationMs` on a line when it reaches {@link PROGRESS_TOAST_MS}.
+ * @param {string} line
+ * @returns {number} The value in ms, or 0.
+ */
+function longDuration(line) {
+  const m = /\bdurationMs:\s*(\d[\d_]*)/.exec(line);
+  const ms = m ? Number(m[1].replaceAll('_', '')) : 0;
+  return ms >= PROGRESS_TOAST_MS ? ms : 0;
+}
+
 /** Scan client/ once; every guard reads from this. */
 function scan() {
   const perFile = new Map();
   for (const file of walk(path.join(repoRoot, 'client'))) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     const lines = fs.readFileSync(file, 'utf8').split('\n');
-    const found = { toastErrors: 0, refuseAndReturn: [], errorClasses: [] };
+    const found = {
+      toastErrors: 0,
+      refuseAndReturn: [],
+      errorClasses: [],
+      longDurations: [],
+    };
     lines.forEach((line, i) => {
       if (isComment(line)) return;
       if (/toast\.error\(/.test(line)) {
@@ -233,6 +256,8 @@ function scan() {
       for (const tok of errorClassTokens(line)) {
         found.errorClasses.push(`${i + 1}:${tok}`);
       }
+      const ms = longDuration(line);
+      if (ms) found.longDurations.push(`${rel}:${i + 1} (${ms} ms)`);
     });
     perFile.set(rel, found);
   }
@@ -330,6 +355,25 @@ test('guard 3: no error class is applied outside the inline helper', () => {
     'the message element is createInlineError().el (class `inline-error`); ' +
       'a new `*-error` / `is-error` class is idiom number 27',
   );
+});
+
+test('guard 4: no toast lives long enough to stand in for a status', () => {
+  const found = [...SCAN.values()].flatMap((f) => f.longDurations);
+  assert.deepEqual(
+    found,
+    [],
+    'progress is a state: show it where the state lives (the save status ' +
+      'line, the element being changed), not in a toast held open for ' +
+      `${PROGRESS_TOAST_MS / 1000} s or more — see ` +
+      'docs/reference/feedback-surfaces.md',
+  );
+});
+
+test('the duration pattern reads literals, separators included', () => {
+  assert.equal(longDuration('  durationMs: 60000,'), 60000);
+  assert.equal(longDuration('{ durationMs: 120_000 }'), 120000);
+  assert.equal(longDuration('  durationMs: 15000,'), 0);
+  assert.equal(longDuration('creepTo(c, { durationMs: data.creepMs })'), 0);
 });
 
 // ---------------------------------------------------------------- self-tests

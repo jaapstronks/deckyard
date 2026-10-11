@@ -48,7 +48,14 @@ export async function seedBilingualDeck(
   { title, themeSlug, dominant, titles, versions },
 ) {
   const theme = await seedThemeId(api, themeSlug);
-  const created = await api.post('/api/presentations', { title, theme });
+  // The language is set at creation: a save cannot change it (B608), so a
+  // deck created in the installation default and switched in the PUT below
+  // is refused for every `en-GB` shot on an `nl` installation.
+  const created = await api.post('/api/presentations', {
+    title,
+    theme,
+    lang: dominant,
+  });
   const id = created?.id || created?.presentation?.id;
   if (!id) throw new Error(`No id returned creating deck "${title}"`);
 

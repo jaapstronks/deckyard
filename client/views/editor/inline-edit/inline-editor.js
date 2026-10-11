@@ -1412,11 +1412,10 @@ export function createInlineEditor({
     }
     const target = resolveMediaTarget(photoEl);
     if (!target) return;
-    // Long-lived "Uploading…" toast; dismissed explicitly on completion (there
-    // is no infinite duration, so cap it well past a realistic upload).
-    const uploading = toast(t('imageLibrary.uploading', 'Uploading…'), {
-      durationMs: 60000,
-    });
+    // The upload is a state of this image, so it shows on the image, not in a
+    // toast that outlives it (B645). The rerender on success replaces the
+    // element; the finally clears it when the drop fails.
+    photoEl.setAttribute('aria-busy', 'true');
     try {
       const { url } = await uploadFile(api, file);
       if (!url) {
@@ -1440,7 +1439,7 @@ export function createInlineEditor({
       // generic "failed" in its place (B205).
       toast.error(err);
     } finally {
-      uploading?.dismiss?.();
+      photoEl.removeAttribute('aria-busy');
     }
   }
 

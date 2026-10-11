@@ -739,6 +739,7 @@ export async function createEditorController({
   syncPublishedAltWarning();
 
   const saveStatus = createSaveStatus();
+  cleanup.register('saveStatus', saveStatus.detach);
   shell.append(saveStatus.el);
   setSaveStatus = saveStatus.setStatus;
   setSaveStatus(saveManager.getStatus(), saveManager.getLastError());
