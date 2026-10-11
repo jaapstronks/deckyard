@@ -15,7 +15,7 @@ surface, slide-type curation.
 core themes and the four CIIIC-fork themes is written as a record in
 `tests/fixtures/theme-records/`, and `tests/theme-record-parity.test.js` pins
 that each renders the same `--t-*` tokens as its file form. The only file
-fields a record does not carry are the ones D208 retired: the
+fields a record does not carry are the ones the record retired (D208): the
 `{en, nl}` background labels, `embedFonts` (fork fonts are managed families,
 bound by name), `hiddenSlideTypes` (use `slideTypes.exclude`), `slides.*` and
 `sampleEmbedUrl`. The rule for what becomes a field: **when every theme sets
@@ -433,4 +433,4 @@ The pixel-perfect PPTX does not use these layouts; the editable one puts each sl
 
 Two routes, both addressed by theme because the bytes depend on the theme alone (B274): `GET /api/themes/:id/template.pptx` for the session — the **Download PPTX template** item on a theme card in Settings → Themes — and `GET /api/v1/themes/{id}/template.pptx` for an API key, which spends the export right and the export limit like any other v1 export. Both resolve the theme through `loadThemeAssets`, so a theme the caller cannot see answers the same 404 as one that does not exist, and both build through `prepareThemeTemplate` (`server/services/exports.js`), which is where the `pptx-template` count on the instance-health `export` axis happens.
 
-Until B274 the template hung off a deck (`GET /api/presentations/:id/export/pptx-template`, a row in the editor's export menu), because the deck was what named the theme. That route is gone: one artifact, one address.
+The template used to hang off a deck (`GET /api/presentations/:id/export/pptx-template`, a row in the editor's export menu), because the deck was what named the theme. That route is gone (B274): one artifact, one address.

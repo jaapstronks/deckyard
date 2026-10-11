@@ -95,7 +95,7 @@ stored, but its control is absent: there is nothing for it to switch.
 
 ## Legacy spellings (until 2026-11-01)
 
-The three kill switches were renamed in B68, two more flags in D259 (B522):
+Three kill switches were renamed first (B68), two more flags later (D259, B522):
 
 | Legacy (deprecated)          | Canonical                          |
 | ---------------------------- | ---------------------------------- |

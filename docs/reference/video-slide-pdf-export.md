@@ -104,9 +104,9 @@ every interactive slide type reads, so the PDF placeholder inherits its one
 documented fallback: **English**, not Dutch. See
 [slide-copy-language.md](slide-copy-language.md).
 
-They lived in a `videoPdfCopy()` table of their own until B358, which is how
-they came to fall back to Dutch while the rest of the product fell back to
-English. A second copy table is a second fallback ladder; add a key to the
+They used to live in a `videoPdfCopy()` table of their own, which is how they
+came to fall back to Dutch while the rest of the product fell back to English
+(B358). A second copy table is a second fallback ladder; add a key to the
 shared one instead.
 
 ## Code

@@ -24,8 +24,8 @@ it touches slide types; `AGENTS.md` § Slide types points here.
   [`docs/reference/slide-type-companions.md`](slide-type-companions.md)
   (what each companion is and what breaks without it) before adding or moving a
   type.
-- **Two shapes coexist.** The A7.1 rollout is converting definitions from the
-  flat `types/<type>.js` into `types/<type>/index.js`, one type at a time, so
+- **Two shapes coexist.** A rollout is converting definitions from the flat
+  `types/<type>.js` into `types/<type>/index.js`, one type at a time (A7.1), so
   both forms are live and the registry imports both. Anything that counts or
   globs type files must accept `<name>.js` **and** `<name>/index.js`; a bare
   `grep '\.js$'` over that directory counts companions as types.

@@ -228,7 +228,7 @@ new-presentation dialog (`client/views/list/modals/creation-view/import-deck.js`
 and the bundle comes out of the editor's Export menu (**Data & bundle → .deck**).
 A user who may manage themes and slide types sees one checkbox, "Install the
 theme and slide types it carries", which sends `install=theme,slideTypes`: one
-choice, because D91 is one rule for both. It is unticked by default. When
+choice, because one rule covers both (D91). It is unticked by default. When
 everything the bundle carried arrived (`installed` or `existing`, no missing
 font, no failed asset), the editor of the new deck opens and `bundledTheme` /
 `bundledSlideTypes` become one passing message in plain language. When

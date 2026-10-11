@@ -12,7 +12,7 @@ underneath it.
 
 **Naming.** The code calls the entity a **live session** everywhere
 (`server/storage/live-sessions/`, `LiveSession*` identifiers,
-`/api/live-sessions/…`) since the B41-b sweep. The one exception is the
+`/api/live-sessions/…`) since a naming sweep (B41-b). The one exception is the
 **physical table `present_sessions`** (and its columns/indexes), kept until a
 rename migration is worth doing. Distinguish the entity from the adjective: a
 `follow-state` status value of `'live'` means a session whose presenter pushed

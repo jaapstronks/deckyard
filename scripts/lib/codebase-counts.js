@@ -91,14 +91,17 @@ export function outsideParens(text) {
 }
 
 /**
- * How often `code` occurs outside parentheses in `text`.
+ * How often `code` occurs outside parentheses in `text`. An inline code span
+ * is a literal, not prose: a spreadsheet cell such as `A2` has the shape of a
+ * planning code and is not one, so spans are dropped before counting.
  * @param {string} text
  * @param {RegExp} code  a non-global pattern
  * @returns {number}
  */
 export function bareCodes(text, code = PLAN_CODE) {
   const global = new RegExp(code.source, 'g');
-  return (outsideParens(text).match(global) || []).length;
+  const prose = text.replace(/`[^`\n]*`/g, '');
+  return (outsideParens(prose).match(global) || []).length;
 }
 
 /**

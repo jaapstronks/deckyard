@@ -20,8 +20,8 @@
  *      runtime, and the runtime loads what a slide needs.
  *
  * **No allowlist**, on purpose (the same stance as `module-layout.test.js`):
- * B528 moved everything both counts found, so a new hit is a new module in the
- * wrong place, not a known debt.
+ * everything both counts found was moved when the rule landed (B528), so a new
+ * hit is a new module in the wrong place, not a known debt.
  *
  * Run with: node --test tests/client-layer-direction.test.js
  */

@@ -101,8 +101,8 @@ Matches the editor's existing language-sync semantics:
   projection does not invent an `i18n` block for them.
 
 Nested item texts (e.g. `text-blocks-slide` `rows[].blocks[].title/body`) are
-per-language in the doc — and, since B164, in the editor sync and the translate
-pipeline too: `mapItemTexts` in `shared/slide-types/text-fields.js` is the one
+per-language in the doc, and in the editor sync and the translate pipeline too
+(B164): `mapItemTexts` in `shared/slide-types/text-fields.js` is the one
 recursion all of them walk, so the codec and the JSON pipeline no longer
 disagree about how deep a text field can sit.
 

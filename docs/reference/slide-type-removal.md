@@ -159,16 +159,17 @@ Then, in rough dependency order:
    **A split is a conversion too, and takes the same route.** The v14 → v15 step
    (`cutImageTextPluralLayouts`) is the worked example: `image-text-slide`
    carried two schemas under one id — `duo`/`row-top`/`row-bottom` read
-   `images[0..2]`, `split`/`corner` read one image — and D100 resolved that by
-   type, so the plural layouts became `image-set-slide` and image-text became the
-   singleton in `image-slide`'s spelling. No type is removed, so there is no
-   record in `removed.js` to derive anything from; the step names both types
-   itself, keys on the retired shape (a plural `layout`, or an own `images`,
-   `imageFit`, `textColumns`, `altNl`, `altEn`) and drops what the singleton has
-   no home for — the images past the first on a `split`/`corner` slide, which
-   D100 accepts by name. It is the same argument as v11 → v12: the plural shape
-   sits in version snapshots, library rows and exported decks on every backend,
-   and the funnel is the one path that reaches all of them.
+   `images[0..2]`, `split`/`corner` read one image — and that was resolved by
+   type (D100), so the plural layouts became `image-set-slide` and image-text
+   became the singleton in `image-slide`'s spelling. No type is removed, so
+   there is no record in `removed.js` to derive anything from; the step names
+   both types itself, keys on the retired shape (a plural `layout`, or an own
+   `images`, `imageFit`, `textColumns`, `altNl`, `altEn`) and drops what the
+   singleton has no home for — the images past the first on a `split`/`corner`
+   slide, a loss the split accepts by name (D100). It is the same argument as
+   v11 → v12: the plural shape sits in version snapshots, library rows and
+   exported decks on every backend, and the funnel is the one path that reaches
+   all of them.
 
    **And a decided conversion enters the funnel only if it is a normaliser**:
    keyed on a shape valid content cannot have, so it is a no-op on every deck
@@ -190,8 +191,8 @@ Then, in rough dependency order:
    - the funnel migrates in memory and the deck is written back on its next
      save, so without the SQL the columns keep the old name until someone edits
      the deck;
-   - the read funnel covers presentations and, since B286, `slide_library`
-     rows (`migrateLibraryItem()`, called by the storage row mapper, dresses an
+   - the read funnel covers presentations and `slide_library` rows (B286;
+     `migrateLibraryItem()`, called by the storage row mapper, dresses an
      item as a one-slide deck per language and hands it to the same funnel).
      Version snapshots and comment snapshots have their own read paths, and the
      SQL is what reaches those; for the library it is what makes the rename

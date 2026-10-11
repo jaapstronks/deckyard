@@ -71,9 +71,9 @@ write is safe only if it falls into one of them.
 
 There used to be an eleventh row — "intentional trusted HTML", the
 `settings/email-templates/actions.js` preview — and it was the only one whose
-safety rested on an authorization claim rather than on escaping. **B154 retired
-it**: the preview now renders in a `sandbox=""` iframe through `srcdoc`, so no
-category is carrying an authorization argument any more.
+safety rested on an authorization claim rather than on escaping. **That row is
+retired** (B154): the preview now renders in a `sandbox=""` iframe through
+`srcdoc`, so no category is carrying an authorization argument any more.
 
 The argument that retired it was not primarily the security one. The old verdict
 (re-verified 2026-08-04) was sound as far as it went: the preview route is gated

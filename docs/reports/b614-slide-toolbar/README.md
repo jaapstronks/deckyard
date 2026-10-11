@@ -1,4 +1,4 @@
-# B614 - slide toolbar belongs to the slide
+# The slide toolbar belongs to the slide (B614)
 
 Each image stacks four strips, separated by a magenta rule: 1440 px before, 1440 px after, 900 px before, 900 px after. `light.png` and `dark.png` show both UI modes.
 

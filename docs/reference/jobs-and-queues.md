@@ -263,8 +263,8 @@ and Redis optional throughout.** Where the code stands, as of 2026-08-05:
   `translate-missing.js`) do the work inline in the request. The queue, the
   worker and its result store are therefore dead code today. Finish-or-strip is
   a decision, not a doc note — it sits on the internal dead-code worklist until
-  it is made. Since B610 the worker is an adapter over the same
-  `translatePresentation` service as the routes (it acts as the job's
+  it is made. The worker is already an adapter over the same
+  `translatePresentation` service as the routes (B610; it acts as the job's
   `actorEmail`, and a job without one is refused), so finishing it is a
   producer and nothing else.
 - **Result stores are per-process, not shared.** Two app instances behind a load

@@ -258,12 +258,12 @@ the admin UI.** Where the code stands, as of 2026-08-17 (B81):
   A failed POST is a warn line. Nothing records that an event happened, so a
   receiver that was down loses the event permanently and neither side can tell.
   If retry/delivery-log is ever picked up, this note is its address.
-- **`actor.id` is `users.id`** (B81). It was the email until B81 moved this last
-  outward-facing contract onto the stable id the rest of the codebase keys on
-  ([`permission-model.md`](permission-model.md)); the email now travels beside
-  it as a contact value, and `actor.id` is `null` for the id-less shapes (file
-  mode, external/legacy rows, the auth-off operator). This was a breaking change
-  for receivers keying on `actor.id` — the kind the beta window is for.
+- **`actor.id` is `users.id`** (B81). It was the email until this last
+  outward-facing contract moved onto the stable id the rest of the codebase keys
+  on ([`permission-model.md`](permission-model.md)); the email now travels
+  beside it as a contact value, and `actor.id` is `null` for the id-less shapes
+  (file mode, external/legacy rows, the auth-off operator). This was a breaking
+  change for receivers keying on `actor.id` — the kind the beta window is for.
 - **The user-agent is `Deckyard-Webhook/1`** (B81), replacing the pre-rename
   `presentation-system-webhook/1`.
 - **The shelf event and its settings key say _organization_** (B92, 1.21.0,
