@@ -9,7 +9,6 @@ import {
   SCHEMA_MIGRATIONS,
   eachSlide,
   migratePresentation,
-  schemaVersionOf,
 } from '../shared/slide-types/schema-version.js';
 import { REMOVED_SLIDE_TYPES } from '../shared/slide-types/removed.js';
 import {
@@ -17,6 +16,8 @@ import {
   validatePresentation,
 } from '../shared/slide-types/presentation.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
+import { slideTypeSample } from '../shared/slide-types/authoring-companions.js';
+import { SLIDE_TYPE_AI_EXAMPLES } from '../server/utils/ai/slide-catalog/type-ai.js';
 
 /** A minimal pre-versioning deck (no schemaVersion stamp). */
 function legacyDeck() {
@@ -53,13 +54,96 @@ test('newPresentation() stamps the current schema version', () => {
   assert.equal(pres.schemaVersion, CURRENT_SCHEMA_VERSION);
 });
 
-test('schemaVersionOf treats missing/garbage stamps as version 0', () => {
-  assert.equal(schemaVersionOf(null), 0);
-  assert.equal(schemaVersionOf({}), 0);
-  assert.equal(schemaVersionOf({ schemaVersion: 'nope' }), 0);
-  assert.equal(schemaVersionOf({ schemaVersion: -3 }), 0);
-  assert.equal(schemaVersionOf({ schemaVersion: 1 }), 1);
-  assert.equal(schemaVersionOf({ schemaVersion: '1' }), 1);
+test('a stamp skips no step: every stamp still runs the whole chain (D85)', () => {
+  // The stamp is "went through the funnel of this build", never "these steps
+  // already ran": a stamped object that carries a retired shape is folded all
+  // the same, whatever the stamp says.
+  for (const stamp of [
+    undefined,
+    'nope',
+    -3,
+    1,
+    '1',
+    CURRENT_SCHEMA_VERSION,
+    String(CURRENT_SCHEMA_VERSION),
+  ]) {
+    const deck = {
+      id: randomUUID(),
+      schemaVersion: stamp,
+      slides: [
+        {
+          id: 's1',
+          type: 'text-blocks-slide',
+          content: {
+            rows: [{ blocks: [{ title: 'Kept' }] }],
+            row1Block1Title: 'Old mirror',
+          },
+        },
+      ],
+    };
+    const out = migratePresentation(deck);
+    assert.equal(out.schemaVersion, CURRENT_SCHEMA_VERSION, String(stamp));
+    assert.deepEqual(out.slides[0].content, {
+      rows: [{ blocks: [{ title: 'Kept' }] }],
+    });
+  }
+});
+
+/**
+ * Every content shape a registered type itself calls valid: its `defaults`,
+ * each `defaultsByLang` entry, its `authoring.sample` and each `aiExamples`
+ * item. What the current writers produce starts from one of these.
+ * @returns {Array<[string, string, object]>} `[type, label, content]`
+ */
+function registeredTypeContents() {
+  const out = [];
+  for (const [name, def] of Object.entries(SLIDE_TYPES)) {
+    if (def?.defaults && typeof def.defaults === 'object')
+      out.push([name, 'defaults', def.defaults]);
+    for (const [lang, d] of Object.entries(def?.defaultsByLang || {}))
+      if (d && typeof d === 'object') out.push([name, `defaults[${lang}]`, d]);
+    const sample = slideTypeSample(name, def);
+    if (sample && typeof sample === 'object')
+      out.push([name, 'authoring.sample', sample]);
+    (SLIDE_TYPE_AI_EXAMPLES[name] || []).forEach((ex, i) => {
+      if (ex?.content && typeof ex.content === 'object')
+        out.push([name, `aiExamples[${i}]`, ex.content]);
+    });
+  }
+  return out;
+}
+
+test('the funnel is a no-op on every registered type its own content describes (D85)', () => {
+  // The step contract: a step keys on a shape valid current content cannot
+  // have, so it never touches what the current writers produce. A step that
+  // does rewrites decks that were never old - the reverted chart-header step
+  // broke exactly the `Quarter\t2023\t2024` example in chart-slide's
+  // aiExamples (B239). Each content runs as its own one-slide deck, both
+  // unstamped and stamped current: a stamp skips nothing, so both must hold.
+  const contents = registeredTypeContents();
+  assert.ok(contents.length > Object.keys(SLIDE_TYPES).length);
+  const rewritten = [];
+  for (const [type, label, content] of contents) {
+    for (const stamp of [undefined, CURRENT_SCHEMA_VERSION]) {
+      const deck = {
+        id: 'deck',
+        title: 'Guard',
+        lang: 'nl',
+        ...(stamp === undefined ? {} : { schemaVersion: stamp }),
+        slides: [{ id: 's1', type, content: structuredClone(content) }],
+      };
+      const before = structuredClone(deck);
+      const { schemaVersion, ...after } = migratePresentation(deck);
+      const { schemaVersion: _stamp, ...expected } = before;
+      assert.equal(schemaVersion, CURRENT_SCHEMA_VERSION);
+      try {
+        assert.deepEqual(after, expected);
+      } catch {
+        rewritten.push(`${type} ${label} (stamp ${stamp ?? 'none'})`);
+      }
+    }
+  }
+  assert.deepEqual(rewritten, []);
 });
 
 test('migrating a legacy deck stamps it current without touching content', () => {
@@ -1882,7 +1966,7 @@ test('the full funnel takes an unstamped duo slide all the way to image-set', ()
   const migrated = migratePresentation(deck);
 
   assert.equal(
-    schemaVersionOf(migrated),
+    migrated.schemaVersion,
     CURRENT_SCHEMA_VERSION,
     'the deck ran the whole chain',
   );
