@@ -1,33 +1,23 @@
 /**
- * Title slide background image field renderer
+ * Background image field renderer: the picker for an image field with
+ * `presetSource: 'backgrounds'` (the shared `slideBgImage`). A full-slide
+ * background is decorative, so a pick stores the URL only - no alt text and
+ * no provider id (the legacy `bgAlt`/`bgImagekitFileId` it once wrote are
+ * folded away by the read funnel, schema v21 -> v22).
  */
 import { t } from '../../../../lib/ui-i18n.js';
 import { getBackgroundPresets } from '../../../../lib/theme/theme.js';
-import { createAltSetter } from './alt-utils.js';
 import { createImagePickerButtons } from './picker-buttons.js';
-import { applyAltFromPick, applyPickMeta } from '../../media/apply-pick.js';
 import { h } from '../../../../lib/dom/index.js';
 import { featureEnabled, getFeatures } from '../../../../lib/state/features.js';
-import {
-  DEFAULT_DECK_LANG,
-  translationSourceFor,
-} from '../../../../../shared/i18n-utils.js';
 
 /**
- * Create a title background image field renderer
+ * Create a background image field renderer
  * @param {Object} ctx - Context with dependencies
  * @returns {Function} Field renderer function
  */
 export function createFieldTitleBgImage(ctx) {
-  const {
-    openImagePicker,
-    theme,
-    pres,
-    normalizeLang,
-    markDirty,
-    scheduleUiRefresh,
-    rerenderEditor,
-  } = ctx;
+  const { openImagePicker, theme, pres } = ctx;
 
   return function fieldTitleBgImage(slide, field, onUploadedUrl) {
     const wrap = h('div', { class: 'stack is-field' });
@@ -51,23 +41,9 @@ export function createFieldTitleBgImage(ctx) {
       );
     }
 
-    // Built per click, so the active language is current (B579: shared by
+    // Built per click, so the context is current (B579: shared by
     // "Choose image…" and "Upload from computer").
     const pickerOpts = () => {
-      const activeLang =
-        normalizeLang?.(pres?.i18n?.active) || DEFAULT_DECK_LANG;
-      // The version this one is translated from, so a picked alt text
-      // seeds the source buffer too. `otherLang()` had no answer once the
-      // deck left the NL/EN pair, and silently seeded nothing (B182).
-      const sourceLang = translationSourceFor(pres, activeLang);
-      const setBgAltForLang = createAltSetter({
-        slide,
-        pres,
-        normalizeLang,
-        activeLang,
-        fieldKey: 'bgAlt',
-      });
-
       return {
         title: t(
           'editor.image.bgLibraryTitle',
@@ -91,24 +67,6 @@ export function createFieldTitleBgImage(ctx) {
           const url = typeof picked?.url === 'string' ? picked.url.trim() : '';
           if (!url) return;
           onUploadedUrl(url);
-          slide.content =
-            slide.content && typeof slide.content === 'object'
-              ? slide.content
-              : {};
-          applyAltFromPick({
-            picked,
-            activeLang,
-            sourceLang,
-            setAltForLang: setBgAltForLang,
-          });
-          applyPickMeta({
-            picked,
-            content: slide.content,
-            providerIdKey: 'bgImagekitFileId',
-          });
-          markDirty?.();
-          rerenderEditor?.();
-          scheduleUiRefresh?.();
         },
       };
     };

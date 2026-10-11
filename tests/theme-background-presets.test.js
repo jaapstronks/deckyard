@@ -200,8 +200,8 @@ test('an imported title slide takes a background only by declaration (D92)', () 
 });
 
 test('an imported title slide keeps a legacy background it already declares', () => {
-  // A deck carrying the legacy bgImage is left un-migrated (it renders via the
-  // fallback and migrates on edit); no preset is stacked on top of it.
+  // The import runs the read funnel first, which folds the legacy bgImage into
+  // slideBgImage (schema v21 -> v22); no preset is stacked on top of it.
   const parts = deckToPresentationParts(
     {
       slides: [
@@ -210,8 +210,8 @@ test('an imported title slide keeps a legacy background it already declares', ()
     },
     { theme: themeWithPresets },
   );
-  assert.equal(parts.slides[0].content.bgImage, '/mine.jpg');
-  assert.ok(!parts.slides[0].content.slideBgImage);
+  assert.equal(parts.slides[0].content.slideBgImage, '/mine.jpg');
+  assert.ok(!('bgImage' in parts.slides[0].content));
 });
 
 test('chapter-title → title conversion seeds a background by declaration only (D92)', () => {

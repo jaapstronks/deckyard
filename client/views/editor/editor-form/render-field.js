@@ -254,7 +254,6 @@ export function createRenderField({
       });
       const isAltField =
         field.key === 'alt' ||
-        field.key === 'bgAlt' ||
         String(field.key || '')
           .toLowerCase()
           .endsWith('alt');

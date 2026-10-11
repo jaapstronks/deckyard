@@ -20,7 +20,6 @@ import {
   describeUnresolvedType,
   unresolvedNotes,
 } from '../../../../shared/slide-types/unresolved.js';
-import { ensureSlideBgImage } from '../../../../shared/slide-types/legacy-bg-image.js';
 import { elementAppliesToSlide, elementTabLabel } from './element-tab.js';
 import {
   buildBackgroundControls,
@@ -439,17 +438,6 @@ export function createRerenderEditor({
     // surfaces (the bulk modal, the library editor).
     const inspectorKeeps =
       caps.fields === 'keeps' ? getInspectorKeepKeys(slide.type, def) : null;
-
-    // Migrate-on-edit: fold a legacy bgImage into the canonical slideBgImage
-    // before the background controls read it, so the shared picker shows the
-    // (now single) background and the legacy render fallback stops firing.
-    // Type-agnostic on purpose: the pair is a content legacy any type could
-    // declare, and a fork type that still does would otherwise render its own
-    // picker next to the shared Background section. Idempotent, and a no-op on
-    // content without the pair; only where background controls render.
-    if (caps.background) {
-      ensureSlideBgImage(slide.content);
-    }
 
     // Deck slides (minus the current one) for in-deck card-link pickers, in
     // both the per-type forms and the generic collection editor.

@@ -732,11 +732,12 @@ this page showed that in the examples. Declaring it now buys you a **second**
 Background section, and two images competing on the slide. So:
 
 - Declare nothing for a slide-wide photo. It is already there.
-- `bgImage`/`bgAlt` are a read-only render fallback for un-migrated decks.
-  Opening such a slide in the editor folds them onto `slideBgImage`
-  (`shared/slide-types/legacy-bg-image.js`); `node
-scripts/migrate-legacy-bg-image.js` does the same in bulk, on either storage
-  backend and including every language version (`--dry-run` first).
+- `bgImage`/`bgAlt` are not read anywhere. The read funnel folds them onto
+  `slideBgImage` and deletes them (schema v21 -> v22,
+  `shared/slide-types/legacy-bg-image.js`), on every type, so a type that
+  still declared the pair would see its values disappear. `node
+scripts/migrate-legacy-bg-image.js` persists the same fold in bulk, on either
+  storage backend and including every language version (`--dry-run` first).
 - Do declare an `image` field for an image that is _content_ — a portrait, a
   chart, one cell of a grid. That is a different thing from the backdrop.
 
@@ -928,7 +929,7 @@ It composes in this order, and the order is the contract:
 3. **`seedAutoBackgroundPreset`** — a type declaring `autoBackgroundPreset`
    takes its `slideBgImage` from `theme.backgroundPresets`. After the merge, so
    a preset is never stacked on a background the caller already brought
-   (including a legacy `bgImage`).
+   (including a legacy `bgImage` the funnel will fold on write).
 4. **`applyInstanceKeyDefaults`** — the keys the type declares as bound to this
    slide instance (`pollId`, `presentationId`). A declaration, so nothing here
    branches on a type name.

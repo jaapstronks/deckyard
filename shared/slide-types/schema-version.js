@@ -51,9 +51,10 @@ import { foldUnofferedEnums } from './normalize-content.js';
 import { canonicalJson } from '../slide-fingerprint.js';
 import { foldTextStylesToOffers } from './text-styles.js';
 import { DECK_FORMAT_ID, RETIRED_DECK_FORMAT_ID } from './deck-format-id.js';
+import { ensureSlideBgImage } from './legacy-bg-image.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 21;
+export const CURRENT_SCHEMA_VERSION = 22;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -1083,6 +1084,39 @@ function foldImageSlideLegacyAlt(pres) {
 }
 
 /**
+ * v21 -> v22: the legacy per-type background (`bgImage`/`bgAlt`, plus the
+ * picker's `bgImagekitFileId`) folds into the shared `slideBgImage` and is
+ * deleted, on every slide of every type in every language version (B257
+ * B1-bg). Until now a render fallback drew it on title-slide and the editor
+ * folded it on edit, so a deck nobody opened kept a second background system
+ * alive, and the import (which lets undeclared keys through) could not strip
+ * unknown keys without dropping that background.
+ *
+ * The fold itself is `ensureSlideBgImage` (legacy-bg-image.js), the authority
+ * the editor and `scripts/migrate-legacy-bg-image.js` already used: a
+ * canonical image wins, else the legacy one moves over with light text and a
+ * bottom scrim (unless the author chose otherwise), and an empty legacy key
+ * folds to an empty canonical one so "deliberately cleared" survives.
+ *
+ * Two departures from the step contract below, both the ones the editor fold
+ * already made on every edit: the result is drawn by the shared layer, not
+ * the bespoke `<img class="slide-bg">` with its `.has-bg` scrim, so it looks
+ * close to but not exactly as before; and `bgAlt` is dropped, because a
+ * full-slide background is decorative. No current writer produces any of the
+ * keys, so the step is a no-op on current content.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldLegacyBgImage(pres) {
+  for (const slide of eachSlide(pres)) {
+    if (slide.content && typeof slide.content === 'object')
+      ensureSlideBgImage(slide.content);
+  }
+  return pres;
+}
+
+/**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
  * still allowed into the one version `i + 1` requires. No stamp is stored (see
  * the module docstring), so every step runs on every deck, every time - which
@@ -1565,6 +1599,10 @@ export const SCHEMA_MIGRATIONS = [
   // v20 -> v21: image-slide's legacy per-language alt (`altNl`/`altEn`) folds
   // into `alt` and is deleted (B257, 80th audit). See foldImageSlideLegacyAlt.
   foldImageSlideLegacyAlt,
+
+  // v21 -> v22: the legacy `bgImage`/`bgAlt` pair folds into `slideBgImage`
+  // and is deleted, on every type (B257 B1-bg). See foldLegacyBgImage.
+  foldLegacyBgImage,
 ];
 
 /**
