@@ -1,10 +1,10 @@
 /**
  * Guard: the follow-along invite declares itself; no module knows her name.
  *
- * The form that holds is `library: false` on the type, read by one
- * predicate, instead of `slide.type === 'follow-invite-slide'` in the editor
- * and the library routes (B401). This file pins the sweep over the dozen
- * branches that were still asking by name (B413). Each now asks a facet of the declaration:
+ * The form that holds is `library: false` on the type, read by one predicate,
+ * instead of `slide.type === 'follow-invite-slide'` in the editor and the
+ * library routes (B401). This file pins the sweep over the dozen branches that
+ * were still asking by name (B413). Each now asks a facet of the declaration:
  *
  *   - `liveOnly: true` (`isLiveOnlySlideType`, `firstPublicSlide`) — every
  *     output that outlives the session: strip, exports, preview image.

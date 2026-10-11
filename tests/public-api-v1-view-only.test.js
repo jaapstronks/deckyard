@@ -1,5 +1,6 @@
 /**
- * The public-API v1 presentation payload exposes `isViewOnly` (B62, finding 12).
+ * The public-API v1 presentation payload exposes `isViewOnly` (B62, finding
+ * 12).
  *
  * `GET /api/v1/presentations?viewOnly=true` filters the list on `isViewOnly`,
  * but no response payload used to carry that field: a consumer could

@@ -1,5 +1,6 @@
 /**
- * The per-slide public API and the MCP write tools know the org registry (B131).
+ * The per-slide public API and the MCP write tools know the org registry
+ * (B131).
  *
  * The storage write seam (`normalizeSlides`) resolves a slide type against
  * the organization's registry rather than the process-wide `SLIDE_TYPES`

@@ -1,5 +1,6 @@
 /**
- * The copy sits in the ImageKit adapter, so every call site gets it (B327, D162).
+ * The copy sits in the ImageKit adapter, so every call site gets it (B327,
+ * D162).
  *
  * The client half of copy-on-pick. The decision it encodes is that a picked DAM
  * image reaches a slide only as own media: the copy runs inside the ImageKit
@@ -20,10 +21,10 @@
  *   4. Without own media, the adapter refuses the pick and explains why.
  *
  * The half that used to hold only in prose is pinned too: the dialog is the
- * seam's, not the panel's (B410). A panel that fires `onPick` and forgets it (the external
- * picker a fork put in this slot did exactly that, then closed) cannot close
- * on a refused copy or leave the refusal unseen, because it never had the
- * close and the message is placed by the seam when the panel does not.
+ * seam's, not the panel's (B410). A panel that fires `onPick` and forgets it
+ * (the external picker a fork put in this slot did exactly that, then closed)
+ * cannot close on a refused copy or leave the refusal unseen, because it never
+ * had the close and the message is placed by the seam when the panel does not.
  *
  * Run with: node --test tests/imagekit-copy-on-pick-seam.test.js
  */

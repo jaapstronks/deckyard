@@ -1,5 +1,6 @@
 /**
- * The internal create routes refuse an unsupported `lang` before the work (B576).
+ * The internal create routes refuse an unsupported `lang` before the work
+ * (B576).
  *
  * The v1 wizard and the MCP create tools refuse an unsupported `lang` with
  * 400 `invalid`, `details.field: 'lang'` (D291, B521). The internal AI

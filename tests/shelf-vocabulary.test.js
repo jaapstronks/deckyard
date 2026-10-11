@@ -48,11 +48,12 @@
  * an organization: `getTeamWeeklyAnalytics`, `buildTeamDigestEmail`) is a
  * different concept and stays.
  *
- * **Webhook surface (B92).** The identifier sweep left one remainder: the settings key
- * `slideAddedToTeamLibraryUrl` and the event `slide.added_to_team_library`,
- * held back because they are stored operator settings plus a public payload
- * contract. Both are now *…OrganizationLibrary…*, and the stored
- * key moved with migration 077, so `CODE_IDENTIFIERS` pins the old spellings too.
+ * **Webhook surface (B92).** The identifier sweep left one remainder: the
+ * settings key `slideAddedToTeamLibraryUrl` and the event
+ * `slide.added_to_team_library`, held back because they are stored operator
+ * settings plus a public payload contract. Both are now
+ * *…OrganizationLibrary…*, and the stored key moved with migration 077, so
+ * `CODE_IDENTIFIERS` pins the old spellings too.
  *
  * Run with: node --test tests/shelf-vocabulary.test.js
  */

@@ -20,9 +20,10 @@
  * one that offers the handling (no v1 or MCP transfer), so this file is the
  * test per contract.
  *
- * The endpoint is singular. There is no claim endpoint (the item this came
- * from spoke of "transfer/claim endpoints", B115) — `POST /api/presentations/:id/transfer-ownership`
- * is the whole ownership surface (see the PR description).
+ * The endpoint is singular. There is no claim endpoint (the item this came from
+ * spoke of "transfer/claim endpoints", B115) —
+ * `POST /api/presentations/:id/transfer-ownership` is the whole ownership
+ * surface (see the PR description).
  *
  * Every refusal is asserted against the store, not read off the status code:
  * after a refused transfer the deck must still name the old owner, on both keys
