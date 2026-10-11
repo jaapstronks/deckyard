@@ -1,5 +1,5 @@
 /**
- * B570: one deck copy under three contracts (A7.4).
+ * One deck copy under three contracts (B570, A7.4).
  *
  * The internal route, public v1 and the MCP `duplicate_presentation` tool each
  * copied a deck their own way: each loaded and decided beside the copy, MCP

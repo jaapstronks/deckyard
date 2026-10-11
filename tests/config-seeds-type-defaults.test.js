@@ -2,8 +2,8 @@
  * The route from installation configuration to a slide type's defaults (B653).
  *
  * `video-slide` had one fork's Bunny library written into core, so a new video
- * slide in any other instance played from a stranger's account. B650 took it
- * out and left the other half open: an instance that *owns* a Bunny library
+ * slide in any other instance played from a stranger's account. Taking it
+ * out (B650) left the other half open: an instance that *owns* a Bunny library
  * could not say so. There was no route at all — not an accident of this type,
  * but a missing seam, which is why the fix is a declaration
  * (`configDefaults`) and not a branch on a type name.

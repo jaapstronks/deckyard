@@ -1,5 +1,6 @@
 /**
- * B149/D61 — the deck-language axis is one open list with one definition site.
+ * The deck-language axis is one open list with one definition site (B149,
+ * D61).
  *
  * The axis used to be a two-value enum (`['nl','en-GB']`) declared in five
  * places, with a sixth hardcode in `getLang()`, a seventh as a `Set` in the

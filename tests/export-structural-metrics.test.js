@@ -1,5 +1,5 @@
 /**
- * Structural export metrics — form 2 of B14.
+ * Structural export metrics (B14, form 2).
  *
  * The smoke test next door (`export-chrome-smoke.test.js`) proves the export
  * chain *runs*: Chrome launches, a PDF has pages, a PNG is not blank. It says

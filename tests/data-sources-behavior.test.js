@@ -1,6 +1,6 @@
 /**
- * B67 — behavioral tests for the data-sources subsystem
- * (server/utils/data-source/): per-provider happy paths through
+ * Behavioral tests for the data-sources subsystem
+ * (server/utils/data-source/; B67): per-provider happy paths through
  * refreshSlideData/fetchProviderData, the binding engine, and the
  * binding-level SSRF refusal on the csv-url sink.
  *

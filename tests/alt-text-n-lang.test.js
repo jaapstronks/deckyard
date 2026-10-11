@@ -1,5 +1,5 @@
 /**
- * B182 fase 5 — AI alt text is generated for the languages the caller names.
+ * AI alt text is generated for the languages the caller names (B182, phase 5).
  *
  * The image library's alt panel renders one input per enabled deck language
  * (D72 #5). Its "generate" button used to reach a generator that asked the
