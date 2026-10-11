@@ -1,0 +1,4 @@
+# Ignore AI log files (they can be large and contain sensitive data)
+*.json
+!.gitkeep
+!.gitignore
