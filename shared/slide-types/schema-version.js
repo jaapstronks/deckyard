@@ -9,14 +9,16 @@
  * rest of it never branches on version.
  *
  * What the funnel actually is (D85, B239): a chain of **idempotent
- * normalisers**, not a version ladder. `schemaVersion` is persisted nowhere -
- * the `presentations` row has no column for it, `mapPresentationRow` reads
- * none, and the portable deck format leaves it out on purpose - so every
- * stored deck reads as version 0 and `migratePresentation()` runs **every**
- * step on every read, every write and every import, on every backend. That is
- * the form, not a defect: it is the one path a deck cannot avoid, and it needs
- * no stamp to be trusted. A stamp is a claim every writer would have to honour
- * (row, snapshot, library row, comment snapshot, wire format, an agent's POST),
+ * normalisers**, not a version ladder. `migratePresentation()` runs **every**
+ * step on every read, every write and every import, on every backend, whatever
+ * `schemaVersion` the object carries. The `presentations` row has no column
+ * for the stamp and the portable deck format leaves it out on purpose; a
+ * version snapshot does carry the stamp the deck had when it was saved
+ * (`stripIdentityForSnapshot` keeps it), and the funnel ignores that too.
+ * That is the form, not a defect: it is the one path a deck cannot avoid, and
+ * it needs no stamp to be trusted. A stamp is a claim every writer would have
+ * to honour (row, snapshot, library row, comment snapshot, wire format, an
+ * agent's POST),
  * and the surfaces the read funnel never passes through are exactly where such
  * claims failed before (docs/reference/slide-type-removal.md, step 0).
  * Persisting a fold is a numbered DB migration's job (030, 056, 081), never
@@ -35,9 +37,7 @@
  * of the generated JSON schemas (docs/reference/deck-format.md). The in-memory
  * stamp `migratePresentation()` writes says "this object went through the
  * funnel of this build" - the collab live-apply guard compares it - and is
- * never stored. Its early return on an already-stamped object is the last
- * place the stamp is read as "these steps already ran"; retiring that is
- * B239's execution item.
+ * never stored by the funnel.
  */
 
 import { getSlideType, resolveSlideTypeName } from './registry.js';
@@ -427,8 +427,8 @@ export const LOSSLESS_TYPE_RENAMES = new Map(
  * The step every lossless rename gets to reuse: a removal declares the rename
  * once in `removed.js`, appends this function as the next migration step and
  * bumps `CURRENT_SCHEMA_VERSION`. The bump is not ceremony, but not because a
- * stamp gates anything (none is stored, so the funnel runs every step on every
- * read regardless): the version is the ledger of shape changes, and a step
+ * stamp gates anything (none does: the funnel runs every step on every read
+ * regardless): the version is the ledger of shape changes, and a step
  * appended without a bump fails `SCHEMA_MIGRATIONS.length ===
  * CURRENT_SCHEMA_VERSION` instead of shipping unrecorded (D85).
  *
@@ -1118,8 +1118,8 @@ function foldLegacyBgImage(pres) {
 
 /**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
- * still allowed into the one version `i + 1` requires. No stamp is stored (see
- * the module docstring), so every step runs on every deck, every time - which
+ * still allowed into the one version `i + 1` requires. No stamp gates a step
+ * (see the module docstring), so every step runs on every deck, every time - which
  * is why a step must:
  *  - be **idempotent**, and key on a shape that valid current content cannot
  *    have (a retired key, a retired type name, an enum value the field no
@@ -1606,27 +1606,18 @@ export const SCHEMA_MIGRATIONS = [
 ];
 
 /**
- * The version a deck is currently in. Missing/invalid stamps are treated as
- * version 0 (pre-versioning).
- * @param {any} pres
- * @returns {number}
- */
-export function schemaVersionOf(pres) {
-  const v = pres == null ? NaN : Number(pres.schemaVersion);
-  return Number.isFinite(v) && v >= 0 ? Math.floor(v) : 0;
-}
-
-/**
  * Run a deck through every normaliser in order and stamp it, in memory. Every
- * stored deck arrives unstamped (nothing persists `schemaVersion`), so in
- * practice the whole chain runs on every call; each step is a no-op on current
- * content, which is what makes that free. Idempotent by construction.
+ * step runs on every call, whatever stamp the object carries: a stamp is a
+ * claim nothing verifies (D85), so it skips nothing - not on a stored deck,
+ * not on a version snapshot (`stripIdentityForSnapshot` keeps the stamp the
+ * deck had when it was saved, which says nothing about steps tightened since),
+ * not on an import handed back with the stamp it left with. Each step is a
+ * no-op on current content, which is what makes running all of them free.
+ * Idempotent by construction.
  *
- * An object that arrives already stamped at or above the current version is
- * returned untouched. Nothing stored produces one; an import can, when a JSON
- * that once left this funnel is handed back. That early return is the last
- * place the stamp is read as "these steps already ran" - a claim nothing
- * verifies - and retiring it is B239's execution item.
+ * The stamp is written afterwards: "this object went through the funnel of
+ * this build". A stamp above the current version (a deck written by a newer
+ * build) is left as it is, so `validatePresentation` can still refuse it.
  *
  * A translated deck stores its slides more than once: `pres.slides` holds the
  * dominant language and `pres.i18n.versions[*].slides` every version, including
@@ -1643,20 +1634,10 @@ export function schemaVersionOf(pres) {
  */
 export function migratePresentation(pres) {
   if (!pres || typeof pres !== 'object') return pres;
-  const from = schemaVersionOf(pres);
-  if (from >= CURRENT_SCHEMA_VERSION) {
-    // Already current, or ahead of us (a deck written by a newer build). Don't
-    // downgrade; only normalise the stamp to a number when it is exactly current.
-    if (from === CURRENT_SCHEMA_VERSION)
-      pres.schemaVersion = CURRENT_SCHEMA_VERSION;
-    return pres;
-  }
   let out = pres;
-  for (let v = from; v < CURRENT_SCHEMA_VERSION; v += 1) {
-    const step = SCHEMA_MIGRATIONS[v];
-    if (typeof step === 'function') out = step(out) || out;
-  }
-  out.schemaVersion = CURRENT_SCHEMA_VERSION;
+  for (const step of SCHEMA_MIGRATIONS) out = step(out) || out;
+  if (!(Number(out.schemaVersion) > CURRENT_SCHEMA_VERSION))
+    out.schemaVersion = CURRENT_SCHEMA_VERSION;
   return out;
 }
 
