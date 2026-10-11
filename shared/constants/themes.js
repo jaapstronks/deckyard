@@ -32,3 +32,12 @@ export const DEFAULT_THEME_SLUG = 'brand';
  * Display name for the default theme.
  */
 export const DEFAULT_THEME_NAME = 'Forest';
+
+/**
+ * The accent a slide gets when its theme names none: the `--slide-accent`
+ * fallback in `client/styles/slides/00-tokens.css`, which this mirrors for
+ * the places that resolve a colour without the cascade (the theme normalizer,
+ * the chart palette, the PPTX theme master). One literal in JS, pinned to the
+ * stylesheet by tests/chart-slide-styles.test.js (B656).
+ */
+export const SLIDE_ACCENT_FALLBACK = '#385c5c';
