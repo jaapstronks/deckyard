@@ -1,8 +1,4 @@
 import { createPresentation } from '../../../services/presentations.js';
-import {
-  loadDisabledSlideTypes,
-  loadCustomSlideTypes,
-} from '../../../utils/org-slide-types.js';
 import { settleNewDeckTheme } from '../../../utils/themes.js';
 import { createLogger } from '../../../utils/logger.js';
 
@@ -20,17 +16,6 @@ export const log = createLogger('ai');
  * @property {object|null} authedUser
  * @property {import('../../../storage/scope.js').StorageScope} storageScope
  */
-
-/**
- * Load disabled and custom slide type context for the authenticated user's org.
- */
-export async function loadSlideTypeContext(authedUser) {
-  const [disabled, custom] = await Promise.all([
-    loadDisabledSlideTypes(authedUser),
-    loadCustomSlideTypes(authedUser),
-  ]);
-  return { disabled, custom };
-}
 
 /**
  * Extract theme context for AI generation.

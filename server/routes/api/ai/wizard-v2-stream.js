@@ -32,11 +32,11 @@ import {
 } from '../../../utils/import-progress.js';
 import {
   log,
-  loadSlideTypeContext,
   loadAiThemeContext,
   reattachAiMeta,
   createDeckFromParts,
 } from './shared.js';
+import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
@@ -70,7 +70,7 @@ export async function handleAiWizardV2Stream({
   const targetLength = getOptionalString(body, 'targetLength') || 'auto';
 
   const userName = getDisplayNameForUser(authedUser);
-  const slideTypeCtx = await loadSlideTypeContext(authedUser);
+  const slideTypeOffer = await loadSlideTypeOffer(authedUser);
   // The map the org's types were offered from is the one they are refined,
   // fixed and composed in (B247).
   const slideTypes = await buildMergedSlideTypes(storageScope);
@@ -165,8 +165,7 @@ export async function handleAiWizardV2Stream({
         },
         onLog: logger ? (data) => logger.logPhase2Call(data) : null,
         signal,
-        disabledSlideTypes: slideTypeCtx.disabled,
-        customSlideTypes: slideTypeCtx.custom,
+        ...slideTypeOffer,
         themeContext,
         slideTypes,
         // Real progress: one event per finished section group.

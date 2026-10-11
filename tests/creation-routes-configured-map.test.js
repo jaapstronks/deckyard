@@ -21,10 +21,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import JSZip from 'jszip';
 
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
+import {
+  NOTION_PAGE_ID,
+  isNotionRequest,
+  minimalPptxDataUrl,
+  notionPageResponse,
+} from './helpers/import-sources.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 delete process.env.SANDBOX_MODE;
@@ -105,8 +110,11 @@ const ANSWER = JSON.stringify({
 function stubFetch(t, { notion = false } = {}) {
   const saved = globalThis.fetch;
   globalThis.fetch = async (url) => {
-    if (notion && new URL(String(url)).hostname === 'api.notion.com') {
-      return notionResponse(String(url));
+    if (notion && isNotionRequest(url)) {
+      return notionPageResponse(String(url), {
+        title: 'Tide pools',
+        text: 'A short film about anemones',
+      });
     }
     return new Response(
       JSON.stringify({ choices: [{ message: { content: ANSWER } }] }),
@@ -116,55 +124,6 @@ function stubFetch(t, { notion = false } = {}) {
   t.after(() => {
     globalThis.fetch = saved;
   });
-}
-
-const NOTION_PAGE_ID = '11111111222233334444555566667777';
-
-/** @param {string} href */
-function notionResponse(href) {
-  const json = (payload) =>
-    new Response(JSON.stringify(payload), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  if (href.includes('/children')) {
-    return json({
-      results: [
-        {
-          id: 'block-1',
-          type: 'paragraph',
-          has_children: false,
-          paragraph: {
-            rich_text: [{ plain_text: 'A short film about anemones' }],
-          },
-        },
-      ],
-      has_more: false,
-      next_cursor: null,
-    });
-  }
-  return json({
-    id: NOTION_PAGE_ID,
-    last_edited_time: '2026-02-01T00:00:00.000Z',
-    properties: {
-      title: { type: 'title', title: [{ plain_text: 'Tide pools' }] },
-    },
-  });
-}
-
-async function minimalPptx() {
-  const zip = new JSZip();
-  zip.file(
-    'ppt/slides/slide1.xml',
-    `<?xml version="1.0" encoding="UTF-8"?>
-<p:sld xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"
-       xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main">
-  <p:cSld><p:spTree>
-    <p:sp><p:txBody><a:p><a:r><a:t>A short film about anemones</a:t></a:r></a:p></p:txBody></p:sp>
-  </p:spTree></p:cSld>
-</p:sld>`,
-  );
-  return await zip.generateAsync({ type: 'nodebuffer' });
 }
 
 function makeJsonRes() {
@@ -241,7 +200,7 @@ test('MCP create_presentation composes from the configured map', async (t) => {
 test('the convert route composes from the configured map', async (t) => {
   await setup(t);
   stubFetch(t);
-  const dataUrl = `data:application/vnd.openxmlformats-officedocument.presentationml.presentation;base64,${(await minimalPptx()).toString('base64')}`;
+  const dataUrl = await minimalPptxDataUrl('A short film about anemones');
   const res = makeJsonRes();
   await handleConvertFile({
     repoRoot: process.cwd(),
