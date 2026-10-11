@@ -86,6 +86,19 @@ test('the embed helper refuses a bare UUID without a library', () => {
   );
 });
 
+test('the slide and the export paths read the field the same way', () => {
+  // One spelling: the slide hands the field to the helper as authored and the
+  // export paths hand it to `resolveBunnyLibraryId`, so neither can start
+  // normalizing it differently from the other. `validateSlide` refuses a
+  // non-string here, so this is about the two reads agreeing, not about the
+  // value being reachable.
+  for (const bunnyLibraryId of [LIB, `  ${LIB}  `, '', '   ', undefined]) {
+    const embedded = Boolean(renderedSrc({ source: UUID, bunnyLibraryId }));
+    const resolved = Boolean(resolveBunnyLibraryId({ bunnyLibraryId }));
+    assert.equal(embedded, resolved, String(bunnyLibraryId));
+  }
+});
+
 // --------------------------------------------------------- the export paths
 
 test('the export paths read the library off the slide, with no fallback', () => {

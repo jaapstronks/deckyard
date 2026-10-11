@@ -137,17 +137,14 @@ export default {
         : '';
 
     const sourceRaw = String(content?.source || '').trim();
-    // No fallback: a library id is instance configuration, and core has none
-    // to lend (B650). Without one a bare UUID embeds nothing.
-    const libId =
-      typeof content?.bunnyLibraryId === 'string'
-        ? content.bunnyLibraryId.trim()
-        : '';
 
     const yt = youtubeEmbedUrl(sourceRaw);
     const vm = vimeoEmbedUrl(sourceRaw);
+    // The field goes through as authored: the helper owns what a library id
+    // has to be, and there is no fallback to fill in, because a library is
+    // instance configuration and core owns none (B650).
     const bunny = bunnyEmbedUrlFromInput(sourceRaw, {
-      libraryId: libId,
+      libraryId: content?.bunnyLibraryId,
     });
 
     let embed = '';
