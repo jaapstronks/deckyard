@@ -101,6 +101,8 @@ async function handleConvertFile({
   // Cancelling is dropping the request: the signal aborts the model calls
   // and the image uploads, and is checked before the presentation is written.
   const signal = clientDisconnectSignal(res);
+  // One map for the AI fix pipeline and the deck import (B247).
+  const slideTypes = await buildMergedSlideTypes(storageScope);
 
   // Convert the file
   let converted;
@@ -111,6 +113,7 @@ async function handleConvertFile({
       lang,
       vendor,
       signal,
+      slideTypes,
     });
   } catch (e) {
     if (!signal.aborted) throw e;
@@ -136,7 +139,7 @@ async function handleConvertFile({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
-      slideTypes: await buildMergedSlideTypes(storageScope),
+      slideTypes,
     });
 
     // Use the detected/effective language from the deck, not the original request
@@ -362,6 +365,8 @@ async function handleConvertStream({
     // The convertFile function will call onStatusMessage as it generates content-aware messages
     const statusMessages = [];
     let statusMessagesSent = false;
+    // One map for the AI fix pipeline and the deck import (B247).
+    const slideTypes = await buildMergedSlideTypes(storageScope);
 
     const { deck, report } = await convertFile(buffer, {
       filename,
@@ -370,6 +375,7 @@ async function handleConvertStream({
       vendor,
       enableLogging: true,
       signal,
+      slideTypes,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
         // Message only: the bar is owned by the creep until the first section
@@ -474,7 +480,7 @@ async function handleConvertStream({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: deck.lang || deck._generationMeta?.effectiveLang || lang,
-      slideTypes: await buildMergedSlideTypes(storageScope),
+      slideTypes,
     });
 
     // Use the detected/effective language from the deck, not the original request

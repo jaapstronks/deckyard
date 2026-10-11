@@ -348,10 +348,11 @@ test("the fix branch refuses text past the custom type's own cap", async () => {
  * each: a positional second argument, or a `slideTypes` key in the options
  * object. `newSlide` takes one options object, so the registry rides in that.
  *
- * The fix pipeline's own entry points are listed for `server/mcp` only. The
- * three `server/routes/api/ai` callers still read the global map; that is
- * B247, and unlike the seams here it degrades (no declarations applied) rather
- * than refusing, so it is not what B131 pinned.
+ * The fix pipeline's entry points take the map as a required argument since
+ * B247 and throw without it; the guard names them for `server/routes` too, so
+ * the AI routes are read here as well as at run time
+ * (`tests/ai-paths-org-registry.test.js`). `deckToPresentationParts` is pinned
+ * in `tests/one-slide-factory.test.js`.
  */
 const SEAMS = [
   { fn: 'resolveSlideTypeName', dirs: ['routes', 'mcp'], at: 1 },
@@ -359,7 +360,7 @@ const SEAMS = [
   { fn: 'validateSlide', dirs: ['routes', 'mcp'], at: 1 },
   { fn: 'newSlide', dirs: ['routes', 'mcp'], at: 0 },
   { fn: 'validateRefinedSlidesStrict', dirs: ['mcp'], at: 1 },
-  { fn: 'validateAndFixRefinedSlides', dirs: ['mcp'], at: 1 },
+  { fn: 'validateAndFixRefinedSlides', dirs: ['routes', 'mcp'], at: 1 },
 ];
 
 test('no write surface resolves a slide type against the global registry', () => {

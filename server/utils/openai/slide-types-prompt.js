@@ -15,6 +15,7 @@
  */
 
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
+import { customSlideTypeKey } from '../../../shared/slide-types/custom-type-runtime.js';
 import { SLIDE_TYPE_CATALOG } from '../ai/slide-type-catalog.js';
 import { getSlideTypeExamples } from '../ai/slide-catalog/examples.js';
 import {
@@ -394,7 +395,7 @@ export function buildSlideTypesPrompt({
     lines.push('CUSTOM SLIDE TYPES (organization-specific):');
     lines.push('');
     for (const ct of customSlideTypes) {
-      const typeKey = `custom-${ct.slug}`;
+      const typeKey = customSlideTypeKey(ct);
       if (disabled.has(typeKey)) continue;
       const ctLabel = ct.label || ct.slug || 'Custom type';
       lines.push(`=== ${typeKey} - ${ctLabel} ===`);

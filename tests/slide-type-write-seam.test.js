@@ -16,7 +16,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { normalizeSlides } from '../server/storage/presentations/slides.js';
-import { getSlideTypeId } from '../shared/slide-types/registry.js';
+import { SLIDE_TYPES, getSlideTypeId } from '../shared/slide-types/registry.js';
 import { validateRefinedSlidesStrict } from '../server/utils/ai/validate-slides/strict.js';
 
 const CANONICAL_TITLE = getSlideTypeId('title-slide');
@@ -83,18 +83,20 @@ test('a missing type is a 400, not a silent pass-through', () => {
 
 test('MCP strict validation accepts a canonical id', () => {
   assert.doesNotThrow(() =>
-    validateRefinedSlidesStrict([
-      { type: CANONICAL_TITLE, content: { title: 'Hi' } },
-    ]),
+    validateRefinedSlidesStrict(
+      [{ type: CANONICAL_TITLE, content: { title: 'Hi' } }],
+      { slideTypes: SLIDE_TYPES },
+    ),
   );
 });
 
 test('MCP strict validation still rejects an unknown type', () => {
   assert.throws(
     () =>
-      validateRefinedSlidesStrict([
-        { type: 'text-slide', content: { title: 'Hi' } },
-      ]),
+      validateRefinedSlidesStrict(
+        [{ type: 'text-slide', content: { title: 'Hi' } }],
+        { slideTypes: SLIDE_TYPES },
+      ),
     /unknown slide type "text-slide"/,
   );
 });

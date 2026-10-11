@@ -71,6 +71,9 @@ export async function handleAiWizardV2Stream({
 
   const userName = getDisplayNameForUser(authedUser);
   const slideTypeCtx = await loadSlideTypeContext(authedUser);
+  // The map the org's types were offered from is the one they are refined,
+  // fixed and composed in (B247).
+  const slideTypes = await buildMergedSlideTypes(storageScope);
   const sessionId = generateSessionId();
   const logger = enableLogging ? createSessionLogger(sessionId) : null;
   // Settle the theme to get the correct title slide type and theme context
@@ -165,6 +168,7 @@ export async function handleAiWizardV2Stream({
         disabledSlideTypes: slideTypeCtx.disabled,
         customSlideTypes: slideTypeCtx.custom,
         themeContext,
+        slideTypes,
         // Real progress: one event per finished section group.
         onGroupDone: ({ done, total }) => {
           sseWrite(res, {
@@ -192,7 +196,9 @@ export async function handleAiWizardV2Stream({
     );
 
     // Validate and fix slides to meet minimum requirements
-    const validatedSlides = validateAndFixRefinedSlides(allSlides);
+    const validatedSlides = validateAndFixRefinedSlides(allSlides, {
+      slideTypes,
+    });
 
     // Validate slide count against target budget
     const { targetSlides: budgetTarget } = calculateTargetSlides(
@@ -244,7 +250,7 @@ export async function handleAiWizardV2Stream({
     const parts = deckToPresentationParts(deck, {
       theme,
       lang: langCode,
-      slideTypes: await buildMergedSlideTypes(storageScope),
+      slideTypes,
     });
     // Keep the per-slide "why this type" + alternatives on the saved slides;
     // the whole-deck review grid reads them after the editor loads the deck.

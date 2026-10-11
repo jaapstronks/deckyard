@@ -46,6 +46,8 @@ const log = createLogger('convert-notion');
  * @param {AbortSignal} [options.signal] - Cancels the import: it reaches both
  *   model phases and is checked before every image re-host, so a caller whose
  *   reader left stops instead of importing for nobody.
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map; the AI slides are fixed against it (B247).
  * @returns {Promise<{deck: object|null, report: object, pageId: string}>}
  */
 export async function convertNotionPage(urlOrPageId, options = {}) {
@@ -57,6 +59,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
     onOutlineComplete = null,
     onGroupDone = null,
     signal = null,
+    slideTypes,
   } = options;
 
   const report = {
@@ -147,6 +150,7 @@ export async function convertNotionPage(urlOrPageId, options = {}) {
       processedImages,
       richContent, // Pass full content for image/table slide creation
       signal,
+      slideTypes,
     });
 
     // Include status messages in report
@@ -290,6 +294,7 @@ async function convertWithAi(formattedContent, options = {}) {
     processedImages = [],
     richContent = null,
     signal = null,
+    slideTypes,
   } = options;
 
   const sessionId = generateSessionId();
@@ -357,11 +362,14 @@ async function convertWithAi(formattedContent, options = {}) {
       onLog: logger ? (data) => logger.logPhase2Call(data) : null,
       onGroupDone,
       signal,
+      slideTypes,
     });
   }
 
   // Validate refined slides
-  const validatedSlides = validateAndFixRefinedSlides(refinedContentSlides);
+  const validatedSlides = validateAndFixRefinedSlides(refinedContentSlides, {
+    slideTypes,
+  });
 
   // Merge structural and content slides, sorted by originalIndex
   const allSlides = [

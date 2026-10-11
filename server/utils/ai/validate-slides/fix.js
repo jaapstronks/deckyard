@@ -7,7 +7,6 @@
  */
 
 import { describeIssue, validateSlideContent } from '../schemas/index.js';
-import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { SLIDE_ITEM_REQUIREMENTS } from './constants.js';
 import { logValidation } from './logging.js';
 import { checkForUnknownFields } from './fields.js';
@@ -22,20 +21,37 @@ import {
 } from './fixers.js';
 
 /**
+ * The fix pipeline reads declarations off the map its caller composes in; a
+ * missing map would silently fall back to the core types and lose an
+ * organization's own (B247).
+ *
+ * @param {string} fn
+ * @param {unknown} slideTypes
+ */
+function requireSlideTypes(fn, slideTypes) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      `${fn}: pass the slide-type map the slides are made in`,
+    );
+  }
+}
+
+/**
  * Validate and fix a refined slide to meet minimum requirements
  *
  * @param {Object} slide - The refined slide
  * @param {Object} [options]
- * @param {Record<string, Object>} [options.slideTypes] - The registry to read
- *   declarations from; an org-aware caller passes its merged map.
+ * @param {Object} options
+ * @param {Record<string, Object>} options.slideTypes - The registry to read
+ *   declarations from: the organization's merged map
+ *   (`buildMergedSlideTypes(scope)`), so a DB-backed type is held to its own
+ *   field limits. There is no process-wide default.
  * @param {Object|null} [options.theme] - The deck's theme, when the caller has
  *   one. Only the `background` field reads it (D88).
  * @returns {Object} Fixed slide
  */
-export function validateAndFixSlide(
-  slide,
-  { slideTypes = SLIDE_TYPES, theme = null } = {},
-) {
+export function validateAndFixSlide(slide, { slideTypes, theme = null } = {}) {
+  requireSlideTypes('validateAndFixSlide', slideTypes);
   const type = slide?.type;
   const def = slideTypes[type];
   let content = slide?.content || {};
@@ -89,7 +105,8 @@ export function validateAndFixSlide(
 
   // Check for unknown fields that the AI generated but the slide type doesn't support
   // This helps identify content loss and improve prompts
-  checkForUnknownFields(type, checkedContent, {
+  checkForUnknownFields(def, checkedContent, {
+    slideType: type,
     originalIndex: slide.originalIndex,
     title: checkedContent.title,
   });
@@ -341,16 +358,18 @@ function getContentWarnings(slide, prevSlide = null) {
  * Validate and fix all refined slides
  *
  * @param {Array} refinedSlides - Array of refined slides from Phase 2
- * @param {Object} [options]
- * @param {Record<string, Object>} [options.slideTypes] - The registry to read
- *   declarations from; an org-aware caller passes its merged map.
+ * @param {Object} options
+ * @param {Record<string, Object>} options.slideTypes - The registry to read
+ *   declarations from: the organization's merged map. Required, as on
+ *   `validateAndFixSlide`.
  * @param {Object|null} [options.theme] - The deck's theme, when the caller has one.
  * @returns {Array} Fixed slides
  */
 export function validateAndFixRefinedSlides(
   refinedSlides,
-  { slideTypes = SLIDE_TYPES, theme = null } = {},
+  { slideTypes, theme = null } = {},
 ) {
+  requireSlideTypes('validateAndFixRefinedSlides', slideTypes);
   if (!Array.isArray(refinedSlides)) return [];
 
   const fixedSlides = [];

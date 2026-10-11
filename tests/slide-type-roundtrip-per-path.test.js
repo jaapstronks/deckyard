@@ -126,7 +126,9 @@ test('facade update: canonical id in → registry key stored → canonical expor
 test('MCP strict: validate accepts the canonical id, facade stores the key, export is canonical', async () => {
   const slides = [{ type: CANONICAL, content: { title: 'Hoi' } }];
   // The strict validator is the MCP-specific seam; it must accept the canonical id.
-  assert.doesNotThrow(() => validateRefinedSlidesStrict(slides));
+  assert.doesNotThrow(() =>
+    validateRefinedSlidesStrict(slides, { slideTypes: SLIDE_TYPES }),
+  );
 
   const stored = await storeSlides(slides);
   assert.equal(stored.slides[0].type, KEY);
@@ -135,9 +137,10 @@ test('MCP strict: validate accepts the canonical id, facade stores the key, expo
 
 // ── Path 5: MCP fix-mode / add_slide / update_slide ────────────────────────
 test('MCP fix: validate-and-fix keeps the canonical id, facade stores the key, export is canonical', async () => {
-  const fixed = validateAndFixRefinedSlides([
-    { type: CANONICAL, content: { title: 'Hoi' } },
-  ]);
+  const fixed = validateAndFixRefinedSlides(
+    [{ type: CANONICAL, content: { title: 'Hoi' } }],
+    { slideTypes: SLIDE_TYPES },
+  );
   assert.equal(fixed.length, 1, 'the slide survives the fix pass');
 
   const stored = await storeSlides(
