@@ -28,6 +28,7 @@ test('list -> content carries the subheading as itself, not as a body line', () 
       items: [{ title: 'Intro' }, { title: 'Demo', text: 'live' }],
     }),
     'content-slide',
+    { slideTypes: SLIDE_TYPES },
   );
   assert.equal(next.content.subheading, 'Wat we vandaag doen');
   assert.equal(next.content.body, '- Intro\n- Demo\nlive');
@@ -45,6 +46,7 @@ test('image -> image-text folds the subheading into title/body and stays quiet',
   const next = convertSlideToType(
     slide('image-slide', { subheading: 'Onze cijfers', image: '/x.png' }),
     'image-text-slide',
+    { slideTypes: SLIDE_TYPES },
   );
   assert.equal(next.content.title, 'Onze cijfers');
   assert.equal(next.content.body, 'Onze cijfers');
@@ -69,6 +71,7 @@ test('image -> image-text prefers a real title over the subheading', () => {
       image: '/x.png',
     }),
     'image-text-slide',
+    { slideTypes: SLIDE_TYPES },
   );
   assert.equal(next.content.title, 'Kwartaalcijfers');
   assert.equal(next.content.body, 'Onze cijfers');

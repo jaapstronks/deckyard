@@ -20,7 +20,7 @@
 import { updatePresentation } from '../storage/presentations/index.js';
 import { findTheme } from '../utils/themes.js';
 import { convertSlideToType } from '../../shared/slide-types/convert.js';
-import { SLIDE_TYPES } from '../../shared/slide-types/registry.js';
+import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
 import {
   AppError,
@@ -127,6 +127,13 @@ export async function applyThemeChange(
   // `default` must stay `default` so the deck keeps following the
   // installation's default instead of freezing to today's id (D232).
   const data = changes ?? pres;
+  // The organization's map, as on every other route that composes a slide: a
+  // converted slide is seeded with the installation's configured defaults
+  // (B653) and may become one of the organization's own types (B655). Built
+  // only when something converts.
+  const slideTypes = conversionMap.size
+    ? await buildMergedSlideTypes(scope)
+    : null;
   // A conversion is asked per slide id, and a slide id names the same slide
   // in every language version: each version converts it with its own text,
   // so no language keeps the old type (B623).
@@ -139,7 +146,7 @@ export async function applyThemeChange(
         // reads the theme (ground, background presets): the theme the deck
         // is moving to, not the one it leaves.
         return convertSlideToType(slide, conversion.convertTo, {
-          slideTypes: SLIDE_TYPES,
+          slideTypes,
           lang: lang || null,
           theme: newTheme,
         });

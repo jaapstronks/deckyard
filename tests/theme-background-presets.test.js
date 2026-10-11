@@ -23,6 +23,8 @@ import {
 } from '../shared/slide-types.js';
 import * as SlideTypes from '../shared/slide-types.js';
 
+const { SLIDE_TYPES } = SlideTypes;
+
 const PRESETS = ['/custom/a.jpg', '/custom/b.jpg'];
 const themeWithPresets = { id: 't', backgroundPresets: PRESETS };
 const themeWithout = { id: 't', backgroundPresets: [] };
@@ -103,7 +105,7 @@ test('seedAutoBackgroundPreset never stacks a preset on a legacy background', ()
 });
 
 test('newSlide without a theme creates a title slide with no background', () => {
-  const slide = newSlide({ type: 'title-slide' });
+  const slide = newSlide({ slideTypes: SLIDE_TYPES, type: 'title-slide' });
   // Canonical key is slideBgImage; the core title type has no
   // autoBackgroundPreset, so a new slide simply carries no background.
   assert.ok(!slide.content.slideBgImage);
@@ -132,11 +134,10 @@ test('newSlide works for every registered type without a theme, and none seed a 
   // Iterating SLIDE_TYPES keeps this zero-touch when a type is added or removed;
   // fork/custom DB types (Tier 2) are not in the static registry at test time
   // and are out of scope here by the same choice as the rest of this suite.
-  const { SLIDE_TYPES } = SlideTypes;
   for (const type of Object.keys(SLIDE_TYPES)) {
     let slide;
     assert.doesNotThrow(() => {
-      slide = newSlide({ type });
+      slide = newSlide({ slideTypes: SLIDE_TYPES, type });
     }, `${type}: newSlide throws without a theme`);
     assert.ok(
       !slide.content.slideBgImage,
@@ -161,13 +162,21 @@ test('an imported title slide takes a background only by declaration (D92)', () 
     slides: [{ type: 'title-slide', content: { title: 'Hello' } }],
   };
 
-  const withTheme = deckToPresentationParts(deck, { theme: themeWithPresets });
+  const withTheme = deckToPresentationParts(deck, {
+    slideTypes: SLIDE_TYPES,
+    theme: themeWithPresets,
+  });
   assert.ok(PRESETS.includes(withTheme.slides[0].content.slideBgImage));
 
-  const withoutTheme = deckToPresentationParts(deck, { theme: themeWithout });
+  const withoutTheme = deckToPresentationParts(deck, {
+    slideTypes: SLIDE_TYPES,
+    theme: themeWithout,
+  });
   assert.ok(!withoutTheme.slides[0].content.slideBgImage);
 
-  const noThemeAtAll = deckToPresentationParts(deck);
+  const noThemeAtAll = deckToPresentationParts(deck, {
+    slideTypes: SLIDE_TYPES,
+  });
   assert.ok(!noThemeAtAll.slides[0].content.slideBgImage);
 
   // Without the declaration nothing is seeded, presets or not.
@@ -194,7 +203,7 @@ test('an imported title slide takes a background only by declaration (D92)', () 
         },
       ],
     },
-    { theme: themeWithPresets },
+    { slideTypes: SLIDE_TYPES, theme: themeWithPresets },
   );
   assert.equal(own.slides[0].content.slideBgImage, '/mine.jpg');
 });
@@ -208,7 +217,7 @@ test('an imported title slide keeps a legacy background it already declares', ()
         { type: 'title-slide', content: { title: 'X', bgImage: '/mine.jpg' } },
       ],
     },
-    { theme: themeWithPresets },
+    { slideTypes: SLIDE_TYPES, theme: themeWithPresets },
   );
   assert.equal(parts.slides[0].content.slideBgImage, '/mine.jpg');
   assert.ok(!('bgImage' in parts.slides[0].content));
@@ -225,6 +234,7 @@ test('chapter-title → title conversion seeds a background by declaration only 
   // into it seeds like an insert of that type would. The converter used to do
   // this by name, a second rule beside the declaration the factory reads.
   const seeded = convertSlideToType(slide, 'title-slide', {
+    slideTypes: SLIDE_TYPES,
     theme: themeWithPresets,
   });
   assert.equal(seeded.type, 'title-slide');
@@ -245,7 +255,9 @@ test('chapter-title → title conversion seeds a background by declaration only 
     slideTypes: undeclared,
   });
   assert.ok(!converted.content.slideBgImage);
-  const flat = convertSlideToType(slide, 'title-slide');
+  const flat = convertSlideToType(slide, 'title-slide', {
+    slideTypes: SLIDE_TYPES,
+  });
   assert.ok(!flat.content.slideBgImage);
 });
 
@@ -281,7 +293,9 @@ test('title ↔ chapter conversion carries title + subheading both ways', () => 
     type: 'title-slide',
     content: { title: 'Cover', subheading: 'A tagline', meta: 'Jaap · 2026' },
   };
-  const toChapter = convertSlideToType(title, 'chapter-title-slide');
+  const toChapter = convertSlideToType(title, 'chapter-title-slide', {
+    slideTypes: SLIDE_TYPES,
+  });
   assert.equal(toChapter.type, 'chapter-title-slide');
   assert.equal(toChapter.content.title, 'Cover');
   assert.equal(toChapter.content.subheading, 'A tagline');
@@ -295,6 +309,7 @@ test('title ↔ chapter conversion carries title + subheading both ways', () => 
       content: { title: 'Section', subheading: 'Sub' },
     },
     'title-slide',
+    { slideTypes: SLIDE_TYPES },
   );
   assert.equal(back.type, 'title-slide');
   assert.equal(back.content.title, 'Section');
@@ -304,9 +319,12 @@ test('title ↔ chapter conversion carries title + subheading both ways', () => 
 test('the title-slide import path never reaches for a demo photo', () => {
   // The point of the slice: with no theme context, nothing hands the slide a
   // background image that the theme did not ask for.
-  const parts = deckToPresentationParts({
-    slides: [{ type: 'title-slide', content: { title: 'A' } }],
-  });
+  const parts = deckToPresentationParts(
+    {
+      slides: [{ type: 'title-slide', content: { title: 'A' } }],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
 
   assert.doesNotMatch(
     JSON.stringify(parts.slides[0].content),

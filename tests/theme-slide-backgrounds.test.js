@@ -14,6 +14,7 @@ import {
   renderSlideHtml,
   validateSlide,
 } from '../shared/slide-types/presentation.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 test('normalizeSlideBackgrounds keeps valid entries and fills defaults', () => {
   const out = normalizeSlideBackgrounds([
@@ -167,7 +168,7 @@ test('bgClassExtended keeps built-ins and accepts variant slugs', () => {
 });
 
 test('validateSlide accepts theme variant ids for the background field only', () => {
-  const slide = newSlide({ type: 'content-slide' });
+  const slide = newSlide({ slideTypes: SLIDE_TYPES, type: 'content-slide' });
   slide.content.background = 'calm';
   assert.deepEqual(
     validateSlide(slide).filter((e) => e.includes('background')),
@@ -273,7 +274,7 @@ test('the class it reports matches the --slide-on-inverted the generator emits',
 const contrastTheme = { slideBackgrounds: CONTRAST_ENTRIES };
 
 function renderWith(content, ctx = {}) {
-  const slide = newSlide({ type: 'content-slide' });
+  const slide = newSlide({ slideTypes: SLIDE_TYPES, type: 'content-slide' });
   Object.assign(slide.content, content);
   return renderSlideHtml(slide, { theme: contrastTheme, ...ctx });
 }
@@ -300,9 +301,12 @@ test('a variant that declares no luminance gets no class', () => {
   // No theme in context is no answer either — that is today's behaviour.
   assert.doesNotMatch(
     renderSlideHtml(
-      Object.assign(newSlide({ type: 'content-slide' }), {
-        content: { background: 'calm' },
-      }),
+      Object.assign(
+        newSlide({ slideTypes: SLIDE_TYPES, type: 'content-slide' }),
+        {
+          content: { background: 'calm' },
+        },
+      ),
       {},
     ),
     /has-slide-bg-(light|dark)-text/,

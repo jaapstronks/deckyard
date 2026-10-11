@@ -37,6 +37,7 @@ import {
   reattachAiMeta,
   createDeckFromParts,
 } from './shared.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/wizard-v2/stream — Server-Sent Events for progress + final
@@ -240,7 +241,11 @@ export async function handleAiWizardV2Stream({
       ],
     };
 
-    const parts = deckToPresentationParts(deck, { theme, lang: langCode });
+    const parts = deckToPresentationParts(deck, {
+      theme,
+      lang: langCode,
+      slideTypes: await buildMergedSlideTypes(storageScope),
+    });
     // Keep the per-slide "why this type" + alternatives on the saved slides;
     // the whole-deck review grid reads them after the editor loads the deck.
     reattachAiMeta(parts.slides, deck.slides);

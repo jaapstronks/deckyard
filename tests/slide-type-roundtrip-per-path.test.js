@@ -41,6 +41,7 @@ import { getSlideTypeId } from '../shared/slide-types/registry.js';
 import { validateRefinedSlidesStrict } from '../server/utils/ai/validate-slides/strict.js';
 import { validateAndFixRefinedSlides } from '../server/utils/ai/validate-slides/fix.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
@@ -148,9 +149,12 @@ test('MCP fix: validate-and-fix keeps the canonical id, facade stores the key, e
 
 // ── Path 6: import + export (pure) ─────────────────────────────────────────
 test('import: canonical id in → registry key parts → canonical exported', () => {
-  const parts = deckToPresentationParts({
-    slides: [{ type: CANONICAL, content: { title: 'Hoi' } }],
-  });
+  const parts = deckToPresentationParts(
+    {
+      slides: [{ type: CANONICAL, content: { title: 'Hoi' } }],
+    },
+    { slideTypes: SLIDE_TYPES },
+  );
   assert.equal(
     parts.slides[0].type,
     KEY,
