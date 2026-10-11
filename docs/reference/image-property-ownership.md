@@ -77,14 +77,14 @@ rule exists to stop exactly this.
 
 ### alt 🚩
 
-| Type                             | Level          | Field(s)                                  | Render precedence                                                                                         |
-| -------------------------------- | -------------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| image-slide                      | S              | `alt` (+`altNl`/`altEn`)                  | `content` (`image-slide.js:242-252`)                                                                      |
-| image-text                       | S (since D100) | `alt`                                     | `resolveImageTextImage`; the vestigial `altNl`/`altEn` were folded and dropped by the schema funnel (v15) |
-| image-set                        | **I** ✅       | item `alt` canonical                      | item (translated as an itemKey)                                                                           |
-| content-columns                  | N              | `col{n}Alt`                               | per column                                                                                                |
-| gallery / team-cards / logo-wall | I              | `images[i]`/`members[i]`/`logos[i]`.`alt` | item (the numbered mirrors went with schema v7 -> v8)                                                     |
-| quote                            | **I** ✅       | `quotes[i].authorImage{n}Alt`             | item; every quote, the first included, lives in `quotes[]` (D314, schema v17)                             |
+| Type                             | Level          | Field(s)                                  | Render precedence                                                                                                                      |
+| -------------------------------- | -------------- | ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| image-slide                      | S              | `alt`                                     | `imageSlideAltText` (`image-slide/image.js`); a legacy `altNl`/`altEn` is folded into `alt` and deleted by the read funnel (v20 → v21) |
+| image-text                       | S (since D100) | `alt`                                     | `resolveImageTextImage`; the vestigial `altNl`/`altEn` were folded and dropped by the schema funnel (v15)                              |
+| image-set                        | **I** ✅       | item `alt` canonical                      | item (translated as an itemKey)                                                                                                        |
+| content-columns                  | N              | `col{n}Alt`                               | per column                                                                                                                             |
+| gallery / team-cards / logo-wall | I              | `images[i]`/`members[i]`/`logos[i]`.`alt` | item (the numbered mirrors went with schema v7 -> v8)                                                                                  |
+| quote                            | **I** ✅       | `quotes[i].authorImage{n}Alt`             | item; every quote, the first included, lives in `quotes[]` (D314, schema v17)                                                          |
 
 ### role, background, structural layout, media collection
 
