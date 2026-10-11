@@ -2,6 +2,7 @@ import { isSlideVisibleIn } from '../../../shared/slide-visibility.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 import { isLiveInviteSlideType } from '../../../shared/slide-types/live-session.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
+import { clamp } from '../../../shared/number-utils.js';
 import { morphTransition } from './morph-engine.js';
 import { h } from '../../lib/dom/index.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
@@ -64,7 +65,7 @@ export function createPresenterDeckController({
   let cubeTransitionCancel = null;
   let morphTransitionCancel = null;
 
-  const clamp = (n) => Math.max(0, Math.min(slides.length - 1, n));
+  const clampIndex = (n) => clamp(n, 0, slides.length - 1);
 
   // In-deck card navigation: a card whose `link` targets another slide renders
   // an overlay anchor (see cardLinkOverlayHtml) — `data-card-nav-id="<slideId>"`
@@ -85,7 +86,7 @@ export function createPresenterDeckController({
       return;
     }
     const n = Number(a.getAttribute('data-card-nav'));
-    if (Number.isFinite(n)) show(clamp(n - 1));
+    if (Number.isFinite(n)) show(clampIndex(n - 1));
   });
 
   const getStageWrap = () => {
@@ -287,7 +288,7 @@ export function createPresenterDeckController({
 
   const show = (i, { direction = 'forward' } = {}) => {
     const prevSection = slides?.[idx] || null;
-    const nextIdx = clamp(i);
+    const nextIdx = clampIndex(i);
     const stageWrap = getStageWrap();
     const preset = String(stageWrap?.dataset?.slideTransition || '').trim();
 
@@ -552,7 +553,7 @@ export function createPresenterDeckController({
     const nextIdx = keepCurrentSlideId
       ? presentSlides.findIndex((s) => s?.id === keepCurrentSlideId)
       : -1;
-    idx = nextIdx >= 0 ? nextIdx : clamp(idx);
+    idx = nextIdx >= 0 ? nextIdx : clampIndex(idx);
     show(idx);
   };
 
@@ -569,7 +570,7 @@ export function createPresenterDeckController({
       const nextIdx = currentId
         ? presentSlides.findIndex((s) => s?.id === currentId)
         : -1;
-      idx = nextIdx >= 0 ? nextIdx : clamp(idx);
+      idx = nextIdx >= 0 ? nextIdx : clampIndex(idx);
       show(idx);
     } catch (err) {
       // Keep presenting on the deck we already have; the next SSE refresh
@@ -617,7 +618,7 @@ export function createPresenterDeckController({
     stepParagraphs: remoteStepParagraphs,
   } = {}) => {
     setStepParagraphs?.(!!remoteStepParagraphs);
-    const target = clamp(Number(slideIndex) || 0);
+    const target = clampIndex(Number(slideIndex) || 0);
     if (target !== idx) {
       show(target, {
         direction: target >= idx ? 'forward' : 'backward',

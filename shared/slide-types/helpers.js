@@ -1,5 +1,6 @@
 // Shared helpers used by slide type registry + renderers.
 
+import { clamp } from '../number-utils.js';
 import { SLIDE_BG_ID_RE } from '../theme-slide-backgrounds.js';
 import { sharedOption } from '../ui-i18n-keys.js';
 import { hostMatches, hostMatchesAny, parseUrl } from '../url-host.js';
@@ -665,10 +666,6 @@ function mulberry32(seed) {
     // eslint-disable-next-line no-bitwise
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-}
-
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
 }
 
 function pct(n) {

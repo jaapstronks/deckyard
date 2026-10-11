@@ -14,7 +14,10 @@
 import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
-import { SLIDE_TYPE_CATALOG } from './slide-type-catalog.js';
+import {
+  getOfferedSlideTypes,
+  getPhase2SlideTypes,
+} from './slide-catalog/index.js';
 import { describeIssue, validateSlideContent } from './schemas/index.js';
 import {
   assertSlideTextLengths,
@@ -28,7 +31,10 @@ import { createLogger } from '../logger.js';
 const log = createLogger('refine-slides');
 
 /**
- * Map intent to allowed slide types
+ * Map intent to allowed slide types. Every list derives from the offer
+ * (getOfferedSlideTypes), so phase 2 accepts a core type exactly where the
+ * catalog offered it: an org-disabled type and one whose definition opted out
+ * of agent use are refused alike (B663).
  * @param {string} intent
  * @param {Array} [disabledSlideTypes] - Org-level disabled types to exclude
  * @param {Array} [customSlideTypes] - The org's published types; the catalog
@@ -43,7 +49,8 @@ function getAllowedTypesForIntent(
   const disabled = new Set(
     Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
   );
-  const filter = (types) => types.filter((t) => !disabled.has(t));
+  const offered = new Set(getOfferedSlideTypes(disabledSlideTypes));
+  const filter = (types) => types.filter((t) => offered.has(t));
 
   switch (intent) {
     case 'opening': {
@@ -62,15 +69,13 @@ function getAllowedTypesForIntent(
       return filter(['payoff-slide', 'content-slide']);
     case 'content':
     default:
-      // All Phase 2 slide types and the org's own (excluding org-disabled)
+      // The phase-2 offer and the org's own published types
       return [
-        ...Object.entries(SLIDE_TYPE_CATALOG)
-          .filter(([, def]) => !def.resolveInPhase1)
-          .map(([type]) => type),
-        ...(Array.isArray(customSlideTypes) ? customSlideTypes : []).map(
-          customSlideTypeKey,
-        ),
-      ].filter((type) => !disabled.has(type));
+        ...getPhase2SlideTypes(disabledSlideTypes),
+        ...(Array.isArray(customSlideTypes) ? customSlideTypes : [])
+          .map(customSlideTypeKey)
+          .filter((type) => !disabled.has(type)),
+      ];
   }
 }
 

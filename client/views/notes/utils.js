@@ -1,7 +1,3 @@
-export function clamp(n, lo, hi) {
-  return Math.max(lo, Math.min(hi, n));
-}
-
 export function normalizeNotes(s) {
   if (s == null) return '';
   if (typeof s === 'string') return s;

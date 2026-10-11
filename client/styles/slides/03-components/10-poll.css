@@ -218,11 +218,6 @@
   color: var(--slide-on-surface-muted);
 }
 
-.slide-poll .poll-bar-count-sep {
-  color: var(--slide-on-surface-muted);
-  opacity: 0.8;
-}
-
 .slide-poll .poll-total,
 .slide-likert .poll-total {
   font-size: var(--slide-text-md);

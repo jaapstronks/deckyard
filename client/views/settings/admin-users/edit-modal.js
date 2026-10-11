@@ -9,6 +9,7 @@ import { labeledCheckbox } from '../../../lib/dom/labeled-checkbox.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { api } from '../../../lib/api.js';
+import { readFileAsDataUrl } from '../../../lib/util/file.js';
 import {
   createAvatar,
   updateAvatar,
@@ -81,12 +82,7 @@ function createProfileImageSection(targetUser, avatarEl, initialImageUrl) {
     imageStatus.textContent = t('admin.users.uploading', 'Uploading…');
 
     try {
-      const dataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
+      const dataUrl = await readFileAsDataUrl(file);
 
       const resp = await api(
         `/api/profile/image/${encodeURIComponent(targetUser.email)}`,
