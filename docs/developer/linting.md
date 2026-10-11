@@ -513,8 +513,8 @@ unreviewable) or downgrade the rules to warnings (no regression protection),
 those existing violations are recorded in
 [`eslint-suppressions.json`](../../eslint-suppressions.json).
 
-The same move recurs when a gate widens: covering empty catches and `void` on
-`client/**`, plus the `try {} catch {}` selector everywhere, surfaced ~490
+The same move recurs when a gate widens: the gate on empty catches and `void`
+in `client/**`, plus the `try {} catch {}` selector everywhere, surfaced ~490
 pre-existing silent catches, and they were baselined as `no-restricted-syntax`
 suppressions after burning down the presenter teardown cluster (B150). One
 caveat that count carries: suppressions match per file + rule name, so a file
