@@ -1342,9 +1342,11 @@ export function registerTools(
     async ({ presentationId, vendor }, context) => {
       const pres = await getCheckedPresentation(presentationId, context);
 
-      // analyzePresentation auto-detects language from slide content
+      // analyzePresentation auto-detects language from slide content; it
+      // proposes from the session organization's offer (B660)
       const result = await analyzePresentation(pres, {
         vendor: vendor || null,
+        ...(await sessionSlideTypeOffer(context)),
       });
 
       // analyzePresentation returns { suggestions: [...], metadata: {...} }

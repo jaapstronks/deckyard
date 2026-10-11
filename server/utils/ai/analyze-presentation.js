@@ -8,7 +8,13 @@
 import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
-import { SLIDE_TYPE_CATALOG } from './slide-type-catalog.js';
+import {
+  SLIDE_TYPE_CATALOG,
+  getOfferedSlideTypes,
+  getPhase2SlideTypes,
+  buildCustomSlideTypeSections,
+} from './slide-catalog/index.js';
+import { customSlideTypeKey } from '../../../shared/slide-types/custom-type-runtime.js';
 
 // Default AI identity fallback (used when no explicit identity is configured)
 import { DREAMBOT_EMAIL, DREAMBOT_NAME } from '../../../shared/constants/ai.js';
@@ -27,19 +33,60 @@ const SUGGESTION_CATEGORIES = [
 ];
 
 /**
- * Build the system prompt for presentation analysis
+ * The slide types a `proposedSlide` may name: the core types the organization
+ * is offered (phase 1 included, the prompt asks for chapter dividers) and its
+ * published ones, minus what it turned off. The same derivation the prompt
+ * shows, so a proposal is accepted exactly when it was offered.
+ * @param {{ disabledSlideTypes?: string[], customSlideTypes?: Array }} offer
+ * @returns {Set<string>}
  */
-function buildAnalysisSystemPrompt({ language }) {
+function offeredSlideTypes({ disabledSlideTypes = [], customSlideTypes = [] }) {
+  const disabled = new Set(
+    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
+  );
+  const custom = (Array.isArray(customSlideTypes) ? customSlideTypes : [])
+    .map(customSlideTypeKey)
+    .filter((type) => !disabled.has(type));
+  return new Set([...getOfferedSlideTypes(disabledSlideTypes), ...custom]);
+}
+
+/**
+ * Build the system prompt for presentation analysis
+ * @param {Object} params
+ * @param {string} params.language
+ * @param {string[]} [params.disabledSlideTypes] - Org-level disabled types to exclude
+ * @param {Array} [params.customSlideTypes] - The org's published types, offered
+ *   with their schema as the phase 2 catalog offers them
+ */
+function buildAnalysisSystemPrompt({
+  language,
+  disabledSlideTypes = [],
+  customSlideTypes = [],
+}) {
   const langLabel = language === 'nl' ? 'DUTCH' : 'ENGLISH';
 
-  // Build slide type catalog excerpt for the prompt
-  const slideTypeInfo = Object.entries(SLIDE_TYPE_CATALOG)
-    .filter(([_, def]) => !def.resolveInPhase1)
-    .map(([type, def]) => {
-      const bestFor = def.bestFor?.slice(0, 3).join(', ') || '';
-      return `- ${type}: ${bestFor}`;
+  // The catalog excerpt the model may propose from: the org's offer, as on
+  // every AI path (B660), one line per core type.
+  const slideTypeInfo = getPhase2SlideTypes(disabledSlideTypes)
+    .map((type) => {
+      const bestFor = SLIDE_TYPE_CATALOG[type].bestFor?.slice(0, 3).join(', ');
+      return `- ${type}: ${bestFor || ''}`;
     })
     .join('\n');
+  const customSections = buildCustomSlideTypeSections({
+    disabledSlideTypes,
+    customSlideTypes,
+  });
+  const customSlideTypeInfo = customSections.length
+    ? `
+
+## ORGANIZATION SLIDE TYPES (also available for actionable suggestions)
+
+These types belong to this organization. Propose one where its schema fits
+the content, with exactly the content schema shown.
+
+${customSections.join('\n')}`
+    : '';
 
   return `You are an AI assistant that reviews presentations and provides helpful improvement suggestions.
 
@@ -81,7 +128,7 @@ Include proposedSlide JSON when suggesting:
 
 ## AVAILABLE SLIDE TYPES FOR ACTIONABLE SUGGESTIONS
 
-${slideTypeInfo}
+${slideTypeInfo}${customSlideTypeInfo}
 
 ## OUTPUT FORMAT
 
@@ -163,8 +210,11 @@ function buildAnalysisUserPrompt({ slides, categories }) {
 
 /**
  * Validate and normalize analysis output
+ * @param {Object} parsed - The model's JSON
+ * @param {Array} slides - The slides analyzed; a suggestion must name one
+ * @param {Set<string>} offered - The types a `proposedSlide` may name
  */
-function normalizeAnalysisOutput(parsed, slides) {
+function normalizeAnalysisOutput(parsed, slides, offered) {
   if (!parsed || typeof parsed !== 'object') {
     throw new Error('Analysis did not return valid JSON');
   }
@@ -196,7 +246,7 @@ function normalizeAnalysisOutput(parsed, slides) {
       let proposedSlide = null;
       if (sug?.proposedSlide && typeof sug.proposedSlide === 'object') {
         const { type, content } = sug.proposedSlide;
-        if (type && SLIDE_TYPE_CATALOG[type] && content) {
+        if (type && offered.has(type) && content) {
           proposedSlide = { type, content };
         }
       }
@@ -224,11 +274,23 @@ function normalizeAnalysisOutput(parsed, slides) {
  * @param {Function} options.onProgress - Callback for progress updates
  * @param {AbortSignal} [options.signal] - Cancels the model call; the
  *   promise then rejects with the signal's reason
+ * @param {string[]} [options.disabledSlideTypes] - Org-level disabled types;
+ *   neither offered nor accepted in a `proposedSlide`
+ * @param {Array} [options.customSlideTypes] - The org's published types,
+ *   offered and accepted like the core ones (the one offer every AI path
+ *   spreads in, `loadSlideTypeOffer()`; B660)
  * @returns {Promise<Object>} Analysis results with suggestions
  */
 export async function analyzePresentation(
   presentation,
-  { categories = null, vendor = null, onProgress = null, signal } = {},
+  {
+    categories = null,
+    vendor = null,
+    onProgress = null,
+    signal,
+    disabledSlideTypes = [],
+    customSlideTypes = [],
+  } = {},
 ) {
   const startTime = Date.now();
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
@@ -254,7 +316,11 @@ export async function analyzePresentation(
     onProgress({ phase: 'analyzing', slideCount: slides.length });
   }
 
-  const systemPrompt = buildAnalysisSystemPrompt({ language });
+  const systemPrompt = buildAnalysisSystemPrompt({
+    language,
+    disabledSlideTypes,
+    customSlideTypes,
+  });
   const userPrompt = buildAnalysisUserPrompt({
     slides,
     categories: categories && categories.length > 0 ? categories : null,
@@ -289,7 +355,11 @@ export async function analyzePresentation(
     });
   }
 
-  const output = normalizeAnalysisOutput(parsed, slides);
+  const output = normalizeAnalysisOutput(
+    parsed,
+    slides,
+    offeredSlideTypes({ disabledSlideTypes, customSlideTypes }),
+  );
 
   output.metadata = {
     slideCount: slides.length,

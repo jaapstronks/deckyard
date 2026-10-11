@@ -23,7 +23,9 @@ export { SLIDE_TYPE_EXAMPLES, getSlideTypeExamples } from './examples.js';
 export {
   getPhase1SlideTypes,
   getPhase2SlideTypes,
+  getOfferedSlideTypes,
   buildSlideTypeDescription,
+  buildCustomSlideTypeSections,
   buildPhase2CatalogPrompt,
 } from './builders.js';
 

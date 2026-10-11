@@ -14,6 +14,7 @@ import {
   CommentEventTypes,
 } from '../../../services/comment-events.js';
 import { getAiIdentity } from '../../../storage/settings.js';
+import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
 import { createLogger } from '../../../utils/logger.js';
 import { sseWrite, sseError, openSseStream } from '../../../utils/sse.js';
 import { withPresentationAuth } from '../../../utils/route-middleware.js';
@@ -84,9 +85,11 @@ export async function handlePresentationAnalyze(
       },
     });
 
+    // The analysis proposes from the org's offer, as every AI path (B660)
     const result = await analyzePresentation(pres, {
       categories,
       signal,
+      ...(await loadSlideTypeOffer(authedUser)),
       onProgress: (progress) => {
         sseWrite(res, { event: 'progress', data: progress });
       },

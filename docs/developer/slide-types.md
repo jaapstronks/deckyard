@@ -910,7 +910,8 @@ hands it to phase 2, the fix pipeline and `deckToPresentationParts`, and phase 2
 lets a content slide come back as one of the org's own types, as the catalogue
 offered them (B247). The offer is one too: every generating path, imports and
 MCP included, loads it through `loadSlideTypeOffer()` in
-`server/utils/org-slide-types.js` (B659).
+`server/utils/org-slide-types.js` (B659), and so does the analysis, whose
+suggestions propose from that offer and nothing else (B660).
 
 ### Where a slide comes into being
 

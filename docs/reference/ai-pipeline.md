@@ -245,7 +245,9 @@ point of the seam.
   that organization turned off and can choose one it published. Every
   generating path spreads that one offer into its options: the `/api/ai/*`
   routes, the file convert and the Notion import, the MCP tools and the public
-  v1 API. Theme context comes from the deck's resolved theme.
+  v1 API; so does the analysis (`/api/presentations/:id/analyze` and MCP
+  `analyze_presentation`), whose `proposedSlide` is accepted exactly when its
+  type was offered. Theme context comes from the deck's resolved theme.
 - Persistence goes through the ordinary scoped presentation store; the pipeline
   itself holds no organization id. General rules:
   [`tenant-isolation.md`](tenant-isolation.md).
