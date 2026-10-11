@@ -243,12 +243,17 @@ test('the wizard stream holds the org type to its own cap', async (t) => {
     lang: 'en',
     enableLogging: false,
   });
-  await handleAiWizardV2Stream(c).catch(() => {});
+  await handleAiWizardV2Stream(c);
   const stored = (db.__tables.presentations || []).flatMap((p) => p.slides);
   assert.ok(
     !stored.some((slide) => slide?.content?.title === LONG),
     'text past the org type cap is not stored, under any type',
   );
+  // The stream ends in the SSE error event, naming the type and its cap, as a
+  // core type past its cap does; the handler catches, so nothing rejects.
+  const out = c.res.chunks.join('');
+  assert.match(out, /^event: error$/m, out);
+  assert.match(out, new RegExp(`${CUSTOM_TYPE}.*> ${TITLE_CAP}`), out);
 });
 
 // ── fixing paths: the org type's own declaration applies ───────────────────

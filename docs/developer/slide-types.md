@@ -901,12 +901,16 @@ per-type schema table left to answer for a database row — it derives one from
 core type, and `tests/org-registry-write-surfaces.test.js` reads the sources to
 keep a new call site from quietly taking the global map.
 
-Still on the global map, and the one place left worth naming: the fix pipeline's
-callers on the AI generation path (`server/routes/api/ai/*`, and the deck
-generators under `server/utils/`). That pipeline repairs rather than refuses, so
-a custom type is not rejected there — it simply has none of its declarations
-applied (no `maxLength`, no item bounds). That gap is what the write-surface
-work left over (B131), and it is tracked as open work (B247).
+The AI generation path reads the same map. The fix pipeline
+(`validateAndFixSlide`, `validateAndFixRefinedSlides`), strict validation and
+phase 2 (`refineSlideGroup`, `refineAllSlideGroups`) take `slideTypes` as a
+required argument and throw without it, so a route cannot fall back to the core
+types by forgetting the map; each AI route builds the org registry once and
+hands it to phase 2, the fix pipeline and `deckToPresentationParts`, and phase 2
+lets a content slide come back as one of the org's own types, as the catalogue
+offered them (B247). What is left is on the offer side, not the map: MCP
+`create_presentation`, the file convert and the Notion import fix against the
+org map but do not yet show the model the org's types (B659).
 
 ### Where a slide comes into being
 
