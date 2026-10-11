@@ -156,8 +156,9 @@ how you know you picked the wrong one.
   button or heading the caller names — and says one polite sentence with the
   label, through `planRowRemoval()`
   (`client/lib/dom/row-removal.js`, B647). One shared sentence,
-  `common.rowRemoved`: a success key per site is the repetition that the
-  removal of confirmations which only repeat the screen took out (B643).
+  `common.rowRemoved`: a success key per site would bring back the
+  confirmations that only repeat what the screen shows, which were taken out
+  (B643).
   Removing a row by navigating away (a deck moved to trash) needs neither —
   the route places focus.
 
@@ -200,10 +201,9 @@ The primitive, the helper and every call site meet the rules above:
 
 No `catch` discards the server sentence any more: one that has the caught
 error hands it over, and a bulk action puts the first failure's sentence after
-its count (B205). What is still
-translated client copy has no server sentence behind it (a guard with no
-request, a browser failure, a 200 that reports a partial outcome) or is copy
-looked up on the status.
+its count (B205). What is still translated client copy has no server sentence
+behind it (a guard with no request, a browser failure, a 200 that reports a
+partial outcome) or is copy looked up on the status.
 
 No refusal of a form on screen is toasted any more (B204) — the 16 local
 validations went to the helper in PR 1, the 13 API refusals caught in a save

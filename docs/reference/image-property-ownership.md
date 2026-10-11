@@ -225,7 +225,8 @@ imageDefaults = {
 > dropped a stored base fit that equalled the default instead of stamping it
 > onto the items — exactly to preserve the empty/explicit signal described
 > above; since image-text split into a one-image type and `image-set`, the
-> funnel deletes the plural keys outright, so no fold is left to run (D100). `focus` was already live as a type default.
+> funnel deletes the plural keys outright, so no fold is left to run (D100).
+> `focus` was already live as a type default.
 
 ### The fit/bleed split (part of `ImageRef`)
 
@@ -284,9 +285,9 @@ the field is cheaper.
 
 Before the split, conversion demoted both `full` and `bleed` to `cover`; the
 edge-to-edge distinction was lost. It is still lost — but declared rather than
-silent, which is the difference the split was after (D100). The reverse direction
-(image-text → image-slide, currently not offered) becomes worth building — there
-is nothing left to guess.
+silent, which is the difference the split was after (D100). The reverse
+direction (image-text → image-slide, currently not offered) becomes worth
+building — there is nothing left to guess.
 
 ## Migration path (tracked in planning)
 
@@ -299,8 +300,9 @@ property.
 1. ~~**Centralize precedence.**~~ ✅ **Shipped — PR #182 (2026-07-20).** One
    `resolveImageTextCell(content, idx)` was the single read authority (render +
    canvas drag + inspector). Pure refactor, render byte-identical. Splitting
-   the type in two split the authority with it (D100): `resolveImageTextImage(content)`
-   (`types/image-text-slide/image.js`) for the one flat image, and
+   the type in two split the authority with it (D100):
+   `resolveImageTextImage(content)` (`types/image-text-slide/image.js`) for
+   the one flat image, and
    `resolveImageSetCell(content, idx)`
    (`types/image-set-slide/images.js`) for the 2–3 of a set.
 2. ~~**De-duplicate image-text S + I → `ImageRef` (focus + alt).**~~ ✅ **Shipped

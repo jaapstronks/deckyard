@@ -217,8 +217,8 @@ else does not fail anywhere: the projection and the editor form both walk
 `defaults` where it promises an example. Four samples had drifted that way
 before anything checked it: a flat `metric1Value` model that had become an
 items field, a `statement`/`labelLow` trio whose fields were renamed, and the
-two chrome types above (B248). `tests/semantic-projection-snapshot.test.js` now checks it for every
-core type. **And a sample is a declaration, not a draw**: `chart-slide` used to
+two chrome types above (B248). `tests/semantic-projection-snapshot.test.js`
+now checks it for every core type. **And a sample is a declaration, not a draw**: `chart-slide` used to
 pick one of three chart types at random on first import, so the tile showed a
 different chart per server process and no tracked artifact could pin the
 type's example.
@@ -313,8 +313,8 @@ type does not declare, so every valid slide of those types logged a missing
 array. One rule was the third kind: `logo-wall-slide` wanted each logo to have
 a name or an image, an either-or that no single field's `required` can say. It
 went with the table on purpose, and that is a known gap: a logo with neither
-renders as an empty tile, and nothing logs it. A gate kept the table
-complete; it could not keep it true. The refine phase now logs the derived
+renders as the empty-image placeholder, and nothing logs it. A gate kept the
+table complete; it could not keep it true. The refine phase now logs the derived
 content schema alone.
 
 The next ungated per-type table should get `promote: true` again as the
