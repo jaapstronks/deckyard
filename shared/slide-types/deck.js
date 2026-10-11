@@ -21,6 +21,7 @@ import { tryParseTypeId } from './type-id.js';
 import { unresolvedSlideAsMarkdown } from './unresolved.js';
 import { DECK_FORMAT_ID } from './deck-format-id.js';
 import { migratePresentation } from './schema-version.js';
+import { declaredContentKeys } from './declared-keys.js';
 import { extensionNames } from '../extension-provenance.js';
 
 // --------
@@ -552,10 +553,17 @@ function normalizeDeckSlide(
   const patch = {};
 
   const fieldByKey = new Map((def.fields || []).map((f) => [f.key, f]));
+  const declared = declaredContentKeys(def);
   for (const [k, v] of Object.entries(contentIn)) {
+    // A key the type does not declare is dropped (D121 B2). Letting it through
+    // "forward-compatible" is what kept every retired key alive in every deck
+    // that once carried it. Legacy shapes are not lost here: the funnel above
+    // already folded them into their declared keys.
+    if (!declared.has(k)) continue;
     const field = fieldByKey.get(k);
     if (!field) {
-      // Allow unknown keys (forward-compatible), but ignore explicit null/undefined.
+      // Declared without a field (instance, global, derived and style keys):
+      // kept as written, but ignore explicit null/undefined.
       if (v != null) patch[k] = v;
       continue;
     }

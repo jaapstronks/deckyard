@@ -115,7 +115,11 @@ plus four optional slide keys whose meaning does not depend on the type:
   [Type identity](#type-identity-one-spelling-on-slidestype) above).
 - **`content`** — an object whose shape is defined by that slide type's field
   registry. Absent or `""` fields mean "unset"; the importer fills type defaults
-  and never blanks a required field.
+  and never blanks a required field. A key the type does not declare is
+  dropped on import (`declaredContentKeys()` in
+  `shared/slide-types/declared-keys.js`, the same list strict validation
+  refuses against); a legacy key the read funnel folds is folded first, so it
+  arrives under its current name.
 
 Portable slides carry **no `id`** — ids are a storage concern and are
 (re)generated on import. A reader must not depend on slide identity across a
@@ -162,7 +166,8 @@ source, no hand-synced copy. The schemas are served live and are versioned by
 
 Schemas are **lenient contracts, not gates**: `additionalProperties` is allowed
 so legacy and forward-compatible keys still validate. They document the known
-shape; they do not reject history.
+shape; they do not reject history. The importer is where an undeclared key ends:
+it validates, and is then dropped (see [Round-trip guarantee](#round-trip-guarantee)).
 
 There is **one** published deck schema, and it describes this envelope — what
 the export writes, not what Deckyard's database stores. Storage fields (`id`,
@@ -227,6 +232,10 @@ Deliberate lossy edges (they degrade, they do not crash):
   placeholder.
 - A **missing local asset** keeps its `/uploads/…` ref and imports as a dangling
   reference.
+- A **key the slide type does not declare** is dropped. Nothing reads such a
+  key, so nothing renders differently: it is a retired key a stored deck still
+  carried (the export writes stored content as it is), or one another writer
+  invented. This is part of the one normalization pass the fixpoint allows.
 
 ## Evolution rule
 

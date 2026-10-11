@@ -245,8 +245,9 @@ export default {
    * `getSubheadingText()` looks at `subheading` only, and `.chart-subtitle`
    * left the stylesheet in #1049 — so it seeded an inert key on every chart
    * slide born through the language-less path. Dropping it is not a migration:
-   * decks that already carry the key keep it (deck.js preserves unknown keys),
-   * it just stops being handed to new slides. Adding `subheading` and
+   * stored decks that already carry the key keep it until they are exported
+   * and imported again (the import drops undeclared keys, D121 B2); it just
+   * stops being handed to new slides. Adding `subheading` and
    * `bottomSubheading` is render-identical to their absence — both helpers
    * treat `''` and missing the same — and makes this path agree with the
    * per-language ones.
