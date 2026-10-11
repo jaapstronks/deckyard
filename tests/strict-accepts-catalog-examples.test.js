@@ -45,7 +45,9 @@ for (const lang of ['nl', 'en-GB']) {
     const refused = [];
     for (const [type, entry] of offeredExamples(lang)) {
       try {
-        validateRefinedSlidesStrict([{ type, content: entry.example }]);
+        validateRefinedSlidesStrict([{ type, content: entry.example }], {
+          slideTypes: SLIDE_TYPES,
+        });
       } catch (err) {
         if (!(err instanceof RawSlideValidationError)) throw err;
         refused.push(`${type}: ${err.details.field} — ${err.message}`);

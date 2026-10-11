@@ -9,6 +9,7 @@ import { getSlideTypeExamples } from './examples.js';
 import { buildGlobalOptionsPromptSection } from './global-options.js';
 import { isAgentOptOut, agentWithheldTypesRule } from './agent-catalog.js';
 import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
+import { customSlideTypeKey } from '../../../../shared/slide-types/custom-type-runtime.js';
 
 /**
  * Get slide types that should be fully resolved in Phase 1 (outline phase)
@@ -109,7 +110,7 @@ export function buildPhase2CatalogPrompt({
   const customSections = [];
   if (Array.isArray(customSlideTypes) && customSlideTypes.length > 0) {
     for (const ct of customSlideTypes) {
-      const typeKey = `custom-${ct.slug}`;
+      const typeKey = customSlideTypeKey(ct);
       if (disabled.has(typeKey)) continue;
       const label = ct.label || ct.slug || 'Custom type';
       const lines = [];

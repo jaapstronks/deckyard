@@ -53,6 +53,9 @@ export async function handleAiAppendSlides({
       : null;
 
   const slideTypeCtx = await loadSlideTypeContext(authedUser);
+  // The map the org's types were offered from is the one they are composed and
+  // fixed in (B247).
+  const slideTypes = await buildMergedSlideTypes(storageScope);
   const {
     slides: generatedSlides,
     rationale,
@@ -79,12 +82,12 @@ export async function handleAiAppendSlides({
       storageScope,
     ),
     lang: lang || existingDeck?.lang,
-    slideTypes: await buildMergedSlideTypes(storageScope),
+    slideTypes,
   });
   let slides = Array.isArray(parts?.slides) ? parts.slides : [];
 
   // Validate slides and log any issues (unknown fields, schema mismatches, etc.)
-  slides = validateAndFixRefinedSlides(slides);
+  slides = validateAndFixRefinedSlides(slides, { slideTypes });
 
   // Re-attach per-slide review metadata (normalization strips unknown slide
   // keys). Both arrays map 1:1 by index onto the generated batch.

@@ -99,6 +99,8 @@ export function assembleDeck(
  * @param {string} options.theme - Deck theme
  * @param {string} options.titleSlideType - Title slide type for the theme (default: 'title-slide')
  * @param {boolean} options.enableLogging - Enable detailed logging (default: true)
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map; the refined slides are fixed against it (B247)
  * @returns {Promise<Object>} Generated deck in deck JSON format
  */
 export async function generateDeckV2(
@@ -114,6 +116,7 @@ export async function generateDeckV2(
     disabledSlideTypes = [],
     customSlideTypes = [],
     themeContext = null,
+    slideTypes,
   } = {},
 ) {
   const startTime = Date.now();
@@ -196,6 +199,7 @@ export async function generateDeckV2(
       disabledSlideTypes,
       customSlideTypes,
       themeContext,
+      slideTypes,
     });
 
     log.info(
@@ -212,7 +216,9 @@ export async function generateDeckV2(
     (a, b) => a.originalIndex - b.originalIndex,
   );
 
-  const validatedSlides = validateAndFixRefinedSlides(allSlides);
+  const validatedSlides = validateAndFixRefinedSlides(allSlides, {
+    slideTypes,
+  });
   log.info(`Validation complete: ${validatedSlides.length} slides total`);
 
   // ═══════════════════════════════════════════════════════════════════════════

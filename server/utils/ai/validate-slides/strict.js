@@ -17,10 +17,7 @@ import {
   describeIssue,
   validateSlideContent,
 } from '../schemas/content-schema.js';
-import {
-  SLIDE_TYPES,
-  resolveSlideTypeName,
-} from '../../../../shared/slide-types/registry.js';
+import { resolveSlideTypeName } from '../../../../shared/slide-types/registry.js';
 
 /**
  * Strict validation error thrown by validateRefinedSlidesStrict.
@@ -110,17 +107,22 @@ function validateSlideStrict(slide, index, { slideTypes, theme }) {
  * failure with structured detail. Does not mutate inputs.
  *
  * @param {Array<{type: string, content: object}>} slides
- * @param {Object} [options]
- * @param {Record<string, Object>} [options.slideTypes] - The registry to
- *   resolve against. Defaults to the process-wide map; an org-aware caller
- *   passes `buildMergedSlideTypes(ctx)` so its DB-backed types are known too.
+ * @param {Object} options
+ * @param {Record<string, Object>} options.slideTypes - The registry to
+ *   resolve against: `buildMergedSlideTypes(ctx)`, so the organization's
+ *   DB-backed types are known too. Required, as on the fix pipeline (B247).
  * @param {Object|null} [options.theme] - The deck's theme, when the caller has
  *   one. Only the `background` field reads it (D88).
  */
 export function validateRefinedSlidesStrict(
   slides,
-  { slideTypes = SLIDE_TYPES, theme = null } = {},
+  { slideTypes, theme = null } = {},
 ) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'validateRefinedSlidesStrict: pass the slide-type map the slides are made in',
+    );
+  }
   if (!Array.isArray(slides)) {
     throw new RawSlideValidationError({
       slideIndex: -1,

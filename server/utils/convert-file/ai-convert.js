@@ -39,6 +39,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     aiSlideIndexOffset = 0, // Offset to apply to AI slide indices for correct source ordering
     titleSlideCandidate = null, // Pre-extracted title slide from first image-only slide
     signal = null, // Aborts both model phases when the caller's reader left
+    slideTypes, // The organization's merged type map (B247)
   } = options;
 
   const sessionId = generateSessionId();
@@ -102,6 +103,7 @@ export async function convertWithAi(formattedContent, options = {}) {
       onStatusMessage,
       onGroupDone,
       signal,
+      slideTypes,
     });
   }
 
@@ -115,7 +117,9 @@ export async function convertWithAi(formattedContent, options = {}) {
   );
 
   // Validate and fix slides
-  const validatedSlides = validateAndFixRefinedSlides(allSlides);
+  const validatedSlides = validateAndFixRefinedSlides(allSlides, {
+    slideTypes,
+  });
 
   // Assemble the deck
   const deck = {

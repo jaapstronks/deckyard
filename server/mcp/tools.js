@@ -451,6 +451,7 @@ export function registerTools(
       );
       const titleSlideType = themeObj?.defaultTitleSlide || 'title-slide';
 
+      const slideTypes = await sessionSlideTypes(context);
       const deck = await generateDeckV2(content, {
         userName: speaker,
         targetLang: lang || null,
@@ -458,6 +459,7 @@ export function registerTools(
         titleSlideType,
         enableLogging: false,
         vendor: vendor || null,
+        slideTypes,
       });
 
       // One create carries the generated slides (B609); no empty deck is
@@ -465,7 +467,7 @@ export function registerTools(
       const parts = deckToPresentationParts(deck, {
         theme: themeObj,
         lang,
-        slideTypes: await sessionSlideTypes(context),
+        slideTypes,
       });
       if (title) parts.title = title;
 
@@ -480,7 +482,6 @@ export function registerTools(
         },
       );
 
-      const slideTypes = await sessionSlideTypes(context);
       const deckLang = resolveDocLangFromPresentation(created);
       const result = {
         id: created.id,
@@ -931,6 +932,7 @@ export function registerTools(
       } = await iteratePresentation(pres, command, {
         lang,
         vendor: vendor || null,
+        slideTypes: await sessionSlideTypes(context),
       });
 
       const { presentation } = await replaceSlides(

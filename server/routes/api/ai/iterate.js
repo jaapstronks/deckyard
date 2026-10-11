@@ -12,6 +12,7 @@ import {
   getLang,
 } from '../../../utils/request-validators.js';
 import { loadSlideTypeContext } from './shared.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 
 /**
  * POST /api/ai/iterate — apply a natural-language command to a deck or a single
@@ -20,7 +21,7 @@ import { loadSlideTypeContext } from './shared.js';
  */
 export const handleAiIterate = withErrorHandler(
   'ai-iterate',
-  async ({ req, res, authedUser }) => {
+  async ({ req, res, authedUser, storageScope }) => {
     const parsed = await requireJsonBody(req, res);
     if (!parsed.ok) return true;
     const body = parsed.body;
@@ -60,6 +61,7 @@ export const handleAiIterate = withErrorHandler(
       currentSlideIndex,
       disabledSlideTypes: slideTypeCtx.disabled,
       customSlideTypes: slideTypeCtx.custom,
+      slideTypes: await buildMergedSlideTypes(storageScope),
     });
 
     serveJson(res, 200, {

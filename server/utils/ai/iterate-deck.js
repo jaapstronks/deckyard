@@ -160,6 +160,8 @@ function summarizeSlide(slide, index) {
  * @param {Array} options.disabledSlideTypes - Types to exclude
  * @param {Array} options.customSlideTypes - Custom types to include
  * @param {Array} options.deckContext - Brief summary of surrounding slides for context
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map; the modified slide is fixed against it (B247)
  * @returns {Promise<Object|Array>} Modified slide(s)
  */
 export async function iterateSlide(
@@ -171,6 +173,7 @@ export async function iterateSlide(
     disabledSlideTypes = [],
     customSlideTypes = [],
     deckContext = [],
+    slideTypes,
   } = {},
 ) {
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
@@ -222,10 +225,10 @@ ${JSON.stringify({ type: slide.type, content: slide.content }, null, 2)}`;
       result = obj?.slides || (obj ? [obj] : []);
     }
     // Validate each split slide
-    return result.map((s) => validateAndFixSlide(s));
+    return result.map((s) => validateAndFixSlide(s, { slideTypes }));
   } else {
     result = extractJsonObject(rawResponse);
-    return validateAndFixSlide(result);
+    return validateAndFixSlide(result, { slideTypes });
   }
 }
 
@@ -235,6 +238,8 @@ ${JSON.stringify({ type: slide.type, content: slide.content }, null, 2)}`;
  * @param {Object} deck - The full deck object
  * @param {string} command - Natural language instruction
  * @param {Object} options
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map; replacement slides are fixed against it (B247)
  * @returns {Promise<Object>} Modification plan with changes and summary
  */
 export async function iterateDeck(
@@ -245,6 +250,7 @@ export async function iterateDeck(
     vendor = null,
     disabledSlideTypes = [],
     customSlideTypes = [],
+    slideTypes,
   } = {},
 ) {
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
@@ -302,10 +308,12 @@ ${JSON.stringify(
   // Validate all replacement slides in the plan
   for (const mod of plan.modifications) {
     if (mod.action === 'replace' && mod.slide) {
-      mod.slide = validateAndFixSlide(mod.slide);
+      mod.slide = validateAndFixSlide(mod.slide, { slideTypes });
     }
     if (mod.action === 'split' && mod.slides) {
-      mod.slides = mod.slides.map((s) => validateAndFixSlide(s));
+      mod.slides = mod.slides.map((s) =>
+        validateAndFixSlide(s, { slideTypes }),
+      );
     }
   }
 

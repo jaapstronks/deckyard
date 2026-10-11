@@ -42,6 +42,7 @@ import {
   GLOBAL_SLIDE_FIELD_KEYS,
 } from '../../../../shared/slide-types/registry.js';
 import { formatCanonicalId } from '../../../../shared/slide-types/type-id.js';
+import { customSlideTypeKey } from '../../../../shared/slide-types/custom-type-runtime.js';
 import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 import { SLIDE_TYPE_CATALOG } from './definitions.js';
 import { clampUsage } from '../../../../shared/slide-types/usage.js';
@@ -393,7 +394,7 @@ export function resolveAgentSlideTypes({
 
   for (const ct of Array.isArray(customSlideTypes) ? customSlideTypes : []) {
     if (!ct?.slug) continue;
-    const key = `custom-${ct.slug}`;
+    const key = customSlideTypeKey(ct);
     if (disabled.has(key)) continue;
     const entry = tier2Entry(ct, lang);
     if (keep(entry)) types[key] = entry;

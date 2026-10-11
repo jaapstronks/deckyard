@@ -250,7 +250,7 @@ test('the validators and the background lock read the one declaration of the der
   for (const key of DERIVED_SLIDE_CONTENT_KEYS) {
     assert.ok(LOCKED_CONTENT_KEYS.background.includes(key), key);
   }
-  assert.deepEqual(getUnknownFields('title-slide', SETTLED), []);
+  assert.deepEqual(getUnknownFields(SLIDE_TYPES['title-slide'], SETTLED), []);
   assert.equal(
     validateSlideContent(SLIDE_TYPES['content-slide'], {
       ...SETTLED,
