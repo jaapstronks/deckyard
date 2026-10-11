@@ -424,17 +424,23 @@ test('MCP iterate_presentation and append_slides offer the org type', async (t) 
     lang: 'en',
   });
 
-  // The answer shape each tool parses differs; what is pinned is the offer.
+  // Iterate reads a modification plan off the answer and finds none, so only
+  // its offer is pinned; append reads `slides[]` and stores the org type.
   for (const [name, args] of [
     ['iterate_presentation', { presentationId: id, command: 'Add partners' }],
     ['append_slides', { presentationId: id, content: 'More partners' }],
   ]) {
     const prompts = stubModel(t, deckAnswer(SHORT));
-    await call(name, args).catch(() => {});
+    await call(name, args);
     assert.ok(prompts.length > 0, `${name} sent the model nothing`);
     assert.ok(
       prompts.every((body) => body.includes(CUSTOM_TYPE)),
       `${name} did not offer ${CUSTOM_TYPE}`,
     );
   }
+  assert.deepEqual(
+    storedTypes().filter((type) => type === CUSTOM_TYPE),
+    [CUSTOM_TYPE, CUSTOM_TYPE],
+    `stored types: ${storedTypes().join(', ')}`,
+  );
 });
