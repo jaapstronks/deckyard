@@ -1,6 +1,6 @@
 /**
- * B332 umbrella review: the sandbox example shelf hands the browser record
- * UUIDs, never seed slugs.
+ * The sandbox example shelf hands the browser record UUIDs, never seed slugs
+ * (B332, umbrella review).
  *
  * The committed example decks name their theme by seed slug (`editorial`),
  * because a record UUID differs per installation. After the theme-record

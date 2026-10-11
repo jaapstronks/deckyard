@@ -10,12 +10,11 @@
  * spent, 400 for a missing/empty `raw`.
  *
  * The generation success paths are NOT covered: both call the configured LLM
- * vendor and there is no vendor seam to observe without one — noted as an
- * explicit opt-out in the B40 brief's Opt-out-log, like the translation
- * endpoint (same seam). Everything up to that call is pinned, and so is a
- * failing model: a local `openai-compat` endpoint that answers 500 makes both
- * generation endpoints answer through `withV1ErrorHandler`, the one v1 error
- * renderer (B619).
+ * vendor and there is no vendor seam to observe without one — a recorded,
+ * deliberate opt-out (B40), like the translation endpoint (same seam).
+ * Everything up to that call is pinned, and so is a failing model: a local
+ * `openai-compat` endpoint that answers 500 makes both generation endpoints
+ * answer through `withV1ErrorHandler`, the one v1 error renderer (B619).
  *
  * Handler-import level against the database double, like the neighbours
  * (tests/public-api-partial-write.test.js). Negative assertions pin the

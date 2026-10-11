@@ -1,5 +1,5 @@
 /**
- * B55 — the slide-library tag PUTs take one canonical body shape.
+ * The slide-library tag PUTs take one canonical body shape (B55).
  *
  * `PUT /api/slide-library/{personal,organization}/:id/tags` accepts `{ tags: [...] }`
  * and nothing else. The historical bare-array body (`["a","b"]`) is a 400 from

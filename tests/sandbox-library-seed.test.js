@@ -1,5 +1,5 @@
 /**
- * B352: the sandbox library seed is a valid declaration.
+ * The sandbox library seed is a valid declaration (B352).
  *
  * The sandbox seeds the organization shelf from
  * `server/sandbox-examples/library/` (server/sandbox/library.js). The files are

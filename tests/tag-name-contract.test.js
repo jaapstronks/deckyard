@@ -1,5 +1,5 @@
 /**
- * B370 — a tag name the column cannot carry is a 400 that names the field.
+ * A tag name the column cannot carry is a 400 that names the field (B370).
  *
  * Three inputs used to leave the API in three different states, none of them a
  * usable answer:

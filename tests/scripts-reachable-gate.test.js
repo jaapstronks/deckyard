@@ -4,7 +4,8 @@
  * `scripts/slide-type-i18n-dump.js` sat in the repo for months with **zero**
  * references — not in `package.json`, not in a workflow, not in the docs, not
  * in a test. Nothing ran it, so nothing noticed when the registry moved under
- * it: by the time it was found it emitted 1.855 keys B140 had deleted, and its
+ * it: by the time it was found it emitted 1.855 keys that were already gone
+ * (B140), and its
  * output directory (`docs/i18n/`) did not exist. A script nobody invokes does
  * not stay correct; it just stops being wrong out loud.
  *

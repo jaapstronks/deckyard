@@ -1,6 +1,6 @@
 /**
- * B597: every server reader that names a slide reads the same heading the
- * reader document gives it.
+ * Every server reader that names a slide reads the same heading the reader
+ * document gives it (B597).
  *
  * The MCP tools, a comment's slide context, the speaker-notes export and the
  * deck-compression prompt each used to pick their own order of

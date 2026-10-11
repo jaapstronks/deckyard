@@ -3,8 +3,8 @@
  * slide coming into being.
  *
  * A slide is *born* once, in `newSlide()` — defaults, theme seed, instance
- * keys. `update_slide` used to store validated content raw; B243 then routed it
- * through the factory, which would have run the birth steps (a random theme
+ * keys. `update_slide` used to store validated content raw; routing it through
+ * the factory instead (B243) would have run the birth steps (a random theme
  * background among them) on every update. The form is: a content update is a
  * patch plus validation, and a type change is a *conversion* through the same
  * `convertSlideToType` the editor uses — so it carries over what maps, re-seeds

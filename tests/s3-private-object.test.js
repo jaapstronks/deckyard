@@ -1,6 +1,6 @@
 /**
- * B510 — S3Provider private objects: stored without a public address, and
- * refused when the bucket would serve them anyway.
+ * S3Provider private objects: stored without a public address, and refused
+ * when the bucket would serve them anyway (B510).
  *
  * An S3 object's visibility is decided by the bucket policy (or a CDN in front
  * of it), which the app cannot read. So `uploadPrivateBuffer` asks, after the

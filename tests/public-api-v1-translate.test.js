@@ -12,8 +12,8 @@
  *
  * The success path is NOT covered: it calls the configured LLM vendor
  * (`translatePresentationStrings`), and there is no vendor seam to observe
- * without one — noted as an explicit opt-out in the B40 brief's Opt-out-log,
- * like the collaborator invite e-mail in PR 2. Everything up to that call is
+ * without one — a recorded, deliberate opt-out (B40), like the collaborator
+ * invite e-mail. Everything up to that call is
  * pinned here, so the endpoint's contract fails loudly if the ladder changes.
  *
  * Handler-import level against the database double, like the neighbours

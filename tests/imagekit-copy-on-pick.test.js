@@ -1,5 +1,5 @@
 /**
- * B327 / D162 — an ImageKit pick becomes own media before it reaches a slide.
+ * An ImageKit pick becomes own media before it reaches a slide (B327, D162).
  *
  * `POST /api/media/imagekit/import` is the server half: it copies the bytes of
  * a DAM asset into whatever media provider this installation runs, so a deck

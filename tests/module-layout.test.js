@@ -38,9 +38,9 @@
  * tables (`ai`, `follow`, `notion`, `presentations`, `static`) into their
  * folder's `index.js`.
  *
- * B526 (D262) widened the third rule to **`client/`** (minus `client/vendor/`,
- * third-party code). The client was never in scope, so it had grown 19 pairs of
- * its own: seven route shims (`views/editor.js`, `follow.js`, `list.js`,
+ * The third rule covers **`client/`** too (B526, D262), minus `client/vendor/`
+ * (third-party code). The client was never in scope, so it had grown 19 pairs
+ * of its own: seven route shims (`views/editor.js`, `follow.js`, `list.js`,
  * `notes.js`, `presenter.js`, `settings.js`, `share-viewer.js`), three small
  * re-export shims (`editor/fields/images.js`, `editor/modals/share-modal.js`,
  * `editor/slide-type-picker.js`) and nine real modules beside their concerns

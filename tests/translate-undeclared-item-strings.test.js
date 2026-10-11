@@ -1,6 +1,6 @@
 /**
- * B219 (D116) — an undeclared string inside an `items` entry is offered to the
- * translator, so the fill job can close what the missing scan reports.
+ * An undeclared string inside an `items` entry is offered to the translator,
+ * so the fill job can close what the missing scan reports (B219, D116).
  *
  * Since D79 the value rule reaches item level: a string the type does not
  * declare is prose, and the missing-translation scan reports it when the
