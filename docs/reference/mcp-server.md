@@ -169,9 +169,12 @@ Each tool maps directly to existing Deckyard functionality:
 
 - `create_presentation` → `generateDeckV2()` + `createPresentation()` (the service in `server/services/presentations.js`, B521)
 - `create_presentation_from_slides` → `validateRefinedSlidesStrict()` / `validateAndFixRefinedSlides()` + `createPresentation()` (no AI pass; the slides ride in the create, so a refused payload leaves no deck behind, B609)
+- `add_slide` / `update_slide` → `addSlide()` / `updateSlide()` in `server/services/slides.js`, which hold the composed slide to `validateSlide()`, the answer the REST contract gives too. Agent content is checked, not repaired: no fix pass runs first, so an over-long list is refused rather than cut (D121 B4)
 - `convert_slide` → `convertSlideWithAi()`
 - `iterate_presentation` → `iteratePresentation()`
 - `validate_presentation` → `validateAndFixRefinedSlides()`
+
+Every validation on this surface reads the deck's theme, so a background variant the theme declares is a value on offer (D88). `validateAndFixRefinedSlides()` repairs model output only: `append_slides`, and the opt-in `validation: "fix"` of `create_presentation_from_slides`, which reports what it changed in `appliedFixes`.
 
 ### Raw-mode example: `create_presentation_from_slides`
 

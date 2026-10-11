@@ -95,8 +95,9 @@ async function persistSlides(scope, identity, pres, slides) {
 
 /**
  * Update one slide. `contentMode` describes the contract's input (v1 replaces,
- * MCP patches); `normalizeContent` is MCP's optional fix-mode input step. Every
- * resulting slide then passes the same strict validation before storage.
+ * MCP patches); the resulting slide passes the same `validateSlide` on both
+ * contracts before storage, so what an agent sends is checked, not repaired
+ * (D121 B4).
  */
 export async function updateSlide(scope, identity, input) {
   const {
@@ -109,7 +110,6 @@ export async function updateSlide(scope, identity, input) {
     conversion = 'mapped',
     notes,
     visibility,
-    normalizeContent,
   } = input;
   const pres = await loadPresentationForActor(scope, identity, presentationId, {
     access: 'write',
@@ -136,18 +136,12 @@ export async function updateSlide(scope, identity, input) {
       throw err;
     }
   }
-  let nextContent =
+  const nextContent =
     content === undefined
       ? converted.content || {}
       : contentMode === 'merge'
         ? { ...converted.content, ...content }
         : content;
-  if (normalizeContent) {
-    nextContent = normalizeContent(
-      { type: slideType, content: nextContent },
-      slideTypes,
-    );
-  }
   const slide = {
     ...existing,
     type: slideType,

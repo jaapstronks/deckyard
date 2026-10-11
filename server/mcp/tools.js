@@ -208,12 +208,15 @@ export function registerTools(
   }
 
   // A slide an MCP tool creates is composed by the shared slide factory like
-  // every other route's: validation first (an agent's content is checked against the type
-  // before anything is built from it), then the validated content goes in as
-  // the factory's patch, so the slide arrives with the type's defaults for the
-  // keys the agent left out, a theme background if the type declares one, and
-  // its instance keys. The write path used to store validated content raw —
-  // an agent-created poll slide reached storage without a `pollId`.
+  // every other route's: the agent's content goes in as the factory's patch,
+  // so the slide arrives with the type's defaults for the keys the agent left
+  // out, a theme background if the type declares one, and its instance keys,
+  // and the composed slide passes `validateSlide` before storage. The write
+  // path used to store validated content raw — an agent-created poll slide
+  // reached storage without a `pollId`. Agent input is checked, never
+  // repaired: `validateAndFixRefinedSlides` belongs to model output (append,
+  // and the opt-in `validation: 'fix'` of a bulk create, which reports what it
+  // changed), and every validation here reads the deck's theme (D121 B4).
 
   /**
    * The acting machine client for a service call: the session owner in the
@@ -603,14 +606,16 @@ export function registerTools(
       }
 
       // Validation, against this session organization's registry so a
-      // published custom type is not refused before its content is read.
+      // published custom type is not refused before its content is read, and
+      // against the deck's theme so one of its own background variants is a
+      // value on offer (D88).
       const slideTypes = await sessionSlideTypes(context);
       let validatedSlides;
       let appliedFixes = [];
       if (validation === 'fix') {
         const fixed = validateAndFixRefinedSlides(
           inputSlides.map((s) => ({ type: s.type, content: s.content })),
-          { slideTypes },
+          { slideTypes, theme: themeObj },
         );
         appliedFixes = diffAppliedFixes(inputSlides, fixed);
         validatedSlides = fixed.map((s, i) => ({
@@ -622,7 +627,7 @@ export function registerTools(
         try {
           validateRefinedSlidesStrict(
             inputSlides.map((s) => ({ type: s.type, content: s.content })),
-            { slideTypes },
+            { slideTypes, theme: themeObj },
           );
         } catch (err) {
           if (err instanceof RawSlideValidationError) {
@@ -745,9 +750,6 @@ export function registerTools(
             content,
             contentMode: 'merge',
             visibility,
-            normalizeContent: (candidate, slideTypes) =>
-              validateAndFixRefinedSlides([candidate], { slideTypes })[0]
-                .content,
           },
         ));
       } catch (err) {
@@ -798,12 +800,10 @@ export function registerTools(
       await getCheckedPresentation(presentationId, context, {
         access: 'write',
       });
-      // Validate the new slide
-      const slideTypes = await sessionSlideTypes(context);
-      const [validated] = validateAndFixRefinedSlides([{ type, content }], {
-        slideTypes,
-      });
 
+      // The service validates the composed slide with `validateSlide`, the
+      // answer the REST contract gives too (D121 B4): what an agent sends is
+      // checked, not repaired.
       const {
         slide: added,
         index: insertAt,
@@ -813,8 +813,8 @@ export function registerTools(
         { actor: actorOf(context) },
         {
           presentationId,
-          type: validated.type,
-          content: validated.content,
+          type,
+          content,
           position,
         },
       );
@@ -977,7 +977,14 @@ export function registerTools(
           content: s.content,
           reasoning: '',
         })),
-        { slideTypes },
+        {
+          slideTypes,
+          theme: await loadDeckTheme(
+            repoRoot,
+            pres.theme,
+            storageScopeOf(context),
+          ),
+        },
       );
 
       const warnings = [];
@@ -1197,17 +1204,19 @@ export function registerTools(
       // theme), then fix what the lenient pass can before the service's strict
       // validation.
       const slideTypes = await sessionSlideTypes(context);
+      const theme = await loadDeckTheme(
+        repoRoot,
+        pres.theme,
+        storageScopeOf(context),
+      );
       const parts = deckToPresentationParts(newSlides, {
-        theme: await loadDeckTheme(
-          repoRoot,
-          pres.theme,
-          storageScopeOf(context),
-        ),
+        theme,
         lang,
         slideTypes,
       });
       const slidesToInsert = validateAndFixRefinedSlides(parts.slides || [], {
         slideTypes,
+        theme,
       });
 
       // Find insert position: before structural closing slides (payoff, end).
