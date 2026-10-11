@@ -183,7 +183,8 @@ const { table, sparse, specific, generated, source } = KINDS;
  * modules is worth nothing; one that says *why* each is safe, and which ones are
  * only safe for now, is a worklist. `promote: true` used to flag the modules
  * that looked like companions and were not gated as such; the last of them,
- * validate-slide-structure.js, was promoted to the matrix (kind `table`), so no
+ * validate-slide-structure.js, was promoted to the matrix (kind `table`) and
+ * later deleted, its checks being what `fields[]` already derives (B242), so no
  * entry carries it now. A future ungated per-type table should get it again as
  * a signpost to the next promotion.
  *
@@ -282,14 +283,6 @@ export const INVENTORY = {
     kind: table,
     companion: 'v1-manual-examples',
     why: 'MANUAL_EXAMPLES, the worked example the v1 prompt shows per type.',
-  },
-  'server/utils/ai/validate-slide-structure.js': {
-    kind: table,
-    companion: 'structure-validation',
-    why:
-      'STRUCTURE_VALIDATORS — the per-type structural check for agent output. ' +
-      'Owed by every non-opt-out collection / fixed-collection type; a missing ' +
-      'entry accepts a malformed collection unvalidated. Promoted from `promote`.',
   },
 
   // --- display-order hint: membership is derived, order is curated ---------
