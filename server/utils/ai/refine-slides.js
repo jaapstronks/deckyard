@@ -15,7 +15,6 @@ import { getLlmConfig } from '../llm/config.js';
 import { requestChatCompletionContent } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import { SLIDE_TYPE_CATALOG } from './slide-type-catalog.js';
-import { validateSlideContentStructure } from './validate-slide-structure.js';
 import { describeIssue, validateSlideContent } from './schemas/index.js';
 import {
   assertSlideTextLengths,
@@ -132,22 +131,11 @@ function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
     type = allowedTypes[0] || 'content-slide';
   }
 
-  // Validate content structure matches the type (existing validation)
-  const structureIssues = validateSlideContentStructure(
-    type,
-    content,
-    originalSlide.index,
-  );
-  if (structureIssues.length > 0) {
-    log.warn(`Content structure issues for ${type}:`, {
-      originalIndex: originalSlide.index,
-      issues: structureIssues,
-      contentKeys: Object.keys(content),
-    });
-  }
-
   // The content schema derived from the type's fields[] (D87): logged here,
-  // never blocking — refine repairs downstream.
+  // never blocking — refine repairs downstream. It is the only structural
+  // check: the per-type validator table that stood beside it restated
+  // cardinality and per-item fields, and for funnel, cycle and process read a
+  // key the types do not declare (B242).
   const schemaResult = validateSlideContent(SLIDE_TYPES[type], content);
   if (!schemaResult.valid && schemaResult.issues.length > 0) {
     log.warn(`Content schema issues for ${type}:`, {

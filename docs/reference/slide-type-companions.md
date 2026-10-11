@@ -55,7 +55,6 @@ inline-edit descriptor and inspector keep-list stay, the picker entries go.
 | Inline-edit descriptor                                    | `client/views/editor/inline-edit/descriptors.js` (`INLINE_DESCRIPTORS`) | every registered type                                                                                    | no on-canvas editing; every field is side-form only                                                                                                  |
 | Inspector keep-list                                       | `shared/slide-types/types/<name>/inline-edit.js` (`inspectorKeeps`)     | sparse by design (reverse only)                                                                          | inspector shows every field the inline layer misses (the safe default)                                                                               |
 | Element-tab offer                                         | `shared/slide-types/types/<name>/inline-edit.js` (`elementTab`)         | sparse by design (reverse only)                                                                          | no "This element" tab for a selected image or card; its settings stay reachable only through the slide-level form                                    |
-| Structural validator                                      | `server/utils/ai/validate-slide-structure.js` (`STRUCTURE_VALIDATORS`)  | every agent-emittable `collection` / `fixed-collection` type                                             | `validateSlideContentStructure` returns no issues — a collection with too few items or a missing item field is accepted unvalidated                  |
 
 A fork-local type in `custom/slide-types/` can satisfy the agent, schematic and
 inline companions from its own definition (`ai: {}`, `schematic: {}`,
@@ -284,10 +283,11 @@ produce: the count drops because knowledge moved onto the types, not because the
 threshold moved.
 
 Two modules used to carry `promote: true` — the refine phase's per-type Zod map
-and `server/utils/ai/validate-slide-structure.js` — both companion-shaped (a
-type with no entry is silently unvalidated) and neither gated. The second was
-promoted to the matrix (**Structural validator** above); the first is **gone**
-(D87, B241), and how it went is the more useful lesson.
+and its per-type structural validator table (`STRUCTURE_VALIDATORS`) — both
+companion-shaped (a type with no entry is silently unvalidated) and neither
+gated. Both are now **gone**: the first by D87 (B241), the second by B242 after
+a spell in the matrix as **Structural validator**. How they went is the more
+useful lesson.
 
 A companion is a per-type table someone has to remember to fill in, and the gate
 exists because they forget. But a table that restates what the definition
@@ -300,10 +300,17 @@ check: a type has a content schema because it has fields.
 
 **Ask of a companion whether it can be derived before you gate it.** A gate on a
 derivable table is a maintained answer to a question nobody needs asked.
-**Structural validator** stays a companion because it is not derivable: it is
-owed only by the `collection` / `fixed-collection` types, and what it checks —
-whether a repeated-item array's cardinality and per-item required fields hold
-together as a _shape_ — is a judgement about the type, not a restatement of it.
+The structural validator looked like the exception and was not. It was gated
+here on the argument that cardinality and per-item required fields "hold
+together as a shape", a judgement about the type rather than a restatement of
+it. Measured against `fields[]` (B242), every check was one of two things: a
+restatement of `minItems`, `maxItems` and an item field's `required`, which the
+content schema already derives; or a disagreement with them. Five validators
+required item fields the type calls optional, and three (`funnel-slide`,
+`cycle-slide`, `process-slide`) checked a key the type does not declare, so
+every valid slide of those types logged a missing array. A gate kept the table
+complete; it could not keep it true. The refine phase now logs the derived
+content schema alone.
 
 The next ungated per-type table should get `promote: true` again as the
 signpost to the following promotion.
