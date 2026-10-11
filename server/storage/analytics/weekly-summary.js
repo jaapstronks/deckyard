@@ -94,14 +94,16 @@ export async function getWeeklyAnalyticsForUser(userId, userEmail) {
       hasActivity: false,
     },
     async (db) => {
-      // Get user info
+      // Get user info. The display name is `users.name`; there is no
+      // `users.display_name` column, and asking for one failed the whole
+      // summary (B662).
       const user = await db
         .selectFrom('users')
-        .select(['id', 'email', 'display_name'])
+        .select(['id', 'email', 'name'])
         .where('id', '=', userId)
         .executeTakeFirst();
 
-      const userName = user?.display_name || userEmail.split('@')[0];
+      const userName = user?.name || userEmail.split('@')[0];
 
       // Get user's presentations
       const userPresentations = await getUserPresentationIds(db, userEmail);
@@ -397,7 +399,7 @@ export async function getTeamWeeklyAnalytics(organizationId) {
         .leftJoin('users', 'users.email', 'presentations.owner_email')
         .select([
           'presentations.owner_email',
-          sql`COALESCE(users.display_name, split_part(presentations.owner_email, '@', 1))`.as(
+          sql`COALESCE(users.name, split_part(presentations.owner_email, '@', 1))`.as(
             'presenter_name',
           ),
           (eb) => eb.fn.count('view_sessions.id').as('total_views'),
@@ -406,7 +408,7 @@ export async function getTeamWeeklyAnalytics(organizationId) {
           ),
         ])
         .where('view_sessions.presentation_id', 'in', presentationIds)
-        .groupBy(['presentations.owner_email', 'users.display_name'])
+        .groupBy(['presentations.owner_email', 'users.name'])
         .orderBy((eb) => eb.fn.count('view_sessions.id'), 'desc')
         .limit(5);
       topPresentersQuery = applyDateFilters(
