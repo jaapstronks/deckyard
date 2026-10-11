@@ -48,6 +48,7 @@ import { clampUsage } from '../../../../shared/slide-types/usage.js';
 import { acceptedTextStyles } from '../../../../shared/slide-types/text-styles.js';
 import { slideTypeSample } from '../../../../shared/slide-types/authoring-companions.js';
 import { contentSchemaFor } from '../schemas/content-schema.js';
+import { getSlideTypeExamples } from './examples.js';
 
 const GLOBAL_FIELDS = new Set(GLOBAL_SLIDE_FIELD_KEYS);
 
@@ -200,27 +201,37 @@ export function deriveAgentSchema(fields) {
 }
 
 /**
- * The example content an agent gets for a type: its sample (D119), what a good
- * slide of this type looks like. `defaults` is the empty slide the editor
- * starts from, which is a template, not an example.
+ * The example content an agent gets for a type, best description first:
  *
- * A sample the type's own content schema refuses is not handed out: an agent
- * copies the example, and strict validation would then refuse the copy (D87).
- * That is one type today, on purpose: `video-slide`'s sample leaves `source`
- * blank so a picker tile does not load a live player (D107). It, and a type
- * with no sample (`embed-slide`, `payoff-slide`, a Tier-2 type), offers its
- * defaults in the requested language instead.
- * tests/strict-accepts-catalog-examples.test.js pins both halves.
+ * 1. its **sample** (D119) — what a good slide of this type looks like;
+ * 2. its first **prompt example** (`aiExamples`) — content written to be copied
+ *    field for field, which is exactly what an agent does with this;
+ * 3. its **defaults** — the empty slide the editor starts from, which is a
+ *    template, not an example, and the last resort for that reason.
+ *
+ * A description the type's own content schema refuses is skipped rather than
+ * handed out: an agent copies the example, and strict validation would then
+ * refuse the copy (D87). That is why rung 2 exists. `video-slide` is refused at
+ * rung 1 on purpose — its sample leaves `source` blank so a picker tile does
+ * not load a live player (D107) — and since B653 its defaults leave `source`
+ * blank too, because a new video slide is an empty one and the only video core
+ * could have written there was one fork's. A type with no sample and no prompt
+ * examples (`embed-slide`, `payoff-slide`, a Tier-2 type) still offers its
+ * defaults in the requested language.
+ * tests/strict-accepts-catalog-examples.test.js pins every rung.
  *
  * @param {string|null} name - Registry name for a core type; null for Tier 2,
- *   whose slug must not pick up a core type's sample.
+ *   whose slug must not pick up a core type's sample or examples.
  * @param {object} def - Definition or Tier-2 record (both carry defaults*).
  * @param {string} lang
  * @returns {object|null}
  */
 function exampleFor(name, def, lang) {
+  const schema = contentSchemaFor(def);
   const sample = slideTypeSample(name, def);
-  if (sample && contentSchemaFor(def).safeParse(sample).success) return sample;
+  if (sample && schema.safeParse(sample).success) return sample;
+  const worked = name ? getSlideTypeExamples(name)?.[0]?.content : null;
+  if (worked && schema.safeParse(worked).success) return worked;
   return (
     def?.defaultsByLang?.[lang] ||
     def?.defaultsByLang?.nl ||

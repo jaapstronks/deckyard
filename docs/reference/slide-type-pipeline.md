@@ -143,6 +143,16 @@ it touches slide types; `AGENTS.md` § Slide types points here.
   with `instanceKeys` so every copy path (duplicate, paste, library insert)
   re-derives it. Vocabulary: `shared/slide-types/instance-keys.js`.
 
+- If a default belongs to **this installation** rather than to core (an account
+  id, a library, a tenant), declare it with `configDefaults` instead of writing
+  a value core cannot own. Configuration then seeds the authoring default where
+  the slide is created, the slide stores it like any other content, and every
+  surface keeps reading the same key. Vocabulary:
+  `shared/slide-types/config-defaults.js`; the env half is
+  `server/config/slide-defaults.js`. Never read `process.env` from `shared/` —
+  these modules run in the browser too, so only half the surfaces would honour
+  it.
+
 ### 4) Ensure the editor UX fits the patterns
 
 - If generic field rendering is enough: you’re done.

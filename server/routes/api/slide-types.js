@@ -25,6 +25,7 @@ import {
 import { slideInstanceKeys } from '../../../shared/slide-types/instance-keys.js';
 import { listPublishedCustomSlideTypes } from '../../storage/custom-slide-types.js';
 import { customSlideTypeKey } from '../../../shared/slide-types/custom-type-runtime.js';
+import { instanceSlideTypes } from '../../config/slide-defaults.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 /**
@@ -41,7 +42,12 @@ async function handleSlideTypeList({ storageScope, res, authedUser }) {
   const meta = {};
 
   // Registered types: core, plus whatever a fork put in custom/slide-types/.
-  for (const [key, def] of Object.entries(SLIDE_TYPES)) {
+  // Through `instanceSlideTypes()`, so a type that declares `configDefaults`
+  // ships this installation's value in its `defaults` (B653) — the same seam
+  // `buildMergedSlideTypes()` applies server-side, and the reason the editor
+  // needs no configuration channel of its own: it composes new slides from
+  // this response.
+  for (const [key, def] of Object.entries(instanceSlideTypes(SLIDE_TYPES))) {
     meta[key] = {
       label: def.label,
       fields: def.fields,
