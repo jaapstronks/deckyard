@@ -186,7 +186,9 @@ Settings, not env: `settings.emailSender.{email,name}` (admin-set sender
 identity, takes precedence over the env vars) and the instance default locale in
 `email_template_settings` (the language of a mail to anyone without a stored
 preference). Per user, `settings.digest.{enabled, dayOfWeek}`
-controls the weekly digest (`enabled` defaults to true, day defaults to Monday).
+controls the weekly digest. It is opt-in (D330): only an explicit
+`enabled: true` sends, so an account without a stored preference gets none;
+the day defaults to Monday.
 
 There is **no feature flag that disables email as a whole** — the switch is
 whether `BREVO_API_KEY` is set.

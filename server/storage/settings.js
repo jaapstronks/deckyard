@@ -338,16 +338,17 @@ function normalizeDayOfWeek(v) {
 }
 
 /**
- * Normalize a stored `digest` preference: on unless explicitly switched off,
- * on the stored day (0 = Sunday) or Monday when none is stored. The one place
- * the digest shape is read, for the settings API and the digest job alike.
+ * Normalize a stored `digest` preference: off unless explicitly switched on
+ * (`enabled: true`; the digest is opt-in, D330), on the stored day
+ * (0 = Sunday) or Monday when none is stored. The one place the digest shape
+ * is read, for the settings API and the digest job alike.
  * @param {*} v - The raw `digest` object from a `user_settings` bag.
  * @returns {{enabled: boolean, dayOfWeek: number}}
  */
 function normalizeDigestPreference(v) {
   const obj = v && typeof v === 'object' ? v : {};
   return {
-    enabled: obj.enabled !== false,
+    enabled: obj.enabled === true,
     dayOfWeek: normalizeDayOfWeek(obj.dayOfWeek),
   };
 }
@@ -708,7 +709,7 @@ export function defaultUserSettings() {
     },
     // Weekly engagement digest settings
     digest: {
-      enabled: true, // Receive weekly engagement digest
+      enabled: false, // Opt-in to the weekly engagement digest (D330)
       dayOfWeek: 1, // 0=Sunday, 1=Monday, etc.
     },
     // Presenter highlighter / laser pointer settings
@@ -900,8 +901,8 @@ async function loadUserSettings(key, userId) {
  *
  * Each `users` row is matched to its settings row the way
  * {@link loadUserSettings} does: by `users.id` first, by e-mail for a row
- * that has no id yet. A user with no settings row gets the defaults (on,
- * Monday). A background job reads this, so it takes a cross-organization
+ * that has no id yet. A user with no settings row gets the defaults (off,
+ * Monday), so only an account that switched the digest on receives it. A background job reads this, so it takes a cross-organization
  * scope.
  *
  * @param {import('./scope.js').StorageScope} scope
@@ -1024,7 +1025,7 @@ export async function writeUserSettings(scope, email, next) {
     next?.digest && typeof next.digest === 'object' ? next.digest : null;
   const digest = nextDigest
     ? {
-        enabled: nextDigest?.enabled !== false,
+        enabled: nextDigest?.enabled === true,
         dayOfWeek: normalizeDayOfWeek(
           nextDigest?.dayOfWeek ?? prev.digest?.dayOfWeek,
         ),

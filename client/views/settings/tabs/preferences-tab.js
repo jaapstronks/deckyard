@@ -519,7 +519,7 @@ export function createPreferencesTab({ user }) {
       // Digest settings
       const myDigest =
         my?.digest && typeof my.digest === 'object' ? my.digest : {};
-      digestEnabledCheck.checked = myDigest?.enabled !== false;
+      digestEnabledCheck.checked = myDigest?.enabled === true;
       digestDaySelect.value = String(myDigest?.dayOfWeek ?? 1);
 
       // Highlighter settings

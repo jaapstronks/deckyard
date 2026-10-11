@@ -8,6 +8,9 @@
  * `getUserSettings()` reads, through the same dual key (id first, e-mail as
  * fallback), and this file pins that on a real join.
  *
+ * The digest is opt-in (B662, D330): an account without a settings row, or
+ * with a `digest` that does not say `enabled: true`, is not a recipient.
+ *
  * Sunday is day 0, which a `|| 1` in the preferences form used to turn into
  * Monday; the round-trip case pins that 0 survives the write and selects the
  * account on a Sunday.
@@ -87,12 +90,54 @@ pgDescribe('digest recipients from user_settings (real PostgreSQL)', () => {
     return users.map((u) => u.email).sort();
   }
 
-  it('an account without a settings row gets the default: on, Monday', async () => {
-    assert.deepEqual(await dueOn(MONDAY), [ALICE_EMAIL, BOB_EMAIL]);
-    assert.deepEqual(await dueOn(THURSDAY), []);
+  /** Switch Bob's digest on for Monday, the way Preferences writes it. */
+  async function bobOptsIn() {
+    await writeUserSettings(testScope(), BOB_EMAIL, {
+      digest: { enabled: true, dayOfWeek: MONDAY },
+    });
+  }
+
+  it('an account without a settings row gets the default: off (D330)', async () => {
+    for (let day = 0; day <= 6; day++) {
+      assert.deepEqual(await dueOn(day), [], `nobody is due on day ${day}`);
+    }
+  });
+
+  it('only an explicit enabled: true is a recipient', async () => {
+    await db
+      .insertInto('user_settings')
+      .values([
+        {
+          email: ALICE_EMAIL,
+          user_id: ALICE_ID,
+          settings: JSON.stringify({ digest: {} }),
+        },
+        {
+          email: BOB_EMAIL,
+          user_id: BOB_ID,
+          settings: JSON.stringify({ privacy: {} }),
+        },
+      ])
+      .execute();
+    assert.deepEqual(await dueOn(MONDAY), [], '{} and no digest key are off');
+
+    await db
+      .updateTable('user_settings')
+      .set({
+        settings: JSON.stringify({
+          digest: { enabled: 'yes', dayOfWeek: MONDAY },
+        }),
+      })
+      .where('user_id', '=', ALICE_ID)
+      .execute();
+    assert.deepEqual(await dueOn(MONDAY), [], "enabled: 'yes' is off");
+
+    await bobOptsIn();
+    assert.deepEqual(await dueOn(MONDAY), [BOB_EMAIL]);
   });
 
   it('a digest switched off in Preferences is not sent', async () => {
+    await bobOptsIn();
     await writeUserSettings(testScope(), ALICE_EMAIL, {
       digest: { enabled: false, dayOfWeek: MONDAY },
     });
@@ -101,6 +146,7 @@ pgDescribe('digest recipients from user_settings (real PostgreSQL)', () => {
   });
 
   it('the chosen day moves the digest to that day', async () => {
+    await bobOptsIn();
     await writeUserSettings(testScope(), ALICE_EMAIL, {
       digest: { enabled: true, dayOfWeek: THURSDAY },
     });
@@ -110,6 +156,7 @@ pgDescribe('digest recipients from user_settings (real PostgreSQL)', () => {
   });
 
   it('Sunday (0) is stored as Sunday and sends on Sunday', async () => {
+    await bobOptsIn();
     await writeUserSettings(testScope(), ALICE_EMAIL, {
       digest: { enabled: true, dayOfWeek: SUNDAY },
     });
@@ -119,6 +166,7 @@ pgDescribe('digest recipients from user_settings (real PostgreSQL)', () => {
   });
 
   it('carries id, e-mail, organization and role for the job', async () => {
+    await bobOptsIn();
     const [bob] = await listDigestRecipients(testScope(), MONDAY).then((us) =>
       us.filter((u) => u.id === BOB_ID),
     );
@@ -137,10 +185,10 @@ pgDescribe('digest recipients from user_settings (real PostgreSQL)', () => {
       .values({
         email: ALICE_EMAIL,
         user_id: null,
-        settings: JSON.stringify({ digest: { enabled: false } }),
+        settings: JSON.stringify({ digest: { enabled: true } }),
       })
       .execute();
-    assert.deepEqual(await dueOn(MONDAY), [BOB_EMAIL]);
+    assert.deepEqual(await dueOn(MONDAY), [ALICE_EMAIL]);
 
     // Bob has both an id-less orphan and his own id row; one digest, by the id row.
     await db
@@ -149,16 +197,20 @@ pgDescribe('digest recipients from user_settings (real PostgreSQL)', () => {
         {
           email: 'bob.old@example.com',
           user_id: BOB_ID,
-          settings: JSON.stringify({ digest: { dayOfWeek: THURSDAY } }),
+          settings: JSON.stringify({
+            digest: { enabled: true, dayOfWeek: THURSDAY },
+          }),
         },
         {
           email: BOB_EMAIL,
           user_id: null,
-          settings: JSON.stringify({ digest: { dayOfWeek: MONDAY } }),
+          settings: JSON.stringify({
+            digest: { enabled: true, dayOfWeek: MONDAY },
+          }),
         },
       ])
       .execute();
-    assert.deepEqual(await dueOn(MONDAY), []);
+    assert.deepEqual(await dueOn(MONDAY), [ALICE_EMAIL]);
     assert.deepEqual(await dueOn(THURSDAY), [BOB_EMAIL]);
   });
 });
