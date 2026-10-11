@@ -62,8 +62,9 @@ export async function resolveSlideImages(slides, opts = {}) {
 /**
  * Image field keys that may contain image URLs across all slide types.
  */
-// `slideBgImage` is the canonical per-slide background (title-bg-unification);
-// `bgImage` stays for legacy/custom (e.g. ciiic-title-slide) imports.
+// `slideBgImage` is the canonical per-slide background (title-bg-unification).
+// A legacy `bgImage` an author still writes is resolved here too, because this
+// runs before the write funnel folds it onto `slideBgImage` (schema v21 -> v22).
 const IMAGE_FIELDS = ['image', 'slideBgImage', 'bgImage'];
 
 /**

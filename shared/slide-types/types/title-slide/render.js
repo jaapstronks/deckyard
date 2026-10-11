@@ -20,7 +20,6 @@
  */
 
 import { bgClass, escapeHtml } from '../../helpers.js';
-import { resolveSlideBgImage } from '../../legacy-bg-image.js';
 import {
   TITLE_LAYOUTS,
   DEFAULT_TITLE_LAYOUT,
@@ -98,11 +97,6 @@ export function coverFontScale(content) {
  *   is not the default; a fork adds its own root class and modifiers.
  * @property {Record<string, string|number>} styleVars - custom properties set
  *   on the root (core: `--cover-scale`)
- * @property {{ src: string, alt: string } | null} bgImage - the legacy
- *   per-type background image (`<img class="slide-bg">` plus `has-bg` on the
- *   root), drawn only for un-migrated decks; an empty `alt` renders it
- *   decorative. `null` when the shared background layer paints the image or
- *   there is none.
  * @property {{ src: string, alt: string }} logo - the logo for this slide
  * @property {string} title
  * @property {string} subheading - blank omits the line
@@ -124,17 +118,6 @@ const hasText = (s) => typeof s === 'string' && s.trim() !== '';
  * @returns {TitleView}
  */
 export function resolveTitleView(content, _slide, ctx) {
-  // Read authority: canonical `slideBgImage` (drawn by the shared
-  // .slide-bg-layer, injectSlideBackground) wins → legacy `bgImage`/`bgAlt`
-  // → none. The bespoke `<img class="slide-bg">` + `.has-bg` treatment is
-  // drawn ONLY for un-migrated decks (source === 'legacy'); when canonical,
-  // the shared layer already paints it and readability comes from
-  // slideBgText/overlay — so we must draw nothing to avoid a double image.
-  const resolvedBg = resolveSlideBgImage(content);
-  const bgImage =
-    resolvedBg.source === 'legacy' && resolvedBg.image
-      ? { src: resolvedBg.image, alt: resolvedBg.alt || '' }
-      : null;
   const theme = ctx?.theme && typeof ctx.theme === 'object' ? ctx.theme : null;
   // Layout is theme-driven, not per-field: the theme's `titleLayout` token
   // (bottom | center | top) maps to a `.tsu-layout-*` class. Unknown/absent
@@ -151,7 +134,6 @@ export function resolveTitleView(content, _slide, ctx) {
     background: content?.background || 'lime',
     classes: alignClass ? [alignClass] : [],
     styleVars: { '--cover-scale': coverFontScale(content) },
-    bgImage,
     // Title slide can use a separate smaller logo (titleLogo) or fall back to
     // the main one, and takes the variant that is visible on the surface this
     // slide renders on when the theme ships a mark per pole.
@@ -181,7 +163,6 @@ export function renderTitleView(view) {
     'slide',
     'slide-title',
     ...(view.background === null ? [] : [bgClass(view.background)]),
-    ...(view.bgImage ? ['has-bg'] : []),
     `tsu-layout-${view.titleLayout}`,
     view.logoCorner === 'left' ? 'is-logo-left' : 'is-logo-right',
     ...(view.classes || []),
@@ -192,11 +173,6 @@ export function renderTitleView(view) {
   const style = vars.length
     ? ` style="${vars.map(([k, v]) => `${escapeHtml(k)}:${escapeHtml(String(v))}`).join(';')}"`
     : '';
-  const bgImgHtml = view.bgImage
-    ? view.bgImage.alt
-      ? `<img class="slide-bg" src="${escapeHtml(view.bgImage.src)}" alt="${escapeHtml(view.bgImage.alt)}" />`
-      : `<img class="slide-bg" src="${escapeHtml(view.bgImage.src)}" alt="" aria-hidden="true" />`
-    : '';
   const subtitle = hasText(view.subheading)
     ? `<p class="tsu-subtitle" data-morph-role="subtitle" data-inline-field="subheading" dir="auto">${escapeHtml(view.subheading)}</p>`
     : '';
@@ -206,7 +182,6 @@ export function renderTitleView(view) {
   return `
         <div class="${rootClass}"${style}>
           <div class="slide-inner">
-            ${bgImgHtml}
             <div class="tsu-overlay" aria-hidden="true"></div>
             <div class="tsu-logo" data-morph-role="logo">
               <img class="tsu-logo-img" src="${escapeHtml(view.logo?.src)}" alt="${escapeHtml(view.logo?.alt)}" />

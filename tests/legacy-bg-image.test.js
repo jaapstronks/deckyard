@@ -4,56 +4,22 @@
  * Slide types used to draw their own bgImage/bgAlt as a bespoke
  * `<img class="slide-bg">` with a `.has-bg` treatment, on top of the generic
  * slideBgImage layer — two systems, two controls, two possible images. These
- * tests pin the single read authority (resolveSlideBgImage), the
- * migrate-on-edit fold (ensureSlideBgImage) and the render fallback (legacy
- * draws its own <img>; canonical draws nothing so the shared layer owns it).
+ * tests pin the fold (ensureSlideBgImage), its place in the read funnel
+ * (schema v21 -> v22, B257 B1-bg) and that the render draws the shared layer
+ * only: the legacy render fallback is gone.
  *
  * Run with: node --test tests/legacy-bg-image.test.js
  */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  resolveSlideBgImage,
-  ensureSlideBgImage,
-} from '../shared/slide-types/legacy-bg-image.js';
+import { ensureSlideBgImage } from '../shared/slide-types/legacy-bg-image.js';
+import { migratePresentation } from '../shared/slide-types/schema-version.js';
 import {
   renderSlideHtml,
   SLIDE_TYPES,
   CUSTOM_SLIDE_TYPE_NAMES,
 } from '../shared/slide-types.js';
-
-// ---- resolveSlideBgImage: canonical wins → legacy → none ----
-
-test('resolve: canonical slideBgImage wins over a legacy bgImage', () => {
-  const r = resolveSlideBgImage({
-    slideBgImage: '/canon.jpg',
-    bgImage: '/legacy.jpg',
-    bgAlt: 'old',
-  });
-  assert.deepEqual(r, { image: '/canon.jpg', alt: '', source: 'canonical' });
-});
-
-test('resolve: legacy bgImage/bgAlt when no canonical', () => {
-  const r = resolveSlideBgImage({
-    bgImage: '/legacy.jpg',
-    bgAlt: 'desc',
-  });
-  assert.deepEqual(r, { image: '/legacy.jpg', alt: 'desc', source: 'legacy' });
-});
-
-test('resolve: none when neither is set', () => {
-  assert.deepEqual(resolveSlideBgImage({}), {
-    image: '',
-    alt: '',
-    source: 'none',
-  });
-  assert.deepEqual(resolveSlideBgImage({ slideBgImage: '  ', bgImage: '' }), {
-    image: '',
-    alt: '',
-    source: 'none',
-  });
-});
 
 // ---- ensureSlideBgImage: fold + reproduce look + idempotent ----
 
@@ -125,57 +91,109 @@ test('ensure: an empty legacy key never overwrites a canonical background', () =
   assert.deepEqual(content, { title: 'T', slideBgImage: '/canon.jpg' });
 });
 
+test('ensure: the picker provider id goes too, with or without the pair', () => {
+  const content = {
+    slideBgImage: '/canon.jpg',
+    bgAlt: 'x',
+    bgImagekitFileId: 'f1',
+  };
+  ensureSlideBgImage(content);
+  assert.deepEqual(content, { slideBgImage: '/canon.jpg' });
+});
+
 test('ensure: content that never carried the pair is left alone entirely', () => {
   const content = { title: 'T' };
   ensureSlideBgImage(content);
   assert.deepEqual(content, { title: 'T' });
 });
 
-// ---- render fallback: mutual exclusivity, no double image ----
+// ---- the read funnel: every type, every language version ----
 
-test('render: legacy deck draws its own slide-bg img + has-bg (unchanged look)', () => {
-  const html = renderSlideHtml({
-    type: 'title-slide',
-    content: { title: 'Hello', bgImage: '/legacy.jpg', bgAlt: 'a photo' },
+test('funnel: folds the pair on every slide of every language version', () => {
+  const pres = migratePresentation({
+    slides: [
+      {
+        type: 'title-slide',
+        content: { title: 'T', bgImage: '/nl.jpg', bgAlt: 'a' },
+      },
+    ],
+    i18n: {
+      versions: {
+        'en-GB': {
+          slides: [
+            {
+              type: 'title-slide',
+              content: { title: 'T', bgImage: '/en.jpg' },
+            },
+            {
+              type: 'text-slide',
+              content: { bgImage: '', bgImagekitFileId: 'f' },
+            },
+          ],
+        },
+      },
+    },
   });
-  assert.match(html, /<img class="slide-bg" src="\/legacy.jpg" alt="a photo"/);
-  assert.match(html, /class="slide slide-title[^"]*\shas-bg/);
-  // The shared slideBgImage layer must NOT appear (no canonical image).
-  assert.doesNotMatch(html, /slide-bg-layer/);
+  assert.deepEqual(pres.slides[0].content, {
+    title: 'T',
+    slideBgImage: '/nl.jpg',
+    slideBgText: 'light',
+    slideBgOverlay: 'gradient-bottom',
+  });
+  const [title, other] = pres.i18n.versions['en-GB'].slides;
+  assert.equal(title.content.slideBgImage, '/en.jpg');
+  assert.ok(!('bgImage' in title.content));
+  assert.deepEqual(
+    other.content,
+    { slideBgImage: '' },
+    'any type, emptiness kept',
+  );
 });
 
-test('render: canonical slideBgImage draws only the shared layer, no legacy img', () => {
-  const html = renderSlideHtml({
-    type: 'title-slide',
-    content: { title: 'Hello', slideBgImage: '/canon.jpg' },
+test('funnel: a no-op on the current shape', () => {
+  const current = {
+    slides: [
+      { type: 'title-slide', content: { title: 'T', slideBgImage: '/a.jpg' } },
+    ],
+  };
+  const before = structuredClone(current.slides);
+  assert.deepEqual(migratePresentation(current).slides, before);
+});
+
+// ---- render: the shared layer only ----
+
+test('render: a legacy deck draws its background through the shared layer', () => {
+  const pres = migratePresentation({
+    slides: [
+      {
+        type: 'title-slide',
+        content: { title: 'Hello', bgImage: '/legacy.jpg', bgAlt: 'a photo' },
+      },
+    ],
   });
-  // Shared layer paints it; the title type draws nothing of its own.
+  const html = renderSlideHtml(pres.slides[0]);
   assert.match(html, /slide-bg-layer/);
+  assert.match(html, /\/legacy.jpg/);
   assert.doesNotMatch(html, /<img class="slide-bg"/);
   assert.doesNotMatch(html, /\shas-bg[\s"]/);
 });
 
-test('render: a slide with BOTH keys shows only the canonical layer (no double image)', () => {
+test('render: an un-funneled bgImage is no longer read', () => {
   const html = renderSlideHtml({
     type: 'title-slide',
-    content: {
-      title: 'Hello',
-      slideBgImage: '/canon.jpg',
-      bgImage: '/legacy.jpg',
-    },
+    content: { title: 'Hello', bgImage: '/legacy.jpg' },
+  });
+  assert.doesNotMatch(html, /\/legacy.jpg/);
+  assert.doesNotMatch(html, /slide-bg-layer/);
+});
+
+test('render: canonical slideBgImage draws only the shared layer', () => {
+  const html = renderSlideHtml({
+    type: 'title-slide',
+    content: { title: 'Hello', slideBgImage: '/canon.jpg' },
   });
   assert.match(html, /slide-bg-layer/);
   assert.doesNotMatch(html, /<img class="slide-bg"/);
-  assert.doesNotMatch(html, /\/legacy.jpg/);
-});
-
-test('render: no background draws neither system', () => {
-  const html = renderSlideHtml({
-    type: 'title-slide',
-    content: { title: 'Hello' },
-  });
-  assert.doesNotMatch(html, /<img class="slide-bg"/);
-  assert.doesNotMatch(html, /slide-bg-layer/);
 });
 
 test('schema: no core slide type declares bgImage/bgAlt fields', () => {
@@ -184,7 +202,7 @@ test('schema: no core slide type declares bgImage/bgAlt fields', () => {
   // duplication this module exists to end. Core types only — a fork's types are
   // absent from a clean checkout, the same carve-out the other policy tests
   // make (see tests/helpers/slide-type-companions.js). A fork that still
-  // declares the pair renders two pickers until migrate-on-edit folds it.
+  // declared the pair would have the read funnel delete its values.
   for (const [name, def] of Object.entries(SLIDE_TYPES)) {
     if (CUSTOM_SLIDE_TYPE_NAMES.includes(name)) continue;
     const keys = (def.fields || []).map((f) => f.key);
