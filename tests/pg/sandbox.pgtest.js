@@ -195,7 +195,9 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
     assert.equal(published.length, 0, 'published entry cascade-deleted');
   });
 
-  it('counts a guest’s decks and bytes, scoped to the org and case-insensitive', async () => {
+  // Stored addresses are normalised on write (D200, migration 091), so the
+  // rows are seeded normalised; the asking address may still be mixed-case.
+  it('counts a guest’s decks and bytes, scoped to the org, from any casing', async () => {
     const bigSlides = [
       { id: 's1', type: 'text', content: { body: 'x'.repeat(5000) } },
     ];
@@ -204,13 +206,13 @@ pgDescribe('sandbox TTL sweep + quota (real PostgreSQL)', () => {
       slides: bigSlides,
     });
     await insertDeck(db, {
-      ownerEmail: 'ALICE@example.com',
+      ownerEmail: 'alice@example.com',
       slides: bigSlides,
     });
     await insertDeck(db, { ownerEmail: 'bob@example.com' });
 
-    const alice = await getSandboxUsageForOwner(ctx, 'alice@example.com');
-    assert.equal(alice.deckCount, 2, 'owner match is case-insensitive');
+    const alice = await getSandboxUsageForOwner(ctx, 'ALICE@example.com');
+    assert.equal(alice.deckCount, 2, 'the asking address is normalised');
     assert.ok(alice.totalBytes > 0, 'stored bytes summed');
 
     const bob = await getSandboxUsageForOwner(ctx, 'Bob@Example.com');

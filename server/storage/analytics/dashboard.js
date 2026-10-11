@@ -5,6 +5,7 @@
 
 import { sql } from 'kysely';
 import { withDbGuard } from '../utils/index.js';
+import { normalizeEmail } from '../../utils/normalize.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
 import { completionRate, getCompletionCounts } from './aggregations.js';
 
@@ -492,11 +493,16 @@ function deckCompletionRate(completion, id) {
  * @returns {Promise<string[]>}
  */
 async function getUserPresentationIds(db, userEmail, organizationId) {
+  // D200: `owner_email` and `user_email` are normalised on write, so the
+  // caller's address is normalised once here and compared bare below.
+  const email = normalizeEmail(userEmail);
+  if (!email) return [];
+
   // Get presentations where user is owner
   const ownedQuery = db
     .selectFrom('presentations')
     .select('id')
-    .where('owner_email', '=', userEmail.toLowerCase());
+    .where('owner_email', '=', email);
 
   // Get presentations shared with user (edit or admin access)
   const sharedQuery = db
@@ -507,11 +513,7 @@ async function getUserPresentationIds(db, userEmail, organizationId) {
       'presentation_collaborators.presentation_id',
     )
     .select('presentations.id')
-    .where(
-      'presentation_collaborators.user_email',
-      '=',
-      userEmail.toLowerCase(),
-    )
+    .where('presentation_collaborators.user_email', '=', email)
     .where('presentation_collaborators.permission', 'in', ['edit', 'admin']);
 
   const [ownedRows, sharedRows] = await Promise.all([
