@@ -116,7 +116,6 @@ html.is-fullscreen .presenter-shell:not(.is-chrome-active) {
   gap: var(--ps-space-4);
   min-height: var(--presenter-topbar-height);
   padding: var(--ps-space-2) var(--ps-space-4);
-  box-sizing: border-box;
   background: hsl(var(--app-bg-elevated) / 0.92);
   border-bottom: 1px solid hsl(var(--app-border-default));
   backdrop-filter: blur(10px);

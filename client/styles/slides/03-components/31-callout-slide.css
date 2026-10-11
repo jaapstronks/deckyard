@@ -65,7 +65,6 @@
 .slide-callout .callout-panel {
   width: 100%;
   max-width: 72%;
-  box-sizing: border-box;
   padding: var(--slide-space-10) var(--slide-space-12);
   /* The accent bar IS the admonition affordance: a reader recognises the shape
      before reading the eyebrow. */

@@ -173,7 +173,6 @@
    above); contain adds breathing room + a white plate inside the frame. */
 .slide-image-text .media .frame.is-fit-contain {
   padding: var(--slide-space-6);
-  box-sizing: border-box;
   background: #fff;
 }
 .slide-image-text.is-image-bg-match .media .frame.is-fit-contain {

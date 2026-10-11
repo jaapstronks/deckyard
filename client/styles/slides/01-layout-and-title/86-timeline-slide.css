@@ -247,14 +247,24 @@
   left: 50%;
   top: 50%;
   width: max-content;
-  min-width: min(var(--card-w), calc(100% + var(--card-spill)));
-  max-width: min(var(--card-max-w), calc(100% + var(--card-spill)));
+  /* The width bounds name the text column; the card adds its inline padding
+     and its 2px border on both sides (border-box, B230). The inline padding
+     has its own name because `--slide-card-padding` may be a shorthand of
+     several values, which `calc()` cannot double. */
+  --card-pad-inline: var(--slide-space-4);
+  --card-chrome: calc(2 * var(--card-pad-inline) + 4px);
+  min-width: calc(
+    min(var(--card-w), calc(100% + var(--card-spill))) + var(--card-chrome)
+  );
+  max-width: calc(
+    min(var(--card-max-w), calc(100% + var(--card-spill))) + var(--card-chrome)
+  );
   background: var(--timeline-card-surface);
   border: 2px solid var(--timeline-card-border);
   border-radius: var(--slide-radius-md);
   /* The card sets the three card roles; .timeline-title / .timeline-text read
      them (slide-roles.md § The card pattern). */
-  --slide-card-padding: var(--slide-space-4);
+  --slide-card-padding: var(--card-pad-inline);
   --slide-font-size-card-title: var(--slide-text-base);
   --slide-font-size-card-body: var(--slide-text-sm);
   padding: var(--slide-card-padding);
@@ -297,8 +307,10 @@
 /* Edge cards: tighter spill cap so the first/last card doesn't reach beyond the slide. */
 .slide-timeline .timeline-item:first-of-type .timeline-card,
 .slide-timeline .timeline-item:last-of-type .timeline-card {
-  min-width: min(var(--card-w), calc(100% + 50px));
-  max-width: min(var(--card-max-w), calc(100% + 50px));
+  min-width: calc(min(var(--card-w), calc(100% + 50px)) + var(--card-chrome));
+  max-width: calc(
+    min(var(--card-max-w), calc(100% + 50px)) + var(--card-chrome)
+  );
 }
 
 /* Date label — sits next to the marker on the card-facing side of the line,
@@ -396,8 +408,8 @@
 
   .slide-timeline .timeline-card {
     /* ladder rung: both stay under the base card (base / sm) */
-    --slide-card-padding: var(--slide-space-3) var(--slide-space-4)
-      var(--slide-space-4);
+    --slide-card-padding: var(--slide-space-3) var(--card-pad-inline)
+      var(--card-pad-inline);
     --slide-font-size-card-title: var(--slide-text-sm);
     --slide-font-size-card-body: var(--slide-text-xs);
     border-radius: var(--slide-radius-sm);

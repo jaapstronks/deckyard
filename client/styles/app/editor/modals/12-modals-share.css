@@ -12,14 +12,14 @@
    Switching tabs moved it as well: measured at 1440×900 the strip sat at
    179 px on Workspace, 198 px on Link and 372 px on Publish.
 
-   664px is the tallest tab measured at that viewport once loaded (Workspace),
-   in the same content-box coordinates as the `80vh` beside it: `.modal` is
-   content-box, so the dialog measures 664 + 40 padding + 2 border = 706 px on
-   screen. `min()` hands short viewports back to 80vh, so nothing is pushed off
-   screen there. The body below keeps doing the scrolling, as it already did. */
+   706px is the dialog the tallest tab needed at that viewport once loaded
+   (Workspace), padding and border included: every box is border-box (B230),
+   so the number is the height on screen. `min()` hands short viewports back
+   to 80vh, so nothing is pushed off screen there. The body below keeps doing
+   the scrolling, as it already did. */
 .share-modal {
   width: min(520px, 90vw);
-  height: min(80vh, 664px);
+  height: min(80vh, 706px);
   overflow: hidden;
 }
 

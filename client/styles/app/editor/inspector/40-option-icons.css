@@ -7,7 +7,6 @@
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-elevated));
   position: relative;
-  box-sizing: border-box;
 }
 
 /* Icons: image side */

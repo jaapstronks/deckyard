@@ -552,8 +552,8 @@ summary.ghost-icon-btn::-webkit-details-marker {
   }
 
   /* Compact the remaining labeled buttons. The Present caret, the one icon
-     button with `.btn` (a <summary>, content-box, where this padding would
-     come on top of its 36px), has folded by now. */
+     button with `.btn` (a <summary>, whose fixed 36px this padding would
+     squeeze), has folded by now. */
   .topbar .btn {
     padding-left: 8px;
     padding-right: 8px;

@@ -55,14 +55,17 @@
 
 /* The colored bar that creates the pyramid effect */
 .slide-pyramid .level-bar {
-  width: var(--level-width, 100%);
-  min-height: 48px;
+  /* The percentage ladder names the text width; the bar adds its inline
+     padding (border-box, B230). */
+  width: calc(var(--level-width, 100%) + 2 * var(--level-pad-x));
+  min-height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
   /* Trapezoid shape using clip-path */
   clip-path: polygon(4% 0%, 96% 0%, 100% 100%, 0% 100%);
-  padding: var(--slide-space-3) var(--slide-space-8);
+  --level-pad-x: var(--slide-space-8);
+  padding: var(--slide-space-3) var(--level-pad-x);
   transition: width 0.3s ease;
 }
 
@@ -108,8 +111,9 @@
 }
 
 .slide-pyramid .pyramid-container[data-count='3'] .level-bar {
-  min-height: 80px;
-  padding: var(--slide-space-4) var(--slide-space-10);
+  min-height: 112px;
+  --level-pad-x: var(--slide-space-10);
+  padding: var(--slide-space-4) var(--level-pad-x);
 }
 
 .slide-pyramid .pyramid-container[data-count='3'] .pyramid-level {
@@ -123,8 +127,9 @@
 }
 
 .slide-pyramid .pyramid-container[data-count='4'] .level-bar {
-  min-height: 64px;
-  padding: var(--slide-space-4) var(--slide-space-10);
+  min-height: 96px;
+  --level-pad-x: var(--slide-space-10);
+  padding: var(--slide-space-4) var(--level-pad-x);
 }
 
 .slide-pyramid .pyramid-container[data-count='4'] .pyramid-level {
@@ -140,8 +145,9 @@
 }
 
 .slide-pyramid .pyramid-container[data-count='6'] .level-bar {
-  min-height: 40px;
-  padding: var(--slide-space-2) var(--slide-space-6);
+  min-height: 56px;
+  --level-pad-x: var(--slide-space-6);
+  padding: var(--slide-space-2) var(--level-pad-x);
 }
 
 .slide-pyramid .pyramid-container[data-count='6'] .pyramid-level {
@@ -225,8 +231,9 @@
   }
 
   .slide-pyramid .level-bar {
-    min-height: 36px;
-    padding: var(--slide-space-2) var(--slide-space-5);
+    min-height: 52px;
+    --level-pad-x: var(--slide-space-5);
+    padding: var(--slide-space-2) var(--level-pad-x);
   }
 
   /* Wins only for the 5-level base rung; every other count has a rule of

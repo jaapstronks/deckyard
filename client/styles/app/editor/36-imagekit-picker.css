@@ -118,7 +118,6 @@
   padding: 12px;
   height: 100%;
   overflow: auto;
-  box-sizing: border-box;
 }
 
 .imagekit-detail-preview {

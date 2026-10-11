@@ -278,7 +278,6 @@
 .sidebar-view {
   display: none;
   width: 100%;
-  box-sizing: border-box;
 }
 
 .sidebar-view.is-active {
