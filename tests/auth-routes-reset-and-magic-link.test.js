@@ -700,6 +700,9 @@ test('change-password rejects a wrong current password and leaves the hash alone
   );
 
   assert.equal(res.status, 400);
+  // The form branches on the code and marks the field it names (B674).
+  assert.equal(res.body.error, 'current_password_incorrect');
+  assert.deepEqual(res.body.details, { field: 'currentPassword' });
   assert.equal(userFor('alice@example.com').password_hash, before, 'unchanged');
   assert.ok(auditTypes().includes('password_change_failed'));
 });
