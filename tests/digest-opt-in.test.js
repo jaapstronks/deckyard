@@ -98,4 +98,13 @@ describe('the weekly digest is opt-in (B662, D330)', () => {
     const { digest } = await getUserSettings(testScope(), 'none@example.com');
     assert.deepEqual(digest, { enabled: false, dayOfWeek: 4 });
   });
+
+  it('a partial write keeps an opted-in user opted in', async () => {
+    __setTestDb(seed());
+    await writeUserSettings(testScope(), 'on@example.com', {
+      digest: { dayOfWeek: 4 },
+    });
+    const { digest } = await getUserSettings(testScope(), 'on@example.com');
+    assert.deepEqual(digest, { enabled: true, dayOfWeek: 4 });
+  });
 });

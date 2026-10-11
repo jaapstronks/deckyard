@@ -1023,13 +1023,10 @@ export async function writeUserSettings(scope, email, next) {
   // Digest settings
   const nextDigest =
     next?.digest && typeof next.digest === 'object' ? next.digest : null;
+  // Absent keys inherit from the stored preference, like the other bags; the
+  // one normaliser decides what the merged shape means (off unless `true`).
   const digest = nextDigest
-    ? {
-        enabled: nextDigest?.enabled === true,
-        dayOfWeek: normalizeDayOfWeek(
-          nextDigest?.dayOfWeek ?? prev.digest?.dayOfWeek,
-        ),
-      }
+    ? normalizeDigestPreference({ ...prev.digest, ...nextDigest })
     : prev.digest;
 
   // Highlighter settings
