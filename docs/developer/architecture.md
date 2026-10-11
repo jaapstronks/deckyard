@@ -172,8 +172,8 @@ The layer is flat, and it is not a dispatch:
   from — see [tenant-isolation.md](../reference/tenant-isolation.md).
 - **Lifecycle** is a thin module (`server/storage/lifecycle.js`):
   `initializeStorage()` / `closeStorage()` over the shared Kysely pool. There is
-  no adapter class, no mixins, no singleton to dispatch through — B79/D34
-  stripped that; one backend, reached one way.
+  no adapter class, no mixins, no singleton to dispatch through: the adapter
+  layer was stripped (B79, D34); one backend, reached one way.
 
 There is no base class to implement and no capability probing left: a single
 backend either has a query path or the call is a bug.

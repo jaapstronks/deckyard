@@ -14,8 +14,8 @@ one per module.
 > path compare in `server/routes/**` outside the exempt trees (the separately
 > versioned `public-api/` and the non-API `static` viewers) — with **no
 > per-file allowlist**. The table is not a target anymore; it is the single
-> dispatch form. Since B399 (2026-09) the public v1 feature modules and the
-> capturing `static` viewers are tables too; what the exemption still covers is
+> dispatch form. The public v1 feature modules and the capturing `static`
+> viewers are tables too (B399, 2026-09); what the exemption still covers is
 > exact-path compares in the v1 entry router and the static file handlers.
 
 ## The `Route` shape

@@ -67,7 +67,7 @@ const PLAN_TREE_HOMES = [
  * that stands on its own (with the code in parentheses behind it, or gone)
  * lowers the number here in the same PR.
  */
-const BURNDOWN = { bareDocCodes: 45, bareTestCodes: 0 };
+const BURNDOWN = { bareDocCodes: 0, bareTestCodes: 0 };
 
 /** @param {string} file */
 function planTreeCitations(file) {
@@ -114,4 +114,13 @@ test('a code counts only outside parentheses', () => {
     'an unclosed parenthesis ends at the paragraph',
   );
   assert.equal(outsideParens('a (b) c'), 'a  c');
+});
+
+test('an inline code span is a literal, not a planning code', () => {
+  assert.equal(bareCodes('The value sits in cell `A2`.'), 0);
+  assert.equal(
+    bareCodes('A literal `f(` opens nothing, so B143 still counts.'),
+    1,
+    'a parenthesis inside a code span does not hide the prose after it',
+  );
 });

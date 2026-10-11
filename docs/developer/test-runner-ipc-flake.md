@@ -48,7 +48,7 @@ run (restored in `after`). It asserted on return values and database state,
 never on the banners, so nothing was hidden. Removing the stdout burst removed
 the trigger, and the suite went green in parallel at full speed.
 
-Both that test and the CLI under it were **retired in B385**, together with the
+Both that test and the CLI under it were **retired** (B385), together with the
 file-based importer they covered — file-based Deckyard installs do not exist.
 So the repo now carries no live instance of the silencing pattern, and no test
 emits a burst big enough to trip the bug. The rule below is the whole

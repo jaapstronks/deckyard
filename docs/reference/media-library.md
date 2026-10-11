@@ -224,8 +224,8 @@ size}` returns a presigned PUT plus the eventual `publicUrl` and a key
 The provider used to be named after one vendor (a `scaleway.js` module with a
 `ScalewayProvider` class, `SCW_*`, `MEDIA_STORAGE_MODE=scaleway`). It is
 generic S3 now (D25); the old
-names are still recognized until the removal date, in the B68 shape — never as
-a silent alias:
+names are still recognized until the removal date, the same way the renamed
+feature flags are (B68) — never as a silent alias:
 
 | Legacy (deprecated)           | Canonical               |
 | ----------------------------- | ----------------------- |

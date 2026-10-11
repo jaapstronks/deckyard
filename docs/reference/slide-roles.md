@@ -73,10 +73,10 @@ it snaps, beyond it (a full doubling) it is a _sub-step hairline_ and goes on
 the allowlist. On the spacing scale that puts the line between 3px, which
 converts, and the 1–2px hairlines, which do not.
 
-Snapping is what B4 decided; the app layer answered the same question
-differently (`css-tokens.md` § _Why the fine band exists_) because 587 values
-could not be visually reviewed one by one, and the slide axes are small enough
-that they can.
+Snapping was the decision for the slide axes (B4); the app layer answered the
+same question differently (`css-tokens.md` § _Why the fine band exists_)
+because 587 values could not be visually reviewed one by one, and the slide axes
+are small enough that they can.
 
 ### The two exceptions
 
@@ -473,7 +473,7 @@ What a theme may set — the full contract, ~30–35 tokens, zero type names:
 - **Layout/branding**: gradient tokens, title layout. `--t-logo-url` is a
   theme token the theme builder emits and the exports mask
   (`export-safe-css.md`), but **no slide CSS reads it**: the `--logo-url`
-  slide variable had no reader and left the theme layer with B531, so the
+  slide variable had no reader and left the theme layer (B531), so the
   token is outside the slide-CSS contract snapshot.
 
 Per-type `--t-<type>-*` tokens (icon-card-grid, per-KPI-tile, table, quote and

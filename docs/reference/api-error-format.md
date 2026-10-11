@@ -33,7 +33,7 @@ The internal `/api/*` routes return errors in one canonical envelope:
 
   | Key         | Meaning                                                                                                                                                         |
   | ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  | `field`     | _Which_ input was bad. The standing case: a storage `invalid` says it here rather than in the code, which is what D48 collapsed the `invalid_*` spellings into. |
+  | `field`     | _Which_ input was bad. The standing case: a storage `invalid` says it here rather than in the code: the old `invalid_*` spellings were collapsed into it (D48). |
   | `index`     | Where in a list-valued `field` (0-based). Present only when the storage layer inspected the list entry by entry.                                                |
   | `itemIndex` | Where inside that entry, for a nested list (an `items` field's `itemFields`).                                                                                   |
   | `reason`    | A snake_case sub-code for the problem at that location, for a client that wants to translate. `message` still carries the English sentence.                     |
@@ -252,8 +252,8 @@ an `AppError` with the fitting status. Pinned by
   `error`, minus this envelope's `ok:false` discriminator (the HTTP status is the
   public surface's discriminator). Produced through `sendV1Error`/`apiError` and
   the `withV1ErrorHandler` wrap in
-  `server/routes/public-api/v1/middleware.js` — B61 converged the three shapes it
-  used to speak into this one. Don't change it here. The wrap is the one v1
+  `server/routes/public-api/v1/middleware.js`, which once spoke three shapes and
+  now speaks this one (B61). Don't change it here. The wrap is the one v1
   error renderer (B619): no sub-handler catches a throw to answer it itself.
   It follows `withErrorHandler`'s rule: an `AppError` keeps its sentence, code
   and details at any status (a failing model is a 502 `bad_gateway` that says

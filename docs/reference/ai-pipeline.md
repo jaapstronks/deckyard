@@ -117,7 +117,7 @@ Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 - `wizard.js` (50) — `POST /api/ai/wizard`, the v1 one-shot path.
 - `wizard-v2-stream.js` (257) — `POST /api/ai/wizard-v2/stream`, the two-phase
   path. The one wizard-v2 route: the non-streaming `wizard-v2` and
-  `wizard-v2/outline` siblings were retired in B97.
+  `wizard-v2/outline` siblings were retired (B97).
 - `append-slides.js` (90), `refine-section.js` (75), `convert-slide.js` (34),
   `compress-deck.js` (47), `iterate.js` (62) — the per-feature routes.
 - `vendors.js` (11) — `GET /api/ai/vendors`, the configured-vendor list.

@@ -89,8 +89,8 @@ What it cost was truth: `i18n-sync` used to _write_ those copies (a fill of
 placeholder as a second spelling of a concept the locale translates elsewhere
 (280 findings in one round), and `missingFor()` in `scripts/i18n-fill.js`
 counted a filled key as translated, so the translator gap report said zero for a
-locale with hundreds of holes. D73 removed the fill rather than teach both
-instruments to recognise a placeholder.
+locale with hundreds of holes. The fill was removed rather than teach both
+instruments to recognise a placeholder (D73).
 
 Both halves of `i18n-sync` are deletions now, and both sweep **every module** —
 a dead `slideType.*` key and a carbon copy are dead weight wherever they sit,

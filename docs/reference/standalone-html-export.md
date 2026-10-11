@@ -55,7 +55,7 @@ Two deliberate choices about what "min" keeps:
 
 ### `ui=strip`
 
-The stage on top, edge to edge, and one toolbar of `--controls-strip-height` (48px, on `:root`) below it, B268/D102. The hosted embed has the same strip in the same places, so a site that iframes either one can drop its own arrows over the slide.
+The stage on top, edge to edge, and one toolbar of `--controls-strip-height` (48px, on `:root`) below it (B268, D102). The hosted embed has the same strip in the same places, so a site that iframes either one can drop its own arrows over the slide.
 
 - **What is in it:** Previous, Next and the counter on the left, Fullscreen on the right, as icon buttons. The buttons keep their ids (`btnPrev`, `btnNext`, `btnFs`) and their `aria-label` as the accessible name; the icons are `aria-hidden`. Height and icons come from one module, `server/utils/controls-strip.js`, which the embed reads too.
 - **Loop controls only when the deck loops:** the Loop button and the seconds field show when the deck's auto-advance is on or the URL asks for `?loop=1`/`?autoplay=1`. The default row keeps offering them always.
