@@ -42,6 +42,7 @@ import { hexToRgb } from '../../shared/color-utils.js';
 import { resolveThemeLogo } from '../../shared/theme-logo.js';
 import { resolveSlideBgHex } from '../../shared/slide-surface-tone.js';
 import { escapeXml } from '../../shared/xml.js';
+import { SLIDE_ACCENT_FALLBACK } from '../../shared/constants/themes.js';
 import { rasterForPptx } from './pptx-image.js';
 import { createLogger } from '../utils/logger.js';
 
@@ -254,6 +255,54 @@ function pptxColor(hex, fallback) {
 }
 
 /**
+ * The colours of one ground under one theme: what it paints, and the text that
+ * reads on it.
+ *
+ * The text colour follows the same cascade the slide CSS does: a ground that
+ * declares its own `--t-slide-bg-<id>-text` wins, else the theme's
+ * `--t-color-text`, else the same `#0b0b0b` the stylesheet falls back to.
+ *
+ * Exported because a composition that paints a slide's own ground (the video
+ * placeholder in `pptx.js`) has to read it the way the master does, not from
+ * a second table of colours (B656).
+ *
+ * @param {object|null} theme - the active normalized theme
+ * @param {string} groundId - a `background` id (`lime`, `mist`, `dark`, a
+ *   theme variant)
+ * @returns {{background: string, text: string, textMuted: string}}
+ */
+export function resolveGroundColors(theme, groundId) {
+  const vars =
+    theme?.cssVars && typeof theme.cssVars === 'object' ? theme.cssVars : {};
+  const id = String(groundId || '')
+    .trim()
+    .toLowerCase();
+
+  const variant = (
+    Array.isArray(theme?.slideBackgrounds) ? theme.slideBackgrounds : []
+  ).find((v) => v && v.id === id);
+
+  const declaredText =
+    vars[`--t-slide-bg-${id}-text`] || variant?.textColor || '';
+  const declaredMuted =
+    vars[`--t-slide-bg-${id}-text-muted`] || variant?.textColorMuted || '';
+
+  return {
+    background: pptxColor(
+      resolveSlideBgHex({ background: id }, theme),
+      FALLBACK_GROUND,
+    ),
+    text: pptxColor(declaredText || vars['--t-color-text'], FALLBACK_TEXT),
+    // A muted colour is often `rgba(...)`, which pptxgenjs cannot take; the
+    // full-strength text colour is the honest fallback, never a guessed mix.
+    textMuted: pptxColor(
+      declaredMuted || vars['--t-color-text-muted'],
+      declaredText || vars['--t-color-text'] || FALLBACK_TEXT,
+    ),
+  };
+}
+
+/**
  * Everything the layouts need from a theme, resolved once.
  *
  * Pure: no I/O, no pptxgenjs. That is what makes it the single derivation —
@@ -266,11 +315,7 @@ function pptxColor(hex, fallback) {
  * `shared/slide-types/type-defaults.js`). No bundled theme declares one today,
  * so in practice this reads `--t-slide-bg-lime` — deliberately read rather than
  * assumed, since that slot is near-black under `midnight` and white under
- * `deckyard`.
- *
- * The text colour follows the same cascade the slide CSS does: a ground that
- * declares its own `--t-slide-bg-<id>-text` wins, else the theme's
- * `--t-color-text`, else the same `#0b0b0b` the stylesheet falls back to.
+ * `deckyard`. Its colours come from {@link resolveGroundColors}.
  *
  * @param {object|null} theme - the active normalized theme
  * @returns {{groundId: string, background: string, text: string, textMuted: string,
@@ -286,17 +331,6 @@ export function resolveThemeMaster(theme) {
     .toLowerCase();
   const content = { background: groundId };
 
-  const variant = (
-    Array.isArray(theme?.slideBackgrounds) ? theme.slideBackgrounds : []
-  ).find((v) => v && v.id === groundId);
-
-  const declaredText =
-    vars[`--t-slide-bg-${groundId}-text`] || variant?.textColor || '';
-  const declaredMuted =
-    vars[`--t-slide-bg-${groundId}-text-muted`] ||
-    variant?.textColorMuted ||
-    '';
-
   const scale = Number(vars['--t-slide-text-scale']);
 
   return {
@@ -306,7 +340,7 @@ export function resolveThemeMaster(theme) {
       vars['--t-slide-bg-dark-text'] || vars['--t-text-color-light'],
       'FFFFFF',
     ),
-    accent: pptxColor(vars['--t-color-accent'], '385C5C'),
+    accent: pptxColor(vars['--t-color-accent'], SLIDE_ACCENT_FALLBACK),
     darkAccent: pptxColor(
       vars['--t-color-accent-on-dark'] || vars['--t-color-link-on-dark'],
       vars['--t-slide-bg-dark-text'] ||
@@ -314,14 +348,7 @@ export function resolveThemeMaster(theme) {
         'FFFFFF',
     ),
     monoFont: pptxTypeface(theme, vars, '--t-font-mono') || 'Courier New',
-    background: pptxColor(resolveSlideBgHex(content, theme), FALLBACK_GROUND),
-    text: pptxColor(declaredText || vars['--t-color-text'], FALLBACK_TEXT),
-    // A muted colour is often `rgba(...)`, which pptxgenjs cannot take; the
-    // full-strength text colour is the honest fallback, never a guessed mix.
-    textMuted: pptxColor(
-      declaredMuted || vars['--t-color-text-muted'],
-      declaredText || vars['--t-color-text'] || FALLBACK_TEXT,
-    ),
+    ...resolveGroundColors(theme, groundId),
     headFont: pptxTypeface(theme, vars, '--t-font-heading'),
     bodyFont: pptxTypeface(theme, vars, '--t-font-body'),
     logoUrl: resolveThemeLogo(theme, content),

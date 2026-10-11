@@ -16,8 +16,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { SLIDE_ACCENT_FALLBACK } from '../shared/constants/themes.js';
 import {
-  CHART_FALLBACK_ACCENT,
   CHART_FALLBACK_PALETTE,
   themeChartPalette,
 } from '../shared/slide-types/types/chart-slide/palette.js';
@@ -78,7 +78,7 @@ test('chart: the CSS series fallbacks mirror CHART_FALLBACK_PALETTE', () => {
   assert.match(
     tokensCss,
     new RegExp(
-      `--slide-accent: var\\(--t-color-accent, ${CHART_FALLBACK_ACCENT}\\);`,
+      `--slide-accent: var\\(--t-color-accent, ${SLIDE_ACCENT_FALLBACK}\\);`,
     ),
     'the JS accent fallback is the --slide-accent default',
   );
