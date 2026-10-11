@@ -16,7 +16,7 @@ import {
   validateSlide,
 } from '../shared/slide-types/presentation.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
-import { validateSlideContentStructure } from '../server/utils/ai/validate-slide-structure.js';
+import { validateSlideContent } from '../server/utils/ai/schemas/index.js';
 
 function render(content) {
   return renderSlideHtml({ type: 'text-blocks-slide', content });
@@ -210,12 +210,12 @@ describe('text-blocks four rows (A0.4)', () => {
     assert.match(errors.join(' '), /at most 4 items/);
   });
 
-  it('passes AI structure validation via the rows[] branch', () => {
-    const issues = validateSlideContentStructure(
-      'text-blocks-slide',
+  it('passes the derived content schema via rows[]', () => {
+    const { valid } = validateSlideContent(
+      SLIDE_TYPES['text-blocks-slide'],
       FOUR_ROW_CONTENT,
     );
-    assert.deepEqual(issues, []);
+    assert.equal(valid, true);
   });
 });
 
@@ -262,10 +262,15 @@ describe('the numbered row{N}… fields are read by nothing but the fold (B452)'
     assert.doesNotMatch(html, /data-inline-field="row1/);
   });
 
-  it('the AI structure check asks for rows[]', () => {
-    assert.deepEqual(
-      validateSlideContentStructure('text-blocks-slide', NUMBERED_CONTENT),
-      ['Missing rows[]'],
+  it('the derived content schema refuses them as undeclared', () => {
+    const { valid, issues } = validateSlideContent(
+      SLIDE_TYPES['text-blocks-slide'],
+      NUMBERED_CONTENT,
+    );
+    assert.equal(valid, false);
+    assert.ok(
+      issues.some((i) => i.keys?.some((k) => /^row\d/.test(k))),
+      'expected the numbered row keys among the refused keys',
     );
   });
 

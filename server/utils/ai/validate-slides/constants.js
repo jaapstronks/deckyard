@@ -45,9 +45,6 @@ export const SLIDE_ITEM_REQUIREMENTS = Object.fromEntries(
   }),
 );
 
-// Global accessibility fields that are added to all slide types
-export const GLOBAL_A11Y_FIELDS = ['a11yTitle', 'a11ySummary'];
-
 // Slide types that don't count toward "content" slide budget. Only types an
 // agent may output belong here: a type withheld from agents (`ai: false`, e.g.
 // the follow-along invite) never reaches the count.

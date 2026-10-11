@@ -40,7 +40,7 @@ role})`, `getLlmStatus()`. Resolves vendor + model + key, including the
 - `server/utils/llm/alt-text.js` — `generateImageAltTexts()`, used by the image
   library (see [`media-library.md`](media-library.md)).
 
-Pipeline (`server/utils/ai/`, 42 modules). The top level:
+Pipeline (`server/utils/ai/`, 41 modules). The top level:
 
 - `server/utils/ai/index.js` — the barrel.
 - `server/utils/ai/generate-deck-v2.js` — the orchestrator: `generateDeckV2`,
@@ -74,8 +74,6 @@ Pipeline (`server/utils/ai/`, 42 modules). The top level:
   (valid/unknown field keys), `fix.js` (the structural repair pipeline),
   `fixers.js` (per-type repairs), `strict.js` (throwing validation for raw
   output), `lengths.js`, `logging.js`.
-- `server/utils/ai/validate-slide-structure.js` — structural check of
-  one slide's content against its type.
 - `server/utils/ai/slide-type-catalog.js` — a 21-line compatibility re-export of
   `slide-catalog/`.
 - `server/utils/ai/slide-catalog/` (9 modules) — what the model is allowed to
