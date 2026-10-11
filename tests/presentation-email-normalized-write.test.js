@@ -1,5 +1,5 @@
 /**
- * B392 (D200): a deck's e-mail stamps are normalised on write.
+ * A deck's e-mail stamps are normalised on write (B392, D200).
  *
  * `owner_email`, `created_by` and `updated_by` are compared bare by every read
  * (`sandbox-quota.js`, the analytics dashboard and the weekly summary), so the

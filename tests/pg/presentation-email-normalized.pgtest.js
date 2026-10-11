@@ -1,5 +1,5 @@
 /**
- * B392 (D200) against real PostgreSQL: one fold, on the write side.
+ * One fold, on the write side, against real PostgreSQL (B392, D200).
  *
  * `presentations.owner_email` is read in four places, and since this change
  * all four compare it bare against an address that went through
