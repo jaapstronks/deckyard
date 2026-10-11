@@ -79,7 +79,7 @@ node scripts/download-google-fonts.js --update-lock   # re-resolve, rewrite the 
 
 Without the pin, `assets/fonts/google/` was a function of Google's release
 schedule rather than of this repository, and no rendering baseline could mean
-anything (`docs/plans/briefs/export-structural-metrics.md`).
+anything (see [export-smoke-test.md](../developer/export-smoke-test.md)).
 
 **Every install failure is fatal.** A pinned URL that answers with an HTTP
 error, or answers with bytes whose checksum does not match, is a _repository_

@@ -248,8 +248,7 @@ while every server-side export drew the fork's. Reading `def.inline` first would
 then have pointed every ghost anchor and `formText` key at elements that were
 not in the document — 0 of 2 anchors resolving instead of core's 2 of 2.
 
-**Why it is now definition-first.** That split is closed
-(`docs/plans/briefs/fork-override-renderer-reach.md`): the server names its
+**Why it is now definition-first.** That split is closed: the server names its
 core-name overrides in a head global (`window.__DECK_SERVER_RENDERED_TYPES__`,
 injected by `server/routes/static/app-shell.js`) and the client routes them
 through server-side rendering (`needsServerRender()` in
