@@ -39,7 +39,8 @@
 .slide-table .md-table th,
 .slide-table .md-table td {
   font-size: var(--slide-font-size-body);
-  padding: var(--slide-space-4) var(--slide-space-5);
+  --md-cell-pad-inline: var(--slide-space-5);
+  padding: var(--slide-space-4) var(--md-cell-pad-inline);
 }
 
 /* Header row slightly bolder for emphasis. Scoped to the header: the body's

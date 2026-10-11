@@ -19,7 +19,6 @@
   padding-bottom: max(var(--ps-space-4), env(safe-area-inset-bottom));
   padding-left: max(var(--ps-space-4), env(safe-area-inset-left));
   padding-right: max(var(--ps-space-4), env(safe-area-inset-right));
-  box-sizing: border-box;
   background: hsl(var(--app-bg-base));
 }
 
@@ -32,7 +31,6 @@
   border: 1px solid hsl(var(--app-border-default));
   box-shadow: var(--app-shadow-lg);
   padding: var(--ps-space-5);
-  box-sizing: border-box;
 }
 
 /* The refused sign-in (`createInlineError({ callout: true })`) opens the card;
@@ -91,7 +89,6 @@
   background: hsl(var(--app-bg-base));
   border: 1px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-lg);
-  box-sizing: border-box;
   transition: all var(--ps-transition-fast);
   -webkit-appearance: none;
   appearance: none;

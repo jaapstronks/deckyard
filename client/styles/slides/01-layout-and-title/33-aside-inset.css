@@ -28,7 +28,6 @@
   --slide-aside-surface: color-mix(in srgb, var(--slide-tone) 9%, transparent);
   --slide-aside-edge: color-mix(in srgb, var(--slide-tone) 22%, transparent);
 
-  box-sizing: border-box;
   margin: var(--slide-space-6) 0 0;
   padding: var(--slide-space-4) var(--slide-space-5);
   /* Narrower than the body it annotates: an inset that runs the full measure

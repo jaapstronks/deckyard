@@ -28,10 +28,6 @@
 .ps-type-thumb.thumb .layout-tile-schematic {
   width: 100%;
   height: 100%;
-  /* Padding (--sd-pad) must stay inside the tile: without border-box the
-     percentage padding was added on top of the 100% width, overflowing the
-     thumb and cropping grid archetypes (gallery/cards) on the right. */
-  box-sizing: border-box;
   aspect-ratio: auto;
   border: none;
   border-radius: 0;

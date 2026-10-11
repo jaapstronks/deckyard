@@ -129,7 +129,6 @@
   height: 20px;
   border-radius: var(--ps-radius-sm);
   margin-right: var(--ps-space-2);
-  box-sizing: border-box;
 }
 
 .activity-type-icon.is-comment {

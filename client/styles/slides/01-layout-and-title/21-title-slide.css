@@ -88,7 +88,6 @@
 .slide-title .tsu-content {
   position: relative;
   z-index: 2;
-  box-sizing: border-box;
   width: min(1040px, calc(100% - var(--tsu-pad-left) - var(--tsu-pad-right)));
   /* Box invariant: a width cap must never move a box off its container's
      alignment axis. The cap here is a measure (a title should not run the full

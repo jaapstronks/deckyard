@@ -27,9 +27,6 @@
   top: 0;
   right: 0;
   bottom: 0;
-  /* The rail is exactly the room the deck's padding makes for it; with the
-     padding and border outside the width it covered the slide's edge. */
-  box-sizing: border-box;
   width: var(--presenter-console-width);
   padding: var(--ps-space-4);
   background: hsl(var(--app-bg-elevated) / 0.96);

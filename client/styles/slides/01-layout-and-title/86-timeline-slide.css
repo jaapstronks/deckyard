@@ -247,8 +247,15 @@
   left: 50%;
   top: 50%;
   width: max-content;
-  min-width: min(var(--card-w), calc(100% + var(--card-spill)));
-  max-width: min(var(--card-max-w), calc(100% + var(--card-spill)));
+  /* The width bounds name the text column; the card adds its padding and its
+     2px border on both sides (border-box, B230). */
+  --card-chrome: calc(2 * var(--slide-card-padding) + 4px);
+  min-width: calc(
+    min(var(--card-w), calc(100% + var(--card-spill))) + var(--card-chrome)
+  );
+  max-width: calc(
+    min(var(--card-max-w), calc(100% + var(--card-spill))) + var(--card-chrome)
+  );
   background: var(--timeline-card-surface);
   border: 2px solid var(--timeline-card-border);
   border-radius: var(--slide-radius-md);
@@ -297,8 +304,10 @@
 /* Edge cards: tighter spill cap so the first/last card doesn't reach beyond the slide. */
 .slide-timeline .timeline-item:first-of-type .timeline-card,
 .slide-timeline .timeline-item:last-of-type .timeline-card {
-  min-width: min(var(--card-w), calc(100% + 50px));
-  max-width: min(var(--card-max-w), calc(100% + 50px));
+  min-width: calc(min(var(--card-w), calc(100% + 50px)) + var(--card-chrome));
+  max-width: calc(
+    min(var(--card-max-w), calc(100% + 50px)) + var(--card-chrome)
+  );
 }
 
 /* Date label — sits next to the marker on the card-facing side of the line,

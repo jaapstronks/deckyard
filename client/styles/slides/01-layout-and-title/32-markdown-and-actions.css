@@ -27,12 +27,15 @@
 
 .slide .md-table th,
 .slide .md-table td {
-  padding: var(--slide-space-4) var(--slide-space-6);
+  --md-cell-pad-inline: var(--slide-space-6);
+  padding: var(--slide-space-4) var(--md-cell-pad-inline);
   vertical-align: top;
   text-align: start; /* RTL support */
   font-weight: 400;
   color: var(--slide-on-surface);
-  min-width: 140px; /* makes small-column tables feel roomier; wide tables will scroll */
+  /* 140px of text makes small-column tables feel roomier; wide tables will
+     scroll. The cell is border-box (B230), so its padding comes on top. */
+  min-width: calc(140px + 2 * var(--md-cell-pad-inline));
 }
 
 .slide .md-table th {

@@ -77,10 +77,6 @@ table.csv-grid {
   width: 100%;
   min-width: 96px;
   padding: 7px 9px;
-  /* Without border-box the 9px side padding is added to width:100%, so the
-     input (and its focus outline) overflows the cell to the right, overlapping
-     the next column. */
-  box-sizing: border-box;
   border: none;
   background: transparent;
   color: hsl(var(--app-text-primary));
@@ -362,7 +358,6 @@ table.csv-grid {
   background: hsl(var(--app-surface-white));
   border: 1px solid hsl(var(--app-border-default));
   padding: 5px;
-  box-sizing: border-box;
 }
 
 .icon-picker-preview-fallback {
@@ -371,7 +366,6 @@ table.csv-grid {
   border-radius: var(--ps-radius-sm);
   background: hsl(var(--app-surface-white));
   border: 1px dashed hsl(var(--app-border-default));
-  box-sizing: border-box;
 }
 
 /* Icon field trigger: preview + current name, opens the picker modal.
@@ -811,7 +805,6 @@ table.csv-grid {
    shell) included, since the block does not grow. */
 
 .page-unavailable {
-  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
