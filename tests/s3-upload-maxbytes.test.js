@@ -1,5 +1,5 @@
 /**
- * B84 meelift — S3Provider.uploadBuffer honours the `maxBytes` ceiling.
+ * S3Provider.uploadBuffer honours the `maxBytes` ceiling (B84).
  *
  * LocalProvider enforced a caller's `maxBytes`; the remote provider silently
  * ignored it, so a bound like the Notion re-host's 20MB cap held only on local

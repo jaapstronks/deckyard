@@ -1,5 +1,5 @@
 /**
- * B61 — the public /api/v1 surface speaks exactly one error envelope:
+ * The public /api/v1 surface speaks exactly one error envelope (B61):
  *
  *   { "error": "<snake_case_machine_code>", "message": "<human text>", "details"?: … }
  *

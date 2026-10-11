@@ -14,7 +14,8 @@
  *  2. **No option carries one text under two keys.** An option has three copy
  *     slots (`label`/`title`/`ariaLabel`); when they say the same thing they
  *     must point at the same key, which is what `sharedOption()` guarantees.
- *     Three keys for one text is how 208 of them got minted before B145/#985.
+ *     Three keys for one text is how 208 of them got minted before the
+ *     cleanup (B145, #985).
  *
  * Both land with a burndown allowlist that may only ever shrink — the
  * `eslint-suppressions.json` / A7.20 pattern. It starts empty: the fold that

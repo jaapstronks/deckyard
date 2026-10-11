@@ -1,5 +1,6 @@
 /**
- * D121 B4: one answer per write surface to "is this content valid".
+ * One answer per write surface to "is this content valid" (D121; B257, step
+ * B4).
  *
  * MCP `add_slide` and `update_slide` hold an agent's content to the same
  * `validateSlide` the REST contract uses: what is sent is checked, not

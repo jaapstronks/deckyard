@@ -1,6 +1,6 @@
 /**
- * B431: the Home theme tile shows the ground a new deck in that theme starts
- * on, not a ground of its own.
+ * The Home theme tile shows the ground a new deck in that theme starts on,
+ * not a ground of its own (B431).
  *
  * The tile used to build its sample title slide with `background: 'lime'`
  * hard-coded. A fork theme that neither uses nor colours `lime` (Dreamkit:

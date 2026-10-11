@@ -1,6 +1,6 @@
 /**
- * The client half of B176 / D70: the two shared theme pickers render what the
- * server offers, and nothing else.
+ * The client half of the theme allowlist (B176, D70): the two shared theme
+ * pickers render what the server offers, and nothing else.
  *
  * `server/routes/api/themes.js` now enforces the `enabledThemes` allowlist, so
  * the picker's job shrank to two things, both pinned here:

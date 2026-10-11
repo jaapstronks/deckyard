@@ -1,5 +1,5 @@
 /**
- * B610: one deck translate on three writers.
+ * One deck translate on three writers (B610).
  *
  * The editor's `POST /api/presentations/:id/translate` (and its
  * `/translate/missing`), the public `POST /api/v1/presentations/:id/translate`

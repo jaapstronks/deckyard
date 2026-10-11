@@ -1,5 +1,5 @@
 /**
- * B607: one deck list on three contracts. Home and search (internal), the
+ * One deck list on three contracts (B607). Home and search (internal), the
  * internal shared-with-me list, `GET /api/v1/presentations` and MCP
  * `list_presentations` used to read the organization's rows and decide on
  * their own who sees what — MCP on a bare e-mail comparison that skipped the

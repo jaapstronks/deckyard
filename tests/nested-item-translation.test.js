@@ -1,6 +1,6 @@
 /**
- * B164 — nested item texts survive a round trip through the translate
- * pipeline.
+ * Nested item texts survive a round trip through the translate pipeline
+ * (B164).
  *
  * `text-blocks-slide` is the one registry type with an `items` field inside an
  * `items` field: `rows[].blocks[].title/body`. The translate pipeline used to

@@ -1,7 +1,7 @@
 /**
  * The server-side language merge of a library item (D170, B335).
  *
- * Before B335 a `content` patch left `i18n.versions[dominant]` on the old text,
+ * A `content` patch used to leave `i18n.versions[dominant]` on the old text,
  * and a deck composed from the item (`buildSlidesFromLibraryItems` forwards
  * every version as `contentByLang`) got the stale prose. `mergeLibraryI18n`
  * rebuilds the versions from the new base: the dominant version is the

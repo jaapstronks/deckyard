@@ -1,6 +1,6 @@
 /**
- * B603: a deck composed from library items starts in the language its slides
- * are written in.
+ * A deck composed from library items starts in the language its slides are
+ * written in (B603).
  *
  * `deckLangForLibraryItems` (client/views/slide-library/compose.js) is the one
  * rule both "Use -> New presentation" in the library and the creation view's

@@ -23,13 +23,13 @@
  * Two gates that each refuse exactly whom the other admits. Nothing in the
  * dispatch table says so, and nothing did until this file.
  *
- * Since B365 there is a third endpoint, `GET .../questions/capabilities`, whose
- * whole job is to report those two answers — because the notes companion used
- * to guess them, and guessed `isOrganizationAdmin` for both. The cells at the
- * bottom pin the report against the actions: whatever `capabilities` claims,
- * the matching POST must agree, for the same caller on the same deck. That
- * equality is the thing under test; the individual booleans are just how it is
- * spelled.
+ * There is also a third endpoint (B365), `GET .../questions/capabilities`,
+ * whose whole job is to report those two answers — because the notes companion
+ * used to guess them, and guessed `isOrganizationAdmin` for both. The cells at
+ * the bottom pin the report against the actions: whatever `capabilities`
+ * claims, the matching POST must agree, for the same caller on the same deck.
+ * That equality is the thing under test; the individual booleans are just how
+ * it is spelled.
  *
  * House shape (as in tests/comments-routes-authz.test.js): the exported
  * dispatcher is called with a req/res double over tests/helpers/fake-db.js.

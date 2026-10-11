@@ -1,5 +1,6 @@
 /**
- * B100 — the two route-level catch-all handlers do not leak internal error text.
+ * The two route-level catch-all handlers do not leak internal error text
+ * (B100).
  *
  * `handleExportError()` and `handleNotionError()` pass an `AppError` through
  * (status, code and message are the contract) and answer anything else with a fixed

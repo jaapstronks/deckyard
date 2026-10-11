@@ -20,7 +20,7 @@
  *     `bad_slideIndex`), and prose in `reason` reaches the wire as the
  *     machine-readable `error` code that clients branch on.
  *   - **kind/status agreement** — `kind: 'ours'` means 5xx and `kind: 'caller'`
- *     means 4xx. The pair is the whole point of B104: 65 codes used to fall
+ *     means 4xx. The pair is the whole point of the gate: 65 codes used to fall
  *     through to a `400` default, so a failed insert reported as the caller's
  *     malformed request and never reached a dashboard watching 5xx.
  *   - **liveness** — every code in the register is actually minted somewhere

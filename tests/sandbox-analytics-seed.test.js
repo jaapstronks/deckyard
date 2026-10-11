@@ -1,6 +1,6 @@
 /**
- * B353: opening a sandbox example writes the viewing history it declares, and
- * nothing outside sandbox mode can.
+ * Opening a sandbox example writes the viewing history it declares, and
+ * nothing outside sandbox mode can (B353).
  *
  * The committed examples declare a `sandbox.analytics` profile; the builder
  * turns it into view sessions and slide views (server/sandbox/analytics.js),

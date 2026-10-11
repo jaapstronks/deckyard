@@ -12,8 +12,9 @@
  * and it was losing: four call sites against ten raw `.isAdmin` reads. This
  * file pins the ESLint rule that makes the helper the default, and the
  * helper's own semantics — in particular that a single-workspace instance (no
- * membership role) is unchanged by any of it. Since B171 the helper lives in
- * `shared/`, so the rule covers that tree too and the exemption moved with it.
+ * membership role) is unchanged by any of it. The helper now lives in
+ * `shared/` (B171), so the rule covers that tree too and the exemption moved
+ * with it.
  *
  * Run with: node --test tests/organization-admin-gate.test.js
  */

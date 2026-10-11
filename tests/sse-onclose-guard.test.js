@@ -1,5 +1,5 @@
 /**
- * B404 gate — "the client left" has one spelling on the server:
+ * Gate: "the client left" has one spelling on the server (B404):
  * `openSseStream({ onClose })` for a stream, `clientDisconnectSignal(res)`
  * for everything else. Both read the response.
  *

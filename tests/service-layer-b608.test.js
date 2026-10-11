@@ -1,12 +1,12 @@
 /**
- * B608: one deck save on two contracts. The public `PUT /api/v1/presentations/:id`
- * and the editor's `PUT /api/presentations/:id` each loaded and decided on
- * their own: v1 dropped `ownerEmail`/`createdBy` without a word, answered a
- * storage refusal (`{ ok:false }`) with a 200, loaded the deck twice on a
- * theme switch and left no activity row; the editor's route alone carried the
- * merge options and the trail. Now both ask `savePresentation`
- * (`server/services/save-presentation.js`) and only parse and answer
- * (A7.4, D252–D256).
+ * One deck save on two contracts (B608). The public
+ * `PUT /api/v1/presentations/:id` and the editor's `PUT /api/presentations/:id`
+ * each loaded and decided on their own: v1 dropped `ownerEmail`/`createdBy`
+ * without a word, answered a storage refusal (`{ ok:false }`) with a 200,
+ * loaded the deck twice on a theme switch and left no activity row; the
+ * editor's route alone carried the merge options and the trail. Now both ask
+ * `savePresentation` (`server/services/save-presentation.js`) and only parse
+ * and answer (A7.4, D252–D256).
  *
  * The store: OWNER's deck, shared with COLLAB at `edit`, and nobody else's.
  * Every refusal is asserted against the store, not read off the status code:

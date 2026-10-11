@@ -1,5 +1,5 @@
 /**
- * B510 — uploaded font variants are private media objects, served by the app.
+ * Uploaded font variants are private media objects, served by the app (B510).
  *
  * The contract, end to end over the local provider:
  *
