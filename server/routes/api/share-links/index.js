@@ -17,6 +17,7 @@
  *   POST   /api/share/:token/guest/request        - Request guest email verification
  *   GET    /api/share/:token/guest/verify/:vtoken - Verify guest email & create session
  *   GET    /api/share/:token/guest/me             - Get current guest session info
+ *   POST   /api/share/:token/comments             - A verified guest comments (D228)
  */
 
 import { dispatchRoutes } from '../../../utils/router.js';

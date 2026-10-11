@@ -28,11 +28,12 @@
  * the check is repeated per handler rather than centralised — as many places to
  * get it right as to get it wrong.
  *
- * Guest access (a share-link `share_guest_session`) is a second identity path
- * through the same handlers; its helper logic (`canGuest{Comment,EditComment,
- * DeleteComment}`) is unit-tested, and pinning the route wiring for it needs a
- * seeded share-link + guest session — a distinct fixture noted as a follow-up,
- * not folded in here. The fire-and-forget side effects (notifications, activity
+ * Guest access (a share-link `share_guest_session`) is a second identity: a
+ * guest creates a comment through their own route under the share token
+ * (`POST /api/share/:token/comments`, D228), never through the signed-in
+ * create route, and edits or deletes their own comment through the same
+ * handlers as an account. Both are pinned at the bottom of this file over a
+ * seeded share link and guest session, with a refusal per broken link. The fire-and-forget side effects (notifications, activity
  * events, SSE broadcasts) are the brief's opt-out 5: they settle after the
  * response, so asserting them at the route level is a race.
  *
@@ -71,6 +72,8 @@ const {
   handlePresentationCommentApply,
   handlePresentationCommentsMarkRead,
 } = await import('../server/routes/api/presentations/comments.js');
+const { handleSharePublic } =
+  await import('../server/routes/api/share-links/index.js');
 
 /** @typedef {{email: string, name: string, organizationId: string, isAdmin?: boolean}} Actor */
 
@@ -227,6 +230,48 @@ function commentRow(overrides) {
   };
 }
 
+/** A share link on the deck; its token is its id with `tok-` for `link-`. */
+function shareLinkRow(overrides) {
+  return {
+    organization_id: ORG,
+    presentation_id: DECK,
+    token: overrides.id.replace(/^link-/, 'tok-'),
+    label: null,
+    permission: 'comment',
+    password_hash: null,
+    expires_at: null,
+    max_uses: null,
+    use_count: 0,
+    created_by: ACTORS.owner.email,
+    created_at: '2026-02-01T00:00:00.000Z',
+    last_used_at: null,
+    revoked_at: null,
+    revoked_by: null,
+    revocation_message: null,
+    registration_mode: 'open',
+    ...overrides,
+  };
+}
+
+/**
+ * A guest on `link` with a live session; the session token is
+ * `session-<id>`. Verified unless `verified_at` says otherwise.
+ */
+function guestRow({ id, link, ...overrides }) {
+  return {
+    id,
+    organization_id: ORG,
+    share_link_id: link,
+    email: `${id}@guest.example`,
+    name: id,
+    verified_at: '2026-02-01T00:00:00.000Z',
+    session_token: `session-${id}`,
+    session_expires_at: '2099-01-01T00:00:00.000Z',
+    created_at: '2026-02-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
 /** Reinstall a freshly seeded double and clear the collaborator permission cache. */
 async function seed() {
   db = createFakeDb({
@@ -281,6 +326,13 @@ async function seed() {
         revocation_message: null,
         registration_mode: 'open',
       },
+      // One link per way a guest's link can refuse them (B179), each with a
+      // verified guest holding a live session on it.
+      shareLinkRow({ id: 'link-revoked', revoked_at: '2026-03-01T00:00:00Z' }),
+      shareLinkRow({ id: 'link-expired', expires_at: '2026-03-01T00:00:00Z' }),
+      shareLinkRow({ id: 'link-view', permission: 'view' }),
+      // A link opened to its use limit: the limit counts opens, not comments.
+      shareLinkRow({ id: 'link-used-up', max_uses: 1, use_count: 1 }),
     ],
     share_link_guests: [
       {
@@ -294,6 +346,16 @@ async function seed() {
         session_expires_at: '2099-01-01T00:00:00.000Z',
         created_at: '2026-02-01T00:00:00.000Z',
       },
+      // Requested access on the comment link but never clicked the e-mail.
+      guestRow({
+        id: 'guest-unverified',
+        link: 'link-guests',
+        verified_at: null,
+      }),
+      guestRow({ id: 'guest-revoked', link: 'link-revoked' }),
+      guestRow({ id: 'guest-expired', link: 'link-expired' }),
+      guestRow({ id: 'guest-view', link: 'link-view' }),
+      guestRow({ id: 'guest-used-up', link: 'link-used-up' }),
     ],
   });
   __setTestDb(db);
@@ -379,6 +441,46 @@ async function call(
     ...args,
   );
   return { handled, res };
+}
+
+/**
+ * POST a comment to the share-token route through the public share-link
+ * mount, the way the router reaches it: anonymous, no `authedUser`, no
+ * storage scope. The guest session (if any) rides in the cookie.
+ *
+ * @param {string} token - Share token.
+ * @param {Object} body - JSON request body.
+ * @param {Object} [options]
+ * @param {string} [options.session] - Guest session token for the cookie.
+ * @returns {Promise<Object>} The response double.
+ */
+async function postAsGuest(token, body, { session } = {}) {
+  const payload = JSON.stringify(body);
+  const req = {
+    method: 'POST',
+    headers: {
+      host: 'decks.example.test',
+      'content-type': 'application/json',
+      ...(session ? { cookie: `share_guest_session=${session}` } : {}),
+    },
+    socket: { remoteAddress: '203.0.113.9' },
+    async *[Symbol.asyncIterator]() {
+      yield Buffer.from(payload, 'utf8');
+    },
+  };
+  const res = makeRes();
+  const url = new URL(
+    `http://decks.example.test/api/share/${encodeURIComponent(token)}/comments`,
+  );
+  const handled = await handleSharePublic({
+    repoRoot: process.cwd(),
+    req,
+    res,
+    url,
+    authedUser: null,
+  });
+  assert.equal(handled, true, 'the share-link mount answers the route');
+  return res;
 }
 
 const comments = () => db.__tables.presentation_comments;
@@ -897,15 +999,16 @@ test('mark-read refuses more than 500 ids', async () => {
 
 const asGuest = { cookie: `share_guest_session=${GUEST.sessionToken}` };
 
-test('a verified guest comments under their guest id, and the payload names them', async () => {
+test('a verified guest with no account comments through the share-token route, under their guest id', async () => {
   await seed();
-  const { res } = await call(handlePresentationCommentsCreate, 'POST', {
-    body: { body: 'From the share link', slideId: 's1' },
-    args: [DECK],
-    ...asGuest,
-  });
+  const res = await postAsGuest(
+    'tok-guests',
+    { body: 'From the share link', slideId: 's1' },
+    { session: GUEST.sessionToken },
+  );
 
   assert.equal(res.statusCode, 201);
+  assert.equal(res.body.ok, true);
   const stored = comments().find((c) => c.author_email === GUEST.email);
   assert.equal(
     stored.author_guest_id,
@@ -913,6 +1016,9 @@ test('a verified guest comments under their guest id, and the payload names them
     'the comment is keyed on the guest row — without it the guest owns nothing',
   );
   assert.equal(stored.author_user_id, null, 'a guest has no users.id');
+  assert.equal(stored.presentation_id, DECK, 'the token named the deck');
+  assert.equal(stored.organization_id, ORG, "written in the guest's org");
+  assert.equal(stored.slide_snapshot?.id, 's1', 'the guest path snapshots too');
   assert.deepEqual(
     res.body.comment.author,
     { id: null, displayName: GUEST.name },
@@ -922,14 +1028,130 @@ test('a verified guest comments under their guest id, and the payload names them
   assert.equal(res.body.comment.authorEmail, undefined);
 });
 
-test("a guest can edit and delete their own comment, and nobody else's", async () => {
+test('a guest replies through the share-token route into the thread', async () => {
   await seed();
-  const created = await call(handlePresentationCommentsCreate, 'POST', {
-    body: { body: 'Typo here' },
+  const res = await postAsGuest(
+    'tok-guests',
+    { body: 'Agreed', parentId: 'cm-open' },
+    { session: GUEST.sessionToken },
+  );
+
+  assert.equal(res.statusCode, 201);
+  assert.equal(commentById(res.body.comment.id).parent_id, 'cm-open');
+});
+
+test('a link opened to its use limit still lets its guest comment', async () => {
+  await seed();
+  const res = await postAsGuest(
+    'tok-used-up',
+    { body: 'Still here' },
+    { session: 'session-guest-used-up' },
+  );
+
+  assert.equal(res.statusCode, 201, 'the limit counts opens, not comments');
+});
+
+/**
+ * Each way the share-token route refuses: the status, the envelope's code,
+ * a sentence for the guest, and nothing written.
+ */
+async function assertGuestRefused(res, status, code) {
+  assert.equal(res.statusCode, status);
+  assert.equal(res.body.ok, false);
+  assert.equal(res.body.error, code);
+  assert.equal(typeof res.body.message, 'string');
+  assert.ok(res.body.message.length > 0, 'the refusal says why');
+  assert.equal(comments().length, 3, 'nothing was written');
+}
+
+test('a revoked share link refuses its guest: 410 revoked', async () => {
+  await seed();
+  const res = await postAsGuest(
+    'tok-revoked',
+    { body: 'Too late' },
+    { session: 'session-guest-revoked' },
+  );
+  await assertGuestRefused(res, 410, 'revoked');
+});
+
+test('an expired share link refuses its guest: 410 expired', async () => {
+  await seed();
+  const res = await postAsGuest(
+    'tok-expired',
+    { body: 'Too late' },
+    { session: 'session-guest-expired' },
+  );
+  await assertGuestRefused(res, 410, 'expired');
+});
+
+test('a view-only share link refuses its verified guest: 403 forbidden', async () => {
+  await seed();
+  const res = await postAsGuest(
+    'tok-view',
+    { body: 'May I?' },
+    { session: 'session-guest-view' },
+  );
+  await assertGuestRefused(res, 403, 'forbidden');
+});
+
+test('an unverified guest is refused: 401 unauthorized', async () => {
+  await seed();
+  const res = await postAsGuest(
+    'tok-guests',
+    { body: 'Before the e-mail' },
+    { session: 'session-guest-unverified' },
+  );
+  await assertGuestRefused(res, 401, 'unauthorized');
+});
+
+test('no guest session at all is refused: 401 unauthorized', async () => {
+  await seed();
+  const res = await postAsGuest('tok-guests', { body: 'Drive-by' });
+  await assertGuestRefused(res, 401, 'unauthorized');
+});
+
+test("a guest session on another link does not carry over to this link's token", async () => {
+  await seed();
+  // Verified, but on the view-only link: their session is not one for
+  // `tok-guests`, however the two links' decks relate.
+  const res = await postAsGuest(
+    'tok-guests',
+    { body: 'Borrowed session' },
+    { session: 'session-guest-view' },
+  );
+  await assertGuestRefused(res, 401, 'unauthorized');
+});
+
+test('an unknown share token is refused: 404 not_found', async () => {
+  await seed();
+  const res = await postAsGuest(
+    'tok-nope',
+    { body: 'Hello?' },
+    { session: GUEST.sessionToken },
+  );
+  await assertGuestRefused(res, 404, 'not_found');
+});
+
+test('the signed-in create route has no guest path: a guest session there is refused', async () => {
+  await seed();
+  const { res } = await call(handlePresentationCommentsCreate, 'POST', {
+    body: { body: 'Wrong door' },
     args: [DECK],
     ...asGuest,
   });
-  const mine = created.res.body.comment.id;
+
+  assert.equal(res.statusCode, 403, 'the cookie is not an identity here');
+  assert.equal(comments().length, 3, 'nothing was written');
+});
+
+test("a guest can edit and delete their own comment, and nobody else's", async () => {
+  await seed();
+  const created = await postAsGuest(
+    'tok-guests',
+    { body: 'Typo here' },
+    { session: GUEST.sessionToken },
+  );
+  const mine = created.body.comment.id;
 
   const edit = await call(handlePresentationCommentUpdate, 'PUT', {
     body: { body: 'Typo fixed' },

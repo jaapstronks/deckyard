@@ -28,17 +28,14 @@ import {
   broadcastToPresentation,
   CommentEventTypes,
 } from '../../../services/comment-events.js';
-import {
-  getGuestFromRequest,
-  withPresentationReadAuth,
-} from '../../../utils/route-middleware.js';
+import { withPresentationReadAuth } from '../../../utils/route-middleware.js';
 import { notifyMentionsAdded } from '../../../services/comment-notifications.js';
 import {
   createComment,
+  commentInputFromBody,
   MAX_COMMENT_LENGTH,
   broadcastCommentCounts,
 } from '../../../services/comments.js';
-import { ForbiddenError } from '../../../utils/errors.js';
 import { getString } from '../../../utils/request-validators.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 
@@ -66,11 +63,11 @@ function mayDeleteComment({ authedUser, guestInfo, pres, comment }) {
  * Body: { body, slideId?, parentId?, positionX?, positionY? }
  *
  * The flow is `services/comments.js`; this adapter parses the body and names
- * who is asking. This contract is the one that can carry two credentials at
- * once — a signed-in session and a share-link guest session — and its rule is
- * that the account comments when it may, otherwise the guest session on this
- * deck does. The service decides "may"; a refusal of the account falls back to
- * the guest, never the other way round.
+ * who is asking: the signed-in account, and only that. A share-link guest
+ * comments through their own route under the share token
+ * (`POST /api/share/:token/comments`, `routes/api/share-links/public.js`):
+ * one path per kind of commenter (D228). This route sits behind the login
+ * gate, so a guest session here was never reachable for a guest anyway.
  */
 export async function handlePresentationCommentsCreate(
   { storageScope, req, res, authedUser } = {},
@@ -80,25 +77,11 @@ export async function handlePresentationCommentsCreate(
 
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
-  const body = parsed.body;
-  const input = {
-    presentationId: id,
-    body: body.body,
-    slideId: body.slideId || null,
-    parentId: body.parentId || null,
-    positionX: body.positionX,
-    positionY: body.positionY,
-  };
-
-  let created;
-  try {
-    created = await createComment(storageScope, { actor: authedUser }, input);
-  } catch (err) {
-    if (!(err instanceof ForbiddenError)) throw err;
-    const guestInfo = await getGuestFromRequest(req);
-    if (!guestInfo) throw err;
-    created = await createComment(storageScope, guestInfo, input);
-  }
+  const created = await createComment(
+    storageScope,
+    { actor: authedUser },
+    commentInputFromBody(id, parsed.body),
+  );
 
   serveJson(res, 201, { ok: true, comment: created.comment });
   return true;

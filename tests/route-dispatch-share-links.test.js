@@ -182,6 +182,13 @@ test('share-links: public routes resolve to their named handlers in order', () =
     'handleShareGuestVerify',
   );
   named(PUBLIC_ROUTES, 'GET', '/api/share/tok/guest/me', 'handleShareGuestMe');
+  // B179 (D228): the guest's own comment route, before the login gate.
+  named(
+    PUBLIC_ROUTES,
+    'POST',
+    '/api/share/tok/comments',
+    'handleShareCommentCreate',
+  );
 });
 
 test('share-links: patterns capture ids in handler-argument order', () => {

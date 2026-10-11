@@ -11,10 +11,22 @@
  * @param {() => Promise<void>} [options.beforeCreate] - Awaited before every
  *   create. The editor stores its pending edits here, so a comment on a slide
  *   added a moment ago names a slide the stored deck already holds (B567).
+ * @param {string|null} [options.shareToken] - Set when the commenter is a
+ *   share-link guest: a comment is then created through the guest's own route
+ *   under the token (`POST /api/share/:token/comments`, D228), never the
+ *   signed-in route behind the login gate. Who comments is decided here, once.
  * @returns {Object} API methods for comment operations
  */
-export function createCommentsApi({ api, presentationId, beforeCreate }) {
+export function createCommentsApi({
+  api,
+  presentationId,
+  beforeCreate,
+  shareToken = null,
+}) {
   const pid = presentationId;
+  const createUrl = shareToken
+    ? `/api/share/${encodeURIComponent(shareToken)}/comments`
+    : `/api/presentations/${pid}/comments`;
 
   const listComments = async (opts = {}) => {
     const params = new URLSearchParams();
@@ -56,7 +68,7 @@ export function createCommentsApi({ api, presentationId, beforeCreate }) {
       payload.positionY = positionY;
     }
     await beforeCreate?.();
-    const resp = await api(`/api/presentations/${pid}/comments`, {
+    const resp = await api(createUrl, {
       method: 'POST',
       body: payload,
     });

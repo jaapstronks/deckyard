@@ -91,11 +91,32 @@ export const MAX_COMMENT_LENGTH = 5000;
  */
 
 /**
+ * The create input an internal `/api` request body names: the signed-in route
+ * (`POST /api/presentations/:id/comments`) and the share-link guest route
+ * (`POST /api/share/:token/comments`) take the same body, so they read it the
+ * same way. Validation is {@link createComment}'s.
+ *
+ * @param {string} presentationId - The deck the route resolved.
+ * @param {Object} body - Parsed JSON body.
+ * @returns {Parameters<typeof createComment>[2]}
+ */
+export function commentInputFromBody(presentationId, body) {
+  return {
+    presentationId,
+    body: body?.body,
+    slideId: body?.slideId || null,
+    parentId: body?.parentId || null,
+    positionX: body?.positionX,
+    positionY: body?.positionY,
+  };
+}
+
+/**
  * Create a comment, or a reply when `parentId` is given.
  *
  * @param {StorageScope} scope - The caller's storage scope.
  * @param {ServiceIdentity} identity - `{ actor }`, or `{ guest, shareLink }`
- *   for a share-link guest (internal contract only).
+ *   for a share-link guest (the share-token route only, D228).
  * @param {Object} input
  * @param {string} input.presentationId
  * @param {*} input.body - The comment text; trimmed here.

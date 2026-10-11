@@ -337,6 +337,10 @@ const REASON_BRANCH_EXCEPTIONS = new Map([
     'adds the presentation id to the payload; the status is unaffected',
   ],
   [
+    'server/routes/api/share-links/public.js :: max_uses_exceeded',
+    'the guest comment route (B179) lets a link opened to its use limit through: the limit counts opens (verify), not comments; every refusal it does answer takes its status from the register',
+  ],
+  [
     'server/routes/api/presentations/slide-locks.js :: unavailable',
     'the release path: "nothing to release because there is no lock backend" is a no-op, not a server error, so editor teardown does not log a 500 on file storage',
   ],

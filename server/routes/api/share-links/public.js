@@ -7,6 +7,7 @@
  * POST   /api/share/:token/guest/request              - Request guest email verification
  * GET    /api/share/:token/guest/verify/:vtoken       - Verify guest email & create session
  * GET    /api/share/:token/guest/me                   - Get current guest session info
+ * POST   /api/share/:token/comments                   - A verified guest comments (D228)
  *
  * Form A throughout (route-dispatch.md): the old chain fell through on a
  * method mismatch, no 405. Table order mirrors the old branch order exactly.
@@ -39,9 +40,18 @@ import {
   requireJsonBody,
   serveJson,
   storageError,
+  unauthorized,
 } from '../../../utils/http.js';
 import { getTrimmedString } from '../../../utils/request-validators.js';
-import { canCommentWithShareLink } from '../../../utils/presentation-authz/index.js';
+import {
+  canCommentWithShareLink,
+  canGuestComment,
+} from '../../../utils/presentation-authz/index.js';
+import { getGuestFromRequest } from '../../../utils/route-middleware.js';
+import {
+  commentInputFromBody,
+  createComment,
+} from '../../../services/comments.js';
 import {
   buildRequestUrl,
   shouldUseSecureCookies,
@@ -529,6 +539,79 @@ async function handleShareGuestMe({ req, res }, shareToken) {
 }
 
 /**
+ * What a refused link means to a guest about to comment, by storage reason.
+ * The code is the reason itself; this is only the sentence beside it.
+ */
+const COMMENT_LINK_REFUSALS = {
+  revoked: 'This share link has been revoked',
+  expired: 'This share link has expired',
+  not_found: 'This share link does not exist',
+  invalid: 'This share link does not exist',
+};
+
+/**
+ * POST /api/share/:token/comments — a verified share-link guest comments.
+ * Body: { body, slideId?, parentId?, positionX?, positionY? } (the same body
+ * the signed-in route takes).
+ *
+ * The guest's own path (B179, D228): the signed-in route sits behind the
+ * login gate, so a guest without an account got a 401 there and guest
+ * commenting never worked. Here the share token addresses the deck and the
+ * guest session cookie names who is asking; `canGuestComment` is the one
+ * guard (verified guest, a link on this deck with `comment` permission, not
+ * revoked, not expired). The refusals, in order:
+ *
+ *   - the link itself is gone: its storage reason (`revoked`, `expired`: 410;
+ *     `not_found`: 404). The use limit is not checked here: it counts opens
+ *     of the link (`verify`), and a guest commenting already opened it;
+ *   - no verified guest session for *this* link: 401 `unauthorized` (a
+ *     session on another link does not carry over);
+ *   - the link does not allow commenting (view-only): 403 `forbidden`.
+ *
+ * The write is scoped to the organization the guest row lives in, since an
+ * anonymous request has none of its own.
+ */
+async function handleShareCommentCreate({ repoRoot, req, res }, token) {
+  const validation = await validateShareLink(token);
+  if (!validation.ok && validation.reason !== 'max_uses_exceeded') {
+    storageError(res, validation, COMMENT_LINK_REFUSALS[validation.reason]);
+    return true;
+  }
+
+  const session = await getGuestFromRequest(req);
+  const guestInfo = session?.shareLink?.token === token ? session : null;
+  if (!guestInfo) {
+    return unauthorized(
+      res,
+      'Verify your email address through this share link to comment',
+    );
+  }
+
+  const { guest, shareLink, organizationId } = guestInfo;
+  if (
+    !canGuestComment({
+      guest,
+      shareLink,
+      presentationId: shareLink.presentationId,
+    })
+  ) {
+    return forbidden(res, 'This share link does not allow commenting');
+  }
+
+  const parsed = await requireJsonBody(req, res);
+  if (!parsed.ok) return true;
+
+  const created = await createComment(
+    { repoRoot, organizationId, actorEmail: null },
+    { guest, shareLink },
+    commentInputFromBody(shareLink.presentationId, parsed.body),
+  );
+
+  serveJson(res, 201, { ok: true, comment: created.comment });
+  return true;
+}
+
+/**
  * Public routes in the old chain's exact order (`render-slide`, B287, joined
  * after `verify`, whose grant it asks for). `/api/share/:token` is a
  * single-segment match (`[^/]+`), so it cannot swallow the deeper
@@ -572,6 +655,12 @@ export const PUBLIC_ROUTES = [
     pattern: /^\/api\/share\/([^/]+)\/guest\/me$/,
     captures: ['text'],
     handler: handleShareGuestMe,
+  },
+  {
+    method: 'POST',
+    pattern: /^\/api\/share\/([^/]+)\/comments$/,
+    captures: ['text'],
+    handler: handleShareCommentCreate,
   },
 ];
 
