@@ -22,24 +22,35 @@ export function getPhase1SlideTypes() {
 }
 
 /**
+ * The core types an organization is offered: the catalog minus what the
+ * organization turned off and minus the definitions that opted out of agent
+ * use. Every agent-facing path derives from this one list, so a type is
+ * accepted exactly where it is offered.
+ * @param {Array} [disabledSlideTypes] - Org-level disabled types to exclude
+ * @returns {string[]} Array of slide type names
+ */
+export function getOfferedSlideTypes(disabledSlideTypes = []) {
+  const disabled = new Set(
+    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
+  );
+  return (
+    Object.keys(SLIDE_TYPE_CATALOG)
+      .filter((type) => !disabled.has(type))
+      // A catalog entry is not by itself permission to offer the type: the
+      // definition's opt-out wins, so the flag means the same thing on every
+      // agent-facing path (see isAgentOptOut).
+      .filter((type) => !SLIDE_TYPES[type] || !isAgentOptOut(SLIDE_TYPES[type]))
+  );
+}
+
+/**
  * Get slide types for Phase 2 (content refinement phase)
  * @param {Array} [disabledSlideTypes] - Org-level disabled types to exclude
  * @returns {string[]} Array of slide type names
  */
 export function getPhase2SlideTypes(disabledSlideTypes = []) {
-  const disabled = new Set(
-    Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
-  );
-  return (
-    Object.entries(SLIDE_TYPE_CATALOG)
-      .filter(([type, def]) => !def.resolveInPhase1 && !disabled.has(type))
-      // A catalog entry is not by itself permission to offer the type: the
-      // definition's opt-out wins, so the flag means the same thing on every
-      // agent-facing path (see isAgentOptOut).
-      .filter(
-        ([type]) => !SLIDE_TYPES[type] || !isAgentOptOut(SLIDE_TYPES[type]),
-      )
-      .map(([type]) => type)
+  return getOfferedSlideTypes(disabledSlideTypes).filter(
+    (type) => !SLIDE_TYPE_CATALOG[type].resolveInPhase1,
   );
 }
 

@@ -10,6 +10,7 @@ import { requestChatCompletionContent, LlmError } from '../llm/index.js';
 import { extractJsonObject } from '../openai/json.js';
 import {
   SLIDE_TYPE_CATALOG,
+  getOfferedSlideTypes,
   getPhase2SlideTypes,
   buildCustomSlideTypeSections,
 } from './slide-catalog/index.js';
@@ -32,10 +33,10 @@ const SUGGESTION_CATEGORIES = [
 ];
 
 /**
- * The slide types a `proposedSlide` may name: the catalog's and the
- * organization's published ones, minus what the organization turned off.
- * The same offer the prompt shows, so a proposal is accepted exactly when it
- * was offered.
+ * The slide types a `proposedSlide` may name: the core types the organization
+ * is offered (phase 1 included, the prompt asks for chapter dividers) and its
+ * published ones, minus what it turned off. The same derivation the prompt
+ * shows, so a proposal is accepted exactly when it was offered.
  * @param {{ disabledSlideTypes?: string[], customSlideTypes?: Array }} offer
  * @returns {Set<string>}
  */
@@ -43,14 +44,10 @@ function offeredSlideTypes({ disabledSlideTypes = [], customSlideTypes = [] }) {
   const disabled = new Set(
     Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
   );
-  return new Set(
-    [
-      ...Object.keys(SLIDE_TYPE_CATALOG),
-      ...(Array.isArray(customSlideTypes) ? customSlideTypes : []).map(
-        customSlideTypeKey,
-      ),
-    ].filter((type) => !disabled.has(type)),
-  );
+  const custom = (Array.isArray(customSlideTypes) ? customSlideTypes : [])
+    .map(customSlideTypeKey)
+    .filter((type) => !disabled.has(type));
+  return new Set([...getOfferedSlideTypes(disabledSlideTypes), ...custom]);
 }
 
 /**
