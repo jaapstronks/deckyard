@@ -6,40 +6,30 @@
  * log content loss (for prompt improvement) and to report unknown fields.
  */
 
-import { SLIDE_TYPES } from '../../../../shared/slide-types/registry.js';
 import { declaredContentKeys } from '../../../../shared/slide-types/declared-keys.js';
 import { logValidation } from './logging.js';
-
-/**
- * The keys a slide of this type may carry: `declaredContentKeys()`, the one
- * predicate strict validation and the deck import read as well. A list of its
- * own here named only `fields[]`, the a11y pair and the contrast keys, so it
- * logged an instance key such as a poll's `pollId` as content loss on a slide
- * strict accepts (B242).
- *
- * @param {string} slideType - The slide type name (e.g., 'content-slide')
- * @returns {ReadonlySet<string>}
- */
-function getValidFieldKeys(slideType) {
-  return declaredContentKeys(SLIDE_TYPES[slideType]);
-}
 
 /**
  * Check for unknown fields in slide content that the slide type doesn't support.
  * Logs warnings for debugging and prompt improvement.
  *
- * @param {string} slideType - The slide type name
+ * The valid keys are `declaredContentKeys()`, the one predicate strict
+ * validation and the deck import read as well (B242), taken off the
+ * definition the caller resolved in its own map, so an organization's type is
+ * read as itself (B247).
+ *
+ * @param {Object|undefined} def - The slide type definition
  * @param {Object} content - The slide content object
- * @param {Object} context - Additional context for logging
+ * @param {Object} context - Additional context for logging (`slideType`, …)
  */
-export function checkForUnknownFields(slideType, content, context = {}) {
+export function checkForUnknownFields(def, content, context = {}) {
   if (!content || typeof content !== 'object') return;
-  if (!SLIDE_TYPES[slideType]) {
+  if (!def) {
     // Unknown slide type - can't validate fields
     return;
   }
 
-  const validKeys = getValidFieldKeys(slideType);
+  const validKeys = declaredContentKeys(def);
   const contentKeys = Object.keys(content);
   const unknownKeys = contentKeys.filter((key) => !validKeys.has(key));
 
@@ -54,7 +44,6 @@ export function checkForUnknownFields(slideType, content, context = {}) {
 
     if (unknownWithContent.length > 0) {
       logValidation('unknown-fields', {
-        slideType,
         unknownFields: unknownWithContent,
         // Include sample values for debugging (truncated)
         sampleValues: Object.fromEntries(
@@ -75,15 +64,15 @@ export function checkForUnknownFields(slideType, content, context = {}) {
  * Get unknown fields from slide content (fields that won't be rendered)
  * Useful for debugging and prompt improvement
  *
- * @param {string} slideType - The slide type name
+ * @param {Object|undefined} def - The slide type definition
  * @param {Object} content - The slide content object
  * @returns {Array<string>} Array of unknown field names
  */
-export function getUnknownFields(slideType, content) {
+export function getUnknownFields(def, content) {
   if (!content || typeof content !== 'object') return [];
-  if (!SLIDE_TYPES[slideType]) return [];
+  if (!def) return [];
 
-  const validKeys = getValidFieldKeys(slideType);
+  const validKeys = declaredContentKeys(def);
   return Object.keys(content).filter((key) => {
     if (validKeys.has(key)) return false;
     const value = content[key];

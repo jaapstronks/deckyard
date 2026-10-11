@@ -77,6 +77,8 @@ export async function handleNotionImport({
   // Cancelling is dropping the request: the signal aborts the model calls
   // and the image uploads, and is checked before the presentation is written.
   const signal = clientDisconnectSignal(res);
+  // One map for the AI fix pipeline and the deck import (B247).
+  const slideTypes = await buildMergedSlideTypes(storageScope);
 
   try {
     // Convert the Notion page
@@ -89,6 +91,7 @@ export async function handleNotionImport({
       vendor,
       enableLogging: true,
       signal,
+      slideTypes,
     });
 
     if (!deck || report.errors.length > 0) {
@@ -108,7 +111,7 @@ export async function handleNotionImport({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: effectiveLang,
-      slideTypes: await buildMergedSlideTypes(storageScope),
+      slideTypes,
     });
 
     // The write step: no deck is created for a client that already left.
@@ -244,6 +247,8 @@ export async function handleNotionImportStream({
 
     const statusMessages = [];
     let statusMessagesSent = false;
+    // One map for the AI fix pipeline and the deck import (B247).
+    const slideTypes = await buildMergedSlideTypes(storageScope);
 
     // Convert with streaming callbacks
     const {
@@ -255,6 +260,7 @@ export async function handleNotionImportStream({
       vendor,
       enableLogging: true,
       signal,
+      slideTypes,
       onStatusMessage: (msg) => {
         statusMessages.push(msg);
         // Message only: the bar is owned by the creep until the first section
@@ -359,7 +365,7 @@ export async function handleNotionImportStream({
     const parts = deckToPresentationParts(deck, {
       theme: themeConfig,
       lang: effectiveLang,
-      slideTypes: await buildMergedSlideTypes(storageScope),
+      slideTypes,
     });
 
     const created = await createPresentation(

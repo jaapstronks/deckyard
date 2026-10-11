@@ -14,6 +14,7 @@ import {
   validateAndFixRefinedSlides,
   RawSlideValidationError,
 } from '../server/utils/ai/validate-slides/index.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 
 describe('validateRefinedSlidesStrict', () => {
   it('accepts a valid title + team-cards deck', () => {
@@ -30,12 +31,16 @@ describe('validateRefinedSlidesStrict', () => {
         },
       },
     ];
-    assert.doesNotThrow(() => validateRefinedSlidesStrict(slides));
+    assert.doesNotThrow(() =>
+      validateRefinedSlidesStrict(slides, { slideTypes: SLIDE_TYPES }),
+    );
   });
 
   it('rejects unknown slide type with structured detail', () => {
     try {
-      validateRefinedSlidesStrict([{ type: 'not-a-real-slide', content: {} }]);
+      validateRefinedSlidesStrict([{ type: 'not-a-real-slide', content: {} }], {
+        slideTypes: SLIDE_TYPES,
+      });
       assert.fail('should have thrown');
     } catch (err) {
       assert.ok(err instanceof RawSlideValidationError);
@@ -46,10 +51,13 @@ describe('validateRefinedSlidesStrict', () => {
 
   it('rejects empty items[] on list-slide with minItems detail', () => {
     try {
-      validateRefinedSlidesStrict([
-        { type: 'title-slide', content: { title: 'x' } },
-        { type: 'list-slide', content: { title: 'List', items: [] } },
-      ]);
+      validateRefinedSlidesStrict(
+        [
+          { type: 'title-slide', content: { title: 'x' } },
+          { type: 'list-slide', content: { title: 'List', items: [] } },
+        ],
+        { slideTypes: SLIDE_TYPES },
+      );
       assert.fail('should have thrown');
     } catch (err) {
       assert.ok(err instanceof RawSlideValidationError);
@@ -62,7 +70,7 @@ describe('validateRefinedSlidesStrict', () => {
 
   it('rejects empty slides array', () => {
     assert.throws(
-      () => validateRefinedSlidesStrict([]),
+      () => validateRefinedSlidesStrict([], { slideTypes: SLIDE_TYPES }),
       (err) =>
         err instanceof RawSlideValidationError &&
         err.details.field === 'slides',
@@ -72,9 +80,10 @@ describe('validateRefinedSlidesStrict', () => {
   it('rejects overlong title with maxLength detail', () => {
     const longTitle = 'x'.repeat(500);
     try {
-      validateRefinedSlidesStrict([
-        { type: 'title-slide', content: { title: longTitle } },
-      ]);
+      validateRefinedSlidesStrict(
+        [{ type: 'title-slide', content: { title: longTitle } }],
+        { slideTypes: SLIDE_TYPES },
+      );
       assert.fail('should have thrown');
     } catch (err) {
       assert.ok(err instanceof RawSlideValidationError);
@@ -91,7 +100,7 @@ describe('diffAppliedFixes', () => {
       { type: 'title-slide', content: { title: 'x'.repeat(500) } },
     ];
     assert.throws(
-      () => validateAndFixRefinedSlides(input),
+      () => validateAndFixRefinedSlides(input, { slideTypes: SLIDE_TYPES }),
       /exceeds max length/,
     );
     assert.equal(input[0].content.title.length, 500);
@@ -110,6 +119,7 @@ describe('diffAppliedFixes', () => {
     ];
     const fixed = validateAndFixRefinedSlides(
       input.map((s) => ({ type: s.type, content: s.content })),
+      { slideTypes: SLIDE_TYPES },
     );
     const fixes = diffAppliedFixes(input, fixed);
     assert.ok(
@@ -122,6 +132,7 @@ describe('diffAppliedFixes', () => {
     const input = [{ type: 'title-slide', content: { title: 'Hello' } }];
     const fixed = validateAndFixRefinedSlides(
       input.map((s) => ({ type: s.type, content: s.content })),
+      { slideTypes: SLIDE_TYPES },
     );
     const fixes = diffAppliedFixes(input, fixed);
     assert.deepStrictEqual(fixes, []);

@@ -44,6 +44,9 @@ export { SUPPORTED_EXTENSIONS, SUPPORTED_MIME_TYPES };
  * @param {AbortSignal} [options.signal] - Cancels the conversion: it reaches
  *   both model phases and is checked before every image upload, so a caller
  *   whose reader left stops instead of converting for nobody.
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged type map (`buildMergedSlideTypes(scope)`); the AI slides are fixed
+ *   against it (B247).
  * @returns {Promise<{deck: object|null, report: object}>}
  */
 export async function convertFile(buffer, options = {}) {
@@ -57,6 +60,7 @@ export async function convertFile(buffer, options = {}) {
     onOutlineComplete = null,
     onGroupDone = null,
     signal = null,
+    slideTypes,
   } = options;
 
   const report = {
@@ -201,6 +205,7 @@ export async function convertFile(buffer, options = {}) {
       aiSlideIndexOffset, // Offset to apply to AI slide indices for correct ordering
       titleSlideCandidate, // Pre-extracted title slide from image-only first slide
       signal,
+      slideTypes,
     });
 
     // Include status messages in report

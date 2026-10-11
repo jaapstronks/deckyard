@@ -20,6 +20,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { refineSlideGroup } from '../server/utils/ai/refine-slides.js';
+import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { resolveAgentSlideTypes } from '../server/utils/ai/slide-catalog/agent-catalog.js';
 import { SLIDE_TYPE_CATALOG } from '../server/utils/ai/slide-type-catalog.js';
 
@@ -69,7 +70,11 @@ for (const lang of ['nl', 'en-GB']) {
           roughContent: 'Source.',
         })),
       };
-      const slides = await refineSlideGroup(group, { lang, vendor: 'openai' });
+      const slides = await refineSlideGroup(group, {
+        lang,
+        vendor: 'openai',
+        slideTypes: SLIDE_TYPES,
+      });
       assert.deepEqual(
         slides.map((s) => s.type),
         examples.map(([type]) => type),

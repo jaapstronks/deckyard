@@ -21,7 +21,7 @@ import {
   SlideTextLengthError,
   validateAndFixSlide,
 } from './validate-slides/index.js';
-import { SLIDE_TYPES } from '../../../shared/slide-types/registry.js';
+import { customSlideTypeKey } from '../../../shared/slide-types/custom-type-runtime.js';
 import { prompts } from './prompts/index.js';
 import { createLogger } from '../logger.js';
 
@@ -31,8 +31,15 @@ const log = createLogger('refine-slides');
  * Map intent to allowed slide types
  * @param {string} intent
  * @param {Array} [disabledSlideTypes] - Org-level disabled types to exclude
+ * @param {Array} [customSlideTypes] - The org's published types; the catalog
+ *   offered them for content slides, so a content slide may come back as one
+ *   (B247)
  */
-function getAllowedTypesForIntent(intent, disabledSlideTypes = []) {
+function getAllowedTypesForIntent(
+  intent,
+  disabledSlideTypes = [],
+  customSlideTypes = [],
+) {
   const disabled = new Set(
     Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
   );
@@ -55,10 +62,15 @@ function getAllowedTypesForIntent(intent, disabledSlideTypes = []) {
       return filter(['payoff-slide', 'content-slide']);
     case 'content':
     default:
-      // All Phase 2 slide types (excluding org-disabled)
-      return Object.entries(SLIDE_TYPE_CATALOG)
-        .filter(([type, def]) => !def.resolveInPhase1 && !disabled.has(type))
-        .map(([type]) => type);
+      // All Phase 2 slide types and the org's own (excluding org-disabled)
+      return [
+        ...Object.entries(SLIDE_TYPE_CATALOG)
+          .filter(([, def]) => !def.resolveInPhase1)
+          .map(([type]) => type),
+        ...(Array.isArray(customSlideTypes) ? customSlideTypes : []).map(
+          customSlideTypeKey,
+        ),
+      ].filter((type) => !disabled.has(type));
   }
 }
 
@@ -107,11 +119,20 @@ export function buildAdjacentContext(slideGroup, allGroups, groupIndex) {
 
 /**
  * Normalize and validate refined slide output
+ *
+ * @param {Object} slide
+ * @param {Object} originalSlide
+ * @param {{ slideTypes: Record<string, Object>, disabledSlideTypes?: Array, customSlideTypes?: Array }} options
  */
-function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
+function normalizeRefinedSlide(
+  slide,
+  originalSlide,
+  { slideTypes, disabledSlideTypes = [], customSlideTypes = [] },
+) {
   const allowedTypes = getAllowedTypesForIntent(
     originalSlide.intent,
     disabledSlideTypes,
+    customSlideTypes,
   );
   let type = String(slide?.type || 'content-slide').trim();
   const content = slide?.content || {};
@@ -136,7 +157,7 @@ function normalizeRefinedSlide(slide, originalSlide, disabledSlideTypes = []) {
   // check: the per-type validator table that stood beside it restated
   // cardinality and per-item fields, and for funnel, cycle and process read a
   // key the types do not declare (B242).
-  const schemaResult = validateSlideContent(SLIDE_TYPES[type], content);
+  const schemaResult = validateSlideContent(slideTypes[type], content);
   if (!schemaResult.valid && schemaResult.issues.length > 0) {
     log.warn(`Content schema issues for ${type}:`, {
       originalIndex: originalSlide.index,
@@ -261,6 +282,9 @@ function createFallbackSlide(originalSlide) {
  * @param {AbortSignal} [options.signal] - Reaches the provider fetch. A
  *   cancelled call is not a failed call: it propagates instead of retrying
  *   into a fallback slide.
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged map (`buildMergedSlideTypes(scope)`); a refined slide is held to the
+ *   limits of the type as the org has it (B247).
  * @returns {Promise<Array>} Refined slides
  */
 export async function refineSlideGroup(
@@ -275,8 +299,14 @@ export async function refineSlideGroup(
     customSlideTypes = [],
     themeContext = null,
     signal = null,
+    slideTypes,
   } = {},
 ) {
+  if (!slideTypes || typeof slideTypes !== 'object') {
+    throw new TypeError(
+      'refineSlideGroup: pass the slide-type map the slides are made in',
+    );
+  }
   const startTime = Date.now();
   const { vendor: resolvedVendor, apiKey, model } = getLlmConfig({ vendor });
   const { slides, groupId } = slideGroup;
@@ -346,25 +376,25 @@ export async function refineSlideGroup(
             slides.find((s) => s.index === refined?.originalIndex) ||
             slides[pos];
           if (!original) continue;
-          const normalized = normalizeRefinedSlide(
-            refined,
-            original,
+          const normalized = normalizeRefinedSlide(refined, original, {
+            slideTypes,
             disabledSlideTypes,
-          );
-          assertSlideTextLengths(normalized, SLIDE_TYPES[normalized.type]);
+            customSlideTypes,
+          });
+          assertSlideTextLengths(normalized, slideTypes[normalized.type]);
           // A rewrite must supply valid content itself, before structural
           // normalization can fill missing values or repair malformed items.
           if (
             lengthFailure &&
-            !validateSlideContent(SLIDE_TYPES[normalized.type], refined.content)
+            !validateSlideContent(slideTypes[normalized.type], refined.content)
               .valid
           ) {
             throw lengthFailure;
           }
           // Structural repair can expose text that the raw schema cannot see
           // (for example array table rows). Refuse it within the same retry.
-          const fixed = validateAndFixSlide(normalized);
-          assertSlideTextLengths(fixed, SLIDE_TYPES[fixed.type]);
+          const fixed = validateAndFixSlide(normalized, { slideTypes });
+          assertSlideTextLengths(fixed, slideTypes[fixed.type]);
         }
         break;
       }
@@ -453,7 +483,11 @@ export async function refineSlideGroup(
 
     usedOriginalIndexes.add(originalSlide.index);
     refinedSlides.push(
-      normalizeRefinedSlide(refined, originalSlide, disabledSlideTypes),
+      normalizeRefinedSlide(refined, originalSlide, {
+        slideTypes,
+        disabledSlideTypes,
+        customSlideTypes,
+      }),
     );
   }
 
@@ -531,6 +565,8 @@ function getPhase2StatusMessages(lang) {
  * @param {AbortSignal} [options.signal] - Passed to every group call and
  *   checked between batches, so a cancelled caller stops after the batch in
  *   flight instead of working through the remaining groups.
+ * @param {Record<string, Object>} options.slideTypes - The organization's
+ *   merged map, handed to every group call.
  * @returns {Promise<Array>} All refined slides in order
  */
 export async function refineAllSlideGroups(
@@ -547,6 +583,7 @@ export async function refineAllSlideGroups(
     customSlideTypes = [],
     themeContext = null,
     signal = null,
+    slideTypes,
   } = {},
 ) {
   const allRefinedSlides = [];
@@ -595,6 +632,7 @@ export async function refineAllSlideGroups(
           customSlideTypes,
           themeContext,
           signal,
+          slideTypes,
         }).then((refinedSlides) => {
           // Track resolved types for adjacent context
           group.resolvedTypes = refinedSlides.map((s) => s.type);
