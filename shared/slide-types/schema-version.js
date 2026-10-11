@@ -53,7 +53,7 @@ import { foldTextStylesToOffers } from './text-styles.js';
 import { DECK_FORMAT_ID, RETIRED_DECK_FORMAT_ID } from './deck-format-id.js';
 
 /** The schema version every freshly written deck is stamped with. */
-export const CURRENT_SCHEMA_VERSION = 20;
+export const CURRENT_SCHEMA_VERSION = 21;
 
 /**
  * A legacy numbered key: `row{N}…` (Count, Color, Enabled, Title, Block{M}Title,
@@ -1049,6 +1049,40 @@ function foldImageSlideLayout(pres) {
 }
 
 /**
+ * v20 -> v21: image-slide read its alt text as `alt || altNl || altEn`, so a
+ * deck from before the per-language alt was dropped kept two more spellings of
+ * one field alive in every reader. The image-text -> image-set fold (v14 ->
+ * v15) already retired them on that type; on image-slide they were never
+ * folded, only read.
+ *
+ * Here the fold runs once, on every copy of every image-slide: an `alt` of the
+ * slide's own wins, else the first non-empty legacy value becomes `alt`, and
+ * both legacy keys are deleted either way. Render-equivalent by construction:
+ * the resolver applied the same precedence. Idempotent: after one run no
+ * image-slide carries `altNl` or `altEn`.
+ *
+ * @param {any} pres
+ * @returns {any}
+ */
+function foldImageSlideLegacyAlt(pres) {
+  const str = (v) => (typeof v === 'string' ? v.trim() : '');
+  for (const slide of eachSlide(pres)) {
+    if (!slide || slide.type !== 'image-slide') continue;
+    const content = slide.content;
+    if (!content || typeof content !== 'object') continue;
+    const has = (key) => Object.prototype.hasOwnProperty.call(content, key);
+    if (!has('altNl') && !has('altEn')) continue;
+    if (!str(content.alt)) {
+      const legacy = str(content.altNl) || str(content.altEn);
+      if (legacy) content.alt = legacy;
+    }
+    delete content.altNl;
+    delete content.altEn;
+  }
+  return pres;
+}
+
+/**
  * Ordered migration steps. `SCHEMA_MIGRATIONS[i]` folds the shape version `i`
  * still allowed into the one version `i + 1` requires. No stamp is stored (see
  * the module docstring), so every step runs on every deck, every time - which
@@ -1527,6 +1561,10 @@ export const SCHEMA_MIGRATIONS = [
   // axes `fit` + `bleed` and is deleted (B257-A2, D121 B1). See
   // foldImageSlideLayout.
   foldImageSlideLayout,
+
+  // v20 -> v21: image-slide's legacy per-language alt (`altNl`/`altEn`) folds
+  // into `alt` and is deleted (B257, 80th audit). See foldImageSlideLegacyAlt.
+  foldImageSlideLegacyAlt,
 ];
 
 /**
