@@ -3,10 +3,10 @@
  *
  * `AI_SESSION_LOGS` decides; unset, only a development checkout logs, so
  * production, CI and `npm test` leave `server/logs/ai/` alone. The routes and
- * generators carry no switch of their own: `createSessionLogger()` answers
- * null when the instance does not log, and every caller already skips a null
- * logger. The end-to-end guard, convert and the Notion import writing nothing,
- * is in `tests/ai-paths-org-registry.test.js`.
+ * generators carry no switch of their own: every caller gets a session
+ * logger, and only the two writers ask whether the instance logs. The
+ * end-to-end guard, convert and the Notion import writing nothing, is in
+ * `tests/ai-paths-org-registry.test.js`.
  *
  * Run with: node --test tests/ai-session-logs.test.js
  */
@@ -64,7 +64,6 @@ for (const [label, env, expected] of [
   test(label, (t) => {
     withEnv(t, { AI_SESSION_LOGS: undefined, ...env });
     assert.equal(aiSessionLogsEnabled(), expected);
-    assert.equal(createSessionLogger('s1') !== null, expected);
   });
 }
 
@@ -72,4 +71,12 @@ test('the direct writers refuse when the instance does not log', (t) => {
   withEnv(t, { NODE_ENV: 'development', AI_SESSION_LOGS: 'false' });
   assert.equal(logLlmConversation({ phase: 'outline', sessionId: 's1' }), null);
   assert.equal(logDeckGenerationSession({ sessionId: 's1' }), null);
+});
+
+test('a session logger writes nothing when the instance does not log', (t) => {
+  withEnv(t, { NODE_ENV: 'development', AI_SESSION_LOGS: 'false' });
+  const logger = createSessionLogger('s1');
+  logger.logPhase1({ systemPrompt: 'x' });
+  logger.logPhase2Call({ systemPrompt: 'y' });
+  assert.equal(logger.finalize({ slides: [] }), null);
 });

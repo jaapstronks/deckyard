@@ -113,7 +113,7 @@ export async function handleAiWizardV2Stream({
       targetLang: lang,
       vendor,
       targetLength,
-      onLog: logger ? (data) => logger.logPhase1(data) : null,
+      onLog: (data) => logger.logPhase1(data),
       signal,
     });
 
@@ -161,7 +161,7 @@ export async function handleAiWizardV2Stream({
           title: outline.title,
           summary: outline.summary,
         },
-        onLog: logger ? (data) => logger.logPhase2Call(data) : null,
+        onLog: (data) => logger.logPhase2Call(data),
         signal,
         ...slideTypeOffer,
         themeContext,
@@ -276,13 +276,11 @@ export async function handleAiWizardV2Stream({
     });
 
     // Finalize logging
-    if (logger) {
-      logger.finalize(deck, {
-        sessionId,
-        totalSlides: updated.slides?.length || 0,
-        endpoint: 'wizard-v2/stream',
-      });
-    }
+    logger.finalize(deck, {
+      sessionId,
+      totalSlides: updated.slides?.length || 0,
+      endpoint: 'wizard-v2/stream',
+    });
 
     // Send final result
     sseWrite(res, {
@@ -309,12 +307,10 @@ export async function handleAiWizardV2Stream({
     log.error('[AI Wizard V2 Stream] Error:', e);
 
     // Log the error too
-    if (logger) {
-      try {
-        logger.finalize({ error: e?.message }, { sessionId, failed: true });
-      } catch {
-        /* ignore logging errors */
-      }
+    try {
+      logger.finalize({ error: e?.message }, { sessionId, failed: true });
+    } catch {
+      /* ignore logging errors */
     }
 
     sseError(res, e?.message || 'Deck generation failed');

@@ -320,7 +320,7 @@ async function convertWithAi(formattedContent, options = {}) {
     userName: metadata?.author || '',
     targetLang: lang === 'auto' ? null : lang,
     vendor,
-    onLog: logger ? (data) => logger.logPhase1(data) : null,
+    onLog: (data) => logger.logPhase1(data),
     signal,
   });
 
@@ -365,7 +365,7 @@ async function convertWithAi(formattedContent, options = {}) {
         title: outline.title,
         summary: outline.summary,
       },
-      onLog: logger ? (data) => logger.logPhase2Call(data) : null,
+      onLog: (data) => logger.logPhase2Call(data),
       onGroupDone,
       signal,
       disabledSlideTypes,
@@ -450,13 +450,11 @@ async function convertWithAi(formattedContent, options = {}) {
   }
 
   // Finalize logging
-  if (logger) {
-    logger.finalize(deck, {
-      sessionId,
-      totalSlides: deck.slides.length,
-      source: 'notion',
-    });
-  }
+  logger.finalize(deck, {
+    sessionId,
+    totalSlides: deck.slides.length,
+    source: 'notion',
+  });
 
   return deck;
 }

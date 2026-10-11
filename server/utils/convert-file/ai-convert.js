@@ -57,7 +57,7 @@ export async function convertWithAi(formattedContent, options = {}) {
     vendor,
     rawFirstSlideTitle:
       titleSlideCandidate?.title || firstSlideContent?.split('\n')[0] || '',
-    onLog: logger ? (data) => logger.logPhase1(data) : null,
+    onLog: (data) => logger.logPhase1(data),
     signal,
   });
 
@@ -100,7 +100,7 @@ export async function convertWithAi(formattedContent, options = {}) {
         title: outline.title,
         summary: outline.summary,
       },
-      onLog: logger ? (data) => logger.logPhase2Call(data) : null,
+      onLog: (data) => logger.logPhase2Call(data),
       onStatusMessage,
       onGroupDone,
       signal,
@@ -239,12 +239,10 @@ export async function convertWithAi(formattedContent, options = {}) {
   deck.lang = deckLang;
 
   // Finalize logging
-  if (logger) {
-    logger.finalize(deck, {
-      source: 'file-convert',
-      originalSlideCount: slideCount,
-    });
-  }
+  logger.finalize(deck, {
+    source: 'file-convert',
+    originalSlideCount: slideCount,
+  });
 
   log.info(`Session ${sessionId} complete, ${deck.slides.length} slides`);
 

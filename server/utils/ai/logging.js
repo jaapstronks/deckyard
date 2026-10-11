@@ -176,12 +176,12 @@ function countSlideTypes(slides) {
 }
 
 /**
- * Create a logger instance for a specific session, or null when this
- * instance does not log (aiSessionLogsEnabled), so callers skip the work.
+ * Create a logger instance for a specific session. Callers always get one;
+ * whether anything reaches disk is decided by the two writers above
+ * (aiSessionLogsEnabled), never by the caller.
  * @param {string} sessionId
  */
 export function createSessionLogger(sessionId) {
-  if (!aiSessionLogsEnabled()) return null;
   const logs = {
     phase1: null,
     phase2Calls: [],
