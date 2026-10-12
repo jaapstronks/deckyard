@@ -1,5 +1,5 @@
 /**
- * App CSS hex colours left after B678. Existing values have a per-file budget;
+ * Remaining app CSS hex colours. Existing values have a per-file budget;
  * each file's budget can only decrease as the colours move to role tokens.
  */
 import { describe, it } from 'node:test';
