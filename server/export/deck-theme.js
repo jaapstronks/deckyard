@@ -49,7 +49,7 @@ import {
   checkThemeRecordFields,
   THEME_RECORD_FIELDS,
 } from '../storage/themes.js';
-import { isValidSlug } from '../storage/utils/index.js';
+import { isValidSlug } from '../../shared/slug.js';
 import { getDefaultThemeId } from '../storage/settings.js';
 import { DEFAULT_THEME_REF } from '../utils/themes.js';
 import { listAllFontFamiliesWithVariants } from '../storage/font-families.js';

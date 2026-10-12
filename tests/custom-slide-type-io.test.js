@@ -4,7 +4,6 @@ import {
   serializeSlideType,
   toPortableDefinition,
   parseImportedSlideType,
-  slugifyLabel,
   deriveUniqueSlug,
   SLIDE_TYPE_ENVELOPE,
 } from '../client/views/settings/slide-type-editor/io.js';
@@ -84,12 +83,6 @@ test('parse rejects a definition with no fields', () => {
   assert.equal(parseImportedSlideType(text).reason, 'missing_fields');
 });
 
-test('slugifyLabel matches the editor/server slug rules', () => {
-  assert.equal(slugifyLabel('My Cool Type!'), 'my-cool-type');
-  assert.equal(slugifyLabel('  spaced  out  '), 'spaced-out');
-  assert.equal(slugifyLabel(''), '');
-});
-
 test('deriveUniqueSlug returns the base slug when free', () => {
   assert.equal(deriveUniqueSlug('My Type', ['other']), 'my-type');
 });
@@ -105,4 +98,9 @@ test('deriveUniqueSlug appends a counter on collision', () => {
 test('deriveUniqueSlug falls back for an empty label', () => {
   assert.equal(deriveUniqueSlug('', []), 'custom-type');
   assert.equal(deriveUniqueSlug('', ['custom-type']), 'custom-type-2');
+});
+
+test('deriveUniqueSlug leaves room for the counter on maximum-length labels', () => {
+  const base = 'a'.repeat(80);
+  assert.equal(deriveUniqueSlug(base, [base]), `${'a'.repeat(78)}-2`);
 });

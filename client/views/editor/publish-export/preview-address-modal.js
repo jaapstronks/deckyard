@@ -1,3 +1,4 @@
+import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createModal } from '../../../lib/dom/modal.js';
 import { h } from '../../../lib/dom/index.js';
@@ -161,6 +162,7 @@ export function openPreviewAddressModal({
   })();
 
   const slugRow = (() => {
+    const slugError = createInlineError();
     const currentSlug =
       typeof pres?.published?.slug === 'string' ? pres.published.slug : '';
     const publishId =
@@ -180,6 +182,7 @@ export function openPreviewAddressModal({
           type: 'button',
           text: t('common.save', 'Save'),
           onclick: async () => {
+            slugError.clear();
             try {
               const resp = await api(`/api/presentations/${id}/publish/slug`, {
                 method: 'PATCH',
@@ -191,7 +194,10 @@ export function openPreviewAddressModal({
               input.value = resp.slug;
               onChange?.();
             } catch (e) {
-              status.textContent = String(e?.message || e);
+              status.textContent = '';
+              slugError.show(String(e?.message || e), {
+                control: e?.details?.field === 'slug' ? input : null,
+              });
             }
           },
         }),
@@ -212,7 +218,7 @@ export function openPreviewAddressModal({
         'Tip: existing links will keep working (they redirect to the new slug).',
       ),
     });
-    wrap.append(head, input, status);
+    wrap.append(head, input, status, slugError.el);
     return wrap;
   })();
 

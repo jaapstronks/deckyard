@@ -1,3 +1,4 @@
+import { generateSlug, isValidSlug } from '../../shared/slug.js';
 /**
  * Storage layer for custom themes.
  * Handles CRUD operations for organization-scoped themes.
@@ -6,7 +7,7 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
-import { withDbGuard, isValidSlug } from './utils/index.js';
+import { withDbGuard } from './utils/index.js';
 import {
   isValidFont,
   DEFAULT_HEADING_FONT,
@@ -520,19 +521,6 @@ function formatTheme(row, { rawConfig = false } = {}) {
   };
   if (row.organization_id) out.organizationId = row.organization_id;
   return out;
-}
-
-/**
- * Generate a URL-safe slug from a label.
- * @param {string} label - Theme label
- * @returns {string} - URL-safe slug
- */
-function generateSlug(label) {
-  return label
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
 }
 
 /**

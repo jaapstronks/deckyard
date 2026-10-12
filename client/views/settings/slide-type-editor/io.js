@@ -9,6 +9,8 @@
  * draft the user reviews and publishes explicitly.
  */
 
+import { generateSlug, MAX_SLUG_LEN } from '../../../../shared/slug.js';
+
 /** Envelope marker written to every exported file. */
 export const SLIDE_TYPE_ENVELOPE = 'deckyard-custom-slide-type';
 const SLIDE_TYPE_ENVELOPE_VERSION = 1;
@@ -94,20 +96,6 @@ export function parseImportedSlideType(text) {
 }
 
 /**
- * Slugify a label the same way the editor and server do, so a client-derived
- * slug matches what the server would generate.
- * @param {string} label
- * @returns {string}
- */
-export function slugifyLabel(label) {
-  return String(label || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-}
-
-/**
  * Derive a slug from `label` that does not collide with any slug in
  * `existingSlugs`, appending `-2`, `-3`, … when needed. Deterministic, so an
  * import never has to interpret a server error string to handle a name clash.
@@ -118,11 +106,11 @@ export function slugifyLabel(label) {
  */
 export function deriveUniqueSlug(label, existingSlugs) {
   const taken = new Set(existingSlugs);
-  const base = slugifyLabel(label) || 'custom-type';
+  const base = generateSlug(label) || 'custom-type';
   if (!taken.has(base)) return base;
-  for (let n = 2; n < 1000; n += 1) {
-    const candidate = `${base}-${n}`.slice(0, 80);
+  for (let n = 2; ; n += 1) {
+    const suffix = `-${n}`;
+    const candidate = `${base.slice(0, MAX_SLUG_LEN - suffix.length).replace(/-+$/, '')}${suffix}`;
     if (!taken.has(candidate)) return candidate;
   }
-  return `${base}-${Date.now()}`.slice(0, 80);
 }

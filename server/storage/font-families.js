@@ -15,6 +15,8 @@
  * exists where external identities *can* appear.
  */
 
+import { generateSlug, isValidSlug } from '../../shared/slug.js';
+
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
@@ -24,13 +26,7 @@ import {
   resolveNamesForAddresses,
   toStoredActorIdentity,
 } from './display-identity.js';
-import {
-  withDbGuard,
-  parseJson,
-  generateSlug,
-  isValidSlug,
-  getUserIdByEmail,
-} from './utils/index.js';
+import { withDbGuard, parseJson, getUserIdByEmail } from './utils/index.js';
 
 const VALID_SOURCES = ['upload', 'adobe', 'monotype', 'google'];
 const VALID_CATEGORIES = ['sans-serif', 'serif', 'display', 'monospace'];

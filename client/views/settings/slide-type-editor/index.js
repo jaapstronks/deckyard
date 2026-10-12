@@ -4,6 +4,8 @@
  * Follows the theme-editor layout pattern.
  */
 
+import { generateSlug, isValidSlug } from '../../../../shared/slug.js';
+
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
@@ -13,30 +15,6 @@ import { createSlideTypePreview } from './preview.js';
 import { fieldProblemMessage } from './field-problem-copy.js';
 import { USAGE_MAX_LENGTH } from '../../../../shared/slide-types/usage.js';
 import { validateCustomFieldDefinitions } from '../../../../shared/slide-types/custom-field-definitions.js';
-
-/**
- * Generate a slug from a label.
- * @param {string} label
- * @returns {string}
- */
-function generateSlug(label) {
-  return String(label || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 80);
-}
-
-/**
- * Validate a slug string.
- * @param {string} slug
- * @returns {boolean}
- */
-function isValidSlug(slug) {
-  if (!slug || typeof slug !== 'string') return false;
-  if (slug.length > 80) return false;
-  return /^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(slug);
-}
 
 /**
  * Try to parse JSON, return null on failure.
@@ -167,7 +145,6 @@ export function createSlideTypeEditor({
     // Auto-generate slug for new types
     if (!isEditing) {
       state.slug = generateSlug(nameInput.value);
-      slugInput.value = state.slug;
     }
     updatePreview();
   });
@@ -186,8 +163,7 @@ export function createSlideTypeEditor({
   });
   if (!isEditing) {
     slugInput.addEventListener('input', () => {
-      state.slug = slugInput.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-      slugInput.value = state.slug;
+      state.slug = slugInput.value;
     });
   }
   const slugHint = h('div', {

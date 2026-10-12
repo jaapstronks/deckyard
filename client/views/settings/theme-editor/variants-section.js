@@ -25,6 +25,8 @@
  * docs/reference/theme-config.md.
  */
 
+import { generateSlug } from '../../../../shared/slug.js';
+
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
@@ -37,16 +39,6 @@ import {
 import { pickTextColorForBg } from '../../../../shared/theme-normalize.js';
 
 const MAX_VARIANTS = 12;
-
-/** Derive a css-class-safe id from a human name. */
-export function slugifyVariantId(name) {
-  return String(name || '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 32)
-    .replace(/-+$/, '');
-}
 
 /**
  * Why this id cannot be used, or '' when it can.
@@ -291,7 +283,7 @@ export function createVariantsSection({ config, colors, onChange }) {
   function add() {
     addError.clear();
     const label = nameInput.value.trim();
-    const id = slugifyVariantId(label);
+    const id = generateSlug(label, { maxLength: 32 });
     const problem = variantIdProblem(
       id,
       list().map((entry) => entry.id),

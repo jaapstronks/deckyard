@@ -56,7 +56,7 @@ each path resolves.
 - `server/storage/cache/` — `permission-cache.js`.
 - `server/storage/utils/` — not a store: the cross-store helpers behind one
   `index.js` seam (`withDbGuard` from `db-guard.js`, `parseJson` /
-  `generateSlug` / `isValidSlug` / `getUserIdByEmail` from `helpers.js`).
+  `getUserIdByEmail` from `helpers.js`). Slug generation and validation live in `shared/slug.js`, shared with the browser.
 - `server/storage/identity-resolver.js` /
   `server/storage/identity-verification.js` — map an external identifier to a
   stable `users.id`, and check that every dual key still agrees (see

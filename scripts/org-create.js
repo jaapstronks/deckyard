@@ -22,6 +22,8 @@
  * Runbook: docs/ops/multi-organization.md.
  */
 
+import { isValidSlug } from '../shared/slug.js';
+
 import { parseArgs } from 'node:util';
 
 import { isCli } from './lib/is-cli.js';
@@ -38,7 +40,6 @@ import {
   createOrganization,
   getMembership,
   getOrganizationBySlug,
-  isValidOrganizationSlug,
 } from '../server/storage/user-organizations/index.js';
 import { getUserByEmailGlobal } from '../server/storage/identity.js';
 import { createUser } from '../server/storage/users.js';
@@ -86,7 +87,7 @@ export async function provisionOrganization(input) {
   const externalId = input.externalId?.trim() || null;
   const ownerEmail = input.ownerEmail ? normalizeEmail(input.ownerEmail) : null;
 
-  if (!isValidOrganizationSlug(slug)) {
+  if (!isValidSlug(slug, { minLength: 2, maxLength: 63 })) {
     return refuse(
       'Slug must be 2-63 characters, lowercase alphanumeric with optional hyphens',
     );
