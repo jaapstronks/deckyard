@@ -586,7 +586,7 @@ One release per round, on a branch, through your own PR:
 
 ### Tag editor import migration (B671, unreleased)
 
-Forks importing `createTagEditor` from `client/views/list/tag-editor.js` must use `client/views/tags/index.js`. The old file is removed without a shim; the editor's behavior and API are unchanged. Import the public seam, not `client/views/tags/tag-editor.js`. On the next release, include this old/new path pair in the breaking notes and apply the beta MINOR override described in [versioning.md](versioning.md).
+Forks using `import { createTagEditor } from './client/views/list/tag-editor.js'` must change the import source to `client/views/tags/index.js`. The old file is removed without a shim; the editor's behavior and API are unchanged. Import the public seam, not `client/views/tags/tag-editor.js`. On the next release, include this old/new path pair in the breaking notes and apply the beta MINOR override described in [versioning.md](versioning.md).
 
 ## Deployment
 
