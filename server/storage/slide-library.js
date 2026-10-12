@@ -844,3 +844,68 @@ async function libraryDisplayNames(rows) {
       ]),
   );
 }
+
+/** Write validated sandbox library seeds in one transaction, preserving stable IDs. */
+export async function upsertSandboxLibrarySeed(
+  scope,
+  { owner, slides, collections },
+) {
+  const { organizationId: orgId } = toStorageContext(
+    scope,
+    'upsertSandboxLibrarySeed',
+  );
+  const slideIds = new Map(slides.map((slide) => [slide.key, slide.id]));
+  await getDb()
+    .transaction()
+    .execute(async (trx) => {
+      for (const slide of slides) {
+        await sql`
+          INSERT INTO slide_library (id, organization_id, owner_email, shelf, name, description,
+            slide_type, theme_id, content, i18n, favorites, created_by, updated_by)
+          VALUES (${slide.id}, ${orgId}, ${owner}, 'organization',
+            ${slide.name}, ${slide.description || null}, ${slide.slideType},
+            ${slide.themeId}, ${JSON.stringify(slide.content)}::jsonb,
+            ${JSON.stringify({ dominant: slide.lang })}::jsonb,
+            '{}'::text[], ${owner}, ${owner})
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name, description = EXCLUDED.description,
+            slide_type = EXCLUDED.slide_type, theme_id = EXCLUDED.theme_id,
+            content = EXCLUDED.content, i18n = EXCLUDED.i18n, trashed_at = NULL, trashed_by = NULL,
+            updated_at = now()
+          WHERE (slide_library.name, slide_library.description, slide_library.slide_type,
+              slide_library.theme_id, slide_library.content, slide_library.i18n,
+              slide_library.trashed_at)
+            IS DISTINCT FROM
+            (EXCLUDED.name, EXCLUDED.description, EXCLUDED.slide_type,
+              EXCLUDED.theme_id, EXCLUDED.content, EXCLUDED.i18n, NULL::timestamptz)
+        `.execute(trx);
+      }
+      for (const collection of collections) {
+        const id = collection.id;
+        await sql`
+          INSERT INTO slide_collections (id, organization_id, owner_email, shelf, name, description,
+            created_by, updated_by)
+          VALUES (${id}, ${orgId}, ${owner}, 'organization', ${collection.name},
+            ${collection.description || null}, ${owner}, ${owner})
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name, description = EXCLUDED.description, updated_at = now()
+          WHERE (slide_collections.name, slide_collections.description)
+            IS DISTINCT FROM (EXCLUDED.name, EXCLUDED.description)
+        `.execute(trx);
+        await trx
+          .deleteFrom('slide_collection_items')
+          .where('collection_id', '=', id)
+          .execute();
+        await trx
+          .insertInto('slide_collection_items')
+          .values(
+            collection.slides.map((key, position) => ({
+              collection_id: id,
+              slide_library_id: slideIds.get(key),
+              position,
+            })),
+          )
+          .execute();
+      }
+    });
+}

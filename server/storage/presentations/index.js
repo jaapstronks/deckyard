@@ -1644,3 +1644,9 @@ export {
   refuseNonCanonicalVersionKeys,
   TRANSLATION_LANGS,
 } from './i18n.js';
+
+export {
+  getPublishedPresentationIds,
+  getCollaboratorCounts,
+} from './list-metadata.js';
+export { getPopularPresentationRows } from './list-metadata.js';

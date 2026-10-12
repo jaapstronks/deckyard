@@ -12,14 +12,15 @@ import {
   truncate,
 } from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
+import { crossOrganizationScope } from '../../server/storage/scope.js';
 import { testScope, otherOrganizationScope } from '../helpers/storage-scope.js';
 import {
   initializeThemeSeeds,
   readCoreThemeSeeds,
   readThemeSeeds,
-  upsertThemeSeeds,
 } from '../../server/utils/theme-seeds.js';
 import {
+  upsertThemeSeeds,
   createTheme,
   deleteTheme,
   getThemeRecord,
@@ -74,7 +75,10 @@ pgDescribe('theme seeds and scope (real PostgreSQL)', () => {
       record: { ...seeds[0].record, label: 'Changed label' },
       hash: 'changed-hash',
     };
-    await upsertThemeSeeds(db, [changed]);
+    await upsertThemeSeeds(
+      crossOrganizationScope(null, 'Test installed theme seeds'),
+      [changed],
+    );
     const row = await db
       .selectFrom('themes')
       .select(['id', 'label'])

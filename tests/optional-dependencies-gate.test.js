@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 /**
  * Optional packages must stay lazy and guarded; static imports make them hard
  * dependencies regardless of whether the feature is enabled.
@@ -309,12 +310,12 @@ for (const [label, body, guarded] of thunkCases) {
 test('every declared optional dependency is used only through guarded dynamic imports', () => {
   const imports = [];
   for (const dir of ['server', 'shared', 'client', 'scripts']) {
-    for (const file of walkJsFiles(new URL(`${dir}/`, root).pathname)) {
+    for (const file of walkJsFiles(fileURLToPath(new URL(`${dir}/`, root)))) {
       if (file.includes('/vendor/')) continue;
       imports.push(
         ...inspect(fs.readFileSync(file, 'utf8'), optional).map((entry) => ({
           ...entry,
-          file: path.relative(root.pathname, file),
+          file: path.relative(fileURLToPath(root), file),
         })),
       );
     }
