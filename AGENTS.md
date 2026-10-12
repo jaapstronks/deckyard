@@ -41,12 +41,7 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
     blame-ignore commit (`git config blame.ignoreRevsFile .git-blame-ignore-revs`
     once per clone): `docs/developer/linting.md` § Formatting.
 
-- **Optional dependencies match how the code loads them**
-  - A package reached only through a gated `await import()` lives in
-    `optionalDependencies`; a statically imported one stays a hard `dependency`
-    even if its feature is off. `ciiic-translation-rules` is fork-only and
-    deliberately undeclared. Current set and rationale:
-    `docs/reference/dynamic-imports.md` § Which packages are optional.
+- **Dependencies**: before changing package declarations or gated imports, read `docs/reference/dynamic-imports.md` § Which packages are optional. It defines hard, optional and fork-only dependencies.
 
 - **Module layout: one folder = one seam**
   - A decomposed unit is a folder `X/` whose `index.js` is the sole public
