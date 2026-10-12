@@ -15,11 +15,11 @@
  * The store: OWNER's Dutch deck with a complete German version, shared with
  * COLLAB at `edit`, and nobody else's. The model is the one way out, so the
  * provider's `fetch` is swapped for a double that answers one translation
- * (ids echoed, titles in the target), following tests/service-layer-b609.test.js.
+ * (ids echoed, titles in the target), following tests/service-layer-presentation-create.test.js.
  * Every refusal is asserted against the store and the model call count, not
  * read off the status code alone.
  *
- * Run with: node --test tests/service-layer-b610.test.js
+ * Run with: node --test tests/service-layer-presentation-translate.test.js
  */
 
 import test from 'node:test';

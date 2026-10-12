@@ -578,6 +578,30 @@ export default [
 
   js.configs.recommended,
 
+  // Native dialogs bypass the shared modal vocabulary, including window.*.
+  {
+    files: ['client/**/*.js'],
+    ignores: ['client/vendor/**'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          checkGlobalObject: true,
+          globals: [
+            {
+              name: 'confirm',
+              message: 'Use confirmModal() from client/lib/dom/modal.js.',
+            },
+            {
+              name: 'prompt',
+              message: 'Use createTextInput() from client/lib/dom/modal.js.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Browser-side source.
   {
     files: ['client/**/*.js'],
@@ -792,6 +816,43 @@ export default [
         'error',
         instanceAdminRestriction,
         ...sharedSilentFailureRules,
+      ],
+    },
+  },
+
+  // Type definitions render pure HTML; runtime effects belong in the client.
+  {
+    files: ['shared/slide-types/types/**/*.js'],
+    rules: {
+      'no-restricted-globals': [
+        'error',
+        {
+          checkGlobalObject: true,
+          globals: [
+            'window',
+            'document',
+            'navigator',
+            'location',
+            'fetch',
+            'XMLHttpRequest',
+            'WebSocket',
+            'EventSource',
+            'setTimeout',
+            'setInterval',
+            'clearTimeout',
+            'clearInterval',
+            'requestAnimationFrame',
+            'cancelAnimationFrame',
+            'requestIdleCallback',
+            'cancelIdleCallback',
+            'MutationObserver',
+            'ResizeObserver',
+            'IntersectionObserver',
+          ].map((name) => ({
+            name,
+            message: 'Slide type modules must render pure HTML.',
+          })),
+        },
       ],
     },
   },

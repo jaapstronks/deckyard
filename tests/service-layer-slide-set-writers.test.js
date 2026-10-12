@@ -15,10 +15,10 @@
  * The store: OWNER's Dutch deck of three slides with a complete German
  * version, and nobody else's. The model is the one way out, so the provider's
  * `fetch` is swapped for a double that answers what the test hands it
- * (following tests/service-layer-b610.test.js). Every refusal is asserted
+ * (following tests/service-layer-presentation-translate.test.js). Every refusal is asserted
  * against the store and the model call count, not read off the message alone.
  *
- * Run with: node --test tests/service-layer-b611.test.js
+ * Run with: node --test tests/service-layer-slide-set-writers.test.js
  */
 
 import test from 'node:test';

@@ -13,9 +13,9 @@
  * a refused save leaves the deck as it was.
  *
  * Handler-import level against the database double, like
- * tests/service-layer-b575.test.js and tests/service-layer-b607.test.js.
+ * tests/service-layer-deck-operations.test.js and tests/service-layer-presentation-list.test.js.
  *
- * Run with: node --test tests/service-layer-b608.test.js
+ * Run with: node --test tests/service-layer-presentation-save.test.js
  */
 
 import test from 'node:test';

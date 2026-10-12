@@ -6,7 +6,7 @@
  * no decks means no comments, a missing scope throws, and odd inputs (bad
  * status, oversized limit) never throw. Which decks are read is the comment
  * service's choice (`listRecentComments`, B618), pinned in
- * tests/service-layer-b618.test.js.
+ * tests/service-layer-recent-comments.test.js.
  *
  * Run with: node --test tests/presentation-comments-recent.test.js
  */

@@ -14,9 +14,9 @@
  * deck. Each carries one comment, so the deck set reads off the comment ids.
  *
  * Handler-import level against the database double, like
- * tests/service-layer-b607.test.js.
+ * tests/service-layer-presentation-list.test.js.
  *
- * Run with: node --test tests/service-layer-b618.test.js
+ * Run with: node --test tests/service-layer-recent-comments.test.js
  */
 
 import test from 'node:test';

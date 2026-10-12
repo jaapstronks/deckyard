@@ -24,7 +24,7 @@
  * Handler-import level against the database double, like the neighbours
  * (tests/public-api-v1-comments.test.js, tests/visibility-change-authz.test.js).
  *
- * Run with: node --test tests/service-layer-b575.test.js
+ * Run with: node --test tests/service-layer-deck-operations.test.js
  */
 
 import test from 'node:test';
