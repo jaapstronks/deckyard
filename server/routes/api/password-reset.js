@@ -16,6 +16,7 @@ import {
 } from '../../auth/auth.js';
 import {
   badRequest,
+  jsonError,
   requireJsonBody,
   serveJson,
   storageError,
@@ -404,9 +405,14 @@ async function handleChangePassword({ repoRoot, req, res }) {
       metadata: { reason: 'invalid_current_password' },
     });
 
-    return badRequest(
+    // A code of its own, so the form branches on it rather than on the
+    // (translated) sentence, and names the field it refuses (B674).
+    return jsonError(
       res,
+      400,
+      'current_password_incorrect',
       t('api.error.currentPasswordIncorrect', 'Current password is incorrect'),
+      { details: { field: 'currentPassword' } },
     );
   }
 

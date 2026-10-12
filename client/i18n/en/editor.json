@@ -76,7 +76,6 @@
   "dataSource.connected": "Connected to {provider}",
   "dataSource.disconnect": "Disconnect",
   "dataSource.disconnect.title": "Remove data source connection",
-  "dataSource.error": "Error: {message}",
   "dataSource.fetching": "Fetching data…",
   "dataSource.field.csvUrl": "CSV URL",
   "dataSource.field.databaseId": "Database ID or URL",

@@ -73,7 +73,6 @@
   "dataSource.connected": "Connecté à {provider}",
   "dataSource.disconnect": "Déconnecter",
   "dataSource.disconnect.title": "Supprimer la connexion à la source de données",
-  "dataSource.error": "Erreur : {message}",
   "dataSource.fetching": "Récupération des données…",
   "dataSource.field.csvUrl": "URL du CSV",
   "dataSource.field.databaseId": "ID ou URL de la base de données",
