@@ -32,7 +32,7 @@ export function createTrashView({ api, renderCard }) {
   });
   const trashList = h('div', { class: 'list presentation-grid' });
   const trashEmpty = h('div', {
-    class: 'help',
+    class: 'empty-note',
     text: t('list.trash.empty', 'Trash is empty.'),
   });
   const trashLoading = h('div', {

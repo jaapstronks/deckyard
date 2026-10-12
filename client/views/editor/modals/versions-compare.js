@@ -362,7 +362,9 @@ export function openVersionCompareModal({
           }
           currentCell.append(thumb);
         } else {
-          currentCell.append(h('div', { class: 'compare-empty', text: '—' }));
+          currentCell.append(
+            h('div', { class: 'empty-note compare-placeholder', text: '—' }),
+          );
         }
 
         // Category indicator
@@ -414,7 +416,9 @@ export function openVersionCompareModal({
           }
           snapshotCell.append(thumb);
         } else {
-          snapshotCell.append(h('div', { class: 'compare-empty', text: '—' }));
+          snapshotCell.append(
+            h('div', { class: 'empty-note compare-placeholder', text: '—' }),
+          );
         }
 
         row.append(currentCell, indicator, snapshotCell);

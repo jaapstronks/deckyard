@@ -229,7 +229,7 @@ export function createImageKitPanel({
     if (!list.length) {
       grid.append(
         h('div', {
-          class: 'help',
+          class: 'empty-note',
           text: t('imagekit.noResults', 'No results.'),
         }),
       );

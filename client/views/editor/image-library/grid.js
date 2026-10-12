@@ -74,7 +74,7 @@ export function createImageLibraryGrid({
     if (!filtered.length) {
       grid.append(
         h('div', {
-          class: 'help',
+          class: 'empty-note',
           text: q.trim()
             ? t('imageLibrary.noResults', 'No results.')
             : t('imageLibrary.empty', 'No items in the library yet.'),

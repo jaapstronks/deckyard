@@ -304,7 +304,7 @@ export function renderMembersList(
   if (!members.length) {
     container.append(
       h('div', {
-        class: 'help',
+        class: 'empty-note',
         text: t('organization.members.empty', 'No members found.'),
       }),
     );

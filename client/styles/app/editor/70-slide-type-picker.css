@@ -390,19 +390,8 @@
   }
 }
 
-.ps-picker-no-results {
-  padding: var(--ps-space-5) var(--ps-space-3);
-  text-align: center;
-  color: hsl(var(--app-text-secondary));
-  font-size: var(--ps-text-sm);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--ps-space-3);
-}
-
 .ps-picker-ai-hatch {
-  flex: 0 0 auto;
+  margin-top: var(--ps-space-3);
 }
 
 /* ============================================

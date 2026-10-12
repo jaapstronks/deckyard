@@ -194,7 +194,7 @@ export function createPresentationsView({
       if (selectedTags.length > 0 || ownership !== 'all') {
         list.append(
           h('div', {
-            class: 'help',
+            class: 'empty-note',
             text: t(
               'list.presentations.noMatch',
               'No presentations match the selected filters.',
@@ -206,7 +206,7 @@ export function createPresentationsView({
       } else {
         list.append(
           h('div', {
-            class: 'help',
+            class: 'empty-note',
             text: t('list.presentations.empty', 'No presentations yet.'),
           }),
         );
