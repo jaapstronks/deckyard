@@ -192,12 +192,12 @@ not in a copy of its own.
 
 The primitive, the helper and every call site meet the rules above:
 
-| Burndown                                                               | Count   |
-| ---------------------------------------------------------------------- | ------- |
-| Refusals of the form on screen reported in a `toast.error`             | 0       |
-| Hand-rolled inline error classes (message idioms)                      | 0 files |
-| `catch` blocks that discard the server sentence for generic `t()` copy | 0       |
-| Background failures that expire in a toast                             | 0       |
+| Burndown                                                               | Count |
+| ---------------------------------------------------------------------- | ----- |
+| Refusals of the form on screen reported in a `toast.error`             | 0     |
+| Hand-rolled inline error classes (message idioms)                      | None  |
+| `catch` blocks that discard the server sentence for generic `t()` copy | 0     |
+| Background failures that expire in a toast                             | 0     |
 
 No `catch` discards the server sentence any more: one that has the caught
 error hands it over, and a bulk action puts the first failure's sentence after

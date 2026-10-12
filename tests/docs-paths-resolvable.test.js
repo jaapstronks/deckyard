@@ -408,6 +408,17 @@ test('every docs/reference/ doc is linked from the index itself', () => {
   );
 });
 
+test('every developer doc is linked from the developer index', () => {
+  const targets = LINKABLE_DOCS.filter((r) => r.startsWith('docs/developer/'));
+  assert.ok(targets.length > 10, 'expected a populated developer tree');
+  const indexed = linkedTargets(['docs/developer/README.md']);
+  assert.deepEqual(
+    targets.filter((target) => !indexed.has(target)),
+    [],
+    'add missing developer docs to docs/developer/README.md',
+  );
+});
+
 test('every other doc under docs/ is linked from somewhere', () => {
   const targets = LINKABLE_DOCS.filter((r) => !r.startsWith('docs/reference/'));
   const linked = linkedTargets();

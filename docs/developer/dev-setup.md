@@ -405,6 +405,6 @@ ESLint gates CI (`npm run lint` runs before the tests) - see
 
 This project is intentionally dependency-light. Before adding a package:
 
-1. Can you write it in < 100 lines?
+1. Can you write it as a small, focused module?
 2. Is it a single-purpose package?
 3. Does it have minimal dependencies itself?

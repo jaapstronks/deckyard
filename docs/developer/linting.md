@@ -162,7 +162,7 @@ Scoped to `client/**`, this rule rejects `h` arriving as a **parameter**, as a
 [`client/lib/dom/index.js`](../../client/lib/dom/index.js) — and no shadow implementations.
 Even so it used to reach the rest of the client in three spellings at once:
 positional (`createModal(h, opts)`, 153 call sites), an opt-in option with a
-default (`h = defaultH`, 7 helpers), and ~400 lines of `{ h, … }` pass-through
+default (`h = defaultH`, 7 helpers), and `{ h, … }` pass-through plumbing
 across 167 of 503 client modules. Canonical form and injected form sat at
 parity, so every new modal-shaped helper had to pick which of the three to copy
 (A7.33).
@@ -190,8 +190,7 @@ font providers through
 [`client/lib/theme/font-assets.js`](../../client/lib/theme/font-assets.js).
 
 `h()` from `client/lib/dom/index.js` is the first frontend rule in `AGENTS.md` and was
-the last one with no mechanical backing: `h` imported in 302 files against 26
-surviving `document.createElement` sites in 14 (B150). The survivors were
+the last one with no mechanical backing: widespread `h` imports alongside surviving raw `document.createElement` sites (B150). The survivors were
 largely **one recipe written five times** — create the tag, set a property or
 two, dedupe on an `id`, append to the head — and the copies had drifted on the
 one detail that has to agree, the id. The same Google stylesheet was requested
@@ -272,7 +271,7 @@ Scoped to `client/**`, this rule rejects `nav` arriving as a **parameter**, as a
 `nav` is one export of
 [`client/lib/state/router.js`](../../client/lib/state/router.js) — a module
 singleton that pushes history state and re-renders. Exactly one file imported
-it, `client/app.js`; from there it was threaded as an option through 55 modules
+it, `client/app.js`; from there it was threaded as an option through the client module graph
 to reach 54 call sites, sometimes four levels deep, in four spellings at once:
 `nav?.(x)` (54), `if (typeof nav === 'function') nav(x)` (3), `if (nav) nav(x)`
 (1) and bare `nav(x)` (1). A fifth alias, `onNavigate: (path) => nav?.(path)`,
@@ -308,7 +307,7 @@ destructured binding, a locally owned `new Set()`, anywhere.
 
 The set of "close functions of everything currently open" was the optional 4th
 positional argument of `openModal`/`confirmModal`/`promptModal` and travelled as
-~200 pass-through lines through 55 modules. Being **optional** is what made it
+pass-through plumbing through the client module graph. Being **optional** is what made it
 worse than the `h` thread above: a caller that forgot it still compiled, still
 opened its modal, and silently dropped that overlay out of close-all — nothing
 at the call site showed which half of the tree remembered.

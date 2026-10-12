@@ -17,7 +17,7 @@ live with the notification system; this doc covers the sending half.
 
 ## Module map
 
-Transport and senders (`server/integrations/email/`, 7 modules):
+Transport and senders (`server/integrations/email/`):
 
 - `server/integrations/email/index.js` — the barrel; re-exports the transport,
   the template-builder helpers and the three sender families.
@@ -40,7 +40,7 @@ htmlContent, textContent, senderOverride})` (a `POST` to
   `sendExportReadyNotification`. Not re-exported by the barrel; the bulk-export
   worker imports it directly.
 
-Template bodies (`server/integrations/email-templates/`, 7 modules):
+Template bodies (`server/integrations/email-templates/`):
 
 - `server/integrations/email-templates/index.js` — the shared shell:
   `EMAIL_STYLES`, `emailButton`, `emailWrapper`, `troubleClickingFooter`.
@@ -82,7 +82,7 @@ Routes and UI:
 
 - `server/routes/api/email-templates.js` — the admin API under
   `/api/admin/email-templates`.
-- `client/views/settings/email-templates/` (5 modules: `index.js`, `builders.js`,
+- `client/views/settings/email-templates/` (concerns: `index.js`, `builders.js`,
   `state.js`, `actions.js`, `labels.js`) — the admin panel.
 
 Compatibility shim:

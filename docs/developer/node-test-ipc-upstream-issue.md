@@ -24,7 +24,7 @@ to `stdout` (e.g. a CLI/migration module that `console.log`s progress):
 node --test 'tests/**/*.test.js'
 ```
 
-Intermittently (~1 in 4 runs in our suite of ~280 files / ~3160 tests) the run
+Intermittently (~1 in 4 runs in our test suite) the run
 exits non-zero with the offending file reported as failing:
 
 ```
