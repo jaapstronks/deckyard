@@ -1,7 +1,7 @@
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { getFeatures } from '../../../lib/state/features.js';
-import { readFileAsDataUrl } from '../../../lib/util/file.js';
+import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import {
   getAllTags,
   installTagsAutocomplete,

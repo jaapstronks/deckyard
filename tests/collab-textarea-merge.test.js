@@ -1,6 +1,6 @@
 /**
  * Unit tests for the caret remap used when a remote collab edit lands in a
- * focused textarea (client/lib/collab/textarea-merge.js). Pure string math —
+ * focused textarea (client/views/editor/live-edits/textarea-merge.js). Pure string math —
  * the DOM wrapper is exercised in browser verification.
  *
  * Run with: node --test tests/collab-textarea-merge.test.js
@@ -8,7 +8,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { remapOffset } from '../client/lib/collab/textarea-merge.js';
+import { remapOffset } from '../client/views/editor/live-edits/textarea-merge.js';
 
 test('insertion before the caret shifts it right', () => {
   // "abc|def" → remote inserts "XY" at 0 → "XYabc|def"

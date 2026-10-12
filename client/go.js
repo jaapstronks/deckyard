@@ -9,7 +9,7 @@
 
 import { api } from './lib/api.js';
 import { applyViewerUiLocale, t } from './lib/ui-i18n.js';
-import { debugLog } from './lib/util/debug.js';
+import { debugLog } from './lib/state/debug.js';
 
 function $id(id) {
   return document.getElementById(id);

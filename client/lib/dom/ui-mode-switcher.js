@@ -2,10 +2,10 @@ import {
   getUiModePreference,
   setUiModePreference,
   subscribeUiMode,
-} from '../lib/theme/ui-mode.js';
-import { icon } from '../lib/dom/icons.js';
-import { t } from '../lib/ui-i18n.js';
-import { h } from '../lib/dom/index.js';
+} from '../theme/ui-mode.js';
+import { icon } from './icons.js';
+import { t } from '../ui-i18n.js';
+import { h } from './index.js';
 
 function prefLabel(p) {
   if (p === 'light') return t('appearance.light', 'Light');

@@ -106,7 +106,7 @@ const nodeBuiltinImportPatterns = [
 // cannot drift apart on what counts as a swallow; only the remedy in the
 // message differs, because the helpers live in different trees
 // (server/utils/fire-and-forget.js vs client/lib/dom/disposal.js +
-// client/lib/util/debug.js). Hoisted into consts because flat-config rule
+// client/lib/state/debug.js). Hoisted into consts because flat-config rule
 // entries replace rather than merge per rule name: the exemption blocks
 // below re-state their rule lists, and a drifted copy would un-gate this.
 const emptyPromiseCatchSelector =
@@ -148,7 +148,7 @@ const clientSilentFailureRules = [
     message:
       'Empty .catch(() => {}) swallows the rejection without a trace. Give ' +
       'the catch a body that records the failure — debugLog(label, err) from ' +
-      'client/lib/util/debug.js at minimum — or says why it is ignorable ' +
+      'client/lib/state/debug.js at minimum — or says why it is ignorable ' +
       '(B106/B150).',
   },
   {
@@ -158,7 +158,7 @@ const clientSilentFailureRules = [
       'client failure with no trace — the one thing a bug report cannot ' +
       'reconstruct. For disposal/teardown, call disposeAll([...]) from ' +
       'client/lib/dom/disposal.js; otherwise give the catch a body that ' +
-      'records the failure (debugLog from client/lib/util/debug.js) or an ' +
+      'records the failure (debugLog from client/lib/state/debug.js) or an ' +
       'eslint-disable with the reason after `--` (B150).',
   },
   {
@@ -166,7 +166,7 @@ const clientSilentFailureRules = [
     message:
       'void doThing() discards a promise without a catch, so the rejection ' +
       'surfaces as an unhandled rejection with no context. Attach a .catch ' +
-      'that records the failure (debugLog from client/lib/util/debug.js). ' +
+      'that records the failure (debugLog from client/lib/state/debug.js). ' +
       'If the callee is synchronous, drop the `void` — there is no promise ' +
       'to discard (B111/B150).',
   },

@@ -41,8 +41,8 @@
  * so tests can run this against the vendored bundle in Node.
  */
 
-import { patchYText } from '../../../shared/collab/deck-ydoc.js';
-import { isPerLanguageKey } from '../../../shared/slide-types/text-fields.js';
+import { patchYText } from '../../../../shared/collab/deck-ydoc.js';
+import { isPerLanguageKey } from '../../../../shared/slide-types/text-fields.js';
 
 const SERVER_MANAGED_KEYS = new Set([
   'id',

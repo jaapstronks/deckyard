@@ -15,7 +15,7 @@
  *   }
  */
 
-import { HocuspocusProvider, WebSocketStatus } from '../../vendor/collab.js';
+import { HocuspocusProvider, WebSocketStatus } from '../../../vendor/collab.js';
 
 /**
  * Saturated, theme-safe colors for presence rings/outlines. Order matters:

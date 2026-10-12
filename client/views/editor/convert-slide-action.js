@@ -10,7 +10,7 @@
 import { confirmModal } from '../../lib/dom/modal.js';
 import { t } from '../../lib/ui-i18n.js';
 import { toast } from '../../lib/dom/toast.js';
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import {
   convertSlideToType,

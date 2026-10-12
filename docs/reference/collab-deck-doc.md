@@ -70,7 +70,7 @@ load, so a deck edited only through collab can still hold such a field as one
 plain string. The binder handles that on the first local edit: it seeds every
 language from the value it finds before patching the active one, so the
 non-dominant version is never blanked (`writeTextField` in
-`client/lib/collab/live-doc-binder.js`). Any non-collab save drops the binary
+`client/views/editor/live-edits/live-doc-binder.js`). Any non-collab save drops the binary
 and re-bootstraps under the current rule.
 
 **There is no third kind of field.** The one concrete case that raised the

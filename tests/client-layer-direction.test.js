@@ -40,6 +40,22 @@ const viewsRoot = path.join(repoRoot, 'client', 'views');
 const DOM_SEAM = path.join(libRoot, 'dom', 'index.js');
 const API = path.join(libRoot, 'api.js');
 const NET = path.join(libRoot, 'net');
+const LIB_LAYERS = new Set([
+  'dom',
+  'net',
+  'state',
+  'format',
+  'theme',
+  'slide-runtime',
+  'slide-authoring',
+  'qa',
+]);
+const LIB_ROOT_MODULES = new Set([
+  'api.js',
+  'storage.js',
+  'ui-i18n.js',
+  'permission-labels.js',
+]);
 const EXEMPT_FROM_FETCH_AND_RENDER = ['dom', 'slide-runtime'].map((d) =>
   path.join(libRoot, d),
 );
@@ -98,6 +114,30 @@ test('the scan sees client/lib/', () => {
     libModules.length > 50,
     `expected the client/lib/ walk to find modules, found ${libModules.length}`,
   );
+});
+
+test('client/lib contains only the documented layers and root seams (B672)', () => {
+  const entries = fs.readdirSync(libRoot, { withFileTypes: true });
+  const unexpected = entries
+    .filter((entry) =>
+      entry.isDirectory()
+        ? !LIB_LAYERS.has(entry.name)
+        : !entry.isFile() || !LIB_ROOT_MODULES.has(entry.name),
+    )
+    .map((entry) => entry.name);
+  assert.deepEqual(
+    unexpected,
+    [],
+    'Add a layer to AGENTS.md only after deciding its ownership',
+  );
+});
+
+test('client/views has no loose view modules (B672)', () => {
+  const loose = fs
+    .readdirSync(viewsRoot, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.endsWith('.js'))
+    .map((entry) => entry.name);
+  assert.deepEqual(loose, []);
 });
 
 test('no import under client/lib/ lands in client/views/ (D263)', () => {

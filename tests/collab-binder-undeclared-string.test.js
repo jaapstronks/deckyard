@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 const { Y } = await import('../client/vendor/collab.js');
 const { createDeckYdocCodec } = await import('../shared/collab/deck-ydoc.js');
 const { createLiveDocBinder } =
-  await import('../client/lib/collab/live-doc-binder.js');
+  await import('../client/views/editor/live-edits/live-doc-binder.js');
 
 /**
  * A type declaring one text field and one machine value. `legacyTagline` and

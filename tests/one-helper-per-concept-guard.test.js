@@ -3,7 +3,7 @@
  * definition (B675).
  *
  * Before the gate five views hand-rolled `new FileReader()` around the
- * `readFileAsDataUrl()` that already lived in `client/lib/util/file.js`, the
+ * `readFileAsDataUrl()` that already lived in `client/lib/net/file.js`, the
  * image library exported a second function under the same name,
  * `notes-join.js` carried a private copy of the QR canvas renderer, and
  * `clamp` was declared five times across `client/` and `shared/`. Each copy
@@ -63,22 +63,22 @@ function offenders(re, owners) {
 
 const RULES = [
   {
-    name: 'a FileReader is constructed only in client/lib/util/file.js',
+    name: 'a FileReader is constructed only in client/lib/net/file.js',
     re: /\bnew FileReader\b/,
-    owners: ['client/lib/util/file.js'],
-    fix: 'import readFileAsDataUrl()/readFileAsText() from client/lib/util/file.js',
+    owners: ['client/lib/net/file.js'],
+    fix: 'import readFileAsDataUrl()/readFileAsText() from client/lib/net/file.js',
   },
   {
-    name: 'readFileAsDataUrl is declared only in client/lib/util/file.js',
+    name: 'readFileAsDataUrl is declared only in client/lib/net/file.js',
     re: /\b(?:function\s+readFileAsDataUrl\b|(?:const|let|var)\s+readFileAsDataUrl\s*=|export\s*\{[^}]*\breadFileAsDataUrl\b[^}]*\}\s*from)/,
-    owners: ['client/lib/util/file.js'],
-    fix: 'import it from client/lib/util/file.js, do not redeclare or re-export it',
+    owners: ['client/lib/net/file.js'],
+    fix: 'import it from client/lib/net/file.js, do not redeclare or re-export it',
   },
   {
-    name: 'the QR library is imported only by client/lib/util/qr.js',
+    name: 'the QR library is imported only by client/lib/dom/qr.js',
     re: /qrcode-generator/,
-    owners: ['client/lib/util/qr.js'],
-    fix: 'use renderQrToCanvas()/createQrDataUrl() from client/lib/util/qr.js',
+    owners: ['client/lib/dom/qr.js'],
+    fix: 'use renderQrToCanvas()/createQrDataUrl() from client/lib/dom/qr.js',
   },
   {
     name: 'clamp is declared only in shared/number-utils.js',

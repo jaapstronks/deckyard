@@ -6,7 +6,7 @@
  * feature flag is on, so flag-off sessions pay nothing.
  */
 
-import { createPresenceSession } from '../../../lib/collab/presence-session.js';
+import { createPresenceSession } from '../live-edits/presence-session.js';
 import { createPresenceUI } from './presence-ui.js';
 
 /**

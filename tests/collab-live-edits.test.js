@@ -34,7 +34,7 @@ const { createPresentation, getPresentation } =
 const { getYDocState } =
   await import('../server/storage/presentations/ydocs.js');
 const { createPresenceSession } =
-  await import('../client/lib/collab/presence-session.js');
+  await import('../client/views/editor/live-edits/presence-session.js');
 
 // The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
 // is the only backend.

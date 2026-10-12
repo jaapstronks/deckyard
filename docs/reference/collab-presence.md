@@ -53,7 +53,7 @@ Browser editor ──ws /collab──▶ node:http server (same port 4177)
   `getCollaboratorPermission` + `canRead/canWritePresentation` pair the REST
   routes use; non-writers (viewers, guests) get read-only connections.
   `server/collab/auth.js`.
-- **Client session**: `client/lib/collab/presence-session.js` wraps
+- **Client session**: `client/views/editor/live-edits/presence-session.js` wraps
   `HocuspocusProvider` (from the vendored bundle) and exposes
   `setViewSlide`, `setFocusField`, `getPeers`, `onPeersChange`. Awareness
   state shape:

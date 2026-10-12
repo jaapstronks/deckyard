@@ -1,5 +1,5 @@
 import { t } from '../../lib/ui-i18n.js';
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 import { slideFingerprint } from '../../../shared/slide-fingerprint.js';
 import {
   mapItemTexts,

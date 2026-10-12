@@ -6,13 +6,13 @@ import { deepClone } from './editor-utils.js';
 import { newSlide } from '../../../shared/slide-types/presentation.js';
 import { migrateLibraryItem } from '../../../shared/slide-types/schema-version.js';
 import { t } from '../../lib/ui-i18n.js';
-import { newId } from '../../lib/util/id.js';
+import { newId } from '../../lib/state/id.js';
 import {
   createSlideLibraryPicker,
   sortByPinnedThenName,
 } from '../slide-library/index.js';
 import { toast } from '../../lib/dom/toast.js';
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 import { isInsertableSlideType } from '../../../shared/slide-types/policy.js';
 import { createSlidesPanelResize } from './slides-panel-resize.js';
 import { createSlidesPanelActions } from './slides-panel-actions.js';

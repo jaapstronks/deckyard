@@ -1,5 +1,5 @@
 const NS = 'http://www.w3.org/2000/svg';
-import { newId } from '../util/id.js';
+import { newId } from '../state/id.js';
 import { clamp } from '../../../shared/number-utils.js';
 import { t } from '../ui-i18n.js';
 

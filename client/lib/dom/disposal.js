@@ -15,7 +15,7 @@
  * broke (enable with ?debugLog=1).
  */
 
-import { debugLog } from '../util/debug.js';
+import { debugLog } from '../state/debug.js';
 
 /**
  * Run every disposer, in order, best-effort.

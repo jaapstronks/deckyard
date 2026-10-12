@@ -182,7 +182,7 @@ open dialog. Decided rather than inherited, for these reasons:
 
 Misusing a primitive (a DOM node passed as a toast message, an empty inline
 error, an unknown toast kind) is a programming error. `reportMisuse()` in
-[`client/lib/util/dev-runtime.js`](../../client/lib/util/dev-runtime.js)
+[`client/lib/state/dev-runtime.js`](../../client/lib/state/dev-runtime.js)
 throws when the host is localhost or absent (development, jsdom) and logs in
 production — the client's counterpart to the server's
 `NODE_ENV !== 'production'` guard. Every UI primitive draws the line there,

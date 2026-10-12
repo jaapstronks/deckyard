@@ -25,7 +25,7 @@ globalThis.Element = dom.window.Element;
 
 const { h } = await import('../client/lib/dom/index.js');
 const { createInlineError } = await import('../client/lib/dom/inline-error.js');
-const { isDevRuntime } = await import('../client/lib/util/dev-runtime.js');
+const { isDevRuntime } = await import('../client/lib/state/dev-runtime.js');
 
 /** A form with one input, mounted so focus() has somewhere to land. */
 function mount(opts) {

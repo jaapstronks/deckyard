@@ -19,7 +19,7 @@
  * Nothing in here reads the DOM; the callers own selection, refresh and toast.
  */
 
-import { newId } from '../util/id.js';
+import { newId } from '../state/id.js';
 import { applyInstanceKeyRekey } from '../../../shared/slide-types/instance-keys.js';
 import { getClipboardSlides } from './slide-clipboard.js';
 

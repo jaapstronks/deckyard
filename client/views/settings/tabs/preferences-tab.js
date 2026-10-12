@@ -28,7 +28,7 @@ import {
   invalidateSettingsCache,
   updateMySettings,
 } from '../../../lib/net/settings.js';
-import { getLangShortLabel } from '../../../lib/format/lang-selector.js';
+import { getLangShortLabel } from '../../../lib/dom/lang-selector.js';
 import { createUserNotificationsSection } from '../sections/index.js';
 import { disableForSandbox } from '../../../lib/dom/sandbox-disabled.js';
 import { createColorPicker } from '../theme-editor/color-picker.js';

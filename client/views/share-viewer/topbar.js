@@ -1,7 +1,7 @@
 import { h } from '../../lib/dom/index.js';
 import { api } from '../../lib/api.js';
 import { t } from '../../lib/ui-i18n.js';
-import { createUiModeSwitcher } from '../ui-mode-switcher.js';
+import { createUiModeSwitcher } from '../../lib/dom/ui-mode-switcher.js';
 import { createCommentsApi } from '../editor/comments-api.js';
 import { getPermissionLabel } from '../../lib/permission-labels.js';
 import { renderGuestJoinPrompt } from './guest-join.js';

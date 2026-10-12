@@ -1,8 +1,8 @@
-import { h } from '../lib/dom/index.js';
-import { t } from '../lib/ui-i18n.js';
-import { copyToClipboardWithPromptFallback } from '../lib/util/clipboard.js';
-import { nav } from '../lib/state/router.js';
-import { renderQrToCanvas } from '../lib/util/qr.js';
+import { h } from '../../lib/dom/index.js';
+import { t } from '../../lib/ui-i18n.js';
+import { copyToClipboardWithPromptFallback } from '../../lib/dom/clipboard.js';
+import { nav } from '../../lib/state/router.js';
+import { renderQrToCanvas } from '../../lib/dom/qr.js';
 
 export async function renderNotesJoin(root, sessionId) {
   const u = new URL(`/notes/${sessionId}`, location.origin);

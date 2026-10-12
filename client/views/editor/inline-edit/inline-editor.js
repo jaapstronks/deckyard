@@ -65,7 +65,7 @@ import { createMarkdownEditModal } from './markdown-modal.js';
 import { createReorderDrag } from './reorder-drag.js';
 import { h } from '../../../lib/dom/index.js';
 import { slideRendered } from '../../../lib/slide-runtime/slide-render.js';
-import { debugLog } from '../../../lib/util/debug.js';
+import { debugLog } from '../../../lib/state/debug.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
 

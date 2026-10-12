@@ -25,7 +25,7 @@
  */
 
 import { h } from './index.js';
-import { reportMisuse } from '../util/dev-runtime.js';
+import { reportMisuse } from '../state/dev-runtime.js';
 
 let seq = 0;
 
