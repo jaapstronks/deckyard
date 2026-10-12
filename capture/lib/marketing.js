@@ -467,7 +467,7 @@ export async function pinJoinCode(page, origin) {
         // side of the wire — this body runs in the page, and the string is the
         // URL the server publishes the module at.
         // eslint-disable-next-line import-x/no-unresolved
-        const qr = await import('/client/lib/slide-runtime/poll.js');
+        const qr = await import('/client/lib/dom/qr.js');
         const { renderQrToCanvas } = qr;
         for (const canvas of canvases) {
           // Also the source of truth for any later re-render (the runtime
