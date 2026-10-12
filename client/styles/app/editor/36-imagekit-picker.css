@@ -57,7 +57,7 @@
 .imagekit-card-name {
   font-size: 12px;
   font-weight: 600;
-  color: #fff;
+  color: hsl(var(--app-text-on-solid));
   line-height: 1.2;
   overflow: hidden;
   text-overflow: ellipsis;

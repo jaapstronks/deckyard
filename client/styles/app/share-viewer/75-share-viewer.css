@@ -269,7 +269,7 @@
   height: 24px;
   border-radius: 50%;
   background: hsl(var(--app-accent-primary));
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -395,7 +395,7 @@
   margin: 0 auto var(--ps-space-4);
   border-radius: 50%;
   background: hsl(145 60% 45%);
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -434,7 +434,7 @@
 }
 .share-viewer-comments-toggle.is-active {
   background: hsl(var(--app-accent-primary));
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   border-color: hsl(var(--app-accent-primary));
 }
 

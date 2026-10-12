@@ -111,7 +111,7 @@
   padding: 0 5px;
   border-radius: 999px;
   background: hsl(0 70% 50%);
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   font-size: var(--ps-text-xs);
   font-weight: 600;
   display: flex;

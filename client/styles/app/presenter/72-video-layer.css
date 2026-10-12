@@ -54,7 +54,7 @@
   appearance: none;
   border: none;
   background: rgba(0, 0, 0, 0.65);
-  color: #fff;
+  color: hsl(var(--app-text-on-solid));
   font-size: 12px;
   padding: 4px 10px;
   border-radius: var(--ps-radius-sm);

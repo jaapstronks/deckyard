@@ -81,6 +81,8 @@ enforces the no-fallback form: a `var(--ps-…|--app-…|--z-…, …)` in app c
 fails, because the token always resolves and a fallback is a second value that
 can only drift from it (D279); a hook keeps its fallback.
 
+`tests/app-css-hex-colors.test.js` counts hex colours in `client/styles/app/**` after removing CSS comments. Existing values are listed per file in `app-css-hex-budgets.json`; a new literal fails, and removing one requires lowering its budget. Use a role token for shared colours; leave a literal only when it represents a deliberate local colour that has no shared role.
+
 ## Spacing — two resolutions
 
 Tokens are named after their multiple of 4px, so `-3` is 12px and the

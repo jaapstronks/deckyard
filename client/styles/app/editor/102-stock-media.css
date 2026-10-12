@@ -91,11 +91,11 @@
 
 .stock-media-item-credit {
   font-size: var(--ps-text-xs);
-  color: white;
+  color: hsl(var(--app-text-on-solid));
 }
 
 .stock-media-item-credit a {
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   text-decoration: underline;
 }
 
@@ -222,7 +222,7 @@
   inset: auto 0 0 0;
   padding: var(--ps-space-1) var(--ps-space-2);
   font-size: var(--ps-text-xs);
-  color: #fff;
+  color: hsl(var(--app-text-on-solid));
   background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
   pointer-events: none;
 }

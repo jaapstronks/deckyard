@@ -50,7 +50,7 @@
   border: 2px solid hsl(var(--app-border-default));
   border-radius: var(--ps-radius-sm);
   cursor: pointer;
-  background: var(--swatch-color, #ffffff);
+  background: var(--swatch-color, hsl(var(--app-surface-white)));
   transition:
     border-color var(--ps-transition-fast),
     transform var(--ps-transition-fast);

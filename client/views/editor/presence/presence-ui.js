@@ -49,7 +49,7 @@ function uniqueByEmail(peers) {
  * @param {HTMLElement} [opts.editorMount] - side-form root (re-applies form
  *   field decorations after the form re-renders)
  * @param {Function} opts.getSelectedSlideId - () => current slide id
- * @returns {{ destroy: Function }}
+ * @returns {{ detach: Function }}
  */
 export function createPresenceUI({
   session,

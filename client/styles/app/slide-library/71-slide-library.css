@@ -336,7 +336,7 @@
 
 .ps-lib-fav-btn.is-on {
   background: hsl(var(--app-accent-primary));
-  color: white;
+  color: hsl(var(--app-text-on-solid));
 }
 
 .ps-lib-fav-btn.is-on:hover {

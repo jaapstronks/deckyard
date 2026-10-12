@@ -1183,7 +1183,7 @@
   border: none;
   border-radius: var(--ps-radius-md);
   background: hsl(0 0% 100% / 0.1);
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   font-size: 28px;
   cursor: pointer;
   display: flex;
@@ -1197,7 +1197,7 @@
 }
 
 .compare-lightbox-label {
-  color: white;
+  color: hsl(var(--app-text-on-solid));
   font-size: var(--ps-text-base);
   font-weight: 600;
   margin-bottom: var(--ps-space-3);

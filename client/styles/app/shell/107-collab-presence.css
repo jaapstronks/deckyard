@@ -106,8 +106,8 @@
 .collab-list-peer-name {
   padding: 1px 6px;
   border-radius: 4px;
-  background: var(--presence-color, #888);
-  color: #fff;
+  background: var(--presence-color, hsl(var(--app-text-secondary)));
+  color: hsl(var(--app-text-on-solid));
   font-size: 10px;
   font-weight: 600;
   line-height: 1.5;
@@ -122,13 +122,13 @@
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--presence-color, #888);
+  background: var(--presence-color, hsl(var(--app-text-secondary)));
   border: 2px solid hsl(var(--app-bg-elevated));
   box-sizing: content-box;
 }
 
 .collab-slide-dot.is-editing {
-  box-shadow: 0 0 0 2px var(--presence-color, #888);
+  box-shadow: 0 0 0 2px var(--presence-color, hsl(var(--app-text-secondary)));
 }
 
 /* ---- Field-focus rings on the preview canvas ----
@@ -138,7 +138,7 @@
 .collab-focus-ring {
   position: absolute;
   z-index: 29;
-  border: 2px solid var(--presence-color, #888);
+  border: 2px solid var(--presence-color, hsl(var(--app-text-secondary)));
   border-radius: 4px;
   pointer-events: none;
 }
@@ -150,8 +150,8 @@
   z-index: 30;
   padding: 2px 8px;
   border-radius: 4px;
-  background: var(--presence-color, #888);
-  color: #fff;
+  background: var(--presence-color, hsl(var(--app-text-secondary)));
+  color: hsl(var(--app-text-on-solid));
   font-size: var(--ps-text-xs);
   font-weight: 600;
   line-height: 1.5;
@@ -167,7 +167,7 @@
   left: 10px;
   width: 2px;
   height: 7px;
-  background: var(--presence-color, #888);
+  background: var(--presence-color, hsl(var(--app-text-secondary)));
 }
 
 /* Slide-corner fallback chip: shown when a peer edits a field that has no
@@ -184,7 +184,7 @@
 
 .collab-remote-focus {
   position: relative;
-  outline: 2px solid var(--presence-color, #888);
+  outline: 2px solid var(--presence-color, hsl(var(--app-text-secondary)));
   outline-offset: 3px;
   border-radius: 4px;
 }
@@ -201,8 +201,8 @@
   z-index: 30;
   padding: 2px 8px;
   border-radius: 4px;
-  background: var(--presence-color, #888);
-  color: #fff;
+  background: var(--presence-color, hsl(var(--app-text-secondary)));
+  color: hsl(var(--app-text-on-solid));
   font-size: var(--ps-text-xs);
   font-weight: 600;
   line-height: 1.5;
