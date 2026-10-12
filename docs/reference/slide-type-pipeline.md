@@ -61,7 +61,7 @@ it touches slide types; `AGENTS.md` § Slide types points here.
 
 ### Presenter stepping (“Tekst stap voor stap”)
 
-- Step mode is DOM-driven in `client/views/presenter/step.js`.
+- Step mode is DOM-driven in `client/lib/slide-runtime/step.js`.
 - If you want a new slide type to be step-able, follow existing DOM conventions (preferred) instead of one-off hacks:
   - Body stepping looks for `.slide-content .body` or `.slide-image-text .copy .body`
   - Card stepping looks for known card containers

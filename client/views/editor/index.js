@@ -38,8 +38,7 @@ export async function renderEditor(root, id, { user } = {}) {
   // For view or comment permissions, render the viewer mode instead of the editor
   if (permission === 'view' || permission === 'comment') {
     try {
-      const { createViewerController } =
-        await import('../viewer/viewer-controller.js');
+      const { createViewerController } = await import('../viewer/index.js');
       const controller = await createViewerController({
         root,
         id,
@@ -102,3 +101,11 @@ function renderNotFound(root) {
     }),
   );
 }
+
+// Public operations shared with the app shell and other features.
+export { showEditorLoadingSkeleton } from './loading-skeleton.js';
+export { initPresentationI18n, loadSlideTypes } from './bootstrap.js';
+export { syncSlideIdInUrl } from './slide-url.js';
+export { createSingleSlideEditor } from './single-slide-editor.js';
+export { getSampleContent } from './slide-type-sample-content.js';
+export { computeDrop, resolveMove } from './inline-edit/reorder-geometry.js';

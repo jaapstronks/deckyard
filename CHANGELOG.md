@@ -4,6 +4,45 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.61.0](https://github.com/jaapstronks/deckyard/compare/v1.60.0...v1.61.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* Import createTagEditor from client/views/tags/index.js instead of client/views/list/tag-editor.js. No shim remains at the old path. Fork guidance is in docs/reference/fork-setup.md.
+
+### Changed
+
+* clarify beta release override path ([158e435](https://github.com/jaapstronks/deckyard/commit/158e435cb38c769af6e4a341a7a4dbf2dfe7fcbd))
+* expose tag editor through its feature seam ([b0a590f](https://github.com/jaapstronks/deckyard/commit/b0a590f53bd2ad99cb7d732771983fcb5a0b6963))
+
+## [1.60.0](https://github.com/jaapstronks/deckyard/compare/v1.59.1...v1.60.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **client:** these core module import paths moved without compatibility shims:
+
+- `client/views/editor/comment-markers.js` → `client/views/comments/comment-markers.js`.
+- `client/views/editor/comments-api.js` → `client/views/comments/comments-api.js`.
+- `client/views/editor/comments-panel.js` → `client/views/comments/comments-panel.js`.
+- `client/views/editor/comments-panel-actions.js` → `client/views/comments/comments-panel-actions.js`.
+- `client/views/editor/comments-panel-renderers.js` → `client/views/comments/comments-panel-renderers.js`.
+- `client/views/editor/comments-panel-sse.js` → `client/views/comments/comments-panel-sse.js`.
+- `client/views/editor/comments-read-state.js` → `client/views/comments/comments-read-state.js`.
+
+Fork callers should import `createCommentMarkers`, `createCommentsApi` and `createCommentsPanel` through `client/views/comments/index.js`. The other moved files are internal feature concerns. No stored-data migration or new configuration is required.
+
+### Fixed
+
+* translate published deck metadata and reader label ([#1610](https://github.com/jaapstronks/deckyard/issues/1610)) ([d5fc1e4](https://github.com/jaapstronks/deckyard/commit/d5fc1e48091e8aada0e143debf0f2f0dd3bc739e))
+
+
+### Changed
+
+* clarify beta release correction verification ([c628a2a](https://github.com/jaapstronks/deckyard/commit/c628a2af6e13227bb9b2101cacd7aabeb32a6a3e))
+* **client:** move comments behind their feature seam ([#1615](https://github.com/jaapstronks/deckyard/issues/1615)) ([43c48a3](https://github.com/jaapstronks/deckyard/commit/43c48a3f73afd21507f44677b96f3d6ec43174fa))
+
 ## [1.59.1](https://github.com/jaapstronks/deckyard/compare/v1.59.0...v1.59.1) (2026-10-12)
 
 

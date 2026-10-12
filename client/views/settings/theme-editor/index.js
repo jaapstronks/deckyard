@@ -287,7 +287,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
   const derivedSwatches = h('div', { class: 'theme-derived-swatches' });
 
   function updateDerivedColorsPreview() {
-    derivedSwatches.innerHTML = '';
+    derivedSwatches.replaceChildren();
     const palette = deriveColorPalette(state.colors.primary);
     for (const color of palette) {
       const swatch = h('div', {
@@ -532,7 +532,7 @@ export function createThemeEditor({ theme, onSave, onCancel }) {
       if (managedFonts.length > 0) {
         state.managedFonts = managedFonts;
         // Re-create font pickers with managed fonts
-        fontsGrid.innerHTML = '';
+        fontsGrid.replaceChildren();
 
         const newHeadingPicker = createFontPicker({
           label: t('settings.themes.headingFont', 'Heading Font'),

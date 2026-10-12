@@ -4,11 +4,9 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import {
-  renderCommentBodyNodes,
-  createRichCommentInput,
-  createCommentLinkButton,
-} from '../comments/index.js';
+import { renderCommentBodyNodes } from './comment-body.js';
+import { createRichCommentInput } from './comment-rich-input.js';
+import { createCommentLinkButton } from './comment-toolbar.js';
 import { h } from '../../lib/dom/index.js';
 
 /**
@@ -49,7 +47,7 @@ export function createCommentRenderers({
    * Render the comment list (empty state or comments).
    */
   function renderCommentList(listEl, comments) {
-    listEl.innerHTML = '';
+    listEl.replaceChildren();
 
     if (comments.length === 0) {
       const emptyEl = h('div', {

@@ -210,7 +210,7 @@ export function createImportCompose({ onChange, canInstallDefinitions }) {
     { setStatus, setBusy, btnAction, close },
   ) => {
     return ({ warnings, navUrl }) => {
-      panel_.innerHTML = '';
+      panel_.replaceChildren();
       panel_.append(
         h('div', {
           class: 'help modal-hint',

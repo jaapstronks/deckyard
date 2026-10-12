@@ -1,8 +1,10 @@
 import { createOverlay } from '../../../lib/dom/modal.js';
 import { icon } from '../../../lib/dom/icons.js';
 import { t } from '../../../lib/ui-i18n.js';
-import { createCommentMarkers } from '../comment-markers.js';
-import { renderCommentBodyNodes } from '../../comments/index.js';
+import {
+  createCommentMarkers,
+  renderCommentBodyNodes,
+} from '../../comments/index.js';
 import { h } from '../../../lib/dom/index.js';
 import { takeEscape } from '../../../lib/dom/escape.js';
 
@@ -424,7 +426,7 @@ export function createPreviewLightbox({
       updateNavState();
       // Preserve markers container before clearing
       markersContainer = bigThumb.querySelector('.comment-markers-container');
-      bigThumb.innerHTML = '';
+      bigThumb.replaceChildren();
       if (!s) return;
       bigThumb.append(
         renderSlideElement(s, { theme, presentationId: pres?.id }),

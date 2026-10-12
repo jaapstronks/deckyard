@@ -6,7 +6,7 @@ import { slideByIdOrIndex } from './slides.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { isLiveInviteSlideType } from '../../../shared/slide-types/live-session.js';
 import { h } from '../../lib/dom/index.js';
-import { applyStepVisibilityForMode } from '../presenter/step.js';
+import { applyStepVisibilityForMode } from '../../lib/slide-runtime/step.js';
 
 export function renderFollowSlide({
   pres,
@@ -48,7 +48,7 @@ export function renderFollowSlide({
   // scanned). The role is declared on the type (`liveInvite`), not named here.
   if (isLiveInviteSlideType(slide.type) && followInviteMessage) {
     if (slideWrap) {
-      slideWrap.innerHTML = '';
+      slideWrap.replaceChildren();
       const msgSlide = h('div', { class: 'slide follow-message-slide' });
       const inner = h('div', { class: 'slide-inner' });
       const box = h('div', {

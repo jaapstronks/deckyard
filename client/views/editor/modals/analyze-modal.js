@@ -103,7 +103,7 @@ export function openAnalyzeModal({ root, id, onComplete } = {}) {
       'Starting analysis…',
     );
     progressFill.style.width = '0%';
-    suggestionsList.innerHTML = '';
+    suggestionsList.replaceChildren();
 
     controller = new AbortController();
 

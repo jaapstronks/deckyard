@@ -243,7 +243,7 @@ export function createCollectionEditor({
 
   function renderList() {
     const current = readArr();
-    list.innerHTML = '';
+    list.replaceChildren();
 
     for (let i = 0; i < current.length; i += 1) {
       const item =

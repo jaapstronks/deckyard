@@ -152,7 +152,7 @@ export function openDataSourceConfigModal({
   actionsRow.append(previewBtn, connectBtn);
 
   function renderConfigFields() {
-    configSection.innerHTML = '';
+    configSection.replaceChildren();
     const providerOpt = PROVIDER_OPTIONS.find(
       (p) => p.value === selectedProvider,
     );
@@ -193,7 +193,7 @@ export function openDataSourceConfigModal({
   }
 
   function renderPreviewData(data) {
-    previewSection.innerHTML = '';
+    previewSection.replaceChildren();
     if (!data) return;
 
     const heading = h('div', {
@@ -258,7 +258,7 @@ export function openDataSourceConfigModal({
   }
 
   function renderBindings() {
-    bindingSection.innerHTML = '';
+    bindingSection.replaceChildren();
     if (!previewData || !bindableInfo) return;
 
     const heading = h('div', {
@@ -318,8 +318,8 @@ export function openDataSourceConfigModal({
     configValues = {};
     previewData = null;
     renderConfigFields();
-    previewSection.innerHTML = '';
-    bindingSection.innerHTML = '';
+    previewSection.replaceChildren();
+    bindingSection.replaceChildren();
     updateActionStates();
   });
 

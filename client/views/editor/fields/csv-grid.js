@@ -453,7 +453,7 @@ export function createCsvGridEditor({
   }
 
   function renderContent() {
-    contentHost.innerHTML = '';
+    contentHost.replaceChildren();
     contentHost.append(mode === 'raw' ? renderRaw() : renderGrid());
   }
 

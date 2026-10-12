@@ -48,14 +48,14 @@ export function createFontsTab({ user } = {}) {
   function showList() {
     listSection.classList.remove('is-hidden');
     editorSection.classList.add('is-hidden');
-    editorSection.innerHTML = '';
+    editorSection.replaceChildren();
   }
 
   // ─── Show editor view ─────────────────────────────────────
   function showEditor(fontFamily = null) {
     listSection.classList.add('is-hidden');
     editorSection.classList.remove('is-hidden');
-    editorSection.innerHTML = '';
+    editorSection.replaceChildren();
 
     const editor = createFontEditor({
       fontFamily,
@@ -88,7 +88,7 @@ export function createFontsTab({ user } = {}) {
 
   // ─── Render the font families list ────────────────────────
   function renderList() {
-    listSection.innerHTML = '';
+    listSection.replaceChildren();
 
     // Header
     const header = h('div', {

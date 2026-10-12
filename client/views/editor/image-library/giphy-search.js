@@ -96,7 +96,7 @@ export function createGiphySearch({ api, onSelect, setStatus, setBusy }) {
 
       if (offset === 0) {
         results = data.results || [];
-        grid.innerHTML = '';
+        grid.replaceChildren();
       } else {
         results = [...results, ...(data.results || [])];
       }
@@ -140,7 +140,7 @@ export function createGiphySearch({ api, onSelect, setStatus, setBusy }) {
 
       if (offset === 0) {
         results = data.results || [];
-        grid.innerHTML = '';
+        grid.replaceChildren();
       } else {
         results = [...results, ...(data.results || [])];
       }
@@ -165,7 +165,7 @@ export function createGiphySearch({ api, onSelect, setStatus, setBusy }) {
 
   // Render results
   const renderResults = () => {
-    grid.innerHTML = '';
+    grid.replaceChildren();
 
     for (const gif of results) {
       const item = h('div', {

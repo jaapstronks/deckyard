@@ -67,7 +67,7 @@ export async function renderDashboard(root) {
   await loadDashboardData();
 
   // Render dashboard
-  shell.innerHTML = '';
+  shell.replaceChildren();
   render();
 
   async function loadDashboardData() {
@@ -93,7 +93,7 @@ export async function renderDashboard(root) {
   }
 
   function render() {
-    shell.innerHTML = '';
+    shell.replaceChildren();
 
     // A load that failed is a background failure: the banner carries the state
     // where it applies and stays until the next load succeeds. Polite, not an
@@ -162,7 +162,7 @@ export async function renderDashboard(root) {
         'aria-label': t('dashboard.periodLabel', 'Time period'),
         onchange: async (e) => {
           period = e.target.value;
-          shell.innerHTML = '';
+          shell.replaceChildren();
           shell.append(loading);
           await loadDashboardData();
           render();

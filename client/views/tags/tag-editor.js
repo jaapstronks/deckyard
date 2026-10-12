@@ -75,7 +75,7 @@ export function createTagEditor({
 
   // Render the tags
   function renderTags() {
-    tagsContainer.innerHTML = '';
+    tagsContainer.replaceChildren();
     for (const tag of tags) {
       const text = h('span', { class: 'tag-editor-tag-text', text: tag });
       if (readOnly) {
@@ -101,7 +101,7 @@ export function createTagEditor({
 
   // Render suggestions
   function renderSuggestions() {
-    suggestionsEl.innerHTML = '';
+    suggestionsEl.replaceChildren();
     if (suggestions.length === 0 || !isOpen) {
       suggestionsEl.classList.remove('is-open');
       return;

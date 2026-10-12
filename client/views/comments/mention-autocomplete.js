@@ -101,11 +101,11 @@ export function attachMentionAutocomplete({
     isOpen = false;
     results = [];
     dropdown.classList.remove('is-open');
-    dropdown.innerHTML = '';
+    dropdown.replaceChildren();
   }
 
   function render() {
-    dropdown.innerHTML = '';
+    dropdown.replaceChildren();
     if (results.length === 0) {
       dropdown.append(
         h('div', {

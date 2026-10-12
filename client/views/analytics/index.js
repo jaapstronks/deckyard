@@ -96,7 +96,7 @@ export async function renderAnalytics(root, presentationId) {
       throw new Error('Presentation not found');
     }
   } catch (err) {
-    shell.innerHTML = '';
+    shell.replaceChildren();
     shell.append(
       createPageUnavailable({
         icon: 'chart-column',
@@ -118,7 +118,7 @@ export async function renderAnalytics(root, presentationId) {
   await loadAnalyticsData();
 
   // Render dashboard
-  shell.innerHTML = '';
+  shell.replaceChildren();
   renderDashboard();
 
   async function loadAnalyticsData() {

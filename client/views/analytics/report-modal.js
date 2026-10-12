@@ -236,7 +236,7 @@ export function createReportModal({
   }
 
   function showSuccess(report) {
-    successEl.innerHTML = '';
+    successEl.replaceChildren();
     successEl.style.display = 'block';
     refusal.clear();
 

@@ -88,7 +88,7 @@ export function renderApiKeysPanel({ user }) {
     if (isLoading) return;
     isLoading = true;
 
-    keysList.innerHTML = '';
+    keysList.replaceChildren();
     keysList.append(
       h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
     );
@@ -98,7 +98,7 @@ export function renderApiKeysPanel({ user }) {
     isLoading = false;
 
     if (result.error) {
-      keysList.innerHTML = '';
+      keysList.replaceChildren();
       keysList.append(h('div', { class: 'help', text: result.error }));
       return;
     }

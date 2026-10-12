@@ -110,7 +110,7 @@ export function createPresenterDeckController({
 
   const mountSlides = () => {
     cleanupSlideRuntimes(stage);
-    stage.innerHTML = '';
+    stage.replaceChildren();
     slides = presentSlides.map((s) => {
       const section = h('section', {
         class: 'deck-slide',

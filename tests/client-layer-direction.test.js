@@ -6,7 +6,7 @@
  * formatting, the theme runtime, the slide pipeline, a DOM-less service layer),
  * and a module that **fetches a feature's records and renders them is a
  * view**, however many pages use it. The verhuislijst of D263 is the judgment;
- * this file pins the two halves of it that can be measured:
+ * this file pins the layer rules and the feature boundaries already closed:
  *
  *   1. **Direction.** No import under `client/lib/` resolves into
  *      `client/views/`. A layer that reaches up into a feature is no layer.
@@ -19,8 +19,13 @@
  *      `slide-runtime/` are exempt by D263: they are the DOM and the slide
  *      runtime, and the runtime loads what a slide needs.
  *
+ *   3. **Feature seams.** Every client consumer outside views/<feature>/
+ *      imports that feature through its index.js. This includes the app shell,
+ *      static imports, re-exports and literal dynamic imports. Within a feature,
+ *      concern imports remain private implementation details (B671).
+ *
  * **No allowlist**, on purpose (the same stance as `module-layout.test.js`):
- * everything both counts found was moved when the rule landed (B528), so a new
+ * everything the layer counts found was moved when the rule landed (B528), so a new
  * hit is a new module in the wrong place, not a known debt.
  *
  * Run with: node --test tests/client-layer-direction.test.js
@@ -31,6 +36,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { init, parse } from 'es-module-lexer';
+
+await init;
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
@@ -80,11 +88,10 @@ function jsFiles(dir) {
  * @returns {string[]}
  */
 function resolvedImports(file, source) {
-  const re =
-    /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)['"](\.{1,2}\/[^'"]+)['"]/g;
-  return [...source.matchAll(re)].map((m) =>
-    path.resolve(path.dirname(file), m[1]),
-  );
+  const [imports] = parse(source);
+  return imports
+    .filter(({ n }) => n?.startsWith('./') || n?.startsWith('../'))
+    .map(({ n }) => path.resolve(path.dirname(file), n));
 }
 
 /**
@@ -103,6 +110,98 @@ function stripComments(source) {
 
 const rel = (p) => path.relative(repoRoot, p).split(path.sep).join('/');
 const inside = (p, dir) => p.startsWith(dir + path.sep);
+
+/** Imports from outside a feature into its implementation. */
+function featureSeamViolations(file, source) {
+  return resolvedImports(file, source).filter((target) => {
+    if (!inside(target, viewsRoot)) return false;
+    const feature = path.relative(viewsRoot, target).split(path.sep)[0];
+    const featureRoot = path.join(viewsRoot, feature);
+    return (
+      !inside(file, featureRoot) &&
+      target !== path.join(featureRoot, 'index.js')
+    );
+  });
+}
+
+test('all client consumers use public feature seams (B671)', () => {
+  const clientRoot = path.join(repoRoot, 'client');
+  const offenders = jsFiles(clientRoot)
+    .filter((file) => !inside(file, path.join(clientRoot, 'vendor')))
+    .flatMap((file) =>
+      featureSeamViolations(file, fs.readFileSync(file, 'utf8')).map(
+        (target) => `${rel(file)} -> ${rel(target)}`,
+      ),
+    );
+  assert.deepEqual(
+    offenders,
+    [],
+    'Import another feature only through views/<feature>/index.js',
+  );
+});
+
+test('the feature seam guard parses imports for any feature and client consumer', () => {
+  // A synthetic feature keeps the gate independent of a fixed feature list.
+  for (const file of [
+    path.join(repoRoot, 'client', 'app.js'),
+    path.join(viewsRoot, 'viewer', 'probe.js'),
+    path.join(libRoot, 'dom', 'probe.js'),
+  ]) {
+    const featureRoot = path.join(viewsRoot, 'probe-feature');
+    let specifier = path
+      .relative(path.dirname(file), featureRoot)
+      .split(path.sep)
+      .join('/');
+    if (!specifier.startsWith('.')) specifier = './' + specifier;
+    for (const source of [
+      `import { factory } from '${specifier}/concern.js';`,
+      `export { factory } from '${specifier}/nested/concern.js';`,
+      `export * from '${specifier}/concern.js';`,
+      `import('${specifier}/concern.js');`,
+      `import('${specifier}/nested/index.js');`,
+    ]) {
+      assert.equal(featureSeamViolations(file, source).length, 1, source);
+    }
+    for (const source of [
+      `import { factory } from '${specifier}/index.js';`,
+      `export * from '${specifier}/index.js';`,
+      `import('${specifier}/index.js');`,
+      `// import { factory } from '${specifier}/concern.js';`,
+      `/* export * from '${specifier}/concern.js'; */`,
+      `const example = "import('${specifier}/concern.js')";`,
+    ]) {
+      assert.deepEqual(featureSeamViolations(file, source), [], source);
+    }
+  }
+  for (const source of [
+    "import { helper } from './concern.js';",
+    "export * from './nested/concern.js';",
+    "import('./concern.js');",
+  ]) {
+    assert.deepEqual(
+      featureSeamViolations(
+        path.join(viewsRoot, 'probe-feature', 'component.js'),
+        source,
+      ),
+      [],
+      source,
+    );
+  }
+});
+
+test('tag editor has no retired list address', () => {
+  assert.equal(
+    fs.existsSync(path.join(viewsRoot, 'list', 'tag-editor.js')),
+    false,
+  );
+});
+
+test('comment modules have no retired editor address', () => {
+  const retired = fs
+    .readdirSync(path.join(viewsRoot, 'editor'))
+    .filter((name) => /^comments?-.*\.js$/.test(name));
+  assert.deepEqual(retired, [], 'Comment modules belong to views/comments/');
+});
 
 const libModules = jsFiles(libRoot).map((file) => {
   const source = fs.readFileSync(file, 'utf8');

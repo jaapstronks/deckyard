@@ -20,7 +20,7 @@ globalThis.HTMLElement = dom.window.HTMLElement;
 globalThis.Node = dom.window.Node;
 globalThis.Element = dom.window.Element;
 
-const { createTagEditor } = await import('../client/views/list/tag-editor.js');
+const { createTagEditor } = await import('../client/views/tags/index.js');
 
 const noApi = async () => [];
 

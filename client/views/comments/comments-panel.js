@@ -1,5 +1,5 @@
 /**
- * Comments panel for the editor.
+ * Comments panel shared by the editor and signed-in viewer.
  * Displays slide comments and allows users to add, reply, and resolve.
  */
 
@@ -8,13 +8,10 @@ import { icon, makeDropdownCaret } from '../../lib/dom/icons.js';
 import { createDropdown } from '../../lib/dom/dropdown.js';
 import { createSegmented } from '../../lib/dom/segmented.js';
 import { formatRelativeTime } from '../../lib/format/format-time.js';
-import {
-  isCommentOwner,
-  isCommentAuthor,
-  attachMentionAutocomplete,
-  createRichCommentInput,
-  createCommentLinkButton,
-} from '../comments/index.js';
+import { isCommentOwner, isCommentAuthor } from './comment-authz.js';
+import { attachMentionAutocomplete } from './mention-autocomplete.js';
+import { createRichCommentInput } from './comment-rich-input.js';
+import { createCommentLinkButton } from './comment-toolbar.js';
 import { storage } from '../../lib/storage.js';
 import { confirmModal } from '../../lib/dom/modal.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
@@ -29,7 +26,7 @@ import { h } from '../../lib/dom/index.js';
 import { createInlineError } from '../../lib/dom/inline-error.js';
 
 /**
- * Creates a comments panel component for the editor.
+ * Creates a comments panel component.
  * @param {Object} options - Configuration options
  * @param {Function} options.api - API function for making requests
  * @param {Object} options.commentsApi - The page's comments client

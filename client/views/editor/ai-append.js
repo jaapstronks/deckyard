@@ -313,7 +313,7 @@ export function openAiAppendWizard({
         ? st.configuredVendors
         : [];
       const initial = pickInitialVendor(st);
-      llmSelect.innerHTML = '';
+      llmSelect.replaceChildren();
       for (const v of configured) {
         const norm = normalizeLlmVendor(v);
         if (!norm) continue;

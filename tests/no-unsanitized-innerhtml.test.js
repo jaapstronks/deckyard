@@ -13,7 +13,7 @@
  * right-hand side is one of:
  *
  *   (a) a single string or template literal with **no** `${…}` interpolation
- *       and no concatenation — the static SVG icons and `= ''` clears; or
+ *       and no concatenation — the static SVG icons; or
  *   (b) listed below with a verdict.
  *
  * The rule is deliberately mechanical: it cannot tell `ICONS[name]` (an

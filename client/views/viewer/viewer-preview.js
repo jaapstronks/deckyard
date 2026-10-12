@@ -105,7 +105,7 @@ export function createViewerPreview({
         lang: resolveDeckLang(pres),
       });
     } else {
-      slideWrap.innerHTML = '';
+      slideWrap.replaceChildren();
       slideWrap.append(
         createEmptyState({
           icon: null,

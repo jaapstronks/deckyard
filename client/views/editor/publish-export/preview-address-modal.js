@@ -86,7 +86,7 @@ export function openPreviewAddressModal({
           // Update the thumbnail if it exists
           const container = wrap.querySelector('.publish-preview-container');
           if (container && resp.ogImageUrl) {
-            container.innerHTML = '';
+            container.replaceChildren();
             const link = h('a', {
               class: 'preview-thumb-link',
               href: resp.ogImageUrl,

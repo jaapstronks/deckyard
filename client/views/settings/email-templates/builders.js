@@ -18,7 +18,7 @@ import {
  * @param {string} currentType - Currently selected type
  */
 export function buildTemplateOptions(templateSelect, currentType) {
-  templateSelect.innerHTML = '';
+  templateSelect.replaceChildren();
   for (const type of TEMPLATE_TYPES) {
     const option = h('option', { value: type, text: getTemplateLabel(type) });
     templateSelect.append(option);
@@ -37,7 +37,7 @@ export function buildDefaultLocaleOptions(
   data,
   selectedLocale,
 ) {
-  defaultLocaleSelect.innerHTML = '';
+  defaultLocaleSelect.replaceChildren();
   const locales = data?.supportedLocales || ['en'];
   for (const locale of locales) {
     const option = h('option', {
@@ -66,7 +66,7 @@ export function buildLocaleTabs(
   onLocaleChange,
   isBusy,
 ) {
-  localeTabs.innerHTML = '';
+  localeTabs.replaceChildren();
   const locales = data?.supportedLocales || ['en'];
 
   for (const locale of locales) {
@@ -106,7 +106,7 @@ export function buildLocaleTabs(
  * @param {Array} placeholders - Placeholder definitions
  */
 export function buildPlaceholders(container, placeholders) {
-  container.innerHTML = '';
+  container.replaceChildren();
 
   if (!placeholders || placeholders.length === 0) return;
 
@@ -149,7 +149,7 @@ export function buildPlaceholders(container, placeholders) {
  * @returns {Object.<string, HTMLElement>} Map of field names to input elements
  */
 export function buildForm(formContainer, data, currentType, currentLocale) {
-  formContainer.innerHTML = '';
+  formContainer.replaceChildren();
   const formInputs = {};
 
   const templateData = data?.templates?.[currentType];

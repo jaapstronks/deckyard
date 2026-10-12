@@ -31,7 +31,7 @@ export function showFollowMessage({
   msg,
 } = {}) {
   cleanupSlideRuntimes?.(slideWrap);
-  if (slideWrap) slideWrap.innerHTML = '';
+  if (slideWrap) slideWrap.replaceChildren();
   if (interactionWrap) interactionWrap.style.display = 'none';
   if (slideWrap) slideWrap.style.display = '';
   markStageMode(slideWrap || interactionWrap, false);

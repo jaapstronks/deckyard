@@ -117,7 +117,7 @@ export function renderOrganizationProfilePanel({
 
   /** Draw the profile card, and the danger zone under it when there is one. */
   function renderForm() {
-    body.innerHTML = '';
+    body.replaceChildren();
 
     body.append(
       h('div', { class: 'stack', style: 'gap: 4px;' }, [
@@ -375,7 +375,7 @@ export function renderOrganizationProfilePanel({
   }
 
   function showLoadFailure() {
-    body.innerHTML = '';
+    body.replaceChildren();
     body.append(
       h('div', {
         class: 'help',

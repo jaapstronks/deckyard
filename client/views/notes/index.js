@@ -180,7 +180,7 @@ export async function renderNotes(root, sessionId) {
       );
     } else {
       cleanupSlideRuntimes(nextPreviewWrap);
-      nextPreviewWrap.innerHTML = '';
+      nextPreviewWrap.replaceChildren();
       nextPreviewWrap.classList.add('is-empty');
       nextPreviewWrap.append(
         h('div', {
@@ -315,3 +315,6 @@ export async function renderNotes(root, sessionId) {
     qaCtl.detach();
   };
 }
+
+// Public operations shared with the app shell and other features.
+export { renderNotesJoin } from './notes-join.js';

@@ -23,7 +23,7 @@ export function renderFollowLangButtons({
   translatingLang,
   onSelect,
 } = {}) {
-  langWrap.innerHTML = '';
+  langWrap.replaceChildren();
   // A deck with one version has nothing to switch to
   if (availableLangs.length < 2) {
     langWrap.style.display = 'none';

@@ -159,7 +159,7 @@ export function createSlidesPanel({
 
   // Debounce only the per-keystroke input path. Each `rerenderSlideList()`
   // rebuilds every thumbnail from scratch (`slide-list/index.js`,
-  // `slideListEl.innerHTML = ''`), so typing an 8-char query used to trigger 8
+  // `slideListEl.replaceChildren()`), so typing an 8-char query used to trigger 8
   // full rebuilds — ~137 ms of blocked main thread on an 80-slide deck. The
   // timer resets on each keystroke, so a word typed at fluent cadence
   // (~120–180 ms between keys) collapses into a single rebuild that fires once

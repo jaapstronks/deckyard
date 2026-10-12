@@ -73,7 +73,7 @@ export async function renderForgotPassword(root) {
       status.className = 'auth-status';
 
       // Show success message
-      form.innerHTML = '';
+      form.replaceChildren();
       const successMsg = h('div', {
         class: 'auth-status is-success',
         text: t(

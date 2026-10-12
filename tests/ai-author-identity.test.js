@@ -4,7 +4,7 @@
  * The identity of AI-suggestion comments is configurable
  * (settings.aiAssistant.email), so recognising a comment as AI-authored cannot
  * compare against a single hardcoded constant — the bug this pins. The renderer
- * (client/views/editor/comments-panel-renderers.js) and the server both route
+ * (client/views/comments/comments-panel-renderers.js) and the server both route
  * through `isAiAuthorEmail`, which must accept three cases:
  *
  *   1. the configured address (a self-hoster's custom aiAssistant.email),

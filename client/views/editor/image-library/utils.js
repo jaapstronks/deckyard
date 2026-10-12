@@ -131,7 +131,7 @@ export function installTagsAutocomplete(inputEl, datalistEl, getTagsFn) {
       ? all.filter((t0) => String(t0).toLowerCase().startsWith(q))
       : all;
 
-    datalistEl.innerHTML = '';
+    datalistEl.replaceChildren();
     for (const tg of filtered.slice(0, 30)) {
       const opt = h('option');
       opt.value = tg;
