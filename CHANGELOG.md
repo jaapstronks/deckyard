@@ -9,7 +9,7 @@ entries are grouped per release rather than exhaustively listed.
 
 ### ⚠ BREAKING CHANGES
 
-* Import createTagEditor from client/views/tags/index.js instead of client/views/list/tag-editor.js. No shim remains at the old path. Fork guidance is in docs/reference/fork-setup.md. Apply the beta MINOR override in the next Release PR.
+* Import createTagEditor from client/views/tags/index.js instead of client/views/list/tag-editor.js. No shim remains at the old path. Fork guidance is in docs/reference/fork-setup.md.
 
 ### Changed
 
