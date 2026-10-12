@@ -6,6 +6,8 @@ import {
   withErrorHandler,
   forbidden,
   badRequest,
+  jsonError,
+  notFound,
 } from '../../utils/http.js';
 import { getStringArray } from '../../utils/request-validators.js';
 import {
@@ -20,9 +22,11 @@ import {
   getMembershipByEmail,
 } from '../../storage/user-organizations/index.js';
 import { hasOrganizationRole } from '../../../shared/organization-role.js';
-import { getOrgSettings } from '../../utils/org-settings.js';
+import { getOrgSettings, publicOrgSettings } from '../../utils/org-settings.js';
 import { canManage } from '../../utils/route-middleware.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
+import { isFeatureEnabled } from '../../config/flags-snapshot.js';
+import { TRANSLATION_INSTRUCTION_MAX_LENGTH } from '../../../shared/constants/translation-instructions.js';
 import { getThemeRecord } from '../../storage/themes.js';
 import { UUID_RE } from '../../utils/uuid.js';
 import { dispatchRoutes } from '../../utils/router.js';
@@ -98,13 +102,14 @@ async function handleAppSettingsPut({ storageScope, req, res, authedUser }) {
 // (the picker needs disabledSlideTypes)
 async function handleOrgSettingsGet({ res, authedUser }) {
   const orgId = authedUser?.organizationId;
-  try {
-    const org = await getOrganizationById(orgId);
-    const settings = getOrgSettings(org);
-    serveJson(res, 200, { settings });
-  } catch {
-    serveJson(res, 200, { settings: {} });
-  }
+  const org = await getOrganizationById(orgId);
+  if (!org) return notFound(res, 'Organization settings not found');
+  const settings = getOrgSettings(org);
+  const mayReadInstructions =
+    isFeatureEnabled('ai') && (await canWriteOrgAdminKeys(authedUser, orgId));
+  serveJson(res, 200, {
+    settings: mayReadInstructions ? settings : publicOrgSettings(settings),
+  });
   return true;
 }
 
@@ -114,6 +119,10 @@ async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
+
+  if ('translationInstructions' in body && !isFeatureEnabled('ai')) {
+    return forbidden(res);
+  }
 
   const hasDesignerKeys = 'disabledSlideTypes' in body;
   const hasAdminKeys = Object.keys(body).some(
@@ -147,6 +156,7 @@ async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
     'rss',
     'defaultThemeId',
     'enabledThemes',
+    'translationInstructions',
   ];
   const merged = { ...currentSettings };
   if ('defaultThemeId' in body) {
@@ -170,8 +180,45 @@ async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
         return badRequest(res, 'Invalid enabled themes');
     }
   }
+  if ('translationInstructions' in body) {
+    const value = body.translationInstructions;
+    const fail = (field) =>
+      jsonError(
+        res,
+        400,
+        'translation_instructions_invalid',
+        `Invalid translation instructions: ${field}. Each field must be text of at most ${TRANSLATION_INSTRUCTION_MAX_LENGTH} characters.`,
+        { details: { field } },
+      );
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      return fail('translationInstructions');
+    if (
+      typeof value.terminology !== 'string' ||
+      value.terminology.length > TRANSLATION_INSTRUCTION_MAX_LENGTH
+    )
+      return fail('terminology');
+    const styles = value.styleByLanguage;
+    if (!styles || typeof styles !== 'object' || Array.isArray(styles))
+      return fail('styleByLanguage');
+    const { supportedSlideLangs } = await getAppSettings(storageScope);
+    for (const [lang, style] of Object.entries(styles)) {
+      if (
+        !supportedSlideLangs.includes(lang) ||
+        typeof style !== 'string' ||
+        style.length > TRANSLATION_INSTRUCTION_MAX_LENGTH
+      )
+        return fail(`styleByLanguage.${lang}`);
+    }
+    merged.translationInstructions = {
+      terminology: value.terminology.trim(),
+      styleByLanguage: Object.fromEntries(
+        Object.entries(styles).map(([lang, style]) => [lang, style.trim()]),
+      ),
+    };
+  }
   for (const key of allowedKeys) {
     if (key in body) {
+      if (key === 'translationInstructions') continue;
       if (key === 'adminsAreDesigners') {
         merged[key] = body[key] === true;
       } else if (key === 'disabledSlideTypes') {
@@ -202,7 +249,11 @@ async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
   }
 
   await updateOrganization(orgId, { settings: merged });
-  serveJson(res, 200, { settings: merged });
+  const mayReadInstructions =
+    isFeatureEnabled('ai') && (await canWriteOrgAdminKeys(authedUser, orgId));
+  serveJson(res, 200, {
+    settings: mayReadInstructions ? merged : publicOrgSettings(merged),
+  });
   return true;
 }
 

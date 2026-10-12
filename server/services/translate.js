@@ -300,6 +300,7 @@ export async function translatePresentation(
     existingTarget,
     fillMissing: pair.fillMissing && !pair.overwrite,
     vendor,
+    organizationId: scope.organizationId,
   });
 
   pres.i18n.versions[pair.to] = {
@@ -406,7 +407,7 @@ export async function runMissingTranslation(
 
   const filled = await translatePresentationStringsFillMissing(
     { sourcePresentation: source, targetPresentation: target, missing },
-    { from, to, vendor },
+    { from, to, vendor, organizationId: scope.organizationId },
   );
 
   const fresh = await getPresentation(scope, pres.id);
