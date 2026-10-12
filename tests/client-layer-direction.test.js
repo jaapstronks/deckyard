@@ -21,7 +21,9 @@
  *
  *   3. **Comments seam.** Editor and viewer consumers import comments through
  *      `views/comments/index.js`. Comment concerns live in that feature, with
- *      no retired editor paths. Other cross-feature seams remain separate work.
+ *      no retired editor paths.
+ *   4. **Tags seam.** Tag editor consumers use views/tags/index.js; the old
+ *      list address is removed. Other feature seams remain separate work.
  *
  * **No allowlist**, on purpose (the same stance as `module-layout.test.js`):
  * everything the layer counts found was moved when the rule landed (B528), so a new
@@ -111,28 +113,41 @@ const rel = (p) => path.relative(repoRoot, p).split(path.sep).join('/');
 const inside = (p, dir) => p.startsWith(dir + path.sep);
 
 const commentsRoot = path.join(viewsRoot, 'comments');
-const commentsSeam = path.join(commentsRoot, 'index.js');
+const tagsRoot = path.join(viewsRoot, 'tags');
 
-/** Imports from another feature into the comments implementation. */
-function commentsSeamViolations(file, source) {
-  if (inside(file, commentsRoot)) return [];
+/** Imports from outside a feature into its implementation. */
+function featureSeamViolations(file, source, featureRoot) {
+  if (inside(file, featureRoot)) return [];
+  const seam = path.join(featureRoot, 'index.js');
   return resolvedImports(file, source).filter(
-    (target) => inside(target, commentsRoot) && target !== commentsSeam,
+    (target) => inside(target, featureRoot) && target !== seam,
   );
 }
 
-test('comments consumers use the public feature seam', () => {
-  const offenders = jsFiles(path.join(repoRoot, 'client'))
-    .filter((file) => !inside(file, path.join(repoRoot, 'client/vendor')))
-    .flatMap((file) =>
-      commentsSeamViolations(file, fs.readFileSync(file, 'utf8')).map(
-        (target) => `${rel(file)} -> ${rel(target)}`,
-      ),
+for (const featureRoot of [commentsRoot, tagsRoot]) {
+  const feature = path.basename(featureRoot);
+  test(`${feature} consumers use the public feature seam`, () => {
+    const offenders = jsFiles(path.join(repoRoot, 'client'))
+      .filter((file) => !inside(file, path.join(repoRoot, 'client/vendor')))
+      .flatMap((file) =>
+        featureSeamViolations(
+          file,
+          fs.readFileSync(file, 'utf8'),
+          featureRoot,
+        ).map((target) => `${rel(file)} -> ${rel(target)}`),
+      );
+    assert.deepEqual(
+      offenders,
+      [],
+      `Import ${feature} through views/${feature}/index.js`,
     );
-  assert.deepEqual(
-    offenders,
-    [],
-    'Import comments through views/comments/index.js',
+  });
+}
+
+test('tag editor has no retired list address', () => {
+  assert.equal(
+    fs.existsSync(path.join(viewsRoot, 'list', 'tag-editor.js')),
+    false,
   );
 });
 
@@ -143,30 +158,42 @@ test('comment modules have no retired editor address', () => {
   assert.deepEqual(retired, [], 'Comment modules belong to views/comments/');
 });
 
-test('the comments seam guard sees module imports and ignores examples', () => {
-  const consumer = path.join(viewsRoot, 'viewer', 'probe.js');
-  for (const source of [
-    "import { createCommentsApi } from '../comments/comments-api.js';",
-    "export { createCommentsPanel } from '../comments/comments-panel.js';",
-    "import('../comments/comments-read-state.js');",
-  ]) {
-    assert.equal(commentsSeamViolations(consumer, source).length, 1, source);
-  }
-  for (const source of [
-    "import { createCommentsApi } from '../comments/index.js';",
-    "// import { createCommentsApi } from '../comments/comments-api.js';",
-    'const example = "import(\'../comments/comments-panel.js\')";',
-  ]) {
-    assert.deepEqual(commentsSeamViolations(consumer, source), [], source);
-  }
-  assert.deepEqual(
-    commentsSeamViolations(
-      path.join(commentsRoot, 'comments-panel.js'),
-      "import { threadWaitsFor } from './comments-read-state.js';",
-    ),
-    [],
-  );
-});
+for (const featureRoot of [commentsRoot, tagsRoot]) {
+  const feature = path.basename(featureRoot);
+  test(`the ${feature} seam guard sees module imports and ignores examples`, () => {
+    const consumer = path.join(viewsRoot, 'viewer', 'probe.js');
+    for (const source of [
+      `import { factory } from '../${feature}/concern.js';`,
+      `export { factory } from '../${feature}/concern.js';`,
+      `import('../${feature}/concern.js');`,
+    ]) {
+      assert.equal(
+        featureSeamViolations(consumer, source, featureRoot).length,
+        1,
+        source,
+      );
+    }
+    for (const source of [
+      `import { factory } from '../${feature}/index.js';`,
+      `// import { factory } from '../${feature}/concern.js';`,
+      `const example = "import('../${feature}/concern.js')";`,
+    ]) {
+      assert.deepEqual(
+        featureSeamViolations(consumer, source, featureRoot),
+        [],
+        source,
+      );
+    }
+    assert.deepEqual(
+      featureSeamViolations(
+        path.join(featureRoot, 'component.js'),
+        "import { helper } from './concern.js';",
+        featureRoot,
+      ),
+      [],
+    );
+  });
+}
 
 const libModules = jsFiles(libRoot).map((file) => {
   const source = fs.readFileSync(file, 'utf8');
