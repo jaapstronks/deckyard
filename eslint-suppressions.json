@@ -169,6 +169,16 @@
       "count": 1
     }
   },
+  "client/views/comments/comments-panel-sse.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/comments/comments-panel.js": {
+    "no-restricted-syntax": {
+      "count": 5
+    }
+  },
   "client/views/comments/mention-autocomplete.js": {
     "no-useless-assignment": {
       "count": 1
@@ -190,16 +200,6 @@
     },
     "no-useless-assignment": {
       "count": 2
-    }
-  },
-  "client/views/editor/comments-panel-sse.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
-  "client/views/editor/comments-panel.js": {
-    "no-restricted-syntax": {
-      "count": 5
     }
   },
   "client/views/editor/deck-grid.js": {

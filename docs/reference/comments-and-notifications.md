@@ -3,6 +3,10 @@
 Shipped 2026-07-17 (PR stack #52–#56, migrations 042–045). This documents
 the durable semantics; the API/MCP surface is in `comments-api.md`.
 
+## Client feature boundary
+
+The editor, preview lightbox and viewers consume comment UI and transport through `client/views/comments/index.js`. That seam exposes `createCommentsApi`, `createCommentsPanel` and `createCommentMarkers` alongside the shared authorization, body-rendering and rich-input helpers. Panel actions, renderers, read-state and SSE wiring live inside the same feature; callers do not import those concern modules directly. `tests/client-layer-direction.test.js` guards this boundary.
+
 ## The model in one paragraph
 
 Thread status (`open` / `resolved` / `dismissed`) is **shared** state:

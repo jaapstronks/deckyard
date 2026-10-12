@@ -6,7 +6,7 @@
  * formatting, the theme runtime, the slide pipeline, a DOM-less service layer),
  * and a module that **fetches a feature's records and renders them is a
  * view**, however many pages use it. The verhuislijst of D263 is the judgment;
- * this file pins the two halves of it that can be measured:
+ * this file pins the layer rules and the feature boundaries already closed:
  *
  *   1. **Direction.** No import under `client/lib/` resolves into
  *      `client/views/`. A layer that reaches up into a feature is no layer.
@@ -19,8 +19,12 @@
  *      `slide-runtime/` are exempt by D263: they are the DOM and the slide
  *      runtime, and the runtime loads what a slide needs.
  *
+ *   3. **Comments seam.** Editor and viewer consumers import comments through
+ *      `views/comments/index.js`. Comment concerns live in that feature, with
+ *      no retired editor paths. Other cross-feature seams remain separate work.
+ *
  * **No allowlist**, on purpose (the same stance as `module-layout.test.js`):
- * everything both counts found was moved when the rule landed (B528), so a new
+ * everything the layer counts found was moved when the rule landed (B528), so a new
  * hit is a new module in the wrong place, not a known debt.
  *
  * Run with: node --test tests/client-layer-direction.test.js
@@ -31,6 +35,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { init, parse } from 'es-module-lexer';
+
+await init;
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
@@ -80,11 +87,10 @@ function jsFiles(dir) {
  * @returns {string[]}
  */
 function resolvedImports(file, source) {
-  const re =
-    /(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)['"](\.{1,2}\/[^'"]+)['"]/g;
-  return [...source.matchAll(re)].map((m) =>
-    path.resolve(path.dirname(file), m[1]),
-  );
+  const [imports] = parse(source);
+  return imports
+    .filter(({ n }) => n?.startsWith('./') || n?.startsWith('../'))
+    .map(({ n }) => path.resolve(path.dirname(file), n));
 }
 
 /**
@@ -103,6 +109,64 @@ function stripComments(source) {
 
 const rel = (p) => path.relative(repoRoot, p).split(path.sep).join('/');
 const inside = (p, dir) => p.startsWith(dir + path.sep);
+
+const commentsRoot = path.join(viewsRoot, 'comments');
+const commentsSeam = path.join(commentsRoot, 'index.js');
+
+/** Imports from another feature into the comments implementation. */
+function commentsSeamViolations(file, source) {
+  if (inside(file, commentsRoot)) return [];
+  return resolvedImports(file, source).filter(
+    (target) => inside(target, commentsRoot) && target !== commentsSeam,
+  );
+}
+
+test('comments consumers use the public feature seam', () => {
+  const offenders = jsFiles(path.join(repoRoot, 'client'))
+    .filter((file) => !inside(file, path.join(repoRoot, 'client/vendor')))
+    .flatMap((file) =>
+      commentsSeamViolations(file, fs.readFileSync(file, 'utf8')).map(
+        (target) => `${rel(file)} -> ${rel(target)}`,
+      ),
+    );
+  assert.deepEqual(
+    offenders,
+    [],
+    'Import comments through views/comments/index.js',
+  );
+});
+
+test('comment modules have no retired editor address', () => {
+  const retired = fs
+    .readdirSync(path.join(viewsRoot, 'editor'))
+    .filter((name) => /^comments?-.*\.js$/.test(name));
+  assert.deepEqual(retired, [], 'Comment modules belong to views/comments/');
+});
+
+test('the comments seam guard sees module imports and ignores examples', () => {
+  const consumer = path.join(viewsRoot, 'viewer', 'probe.js');
+  for (const source of [
+    "import { createCommentsApi } from '../comments/comments-api.js';",
+    "export { createCommentsPanel } from '../comments/comments-panel.js';",
+    "import('../comments/comments-read-state.js');",
+  ]) {
+    assert.equal(commentsSeamViolations(consumer, source).length, 1, source);
+  }
+  for (const source of [
+    "import { createCommentsApi } from '../comments/index.js';",
+    "// import { createCommentsApi } from '../comments/comments-api.js';",
+    'const example = "import(\'../comments/comments-panel.js\')";',
+  ]) {
+    assert.deepEqual(commentsSeamViolations(consumer, source), [], source);
+  }
+  assert.deepEqual(
+    commentsSeamViolations(
+      path.join(commentsRoot, 'comments-panel.js'),
+      "import { threadWaitsFor } from './comments-read-state.js';",
+    ),
+    [],
+  );
+});
 
 const libModules = jsFiles(libRoot).map((file) => {
   const source = fs.readFileSync(file, 'utf8');

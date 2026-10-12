@@ -25,10 +25,9 @@ globalThis.EventSource = class {
 
 const { createSaveManager } =
   await import('../client/views/editor/save-manager.js');
-const { createCommentsApi } =
-  await import('../client/views/editor/comments-api.js');
+const { createCommentsApi } = await import('../client/views/comments/index.js');
 const { createCommentsPanel } =
-  await import('../client/views/editor/comments-panel.js');
+  await import('../client/views/comments/index.js');
 
 function makeDeck() {
   return {

@@ -19,7 +19,7 @@ import {
   lastMessageAuthor,
   threadWaitsFor,
   collectUnreadThreadIds,
-} from '../client/views/editor/comments-read-state.js';
+} from '../client/views/comments/comments-read-state.js';
 import { markThreadsRead } from '../server/storage/presentations/comments.js';
 
 // A comment names its author with `{ id, displayName }` and carries no address
