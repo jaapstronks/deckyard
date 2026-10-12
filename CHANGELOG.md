@@ -4,6 +4,17 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.59.0](https://github.com/jaapstronks/deckyard/compare/v1.58.0...v1.59.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* **client:** Client module import paths moved without compatibility shims. Update fork imports: client/lib/util/clipboard.js -> client/lib/dom/clipboard.js; client/lib/format/lang-selector.js -> client/lib/dom/lang-selector.js; client/lib/util/qr.js -> client/lib/dom/qr.js; client/views/ui-mode-switcher.js -> client/lib/dom/ui-mode-switcher.js; client/lib/util/file.js -> client/lib/net/file.js; client/lib/util/debug.js -> client/lib/state/debug.js; client/lib/util/dev-runtime.js -> client/lib/state/dev-runtime.js; client/lib/util/id.js -> client/lib/state/id.js; client/lib/collab/live-doc-binder.js -> client/views/editor/live-edits/live-doc-binder.js; client/lib/collab/presence-session.js -> client/views/editor/live-edits/presence-session.js; client/lib/collab/textarea-merge.js -> client/views/editor/live-edits/textarea-merge.js; client/views/notes-join.js -> client/views/notes/notes-join.js; client/views/present-window.js -> client/views/presenter/present-window.js; client/views/theme-select.js -> client/views/theme-select/index.js.
+
+### Changed
+
+* **client:** place views and widgets with their owners ([#1600](https://github.com/jaapstronks/deckyard/issues/1600)) ([819d1cd](https://github.com/jaapstronks/deckyard/commit/819d1cd7a1abd844a01f9b31aa8a2fb7acac4784))
+
 ## [1.58.0](https://github.com/jaapstronks/deckyard/compare/v1.57.0...v1.58.0) (2026-10-12)
 
 
