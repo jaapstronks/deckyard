@@ -167,6 +167,7 @@ nothing is discoverable only by `ls`.
 | [`route-dispatch.md`](reference/route-dispatch.md)       | The `ROUTES`-table dispatch norm for `/api/*` modules                                    |
 | [`comments-api.md`](reference/comments-api.md)           | Comments via public API v1 + MCP                                                         |
 | [`notion-import.md`](reference/notion-import.md)         | Importing a Notion page as a deck, publishing back, and the Notion data-source providers |
+| [`services-layer.md`](reference/services-layer.md)       | Shared server domain operations, adapter boundaries, identity and errors                 |
 
 **Formats & export**
 

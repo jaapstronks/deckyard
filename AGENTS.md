@@ -15,7 +15,10 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
 - **`server/`**: Node server; persistence lives in Postgres behind `server/storage/`.
   - `server/routes/`: HTTP handlers (API + static).
   - `server/storage/`: facades over the database adapter plus uploads on disk; every function takes a `StorageScope` first (`docs/reference/storage-scope.md`).
-  - `server/utils/`: exports (HTML/PDF/PNG/PPTX/print), rendering helpers, openai helpers, etc.
+  - `server/services/`: shared domain operations for internal API, public v1 and MCP; see `docs/reference/services-layer.md`.
+  - `server/export/`: export builders (HTML/PDF/PNG/PPTX/print) and format-specific helpers.
+  - `server/render/`: browser-backed rendering and screenshot support.
+  - `server/utils/`: HTTP, authorization, validation and other shared server helpers.
 - **`themes/`**: theme JSON files resolved at runtime into CSS variables (don’t brand the app chrome).
 - **`assets/`**: fonts/images used by slides and UI.
 
@@ -81,7 +84,7 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
 - **Separation of concerns**
   - **Shared slide type modules**: describe schema + defaults + **pure HTML rendering** (no DOM side effects, no fetch, no timers).
   - **Client runtime behavior**: attach behavior to rendered markup in `client/lib/*` or view controllers (and ensure cleanup).
-  - **Server**: persistence and endpoints in `server/storage/*` + `server/routes/*`; export logic in `server/utils/*`.
+  - **Server**: HTTP adapters in `server/routes/`, shared domain operations in `server/services/`, persistence in `server/storage/`, and export builders in `server/export/`.
 
 - **Theming & styling boundaries**
   - Theme variables are scoped to `.slide` to keep **application UI** theme-independent; the `--t-*` → slide-variable layer is `client/styles/slides/00-theme.css`, loaded by `client/styles/slides.css` right after the tokens and nowhere else (D268).
