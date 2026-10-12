@@ -11,9 +11,9 @@
  * containing "empty" in client JS must be one of the sanctioned tokens, a
  * state class, or on the short allowlist below.
  *
- * The burndown is done (PR E2): every one of those 20 sites now uses the
- * sanctioned vocabulary, so the allowlist holds only the one permanent
- * exception. Keep it that way — a new entry needs a reason, not a TODO.
+ * The burndown is done: the empty-state sites now use the
+ * sanctioned vocabulary. This test also pins the messages that used
+ * `.help`, which a class-name-only scan cannot detect.
  *
  * Run with: node --test tests/empty-state-single-vocabulary.test.js
  */
@@ -43,13 +43,6 @@ const SANCTIONED = new Set([
   'non-empty',
 ]);
 
-// file (relative to repo root) -> tokens still tolerated there.
-// PERMANENT: versions-compare's `compare-empty` is a "—" placeholder cell in
-// the version diff table — a table cell, not an empty state; it stays.
-const ALLOWLIST = {
-  'client/views/editor/modals/versions-compare.js': ['compare-empty'],
-};
-
 function walk(dir, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const full = path.join(dir, entry.name);
@@ -70,11 +63,10 @@ test('every "empty" class token is sanctioned or allowlisted', () => {
   for (const file of walk(CLIENT_DIR)) {
     const rel = path.relative(repoRoot, file);
     const src = fs.readFileSync(file, 'utf8');
-    const tolerated = new Set(ALLOWLIST[rel] || []);
     for (const match of src.matchAll(CLASS_LITERAL)) {
       for (const token of match[1].split(/\s+/)) {
         if (!token.includes('empty')) continue;
-        if (SANCTIONED.has(token) || tolerated.has(token)) continue;
+        if (SANCTIONED.has(token)) continue;
         offenders.push(`${rel}: ${token}`);
       }
     }
@@ -89,25 +81,45 @@ test('every "empty" class token is sanctioned or allowlisted', () => {
   );
 });
 
-test('allowlist entries still exist (stale entries must be removed)', () => {
-  const stale = [];
-  for (const [rel, tokens] of Object.entries(ALLOWLIST)) {
-    const full = path.join(repoRoot, rel);
-    if (!fs.existsSync(full)) {
-      stale.push(`${rel} (file gone)`);
-      continue;
-    }
-    const src = fs.readFileSync(full, 'utf8');
-    for (const token of tokens) {
-      const used = [...src.matchAll(CLASS_LITERAL)].some((m) =>
-        m[1].split(/\s+/).includes(token),
-      );
-      if (!used) stale.push(`${rel}: ${token}`);
+test('empty messages use the shared note style', () => {
+  const sites = {
+    'client/views/settings/organization-members/member-list.js': [
+      'organization.members.empty',
+    ],
+    'client/views/list/views/trash-view.js': ['list.trash.empty'],
+    'client/views/list/views/presentations-view.js': [
+      'list.presentations.noMatch',
+      'list.presentations.empty',
+    ],
+    'client/views/editor/image-library/grid.js': [
+      'imageLibrary.noResults',
+      'imageLibrary.empty',
+    ],
+    'client/views/editor/imagekit-picker/index.js': ['imagekit.noResults'],
+    'client/views/editor/modals/versions-modal.js': ['editor.versions.empty'],
+    'client/views/editor/slide-type-picker/index.js': [
+      'editor.slideTypePicker.noResults',
+    ],
+  };
+  const offenders = [];
+  for (const [rel, keys] of Object.entries(sites)) {
+    const src = fs.readFileSync(path.join(repoRoot, rel), 'utf8');
+    for (const key of keys) {
+      const pos = src.indexOf(`'${key}'`);
+      const note = src.lastIndexOf("class: 'empty-note'", pos);
+      const otherClass = src.lastIndexOf('class:', pos);
+      if (pos < 0 || note < 0 || otherClass !== note) {
+        offenders.push(`${rel}: ${key}`);
+      }
     }
   }
-  assert.deepEqual(
-    stale,
-    [],
-    `Stale allowlist entr(y/ies) — migrated sites must drop off the list:\n  ${stale.join('\n  ')}`,
+  assert.deepEqual(offenders, []);
+  const compare = fs.readFileSync(
+    path.join(repoRoot, 'client/views/editor/modals/versions-compare.js'),
+    'utf8',
+  );
+  assert.equal(
+    compare.match(/class: 'empty-note compare-placeholder'/g)?.length,
+    2,
   );
 });
