@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.61.0](https://github.com/jaapstronks/deckyard/compare/v1.60.0...v1.61.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* Import createTagEditor from client/views/tags/index.js instead of client/views/list/tag-editor.js. No shim remains at the old path. Fork guidance is in docs/reference/fork-setup.md. Apply the beta MINOR override in the next Release PR.
+
+### Changed
+
+* clarify beta release override path ([158e435](https://github.com/jaapstronks/deckyard/commit/158e435cb38c769af6e4a341a7a4dbf2dfe7fcbd))
+* expose tag editor through its feature seam ([b0a590f](https://github.com/jaapstronks/deckyard/commit/b0a590f53bd2ad99cb7d732771983fcb5a0b6963))
+
 ## [1.60.0](https://github.com/jaapstronks/deckyard/compare/v1.59.1...v1.60.0) (2026-10-12)
 
 
