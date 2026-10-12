@@ -217,15 +217,26 @@ async function getSlideLibraryRow(id, ctx) {
  * off the axis is refused, because `mergeLibraryI18n` writes
  * `versions[dominant]` on every content PATCH and would mint that key there.
  *
+ * Omitted i18n, versions and version content are allowed. Present values must
+ * be objects, including each version record; null is not omission.
+ *
  * @param {unknown} i18n
  * @returns {object}
- * @throws {AppError} 400 `invalid`, `details.field` = `i18n.versions` or
- *   `i18n.dominant`
+ * @throws {AppError} 400 `invalid`, `details.field` names the refused path
  */
 function canonicalCreateI18n(i18n) {
-  if (!isPlainObject(i18n)) return {};
-  if (isPlainObject(i18n.versions)) {
+  if (i18n === undefined) return {};
+  requireI18nObject(i18n, 'i18n');
+  if ('versions' in i18n) {
+    requireI18nObject(i18n.versions, 'i18n.versions');
     refuseNonCanonicalVersionKeys(i18n.versions);
+    for (const [lang, version] of Object.entries(i18n.versions)) {
+      const field = `i18n.versions.${lang}`;
+      requireI18nObject(version, field);
+      if ('content' in version) {
+        requireI18nObject(version.content, `${field}.content`);
+      }
+    }
   }
   if (i18n.dominant === undefined) return i18n;
   const dominant = normalizeLang(i18n.dominant);
@@ -238,6 +249,13 @@ function canonicalCreateI18n(i18n) {
     );
   }
   return { ...i18n, dominant };
+}
+
+/** Refuse malformed language data before any create writes to the database. */
+function requireI18nObject(value, field) {
+  if (!isPlainObject(value)) {
+    throw new AppError(`${field} must be an object`, 400, { field }, 'invalid');
+  }
 }
 
 /**

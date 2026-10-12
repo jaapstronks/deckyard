@@ -35,8 +35,12 @@ const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
 const { handleSlideLibrary } =
   await import('../server/routes/api/slide-library.js');
-const { listPersonalLibrary, listOrganizationLibrary } =
-  await import('../server/storage/slide-library.js');
+const {
+  listPersonalLibrary,
+  listOrganizationLibrary,
+  createPersonalLibraryItem,
+  createOrganizationLibraryItem,
+} = await import('../server/storage/slide-library.js');
 
 test.before(async () => {
   __setTestDb(
@@ -138,3 +142,44 @@ test('a dominant off the axis is refused: a content PATCH would mint it as a key
   assert.equal(res.body.error, 'invalid');
   assert.deepEqual(res.body.details, { field: 'i18n.dominant' });
 });
+
+// B496: exercise both HTTP and direct storage callers. The fake database has
+// no library insert support, so reaching an insert also fails these refusals.
+for (const shelf of ['personal', 'organization']) {
+  for (const value of [[], 'text', null, 42, false]) {
+    for (const field of [
+      'i18n',
+      'i18n.versions',
+      'i18n.versions.nl',
+      'i18n.versions.en-GB.content',
+    ]) {
+      test(`${shelf} refuses ${field} = ${JSON.stringify(value)} before writing`, async () => {
+        const body = bodyWithVersion('en-GB');
+        const path = field.split('.');
+        const key = path.pop();
+        const parent = path.reduce((obj, part) => obj[part], body);
+        parent[key] = value;
+        const before = await shelfItems(shelf);
+        const res = await post(shelf, body);
+        assert.equal(res.statusCode, 400, JSON.stringify(res.body));
+        assert.equal(res.body.error, 'invalid');
+        assert.deepEqual(res.body.details, { field });
+        const create = () =>
+          shelf === 'personal'
+            ? createPersonalLibraryItem(testScope(), OWNER, body, {
+                actorEmail: OWNER,
+              })
+            : createOrganizationLibraryItem(testScope(), body, {
+                actorEmail: OWNER,
+              });
+        await assert.rejects(create, (err) => {
+          assert.equal(err.statusCode, 400);
+          assert.equal(err.code, 'invalid');
+          assert.deepEqual(err.details, { field });
+          return true;
+        });
+        assert.deepEqual(await shelfItems(shelf), before);
+      });
+    }
+  }
+}
