@@ -7,7 +7,7 @@ import { renderSlideBodySemanticHtml } from '../shared/slide-types/semantic-proj
 import {
   collectCardsForSlide,
   applyCardsVisibility,
-} from '../client/views/presenter/step.js';
+} from '../client/lib/slide-runtime/step.js';
 
 /**
  * B313 (D148) — the reader said `<th scope="row">` for a table's first column

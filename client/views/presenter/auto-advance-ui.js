@@ -4,7 +4,7 @@
  * Owns everything that turns the deck's auto-advance/pacing config into
  * on-screen behaviour: the countdown bar over the stage, the deck-time readout
  * in the progress area, and the pause/resume toolbar button's label + handler.
- * The underlying timer engine is `auto-advance.js`; this module only builds the
+ * The underlying timer engine is `lib/slide-runtime/auto-advance.js`; this module only builds the
  * chrome around it and connects it to the deck.
  *
  * Lifted out of `renderPresenter` as a P4 seam (docs/plans/TODO.md B10). It is a
@@ -16,7 +16,7 @@
  */
 
 import { t } from '../../lib/ui-i18n.js';
-import { createAutoAdvance } from './auto-advance.js';
+import { createAutoAdvance } from '../../lib/slide-runtime/auto-advance.js';
 import {
   calculateDeckTime,
   getSlideEffectiveDuration,

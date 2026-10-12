@@ -17,7 +17,7 @@ import {
   createPresenterDeckController,
   normalizeNotesStrings,
 } from './deck-controller.js';
-import { STEP_DEPS } from './step.js';
+import { STEP_DEPS } from '../../lib/slide-runtime/step.js';
 import { createPresenterHighlighter } from './highlighter.js';
 import { createPresentChannel } from '../../lib/net/present-channel.js';
 import { readDeckLangFromUrl } from './present-lang.js';

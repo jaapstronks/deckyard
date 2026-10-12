@@ -19,11 +19,10 @@
  *      `slide-runtime/` are exempt by D263: they are the DOM and the slide
  *      runtime, and the runtime loads what a slide needs.
  *
- *   3. **Comments seam.** Editor and viewer consumers import comments through
- *      `views/comments/index.js`. Comment concerns live in that feature, with
- *      no retired editor paths.
- *   4. **Tags seam.** Tag editor consumers use views/tags/index.js; the old
- *      list address is removed. Other feature seams remain separate work.
+ *   3. **Feature seams.** Every client consumer outside views/<feature>/
+ *      imports that feature through its index.js. This includes the app shell,
+ *      static imports, re-exports and literal dynamic imports. Within a feature,
+ *      concern imports remain private implementation details (B671).
  *
  * **No allowlist**, on purpose (the same stance as `module-layout.test.js`):
  * everything the layer counts found was moved when the rule landed (B528), so a new
@@ -112,37 +111,83 @@ function stripComments(source) {
 const rel = (p) => path.relative(repoRoot, p).split(path.sep).join('/');
 const inside = (p, dir) => p.startsWith(dir + path.sep);
 
-const commentsRoot = path.join(viewsRoot, 'comments');
-const tagsRoot = path.join(viewsRoot, 'tags');
-
 /** Imports from outside a feature into its implementation. */
-function featureSeamViolations(file, source, featureRoot) {
-  if (inside(file, featureRoot)) return [];
-  const seam = path.join(featureRoot, 'index.js');
-  return resolvedImports(file, source).filter(
-    (target) => inside(target, featureRoot) && target !== seam,
-  );
-}
-
-for (const featureRoot of [commentsRoot, tagsRoot]) {
-  const feature = path.basename(featureRoot);
-  test(`${feature} consumers use the public feature seam`, () => {
-    const offenders = jsFiles(path.join(repoRoot, 'client'))
-      .filter((file) => !inside(file, path.join(repoRoot, 'client/vendor')))
-      .flatMap((file) =>
-        featureSeamViolations(
-          file,
-          fs.readFileSync(file, 'utf8'),
-          featureRoot,
-        ).map((target) => `${rel(file)} -> ${rel(target)}`),
-      );
-    assert.deepEqual(
-      offenders,
-      [],
-      `Import ${feature} through views/${feature}/index.js`,
+function featureSeamViolations(file, source) {
+  return resolvedImports(file, source).filter((target) => {
+    if (!inside(target, viewsRoot)) return false;
+    const feature = path.relative(viewsRoot, target).split(path.sep)[0];
+    const featureRoot = path.join(viewsRoot, feature);
+    return (
+      !inside(file, featureRoot) &&
+      target !== path.join(featureRoot, 'index.js')
     );
   });
 }
+
+test('all client consumers use public feature seams (B671)', () => {
+  const clientRoot = path.join(repoRoot, 'client');
+  const offenders = jsFiles(clientRoot)
+    .filter((file) => !inside(file, path.join(clientRoot, 'vendor')))
+    .flatMap((file) =>
+      featureSeamViolations(file, fs.readFileSync(file, 'utf8')).map(
+        (target) => `${rel(file)} -> ${rel(target)}`,
+      ),
+    );
+  assert.deepEqual(
+    offenders,
+    [],
+    'Import another feature only through views/<feature>/index.js',
+  );
+});
+
+test('the feature seam guard parses imports for any feature and client consumer', () => {
+  // A synthetic feature keeps the gate independent of a fixed feature list.
+  for (const file of [
+    path.join(repoRoot, 'client', 'app.js'),
+    path.join(viewsRoot, 'viewer', 'probe.js'),
+    path.join(libRoot, 'dom', 'probe.js'),
+  ]) {
+    const featureRoot = path.join(viewsRoot, 'probe-feature');
+    let specifier = path
+      .relative(path.dirname(file), featureRoot)
+      .split(path.sep)
+      .join('/');
+    if (!specifier.startsWith('.')) specifier = './' + specifier;
+    for (const source of [
+      `import { factory } from '${specifier}/concern.js';`,
+      `export { factory } from '${specifier}/nested/concern.js';`,
+      `export * from '${specifier}/concern.js';`,
+      `import('${specifier}/concern.js');`,
+      `import('${specifier}/nested/index.js');`,
+    ]) {
+      assert.equal(featureSeamViolations(file, source).length, 1, source);
+    }
+    for (const source of [
+      `import { factory } from '${specifier}/index.js';`,
+      `export * from '${specifier}/index.js';`,
+      `import('${specifier}/index.js');`,
+      `// import { factory } from '${specifier}/concern.js';`,
+      `/* export * from '${specifier}/concern.js'; */`,
+      `const example = "import('${specifier}/concern.js')";`,
+    ]) {
+      assert.deepEqual(featureSeamViolations(file, source), [], source);
+    }
+  }
+  for (const source of [
+    "import { helper } from './concern.js';",
+    "export * from './nested/concern.js';",
+    "import('./concern.js');",
+  ]) {
+    assert.deepEqual(
+      featureSeamViolations(
+        path.join(viewsRoot, 'probe-feature', 'component.js'),
+        source,
+      ),
+      [],
+      source,
+    );
+  }
+});
 
 test('tag editor has no retired list address', () => {
   assert.equal(
@@ -157,43 +202,6 @@ test('comment modules have no retired editor address', () => {
     .filter((name) => /^comments?-.*\.js$/.test(name));
   assert.deepEqual(retired, [], 'Comment modules belong to views/comments/');
 });
-
-for (const featureRoot of [commentsRoot, tagsRoot]) {
-  const feature = path.basename(featureRoot);
-  test(`the ${feature} seam guard sees module imports and ignores examples`, () => {
-    const consumer = path.join(viewsRoot, 'viewer', 'probe.js');
-    for (const source of [
-      `import { factory } from '../${feature}/concern.js';`,
-      `export { factory } from '../${feature}/concern.js';`,
-      `import('../${feature}/concern.js');`,
-    ]) {
-      assert.equal(
-        featureSeamViolations(consumer, source, featureRoot).length,
-        1,
-        source,
-      );
-    }
-    for (const source of [
-      `import { factory } from '../${feature}/index.js';`,
-      `// import { factory } from '../${feature}/concern.js';`,
-      `const example = "import('../${feature}/concern.js')";`,
-    ]) {
-      assert.deepEqual(
-        featureSeamViolations(consumer, source, featureRoot),
-        [],
-        source,
-      );
-    }
-    assert.deepEqual(
-      featureSeamViolations(
-        path.join(featureRoot, 'component.js'),
-        "import { helper } from './concern.js';",
-        featureRoot,
-      ),
-      [],
-    );
-  });
-}
 
 const libModules = jsFiles(libRoot).map((file) => {
   const source = fs.readFileSync(file, 'utf8');

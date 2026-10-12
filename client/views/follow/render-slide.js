@@ -6,7 +6,7 @@ import { slideByIdOrIndex } from './slides.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { isLiveInviteSlideType } from '../../../shared/slide-types/live-session.js';
 import { h } from '../../lib/dom/index.js';
-import { applyStepVisibilityForMode } from '../presenter/step.js';
+import { applyStepVisibilityForMode } from '../../lib/slide-runtime/step.js';
 
 export function renderFollowSlide({
   pres,

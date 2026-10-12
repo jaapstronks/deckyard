@@ -315,3 +315,6 @@ export async function renderNotes(root, sessionId) {
     qaCtl.detach();
   };
 }
+
+// Public operations shared with the app shell and other features.
+export { renderNotesJoin } from './notes-join.js';

@@ -68,6 +68,11 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
     `views/<feature>/` with an `index.js` seam and no route (the shape
     `views/comments/`, `views/slide-library/` and `views/user/` have).
   - The direction is one way: **`lib/` never imports from `views/`.**
+  - Across feature boundaries, import only `views/<feature>/index.js`.
+    Imports within that feature may address its concern modules directly.
+    `tests/client-layer-direction.test.js` parses all non-vendor client modules
+    to enforce this for static imports, re-exports and literal dynamic imports,
+    without an allowlist (B671).
   - Feature-less shared UI has **one address: `lib/dom/`** — banners,
     empty states, a field wrapper. No `views/shared/`, no
     components or features folder, no third place.

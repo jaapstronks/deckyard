@@ -20,10 +20,7 @@ import {
   deriveUniqueSlug,
 } from '../../slide-type-editor/io.js';
 import { loadThemeById } from '../../../../lib/theme/theme.js';
-import {
-  computeDrop,
-  resolveMove,
-} from '../../../editor/inline-edit/reorder-geometry.js';
+import { computeDrop, resolveMove } from '../../../editor/index.js';
 import { getCategories, CATEGORY_LABELS } from './categories.js';
 import { createCurationThumbnail } from './curation-thumbnails.js';
 import { openTypePreview as openTypePreviewModal } from './type-preview-modal.js';
