@@ -208,7 +208,7 @@ export function registerTools(
   // organization's, as on every AI path (B659). A stdio session has no
   // organization and falls back to the default one.
   function sessionSlideTypeOffer(context) {
-    return loadSlideTypeOffer({ organizationId: context?.organizationId });
+    return loadSlideTypeOffer(storageScopeOf(context));
   }
 
   // A slide an MCP tool creates is composed by the shared slide factory like
