@@ -1,10 +1,10 @@
+import { ensureUserByEmail } from './users.js';
 /**
  * Storage layer for password reset functionality.
  * Handles token generation, validation, rate limiting, and user password management.
  * Uses shared secure-tokens utility for token generation/hashing.
  */
 
-import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { getUserByEmailGlobal } from './identity.js';
 import {
@@ -269,18 +269,18 @@ export async function setUserPassword(scope, email, password) {
     return { ok: false, reason: validation.reason };
   }
 
-  // A reset token carries only an email, never an organization, so the person
-  // behind it is resolved globally. Scoping this lookup would make the reset
-  // insert a second row for an email that is globally unique, which fails.
-  const existingUser = await getUserByEmailGlobal(normalized);
-
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    const orgId = getOrgId(scope);
     const passwordHash = await hashPassword(password);
     const now = nowIso();
-
-    if (existingUser) {
-      // Update existing user
+    const result = await ensureUserByEmail(scope, {
+      email: normalized,
+      role: 'user',
+      authSource: 'database',
+      passwordHash,
+      passwordChangedAt: now,
+    });
+    if (!result?.user) return { ok: false, reason: 'unavailable' };
+    if (!result.created) {
       await db
         .updateTable('users')
         .set({
@@ -289,22 +289,7 @@ export async function setUserPassword(scope, email, password) {
           auth_source: 'database',
           updated_at: now,
         })
-        .where('id', '=', existingUser.id)
-        .execute();
-    } else {
-      // Nobody with this email exists yet: the new row lands in the context
-      // organization, which becomes their home organization.
-      await db
-        .insertInto('users')
-        .values({
-          organization_id: orgId,
-          email: normalized,
-          password_hash: passwordHash,
-          password_changed_at: now,
-          auth_source: 'database',
-          created_at: now,
-          updated_at: now,
-        })
+        .where('id', '=', result.user.id)
         .execute();
     }
 

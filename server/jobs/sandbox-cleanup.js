@@ -1,15 +1,14 @@
-import { sql } from 'kysely';
-import { getDb } from '../db/client.js';
-import { getDefaultOrganizationId } from '../config/database.js';
+import {
+  deleteExpiredSandboxDecks,
+  deleteExpiredSandboxGuests,
+} from '../storage/sandbox-cleanup.js';
+import { crossOrganizationScope } from '../storage/scope.js';
+import { createStorageScope } from '../utils/context.js';
 import {
   sandboxCookieMaxAgeDays,
   sandboxEnabled,
   sandboxTtlMs,
 } from '../config/sandbox.js';
-import {
-  SANDBOX_GUEST_EMAIL_PATTERN,
-  SANDBOX_GUEST_EMAIL_REGEX,
-} from '../auth/sandbox.js';
 import {
   getSandboxTotalBytes,
   sandboxMaxTotalBytes,
@@ -36,21 +35,9 @@ const log = createLogger('sandbox-cleanup');
  * @returns {Promise<number>} How many decks were deleted.
  */
 export async function sweepExpiredSandboxDecks() {
-  const db = getDb();
-  const orgId = getDefaultOrganizationId();
-  // Expired = created before (now − TTL). sandboxTtlMs() stays the single
-  // source of the TTL value; only the comparison lives in SQL.
+  const scope = createStorageScope(null);
   const cutoff = new Date(Date.now() - sandboxTtlMs()).toISOString();
-
-  const result = await db
-    .deleteFrom('presentations')
-    .where('organization_id', '=', orgId)
-    .where('owner_email', 'like', SANDBOX_GUEST_EMAIL_PATTERN)
-    .where('visibility', '<>', 'organization')
-    .where('created_at', '<=', cutoff)
-    .executeTakeFirst();
-
-  const deleted = Number(result?.numDeletedRows ?? 0);
+  const deleted = await deleteExpiredSandboxDecks(scope, cutoff);
 
   // Non-destructive disk-usage guard: once TTL-expired decks are gone, warn if
   // the whole presentations table is still over the global soft ceiling.
@@ -59,7 +46,7 @@ export async function sweepExpiredSandboxDecks() {
   // evict non-expired decks here — that would delete live guest work.
   const ceiling = sandboxMaxTotalBytes();
   if (ceiling > 0) {
-    const total = await getSandboxTotalBytes({ organizationId: orgId });
+    const total = await getSandboxTotalBytes(scope);
     if (total >= ceiling) {
       log.warn(
         `sandbox presentations at ${total} bytes ≥ ceiling ${ceiling}; ` +
@@ -89,21 +76,16 @@ export async function sweepExpiredSandboxDecks() {
  * @returns {Promise<number>} How many guest rows were deleted.
  */
 export async function sweepExpiredSandboxGuests() {
-  const db = getDb();
   const cutoff = new Date(
     Date.now() - sandboxCookieMaxAgeDays() * 24 * 60 * 60 * 1000,
   ).toISOString();
-  const result = await db
-    .deleteFrom('users')
-    .where('email', 'like', SANDBOX_GUEST_EMAIL_PATTERN)
-    .where((eb) =>
-      eb.or([
-        eb('created_at', '<=', cutoff),
-        sql`email !~ ${SANDBOX_GUEST_EMAIL_REGEX.source}`,
-      ]),
-    )
-    .executeTakeFirst();
-  return Number(result?.numDeletedRows ?? 0);
+  return deleteExpiredSandboxGuests(
+    crossOrganizationScope(
+      null,
+      'Expired sandbox cookie identities are instance-wide',
+    ),
+    cutoff,
+  );
 }
 
 /**

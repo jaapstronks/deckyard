@@ -14,7 +14,7 @@
 
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
-import { getUserByEmailGlobal } from './identity.js';
+import { ensureUserByEmail } from './users.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
 import { withDbGuard } from './utils/index.js';
@@ -80,33 +80,20 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
     }
     const now = nowIso();
 
-    // Resolved across organizations: the IdP asserts an email, and that email
-    // identifies exactly one person instance-wide (users.email is unique).
-    let user = await getUserByEmailGlobal(email);
-
-    let provisioned = false;
-
-    if (!user) {
-      if (!opts?.autoProvision) {
-        return { ok: false, reason: 'not_provisioned' };
-      }
-      const inserted = await db
-        .insertInto('users')
-        .values({
-          organization_id: orgId,
-          email,
-          name: name || null,
-          role: grantsAdmin ? 'admin' : defaultRole,
-          auth_source: 'oidc',
-          created_at: now,
-          updated_at: now,
-        })
-        .onConflict((oc) => oc.column('email').doNothing())
-        .returningAll()
-        .executeTakeFirst();
-      user = inserted || (await getUserByEmailGlobal(email));
-      provisioned = Boolean(inserted);
-    }
+    const result = await ensureUserByEmail(
+      { ...scope, organizationId: orgId },
+      {
+        email,
+        name: name || null,
+        role: grantsAdmin ? 'admin' : defaultRole,
+        authSource: 'oidc',
+        autoProvision: !!opts?.autoProvision,
+      },
+    );
+    if (!result) return { ok: false, reason: 'unavailable' };
+    if (!result.user) return { ok: false, reason: 'not_provisioned' };
+    let user = result.user;
+    const provisioned = result.created;
     // Membership first: a refused login (no_membership) must leave the
     // existing user row untouched - no rename, no admin grant, no
     // auth_source flip. The membership does not depend on the update below.

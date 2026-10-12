@@ -1,3 +1,4 @@
+import { getDb, sql } from '../db/client.js';
 import { generateSlug, isValidSlug } from '../../shared/slug.js';
 /**
  * Storage layer for custom themes.
@@ -595,4 +596,30 @@ async function getUserIdByEmail(db, orgId, email) {
     .executeTakeFirst();
 
   return user?.id || null;
+}
+
+/** Apply a fully validated seed batch in one transaction. */
+export async function upsertThemeSeeds(scope, seeds) {
+  toStorageContext(
+    scope,
+    'upsertThemeSeeds',
+    {},
+    { allowCrossOrganization: true },
+  );
+  await getDb()
+    .transaction()
+    .execute(async (trx) => {
+      for (const { record, hash } of seeds) {
+        await sql`
+        INSERT INTO themes (organization_id, seed_hash, slug, label, logo_url, logo_small_url, colors, fonts, config)
+        VALUES (NULL, ${hash}, ${record.slug}, ${record.label}, ${record.logoUrl ?? null}, ${record.logoSmallUrl ?? null},
+          ${JSON.stringify(record.colors)}::jsonb, ${JSON.stringify(record.fonts)}::jsonb, ${JSON.stringify(record.config)}::jsonb)
+        ON CONFLICT (slug) WHERE organization_id IS NULL DO UPDATE SET
+          seed_hash = EXCLUDED.seed_hash, label = EXCLUDED.label,
+          logo_url = EXCLUDED.logo_url, logo_small_url = EXCLUDED.logo_small_url,
+          colors = EXCLUDED.colors, fonts = EXCLUDED.fonts, config = EXCLUDED.config, updated_at = now()
+        WHERE themes.seed_hash IS DISTINCT FROM EXCLUDED.seed_hash
+      `.execute(trx);
+      }
+    });
 }

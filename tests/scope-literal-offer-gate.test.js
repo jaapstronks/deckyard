@@ -13,7 +13,6 @@ const ALLOWED = {
   'server/export/deck-slide-types.js': 1,
   'server/export/deck-theme.js': 1,
   'server/jobs/queue/workers/bulk-export-worker.js': 1,
-  'server/jobs/sandbox-cleanup.js': 1,
   'server/routes/api/share-links/public.js': 1,
   'server/routes/static/published.js': 2,
   'server/routes/static/embed.js': 1,

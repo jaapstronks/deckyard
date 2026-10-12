@@ -15,6 +15,15 @@ import js from '@eslint/js';
 import globals from 'globals';
 import importX from 'eslint-plugin-import-x';
 
+const storageQueryImportPatterns = [
+  {
+    regex:
+      '(^kysely(?:/|$)|(?:^|/)db/client(?:\\.js)?$|(?:^|/)storage/utils(?:/|$))',
+    message:
+      'Database queries belong in server/storage/; import a storage operation instead.',
+  },
+];
+
 // Every `t()` call must carry its English fallback: `t(key, fallback)`.
 // The fallback is what Tier-2 locales degrade to when a key is missing
 // (client/lib/ui-i18n.js) — the whole reason tiering is safe. Written as
@@ -972,6 +981,35 @@ export default [
     },
   },
 
+  // SQL and database handles belong to storage/db, never to their consumers.
+  {
+    files: ['server/**/*.js'],
+    ignores: [
+      'server/storage/**',
+      'server/db/**',
+      'server/utils/ai/schemas/**',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            ...nodeBuiltinImports,
+            {
+              name: 'zod',
+              message:
+                'Use request validators; zod belongs to AI output schemas.',
+            },
+          ],
+          patterns: [
+            ...nodeBuiltinImportPatterns,
+            ...storageQueryImportPatterns,
+          ],
+        },
+      ],
+    },
+  },
+
   // The directory the zod block exempts still gets the node: prefix rule; a
   // flat-config block that does not match leaves the rule unset rather than
   // inherited.
@@ -980,7 +1018,13 @@ export default [
     rules: {
       'no-restricted-imports': [
         'error',
-        { paths: nodeBuiltinImports, patterns: nodeBuiltinImportPatterns },
+        {
+          paths: nodeBuiltinImports,
+          patterns: [
+            ...nodeBuiltinImportPatterns,
+            ...storageQueryImportPatterns,
+          ],
+        },
       ],
     },
   },

@@ -58,32 +58,8 @@ const ALLOWLIST = [
     reason: 'single-organization identity fallback (no membership row to read)',
   },
   {
-    file: 'server/jobs/sandbox-cleanup.js',
-    reason: 'the sandbox is single-org by definition',
-  },
-  {
-    file: 'server/sandbox/library.js',
-    reason:
-      'the sandbox library seed runs at boot, before any session; the ' +
-      'sandbox is single-org by definition',
-  },
-  {
     file: 'server/auth/auth.js',
     reason: 'auth-disabled and dev-bypass synthetic users (no session org)',
-  },
-  {
-    file: 'server/auth/dev-bypass.js',
-    reason:
-      'the dev-bypass users row is created in the default organization; the ' +
-      'bypass has no session to read one from and refuses to run outside ' +
-      'development',
-  },
-  {
-    file: 'server/auth/sandbox.js',
-    reason:
-      'a sandbox guest users row is created in the default organization; ' +
-      'the sandbox is single-org by definition and a guest has no session ' +
-      'to read one from',
   },
   {
     file: 'server/utils/context.js',

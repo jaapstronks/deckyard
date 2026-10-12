@@ -8,6 +8,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parse } from 'acorn';
 import { walkJsFiles } from './helpers/call-sites.js';
 
@@ -77,7 +78,7 @@ test('root detector catches path construction, ignoring comments and temporary r
 });
 
 test('only the fork import audit constructs the checkout custom root', () => {
-  const root = new URL('../', import.meta.url).pathname;
+  const root = fileURLToPath(new URL('../', import.meta.url));
   const hits = walkJsFiles(path.join(root, 'tests'))
     .filter((file) => readsForkRoot(fs.readFileSync(file, 'utf8')))
     .map((file) => path.relative(root, file));
