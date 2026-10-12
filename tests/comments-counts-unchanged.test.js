@@ -31,9 +31,8 @@ globalThis.EventSource = class {
 };
 
 const { createCommentsPanel } =
-  await import('../client/views/editor/comments-panel.js');
-const { createCommentsApi } =
-  await import('../client/views/editor/comments-api.js');
+  await import('../client/views/comments/index.js');
+const { createCommentsApi } = await import('../client/views/comments/index.js');
 
 /** @param {{counts: Record<string, number>}} state - mutable counts source */
 function makePanel(state) {

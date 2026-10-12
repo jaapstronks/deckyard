@@ -1,8 +1,7 @@
 /**
- * Comments - the feature's public seam, shared by the editor's comments
- * panel, the preview lightbox and the share viewer: who may act on a comment,
- * rendering a stored body, the rich input with its link button and the
- * mention autocomplete.
+ * Comments - the feature's public seam for the editor, preview lightbox
+ * and viewers: API transport, panel and positioned markers, authorization,
+ * stored-body rendering and rich input with mentions and links.
  */
 
 export {
@@ -14,3 +13,6 @@ export { renderCommentBodyNodes } from './comment-body.js';
 export { createRichCommentInput } from './comment-rich-input.js';
 export { createCommentLinkButton } from './comment-toolbar.js';
 export { attachMentionAutocomplete } from './mention-autocomplete.js';
+export { createCommentsApi } from './comments-api.js';
+export { createCommentsPanel } from './comments-panel.js';
+export { createCommentMarkers } from './comment-markers.js';

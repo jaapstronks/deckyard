@@ -1,5 +1,5 @@
 /**
- * Comments API client for the editor.
+ * Comments API client shared by the editor and viewers.
  * Handles CRUD operations for presentation comments.
  */
 
