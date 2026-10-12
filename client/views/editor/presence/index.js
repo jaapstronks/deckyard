@@ -22,7 +22,7 @@ import { createPresenceUI } from './presence-ui.js';
  * @param {HTMLElement} opts.thumb - preview slide container
  * @param {HTMLElement} [opts.editorMount] - side-form root
  * @param {Function} opts.getSelectedSlideId
- * @returns {{ setViewSlide: Function, destroy: Function }}
+ * @returns {{ setViewSlide: Function, detach: Function }}
  */
 export function initEditorPresence({
   pres,

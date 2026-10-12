@@ -25,7 +25,7 @@ const AUTO_DISMISS_MS = 12000;
 /**
  * @param {object} opts
  * @param {HTMLElement} opts.stage - The `.preview-stage` (positioning context)
- * @returns {{ maybeShow: Function, dismiss: Function, destroy: Function }}
+ * @returns {{ maybeShow: Function, dismiss: Function, detach: Function }}
  */
 export function createInlineCoachMark({ stage } = {}) {
   let el = null;

@@ -5,7 +5,7 @@
  *   const vl = createVideoLayer({ containerEl, getCurrentSlide });
  *   vl.setConfig(pres.settings.liveVideo);   // configure + start
  *   vl.updatePosition();                      // call on slide change
- *   vl.destroy();                             // cleanup
+ *   vl.detach();                             // cleanup
  */
 
 import {
@@ -22,7 +22,7 @@ import { h } from '../dom/index.js';
  * @param {Object} opts
  * @param {HTMLElement} opts.containerEl - Stage wrapper to append the layer to
  * @param {() => Object|null} opts.getCurrentSlide - Returns current slide object
- * @returns {{ setConfig, updatePosition, show, hide, destroy, el }}
+ * @returns {{ setConfig, updatePosition, show, hide, detach, el }}
  */
 export function createVideoLayer({ containerEl, getCurrentSlide }) {
   // --- DOM scaffold ---

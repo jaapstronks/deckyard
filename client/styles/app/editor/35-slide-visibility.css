@@ -32,7 +32,7 @@
 /* Color coding by preset */
 .slide-visibility-badge--draft {
   background: hsl(var(--app-warning));
-  color: #000;
+  color: hsl(var(--app-text-on-warning));
 }
 
 .slide-visibility-badge--draft::before {
@@ -41,7 +41,7 @@
 
 .slide-visibility-badge--internal {
   background: hsl(var(--app-accent-primary));
-  color: #fff;
+  color: hsl(var(--app-text-on-solid));
 }
 
 .slide-visibility-badge--internal::before {
@@ -50,7 +50,7 @@
 
 .slide-visibility-badge--hidden {
   background: hsl(var(--app-danger));
-  color: #fff;
+  color: hsl(var(--app-text-on-solid));
 }
 
 .slide-visibility-badge--hidden::before {
@@ -59,7 +59,7 @@
 
 .slide-visibility-badge--skipInPresentation {
   background: hsl(var(--app-text-secondary));
-  color: #fff;
+  color: hsl(var(--app-text-on-solid));
 }
 
 .slide-visibility-badge--skipInPresentation::before {
@@ -342,7 +342,7 @@
 
 .slide-draft-badge {
   background: hsl(var(--app-warning));
-  color: #000;
+  color: hsl(var(--app-text-on-warning));
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
@@ -370,7 +370,7 @@
   top: 4px;
   right: 4px;
   background: hsl(var(--app-warning));
-  color: #000;
+  color: hsl(var(--app-text-on-warning));
   font-size: 9px;
   font-weight: 700;
   text-transform: uppercase;
