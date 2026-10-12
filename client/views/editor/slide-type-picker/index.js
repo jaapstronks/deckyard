@@ -767,9 +767,8 @@ export function createSlideTypePicker({
 
     mount.append(typesWrap);
 
-    const noResults = h('div', { class: 'ps-picker-no-results', hidden: true });
+    const noResults = h('div', { class: 'empty-note', hidden: true });
     const noResultsText = h('div', {
-      class: 'ps-picker-no-results-text',
       text: t(
         'editor.slideTypePicker.noResults',
         'No slide types match your search.',
