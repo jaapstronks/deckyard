@@ -227,9 +227,15 @@ is what release-please reads — keep it a valid Conventional Commit.
    `vX.Y.Z`, and publishes a **GitHub Release**. You never pick the number by
    hand — it's derived from what's in the PR.
 
-The [`merge-housekeeping`](../../.claude/skills/merge-housekeeping/SKILL.md) skill
-nudges (phone push) when the accumulated merges warrant cutting a release, so the
-Release PR doesn't sit open and forgotten. It never cuts the release itself.
+### Agent-managed release cadence
+
+The maintainer delegates release timing and execution to agents (2026-10-12). After substantive merges, evaluate the unreleased changes and release-dependent briefings. Schedule a separate release-cut review-and-merge session when a security fix, breaking change or concrete release blocker warrants it; otherwise use about fifteen user-facing changes or roughly a week with worthwhile unreleased changes as a guideline. These are judgment calls, not a mandatory calendar: internal churn alone does not warrant a release, and an urgent fix can ship sooner.
+
+The closing `/handoff` announces that release review, its Release PR and resolved model. It is an announcement under the standing mandate, not a request for a new timing decision. The maintainer can override or cancel it. Check the shared queue and claims so only one lane schedules the same release. Preserve pending feature reviews and audits explicitly in the queue; the release review hands back to them afterward. An unready Release PR keeps its concrete blocker visible while other useful work continues.
+
+The receiving session independently reviews the current release scope, version, changelog, migrations, configuration and CI before merging the release-please PR. A routine release gets tier `workhorse`; escalate substantive unresolved risks according to the item tiers. Do not bypass required checks or hand-bump a version. After merging, verify the tag and GitHub Release, deliver the website notes and sandbox upgrade using the upstream recipes below, and register evidence for briefings whose release condition was actually met. A tag alone does not complete downstream fork, capture or deployment verification.
+
+The [`merge-housekeeping`](../../.claude/skills/merge-housekeeping/SKILL.md) skill evaluates this cadence and records scheduling in `docs/plans/_reconcile/release-log.md`. It schedules the separate reviewer; it does not cut a release as a side effect of a feature merge.
 
 ## Correcting a version
 
