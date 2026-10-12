@@ -13,7 +13,7 @@ import {
 import {
   getSandboxTotalBytes,
   sandboxMaxTotalBytes,
-} from '../storage/presentations/sandbox-quota.js';
+} from '../storage/presentations/index.js';
 import { createLogger } from '../utils/logger.js';
 import { createIntervalJob } from './interval-job.js';
 

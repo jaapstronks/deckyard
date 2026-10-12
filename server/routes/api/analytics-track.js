@@ -18,7 +18,7 @@ import { norm } from '../../utils/normalize.js';
 import { redactSecret } from '../../utils/log-redact.js';
 import { getClientIp, allowRequest } from '../../utils/rate-limit.js';
 import { getPresentation } from '../../storage/presentations/index.js';
-import { validateShareLink } from '../../storage/share-links/crud.js';
+import { validateShareLink } from '../../storage/share-links/index.js';
 import { getAppSettings, getUserSettings } from '../../storage/settings.js';
 import {
   isValidDeviceId,
@@ -45,7 +45,7 @@ import {
   transitionToSlide,
   endAllSlideViewsForSession,
 } from '../../storage/analytics/index.js';
-import { getFollowStateForPresentation } from '../../storage/live-sessions/follow-state.js';
+import { getFollowStateForPresentation } from '../../storage/live-sessions/index.js';
 import { createLogger } from '../../utils/logger.js';
 import { crossOrganizationScope } from '../../storage/scope.js';
 const log = createLogger('analytics-track');

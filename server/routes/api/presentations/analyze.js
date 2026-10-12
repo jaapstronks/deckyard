@@ -4,7 +4,7 @@
  */
 
 import { methodNotAllowed, requireJsonBody } from '../../../utils/http.js';
-import { createComment } from '../../../storage/presentations/comments.js';
+import { createComment } from '../../../storage/presentations/index.js';
 import {
   analyzePresentation,
   suggestionToCommentData,

@@ -56,7 +56,7 @@ import {
 import { DEFAULT_THEME_SLUG } from '../../shared/constants/themes.js';
 import { getThemeRecord, listSeedThemes } from './themes.js';
 import { UUID_RE } from '../utils/uuid.js';
-import { SUBSCRIPTION_LEVELS } from './presentations/subscriptions.js';
+import { SUBSCRIPTION_LEVELS } from './presentations/index.js';
 import {
   isEmbeddableUrl,
   normalizeProviderId,

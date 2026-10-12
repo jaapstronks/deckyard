@@ -12,7 +12,7 @@
  * @module server/services/ownership
  */
 
-import { transferPresentationOwnership } from '../storage/presentations/ownership.js';
+import { transferPresentationOwnership } from '../storage/presentations/index.js';
 import { getUserByEmail } from '../storage/users.js';
 import {
   createActivityEvent,

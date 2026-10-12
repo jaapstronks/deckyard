@@ -29,7 +29,7 @@ import {
   REASON_TO_TYPE,
 } from './comment-subscriptions.js';
 import { getUserByEmail } from '../storage/users.js';
-import { getCommentAuthorEmail } from '../storage/presentations/comments.js';
+import { getCommentAuthorEmail } from '../storage/presentations/index.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from '../utils/logger.js';
 

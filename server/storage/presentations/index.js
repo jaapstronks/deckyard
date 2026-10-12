@@ -224,7 +224,7 @@ export async function updatePresentation(storageScope, id, body, opts) {
       countInstanceHealth(slideTypeEntries('slide_type.authored', result));
     }
     fireAndForget(
-      import('../live-sessions/sse.js').then((m) =>
+      import('../live-sessions/index.js').then((m) =>
         m.notifyDeckUpdatedForPresentation(storageScope, id),
       ),
       'live-session deck refresh after save',
@@ -1604,3 +1604,43 @@ export const __store = {
   createPresentationRow,
   updatePresentationRow,
 };
+
+export { getYDocState, setYDocState } from './ydocs.js';
+
+export { getSandboxTotalBytes, sandboxMaxTotalBytes } from './sandbox-quota.js';
+
+export { getPresentationCached } from './cache.js';
+
+export { updateSlideNotes } from './slide-notes.js';
+
+export {
+  createComment,
+  getComment,
+  resolveComment,
+  markThreadsRead,
+  getOpenCommentCount,
+  getCommentCountsBySlide,
+  getCommentAuthorEmail,
+  getThreadParticipants,
+  listComments,
+  listRecentCommentsOnDecks,
+  updateComment,
+  deleteComment,
+  reopenComment,
+  dismissComment,
+} from './comments.js';
+
+export {
+  getSubscription,
+  setSubscription,
+  SUBSCRIPTION_LEVELS,
+  listSubscriptions,
+} from './subscriptions.js';
+
+export { transferPresentationOwnership } from './ownership.js';
+
+export {
+  normalizeLang,
+  refuseNonCanonicalVersionKeys,
+  TRANSLATION_LANGS,
+} from './i18n.js';

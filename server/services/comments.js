@@ -56,7 +56,7 @@ import {
   dismissComment,
   getOpenCommentCount,
   getCommentCountsBySlide,
-} from '../storage/presentations/comments.js';
+} from '../storage/presentations/index.js';
 import { getPresentation } from '../storage/presentations/index.js';
 import { repoRootOf } from '../storage/scope.js';
 import {

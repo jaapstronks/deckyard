@@ -32,7 +32,7 @@ import {
 import {
   getYDocState as defaultGetYDocState,
   setYDocState as defaultSetYDocState,
-} from '../storage/presentations/ydocs.js';
+} from '../storage/presentations/index.js';
 import { singleOrganizationScope } from '../storage/scope.js';
 import { migratePresentation } from '../../shared/slide-types/schema-version.js';
 

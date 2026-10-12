@@ -33,7 +33,7 @@ import {
   normalizeLang,
   refuseNonCanonicalVersionKeys,
   TRANSLATION_LANGS,
-} from './presentations/i18n.js';
+} from './presentations/index.js';
 
 /**
  * The refusal of a change to a shared item by someone who is neither its

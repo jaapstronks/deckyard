@@ -31,7 +31,7 @@ import { crossOrganizationScope } from '../storage/scope.js';
 import {
   countPersistedSessions,
   sweepExpiredSessions,
-} from '../storage/live-sessions/db.js';
+} from '../storage/live-sessions/index.js';
 import { createLogger } from '../utils/logger.js';
 import { createIntervalJob } from './interval-job.js';
 

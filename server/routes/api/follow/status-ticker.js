@@ -8,7 +8,7 @@
  */
 
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
-import { getPresentationCached } from '../../../storage/presentations/cache.js';
+import { getPresentationCached } from '../../../storage/presentations/index.js';
 import { fireAndForget } from '../../../utils/fire-and-forget.js';
 import {
   computeAudienceCapabilitiesFromState,

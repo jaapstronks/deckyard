@@ -23,7 +23,7 @@ import {
   getSubscription,
   setSubscription,
   SUBSCRIPTION_LEVELS,
-} from '../../../storage/presentations/subscriptions.js';
+} from '../../../storage/presentations/index.js';
 import { getUserSettings } from '../../../storage/settings.js';
 
 export async function handlePresentationSubscription(
