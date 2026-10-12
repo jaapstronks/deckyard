@@ -31,7 +31,7 @@
   display: block;
   width: 160px;
   height: 90px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 10px;
   border: 1px solid hsl(var(--app-border-default));
   background: hsl(var(--app-bg-sunken));
