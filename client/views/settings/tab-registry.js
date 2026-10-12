@@ -217,7 +217,7 @@ export function reachableTabs(access) {
  */
 export function resolveTab(key, access) {
   const tab = SETTINGS_TABS.find((entry) => entry.key === key);
-  return tab && reaches(tab, access) ? key : DEFAULT_TAB;
+  return tab && reaches(tab, access) ? tab.key : DEFAULT_TAB;
 }
 
 /**

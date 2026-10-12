@@ -169,7 +169,15 @@ test('a multi-workspace member gets the organization tabs with the personal ones
 
 test('a hash for a tab out of reach lands on the default', async () => {
   const plain = { email: 'a@example.com', isAdmin: false };
-  for (const hash of ['health', 'users', 'fonts', 'organization', 'nope']) {
+  for (const hash of [
+    'health',
+    'users',
+    'fonts',
+    'organization',
+    'nope',
+    'constructor',
+    'toString',
+  ]) {
     const seen = await renderFor(plain, hash);
     assert.equal(seen.active, DEFAULT_TAB, `#${hash}`);
   }
