@@ -133,6 +133,10 @@
 
   "comments.aiAuthor": "AI Assistant",
 
+  "published.untitled": "Presentation",
+  "published.description": "View the presentation “{title}”.",
+  "published.readerLink": "Reading view",
+
   "qa.anonymous": "Anonymous",
   "qa.noQuestions": "No questions (yet).",
   "qa.expand": "Expand",
