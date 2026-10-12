@@ -33,7 +33,7 @@ ladder in `shared/constants/permissions.js`, and the deck-level grants in
 
 ## Module map
 
-The deciders (`server/utils/presentation-authz/`, 5 modules, 604 lines), fronted
+The deciders (`server/utils/presentation-authz/`), fronted
 by one barrel:
 
 - `server/utils/presentation-authz/index.js` — the barrel every call site

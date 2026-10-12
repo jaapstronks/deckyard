@@ -20,7 +20,7 @@ state recently — a live session can be `ended` or `not_started`.
 
 ## Module map
 
-Storage (`server/storage/live-sessions/`, 10 modules):
+Storage (`server/storage/live-sessions/`):
 
 - `server/storage/live-sessions/index.js` — barrel; the public surface.
 - `server/storage/live-sessions/constants.js` — timing: `TTL_MS` (24 h idle),
@@ -49,9 +49,9 @@ Storage (`server/storage/live-sessions/`, 10 modules):
 
 Routes:
 
-- `server/routes/api/live-sessions.js` (~416 lines) — **presenter** routes,
+- `server/routes/api/live-sessions.js` — **presenter** routes,
   all behind deck-write.
-- `server/routes/api/live-session-audience.js` (~267 lines) — **public**
+- `server/routes/api/live-session-audience.js` — **public**
   capability-based routes (the session id is the authorization).
 - `server/routes/api/follow/` — a seam in `index.js` over `state.js`,
   `events.js`, `presentation.js`, `interactions.js`, `questions.js`,

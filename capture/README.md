@@ -277,7 +277,7 @@ flags them as stale.
 
 The walk stops at the `capture/` boundary: an import of `shared/` or `server/`
 is neither hashed nor followed. That boundary is the whole design. Unscoped, the
-graph runs to ~122 modules through `lib/comments-seed.js`, and those directories
+graph reaches shared and server modules through `lib/comments-seed.js`, and those directories
 took 308 commits in the same 60 days `capture/` took 6 — every recipe would read
 as stale nearly every day, and a gate that is always red gets ignored.
 

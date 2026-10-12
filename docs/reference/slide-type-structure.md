@@ -188,8 +188,7 @@ Assertion 4's `VARIANT_BURNDOWN` has been empty since the cut (D100). Its one en
 because it guards the codebase around the types rather than the types
 themselves, and it is the only one of the five that comes from a real regression
 (PR #451) rather than from design. Every tracked module that branches on three
-or more type names must be accounted for, with a kind and a reason; 46 modules
-qualify. Full account in
+or more type names must be accounted for, with a kind and a reason. Full account in
 [`slide-type-companions.md`](./slide-type-companions.md#the-name-branching-inventory--no-hole-in-the-matrix).
 
 Its most useful finding was an argument for the next facet: **nine modules

@@ -33,7 +33,7 @@ wrong. Each is also runnable as a one-off from the CLI.
 
 ## Module map
 
-The shared queue layer (`server/jobs/queue/`, 5 modules, 1.039 lines):
+The shared queue layer (`server/jobs/queue/`):
 
 - `server/jobs/queue/connection.js` — the whole shared layer: queue names,
   per-queue default job options, `initializeQueues()`, `addJob()`,
