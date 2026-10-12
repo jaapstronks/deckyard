@@ -145,6 +145,7 @@ export function createSlideTypeEditor({
     // Auto-generate slug for new types
     if (!isEditing) {
       state.slug = generateSlug(nameInput.value);
+      slugInput.value = state.slug;
     }
     updatePreview();
   });
@@ -164,6 +165,7 @@ export function createSlideTypeEditor({
   if (!isEditing) {
     slugInput.addEventListener('input', () => {
       state.slug = slugInput.value;
+      updatePreview();
     });
   }
   const slugHint = h('div', {
