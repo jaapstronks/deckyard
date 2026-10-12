@@ -261,10 +261,7 @@ an `AppError` with the fitting status. Pinned by
   so), any other throw from 500 up answers "Internal server error", and every
   answer carries the key's rate-limit headers.
 - Enforced/covered by `tests/api-error-envelope.test.js`.
-- A handful of ad-hoc `serveJson(res, status, { error: err.message })` sites (AI,
-  media, uploads, notion) still put prose in `error`; the client tolerates both,
-  and migrating them (plus rolling out `withErrorHandler`) is the mechanical
-  follow-up tracked in `TODO.md`.
+- Internal API routes use `withErrorHandler` and the canonical helpers. The envelope guard also covers static routes and MCP transport HTTP errors; JSON-RPC responses keep their protocol-defined shape.
 
 ## MCP transport HTTP errors
 
