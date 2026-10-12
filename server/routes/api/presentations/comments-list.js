@@ -13,7 +13,7 @@ import {
   getComment,
   getOpenCommentCount,
   getCommentCountsBySlide,
-} from '../../../storage/presentations/comments.js';
+} from '../../../storage/presentations/index.js';
 import {
   addClient,
   removeClient,

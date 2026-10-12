@@ -32,7 +32,7 @@ import {
   unauthorized,
 } from '../../../utils/http.js';
 import { validateShareLink } from '../../../storage/share-links/index.js';
-import { getOpenCommentCount } from '../../../storage/presentations/comments.js';
+import { getOpenCommentCount } from '../../../storage/presentations/index.js';
 import { canGuestComment } from '../../../utils/presentation-authz/index.js';
 import { getGuestFromRequest } from '../../../utils/route-middleware.js';
 import {

@@ -22,7 +22,7 @@ import {
   getComment,
   resolveComment,
   markThreadsRead,
-} from '../../../storage/presentations/comments.js';
+} from '../../../storage/presentations/index.js';
 import {
   broadcastToPresentation,
   CommentEventTypes,

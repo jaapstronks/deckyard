@@ -1,6 +1,6 @@
 import { methodNotAllowed, serveJson, notFound } from '../../../utils/http.js';
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
-import { getPresentationCached } from '../../../storage/presentations/cache.js';
+import { getPresentationCached } from '../../../storage/presentations/index.js';
 import {
   computeAudienceCapabilitiesFromState,
   followAudienceScope,

@@ -8,7 +8,7 @@ import {
 } from '../../../utils/http.js';
 import { getFollowStateForPresentation } from '../../../storage/live-sessions/index.js';
 import { getString } from '../../../utils/request-validators.js';
-import { getPresentationCached } from '../../../storage/presentations/cache.js';
+import { getPresentationCached } from '../../../storage/presentations/index.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import {
   computeAudienceCapabilitiesFromState,

@@ -430,21 +430,9 @@ server/storage/presentations/
   …
 ```
 
-A domain that is still a single module stays a flat file; it graduates to its own
-folder only when a second member appears. Inside
-the folder, `index.js` holds the domain's primary facade; other members are
-imported directly by path (`storage/presentations/i18n.js`) — the folder groups
-the domain, it does not force everything through one re-export barrel. What is
-ruled out is a **flat re-export shim next to the folder** that forwards into the
-folder's `index.js` (two barrels for one thing); collapse those into one.
+A domain that is still a single module stays a flat file; it graduates to its own folder only when a second member appears. Inside a decomposed unit, `index.js` is the sole public seam. Consumers outside that unit import the seam; concern modules may import each other inside their own folder. A flat re-export shim next to the folder creates a second seam and is forbidden.
 
-`tests/module-layout.test.js` enforces that last rule — no `P/X.js` beside a
-folder `P/X/` — across both `server/` and `client/` (`client/vendor/`
-excepted), with no allowlist (A7.36 for the server, B526/D262 for the client).
-Its two other rules (no index-only folder, no multi-file folder without an
-`index.js`) stay scoped to the store level of `server/storage/`: client
-folders such as `lib/<area>/` and `views/editor/` are groups imported by path,
-not seams.
+`tests/module-layout.test.js` enforces the eponymous-wrapper rule across `server/` and `client/` (`client/vendor/` excepted). At the store level of `server/storage/`, it also refuses index-only folders, multi-file folders without an `index.js`, and production imports that bypass a decomposed store's seam, including imports from another store. Unit tests may exercise concern modules directly. Client folders such as `lib/<area>/` and `views/editor/` are groups imported by path, not storage seams.
 
 ### One folder = one seam
 
@@ -492,7 +480,7 @@ The full rule behind `AGENTS.md` § _Module layout: one folder = one seam_.
   validated) is pinned in `docs/reference/storage-scope.md` and enforced by
   `tests/storage-call-convention.test.js`. The _shape_ is enforced too:
   `tests/module-layout.test.js` fails on a folder holding nothing but
-  an `index.js`, and on a multi-file folder without one — no allowlist. The
+  an `index.js`, on a multi-file folder without one, and on production imports from outside a decomposed store that bypass its `index.js` - no allowlist. The
   same file enforces the eponymous-wrapper rule above across all of
   `server/`: no `P/X.js` beside a folder `P/X/`.
 - **`client/` follows the same rule.** No `P/X.js` beside a folder `P/X/`

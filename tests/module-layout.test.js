@@ -1,7 +1,7 @@
 /**
  * Module layout: one folder = one seam (A7.36, D57; client since B526, D262).
  *
- * Two rules scope to `server/storage/`, one to `server/` and `client/` as a
+ * Three rules scope to `server/storage/`, one to `server/` and `client/` as a
  * whole.
  *
  * `AGENTS.md` § _Module layout: one folder = one seam_ has said this since
@@ -51,11 +51,11 @@
  * storage-only: client folders like `lib/<area>/` and `views/editor/` are
  * groups that import by path, and a barrel duty there would be ceremony.
  *
- * **There is no allowlist** on any of the three, on purpose. The previous scan
+ * **There is no allowlist** on any of the four, on purpose. The previous scan
  * found four of these and they were still here at the next one; a burndown list
  * would have carried them a third time.
  *
- * Not covered by any of the three: a folder holding exactly one file that is
+ * Not covered by any of the four: a folder holding exactly one file that is
  * *not* `index.js` (`cache/permission-cache.js` today). Same disease as rule 1 —
  * a folder around an undecomposed module — but the brief states the rule as
  * "only an `index.js`", and widening it is a decision, not a lint fix.
@@ -69,6 +69,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { init, parse } from 'es-module-lexer';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
@@ -207,3 +208,45 @@ for (const [dir, collect] of [
     );
   });
 }
+
+/**
+ * Production consumers use a decomposed store's seam, even from another store.
+ * Unit tests are outside this production scan so they can exercise concerns.
+ * Parse real ESM imports (including literal dynamic imports and re-exports),
+ * rather than matching import-like prose in comments or strings.
+ */
+test('production imports use each decomposed storage folder through its seam', async () => {
+  await init;
+  const stores = new Set(
+    storeFolders()
+      .filter((store) => store.files.includes('index.js'))
+      .map((store) => store.name),
+  );
+  const files = ['server', 'client', 'shared']
+    .flatMap(trackedFiles)
+    .filter((file) => file.endsWith('.js'));
+  assert.ok(files.length > 100, 'the production import scan must not be empty');
+  const offenders = [];
+  for (const file of files) {
+    const [imports] = parse(fs.readFileSync(path.join(repoRoot, file), 'utf8'));
+    for (const entry of imports) {
+      if (!entry.n?.startsWith('.')) continue;
+      const target = path.posix.normalize(
+        path.posix.join(path.posix.dirname(file), entry.n),
+      );
+      const match = target.match(/^server\/storage\/([^/]+)\/(.+)$/);
+      if (!match || !stores.has(match[1])) continue;
+      if (
+        match[2] === 'index.js' ||
+        file.startsWith(`server/storage/${match[1]}/`)
+      )
+        continue;
+      offenders.push(`${file} -> ${target}`);
+    }
+  }
+  assert.deepEqual(
+    offenders.sort(),
+    [],
+    `Storage consumers must import the index.js seam (AGENTS.md § Module layout):\n  ${offenders.join('\n  ')}`,
+  );
+});

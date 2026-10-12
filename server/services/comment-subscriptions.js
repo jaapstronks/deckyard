@@ -24,8 +24,8 @@ import { listCollaborators } from '../storage/collaborators.js';
 import {
   getCommentAuthorEmail,
   getThreadParticipants,
-} from '../storage/presentations/comments.js';
-import { listSubscriptions } from '../storage/presentations/subscriptions.js';
+} from '../storage/presentations/index.js';
+import { listSubscriptions } from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';
 import { getUserByEmail } from '../storage/users.js';
 import { crossOrganizationScope } from '../storage/scope.js';
