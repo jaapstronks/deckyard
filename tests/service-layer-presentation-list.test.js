@@ -14,9 +14,9 @@
  * and an outsider.
  *
  * Handler-import level against the database double, like
- * tests/service-layer-b575.test.js.
+ * tests/service-layer-deck-operations.test.js.
  *
- * Run with: node --test tests/service-layer-b607.test.js
+ * Run with: node --test tests/service-layer-presentation-list.test.js
  */
 
 import test from 'node:test';

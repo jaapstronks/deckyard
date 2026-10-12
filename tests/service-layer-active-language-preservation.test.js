@@ -20,7 +20,7 @@
  * (`active = de`). Assertions read the stored row, in the shape of the
  * translate service's "keeps that version" test (B610).
  *
- * Run with: node --test tests/service-layer-b620.test.js
+ * Run with: node --test tests/service-layer-active-language-preservation.test.js
  */
 
 import test from 'node:test';
