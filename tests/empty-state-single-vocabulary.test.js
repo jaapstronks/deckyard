@@ -9,7 +9,7 @@
  * each cloned the block under their own class names, and ~20 surfaces spelled
  * their own note class. This gate stops new spellings: any class token
  * containing "empty" in client JS must be one of the sanctioned tokens, a
- * state class, or on the short allowlist below.
+ * state class.
  *
  * The burndown is done: the empty-state sites now use the
  * sanctioned vocabulary. This test also pins the messages that used
@@ -97,22 +97,29 @@ test('empty messages use the shared note style', () => {
     ],
     'client/views/editor/imagekit-picker/index.js': ['imagekit.noResults'],
     'client/views/editor/modals/versions-modal.js': ['editor.versions.empty'],
-    'client/views/editor/slide-type-picker/index.js': [
-      'editor.slideTypePicker.noResults',
-    ],
   };
   const offenders = [];
   for (const [rel, keys] of Object.entries(sites)) {
     const src = fs.readFileSync(path.join(repoRoot, rel), 'utf8');
     for (const key of keys) {
       const pos = src.indexOf(`'${key}'`);
-      const note = src.lastIndexOf("class: 'empty-note'", pos);
-      const otherClass = src.lastIndexOf('class:', pos);
-      if (pos < 0 || note < 0 || otherClass !== note) {
+      const element = src.lastIndexOf("h('div', {", pos);
+      const props = src.slice(element, pos);
+      if (pos < 0 || element < 0 || !/class: 'empty-note'/.test(props)) {
         offenders.push(`${rel}: ${key}`);
       }
     }
   }
+  const picker = fs.readFileSync(
+    path.join(repoRoot, 'client/views/editor/slide-type-picker/index.js'),
+    'utf8',
+  );
+  assert.match(
+    picker,
+    /const noResults = h\('div', \{ class: 'empty-note', hidden: true \}\)/,
+  );
+  assert.match(picker, /noResults\.append\(noResultsText\)/);
+  assert.match(picker, /'editor\.slideTypePicker\.noResults'/);
   assert.deepEqual(offenders, []);
   const compare = fs.readFileSync(
     path.join(repoRoot, 'client/views/editor/modals/versions-compare.js'),
