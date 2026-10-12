@@ -296,7 +296,7 @@ const ENTRIES = {
     {
       entry: 'Settings: the API keys tab (keys, MCP connect card)',
       calls: ['client/views/settings/api-keys/actions.js'],
-      gate: 'client/views/settings/index.js',
+      gate: 'client/views/settings/tab-registry.js',
     },
     {
       entry: 'Home onboarding: Connect an AI agent',
@@ -314,7 +314,7 @@ const GATE = {
   analytics:
     /\b(?:featureEnabled|isFeatureEnabled)\('analytics'\)|\btracking === true\b/,
   stockMedia: /\bfeatureEnabled\('stockMedia'\)/,
-  publicApi: /\bfeatureEnabled\('publicApi'\)/,
+  publicApi: /\bfeatureEnabled\('publicApi'\)|\bfeature: 'publicApi'/,
   live: /\b(?:featureEnabled|isFeatureEnabled)\('live'\)|\bfeature: 'live'/,
 };
 
