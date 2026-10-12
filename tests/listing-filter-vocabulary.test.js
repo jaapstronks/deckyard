@@ -30,9 +30,7 @@
  * the needles are adjacency-based (`scope: owned`, `visibility: shared`)
  * because bare `scope` and bare `visibility` are both legitimate words for
  * other meanings on nearly every page. `vocabulary.md` is exempt as the
- * register itself; `collab-research.md` as a deliberately frozen phase-0
- * snapshot (the same allowlist reason `tests/docs-paths-resolvable.test.js`
- * carries).
+ * register itself; historical collaboration research lives in `docs/adr/`.
  *
  * Run with: node --test tests/listing-filter-vocabulary.test.js
  */
@@ -158,9 +156,6 @@ const DOC_DIR = path.join('docs', 'reference');
 const DOC_EXEMPT = new Set([
   // The register itself: it names the loser spelling in order to forbid it.
   'vocabulary.md',
-  // A deliberately frozen phase-0 snapshot, allowlisted the same way in
-  // tests/docs-paths-resolvable.test.js.
-  'collab-research.md',
 ]);
 
 const DOC_FORBIDDEN = [

@@ -186,19 +186,19 @@ nothing is discoverable only by `ls`.
 
 **Presenting & collaboration**
 
-| Doc                                                                         | What it covers                                                             |
-| --------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| [`two-window-presenter.md`](reference/two-window-presenter.md)              | The two-window presenter view                                              |
-| [`live-sessions.md`](reference/live-sessions.md)                            | Present sessions and the SSE layer underneath the presenter UI             |
-| [`notes-companion.md`](reference/notes-companion.md)                        | The phone companion, and the session token that authorizes its notes edits |
-| [`live-video-layer.md`](reference/live-video-layer.md)                      | The live video layer                                                       |
-| [`comments-and-notifications.md`](reference/comments-and-notifications.md)  | The three-layer comments model                                             |
-| [`collab-presence.md`](reference/collab-presence.md)                        | Collaborator presence                                                      |
-| [`collab-deck-doc.md`](reference/collab-deck-doc.md)                        | CRDT schema, serializer, persistence                                       |
-| [`collab-editor-binder.md`](reference/collab-editor-binder.md)              | Live edits in the editor                                                   |
-| [`slide-locks.md`](reference/slide-locks.md)                                | Per-slide edit locks when live edits are off: taken on the first change    |
-| [`collab-research.md`](reference/collab-research.md)                        | Phase 0 research (dated snapshot)                                          |
-| [`../adr/001-realtime-collaboration.md`](adr/001-realtime-collaboration.md) | ADR 001 — Yjs + Hocuspocus                                                 |
+| Doc                                                                                  | What it covers                                                             |
+| ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| [`two-window-presenter.md`](reference/two-window-presenter.md)                       | The two-window presenter view                                              |
+| [`live-sessions.md`](reference/live-sessions.md)                                     | Present sessions and the SSE layer underneath the presenter UI             |
+| [`notes-companion.md`](reference/notes-companion.md)                                 | The phone companion, and the session token that authorizes its notes edits |
+| [`live-video-layer.md`](reference/live-video-layer.md)                               | The live video layer                                                       |
+| [`comments-and-notifications.md`](reference/comments-and-notifications.md)           | The three-layer comments model                                             |
+| [`collab-presence.md`](reference/collab-presence.md)                                 | Collaborator presence                                                      |
+| [`collab-deck-doc.md`](reference/collab-deck-doc.md)                                 | CRDT schema, serializer, persistence                                       |
+| [`collab-editor-binder.md`](reference/collab-editor-binder.md)                       | Live edits in the editor                                                   |
+| [`slide-locks.md`](reference/slide-locks.md)                                         | Per-slide edit locks when live edits are off: taken on the first change    |
+| [`002-collaboration-phase-0-research.md`](adr/002-collaboration-phase-0-research.md) | Phase 0 research (dated snapshot)                                          |
+| [`../adr/001-realtime-collaboration.md`](adr/001-realtime-collaboration.md)          | ADR 001 — Yjs + Hocuspocus                                                 |
 
 **Operating an instance**
 
