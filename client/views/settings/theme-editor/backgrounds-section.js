@@ -66,7 +66,7 @@ export function createBackgroundsSection({ config, onChange }) {
   }
 
   function render() {
-    grid.innerHTML = '';
+    grid.replaceChildren();
     for (const [index, url] of presets().entries()) {
       const tile = h('div', { class: 'theme-bg-preset' });
       tile.append(

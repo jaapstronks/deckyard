@@ -105,7 +105,7 @@ export function createViewerList({
   renderList();
 
   function renderList() {
-    container.innerHTML = '';
+    container.replaceChildren();
 
     const displaySessions = currentSessions;
 

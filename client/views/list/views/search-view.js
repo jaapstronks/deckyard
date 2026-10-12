@@ -77,8 +77,8 @@ export function createSearchView({
     currentQuery = query?.trim() || '';
 
     // Clear previous results
-    searchList.innerHTML = '';
-    statusSlot.innerHTML = '';
+    searchList.replaceChildren();
+    statusSlot.replaceChildren();
 
     if (!currentQuery) {
       searchTitle.textContent = t('list.search.title', 'Search');
@@ -151,8 +151,8 @@ export function createSearchView({
    */
   function clear() {
     currentQuery = '';
-    searchList.innerHTML = '';
-    statusSlot.innerHTML = '';
+    searchList.replaceChildren();
+    statusSlot.replaceChildren();
   }
 
   return {

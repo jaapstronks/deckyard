@@ -20,7 +20,7 @@ import { h } from '../../lib/dom/index.js';
  * @param {string} [errorData.presentationTitle] - Presentation title
  */
 export function renderError(shell, errorCode, errorData = {}) {
-  shell.innerHTML = '';
+  shell.replaceChildren();
 
   const errorMessages = {
     not_found: {

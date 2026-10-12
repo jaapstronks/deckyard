@@ -142,7 +142,7 @@ export function createCollaboratorsSection({
       // A list that did not load is a state of the list, not a refusal of
       // something the user just did: polite, in place, and focus stays put.
       const loadError = createInlineError({ live: 'polite' });
-      list.innerHTML = '';
+      list.replaceChildren();
       list.append(loadError.el);
       loadError.show(
         t('share.collaborators.loadError', 'Failed to load collaborators'),
@@ -283,7 +283,7 @@ export function createCollaboratorsSection({
   }
 
   function renderCollaboratorsList() {
-    list.innerHTML = '';
+    list.replaceChildren();
 
     // Always show owner at top
     const ownerItem = renderOwnerItem();

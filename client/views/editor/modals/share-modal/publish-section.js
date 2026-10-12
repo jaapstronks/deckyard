@@ -288,7 +288,7 @@ export function createPublishSection({
   }
 
   function render() {
-    section.innerHTML = '';
+    section.replaceChildren();
     const title = h('div', {
       class: 'share-section-title',
       text: t('share.publish.title', 'Put it on the open web'),

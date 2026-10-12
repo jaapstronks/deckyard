@@ -113,7 +113,7 @@ async function populateThemes({
       return currentTheme;
     }
 
-    select.innerHTML = '';
+    select.replaceChildren();
     select.append(
       h('option', { value: 'default', text: defaultThemeLabel(themes) }),
     );

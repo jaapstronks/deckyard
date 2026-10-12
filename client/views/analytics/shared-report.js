@@ -54,7 +54,7 @@ export async function renderSharedReport(root, token) {
               'analytics.reportUnavailable.generic',
               'This report may have expired or been removed.',
             );
-    shell.innerHTML = '';
+    shell.replaceChildren();
     shell.append(
       createPageUnavailable({
         icon: 'chart-column',
@@ -66,7 +66,7 @@ export async function renderSharedReport(root, token) {
   }
 
   // Render report
-  shell.innerHTML = '';
+  shell.replaceChildren();
   renderReport(report);
 
   function renderReport(data) {

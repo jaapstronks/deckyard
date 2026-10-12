@@ -38,7 +38,7 @@ export function createImageLibraryGrid({
   ]);
 
   const renderTagFilters = () => {
-    filtersRow.innerHTML = '';
+    filtersRow.replaceChildren();
     const allTags = getAllTags(items());
     const activeTag = getActiveTag();
 
@@ -66,7 +66,7 @@ export function createImageLibraryGrid({
   };
 
   const renderGrid = () => {
-    grid.innerHTML = '';
+    grid.replaceChildren();
     const q = qInput.value || '';
     const activeTag = getActiveTag();
     const filtered = items().filter((it) => matchesSearch(it, q, activeTag));

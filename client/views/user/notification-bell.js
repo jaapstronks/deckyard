@@ -184,7 +184,7 @@ export function createNotificationBell({ api }) {
   }
 
   function renderNotifications() {
-    listContainer.innerHTML = '';
+    listContainer.replaceChildren();
 
     if (isLoading) {
       listContainer.append(

@@ -153,7 +153,7 @@ export function createVideoLayer({ containerEl, getCurrentSlide }) {
       }
       hlsInstance = null;
     }
-    playerWrap.innerHTML = '';
+    playerWrap.replaceChildren();
     playerEl = null;
     el.querySelector('.video-layer-error')?.remove();
   }

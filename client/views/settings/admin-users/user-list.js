@@ -203,7 +203,7 @@ export function renderUsersList(
   onEdit,
   onRefresh,
 ) {
-  container.innerHTML = '';
+  container.replaceChildren();
 
   if (users.length === 0) {
     container.append(

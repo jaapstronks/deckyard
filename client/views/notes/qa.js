@@ -28,7 +28,7 @@ export function createNotesQaController({
   const expanded = new Set();
 
   const renderQuestions = () => {
-    qaBody.innerHTML = '';
+    qaBody.replaceChildren();
     if (!questions.length) {
       qaBody.append(
         h('div', {

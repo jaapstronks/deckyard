@@ -45,7 +45,7 @@ export function createSlideHeatmap({ slides, presentation }) {
   renderHeatmap(slides);
 
   function renderHeatmap(slideData) {
-    container.innerHTML = '';
+    container.replaceChildren();
 
     if (!slideData || slideData.length === 0) {
       container.append(

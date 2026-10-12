@@ -299,7 +299,7 @@ export function renderMembersList(
   currentUser,
   options = {},
 ) {
-  container.innerHTML = '';
+  container.replaceChildren();
 
   if (!members.length) {
     container.append(

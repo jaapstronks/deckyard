@@ -50,7 +50,7 @@ export function createFollowQaController({
   };
 
   const renderQuestions = () => {
-    qaList.innerHTML = '';
+    qaList.replaceChildren();
     const copy = getCopy?.() || {};
     qaHint.textContent = questions.length ? `${questions.length}` : '';
     if (!questions.length) {

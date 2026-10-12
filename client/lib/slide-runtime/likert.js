@@ -45,7 +45,7 @@ function svgEl(name, attrs = {}) {
  */
 export function mountLikertHill(container, { optionCount = 5 } = {}) {
   const n = Math.max(2, Math.floor(Number(optionCount || 0) || 0));
-  container.innerHTML = '';
+  container.replaceChildren();
 
   const W = 1000;
   const H = 240;

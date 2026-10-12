@@ -51,7 +51,13 @@ injected) but wrong-looking: the slide renders its own markup as visible text.
 The fallback warns once per process so the miss is diagnosable from a log; the
 uninitialized path is pinned by `tests/sanitizer-fallback-path.test.js`.
 
+## Clearing a node
+
+Use `el.replaceChildren()` to remove all child nodes before re-rendering. Empty `innerHTML` assignments are rejected by ESLint across client source, including the DOM helpers and modal module. Clearing is a DOM operation; reserving `innerHTML` for markup makes the remaining sinks visible in the inventory below. This does not replace lifecycle cleanup: call the component's detach/disposal path before removing nodes when it owns side effects.
+
 ## Why `innerHTML` is still used in places (and is safe)
+
+The B677 sweep (2026-10-12) leaves 13 markup writes in non-vendor client source: three static back-arrow entities in the settings editors, five user-text sites and five DOM round-trip/render-contract sites. The ten non-static writes match the escaping gate’s existing allowlist with no additions or stale entries.
 
 A full sweep of `client/` (B8) classified every `innerHTML` occurrence. The
 counts below are a snapshot; the **categories** are the durable part — a new
@@ -59,17 +65,15 @@ write is safe only if it falls into one of them.
 
 | Category                           | What it is                                                                                                                          | Why safe                                                                                                        |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Clears (`= ''`)                    | Emptying a node before re-render                                                                                                    | No markup written                                                                                               |
 | Comparisons (`=== ''`)             | Reads, not writes                                                                                                                   | Not a sink                                                                                                      |
 | Static SVG / entity strings        | Icon markup, `&larr;`, `&#8942;` — string **literals** in source                                                                    | No runtime data; author-controlled constants                                                                    |
-| Icon maps                          | `ICONS[name]`, `VIEW_ICON[mode]`, `dom/icons.js` `svg.innerHTML`                                                                    | Values are module-level static SVG constants, keys are internal enums                                           |
 | `escapeHtml`-guarded interpolation | e.g. `app.js` fatal screen, `share-viewer/guest-join.js` email confirmation                                                         | Every interpolated value passes through `escapeHtml()` first                                                    |
-| `markdownToSafeHtml` output        | `notes/index.js`, `presenter/console.js` speaker notes                                                                              | Sanitized by the sanctioned renderer                                                                            |
+| `markdownToSafeHtml` output        | `notes/notes-editor.js`, `presenter/console.js` speaker notes                                                                       | Sanitized by the sanctioned renderer                                                                            |
 | Round-trip / parse buffers         | `inline-edit/inline-editor.js` restore (`el.innerHTML` captured then restored), `slide-authoring/markdown-serialize.js` scratch div | Restores the element's own prior trusted DOM, or parses into a **detached** node never attached to the page     |
 | Slide-render contract boundary     | `lib/slide-runtime/slide-render.js` parsing `renderSlideHtml()` output                                                              | Per **`AGENTS.md`**, escaping is the slide-type's responsibility at render time; this is the sanctioned handoff |
 | Self-escaping renderer             | `modals/json-debug-modal.js` `renderSchemaAsHtml()`                                                                                 | Escapes `& < >` before applying its mini-markdown transforms                                                    |
 
-There used to be an eleventh row — "intentional trusted HTML", the
+There used to be a row — "intentional trusted HTML", the
 `settings/email-templates/actions.js` preview — and it was the only one whose
 safety rested on an authorization claim rather than on escaping. **That row is
 retired** (B154): the preview now renders in a `sandbox=""` iframe through

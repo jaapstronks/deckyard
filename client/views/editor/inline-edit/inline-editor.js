@@ -421,7 +421,7 @@ export function createInlineEditor({
     ring.classList.add('is-active');
     overlay.reposition();
     // A ghost-spawned field renders only the spawn sentinel; start blank.
-    if (isNew) el.innerHTML = '';
+    if (isNew) el.replaceChildren();
     // "Did the user change anything?" is judged against the serialization of
     // the UNTOUCHED render, not the stored raw: the serializer normalizes
     // (list renumbering, whitespace), so comparing against the raw would make

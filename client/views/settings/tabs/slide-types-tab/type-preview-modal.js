@@ -136,7 +136,7 @@ export function openTypePreview(type, allTypesList, ctx) {
     keyEl.textContent = entry.type;
     counterEl.textContent = `${currentIdx + 1} / ${allTypesList.length}`;
 
-    stage.innerHTML = '';
+    stage.replaceChildren();
     stage.append(
       createCurationThumbnail(
         entry.type,

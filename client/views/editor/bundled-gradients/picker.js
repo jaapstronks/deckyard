@@ -59,7 +59,7 @@ export function openBundledGradientPicker({
   const grid = h('div', { class: 'stock-media-grid gradient-picker-grid' });
 
   const renderFilters = () => {
-    filterBar.innerHTML = '';
+    filterBar.replaceChildren();
     for (const opt of TONES) {
       filterBar.append(
         h('button', {
@@ -93,7 +93,7 @@ export function openBundledGradientPicker({
   };
 
   const renderGrid = () => {
-    grid.innerHTML = '';
+    grid.replaceChildren();
     const items = (manifestCache || []).filter(
       (it) => tone === 'all' || it.tone === tone,
     );

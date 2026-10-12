@@ -123,7 +123,7 @@ export function createShareViewerCommentsSection({
       // A list that did not load is a state of the list, not a refusal: the
       // message sits where the comments would have been, politely.
       const loadError = createInlineError({ live: 'polite' });
-      list.innerHTML = '';
+      list.replaceChildren();
       list.append(loadError.el);
       loadError.show(
         t('comments.error.loadFailed', 'Failed to load comments'),
@@ -135,7 +135,7 @@ export function createShareViewerCommentsSection({
   }
 
   function renderComments() {
-    list.innerHTML = '';
+    list.replaceChildren();
 
     if (comments.length === 0) {
       const emptyEl = h('div', {

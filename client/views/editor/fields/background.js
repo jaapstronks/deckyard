@@ -117,7 +117,7 @@ export function createBackgroundFields({ theme } = {}) {
     };
 
     const renderTrigger = () => {
-      trigger.innerHTML = '';
+      trigger.replaceChildren();
       const currentOpt =
         options.find((o) => o.value === current) || normalizeOption(current);
       const sw = h('span', {
@@ -164,7 +164,7 @@ export function createBackgroundFields({ theme } = {}) {
     });
 
     const renderMenu = () => {
-      menu.innerHTML = '';
+      menu.replaceChildren();
       for (const opt of options) {
         const o = String(opt?.value ?? '');
         const btn = h('button', {

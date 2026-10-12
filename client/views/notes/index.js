@@ -180,7 +180,7 @@ export async function renderNotes(root, sessionId) {
       );
     } else {
       cleanupSlideRuntimes(nextPreviewWrap);
-      nextPreviewWrap.innerHTML = '';
+      nextPreviewWrap.replaceChildren();
       nextPreviewWrap.classList.add('is-empty');
       nextPreviewWrap.append(
         h('div', {
