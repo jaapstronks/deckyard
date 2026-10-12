@@ -138,6 +138,8 @@ so the move is something it has to change on upgrade. It carries a breaking note
 shim at the old path (`AGENTS.md` § _Module layout_), and during beta the Release
 PR gets the `Release-As: 1.<next>.0` override below (D276).
 
+The same review applies to removed helper exports: replacing `safeSlug` with `generateSlug`, or moving QR helpers to a new module, changes a fork's imports even when upstream callers are already updated. Name the old and new paths in the breaking-change note.
+
 ### Wire changes are never titled `refactor:`
 
 The changelog is generated from commit titles (release-please), and
