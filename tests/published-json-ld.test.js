@@ -20,6 +20,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.DEFAULT_ORGANIZATION_ID ||= '00000000-0000-0000-0000-0000000000aa';
@@ -39,7 +40,7 @@ const CREATED = '2026-02-01T09:30:00.000Z';
 let brandSeed;
 
 /** Seed one published deck whose `created_at` is `createdAt`. */
-function seed(createdAt) {
+function seed(createdAt, { description = null } = {}) {
   __setTestDb(
     createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
@@ -49,6 +50,7 @@ function seed(createdAt) {
           id: 'deck-pub',
           organization_id: ORG,
           title: 'Published deck',
+          description,
           owner_email: 'owner@example.com',
           created_by: 'owner@example.com',
           updated_by: 'owner@example.com',
@@ -82,8 +84,8 @@ function seed(createdAt) {
   );
 }
 
-/** Drive the published route and hand back the parsed JSON-LD object. */
-async function jsonLdFromPublishedPage() {
+/** Drive the published route and return its HTML. */
+async function publishedPage(query = '') {
   const res = {
     statusCode: null,
     headers: {},
@@ -107,11 +109,16 @@ async function jsonLdFromPublishedPage() {
     repoRoot: process.cwd(),
     req: { method: 'GET', headers: { host: 'decks.example.test' } },
     res,
-    url: new URL(`http://decks.example.test${path}`),
+    url: new URL(`http://decks.example.test${path}${query}`),
   });
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
-  const match = String(res.rawBody || '').match(
+  return String(res.rawBody || '');
+}
+
+/** Read the structured data from the served page. */
+async function jsonLdFromPublishedPage(query = '') {
+  const match = (await publishedPage(query)).match(
     /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
   );
   assert.ok(match, 'the published page carries a JSON-LD block');
@@ -149,6 +156,73 @@ test('the JSON-LD names no author, and no part of the owner email', async () => 
   const serialized = JSON.stringify(ld);
   assert.equal(serialized.includes('owner@example.com'), false);
   assert.equal(/"owner"/.test(serialized), false);
+});
+
+test('published metadata and reader label follow the selected EN/NL deck language', async () => {
+  seed(CREATED);
+  for (const [query, description, readerLabel, lang] of [
+    ['', 'Bekijk de presentatie “Published deck”.', 'Leesweergave', 'nl'],
+    [
+      '?lang=en-GB',
+      'View the presentation “Published deck”.',
+      'Reading view',
+      'en-GB',
+    ],
+  ]) {
+    const html = await publishedPage(query);
+    const ld = JSON.parse(
+      html.match(
+        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+      )[1],
+    );
+    assert.equal(ld.description, description);
+    assert.equal(ld.inLanguage, lang);
+    for (const name of [
+      'description',
+      'og:description',
+      'twitter:description',
+    ]) {
+      assert.match(
+        html,
+        new RegExp(
+          `<meta (?:name|property)="${name}" content="${description}"`,
+        ),
+      );
+    }
+    assert.match(html, new RegExp(`rel="alternate"[^>]*>${readerLabel}</a>`));
+  }
+});
+
+test('an authored description takes precedence in both languages', async () => {
+  seed(CREATED, { description: 'Author text' });
+  for (const query of ['', '?lang=en-GB']) {
+    const html = await publishedPage(query);
+    assert.match(html, /<meta name="description" content="Author text"/);
+    assert.match(html, /<meta property="og:description" content="Author text"/);
+    assert.match(
+      html,
+      /<meta name="twitter:description" content="Author text"/,
+    );
+    assert.equal(
+      JSON.parse(
+        html.match(
+          /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+        )[1],
+      ).description,
+      'Author text',
+    );
+  }
+});
+
+test('published route has no fixed Dutch copy or language branch', () => {
+  const source = readFileSync(
+    new URL('../server/routes/static/published.js', import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(
+    source,
+    /Bekijk de presentatie|Leesweergave|modeLang\s*===\s*['"]nl['"]/,
+  );
 });
 
 test('toIsoOrNull: one ISO string from either shape, null for nothing usable', () => {
