@@ -1,7 +1,7 @@
 /**
  * The settings page and its sidebar read one tab register (B679).
  *
- * Before B679 `client/views/settings/index.js` and `settings-sidebar.js` each
+ * Previously `client/views/settings/index.js` and `settings-sidebar.js` each
  * declared their own `ADMIN_TABS`, six entries against eight: the page gated
  * and built from one, the sidebar drew from the other, and nothing held them
  * together. What this pins down:
