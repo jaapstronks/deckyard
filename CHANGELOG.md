@@ -4,6 +4,36 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.58.0](https://github.com/jaapstronks/deckyard/compare/v1.57.0...v1.58.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* QR helpers renderQrToCanvas and createQrDataUrl move from client/lib/slide-runtime/poll.js to client/lib/util/qr.js. The unused getOrCreateVoterId and mountPollBars exports are removed. The safeSlug export in server/utils/slug.js is removed; use generateSlug from shared/slug.js with fallback presentation where needed. Fork callers must update imports.
+
+### Fixed
+
+* a share-link guest comments through a route under the token (B179) ([#1584](https://github.com/jaapstronks/deckyard/issues/1584)) ([c5c9f68](https://github.com/jaapstronks/deckyard/commit/c5c9f687517277c3b5dfdd37da27dd80e91e4fc6))
+* AI session logs are one instance setting, off in the test suite (B661) ([#1580](https://github.com/jaapstronks/deckyard/issues/1580)) ([70b56fb](https://github.com/jaapstronks/deckyard/commit/70b56fbfc4810e6acfb5c5b72e8f2bf7459b99b0))
+* **auth:** the session token uses the signed-payload seam (B288) ([#1582](https://github.com/jaapstronks/deckyard/issues/1582)) ([838aa89](https://github.com/jaapstronks/deckyard/commit/838aa89ded31debc3ed64ea94f88fe291f0b104f))
+* owner_email is normalised on write, read sites compare bare (B392) ([#1586](https://github.com/jaapstronks/deckyard/issues/1586)) ([806c1dd](https://github.com/jaapstronks/deckyard/commit/806c1dd9f0526d1c52ce5c28b8e497bb8c98e357))
+* phase 2 accepts a slide type exactly where it is offered (B663) ([#1588](https://github.com/jaapstronks/deckyard/issues/1588)) ([8411b95](https://github.com/jaapstronks/deckyard/commit/8411b957a1de073ab90a0967d53ec7d7177c19e5))
+* respect theme heading transform on chart titles ([#1596](https://github.com/jaapstronks/deckyard/issues/1596)) ([ee0e672](https://github.com/jaapstronks/deckyard/commit/ee0e6721026b7d4a452f32097d780a1afd75d556))
+* share slug rules and refuse invalid publish renames ([#1595](https://github.com/jaapstronks/deckyard/issues/1595)) ([db06b00](https://github.com/jaapstronks/deckyard/commit/db06b00c491c9ea1dc1760d1c29d2744bbaef38c))
+* show the complete selected image in inspector previews ([#1597](https://github.com/jaapstronks/deckyard/issues/1597)) ([5d19de9](https://github.com/jaapstronks/deckyard/commit/5d19de9f8d00c9534a641bf35b6cd62da25fd557))
+* the client branches on error codes, refusals are inline (B674) ([#1589](https://github.com/jaapstronks/deckyard/issues/1589)) ([0488bd2](https://github.com/jaapstronks/deckyard/commit/0488bd2277a744b14a04cdefbb275c07c15fbc8e))
+* the schema funnel runs every step, a stamp skips nothing (B239) ([#1583](https://github.com/jaapstronks/deckyard/issues/1583)) ([93ab9bc](https://github.com/jaapstronks/deckyard/commit/93ab9bc01170671ae0110d382cfed2f4c83b3920))
+* the settings page and sidebar read one tab register (B679) ([#1591](https://github.com/jaapstronks/deckyard/issues/1591)) ([92362c2](https://github.com/jaapstronks/deckyard/commit/92362c21e3b6eb3fff0b6cc7e4597bd5cf70979f))
+* the weekly digest sends again and is opt-in (B662) ([#1587](https://github.com/jaapstronks/deckyard/issues/1587)) ([400dffb](https://github.com/jaapstronks/deckyard/commit/400dffbbf24695ee41b79206a5ff67458ce3bd65))
+* unify AI request parameters and imported image placeholders ([#1594](https://github.com/jaapstronks/deckyard/issues/1594)) ([4216ff1](https://github.com/jaapstronks/deckyard/commit/4216ff11a348f78819b94a92a92f23f09ba82d68))
+* unify remaining HTTP error envelopes ([#1593](https://github.com/jaapstronks/deckyard/issues/1593)) ([8554ff5](https://github.com/jaapstronks/deckyard/commit/8554ff5190a80a2cc84ece6f9e0f2a9d6f29a91d))
+* use one slide-type offer for MCP and one-shot AI ([#1592](https://github.com/jaapstronks/deckyard/issues/1592)) ([5b61e99](https://github.com/jaapstronks/deckyard/commit/5b61e9965ec5065a654f7f5125c699abdea5100e))
+
+
+### Changed
+
+* announce removed fork helper imports before release ([fddef11](https://github.com/jaapstronks/deckyard/commit/fddef118f99ca47236704187641530a81c853a4a))
+
 ## [1.57.0](https://github.com/jaapstronks/deckyard/compare/v1.56.0...v1.57.0) (2026-10-11)
 
 
