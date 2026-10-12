@@ -131,7 +131,4 @@ that is exactly the state the codebase was in before the cleanup: 77 runtime
 sites, of which about a dozen were gratuitous and another dozen contradicted
 themselves about whether a dependency was optional.
 
-The ESLint gate (`npm run lint`, see
-[`docs/developer/linting.md`](../developer/linting.md)) catches unresolved
-imports and unused ones, but it does not judge lazy-versus-static. That judgment
-is this document plus review.
+The ESLint gate (`npm run lint`, see [`docs/developer/linting.md`](../developer/linting.md)) catches unresolved and unused imports. `tests/optional-dependencies-gate.test.js` checks every declared optional package against runtime imports: static imports and re-exports are refused, dynamic imports need an awaited catch boundary in the same function or an earlier feature-off return, and unused optional declarations fail. It also recognizes dependency-injected import thunks awaited inside a catch boundary, including awaited `Promise.all` groups. Deferred callbacks and unawaited promises do not inherit an enclosing catch. This is a structural check; review still verifies that the feature check and missing-package message make sense, and judges dynamic imports of hard dependencies and internal modules.

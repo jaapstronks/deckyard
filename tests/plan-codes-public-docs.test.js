@@ -31,6 +31,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { walkJsFiles } from './helpers/call-sites.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -123,4 +124,29 @@ test('an inline code span is a literal, not a planning code', () => {
     1,
     'a parenthesis inside a code span does not hide the prose after it',
   );
+});
+
+const planCodeInName = /(?:^|[-_.])[abd]\d+(?:[.][0-9]+)*(?=[-_.]|$)/i;
+
+test('test filenames describe behaviour rather than private planning codes', () => {
+  const offenders = walkJsFiles(resolve(ROOT, 'tests'))
+    .filter((file) => /\.(?:pg)?test\.js$/.test(file))
+    .map((file) => file.slice(file.lastIndexOf('/') + 1))
+    .filter((name) => planCodeInName.test(name));
+  assert.deepEqual(offenders, []);
+});
+
+test('the filename detector catches planning codes without rejecting ordinary names', () => {
+  for (const name of [
+    'service-layer-b575.test.js',
+    'a7.4.pgtest.js',
+    'decision-D63.test.js',
+  ])
+    assert.ok(planCodeInName.test(name));
+  for (const name of [
+    's3-private-object.test.js',
+    'service-layer-deck-operations.test.js',
+    'base64.test.js',
+  ])
+    assert.equal(planCodeInName.test(name), false);
 });

@@ -18,9 +18,9 @@
  * two-phase outline parser reads `intent`/`roughContent`, and an unparseable
  * refinement falls back to deterministic slides), following
  * tests/post-cancel.test.js. Handler-import level against the database double,
- * like tests/service-layer-b608.test.js.
+ * like tests/service-layer-presentation-save.test.js.
  *
- * Run with: node --test tests/service-layer-b609.test.js
+ * Run with: node --test tests/service-layer-presentation-create.test.js
  */
 
 import test from 'node:test';
