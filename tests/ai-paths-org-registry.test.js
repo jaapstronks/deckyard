@@ -70,6 +70,8 @@ const { handleAiRefineSection } =
 const { handleAiIterate } = await import('../server/routes/api/ai/iterate.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
 const { registerTools } = await import('../server/mcp/tools.js');
+const { loadSlideTypeOffer } =
+  await import('../server/utils/org-slide-types.js');
 const convertRoutes = await import('../server/routes/api/convert.js');
 const { handleNotionImport } =
   await import('../server/routes/api/notion/import.js');
@@ -371,6 +373,35 @@ function mcp() {
   registerTools(server, { defaultOwnerEmail: OWNER });
   const session = { ownerEmail: OWNER, organizationId: ORG };
   return (name, args) => server.tools.get(name).handler(args, session);
+}
+
+test('MCP stdio offers the default organization types', async () => {
+  await setup();
+  const server = new McpServer();
+  registerTools(server, { defaultOwnerEmail: OWNER });
+  const offer = await server.tools.get('get_slide_types').handler({});
+  assert.ok(offer.types[CUSTOM_TYPE]);
+  assert.equal(offer.types[CUSTOM_TYPE].label, 'Partner wall');
+});
+
+test('the offer loader refuses a missing organization scope', async () => {
+  await assert.rejects(loadSlideTypeOffer({}), /no organizationId/);
+});
+
+for (const table of ['organizations', 'custom_slide_types']) {
+  test(`the offer loader propagates ${table} lookup failures`, async (t) => {
+    await setup();
+    const failure = new Error(`${table} lookup failed`);
+    const selectFrom = db.selectFrom;
+    t.mock.method(db, 'selectFrom', (name) => {
+      if (name === table) throw failure;
+      return selectFrom(name);
+    });
+    await assert.rejects(
+      loadSlideTypeOffer(createStorageScope({ organizationId: ORG })),
+      failure,
+    );
+  });
 }
 
 test('MCP create_presentation keeps the org type the model chose', async (t) => {

@@ -17,16 +17,12 @@
 import { SLIDE_TYPES } from '../../../shared/slide-types.js';
 import { customSlideTypeKey } from '../../../shared/slide-types/custom-type-runtime.js';
 import { SLIDE_TYPE_CATALOG } from '../ai/slide-type-catalog.js';
+import { getOfferedSlideTypes } from '../ai/slide-catalog/index.js';
 import { getSlideTypeExamples } from '../ai/slide-catalog/examples.js';
 import {
-  isAgentOptOut,
   agentWithheldTypesRule,
   deriveAgentSchema,
 } from '../ai/slide-catalog/agent-catalog.js';
-
-function stableSlideTypeEntries() {
-  return Object.entries(SLIDE_TYPES || {});
-}
 
 function jsonExample(v) {
   return JSON.stringify(v, null, 2);
@@ -317,6 +313,7 @@ export function buildSlideTypesPrompt({
   customSlideTypes = [],
 } = {}) {
   const lines = [];
+  const offered = getOfferedSlideTypes(disabledSlideTypes);
   const disabled = new Set(
     Array.isArray(disabledSlideTypes) ? disabledSlideTypes : [],
   );
@@ -329,13 +326,8 @@ export function buildSlideTypesPrompt({
   );
   lines.push('');
 
-  for (const [type, def] of stableSlideTypeEntries()) {
-    // Types withheld from agents (deprecated, app-managed, an alias, a gated
-    // escape hatch) declare that on the definition itself — see
-    // isAgentOptOut(). This used to be a hand-maintained list here, which is
-    // how it drifted from the MCP layer's view of the same question.
-    if (isAgentOptOut(def)) continue;
-    if (disabled.has(type)) continue;
+  for (const type of offered) {
+    const def = SLIDE_TYPES[type];
 
     const label = typeof def?.label === 'string' ? def.label : '';
     lines.push(`=== ${type}${label ? ` - ${label}` : ''} ===`);
