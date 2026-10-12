@@ -424,7 +424,7 @@ export function createPreviewLightbox({
       updateNavState();
       // Preserve markers container before clearing
       markersContainer = bigThumb.querySelector('.comment-markers-container');
-      bigThumb.innerHTML = '';
+      bigThumb.replaceChildren();
       if (!s) return;
       bigThumb.append(
         renderSlideElement(s, { theme, presentationId: pres?.id }),

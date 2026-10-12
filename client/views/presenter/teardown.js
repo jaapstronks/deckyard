@@ -58,7 +58,7 @@ export function createPresenterTeardown({
       },
       () => cleanupSlideRuntimes(stage),
       () => {
-        stage.innerHTML = '';
+        stage.replaceChildren();
       },
       detachKeys,
       detachSwipe,

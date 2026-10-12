@@ -406,7 +406,7 @@ export function mountSlideInto(
   if (!container) return null;
   cleanupSlideRuntimes(container);
   try {
-    container.innerHTML = '';
+    container.replaceChildren();
   } catch {
     // ignore
   }

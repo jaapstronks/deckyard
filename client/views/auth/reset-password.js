@@ -141,7 +141,7 @@ export async function renderResetPassword(root) {
         });
 
         // Success - show message and link to login
-        form.innerHTML = '';
+        form.replaceChildren();
         const successMsg = h('div', {
           class: 'auth-status is-success',
           text: t(

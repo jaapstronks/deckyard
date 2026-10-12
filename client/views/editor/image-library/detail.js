@@ -131,7 +131,7 @@ export function createImageLibraryDetail({
   };
 
   const renderDetail = (it) => {
-    detailWrap.innerHTML = '';
+    detailWrap.replaceChildren();
     const isEditable = !!user;
     const alts = it?.alts && typeof it.alts === 'object' ? it.alts : {};
     const tags = Array.isArray(it?.tags) ? it.tags : [];

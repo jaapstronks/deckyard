@@ -95,7 +95,7 @@ export function createLibraryCompose({
   const renderTray = () => {
     const items = orderedSelectedItems();
     trayWrap.classList.toggle('is-hidden', items.length === 0);
-    trayWrap.innerHTML = '';
+    trayWrap.replaceChildren();
     if (!items.length) return;
 
     trayWrap.append(
@@ -219,7 +219,7 @@ export function createLibraryCompose({
       // A source that did not load is a state of the panel, not a refusal of
       // something the user just submitted: polite, in place, focus untouched.
       const loadError = createInlineError({ live: 'polite' });
-      pickerMount.innerHTML = '';
+      pickerMount.replaceChildren();
       pickerMount.append(loadError.el);
       loadError.show(
         t('slideLibrary.loadError', 'Failed to load slide library.'),
@@ -288,7 +288,7 @@ export function createLibraryCompose({
   };
 
   const renderCollectionsChooser = (collections) => {
-    collectionsMount.innerHTML = '';
+    collectionsMount.replaceChildren();
     const all = [
       ...(collections?.personal || []),
       ...(collections?.organization || []),
@@ -351,7 +351,7 @@ export function createLibraryCompose({
   const ensureCollectionsChooser = async () => {
     if (collectionsLoaded) return;
     collectionsLoaded = true;
-    collectionsMount.innerHTML = '';
+    collectionsMount.replaceChildren();
     collectionsMount.append(
       h('div', { class: 'help', text: t('common.loading', 'Loading…') }),
     );
@@ -360,7 +360,7 @@ export function createLibraryCompose({
       renderCollectionsChooser(collections);
     } catch {
       const loadError = createInlineError({ live: 'polite' });
-      collectionsMount.innerHTML = '';
+      collectionsMount.replaceChildren();
       collectionsMount.append(loadError.el);
       loadError.show(
         t(

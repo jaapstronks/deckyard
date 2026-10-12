@@ -70,7 +70,7 @@ export function createAdobePanel({ sourceConfig = {}, onImport }) {
 
     discoverBtn.disabled = true;
     discoverBtn.textContent = t('fonts.discovering', 'Discovering…');
-    resultsContainer.innerHTML = '';
+    resultsContainer.replaceChildren();
 
     try {
       const result = await api('/api/font-families/discover-adobe', {

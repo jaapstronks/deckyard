@@ -48,7 +48,7 @@ export function renderFollowSlide({
   // scanned). The role is declared on the type (`liveInvite`), not named here.
   if (isLiveInviteSlideType(slide.type) && followInviteMessage) {
     if (slideWrap) {
-      slideWrap.innerHTML = '';
+      slideWrap.replaceChildren();
       const msgSlide = h('div', { class: 'slide follow-message-slide' });
       const inner = h('div', { class: 'slide-inner' });
       const box = h('div', {

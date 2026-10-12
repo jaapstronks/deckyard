@@ -111,7 +111,7 @@ export function createPreferencesTab({ user }) {
   };
 
   const buildLangControl = (supportedList) => {
-    langControlWrap.innerHTML = '';
+    langControlWrap.replaceChildren();
     langButtons = {};
     const langs =
       Array.isArray(supportedList) && supportedList.length > 0
@@ -536,7 +536,7 @@ export function createPreferencesTab({ user }) {
       // UI locale selector options
       const manifest = await fetchUiLocaleManifest();
       const locales = Array.isArray(manifest?.locales) ? manifest.locales : [];
-      uiLocaleSelect.innerHTML = '';
+      uiLocaleSelect.replaceChildren();
       if (!locales.length) {
         uiLocaleSelect.append(
           h('option', {

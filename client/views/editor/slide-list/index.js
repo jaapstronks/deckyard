@@ -305,7 +305,7 @@ export function setupSlideList({
   };
 
   const rerenderSlideList = () => {
-    slideListEl.innerHTML = '';
+    slideListEl.replaceChildren();
     const allSlides = pres.slides || [];
     const selectedSlideId = getSelectedSlideId?.();
     const multiSelectedIds = getSelectedSlideIds?.() || new Set();

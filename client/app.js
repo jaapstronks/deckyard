@@ -155,7 +155,7 @@ async function render() {
   }
   cleanup = null;
 
-  root.innerHTML = '';
+  root.replaceChildren();
 
   // The editor route fetches auth/settings/presentation before it can mount;
   // show its layout skeleton right away so the page never sits blank.

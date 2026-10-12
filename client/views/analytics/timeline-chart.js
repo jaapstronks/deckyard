@@ -41,7 +41,7 @@ export function createTimelineChart({ data }) {
   renderChart(data);
 
   function renderChart(chartData) {
-    chartContainer.innerHTML = '';
+    chartContainer.replaceChildren();
 
     if (!chartData || chartData.length === 0) {
       chartContainer.append(

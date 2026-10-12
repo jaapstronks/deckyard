@@ -173,7 +173,7 @@ export function createPresentationsView({
     for (const key of OWNERSHIPS) {
       const count = tagFiltered.filter((p) => inOwnership(p, key)).length;
       const btn = ownershipButtons.get(key);
-      btn.innerHTML = '';
+      btn.replaceChildren();
       btn.append(
         h('span', {
           class: 'ownership-filter-label',
@@ -189,7 +189,7 @@ export function createPresentationsView({
       tagFiltered.filter((p) => inOwnership(p, ownership)),
     );
 
-    list.innerHTML = '';
+    list.replaceChildren();
     if (filtered.length === 0) {
       if (selectedTags.length > 0 || ownership !== 'all') {
         list.append(

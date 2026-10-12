@@ -49,7 +49,7 @@ export function createCommentRenderers({
    * Render the comment list (empty state or comments).
    */
   function renderCommentList(listEl, comments) {
-    listEl.innerHTML = '';
+    listEl.replaceChildren();
 
     if (comments.length === 0) {
       const emptyEl = h('div', {

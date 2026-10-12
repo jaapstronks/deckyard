@@ -28,7 +28,7 @@ export function createViewerSlidesPanel({
   panelEl.append(panelHeader, panelScroll);
 
   const rerenderSlideList = () => {
-    listEl.innerHTML = '';
+    listEl.replaceChildren();
     const slides = pres?.slides || [];
     const selectedId = getSelectedSlideId?.();
 

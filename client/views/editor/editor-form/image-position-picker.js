@@ -140,7 +140,7 @@ export function renderImagePositionPicker({
   wrap.append(mount, help);
 
   const renderAxis = ({ axis } = {}) => {
-    mount.innerHTML = '';
+    mount.replaceChildren();
     if (axis === 'none') {
       help.textContent = t(
         'editor.imagePosition.noExtraSpace',

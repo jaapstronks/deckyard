@@ -51,7 +51,7 @@ export function createTrashView({ api, renderCard }) {
       const items = await api('/api/presentations/trash');
 
       loaded = true;
-      trashView.innerHTML = '';
+      trashView.replaceChildren();
       trashView.append(trashTitle, trashHint);
 
       if (!items || items.length === 0) {
@@ -71,7 +71,7 @@ export function createTrashView({ api, renderCard }) {
       // The view could not load: a state of the view, announced politely.
       const loadError = createInlineError({ live: 'polite' });
       loaded = true;
-      trashView.innerHTML = '';
+      trashView.replaceChildren();
       trashView.append(trashTitle, trashHint, loadError.el);
       loadError.show(t('list.trash.loadError', 'Failed to load trash.'), {
         focus: false,
@@ -82,7 +82,7 @@ export function createTrashView({ api, renderCard }) {
   /** Reload the trash from the server; resolves once it is on screen. */
   function refresh() {
     loaded = false;
-    trashList.innerHTML = '';
+    trashList.replaceChildren();
     return load();
   }
 

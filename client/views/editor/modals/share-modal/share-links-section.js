@@ -292,7 +292,7 @@ export function createShareLinksSection({
     } catch {
       // See collaborators-section.js: the list says so itself, politely.
       const loadError = createInlineError({ live: 'polite' });
-      linksList.innerHTML = '';
+      linksList.replaceChildren();
       linksList.append(loadError.el);
       loadError.show(t('share.links.loadError', 'Failed to load links'), {
         focus: false,
@@ -301,7 +301,7 @@ export function createShareLinksSection({
   }
 
   function renderLinksList() {
-    linksList.innerHTML = '';
+    linksList.replaceChildren();
 
     if (shareLinks.length === 0) {
       linksList.append(

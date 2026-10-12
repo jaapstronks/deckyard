@@ -420,7 +420,7 @@ function openLibraryModal({
     activeSection = section;
     libraryView.hidden = true;
     externalView.hidden = false;
-    externalView.innerHTML = '';
+    externalView.replaceChildren();
 
     if (section === SECTIONS.UNSPLASH && unsplashComponent) {
       externalView.append(unsplashComponent.el);
@@ -482,7 +482,7 @@ function openLibraryModal({
   // Mobile navigation (dropdown for smaller screens)
   const mobileNav = h('div', { class: 'media-lib-mobile-nav' });
   const renderMobileNav = () => {
-    mobileNav.innerHTML = '';
+    mobileNav.replaceChildren();
     const sections = [
       SECTIONS.ALL,
       SECTIONS.RECENT,

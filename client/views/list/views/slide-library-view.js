@@ -138,7 +138,7 @@ export function createSlideLibraryView({ api, initialShelf = 'organization' }) {
 
   async function render() {
     try {
-      view.innerHTML = '';
+      view.replaceChildren();
 
       // Collections management sits above the grid; membership add hangs off the
       // per-card more-menu via onAddToCollection.
@@ -178,7 +178,7 @@ export function createSlideLibraryView({ api, initialShelf = 'organization' }) {
     } catch {
       // The view could not load: a state of the view, announced politely.
       const loadError = createInlineError({ live: 'polite' });
-      view.innerHTML = '';
+      view.replaceChildren();
       view.append(title, hint, loadError.el);
       loadError.show(
         t('slideLibrary.loadError', 'Failed to load slide library.'),
@@ -211,7 +211,7 @@ export function createSlideLibraryView({ api, initialShelf = 'organization' }) {
 
   function refresh() {
     rendered = null;
-    mount.innerHTML = '';
+    mount.replaceChildren();
     load();
   }
 

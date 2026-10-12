@@ -137,7 +137,7 @@ export function openVersionCompareModal({
       if (result?.ok && Array.isArray(result.insights)) {
         // Clear any existing insights
         for (const container of insightContainers.values()) {
-          container.innerHTML = '';
+          container.replaceChildren();
           container.style.display = 'none';
         }
 
@@ -212,7 +212,7 @@ export function openVersionCompareModal({
       const diff = computeSlideDiff(currentSlides, snapshotSlides);
 
       // Update summary
-      summary.innerHTML = '';
+      summary.replaceChildren();
       summary.append(
         h('div', { class: 'summary-stat' }, [
           h('span', {

@@ -29,7 +29,7 @@ export function createCommentMarkers({
   containerEl.appendChild(markersContainer);
 
   // Re-append the markers container if the parent's contents were wiped
-  // (e.g. mountSlideInto sets innerHTML = '' on every rerender)
+  // (e.g. mountSlideInto calls replaceChildren() on every rerender)
   function ensureAttached() {
     if (!markersContainer) return;
     if (markersContainer.parentNode !== containerEl) {
@@ -60,7 +60,7 @@ export function createCommentMarkers({
 
   function renderMarkers() {
     ensureAttached();
-    markersContainer.innerHTML = '';
+    markersContainer.replaceChildren();
 
     // Only render positioned comments (with positionX and positionY)
     const positionedComments = comments.filter(

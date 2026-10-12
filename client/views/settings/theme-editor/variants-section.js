@@ -242,7 +242,7 @@ export function createVariantsSection({ config, colors, onChange }) {
   }
 
   function render() {
-    rows.innerHTML = '';
+    rows.replaceChildren();
     const entries = list();
     for (const [index, entry] of entries.entries()) {
       rows.append(renderRow(entry, index));
@@ -348,7 +348,7 @@ export function createVariantsSection({ config, colors, onChange }) {
     if (config.defaultBackground && !offered.has(config.defaultBackground)) {
       delete config.defaultBackground;
     }
-    ground.innerHTML = '';
+    ground.replaceChildren();
     ground.append(
       h('label', {
         class: 'field-label field-label-sm',

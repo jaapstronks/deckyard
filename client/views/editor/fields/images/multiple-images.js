@@ -151,7 +151,7 @@ export function createFieldImages(ctx) {
      */
     function renderSelected() {
       const urls = readValue();
-      selectedRows.innerHTML = '';
+      selectedRows.replaceChildren();
       if (!urls.length) {
         selectedRows.append(
           h('div', {

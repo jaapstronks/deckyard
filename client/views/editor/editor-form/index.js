@@ -125,7 +125,7 @@ export function createRerenderEditor({
     // Clean up previous dropdown listeners
     detachHeaderActions();
 
-    editorMount.innerHTML = '';
+    editorMount.replaceChildren();
     const slide = pres.slides.find((s) => s.id === getSelectedSlideId?.());
     if (!slide) return;
 
@@ -163,7 +163,7 @@ export function createRerenderEditor({
       // left; lock + slide-actions menu on the right. Rebuilt per slide.
       const tbLeft = slideToolbar?.leftEl || null;
       if (tbLeft) {
-        tbLeft.innerHTML = '';
+        tbLeft.replaceChildren();
         tbLeft.append(
           h('div', {
             class: 'pill',
@@ -258,7 +258,7 @@ export function createRerenderEditor({
       headerActionsDetach = headerActionsResult.detach;
       const tbActions = slideToolbar?.actionsEl || null;
       if (tbActions) {
-        tbActions.innerHTML = '';
+        tbActions.replaceChildren();
         tbActions.append(headerActionsResult.el);
       }
     }

@@ -515,7 +515,7 @@ export function createSlideLibraryPicker({
     const selectionBar = h('div', { class: 'ps-lib-selection-bar' });
 
     updateSelectionBar = () => {
-      selectionBar.innerHTML = '';
+      selectionBar.replaceChildren();
       const count = state.getSelectedCount();
 
       if (count === 0) {
@@ -668,7 +668,7 @@ export function createSlideLibraryPicker({
     // picker's own state drive subsequent re-renders.
     if (shelfOverride === 'organization' || shelfOverride === 'personal')
       state.setShelf(shelfOverride);
-    mount.innerHTML = '';
+    mount.replaceChildren();
 
     const header = h('div', { class: 'ps-lib-header' });
     const headerRow = h('div', { class: 'ps-lib-header-row' });
@@ -685,7 +685,7 @@ export function createSlideLibraryPicker({
     // list rerender (a language switch changes the counts, a filter click its
     // active state). Hidden while there is nothing to filter.
     const renderFilters = () => {
-      filtersRow.innerHTML = '';
+      filtersRow.replaceChildren();
       if (state.getView() !== 'trash')
         controls.renderTypeFilters(filtersRow, state.getShelf(), {
           rerenderList,
@@ -696,7 +696,7 @@ export function createSlideLibraryPicker({
     // List-only rerender (plus the filters that count it)
     const rerenderList = async () => {
       renderFilters();
-      listContainer.innerHTML = '';
+      listContainer.replaceChildren();
       const shelf = state.getShelf();
       if (state.isLoading(shelf)) {
         listContainer.append(

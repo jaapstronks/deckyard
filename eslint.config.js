@@ -214,6 +214,15 @@ const sharedSilentFailureRules = [
 
 const clientRestrictedSyntax = [
   {
+    selector:
+      "AssignmentExpression[operator='='][right.type='Literal'][right.value=''] > " +
+      "MemberExpression.left:matches([computed=false][property.name='innerHTML']," +
+      "[computed=true][property.value='innerHTML'])",
+    message:
+      'Clear DOM nodes with replaceChildren(), so innerHTML writes remain ' +
+      'reserved for reviewed markup (B677, docs/reference/html-escaping.md).',
+  },
+  {
     selector: "CallExpression[callee.name='t'][arguments.length<2]",
     message:
       't() needs an English fallback: t(key, fallback). Without it a ' +

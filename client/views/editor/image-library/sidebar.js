@@ -125,7 +125,7 @@ export function createMediaLibrarySidebar({
   const sidebar = h('aside', { class: 'media-lib-sidebar' });
 
   const renderSidebar = () => {
-    sidebar.innerHTML = '';
+    sidebar.replaceChildren();
 
     const activeSection = getActiveSection();
     const activeTag = getActiveTag();

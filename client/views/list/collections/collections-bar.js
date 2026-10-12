@@ -64,7 +64,7 @@ export function createCollectionsBar({ api, root }) {
   };
 
   const renderHeader = () => {
-    headerRow.innerHTML = '';
+    headerRow.replaceChildren();
     headerRow.append(
       h('h3', {
         class: 'collections-bar-title',
@@ -212,7 +212,7 @@ export function createCollectionsBar({ api, root }) {
   };
 
   const renderList = () => {
-    listWrap.innerHTML = '';
+    listWrap.replaceChildren();
     const all = [
       ...(collections.personal || []),
       ...(collections.organization || []),
