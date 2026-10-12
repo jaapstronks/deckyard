@@ -17,10 +17,7 @@ Deckyard's hosting story has four shapes:
    deploy with its **own process and its own database**. Requested via the
    contact form or as an upgrade path from sandbox/self-host. Available as
    managed hosting: you run it, or we run it for you.
-4. **Multiple organizations on one instance** (`MULTI_ORG_ENABLED`) —
-   **in development**, see below. Isolation is enforced in code (every query is
-   scoped by `organization_id`) rather than by infrastructure, which is what
-   the PostgreSQL storage layer provides.
+4. **Multiple organizations on one instance** (`MULTI_ORG_ENABLED`) — see below. Isolation is enforced in code (every query is scoped by `organization_id`) rather than by infrastructure, which is what the PostgreSQL storage layer provides.
 
 Shapes 1-3 run in the default **single-organization** mode
 (`MULTI_ORG_ENABLED` unset). Their isolation guarantee is
@@ -56,8 +53,7 @@ Concretely, on a dedicated instance:
   authenticated user read access to `visibility: 'organization'` decks
   (`server/utils/presentation-authz/presentations.js`) is intended organization
   sharing, not a leak — the organization _is_ the single tenant.
-- Private decks stay owner-scoped (email-keyed ownership check in the same
-  file), so users on the instance still can't read each other's private decks.
+- Private decks stay owner-scoped (`users.id` ownership check in the same file), so users on the instance still can't read each other's private decks.
 
 ## The storage layer enforces the boundary
 
@@ -197,12 +193,7 @@ Sandbox mode is safe to expose publicly. Its isolation rests on four things:
 - **Separate storage roots.** Data and uploads live under `SANDBOX_DATA_DIR` /
   `SANDBOX_UPLOADS_DIR` when set (`server/config/storage-paths.js`), keeping
   sandbox content off any real install's disk.
-- **Per-guest unguessable identity.** Each visitor gets a random UUID in the
-  `sb_sandbox` cookie, mapped to a synthetic email
-  `guest-<uuid>@sandbox.local` (`server/auth/sandbox.js`). A guest's private
-  decks are owned by that email, and the private-visibility authz check is
-  email-keyed, so one guest cannot read another's private decks without knowing
-  their random UUID.
+- **Per-guest unguessable identity.** Each visitor gets a random token in the `sb_sandbox` cookie, mapped to a synthetic email `guest-<digest>@sandbox.local` (`server/auth/sandbox.js`). The guest has a `users.id` resolved from that identity before authorization; private-deck ownership compares that id, so another guest cannot pass the owner check.
 - **Organization decks are intentionally shared, read-only seed content.** In
   sandbox mode `canWritePresentation` returns `false` for organization visibility
   (`server/utils/presentation-authz/presentations.js`), and the sandbox
@@ -219,7 +210,7 @@ No persistent cross-session leak was found: private decks are isolated by an
 unguessable per-guest identity, and the only shared decks are the
 read-only curated seed set.
 
-## In development: shape 4 (multiple organizations on one instance)
+## Shape 4: multiple organizations on one instance
 
 _Operating it — turning it on, creating organizations (`npm run org:create`),
 what stays instance-global — is the runbook
@@ -508,14 +499,7 @@ admin had switched into, is gone. Pinned by
 
 ### What is not done yet
 
-- **Ownership and access control still key on email strings**, not on
-  `users.id`. Every authorization decision in
-  `server/utils/presentation-authz/` compares `pres.ownerEmail` / `pres.createdBy`
-  against the session's email, and the collaborator, comment and lock tables do
-  the same. That is a decoupling epic of its own, not organization work, and it
-  is what stands between the current state and pointing two _unrelated_
-  customers at one instance. The narrow leaks it started from were closed
-  separately (PR #214).
+- **Some collaborator grants still key on email.** Presentation owner and creator checks compare `users.id` to the id stamps on the deck (`shared/identity-match.js`); collaborator lookups still use `user_email` (`server/storage/collaborators.js`). This is a separate identity migration, not an unimplemented owner check.
 - **`AUTH_DEV_BYPASS` and multi-organization do not mix.** The bypass pins
   `organizationId` on the default organization and ignores the session cookie
   (`server/auth/auth.js`), so there is no membership to read a role or a designer
@@ -523,7 +507,4 @@ admin had switched into, is gone. Pinned by
   verify locally; a bypass session in multi-organization mode sees the designer tabs
   disappear.
 
-Shape 4 stays _in development_ on those grounds, not on missing UI: the
-isolation it offers is code-enforced, and the identity epic above is the
-remaining structural gap. Shapes 1-3 are unaffected — their tenant boundary is
-the deploy itself.
+Shape 4 uses code-enforced organization isolation. The remaining limitations above matter when operating a shared instance; shapes 1-3 keep their tenant boundary at the deploy itself.

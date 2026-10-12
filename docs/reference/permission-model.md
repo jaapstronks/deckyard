@@ -174,10 +174,7 @@ Two partial indexes, both `WHERE revoked_at IS NULL`: by `presentation_id`
 (list a deck's collaborators) and by `(user_email, organization_id)` ("shared
 with me").
 
-**Ownership stamps on `presentations`** — `owner_id` / `owner_email`,
-`created_by_id` / `created_by` (migration 063). The id is the key; the address
-beside it is display only, and a row whose id column is a defined NULL names
-nobody.
+**Ownership stamps on `presentations`** — `owner_user_id` / `owner_email`, `created_by_user_id` / `created_by`, and `updated_by_user_id` / `updated_by` (migration 063). The id is the authorization key; the address beside it is display or audit data only, and a row whose id column is NULL names nobody.
 
 **`presentation_share_links`** (migration 004) — token, `permission`,
 `expires_at`, `revoked_at`, `revocation_message`. The token is globally unique
@@ -377,7 +374,7 @@ every authorized request, so it is cached:
 | `PERMISSION_CACHE_MAX_SIZE`    | Max entries in the in-memory fallback, default `10000`.                                                                                                                                             |
 | `REDIS_URL`                    | When set and reachable, permissions cache in Redis and invalidation is instance-wide. Absent → memory only (the same optional-Redis rule as [`jobs-and-queues.md`](jobs-and-queues.md)).            |
 | `AUTH_ENABLED=false`           | Produces the single `unrestricted` operator; every ownership-scoped check grants.                                                                                                                   |
-| `AUTH_DEV_BYPASS`              | Auto-login in development. The bypass user is not a database user, so it decides on the email fallback.                                                                                             |
+| `AUTH_DEV_BYPASS`              | Auto-login in development. The bypass resolves `dev@local.test` to a `users.id` before ownership checks.                                                                                            |
 | `MULTI_ORG_ENABLED`            | Turns `isSameOrganization` into a real comparison. Unset, it answers `true` from the flag without reading anything.                                                                                 |
 | `SANDBOX_MODE`                 | Organization decks become read-only for guests, and sharing is declared off (D181): the routes refuse `→ organization` visibility, invites and transfers. See [`sandbox-mode.md`](sandbox-mode.md). |
 
@@ -450,8 +447,7 @@ Normative target: **one ladder, one decider per question, keyed on
   (`shared/constants/permissions.js`), four predicates, and every decider goes
   through them. Share links use a subset of the same vocabulary rather than a
   parallel one.
-- **Ownership decisions key on `users.id`** with the email as the defined
-  fallback, on both sides of the wire (T10 PR A/C, #638, #640). The client
+- **Ownership decisions key on `users.id`** without an email fallback, on both sides of the wire (T10 PR A/C, #638, #640). The client
   mirrors import the same module, so client and server cannot drift on who an
   owner is.
 - **Collaborator grants still key on the email.** `user_id` exists on
