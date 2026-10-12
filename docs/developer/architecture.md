@@ -30,7 +30,7 @@ deckyard/
 │   ├── auth/            # Authentication (sessions, sandbox mode)
 │   ├── db/              # PostgreSQL client + migrations
 │   ├── config/          # Environment, feature flags, paths
-│   ├── services/        # Domain services (SSE broadcast, notifications)
+│   ├── services/        # Shared domain operations for internal API, v1 and MCP
 │   ├── jobs/            # Background jobs (cleanup, digest emails, bulk export)
 │   ├── integrations/    # Third-party APIs (Brevo, Giphy, Unsplash)
 │   ├── analytics/       # Usage analytics
@@ -147,6 +147,14 @@ direct helpers.
 
 ---
 
+## Service Layer
+
+The internal API, public v1 API and MCP are adapters over shared domain operations in `server/services/`. Adapters resolve identity and storage scope, parse their input and render the result in their own response format. Services own deck authorization, validation and mutation side effects; `server/storage/` owns persistence. Export preparation belongs to `server/services/exports.js`, while format builders live in `server/export/` and browser rendering in `server/render/`.
+
+Services are imported by their domain module, such as `server/services/presentations.js`; there is no layer-wide barrel. Event broadcasts and notifications also live here, alongside the deck operations. See [services-layer.md](../reference/services-layer.md) for entry points, identity, error handling and the enforced adapter boundaries.
+
+---
+
 ## Storage Layer
 
 ### One backend, one adapter
@@ -244,10 +252,7 @@ Deckyard is MCP-native: `server/mcp/` exposes the full presentation lifecycle
 - **Streamable HTTP/SSE** (`POST /mcp` on the main server, `server/mcp/sse.js`)
   — for remote agents, authenticated with API keys.
 
-Tools live in `server/mcp/tools.js` and reuse the same storage + validation
-layer as the REST API (per-deck authorization via
-`server/mcp/presentation-access.js`). Forks can add their own tools through
-`custom/mcp-tools.js` (see `docs/reference/mcp-server.md`).
+Tools live in `server/mcp/tools.js` and call the shared domain services used by the REST API. Per-deck authorization goes through `server/mcp/presentation-access.js`, which adapts the presentation service to MCP identity and errors. Forks can add their own tools through `custom/mcp-tools.js` (see `docs/reference/mcp-server.md`).
 
 ---
 
