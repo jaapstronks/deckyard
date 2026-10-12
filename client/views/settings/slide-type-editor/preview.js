@@ -17,6 +17,7 @@
  * screen is for; the theme is picked elsewhere.
  */
 
+import { isValidSlug } from '../../../../shared/slug.js';
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { escapeHtml } from '../../../../shared/slide-types/helpers.js';
@@ -175,6 +176,14 @@ export function renderPreviewSlide({
   fields = [],
   defaults = {},
 }) {
+  if (!isValidSlug(slug)) {
+    throw new Error(
+      t(
+        'settings.slideTypes.errorInvalidSlug',
+        'Invalid slug. Use lowercase letters, numbers, and hyphens.',
+      ),
+    );
+  }
   const render = createTemplateSlideRenderer({
     template,
     css,

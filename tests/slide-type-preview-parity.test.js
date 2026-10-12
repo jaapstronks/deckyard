@@ -131,3 +131,16 @@ test('an empty {{#each}} renders the same nothing on both sides', () => {
   assert.equal(previewHtml(empty), deckHtml(empty, empty.defaults));
   assert.doesNotMatch(previewHtml(empty), /<li/);
 });
+
+test('preview refuses invalid draft slugs before they can become HTML or CSS', () => {
+  for (const slug of [
+    '',
+    'Two Words',
+    'x" onmouseover="alert(1)',
+    '</style><img src=x onerror=alert(1)>',
+    'x, body',
+    'a'.repeat(81),
+  ]) {
+    assert.throws(() => previewHtml({ ...DEFINITION, slug }), /Invalid slug/);
+  }
+});
