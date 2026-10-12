@@ -1,9 +1,10 @@
 /**
  * C7a gate — the internal error surface has no envelope stragglers left.
  *
- * Two things are pinned here:
+ * The internal API, static routes and MCP HTTP errors share one envelope.
+ * JSON-RPC responses keep their protocol-defined shape. Two gates pin this:
  *
- * 1. No route under `server/routes/api/` (and not `server/server.js`) answers
+ * 1. No route under `server/routes/api/`, `server/routes/static/` or `server/mcp/` answers
  *    an error with a *literal* 4xx/5xx status in `serveJson(res, 4xx/5xx, …)` —
  *    errors go through `jsonError()`/the status helpers so every failure
  *    carries the canonical `{ ok: false, error: '<machine_code>' }` envelope.
@@ -50,11 +51,33 @@ function jsFiles(dir) {
 
 const ERROR_STATUS_SERVE = /serveJson\(\s*res\s*,\s*[45]\d\d\b/;
 
-test('no serveJson with a 4xx/5xx literal status in internal api routes', () => {
+// JSON-RPC bodies are a separate protocol, identified by their jsonrpc member.
+const HANDWRITTEN_ERROR =
+  /writeHead\(\s*(?:[45]\d\d|status)\b[^;]*;\s*res\.end\(\s*JSON\.stringify\(\s*\{(?!\s*jsonrpc\s*:)/s;
+
+test('guard catches handwritten literal and computed HTTP errors but permits JSON-RPC', () => {
+  for (const status of ['400', '503', 'status']) {
+    assert.match(
+      `res.writeHead(${status}, {}); res.end(JSON.stringify({ error: 'x' }));`,
+      HANDWRITTEN_ERROR,
+    );
+    assert.doesNotMatch(
+      `res.writeHead(${status}, {}); res.end(JSON.stringify({ jsonrpc: '2.0', error: { code: -32700 } }));`,
+      HANDWRITTEN_ERROR,
+    );
+  }
+});
+
+test('internal HTTP errors use canonical helpers', () => {
   const offenders = [];
-  for (const file of jsFiles(path.join(repoRoot, 'server/routes/api'))) {
+  const files = [
+    'server/routes/api',
+    'server/routes/static',
+    'server/mcp',
+  ].flatMap((dir) => jsFiles(path.join(repoRoot, dir)));
+  for (const file of files) {
     const src = readFileSync(file, 'utf8');
-    if (ERROR_STATUS_SERVE.test(src))
+    if (ERROR_STATUS_SERVE.test(src) || HANDWRITTEN_ERROR.test(src))
       offenders.push(path.relative(repoRoot, file));
   }
   assert.deepEqual(

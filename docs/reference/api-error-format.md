@@ -265,3 +265,9 @@ an `AppError` with the fitting status. Pinned by
   media, uploads, notion) still put prose in `error`; the client tolerates both,
   and migrating them (plus rolling out `withErrorHandler`) is the mechanical
   follow-up tracked in `TODO.md`.
+
+## MCP transport HTTP errors
+
+The MCP GET and DELETE endpoints and unsupported HTTP methods use the same canonical envelope through `jsonError()`, with status-derived machine codes (`unauthorized`, `bad_request`, `not_found`, `method_not_allowed`; authentication service failures on GET use `unavailable`). POST JSON-RPC errors retain their protocol-defined `jsonrpc`, `id` and `error: { code, message }` shape.
+
+The top-level HTTP handler preserves an `AppError`'s code, safe message and registered details through `errorToResponse()`. Unexpected 5xx errors return `internal_error` and `Internal server error`, without raw error messages or details. Plain errors with an explicit sub-500 status use the status-derived code and their intended display message.
