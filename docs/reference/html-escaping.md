@@ -57,7 +57,7 @@ Use `el.replaceChildren()` to remove all child nodes before re-rendering. Empty 
 
 ## Why `innerHTML` is still used in places (and is safe)
 
-The B677 sweep (2026-10-12) leaves 13 markup writes in non-vendor client source: three static back-arrow entities in the settings editors, five user-text sites and five DOM round-trip/render-contract sites. The ten non-static writes match the escaping gate’s existing allowlist with no additions or stale entries.
+The DOM-clearing sweep (B677, 2026-10-12) leaves 13 markup writes in non-vendor client source: three static back-arrow entities in the settings editors, five user-text sites and five DOM round-trip/render-contract sites. The ten non-static writes match the escaping gate’s existing allowlist with no additions or stale entries.
 
 A full sweep of `client/` (B8) classified every `innerHTML` occurrence. The
 counts below are a snapshot; the **categories** are the durable part — a new
