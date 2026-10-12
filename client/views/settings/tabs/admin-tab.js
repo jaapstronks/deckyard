@@ -631,6 +631,7 @@ export function createAdminTab({ user }) {
         : null;
       if (supportedSlideLangs) {
         setSupportedLangs(supportedSlideLangs);
+        translationInstructions?.syncSupportedLanguages(supportedSlideLangs);
       }
 
       invalidateSettingsCache();

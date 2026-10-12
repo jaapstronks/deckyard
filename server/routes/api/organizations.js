@@ -35,6 +35,7 @@ import {
 } from '../../storage/user-organizations/index.js';
 import { hasOrganizationRole } from '../../../shared/organization-role.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
+import { publicOrganization } from '../../utils/org-settings.js';
 
 /**
  * Human-readable text per organization-mutation failure reason.
@@ -119,7 +120,7 @@ async function handleOrgCreate({ req, res, userId, authedUser }) {
 
   serveJson(res, 201, {
     ok: true,
-    organization: result.organization,
+    organization: publicOrganization(result.organization),
   });
   return true;
 }
@@ -144,11 +145,7 @@ async function handleOrgGet({ res, userId }, orgId) {
     // removed. Without it the profile screen can only offer its owner a
     // Delete button that is certain to be refused.
     organization: {
-      ...organization,
-      settings: {
-        ...organization.settings,
-        translationInstructions: undefined,
-      },
+      ...publicOrganization(organization),
       isDefault: isDefaultOrganization(organization.id),
     },
     membership: {
@@ -229,7 +226,10 @@ async function handleOrgUpdate({ req, res, userId, authedUser }, orgId) {
     return organizationError(res, result);
   }
 
-  serveJson(res, 200, { ok: true, organization: result.organization });
+  serveJson(res, 200, {
+    ok: true,
+    organization: publicOrganization(result.organization),
+  });
   return true;
 }
 
@@ -275,7 +275,7 @@ async function handleOrgSwitch({ req, res, userId }, orgId) {
   // Return the organization info for the client
   serveJson(res, 200, {
     ok: true,
-    organization,
+    organization: publicOrganization(organization),
     membership: {
       role: membership.role,
       joinedAt: membership.joinedAt,

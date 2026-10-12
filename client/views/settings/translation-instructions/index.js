@@ -11,7 +11,7 @@ import {
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
 import { TRANSLATION_INSTRUCTION_MAX_LENGTH } from '../../../../shared/constants/translation-instructions.js';
 
-/** @returns {{el: HTMLElement, load: () => Promise<void>}} */
+/** @returns {{el: HTMLElement, load: () => Promise<void>, syncSupportedLanguages: (languages: string[]) => void}} */
 export function createTranslationInstructionsCard() {
   const card = h('section', { class: 'stack editor-card' });
   const heading = h('h3', {
@@ -61,6 +61,7 @@ export function createTranslationInstructionsCard() {
   const save = h('button', {
     type: 'button',
     class: 'btn btn-primary',
+    disabled: true,
     text: t(
       'settings.admin.translationInstructions.save',
       'Save translation instructions',
@@ -76,54 +77,78 @@ export function createTranslationInstructionsCard() {
     save,
   );
 
-  /** @type {Map<string, {input: HTMLTextAreaElement, error: ReturnType<typeof createInlineError>}>} */
+  /** @type {Map<string, {el: HTMLElement, input: HTMLTextAreaElement, error: ReturnType<typeof createInlineError>}>} */
   const styleFields = new Map();
   let loaded = false;
   let busy = false;
+  let loadPromise;
+  let supportedLanguages;
+  let activeLanguages = [];
+  let initialStyles = {};
 
-  async function load() {
-    if (loaded) return;
-    loaded = true;
-    try {
-      const [app, org] = await Promise.all([
-        fetchAppSettings(),
-        fetchOrgSettings({ maxAgeMs: 0 }),
-      ]);
-      const instructions = org.translationInstructions || {};
-      terminology.value = instructions.terminology || '';
-      for (const lang of app.supportedSlideLangs || []) {
+  function syncSupportedLanguages(languages) {
+    supportedLanguages = [...languages];
+    if (!loaded) return;
+    activeLanguages = supportedLanguages;
+    styles.replaceChildren();
+    for (const lang of activeLanguages) {
+      if (!styleFields.has(lang)) {
         const input = h('textarea', {
           class: 'form-input',
           name: `styleByLanguage.${lang}`,
           rows: 5,
           maxlength: String(TRANSLATION_INSTRUCTION_MAX_LENGTH),
         });
-        input.value = instructions.styleByLanguage?.[lang] || '';
+        input.value = initialStyles[lang] || '';
         const error = createInlineError();
-        styles.append(
-          h('div', { class: 'stack' }, [
-            h('label', { class: 'field-row' }, [
-              h('span', {
-                class: 'field-row-label',
-                text: getLangDisplayName(lang),
-              }),
-              input,
-            ]),
-            error.el,
+        const el = h('div', { class: 'stack' }, [
+          h('label', { class: 'field-row' }, [
+            h('span', {
+              class: 'field-row-label',
+              text: getLangDisplayName(lang),
+            }),
+            input,
           ]),
-        );
-        styleFields.set(lang, { input, error });
+          error.el,
+        ]);
+        styleFields.set(lang, { el, input, error });
       }
-    } catch (err) {
-      saveError.show(err.message);
+      styles.append(styleFields.get(lang).el);
     }
   }
 
+  async function load() {
+    if (loaded) return;
+    if (loadPromise) return loadPromise;
+    loadPromise = (async () => {
+      try {
+        const [app, org] = await Promise.all([
+          fetchAppSettings(),
+          fetchOrgSettings({ maxAgeMs: 0 }),
+        ]);
+        const instructions = org.translationInstructions || {};
+        terminology.value = instructions.terminology || '';
+        initialStyles = instructions.styleByLanguage || {};
+        loaded = true;
+        syncSupportedLanguages(
+          supportedLanguages || app.supportedSlideLangs || [],
+        );
+        saveError.clear();
+        save.disabled = false;
+      } catch (err) {
+        saveError.show(err.message);
+      } finally {
+        loadPromise = undefined;
+      }
+    })();
+    return loadPromise;
+  }
+
   save.addEventListener('click', async () => {
-    if (busy) return;
+    if (busy || !loaded) return;
     saveError.clear();
     terminologyError.clear();
-    for (const { error } of styleFields.values()) error.clear();
+    for (const lang of activeLanguages) styleFields.get(lang).error.clear();
     busy = true;
     save.disabled = true;
     try {
@@ -131,7 +156,10 @@ export function createTranslationInstructionsCard() {
         translationInstructions: {
           terminology: terminology.value,
           styleByLanguage: Object.fromEntries(
-            [...styleFields].map(([lang, { input }]) => [lang, input.value]),
+            activeLanguages.map((lang) => [
+              lang,
+              styleFields.get(lang).input.value,
+            ]),
           ),
         },
       });
@@ -147,9 +175,9 @@ export function createTranslationInstructionsCard() {
       } else saveError.show(err.message);
     } finally {
       busy = false;
-      save.disabled = false;
+      save.disabled = !loaded;
     }
   });
 
-  return { el: card, load };
+  return { el: card, load, syncSupportedLanguages };
 }

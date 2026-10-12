@@ -7,6 +7,7 @@ import {
   forbidden,
   badRequest,
   jsonError,
+  notFound,
 } from '../../utils/http.js';
 import { getStringArray } from '../../utils/request-validators.js';
 import {
@@ -21,7 +22,7 @@ import {
   getMembershipByEmail,
 } from '../../storage/user-organizations/index.js';
 import { hasOrganizationRole } from '../../../shared/organization-role.js';
-import { getOrgSettings } from '../../utils/org-settings.js';
+import { getOrgSettings, publicOrgSettings } from '../../utils/org-settings.js';
 import { canManage } from '../../utils/route-middleware.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import { isFeatureEnabled } from '../../config/flags-snapshot.js';
@@ -101,19 +102,14 @@ async function handleAppSettingsPut({ storageScope, req, res, authedUser }) {
 // (the picker needs disabledSlideTypes)
 async function handleOrgSettingsGet({ res, authedUser }) {
   const orgId = authedUser?.organizationId;
-  try {
-    const org = await getOrganizationById(orgId);
-    const settings = { ...getOrgSettings(org) };
-    if (
-      !isFeatureEnabled('ai') ||
-      !(await canWriteOrgAdminKeys(authedUser, orgId))
-    ) {
-      delete settings.translationInstructions;
-    }
-    serveJson(res, 200, { settings });
-  } catch {
-    serveJson(res, 200, { settings: {} });
-  }
+  const org = await getOrganizationById(orgId);
+  if (!org) return notFound(res, 'Organization settings not found');
+  const settings = getOrgSettings(org);
+  const mayReadInstructions =
+    isFeatureEnabled('ai') && (await canWriteOrgAdminKeys(authedUser, orgId));
+  serveJson(res, 200, {
+    settings: mayReadInstructions ? settings : publicOrgSettings(settings),
+  });
   return true;
 }
 
@@ -253,7 +249,11 @@ async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
   }
 
   await updateOrganization(orgId, { settings: merged });
-  serveJson(res, 200, { settings: merged });
+  const mayReadInstructions =
+    isFeatureEnabled('ai') && (await canWriteOrgAdminKeys(authedUser, orgId));
+  serveJson(res, 200, {
+    settings: mayReadInstructions ? merged : publicOrgSettings(merged),
+  });
   return true;
 }
 

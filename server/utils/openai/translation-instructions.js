@@ -3,8 +3,8 @@ import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../org-settings.js';
 
 /**
- * Organization text is reference material, never a new instruction source.
- * JSON quoting keeps newlines and delimiter-looking text inside the data value.
+ * Organization text is quoted as reference data; task and output rules remain
+ * in the fixed prompt. Quoting is not a security boundary against malicious text.
  * Empty settings preserve the old prompt's absence of organization rules.
  * @param {string} organizationId
  * @param {string} toLang - Canonical target deck language.
