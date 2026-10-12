@@ -72,14 +72,7 @@ Versus a normal instance:
 - **Watermarked exports.** Exports carry `SANDBOX_WATERMARK` text.
 - **Quotas.** Per-guest deck-count and stored-byte caps, a lower request-body
   cap, secure cookies, and proxy-trust for rate limiting.
-- **No sharing between guests (D181).** One declaration, `sharingEnabled()`,
-  is off: user search answers with nobody, and opening a deck to the
-  organization, inviting a collaborator, transferring ownership and writing to
-  the organization shelf (slides and collections) are refused with a 403. The client
-  reads the same value as `features.enableSharing` and keeps every such entry
-  on screen, greyed out, under one sentence of why (the Share dialog's Team
-  tab, the Team choice of the save-to-library and collection modals). Share
-  links (the Guests tab) are not part of it.
+- **No sharing between guests (D181).** One declaration, `sharingEnabled()`, is off: user search answers with nobody, and opening a deck to the organization, inviting a collaborator, transferring ownership and writing to the organization shelf (slides and collections) are refused with a 403. The client reads the same value as `features.enableSharing` and keeps every such entry on screen, greyed out, under one sentence of why (the Share dialog's Team tab, the Team choice of the save-to-library and collection modals). Share links follow the same refusal; the Guests tab uses the same disabled controls and explanation as Team (B406). Organization tag lists and autocomplete return no vocabulary, and tag creation/deletion are refused. Tags on a guest's private deck remain usable behind the deck's authorization. Curated organization decks remain readable, but their comment surfaces are closed: creation, lists, single comments, counts, SSE and moderation. The recent-comment feed excludes those decks, including comments left before this boundary was enforced. The shared seed library remains readable.
 - **Publishing off, neutral theme, SEO tuned.** Publish disabled; a neutral
   default theme; the root landing is indexable with the sandbox OG image, while
   internal SPA routes are `noindex`.

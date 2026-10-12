@@ -189,3 +189,41 @@ test('without a Public tab to open, the Export dialog shows no hint', () => {
   assert.equal(document.querySelector('.export-format-hint'), null);
   modal.close();
 });
+
+const { setFeatures } = await import('../client/lib/state/features.js');
+
+test('sandbox Guests controls are disabled with the same explanation as Team', async () => {
+  setFeatures({ sandboxMode: true, enableSharing: false });
+  const handle = open(BILINGUAL, { initialTab: 'guests' });
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const guests = document.querySelector('[data-tab="guests"]');
+    const team = document.querySelector('[data-tab="organization"]');
+    assert.equal(guests.hidden, false);
+    assert.equal(
+      guests.querySelector('.sharing-off-note').textContent,
+      team.querySelector('.sharing-off-note').textContent,
+    );
+    assert.equal(guests.querySelector('fieldset').disabled, true);
+    const button = guests.querySelector('button');
+    assert.ok(button);
+    assert.equal(button.matches(':disabled'), true);
+  } finally {
+    handle.close();
+    setFeatures(null);
+  }
+});
+
+test('normal organization Guests controls remain enabled', () => {
+  setFeatures({ enableSharing: true });
+  const handle = open(BILINGUAL, { initialTab: 'guests' });
+  try {
+    const guests = document.querySelector('[data-tab="guests"]');
+    assert.equal(guests.querySelector('fieldset[disabled]'), null);
+    assert.equal(guests.querySelector('.sharing-off-note'), null);
+    assert.equal(guests.querySelector('button').matches(':disabled'), false);
+  } finally {
+    handle.close();
+    setFeatures(null);
+  }
+});

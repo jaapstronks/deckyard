@@ -74,6 +74,7 @@ export async function handlePresentationCommentGet(
     id,
     authedUser,
     res,
+    permission: 'readComments',
   });
   if (!pres) return true;
 
@@ -103,6 +104,7 @@ export async function handlePresentationCommentCounts(
     id,
     authedUser,
     res,
+    permission: 'readComments',
   });
   if (!pres) return true;
 
@@ -130,6 +132,7 @@ export async function handlePresentationCommentEvents(
     id,
     authedUser,
     res,
+    permission: 'readComments',
   });
   if (!pres) return true;
 

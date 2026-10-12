@@ -160,7 +160,9 @@ export function openShareModal({
   const guestsPanel = h(
     'div',
     { class: 'share-tab-panel', 'data-tab': 'guests' },
-    [shareLinks.el],
+    sharingEnabled()
+      ? [shareLinks.el]
+      : [createSharingOffNote(), createSharingOffFieldset([shareLinks.el])],
   );
 
   // --- Public tab ---

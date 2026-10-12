@@ -54,7 +54,7 @@ export function canManage(authedUser) {
  * @param {string} options.id - Presentation ID
  * @param {Object} options.authedUser - Authenticated user object
  * @param {Object} options.res - HTTP response object
- * @param {'read'|'write'|'delete'|'manage'|'comment'} [options.permission='read'] - Required permission
+ * @param {'read'|'write'|'delete'|'manage'|'comment'|'readComments'} [options.permission='read'] - Required permission
  * @returns {Promise<Object|null>} The presentation if authorized, null if error response was sent
  *
  * @example
