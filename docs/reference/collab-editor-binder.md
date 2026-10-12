@@ -80,7 +80,7 @@ these paths is untouched:
   without touching the rest of the binder. **Exception — presenter notes**:
   the notes textarea is plain text, so remote changes are merged in live
   with the caret/selection remapped across the change
-  (`client/lib/collab/textarea-merge.js`) — two people can genuinely
+  (`client/views/editor/live-edits/textarea-merge.js`) — two people can genuinely
   co-type in the notes. The refresh bypasses the render debounce (a
   keystroke inside that window would write the stale whole value back) and
   is only deferred during an active IME composition. The markdown modal
@@ -203,7 +203,7 @@ its editor afterwards, as before.
 
 ## Files
 
-- `client/lib/collab/live-doc-binder.js` — the binder core (UI-free,
+- `client/views/editor/live-edits/live-doc-binder.js` — the binder core (UI-free,
   Y/codec injected; testable headless in Node against the vendored bundle).
 - `client/views/editor/live-edits/index.js` — editor glue: waits for
   provider sync, routes remote changes to the targeted re-renders with the

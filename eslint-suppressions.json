@@ -24,29 +24,9 @@
       "count": 1
     }
   },
-  "client/lib/collab/live-doc-binder.js": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
-  "client/lib/collab/presence-session.js": {
-    "no-restricted-syntax": {
-      "count": 4
-    }
-  },
-  "client/lib/collab/textarea-merge.js": {
+  "client/lib/dom/clipboard.js": {
     "no-restricted-syntax": {
       "count": 1
-    }
-  },
-  "client/views/comments/mention-autocomplete.js": {
-    "no-useless-assignment": {
-      "count": 1
-    }
-  },
-  "client/lib/dom/index.js": {
-    "no-restricted-syntax": {
-      "count": 3
     }
   },
   "client/lib/dom/head-assets.js": {
@@ -57,6 +37,11 @@
   "client/lib/dom/in-view.js": {
     "no-restricted-syntax": {
       "count": 1
+    }
+  },
+  "client/lib/dom/index.js": {
+    "no-restricted-syntax": {
+      "count": 3
     }
   },
   "client/lib/dom/modal.js": {
@@ -71,16 +56,6 @@
   },
   "client/lib/dom/toast.js": {
     "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "client/views/analytics/tracker.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "client/lib/format/lang-selector.js": {
-    "no-useless-assignment": {
       "count": 1
     }
   },
@@ -102,21 +77,6 @@
   "client/lib/qa/questions-feed.js": {
     "no-restricted-syntax": {
       "count": 1
-    }
-  },
-  "client/views/list/collections/collections-bar.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "client/views/slide-library/edit-modal.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "client/views/slide-library/picker.js": {
-    "no-restricted-syntax": {
-      "count": 2
     }
   },
   "client/lib/slide-runtime/countdown-runtime.js": {
@@ -149,6 +109,11 @@
       "count": 3
     }
   },
+  "client/lib/state/debug.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
   "client/lib/state/maintenance.js": {
     "no-restricted-syntax": {
       "count": 1
@@ -166,32 +131,12 @@
   },
   "client/lib/theme/ui-mode.js": {
     "no-restricted-syntax": {
-      "count": 5
+      "count": 4
     }
   },
   "client/lib/ui-i18n.js": {
     "no-restricted-syntax": {
       "count": 3
-    }
-  },
-  "client/views/user/notification-bell.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
-  "client/views/user/user-menu.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
-  "client/lib/util/clipboard.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "client/lib/util/debug.js": {
-    "no-restricted-syntax": {
-      "count": 4
     }
   },
   "client/views/analytics/report-modal.js": {
@@ -204,7 +149,27 @@
       "count": 1
     }
   },
+  "client/views/analytics/tracker.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "client/views/analytics/viewer-list.js": {
+    "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/auth/login.js": {
+    "no-restricted-syntax": {
+      "count": 6
+    }
+  },
+  "client/views/auth/magic-login.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/comments/mention-autocomplete.js": {
     "no-useless-assignment": {
       "count": 1
     }
@@ -260,16 +225,16 @@
       "count": 24
     }
   },
-  "client/views/editor/editor-form/index.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "client/views/editor/editor-form/background-section.js": {
     "no-restricted-syntax": {
       "count": 1
     },
     "no-useless-assignment": {
+      "count": 1
+    }
+  },
+  "client/views/editor/editor-form/index.js": {
+    "no-restricted-syntax": {
       "count": 1
     }
   },
@@ -354,6 +319,21 @@
   "client/views/editor/live-edits/index.js": {
     "no-restricted-syntax": {
       "count": 4
+    }
+  },
+  "client/views/editor/live-edits/live-doc-binder.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/editor/live-edits/presence-session.js": {
+    "no-restricted-syntax": {
+      "count": 4
+    }
+  },
+  "client/views/editor/live-edits/textarea-merge.js": {
+    "no-restricted-syntax": {
+      "count": 1
     }
   },
   "client/views/editor/modals/analyze-modal.js": {
@@ -446,11 +426,6 @@
       "count": 2
     }
   },
-  "client/views/editor/slide-list/index.js": {
-    "no-restricted-syntax": {
-      "count": 3
-    }
-  },
   "client/views/editor/slide-list/context-menu.js": {
     "no-restricted-syntax": {
       "count": 1
@@ -459,6 +434,11 @@
   "client/views/editor/slide-list/drag-handlers.js": {
     "no-restricted-syntax": {
       "count": 1
+    }
+  },
+  "client/views/editor/slide-list/index.js": {
+    "no-restricted-syntax": {
+      "count": 3
     }
   },
   "client/views/editor/slide-list/insert-row.js": {
@@ -574,6 +554,11 @@
       "count": 1
     }
   },
+  "client/views/list/collections/collections-bar.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
   "client/views/list/index.js": {
     "no-restricted-syntax": {
       "count": 2
@@ -627,34 +612,19 @@
       "count": 1
     }
   },
-  "client/views/auth/login.js": {
-    "no-restricted-syntax": {
-      "count": 6
-    }
-  },
-  "client/views/auth/magic-login.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
-  "client/views/notes-join.js": {
-    "no-restricted-syntax": {
-      "count": 2
-    }
-  },
   "client/views/notes/index.js": {
     "no-restricted-syntax": {
       "count": 4
     }
   },
-  "client/views/notes/session-sse.js": {
+  "client/views/notes/notes-join.js": {
     "no-restricted-syntax": {
       "count": 2
     }
   },
-  "client/views/present-window.js": {
+  "client/views/notes/session-sse.js": {
     "no-restricted-syntax": {
-      "count": 6
+      "count": 2
     }
   },
   "client/views/presenter/console-timer.js": {
@@ -698,6 +668,11 @@
   "client/views/presenter/interactions.js": {
     "no-restricted-syntax": {
       "count": 2
+    }
+  },
+  "client/views/presenter/present-window.js": {
+    "no-restricted-syntax": {
+      "count": 6
     }
   },
   "client/views/presenter/session-state.js": {
@@ -818,6 +793,26 @@
   "client/views/share-viewer/topbar.js": {
     "no-useless-assignment": {
       "count": 1
+    }
+  },
+  "client/views/slide-library/edit-modal.js": {
+    "no-restricted-syntax": {
+      "count": 1
+    }
+  },
+  "client/views/slide-library/picker.js": {
+    "no-restricted-syntax": {
+      "count": 2
+    }
+  },
+  "client/views/user/notification-bell.js": {
+    "no-restricted-syntax": {
+      "count": 3
+    }
+  },
+  "client/views/user/user-menu.js": {
+    "no-restricted-syntax": {
+      "count": 2
     }
   },
   "client/views/viewer/viewer-controller.js": {

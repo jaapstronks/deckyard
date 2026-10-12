@@ -27,7 +27,7 @@ import {
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { lockDocumentScroll } from './editor-utils.js';
 import { openAiAppendWizard as openAiAppendWizardModal } from './ai-append.js';
-import { readFileAsDataUrl } from '../../lib/util/file.js';
+import { readFileAsDataUrl } from '../../lib/net/file.js';
 import { createImagePickers } from './image-pickers.js';
 import { createFieldRenderers } from './fields/index.js';
 import { setupSlideList } from './slide-list/index.js';
@@ -70,7 +70,7 @@ import { featureEnabled, getFeatures } from '../../lib/state/features.js';
 import { clusterOffSlideTypes } from '../../../shared/slide-types/policy.js';
 import { createSlideLockManager } from './slide-lock-manager.js';
 import { restoreSlideFromServer } from './slide-lock-restore.js';
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 import { syncSlideIdInUrl } from './slide-url.js';
 import { createCommentsPanel } from './comments-panel.js';
 import { createCommentsApi } from './comments-api.js';

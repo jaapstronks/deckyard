@@ -1,26 +1,26 @@
-import { api } from '../lib/api.js';
-import { h } from '../lib/dom/index.js';
-import { t } from '../lib/ui-i18n.js';
-import { loadThemeById } from '../lib/theme/theme.js';
-import { resolveRevealStyle } from '../../shared/reveal-style.js';
+import { api } from '../../lib/api.js';
+import { h } from '../../lib/dom/index.js';
+import { t } from '../../lib/ui-i18n.js';
+import { loadThemeById } from '../../lib/theme/theme.js';
+import { resolveRevealStyle } from '../../../shared/reveal-style.js';
 import {
   cleanupSlideRuntimes,
   pauseVideoEmbeds,
   activateVideoEmbeds,
   renderSlideElement,
-} from '../lib/slide-runtime/slide-render.js';
-import { createPresenterAnimator } from './presenter/animations.js';
-import { createPresenterStageScaffold } from './presenter/stage-scaffold.js';
-import { attachStageScale } from './presenter/stage-scale.js';
-import { createPresenterFullscreenController } from './presenter/fullscreen.js';
+} from '../../lib/slide-runtime/slide-render.js';
+import { createPresenterAnimator } from './animations.js';
+import { createPresenterStageScaffold } from './stage-scaffold.js';
+import { attachStageScale } from './stage-scale.js';
+import { createPresenterFullscreenController } from './fullscreen.js';
 import {
   createPresenterDeckController,
   normalizeNotesStrings,
-} from './presenter/deck-controller.js';
-import { STEP_DEPS } from './presenter/step.js';
-import { createPresenterHighlighter } from './presenter/highlighter.js';
-import { createPresentChannel } from '../lib/net/present-channel.js';
-import { readDeckLangFromUrl } from './presenter/present-lang.js';
+} from './deck-controller.js';
+import { STEP_DEPS } from './step.js';
+import { createPresenterHighlighter } from './highlighter.js';
+import { createPresentChannel } from '../../lib/net/present-channel.js';
+import { readDeckLangFromUrl } from './present-lang.js';
 
 /**
  * Projector window for the two-window presenter view.

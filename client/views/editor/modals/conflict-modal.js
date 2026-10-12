@@ -3,7 +3,7 @@ import { createModal } from '../../../lib/dom/modal.js';
 import {
   copyToClipboard,
   showCopyFallbackModal,
-} from '../../../lib/util/clipboard.js';
+} from '../../../lib/dom/clipboard.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { h } from '../../../lib/dom/index.js';
 

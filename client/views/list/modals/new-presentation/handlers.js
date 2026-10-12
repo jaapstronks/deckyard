@@ -9,7 +9,7 @@ import { generatePresentationStreaming } from '../../../../lib/net/ai-stream.js'
 import { showLoadingModal } from '../../../../lib/dom/loading-modal.js';
 import { createMessageRotator } from '../../../../lib/dom/status-message-rotator.js';
 import { processSSEStream } from '../../../../lib/net/sse.js';
-import { readFileAsDataUrl } from '../../../../lib/util/file.js';
+import { readFileAsDataUrl } from '../../../../lib/net/file.js';
 import { nav } from '../../../../lib/state/router.js';
 import {
   DEFAULT_DECK_LANG,

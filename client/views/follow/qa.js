@@ -1,4 +1,4 @@
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 import { promptModal } from '../../lib/dom/modal.js';
 import { h } from '../../lib/dom/index.js';
 import {

@@ -1,4 +1,4 @@
-import { h } from '../dom/index.js';
+import { setThemeColorMeta } from '../dom/theme-color-meta.js';
 import { storage } from '../storage.js';
 
 const STORAGE_KEY = 'ps-ui-mode'; // 'system' | 'light' | 'dark'
@@ -37,19 +37,6 @@ function resolve(pref) {
   if (p === 'light') return 'light';
   if (p === 'dark') return 'dark';
   return systemPrefersDark() ? 'dark' : 'light';
-}
-
-function setThemeColorMeta(resolved) {
-  // Pick stable colors matching our token palettes (don’t depend on computed styles).
-  const next = resolved === 'dark' ? '#0b1220' : '#f6f7fb';
-  try {
-    const meta =
-      document.querySelector('meta[name="theme-color"]') ||
-      document.head.appendChild(h('meta', { name: 'theme-color' }));
-    meta.setAttribute('content', next);
-  } catch {
-    // ignore
-  }
 }
 
 function applyResolved(resolved) {

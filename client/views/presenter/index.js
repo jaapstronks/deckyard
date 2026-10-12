@@ -23,7 +23,7 @@ import { startPresenterSession } from './session.js';
 import { normalizeLang } from '../../lib/format/i18n.js';
 import { t } from '../../lib/ui-i18n.js';
 import { setDocumentTitle } from '../../lib/theme/branding.js';
-import { copyToClipboardWithPromptFallback } from '../../lib/util/clipboard.js';
+import { copyToClipboardWithPromptFallback } from '../../lib/dom/clipboard.js';
 import { loadThemeById } from '../../lib/theme/theme.js';
 import { attachStageScale } from './stage-scale.js';
 import { createEdgeHint } from './edge-hint.js';

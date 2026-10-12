@@ -2,7 +2,7 @@
  * Editor live-edits bootstrap (feature-flagged: features.collab +
  * features.collabLiveEdits).
  *
- * Wires the live-doc binder (client/lib/collab/live-doc-binder.js) into the
+ * Wires the live-doc binder (client/views/editor/live-edits/live-doc-binder.js) into the
  * open editor: waits for the presence session's provider to sync, then makes
  * the shared Y.Doc the write target for every local mutation (the
  * controller's markDirty seam calls `localEdit`) and routes doc-driven
@@ -26,8 +26,8 @@
 
 import { Y } from '../../../vendor/collab.js';
 import { createDeckYdocCodec } from '../../../../shared/collab/deck-ydoc.js';
-import { createLiveDocBinder } from '../../../lib/collab/live-doc-binder.js';
-import { applyRemoteTextareaValue } from '../../../lib/collab/textarea-merge.js';
+import { createLiveDocBinder } from './live-doc-binder.js';
+import { applyRemoteTextareaValue } from './textarea-merge.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { t } from '../../../lib/ui-i18n.js';
 

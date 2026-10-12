@@ -19,7 +19,7 @@ import { attachThumbScale } from '../../../lib/slide-runtime/thumb-scale.js';
 import { loadThemeById } from '../../../lib/theme/theme.js';
 import { h } from '../../../lib/dom/index.js';
 import { nav } from '../../../lib/state/router.js';
-import { debugLog } from '../../../lib/util/debug.js';
+import { debugLog } from '../../../lib/state/debug.js';
 
 /**
  * Create the home view with recent presentations and activity preview

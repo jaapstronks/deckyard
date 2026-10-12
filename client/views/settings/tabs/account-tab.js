@@ -8,7 +8,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { api } from '../../../lib/api.js';
-import { readFileAsDataUrl } from '../../../lib/util/file.js';
+import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import {
   createAvatar,
   updateAvatar,
