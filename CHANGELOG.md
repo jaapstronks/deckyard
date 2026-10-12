@@ -11,6 +11,16 @@ entries are grouped per release rather than exhaustively listed.
 
 * **client:** these core module import paths moved without compatibility shims:
 
+- `client/views/editor/comment-markers.js` → `client/views/comments/comment-markers.js`.
+- `client/views/editor/comments-api.js` → `client/views/comments/comments-api.js`.
+- `client/views/editor/comments-panel.js` → `client/views/comments/comments-panel.js`.
+- `client/views/editor/comments-panel-actions.js` → `client/views/comments/comments-panel-actions.js`.
+- `client/views/editor/comments-panel-renderers.js` → `client/views/comments/comments-panel-renderers.js`.
+- `client/views/editor/comments-panel-sse.js` → `client/views/comments/comments-panel-sse.js`.
+- `client/views/editor/comments-read-state.js` → `client/views/comments/comments-read-state.js`.
+
+Fork callers should import `createCommentMarkers`, `createCommentsApi` and `createCommentsPanel` through `client/views/comments/index.js`. The other moved files are internal feature concerns. No stored-data migration or new configuration is required.
+
 ### Fixed
 
 * translate published deck metadata and reader label ([#1610](https://github.com/jaapstronks/deckyard/issues/1610)) ([d5fc1e4](https://github.com/jaapstronks/deckyard/commit/d5fc1e48091e8aada0e143debf0f2f0dd3bc739e))
