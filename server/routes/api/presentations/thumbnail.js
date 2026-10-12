@@ -30,6 +30,7 @@ import {
   requestThumbnailGeneration,
 } from '../../../render/deck-thumbnail.js';
 import {
+  jsonError,
   methodNotAllowed,
   matchesIfNoneMatch,
   notModified,
@@ -96,10 +97,5 @@ export async function handlePresentationThumbnail(
   if (stale) return sendImage(stale.buffer, stale.filename);
 
   // Nothing to show yet — `no-store` so the client's retry actually re-requests.
-  res.writeHead(404, {
-    'Cache-Control': 'no-store',
-    'Content-Type': 'application/json',
-  });
-  res.end(JSON.stringify({ ok: false, error: 'thumbnail_pending' }));
-  return true;
+  return jsonError(res, 404, 'thumbnail_pending');
 }

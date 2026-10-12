@@ -307,9 +307,9 @@ for (const { name, handler, granted, method } of ENDPOINTS) {
     const { status, body } = await call(handler, COLLABORATOR, { method });
     assert.equal(status, granted);
     if (handler === handlePresentationThumbnail) {
-      assert.equal(
-        body?.error,
-        'thumbnail_pending',
+      assert.deepEqual(
+        body,
+        { ok: false, error: 'thumbnail_pending' },
         'refused at rendering, not at the door',
       );
     }

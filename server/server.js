@@ -171,7 +171,7 @@ async function handleRequest(req, res) {
   } catch (err) {
     const status = Number(err?.statusCode || 500);
     // Unexpected 500s are server bugs — the client only ever sees a generic
-    // "server_error" envelope, so without this the failure is invisible during
+    // "internal_error" envelope, so without this the failure is invisible during
     // a self-install. Log method + path + stack so it's diagnosable.
     if (status >= 500) {
       const method = req?.method || '?';

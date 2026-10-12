@@ -142,16 +142,25 @@ test('errorToResponse codes a plain (non-App) error by its status', () => {
 
 test('top-level handler stays generic for 500 and safe for sub-500', () => {
   const leak = buildTopLevelErrorBody(500, new Error('SELECT * FROM secrets'));
-  assert.equal(leak.error, 'server_error');
-  assert.equal(leak.message, 'Server error');
+  assert.equal(leak.error, 'internal_error');
+  assert.equal(leak.message, 'Internal server error');
   assert.doesNotMatch(JSON.stringify(leak), /SELECT/);
 
   const safe = buildTopLevelErrorBody(
     413,
     Object.assign(new Error('too big'), { statusCode: 413 }),
   );
-  assert.equal(safe.error, 'request_error');
+  assert.equal(safe.error, 'payload_too_large');
   assert.equal(safe.message, 'too big');
+});
+
+test('top-level handler preserves AppError codes, messages and registered details', () => {
+  for (const err of [
+    new AppError('Bad field', 400, { field: 'title' }, 'invalid'),
+    new AppError('Service unavailable', 503, null, 'unavailable'),
+  ]) {
+    assert.deepEqual(buildTopLevelErrorBody(err.statusCode, err), err.toJSON());
+  }
 });
 
 // ---------------------------------------------------------------------------
