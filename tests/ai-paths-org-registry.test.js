@@ -388,6 +388,22 @@ test('the offer loader refuses a missing organization scope', async () => {
   await assert.rejects(loadSlideTypeOffer({}), /no organizationId/);
 });
 
+for (const table of ['organizations', 'custom_slide_types']) {
+  test(`the offer loader propagates ${table} lookup failures`, async (t) => {
+    await setup();
+    const failure = new Error(`${table} lookup failed`);
+    const selectFrom = db.selectFrom;
+    t.mock.method(db, 'selectFrom', (name) => {
+      if (name === table) throw failure;
+      return selectFrom(name);
+    });
+    await assert.rejects(
+      loadSlideTypeOffer(createStorageScope({ organizationId: ORG })),
+      failure,
+    );
+  });
+}
+
 test('MCP create_presentation keeps the org type the model chose', async (t) => {
   await setup();
   stubModel(t, deckAnswer(SHORT));

@@ -11,12 +11,15 @@ const server = join(root, 'server');
 // Existing literals only. Removing a site requires removing its entry here.
 const ALLOWED = {
   'server/export/deck-slide-types.js': 1,
+  'server/export/deck-theme.js': 1,
   'server/jobs/queue/workers/bulk-export-worker.js': 1,
   'server/jobs/sandbox-cleanup.js': 1,
   'server/routes/api/share-links/public.js': 1,
   'server/routes/static/published.js': 2,
+  'server/routes/static/embed.js': 1,
   'server/services/exports.js': 1,
   'server/services/publish-presentation.js': 1,
+  'server/utils/themes.js': 1,
 };
 
 function* files(dir) {
@@ -27,15 +30,10 @@ function* files(dir) {
   }
 }
 
-/** Count one-line scope literals beginning with an organizationId field. */
+/** Count scope arguments and properties beginning with organizationId. */
 export function scopeLiteralCount(source) {
-  return source
-    .split('\n')
-    .filter(
-      (line) =>
-        /\{\s*organizationId\b/.test(line) &&
-        !/\b(?:const|let|var)\s*\{\s*organizationId\b/.test(line),
-    ).length;
+  return [...source.matchAll(/(?:\(\s*|\bscope\s*:\s*)\{\s*organizationId\b/g)]
+    .length;
 }
 
 test('scope literals outside storage only shrink', () => {
@@ -54,6 +52,15 @@ test('scope detector distinguishes literals from destructuring', () => {
     scopeLiteralCount(
       'const { organizationId } = scope;\nloadOffer({ organizationId });',
     ),
+    1,
+  );
+});
+
+test('scope detector catches formatted call arguments', () => {
+  assert.equal(scopeLiteralCount('loadOffer({\n  organizationId,\n});'), 1);
+  assert.equal(scopeLiteralCount('loadOffer(\n  { organizationId },\n);'), 1);
+  assert.equal(
+    scopeLiteralCount('notify({ scope: {\n  organizationId,\n} });'),
     1,
   );
 });
