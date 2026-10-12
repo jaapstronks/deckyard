@@ -6,7 +6,6 @@ This section is for developers working on the codebase.
 
 - **Beta doctrine**: [docs/developer/beta-doctrine.md](./beta-doctrine.md) - principles for changes during beta
 - **Maintaining upstream**: [docs/developer/maintaining.md](./maintaining.md) - planning, reviews, handoffs and releases
-- **Node IPC issue draft**: [docs/developer/node-test-ipc-upstream-issue.md](./node-test-ipc-upstream-issue.md) - reproduction and proposed upstream report
 
 - **Dev setup**: [docs/developer/dev-setup.md](./dev-setup.md)
 - **Architecture overview**: [docs/developer/architecture.md](./architecture.md)

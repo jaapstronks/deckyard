@@ -578,24 +578,9 @@ var(--tf-size-scale))`). The parser recognises `em` itself, so these are not
   they resolve to a token; a local introducing a new literal counts as a
   literal.
 
-## What disappears
+## Legacy aliases
 
-Legacy alias families with live consumers today; the sweep migrates the
-consumers and then deletes the family. None of these is a valid spelling for
-new code:
-
-1. ~~`--font-size-title/subtitle/heading/body` + `--line-height-body`~~ —
-   **done** (batch 2.2a): consumers migrated, family deleted from the theme
-   layer (then `theme.css`, now `slides/00-theme.css`);
-2. ~~the `--color-*` spelling of the text-colour alias layer~~ — **done**
-   (batch 2.2b): consumers migrated to the `--slide-*` colour roles, alias
-   definitions deleted from the theme layer;
-3. ~~the five `--t-*` legacy aliases (`--t-primary`, `--t-accent`,
-   `--t-bg-dark`, `--t-brand-1/2`)~~ — **done** (phase 3): consumers read
-   roles, `theme-normalize.js` fills `--t-color-brand-{1..3}` from
-   `brandColors` instead of emitting aliases;
-4. ~~direct `var(--t-radius…)` reads in slide CSS~~ — **done** (batch 2.2a):
-   all reads go through `--slide-radius-*`.
+Slide CSS reads `--slide-*` roles. The token layer in `client/styles/slides/00-tokens.css` translates theme values into those roles; old `--font-size-*`, `--color-*` and direct `--t-*` reads are absent from slide stylesheets. The gate below pins this contract.
 
 ## Enforcement
 

@@ -307,11 +307,9 @@ Then, in rough dependency order:
    remove the plumbing or note in a comment that no core type declares it.
 9. **Verify**: `npm test`, `npm run lint`.
 
-### What you do _not_ have to do
+### Locale and stored-deck effects
 
-- ~~**i18n**: deprecated types are excluded from extraction, so a type that
-  spent time on rung 1 has no keys in `client/i18n/<locale>/slide-types.json`.~~
-  **Wrong — corrected 2026-07-30.** The registry walk in
+- **i18n**: the registry walk in
   `scripts/lib/slide-type-i18n-keys.js` iterates
   `SLIDE_TYPES` and does not look at `deprecated`, so an archived type keeps its
   label and field keys in every locale. Split-partner still had six keys × 12
@@ -321,8 +319,7 @@ Then, in rough dependency order:
   `tests/slide-type-i18n-orphans.test.js` (added 2026-07-30) **fails** the
   moment a `slideType.<id>.*` namespace names a type that has left the registry,
   reporting the locale and the id — so a forgotten prune is caught in the test
-  suite instead of shipping forever. (`client/i18n/en.json` is a stale build
-  artifact — ignore it.)
+  suite instead of shipping forever.
 - **Stored decks**: nothing rewrites deck JSON. Removal is a code-side operation;
   content already on disk keeps its `type` string.
 
@@ -392,9 +389,8 @@ touch is the long tail — the CSS block, the two doc tables, the two per-type t
 lists, the allowlist entry and twelve locale payloads all still had to be found
 and edited by hand. That tail is the worklist to actually close the gate:
 
-1. ~~`docs/reference/editor-inspector.md` + `docs/reference/wysiwyg-inline-editing.md`
-   — per-type tables that should be generated like `slide-type-inventory.md`.~~
-   **Done:** both tables are now `<!--gen:…-->` regions filled from the schema,
+1. The per-type tables in `docs/reference/editor-inspector.md` and
+   `docs/reference/wysiwyg-inline-editing.md` are now `<!--gen:…-->` regions filled from the schema,
    the inline-edit descriptor, the keep-list and the `layoutVariants`/
    `fieldGroups` declarations (`scripts/lib/slide-type-doc-tables.js`). Removing
    a type drops both rows with no hand edit, and the regeneration surfaced the
@@ -504,17 +500,9 @@ go — `card-stack-slide` degrades to an archived slide that names its successor
 degrades to an archived slide with every stored field visible. The contract is
 the prerequisite for rung 3 on any type decks actually used.
 
-## Known gaps this removal exposed
+## Remaining deregistration points
 
-- ~~**The unknown-type render is the entire migration story.**~~ Fixed by the
-  render contract above (`shared/slide-types/unresolved.js`).
-- ~~**Nothing fails when a reference is orphaned.**~~ Fixed by
-  `tests/removed-slide-types.test.js` (step 7 above).
-- **Per-type tables are deregistration points.** `INSPECTOR_KEEPS` and
-  `EXCLUDED_TYPES` both had to have an entry _removed_; neither was derived from
-  anything the type declares. `INSPECTOR_KEEPS` has since become exactly that —
-  a type declares `inspectorKeeps` in its own `inline-edit.js` and the map is
-  derived — so the next removal only has `EXCLUDED_TYPES` left in this row.
+`tests/inspector-form.test.js`, `tests/theme-background-presets.test.js` and `scripts/i18n-audit-allowlist.json` still carry per-type knowledge. The removal checklist above covers them until those lists derive from type declarations. `INSPECTOR_KEEPS` derives from each type's `inline-edit.js`; agent opt-out derives from the type's own `deprecated` or `ai: false` marker. The old `EXCLUDED_TYPES` list is gone.
 
 ## See also
 

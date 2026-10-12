@@ -79,6 +79,18 @@ const MARKDOWN_FILES = collectMarkdown();
 /** @returns {string} the file's text */
 const read = (rel) => fs.readFileSync(path.join(REPO_ROOT, rel), 'utf8');
 
+test('reference pages do not present completed plan steps as current guidance', () => {
+  const staleMarker = /~~|✅\s*(?:\*\*)?Shipped\b/i;
+  const stale = MARKDOWN_FILES.filter((rel) =>
+    rel.startsWith('docs/reference/'),
+  ).filter((rel) => staleMarker.test(read(rel)));
+  assert.deepEqual(
+    stale,
+    [],
+    'Move completed plan history out of docs/reference/ and describe current behavior',
+  );
+});
+
 test('the prose scan actually sees the docs', () => {
   // A silent zero-file scan would make every assertion below vacuously pass.
   assert.ok(
