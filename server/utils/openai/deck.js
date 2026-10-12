@@ -1,3 +1,4 @@
+import { DEFAULT_IMAGE_PLACEHOLDER } from '../../../shared/slide-types/image-placeholder.js';
 import { ICON_NAMES } from '../../../shared/icon-names.js';
 import { DECK_FORMAT_ID } from '../../../shared/slide-types/deck-format-id.js';
 import { getLlmConfig } from '../llm/config.js';
@@ -60,7 +61,7 @@ export async function generateDeckJsonFromRawContent(
     '}',
     '',
     buildSlideTypesPrompt({
-      preferredPlaceholderImage: '/assets/images/backgrounds/demo-aurora.jpg',
+      preferredPlaceholderImage: DEFAULT_IMAGE_PLACEHOLDER,
       disabledSlideTypes,
       customSlideTypes,
     }),
@@ -112,7 +113,7 @@ export async function generateDeckJsonFromRawContent(
     '  - For interviews, include at least 1 image-text-slide about the interviewee (or the interview topic) near the start of the deck.',
     '  - For long decks, aim for ~1 image-text-slide per 8–10 slides.',
     '  - Alternate imageSide left/right across multiple image-text-slide(s) for variety.',
-    '  - If you cannot provide a real image URL, you MUST still provide a valid placeholder URL: "/assets/images/backgrounds/demo-aurora.jpg".',
+    `  - If you cannot provide a real image URL, you MUST still provide a valid placeholder URL: "${DEFAULT_IMAGE_PLACEHOLDER}".`,
     '  - Add a clear TODO marker in the body (last bullet) so the user knows to replace the image, e.g. "- TODO: replace image".',
     '',
     'Card slides (IMPORTANT):',

@@ -1,3 +1,4 @@
+import { DEFAULT_IMAGE_PLACEHOLDER } from '../../../shared/slide-types/image-placeholder.js';
 /**
  * Slide Types Prompt Builder (V1 generation + append)
  *
@@ -308,7 +309,7 @@ function compactAgentSchema(schema) {
 }
 
 export function buildSlideTypesPrompt({
-  preferredPlaceholderImage = '/assets/images/backgrounds/demo-aurora.jpg',
+  preferredPlaceholderImage = DEFAULT_IMAGE_PLACEHOLDER,
   disabledSlideTypes = [],
   customSlideTypes = [],
 } = {}) {

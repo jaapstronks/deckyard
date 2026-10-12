@@ -57,7 +57,7 @@ function withoutInstanceIds(content) {
 
 // ── the routes agree ────────────────────────────────────────────────────────
 
-test('creating and importing a slide of the same type yield the same content', () => {
+test('import composes defaults and declared import values through the slide factory', () => {
   // The editor insert (the factory, with the registry the editor holds) and a
   // deck import of a bare `{ type }` slide. The import path builds a patch and
   // hands it to the same factory, so on every key neither route was given they
@@ -81,6 +81,13 @@ test('creating and importing a slide of the same type yield the same content', (
         theme: THEME,
         lang,
         presentationId: 'deck-1',
+        // Import supplies its declared placeholders as a patch; insertion
+        // without that patch keeps the ordinary empty image defaults.
+        content: Object.fromEntries(
+          SLIDE_TYPES[type].fields
+            .filter((f) => f.type === 'image' && f.importPlaceholder)
+            .map((f) => [f.key, f.importPlaceholder]),
+        ),
       }).content,
     );
     const [importedSlide] = deckToPresentationParts(

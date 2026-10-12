@@ -194,3 +194,7 @@ If the slide is an audience interaction:
   - follow-along (if applicable)
   - exported HTML/print/PDF/PNG/PPTX (if applicable)
 - If it should **not** appear in public outputs, add a single centralized filter (see `stripLiveOnlySlidesFromPresentation()`).
+
+## Image placeholders on import
+
+An `image` field may declare `importPlaceholder`, a nonempty image URL used when an imported value is missing, blank or not a string. `deckToPresentationParts()` applies it once, after composing the slide; this covers AI wizard output, append output and ordinary deck imports. Real URLs and configured type defaults win. Editor insertion keeps the type's ordinary defaults. The core image and image-text types declare `DEFAULT_IMAGE_PLACEHOLDER` from `shared/slide-types/image-placeholder.js`; types without the declaration keep their existing defaults.

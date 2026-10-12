@@ -1,3 +1,4 @@
+import { DEFAULT_IMAGE_PLACEHOLDER } from '../../../shared/slide-types/image-placeholder.js';
 import { ICON_NAMES } from '../../../shared/icon-names.js';
 import { getLlmConfig } from '../llm/config.js';
 import { LlmError } from '../llm/error.js';
@@ -11,7 +12,7 @@ export async function generateSlidesToAppendFromRawContent(
   rawContent,
   {
     existingDeck = null,
-    preferredPlaceholderImage = '/assets/images/backgrounds/demo-aurora.jpg',
+    preferredPlaceholderImage = DEFAULT_IMAGE_PLACEHOLDER,
     targetLang = null,
     vendor = null,
     contentOnly = false,
