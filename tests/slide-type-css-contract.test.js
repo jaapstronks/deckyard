@@ -90,7 +90,7 @@ const CSS_CORPUS = [
 const UNSTYLED = {
   'chart-frag': {
     kind: 'hook',
-    why: 'presenter stepping queries it — client/views/presenter/step.js:179',
+    why: 'presenter stepping queries it — client/lib/slide-runtime/step.js:179',
   },
   'team-cards-group-right': {
     kind: 'hook',

@@ -5,7 +5,7 @@ import {
   RENDER_VIA_THEME,
   renderSlideElement,
 } from '../../../../lib/slide-runtime/slide-render.js';
-import { getSampleContent } from '../../../editor/slide-type-sample-content.js';
+import { getSampleContent } from '../../../editor/index.js';
 import { SLIDE_TYPES as BUNDLED_SLIDE_TYPES } from '../../../../../shared/slide-types.js';
 
 /**

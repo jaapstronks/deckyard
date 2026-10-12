@@ -1,5 +1,5 @@
 import { h } from '../../lib/dom/index.js';
-import { createAutoAdvance } from '../presenter/auto-advance.js';
+import { createAutoAdvance } from '../../lib/slide-runtime/auto-advance.js';
 import {
   getSlideEffectiveDuration,
   DEFAULT_ADVANCE_INTERVAL_SECONDS,

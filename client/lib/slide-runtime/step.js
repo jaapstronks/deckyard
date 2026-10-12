@@ -1,4 +1,4 @@
-// Presenter step-through helpers (body paragraphs/lists or card grids).
+// Slide step-through helpers shared by presenter, projector and follow views.
 
 const getBodyEl = (section) =>
   section?.querySelector?.(
