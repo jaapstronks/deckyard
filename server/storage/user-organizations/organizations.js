@@ -60,20 +60,6 @@ export async function getOrganizationBySlug(slug) {
 }
 
 /**
- * Whether a slug has the one shape an organization slug may take: 2-63
- * characters, lowercase alphanumeric, hyphens allowed but not at start or end.
- * Shared by the HTTP route and `scripts/org-create.js`, so the two entry
- * points cannot accept different slugs.
- *
- * @param {string} slug
- * @returns {boolean}
- */
-export function isValidOrganizationSlug(slug) {
-  if (!slug || typeof slug !== 'string') return false;
-  return /^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]$|^[a-z0-9]{1,2}$/.test(slug);
-}
-
-/**
  * Create a new organization.
  * @param {Object} data - Organization data
  * @param {string} data.name - Organization name

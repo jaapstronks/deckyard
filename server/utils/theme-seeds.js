@@ -11,7 +11,7 @@ import {
   checkThemeConfig,
   validateThemeColors,
 } from '../../shared/theme-config-schema.js';
-import { isValidSlug } from '../storage/utils/index.js';
+import { isValidSlug } from '../../shared/slug.js';
 
 const RECORD_FIELDS = [
   'slug',

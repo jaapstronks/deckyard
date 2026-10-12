@@ -15,6 +15,8 @@
  * exists where external identities *can* appear.
  */
 
+import { generateSlug, isValidSlug } from '../../shared/slug.js';
+
 import { sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
@@ -24,13 +26,7 @@ import {
   resolveNamesForAddresses,
   toStoredActorIdentity,
 } from './display-identity.js';
-import {
-  withDbGuard,
-  parseJson,
-  generateSlug,
-  isValidSlug,
-  getUserIdByEmail,
-} from './utils/index.js';
+import { withDbGuard, parseJson, getUserIdByEmail } from './utils/index.js';
 import { validateUsage } from '../../shared/slide-types/usage.js';
 import { customSlideTypeKey } from '../../shared/slide-types/custom-type-runtime.js';
 import { validateCustomFieldDefinitions } from '../../shared/slide-types/custom-field-definitions.js';

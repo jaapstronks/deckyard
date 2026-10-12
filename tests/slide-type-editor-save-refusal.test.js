@@ -21,11 +21,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
+import createDOMPurify from 'dompurify';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', {
   url: 'http://localhost/settings',
 });
 globalThis.window = dom.window;
+window.DOMPurify = createDOMPurify(window);
 globalThis.document = dom.window.document;
 globalThis.location = dom.window.location;
 globalThis.localStorage = dom.window.localStorage;
@@ -76,6 +78,45 @@ function mount({ slideType, onSave }) {
 }
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+test('a generated slug is visible and manual slug edits refresh the guarded preview', async () => {
+  let saved;
+  const view = mount({
+    slideType: {
+      ...definition([{ key: 'title', type: 'string', label: 'Title' }]),
+      template: '<section>Preview</section>',
+    },
+    onSave: async (value) => {
+      saved = value;
+    },
+  });
+  const name = view.input('My Custom Slide');
+  const slug = view.input('my-custom-slide');
+  const type = (input, value) => {
+    input.value = value;
+    input.dispatchEvent(new dom.window.Event('input'));
+  };
+  const previewBody = () =>
+    view.el.querySelector('iframe').contentDocument.body;
+  const rendered = () => new Promise((resolve) => setTimeout(resolve, 350));
+
+  type(name, 'Café Review');
+  assert.equal(slug.value, 'cafe-review');
+  view.save().click();
+  await tick();
+  assert.equal(saved.slug, slug.value);
+
+  type(slug, '</style><img src=x onerror=alert(1)>');
+  await rendered();
+  assert.match(previewBody().textContent, /Invalid slug/);
+  assert.equal(previewBody().querySelector('img'), null);
+  assert.equal(slug.value, '</style><img src=x onerror=alert(1)>');
+
+  type(slug, 'valid-retry');
+  await rendered();
+  assert.ok(previewBody().querySelector('.slide-custom-valid-retry'));
+  view.el.remove();
+});
 
 test('the shared rules refuse an items field with no item fields, and locate it', () => {
   const result = validateCustomFieldDefinitions([

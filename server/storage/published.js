@@ -13,7 +13,8 @@
  */
 
 import crypto from 'node:crypto';
-import { safeSlug } from '../utils/slug.js';
+import { generateSlug, isValidSlug, MAX_SLUG_LEN } from '../../shared/slug.js';
+import { throwStorageFailure } from '../utils/errors.js';
 import { getDb } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { getPresentation } from './presentations/index.js';
@@ -224,7 +225,7 @@ export async function upsertPublishedEntry(
   if (!id) throw new Error('publishId is required');
   if (!pid) throw new Error('presentationId is required');
 
-  const slug = safeSlug(title || 'presentation');
+  const slug = generateSlug(title, { fallback: 'presentation' });
   const result = await upsertPublishedRow(
     {
       id,
@@ -277,7 +278,13 @@ export async function updatePublishedSlug(storageScope, publishId, nextSlug) {
   const existing = await getPublishedRow(id);
   if (!existing) throw new Error('Published entry not found');
 
-  const slug = safeSlug(nextSlug);
+  if (!isValidSlug(nextSlug)) {
+    throwStorageFailure(
+      { reason: 'invalid', field: 'slug' },
+      `Slug must be 1-${MAX_SLUG_LEN} lowercase letters, digits or hyphens, starting and ending with a letter or digit`,
+    );
+  }
+  const slug = nextSlug;
   const result = await upsertPublishedRow(
     {
       ...existing,

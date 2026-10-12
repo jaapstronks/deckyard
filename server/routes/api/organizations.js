@@ -1,3 +1,4 @@
+import { isValidSlug } from '../../../shared/slug.js';
 /**
  * API routes for organization management (multi-organization mode).
  * All routes are guarded by the MULTI_ORG_ENABLED feature flag.
@@ -31,7 +32,6 @@ import {
   deleteOrganization,
   getMembership,
   isDefaultOrganization,
-  isValidOrganizationSlug,
 } from '../../storage/user-organizations/index.js';
 import { hasOrganizationRole } from '../../../shared/organization-role.js';
 import { getUserByEmailGlobal } from '../../storage/identity.js';
@@ -98,7 +98,7 @@ async function handleOrgCreate({ req, res, userId, authedUser }) {
     return badRequest(res, 'Organization name must be at least 2 characters');
   }
 
-  if (!isValidOrganizationSlug(slug)) {
+  if (!isValidSlug(slug, { minLength: 2, maxLength: 63 })) {
     return badRequest(
       res,
       'Slug must be 2-63 characters, lowercase alphanumeric with optional hyphens',

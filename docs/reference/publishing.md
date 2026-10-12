@@ -41,8 +41,7 @@ Publish / unpublish:
   `listPublishedForFeed`.
 - `server/render/preview-image.js` + `server/render/og-image.js` — the OG image:
   render the first meaningful slide, or pick one out of the deck's content.
-- `server/utils/slug.js` — `safeSlug()`, which derives the URL slug from a
-  title.
+- `shared/slug.js` - `generateSlug()` derives a URL slug from a title; `isValidSlug()` validates explicitly supplied slugs.
 
 The public pages:
 
@@ -80,14 +79,14 @@ Client surfaces:
 
 **`published_presentations`** (migration 001) — one row per published deck:
 
-| Column                      | Notes                                                                                                                                |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `id`                        | The publish id: the first segment of a UUID, 8 hex characters. Primary key, and the public token.                                    |
-| `presentation_id`           | FK, `ON DELETE CASCADE` — deleting a deck unpublishes it.                                                                            |
-| `organization_id`           | FK. Used by the listing and the feed; _not_ by `getPublishedById`, which is deliberately unscoped.                                   |
-| `title`, `slug`             | The slug comes from `safeSlug(title)` at publish time and can be renamed afterwards. It is cosmetic: the id alone resolves the deck. |
-| `og_image_url`              | The generated preview, or the fallback asset.                                                                                        |
-| `created_at`, `modified_at` |                                                                                                                                      |
+| Column                      | Notes                                                                                                                                                                  |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                        | The publish id: the first segment of a UUID, 8 hex characters. Primary key, and the public token.                                                                      |
+| `presentation_id`           | FK, `ON DELETE CASCADE` — deleting a deck unpublishes it.                                                                                                              |
+| `organization_id`           | FK. Used by the listing and the feed; _not_ by `getPublishedById`, which is deliberately unscoped.                                                                     |
+| `title`, `slug`             | The slug comes from `generateSlug(title, { fallback: 'presentation' })` at publish time and can be renamed afterwards. It is cosmetic: the id alone resolves the deck. |
+| `og_image_url`              | The generated preview, or the fallback asset.                                                                                                                          |
+| `created_at`, `modified_at` |                                                                                                                                                                        |
 
 The same facts are mirrored onto **`presentations.published`** (a JSONB column,
 migration 001) as `{ id, slug, ogImageUrl, created, modified }`, so exports and
@@ -130,7 +129,8 @@ deliberate no-op that only reserves the number) — `enabled`, `title`,
    ([`webhooks.md`](webhooks.md)), and answer with
    `{ publishId, slug, path, ogImageUrl }`.
 
-`PATCH …/publish/slug` renames the slug (400 if the deck is not published);
+`PATCH …/publish/slug` renames the slug. It refuses invalid spelling with HTTP 400, code `invalid` and `details.field = "slug"`; the editor shows that refusal inline beside the input. Explicit slugs must be 1-80 lowercase ASCII letters, digits or hyphens, with a letter or digit at both ends. Input is never trimmed, lowercased or otherwise repaired. A deck that is not published also receives HTTP 400.
+
 `POST …/preview/regenerate` re-runs step 4 alone.
 
 ### 2. Unpublish
