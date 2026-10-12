@@ -565,3 +565,52 @@ test('no absent-symbol entry has quietly come back or stopped being cited (the a
     );
   }
 });
+
+/** Schema citations in the authorization docs, where a wrong column name is especially misleading. */
+const AUTHZ_SCHEMA_DOCS = [
+  'docs/reference/tenant-isolation.md',
+  'docs/reference/permission-model.md',
+  'docs/ops/multi-organization.md',
+];
+const NON_SCHEMA_AUTHZ_NAMES = new Set([
+  'not_found',
+  'user_not_found',
+  'sb_sandbox',
+]);
+
+function migrationSchemaNames() {
+  const directory = path.join(REPO_ROOT, 'server/db/migrations');
+  const names = new Set();
+  for (const file of fs
+    .readdirSync(directory)
+    .filter((name) => name.endsWith('.js'))) {
+    const source = fs
+      .readFileSync(path.join(directory, file), 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+    for (const match of source.matchAll(/\b[a-z][a-z0-9]*_[a-z0-9_]+\b/g)) {
+      names.add(match[0]);
+    }
+  }
+  return names;
+}
+
+test('backticked schema names in authorization docs occur in migrations', () => {
+  const names = migrationSchemaNames();
+  assert.ok(names.has('owner_user_id') && names.has('created_by_user_id'));
+  assert.ok(!names.has('owner_id') && !names.has('created_by_id'));
+  const missing = [];
+  for (const doc of AUTHZ_SCHEMA_DOCS) {
+    const content = fs.readFileSync(path.join(REPO_ROOT, doc), 'utf8');
+    for (const match of content.matchAll(/`([a-z][a-z0-9]*_[a-z0-9_]+)`/g)) {
+      if (!names.has(match[1]) && !NON_SCHEMA_AUTHZ_NAMES.has(match[1])) {
+        missing.push(`${match[1]} (in ${doc})`);
+      }
+    }
+  }
+  assert.deepEqual(
+    missing,
+    [],
+    'correct the cited schema name or identify a non-schema token',
+  );
+});
