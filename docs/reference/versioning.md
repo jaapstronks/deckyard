@@ -261,6 +261,8 @@ title, `package.json`, tag, changelog heading. The generated changelog _body_
 still reflects the commits (a `⚠ BREAKING CHANGES` section stays), which is
 correct: the note was accurate, only the digit was wrong.
 
+Keep the override commit focused: put `Release-As:` in its own final paragraph and verify the bot actually updates every version file. A trailer buried in a long squash body is not proof that the override was applied. Likewise, check that generated breaking notes retain the complete old/new import-path list; restore omitted details in the Release PR before merging.
+
 Use this sparingly. It is the release equivalent of a manual override — every
 use means the commit convention failed upstream, so fix that too (in this case:
 [the beta rule](#while-deckyard-is-in-beta-no-major-bumps) and the two
