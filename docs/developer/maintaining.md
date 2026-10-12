@@ -97,7 +97,7 @@ Apply [the beta doctrine](beta-doctrine.md) when picking work, reviewing PRs, wr
   it writes the release notes on `deckyard-website` (hub → spoke) and moves the
   sandbox to the new tag, in the same session. The full recipes, including the
   integration-branch history: `docs/reference/versioning.md` § Upstream release
-  recipes.
+  recipes. Timing is agent-managed under the standing mandate: announce a separate release-cut review-and-merge handoff when warranted; the maintainer can override. See versioning § Agent-managed release cadence.
 - **After merging a delegated PR**: run the **`merge-housekeeping`** skill as
   the tail of the merge, before you stop (branch cleanup, TODO tick-off, drift
   scan; at the threshold your closing hand-off becomes the reorg-audit). It is
