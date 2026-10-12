@@ -36,7 +36,7 @@ surviving tables are compared against the single expected survivor.
 The **round trip** then catches the other direction — a `down()` that drops
 something its `up()` no longer recreates comes back short on the second pass.
 
-What the round trip does _not_ catch on its own: 32 of the 57 migrations create
+What the round trip does _not_ catch on its own: some migrations create
 with `IF NOT EXISTS`, so a leftover object does not make the second `up()`
 fail. For those, the down-to-empty check is the only thing that notices. The
 second `up()` failing on a still-present object is real, but only for the

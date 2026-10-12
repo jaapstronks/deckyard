@@ -188,8 +188,7 @@ Assertion 4's `VARIANT_BURNDOWN` has been empty since the cut (D100). Its one en
 because it guards the codebase around the types rather than the types
 themselves, and it is the only one of the five that comes from a real regression
 (PR #451) rather than from design. Every tracked module that branches on three
-or more type names must be accounted for, with a kind and a reason; 46 modules
-qualify. Full account in
+or more type names must be accounted for, with a kind and a reason. Full account in
 [`slide-type-companions.md`](./slide-type-companions.md#the-name-branching-inventory--no-hole-in-the-matrix).
 
 Its most useful finding was an argument for the next facet: **nine modules
@@ -202,11 +201,9 @@ replaced by a ceiling that forbids the pattern.
 
 ## What is not here yet
 
-- ~~**Derivation.**~~ Done. The picker shelves and the settings curation
-  headings were two hand-written tables that disagreed about five types; both
-  are now derived from a `group` declared on the type. It is deliberately _not_
-  derived from `structure` — that was measured and it dismembers `media` and
-  drops `chart` and `table` out of view. See
+- **Picker groups.** Picker shelves and settings curation headings derive from
+  the `group` declared on each type. They do not derive from `structure`, which
+  would split `media` and leave `chart` and `table` outside their groups. See
   [`slide-type-groups.md`](./slide-type-groups.md).
 - **The other facets.** `intent` (frame / enumerate / sequence / compare /
   quantify / ask) and `payload` are real and still without a consumer; built

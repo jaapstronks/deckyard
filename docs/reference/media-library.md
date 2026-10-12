@@ -21,7 +21,7 @@ on a slide is [`image-property-ownership.md`](image-property-ownership.md).
 
 ## Module map
 
-Media providers (`server/media/`, 7 modules):
+Media providers (`server/media/`):
 
 - `server/media/index.js` — the singleton factory: `initializeMediaProvider()`
   (once at startup), `getMediaProvider()`, `isMediaProviderInitialized()`,

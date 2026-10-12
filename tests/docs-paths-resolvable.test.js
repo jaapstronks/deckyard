@@ -117,7 +117,7 @@ const isDocFile = (rel) =>
 /**
  * Cited paths that resolve to nothing yet are correct as written.
  *
- * Two categories, each keyed with a reason so neither becomes a junk drawer.
+ * Each entry carries a reason so this does not become a junk drawer.
  * `<type>.js`-style angle-bracket templates and `client/lib/*` globs never reach
  * here — they are filtered as patterns, not paths. What lands here is the residue
  * that *looks* like a real path.
@@ -138,17 +138,6 @@ const TUTORIAL_PLACEHOLDERS = {
     'AGENTS.md placeholder for the folder/index.js seam a decomposed store ships as',
   'shared/slide-types/types/my-slide.js':
     'contributing.md example slide-type registry entry the reader is adding',
-};
-
-/**
- * 2. Frozen-snapshot docs — a dated report describes the tree as it was. Rewriting
- *    its module paths would falsify it, so any otherwise-dead path cited *only*
- *    from one of these files is excused. A path also cited from a live doc still
- *    fails there.
- */
-const FROZEN_SNAPSHOT_DOCS = {
-  'docs/reference/collab-research.md':
-    'a dated phase-0 research snapshot; its module paths are historical and its banner says so',
 };
 
 /**
@@ -237,7 +226,9 @@ function pathResolves(rel) {
 function citedPaths() {
   const backtick = /`([^`\n]+)`/g;
   const out = []; // { p, doc }
-  for (const doc of DOC_FILES) {
+  // ADRs record decisions against the tree at the time. Check current docs,
+  // including reference, developer and ops, against today's tracked paths.
+  for (const doc of DOC_FILES.filter((file) => !file.startsWith('docs/adr/'))) {
     const text = fs.readFileSync(path.join(REPO_ROOT, doc), 'utf8');
     let m;
     while ((m = backtick.exec(text))) {
@@ -282,7 +273,6 @@ test('every backtick file path in the docs resolves, or is allowlisted', () => {
   const leftovers = CITATIONS.filter(({ p, doc }) => {
     if (pathResolves(p)) return false;
     if (Object.hasOwn(TUTORIAL_PLACEHOLDERS, p)) return false;
-    if (Object.hasOwn(FROZEN_SNAPSHOT_DOCS, doc)) return false;
     return true;
   });
   assert.deepEqual(
@@ -290,9 +280,8 @@ test('every backtick file path in the docs resolves, or is allowlisted', () => {
     [],
     `these documented paths do not exist in the working tree:\n` +
       leftovers.map(({ p, doc }) => `  - ${p}  (in ${doc})`).join('\n') +
-      `\n\nEither fix the path, or — if it is deliberate — add it to ` +
-      `TUTORIAL_PLACEHOLDERS (a fictional path) or FROZEN_SNAPSHOT_DOCS (a dated ` +
-      `snapshot doc) in tests/docs-paths-resolvable.test.js, with a reason.`,
+      `\n\nFix the path, or add a fictional tutorial path to ` +
+      `TUTORIAL_PLACEHOLDERS in tests/docs-paths-resolvable.test.js with a reason.`,
   );
 });
 
@@ -310,31 +299,8 @@ test('no tutorial placeholder has quietly become real or uncited (the allowlist 
   }
 });
 
-test('every frozen-snapshot doc still exists and still shelters a dead path', () => {
-  const docSet = new Set(DOC_FILES);
-  for (const [doc, why] of Object.entries(FROZEN_SNAPSHOT_DOCS)) {
-    assert.ok(
-      docSet.has(doc),
-      `FROZEN_SNAPSHOT_DOCS lists "${doc}" (${why}) but it is not a scanned doc — drop the entry.`,
-    );
-    const shelters = CITATIONS.some(
-      ({ p, doc: d }) =>
-        d === doc &&
-        !pathResolves(p) &&
-        !Object.hasOwn(TUTORIAL_PLACEHOLDERS, p),
-    );
-    assert.ok(
-      shelters,
-      `FROZEN_SNAPSHOT_DOCS lists "${doc}" but every path it cites now resolves — the exemption is moot, drop the entry.`,
-    );
-  }
-});
-
 test('every allowlist entry carries a real reason', () => {
-  for (const [key, why] of [
-    ...Object.entries(TUTORIAL_PLACEHOLDERS),
-    ...Object.entries(FROZEN_SNAPSHOT_DOCS),
-  ]) {
+  for (const [key, why] of Object.entries(TUTORIAL_PLACEHOLDERS)) {
     assert.ok(
       typeof why === 'string' && why.trim().length > 10,
       `allowlist entry "${key}" needs a real reason, not "${why}"`,
@@ -405,6 +371,17 @@ test('every docs/reference/ doc is linked from the index itself', () => {
     `${DOC_INDEX} calls itself the complete documentation index, but these ` +
       `reference docs are not in it:\n` +
       missing.map((t) => `  - ${t}`).join('\n'),
+  );
+});
+
+test('every developer doc is linked from the developer index', () => {
+  const targets = LINKABLE_DOCS.filter((r) => r.startsWith('docs/developer/'));
+  assert.ok(targets.length > 10, 'expected a populated developer tree');
+  const indexed = linkedTargets(['docs/developer/README.md']);
+  assert.deepEqual(
+    targets.filter((target) => !indexed.has(target)),
+    [],
+    'add missing developer docs to docs/developer/README.md',
   );
 });
 

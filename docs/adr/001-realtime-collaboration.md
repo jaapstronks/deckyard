@@ -2,7 +2,7 @@
 
 - **Status**: accepted — implemented and merged to `main` (2026-07-16); shipped behind `COLLAB_ENABLED` / `COLLAB_LIVE_EDITS` (default off)
 - **Date**: 2026-07-15 (status updated 2026-07-17)
-- **Research**: [docs/reference/collab-research.md](../reference/collab-research.md)
+- **Research**: [docs/adr/002-collaboration-phase-0-research.md](002-collaboration-phase-0-research.md)
 
 ## Context
 

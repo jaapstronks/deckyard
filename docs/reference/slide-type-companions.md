@@ -260,8 +260,7 @@ gate is on the accounting, not the contents — a module may be a closed-set
 special case; it may not be a surprise.
 
 The threshold is the whole judgement, so it is written down rather than implied:
-94 modules _name_ a type, 46 branched on three or more when the inventory was
-first taken. One or two names reads as type-specific behaviour (the chart data
+The inventory found both type-specific references and branches over several types. One or two names reads as type-specific behaviour (the chart data
 modal exists for `chart-slide`) and no future type can be "missing" from
 it; three or more is where a module stops being about a type and becomes a table
 _of_ types.

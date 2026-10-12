@@ -36,8 +36,7 @@
  *
  * Two files are exempt, for opposite reasons: `vocabulary.md` is the register
  * itself and must be able to name the loser spelling to forbid it, and
- * `collab-research.md` is a deliberately frozen phase-0 snapshot (the same
- * allowlist reason `tests/docs-paths-resolvable.test.js` carries).
+ * Historical collaboration research now lives in `docs/adr/`.
  *
  * **Identifiers (B90).** The first sweep renamed the field, the values and the
  * route segment but not the function names; a second closed that remainder —
@@ -224,9 +223,6 @@ const DOC_PROSE = {
   exempt: new Set([
     // The register itself: it names the loser spelling in order to forbid it.
     'vocabulary.md',
-    // A deliberately frozen phase-0 snapshot, allowlisted the same way in
-    // tests/docs-paths-resolvable.test.js.
-    'collab-research.md',
   ]),
   forbidden: [
     {

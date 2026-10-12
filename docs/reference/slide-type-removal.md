@@ -230,7 +230,7 @@ Then, in rough dependency order:
    one), then remove the `TYPE_CSS` entry and regenerate the aggregators.
    `tests/css-aggregators.test.js` enforces both directions: an entry
    for an unregistered type fails, and an unclaimed file on disk fails — so
-   the 118 lines of `.slide-partner-split` that outlived
+   the `.slide-partner-split` rules that outlived
    `split-partner-title-slide` inside a shared sheet can no longer happen for
    claimed CSS. **Two deliberate residues are left in shared sheets** and a
    removal still has to visit them by hand:
@@ -307,11 +307,9 @@ Then, in rough dependency order:
    remove the plumbing or note in a comment that no core type declares it.
 9. **Verify**: `npm test`, `npm run lint`.
 
-### What you do _not_ have to do
+### Locale and stored-deck effects
 
-- ~~**i18n**: deprecated types are excluded from extraction, so a type that
-  spent time on rung 1 has no keys in `client/i18n/<locale>/slide-types.json`.~~
-  **Wrong — corrected 2026-07-30.** The registry walk in
+- **i18n**: the registry walk in
   `scripts/lib/slide-type-i18n-keys.js` iterates
   `SLIDE_TYPES` and does not look at `deprecated`, so an archived type keeps its
   label and field keys in every locale. Split-partner still had six keys × 12
@@ -321,21 +319,20 @@ Then, in rough dependency order:
   `tests/slide-type-i18n-orphans.test.js` (added 2026-07-30) **fails** the
   moment a `slideType.<id>.*` namespace names a type that has left the registry,
   reporting the locale and the id — so a forgotten prune is caught in the test
-  suite instead of shipping forever. (`client/i18n/en.json` is a stale build
-  artifact — ignore it.)
+  suite instead of shipping forever.
 - **Stored decks**: nothing rewrites deck JSON. Removal is a code-side operation;
   content already on disk keeps its `type` string.
 
 ## Baseline: what freeform's removal actually cost
 
-**25 files, 715 deletions.** Freeform was the cheapest possible case — already
+**Freeform removal.** Freeform was the cheapest possible case — already
 deprecated, its canvas editor already removed (#252), zero decks using it, no
 i18n keys, no AI catalog entry, no inline-edit descriptor, no conversion target.
 Grouped by _why_ each file had to change:
 
 | Group                     | Files | What was in them                                                                                                                                                                                            |
 | ------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owned by the type**     | 2     | the definition (`types/freeform-slide.js`, 328 lines) and its stylesheet (`80-freeform.css`, 320 lines)                                                                                                     |
+| **Owned by the type**     | 2     | the definition (`types/freeform-slide.js`) and its stylesheet (`80-freeform.css`)                                                                                                                           |
 | **Registration / wiring** | 5     | registry import + map entry, the CSS aggregator `@import`, `INSPECTOR_KEEPS`, `EXCLUDED_TYPES`, the curated picker group (now the type's own `group`, so this row is one file smaller for the next removal) |
 | **Duplicated knowledge**  | 18    | 10 comments naming the type, 3 reference docs (per-type rows + a hand-written core-type count in 4 places), 5 tests enumerating types by hand                                                               |
 
@@ -370,21 +367,20 @@ The **production** scan this removal owed ran on slides.ciiic.nl on 2026-07-31:
 real deck degrades and the removal ships without a conversion migration —
 unlike `lijstje-slide`, where the same production store held 565 slides.
 
-**28 files, 472 deletions.** Grouped by _why_:
+**Split-partner-title removal.** Grouped by _why_:
 
-| Group                             | Files | What was in them                                                                                                                                                                                                                                                                                                                              |
-| --------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owned by the type**             | 4     | the definition (`types/split-partner-title-slide.js`, 147 lines), its directory companions (`authoring.js`, `inline-edit.js`), and its 118 lines of CSS — a block at the top of the then-shared `02-content-and-media/02-layouts.css` (that sheet has since been renamed to `40-quote.css` and claimed by quote-slide), not a file of its own |
-| **Registration / wiring**         | 3     | `registry.js` (the one hand edit) + the two **generated** aggregators `authoring.js` / `inline-edit.js` (regenerated, not hand-edited)                                                                                                                                                                                                        |
-| **Removal mechanism**             | 2     | the `removed.js` tombstone and the archival→removal guardrail in `slide-types-policy.test.js` — every removal touches these by design                                                                                                                                                                                                         |
-| **Derived docs**                  | 2     | `README.md`, `slide-type-inventory.md` — machine-generated count/inventory, now _derived_ rather than hand-restated                                                                                                                                                                                                                           |
-| **Residual duplicated knowledge** | 5     | two hand table rows (`editor-inspector.md`, `wysiwyg-inline-editing.md`), a per-type coverage pin (`inspector-form.test.js`), per-type render tests (`theme-background-presets.test.js`), a sample-content allowlist entry (`i18n-audit-allowlist.json`)                                                                                      |
-| **Locale payloads**               | 12    | `slideType.split-partner-title-slide.*` — six keys in every `client/i18n/<locale>/slide-types.json`, which the type should never have had (see below)                                                                                                                                                                                         |
+| Group                             | Files | What was in them                                                                                                                                                                                                                                                                                                      |
+| --------------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owned by the type**             | 4     | the definition (`types/split-partner-title-slide.js`), its directory companions (`authoring.js`, `inline-edit.js`), and its CSS — a block at the top of the then-shared `02-content-and-media/02-layouts.css` (that sheet has since been renamed to `40-quote.css` and claimed by quote-slide), not a file of its own |
+| **Registration / wiring**         | 3     | `registry.js` (the one hand edit) + the two **generated** aggregators `authoring.js` / `inline-edit.js` (regenerated, not hand-edited)                                                                                                                                                                                |
+| **Removal mechanism**             | 2     | the `removed.js` tombstone and the archival→removal guardrail in `slide-types-policy.test.js` — every removal touches these by design                                                                                                                                                                                 |
+| **Derived docs**                  | 2     | `README.md`, `slide-type-inventory.md` — machine-generated count/inventory, now _derived_ rather than hand-restated                                                                                                                                                                                                   |
+| **Residual duplicated knowledge** | 5     | two hand table rows (`editor-inspector.md`, `wysiwyg-inline-editing.md`), a per-type coverage pin (`inspector-form.test.js`), per-type render tests (`theme-background-presets.test.js`), a sample-content allowlist entry (`i18n-audit-allowlist.json`)                                                              |
+| **Locale payloads**               | 12    | `slideType.split-partner-title-slide.*` — six keys in every `client/i18n/<locale>/slide-types.json`, which the type should never have had (see below)                                                                                                                                                                 |
 
-**Verdict: the done-gate is not met.** The gate is ≤3 files ideal, and anything
+**Verdict: the done-gate is not met.** The ideal gate touches at most three files, and anything
 above 10 fails "regardless of how clean the architecture looks." 28 > 10 — and
-even the like-for-like number against freeform (16 files, dropping the locale
-payloads freeform never had) fails it.
+even the like-for-like number against freeform (dropping the locale payloads freeform never had) fails it.
 
 What the seam _did_ buy is real, and it is not the headline: files carrying
 **hand-maintained duplicated knowledge** fell from freeform's 18 to 5, and the
@@ -393,9 +389,8 @@ touch is the long tail — the CSS block, the two doc tables, the two per-type t
 lists, the allowlist entry and twelve locale payloads all still had to be found
 and edited by hand. That tail is the worklist to actually close the gate:
 
-1. ~~`docs/reference/editor-inspector.md` + `docs/reference/wysiwyg-inline-editing.md`
-   — per-type tables that should be generated like `slide-type-inventory.md`.~~
-   **Done:** both tables are now `<!--gen:…-->` regions filled from the schema,
+1. The per-type tables in `docs/reference/editor-inspector.md` and
+   `docs/reference/wysiwyg-inline-editing.md` are now `<!--gen:…-->` regions filled from the schema,
    the inline-edit descriptor, the keep-list and the `layoutVariants`/
    `fieldGroups` declarations (`scripts/lib/slide-type-doc-tables.js`). Removing
    a type drops both rows with no hand edit, and the regeneration surfaced the
@@ -423,7 +418,7 @@ present-tense `editor-inspector.md` row still in the tree, because it matches th
 type **id**, word-bounded:
 
 - **the CSS class is not derived from the id.** `.slide-partner-split` never
-  contains `split-partner-title-slide`, so 118 lines of dead CSS shipped to every
+  contains `split-partner-title-slide`, so dead CSS shipped to every
   client and no test objected. Step 2 of the checklist above now says to grep the
   class off `renderHtml` by hand.
 - **prose drops the `-slide` suffix.** `editor-inspector.md` said
@@ -505,17 +500,9 @@ go — `card-stack-slide` degrades to an archived slide that names its successor
 degrades to an archived slide with every stored field visible. The contract is
 the prerequisite for rung 3 on any type decks actually used.
 
-## Known gaps this removal exposed
+## Remaining deregistration points
 
-- ~~**The unknown-type render is the entire migration story.**~~ Fixed by the
-  render contract above (`shared/slide-types/unresolved.js`).
-- ~~**Nothing fails when a reference is orphaned.**~~ Fixed by
-  `tests/removed-slide-types.test.js` (step 7 above).
-- **Per-type tables are deregistration points.** `INSPECTOR_KEEPS` and
-  `EXCLUDED_TYPES` both had to have an entry _removed_; neither was derived from
-  anything the type declares. `INSPECTOR_KEEPS` has since become exactly that —
-  a type declares `inspectorKeeps` in its own `inline-edit.js` and the map is
-  derived — so the next removal only has `EXCLUDED_TYPES` left in this row.
+`tests/inspector-form.test.js`, `tests/theme-background-presets.test.js` and `scripts/i18n-audit-allowlist.json` still carry per-type knowledge. The removal checklist above covers them until those lists derive from type declarations. `INSPECTOR_KEEPS` derives from each type's `inline-edit.js`; agent opt-out derives from the type's own `deprecated` or `ai: false` marker. The old `EXCLUDED_TYPES` list is gone.
 
 ## See also
 

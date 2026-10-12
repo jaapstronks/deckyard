@@ -20,7 +20,7 @@ is [`../developer/slide-types.md`](../developer/slide-types.md).
 
 ## Module map
 
-Transport (`server/utils/llm/`, 13 modules):
+Transport (`server/utils/llm/`):
 
 - `server/utils/llm/index.js` — `requestChatCompletionContent({vendor, apiKey,
 model, temperature, responseFormat, maxTokens, messages})`, the single call
@@ -40,7 +40,7 @@ role})`, `getLlmStatus()`. Resolves vendor + model + key, including the
 - `server/utils/llm/alt-text.js` — `generateImageAltTexts()`, used by the image
   library (see [`media-library.md`](media-library.md)).
 
-Pipeline (`server/utils/ai/`, 41 modules). The top level:
+Pipeline (`server/utils/ai/`). The top level:
 
 - `server/utils/ai/index.js` — the barrel.
 - `server/utils/ai/generate-deck-v2.js` — the orchestrator: `generateDeckV2`,
@@ -68,7 +68,7 @@ Pipeline (`server/utils/ai/`, 41 modules). The top level:
   slide.
 - `server/utils/ai/compare-versions.js` — human-readable diff
   summaries between two deck versions.
-- `server/utils/ai/validate-slides/` (an `index.js` barrel over 8 modules) —
+- `server/utils/ai/validate-slides/` (an `index.js` barrel over concern modules) —
   the repair stage: `checks.js`, `constants.js` (which types get their item
   count repaired — a behaviour choice, not a constraint), `fields.js`
   (valid/unknown field keys), `fix.js` (the structural repair pipeline),
@@ -76,7 +76,7 @@ Pipeline (`server/utils/ai/`, 41 modules). The top level:
   output), `lengths.js`, `logging.js`.
 - `server/utils/ai/slide-type-catalog.js` — a 21-line compatibility re-export of
   `slide-catalog/`.
-- `server/utils/ai/slide-catalog/` (9 modules) — what the model is allowed to
+- `server/utils/ai/slide-catalog/` — what the model is allowed to
   author: `definitions.js` (the catalogue + editorial "when to pick this"),
   `type-ai.js` (**generated** — `node scripts/generate-slide-ai-aggregator.js`,
   sourced from each `shared/slide-types/types/<name>/ai.js`), `examples.js`
@@ -102,7 +102,7 @@ Pipeline (`server/utils/ai/`, 41 modules). The top level:
 - `server/utils/ai/validation-logging.js` — small, production-safe
   validation-event logs (unknown fields, schema issues) plus the admin readers.
 
-Legacy single-prompt path (`server/utils/openai/`, 8 modules): call sites
+Legacy single-prompt path (`server/utils/openai/`): call sites
 import `openai/deck.js` (`wizard`), `openai/append.js`, `openai/translate.js`
 and `openai/convert-slide.js` directly; `openai/json.js`, `lang.js`,
 `prompt.js` and `slide-types-prompt.js` support them. This is the **v1** generation route — one prompt, no outline phase — still
@@ -126,7 +126,7 @@ Routes (`server/routes/api/ai/`, 9 concern modules behind an `index.js` seam):
 Outside `/api/ai/*`: `server/routes/api/presentations/analyze.js` (AI analysis
 into comments), `server/routes/api/presentations/versions.js` (AI version
 compare), `server/routes/api/convert.js` (deck conversion), and
-`server/routes/api/admin-ai-logs.js` (102 lines, the admin validation-log
+`server/routes/api/admin-ai-logs.js` (the admin validation-log
 reader).
 
 ## Data model

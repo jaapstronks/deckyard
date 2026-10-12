@@ -2,14 +2,14 @@
 
 > **Historical snapshot (2026-07-15, pre-implementation).** The collab track
 > has since shipped to `main`; how it works now is documented in
-> `collab-presence.md`, `collab-deck-doc.md` and `collab-editor-binder.md`.
+> `docs/reference/collab-presence.md`, `docs/reference/collab-deck-doc.md` and `docs/reference/collab-editor-binder.md`.
 > Codebase observations below (counts, file paths, "pre-existing gaps" — e.g.
 > the MCP authz gap in §4, since fixed) describe the code as it was on this
 > date and are deliberately left unrewritten. Several `client/lib/*` modules
 > cited here have since moved into subfolders (`slide-runtime/`, `state/`,
 > …); follow the current layout, not these paths.
 
-_2026-07-15. Groundwork for [ADR 001](../adr/001-realtime-collaboration.md).
+_2026-07-15. Groundwork for [ADR 001](001-realtime-collaboration.md).
 Research question: can Deckyard support Miro/Google-Docs-style multi-user
 editing (presence + live edits), what does the codebase give us, and what has
 to change?_
@@ -262,4 +262,4 @@ duplicated slides arrays and (2) replacing snapshot undo — both are bounded,
 known refactors, detailed in the ADR. A full frontend rewrite (Svelte etc.)
 is not needed and would not even help with the hardest sub-problem
 (character-level text merging needs a Y.Text binding regardless of
-framework). Recommendation and phasing: [ADR 001](../adr/001-realtime-collaboration.md).
+framework). Recommendation and phasing: [ADR 001](001-realtime-collaboration.md).

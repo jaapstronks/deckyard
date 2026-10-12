@@ -19,7 +19,7 @@ for that half.
 
 ## Module map
 
-Helpers and config (`server/analytics/`, 3 modules):
+Helpers and config (`server/analytics/`):
 
 - `server/analytics/helpers.js` — `ANALYTICS_CONFIG` (all env-tunable),
   `TRACKING_RATE_LIMITS` / `AUTH_RATE_LIMITS`, input validation
@@ -38,7 +38,7 @@ Helpers and config (`server/analytics/`, 3 modules):
   inline tracker for pages served outside the SPA (`/p/<publishId>` and embeds),
   which calls the same `/api/track/*` endpoints the SPA tracker uses.
 
-Storage (`server/storage/analytics/`, 7 modules):
+Storage (`server/storage/analytics/`):
 
 - `server/storage/analytics/view-sessions.js` — session CRUD
   (`createViewSession`, `updateViewSession`, `endViewSession`,
@@ -91,7 +91,7 @@ Job:
 
 Client:
 
-- `client/views/analytics/` (14 modules) — the dashboard, date picker, timeline
+- `client/views/analytics/` — the dashboard, date picker, timeline
   and heatmap charts, viewer list, realtime viewer, report modal, the public
   `shared-report.js` view and the leads tab.
 - `client/views/analytics/tracker.js` — the SPA-side tracker.

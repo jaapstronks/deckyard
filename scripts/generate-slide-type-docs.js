@@ -57,7 +57,6 @@ export const INVENTORY_DOC = 'docs/reference/slide-type-inventory.md';
 /** Files carrying a hand-written type count inside marker spans (see below). */
 export const COUNT_MARKER_FILES = [
   'README.md',
-  'ROADMAP.md',
   'docs/reference/editor-inspector.md',
   'docs/reference/slide-type-structure.md',
   'docs/reference/deck-conformance.md',

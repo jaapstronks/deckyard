@@ -16,7 +16,7 @@ not _what you may touch_.
 
 ## Module map
 
-- `server/auth/auth.js` (~568 lines) — the core session library: cookie-based
+- `server/auth/auth.js` — the core session library: cookie-based
   sessions, HMAC-signed tokens, password-login verification, dev-bypass, and the
   boot-time config validation. Main exports below.
 - `server/auth/sandbox.js` — anonymous throwaway guest sessions for sandbox mode

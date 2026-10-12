@@ -108,8 +108,6 @@ The allowlist is grouped by the argument that justifies each entry:
   A sixth entry is a security decision; a separate assertion pins the count at
   five so growing it is a visible, reviewable edit. (It was six until B154 moved
   the email-template preview into a sandboxed iframe.)
-- **`INDIRECT_STATIC_SITES`** — icon-map lookups and static-SVG ternaries: no
-  runtime data, only a literal the mechanical rule cannot see past.
 - **`DOM_ROUNDTRIP_SITES`** — detached parse buffers, the cancel-edit restore,
   and the `renderSlideHtml()` contract boundary.
 
