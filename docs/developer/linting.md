@@ -762,3 +762,5 @@ and the gitignored planning symlink (see `docs/developer/maintaining.md`).
   `no-bitwise` are intentionally **not** enabled (server logging is legitimate),
   and `reportUnusedDisableDirectives` is off so those directives are left in
   place, forward-compatible if either rule is ever switched on.
+
+Route modules import parameter extractors from `server/utils/request-validators.js`. ESLint refuses local function declarations or function-valued variables named `get*Params` under `server/routes/`, so a second extractor cannot quietly diverge from the shared request contract.

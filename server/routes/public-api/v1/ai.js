@@ -18,7 +18,10 @@ import {
 } from '../../../../shared/slide-types.js';
 import { loadDeckTheme, settleNewDeckTheme } from '../../../utils/themes.js';
 import { loadSlideTypeOffer } from '../../../utils/org-slide-types.js';
-import { getOptionalObject } from '../../../utils/request-validators.js';
+import {
+  getAiParams,
+  getOptionalObject,
+} from '../../../utils/request-validators.js';
 import {
   requirePermission,
   dispatchV1Routes,
@@ -31,27 +34,8 @@ import {
   apiCreated,
   apiError,
 } from './middleware.js';
-import {
-  DEFAULT_DECK_LANG,
-  normalizeLang,
-} from '../../../../shared/i18n-utils.js';
+import { DEFAULT_DECK_LANG } from '../../../../shared/i18n-utils.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
-
-// ============================================================
-// VALIDATION HELPERS
-// ============================================================
-
-/**
- * Validate and extract AI request parameters.
- */
-function getAiParams(body) {
-  return {
-    raw: String(body?.raw || '').trim(),
-    vendor: body?.vendor || null,
-    lang: normalizeLang(body?.lang),
-    theme: body?.theme,
-  };
-}
 
 // ============================================================
 // ROUTE HANDLERS
@@ -87,9 +71,9 @@ async function handleWizard(ctx) {
   // Refused before the generation, so a refused body costs no LLM call.
   assertCreatableDeckInput(body);
 
-  const { raw, vendor, lang, theme } = getAiParams(body);
+  const { raw, vendor, lang, theme, settings } = getAiParams(body);
 
-  if (!raw) {
+  if (!raw.trim()) {
     await apiError(
       ctx,
       400,
@@ -134,6 +118,7 @@ async function handleWizard(ctx) {
       slides: parts.slides,
       theme: effectiveTheme,
       lang: lang || undefined,
+      ...(settings ? { settings } : {}),
     },
   );
 
@@ -163,8 +148,8 @@ async function handleAppendSlides(ctx) {
   const { ok: bodyOk, body } = await readApiV1Body(ctx, ctx.req);
   if (!bodyOk) return true;
 
-  const raw = String(body?.raw || '').trim();
-  if (!raw) {
+  const { raw, vendor, lang } = getAiParams(body);
+  if (!raw.trim()) {
     await apiError(
       ctx,
       400,
@@ -172,9 +157,6 @@ async function handleAppendSlides(ctx) {
     );
     return true;
   }
-
-  const vendor = body?.vendor || null;
-  const lang = normalizeLang(body?.lang);
 
   // Optional existing deck/presentation for context
   const deckInput = getOptionalObject(body, 'deck');
@@ -210,21 +192,6 @@ async function handleAppendSlides(ctx) {
     slideTypes: await buildMergedSlideTypes(storageScope),
   });
   const slides = Array.isArray(parts?.slides) ? parts.slides : [];
-
-  // Ensure required image URLs are never blank
-  for (const s of slides) {
-    if (!s || typeof s !== 'object') continue;
-    if (
-      (s.type === 'image-slide' || s.type === 'image-text-slide') &&
-      (!s.content ||
-        typeof s.content !== 'object' ||
-        typeof s.content.image !== 'string' ||
-        !s.content.image.trim())
-    ) {
-      s.content = s.content && typeof s.content === 'object' ? s.content : {};
-      s.content.image = '/assets/images/backgrounds/demo-aurora.jpg';
-    }
-  }
 
   await apiSuccess(ctx, {
     slides: slides.map((slide) => ({

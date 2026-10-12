@@ -1,8 +1,7 @@
 import { badRequest, serveJson, requireJsonBody } from '../../../utils/http.js';
 import {
-  getString,
+  getAiParams,
   getOptionalString,
-  getLang,
   getBoolean,
   getOptionalObject,
 } from '../../../utils/request-validators.js';
@@ -32,10 +31,8 @@ export async function handleAiAppendSlides({
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
-  const raw = getString(body, 'raw');
+  const { raw, vendor, lang } = getAiParams(body);
   if (!raw.trim()) return badRequest(res, 'Expected { raw: "..." }');
-  const vendor = getOptionalString(body, 'vendor');
-  const lang = getLang(body);
   const contentOnly = getBoolean(body, 'contentOnly', false);
   const verbatim = getBoolean(body, 'verbatim', false);
   // Revision mode (batch review "Adjust"): prior batch + feedback on it.
@@ -96,21 +93,6 @@ export async function handleAiAppendSlides({
     if (meta.why) s._aiReasoning = meta.why;
     if (meta.alternatives?.length) s._aiAlternatives = meta.alternatives;
   });
-
-  // Extra safety: ensure required image URLs are never blank.
-  for (const s of slides) {
-    if (!s || typeof s !== 'object') continue;
-    if (
-      (s.type === 'image-slide' || s.type === 'image-text-slide') &&
-      (!s.content ||
-        typeof s.content !== 'object' ||
-        typeof s.content.image !== 'string' ||
-        !s.content.image.trim())
-    ) {
-      s.content = s.content && typeof s.content === 'object' ? s.content : {};
-      s.content.image = '/assets/images/backgrounds/demo-aurora.jpg';
-    }
-  }
 
   serveJson(res, 200, { slides, rationale });
   return true;

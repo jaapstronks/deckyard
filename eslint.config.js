@@ -522,6 +522,27 @@ const deckLangLiteralAllowlist = [
   'client/views/settings/tabs/preferences-tab.js',
 ];
 
+const serverSyntaxRules = [
+  'error',
+  {
+    selector:
+      "MemberExpression[object.object.name='process'][object.property.name='env']" +
+      ":not([property.name='NODE_ENV']):not([property.name='NODE_TEST_CONTEXT'])",
+    message:
+      'Read env via envStr/envBool/envInt/envList from server/config/utils.js — ' +
+      'one accessor family, one flag vocabulary (B64). Only NODE_ENV and ' +
+      'NODE_TEST_CONTEXT may be read raw.',
+  },
+  {
+    selector:
+      "VariableDeclarator[init.object.name='process'][init.property.name='env']",
+    message:
+      'Do not alias or destructure process.env — read each variable via ' +
+      'envStr/envBool/envInt/envList from server/config/utils.js (B64).',
+  },
+  ...serverSilentFailureRules,
+];
+
 export default [
   {
     // Vendored bundles, generated assets, data dirs, gitignored drop-ins, and
@@ -687,25 +708,21 @@ export default [
     files: ['server/**/*.js'],
     ignores: ['server/config/**'],
     rules: {
+      'no-restricted-syntax': serverSyntaxRules,
+    },
+  },
+
+  {
+    files: ['server/routes/**/*.js'],
+    rules: {
       'no-restricted-syntax': [
-        'error',
+        ...serverSyntaxRules,
         {
           selector:
-            "MemberExpression[object.object.name='process'][object.property.name='env']" +
-            ":not([property.name='NODE_ENV']):not([property.name='NODE_TEST_CONTEXT'])",
+            'FunctionDeclaration[id.name=/^get[A-Z].*Params$/], VariableDeclarator[id.name=/^get[A-Z].*Params$/][init.type=/^(ArrowFunctionExpression|FunctionExpression)$/]',
           message:
-            'Read env via envStr/envBool/envInt/envList from server/config/utils.js — ' +
-            'one accessor family, one flag vocabulary (B64). Only NODE_ENV and ' +
-            'NODE_TEST_CONTEXT may be read raw.',
+            'Import request parameter validators from server/utils/request-validators.js.',
         },
-        {
-          selector:
-            "VariableDeclarator[init.object.name='process'][init.property.name='env']",
-          message:
-            'Do not alias or destructure process.env — read each variable via ' +
-            'envStr/envBool/envInt/envList from server/config/utils.js (B64).',
-        },
-        ...serverSilentFailureRules,
       ],
     },
   },
