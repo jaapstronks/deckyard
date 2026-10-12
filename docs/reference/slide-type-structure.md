@@ -201,11 +201,9 @@ replaced by a ceiling that forbids the pattern.
 
 ## What is not here yet
 
-- ~~**Derivation.**~~ Done. The picker shelves and the settings curation
-  headings were two hand-written tables that disagreed about five types; both
-  are now derived from a `group` declared on the type. It is deliberately _not_
-  derived from `structure` — that was measured and it dismembers `media` and
-  drops `chart` and `table` out of view. See
+- **Picker groups.** Picker shelves and settings curation headings derive from
+  the `group` declared on each type. They do not derive from `structure`, which
+  would split `media` and leave `chart` and `table` outside their groups. See
   [`slide-type-groups.md`](./slide-type-groups.md).
 - **The other facets.** `intent` (frame / enumerate / sequence / compare /
   quantify / ask) and `payload` are real and still without a consumer; built

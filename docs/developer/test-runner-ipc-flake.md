@@ -66,5 +66,6 @@ The underlying Node bug is still latent. To avoid re-triggering it:
   noisy `console.*` output in that file's code path and silence it, rather than
   reaching for `--test-concurrency=1`.
 
-Upstream tracking notes live alongside this doc in
-[`node-test-ipc-upstream-issue.md`](node-test-ipc-upstream-issue.md).
+## If it recurs on a newer Node
+
+Check [Node's issue tracker](https://github.com/nodejs/node/issues) before filing. The original reproduction was on Node v24.18.0, Linux 6.8.0 x86_64, 16 CPUs. Parallel process-isolated runs of `node --test 'tests/**/*.test.js'` failed about 4/15 times when one test file emitted a burst of stdout. The runner reported `Unable to deserialize cloned data due to invalid or unsupported version` at `#processRawBuffer` for that file. Serial runs were clean; concurrency 4 still failed occasionally; silencing the output gave 20 clean parallel runs. A useful upstream report should include a fresh minimal reproducer, the current Node version, the failure rate and whether suppressing stdout still removes the failure. The expected behavior is a correct pass/fail summary regardless of how much stdout a child forwards.

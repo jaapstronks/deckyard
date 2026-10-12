@@ -4,6 +4,14 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.59.1](https://github.com/jaapstronks/deckyard/compare/v1.59.0...v1.59.1) (2026-10-12)
+
+
+### Fixed
+
+* load live QR renderer in marketing capture ([#1607](https://github.com/jaapstronks/deckyard/issues/1607)) ([6708354](https://github.com/jaapstronks/deckyard/commit/67083546f9481c507458ecdc68fda3dfa68ab6ab))
+* refuse malformed library language versions before storage ([#1601](https://github.com/jaapstronks/deckyard/issues/1601)) ([8815871](https://github.com/jaapstronks/deckyard/commit/881587186e76359c3dc42d3089d21c12a897f314))
+
 ## [1.59.0](https://github.com/jaapstronks/deckyard/compare/v1.58.0...v1.59.0) (2026-10-12)
 
 

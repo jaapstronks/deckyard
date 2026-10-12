@@ -54,8 +54,7 @@ breaking MINOR with a stored-data migration (074) — no accepts-both reading.
   narrow rather than a blanket word ban: `\bteam\b` would drown in the
   `team-cards` slide type and its CSS locals, and bare `scope`/`visibility`
   are legitimate on nearly every page. Exempt in every gate: this file (the
-  register must name a loser spelling to forbid it) and `collab-research.md`
-  (a deliberately frozen phase-0 snapshot); the organization gate also exempts
+  register must name a loser spelling to forbid it) ; historical collaboration research lives in `docs/adr/`. The organization gate also exempts
   `notion-import.md`, which describes Notion's own workspace concept.
 - **`scope` still legitimately exists** for the storage-scope concept
   (`server/storage/scope.js` — the module and its prose; variables say
