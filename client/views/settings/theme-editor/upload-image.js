@@ -9,7 +9,7 @@
  */
 
 import { api } from '../../../lib/api.js';
-import { readFileAsDataUrl } from '../../../lib/util/file.js';
+import { readFileAsDataUrl } from '../../../lib/net/file.js';
 
 /**
  * Upload an image and return its public URL.

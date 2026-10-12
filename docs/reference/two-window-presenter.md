@@ -13,7 +13,7 @@ deck there" possible.
   Owns keyboard nav, the console rail, the elapsed timer, the highlighter, and
   the SSE live-session. It is the single source of truth.
 - **Projector** — a lightweight follower view (`/present/:id/window`,
-  `client/views/present-window.js`). No keys, no session, no console. It reuses
+  `client/views/presenter/present-window.js`). No keys, no session, no console. It reuses
   the **deck-controller** as its render engine and mirrors the master's state.
   Auth carries over via cookies in the same browser.
 

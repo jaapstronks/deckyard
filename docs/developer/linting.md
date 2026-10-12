@@ -360,7 +360,7 @@ Accepted forms, all named:
   disposal/teardown form. Runs every disposer best-effort, in order, and
   records each failure through `debugLog` instead of a per-handle empty catch.
 - A catch body that records the failure —
-  [`debugLog(label, err)`](../../client/lib/util/debug.js) on the client — or
+  [`debugLog(label, err)`](../../client/lib/state/debug.js) on the client — or
   handles it, or an inline `eslint-disable` with the reason after `--`.
 - **Not throwing in the first place** — the shared form, and the one that
   retired most of that tree's burndown. `new URL()` is a throwing parser, so

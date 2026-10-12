@@ -34,7 +34,7 @@ import assert from 'node:assert/strict';
 import * as Y from 'yjs';
 import { createDeckYdocCodec } from '../shared/collab/deck-ydoc.js';
 import { SLIDE_TYPES } from '../shared/slide-types.js';
-import { createLiveDocBinder } from '../client/lib/collab/live-doc-binder.js';
+import { createLiveDocBinder } from '../client/views/editor/live-edits/live-doc-binder.js';
 
 // The field that stood here was text-blocks' numbered `row1Block1Title`, gone
 // since B452. The binder's seeding does not depend on which text field was

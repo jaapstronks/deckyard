@@ -6,7 +6,7 @@
 import { h } from '../../../lib/dom/index.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { api } from '../../../lib/api.js';
-import { readFileAsDataUrl } from '../../../lib/util/file.js';
+import { readFileAsDataUrl } from '../../../lib/net/file.js';
 import { formatFileSize } from '../../../lib/format/format.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { icon } from '../../../lib/dom/icons.js';

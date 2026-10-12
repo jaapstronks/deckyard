@@ -38,7 +38,7 @@ import assert from 'node:assert/strict';
 
 import { Y } from '../client/vendor/collab.js';
 import { createDeckYdocCodec } from '../shared/collab/deck-ydoc.js';
-import { createLiveDocBinder } from '../client/lib/collab/live-doc-binder.js';
+import { createLiveDocBinder } from '../client/views/editor/live-edits/live-doc-binder.js';
 
 const codec = createDeckYdocCodec(Y);
 

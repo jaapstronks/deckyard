@@ -25,7 +25,7 @@ import { setDocumentTitle } from './lib/theme/branding.js';
 import { renderList } from './views/list/index.js';
 import { renderEditor } from './views/editor/index.js';
 import { renderPresenter } from './views/presenter/index.js';
-import { renderPresentWindow } from './views/present-window.js';
+import { renderPresentWindow } from './views/presenter/present-window.js';
 import {
   renderLogin,
   renderForgotPassword,
@@ -33,7 +33,7 @@ import {
   renderMagicLogin,
 } from './views/auth/index.js';
 import { renderNotes } from './views/notes/index.js';
-import { renderNotesJoin } from './views/notes-join.js';
+import { renderNotesJoin } from './views/notes/notes-join.js';
 import { renderFollow } from './views/follow/index.js';
 import { renderShareViewer } from './views/share-viewer/index.js';
 import { renderSettings } from './views/settings/index.js';

@@ -4,7 +4,7 @@ import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { getSupportedLangs } from '../../../lib/format/i18n.js';
 import { getLangDisplayName } from '../../../../shared/i18n-utils.js';
-import { debugLog } from '../../../lib/util/debug.js';
+import { debugLog } from '../../../lib/state/debug.js';
 import {
   IMAGE_UPLOAD_MIME_TO_EXT,
   imageUploadAccept,

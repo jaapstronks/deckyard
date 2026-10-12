@@ -14,7 +14,7 @@
  * normalized, ranked questions.
  */
 
-import { debugLog } from '../util/debug.js';
+import { debugLog } from '../state/debug.js';
 import {
   createSSEConnection,
   LONG_LIVED_STREAM,

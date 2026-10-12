@@ -1,5 +1,5 @@
 import { h } from '../../lib/dom/index.js';
-import { createUiModeSwitcher } from '../ui-mode-switcher.js';
+import { createUiModeSwitcher } from '../../lib/dom/ui-mode-switcher.js';
 
 /**
  * Build the follow-along (audience) DOM scaffold: topbar (title, language

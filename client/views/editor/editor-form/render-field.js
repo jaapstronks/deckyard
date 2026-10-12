@@ -1,4 +1,4 @@
-import { debugLog } from '../../../lib/util/debug.js';
+import { debugLog } from '../../../lib/state/debug.js';
 import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { normalizeLang } from '../../../lib/format/i18n.js';

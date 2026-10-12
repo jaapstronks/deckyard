@@ -129,7 +129,7 @@ getCurrentSlide })`, with `setConfig(pres.settings.liveVideo)` on load and
 - **Share viewer** (`client/views/share-viewer/index.js`) — only created when
   `liveVideo.enabled && streamUrl`.
 
-The **present window** (`client/views/present-window.js`, the projection
+The **present window** (`client/views/presenter/present-window.js`, the projection
 window in two-window mode) does _not_ mount the layer, and the editor canvas
 shows no video.
 

@@ -1,4 +1,4 @@
-import { getLangShortLabel } from '../../lib/format/lang-selector.js';
+import { getLangShortLabel } from '../../lib/dom/lang-selector.js';
 import { t } from '../../lib/ui-i18n.js';
 import { h } from '../../lib/dom/index.js';
 import { getLangDisplayName } from '../../../shared/i18n-utils.js';

@@ -1,7 +1,7 @@
 import { h } from '../../lib/dom/index.js';
 import { t } from '../../lib/ui-i18n.js';
 import { icon } from '../../lib/dom/icons.js';
-import { createUiModeSwitcher } from '../ui-mode-switcher.js';
+import { createUiModeSwitcher } from '../../lib/dom/ui-mode-switcher.js';
 
 /**
  * Build the speaker-notes companion DOM scaffold.

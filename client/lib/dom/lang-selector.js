@@ -5,7 +5,7 @@
  */
 
 import { t } from '../ui-i18n.js';
-import { h } from '../dom/index.js';
+import { h } from './index.js';
 import {
   DEFAULT_SUPPORTED_DECK_LANGS,
   getLangDisplayName,
@@ -77,7 +77,6 @@ export function createLangSelector({
   const useDropdown = supportedList.length > 2;
 
   let selectEl = null;
-  let seg = null;
   let buttons = {};
 
   if (useDropdown) {
@@ -101,7 +100,7 @@ export function createLangSelector({
     wrap.append(label, selectEl);
   } else {
     // Create segmented buttons
-    seg = h('div', { class: 'sb-segmented is-toggle' });
+    const seg = h('div', { class: 'sb-segmented is-toggle' });
 
     for (const code of supportedList) {
       const btn = h('button', {

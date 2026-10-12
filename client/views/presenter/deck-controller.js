@@ -6,7 +6,7 @@ import { clamp } from '../../../shared/number-utils.js';
 import { morphTransition } from './morph-engine.js';
 import { h } from '../../lib/dom/index.js';
 import { disposeAll } from '../../lib/dom/disposal.js';
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 
 export function filterPresentSlides(presentation) {
   return (presentation?.slides || []).filter((s) => {

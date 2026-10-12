@@ -22,7 +22,7 @@ const { maybeAttachCollab, shutdownCollab } =
 const { createPresentation } =
   await import('../server/storage/presentations/index.js');
 const { createPresenceSession } =
-  await import('../client/lib/collab/presence-session.js');
+  await import('../client/views/editor/live-edits/presence-session.js');
 
 // The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
 // is the only backend.

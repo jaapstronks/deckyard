@@ -14,7 +14,7 @@
 
 import { h } from '../../lib/dom/index.js';
 import { authConfig } from '../../lib/state/auth.js';
-import { debugLog } from '../../lib/util/debug.js';
+import { debugLog } from '../../lib/state/debug.js';
 
 /**
  * Build the auth-view scaffolding: shell, card and header with title/subtitle.

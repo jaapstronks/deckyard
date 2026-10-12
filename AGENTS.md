@@ -56,12 +56,14 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
     `docs/developer/architecture.md` § One folder = one seam.
 
 - **Client layers: `lib/` is a layer, `views/` is a feature** (D263, D264)
-  - `client/lib/` holds what owns no product feature: the DOM primitives
-    (`dom/`, with `h()`), transport (`net/`, `api.js`), state and routing
-    (`state/`), formatting and i18n (`format/`), the theme runtime (`theme/`),
-    the slide pipeline (`slide-runtime/`, `slide-authoring/`) and a
-    client-side service layer without DOM (`qa/`: model + feed + mutations,
-    the views render).
+  - `client/lib/` holds what owns no product feature: the DOM primitives and
+    shared widgets (`dom/`, with `h()`), transport and file reading (`net/`,
+    `api.js`), state and routing (`state/`, `storage.js`), formatting and i18n
+    (`format/`, `ui-i18n.js`), the theme runtime (`theme/`), the slide pipeline
+    (`slide-runtime/`, `slide-authoring/`) and a client-side service layer
+    without DOM (`qa/`: model + feed + mutations, the views render).
+    `permission-labels.js` is the remaining root-level pure label seam.
+    `tests/client-layer-direction.test.js` pins this closed list.
   - Feature UI lives under `client/views/`: a module that **fetches a
     feature's records and renders them is a view**, however many pages use
     it. One owner → it lives inside that view; two or more → its own

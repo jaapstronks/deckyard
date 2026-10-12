@@ -25,7 +25,7 @@ import { createSegmented } from '../../lib/dom/segmented.js';
 import { buildExportUrl } from './publish-export/urls.js';
 import { DEFAULT_DECK_LANG } from '../../../shared/i18n-utils.js';
 import { existingVersionLangs } from '../../../shared/i18n-progress.js';
-import { getLangShortLabel } from '../../lib/format/lang-selector.js';
+import { getLangShortLabel } from '../../lib/dom/lang-selector.js';
 import { getFeatures } from '../../lib/state/features.js';
 import { IMAGE_SLIDES_HEADER } from '../../../shared/export-headers.js';
 

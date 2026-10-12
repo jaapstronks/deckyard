@@ -3,8 +3,8 @@
  * Used across the application for consistent clipboard operations.
  */
 
-import { createModal, createTextArea } from '../dom/modal.js';
-import { h } from '../dom/index.js';
+import { createModal, createTextArea } from './modal.js';
+import { h } from './index.js';
 import { t } from '../ui-i18n.js';
 
 /**

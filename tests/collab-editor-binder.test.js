@@ -32,11 +32,11 @@ const { maybeAttachCollab, shutdownCollab } =
 const { createPresentation, getPresentation } =
   await import('../server/storage/presentations/index.js');
 const { createPresenceSession } =
-  await import('../client/lib/collab/presence-session.js');
+  await import('../client/views/editor/live-edits/presence-session.js');
 const { Y } = await import('../client/vendor/collab.js');
 const { createDeckYdocCodec } = await import('../shared/collab/deck-ydoc.js');
 const { createLiveDocBinder } =
-  await import('../client/lib/collab/live-doc-binder.js');
+  await import('../client/views/editor/live-edits/live-doc-binder.js');
 
 // The mount still takes a `repoRoot`; storage ignores it now that PostgreSQL
 // is the only backend.

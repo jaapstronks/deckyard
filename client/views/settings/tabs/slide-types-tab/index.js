@@ -10,7 +10,7 @@ import { toast } from '../../../../lib/dom/toast.js';
 import { downloadBlob } from '../../../../lib/dom/download.js';
 import { confirmModal } from '../../../../lib/dom/modal.js';
 import { planRowRemoval } from '../../../../lib/dom/row-removal.js';
-import { readFileAsText } from '../../../../lib/util/file.js';
+import { readFileAsText } from '../../../../lib/net/file.js';
 import { createSlideTypeEditor } from '../../slide-type-editor/index.js';
 import { createEmptyState } from '../../../../lib/dom/empty-state.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
