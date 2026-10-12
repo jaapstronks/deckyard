@@ -34,6 +34,7 @@ import {
   validatePermission,
   parsePaginationParams,
 } from '../../../utils/request-validators.js';
+import { assertSharingEnabled } from '../../../sandbox/sharing.js';
 import { buildShareUrl } from '../../../utils/request-url.js';
 
 /**
@@ -76,6 +77,7 @@ async function handleShareLinkCreate(
   { storageScope, req, res, authedUser },
   presentationId,
 ) {
+  assertSharingEnabled();
   const pres = await withPresentationAuth({
     storageScope,
     id: presentationId,

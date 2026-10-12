@@ -322,3 +322,184 @@ test('handing a deck to another guest is refused, and Alice still owns it', asyn
   assert.equal(after.ownerEmail, ALICE.email);
   assert.equal(after.ownerId, ALICE.id);
 });
+
+// B406: the remaining organization-wide channels.
+const { handleTags } = await import('../server/routes/api/tags.js');
+const { handleShareLinks } =
+  await import('../server/routes/api/share-links/index.js');
+const { getEffectivePermission } =
+  await import('../server/utils/presentation-authz/index.js');
+const { listRecentComments } = await import('../server/services/comments.js');
+
+test('organization tag names are absent to both guests; creation/deletion are refused', async () => {
+  db.__tables.tags ||= [];
+  const tag = {
+    id: '11111111-1111-4111-8111-111111111111',
+    organization_id: ORG,
+    name: 'Alice secret',
+    created_at: new Date().toISOString(),
+  };
+  db.__tables.tags.push(tag);
+  for (const as of [ALICE, BOB]) {
+    for (const path of ['/api/tags', '/api/tags/search?q=Alice']) {
+      const { res } = await call(handleTags, 'GET', path, { as });
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(jsonBody(res), []);
+    }
+    assertSharingDisabled(
+      await call(handleTags, 'POST', '/api/tags', {
+        as,
+        body: { name: 'New secret' },
+      }),
+    );
+    assertSharingDisabled(
+      await call(handleTags, 'DELETE', `/api/tags/${tag.id}`, { as }),
+    );
+  }
+  assert.ok(
+    db.__tables.tags.includes(tag),
+    'a guest cannot delete existing vocabulary',
+  );
+  delete process.env.SANDBOX_MODE;
+  try {
+    const created = await call(handleTags, 'POST', '/api/tags', {
+      as: ALICE,
+      body: { name: 'Normal tag' },
+    });
+    assert.equal(created.res.statusCode, 201);
+    const deleted = await call(handleTags, 'DELETE', `/api/tags/${tag.id}`, {
+      as: BOB,
+    });
+    assert.equal(deleted.res.statusCode, 200);
+  } finally {
+    process.env.SANDBOX_MODE = '1';
+  }
+});
+
+test('curated decks stay readable but cannot carry comments, including pre-existing guest messages', async () => {
+  const pres = await seedAliceDeck();
+  db.__tables.presentations.find((p) => p.id === pres.id).visibility =
+    'organization';
+  db.__tables.presentation_comments ||= [];
+  const comment = {
+    id: '22222222-2222-4222-8222-222222222222',
+    organization_id: ORG,
+    presentation_id: pres.id,
+    body: 'Alice secret comment',
+    author_email: ALICE.email,
+    author_user_id: ALICE.id,
+    status: 'open',
+    created_at: new Date().toISOString(),
+    comment_type: 'human',
+  };
+  db.__tables.presentation_comments.push(comment);
+  for (const as of [ALICE, BOB]) {
+    const deck = await call(
+      handlePresentations,
+      'GET',
+      `/api/presentations/${pres.id}`,
+      { as },
+    );
+    assert.equal(deck.res.statusCode, 200, 'example content remains readable');
+    assert.equal(
+      getEffectivePermission({
+        user: as,
+        pres: { ...pres, visibility: 'organization' },
+      }),
+      'view',
+    );
+    for (const suffix of [
+      '/comments',
+      `/comments/${comment.id}`,
+      '/comments/counts',
+      '/comments/events',
+    ]) {
+      const { res } = await call(
+        handlePresentations,
+        'GET',
+        `/api/presentations/${pres.id}${suffix}`,
+        { as },
+      );
+      assert.equal(res.statusCode, 403, suffix);
+      assert.equal(jsonBody(res).error, 'forbidden');
+      assert.ok(!String(res.body).includes(comment.body));
+    }
+    const post = await call(
+      handlePresentations,
+      'POST',
+      `/api/presentations/${pres.id}/comments`,
+      { as, body: { body: 'New message' } },
+    );
+    assert.equal(post.res.statusCode, 403);
+    for (const [method, suffix, body] of [
+      ['PUT', `/comments/${comment.id}`, { body: 'Edited secret' }],
+      ['DELETE', `/comments/${comment.id}`, undefined],
+      ['POST', `/comments/${comment.id}/resolve`, {}],
+    ]) {
+      const out = await call(
+        handlePresentations,
+        method,
+        `/api/presentations/${pres.id}${suffix}`,
+        { as, body },
+      );
+      assert.equal(out.res.statusCode, 403, `${method} ${suffix}`);
+    }
+    const recent = await listRecentComments(
+      createStorageScope(as, { repoRoot: process.cwd() }),
+      { actor: as },
+      {},
+    );
+    assert.ok(!recent.items.some((i) => i.comment.body === comment.body));
+  }
+  delete process.env.SANDBOX_MODE;
+  try {
+    const read = await call(
+      handlePresentations,
+      'GET',
+      `/api/presentations/${pres.id}/comments`,
+      { as: BOB },
+    );
+    assert.equal(read.res.statusCode, 200);
+    assert.ok(jsonBody(read.res).comments.some((c) => c.body === comment.body));
+    const post = await call(
+      handlePresentations,
+      'POST',
+      `/api/presentations/${pres.id}/comments`,
+      { as: BOB, body: { body: 'Normal organization comment' } },
+    );
+    assert.equal(post.res.statusCode, 201);
+  } finally {
+    process.env.SANDBOX_MODE = '1';
+  }
+});
+
+test('a guest cannot mint a share link; normal organization owners still can', async () => {
+  const pres = await seedAliceDeck();
+  assertSharingDisabled(
+    await call(
+      handleShareLinks,
+      'POST',
+      `/api/presentations/${pres.id}/share-links`,
+      { as: ALICE, body: { permission: 'view' } },
+    ),
+  );
+  assert.equal(
+    (db.__tables.presentation_share_links || []).filter(
+      (l) => l.presentation_id === pres.id,
+    ).length,
+    0,
+  );
+  delete process.env.SANDBOX_MODE;
+  try {
+    const out = await call(
+      handleShareLinks,
+      'POST',
+      `/api/presentations/${pres.id}/share-links`,
+      { as: ALICE, body: { permission: 'view' } },
+    );
+    assert.equal(out.res.statusCode, 201);
+    assert.ok(jsonBody(out.res).token);
+  } finally {
+    process.env.SANDBOX_MODE = '1';
+  }
+});

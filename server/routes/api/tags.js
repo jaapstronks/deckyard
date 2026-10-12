@@ -28,11 +28,13 @@ import {
 } from '../../utils/http.js';
 import { parsePaginationParams } from '../../utils/request-validators.js';
 import { withPresentationAuth } from '../../utils/route-middleware.js';
+import { sharingEnabled } from '../../config/sandbox.js';
+import { assertSharingEnabled } from '../../sandbox/sharing.js';
 import { dispatchRoutes } from '../../utils/router.js';
 
 // GET /api/tags - List all tags
 async function handleTagList({ storageScope, res }) {
-  const tags = await listTags(storageScope);
+  const tags = sharingEnabled() ? await listTags(storageScope) : [];
   serveJson(res, 200, tags);
   return true;
 }
@@ -44,13 +46,16 @@ async function handleTagSearch({ storageScope, res, url }) {
     defaultLimit: 10,
     maxLimit: 50,
   });
-  const tags = await searchTags(storageScope, query, limit);
+  const tags = sharingEnabled()
+    ? await searchTags(storageScope, query, limit)
+    : [];
   serveJson(res, 200, tags);
   return true;
 }
 
 // POST /api/tags - Create a new tag
 async function handleTagCreate({ storageScope, req, res }) {
+  assertSharingEnabled();
   const parsed = await requireJsonBody(req, res);
   if (!parsed.ok) return true;
   const body = parsed.body;
@@ -65,6 +70,7 @@ async function handleTagCreate({ storageScope, req, res }) {
 
 // DELETE /api/tags/:tagId - Delete a tag
 async function handleTagDelete({ storageScope, res }, tagId) {
+  assertSharingEnabled();
   const deleted = await deleteTag(storageScope, tagId);
   if (!deleted) {
     return notFound(res, 'Tag not found');

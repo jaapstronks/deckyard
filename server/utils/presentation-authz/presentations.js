@@ -23,7 +23,7 @@
  * to be transferable. See docs/reference/permission-model.md.
  */
 
-import { sandboxEnabled } from '../../config/sandbox.js';
+import { sandboxEnabled, sharingEnabled } from '../../config/sandbox.js';
 import { isMultiOrgEnabled } from '../../config/features.js';
 import { isOrganizationAdmin } from '../../../shared/organization-role.js';
 import {
@@ -283,6 +283,19 @@ export function canManageCollaborators({
 }
 
 /**
+ * Curated organization decks are examples, never a guest conversation channel.
+ * Their content stays readable while all comment surfaces remain closed.
+ * @param {Object} pres
+ * @returns {boolean}
+ */
+export function presentationCommentsEnabled(pres) {
+  return (
+    sharingEnabled() ||
+    normalizePresentationVisibility(pres?.visibility) !== 'organization'
+  );
+}
+
+/**
  * Check if a user can comment on a presentation.
  */
 export function canCommentOnPresentation({
@@ -293,6 +306,9 @@ export function canCommentOnPresentation({
   if (isUnrestricted(user)) return true;
   if (!pres || typeof pres !== 'object') return false;
   if (!hasIdentity(user)) return false;
+
+  // Curated organization decks stay readable, but cannot carry guest messages.
+  if (!presentationCommentsEnabled(pres)) return false;
 
   // Owner/creator can always comment
   if (isOwnerOrCreator(user, pres)) return true;
@@ -322,6 +338,8 @@ export function getEffectivePermission({
   if (!pres || typeof pres !== 'object') return 'view';
 
   if (!hasIdentity(user)) return 'view';
+
+  if (!presentationCommentsEnabled(pres)) return 'view';
 
   // The owner always has edit permission. Not the creator: this function is the
   // read-side mirror of canWritePresentation (it picks editor-vs-viewer UI), so

@@ -58,6 +58,7 @@ import { listPresentationsSharedWithUser } from '../storage/collaborators.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
 import {
   belongsInCollection,
+  presentationCommentsEnabled,
   isOwnerOrCreator,
   isUnrestricted,
   resolveActorUserId,
@@ -91,7 +92,7 @@ import {
  * @typedef {import('./actor.js').Actor} Actor
  * @typedef {import('./actor.js').ServiceIdentity} ServiceIdentity
  * @typedef {import('../storage/scope.js').StorageScope} StorageScope
- * @typedef {'read'|'write'|'delete'|'manage'|'transfer'|'comment'|'moderate'} PresentationAccess
+ * @typedef {'read'|'write'|'delete'|'manage'|'transfer'|'comment'|'readComments'|'moderate'} PresentationAccess
  */
 
 /**
@@ -124,6 +125,10 @@ const ACTOR_RIGHTS = {
     allows: canActorTransferOwnership,
     refusal: 'Only the presentation owner can transfer ownership',
   },
+  readComments: {
+    allows: async (pres) => presentationCommentsEnabled(pres),
+    refusal: 'Comments are off on sandbox example decks',
+  },
   comment: {
     allows: canActorCommentOnPresentation,
     refusal: 'You may not comment on this presentation',
@@ -146,7 +151,8 @@ const ACTOR_RIGHTS = {
  * @returns {boolean}
  */
 function guestAllows(pres, { guest, shareLink }, access) {
-  if (access === 'read') return shareLink?.presentationId === pres.id;
+  if (access === 'read' || access === 'readComments')
+    return shareLink?.presentationId === pres.id;
   if (access === 'comment') {
     return canGuestComment({ guest, shareLink, presentationId: pres.id });
   }
@@ -166,6 +172,11 @@ function guestAllows(pres, { guest, shareLink }, access) {
 async function refusal(pres, identity, access) {
   const right = ACTOR_RIGHTS[access];
   if (!right) throw new Error(`Unknown presentation access: ${access}`);
+  if (
+    ['readComments', 'comment', 'moderate'].includes(access) &&
+    !presentationCommentsEnabled(pres)
+  )
+    return ACTOR_RIGHTS.readComments.refusal;
   if ('guest' in identity) {
     return guestAllows(pres, identity, access) ? null : right.refusal;
   }

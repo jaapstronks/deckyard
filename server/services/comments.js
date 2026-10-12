@@ -67,6 +67,7 @@ import {
   throwStorageFailure,
 } from '../utils/errors.js';
 import {
+  presentationCommentsEnabled,
   canDeleteComment,
   canEditComment,
   canGuestDeleteComment,
@@ -251,6 +252,7 @@ async function authoredComment(scope, identity, input, right) {
     scope,
     identity,
     input.presentationId,
+    { access: 'readComments' },
   );
   const comment = await commentOn(scope, pres.id, input.commentId);
   const decide = COMMENT_AUTHORSHIP[right];
@@ -569,6 +571,7 @@ export async function listComments(
     scope,
     identity,
     presentationId,
+    { access: 'readComments' },
   );
   const comments = await storeListComments(scope, presentation.id, {
     status: status === 'all' ? undefined : status,
@@ -621,12 +624,16 @@ export async function listRecentComments(
     identity,
     { ownership },
   );
-  const { comments, total } = await listRecentCommentsOnDecks(scope, listed, {
-    authorEmail: authorEmail || null,
-    status,
-    since: sinceIso,
-    limit,
-  });
+  const { comments, total } = await listRecentCommentsOnDecks(
+    scope,
+    listed.filter(presentationCommentsEnabled),
+    {
+      authorEmail: authorEmail || null,
+      status,
+      since: sinceIso,
+      limit,
+    },
+  );
 
   // Each deck once: the comments already come from decks the user can see.
   const decks = new Map();

@@ -290,11 +290,7 @@ Where the deciders differ from that shape, they differ deliberately:
   everyone.
   `organization → private` is admin-only. "Admin" here is the **organization**
   admin — see _Admin means admin of the organization you are in_ below.
-- **`getEffectivePermission`** is the client's answer, not a gate: it returns
-  `edit | comment | view` for the editor to pick a UI, and is delivered as
-  `_userPermission` on `GET /api/presentations/:id`. A view-only organization deck
-  resolves to `comment`; anything unmatched falls back to the collaborator
-  level, or `view`.
+- **`getEffectivePermission`** is the client's answer, not a gate: it returns `edit | comment | view` for the editor to pick a UI, and is delivered as `_userPermission` on `GET /api/presentations/:id`. A view-only organization deck resolves to `comment`; sandbox organization examples resolve to `view` and their comment surfaces are closed (`presentationCommentsEnabled`, B406). Anything unmatched falls back to the collaborator level, or `view`.
 
 ### 3. Identity: which key decides
 
