@@ -235,7 +235,7 @@ The closing `/handoff` announces that release review, its Release PR and resolve
 
 The receiving session independently reviews the current release scope, version, changelog, migrations, configuration and CI before merging the release-please PR. A routine release gets tier `workhorse`; escalate substantive unresolved risks according to the item tiers. Do not bypass required checks or hand-bump a version. After merging, verify the tag and GitHub Release, deliver the website notes and sandbox upgrade using the upstream recipes below, and register evidence for briefings whose release condition was actually met. A tag alone does not complete downstream fork, capture or deployment verification.
 
-The [`merge-housekeeping`](../../.claude/skills/merge-housekeeping/SKILL.md) skill evaluates this cadence and records scheduling in `docs/plans/_reconcile/release-log.md`. It schedules the separate reviewer; it does not cut a release as a side effect of a feature merge.
+The [`merge-housekeeping`](../../.claude/skills/merge-housekeeping/SKILL.md) skill evaluates this cadence and records scheduling in the maintainer's private release ledger. It schedules the separate reviewer; it does not cut a release as a side effect of a feature merge.
 
 ## Correcting a version
 
