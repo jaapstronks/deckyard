@@ -4,6 +4,29 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.62.0](https://github.com/jaapstronks/deckyard/compare/v1.61.0...v1.62.0) (2026-10-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* The optional ciiic-translation-rules package is no longer loaded by server/utils/openai/translate.js. Move its terminology and per-target-language style text into Settings > Admin > Translation instructions (/settings#admin), stored as organizations.settings.translationInstructions. There is no automatic migration; remove the obsolete package and its Dockerfile installation after transferring the content.
+* Fork imports of client/views/presenter/step.js must use client/lib/slide-runtime/step.js; imports of client/views/presenter/auto-advance.js must use client/lib/slide-runtime/auto-advance.js. Old paths are removed without shims.
+
+### Added
+
+* add organization translation instructions ([33938c9](https://github.com/jaapstronks/deckyard/commit/33938c91e07b54fe2b1e137d23949420e7597d38))
+
+
+### Security
+
+* isolate remaining sandbox guest sharing channels ([#1621](https://github.com/jaapstronks/deckyard/issues/1621)) ([5d920ed](https://github.com/jaapstronks/deckyard/commit/5d920edaa4375324eb83a0976985f3bffdfb121f))
+
+
+### Changed
+
+* clarify explicit release ownership transfers ([c6ee82c](https://github.com/jaapstronks/deckyard/commit/c6ee82c82141897989d83f0bd077bab73c174460))
+* enforce public client feature seams ([6aee542](https://github.com/jaapstronks/deckyard/commit/6aee54251a0c6cebbc258bdfd05e028fa6ccd9ab))
+
 ## [1.61.0](https://github.com/jaapstronks/deckyard/compare/v1.60.0...v1.61.0) (2026-10-12)
 
 
