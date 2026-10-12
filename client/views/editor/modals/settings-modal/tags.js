@@ -1,5 +1,5 @@
 import { t } from '../../../../lib/ui-i18n.js';
-import { createTagEditor } from '../../../list/tag-editor.js';
+import { createTagEditor } from '../../../tags/index.js';
 import { createInlineError } from '../../../../lib/dom/inline-error.js';
 import { h } from '../../../../lib/dom/index.js';
 
