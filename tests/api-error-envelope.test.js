@@ -281,6 +281,7 @@ test('every registered code passes with exactly its keys', () => {
       convertible: ['text-slide'],
     },
     current_password_incorrect: { field: 'currentPassword' },
+    translation_instructions_invalid: { field: 'terminology' },
     missing_alt: {
       lang: 'nl',
       slideIndex: 2,

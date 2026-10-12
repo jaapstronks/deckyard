@@ -82,13 +82,8 @@ What is _not_ covered — the honest boundaries:
   `fs.readFile` argument or a doc is not an import. Docs are covered separately
   by `tests/docs-paths-resolvable.test.js`; the rest is not covered at all.
 
-Two suppressions exist, both with their reason inline:
+One suppression exists, with its reason inline:
 
-- **`server/utils/openai/translate.js`** — `ciiic-translation-rules` is fork-only
-  and deliberately undeclared in `package.json` (see `AGENTS.md` § Optional
-  dependencies), loaded through a gated `await import()` whose `catch` is the
-  contract. It is the one import in the tree that is _supposed_ not to resolve
-  upstream.
 - **`tests/fixtures/fork-slide-types/payoff-slide.js`** — a fork fixture whose
   specifier is written for its _runtime_ home (`custom/slide-types/`, one level
   shallower than where it is tracked). The `test-fork` CI job copies it into

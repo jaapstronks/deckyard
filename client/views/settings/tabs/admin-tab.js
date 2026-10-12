@@ -11,6 +11,7 @@ import { t } from '../../../lib/ui-i18n.js';
 import { toast } from '../../../lib/dom/toast.js';
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 import { createSsoLoginsCard } from '../sso-logins.js';
+import { createTranslationInstructionsCard } from '../translation-instructions/index.js';
 import {
   fetchAppSettings,
   updateAppSettings,
@@ -444,9 +445,13 @@ export function createAdminTab({ user }) {
   });
   actions.append(btnSave);
 
+  const translationInstructions = featureEnabled('ai')
+    ? createTranslationInstructionsCard()
+    : null;
   const cards = h('div', { class: 'settings-admin-cards' }, [
     langCard,
     aiCard,
+    translationInstructions?.el,
     senderCard,
     sessionCard,
     hasAnalytics ? analyticsCard : null,
@@ -499,6 +504,7 @@ export function createAdminTab({ user }) {
     if (loaded) return;
     loaded = true;
     ssoLogins.load();
+    translationInstructions?.load();
 
     try {
       const app = await fetchAppSettings();

@@ -45,7 +45,12 @@ export async function handlePresentationTranslateFields(
   if (!to) return badRequest(res, 'A target language ("to") is required.');
   const fields = getOptionalObject(body, 'fields') || {};
 
-  const translations = await translateFieldMap(fields, { from, to, vendor });
+  const translations = await translateFieldMap(fields, {
+    from,
+    to,
+    vendor,
+    organizationId: storageScope.organizationId,
+  });
   serveJson(res, 200, { ok: true, from, to, translations });
   return true;
 }

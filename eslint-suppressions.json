@@ -1189,11 +1189,6 @@
       "count": 1
     }
   },
-  "server/utils/openai/translate.js": {
-    "no-restricted-syntax": {
-      "count": 1
-    }
-  },
   "server/utils/sandbox-og-image.js": {
     "no-restricted-syntax": {
       "count": 1

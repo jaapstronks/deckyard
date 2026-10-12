@@ -65,6 +65,7 @@ export const LOCATION_KEYS = Object.freeze([
  * @type {Readonly<Record<string, readonly string[]>>}
  */
 export const PAYLOAD_KEYS = Object.freeze({
+  translation_instructions_invalid: Object.freeze(['field']),
   // Strict slide validation groups field errors under one named list (B572).
   bad_request: Object.freeze(['errors']),
   // The change-password form names the input it refuses (B674).

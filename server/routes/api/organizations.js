@@ -145,6 +145,10 @@ async function handleOrgGet({ res, userId }, orgId) {
     // Delete button that is certain to be refused.
     organization: {
       ...organization,
+      settings: {
+        ...organization.settings,
+        translationInstructions: undefined,
+      },
       isDefault: isDefaultOrganization(organization.id),
     },
     membership: {

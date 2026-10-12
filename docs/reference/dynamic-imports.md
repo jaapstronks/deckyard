@@ -52,7 +52,6 @@ about twice that; half are JSDoc type annotations like
 | `bullmq`                                              | `server/jobs/queue/connection.js`         | same gate, paired                                                                                         |
 | `@aws-sdk/client-s3`, `@aws-sdk/s3-request-presigner` | `server/media/s3.js`                      | `isS3Configured()`; `s3.js` itself is loaded dynamically from `server/media/index.js` for the same reason |
 | `@hocuspocus/server`, `crossws/adapters/node`         | `server/collab/mount.js`                  | `isCollabEnabled()` — a disabled install never loads the collab dependency tree                           |
-| `ciiic-translation-rules`                             | `server/utils/openai/translate.js`        | fork-only, deliberately **not** in `package.json`, falls back to empty rules                              |
 | `dompurify`, `jsdom`                                  | `shared/sanitize.js`                      | server-side sanitization path only                                                                        |
 
 A package that is imported **statically** anywhere stays a hard `dependency`
@@ -115,12 +114,6 @@ untangling as a design change, never as a find-and-replace.
   `@hocuspocus/server` + `crossws` (live collaboration). A package that is
   _statically_ imported (e.g. `openid-client`) stays a hard `dependency` even
   if its feature is off, because loading the module pulls it in regardless.
-- **`ciiic-translation-rules` is fork-only** and deliberately **not declared**
-  in `package.json`: it's a private package that ships only in the CIIIC fork,
-  loaded through an optional `await import()` in
-  `server/utils/openai/translate.js` that falls back to empty rules when it's
-  absent. Adding it to `package.json` would break `npm install` for the OSS
-  repo, so it stays undeclared by design.
 
 ## Why this is written down
 
