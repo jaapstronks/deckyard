@@ -16,6 +16,7 @@
  * Run with: node --test tests/presentation-conflict-envelope.test.js
  */
 
+import { createMockRes, createMockReq } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { testScope } from './helpers/storage-scope.js';
@@ -59,35 +60,6 @@ test.after(() => {
 });
 
 /** A request whose body streams `body` as JSON, with the given method/headers. */
-function fakeReq({ method = 'PUT', headers = {}, body = null } = {}) {
-  const buf = Buffer.from(body == null ? '' : JSON.stringify(body), 'utf8');
-  return {
-    method,
-    headers,
-    async *[Symbol.asyncIterator]() {
-      yield buf;
-    },
-  };
-}
-
-function fakeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-    json() {
-      return JSON.parse(this.body);
-    },
-  };
-}
 
 /** Create a fresh deck owned by OWNER; returns the stored presentation. */
 async function seedDeck() {
@@ -130,10 +102,10 @@ function assertConflictEnvelope(res, presId) {
 
 test('PUT /:id conflict emits the canonical envelope', async () => {
   const pres = await seedDeck();
-  const res = fakeRes();
+  const res = createMockRes();
   await handlePresentations({
     storageScope: testScope(),
-    req: fakeReq({
+    req: createMockReq({
       method: 'PUT',
       headers: { 'if-match': STALE_REVISION },
       body: { ...pres, title: 'Changed' },
@@ -147,10 +119,10 @@ test('PUT /:id conflict emits the canonical envelope', async () => {
 
 test('PATCH /:id/visibility conflict emits the canonical envelope', async () => {
   const pres = await seedDeck();
-  const res = fakeRes();
+  const res = createMockRes();
   await handlePresentations({
     storageScope: testScope(),
-    req: fakeReq({
+    req: createMockReq({
       method: 'PATCH',
       headers: { 'if-match': STALE_REVISION },
       body: { visibility: 'organization' },
@@ -167,10 +139,10 @@ test('POST /:id/versions/:v/restore conflict emits the canonical envelope', asyn
   const version = await createPresentationVersion(testScope(), pres.id, pres, {
     actorEmail: OWNER,
   });
-  const res = fakeRes();
+  const res = createMockRes();
   await handlePresentations({
     storageScope: testScope(),
-    req: fakeReq({
+    req: createMockReq({
       method: 'POST',
       headers: { 'if-match': STALE_REVISION },
       body: {},

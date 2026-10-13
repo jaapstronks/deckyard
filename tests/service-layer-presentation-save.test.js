@@ -18,6 +18,7 @@
  * Run with: node --test tests/service-layer-presentation-save.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -154,25 +155,6 @@ async function activity(db, eventType) {
 
 // --- The two contracts --------------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(String(payload)) : null;
-    },
-  };
-}
-
 function makeReq(method, body, headers = {}) {
   const req = Readable.from(
     body === undefined ? [] : [Buffer.from(JSON.stringify(body))],
@@ -189,7 +171,7 @@ function makeReq(method, body, headers = {}) {
 
 /** The editor's PUT, as `as`, with If-Match `revision` and extra headers. */
 async function editorSave(as, body, { revision = 1, headers = {} } = {}) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleInternalPresentations({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(as, { repoRoot: process.cwd() }),
@@ -203,7 +185,7 @@ async function editorSave(as, body, { revision = 1, headers = {} } = {}) {
 
 /** The editor's GET, as `as`. */
 async function editorRead(as) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleInternalPresentations({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(as, { repoRoot: process.cwd() }),
@@ -217,7 +199,7 @@ async function editorRead(as) {
 
 /** A v1 PUT with `as`'s key already authenticated. */
 async function v1Save(as, body) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleV1Presentations({
     req: makeReq('PUT', body),
     res,
@@ -287,8 +269,8 @@ test('refusals: another lang, owner or creator and a retired name are 400 invali
 
     const v1 = await v1Save(OWNER, { title: 'Changed', ...refused });
     assert.equal(v1.statusCode, 400, `v1 ${field}`);
-    assert.equal(v1.body.error, 'invalid', `v1 ${field}`);
-    assert.equal(v1.body.details.field, field, `v1 ${field}`);
+    assert.equal(v1.json().error, 'invalid', `v1 ${field}`);
+    assert.equal(v1.json().details.field, field, `v1 ${field}`);
     assertUnchanged(db, before, `v1 refuses ${field}`);
 
     // The editor never moves its owner (stale after a transfer), so it does
@@ -296,15 +278,15 @@ test('refusals: another lang, owner or creator and a retired name are 400 invali
     if (field === 'ownerEmail') continue;
     const editor = await editorSave(OWNER, { title: 'Changed', ...refused });
     assert.equal(editor.statusCode, 400, `editor ${field}`);
-    assert.equal(editor.body.error, 'invalid', `editor ${field}`);
-    assert.equal(editor.body.details.field, field, `editor ${field}`);
+    assert.equal(editor.json().error, 'invalid', `editor ${field}`);
+    assert.equal(editor.json().details.field, field, `editor ${field}`);
     assertUnchanged(db, before, `editor refuses ${field}`);
   }
 });
 
 test('echoes: the deck own owner, creator and lang sent back from a read are a plain save', async () => {
   const db = await installDb();
-  const read = (await editorRead(COLLAB)).body;
+  const read = (await editorRead(COLLAB)).json();
 
   // v1 hands the owner its own address and everyone else `null`.
   for (const ownerEmail of [OWNER_EMAIL, OWNER_EMAIL.toUpperCase(), null]) {
@@ -358,13 +340,13 @@ test('v1 and editor: a deck over the size limit is 409 limit_exceeded and nothin
     // v1 used to answer this with a 200 and `{ ok:false }` for a presentation.
     const v1 = await v1Save(OWNER, { slides });
     assert.equal(v1.statusCode, 409);
-    assert.equal(v1.body.error, 'limit_exceeded');
-    assert.match(v1.body.message, /slide/i);
+    assert.equal(v1.json().error, 'limit_exceeded');
+    assert.match(v1.json().message, /slide/i);
     assertUnchanged(db, before, 'v1 over the limit');
 
     const editor = await editorSave(OWNER, { slides });
     assert.equal(editor.statusCode, 409);
-    assert.equal(editor.body.error, 'limit_exceeded');
+    assert.equal(editor.json().error, 'limit_exceeded');
     assertUnchanged(db, before, 'editor over the limit');
   } finally {
     if (previous === undefined)
@@ -399,7 +381,7 @@ test('editor: the merge headers reach the store (a stale tab merges a disjoint e
   // Without the headers a stale tab is a plain revision conflict.
   const plain = await editorSave(OWNER, staleBody, { revision: 1 });
   assert.equal(plain.statusCode, 409);
-  assert.equal(plain.body.error, 'conflict');
+  assert.equal(plain.json().error, 'conflict');
 
   // With them the store merges: slide 2 is this tab's, slide 1 stays the
   // other editor's.

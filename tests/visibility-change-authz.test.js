@@ -28,6 +28,7 @@
  * Run with: node --test tests/visibility-change-authz.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -145,22 +146,6 @@ async function seed({ visibility = 'private', isViewOnly = false } = {}) {
 
 // --- The request double -----------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 const jsonBody = (res) => JSON.parse(String(res.body || '{}'));
 
 /**
@@ -187,7 +172,7 @@ async function patch(pres, { as = null, body, ifMatch = true }) {
       yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   await handlePresentations({
     repoRoot: process.cwd(),

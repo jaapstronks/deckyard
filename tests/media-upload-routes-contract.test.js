@@ -41,6 +41,7 @@
  * Run with: node --test tests/media-upload-routes-contract.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -113,22 +114,6 @@ function seed(appSettings) {
 }
 
 /** A response double capturing the status/headers/body the helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
 
 /**
  * Drive a mount handler (`handleMedia`/`handleUploads`/`handleStockMedia`) the
@@ -152,7 +137,7 @@ async function call(handle, method, pathAndQuery, { as = null, body } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handle({
     repoRoot: process.cwd(),
@@ -174,7 +159,7 @@ test('media status is public and reports no provider on a bare install', async (
   const { res } = await call(handleMedia, 'GET', '/api/media/status');
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body, {
+  assert.deepEqual(res.json(), {
     mode: 'none',
     presignedSupported: false,
     imagekitAvailable: false,
@@ -186,9 +171,9 @@ test('imagekit status is public and reports unconfigured on a bare install', asy
   const { res } = await call(handleMedia, 'GET', '/api/media/imagekit/status');
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.configured, false);
+  assert.equal(res.json().configured, false);
   assert.ok(
-    res.body.issues.some((i) => /IMAGEKIT_PRIVATE_KEY/.test(i)),
+    res.json().issues.some((i) => /IMAGEKIT_PRIVATE_KEY/.test(i)),
     'the missing-key issues are surfaced',
   );
 });
@@ -200,7 +185,7 @@ test('presign refuses an unauthenticated caller with a 401', async () => {
   });
 
   assert.equal(res.statusCode, 401);
-  assert.equal(res.body.error, 'unauthorized');
+  assert.equal(res.json().error, 'unauthorized');
 });
 
 test('presign refuses demo/sandbox mode with a 400 before touching the provider', async () => {
@@ -213,8 +198,8 @@ test('presign refuses demo/sandbox mode with a 400 before touching the provider'
     });
 
     assert.equal(res.statusCode, 400);
-    assert.equal(res.body.error, 'bad_request');
-    assert.match(res.body.message, /disabled in demo\/sandbox/i);
+    assert.equal(res.json().error, 'bad_request');
+    assert.match(res.json().message, /disabled in demo\/sandbox/i);
   } finally {
     delete process.env.DEMO_MODE;
   }
@@ -228,7 +213,7 @@ test('presign refuses a missing provider with a 400', async () => {
   });
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /provider not initialized/i);
+  assert.match(res.json().message, /provider not initialized/i);
 });
 
 test('confirm refuses an unauthenticated caller with a 401', async () => {
@@ -248,7 +233,7 @@ test('confirm refuses a missing provider with a 400', async () => {
   });
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /provider not initialized/i);
+  assert.match(res.json().message, /provider not initialized/i);
 });
 
 test('the imagekit detail write refuses an unauthenticated caller with a 401', async () => {
@@ -284,7 +269,7 @@ test('the imagekit detail write is refused with a 405 in demo/sandbox mode', asy
       405,
       'sandbox makes the write path method-not-allowed',
     );
-    assert.equal(res.body.error, 'method_not_allowed');
+    assert.equal(res.json().error, 'method_not_allowed');
   } finally {
     delete process.env.SANDBOX_MODE;
   }
@@ -321,7 +306,7 @@ test('upload refuses demo/sandbox mode with a 400', async () => {
     });
 
     assert.equal(res.statusCode, 400);
-    assert.match(res.body.message, /disabled in demo\/sandbox/i);
+    assert.match(res.json().message, /disabled in demo\/sandbox/i);
   } finally {
     delete process.env.DEMO_MODE;
   }
@@ -335,7 +320,7 @@ test('upload rejects a body without a data URL with a 400', async () => {
   });
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /Expected \{ dataUrl/);
+  assert.match(res.json().message, /Expected \{ dataUrl/);
 });
 
 // ===========================================================================
@@ -352,13 +337,17 @@ test('stock-media status is public and reports the bare-install shape', async ()
 
   assert.equal(res.statusCode, 200);
   assert.equal(
-    res.body.bundled.configured,
+    res.json().bundled.configured,
     true,
     'bundled has nothing to configure',
   );
-  assert.equal(res.body.bundled.enabled, false, 'and is off until toggled on');
-  assert.equal(res.body.unsplash.configured, false, 'no UNSPLASH_ACCESS_KEY');
-  assert.equal(res.body.giphy.configured, false, 'no GIPHY_API_KEY');
+  assert.equal(
+    res.json().bundled.enabled,
+    false,
+    'and is off until toggled on',
+  );
+  assert.equal(res.json().unsplash.configured, false, 'no UNSPLASH_ACCESS_KEY');
+  assert.equal(res.json().giphy.configured, false, 'no GIPHY_API_KEY');
 });
 
 test('an authed-only stock-media route falls through (not 401) for an anonymous caller', async () => {
@@ -389,7 +378,7 @@ test('bundled manifest is a 400 while the bundled source is toggled off', async 
   );
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /Bundled gradients are not available/);
+  assert.match(res.json().message, /Bundled gradients are not available/);
 });
 
 test('unsplash search is a 400 while Unsplash is unconfigured', async () => {
@@ -404,7 +393,7 @@ test('unsplash search is a 400 while Unsplash is unconfigured', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /Unsplash is not available/);
+  assert.match(res.json().message, /Unsplash is not available/);
 });
 
 test('unsplash download is a 400 while Unsplash is unconfigured', async () => {
@@ -420,7 +409,7 @@ test('unsplash download is a 400 while Unsplash is unconfigured', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /Unsplash is not available/);
+  assert.match(res.json().message, /Unsplash is not available/);
 });
 
 test('giphy search is a 400 while Giphy is unconfigured', async () => {
@@ -435,7 +424,7 @@ test('giphy search is a 400 while Giphy is unconfigured', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /Giphy is not available/);
+  assert.match(res.json().message, /Giphy is not available/);
 });
 
 test('giphy download is a 400 while Giphy is unconfigured', async () => {
@@ -451,7 +440,7 @@ test('giphy download is a 400 while Giphy is unconfigured', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /Giphy is not available/);
+  assert.match(res.json().message, /Giphy is not available/);
 });
 
 // With a key present and the instance toggle on, the "not available" gate opens
@@ -472,7 +461,7 @@ test('a configured-and-enabled Unsplash still rejects an empty query with a 400'
     );
 
     assert.equal(res.statusCode, 400);
-    assert.match(res.body.message, /Search query required/);
+    assert.match(res.json().message, /Search query required/);
   } finally {
     delete process.env.UNSPLASH_ACCESS_KEY;
   }
@@ -493,7 +482,7 @@ test('a configured-and-enabled Unsplash download still rejects a missing photo i
     );
 
     assert.equal(res.statusCode, 400);
-    assert.match(res.body.message, /Photo ID required/);
+    assert.match(res.json().message, /Photo ID required/);
   } finally {
     delete process.env.UNSPLASH_ACCESS_KEY;
   }
@@ -513,7 +502,7 @@ test('a configured-and-enabled Giphy still rejects an empty query with a 400', a
     );
 
     assert.equal(res.statusCode, 400);
-    assert.match(res.body.message, /Search query required/);
+    assert.match(res.json().message, /Search query required/);
   } finally {
     delete process.env.GIPHY_API_KEY;
   }
@@ -534,7 +523,7 @@ test('a configured-and-enabled Giphy download still rejects a missing gif id', a
     );
 
     assert.equal(res.statusCode, 400);
-    assert.match(res.body.message, /GIF ID required/);
+    assert.match(res.json().message, /GIF ID required/);
   } finally {
     delete process.env.GIPHY_API_KEY;
   }
@@ -558,7 +547,7 @@ test('presign against the local provider is a 400 — it has no presigned upload
   });
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /does not support presigned uploads/i);
+  assert.match(res.json().message, /does not support presigned uploads/i);
 });
 
 test('confirm against the local provider validates the key before the filesystem', async () => {
@@ -571,7 +560,7 @@ test('confirm against the local provider validates the key before the filesystem
   });
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /key is required/);
+  assert.match(res.json().message, /key is required/);
 });
 
 test('a valid data-URL upload is stored and returns 201 with its metadata', async () => {
@@ -584,16 +573,16 @@ test('a valid data-URL upload is stored and returns 201 with its metadata', asyn
   });
 
   assert.equal(res.statusCode, 201);
-  assert.equal(res.body.mime, 'image/png');
+  assert.equal(res.json().mime, 'image/png');
   assert.match(
-    res.body.url,
+    res.json().url,
     /^\/uploads\/.+\.png$/,
     'a public URL under /uploads is returned',
   );
-  assert.ok(res.body.bytes > 0, 'the stored byte count is reported');
+  assert.ok(res.json().bytes > 0, 'the stored byte count is reported');
 
   // The bytes really landed in the temp uploads dir, not just in the response.
-  const key = res.body.filename;
+  const key = res.json().filename;
   const stat = await fs.stat(path.join(uploadsTmpDir, key));
   assert.ok(stat.isFile(), 'the upload is on disk');
 });
@@ -611,8 +600,8 @@ test('the upload file-type door rejects an unsupported content type with a 400',
   });
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.error, 'upload_failed');
-  assert.match(res.body.message, /Unsupported content type/);
+  assert.equal(res.json().error, 'upload_failed');
+  assert.match(res.json().message, /Unsupported content type/);
 });
 
 test('the upload size door rejects an over-size buffer with a 400', async () => {
@@ -631,6 +620,6 @@ test('the upload size door rejects an over-size buffer with a 400', async () => 
   });
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.error, 'upload_failed');
-  assert.match(res.body.message, /File too large/);
+  assert.equal(res.json().error, 'upload_failed');
+  assert.match(res.json().message, /File too large/);
 });

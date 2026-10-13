@@ -4,12 +4,12 @@ import { fileURLToPath } from 'node:url';
  * dependencies regardless of whether the feature is enabled.
  * Run with: node --test tests/optional-dependencies-gate.test.js
  */
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parse } from 'acorn';
-import { walkJsFiles } from './helpers/call-sites.js';
 
 const root = new URL('../', import.meta.url);
 const manifest = JSON.parse(
@@ -310,7 +310,9 @@ for (const [label, body, guarded] of thunkCases) {
 test('every declared optional dependency is used only through guarded dynamic imports', () => {
   const imports = [];
   for (const dir of ['server', 'shared', 'client', 'scripts']) {
-    for (const file of walkJsFiles(fileURLToPath(new URL(`${dir}/`, root)))) {
+    for (const file of walkFiles(fileURLToPath(new URL(`${dir}/`, root)), {
+      extensions: ['.js'],
+    })) {
       if (file.includes('/vendor/')) continue;
       imports.push(
         ...inspect(fs.readFileSync(file, 'utf8'), optional).map((entry) => ({

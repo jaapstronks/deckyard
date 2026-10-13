@@ -19,6 +19,7 @@
  * Run with: node --test tests/service-layer-presentation-list.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
@@ -170,25 +171,6 @@ async function installDb() {
 
 // --- The three contracts ------------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(String(payload)) : null;
-    },
-  };
-}
-
 const makeReq = (method) => ({
   method,
   headers: { host: 'deck.example' },
@@ -197,7 +179,7 @@ const makeReq = (method) => ({
 
 /** A GET on the internal `/api` contract, as `as`. */
 async function internal(handler, path, as) {
-  const res = makeRes();
+  const res = createMockRes();
   await handler({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(as, { repoRoot: process.cwd() }),
@@ -211,7 +193,7 @@ async function internal(handler, path, as) {
 
 /** A GET on the public v1 contract with `as`'s key already authenticated. */
 async function v1(path, as) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleV1Presentations({
     req: makeReq('GET'),
     res,
@@ -360,8 +342,9 @@ test('internal: Home, search and shared-with-me for owner, collaborator and outs
 
   const home = async (as) =>
     ids(
-      (await internal(handleInternalPresentations, '/api/presentations', as))
-        .body,
+      (
+        await internal(handleInternalPresentations, '/api/presentations', as)
+      ).json(),
     );
   assert.deepEqual(await home(OWNER), [OWN, ORG_DECK]);
   assert.deepEqual(await home(COLLAB), [ORG_DECK]);
@@ -373,8 +356,8 @@ test('internal: Home, search and shared-with-me for owner, collaborator and outs
     COLLAB,
   );
   assert.equal(shared.statusCode, 200);
-  assert.deepEqual(ids(shared.body.presentations), [SHARED]);
-  assert.equal(shared.body.presentations[0].permission, 'view');
+  assert.deepEqual(ids(shared.json().presentations), [SHARED]);
+  assert.equal(shared.json().presentations[0].permission, 'view');
 
   const search = async (query, as) =>
     internal(
@@ -384,9 +367,12 @@ test('internal: Home, search and shared-with-me for owner, collaborator and outs
     );
   const found = await search('q=roadmap', OWNER);
   assert.equal(found.statusCode, 200);
-  assert.deepEqual(ids(found.body.results), [OWN]);
+  assert.deepEqual(ids(found.json().results), [OWN]);
   // The other roadmap is STRANGER's private deck: not searched for anyone else.
-  assert.deepEqual(ids((await search('q=roadmap', OUTSIDER)).body.results), []);
+  assert.deepEqual(
+    ids((await search('q=roadmap', OUTSIDER)).json().results),
+    [],
+  );
 
   for (const [query, field] of [
     ['q=x', 'q'],
@@ -395,8 +381,8 @@ test('internal: Home, search and shared-with-me for owner, collaborator and outs
   ]) {
     const refused = await search(query, OWNER);
     assert.equal(refused.statusCode, 400, query);
-    assert.equal(refused.body.error, 'invalid', query);
-    assert.equal(refused.body.details.field, field, query);
+    assert.equal(refused.json().error, 'invalid', query);
+    assert.equal(refused.json().details.field, field, query);
   }
 });
 
@@ -412,25 +398,27 @@ test('v1 list: owner, collaborator and outsider; viewOnly refuses an unknown val
 
   const owner = await list(OWNER);
   assert.equal(owner.statusCode, 200);
-  assert.deepEqual(ids(owner.body.presentations), [OWN, ORG_DECK]);
-  assert.equal(owner.body.pagination.total, 2);
-  assert.deepEqual(ids((await list(COLLAB)).body.presentations), [ORG_DECK]);
-  assert.deepEqual(ids((await list(OUTSIDER)).body.presentations), [ORG_DECK]);
+  assert.deepEqual(ids(owner.json().presentations), [OWN, ORG_DECK]);
+  assert.equal(owner.json().pagination.total, 2);
+  assert.deepEqual(ids((await list(COLLAB)).json().presentations), [ORG_DECK]);
+  assert.deepEqual(ids((await list(OUTSIDER)).json().presentations), [
+    ORG_DECK,
+  ]);
 
   const viewOnly = await list(OWNER, '?viewOnly=true');
-  assert.deepEqual(ids(viewOnly.body.presentations), [ORG_DECK]);
+  assert.deepEqual(ids(viewOnly.json().presentations), [ORG_DECK]);
   const editable = await list(OWNER, '?viewOnly=false');
-  assert.deepEqual(ids(editable.body.presentations), [OWN]);
+  assert.deepEqual(ids(editable.json().presentations), [OWN]);
 
   const paged = await list(OWNER, '?limit=1&offset=1');
-  assert.deepEqual(ids(paged.body.presentations), [ORG_DECK]);
-  assert.equal(paged.body.pagination.hasMore, false);
+  assert.deepEqual(ids(paged.json().presentations), [ORG_DECK]);
+  assert.equal(paged.json().pagination.hasMore, false);
 
   // Read as "no filter" without a word before B607.
   const refused = await list(OWNER, '?viewOnly=yes');
   assert.equal(refused.statusCode, 400);
-  assert.equal(refused.body.error, 'invalid');
-  assert.equal(refused.body.details.field, 'viewOnly');
+  assert.equal(refused.json().error, 'invalid');
+  assert.equal(refused.json().details.field, 'viewOnly');
 });
 
 // =============================================================================

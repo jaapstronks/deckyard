@@ -16,6 +16,7 @@
  * Run with: node --test tests/route-dispatch-account-and-data-sources.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -49,23 +50,8 @@ function select(routes, method, pathname) {
   return null;
 }
 
-function mockRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end() {},
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 function ctx(method, pathname, authedUser = { email: 'a@b.test' }) {
-  const res = mockRes();
+  const res = createMockRes();
   return {
     res,
     ctx: {
@@ -180,7 +166,7 @@ test('data-sources: the preview/refresh 405 catch-alls emit 405', () => {
   ]) {
     const route = select(DS_ROUTES, 'GET', path);
     assert.ok(route && route.handler.name !== 'handleDataSourcePreview');
-    const res = mockRes();
+    const res = createMockRes();
     route.handler({ res });
     assert.equal(res.statusCode, 405, `GET ${path} → 405 catch-all`);
     assert.equal(res.headers.Allow, 'POST', `GET ${path} → Allow: POST`);

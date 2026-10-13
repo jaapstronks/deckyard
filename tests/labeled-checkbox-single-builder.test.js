@@ -17,6 +17,7 @@
  * Run with: node --test tests/labeled-checkbox-single-builder.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -42,18 +43,9 @@ const RAW_CLASS = new RegExp(
   `\\bclass:\\s*['"\`](?:${MIGRATED_CLASSES.join('|')})['"\`]`,
 );
 
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
-
 test('migrated labeled-checkbox classes are only built via labeledCheckbox()', () => {
   const violations = [];
-  for (const file of walk(CLIENT_DIR)) {
+  for (const file of walkFiles(CLIENT_DIR, { extensions: ['.js'] })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     if (rel === HELPER) continue;
     fs.readFileSync(file, 'utf8')

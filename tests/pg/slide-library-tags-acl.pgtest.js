@@ -21,6 +21,7 @@
  * Run with: DATABASE_URL=… npm run test:pg
  */
 
+import { createMockRes } from '../helpers/http-mocks.js';
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -60,31 +61,13 @@ const ADMIN = {
   isAdmin: true,
 };
 
-function mockRes() {
-  return {
-    statusCode: null,
-    payload: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(payload) {
-      this.payload = payload ? JSON.parse(payload) : null;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 async function call(user, method, path, body) {
   const req = Readable.from(
     body === undefined ? [] : [Buffer.from(JSON.stringify(body))],
   );
   req.method = method;
   req.headers = {};
-  const res = mockRes();
+  const res = createMockRes();
   await handleSlideLibrary({
     repoRoot: '/tmp',
     storageScope,
@@ -177,7 +160,7 @@ pgDescribe(
     it("answers 404 when Bob reads the tags of Alice's personal item", async () => {
       const res = await getTags(BOB, 'personal', alicePersonal.id);
       assert.equal(res.statusCode, 404);
-      assert.equal(res.payload.error, 'not_found');
+      assert.equal(res.json().error, 'not_found');
     });
 
     it("answers 404 when Bob replaces the tags of Alice's personal item, and they stay", async () => {
@@ -228,7 +211,7 @@ pgDescribe(
       const res = await getTags(BOB, 'organization', orgItem.id);
       assert.equal(res.statusCode, 200);
       assert.deepEqual(
-        res.payload.map((t) => t.name),
+        res.json().map((t) => t.name),
         ['original'],
       );
     });
@@ -236,7 +219,7 @@ pgDescribe(
     it('answers 403 when a member who is neither creator nor admin retags a shared item, and they stay', async () => {
       const res = await putTags(BOB, 'organization', orgItem.id, ['hijacked']);
       assert.equal(res.statusCode, 403);
-      assert.equal(res.payload.error, 'forbidden');
+      assert.equal(res.json().error, 'forbidden');
       assert.deepEqual(await storedTagNames(db, orgItem.id), ['original']);
     });
 
@@ -262,7 +245,7 @@ pgDescribe(
       const got = await getTags(ALICE, 'personal', alicePersonal.id);
       assert.equal(got.statusCode, 200);
       assert.deepEqual(
-        got.payload.map((t) => t.name),
+        got.json().map((t) => t.name),
         ['mine'],
       );
     });

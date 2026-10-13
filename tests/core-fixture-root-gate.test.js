@@ -4,13 +4,13 @@
  * REPO_ROOT/custom reader.
  * Run with: node --test tests/core-fixture-root-gate.test.js
  */
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'acorn';
-import { walkJsFiles } from './helpers/call-sites.js';
 
 function readsForkRoot(source) {
   const ast = parse(source, { ecmaVersion: 'latest', sourceType: 'module' });
@@ -79,7 +79,7 @@ test('root detector catches path construction, ignoring comments and temporary r
 
 test('only the fork import audit constructs the checkout custom root', () => {
   const root = fileURLToPath(new URL('../', import.meta.url));
-  const hits = walkJsFiles(path.join(root, 'tests'))
+  const hits = walkFiles(path.join(root, 'tests'), { extensions: ['.js'] })
     .filter((file) => readsForkRoot(fs.readFileSync(file, 'utf8')))
     .map((file) => path.relative(root, file));
   assert.deepEqual(hits, ['tests/custom-imports-resolvable.test.js']);

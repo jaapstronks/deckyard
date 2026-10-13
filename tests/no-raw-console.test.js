@@ -24,6 +24,7 @@
  * Run with: node --test tests/no-raw-console.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -68,15 +69,6 @@ const CONSOLE_CALL =
 // past the guard and mask unrelated code.
 const CLI_TAIL_GUARD =
   /if\s*\(\s*process\.argv\[1\]\?\.endsWith\(.*\)\s*\{\s*$/;
-
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
 
 /**
  * Mark the lines belonging to CLI-tail blocks: from a line matching
@@ -125,7 +117,9 @@ test('no bare console.* under server/ (log through createLogger)', () => {
   const allowed = new Map(ALLOWLIST.map((a) => [a.file, a]));
   const violations = [];
 
-  for (const file of walk(path.join(repoRoot, 'server'))) {
+  for (const file of walkFiles(path.join(repoRoot, 'server'), {
+    extensions: ['.js'],
+  })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     const entry = allowed.get(rel);
     if (entry && entry.count === undefined) continue;
@@ -166,7 +160,9 @@ test('createLogger namespaces are kebab-case', () => {
   const NAMESPACE = /createLogger\(\s*'([^']*)'\s*\)/g;
   const OK = /^[a-z0-9]+(-[a-z0-9]+)*$/;
   const bad = [];
-  for (const file of walk(path.join(repoRoot, 'server'))) {
+  for (const file of walkFiles(path.join(repoRoot, 'server'), {
+    extensions: ['.js'],
+  })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     const src = fs.readFileSync(file, 'utf8');
     for (const m of src.matchAll(NAMESPACE)) {

@@ -38,6 +38,7 @@
  * Run with: node --test tests/ownership-transfer-authz.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -173,22 +174,6 @@ async function seed() {
 
 // --- The request double -----------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 const jsonBody = (res) => JSON.parse(String(res.body || '{}'));
 
 /**
@@ -215,7 +200,7 @@ async function call(method, pathname, { as = null, body } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handlePresentations({
     repoRoot: process.cwd(),

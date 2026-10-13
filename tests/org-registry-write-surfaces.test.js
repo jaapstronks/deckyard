@@ -29,6 +29,7 @@
  * Run with: node --test tests/org-registry-write-surfaces.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -36,7 +37,7 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
-import { walkJsFiles, callArguments } from './helpers/call-sites.js';
+import { callArguments } from './helpers/call-sites.js';
 import { brandSeedRow } from './helpers/theme-seed.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'b131']
@@ -368,7 +369,7 @@ test('no write surface resolves a slide type against the global registry', () =>
   for (const { fn, dirs, at } of SEAMS) {
     for (const dir of dirs) {
       const root = path.join(process.cwd(), 'server', dir);
-      for (const file of walkJsFiles(root)) {
+      for (const file of walkFiles(root, { extensions: ['.js'] })) {
         const source = fs.readFileSync(file, 'utf8');
         for (const args of callArguments(source, fn)) {
           const arg = args[at];

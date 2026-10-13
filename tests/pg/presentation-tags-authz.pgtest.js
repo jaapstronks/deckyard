@@ -25,6 +25,7 @@
  * Run with: DATABASE_URL=… npm run test:pg
  */
 
+import { createMockRes } from '../helpers/http-mocks.js';
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -72,31 +73,13 @@ const CAROL = {
 
 const DECK = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 
-function mockRes() {
-  return {
-    statusCode: null,
-    payload: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(payload) {
-      this.payload = payload ? JSON.parse(payload) : null;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 async function call(user, scope, method, body) {
   const req = Readable.from(
     body === undefined ? [] : [Buffer.from(JSON.stringify(body))],
   );
   req.method = method;
   req.headers = {};
-  const res = mockRes();
+  const res = createMockRes();
   const path = `/api/presentations/${DECK}/tags`;
   await handlePresentations({
     repoRoot: '/tmp',
@@ -197,14 +180,14 @@ pgDescribe('deck tags routes authorize the deck (real PostgreSQL)', () => {
     const get = await call(ALICE, scopeA, 'GET');
     assert.equal(get.statusCode, 200);
     assert.deepEqual(
-      get.payload.map((t) => t.name),
+      get.json().map((t) => t.name),
       ['keep', 'me'],
     );
 
     const put = await call(ALICE, scopeA, 'PUT', { tags: ['fresh'] });
     assert.equal(put.statusCode, 200);
     assert.deepEqual(
-      put.payload.map((t) => t.name),
+      put.json().map((t) => t.name),
       ['fresh'],
     );
     assert.deepEqual(await storedTagNames(db), ['fresh']);
@@ -213,10 +196,10 @@ pgDescribe('deck tags routes authorize the deck (real PostgreSQL)', () => {
   it('a refused tag name through the route is a 400 naming the field', async () => {
     const res = await call(ALICE, scopeA, 'PUT', { tags: ['keeper', '   '] });
     assert.equal(res.statusCode, 400);
-    assert.equal(res.payload.error, 'invalid');
-    assert.equal(res.payload.details.field, 'tags');
-    assert.equal(res.payload.details.index, 1);
-    assert.equal(res.payload.details.reason, 'blank');
+    assert.equal(res.json().error, 'invalid');
+    assert.equal(res.json().details.field, 'tags');
+    assert.equal(res.json().details.index, 1);
+    assert.equal(res.json().details.reason, 'blank');
     assert.deepEqual(await storedTagNames(db), ['keep', 'me']);
   });
 

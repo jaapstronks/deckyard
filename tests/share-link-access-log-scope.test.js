@@ -34,13 +34,14 @@
  * Run with: node --test tests/share-link-access-log-scope.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { callArguments, walkJsFiles } from './helpers/call-sites.js';
+import { callArguments } from './helpers/call-sites.js';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -229,7 +230,9 @@ const CONTRACTS = [
 test('no access-log call site passes a scope', () => {
   const offenders = [];
 
-  for (const file of walkJsFiles(path.join(repoRoot, 'server'))) {
+  for (const file of walkFiles(path.join(repoRoot, 'server'), {
+    extensions: ['.js'],
+  })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     const source = fs.readFileSync(file, 'utf8');
     for (const { fn, maxArgs } of CONTRACTS) {

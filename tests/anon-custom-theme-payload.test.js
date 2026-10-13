@@ -28,6 +28,7 @@
  * Run with: node --test tests/anon-custom-theme-payload.test.js
  */
 
+import { createMockRes, createMockReq } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { testScope } from './helpers/storage-scope.js';
@@ -105,34 +106,6 @@ test.beforeEach(() => {
 // Fakes
 // ---------------------------------------------------------------------------
 
-function fakeReq({ method = 'GET', headers = {}, body = null } = {}) {
-  const buf = Buffer.from(body == null ? '' : JSON.stringify(body), 'utf8');
-  return {
-    method,
-    headers,
-    socket: {},
-    async *[Symbol.asyncIterator]() {
-      yield buf;
-    },
-  };
-}
-
-function fakeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 const jsonBody = (res) => JSON.parse(String(res.body || '{}'));
 
 /** Presenter scope (states its organization — a state push is not anonymous). */
@@ -188,10 +161,10 @@ async function goLive(pres) {
 
 /** `POST /api/share/:token/verify` through the public dispatcher. */
 async function verifyShare(token, body = {}) {
-  const res = fakeRes();
+  const res = createMockRes();
   const handled = await handleSharePublicEndpoints({
     repoRoot: REPO_ROOT,
-    req: fakeReq({ method: 'POST', body }),
+    req: createMockReq({ method: 'POST', body }),
     res,
     url: new URL(`/api/share/${token}/verify`, 'http://localhost'),
   });
@@ -262,11 +235,11 @@ test('the theme payload is the render projection, not the stored row', async () 
 // ---------------------------------------------------------------------------
 
 async function followPresentation(presentationId) {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleFollowPresentation(
     {
       repoRoot: REPO_ROOT,
-      req: fakeReq({ method: 'GET' }),
+      req: createMockReq({ method: 'GET' }),
       res,
       url: new URL(
         `/api/follow/${presentationId}/presentation`,
@@ -307,10 +280,10 @@ test('default sends its resolved config to the follow audience', async () => {
 // ---------------------------------------------------------------------------
 
 async function sessionDeck(sessionId) {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleLiveSessionsPublic({
     repoRoot: REPO_ROOT,
-    req: fakeReq({ method: 'GET' }),
+    req: createMockReq({ method: 'GET' }),
     res,
     url: new URL(`/api/live-sessions/${sessionId}/deck`, 'http://localhost'),
   });

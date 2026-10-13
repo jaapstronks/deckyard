@@ -14,6 +14,7 @@
  * Run with: node --test tests/router-query-ownership.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -101,7 +102,6 @@ const ALLOWLIST = [
 ];
 
 /** Third-party code we neither wrote nor patch. */
-const SKIP_DIRS = new Set(['vendor']);
 
 /** Hand-rolled reads of the live querystring, in every spelling seen so far. */
 const PATTERNS = [
@@ -110,24 +110,14 @@ const PATTERNS = [
   /new URLSearchParams\(\s*(?:window\.|globalThis\.)?location/,
 ];
 
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      walk(full, out);
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
-      out.push(full);
-    }
-  }
-  return out;
-}
-
 test('guard: only the router parses the current querystring', () => {
   const allowed = new Set(ALLOWLIST.map((a) => a.file));
   const violations = [];
 
-  for (const file of walk(path.join(repoRoot, 'client'))) {
+  for (const file of walkFiles(path.join(repoRoot, 'client'), {
+    extensions: ['.js'],
+    skipDirs: ['vendor'],
+  })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     if (allowed.has(rel)) continue;
     const lines = fs.readFileSync(file, 'utf8').split('\n');
@@ -191,7 +181,10 @@ test('guard: only the router writes the address bar', () => {
   const allowed = new Set(ALLOWLIST.map((a) => a.file));
   const violations = [];
 
-  for (const file of walk(path.join(repoRoot, 'client'))) {
+  for (const file of walkFiles(path.join(repoRoot, 'client'), {
+    extensions: ['.js'],
+    skipDirs: ['vendor'],
+  })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     if (allowed.has(rel)) continue;
     const lines = fs.readFileSync(file, 'utf8').split('\n');
@@ -232,7 +225,10 @@ test('guard: the selected slide has one query spelling, `slideId` (B257-A, D157)
   // `?s=` was a read-only alias on load that nothing ever wrote; a second
   // spelling without a producer. Three controllers read it; none may again.
   const offenders = [];
-  for (const file of walk(path.join(repoRoot, 'client'))) {
+  for (const file of walkFiles(path.join(repoRoot, 'client'), {
+    extensions: ['.js'],
+    skipDirs: ['vendor'],
+  })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     const src = fs.readFileSync(file, 'utf8');
     if (/queryParam\(\s*['"]s['"]\s*\)/.test(src)) offenders.push(rel);
