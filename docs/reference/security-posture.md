@@ -130,6 +130,16 @@ attacker cannot burn CPU by forcing repeated hashes. (When `TRUST_PROXY` is set,
 the client IP is read from the trusted-proxy hop rather than a spoofable
 client-supplied header.)
 
+### Shared token-bucket backend
+
+All request limiters use the same capacity and continuous refill contract in Redis and memory. Redis refills, consumes and returns the remaining budget, full-reset timestamp and next-admission delay in one atomic Lua execution. Refused requests do not spend tokens. Idle Redis buckets expire when their budget has fully refilled.
+
+When Redis is unavailable, each process uses its own in-memory budget. This fallback does not preserve a shared budget across instances, and switching backends can admit a fresh burst. Application clocks supply timestamps, so instances should keep their clocks synchronized.
+
+Admin user creation uses the shared limiter with a burst capacity of 20 and a refill of 20 per hour, keyed by admin email across organizations. This replaces the former per-process hourly counter; one new token becomes available every three minutes after the burst.
+
+The internal Redis export is now `allowRequestRedisDetails(key, { capacity, refillPerSec })`; the former `checkRateLimitRedis(key, { capacity, windowSeconds })` sliding-window export has been removed. Forks importing it must migrate to the token-bucket parameters. Redis keys use the `ratelimit:token-bucket:` namespace; old sliding-window keys expire independently, so an upgrade begins a fresh budget.
+
 ## User-uploaded content is served inert
 
 **Where:** `server/utils/http.js` (`serveFile`, the `userUpload` option).

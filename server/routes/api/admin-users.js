@@ -30,6 +30,7 @@ import {
   resendInvitation,
 } from '../../storage/users.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
+import { allowRequest } from '../../utils/rate-limit.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import {
   getMembershipByEmail,
@@ -65,50 +66,10 @@ function adminUserError(res, result) {
 }
 const log = createLogger('admin-users');
 
-// ============================================================
-// RATE LIMITING
-// In-memory rate limiting for admin user operations
-// ============================================================
-
-const RATE_LIMIT_CREATE_PER_ADMIN = 20; // per hour
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
-
-// Map of adminEmail -> { count, resetAt }
-const createRateLimits = new Map();
-
-/**
- * Check and update rate limit for an admin.
- * @param {string} adminEmail - Admin's email address
- * @param {number} maxRequests - Maximum requests per window
- * @returns {boolean} - True if rate limited
- */
-function checkAdminRateLimit(adminEmail, maxRequests) {
-  const now = Date.now();
-  const entry = createRateLimits.get(adminEmail);
-
-  // Clean up expired entries periodically
-  if (createRateLimits.size > 1000) {
-    for (const [key, val] of createRateLimits) {
-      if (val.resetAt < now) createRateLimits.delete(key);
-    }
-  }
-
-  if (!entry || entry.resetAt < now) {
-    // New window
-    createRateLimits.set(adminEmail, {
-      count: 1,
-      resetAt: now + RATE_LIMIT_WINDOW_MS,
-    });
-    return false;
-  }
-
-  if (entry.count >= maxRequests) {
-    return true;
-  }
-
-  entry.count++;
-  return false;
-}
+// Per-admin account across organizations, matching the former email-keyed
+// limiter: burst of 20 creates, sustained refill of 20 per hour.
+const RATE_LIMIT_CREATE_PER_ADMIN = 20;
+const RATE_LIMIT_WINDOW_SECONDS = 60 * 60;
 
 /**
  * Build the setup URL for a new user invitation.
@@ -161,7 +122,12 @@ async function handleAdminUserCreate({
   authedUser: user,
 }) {
   // Rate limit user creation to prevent abuse
-  if (checkAdminRateLimit(user.email, RATE_LIMIT_CREATE_PER_ADMIN)) {
+  if (
+    !(await allowRequest(`admin-create:${user.email}`, {
+      capacity: RATE_LIMIT_CREATE_PER_ADMIN,
+      refillPerSec: RATE_LIMIT_CREATE_PER_ADMIN / RATE_LIMIT_WINDOW_SECONDS,
+    }))
+  ) {
     rateLimited(
       res,
       3600,

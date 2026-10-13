@@ -1,5 +1,6 @@
 import { mightRedisBeAvailable } from './redis-client.js';
 import { allowRequestRedisDetails } from './rate-limit-redis.js';
+import { normalizeRateLimitOptions } from './rate-limit-options.js';
 import { envBool, envInt } from '../config/utils.js';
 import {
   LOGIN_LIMITS,
@@ -135,8 +136,10 @@ function pruneBuckets(now) {
  * @returns {{allowed: boolean, limit: number, remaining: number, resetAt: number, retryAfter: number}}
  */
 function checkRequestInMemory(key, { capacity, refillPerSec }) {
-  const cap = Math.max(1, Number(capacity || 0) || 1);
-  const rps = Math.max(0.001, Number(refillPerSec || 0) || 1);
+  const { capacity: cap, refillPerSec: rps } = normalizeRateLimitOptions({
+    capacity,
+    refillPerSec,
+  });
   const now = Date.now();
 
   let b = buckets.get(key);
