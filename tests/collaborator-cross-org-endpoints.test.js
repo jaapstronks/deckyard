@@ -50,6 +50,7 @@
  * Run with: node --test tests/collaborator-cross-org-endpoints.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import { brandSeedRow } from './helpers/theme-seed.js';
 import assert from 'node:assert/strict';
@@ -66,7 +67,7 @@ const HOME_ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const AWAY_ORG = '00000000-0000-0000-0000-0000000000bb';
 const DECK = 'deck-under-test';
 
-import { callArguments, walkJsFiles } from './helpers/call-sites.js';
+import { callArguments } from './helpers/call-sites.js';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
@@ -472,7 +473,9 @@ const permissionCallArgs = (source) =>
 test('no getCollaboratorPermission() call site passes a scope', () => {
   const offenders = [];
 
-  for (const file of walkJsFiles(path.join(repoRoot, 'server'))) {
+  for (const file of walkFiles(path.join(repoRoot, 'server'), {
+    extensions: ['.js'],
+  })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     for (const args of permissionCallArgs(fs.readFileSync(file, 'utf8'))) {
       if (args.length > 2) offenders.push(`${rel}  (${args.length} arguments)`);

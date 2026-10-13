@@ -22,6 +22,7 @@
  * Run with: node --test tests/service-layer-presentation-translate.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -198,25 +199,6 @@ function stubModel(t) {
 
 // --- The three writers --------------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(String(payload)) : null;
-    },
-  };
-}
-
 function makeReq(body) {
   const req = Readable.from(
     body === undefined ? [] : [Buffer.from(JSON.stringify(body))],
@@ -229,7 +211,7 @@ function makeReq(body) {
 
 /** The editor's translate (or `translate/missing`), as `as`. */
 async function editorPost(as, body, path = 'translate') {
-  const res = makeRes();
+  const res = createMockRes();
   await handleInternalPresentations({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(as, { repoRoot: process.cwd() }),
@@ -243,7 +225,7 @@ async function editorPost(as, body, path = 'translate') {
 
 /** A v1 translate with `as`'s AI-capable key already authenticated. */
 async function v1Post(as, body) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleV1Translation({
     req: makeReq(body),
     res,
@@ -303,18 +285,18 @@ const CONTRACTS = {
     const res = await editorPost(as, body);
     return {
       status: res.statusCode,
-      field: res.body?.details?.field ?? null,
-      error: res.body?.error ?? null,
-      result: res.body,
+      field: res.json()?.details?.field ?? null,
+      error: res.json()?.error ?? null,
+      result: res.json(),
     };
   },
   v1: async (as, body) => {
     const res = await v1Post(as, v1Body(body));
     return {
       status: res.statusCode,
-      field: res.body?.details?.field ?? null,
-      error: res.body?.error ?? null,
-      result: res.body,
+      field: res.json()?.details?.field ?? null,
+      error: res.json()?.error ?? null,
+      result: res.json(),
     };
   },
   worker: async (as, body) => {
@@ -388,26 +370,26 @@ test('the contracts answer in their own envelope', async (t) => {
 
   const editor = await editorPost(OWNER, { from: 'nl', to: 'fr' });
   assert.equal(editor.statusCode, 200);
-  assert.equal(editor.body.ok, true);
-  assert.equal(editor.body.from, 'nl');
-  assert.equal(editor.body.to, 'fr');
+  assert.equal(editor.json().ok, true);
+  assert.equal(editor.json().from, 'nl');
+  assert.equal(editor.json().to, 'fr');
   assert.equal(
-    editor.body.presentation.i18n.versions.fr.title,
+    editor.json().presentation.i18n.versions.fr.title,
     'Feuille de route',
   );
 
   const v1 = await v1Post(OWNER, { targetLang: 'es' });
-  assert.equal(v1.statusCode, 200, JSON.stringify(v1.body));
-  assert.equal(v1.body.translated, true);
-  assert.equal(v1.body.from, 'nl', 'the active version is the source');
-  assert.equal(v1.body.to, 'es');
-  assert.deepEqual(Object.keys(v1.body.presentation).sort(), [
+  assert.equal(v1.statusCode, 200, JSON.stringify(v1.json()));
+  assert.equal(v1.json().translated, true);
+  assert.equal(v1.json().from, 'nl', 'the active version is the source');
+  assert.equal(v1.json().to, 'es');
+  assert.deepEqual(Object.keys(v1.json().presentation).sort(), [
     'i18n',
     'id',
     'revision',
     'title',
   ]);
-  assert.equal(v1.body.presentation.revision, storedDeck(db).revision);
+  assert.equal(v1.json().presentation.revision, storedDeck(db).revision);
 
   const job = await workerJob(OWNER, { from: 'nl', to: 'it' });
   assert.deepEqual(job, {
@@ -499,16 +481,16 @@ test('an absent source is the active version when the deck carries it, else the 
   const db = await installDb({ active: 'de' });
   const calls = stubModel(t);
   const res = await editorPost(OWNER, { to: 'fr' });
-  assert.equal(res.statusCode, 200, JSON.stringify(res.body));
-  assert.equal(res.body.from, 'de');
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  assert.equal(res.json().from, 'de');
   assert.equal(calls.length, 1);
   assert.equal(storedDeck(db).i18n.translation.fr.from, 'de');
 
   // Active names a version the deck does not have: the dominant one.
   const db2 = await installDb({ active: 'de', de: null });
   const res2 = await editorPost(OWNER, { to: 'fr' });
-  assert.equal(res2.statusCode, 200, JSON.stringify(res2.body));
-  assert.equal(res2.body.from, 'nl');
+  assert.equal(res2.statusCode, 200, JSON.stringify(res2.json()));
+  assert.equal(res2.json().from, 'nl');
   assert.equal(storedDeck(db2).i18n.translation.fr.from, 'nl');
 });
 
@@ -521,7 +503,7 @@ test('translating from a non-dominant version keeps that version (the seam reads
   stubModel(t);
 
   const res = await editorPost(OWNER, { from: 'de', to: 'fr' });
-  assert.equal(res.statusCode, 200, JSON.stringify(res.body));
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
 
   const row = storedDeck(db);
   // Every writer used to set `active = from` and write the loaded deck back,
@@ -577,10 +559,10 @@ test('translate/missing (wait): fills the gap only, marks running then done in t
     { from: 'nl', to: 'de' },
     'translate/missing',
   );
-  assert.equal(res.statusCode, 200, JSON.stringify(res.body));
-  assert.equal(res.body.updated, true);
-  assert.equal(res.body.started, false);
-  assert.equal(res.body.missingCount, 1);
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  assert.equal(res.json().updated, true);
+  assert.equal(res.json().started, false);
+  assert.equal(res.json().missingCount, 1);
   assert.equal(calls.length, 1, 'one model call');
   assert.deepEqual(
     presentationWrites(db, from),
@@ -593,7 +575,7 @@ test('translate/missing (wait): fills the gap only, marks running then done in t
   assert.equal(row.i18n.versions.de.slides[1].content.title, 'Deux', 'filled');
   assert.equal(row.i18n.translation.de.status, 'done');
   assert.equal(row.i18n.translation.de.missingCount, 0);
-  assert.equal(res.body.presentation.i18n.translation.de.status, 'done');
+  assert.equal(res.json().presentation.i18n.translation.de.status, 'done');
 
   // Nothing left to fill: answered without the model and without a write.
   const again = await editorPost(
@@ -601,8 +583,8 @@ test('translate/missing (wait): fills the gap only, marks running then done in t
     { from: 'nl', to: 'de' },
     'translate/missing',
   );
-  assert.equal(again.statusCode, 200, JSON.stringify(again.body));
-  assert.deepEqual(again.body, {
+  assert.equal(again.statusCode, 200, JSON.stringify(again.json()));
+  assert.deepEqual(again.json(), {
     ok: true,
     from: 'nl',
     to: 'de',
@@ -621,8 +603,8 @@ test('translate/missing (background): answers with the count and the fill lands 
     { from: 'nl', to: 'de', mode: 'background' },
     'translate/missing',
   );
-  assert.equal(res.statusCode, 200, JSON.stringify(res.body));
-  assert.deepEqual(res.body, {
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  assert.deepEqual(res.json(), {
     ok: true,
     from: 'nl',
     to: 'de',
@@ -658,8 +640,8 @@ test('translate/missing: an outsider is refused with 403 before any work, a miss
     'translate/missing',
   );
   assert.equal(noTarget.statusCode, 400);
-  assert.equal(noTarget.body.error, 'invalid');
-  assert.equal(noTarget.body.details.field, 'to');
+  assert.equal(noTarget.json().error, 'invalid');
+  assert.equal(noTarget.json().details.field, 'to');
 
   assert.equal(calls.length, 0);
   assert.deepEqual(storedDeck(db), before);

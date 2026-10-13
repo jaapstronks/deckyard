@@ -11,6 +11,7 @@
  * Run with: node --test tests/slide-library-save-route.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -19,29 +20,11 @@ import { handleSlideLibrary } from '../server/routes/api/slide-library.js';
 /** A library item id: a `uuid` column, declared so by the route (B399). */
 const ITEM_ID = '5b0c9d1e-2f3a-4b5c-8d6e-7f8091a2b3c4';
 
-function mockRes() {
-  return {
-    statusCode: null,
-    payload: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(payload) {
-      this.payload = payload ? JSON.parse(payload) : null;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 function call(method, path, body, headers = {}) {
   const req = Readable.from([Buffer.from(JSON.stringify(body))]);
   req.method = method;
   req.headers = headers;
-  const res = mockRes();
+  const res = createMockRes();
   return {
     res,
     ctx: {
@@ -68,9 +51,9 @@ for (const shelf of ['personal', 'organization']) {
       );
       assert.equal(await handleSlideLibrary(ctx), true);
       assert.equal(res.statusCode, 400);
-      assert.equal(res.payload.error, 'invalid');
-      assert.deepEqual(res.payload.details, { field: 'body' });
-      assert.match(res.payload.message, new RegExp(`"${key}"`));
+      assert.equal(res.json().error, 'invalid');
+      assert.deepEqual(res.json().details, { field: 'body' });
+      assert.match(res.json().message, new RegExp(`"${key}"`));
     });
   }
 
@@ -83,7 +66,7 @@ for (const shelf of ['personal', 'organization']) {
     );
     await handleSlideLibrary(ctx);
     assert.equal(res.statusCode, 400);
-    assert.deepEqual(res.payload.details, { field: 'content' });
+    assert.deepEqual(res.json().details, { field: 'content' });
   });
 
   for (const key of ['name', 'description', 'content']) {
@@ -92,7 +75,7 @@ for (const shelf of ['personal', 'organization']) {
       const { ctx, res } = call('PATCH', path, { [key]: value });
       assert.equal(await handleSlideLibrary(ctx), true);
       assert.equal(res.statusCode, 428);
-      assert.equal(res.payload.error, 'missing_if_match');
+      assert.equal(res.json().error, 'missing_if_match');
     });
   }
 }

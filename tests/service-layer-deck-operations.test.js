@@ -27,6 +27,7 @@
  * Run with: node --test tests/service-layer-deck-operations.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -232,25 +233,6 @@ function assertUnchanged(db, before, why) {
 
 // --- The three contracts ------------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(String(payload)) : null;
-    },
-  };
-}
-
 function makeReq(method, body) {
   const req = Readable.from(
     body === undefined ? [] : [Buffer.from(JSON.stringify(body))],
@@ -263,7 +245,7 @@ function makeReq(method, body) {
 
 /** A request on the internal `/api` contract, as `as`. */
 async function internal(handler, method, path, { as, body } = {}) {
-  const res = makeRes();
+  const res = createMockRes();
   await handler({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(as, { repoRoot: process.cwd() }),
@@ -277,7 +259,7 @@ async function internal(handler, method, path, { as, body } = {}) {
 
 /** A request on the public v1 contract, with OWNER's key already authenticated. */
 async function v1(handler, method, path, { body, permissions } = {}) {
-  const res = makeRes();
+  const res = createMockRes();
   await handler({
     req: makeReq(method, body),
     res,
@@ -346,8 +328,8 @@ test('internal list: the owner reads, an unknown status is refused, a stranger i
     as: OWNER,
   });
   assert.equal(ok.statusCode, 200);
-  assert.equal(ok.body.comments.length, 3);
-  assert.equal(ok.body.openCount, 2);
+  assert.equal(ok.json().comments.length, 3);
+  assert.equal(ok.json().openCount, 2);
 
   // Read as "all" without a word before B575.
   const bogus = await internal(
@@ -357,8 +339,8 @@ test('internal list: the owner reads, an unknown status is refused, a stranger i
     { as: OWNER },
   );
   assert.equal(bogus.statusCode, 400);
-  assert.equal(bogus.body.error, 'invalid');
-  assert.equal(bogus.body.details.field, 'status');
+  assert.equal(bogus.json().error, 'invalid');
+  assert.equal(bogus.json().details.field, 'status');
 
   const kind = await internal(
     handleInternalPresentations,
@@ -367,7 +349,7 @@ test('internal list: the owner reads, an unknown status is refused, a stranger i
     { as: OWNER },
   );
   assert.equal(kind.statusCode, 400);
-  assert.equal(kind.body.details.field, 'commentType');
+  assert.equal(kind.json().details.field, 'commentType');
 
   const stranger = await internal(handleInternalPresentations, 'GET', path, {
     as: STRANGER,
@@ -381,8 +363,8 @@ test('v1 list: an unknown status or since is 400 invalid naming the field', asyn
 
   const ok = await v1(handleV1Comments, 'GET', `${path}?since=2026-08-02`);
   assert.equal(ok.statusCode, 200);
-  assert.equal(ok.body.total, 2);
-  assert.equal(ok.body.since, '2026-08-02T00:00:00.000Z');
+  assert.equal(ok.json().total, 2);
+  assert.equal(ok.json().since, '2026-08-02T00:00:00.000Z');
 
   for (const [query, field] of [
     ['status=bogus', 'status'],
@@ -390,8 +372,8 @@ test('v1 list: an unknown status or since is 400 invalid naming the field', asyn
   ]) {
     const res = await v1(handleV1Comments, 'GET', `${path}?${query}`);
     assert.equal(res.statusCode, 400, query);
-    assert.equal(res.body.error, 'invalid', query);
-    assert.equal(res.body.details.field, field, query);
+    assert.equal(res.json().error, 'invalid', query);
+    assert.equal(res.json().details.field, field, query);
   }
 
   const foreign = await v1(
@@ -517,8 +499,8 @@ test('internal change-theme: the owner switches; an unknown theme and a stranger
     body: { newThemeId: 'no-such-theme' },
   });
   assert.equal(unknown.statusCode, 400);
-  assert.equal(unknown.body.error, 'invalid');
-  assert.equal(unknown.body.details.field, 'theme');
+  assert.equal(unknown.json().error, 'invalid');
+  assert.equal(unknown.json().details.field, 'theme');
   assertUnchanged(db, before, 'an unknown theme is refused');
 
   const stranger = await internal(handleInternalPresentations, 'POST', path, {
@@ -533,7 +515,7 @@ test('internal change-theme: the owner switches; an unknown theme and a stranger
     body: { newThemeId: AMETHYST },
   });
   assert.equal(ok.statusCode, 200);
-  assert.equal(ok.body.presentation.theme, AMETHYST);
+  assert.equal(ok.json().presentation.theme, AMETHYST);
   assert.equal(storedDeck(db).theme, AMETHYST);
   assert.equal(storedDeck(db).slides.length, 2, 'the slides stay');
 });
@@ -556,10 +538,14 @@ test('internal change-theme: a failed slide conversion is refused and changes no
     },
   });
   assert.equal(refused.statusCode, 400);
-  assert.equal(refused.body.error, 'invalid');
-  assert.equal(refused.body.details.field, 'convertSlides');
-  assert.equal(refused.body.details.index, 1, 'the entry that failed');
-  assert.match(refused.body.message, /slide-2/, 'the message names the slide');
+  assert.equal(refused.json().error, 'invalid');
+  assert.equal(refused.json().details.field, 'convertSlides');
+  assert.equal(refused.json().details.index, 1, 'the entry that failed');
+  assert.match(
+    refused.json().message,
+    /slide-2/,
+    'the message names the slide',
+  );
   assertUnchanged(db, before, 'a failed conversion is refused');
   assert.deepEqual(
     storedDeck(db).slides,
@@ -590,7 +576,7 @@ test('v1 PUT theme: an unknown theme and a foreign deck change nothing', async (
     { body: { theme: 'no-such-theme' } },
   );
   assert.equal(unknown.statusCode, 400);
-  assert.equal(unknown.body.details.field, 'theme');
+  assert.equal(unknown.json().details.field, 'theme');
   assertUnchanged(db, before, 'an unknown theme is refused');
 
   const foreignBefore = structuredClone(storedDeck(db, STRANGER_DECK_ID));

@@ -23,6 +23,7 @@
  * Run with: node --test tests/service-layer-presentation-create.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -155,25 +156,6 @@ function stubModel(t) {
 
 // --- The contracts ------------------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    body: null,
-    setHeader(name, value) {
-      this.headers[name] = value;
-    },
-    writeHead(status, headers) {
-      this.statusCode = status;
-      Object.assign(this.headers, headers || {});
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(String(payload)) : null;
-    },
-  };
-}
-
 function makeReq(body) {
   const req = Readable.from([Buffer.from(JSON.stringify(body))]);
   req.method = 'POST';
@@ -184,7 +166,7 @@ function makeReq(body) {
 
 /** The internal one-shot wizard, as the session user. */
 async function internalWizard(body) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleAiWizard({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(OWNER, { repoRoot: process.cwd() }),
@@ -198,7 +180,7 @@ async function internalWizard(body) {
 
 /** The v1 wizard with the owner's AI-capable key already authenticated. */
 async function v1Wizard(body) {
-  const res = makeRes();
+  const res = createMockRes();
   await handleV1Ai({
     req: makeReq(body),
     res,
@@ -335,11 +317,11 @@ test('v1 wizard: one insert, no update; 201 with the generated deck, owned by th
     raw: 'A talk about tide pools.',
     lang: 'en-GB',
   });
-  assert.equal(res.statusCode, 201, JSON.stringify(res.body));
+  assert.equal(res.statusCode, 201, JSON.stringify(res.json()));
   assert.equal(calls.length, 1, 'one model call');
   assertOneWrite(db, from, 'v1 wizard');
 
-  const pres = res.body.data?.presentation ?? res.body.presentation;
+  const pres = res.json().data?.presentation ?? res.json().presentation;
   assert.equal(pres.slideCount, 2);
   assert.equal(pres.title, 'Tide pools');
   assert.equal(pres.lang, 'en-GB');
@@ -364,8 +346,8 @@ test('v1 wizard: a generated deck over the size limit is a 409 limit_exceeded, n
   const res = await withSlideLimit(1, () =>
     v1Wizard({ raw: 'A talk about tide pools.' }),
   );
-  assert.equal(res.statusCode, 409, JSON.stringify(res.body));
-  assert.equal(res.body.error, 'limit_exceeded');
+  assert.equal(res.statusCode, 409, JSON.stringify(res.json()));
+  assert.equal(res.json().error, 'limit_exceeded');
   assert.equal(decks(db).length, 0, 'no empty deck is left behind');
 });
 
@@ -375,8 +357,8 @@ test('v1 wizard and MCP create_presentation: a refused body costs no model call'
 
   const v1 = await v1Wizard({ raw: 'Tide pools.', lang: 'xx' });
   assert.equal(v1.statusCode, 400);
-  assert.equal(v1.body.error, 'invalid');
-  assert.equal(v1.body.details.field, 'lang');
+  assert.equal(v1.json().error, 'invalid');
+  assert.equal(v1.json().details.field, 'lang');
 
   await assert.rejects(
     () =>
@@ -422,12 +404,12 @@ test('internal wizard: one insert, no update; 201 with the deck', async (t) => {
   const from = db.__queryLog.length;
 
   const res = await internalWizard({ raw: 'A talk about tide pools.' });
-  assert.equal(res.statusCode, 201, JSON.stringify(res.body));
+  assert.equal(res.statusCode, 201, JSON.stringify(res.json()));
   assertOneWrite(db, from, 'internal wizard');
 
   const [row] = decks(db);
-  assert.equal(row.id, res.body.id);
-  assert.equal(res.body.slides.length, 2);
+  assert.equal(row.id, res.json().id);
+  assert.equal(res.json().slides.length, 2);
   assert.deepEqual(
     row.slides.map((s) => s.content.title),
     ['Tide pools', 'Anemones'],

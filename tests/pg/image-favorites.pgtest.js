@@ -26,6 +26,7 @@
  * builds a real export and reads the bundle back.
  */
 
+import { createMockRes } from '../helpers/http-mocks.js';
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -157,31 +158,13 @@ const ALICE_USER = {
 };
 const BOB_USER = { id: 'user-bob', email: BOB, organizationRole: 'member' };
 
-function mockRes() {
-  return {
-    statusCode: null,
-    payload: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(payload) {
-      this.payload = payload ? JSON.parse(payload) : null;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 async function call(user, method, path, body) {
   const req = Readable.from(
     body === undefined ? [] : [Buffer.from(JSON.stringify(body))],
   );
   req.method = method;
   req.headers = { 'content-type': 'application/json' };
-  const res = mockRes();
+  const res = createMockRes();
   await handleImageLibrary({
     repoRoot: '/tmp',
     storageScope,
@@ -199,7 +182,7 @@ const star = (user, id) =>
 async function listedItem(user, id) {
   const res = await call(user, 'GET', '/api/image-library');
   assert.equal(res.statusCode, 200);
-  const item = res.payload.items.find((it) => it.id === id);
+  const item = res.json().items.find((it) => it.id === id);
   assert.ok(item, `image ${id} is listed`);
   return item;
 }
@@ -232,14 +215,14 @@ pgDescribe(
       const res = await call(ALICE_USER, 'GET', '/api/image-library');
       assert.equal(res.statusCode, 200);
 
-      const item = res.payload.items.find((it) => it.id === imageId);
+      const item = res.json().items.find((it) => it.id === imageId);
       assert.ok(item);
       assert.equal(item.favorite, false, 'nobody has starred it yet');
       assert.equal('isFavorite' in item, false, 'the old spelling is gone');
 
       // The starred-id list was the same fact in a second shape, with no reader.
       assert.equal(
-        'favoriteIds' in res.payload,
+        'favoriteIds' in res.json(),
         false,
         'no id list beside the per-item flag',
       );
@@ -249,14 +232,14 @@ pgDescribe(
       const on = await star(ALICE_USER, imageId);
       assert.equal(on.statusCode, 200);
       assert.deepEqual(
-        on.payload,
+        on.json(),
         { id: imageId, favorite: true },
         'the whole answer, so a second key cannot slip in unnoticed',
       );
       assert.equal((await listedItem(ALICE_USER, imageId)).favorite, true);
 
       const off = await star(ALICE_USER, imageId);
-      assert.deepEqual(off.payload, { id: imageId, favorite: false });
+      assert.deepEqual(off.json(), { id: imageId, favorite: false });
       assert.equal((await listedItem(ALICE_USER, imageId)).favorite, false);
     });
 
@@ -285,11 +268,11 @@ pgDescribe(
         `/api/image-library/${imageId}`,
       );
       assert.equal(alice.statusCode, 200);
-      assert.equal(alice.payload.favorite, true);
-      assert.equal('isFavorite' in alice.payload, false);
+      assert.equal(alice.json().favorite, true);
+      assert.equal('isFavorite' in alice.json(), false);
 
       const bob = await call(BOB_USER, 'GET', `/api/image-library/${imageId}`);
-      assert.equal(bob.payload.favorite, false);
+      assert.equal(bob.json().favorite, false);
     });
 
     it('a save answers with the star still on the item', async () => {
@@ -305,9 +288,9 @@ pgDescribe(
         },
       );
       assert.equal(saved.statusCode, 200);
-      assert.equal(saved.payload.description, 'Edited while starred');
-      assert.equal(saved.payload.favorite, true, 'the star survives the save');
-      assert.equal('isFavorite' in saved.payload, false);
+      assert.equal(saved.json().description, 'Edited while starred');
+      assert.equal(saved.json().favorite, true, 'the star survives the save');
+      assert.equal('isFavorite' in saved.json(), false);
     });
 
     it('`favorite` is derived, never an input to a save', async () => {
@@ -324,7 +307,7 @@ pgDescribe(
       );
       assert.equal(saved.statusCode, 200);
       assert.equal(
-        saved.payload.favorite,
+        saved.json().favorite,
         false,
         'the patch cannot write the caller a star',
       );
@@ -337,8 +320,8 @@ pgDescribe(
         title: 'Fresh',
       });
       assert.equal(res.statusCode, 201);
-      assert.equal(res.payload.favorite, false, 'a fresh image is nobody’s');
-      assert.equal('isFavorite' in res.payload, false);
+      assert.equal(res.json().favorite, false, 'a fresh image is nobody’s');
+      assert.equal('isFavorite' in res.json(), false);
     });
   },
 );

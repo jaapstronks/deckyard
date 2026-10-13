@@ -26,12 +26,13 @@
  * Run with: node --test tests/one-slide-factory.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { walkJsFiles, callArguments } from './helpers/call-sites.js';
+import { callArguments } from './helpers/call-sites.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
 import { newSlide } from '../shared/slide-types/presentation.js';
 import { deckToPresentationParts } from '../shared/slide-types/deck.js';
@@ -320,7 +321,9 @@ const CLONE_ALLOWED = new Set([
 test('only the shared resolver composes a slide from a type default', () => {
   const offenders = [];
   for (const dir of ['client', 'server', 'shared']) {
-    for (const file of walkJsFiles(path.join(process.cwd(), dir))) {
+    for (const file of walkFiles(path.join(process.cwd(), dir), {
+      extensions: ['.js'],
+    })) {
       const rel = path.relative(process.cwd(), file);
       if (CLONE_ALLOWED.has(rel)) continue;
       const source = withoutComments(fs.readFileSync(file, 'utf8'));
@@ -359,7 +362,9 @@ test('every deck normalization is given a theme, a language and a type map', () 
   // the call sites no test drives.
   const offenders = [];
   for (const dir of ['server', 'shared', 'client']) {
-    for (const file of walkJsFiles(path.join(process.cwd(), dir))) {
+    for (const file of walkFiles(path.join(process.cwd(), dir), {
+      extensions: ['.js'],
+    })) {
       const source = withoutComments(fs.readFileSync(file, 'utf8'));
       for (const args of callArguments(source, 'deckToPresentationParts')) {
         if (
@@ -390,7 +395,9 @@ test('every slide composition and conversion is given a theme and a type map', (
   // two such routes.
   const offenders = [];
   for (const dir of ['server', 'shared', 'client']) {
-    for (const file of walkJsFiles(path.join(process.cwd(), dir))) {
+    for (const file of walkFiles(path.join(process.cwd(), dir), {
+      extensions: ['.js'],
+    })) {
       const rel = path.relative(process.cwd(), file);
       const source = withoutComments(fs.readFileSync(file, 'utf8'));
       for (const args of callArguments(source, '\\bnewSlide')) {
@@ -466,7 +473,9 @@ test('no route builds a new slide as a bare literal (B272)', () => {
   // defaults, no instance keys, no notes or visibility, no theme ground. A new
   // slide under `server/routes/` is made by `newSlide()`.
   const offenders = [];
-  for (const file of walkJsFiles(path.join(process.cwd(), 'server/routes'))) {
+  for (const file of walkFiles(path.join(process.cwd(), 'server/routes'), {
+    extensions: ['.js'],
+  })) {
     const rel = path.relative(process.cwd(), file);
     if (SLIDE_LITERAL_ALLOWED.has(rel)) continue;
     const source = withoutComments(fs.readFileSync(file, 'utf8'));

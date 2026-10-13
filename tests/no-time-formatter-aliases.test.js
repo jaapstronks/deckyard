@@ -20,6 +20,7 @@
  * Run with: node --test tests/no-time-formatter-aliases.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -28,8 +29,6 @@ import { fileURLToPath } from 'node:url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
-
-const SKIP_DIRS = new Set(['vendor', 'node_modules']);
 
 // Canonical time/date/duration formatters → the one module allowed to define each.
 const OWNED = {
@@ -43,20 +42,11 @@ const OWNED = {
 // Retired `fmt*` spellings that must not reappear as an identifier anywhere.
 const RETIRED = ['fmtDate', 'fmtRelativeTime'];
 
-function walk(dir, out = []) {
-  if (!fs.existsSync(dir)) return out;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      walk(path.join(dir, entry.name), out);
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
-      out.push(path.join(dir, entry.name));
-    }
-  }
-  return out;
-}
-
-const clientFiles = walk(path.join(repoRoot, 'client'));
+const clientFiles = walkFiles(path.join(repoRoot, 'client'), {
+  extensions: ['.js'],
+  skipDirs: ['vendor', 'node_modules'],
+  missingOk: true,
+});
 
 /** A `function NAME` or `const/let/var NAME =` declaration of NAME. */
 function definesName(src, name) {

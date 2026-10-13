@@ -39,6 +39,7 @@
  * Run with: node --test tests/organization-admin-gates.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -209,22 +210,6 @@ test('there is one gate, and both halves read that one', async () => {
 // Mirror 1 — the question moderator hatch (routes/api/questions.js)
 // ===========================================================================
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 /**
  * Drive one request through an exported route dispatcher, so the capture
  * groups and the table order are part of what is under test.
@@ -242,7 +227,7 @@ async function call(handler, method, pathname, { as = null } = {}) {
     socket: { remoteAddress: '203.0.113.9' },
     async *[Symbol.asyncIterator]() {},
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handler({
     repoRoot: REPO_ROOT,

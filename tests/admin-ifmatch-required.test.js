@@ -17,6 +17,7 @@
  * Run with: node --test tests/admin-ifmatch-required.test.js
  */
 
+import { createMockRes, createMockReq } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { testScope } from './helpers/storage-scope.js';
@@ -61,32 +62,6 @@ test.after(() => {
 });
 
 /** A request whose body streams `body` as JSON, with the given method/headers. */
-function fakeReq({ method = 'PUT', headers = {}, body = null } = {}) {
-  const buf = Buffer.from(body == null ? '' : JSON.stringify(body), 'utf8');
-  return {
-    method,
-    headers,
-    async *[Symbol.asyncIterator]() {
-      yield buf;
-    },
-  };
-}
-
-function fakeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
 
 /** Create a fresh deck owned by OWNER; returns the stored presentation. */
 async function seedDeck() {
@@ -108,11 +83,15 @@ const owner = sessionFor(OWNER, { isAdmin: false });
 
 test('PUT without If-Match is 428 for an admin (escape hatch removed)', async () => {
   const pres = await seedDeck();
-  const res = fakeRes();
+  const res = createMockRes();
   await handlePresentationItem(
     {
       storageScope: testScope(),
-      req: fakeReq({ method: 'PUT', headers: {}, body: { title: 'Changed' } }),
+      req: createMockReq({
+        method: 'PUT',
+        headers: {},
+        body: { title: 'Changed' },
+      }),
       res,
       url: `/api/presentations/${pres.id}`,
       authedUser: admin,
@@ -131,11 +110,15 @@ test('PUT without If-Match is 428 for an admin (escape hatch removed)', async ()
 
 test('PUT without If-Match is 428 for a non-admin owner too', async () => {
   const pres = await seedDeck();
-  const res = fakeRes();
+  const res = createMockRes();
   await handlePresentationItem(
     {
       storageScope: testScope(),
-      req: fakeReq({ method: 'PUT', headers: {}, body: { title: 'Changed' } }),
+      req: createMockReq({
+        method: 'PUT',
+        headers: {},
+        body: { title: 'Changed' },
+      }),
       res,
       url: `/api/presentations/${pres.id}`,
       authedUser: owner,
@@ -147,11 +130,11 @@ test('PUT without If-Match is 428 for a non-admin owner too', async () => {
 
 test('PUT with a matching If-Match still succeeds for an admin', async () => {
   const pres = await seedDeck();
-  const res = fakeRes();
+  const res = createMockRes();
   await handlePresentationItem(
     {
       storageScope: testScope(),
-      req: fakeReq({
+      req: createMockReq({
         method: 'PUT',
         headers: { 'if-match': String(pres.revision) },
         body: { ...pres, title: 'Properly merged' },
@@ -179,12 +162,12 @@ test('POST /visibility without If-Match is 428 for an admin', async () => {
     handlePresentationVisibility(
       {
         storageScope: testScope(),
-        req: fakeReq({
+        req: createMockReq({
           method: 'PATCH',
           headers: {},
           body: { visibility: 'organization' },
         }),
-        res: fakeRes(),
+        res: createMockRes(),
         authedUser: admin,
       },
       pres.id,
@@ -198,11 +181,11 @@ test('POST /restore without If-Match is 428 for an admin', async () => {
   const version = await createPresentationVersion(testScope(), pres.id, pres, {
     actorEmail: OWNER,
   });
-  const res = fakeRes();
+  const res = createMockRes();
   await handlePresentationRestoreVersion(
     {
       storageScope: testScope(),
-      req: fakeReq({ method: 'POST', headers: {}, body: {} }),
+      req: createMockReq({ method: 'POST', headers: {}, body: {} }),
       res,
       authedUser: admin,
     },

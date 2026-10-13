@@ -26,6 +26,7 @@
  * Run with: node --test tests/env-manifest.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -61,15 +62,6 @@ function* envReads(src) {
   for (const re of ENV_READS) {
     for (const m of src.matchAll(re)) yield m;
   }
-}
-
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
 }
 
 function declaredVars() {
@@ -110,7 +102,7 @@ test('every env var the engine reads is declared in .env.example', () => {
   const undeclared = new Map(); // var -> first read site
 
   for (const file of SOURCE_TREES.flatMap((tree) =>
-    walk(path.join(repoRoot, tree)),
+    walkFiles(path.join(repoRoot, tree), { extensions: ['.js'] }),
   )) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     const src = fs.readFileSync(file, 'utf8');
@@ -137,7 +129,7 @@ test('every env var the engine reads is declared in .env.example', () => {
 test('the exempt list only names vars the engine actually reads', () => {
   const read = new Set();
   for (const file of SOURCE_TREES.flatMap((tree) =>
-    walk(path.join(repoRoot, tree)),
+    walkFiles(path.join(repoRoot, tree), { extensions: ['.js'] }),
   )) {
     const src = fs.readFileSync(file, 'utf8');
     for (const m of envReads(src)) read.add(m[1]);

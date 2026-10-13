@@ -38,6 +38,7 @@
  * Run with: node --test tests/question-moderation-routes.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -147,22 +148,6 @@ async function seed({ slides } = {}) {
 
 // --- The request double -----------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 const jsonBody = (res) => JSON.parse(String(res.body || '{}'));
 
 /**
@@ -187,7 +172,7 @@ async function call(method, pathname, { as = null, body } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handleQuestions({
     repoRoot: REPO_ROOT,
@@ -552,7 +537,7 @@ test('an anonymous caller is refused 401 by the running /api dispatcher', async 
       headers: { host: 'decks.example.test' },
       socket: { remoteAddress: '203.0.113.9' },
     };
-    const res = makeRes();
+    const res = createMockRes();
     await handleApi({
       repoRoot: REPO_ROOT,
       req,

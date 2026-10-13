@@ -33,6 +33,7 @@
  * Run with: node --test tests/anon-follow-and-share-surfaces.test.js
  */
 
+import { createMockRes, createMockReq } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -142,34 +143,6 @@ test.beforeEach(() => {
 // Fakes
 // ---------------------------------------------------------------------------
 
-function fakeReq({ method = 'GET', headers = {}, body = null } = {}) {
-  const buf = Buffer.from(body == null ? '' : JSON.stringify(body), 'utf8');
-  return {
-    method,
-    headers,
-    socket: {},
-    async *[Symbol.asyncIterator]() {
-      yield buf;
-    },
-  };
-}
-
-function fakeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 const jsonBody = (res) => JSON.parse(String(res.body || '{}'));
 
 /** Presenter scope (states its organization — a state push is not anonymous). */
@@ -229,9 +202,9 @@ async function callQuestions({
   body,
   headers,
 }) {
-  const res = fakeRes();
+  const res = createMockRes();
   const handled = await handleFollowQuestions(
-    { repoRoot: REPO_ROOT, req: fakeReq({ method, body, headers }), res },
+    { repoRoot: REPO_ROOT, req: createMockReq({ method, body, headers }), res },
     presentationId,
   );
   return { res, handled };
@@ -338,9 +311,9 @@ test('an upvote on a deck that is not live is refused (400)', async () => {
     ownerEmail: OWNER,
     slides: [{ type: 'content-slide', content: { title: 'A' } }],
   });
-  const res = fakeRes();
+  const res = createMockRes();
   await handleFollowUpvote(
-    { repoRoot: REPO_ROOT, req: fakeReq({ method: 'POST' }), res },
+    { repoRoot: REPO_ROOT, req: createMockReq({ method: 'POST' }), res },
     pres.id,
     'some-question-id',
   );
@@ -367,9 +340,9 @@ async function callCancel({
   headers,
   method = 'POST',
 }) {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleFollowCancel(
-    { repoRoot: REPO_ROOT, req: fakeReq({ method, headers }), res },
+    { repoRoot: REPO_ROOT, req: createMockReq({ method, headers }), res },
     presentationId,
     questionId,
   );
@@ -463,11 +436,11 @@ test('cancel rejects an unsupported method (405)', async () => {
 // ---------------------------------------------------------------------------
 
 async function callInteractionsCurrent({ presentationId, headers } = {}) {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleFollowInteractionsCurrent(
     {
       repoRoot: REPO_ROOT,
-      req: fakeReq({ method: 'GET', headers }),
+      req: createMockReq({ method: 'GET', headers }),
       res,
       url: new URL(
         `/api/follow/${presentationId}/interactions/current`,
@@ -480,9 +453,9 @@ async function callInteractionsCurrent({ presentationId, headers } = {}) {
 }
 
 async function callVote({ presentationId, slideId, body }) {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleFollowInteractionVote(
-    { repoRoot: REPO_ROOT, req: fakeReq({ method: 'POST', body }), res },
+    { repoRoot: REPO_ROOT, req: createMockReq({ method: 'POST', body }), res },
     presentationId,
     slideId,
   );
@@ -565,9 +538,9 @@ async function callInteractionState({
   method = 'GET',
   headers,
 }) {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleFollowInteractionState(
-    { repoRoot: REPO_ROOT, req: fakeReq({ method, headers }), res },
+    { repoRoot: REPO_ROOT, req: createMockReq({ method, headers }), res },
     presentationId,
     slideId,
   );
@@ -580,9 +553,9 @@ async function callFeedback({
   body,
   method = 'POST',
 }) {
-  const res = fakeRes();
+  const res = createMockRes();
   await handleFollowInteractionFeedback(
-    { repoRoot: REPO_ROOT, req: fakeReq({ method, body }), res },
+    { repoRoot: REPO_ROOT, req: createMockReq({ method, body }), res },
     presentationId,
     slideId,
   );
@@ -757,10 +730,10 @@ test('the audience write paths map their storage reasons to deliberate statuses'
 const CLIENT_DIR = path.join(process.cwd(), 'client');
 
 async function callShare({ token, method = 'GET' }) {
-  const res = fakeRes();
+  const res = createMockRes();
   const handled = await handleShareLink({
     repoRoot: process.cwd(),
-    req: fakeReq({ method, headers: { host: 'example.com' } }),
+    req: createMockReq({ method, headers: { host: 'example.com' } }),
     res,
     url: new URL(`/s/${token}`, 'http://example.com'),
     clientDir: CLIENT_DIR,
@@ -866,12 +839,12 @@ test('the share viewer ignores a non-GET request', async () => {
  * these two rows pin that it is the language of the slides actually served.
  */
 async function callFollowPresentation(presentationId, { lang } = {}) {
-  const res = fakeRes();
+  const res = createMockRes();
   const qs = lang ? `?lang=${encodeURIComponent(lang)}` : '';
   const handled = await handleFollowPresentation(
     {
       repoRoot: REPO_ROOT,
-      req: fakeReq({ method: 'GET' }),
+      req: createMockReq({ method: 'GET' }),
       res,
       url: new URL(
         `/api/follow/${presentationId}/presentation${qs}`,
@@ -969,10 +942,10 @@ function storeSlides(presId, rewrite) {
 
 /** Drive a public dispatcher at `path`; resolve status and JSON body. */
 async function callPublic(handler, { path, method = 'POST', body }) {
-  const res = fakeRes();
+  const res = createMockRes();
   const handled = await handler({
     repoRoot: process.cwd(),
-    req: fakeReq({
+    req: createMockReq({
       method,
       body,
       headers: { 'content-type': 'application/json' },
