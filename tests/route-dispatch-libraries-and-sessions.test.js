@@ -19,6 +19,7 @@
  * Run with: node --test tests/route-dispatch-libraries-and-sessions.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -62,23 +63,8 @@ function select(routes, method, pathname) {
   return null;
 }
 
-function mockRes() {
-  return {
-    statusCode: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end() {},
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
-
 function ctx(method, pathname, authedUser = { email: 'a@b.test' }) {
-  const res = mockRes();
+  const res = createMockRes();
   return {
     res,
     ctx: {

@@ -26,6 +26,7 @@
  * Run with: node --test tests/tag-name-contract.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
@@ -36,24 +37,6 @@ import { testScope } from './helpers/storage-scope.js';
 // A test is the session, so it states the organization it acts in; the
 // refusals below land before any query, so no database is involved.
 const storageScope = testScope();
-
-function mockRes() {
-  return {
-    statusCode: null,
-    payload: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(payload) {
-      this.payload = payload ? JSON.parse(payload) : null;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
 
 function jsonReq(method, body) {
   const req = Readable.from([Buffer.from(JSON.stringify(body))]);
@@ -74,7 +57,7 @@ const REFUSED = [
 
 for (const { label, name, reason } of REFUSED) {
   test(`POST /api/tags: ${label} is a 400 naming the field`, async () => {
-    const res = mockRes();
+    const res = createMockRes();
     await handleTags({
       storageScope,
       req: jsonReq('POST', { name }),
@@ -82,19 +65,19 @@ for (const { label, name, reason } of REFUSED) {
       url: { pathname: '/api/tags', searchParams: new URLSearchParams() },
     });
     assert.equal(res.statusCode, 400);
-    assert.equal(res.payload.error, 'invalid');
-    assert.equal(res.payload.details.field, 'name');
+    assert.equal(res.json().error, 'invalid');
+    assert.equal(res.json().details.field, 'name');
     assert.equal(
-      res.payload.details.index,
+      res.json().details.index,
       undefined,
       'a single name has nowhere to point',
     );
-    assert.equal(res.payload.details.reason, reason);
+    assert.equal(res.json().details.reason, reason);
   });
 }
 
 test('POST /api/tags: a missing name is refused as a blank one', async () => {
-  const res = mockRes();
+  const res = createMockRes();
   await handleTags({
     storageScope,
     req: jsonReq('POST', {}),
@@ -102,7 +85,7 @@ test('POST /api/tags: a missing name is refused as a blank one', async () => {
     url: { pathname: '/api/tags', searchParams: new URLSearchParams() },
   });
   assert.equal(res.statusCode, 400);
-  assert.equal(res.payload.error, 'invalid');
-  assert.equal(res.payload.details.field, 'name');
-  assert.equal(res.payload.details.reason, 'blank');
+  assert.equal(res.json().error, 'invalid');
+  assert.equal(res.json().details.field, 'name');
+  assert.equal(res.json().details.reason, 'blank');
 });

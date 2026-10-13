@@ -16,24 +16,6 @@
  * that blinds them fails loudly.
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
-
-/**
- * Every `.js` file under a directory, recursively.
- * @param {string} dir - Directory to walk.
- * @param {string[]} [out] - Accumulator.
- * @returns {string[]} Absolute paths.
- */
-export function walkJsFiles(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walkJsFiles(full, out);
-    else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
-
 /**
  * The arguments of every `<fn>(...)` call in a source file, split on top-level
  * commas. Scans by bracket depth so an object literal or a nested call in an

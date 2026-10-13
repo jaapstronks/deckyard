@@ -29,6 +29,7 @@
  * Run with: node --test tests/imagekit-copy-on-pick.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
@@ -141,22 +142,6 @@ function stubFetch({
 }
 
 /** A response double capturing the status/body the http helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
 
 /** Drive `handleMedia` the way the router does. */
 async function call(method, pathAndQuery, { as = null, body } = {}) {
@@ -169,7 +154,7 @@ async function call(method, pathAndQuery, { as = null, body } = {}) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const authedUser = as || undefined;
   const handled = await handleMedia({
     repoRoot: process.cwd(),
@@ -195,13 +180,13 @@ test('copies the asset into own media and answers a URL this install serves', as
 
   assert.equal(res.statusCode, 201);
   assert.ok(
-    res.body.url.startsWith('/uploads/'),
-    `expected an own-media URL, got ${res.body.url}`,
+    res.json().url.startsWith('/uploads/'),
+    `expected an own-media URL, got ${res.json().url}`,
   );
-  assert.notEqual(res.body.url, CANONICAL_URL);
-  assert.equal(res.body.sourceUrl, CANONICAL_URL);
-  assert.equal(res.body.mime, 'image/gif');
-  assert.ok(res.body.bytes > 0);
+  assert.notEqual(res.json().url, CANONICAL_URL);
+  assert.equal(res.json().sourceUrl, CANONICAL_URL);
+  assert.equal(res.json().mime, 'image/gif');
+  assert.ok(res.json().bytes > 0);
 
   // The fileId was resolved at the source before anything was fetched.
   assert.ok(seen.fetched[0].startsWith(DETAILS_URL));
@@ -210,7 +195,7 @@ test('copies the asset into own media and answers a URL this install serves', as
   // And the bytes really are on disk, not just promised.
   const onDisk = path.join(
     uploadsTmpDir,
-    res.body.url.replace('/uploads/', ''),
+    res.json().url.replace('/uploads/', ''),
   );
   const stat = await fs.stat(onDisk);
   assert.ok(stat.size > 0, 'the copied image was written to own media');
@@ -222,9 +207,9 @@ test('the stored object is named after the DAM asset, so it stays recognisable',
 
   assert.equal(res.statusCode, 201);
   assert.match(
-    res.body.url,
+    res.json().url,
     /\/uploads\/team-photo-/,
-    `expected the asset name in the key, got ${res.body.url}`,
+    `expected the asset name in the key, got ${res.json().url}`,
   );
 });
 
@@ -241,7 +226,7 @@ test("a transformation on the file's own URL is kept", async () => {
   );
 
   assert.equal(res.statusCode, 201);
-  assert.equal(res.body.sourceUrl, withTr, 'the transformation survives');
+  assert.equal(res.json().sourceUrl, withTr, 'the transformation survives');
   assert.equal(seen.fetched[1], withTr);
 });
 
@@ -287,7 +272,7 @@ test('a URL that is not this file is refused, and never fetched', async () => {
   );
 
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /does not belong/i);
+  assert.match(res.json().message, /does not belong/i);
   assert.equal(
     seen.fetched.length,
     1,
@@ -319,7 +304,7 @@ test('SSRF: a file whose ImageKit URL resolves into private space is not fetched
 
   assert.equal(res.statusCode, 400);
   assert.equal(seen.fetched.length, 1, 'the blocked address was never fetched');
-  assert.equal(res.body.error, 'import_failed');
+  assert.equal(res.json().error, 'import_failed');
 });
 
 // ===========================================================================
@@ -342,9 +327,9 @@ test('a failed image fetch refuses instead of handing back the ImageKit URL', as
   const { res } = await importImage({ fileId: FILE_ID }, { as: USER });
 
   assert.equal(res.statusCode, 400);
-  assert.equal(res.body.ok, false);
+  assert.equal(res.json().ok, false);
   assert.equal(
-    res.body.url,
+    res.json().url,
     undefined,
     'a refusal must not answer a URL of any kind — least of all the external one',
   );
@@ -379,10 +364,10 @@ const upstreamError = (status) => () => ({
 /** The one refusal shape, with nothing of ImageKit's payload in it. */
 function assertLookupRefusal(res) {
   assert.equal(res.statusCode, 502);
-  assert.equal(res.body.ok, false);
-  assert.equal(res.body.error, 'import_failed');
-  assert.equal(res.body.url, undefined);
-  const wire = JSON.stringify(res.body);
+  assert.equal(res.json().ok, false);
+  assert.equal(res.json().error, 'import_failed');
+  assert.equal(res.json().url, undefined);
+  const wire = JSON.stringify(res.json());
   assert.doesNotMatch(wire, /does not exist|support@imagekit|"help"/);
 }
 
@@ -419,7 +404,7 @@ test('fileId is required', async () => {
   stubFetch();
   const { res } = await importImage({}, { as: USER });
   assert.equal(res.statusCode, 400);
-  assert.match(res.body.message, /fileId/);
+  assert.match(res.json().message, /fileId/);
 });
 
 // ===========================================================================
@@ -446,7 +431,7 @@ test('a member of another organization is still a signed-in caller', async () =>
     { as: { ...USER, organizationId: OTHER_ORG } },
   );
   assert.equal(res.statusCode, 201);
-  assert.ok(res.body.url.startsWith('/uploads/'));
+  assert.ok(res.json().url.startsWith('/uploads/'));
 });
 
 test('IMAGEKIT_ONLY refuses the copy — there is no own media to copy into', async () => {
@@ -455,7 +440,7 @@ test('IMAGEKIT_ONLY refuses the copy — there is no own media to copy into', as
   try {
     const { res } = await importImage({ fileId: FILE_ID }, { as: USER });
     assert.equal(res.statusCode, 400);
-    assert.equal(res.body.error, 'uploads_disabled');
+    assert.equal(res.json().error, 'uploads_disabled');
     assert.equal(seen.fetched.length, 0, 'refused before any call to ImageKit');
   } finally {
     delete process.env.IMAGEKIT_ONLY;
@@ -468,7 +453,7 @@ test('uploads switched off refuses the copy the same way', async () => {
   try {
     const { res } = await importImage({ fileId: FILE_ID }, { as: USER });
     assert.equal(res.statusCode, 400);
-    assert.equal(res.body.error, 'uploads_disabled');
+    assert.equal(res.json().error, 'uploads_disabled');
     assert.equal(seen.fetched.length, 0);
   } finally {
     delete process.env.UPLOADS_ENABLED;
@@ -481,7 +466,7 @@ test('demo mode refuses the copy', async () => {
   try {
     const { res } = await importImage({ fileId: FILE_ID }, { as: USER });
     assert.equal(res.statusCode, 400);
-    assert.match(res.body.message, /demo\/sandbox/i);
+    assert.match(res.json().message, /demo\/sandbox/i);
     assert.equal(seen.fetched.length, 0);
   } finally {
     delete process.env.DEMO_MODE;

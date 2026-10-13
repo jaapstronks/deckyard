@@ -30,6 +30,7 @@
  * Run with: node --test tests/default-org-fallback-guard.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -83,15 +84,6 @@ const ALLOWLIST = [
 // has no following `(`, so imports never trip the guard.
 const CALL = /getDefaultOrganizationId\s*\(/;
 
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
-
 function callSites(file) {
   const rel = path.relative(repoRoot, file).split(path.sep).join('/');
   const lines = fs.readFileSync(file, 'utf8').split('\n');
@@ -110,7 +102,9 @@ test('getDefaultOrganizationId() is only called from the sanctioned allowlist', 
   const callers = new Set();
   const violations = [];
 
-  for (const file of walk(path.join(repoRoot, TARGET_DIR))) {
+  for (const file of walkFiles(path.join(repoRoot, TARGET_DIR), {
+    extensions: ['.js'],
+  })) {
     const { rel, hits } = callSites(file);
     if (hits.length === 0) continue;
     callers.add(rel);

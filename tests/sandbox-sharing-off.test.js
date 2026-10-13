@@ -22,6 +22,7 @@
  * Run with: node --test tests/sandbox-sharing-off.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -123,22 +124,6 @@ async function seedAliceDeck() {
 
 // --- The request double -----------------------------------------------------
 
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload;
-    },
-  };
-}
-
 const jsonBody = (res) => JSON.parse(String(res.body || '{}'));
 
 /**
@@ -161,7 +146,7 @@ async function call(dispatcher, method, pathAndQuery, { as, body }) {
       if (payload) yield Buffer.from(payload, 'utf8');
     },
   };
-  const res = makeRes();
+  const res = createMockRes();
   const handled = await dispatcher({
     repoRoot: process.cwd(),
     storageScope: createStorageScope(as, { repoRoot: process.cwd() }),

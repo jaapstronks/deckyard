@@ -12,6 +12,7 @@
  * Run with: node --test tests/slide-library-type-declaration.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -22,24 +23,6 @@ import { isLibrarySlideType } from '../shared/slide-types/policy.js';
 import { validateSlideTypeDefinition } from '../shared/slide-types/validate-definition.js';
 import { handleSlideLibrary } from '../server/routes/api/slide-library.js';
 import { handleSlideTypes } from '../server/routes/api/slide-types.js';
-
-function mockRes() {
-  return {
-    statusCode: null,
-    payload: null,
-    headers: {},
-    writeHead(c, headers) {
-      this.statusCode = c;
-      Object.assign(this.headers, headers);
-    },
-    end(payload) {
-      this.payload = payload ? JSON.parse(payload) : null;
-    },
-    setHeader(k, v) {
-      this.headers[k] = v;
-    },
-  };
-}
 
 test('the Follow-along invite declares itself out of the library; an ordinary type does not', () => {
   assert.equal(SLIDE_TYPES['follow-invite-slide'].library, false);
@@ -78,7 +61,7 @@ for (const shelf of ['personal', 'organization']) {
     ]);
     req.method = 'POST';
     req.headers = {};
-    const res = mockRes();
+    const res = createMockRes();
     const handled = await handleSlideLibrary({
       repoRoot: '/tmp',
       storageScope: {},
@@ -92,13 +75,13 @@ for (const shelf of ['personal', 'organization']) {
     });
     assert.equal(handled, true);
     assert.equal(res.statusCode, 400);
-    assert.equal(res.payload.error, 'invalid');
-    assert.deepEqual(res.payload.details, { field: 'slideType' });
+    assert.equal(res.json().error, 'invalid');
+    assert.deepEqual(res.json().details, { field: 'slideType' });
   });
 }
 
 test('/api/slide-types carries the declaration to the editor', async () => {
-  const res = mockRes();
+  const res = createMockRes();
   await handleSlideTypes({
     repoRoot: '/tmp',
     storageScope: {},
@@ -111,8 +94,8 @@ test('/api/slide-types carries the declaration to the editor', async () => {
     },
   });
   assert.equal(res.statusCode, 200);
-  assert.equal(res.payload['follow-invite-slide'].library, false);
-  assert.equal(res.payload['content-slide'].library, undefined);
+  assert.equal(res.json()['follow-invite-slide'].library, false);
+  assert.equal(res.json()['content-slide'].library, undefined);
 });
 
 test('the editor asks the predicate, not the type name', () => {

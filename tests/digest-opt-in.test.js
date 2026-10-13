@@ -13,7 +13,7 @@
  * through the in-memory Kysely double. Recipient selection is pinned in
  * tests/pg/digest-recipients.pgtest.js: its join (id first, e-mail fallback,
  * `lower(users.email)`) is a callback-form `leftJoin` the double does not
- * model.
+ * model and explicitly refuses.
  *
  * Run with: node --test tests/digest-opt-in.test.js
  */

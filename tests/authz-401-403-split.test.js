@@ -38,13 +38,12 @@
  * Run with: node --test tests/authz-401-403-split.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import { walkJsFiles } from './helpers/call-sites.js';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -96,7 +95,9 @@ function enclosingGuard(lines, lineNo) {
 function unauthorizedCallSites() {
   const sites = [];
   for (const root of SCANNED_ROOTS) {
-    for (const file of walkJsFiles(join(repoRoot, root))) {
+    for (const file of walkFiles(join(repoRoot, root), {
+      extensions: ['.js'],
+    })) {
       const src = readFileSync(file, 'utf8');
       const lines = src.split('\n');
       const re = /\bunauthorized\s*\(/g;

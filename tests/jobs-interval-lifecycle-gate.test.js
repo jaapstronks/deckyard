@@ -15,6 +15,7 @@
  * Run with: node --test tests/jobs-interval-lifecycle-gate.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -31,14 +32,6 @@ const HELPER = 'server/jobs/interval-job.js';
 const SET_INTERVAL = /\bsetInterval\s*\(/;
 
 /** All .js files under server/jobs/, recursively. */
-function walk(dir, out = []) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const full = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(full, out);
-    else if (entry.isFile() && entry.name.endsWith('.js')) out.push(full);
-  }
-  return out;
-}
 
 /** Raw setInterval call-lines in a file (comment-only lines skipped). */
 function setIntervalLines(file) {
@@ -56,7 +49,7 @@ function setIntervalLines(file) {
 
 test('setInterval under server/jobs/ appears only in the createIntervalJob helper', () => {
   const violations = [];
-  for (const file of walk(JOBS_DIR)) {
+  for (const file of walkFiles(JOBS_DIR, { extensions: ['.js'] })) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     if (rel === HELPER) continue;
     for (const h of setIntervalLines(file)) {

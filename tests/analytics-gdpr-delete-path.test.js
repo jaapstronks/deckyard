@@ -48,6 +48,7 @@
  * Run with: node --test tests/analytics-gdpr-delete-path.test.js
  */
 
+import { createMockRes } from './helpers/http-mocks.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -79,26 +80,10 @@ const EXPENSIVE_CAP = AUTH_RATE_LIMITS.expensive.capacity;
 // ---------------------------------------------------------------------------
 
 /** A minimal response double capturing the status/body the helpers write. */
-function makeRes() {
-  return {
-    statusCode: null,
-    headers: null,
-    body: null,
-    writeHead(status, headers) {
-      this.statusCode = status;
-      this.headers = headers;
-      return this;
-    },
-    end(payload) {
-      this.body = payload ? JSON.parse(payload) : null;
-      return this;
-    },
-  };
-}
 
 /** Invoke a GDPR handler the way the router does, returning res + result. */
 async function invoke(handler, authedUser) {
-  const res = makeRes();
+  const res = createMockRes();
   const handled = await handler({ res, url: MY_DATA_URL, authedUser });
   return { res, handled };
 }
@@ -200,10 +185,10 @@ test('export returns the caller’s own sessions and slide views', async () => {
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.totalSessions, 1);
-  assert.equal(res.body.totalSlideViews, 2);
-  assert.equal(res.body.sessions[0].viewerEmail, ALICE);
-  assert.equal(res.body.identifier.email, ALICE);
+  assert.equal(res.json().totalSessions, 1);
+  assert.equal(res.json().totalSlideViews, 2);
+  assert.equal(res.json().sessions[0].viewerEmail, ALICE);
+  assert.equal(res.json().identifier.email, ALICE);
 });
 
 test('export refuses an unauthenticated caller and reads nothing', async () => {
@@ -215,7 +200,7 @@ test('export refuses an unauthenticated caller and reads nothing', async () => {
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 401);
-  assert.deepEqual(res.body, {
+  assert.deepEqual(res.json(), {
     ok: false,
     error: 'unauthorized',
     message: 'Authentication required',
@@ -243,13 +228,20 @@ test('export covers the caller’s rows in every organization, and no one else�
   });
 
   assert.equal(res.statusCode, 200);
-  assert.equal(res.body.totalSessions, 2, 'both of Alice’s sessions come back');
-  assert.deepEqual(res.body.sessions.map((s) => s.presentationId).sort(), [
-    DECK_IN_A,
-    DECK_IN_B,
-  ]);
+  assert.equal(
+    res.json().totalSessions,
+    2,
+    'both of Alice’s sessions come back',
+  );
   assert.deepEqual(
-    [...new Set(res.body.sessions.map((s) => s.viewerEmail))],
+    res
+      .json()
+      .sessions.map((s) => s.presentationId)
+      .sort(),
+    [DECK_IN_A, DECK_IN_B],
+  );
+  assert.deepEqual(
+    [...new Set(res.json().sessions.map((s) => s.viewerEmail))],
     [ALICE],
     'no other person’s rows are exported',
   );
@@ -281,7 +273,7 @@ test('export ignores which organization the caller is acting in', async () => {
   for (const { res } of [actingInA, actingInB, noOrg]) {
     assert.equal(res.statusCode, 200);
     assert.equal(
-      res.body.totalSessions,
+      res.json().totalSessions,
       2,
       'the acting organization does not narrow the answer',
     );
@@ -313,8 +305,8 @@ test('delete erases the caller’s rows in every organization, and their slide v
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body.deleted, { sessions: 2, slideViews: 2 });
-  assert.equal(res.body.message, 'Your analytics data has been deleted');
+  assert.deepEqual(res.json().deleted, { sessions: 2, slideViews: 2 });
+  assert.equal(res.json().message, 'Your analytics data has been deleted');
 
   assert.deepEqual(
     sessionIds(db),
@@ -341,7 +333,7 @@ test('delete refuses an unauthenticated caller and removes nothing', async () =>
 
   assert.equal(handled, true);
   assert.equal(res.statusCode, 401);
-  assert.deepEqual(res.body, {
+  assert.deepEqual(res.json(), {
     ok: false,
     error: 'unauthorized',
     message: 'Authentication required',
@@ -375,7 +367,7 @@ test('delete does not sweep up sessions that carry no email', async () => {
   });
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body.deleted, { sessions: 1, slideViews: 1 });
+  assert.deepEqual(res.json().deleted, { sessions: 1, slideViews: 1 });
   assert.deepEqual(
     sessionIds(db),
     ['anon-same-device'],
@@ -393,7 +385,7 @@ test('delete reports a zeroed count when the caller has no data (no false erasur
   });
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.body.deleted, { sessions: 0, slideViews: 0 });
+  assert.deepEqual(res.json().deleted, { sessions: 0, slideViews: 0 });
   assert.deepEqual(
     sessionIds(db),
     ['bob'],
@@ -447,8 +439,8 @@ test('export is rate-limited once the expensive-op bucket is spent', async () =>
   const { res } = await invoke(handleExportMyData, user);
   assert.equal(res.statusCode, 429, 'the call past the burst is refused');
   assert.equal(res.headers['Retry-After'], '5');
-  assert.equal(res.body.error, 'rate_limited');
-  assert.match(res.body.message, /Rate limit/);
+  assert.equal(res.json().error, 'rate_limited');
+  assert.match(res.json().message, /Rate limit/);
 });
 
 test('delete is rate-limited once the expensive-op bucket is spent', async () => {
@@ -467,6 +459,6 @@ test('delete is rate-limited once the expensive-op bucket is spent', async () =>
   const { res } = await invoke(handleDeleteMyData, user);
   assert.equal(res.statusCode, 429, 'the call past the burst is refused');
   assert.equal(res.headers['Retry-After'], '5');
-  assert.equal(res.body.error, 'rate_limited');
-  assert.match(res.body.message, /Rate limit/);
+  assert.equal(res.json().error, 'rate_limited');
+  assert.match(res.json().message, /Rate limit/);
 });

@@ -17,13 +17,12 @@
  * Run with: node --test tests/instance-health-single-writer.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-
-import { walkJsFiles } from './helpers/call-sites.js';
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -45,7 +44,7 @@ const INSERTS_DECK = /insertInto\(\s*['"`]presentations['"`]\s*\)/;
  * @returns {string[]}
  */
 function filesMatching(pattern) {
-  return SCANNED.flatMap((dir) => walkJsFiles(dir))
+  return SCANNED.flatMap((dir) => walkFiles(dir, { extensions: ['.js'] }))
     .filter((file) => pattern.test(fs.readFileSync(file, 'utf8')))
     .map((file) => path.relative(repoRoot, file).split(path.sep).join('/'))
     .sort();

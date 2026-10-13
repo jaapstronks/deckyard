@@ -16,6 +16,9 @@
  *   updateTable / set / returning / returningAll, deleteFrom / returning,
  *   and `db.fn.count()`.
  *
+ * Joins support column references only. Callback joins throw immediately;
+ * exercise those query shapes in the PostgreSQL suite.
+ *
  * Table references may carry an alias (`selectFrom('presentation_collaborators
  * as c').innerJoin('presentations as p', …)`, the "shared with me" query): the
  * alias shadows the real name for column resolution, as in SQL.
@@ -680,6 +683,11 @@ export function createFakeDb(seed = {}) {
 
     const builder = {
       innerJoin(joinTable, left, right) {
+        if (typeof left !== 'string' || typeof right !== 'string') {
+          throw new Error(
+            'fake-db: only column-reference joins are supported; callback joins require PostgreSQL',
+          );
+        }
         state.joins.push({
           ...parseTableRef(joinTable),
           left,
@@ -689,6 +697,11 @@ export function createFakeDb(seed = {}) {
         return builder;
       },
       leftJoin(joinTable, left, right) {
+        if (typeof left !== 'string' || typeof right !== 'string') {
+          throw new Error(
+            'fake-db: only column-reference joins are supported; callback joins require PostgreSQL',
+          );
+        }
         state.joins.push({
           ...parseTableRef(joinTable),
           left,

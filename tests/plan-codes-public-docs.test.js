@@ -28,10 +28,10 @@
  * Run with: node --test tests/plan-codes-public-docs.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { walkJsFiles } from './helpers/call-sites.js';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -129,7 +129,7 @@ test('an inline code span is a literal, not a planning code', () => {
 const planCodeInName = /(?:^|[-_.])[abd]\d+(?:[.][0-9]+)*(?=[-_.]|$)/i;
 
 test('test filenames describe behaviour rather than private planning codes', () => {
-  const offenders = walkJsFiles(resolve(ROOT, 'tests'))
+  const offenders = walkFiles(resolve(ROOT, 'tests'), { extensions: ['.js'] })
     .filter((file) => /\.(?:pg)?test\.js$/.test(file))
     .map((file) => file.slice(file.lastIndexOf('/') + 1))
     .filter((name) => planCodeInName.test(name));

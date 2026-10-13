@@ -22,6 +22,7 @@
  * Run with: node --test tests/no-escape-markdown-aliases.test.js
  */
 
+import { walkFiles } from './helpers/walk-files.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -31,7 +32,6 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
 
-const SKIP_DIRS = new Set(['vendor', 'node_modules']);
 const SOURCE_TREES = ['client', 'server', 'shared', 'custom'];
 
 // A local `const esc` unrelated to the helper lives here; it imports nothing
@@ -45,20 +45,13 @@ const CANONICAL_ESCAPER_FILES = new Set([
   'shared/xml.js',
 ]);
 
-function walk(dir, out = []) {
-  if (!fs.existsSync(dir)) return out;
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.isDirectory()) {
-      if (SKIP_DIRS.has(entry.name)) continue;
-      walk(path.join(dir, entry.name), out);
-    } else if (entry.isFile() && entry.name.endsWith('.js')) {
-      out.push(path.join(dir, entry.name));
-    }
-  }
-  return out;
-}
-
-const sourceFiles = SOURCE_TREES.flatMap((t) => walk(path.join(repoRoot, t)));
+const sourceFiles = SOURCE_TREES.flatMap((t) =>
+  walkFiles(path.join(repoRoot, t), {
+    extensions: ['.js'],
+    skipDirs: ['vendor', 'node_modules'],
+    missingOk: true,
+  }),
+);
 
 /** Destructured tokens of every `import { … } from '<path><name>.js'`. */
 function importTokensFrom(src, moduleBasename) {
