@@ -56,7 +56,7 @@ export async function requestGuestVerification(
   email,
   name,
 ) {
-  toStorageContext(
+  const context = toStorageContext(
     scope,
     'requestGuestVerification',
     {},
@@ -73,14 +73,20 @@ export async function requestGuestVerification(
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
-    // Token-authorized path: the anonymous caller has no session to take an
-    // organization from, so the link's own row is the source (same shape as
-    // verifyGuestEmail below).
-    const linkRow = await db
+    // Session callers stay within their organization. A prevalidated public
+    // token may explicitly resolve the organization from the link itself.
+    let linkQuery = db
       .selectFrom('presentation_share_links')
       .select(['organization_id'])
-      .where('id', '=', id)
-      .executeTakeFirst();
+      .where('id', '=', id);
+    if (context.organizationId) {
+      linkQuery = linkQuery.where(
+        'organization_id',
+        '=',
+        context.organizationId,
+      );
+    }
+    const linkRow = await linkQuery.executeTakeFirst();
 
     if (!linkRow) {
       return { ok: false, reason: 'share_link_not_found' };
@@ -88,12 +94,7 @@ export async function requestGuestVerification(
     const orgId = linkRow.organization_id;
 
     // Validate the share link
-    const validation = await getValidShareLinkById(
-      { organizationId: orgId },
-      db,
-      id,
-      orgId,
-    );
+    const validation = await getValidShareLinkById(scope, db, id, orgId);
     if (!validation.ok) {
       return validation;
     }

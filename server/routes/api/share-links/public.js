@@ -230,8 +230,8 @@ async function handleShareVerify({ repoRoot, req, res }, token) {
     return true;
   }
 
-  // Log the access against the link the token just resolved to. The link id
-  // is the scope — the access log takes no context (see access-log.js).
+  // Log access with an explicit cross-organization scope: the public token
+  // has already authorized the link id.
   const userAgent = req.headers['user-agent'];
   await logShareLinkAccess(
     crossOrganizationScope(
