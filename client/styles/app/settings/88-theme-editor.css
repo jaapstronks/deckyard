@@ -28,7 +28,7 @@
 
 /* Theme card. The settings list and the theme picker
    (client/views/theme-select/index.js) render the same card root, so its rules
-   live here once (D269); the picker's inner parts stay in 13-modals-misc.css. */
+   live here once (D269); the picker's inner parts live in theme-select/13-theme-picker.css. */
 .theme-card {
   display: flex;
   flex-direction: column;
