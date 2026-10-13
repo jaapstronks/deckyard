@@ -55,6 +55,8 @@
  * @module storage/identity-verification
  */
 
+import { toStorageContext } from './scope.js';
+
 import { sql } from 'kysely';
 import { withDbGuard } from './utils/index.js';
 
@@ -256,8 +258,19 @@ async function verifyDualKey(db, key) {
  * not the same as a failed check.
  *
  * @returns {Promise<IdentityVerificationReport>}
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  */
-export async function verifyIdentityConsistency() {
+export async function verifyIdentityConsistency(scope) {
+  const context = toStorageContext(
+    scope,
+    'verifyIdentityConsistency',
+    {},
+    { allowCrossOrganization: true },
+  );
+  if (!context.crossOrganization || context.organizationId)
+    throw new TypeError(
+      'verifyIdentityConsistency() requires an explicit global identity or provisioning scope',
+    );
   return withDbGuard(
     { ok: true, available: false, mismatched: 0, unlinked: 0, checks: [] },
     async (db) => {

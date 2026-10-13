@@ -115,7 +115,7 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
   }
 
   it("writes the known user's stable users.id", async () => {
-    const added = await addCollaborator(PID, {
+    const added = await addCollaborator({ organizationId: ORG }, PID, {
       userEmail: MEMBER_EMAIL,
       permission: 'edit',
     });
@@ -125,7 +125,7 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
 
   it('writes NULL for an external collaborator (no users row)', async () => {
     const email = 'external-partner@agency.test'; // deliberately NOT in `users`
-    const added = await addCollaborator(PID, {
+    const added = await addCollaborator({ organizationId: ORG }, PID, {
       userEmail: email,
       permission: 'edit',
     });
@@ -134,10 +134,14 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
   });
 
   it('restores the correct user_id on revoke → re-add (reactivate)', async () => {
-    await addCollaborator(PID, { userEmail: MEMBER_EMAIL, permission: 'view' });
+    await addCollaborator({ organizationId: ORG }, PID, {
+      userEmail: MEMBER_EMAIL,
+      permission: 'view',
+    });
     assert.equal(await storedUserId(MEMBER_EMAIL), MEMBER_ID);
 
     const removed = await removeCollaborator(
+      { organizationId: ORG },
       PID,
       MEMBER_EMAIL,
       OWNER_EMAIL,
@@ -145,7 +149,7 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
     );
     assert.equal(removed.ok, true);
 
-    const readded = await addCollaborator(PID, {
+    const readded = await addCollaborator({ organizationId: ORG }, PID, {
       userEmail: MEMBER_EMAIL,
       permission: 'admin',
     });
@@ -158,10 +162,19 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
     const email = 'late-signup@example.com';
 
     // First invited as an external collaborator: no users row yet → NULL.
-    await addCollaborator(PID, { userEmail: email, permission: 'view' });
+    await addCollaborator({ organizationId: ORG }, PID, {
+      userEmail: email,
+      permission: 'view',
+    });
     assert.equal(await storedUserId(email), null);
 
-    await removeCollaborator(PID, email, OWNER_EMAIL, {});
+    await removeCollaborator(
+      { organizationId: ORG },
+      PID,
+      email,
+      OWNER_EMAIL,
+      {},
+    );
 
     // They sign up — a users row now exists for that email.
     const lateId = '33333333-3333-3333-3333-333333333333';
@@ -177,7 +190,7 @@ pgDescribe('collaborator user_id dual-key write (real PostgreSQL)', () => {
       .execute();
 
     // Re-adding resolves the freshly-created id instead of staying NULL.
-    const readded = await addCollaborator(PID, {
+    const readded = await addCollaborator({ organizationId: ORG }, PID, {
       userEmail: email,
       permission: 'edit',
     });

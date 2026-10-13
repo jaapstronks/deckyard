@@ -2,11 +2,12 @@
  * Analytics reports storage for shareable report data.
  */
 
+import { crossOrganizationScope, toStorageContext } from '../scope.js';
+
 import crypto from 'node:crypto';
 import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/index.js';
 import { getOrgId } from '../../utils/context.js';
-import { toStorageContext } from '../scope.js';
 import {
   NO_DISPLAY_NAMES,
   resolveNamesForAddresses,
@@ -388,5 +389,11 @@ function rowToReport(row, lookup = NO_DISPLAY_NAMES) {
  * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
  */
 function creatorNames(rows) {
-  return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
+  return resolveNamesForAddresses(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    (rows || []).map((row) => row?.created_by),
+  );
 }

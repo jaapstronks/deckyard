@@ -8,7 +8,7 @@
  * `addCollaborator` stamped the row with the *inviter's* session organization.
  * One concept, three scopes.
  *
- * `server/storage/collaborators.js` now scopes on the presentation alone —
+ * `server/storage/collaborators.js` validates scope against the presentation organization —
  * `(presentation_id, user_email)` is unique and a presentation id names exactly
  * one deck in exactly one organization — so there is no session organization
  * left for an endpoint to disagree about. This file pins that from three
@@ -41,7 +41,7 @@
  * The structural test at the bottom is what keeps this from rotting: the
  * behavioural cases cover the endpoints that are cheap to drive, while the
  * source-level guard covers *all* of them — export, render-slide, the collab
- * websocket handshake — by refusing any call site that passes a scope again.
+ * websocket handshake — by requiring a scope at every permission lookup.
  *
  * MULTI_ORG_ENABLED and DEFAULT_ORGANIZATION_ID are read at module scope,
  * so the environment is set before any import and this file relies on
@@ -397,7 +397,11 @@ test('a row stamped with a foreign organization still grants — on every endpoi
   await seed({ rowOrg: AWAY_ORG });
 
   assert.equal(
-    await getCollaboratorPermission(DECK, COLLABORATOR.email),
+    await getCollaboratorPermission(
+      { organizationId: HOME_ORG },
+      DECK,
+      COLLABORATOR.email,
+    ),
     'edit',
   );
   for (const { name, handler, granted, method } of ENDPOINTS) {
@@ -408,7 +412,7 @@ test('a row stamped with a foreign organization still grants — on every endpoi
 
 test('a new invite is stamped with the deck, not with the inviter', async () => {
   await seed({ deckOrg: AWAY_ORG });
-  const result = await addCollaborator(DECK, {
+  const result = await addCollaborator({ organizationId: AWAY_ORG }, DECK, {
     userEmail: 'fresh@home.example',
     permission: 'view',
     invitedBy: COLLABORATOR.email,
@@ -427,10 +431,14 @@ test('a new invite is stamped with the deck, not with the inviter', async () => 
 
 test('inviting onto a deck that does not exist is refused rather than guessed at', async () => {
   await seed();
-  const result = await addCollaborator('no-such-deck', {
-    userEmail: 'fresh@home.example',
-    permission: 'view',
-  });
+  const result = await addCollaborator(
+    { organizationId: HOME_ORG },
+    'no-such-deck',
+    {
+      userEmail: 'fresh@home.example',
+      permission: 'view',
+    },
+  );
   assert.deepEqual(result, { ok: false, reason: 'not_found' });
 });
 
@@ -458,49 +466,26 @@ test('a deck in another organization is absent on every endpoint, row or no row'
 });
 
 // ---------------------------------------------------------------------------
-// The structural half: no call site can re-introduce a scope
+// The structural half: every permission lookup states its storage scope.
 // ---------------------------------------------------------------------------
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
-
-// The bracket-depth scanner is shared with the share-link access-log guard,
-// which pins the same "the identifier is the scope" contract.
 const permissionCallArgs = (source) =>
   callArguments(source, 'getCollaboratorPermission');
 
-test('no getCollaboratorPermission() call site passes a scope', () => {
+test('every getCollaboratorPermission() call site passes a scope first', () => {
   const offenders = [];
-
   for (const file of walkJsFiles(path.join(repoRoot, 'server'))) {
     const rel = path.relative(repoRoot, file).split(path.sep).join('/');
     for (const args of permissionCallArgs(fs.readFileSync(file, 'utf8'))) {
-      if (args.length > 2) offenders.push(`${rel}  (${args.length} arguments)`);
+      if (args.length !== 3)
+        offenders.push(`${rel} (${args.length} arguments)`);
     }
   }
-
   assert.deepEqual(
     offenders,
     [],
-    'getCollaboratorPermission takes a presentation and an email — the deck is the scope. ' +
-      'A third argument is the session organization creeping back in:\n  ' +
-      offenders.join('\n  '),
-  );
-});
-
-test('the guard would catch a re-introduced scope argument', () => {
-  const planted =
-    'await getCollaboratorPermission(pres.id, user.email, { organizationId: ctx.organizationId });';
-  assert.equal(
-    permissionCallArgs(planted)[0].length,
-    3,
-    'the parser sees all three arguments',
-  );
-  assert.equal(
-    permissionCallArgs(
-      'await getCollaboratorPermission(pres.id, user.email);',
-    )[0].length,
-    2,
-    'and exactly two on the canonical form',
+    'Permission reads take scope, presentation id, email.',
   );
 });

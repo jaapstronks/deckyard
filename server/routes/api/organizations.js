@@ -1,3 +1,5 @@
+import { createStorageScope } from '../../utils/context.js';
+import { crossOrganizationScope } from '../../storage/scope.js';
 import { isValidSlug } from '../../../shared/slug.js';
 /**
  * API routes for organization management (multi-organization mode).
@@ -67,7 +69,13 @@ function organizationError(res, result) {
 
 // GET /api/organizations - List user's organizations
 async function handleOrgList({ res, userId }) {
-  const organizations = await listUserOrganizations(userId);
+  const organizations = await listUserOrganizations(
+    crossOrganizationScope(
+      null,
+      'list authenticated user memberships for organization selection',
+    ),
+    userId,
+  );
   serveJson(res, 200, { organizations });
   return true;
 }
@@ -106,13 +114,16 @@ async function handleOrgCreate({ req, res, userId, authedUser }) {
     );
   }
 
-  const result = await createOrganization({
-    name,
-    slug,
-    displayName,
-    description,
-    ownerId: userId,
-  });
+  const result = await createOrganization(
+    crossOrganizationScope(null, 'authorized organization creation'),
+    {
+      name,
+      slug,
+      displayName,
+      description,
+      ownerId: userId,
+    },
+  );
 
   if (!result.ok) {
     return organizationError(res, result);
@@ -128,12 +139,19 @@ async function handleOrgCreate({ req, res, userId, authedUser }) {
 // GET /api/organizations/:id - Get organization details
 async function handleOrgGet({ res, userId }, orgId) {
   // Check membership
-  const membership = await getMembership(userId, orgId);
+  const membership = await getMembership(
+    createStorageScope(null, { organizationId: orgId }),
+    userId,
+    orgId,
+  );
   if (!membership) {
     return forbidden(res, 'You are not a member of this organization');
   }
 
-  const organization = await getOrganizationById(orgId);
+  const organization = await getOrganizationById(
+    createStorageScope(null, { organizationId: orgId }),
+    orgId,
+  );
   if (!organization) {
     return notFound(res);
   }
@@ -159,7 +177,11 @@ async function handleOrgGet({ res, userId }, orgId) {
 // PATCH /api/organizations/:id - Update organization
 async function handleOrgUpdate({ req, res, userId, authedUser }, orgId) {
   // Check membership and admin permission
-  const membership = await getMembership(userId, orgId);
+  const membership = await getMembership(
+    createStorageScope(null, { organizationId: orgId }),
+    userId,
+    orgId,
+  );
   if (!membership) {
     return forbidden(res, 'You are not a member of this organization');
   }
@@ -220,7 +242,11 @@ async function handleOrgUpdate({ req, res, userId, authedUser }, orgId) {
     return badRequest(res, 'No valid updates provided');
   }
 
-  const result = await updateOrganization(orgId, updates);
+  const result = await updateOrganization(
+    createStorageScope(null, { organizationId: orgId }),
+    orgId,
+    updates,
+  );
 
   if (!result.ok) {
     return organizationError(res, result);
@@ -236,7 +262,11 @@ async function handleOrgUpdate({ req, res, userId, authedUser }, orgId) {
 // DELETE /api/organizations/:id - Delete organization
 async function handleOrgDelete({ res, userId }, orgId) {
   // Only owner can delete organization
-  const membership = await getMembership(userId, orgId);
+  const membership = await getMembership(
+    createStorageScope(null, { organizationId: orgId }),
+    userId,
+    orgId,
+  );
   if (!membership) {
     return forbidden(res, 'You are not a member of this organization');
   }
@@ -245,7 +275,10 @@ async function handleOrgDelete({ res, userId }, orgId) {
     return forbidden(res, 'Only the owner can delete the organization');
   }
 
-  const result = await deleteOrganization(orgId);
+  const result = await deleteOrganization(
+    createStorageScope(null, { organizationId: orgId }),
+    orgId,
+  );
 
   if (!result.ok) {
     return organizationError(res, result);
@@ -259,12 +292,19 @@ async function handleOrgDelete({ res, userId }, orgId) {
 // (Sets the user's active organization for this session)
 async function handleOrgSwitch({ req, res, userId }, orgId) {
   // Verify membership
-  const membership = await getMembership(userId, orgId);
+  const membership = await getMembership(
+    createStorageScope(null, { organizationId: orgId }),
+    userId,
+    orgId,
+  );
   if (!membership) {
     return forbidden(res, 'You are not a member of this organization');
   }
 
-  const organization = await getOrganizationById(orgId);
+  const organization = await getOrganizationById(
+    createStorageScope(null, { organizationId: orgId }),
+    orgId,
+  );
   if (!organization) {
     return notFound(res);
   }
@@ -353,7 +393,14 @@ export const handleOrganizations = withErrorHandler(
     // the lookup that decides which organizations the person may switch to, so
     // scoping it to the current one would make switching impossible for anyone
     // whose home organization is not the one they are currently in.
-    const dbUser = await getUserByEmailGlobal(ctx.authedUser.email);
+    const dbUser = await getUserByEmailGlobal(
+      crossOrganizationScope(
+        ctx.repoRoot,
+        'resolve authenticated global identity before organization selection',
+        { actorEmail: ctx.authedUser.email },
+      ),
+      ctx.authedUser.email,
+    );
     if (!dbUser) {
       return unauthorized(ctx.res, 'User not found');
     }

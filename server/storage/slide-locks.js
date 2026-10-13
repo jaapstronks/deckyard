@@ -6,8 +6,9 @@
  * only lock individual slides, enabling true concurrent collaboration.
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
 import { norm, nowIso, isoAfter } from '../utils/normalize.js';
 import { matchesIdentity } from '../../shared/identity-match.js';
 import { withDbGuard } from './utils/index.js';
@@ -55,6 +56,10 @@ function mapLockRow(row, lookup = NO_DISPLAY_NAMES) {
  */
 function lockDisplayNames(rows) {
   return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
     (rows || [])
       .filter(Boolean)
       .map((row) => ({ id: row.holder_user_id, email: row.holder_email })),

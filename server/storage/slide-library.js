@@ -14,10 +14,11 @@
  * indirection); getDb() throws on an uninitialized database.
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { getDb, sql } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
-import { toStorageContext } from './scope.js';
 import {
   resolveDisplayNames,
   toDisplayIdentity,
@@ -273,7 +274,7 @@ async function createSlideLibraryRow(data, ctx) {
   // organization-library authz guard can match on the stable id.
   const actorEmail = ctx?.actorEmail || null;
   const actorResolution = actorEmail
-    ? await resolveIdentityByEmail(actorEmail)
+    ? await resolveIdentityByEmail(ctx, actorEmail)
     : null;
   const actorUserId = actorResolution?.userId ?? null;
 
@@ -480,7 +481,7 @@ async function patchLibraryItem(ctx, target, patch, opts = {}) {
   // only when there is an actor to stamp, so an actor-less write never nulls
   // the id half while the e-mail half keeps the previous writer.
   if (changesItem && ctx?.actorEmail) {
-    const actorResolution = await resolveIdentityByEmail(ctx.actorEmail);
+    const actorResolution = await resolveIdentityByEmail(ctx, ctx.actorEmail);
     updateData.updated_by = ctx.actorEmail;
     updateData.updated_by_user_id = actorResolution?.userId ?? null;
   }
@@ -835,6 +836,10 @@ export async function setTagsForSlideLibraryItem(
  */
 async function libraryDisplayNames(rows) {
   return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
     (rows || [])
       .filter(Boolean)
       .flatMap((row) => [

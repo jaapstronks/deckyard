@@ -3,6 +3,8 @@
  * Handles organization records: creation, lookup, updates, and deletion.
  */
 
+import { toStorageContext } from '../scope.js';
+
 import { nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/index.js';
 import { getDefaultOrganizationId } from '../../config/database.js';
@@ -27,16 +29,25 @@ const ORG_COLUMNS = [
 
 /**
  * Get an organization by ID.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} organizationId - Organization ID
  * @returns {Promise<Object|null>}
  */
-export async function getOrganizationById(organizationId) {
+export async function getOrganizationById(scope, organizationId) {
+  const context = toStorageContext(
+    scope,
+    'getOrganizationById',
+    {},
+    { allowCrossOrganization: true },
+  );
   return withDbGuard(null, async (db) => {
-    const row = await db
+    let query = db
       .selectFrom('organizations')
       .select(ORG_COLUMNS)
-      .where('id', '=', organizationId)
-      .executeTakeFirst();
+      .where('id', '=', organizationId);
+    if (context.organizationId)
+      query = query.where('id', '=', context.organizationId);
+    const row = await query.executeTakeFirst();
 
     return row ? formatOrganization(row) : null;
   });
@@ -44,16 +55,25 @@ export async function getOrganizationById(organizationId) {
 
 /**
  * Get an organization by its slug (already lowercased by the caller).
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} slug - Organization slug
  * @returns {Promise<Object|null>}
  */
-export async function getOrganizationBySlug(slug) {
+export async function getOrganizationBySlug(scope, slug) {
+  const context = toStorageContext(
+    scope,
+    'getOrganizationBySlug',
+    {},
+    { allowCrossOrganization: true },
+  );
   return withDbGuard(null, async (db) => {
-    const row = await db
+    let query = db
       .selectFrom('organizations')
       .select(ORG_COLUMNS)
-      .where('slug', '=', slug)
-      .executeTakeFirst();
+      .where('slug', '=', slug);
+    if (context.organizationId)
+      query = query.where('id', '=', context.organizationId);
+    const row = await query.executeTakeFirst();
 
     return row ? formatOrganization(row) : null;
   });
@@ -61,6 +81,7 @@ export async function getOrganizationBySlug(slug) {
 
 /**
  * Create a new organization.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {Object} data - Organization data
  * @param {string} data.name - Organization name
  * @param {string} data.slug - Unique slug
@@ -74,7 +95,17 @@ export async function getOrganizationBySlug(slug) {
  *   `users` row in it.
  * @returns {Promise<Object>}
  */
-export async function createOrganization(data) {
+export async function createOrganization(scope, data) {
+  const context = toStorageContext(
+    scope,
+    'createOrganization',
+    {},
+    { allowCrossOrganization: true },
+  );
+  if (!context.crossOrganization || context.organizationId)
+    throw new TypeError(
+      'createOrganization() requires an explicit instance provisioning scope',
+    );
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const slug = String(data.slug || '')
       .toLowerCase()
@@ -146,11 +177,17 @@ export async function createOrganization(data) {
 
 /**
  * Update an organization.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} organizationId - Organization ID
  * @param {Object} updates - Fields to update
  * @returns {Promise<Object>}
  */
-export async function updateOrganization(organizationId, updates) {
+export async function updateOrganization(scope, organizationId, updates) {
+  const context = toStorageContext(scope, 'updateOrganization');
+  if (context.organizationId !== organizationId)
+    throw new TypeError(
+      'updateOrganization() organization differs from storage scope',
+    );
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const updateData = {
       updated_at: nowIso(),
@@ -215,10 +252,16 @@ export function isDefaultOrganization(organizationId) {
 /**
  * Delete an organization.
  * This will cascade delete all related data.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} organizationId - Organization ID
  * @returns {Promise<Object>}
  */
-export async function deleteOrganization(organizationId) {
+export async function deleteOrganization(scope, organizationId) {
+  const context = toStorageContext(scope, 'deleteOrganization');
+  if (context.organizationId !== organizationId)
+    throw new TypeError(
+      'deleteOrganization() organization differs from storage scope',
+    );
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     // Prevent deletion of default organization
     if (isDefaultOrganization(organizationId)) {

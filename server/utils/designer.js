@@ -1,3 +1,4 @@
+import { createStorageScope } from './context.js';
 /**
  * Designer capability utilities.
  * Resolves whether a user has designer capability based on their
@@ -56,7 +57,14 @@ export async function resolveDesignerCapability(user) {
             role: user.organizationRole,
             isDesigner: Boolean(user.organizationIsDesigner),
           }
-        : await getMembershipByEmail(user.email, orgId);
+        : await getMembershipByEmail(
+            createStorageScope(
+              { email: user.email },
+              { organizationId: orgId },
+            ),
+            user.email,
+            orgId,
+          );
     if (!membership) return false;
 
     // Owners, explicit designers and plain members are decided by the membership
@@ -64,7 +72,12 @@ export async function resolveDesignerCapability(user) {
     // defer that organization read until it is the deciding factor.
     const needsOrgSettings =
       membership.role === 'admin' && !membership.isDesigner;
-    const org = needsOrgSettings ? await getOrganizationById(orgId) : null;
+    const org = needsOrgSettings
+      ? await getOrganizationById(
+          createStorageScope({ email: user.email }, { organizationId: orgId }),
+          orgId,
+        )
+      : null;
 
     return hasDesignerCapability(membership, getOrgSettings(org));
   } catch {

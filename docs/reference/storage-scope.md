@@ -31,8 +31,8 @@ operations that genuinely cannot be organization-scoped (next section).
 
 A function that validates with `allowCrossOrganization: true` accepts a
 `crossOrganizationScope(repoRoot, reason)` — a scope that deliberately states
-no organization. Four categories are legitimate; everything else is a
-violation, not a fifth category waiting to be named:
+no organization. Five categories are legitimate; everything else needs an explicit
+boundary decision:
 
 1. **Token-authorized reads** — a globally unique token (publish id, share
    token, follow code) was already resolved, and the deck id came _out_ of
@@ -54,6 +54,8 @@ violation, not a fifth category waiting to be named:
    instance-admin role (`users.role`, not a membership role) builds this scope.
    A read that hands back a row, or a count per organization, is not in this
    category.
+
+5. **Global actor identity and explicit provisioning** — before a session has an organization, authentication resolves the instance-wide user and verifies the requested membership. The same global identity is used to name actors on already-authorized rows, including external collaborators. Operator consistency scans, organization creation and verified-login membership provisioning also need an explicit instance scope; the provisioning caller has already established operator authority or verified the login and target organization. Authentication audit rows have no organization column, so their writes and retention use a reasoned instance scope. These operations still take and validate `scope`; they are not scope-less token exceptions. An instance scope does not itself grant administrator authority.
 
 The `reason` string is mandatory and shows up in errors — write it for the
 reviewer who wonders why the call is exempt.
@@ -135,10 +137,10 @@ Two tables are counters about the instance itself, keyed by nothing an
 organization could own: `api_usage_daily` (quota per API key, rate limits)
 and `instance_health` (which surfaces the install uses, D246 — no
 organization, person or deck in the row). Their facades, `api-usage.js` and
-`instance-health.js`, take **no** `StorageScope`. That is not a fourth
+`instance-health.js`, take **no** `StorageScope`. That is not an additional
 cross-organization category: a cross-organization scope is for _reading_
 organization-owned rows without a filter, and writes may never run
-cross-organization. Here there is no organization to state or to skip, so a
+cross-organization outside the explicit provisioning and instance-auth-audit boundary above. Here there is no organization to state or to skip, so a
 scope parameter would be ceremony that validates nothing. A new table joins
 this pair only when it, too, has no organization column and no per-person
 key; anything else takes a scope.
@@ -151,7 +153,7 @@ The registered token operations are API-key validation, analytics-report token l
 
 ## Enforcement and implementation status (2026-10-13)
 
-The target above is not yet fully implemented. The current static census finds 361 DB-reaching defining exports, of which 89 still need a first parameter named `scope`. Cluster 1 renamed 67 existing scope-first DB parameters and the three pure helpers (`resolveScope`, `repoRootOf`, `toStorageContext`) from `storageScope` to `scope`, without shifting arguments or changing validation. No exported scope parameter retains the old spelling. There are 34 individually justified token/telemetry exceptions (B665). `tests/fixtures/storage-scope-inventory.json` preserves the initial census of 359 exports, signatures and direct static call sites. Scanner repairs exposed two additional lock-policy exports; `enforceSlideLocks(scope, opts)` and `enforceSlideWritePolicy(scope, opts)` now validate and forward the caller scope, with the old `opts.ctx` argument removed. These two exports add no debt to the frozen ceiling. Recount from the repository root with:
+The target above is not yet fully implemented. The current static census finds 361 DB-reaching defining exports, of which 54 still need a first parameter named `scope`. Cluster 1 renamed 67 existing scope-first DB parameters and the three pure helpers (`resolveScope`, `repoRootOf`, `toStorageContext`) from `storageScope` to `scope`, without shifting arguments or changing validation. No exported scope parameter retains the old spelling. There are 34 individually justified token/telemetry exceptions (B665). `tests/fixtures/storage-scope-inventory.json` preserves the initial census of 359 exports, signatures and direct static call sites. Scanner repairs exposed two additional lock-policy exports; `enforceSlideLocks(scope, opts)` and `enforceSlideWritePolicy(scope, opts)` now validate and forward the caller scope, with the old `opts.ctx` argument removed. These two exports add no debt to the frozen ceiling. Recount from the repository root with:
 
 ```sh
 node scripts/storage-scope-inventory.js > .scratch/storage-scope-inventory.json
@@ -160,5 +162,11 @@ node scripts/storage-scope-inventory.js > .scratch/storage-scope-inventory.json
 `tests/storage-call-convention.test.js` now positively requires `scope` first for DB-reaching exports, following private functions, callbacks, imported aliases, storage re-export barrels and literal lazy storage imports. The scanner recognizes query builders and database entry points; it does not prove runtime validation, organization filtering or authorization. Dynamic property dispatch and factory-returned functions are outside its static reach. Caller evidence covers the listed source roots and excludes vendor/fixture directories; it is not a census of external forks or dynamically dispatched calls. Literal lazy imports follow transitive named and export-star barrels, including cycles and database entrypoints; executable parameter initializers also contribute DB reachability. Caller collection recognizes static imports and `import('./rows.js').then(mod => mod.read())`, but does not trace bindings created by awaited imports such as `const {read} = await import('./rows.js'); read(scope)`. The enclosing storage function still counts as DB-reaching. Before migrating a signature, manually inspect awaited-import callers alongside the recorded call sites.
 
 Existing signature debt lives in `tests/storage-call-convention-burndown.json`. Its scope-first entries must be a subset of the frozen initial census and must still name current violations: remove a row when it is fixed, never regenerate the initial fixture to accommodate new debt. The existing negative signature rules and mutation failure-shape rule (c) remain independent. The six disk-path exceptions apply only to the old `repoRoot` rule; they do not exempt DB-reaching operations from the positive gate. Infrastructure exports (database guard, lifecycle and boot checks) are recorded as debt pending a proper layer boundary, rather than receiving a new exception category.
+
+The actor/organization/identity migration (B665 cluster 2) adds a first `scope` argument to 35 actor/organization/identity exports: eleven memberships, five organizations, five collaborators, three identity, two identity-resolver, two display-identity, one identity-verification, one login-membership and five password account/audit operations. Update direct fork calls by inserting the scope before every previous argument; no old signature or compatibility shim remains. Bootstrap scripts and authentication entry points build reasoned instance scopes before a session scope exists. Global user-id/display-name resolution remains instance-wide because a person can belong to several organizations; it does not grant access to an organization or deck.
+
+Organization-bound membership operations require an organization scope and reject a different explicit organization argument. Membership-id-only changes filter their reads and writes by the scope organization. `listUserOrganizations` accepts an instance scope for organization selection or filters to a supplied organization. Organization reads filter to an organization scope, with explicit instance reads for operator lookup; creation requires an instance provisioning scope, while update/delete require the target organization scope. Active-membership selection, login provisioning and the instance consistency scan require explicit instance scopes. Token operations retain their individual exceptions.
+
+Collaborator operations require the caller scope to match the parent deck's actual organization before reading a cache or collaborator row. Callers that already authorized a cross-organization collaborator derive this scope from the loaded deck; they do not reuse the visitor's active organization. Legacy collaborator organization stamps do not replace the parent deck check. A cached permission cannot authorize a wrong organization or a deleted parent deck. Existing member/collaborator permissions and authentication behavior remain subject to the caller's authorization checks.
 
 The remaining migration clusters change signatures and callers together and require independent review (B665). The gate/inventory PR also migrates those two newly exposed lock-policy signatures and their callers; the remaining cluster migrations are separate. Outside the parameter convention, the deliberate scope homonyms remain `ownership: collection|owned|shared|all` for deck-list selection and `opts.shelf: personal|organization` for slide-library selection. During beta, obsolete signatures are removed rather than supported alongside the canonical form.

@@ -283,7 +283,7 @@ test('the previous owner is kept on as an edit collaborator by default', async (
   });
   assert.equal(jsonBody(res).previousOwnerKeptAsCollaborator, true);
 
-  const rows = await listCollaborators(pres.id);
+  const rows = await listCollaborators({ organizationId: ORG }, pres.id);
   const old = rows.find((r) => r.userEmail === OWNER.email);
   assert.ok(old, 'the previous owner is on the deck');
   assert.equal(old.permission, 'edit', 'and holds edit, not admin');
@@ -297,7 +297,7 @@ test('keepAsCollaborator:false hands the deck over completely', async () => {
   });
   assert.equal(jsonBody(res).previousOwnerKeptAsCollaborator, false);
 
-  const rows = await listCollaborators(pres.id);
+  const rows = await listCollaborators({ organizationId: ORG }, pres.id);
   assert.equal(
     rows.find((r) => r.userEmail === OWNER.email),
     undefined,
@@ -315,7 +315,7 @@ test('a new owner who was a collaborator loses the now-redundant row', async () 
   });
 
   await assertStillOwnedBy(pres.id, EDITOR, 'the editor now owns the deck');
-  const rows = await listCollaborators(pres.id);
+  const rows = await listCollaborators({ organizationId: ORG }, pres.id);
   assert.equal(
     rows.find((r) => r.userEmail === EDITOR.email),
     undefined,

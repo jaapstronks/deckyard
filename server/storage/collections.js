@@ -19,10 +19,11 @@
  * indirection); getDb() throws on an uninitialized database.
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { getDb, transaction } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
-import { toStorageContext } from './scope.js';
 import {
   resolveDisplayNames,
   toDisplayIdentity,
@@ -238,7 +239,7 @@ async function createSlideCollection(data, ctx) {
   // organization-collection mutate guard can match on the stable id.
   const actorEmail = ctx?.actorEmail || null;
   const actorResolution = actorEmail
-    ? await resolveIdentityByEmail(actorEmail)
+    ? await resolveIdentityByEmail(ctx, actorEmail)
     : null;
   const actorUserId = actorResolution?.userId ?? null;
 
@@ -314,7 +315,7 @@ async function updateSlideCollection(id, data, ctx) {
     updated_at: now(),
   };
   if (ctx?.actorEmail) {
-    const actorResolution = await resolveIdentityByEmail(ctx.actorEmail);
+    const actorResolution = await resolveIdentityByEmail(ctx, ctx.actorEmail);
     updateData.updated_by = ctx.actorEmail;
     updateData.updated_by_user_id = actorResolution?.userId ?? null;
   }
@@ -544,6 +545,10 @@ export async function deleteOrganizationCollection(
  */
 async function collectionDisplayNames(rows) {
   return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
     (rows || []).filter(Boolean).flatMap((row) => [
       { id: row.updated_by_user_id, email: row.updated_by },
       { id: row.created_by_user_id, email: row.created_by },

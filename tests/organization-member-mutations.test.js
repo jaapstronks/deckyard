@@ -311,7 +311,11 @@ test('the last owner cannot be demoted, even below the route', async () => {
   // all. The route refuses this case too, but the storage layer is where the
   // invariant belongs — it is what a script or a future caller meets first.
   const db = seed();
-  const result = await updateMemberRole(membershipId('owner'), 'member');
+  const result = await updateMemberRole(
+    { organizationId: ORG },
+    membershipId('owner'),
+    'member',
+  );
 
   assert.equal(result.ok, false);
   assert.equal(result.reason, 'last_owner');
@@ -324,7 +328,11 @@ test('an owner may be demoted once there is a second one', async () => {
   );
   const db = seed({ people });
 
-  const result = await updateMemberRole(membershipId('admin'), 'member');
+  const result = await updateMemberRole(
+    { organizationId: ORG },
+    membershipId('admin'),
+    'member',
+  );
   assert.equal(result.ok, true);
   assert.equal(ownerCount(db), 1);
 });
@@ -365,7 +373,12 @@ test('an owner handing the organization to themselves keeps it', async () => {
 
 test('transferring to yourself changes nothing, below the route too', async () => {
   const db = seed();
-  const result = await transferOwnership(ORG, userId('owner'), userId('owner'));
+  const result = await transferOwnership(
+    { organizationId: ORG },
+    ORG,
+    userId('owner'),
+    userId('owner'),
+  );
 
   assert.equal(result.ok, true);
   assert.equal(roleOf(db, 'owner'), 'owner');
@@ -423,7 +436,9 @@ test('a plain member cannot remove anyone else', async () => {
 
 test('members come back owner, then admins, then members', async () => {
   seed();
-  const members = await listOrganizationMembers(ORG, { limit: 10 });
+  const members = await listOrganizationMembers({ organizationId: ORG }, ORG, {
+    limit: 10,
+  });
 
   assert.deepEqual(
     members.map((m) => m.role),
@@ -439,8 +454,14 @@ test('members come back owner, then admins, then members', async () => {
 
 test('the order survives paging, so page two is the tail and not a reshuffle', async () => {
   seed();
-  const first = await listOrganizationMembers(ORG, { limit: 2, offset: 0 });
-  const second = await listOrganizationMembers(ORG, { limit: 2, offset: 2 });
+  const first = await listOrganizationMembers({ organizationId: ORG }, ORG, {
+    limit: 2,
+    offset: 0,
+  });
+  const second = await listOrganizationMembers({ organizationId: ORG }, ORG, {
+    limit: 2,
+    offset: 2,
+  });
 
   assert.deepEqual(
     first.map((m) => m.role),
@@ -451,7 +472,7 @@ test('the order survives paging, so page two is the tail and not a reshuffle', a
     ['member', 'member'],
   );
   assert.equal(
-    await countOrganizationMembers(ORG),
+    await countOrganizationMembers({ organizationId: ORG }, ORG),
     4,
     'total counts the organization, not the page',
   );

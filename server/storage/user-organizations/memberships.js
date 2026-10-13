@@ -3,6 +3,8 @@
  * Handles multi-organization user membership and role operations.
  */
 
+import { toStorageContext } from '../scope.js';
+
 import { sql } from 'kysely';
 import { nowIso, normalizeEmail } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/index.js';
@@ -45,11 +47,16 @@ export function hasDesignerCapability(membership, orgSettings) {
 
 /**
  * Update a member's designer flag.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} membershipId - Membership ID
  * @param {boolean} isDesigner - New designer flag value
  * @returns {Promise<Object>}
  */
-export async function updateMemberDesigner(membershipId, isDesigner) {
+export async function updateMemberDesigner(scope, membershipId, isDesigner) {
+  const { organizationId: scopedOrgId } = toStorageContext(
+    scope,
+    'updateMemberDesigner',
+  );
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const now = nowIso();
     const row = await db
@@ -59,6 +66,7 @@ export async function updateMemberDesigner(membershipId, isDesigner) {
         updated_at: now,
       })
       .where('id', '=', membershipId)
+      .where('organization_id', '=', scopedOrgId)
       .returningAll()
       .executeTakeFirst();
 
@@ -79,11 +87,20 @@ export async function updateMemberDesigner(membershipId, isDesigner) {
 
 /**
  * Get user's membership in a specific organization.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} userId - User ID
  * @param {string} organizationId - Organization ID
  * @returns {Promise<Object|null>}
  */
-export async function getMembership(userId, organizationId) {
+export async function getMembership(scope, userId, organizationId) {
+  const { organizationId: scopedOrgId } = toStorageContext(
+    scope,
+    'getMembership',
+  );
+  if (organizationId !== scopedOrgId)
+    throw new TypeError(
+      'getMembership() organization differs from storage scope',
+    );
   return withDbGuard(null, async (db) => {
     const row = await db
       .selectFrom('user_organizations')
@@ -109,11 +126,20 @@ export async function getMembership(userId, organizationId) {
 
 /**
  * Get user's membership by email in a specific organization.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} email - User's email
  * @param {string} organizationId - Organization ID
  * @returns {Promise<Object|null>}
  */
-export async function getMembershipByEmail(email, organizationId) {
+export async function getMembershipByEmail(scope, email, organizationId) {
+  const { organizationId: scopedOrgId } = toStorageContext(
+    scope,
+    'getMembershipByEmail',
+  );
+  if (organizationId !== scopedOrgId)
+    throw new TypeError(
+      'getMembershipByEmail() organization differs from storage scope',
+    );
   const normalized = normalizeEmail(email);
   if (!normalized) return null;
 
@@ -145,12 +171,19 @@ export async function getMembershipByEmail(email, organizationId) {
 
 /**
  * List all organizations a user belongs to.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} userId - User ID
  * @returns {Promise<Array>}
  */
-export async function listUserOrganizations(userId) {
+export async function listUserOrganizations(scope, userId) {
+  const { organizationId } = toStorageContext(
+    scope,
+    'listUserOrganizations',
+    {},
+    { allowCrossOrganization: true },
+  );
   return withDbGuard([], async (db) => {
-    const rows = await db
+    let query = db
       .selectFrom('user_organizations')
       .innerJoin(
         'organizations',
@@ -169,7 +202,14 @@ export async function listUserOrganizations(userId) {
         'organizations.display_name',
         'organizations.created_at',
       ])
-      .where('user_organizations.user_id', '=', userId)
+      .where('user_organizations.user_id', '=', userId);
+    if (organizationId)
+      query = query.where(
+        'user_organizations.organization_id',
+        '=',
+        organizationId,
+      );
+    const rows = await query
       .orderBy('user_organizations.joined_at', 'asc')
       .execute();
 
@@ -194,13 +234,26 @@ END`;
 /**
  * List all members of an organization, owner first, then admins, then members,
  * each group oldest membership first.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} organizationId - Organization ID
  * @param {Object} options - Query options
  * @param {number} [options.limit=50] - Max results
  * @param {number} [options.offset=0] - Skip results
  * @returns {Promise<Array>}
  */
-export async function listOrganizationMembers(organizationId, options = {}) {
+export async function listOrganizationMembers(
+  scope,
+  organizationId,
+  options = {},
+) {
+  const { organizationId: scopedOrgId } = toStorageContext(
+    scope,
+    'listOrganizationMembers',
+  );
+  if (organizationId !== scopedOrgId)
+    throw new TypeError(
+      'listOrganizationMembers() organization differs from storage scope',
+    );
   return withDbGuard([], async (db) => {
     const limit = Math.min(Math.max(1, options.limit || 50), 100);
     const offset = Math.max(0, options.offset || 0);
@@ -245,11 +298,20 @@ export async function listOrganizationMembers(organizationId, options = {}) {
  * route declares the segment (`captures`, B399), so `/members/nonsense`
  * answers 404 before it reaches this query.
  *
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} organizationId - Organization ID
  * @param {string} identifier - Membership ID or user ID
  * @returns {Promise<Object|null>}
  */
-export async function getOrganizationMember(organizationId, identifier) {
+export async function getOrganizationMember(scope, organizationId, identifier) {
+  const { organizationId: scopedOrgId } = toStorageContext(
+    scope,
+    'getOrganizationMember',
+  );
+  if (organizationId !== scopedOrgId)
+    throw new TypeError(
+      'getOrganizationMember() organization differs from storage scope',
+    );
   if (!identifier) return null;
 
   return withDbGuard(null, async (db) => {
@@ -282,10 +344,19 @@ export async function getOrganizationMember(organizationId, identifier) {
 
 /**
  * Count members in an organization.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} organizationId - Organization ID
  * @returns {Promise<number>}
  */
-export async function countOrganizationMembers(organizationId) {
+export async function countOrganizationMembers(scope, organizationId) {
+  const { organizationId: scopedOrgId } = toStorageContext(
+    scope,
+    'countOrganizationMembers',
+  );
+  if (organizationId !== scopedOrgId)
+    throw new TypeError(
+      'countOrganizationMembers() organization differs from storage scope',
+    );
   return withDbGuard(0, async (db) => {
     const result = await db
       .selectFrom('user_organizations')
@@ -299,6 +370,7 @@ export async function countOrganizationMembers(organizationId) {
 
 /**
  * Add a user to an organization.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {Object} data - Membership data
  * @param {string} data.userId - User ID
  * @param {string} data.organizationId - Organization ID
@@ -306,7 +378,10 @@ export async function countOrganizationMembers(organizationId) {
  * @param {string} [data.invitedBy] - User ID who invited them
  * @returns {Promise<Object>}
  */
-export async function addMember(data) {
+export async function addMember(scope, data) {
+  const { organizationId: scopedOrgId } = toStorageContext(scope, 'addMember');
+  if (data?.organizationId !== scopedOrgId)
+    throw new TypeError('addMember() organization differs from storage scope');
   const role = WORKSPACE_ROLES.includes(data.role) ? data.role : 'member';
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -347,11 +422,16 @@ export async function addMember(data) {
 
 /**
  * Update a member's role in an organization.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} membershipId - Membership ID
  * @param {string} newRole - New role
  * @returns {Promise<Object>}
  */
-export async function updateMemberRole(membershipId, newRole) {
+export async function updateMemberRole(scope, membershipId, newRole) {
+  const { organizationId: scopedOrgId } = toStorageContext(
+    scope,
+    'updateMemberRole',
+  );
   if (!WORKSPACE_ROLES.includes(newRole)) {
     return { ok: false, reason: 'invalid', field: 'role' };
   }
@@ -366,6 +446,7 @@ export async function updateMemberRole(membershipId, newRole) {
       .selectFrom('user_organizations')
       .select(['id', 'role', 'organization_id'])
       .where('id', '=', membershipId)
+      .where('organization_id', '=', scopedOrgId)
       .executeTakeFirst();
 
     if (!current) {
@@ -392,6 +473,7 @@ export async function updateMemberRole(membershipId, newRole) {
         updated_at: now,
       })
       .where('id', '=', membershipId)
+      .where('organization_id', '=', scopedOrgId)
       .returningAll()
       .executeTakeFirst();
 
@@ -408,16 +490,22 @@ export async function updateMemberRole(membershipId, newRole) {
 
 /**
  * Remove a member from an organization.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} membershipId - Membership ID
  * @returns {Promise<Object>}
  */
-export async function removeMember(membershipId) {
+export async function removeMember(scope, membershipId) {
+  const { organizationId: scopedOrgId } = toStorageContext(
+    scope,
+    'removeMember',
+  );
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     // Get membership details first for validation
     const membership = await db
       .selectFrom('user_organizations')
       .select(['id', 'role', 'organization_id'])
       .where('id', '=', membershipId)
+      .where('organization_id', '=', scopedOrgId)
       .executeTakeFirst();
 
     if (!membership) {
@@ -441,6 +529,7 @@ export async function removeMember(membershipId) {
     await db
       .deleteFrom('user_organizations')
       .where('id', '=', membershipId)
+      .where('organization_id', '=', scopedOrgId)
       .execute();
 
     return { ok: true };
@@ -450,16 +539,26 @@ export async function removeMember(membershipId) {
 /**
  * Transfer ownership of an organization to another member.
  * The current owner becomes an admin.
+ * @param {import('../scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} organizationId - Organization ID
  * @param {string} currentOwnerUserId - Current owner's user ID
  * @param {string} newOwnerUserId - New owner's user ID
  * @returns {Promise<Object>}
  */
 export async function transferOwnership(
+  scope,
   organizationId,
   currentOwnerUserId,
   newOwnerUserId,
 ) {
+  const { organizationId: scopedOrgId } = toStorageContext(
+    scope,
+    'transferOwnership',
+  );
+  if (organizationId !== scopedOrgId)
+    throw new TypeError(
+      'transferOwnership() organization differs from storage scope',
+    );
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const now = nowIso();
 

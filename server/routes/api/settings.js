@@ -1,3 +1,4 @@
+import { createStorageScope } from '../../utils/context.js';
 import {
   methodNotAllowed,
   serveJson,
@@ -55,6 +56,10 @@ async function canWriteOrgAdminKeys(authedUser, organizationId) {
   if (!authedUser?.email || !organizationId) return false;
 
   const membership = await getMembershipByEmail(
+    createStorageScope(
+      { email: authedUser?.email },
+      { organizationId: organizationId },
+    ),
     authedUser.email,
     organizationId,
   );
@@ -102,7 +107,10 @@ async function handleAppSettingsPut({ storageScope, req, res, authedUser }) {
 // (the picker needs disabledSlideTypes)
 async function handleOrgSettingsGet({ res, authedUser }) {
   const orgId = authedUser?.organizationId;
-  const org = await getOrganizationById(orgId);
+  const org = await getOrganizationById(
+    createStorageScope({ email: authedUser?.email }, { organizationId: orgId }),
+    orgId,
+  );
   if (!org) return notFound(res, 'Organization settings not found');
   const settings = getOrgSettings(org);
   const mayReadInstructions =
@@ -146,7 +154,10 @@ async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
   }
   if (hasDesignerKeys && !isDesigner) return forbidden(res);
 
-  const org = await getOrganizationById(orgId);
+  const org = await getOrganizationById(
+    createStorageScope({ email: authedUser?.email }, { organizationId: orgId }),
+    orgId,
+  );
   const currentSettings = getOrgSettings(org);
 
   // Merge only allowed keys
@@ -248,7 +259,11 @@ async function handleOrgSettingsPatch({ req, res, authedUser, storageScope }) {
     }
   }
 
-  await updateOrganization(orgId, { settings: merged });
+  await updateOrganization(
+    createStorageScope({ email: authedUser?.email }, { organizationId: orgId }),
+    orgId,
+    { settings: merged },
+  );
   const mayReadInstructions =
     isFeatureEnabled('ai') && (await canWriteOrgAdminKeys(authedUser, orgId));
   serveJson(res, 200, {

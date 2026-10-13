@@ -104,7 +104,10 @@ pgDescribe('email identity provisioning (real PostgreSQL)', () => {
       setUserPassword(scope, options.email, password),
     ]);
     assert.ok(results.every((result) => result.ok));
-    assert.equal(await verifyUserPassword(options.email, password), true);
+    assert.equal(
+      await verifyUserPassword(scope, options.email, password),
+      true,
+    );
     assert.equal(
       (await db.selectFrom('users').selectAll().execute()).length,
       1,

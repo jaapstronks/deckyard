@@ -1,9 +1,10 @@
-import { ensureUserByEmail } from './users.js';
 /**
  * Storage layer for password reset functionality.
  * Handles token generation, validation, rate limiting, and user password management.
  * Uses shared secure-tokens utility for token generation/hashing.
  */
+
+import { ensureUserByEmail } from './users.js';
 
 import { toStorageContext } from './scope.js';
 import { getUserByEmailGlobal } from './identity.js';
@@ -241,11 +242,18 @@ export async function consumeResetToken(rawToken) {
 
 /**
  * Check if a user exists in the database with a password hash.
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} email - The user's email
  * @returns {Promise<boolean>} - True if user has database credentials
  */
-export async function hasDatabaseCredentials(email) {
-  const user = await getUserByEmailGlobal(email);
+export async function hasDatabaseCredentials(scope, email) {
+  toStorageContext(
+    scope,
+    'hasDatabaseCredentials',
+    {},
+    { allowCrossOrganization: true },
+  );
+  const user = await getUserByEmailGlobal(scope, email);
   return !!(user?.password_hash && user?.auth_source === 'database');
 }
 
@@ -299,12 +307,19 @@ export async function setUserPassword(scope, email, password) {
 
 /**
  * Verify a user's current password.
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} email - The user's email
  * @param {string} password - The password to verify
  * @returns {Promise<boolean>} - True if password is correct
  */
-export async function verifyUserPassword(email, password) {
-  const user = await getUserByEmailGlobal(email);
+export async function verifyUserPassword(scope, email, password) {
+  toStorageContext(
+    scope,
+    'verifyUserPassword',
+    {},
+    { allowCrossOrganization: true },
+  );
+  const user = await getUserByEmailGlobal(scope, email);
   if (!user?.password_hash) return false;
 
   return verifyPassword(password, user.password_hash);
@@ -313,11 +328,18 @@ export async function verifyUserPassword(email, password) {
 /**
  * Get the timestamp when a user's password was last changed.
  * Used for session invalidation checks.
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {string} email - The user's email
  * @returns {Promise<Date|null>} - Password changed timestamp or null
  */
-export async function getPasswordChangedAt(email) {
-  const user = await getUserByEmailGlobal(email);
+export async function getPasswordChangedAt(scope, email) {
+  toStorageContext(
+    scope,
+    'getPasswordChangedAt',
+    {},
+    { allowCrossOrganization: true },
+  );
+  const user = await getUserByEmailGlobal(scope, email);
   if (!user?.password_changed_at) return null;
   return new Date(user.password_changed_at);
 }
@@ -328,6 +350,7 @@ export async function getPasswordChangedAt(email) {
 
 /**
  * Log an authentication-related event.
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  * @param {Object} event - Event details
  * @param {string} event.type - Event type (login, logout, password_reset_request, etc.)
  * @param {string} [event.email] - User email
@@ -337,7 +360,8 @@ export async function getPasswordChangedAt(email) {
  * @param {Object} [event.metadata] - Additional metadata
  * @returns {Promise<void>}
  */
-export async function logAuthEvent(event) {
+export async function logAuthEvent(scope, event) {
+  toStorageContext(scope, 'logAuthEvent', {}, { allowCrossOrganization: true });
   return withDbGuard(undefined, async (db) => {
     await db
       .insertInto('auth_audit_log')
@@ -378,8 +402,15 @@ export async function cleanupExpiredTokens() {
 /**
  * Cleanup old audit log entries (older than 90 days).
  * @returns {Promise<number>} - Number of entries cleaned up
+ * @param {import('./scope.js').StorageScope} scope - Caller authorization scope.
  */
-export async function cleanupOldAuditLogs() {
+export async function cleanupOldAuditLogs(scope) {
+  toStorageContext(
+    scope,
+    'cleanupOldAuditLogs',
+    {},
+    { allowCrossOrganization: true },
+  );
   return withDbGuard(0, async (db) => {
     const ninetyDaysAgo = isoBefore(90 * 24 * 60 * 60 * 1000);
 

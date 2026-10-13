@@ -19,6 +19,8 @@
  * Run with: DATABASE_URL=… npm run test:pg
  */
 
+import { crossOrganizationScope } from '../../server/storage/scope.js';
+
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { sql } from 'kysely';
@@ -451,7 +453,9 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       .execute();
     await writeUserSettings(testScope(), ALICE, {});
 
-    const report = await verifyIdentityConsistency();
+    const report = await verifyIdentityConsistency(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+    );
     assert.equal(report.ok, true, formatIdentityReport(report).join('\n'));
     assert.equal(report.mismatched, 0);
     assert.equal(check(report, 'presentations', 'owner_user_id').linked, 1);
@@ -506,7 +510,9 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
     // The shared anonymous bucket: never a person, so never an id.
     await writeUserSettings(testScope(), '', {});
 
-    const report = await verifyIdentityConsistency();
+    const report = await verifyIdentityConsistency(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+    );
     assert.equal(report.ok, true, formatIdentityReport(report).join('\n'));
     assert.equal(
       check(report, 'presentation_collaborators', 'user_id').external,
@@ -533,7 +539,9 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       })
       .execute();
 
-    const report = await verifyIdentityConsistency();
+    const report = await verifyIdentityConsistency(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+    );
     const owner = check(report, 'presentations', 'owner_user_id');
     assert.equal(owner.unlinked, 1);
     assert.equal(owner.linked, 0);
@@ -561,7 +569,9 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       })
       .execute();
 
-    const report = await verifyIdentityConsistency();
+    const report = await verifyIdentityConsistency(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+    );
     assert.equal(report.ok, false);
     assert.equal(report.mismatched, 1);
     const owner = check(report, 'presentations', 'owner_user_id');
@@ -583,7 +593,9 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
       .where('id', '=', ALICE_ID)
       .execute();
 
-    const drifted = await verifyIdentityConsistency();
+    const drifted = await verifyIdentityConsistency(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+    );
     assert.equal(
       drifted.ok,
       false,
@@ -593,7 +605,9 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
 
     await writeUserSettings(testScope(), ALICE_RENAMED, {});
 
-    const healed = await verifyIdentityConsistency();
+    const healed = await verifyIdentityConsistency(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+    );
     assert.equal(healed.ok, true, formatIdentityReport(healed).join('\n'));
     assert.equal(check(healed, 'user_settings', 'user_id').linked, 1);
   });
@@ -612,8 +626,12 @@ pgDescribe('identity data migration verification (real PostgreSQL)', () => {
 
     const { rows: before } =
       await sql`SELECT xmin::text AS v FROM presentations`.execute(db);
-    const first = await verifyIdentityConsistency();
-    const second = await verifyIdentityConsistency();
+    const first = await verifyIdentityConsistency(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+    );
+    const second = await verifyIdentityConsistency(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+    );
     const { rows: after } =
       await sql`SELECT xmin::text AS v FROM presentations`.execute(db);
 

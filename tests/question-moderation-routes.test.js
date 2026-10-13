@@ -466,7 +466,7 @@ test('an editor-collaborator is told they may promote — and may', async () => 
   // with `isOrganizationAdmin`, so this person saw no promote button at all
   // while the route below happily accepted their POST.
   const seeded = await seed();
-  const added = await addCollaborator(seeded.pres.id, {
+  const added = await addCollaborator({ organizationId: ORG }, seeded.pres.id, {
     userEmail: EDITOR.email,
     permission: PERMISSIONS.EDIT,
     invitedBy: OWNER.email,
