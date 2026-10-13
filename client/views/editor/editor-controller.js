@@ -376,7 +376,13 @@ export async function createEditorController({
     onFieldRefusal: (err) => {
       saveRefusal.set(err);
       if (!err) return;
-      if (err.details.lang) topbarApi?.revealRefusedVersion(err.details.lang);
+      if (
+        err.details.lang &&
+        normalizeLang(err.details.lang) !== normalizeLang(pres.i18n?.active)
+      ) {
+        bulkEditModal?.close();
+        topbarApi?.revealRefusedVersion(err.details.lang);
+      }
       setSelectedSlideIdWithLock(err.details.slideId);
       setInspectorCollapsed(false);
       rerenderSlideList();
