@@ -37,10 +37,17 @@ info:
     | Pro | 300 | 100 | 500 |
     | Enterprise | 1000 | Unlimited | Unlimited |
 
-    Rate limit information is included in response headers:
-    - `X-RateLimit-Limit`: Maximum requests allowed
-    - `X-RateLimit-Remaining`: Requests remaining
-    - `X-RateLimit-Reset`: Unix timestamp when the limit resets
+    Responses from authenticated API handlers include the request limiter's
+    decision in these headers:
+    - `X-RateLimit-Limit`: Request bucket capacity for the key's tier
+    - `X-RateLimit-Remaining`: Whole requests available after this request
+    - `X-RateLimit-Reset`: Unix timestamp when the current request budget is full again
+
+    The request limiter refills tokens in memory, or uses a sliding window when
+    Redis is available. Its headers describe the backend that actually handled
+    the request. AI and export quota responses use the same header names for
+    their daily quota instead. A request-rate-limited response also includes
+    `Retry-After`, the seconds until the next request can be admitted.
 
     ## Errors
 
@@ -2708,11 +2715,10 @@ components:
 
     RateLimited:
       description: >-
-        Rate limit exceeded (`error: rate_limited`). Two limiters answer with
-        this status: the per-minute request limiter (sets `Retry-After` only)
-        and the daily AI/export limiters (set the `X-RateLimit-*` headers and
-        carry `limit`, `used` and `resetAt` inside `details`). All headers are
-        therefore optional.
+        Rate limit exceeded (`error: rate_limited`). The request limiter sets
+        `X-RateLimit-*` and `Retry-After`; the daily AI/export limiters set
+        `X-RateLimit-*` and carry `limit`, `used` and `resetAt` inside
+        `details`. The daily limiters do not set `Retry-After`.
       headers:
         X-RateLimit-Limit:
           schema:

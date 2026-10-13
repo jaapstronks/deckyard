@@ -40,6 +40,8 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage } = await import('../server/storage/lifecycle.js');
 const { handleAi } = await import('../server/routes/public-api/v1/ai.js');
+const { checkRequestRateLimit } =
+  await import('../server/routes/public-api/v1/middleware.js');
 const { getLlmStatus } = await import('../server/utils/llm/config.js');
 
 /**
@@ -310,6 +312,7 @@ for (const pathname of ['/api/v1/ai/wizard', '/api/v1/ai/append-slides']) {
     const ctx = makeCtx('POST', pathname, {
       body: { raw: 'A deck about tests', vendor: 'openai-compat' },
     });
+    assert.equal(await checkRequestRateLimit(ctx), true);
     assert.equal(await handleAi(ctx), true);
 
     assert.equal(ctx.res.statusCode, 502);
