@@ -1,7 +1,7 @@
 /**
  * The storage call convention (A7.20, B86): burndown gate.
  *
- * Two rules for `server/storage/**`, one allowlist.
+ * Signature and failure-shape rules for `server/storage/**`.
  *
  * **The signature rule (A7.20).** Every exported function that touches storage
  * takes a `StorageScope` as its **first** parameter, named `scope`, and
@@ -44,7 +44,10 @@
  * Existing violations are carried in `storage-call-convention-burndown.json`,
  * an allowlist that may only shrink (the `eslint-suppressions.json` pattern):
  * fixing an export means deleting its line, and adding a new export in either
- * old shape fails this test. Six exports are permanently exempt from rule (a)
+ * old shape fails this test. Rule (e) below additionally requires `scope` first
+ * for DB-reaching exports, with D331 token/telemetry exceptions. The frozen
+ * initial inventory bounds its burndown identities.
+ * Six exports are permanently exempt from rule (a)
  * because they genuinely take a disk path, not a scope; they are listed here
  * with reasons.
  *
@@ -57,6 +60,13 @@ import { parse } from 'acorn';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import {
+  storageScopeInventory,
+  scopeFirstViolations,
+  addedBurndownEntries,
+} from './helpers/storage-scope-inventory.js';
+import { STORAGE_SCOPE_EXCEPTIONS } from './helpers/storage-scope-exceptions.js';
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const storageRoot = join(repoRoot, 'server', 'storage');
@@ -346,7 +356,9 @@ test('no storage export takes a new pre-convention shape', () => {
 
 test('the burndown list only shrinks: every line still names a real violation', () => {
   const present = new Set(found);
-  const stale = burndown.filter((v) => !present.has(v));
+  const stale = burndown.filter(
+    (v) => !v.endsWith(' :: scope-first') && !present.has(v),
+  );
   assert.deepEqual(
     stale,
     [],
@@ -393,12 +405,66 @@ test('the permanent exceptions still exist and still take a disk path first', ()
 });
 
 test('no burndown line doubles as a permanent exception', () => {
-  const overlap = burndown.filter((v) =>
-    PERMANENT_EXCEPTIONS.has(v.split(' :: ').slice(0, 2).join(' :: ')),
+  const overlap = burndown.filter(
+    (v) =>
+      !v.endsWith(' :: scope-first') &&
+      PERMANENT_EXCEPTIONS.has(v.split(' :: ').slice(0, 2).join(' :: ')),
   );
   assert.deepEqual(
     overlap,
     [],
     'an export is either exempt or on the burndown list, never both',
   );
+});
+
+// Rule (e), B665: positive DB-reaching signature gate. Rule (c) above remains
+// independent; a scope cannot conceal an invalid mutation failure shape.
+const inventory = storageScopeInventory(
+  new Map(
+    [...walk(storageRoot)].map((file) => [
+      relative(repoRoot, file),
+      readFileSync(file, 'utf8'),
+    ]),
+  ),
+);
+const scopeViolations = scopeFirstViolations(
+  inventory,
+  STORAGE_SCOPE_EXCEPTIONS,
+);
+const scopeBurndown = burndown.filter((line) =>
+  line.endsWith(' :: scope-first'),
+);
+const initialInventory = JSON.parse(
+  readFileSync(
+    join(repoRoot, 'tests/fixtures/storage-scope-inventory.json'),
+    'utf8',
+  ),
+);
+
+test('DB-reaching storage exports take scope first (positive signature gate)', () => {
+  assert.deepEqual(
+    addedBurndownEntries(scopeViolations, scopeBurndown),
+    [],
+    'New DB-reaching exports must take scope first. Existing debt only burns down.',
+  );
+});
+
+test('the scope burndown cannot add identities to the initial B665 inventory', () => {
+  assert.deepEqual(
+    addedBurndownEntries(scopeBurndown, initialInventory.violations),
+    [],
+  );
+});
+
+test('every scope-first burndown entry still violates the positive convention', () => {
+  assert.deepEqual(addedBurndownEntries(scopeBurndown, scopeViolations), []);
+});
+
+test('scope exceptions remain DB-reaching exports with a D331 category and reason', () => {
+  const keys = new Set(inventory.map((fn) => fn.key));
+  for (const [key, reason] of STORAGE_SCOPE_EXCEPTIONS) {
+    assert.ok(keys.has(key), `Remove stale scope exception: ${key}`);
+    assert.match(reason, /^(token|telemetry): .+/);
+    assert.ok(!scopeBurndown.includes(`${key} :: scope-first`));
+  }
 });
