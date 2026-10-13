@@ -42,7 +42,10 @@ export async function handleRealtime(ctx, presentationId) {
   if (!stream.ok) return true;
 
   // Send initial count
-  const initialCount = await getActiveViewerCount(presentationId);
+  const initialCount = await getActiveViewerCount(
+    ctx.storageScope,
+    presentationId,
+  );
   // A client that left during the count is gone: start no timers for it.
   if (stream.signal.aborted) return true;
   sseWrite(res, { event: 'viewerCount', data: { count: initialCount } });
@@ -50,7 +53,10 @@ export async function handleRealtime(ctx, presentationId) {
   // Set up interval for updates (using configurable interval)
   intervalId = setInterval(async () => {
     try {
-      const count = await getActiveViewerCount(presentationId);
+      const count = await getActiveViewerCount(
+        ctx.storageScope,
+        presentationId,
+      );
       sseWrite(res, { event: 'viewerCount', data: { count } });
     } catch (err) {
       // Log error but don't crash the connection

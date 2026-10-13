@@ -685,7 +685,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
       text: 'F',
     });
 
-    assert.equal(closeSession(sessionId, 'closed'), true);
+    assert.equal(closeSession(testScope(), sessionId, 'closed'), true);
     // The delete is fire-and-forget; give it the event-loop turn it needs.
     await new Promise((resolve) => setTimeout(resolve, 100));
 
@@ -781,14 +781,18 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
 
   it('ensureInteractionSlide answers invalid for a blank id and not_found for a dead session', async () => {
     assert.deepEqual(
-      await ensureInteractionSlide({ sessionId, slideId: '  ', type: 'poll' }),
+      await ensureInteractionSlide(testScope(), {
+        sessionId,
+        slideId: '  ',
+        type: 'poll',
+      }),
       {
         ok: false,
         reason: 'invalid',
       },
     );
     assert.deepEqual(
-      await ensureInteractionSlide({
+      await ensureInteractionSlide(testScope(), {
         sessionId: 'no-such-session',
         slideId: 'poll-1',
         type: 'poll',
@@ -798,7 +802,7 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   });
 
   it('ensureInteractionSlide hands the row back under ok', async () => {
-    const ensured = await ensureInteractionSlide({
+    const ensured = await ensureInteractionSlide(testScope(), {
       sessionId,
       slideId: 'poll-1',
       type: 'poll',
@@ -810,12 +814,18 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   });
 
   it('updateInteractionSlide answers invalid for a blank id and not_found when nothing is there', async () => {
-    assert.deepEqual(await updateInteractionSlide({ sessionId, slideId: '' }), {
-      ok: false,
-      reason: 'invalid',
-    });
     assert.deepEqual(
-      await updateInteractionSlide({ sessionId, slideId: 'never-ensured' }),
+      await updateInteractionSlide(testScope(), { sessionId, slideId: '' }),
+      {
+        ok: false,
+        reason: 'invalid',
+      },
+    );
+    assert.deepEqual(
+      await updateInteractionSlide(testScope(), {
+        sessionId,
+        slideId: 'never-ensured',
+      }),
       {
         ok: false,
         reason: 'not_found',
@@ -824,13 +834,13 @@ pgDescribe('live interaction storage (real PostgreSQL)', () => {
   });
 
   it('updateInteractionSlide hands the updated row back under ok', async () => {
-    await ensureInteractionSlide({
+    await ensureInteractionSlide(testScope(), {
       sessionId,
       slideId: 'poll-1',
       type: 'poll',
       optionCount: 2,
     });
-    const updated = await updateInteractionSlide({
+    const updated = await updateInteractionSlide(testScope(), {
       sessionId,
       slideId: 'poll-1',
       status: 'closed',

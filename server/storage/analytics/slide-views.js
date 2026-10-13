@@ -1,3 +1,4 @@
+import { toStorageContext } from '../scope.js';
 /**
  * Slide views storage for tracking per-slide engagement.
  */
@@ -6,6 +7,35 @@ import { sql } from 'kysely';
 import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/index.js';
 import { isValidSlideIndex } from '../../analytics/helpers.js';
+
+async function sessionInScope(scope, db, sessionId, presentationId = null) {
+  const context = toStorageContext(
+    scope,
+    'sessionInScope',
+    {},
+    { allowCrossOrganization: true },
+  );
+  if (context.crossOrganization && scope.capabilitySessionId !== sessionId)
+    return false;
+  let query = db
+    .selectFrom('view_sessions')
+    .innerJoin(
+      'presentations',
+      'presentations.id',
+      'view_sessions.presentation_id',
+    )
+    .select('view_sessions.id')
+    .where('view_sessions.id', '=', sessionId);
+  if (presentationId)
+    query = query.where('view_sessions.presentation_id', '=', presentationId);
+  if (context.organizationId)
+    query = query.where(
+      'presentations.organization_id',
+      '=',
+      context.organizationId,
+    );
+  return !!(await query.executeTakeFirst());
+}
 
 // ============================================================
 // SLIDE VIEW CRUD
@@ -17,11 +47,19 @@ import { isValidSlideIndex } from '../../analytics/helpers.js';
  * @param {string} viewSessionId - The view session ID
  * @returns {Promise<{ok: boolean, reason?: string}>}
  */
-export async function endAllSlideViewsForSession(viewSessionId) {
+export async function endAllSlideViewsForSession(scope, viewSessionId) {
+  toStorageContext(
+    scope,
+    'endAllSlideViewsForSession',
+    {},
+    { allowCrossOrganization: true },
+  );
   const sessionId = norm(viewSessionId);
   if (!sessionId) return { ok: false, reason: 'invalid' };
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    if (!(await sessionInScope(scope, db, sessionId)))
+      return { ok: false, reason: 'not_found' };
     const now = nowIso();
 
     // Batch update all open slide views for this session
@@ -51,7 +89,13 @@ export async function endAllSlideViewsForSession(viewSessionId) {
  * @param {number} data.slideIndex - The new slide index
  * @returns {Promise<{ok: boolean, slideView?: Object, reason?: string}>}
  */
-export async function transitionToSlide(data) {
+export async function transitionToSlide(scope, data) {
+  toStorageContext(
+    scope,
+    'transitionToSlide',
+    {},
+    { allowCrossOrganization: true },
+  );
   const viewSessionId = norm(data?.viewSessionId);
   const presentationId = norm(data?.presentationId);
   const slideId = norm(data?.slideId);
@@ -69,6 +113,9 @@ export async function transitionToSlide(data) {
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     // Use a transaction to ensure atomicity
     return db.transaction().execute(async (trx) => {
+      if (!(await sessionInScope(scope, trx, viewSessionId, presentationId))) {
+        return { ok: false, reason: 'not_found' };
+      }
       const now = nowIso();
 
       // End any current open slide view in this transaction
@@ -125,7 +172,18 @@ export async function transitionToSlide(data) {
  * @param {string} olderThan - ISO date string
  * @returns {Promise<{deleted: number}>}
  */
-export async function deleteOldSlideViews(olderThan) {
+export async function deleteOldSlideViews(scope, olderThan) {
+  const context = toStorageContext(
+    scope,
+    'deleteOldSlideViews',
+    {},
+    { allowCrossOrganization: true },
+  );
+
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'deleteOldSlideViews() requires an instance retention scope',
+    );
   return withDbGuard({ deleted: 0 }, async (db) => {
     const result = await db
       .deleteFrom('slide_views')

@@ -151,7 +151,7 @@ export async function ensureFeedbackForSlide(
     {},
     { allowCrossOrganization: true },
   );
-  const ensured = await ensureInteractionSlide({
+  const ensured = await ensureInteractionSlide(scope, {
     sessionId,
     slideId,
     type: 'feedback',
@@ -184,7 +184,7 @@ export async function getFeedbackAggregate(
     {},
     { allowCrossOrganization: true },
   );
-  const slide = await getInteractionSlide({ sessionId, slideId });
+  const slide = await getInteractionSlide(scope, { sessionId, slideId });
   if (!slide) return null;
   return aggregateForDevice(slide, deviceId);
 }
@@ -228,7 +228,7 @@ export async function submitFeedback(
 
   // Auto-create so the first respondent never needs a presenter action, the
   // same way a first voter creates a poll's interaction.
-  const ensured = await ensureInteractionSlide({
+  const ensured = await ensureInteractionSlide(scope, {
     sessionId,
     slideId: sid,
     type: 'feedback',
@@ -258,7 +258,10 @@ export async function submitFeedback(
       )
       .execute();
   });
-  const bumped = await updateInteractionSlide({ sessionId, slideId: sid });
+  const bumped = await updateInteractionSlide(scope, {
+    sessionId,
+    slideId: sid,
+  });
   const touched = bumped.ok ? bumped.slide : slide;
 
   const aggForDevice = await aggregateForDevice(touched, did);
@@ -294,7 +297,11 @@ export async function setFeedbackStatus(
   { slideId = '', status = 'open' } = {},
 ) {
   toStorageContext(scope, 'setFeedbackStatus');
-  const updated = await updateInteractionSlide({ sessionId, slideId, status });
+  const updated = await updateInteractionSlide(scope, {
+    sessionId,
+    slideId,
+    status,
+  });
   if (!updated.ok) return updated;
   const agg = await aggregateForDevice(updated.slide, null);
   await maybeBroadcast(scope, sessionId, agg);
@@ -313,7 +320,7 @@ export async function setFeedbackStatus(
  */
 export async function resetFeedback(scope, sessionId, { slideId = '' } = {}) {
   toStorageContext(scope, 'resetFeedback');
-  const updated = await updateInteractionSlide({ sessionId, slideId });
+  const updated = await updateInteractionSlide(scope, { sessionId, slideId });
   if (!updated.ok) return updated;
   const slide = updated.slide;
 

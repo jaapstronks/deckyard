@@ -35,9 +35,13 @@ import {
 /**
  * Generate report data based on type.
  */
-async function generateReportData(presentationId, reportType, opts) {
-  const overview = await getPresentationAnalyticsOverview(presentationId, opts);
-  const journey = await getViewerJourneyData(presentationId, opts);
+async function generateReportData(scope, presentationId, reportType, opts) {
+  const overview = await getPresentationAnalyticsOverview(
+    scope,
+    presentationId,
+    opts,
+  );
+  const journey = await getViewerJourneyData(scope, presentationId, opts);
 
   const baseData = {
     overview,
@@ -51,10 +55,11 @@ async function generateReportData(presentationId, reportType, opts) {
 
   // Add slide engagement for detailed and engagement reports
   const slideEngagement = await getDetailedSlideEngagement(
+    scope,
     presentationId,
     opts,
   );
-  const heatmap = await getInteractionHeatmapData(presentationId, opts);
+  const heatmap = await getInteractionHeatmapData(scope, presentationId, opts);
 
   if (reportType === 'detailed') {
     return {
@@ -164,10 +169,15 @@ export async function handleCreateReport(ctx, presentationId) {
   }
 
   // Generate report data
-  const reportData = await generateReportData(presentationId, reportType, {
-    since: startDate,
-    until: endDate,
-  });
+  const reportData = await generateReportData(
+    ctx.storageScope,
+    presentationId,
+    reportType,
+    {
+      since: startDate,
+      until: endDate,
+    },
+  );
 
   const result = await createAnalyticsReport(ctx.storageScope, {
     presentationId,

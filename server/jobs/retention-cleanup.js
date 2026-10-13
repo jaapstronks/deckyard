@@ -143,7 +143,9 @@ export async function runRetentionCleanup({
   );
   log.info(`Deleted ${instanceHealth} old instance_health rows`);
 
-  const shareLinks = await cleanupExpiredShareLinks();
+  const shareLinks = await cleanupExpiredShareLinks(
+    crossOrganizationScope(null, 'share-link retention: instance-wide expiry'),
+  );
   log.info(`Revoked ${shareLinks} expired share links`);
 
   const { deleted: activityEvents } = await deleteOldActivityEvents(
