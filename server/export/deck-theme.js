@@ -181,7 +181,14 @@ export async function loadBundleableTheme(
   if (id === DEFAULT_THEME_REF) {
     id = organizationId
       ? await getDefaultThemeId({ repoRoot, organizationId })
-      : (await listSeedThemes())[0]?.id;
+      : (
+          await listSeedThemes(
+            crossOrganizationScope(
+              repoRoot ?? null,
+              'seed themes are instance-level configuration without an organization',
+            ),
+          )
+        )[0]?.id;
   }
   if (!UUID_RE.test(id || ''))
     throw new Error(`Theme not found for bundle export: ${rawThemeId}`);

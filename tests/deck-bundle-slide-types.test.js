@@ -42,8 +42,7 @@ const OWNER = 'owner@example.com';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createCustomSlideType, listCustomSlideTypes, getCustomSlideType } =
   await import('../server/storage/custom-slide-types.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types/registry.js');
@@ -89,7 +88,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
   fs.rmSync(tmpUploads, { recursive: true, force: true });
   fs.rmSync(installRoot, { recursive: true, force: true });

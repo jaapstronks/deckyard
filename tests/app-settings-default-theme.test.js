@@ -13,10 +13,7 @@ import { before, after, describe, it } from 'node:test';
 import assert from 'node:assert';
 import { createFakeDb } from './helpers/fake-db.js';
 import { __setTestDb } from '../server/db/client.js';
-import {
-  initializeStorage,
-  __resetStorageForTests,
-} from '../server/storage/lifecycle.js';
+import { initializeStorage } from '../server/db/lifecycle.js';
 
 const { getDefaultThemeId, getEnabledThemeIds } =
   await import('../server/storage/settings.js');
@@ -55,7 +52,6 @@ before(async () => {
   await initializeStorage();
 });
 after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

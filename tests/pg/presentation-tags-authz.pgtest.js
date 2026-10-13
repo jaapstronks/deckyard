@@ -217,18 +217,16 @@ pgDescribe('deck tags routes authorize the deck (real PostgreSQL)', () => {
 
   it("the one replacement path refuses another organization's library item too", async () => {
     const itemId = await seedSlideLibraryItem(db, { organizationId: ORG_A });
-    const ok = await replaceTagLinks({
+    const ok = await replaceTagLinks(scopeA, {
       linkTable: 'slide_library_tags',
       rowId: itemId,
-      orgId: ORG_A,
       tagNames: ['shelf'],
     });
     assert.equal(ok.ok, true);
 
-    const r = await replaceTagLinks({
+    const r = await replaceTagLinks(scopeB, {
       linkTable: 'slide_library_tags',
       rowId: itemId,
-      orgId: ORG_B,
       tagNames: [],
     });
     assert.deepEqual(r, { ok: false, reason: 'not_found' });

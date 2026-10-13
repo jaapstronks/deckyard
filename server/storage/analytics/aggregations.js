@@ -5,7 +5,7 @@ import { toStorageContext } from '../scope.js';
 
 import { sql } from 'kysely';
 import { norm } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
 
 async function scopedPresentationIds(scope, db, ids) {

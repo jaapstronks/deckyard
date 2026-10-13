@@ -44,7 +44,7 @@ reseeds in `before`, so order never matters.
 ## The seams
 
 The storage layer reaches the database exclusively through `getDb()` behind
-`isDatabaseAvailable()` (`server/storage/utils/db-guard.js`). `tests/pg/helpers/
+`isDatabaseAvailable()` (`withDbGuard` in `server/db/client.js`). `tests/pg/helpers/
 harness.js` opens a real Kysely against `DATABASE_URL` and installs it with
 `__setTestDb()` (`server/db/client.js`) — the _same_ seam the in-memory double
 uses. Once installed, every storage module transparently hits the live

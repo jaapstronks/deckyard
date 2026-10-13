@@ -42,7 +42,7 @@ const RAW_KEY = 'dk_live_sse-tenancy-key-00000000000000';
 
 const { createFakeDb } = await import('../helpers/fake-db.js');
 const { __setTestDb } = await import('../../server/db/client.js');
-const { initializeStorage } = await import('../../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../../server/db/lifecycle.js');
 const { hashToken } = await import('../../server/utils/secure-tokens.js');
 const { McpServer } = await import('../../server/mcp/protocol.js');
 const { registerTools } = await import('../../server/mcp/tools.js');

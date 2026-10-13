@@ -1,4 +1,4 @@
-import { getDb, sql } from '../db/client.js';
+import { getDb, sql, withDbGuard } from '../db/client.js';
 import { generateSlug, isValidSlug } from '../../shared/slug.js';
 /**
  * Storage layer for custom themes.
@@ -8,7 +8,6 @@ import { generateSlug, isValidSlug } from '../../shared/slug.js';
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
-import { withDbGuard } from './utils/index.js';
 import {
   isValidFont,
   DEFAULT_HEADING_FONT,
@@ -149,8 +148,22 @@ export async function listThemes(scope, { rawConfig = false } = {}) {
   });
 }
 
-/** List globally visible seed records without granting access to organization rows. */
-export async function listSeedThemes() {
+/**
+ * List globally visible seed records without granting access to organization rows.
+ *
+ * Seeds carry no organization (`organization_id IS NULL`): they are
+ * instance-level configuration (storage-scope.md category 3), so an
+ * organization scope and a reasoned instance scope both read the same rows.
+ * @param {import('./scope.js').StorageScope} scope
+ * @returns {Promise<Object[]>}
+ */
+export async function listSeedThemes(scope) {
+  toStorageContext(
+    scope,
+    'listSeedThemes',
+    {},
+    { allowCrossOrganization: true },
+  );
   return withDbGuard([], async (db) => {
     const rows = await db
       .selectFrom('themes')

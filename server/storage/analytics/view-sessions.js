@@ -5,7 +5,7 @@
 
 import crypto from 'node:crypto';
 import { norm, nowIso, durationSinceSeconds } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { toStorageContext } from '../scope.js';
 import { ANALYTICS_CONFIG, applyDateFilters } from '../../analytics/helpers.js';
 

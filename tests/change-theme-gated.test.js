@@ -21,8 +21,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation, getPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
 
@@ -60,7 +59,6 @@ describe('updatePresentation — gated theme switch', () => {
   });
 
   after(async () => {
-    __resetStorageForTests();
     __setTestDb(null);
   });
 

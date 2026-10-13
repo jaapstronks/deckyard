@@ -17,7 +17,7 @@ import {
   hashToken,
   isValidEmail,
 } from '../utils/secure-tokens.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { ensureMembership } from './login-membership.js';
 
 // ============================================================

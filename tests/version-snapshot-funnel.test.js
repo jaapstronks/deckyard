@@ -101,8 +101,7 @@ for (const [label, stamp] of [
     process.env.DEFAULT_ORGANIZATION_ID = ORG;
     const { createFakeDb } = await import('./helpers/fake-db.js');
     const { __setTestDb } = await import('../server/db/client.js');
-    const { initializeStorage, __resetStorageForTests } =
-      await import('../server/storage/lifecycle.js');
+    const { initializeStorage } = await import('../server/db/lifecycle.js');
     const db = createFakeDb({
       organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
       presentation_versions: [],
@@ -147,7 +146,6 @@ for (const [label, stamp] of [
         );
       }
     } finally {
-      __resetStorageForTests();
       __setTestDb(null);
     }
   });

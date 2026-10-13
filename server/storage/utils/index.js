@@ -1,17 +1,15 @@
 /**
  * Cross-store helpers — the sole public seam over `server/storage/utils/`.
  *
- * Not a store: nothing here reads or writes a domain table. It holds the two
- * things every store needs and none of them owns — the database-availability
- * guard, and the small value helpers (`parseJson`, e-mail →
- * user id, `LIKE`-pattern escaping) that no one store owns — most of them
- * because they were duplicated across stores before they moved here.
+ * Not a store: it holds the small helpers (`parseJson`, e-mail → user id,
+ * `LIKE`-pattern escaping) that no one store owns, most of them because they
+ * were duplicated across stores before they moved here. The
+ * database-availability guard `withDbGuard` is a database primitive and lives
+ * in `server/db/client.js` (B665).
  *
- * Consumers import this barrel, not `./db-guard.js` or `./helpers.js`
- * (`AGENTS.md` § _Module layout: one folder = one seam_), which is what
- * `tests/module-layout.test.js` pins.
+ * Consumers import this barrel, not `./helpers.js` (`AGENTS.md` § _Module
+ * layout: one folder = one seam_), which is what `tests/module-layout.test.js`
+ * pins.
  */
-
-export { withDbGuard } from './db-guard.js';
 
 export { parseJson, getUserIdByEmail, escapeLikePattern } from './helpers.js';

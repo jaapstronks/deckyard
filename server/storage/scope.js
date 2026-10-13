@@ -124,7 +124,7 @@ export function resolveScope(
  * and theme files.
  *
  * Unlike the organization this is allowed to be absent: paths that never touch
- * the disk (analytics ingest, for one) have no repo root to give, and the six
+ * the disk (analytics ingest, for one) have no repo root to give, and the five
  * disk-path functions are never reached from there.
  *
  * @param {StorageScope} scope

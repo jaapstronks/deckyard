@@ -54,7 +54,7 @@
 import { toStorageContext } from './scope.js';
 
 import { displayNameFromEmail } from '../../shared/display-name.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 
 /**
  * A person as a response names them.

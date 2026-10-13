@@ -29,14 +29,19 @@ each path resolves.
   reduces a caller scope to a `StorageContext` via `toStorageContext()`; the
   tenancy gate (see _Authz & tenancy_). Every facade calls this once, then
   passes the context down to its queries.
-- `server/storage/lifecycle.js` — the storage lifecycle
-  (`initializeStorage` / `closeStorage`), thin wrappers over `db/client.js`'s
-  idempotent `initializeDatabase()` / `closeDatabase()`.
 - `server/db/client.js` — the single Kysely handle. Every facade reaches
   PostgreSQL through `getDb()` directly (there is no adapter class; B79/D34
-  stripped it), which throws before init so a premature query fails loud.
-- `server/storage/boot-check.js` — refuses to start on an empty DB while legacy
-  on-disk data still exists.
+  stripped it), which throws before init so a premature query fails loud. It
+  also holds `withDbGuard(fallback, fn)`, the availability guard every store
+  wraps its queries in.
+- `server/db/lifecycle.js` — the database lifecycle for consumers outside the
+  storage layer (`initializeStorage` / `closeStorage`), thin lazy wrappers over
+  `client.js`'s idempotent `initializeDatabase()` / `closeDatabase()`.
+- `server/db/boot-check.js` — refuses to start while migrations are pending, or
+  on an empty DB while legacy on-disk data still exists.
+
+The three database-layer modules act for no organization, so they live in
+`server/db/`, outside the storage scope convention (B665).
 
 **Domain subdirectories** (each takes a scope as first arg):
 
@@ -55,8 +60,8 @@ each path resolves.
   storage (incl. the GDPR view-session path), behind an `index.js` barrel.
 - `server/storage/cache/` — `permission-cache.js`.
 - `server/storage/utils/` — not a store: the cross-store helpers behind one
-  `index.js` seam (`withDbGuard` from `db-guard.js`, `parseJson` /
-  `getUserIdByEmail` from `helpers.js`). Slug generation and validation live in `shared/slug.js`, shared with the browser.
+  `index.js` seam (`parseJson`, `escapeLikePattern` and the scope-first
+  `getUserIdByEmail(scope, db, email)` from `helpers.js`). Slug generation and validation live in `shared/slug.js`, shared with the browser.
 - `server/storage/identity-resolver.js` /
   `server/storage/identity-verification.js` — map an external identifier to a
   stable `users.id`, and check that every dual key still agrees (see
@@ -176,10 +181,10 @@ that one has no id beside it yet.
   starts — whichever comes first — and then as a keyset cursor inside that
   service layer, never as a per-endpoint parameter. Until then the twelve
   in-memory slicers over `parsePaginationParams` are the intended shape.
-- **Storage boot.** `initializeStorage()` (server/storage/lifecycle.js) opens
+- **Storage boot.** `initializeStorage()` (server/db/lifecycle.js) opens
   the shared Kysely pool via `initializeDatabase()`; it is idempotent, and
   `getDb()` throws `"Database not initialized"` before it has run.
-- **Boot safety.** `boot-check.js` aborts startup if the DB is empty but legacy
+- **Boot safety.** `server/db/boot-check.js` aborts startup if the DB is empty but legacy
   file data still sits on disk, so an accidental empty-DB boot cannot silently
   shadow real data.
 
@@ -267,7 +272,7 @@ that disagrees, a register entry nobody mints, and any `getErrorStatus(reason,
 infrastructure failures raise. `toStorageContext()` throwing on an absent scope
 is the canonical case. A caller is not expected to catch these; they are bugs
 or outages, not outcomes. The one softened edge is `withDbGuard(fallback, fn)`
-(`server/storage/utils/db-guard.js`), which returns `fallback` instead of
+(`server/db/client.js`), which returns `fallback` instead of
 throwing when the pool is down — pass `null`/`[]` from a read and
 `{ ok: false, reason: 'unavailable' }` from a mutation, so the guard hands back
 that call kind's own failure shape.

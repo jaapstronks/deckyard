@@ -31,8 +31,7 @@ const OWNER = 'owner@example.com';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleSlideLibrary } =
   await import('../server/routes/api/slide-library.js');
 const {
@@ -53,7 +52,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

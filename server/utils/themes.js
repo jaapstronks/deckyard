@@ -35,10 +35,27 @@ export function resolveThemeId(raw) {
     : null;
 }
 
+/**
+ * The scope a seed read runs under: the caller's organization scope when it
+ * has one, else a reasoned instance scope. Seeds carry no organization; they
+ * are instance-level configuration (storage-scope.md category 3).
+ * @param {string|null} repoRoot
+ * @param {Object|null} ctx
+ * @returns {import('../storage/scope.js').StorageScope}
+ */
+function seedScope(repoRoot, ctx) {
+  return ctx?.organizationId
+    ? ctx
+    : crossOrganizationScope(
+        repoRoot ?? null,
+        'seed themes are instance-level configuration without an organization',
+      );
+}
+
 /** The installation default seed, loaded (`installationDefaultThemeId`). */
 async function installationDefault(repoRoot, ctx) {
   const scope = ctx?.organizationId ? ctx : null;
-  const id = await installationDefaultThemeId();
+  const id = await installationDefaultThemeId(seedScope(repoRoot, ctx));
   return loadCustomThemeRecord(id, scope, repoRoot);
 }
 
@@ -111,7 +128,10 @@ export async function settleNewDeckTheme(repoRoot, requested, ctx = null) {
   if (requested === undefined || requested === null) {
     if (sandboxEnabled()) {
       const handle = sandboxDefaultThemeId();
-      const seedId = await resolveSeedThemeSlug(handle);
+      const seedId = await resolveSeedThemeSlug(
+        seedScope(repoRoot, ctx),
+        handle,
+      );
       if (!seedId) throw new Error(`Sandbox theme seed not found: ${handle}`);
       return {
         themeId: seedId,
@@ -328,7 +348,7 @@ export async function resolveThemeThumbBg(repoRoot, rawThemeId, ctx = null) {
 export async function listThemeIds(repoRoot, ctx = null) {
   const records = ctx?.organizationId
     ? await listThemes(ctx)
-    : await listSeedThemes();
+    : await listSeedThemes(seedScope(repoRoot, null));
   return records.map((theme) => theme.id);
 }
 
@@ -338,7 +358,9 @@ export async function listThemeIds(repoRoot, ctx = null) {
  * @returns {Promise<string[]>}
  */
 export async function listCoreThemeIds(repoRoot) {
-  return (await listSeedThemes()).map((theme) => theme.id);
+  return (await listSeedThemes(seedScope(repoRoot, null))).map(
+    (theme) => theme.id,
+  );
 }
 
 /**

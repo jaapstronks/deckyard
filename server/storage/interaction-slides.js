@@ -23,7 +23,7 @@ import { toStorageContext } from './scope.js';
  * can never outlive its session (the cascade collects it).
  */
 
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 
 async function sessionInScope(db, scope, sessionId) {
   const context = toStorageContext(

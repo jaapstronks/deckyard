@@ -33,6 +33,7 @@ import { createStorageScope } from '../utils/context.js';
 import { sandboxEnabled } from '../config/sandbox.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
 import { resolveSeedThemeSlug } from '../storage/settings.js';
+import { crossOrganizationScope } from '../storage/scope.js';
 
 /** Who the seeded items name as their maker: rendered as "Deckyard". */
 export const SANDBOX_LIBRARY_OWNER = 'deckyard@sandbox.local';
@@ -137,7 +138,13 @@ export async function seedSandboxLibrary(repoRoot) {
   const themeIds = new Map();
   for (const slide of slides) {
     if (themeIds.has(slide.theme)) continue;
-    const id = await resolveSeedThemeSlug(slide.theme);
+    const id = await resolveSeedThemeSlug(
+      crossOrganizationScope(
+        repoRoot,
+        'the sandbox library seed names seed themes, which are instance-level configuration',
+      ),
+      slide.theme,
+    );
     if (!id) refuse(slide.file, `theme (${slide.theme} names no seed)`);
     themeIds.set(slide.theme, id);
   }

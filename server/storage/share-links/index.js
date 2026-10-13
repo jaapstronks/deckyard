@@ -8,7 +8,7 @@ import { toStorageContext } from '../scope.js';
 
 import crypto from 'node:crypto';
 import { nowIso } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { hashPassword, verifyPassword } from '../../utils/password-hash.js';
 
 // Share-link password protection uses the shared versioned scrypt util (one

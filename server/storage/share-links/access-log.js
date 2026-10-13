@@ -8,7 +8,7 @@
 
 import { norm } from '../../utils/normalize.js';
 import { toStorageContext } from '../scope.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 
 /**
  * Log access to a share link.

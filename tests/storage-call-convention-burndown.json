@@ -1,14 +1,1 @@
-[
-  "server/storage/activity-events.js :: deleteOldActivityEvents :: scope-first",
-  "server/storage/boot-check.js :: pendingMigrationsError :: scope-first",
-  "server/storage/boot-check.js :: strandedFileDataError :: scope-first",
-  "server/storage/lifecycle.js :: closeStorage :: scope-first",
-  "server/storage/lifecycle.js :: initializeStorage :: scope-first",
-  "server/storage/settings.js :: installationDefaultThemeId :: scope-first",
-  "server/storage/settings.js :: resolveSeedThemeSlug :: scope-first",
-  "server/storage/slide-locks.js :: cleanupExpiredSlideLocks :: scope-first",
-  "server/storage/tags.js :: replaceTagLinks :: scope-first",
-  "server/storage/themes.js :: listSeedThemes :: scope-first",
-  "server/storage/utils/db-guard.js :: withDbGuard :: scope-first",
-  "server/storage/utils/helpers.js :: getUserIdByEmail :: scope-first"
-]
+[]

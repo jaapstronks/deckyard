@@ -52,8 +52,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handleMedia } = await import('../server/routes/api/media.js');
 const { initializeMediaProvider } = await import('../server/media/index.js');
@@ -88,7 +87,6 @@ test.before(async () => {
 
 test.after(async () => {
   globalThis.fetch = savedFetch;
-  __resetStorageForTests();
   __setTestDb(null);
   delete process.env.UPLOADS_DIR;
   if (uploadsTmpDir)

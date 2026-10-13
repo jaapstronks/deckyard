@@ -19,7 +19,7 @@ import { crossOrganizationScope, toStorageContext } from './scope.js';
 
 import { generateSlug, isValidSlug } from '../../shared/slug.js';
 
-import { sql } from '../db/client.js';
+import { sql, withDbGuard } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { nowIso } from '../utils/normalize.js';
 import {
@@ -27,7 +27,7 @@ import {
   resolveNamesForAddresses,
   toStoredActorIdentity,
 } from './display-identity.js';
-import { withDbGuard, parseJson, getUserIdByEmail } from './utils/index.js';
+import { parseJson, getUserIdByEmail } from './utils/index.js';
 import { validateUsage } from '../../shared/slide-types/usage.js';
 import { customSlideTypeKey } from '../../shared/slide-types/custom-type-runtime.js';
 import { validateCustomFieldDefinitions } from '../../shared/slide-types/custom-field-definitions.js';
@@ -212,7 +212,7 @@ export async function createCustomSlideType(
         created_at: now,
         updated_at: now,
         created_by: scope?.actorEmail
-          ? await getUserIdByEmail(db, orgId, scope.actorEmail)
+          ? await getUserIdByEmail(scope, db, scope.actorEmail)
           : null,
       })
       .returningAll()

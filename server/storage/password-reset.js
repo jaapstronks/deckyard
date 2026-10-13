@@ -24,7 +24,7 @@ import {
   verifyPassword,
   MAX_PASSWORD_LENGTH,
 } from '../utils/password-hash.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 
 // Re-export the shared password-hash primitives so existing importers of this
 // module keep working (users.js, auth.js). The implementation lives in

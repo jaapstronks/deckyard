@@ -8,7 +8,7 @@ import { crossOrganizationScope, toStorageContext } from './scope.js';
 
 import { getOrgId } from '../utils/context.js';
 import { norm, nowIso } from '../utils/normalize.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import {
   resolveDisplayNames,
   toStoredActorIdentity,
@@ -185,10 +185,22 @@ export async function listActivityEvents(scope, opts = {}) {
  *
  * Instance-wide: a scheduled retention job has no organization context, so this
  * deletes across every organization, the same model as the analytics cleanup.
+ * Only an instance retention scope is accepted (storage-scope.md category 7).
+ * @param {import('./scope.js').StorageScope} scope - Reasoned instance retention scope
  * @param {string} olderThan - ISO timestamp; events created before it are removed
  * @returns {Promise<{deleted: number}>}
  */
-export async function deleteOldActivityEvents(olderThan) {
+export async function deleteOldActivityEvents(scope, olderThan) {
+  const context = toStorageContext(
+    scope,
+    'deleteOldActivityEvents',
+    {},
+    { allowCrossOrganization: true },
+  );
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'deleteOldActivityEvents() requires an instance retention scope',
+    );
   return withDbGuard({ deleted: 0 }, async (db) => {
     const result = await db
       .deleteFrom('activity_events')

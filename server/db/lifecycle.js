@@ -1,13 +1,14 @@
 /**
  * Storage lifecycle: bring the shared database handle up and down.
  *
- * Every storage domain now reaches PostgreSQL through direct Kysely on
- * `getDb()` (B79 / D34 stripped the adapter class), so "initializing storage" is
- * just opening the database pool. These thin wrappers keep the historical
- * `initializeStorage()` / `closeStorage()` names the server bootstrap
- * (server/server.js), the MCP server (server/mcp/index.js) and the test suites
- * call, over `server/db/client.js`'s already-idempotent `initializeDatabase()` /
- * `closeDatabase()`.
+ * Every storage domain reaches PostgreSQL through direct Kysely on `getDb()`
+ * (B79 / D34 stripped the adapter class), so "initializing storage" is just
+ * opening the database pool. This is the bootstrap seam for consumers outside
+ * the storage layer (server/server.js, server/mcp/index.js, scripts and the
+ * test suites), which may not import `client.js` itself: it wraps the
+ * already-idempotent `initializeDatabase()` / `closeDatabase()`. It lives in
+ * the database layer, not under `server/storage/`, because it opens a pool and
+ * acts for no organization (B665).
  *
  * The sentinel behaviour the storage layer relies on is unchanged and lives in
  * `db/client.js`: `initializeDatabase()` is idempotent (a second call returns
@@ -32,7 +33,7 @@
  * @returns {Promise<void>}
  */
 export async function initializeStorage() {
-  const { initializeDatabase } = await import('../db/client.js');
+  const { initializeDatabase } = await import('./client.js');
   await initializeDatabase();
 }
 
@@ -41,20 +42,6 @@ export async function initializeStorage() {
  * @returns {Promise<void>}
  */
 export async function closeStorage() {
-  const { closeDatabase } = await import('../db/client.js');
+  const { closeDatabase } = await import('./client.js');
   await closeDatabase();
-}
-
-/**
- * Test-only: previously dropped the facade's adapter singleton without closing
- * the shared handle. That singleton is gone — the facades hold no storage state,
- * they read the current handle from `getDb()` — so there is nothing to reset:
- * the handle lives in `server/db/client.js` and is owned by whoever installed it
- * (`__setTestDb`, for the real-PostgreSQL suite) or by {@link closeStorage}.
- * Kept as a no-op so the test teardowns that call it need no churn.
- * @returns {void}
- */
-export function __resetStorageForTests() {
-  // No adapter singleton remains to clear (B79 / D34); the DB handle is managed
-  // in db/client.js. Intentionally does nothing.
 }

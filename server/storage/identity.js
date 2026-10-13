@@ -21,7 +21,7 @@
 import { toStorageContext } from './scope.js';
 
 import { normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { listUserOrganizations } from './user-organizations/index.js';

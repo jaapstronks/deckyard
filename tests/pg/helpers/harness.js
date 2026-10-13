@@ -56,10 +56,7 @@ import pg from 'pg';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 
 import { __setTestDb } from '../../../server/db/client.js';
-import {
-  initializeStorage,
-  __resetStorageForTests,
-} from '../../../server/storage/lifecycle.js';
+import { initializeStorage } from '../../../server/db/lifecycle.js';
 
 const { Pool } = pg;
 
@@ -163,9 +160,7 @@ export async function installFacadeStorage() {
  * singleton remains, kept to pair with {@link installFacadeStorage}.
  * @returns {void}
  */
-export function uninstallFacadeStorage() {
-  __resetStorageForTests();
-}
+export function uninstallFacadeStorage() {}
 
 /**
  * Empty the named tables and reset their identity sequences, so each test

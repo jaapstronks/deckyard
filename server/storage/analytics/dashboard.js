@@ -5,7 +5,7 @@ import { toStorageContext } from '../scope.js';
  */
 
 import { sql } from 'kysely';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
 import { completionRate, getCompletionCounts } from './aggregations.js';

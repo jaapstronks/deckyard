@@ -50,7 +50,7 @@ async function main() {
   }
 
   const { repoRoot } = await import('../server/config/paths.js');
-  const { closeStorage } = await import('../server/storage/lifecycle.js');
+  const { closeStorage } = await import('../server/db/lifecycle.js');
   const report = await doctor.runDoctor({ repoRoot });
   await closeStorage();
   print(

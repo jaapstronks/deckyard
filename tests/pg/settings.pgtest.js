@@ -93,7 +93,7 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
 
   it('keeps theme settings on each organization and leaves the singleton clean', async () => {
     await initializeThemeSeeds();
-    const seeds = await listSeedThemes();
+    const seeds = await listSeedThemes(testScope());
     const brand = seeds.find((theme) => theme.slug === DEFAULT_THEME_SLUG);
     const amethyst = seeds.find((theme) => theme.slug === 'amethyst');
     const orgA = testScope().organizationId;
@@ -146,7 +146,7 @@ pgDescribe('settings storage (real PostgreSQL)', () => {
 
   it('resolves the instance values for an organization that sets nothing, beside one that does', async () => {
     await initializeThemeSeeds();
-    const seeds = await listSeedThemes();
+    const seeds = await listSeedThemes(testScope());
     const brand = seeds.find((theme) => theme.slug === DEFAULT_THEME_SLUG);
     const amethyst = seeds.find((theme) => theme.slug === 'amethyst');
     const orgA = testScope().organizationId;

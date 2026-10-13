@@ -58,7 +58,7 @@
 import { toStorageContext } from './scope.js';
 
 import { sql } from 'kysely';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 
 /**
  * The dual keys this pass verifies: one entry per (id column, e-mail column)

@@ -30,8 +30,7 @@ const OWNER = 'owner@example.com';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
 const { createLiveSession, updateLiveSessionState } =
@@ -51,7 +50,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

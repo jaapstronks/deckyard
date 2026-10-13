@@ -43,7 +43,7 @@ const FOREIGN_DECK_ID = 'd000000c-0000-4000-8000-00000000000c';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handlePublishing } =
   await import('../server/routes/public-api/v1/publishing.js');
 
