@@ -23,6 +23,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
+import { createSaveManager } from '../client/views/editor/save-manager.js';
+import { normalizeLang } from '../shared/i18n-utils.js';
+import { validateSlideFields } from '../shared/slide-types/presentation.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'b608']
   .join('-')
@@ -641,6 +644,138 @@ test('editor: translated legacy values are compared with their own language, and
   const hiddenInvalid = await put(body);
   assert.equal(hiddenInvalid.statusCode, 400);
   assert.equal(hiddenInvalid.json().details.lang, 'nl');
+});
+
+test('editor save-manager persists empty translation prose when adding a language and a slide, but refuses an unsafe off-screen URL', async () => {
+  const db = await installDb();
+  storedDeck(db).slides = [
+    {
+      id: 'contact-1',
+      type: 'end-slide',
+      content: { title: 'Contact', contactUrl: 'https://example.com' },
+    },
+  ];
+  const pres = (await editorRead(OWNER)).json();
+  pres.i18n = {
+    active: 'nl',
+    dominant: 'nl',
+    versions: { nl: { title: pres.title, slides: pres.slides } },
+  };
+  const failures = [];
+  let lastPayload;
+  const mgr = createSaveManager({
+    api: async (_path, opts) => {
+      lastPayload = structuredClone(opts.body);
+      const response = await editorSave(OWNER, opts.body, {
+        revision: Number(opts.headers['If-Match']),
+      });
+      if (response.statusCode !== 200) {
+        const error = Object.assign(
+          new Error(response.json().message),
+          response.json(),
+        );
+        failures.push(error);
+        throw error;
+      }
+      return response.json();
+    },
+    toast: { info() {}, success() {}, error() {} },
+    pres,
+    id: pres.id,
+    SLIDE_TYPES: {
+      'end-slide': {
+        fields: [
+          { key: 'title', type: 'string', required: true },
+          { key: 'contactUrl', type: 'url' },
+        ],
+      },
+    },
+    normalizeLang,
+    getSelectedSlideId: () => 'contact-1',
+  });
+
+  pres.i18n.versions['en-GB'] = { title: pres.title, slides: [] };
+  mgr.markDirty({ slideId: 'contact-1' });
+  await mgr.requestSave();
+  assert.equal(failures.length, 0);
+  assert.equal(pres.i18n.versions['en-GB'].slides[0].content.title ?? '', '');
+  assert.equal(
+    storedDeck(db).i18n.versions['en-GB'].slides[0].content.title ?? '',
+    '',
+  );
+
+  pres.slides.push({
+    id: 'contact-2',
+    type: 'end-slide',
+    content: { title: 'New contact', contactUrl: 'https://deck.example' },
+  });
+  mgr.markDirty({ slideId: 'contact-2' });
+  await mgr.requestSave();
+  assert.equal(failures.length, 0);
+  assert.equal(pres.i18n.versions['en-GB'].slides[1].content.title ?? '', '');
+  assert.equal(storedDeck(db).i18n.versions['en-GB'].slides.length, 2);
+
+  const unsafe = structuredClone(lastPayload);
+  unsafe.i18n.versions['en-GB'].slides[1].content.contactUrl =
+    'javascript:alert(1)';
+  const rejected = await editorSave(OWNER, unsafe, {
+    revision: storedDeck(db).revision,
+  });
+  mgr.cancelAutosave();
+  assert.equal(rejected.statusCode, 400);
+  assert.equal(rejected.json().details.field, 'contactUrl');
+  assert.equal(rejected.json().details.lang, 'en-GB');
+  assert.equal(
+    storedDeck(db).i18n.versions['en-GB'].slides[1].content.contactUrl,
+    'https://deck.example',
+  );
+});
+
+test('translation field validation permits nested prose gaps while keeping structural and URL checks', () => {
+  const slideTypes = {
+    custom: {
+      fields: [
+        {
+          key: 'rows',
+          type: 'items',
+          required: true,
+          itemFields: [
+            { key: 'title', type: 'string', required: true },
+            { key: 'link', type: 'url', required: true },
+          ],
+        },
+      ],
+    },
+  };
+  const slide = {
+    id: 'nested',
+    type: 'custom',
+    content: { rows: [{ title: '', link: 'https://example.com' }] },
+  };
+  assert.equal(validateSlideFields(slide, { slideTypes })[0].field, 'rows');
+  assert.deepEqual(
+    validateSlideFields(slide, {
+      slideTypes,
+      allowMissingTranslationText: true,
+    }),
+    [],
+  );
+  slide.content.rows[0].link = 'javascript:alert(1)';
+  assert.equal(
+    validateSlideFields(slide, {
+      slideTypes,
+      allowMissingTranslationText: true,
+    })[0].field,
+    'rows',
+  );
+  slide.content.rows = [];
+  assert.equal(
+    validateSlideFields(slide, {
+      slideTypes,
+      allowMissingTranslationText: true,
+    })[0].field,
+    'rows',
+  );
 });
 
 test('editor: collection URL values use the declared validator too', async () => {

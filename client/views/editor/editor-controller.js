@@ -368,12 +368,15 @@ export async function createEditorController({
   // sync before that, and the topbar runs its own at mount.
   let syncAnalyticsAvailability = () => {};
 
-  const saveRefusal = createSaveRefusal();
+  const saveRefusal = createSaveRefusal({
+    getActiveLang: () => normalizeLang(pres.i18n?.active),
+  });
   cleanup.register('saveRefusal', saveRefusal.detach);
   const saveManager = createSaveManager({
     onFieldRefusal: (err) => {
       saveRefusal.set(err);
       if (!err) return;
+      if (err.details.lang) topbarApi?.revealRefusedVersion(err.details.lang);
       setSelectedSlideIdWithLock(err.details.slideId);
       setInspectorCollapsed(false);
       rerenderSlideList();

@@ -6,10 +6,14 @@ import { AppError } from '../utils/errors.js';
  * Refuse the first invalid declared field, retaining all of its diagnostics.
  * @param {Object} slide
  * @param {Record<string, Object>} slideTypes
- * @param {{lang?: string}} [location]
+ * @param {{lang?: string, allowMissingTranslationText?: boolean}} [location]
  */
 export function assertValidSlideFields(slide, slideTypes, location = {}) {
-  const problem = validateSlideFields(slide, { slideTypes })[0];
+  const { allowMissingTranslationText = false, ...details } = location;
+  const problem = validateSlideFields(slide, {
+    slideTypes,
+    allowMissingTranslationText,
+  })[0];
   if (!problem) return;
   throw new AppError(
     problem.errors.join('; '),
@@ -17,7 +21,7 @@ export function assertValidSlideFields(slide, slideTypes, location = {}) {
     {
       ...problem,
       slideId: slide.id,
-      ...location,
+      ...details,
     },
     'invalid',
   );

@@ -2,7 +2,7 @@
 import { createInlineError } from '../../../lib/dom/inline-error.js';
 
 /** Own the refusal across form rerenders, until another save or field edit. */
-export function createSaveRefusal() {
+export function createSaveRefusal({ getActiveLang } = {}) {
   let refusal = null;
   const surfaces = new Set();
   const fields = new Map();
@@ -14,12 +14,13 @@ export function createSaveRefusal() {
     }
     surfaces.clear();
   };
-  const matches = (slide, field) =>
+  const matches = (slide, field, lang = getActiveLang?.()) =>
     refusal?.details?.slideId === slide?.id &&
-    refusal?.details?.field === field?.key;
-  const decorate = (el, slide, field) => {
-    fields.set(el, { slide, field });
-    if (!matches(slide, field)) return;
+    refusal?.details?.field === field?.key &&
+    (!refusal?.details?.lang || refusal.details.lang === lang);
+  const decorate = (el, slide, field, lang = getActiveLang?.()) => {
+    fields.set(el, { slide, field, lang });
+    if (!matches(slide, field, lang)) return;
     const surface = createInlineError();
     surfaces.add(surface);
     el.append(surface.el);
@@ -40,8 +41,8 @@ export function createSaveRefusal() {
     set(error) {
       clear();
       refusal = error;
-      for (const [el, { slide, field }] of fields) {
-        if (el.isConnected) decorate(el, slide, field);
+      for (const [el, { slide, field, lang }] of fields) {
+        if (el.isConnected) decorate(el, slide, field, lang);
         else fields.delete(el);
       }
     },

@@ -17,6 +17,7 @@ import { SLIDE_TYPES, getSlideType } from './registry.js';
 import { validateVisibility } from '../slide-visibility.js';
 import { injectTextStyles } from './text-styles.js';
 import { validateFieldValue } from './field-types.js';
+import { isTextField } from './text-fields.js';
 import { CURRENT_SCHEMA_VERSION } from './schema-version.js';
 import { renderUnresolvedSlideHtml } from './unresolved.js';
 import { resolveThemeLogo } from '../theme-logo.js';
@@ -609,14 +610,34 @@ export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
  * Validate declared content fields, preserving their key for inline feedback.
  * Item-field checks remain owned by validateFieldValue, at every write surface.
  * @param {Object} slide
- * @param {{slideTypes?: Record<string, Object>}} [opts]
+ * @param {{slideTypes?: Record<string, Object>, allowMissingTranslationText?: boolean}} [opts]
  * @returns {Array<{field: string, errors: string[]}>}
  */
-export function validateSlideFields(slide, { slideTypes = SLIDE_TYPES } = {}) {
+export function validateSlideFields(
+  slide,
+  { slideTypes = SLIDE_TYPES, allowMissingTranslationText = false } = {},
+) {
   const def = getSlideType(slide?.type, slideTypes);
   if (!def) return [];
   return def.fields.flatMap((field) => {
-    const errors = validateFieldValue(slide?.content?.[field.key], field);
+    // An untranslated version is allowed to have gaps in prose, including
+    // nested item prose. Its present values still pass the same type and
+    // safety checks, and structural/non-prose requirements remain intact.
+    const definition = allowMissingTranslationText
+      ? translationFieldDefinition(field)
+      : field;
+    const errors = validateFieldValue(slide?.content?.[field.key], definition);
     return errors.length ? [{ field: field.key, errors }] : [];
   });
+}
+
+function translationFieldDefinition(field) {
+  const itemFields = Array.isArray(field.itemFields)
+    ? field.itemFields.map(translationFieldDefinition)
+    : field.itemFields;
+  return {
+    ...field,
+    ...(isTextField(field) ? { required: false } : {}),
+    ...(itemFields ? { itemFields } : {}),
+  };
 }

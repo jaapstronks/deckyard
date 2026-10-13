@@ -77,6 +77,7 @@ async function assertChangedSlideFields(scope, pres, changes) {
   const versions = changes.i18n?.versions || {};
   refuseNonCanonicalVersionKeys(versions);
   const active = normalizeLang(changes.i18n?.active);
+  const dominant = normalizeLang(pres.i18n?.dominant || pres.lang);
   const buffers = Object.entries(versions)
     .filter(([lang]) => lang !== active || !Array.isArray(changes.slides))
     .map(([lang, version]) => ({
@@ -99,7 +100,10 @@ async function assertChangedSlideFields(scope, pres, changes) {
     const stored = new Map((before || []).map((s) => [s.id, canonicalJson(s)]));
     for (const slide of Array.isArray(slides) ? slides : []) {
       if (stored.get(slide?.id) === canonicalJson(slide)) continue;
-      assertValidSlideFields(slide, slideTypes, lang ? { lang } : {});
+      assertValidSlideFields(slide, slideTypes, {
+        ...(lang ? { lang } : {}),
+        allowMissingTranslationText: !!lang && lang !== dominant,
+      });
     }
   }
 }

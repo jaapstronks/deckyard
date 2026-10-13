@@ -58,3 +58,23 @@ test('same field key on another slide stays unmarked and a successful save clear
   state.set(null);
   assert.equal(target.control.hasAttribute('aria-invalid'), false);
 });
+
+test('an off-screen refusal marks only the field rendered for that language', () => {
+  let active = 'nl';
+  const state = createSaveRefusal({ getActiveLang: () => active });
+  const dutchModal = wrapper();
+  document.body.append(dutchModal.el);
+  state.decorate(dutchModal.el, slide, field);
+  active = 'en-GB';
+  state.set({
+    ...refused,
+    details: { ...refused.details, lang: 'en-GB' },
+  });
+  assert.equal(dutchModal.control.hasAttribute('aria-invalid'), false);
+  const englishInspector = wrapper();
+  document.body.append(englishInspector.el);
+  state.decorate(englishInspector.el, slide, field);
+  assert.equal(englishInspector.control.getAttribute('aria-invalid'), 'true');
+  assert.equal(dutchModal.control.hasAttribute('aria-invalid'), false);
+  state.detach();
+});

@@ -148,6 +148,8 @@ A deck written in several languages carries its structure **once**. `content`,
 - Everything is optional. A reader that does not know `translations` gets a
   complete deck in one language.
 
+The editor stores a full slide buffer for each language. Its source (`i18n.dominant`) must satisfy declared required fields when changed. Other buffers may be incomplete: a required prose field may be absent or empty, including prose inside `items`, until someone translates it. `shared/slide-types/presentation.js` applies this through the same declared field validator as ordinary writes; present values still pass their type, length and URL checks, and required structure or machine values remain required. The save manager mirrors structure into every language without copying source-language prose.
+
 Deckyard's importer takes `lang` as the deck's language and refuses a deck
 whose `lang`, or any `translations` tag, is not a language it authors in, and a
 request whose language contradicts the deck's own. That is the implementation's
