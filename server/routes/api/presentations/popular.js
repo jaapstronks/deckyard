@@ -94,6 +94,7 @@ async function filterReadableRows(rows, ctx) {
     }
     try {
       collaboratorPermission = await getCollaboratorPermission(
+        ctx,
         row.id,
         user?.email,
       );
@@ -120,6 +121,7 @@ async function formatPresentations(rows, ctx) {
   // One batched lookup for the whole board (D22); see
   // server/storage/display-identity.js.
   const displayNames = await resolveDisplayNames(
+    ctx,
     rows.flatMap((row) => [
       { id: row.updated_by_user_id, email: row.updated_by },
       { id: row.created_by_user_id, email: row.created_by },

@@ -152,7 +152,7 @@ test('shared-with-me ships thumbBg', async () => {
     testScope(),
     deckFor('Shared deck', { visibility: 'private' }),
   );
-  const invited = await addCollaborator(created.id, {
+  const invited = await addCollaborator({ organizationId: ORG }, created.id, {
     userEmail: PARTNER,
     permission: 'edit',
     invitedBy: OWNER,

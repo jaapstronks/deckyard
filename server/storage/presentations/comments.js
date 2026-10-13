@@ -48,6 +48,7 @@ const NO_COMMENT_CONTEXT = Object.freeze({
 async function commentReadContext(rows, scope) {
   const [lookup, ai] = await Promise.all([
     resolveDisplayNames(
+      scope,
       (rows || [])
         .filter(Boolean)
         .flatMap((row) => [
@@ -477,7 +478,7 @@ export async function createComment(scope, presentationId, data) {
   // row, resolves to a defined NULL.
   const authorUserId = authorGuestId
     ? null
-    : ((await resolveIdentityByEmail(authorEmail))?.userId ?? null);
+    : ((await resolveIdentityByEmail(scope, authorEmail))?.userId ?? null);
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
     const orgId = getOrgId(scope);

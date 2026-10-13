@@ -1,3 +1,4 @@
+import { createStorageScope } from '../context.js';
 import { isFeatureEnabled } from '../../config/flags-snapshot.js';
 import { getOrganizationById } from '../../storage/user-organizations/index.js';
 import { getOrgSettings } from '../org-settings.js';
@@ -12,7 +13,10 @@ import { getOrgSettings } from '../org-settings.js';
  */
 export async function translationReferenceLines(organizationId, toLang) {
   if (!isFeatureEnabled('ai') || !organizationId) return [];
-  const org = await getOrganizationById(organizationId);
+  const org = await getOrganizationById(
+    createStorageScope(null, { organizationId: organizationId }),
+    organizationId,
+  );
   const instructions = getOrgSettings(org).translationInstructions;
   const terminology = instructions?.terminology || '';
   const style = instructions?.styleByLanguage?.[toLang] || '';

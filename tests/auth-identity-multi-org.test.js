@@ -162,7 +162,10 @@ test('a user whose home organization is not the default one can log in', async (
 
 test('getUserByEmailGlobal ignores the home organization', async () => {
   seedMultiOrg();
-  const row = await identity.getUserByEmailGlobal('alice@example.com');
+  const row = await identity.getUserByEmailGlobal(
+    { crossOrganization: 'test global pre-auth identity resolution' },
+    'alice@example.com',
+  );
   assert.equal(row.id, 'user-alice');
   assert.equal(row.organization_id, ORG_B, 'home organization is untouched');
 });
@@ -276,22 +279,45 @@ test('a user with no memberships at all is refused', async () => {
 test('resolveActiveOrganization is the single decision point', async () => {
   seedMultiOrg();
   assert.equal(
-    await identity.resolveActiveOrganization('user-alice', ORG_B),
+    await identity.resolveActiveOrganization(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'user-alice',
+      ORG_B,
+    ),
     ORG_B,
   );
   assert.equal(
-    await identity.resolveActiveOrganization('user-alice', ORG_GONE),
+    await identity.resolveActiveOrganization(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'user-alice',
+      ORG_GONE,
+    ),
     ORG_A,
   );
   assert.equal(
-    await identity.resolveActiveOrganization('user-alice', undefined),
+    await identity.resolveActiveOrganization(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'user-alice',
+      undefined,
+    ),
     ORG_A,
   );
   assert.equal(
-    await identity.resolveActiveOrganization('user-nobody', ORG_A),
+    await identity.resolveActiveOrganization(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'user-nobody',
+      ORG_A,
+    ),
     null,
   );
-  assert.equal(await identity.resolveActiveOrganization(null, ORG_A), null);
+  assert.equal(
+    await identity.resolveActiveOrganization(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      null,
+      ORG_A,
+    ),
+    null,
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -367,7 +393,11 @@ test('the role is read from the membership list the session already needs', asyn
 test('resolveActiveMembership answers org, role and designer from one lookup', async () => {
   seedMultiOrg();
   assert.deepEqual(
-    await identity.resolveActiveMembership('user-alice', ORG_B),
+    await identity.resolveActiveMembership(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'user-alice',
+      ORG_B,
+    ),
     {
       organizationId: ORG_B,
       role: 'owner',
@@ -375,7 +405,11 @@ test('resolveActiveMembership answers org, role and designer from one lookup', a
     },
   );
   assert.deepEqual(
-    await identity.resolveActiveMembership('user-alice', ORG_GONE),
+    await identity.resolveActiveMembership(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'user-alice',
+      ORG_GONE,
+    ),
     {
       organizationId: ORG_A,
       role: 'member',
@@ -383,7 +417,11 @@ test('resolveActiveMembership answers org, role and designer from one lookup', a
     },
   );
   assert.deepEqual(
-    await identity.resolveActiveMembership('user-nobody', ORG_A),
+    await identity.resolveActiveMembership(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'user-nobody',
+      ORG_A,
+    ),
     {
       organizationId: null,
       role: null,

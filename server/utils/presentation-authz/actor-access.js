@@ -1,3 +1,4 @@
+import { createStorageScope } from '../context.js';
 /**
  * Actor-based presentation access checks.
  *
@@ -34,6 +35,8 @@
  * ownership, a collaborator row — do not consult the organization at all and are
  * unaffected either way.
  */
+
+import { crossOrganizationScope } from '../../storage/scope.js';
 
 import { getCollaboratorPermission } from '../../storage/collaborators.js';
 import { resolveIdentityByEmail } from '../../storage/identity-resolver.js';
@@ -120,7 +123,13 @@ export async function resolveActorUserId(actor) {
   // owner once per request) — no reason to ask the database again.
   if (actor?.id) return actor.id;
   if (!actor?.email) return null;
-  const resolution = await resolveIdentityByEmail(actor.email);
+  const resolution = await resolveIdentityByEmail(
+    crossOrganizationScope(
+      null,
+      'resolve machine actor identity before ownership checks',
+    ),
+    actor.email,
+  );
   return resolution?.userId || null;
 }
 
@@ -136,7 +145,16 @@ export async function resolveActorUserId(actor) {
 export async function canActorAccessPresentation(pres, actor, access = 'read') {
   if (!pres || typeof pres !== 'object') return false;
   const [collaboratorPermission, actorUserId] = await Promise.all([
-    actor?.email ? getCollaboratorPermission(pres.id, actor.email) : null,
+    actor?.email
+      ? getCollaboratorPermission(
+          createStorageScope(
+            { email: actor.email },
+            { organizationId: pres.organizationId },
+          ),
+          pres.id,
+          actor.email,
+        )
+      : null,
     resolveActorUserId(actor),
   ]);
   return checkActorAccess({
@@ -236,7 +254,16 @@ export async function canActorSetViewOnly(pres, actor) {
 export async function canActorManageCollaborators(pres, actor) {
   if (!pres || typeof pres !== 'object') return false;
   const [collaboratorPermission, actorUserId] = await Promise.all([
-    actor?.email ? getCollaboratorPermission(pres.id, actor.email) : null,
+    actor?.email
+      ? getCollaboratorPermission(
+          createStorageScope(
+            { email: actor.email },
+            { organizationId: pres.organizationId },
+          ),
+          pres.id,
+          actor.email,
+        )
+      : null,
     resolveActorUserId(actor),
   ]);
   return canManageCollaborators({
@@ -301,7 +328,16 @@ export function checkActorCommentAccess({
 export async function canActorCommentOnPresentation(pres, actor) {
   if (!pres || typeof pres !== 'object') return false;
   const [collaboratorPermission, actorUserId] = await Promise.all([
-    actor?.email ? getCollaboratorPermission(pres.id, actor.email) : null,
+    actor?.email
+      ? getCollaboratorPermission(
+          createStorageScope(
+            { email: actor.email },
+            { organizationId: pres.organizationId },
+          ),
+          pres.id,
+          actor.email,
+        )
+      : null,
     resolveActorUserId(actor),
   ]);
   return checkActorCommentAccess({

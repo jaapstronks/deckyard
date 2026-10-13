@@ -201,7 +201,10 @@ test('the undeletable organization is the configured one, not the seed UUID', ()
 
 test('deleting the configured default organization is refused', async () => {
   seed();
-  const refused = await deleteOrganization(DEFAULT_ORG);
+  const refused = await deleteOrganization(
+    { organizationId: DEFAULT_ORG },
+    DEFAULT_ORG,
+  );
   assert.deepEqual(refused, { ok: false, reason: 'cannot_delete_default' });
 });
 
@@ -209,7 +212,10 @@ test('the seed organization is deletable when it is not the default', async () =
   const db = seed();
   // The old guard compared against this UUID literally, so it survived here and
   // the actual fallback organization above did not.
-  const deleted = await deleteOrganization(SEED_ORG);
+  const deleted = await deleteOrganization(
+    { organizationId: SEED_ORG },
+    SEED_ORG,
+  );
   assert.deepEqual(deleted, { ok: true });
   assert.equal(
     db.__tables.organizations.some((o) => o.id === SEED_ORG),

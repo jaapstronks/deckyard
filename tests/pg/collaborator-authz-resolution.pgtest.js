@@ -107,38 +107,71 @@ pgDescribe(
         // A distinct email per case keeps the in-memory permission cache from
         // colliding across tests; addCollaborator invalidates its own key.
         const email = `collab-${permission}@example.com`;
-        const added = await addCollaborator(PID, {
+        const added = await addCollaborator({ organizationId: ORG }, PID, {
           userEmail: email,
           permission,
         });
         assert.equal(added.ok, true);
 
-        assert.equal(await getCollaboratorPermission(PID, email), permission);
+        assert.equal(
+          await getCollaboratorPermission({ organizationId: ORG }, PID, email),
+          permission,
+        );
       });
     }
 
     it('returns null for someone who is not a collaborator', async () => {
       assert.equal(
-        await getCollaboratorPermission(PID, 'stranger@example.com'),
+        await getCollaboratorPermission(
+          { organizationId: ORG },
+          PID,
+          'stranger@example.com',
+        ),
         null,
       );
     });
 
     it('returns null once a collaborator is revoked', async () => {
       const email = 'revoked@example.com';
-      await addCollaborator(PID, { userEmail: email, permission: 'edit' });
-      assert.equal(await getCollaboratorPermission(PID, email), 'edit');
+      await addCollaborator({ organizationId: ORG }, PID, {
+        userEmail: email,
+        permission: 'edit',
+      });
+      assert.equal(
+        await getCollaboratorPermission({ organizationId: ORG }, PID, email),
+        'edit',
+      );
 
-      const removed = await removeCollaborator(PID, email, OWNER_EMAIL, {});
+      const removed = await removeCollaborator(
+        { organizationId: ORG },
+        PID,
+        email,
+        OWNER_EMAIL,
+        {},
+      );
       assert.equal(removed.ok, true);
-      assert.equal(await getCollaboratorPermission(PID, email), null);
+      assert.equal(
+        await getCollaboratorPermission({ organizationId: ORG }, PID, email),
+        null,
+      );
     });
 
     it('reflects a permission update', async () => {
       const email = 'promoted@example.com';
-      await addCollaborator(PID, { userEmail: email, permission: 'view' });
-      await updateCollaboratorPermission(PID, email, 'admin');
-      assert.equal(await getCollaboratorPermission(PID, email), 'admin');
+      await addCollaborator({ organizationId: ORG }, PID, {
+        userEmail: email,
+        permission: 'view',
+      });
+      await updateCollaboratorPermission(
+        { organizationId: ORG },
+        PID,
+        email,
+        'admin',
+      );
+      assert.equal(
+        await getCollaboratorPermission({ organizationId: ORG }, PID, email),
+        'admin',
+      );
     });
 
     it("stamps a new row with the deck's organization", async () => {
@@ -152,7 +185,10 @@ pgDescribe(
         .values({ id: otherOrg, name: 'Other', slug: 'other' })
         .execute();
       const email = 'stamped@example.com';
-      await addCollaborator(PID, { userEmail: email, permission: 'edit' });
+      await addCollaborator({ organizationId: ORG }, PID, {
+        userEmail: email,
+        permission: 'edit',
+      });
 
       const row = await db
         .selectFrom('presentation_collaborators')
@@ -186,11 +222,15 @@ pgDescribe(
         })
         .execute();
 
-      assert.equal(await getCollaboratorPermission(PID, email), 'edit');
+      assert.equal(
+        await getCollaboratorPermission({ organizationId: ORG }, PID, email),
+        'edit',
+      );
     });
 
     it('refuses to invite onto a deck that does not exist', async () => {
       const result = await addCollaborator(
+        { organizationId: ORG },
         'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
         {
           userEmail: 'nowhere@example.com',
@@ -204,7 +244,10 @@ pgDescribe(
 
     it('an edit collaborator can read and write through canActorAccessPresentation', async () => {
       const email = 'editor@example.com';
-      await addCollaborator(PID, { userEmail: email, permission: 'edit' });
+      await addCollaborator({ organizationId: ORG }, PID, {
+        userEmail: email,
+        permission: 'edit',
+      });
       const pres = {
         id: PID,
         visibility: 'private',
@@ -232,7 +275,10 @@ pgDescribe(
 
     it('a view collaborator can read but not write', async () => {
       const email = 'viewer@example.com';
-      await addCollaborator(PID, { userEmail: email, permission: 'view' });
+      await addCollaborator({ organizationId: ORG }, PID, {
+        userEmail: email,
+        permission: 'view',
+      });
       const pres = {
         id: PID,
         visibility: 'private',
@@ -262,7 +308,10 @@ pgDescribe(
 
     it('an external collaborator (no user row) still resolves a permission and gets access', async () => {
       const email = 'external-partner@agency.test'; // deliberately NOT in `users`
-      await addCollaborator(PID, { userEmail: email, permission: 'edit' });
+      await addCollaborator({ organizationId: ORG }, PID, {
+        userEmail: email,
+        permission: 'edit',
+      });
       const pres = {
         id: PID,
         visibility: 'private',
@@ -270,7 +319,10 @@ pgDescribe(
         organizationId: ORG,
       };
 
-      assert.equal(await getCollaboratorPermission(PID, email), 'edit');
+      assert.equal(
+        await getCollaboratorPermission({ organizationId: ORG }, PID, email),
+        'edit',
+      );
       assert.equal(
         await canActorAccessPresentation(
           pres,
@@ -282,7 +334,10 @@ pgDescribe(
 
       // …and the resolver names them external rather than failing — this is the
       // seam the epic must preserve when ACL moves from email to user_id.
-      const resolution = await resolveIdentityByEmail(email);
+      const resolution = await resolveIdentityByEmail(
+        { organizationId: ORG },
+        email,
+      );
       assert.equal(resolution.userId, null);
       assert.equal(resolution.external, true);
       assert.equal(resolution.resolved, false);
@@ -291,14 +346,20 @@ pgDescribe(
     // --- Identity resolver against the real users table ----------------------
 
     it('resolves a known owner email to its stable users.id', async () => {
-      const resolution = await resolveIdentityByEmail(OWNER_EMAIL);
+      const resolution = await resolveIdentityByEmail(
+        { organizationId: ORG },
+        OWNER_EMAIL,
+      );
       assert.equal(resolution.userId, OWNER_ID);
       assert.equal(resolution.resolved, true);
       assert.equal(resolution.external, false);
     });
 
     it('resolves an unknown email as a defined external identity', async () => {
-      const resolution = await resolveIdentityByEmail('nobody@example.com');
+      const resolution = await resolveIdentityByEmail(
+        { organizationId: ORG },
+        'nobody@example.com',
+      );
       assert.equal(resolution.userId, null);
       assert.equal(resolution.external, true);
     });

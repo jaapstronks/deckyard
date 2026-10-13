@@ -11,6 +11,8 @@
  * organization-scoped".
  */
 
+import { crossOrganizationScope } from '../scope.js';
+
 import crypto from 'node:crypto';
 import { getDb, sql } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
@@ -760,6 +762,7 @@ async function listPresentationRows(ctx) {
   // One batched name lookup for the whole page rather than one per card:
   // a 200-deck organization would otherwise issue 200 identical queries.
   const displayNames = await resolveDisplayNames(
+    ctx,
     rows.flatMap((row) => [
       { id: row.updatedById, email: row.updatedBy },
       { id: row.createdById, email: row.createdBy },
@@ -842,11 +845,17 @@ async function getPresentationRow(id, ctx) {
  * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
  */
 async function displayNamesFor(row) {
-  return resolveDisplayNames([
-    { id: row?.updated_by_user_id, email: row?.updated_by },
-    { id: row?.created_by_user_id, email: row?.created_by },
-    { id: row?.trashed_by_user_id, email: row?.trashed_by },
-  ]);
+  return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    [
+      { id: row?.updated_by_user_id, email: row?.updated_by },
+      { id: row?.created_by_user_id, email: row?.created_by },
+      { id: row?.trashed_by_user_id, email: row?.trashed_by },
+    ],
+  );
 }
 
 /**
@@ -870,7 +879,7 @@ async function createPresentationRow(data, ctx) {
   // users row resolves `external` and stays NULL (the pinned legacy path).
   // Reads still key on the email; this only populates the columns a later
   // PR moves the ownership reads onto.
-  const ownerResolution = await resolveIdentityByEmail(ownerEmail);
+  const ownerResolution = await resolveIdentityByEmail(ctx, ownerEmail);
   const ownerUserId = ownerResolution?.userId ?? null;
 
   const row = await db
@@ -1065,7 +1074,10 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
     revision: sql`revision + 1`,
   };
   if (updatedByEmail) {
-    const updatedByResolution = await resolveIdentityByEmail(updatedByEmail);
+    const updatedByResolution = await resolveIdentityByEmail(
+      ctx,
+      updatedByEmail,
+    );
     updateData.updated_by = normalizeEmail(updatedByEmail);
     updateData.updated_by_user_id = updatedByResolution?.userId ?? null;
   }
@@ -1094,7 +1106,7 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
   // resolution of the same address, so the paired keys can never diverge —
   // a known owner writes their `users.id`, an external owner writes NULL.
   if (opts?.allowOwnerChange && data.ownerEmail) {
-    const ownerResolution = await resolveIdentityByEmail(data.ownerEmail);
+    const ownerResolution = await resolveIdentityByEmail(ctx, data.ownerEmail);
     if (ownerResolution) {
       updateData.owner_email = ownerResolution.value;
       updateData.owner_user_id = ownerResolution.userId ?? null;
@@ -1145,7 +1157,7 @@ async function deletePresentationRow(id, ctx) {
   // resolves `external` and stays NULL (the pinned legacy path).
   const trashedByEmail = ctx?.actorEmail || null;
   const trashedByResolution = trashedByEmail
-    ? await resolveIdentityByEmail(trashedByEmail)
+    ? await resolveIdentityByEmail(ctx, trashedByEmail)
     : null;
   const result = await db
     .updateTable('presentations')
@@ -1201,6 +1213,7 @@ async function listTrashedPresentationRows(ctx) {
     .execute();
 
   const displayNames = await resolveDisplayNames(
+    ctx,
     rows.flatMap((row) => [
       { id: row.updatedById, email: row.updatedBy },
       { id: row.createdById, email: row.createdBy },
@@ -1457,6 +1470,7 @@ async function listPresentationVersionRows(presentationId, ctx) {
     .execute();
 
   const displayNames = await resolveDisplayNames(
+    ctx,
     rows.map((row) => ({ id: row.created_by_user_id, email: row.created_by })),
   );
   return rows.map((row) => mapVersionRowSummary(row, displayNames));
@@ -1490,9 +1504,13 @@ async function getPresentationVersionRow(presentationId, versionId, ctx) {
  * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
  */
 async function versionDisplayNames(row) {
-  return resolveDisplayNames([
-    { id: row?.created_by_user_id, email: row?.created_by },
-  ]);
+  return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    [{ id: row?.created_by_user_id, email: row?.created_by }],
+  );
 }
 
 /**
@@ -1519,7 +1537,7 @@ async function createPresentationVersionRow(
   // column — the version list renders `{ id, displayName }` from it (D22).
   const createdByEmail = ctx?.actorEmail || null;
   const createdByResolution = createdByEmail
-    ? await resolveIdentityByEmail(createdByEmail)
+    ? await resolveIdentityByEmail(ctx, createdByEmail)
     : null;
 
   const row = await db

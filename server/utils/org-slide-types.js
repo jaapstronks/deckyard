@@ -19,10 +19,10 @@ import { resolveScope } from '../storage/scope.js';
  * @returns {Promise<string[]>}
  */
 export async function loadDisabledSlideTypes(scope) {
-  const { organizationId } = resolveScope(scope, 'loadDisabledSlideTypes');
+  resolveScope(scope, 'loadDisabledSlideTypes');
   return [
     ...new Set([
-      ...(await loadOrgDisabledSlideTypes(organizationId)),
+      ...(await loadOrgDisabledSlideTypes(scope)),
       ...clusterOffSlideTypes(SLIDE_TYPES, isFeatureEnabled),
     ]),
   ];
@@ -30,11 +30,12 @@ export async function loadDisabledSlideTypes(scope) {
 
 /**
  * The organization's own curation (`disabledSlideTypes` in its settings).
- * @param {string} organizationId
+ * @param {import('../storage/scope.js').StorageScope} scope
  * @returns {Promise<string[]>}
  */
-async function loadOrgDisabledSlideTypes(organizationId) {
-  const org = await getOrganizationById(organizationId);
+async function loadOrgDisabledSlideTypes(scope) {
+  const { organizationId } = resolveScope(scope, 'loadOrgDisabledSlideTypes');
+  const org = await getOrganizationById(scope, organizationId);
   const settings = getOrgSettings(org);
   return Array.isArray(settings.disabledSlideTypes)
     ? settings.disabledSlideTypes

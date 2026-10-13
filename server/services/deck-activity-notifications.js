@@ -146,7 +146,12 @@ async function resolveDeckActivityRecipients({
 }) {
   let collaborators = [];
   try {
-    collaborators = (await listCollaborators(presentation?.id))
+    collaborators = (
+      await listCollaborators(
+        { ...scope, organizationId: presentation.organizationId },
+        presentation?.id,
+      )
+    )
       .map((c) => c?.userEmail)
       .filter(Boolean);
   } catch {

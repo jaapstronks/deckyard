@@ -129,14 +129,14 @@ async function handleAdminUserList({ storageScope: ctx, res }) {
 
   // Enrich users with designer status from their org membership
   const orgId = getOrgId(ctx);
-  const org = await getOrganizationById(orgId).catch(() => null);
+  const org = await getOrganizationById(ctx, orgId).catch(() => null);
   const orgSettings =
     org?.settings && typeof org.settings === 'object' ? org.settings : {};
 
   const enrichedUsers = await Promise.all(
     users.map(async (u) => {
       try {
-        const membership = await getMembershipByEmail(u.email, orgId);
+        const membership = await getMembershipByEmail(ctx, u.email, orgId);
         const isDesigner = membership
           ? hasDesignerCapability(membership, orgSettings)
           : false;
@@ -189,7 +189,7 @@ async function handleAdminUserCreate({
   }
 
   // Log the event
-  await logAuthEvent({
+  await logAuthEvent(ctx, {
     type: 'user_created',
     email,
     success: true,
@@ -285,20 +285,20 @@ async function handleAdminUserUpdate({ storageScope: ctx, req, res }, userId) {
     }
 
     const orgId = getOrgId(ctx);
-    let membership = await getMembershipByEmail(targetUser.email, orgId);
+    let membership = await getMembershipByEmail(ctx, targetUser.email, orgId);
 
     // Auto-create membership if user doesn't have one yet
     if (!membership && targetUser.id) {
-      await addMember({
+      await addMember(ctx, {
         userId: targetUser.id,
         organizationId: orgId,
         role: targetUser.role === 'admin' ? 'admin' : 'member',
       });
-      membership = await getMembershipByEmail(targetUser.email, orgId);
+      membership = await getMembershipByEmail(ctx, targetUser.email, orgId);
     }
 
     if (membership) {
-      await updateMemberDesigner(membership.id, Boolean(body.isDesigner));
+      await updateMemberDesigner(ctx, membership.id, Boolean(body.isDesigner));
     }
 
     resultUser = resultUser || targetUser;
@@ -326,7 +326,7 @@ async function handleAdminUserDelete(
   }
 
   // Log the event
-  await logAuthEvent({
+  await logAuthEvent(ctx, {
     type: 'user_deleted',
     email: targetUser?.email,
     success: true,

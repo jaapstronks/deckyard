@@ -68,7 +68,7 @@ export async function transferPresentationOwnership(
 
   // Remove new owner from collaborators if they were one
   try {
-    await removeCollaborator(presentationId, newOwnerEmail, actorEmail);
+    await removeCollaborator(scope, presentationId, newOwnerEmail, actorEmail);
   } catch {
     // Ignore - they may not have been a collaborator
   }
@@ -81,7 +81,7 @@ export async function transferPresentationOwnership(
     previousOwnerEmail !== newOwnerEmail
   ) {
     try {
-      const result = await addCollaborator(presentationId, {
+      const result = await addCollaborator(scope, presentationId, {
         userEmail: previousOwnerEmail,
         permission: 'edit', // Previous owners get edit access
         invitedBy: actorEmail,

@@ -15,10 +15,11 @@
  * exists where external identities *can* appear.
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { generateSlug, isValidSlug } from '../../shared/slug.js';
 
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
 import { managedFontUrl } from '../media/managed-fonts.js';
 import {
@@ -610,7 +611,13 @@ function formatFamily(row, lookup = NO_DISPLAY_NAMES) {
  * @returns {Promise<import('./display-identity.js').DisplayNameLookup>}
  */
 function creatorNames(rows) {
-  return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
+  return resolveNamesForAddresses(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    (rows || []).map((row) => row?.created_by),
+  );
 }
 
 function formatVariant(row) {
