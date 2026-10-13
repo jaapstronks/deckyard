@@ -117,3 +117,28 @@ test('query handles, nested callbacks and dynamic DB imports are DB-reaching', (
     'query',
   ]);
 });
+
+test('literal lazy storage imports remain gated and their then-callback calls are inventoried', () => {
+  const lazySources = new Map([
+    ...sources,
+    [
+      'server/storage/cache.js',
+      `
+    export function cached(storageScope) {
+      return import('./index.js').then(mod => mod.rows(storageScope));
+    }
+  `,
+    ],
+  ]);
+  const inventory = storageScopeInventory(lazySources);
+  assert.ok(
+    scopeFirstViolations(inventory, new Map()).includes(
+      'server/storage/cache.js :: cached :: scope-first',
+    ),
+  );
+  assert.ok(
+    inventory
+      .find((fn) => fn.name === 'read')
+      .callers.includes('server/storage/cache.js:3'),
+  );
+});

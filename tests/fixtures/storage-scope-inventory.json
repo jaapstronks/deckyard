@@ -1,6 +1,6 @@
 {
   "measuredAt": "2026-10-13",
-  "base": "4ab29d647c6fa7fa653d2f120c49e5bfb39fa7ab",
+  "base": "108237429d162267f19be42e97d9274d646b7a14",
   "callerRoots": ["server", "client", "shared", "scripts", "tests", "capture"],
   "excludedDirectories": ["vendor", "fixtures"],
   "violations": [
@@ -84,6 +84,7 @@
     "server/storage/password-reset.js :: hasDatabaseCredentials :: scope-first",
     "server/storage/password-reset.js :: logAuthEvent :: scope-first",
     "server/storage/password-reset.js :: verifyUserPassword :: scope-first",
+    "server/storage/presentations/cache.js :: getPresentationCached :: scope-first",
     "server/storage/presentations/index.js :: createPresentation :: scope-first",
     "server/storage/presentations/index.js :: createPresentationVersion :: scope-first",
     "server/storage/presentations/index.js :: deletePresentation :: scope-first",
@@ -2086,6 +2087,7 @@
       "params": ["scope", "presentationId", null],
       "exception": null,
       "callers": [
+        "server/storage/presentations/index.js:228",
         "tests/live-sessions-deck-updated.test.js:49",
         "tests/live-sessions-deck-updated.test.js:69",
         "tests/live-sessions-deck-updated.test.js:82"
@@ -2436,6 +2438,20 @@
       ]
     },
     {
+      "key": "server/storage/presentations/cache.js :: getPresentationCached",
+      "line": 57,
+      "params": ["storageScope", "id"],
+      "exception": null,
+      "callers": [
+        "server/routes/api/follow/interactions.js:217",
+        "server/routes/api/follow/interactions.js:295",
+        "server/routes/api/follow/interactions.js:392",
+        "server/routes/api/follow/interactions.js:54",
+        "server/routes/api/follow/state.js:18",
+        "server/routes/api/follow/status-ticker.js:35"
+      ]
+    },
+    {
       "key": "server/storage/presentations/comments.js :: createComment",
       "line": 461,
       "params": ["scope", "presentationId", "data"],
@@ -2701,6 +2717,7 @@
         "server/services/translate.js:413",
         "server/storage/live-sessions/control.js:116",
         "server/storage/live-sessions/sessions.js:69",
+        "server/storage/presentations/cache.js:65",
         "server/storage/presentations/index.js:172",
         "server/storage/presentations/index.js:185",
         "server/storage/presentations/ownership.js:40",

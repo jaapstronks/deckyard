@@ -113,6 +113,7 @@ export function storageScopeInventory(sources, callerSources = sources) {
           params: node.params.map(parameterName),
           refs: new Set(),
           members: [],
+          dynamicSources: new Set(),
           db: false,
         };
         visit(node.body, (child) => {
@@ -125,6 +126,12 @@ export function storageScopeInventory(sources, callerSources = sources) {
             if (child.object.type === 'Identifier') {
               record.members.push([child.object.name, property]);
             }
+          }
+          if (
+            child.type === 'ImportExpression' &&
+            typeof child.source.value === 'string'
+          ) {
+            record.dynamicSources.add(target(file, child.source.value));
           }
           if (
             child.type === 'ImportExpression' &&
@@ -166,6 +173,14 @@ export function storageScopeInventory(sources, callerSources = sources) {
       if (resolved === '@database') fn.db = true;
       else if (resolved && resolved !== fn.key) fn.dependencies.add(resolved);
     }
+    for (const source of fn.dynamicSources) {
+      // A literal lazy storage import reaches that module's DB surface. This
+      // deliberately over-approximates which export a callback may select.
+      for (const name of modules.get(source)?.exports.keys() || []) {
+        const resolved = resolve(source, name);
+        if (resolved && resolved !== fn.key) fn.dependencies.add(resolved);
+      }
+    }
     for (const [object, property] of fn.members) {
       const binding = modules.get(fn.file).imports.get(object);
       if (binding?.name !== '*') continue;
@@ -206,6 +221,35 @@ export function storageScopeInventory(sources, callerSources = sources) {
     }
     visit(ast, (node) => {
       if (node.type !== 'CallExpression') return;
+      // Literal import('./x.js').then(mod => mod.read()) is used by the
+      // presentation cache to break a static cycle. Preserve its real callers.
+      if (
+        node.callee.type === 'MemberExpression' &&
+        node.callee.object.type === 'ImportExpression' &&
+        node.callee.property.name === 'then'
+      ) {
+        const source = node.callee.object.source.value;
+        const callback = node.arguments[0];
+        const parameter = callback?.params?.[0]?.name;
+        if (typeof source === 'string' && parameter)
+          visit(callback.body, (child) => {
+            const callee = child.callee;
+            if (
+              child.type !== 'CallExpression' ||
+              callee?.type !== 'MemberExpression' ||
+              callee.object.name !== parameter
+            )
+              return;
+            const resolved = resolve(
+              target(file, source),
+              callee.computed ? callee.property.value : callee.property.name,
+            );
+            if (!functions.has(resolved)) return;
+            if (!callSites.has(resolved)) callSites.set(resolved, new Set());
+            callSites.get(resolved).add(`${file}:${child.loc.start.line}`);
+          });
+      }
+
       const callee = node.callee;
       let resolved;
       if (callee.type === 'Identifier') {

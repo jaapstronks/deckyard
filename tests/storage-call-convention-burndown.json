@@ -79,6 +79,7 @@
   "server/storage/password-reset.js :: hasDatabaseCredentials :: scope-first",
   "server/storage/password-reset.js :: logAuthEvent :: scope-first",
   "server/storage/password-reset.js :: verifyUserPassword :: scope-first",
+  "server/storage/presentations/cache.js :: getPresentationCached :: scope-first",
   "server/storage/presentations/index.js :: createPresentation :: scope-first",
   "server/storage/presentations/index.js :: createPresentationVersion :: scope-first",
   "server/storage/presentations/index.js :: deletePresentation :: scope-first",
