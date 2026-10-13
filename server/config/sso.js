@@ -67,7 +67,7 @@ export function isSsoEnabled() {
 }
 
 /**
- * Whether password / magic-link login should be hidden. Only meaningful when
+ * Whether local login and recovery should be refused. Only meaningful when
  * {@link isSsoEnabled} is true; enforcement without a working IdP would lock
  * everyone out, so we require SSO to be enabled first.
  * @returns {boolean}
