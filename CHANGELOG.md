@@ -10,11 +10,25 @@ entries are grouped per release rather than exhaustively listed.
 ### ⚠ BREAKING CHANGES
 
 * deleteOldActivityEvents, cleanupExpiredSlideLocks, listSeedThemes, resolveSeedThemeSlug, installationDefaultThemeId, replaceTagLinks and getUserIdByEmail take a scope first; withDbGuard moved to server/db/client.js, initializeStorage and closeStorage to server/db/lifecycle.js, pendingMigrationsError and strandedFileDataError to server/db/boot-check.js; __resetStorageForTests removed.
+* Fork impact, with no re-export shims at the old paths:
+
+  | Module | Change |
+  | --- | --- |
+  | `server/storage/activity-events.js` | `deleteOldActivityEvents(scope, olderThan)`: instance retention scope only |
+  | `server/storage/slide-locks.js` | `cleanupExpiredSlideLocks(scope)`: instance retention scope only |
+  | `server/storage/themes.js` | `listSeedThemes(scope)`: organization or reasoned instance scope |
+  | `server/storage/settings.js` | `resolveSeedThemeSlug(scope, slug)`, `installationDefaultThemeId(scope)`: organization or reasoned instance scope |
+  | `server/storage/tags.js` | `replaceTagLinks(scope, { linkTable, rowId, tagNames })`: the `orgId` field is removed; the organization comes from the scope |
+  | `server/storage/utils/index.js` | `getUserIdByEmail(scope, db, email)`: the `orgId` argument is removed; the organization comes from the scope |
+  | `server/db/client.js` | `withDbGuard(fallback, fn)` moved from `server/storage/utils/db-guard.js`; no longer exported by `server/storage/utils/index.js` |
+  | `server/db/lifecycle.js` | `initializeStorage()`, `closeStorage()` moved from `server/storage/lifecycle.js` |
+  | `server/db/boot-check.js` | `pendingMigrationsError()`, `strandedFileDataError(repoRoot)` moved from `server/storage/boot-check.js` |
+
+  The no-op `__resetStorageForTests` is removed, and with it `uninstallFacadeStorage()` from `tests/pg/helpers/harness.js`; fork pg tests drop that call (`closeTestDb()` is the whole teardown). See `docs/reference/storage-scope.md`.
 
 ### Changed
 
 * finish scope-first storage exports and move DB infrastructure to server/db ([#1639](https://github.com/jaapstronks/deckyard/issues/1639)) ([35b48c3](https://github.com/jaapstronks/deckyard/commit/35b48c3ee18bacff3e8d2a4b7c1bf22bfca46999))
-* release 1.67.0 as a beta minor ([ced9141](https://github.com/jaapstronks/deckyard/commit/ced914136f4b84e928a55df72ade68b12cc32fd5))
 
 ## [1.66.0](https://github.com/jaapstronks/deckyard/compare/v1.65.0...v1.66.0) (2026-10-13)
 
