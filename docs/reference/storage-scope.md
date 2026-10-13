@@ -167,17 +167,17 @@ The actor/organization/identity migration (B665 cluster 2) adds a first `scope` 
 
 The complete changed-export list (paths relative to the repository root):
 
-| Module | Exports receiving a new first `scope` argument |
-| --- | --- |
-| `server/storage/collaborators.js` | `addCollaborator`, `getCollaboratorPermission`, `listCollaborators`, `removeCollaborator`, `updateCollaboratorPermission` |
-| `server/storage/display-identity.js` | `resolveDisplayNames`, `resolveNamesForAddresses` |
-| `server/storage/identity-resolver.js` | `resolveIdentity`, `resolveIdentityByEmail` |
-| `server/storage/identity-verification.js` | `verifyIdentityConsistency` |
-| `server/storage/identity.js` | `getUserByEmailGlobal`, `resolveActiveMembership`, `resolveActiveOrganization` |
-| `server/storage/login-membership.js` | `ensureMembership` |
-| `server/storage/password-reset.js` | `cleanupOldAuditLogs`, `getPasswordChangedAt`, `hasDatabaseCredentials`, `logAuthEvent`, `verifyUserPassword` |
-| `server/storage/user-organizations/memberships.js` | `addMember`, `countOrganizationMembers`, `getMembership`, `getMembershipByEmail`, `getOrganizationMember`, `listOrganizationMembers`, `listUserOrganizations`, `removeMember`, `transferOwnership`, `updateMemberDesigner`, `updateMemberRole` |
-| `server/storage/user-organizations/organizations.js` | `createOrganization`, `deleteOrganization`, `getOrganizationById`, `getOrganizationBySlug`, `updateOrganization` |
+| Module                                               | Exports receiving a new first `scope` argument                                                                                                                                                                                                 |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server/storage/collaborators.js`                    | `addCollaborator`, `getCollaboratorPermission`, `listCollaborators`, `removeCollaborator`, `updateCollaboratorPermission`                                                                                                                      |
+| `server/storage/display-identity.js`                 | `resolveDisplayNames`, `resolveNamesForAddresses`                                                                                                                                                                                              |
+| `server/storage/identity-resolver.js`                | `resolveIdentity`, `resolveIdentityByEmail`                                                                                                                                                                                                    |
+| `server/storage/identity-verification.js`            | `verifyIdentityConsistency`                                                                                                                                                                                                                    |
+| `server/storage/identity.js`                         | `getUserByEmailGlobal`, `resolveActiveMembership`, `resolveActiveOrganization`                                                                                                                                                                 |
+| `server/storage/login-membership.js`                 | `ensureMembership`                                                                                                                                                                                                                             |
+| `server/storage/password-reset.js`                   | `cleanupOldAuditLogs`, `getPasswordChangedAt`, `hasDatabaseCredentials`, `logAuthEvent`, `verifyUserPassword`                                                                                                                                  |
+| `server/storage/user-organizations/memberships.js`   | `addMember`, `countOrganizationMembers`, `getMembership`, `getMembershipByEmail`, `getOrganizationMember`, `listOrganizationMembers`, `listUserOrganizations`, `removeMember`, `transferOwnership`, `updateMemberDesigner`, `updateMemberRole` |
+| `server/storage/user-organizations/organizations.js` | `createOrganization`, `deleteOrganization`, `getOrganizationById`, `getOrganizationBySlug`, `updateOrganization`                                                                                                                               |
 
 Every previous argument shifts one position, including the database argument in `ensureMembership(scope, db, ...)`. Import paths stay unchanged. Organization-bound mutations use the target organization scope; pre-authentication, provisioning and instance-wide identity/audit operations require an explicit instance scope with a reason.
 
