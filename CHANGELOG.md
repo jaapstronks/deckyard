@@ -4,6 +4,17 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.63.0](https://github.com/jaapstronks/deckyard/compare/v1.62.0...v1.63.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* **storage:** server/storage/presentations/crud/enforce-slide-locks.js exports enforceSlideLocks and enforceSlideWritePolicy now take (scope, opts) instead of ({ctx, ...opts}). Fork callers must pass the organization scope first and remove opts.ctx. Import paths are unchanged.
+
+### Fixed
+
+* **storage:** enforce scope-first slide lock policies and gate ([99fa167](https://github.com/jaapstronks/deckyard/commit/99fa1673e236a96da7088b98067e68cc0ea63616))
+
 ## [1.62.0](https://github.com/jaapstronks/deckyard/compare/v1.61.0...v1.62.0) (2026-10-12)
 
 
