@@ -8,6 +8,7 @@ import { generateSlug, isValidSlug } from '../../shared/slug.js';
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso } from '../utils/normalize.js';
+import { getUserIdByEmail } from './utils/index.js';
 import {
   isValidFont,
   DEFAULT_HEADING_FONT,
@@ -345,7 +346,7 @@ export async function createTheme(scope, data) {
         created_at: now,
         updated_at: now,
         created_by: scope?.actorEmail
-          ? await getUserIdByEmail(db, orgId, scope.actorEmail)
+          ? await getUserIdByEmail(scope, db, scope.actorEmail)
           : null,
       })
       .returningAll()
@@ -591,24 +592,6 @@ function validateFonts(fonts) {
   if (normalized.bodyFamilyId) result.bodyFamilyId = normalized.bodyFamilyId;
 
   return result;
-}
-
-/**
- * Get user ID by email (for created_by field).
- * @param {Object} db - Database instance
- * @param {string} orgId - Organization ID
- * @param {string} email - User email
- * @returns {Promise<string|null>} - User ID or null
- */
-async function getUserIdByEmail(db, orgId, email) {
-  const user = await db
-    .selectFrom('users')
-    .select('id')
-    .where('organization_id', '=', orgId)
-    .where('email', '=', email)
-    .executeTakeFirst();
-
-  return user?.id || null;
 }
 
 /** Apply a fully validated seed batch in one transaction. */

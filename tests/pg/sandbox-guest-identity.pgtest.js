@@ -22,7 +22,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
@@ -72,7 +71,6 @@ pgDescribe('sandbox guest identity (real PostgreSQL)', () => {
   after(async () => {
     if (prevSandboxMode === undefined) delete process.env.SANDBOX_MODE;
     else process.env.SANDBOX_MODE = prevSandboxMode;
-    uninstallFacadeStorage();
     await closeTestDb(db);
   });
 

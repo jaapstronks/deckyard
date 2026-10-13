@@ -501,7 +501,7 @@ export async function cleanupExpiredSlideLocks(scope) {
     {},
     { allowCrossOrganization: true },
   );
-  if (!context.crossOrganization)
+  if (context.organizationId || !context.crossOrganization)
     throw new TypeError(
       'cleanupExpiredSlideLocks() requires an instance retention scope',
     );

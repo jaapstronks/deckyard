@@ -36,7 +36,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import {
   seedDefaultOrganization,
@@ -118,7 +117,6 @@ pgDescribe('deck tags routes authorize the deck (real PostgreSQL)', () => {
   after(async () => {
     if (multiOrgBefore === undefined) delete process.env.MULTI_ORG_ENABLED;
     else process.env.MULTI_ORG_ENABLED = multiOrgBefore;
-    uninstallFacadeStorage();
     await closeTestDb(db);
   });
 

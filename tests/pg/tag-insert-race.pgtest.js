@@ -39,7 +39,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import { seedDefaultOrganization, seedPresentation } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
@@ -105,7 +104,6 @@ pgDescribe('two writers create the same tag at once (real PostgreSQL)', () => {
   });
 
   after(async () => {
-    uninstallFacadeStorage();
     await rival.end();
     await closeTestDb(db);
   });

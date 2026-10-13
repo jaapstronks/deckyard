@@ -197,7 +197,7 @@ export async function deleteOldActivityEvents(scope, olderThan) {
     {},
     { allowCrossOrganization: true },
   );
-  if (!context.crossOrganization)
+  if (context.organizationId || !context.crossOrganization)
     throw new TypeError(
       'deleteOldActivityEvents() requires an instance retention scope',
     );

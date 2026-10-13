@@ -30,7 +30,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import {
   seedDefaultOrganization,
@@ -64,7 +63,6 @@ pgDescribe(
     });
 
     after(async () => {
-      uninstallFacadeStorage();
       await closeTestDb(db);
     });
 

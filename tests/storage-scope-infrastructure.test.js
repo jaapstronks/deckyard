@@ -1,11 +1,12 @@
 /**
- * B665 cluster 4: the last storage exports take `scope` first.
+ * The last storage exports take `scope` first (B665 cluster 4).
  *
  * Retention sweeps accept only a reasoned instance scope (storage-scope.md
- * category 7), seed-theme reads accept an organization scope or a reasoned
- * instance scope (category 3), and the tag-replacement and user-id helpers
- * derive their organization from the scope instead of a loose `orgId`. Every
- * one refuses a missing scope before it queries.
+ * category 7) and refuse any scope that names an organization, seed-theme
+ * reads accept an organization scope or a reasoned instance scope (category
+ * 3), and the tag-replacement and user-id helpers derive their organization
+ * from the scope instead of a loose `orgId`. Every one refuses a missing scope
+ * before it queries.
  *
  * Run with: node --test tests/storage-scope-infrastructure.test.js
  */
@@ -50,6 +51,16 @@ test('retention sweeps refuse a missing or organization scope', async () => {
   await assert.rejects(cleanupExpiredSlideLocks(), TypeError);
   await assert.rejects(
     cleanupExpiredSlideLocks(orgScope(ORG_A)),
+    /requires an instance retention scope/,
+  );
+  // A reason beside an organization is still an organization scope.
+  const reasonedOrg = { ...orgScope(ORG_A), crossOrganization: 'test: both' };
+  await assert.rejects(
+    deleteOldActivityEvents(reasonedOrg, past),
+    /requires an instance retention scope/,
+  );
+  await assert.rejects(
+    cleanupExpiredSlideLocks(reasonedOrg),
     /requires an instance retention scope/,
   );
 });

@@ -4,7 +4,6 @@ import {
   openTestDb,
   closeTestDb,
   installFacadeStorage,
-  uninstallFacadeStorage,
   pgDescribe,
   truncate,
 } from './helpers/harness.js';
@@ -32,7 +31,6 @@ pgDescribe('extension provenance in PostgreSQL', () => {
   });
 
   after(async () => {
-    uninstallFacadeStorage();
     await closeTestDb(db);
   });
 
