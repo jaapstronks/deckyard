@@ -34,24 +34,11 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
 - **No bundler; keep it readable**
   - Small modules in `client/lib/*`, `client/views/**`, `server/utils/**`, `server/storage/**`; no new dependency without a strong reason.
 
-- **Formatting is Prettier's job, not a review topic**
-  - Prettier on its defaults plus `singleQuote: true`: `npm run format` writes,
-    `npm run format:check` gates in CI next to `npm run lint`. Don't hand-format,
-    don't argue style; a `// prettier-ignore` needs a reason. Generators, the
-    blame-ignore commit (`git config blame.ignoreRevsFile .git-blame-ignore-revs`
-    once per clone): `docs/developer/linting.md` § Formatting.
+- **Formatting: Prettier.** For formatting, ignores and generators, read `docs/developer/linting.md` § Formatting (commands and rules).
 
 - **Dependencies**: before changing package declarations or gated imports, read `docs/reference/dynamic-imports.md` § Which packages are optional. It defines hard, optional and fork-only dependencies.
 
-- **Module layout: one folder = one seam**
-  - A decomposed unit is a folder `X/` whose `index.js` is the sole public
-    seam; consumers import `X/index.js`, never a concern file. No eponymous
-    wrapper beside the folder (`X.js` next to `X/`), no role suffix on the
-    folder, and no re-export shim at a moved path (one bounded exception). In
-    `server/storage/` a bare `X.js` is one module, `X/index.js` a seam.
-    `tests/module-layout.test.js` enforces it, no allowlist. The full rule, the
-    shim exception and the client/storage specifics:
-    `docs/developer/architecture.md` § One folder = one seam.
+- **Module layout: one folder = one seam.** Before decomposing modules or moving imports, read `docs/developer/architecture.md` § One folder = one seam for public entries, naming, storage/client boundaries and the single shim exception.
 
 - **Client layers: `lib/` is a layer, `views/` is a feature** (D263, D264)
   - `client/lib/` holds what owns no product feature: the DOM primitives and
