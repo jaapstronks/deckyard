@@ -1,0 +1,48 @@
+/* --- Revoke message modal --- */
+.revoke-modal-description {
+  margin: 0 0 var(--ps-space-4);
+  line-height: 1.5;
+}
+
+.revoke-modal-message-section {
+  margin-bottom: var(--ps-space-4);
+}
+
+.revoke-modal-message-toggle {
+  display: inline-block;
+  font-size: var(--ps-text-base);
+  color: hsl(var(--app-accent-text));
+  text-decoration: none;
+}
+.revoke-modal-message-toggle:hover {
+  text-decoration: underline;
+}
+
+.revoke-modal-message-expanded {
+  margin-top: var(--ps-space-3);
+}
+.revoke-modal-message-expanded .form-label {
+  display: block;
+  margin-bottom: var(--ps-space-1-5);
+  font-size: var(--ps-text-sm);
+  font-weight: 600;
+}
+
+.revoke-modal-textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.revoke-modal-char-count {
+  margin-top: var(--ps-space-1);
+  font-size: 12px;
+  text-align: right;
+}
+.revoke-modal-char-count.is-warning {
+  color: hsl(var(--app-warning));
+}
+
+.revoke-modal-buttons {
+  gap: var(--ps-space-2-5);
+}

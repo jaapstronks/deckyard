@@ -51,7 +51,7 @@ const SHARE_CSS = path.join(
 );
 const MODALS_BASE_CSS = path.join(
   repoRoot,
-  'client/styles/app/editor/modals/10-modals-base.css',
+  'client/styles/app/components/10-modals-base.css',
 );
 const SHARE_MODAL_JS = path.join(
   repoRoot,

@@ -19,6 +19,7 @@ import {
   VIEWER_LAYER,
   viewerEntries,
   APP_FEATURE_LAYER,
+  APP_COMPONENT_LAYER,
   APP_FEATURE_ORDER,
   appFeatureEntries,
 } from '../scripts/generate-slide-css-aggregators.js';
@@ -225,7 +226,10 @@ test('every feature-chrome file is claimed exactly once, each in a feature folde
     'a feature sheet lives in its feature folder, never loose in client/styles/app/',
   );
   assert.deepEqual(
-    [...APP_FEATURE_LAYER.files].sort(),
+    [
+      ...APP_FEATURE_LAYER.files,
+      ...APP_COMPONENT_LAYER.files.map((f) => `components/${f}`),
+    ].sort(),
     onDisk.filter((f) => f.includes('/')).sort(),
     'client/styles/app/<feature>/ and APP_FEATURE_LAYER.files disagree: declare a new sheet, un-declare a removed one',
   );
@@ -240,7 +244,7 @@ test('every feature-chrome file is claimed exactly once, each in a feature folde
     .map((entry) => entry.name)
     .sort();
   assert.deepEqual(
-    [...APP_FEATURE_ORDER].sort(),
+    [...APP_FEATURE_ORDER, 'components'].sort(),
     folders,
     'each app feature folder has exactly one declared aggregator',
   );
@@ -249,14 +253,18 @@ test('every feature-chrome file is claimed exactly once, each in a feature folde
     APP_FEATURE_ORDER.length,
     'an app feature appears only once in layer order',
   );
-  for (const feature of APP_FEATURE_ORDER) {
+  for (const feature of [...APP_FEATURE_ORDER, 'components']) {
     const actual = fs
       .readdirSync(path.join(appDir, feature), { recursive: true })
       .filter((file) => file.endsWith('.css'))
       .map((file) => file.split(path.sep).join('/'))
       .sort();
     assert.deepEqual(
-      [...appFeatureEntries(feature)].sort(),
+      [
+        ...(feature === 'components'
+          ? APP_COMPONENT_LAYER.files
+          : appFeatureEntries(feature)),
+      ].sort(),
       actual,
       `${feature}: every sheet is claimed exactly once`,
     );

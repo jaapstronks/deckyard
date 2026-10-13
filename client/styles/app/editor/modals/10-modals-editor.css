@@ -1,0 +1,43 @@
+/* Editor-specific modal variants. Shared structure lives in app/components/. */
+
+.modal.ps-modal.slide-type-modal {
+  /* Wider modal on desktop to show more thumbnails */
+  width: min(1200px, 100%);
+  /* Taller: the picker has a lot of content, so use most of the viewport
+     height instead of leaving a big empty band below. */
+  max-height: min(94vh, 940px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Even wider on large desktops to fit 5 thumbnails per row */
+@media (min-width: 1600px) {
+  .modal.ps-modal.slide-type-modal {
+    width: min(1400px, 95%);
+  }
+}
+
+.slide-type-modal .ps-modal-body {
+  /* Denser like Lovable; keep header fixed and scroll content if needed. */
+  padding: var(--ps-space-4);
+  gap: var(--ps-space-3);
+  overflow: auto;
+  min-height: 0;
+}
+
+/* Trim the picker's chrome so the slide grid starts higher up the modal. */
+.slide-type-modal .ps-modal-header {
+  padding: var(--ps-space-3) var(--ps-space-5);
+}
+
+.translate-slide-modal {
+  max-width: 880px;
+}
+
+.translate-field-modal {
+  max-width: 820px;
+}
+
+.translate-preview-list {
+  margin-top: 10px;
+}
