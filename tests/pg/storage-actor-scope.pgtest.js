@@ -1,4 +1,4 @@
-/** B665 actor/organization scopes against PostgreSQL, including bootstrap callers. */
+/** Actor/organization scopes against PostgreSQL, including bootstrap callers. */
 import { after, before, beforeEach, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';

@@ -1,4 +1,4 @@
-/** Scope refusal and tenant isolation for B665's actor/identity storage cluster. */
+/** Scope refusal and tenant isolation for actor/identity storage. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { __setTestDb } from '../server/db/client.js';
