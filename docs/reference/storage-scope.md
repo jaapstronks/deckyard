@@ -165,6 +165,22 @@ Existing signature debt lives in `tests/storage-call-convention-burndown.json`. 
 
 The actor/organization/identity migration (B665 cluster 2) adds a first `scope` argument to 35 actor/organization/identity exports: eleven memberships, five organizations, five collaborators, three identity, two identity-resolver, two display-identity, one identity-verification, one login-membership and five password account/audit operations. Update direct fork calls by inserting the scope before every previous argument; no old signature or compatibility shim remains. Bootstrap scripts and authentication entry points build reasoned instance scopes before a session scope exists. Global user-id/display-name resolution remains instance-wide because a person can belong to several organizations; it does not grant access to an organization or deck.
 
+The complete changed-export list (paths relative to the repository root):
+
+| Module | Exports receiving a new first `scope` argument |
+| --- | --- |
+| `server/storage/collaborators.js` | `addCollaborator`, `getCollaboratorPermission`, `listCollaborators`, `removeCollaborator`, `updateCollaboratorPermission` |
+| `server/storage/display-identity.js` | `resolveDisplayNames`, `resolveNamesForAddresses` |
+| `server/storage/identity-resolver.js` | `resolveIdentity`, `resolveIdentityByEmail` |
+| `server/storage/identity-verification.js` | `verifyIdentityConsistency` |
+| `server/storage/identity.js` | `getUserByEmailGlobal`, `resolveActiveMembership`, `resolveActiveOrganization` |
+| `server/storage/login-membership.js` | `ensureMembership` |
+| `server/storage/password-reset.js` | `cleanupOldAuditLogs`, `getPasswordChangedAt`, `hasDatabaseCredentials`, `logAuthEvent`, `verifyUserPassword` |
+| `server/storage/user-organizations/memberships.js` | `addMember`, `countOrganizationMembers`, `getMembership`, `getMembershipByEmail`, `getOrganizationMember`, `listOrganizationMembers`, `listUserOrganizations`, `removeMember`, `transferOwnership`, `updateMemberDesigner`, `updateMemberRole` |
+| `server/storage/user-organizations/organizations.js` | `createOrganization`, `deleteOrganization`, `getOrganizationById`, `getOrganizationBySlug`, `updateOrganization` |
+
+Every previous argument shifts one position, including the database argument in `ensureMembership(scope, db, ...)`. Import paths stay unchanged. Organization-bound mutations use the target organization scope; pre-authentication, provisioning and instance-wide identity/audit operations require an explicit instance scope with a reason.
+
 Organization-bound membership operations require an organization scope and reject a different explicit organization argument. Membership-id-only changes filter their reads and writes by the scope organization. `listUserOrganizations` accepts an instance scope for organization selection or filters to a supplied organization. Organization reads filter to an organization scope, with explicit instance reads for operator lookup; creation requires an instance provisioning scope, while update/delete require the target organization scope. Active-membership selection, login provisioning and the instance consistency scan require explicit instance scopes. Token operations retain their individual exceptions.
 
 Collaborator operations require the caller scope to match the parent deck's actual organization before reading a cache or collaborator row. Callers that already authorized a cross-organization collaborator derive this scope from the loaded deck; they do not reuse the visitor's active organization. Legacy collaborator organization stamps do not replace the parent deck check. A cached permission cannot authorize a wrong organization or a deleted parent deck. Existing member/collaborator permissions and authentication behavior remain subject to the caller's authorization checks.
