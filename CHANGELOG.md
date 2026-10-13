@@ -11,6 +11,8 @@ entries are grouped per release rather than exhaustively listed.
 
 * App CSS source paths move without shims. Paths relative to client/styles/app/:  - `shell/20-editor-layout.css`, `shell/21-editor-skeleton.css`, `shell/107-collab-presence.css` -> Same filenames under `editor/`  - `shell/05-avatar.css`, `shell/99-notification-bell.css` -> Same filenames under `user/`  - `shell/96-activity-feed.css` -> `list/96-activity-feed.css`  - `list/17-deck-grid.css` -> `editor/17-deck-grid.css`  - `settings/103-data-source.css` -> `editor/103-data-source.css`  - `editor/modals/10-modals-base.css` -> `components/10-modals-base.css`; slide-picker and translation variants in `editor/modals/10-modals-editor.css`  - `editor/modals/11-modals-loading.css` -> `components/11-modals-loading.css`  - `editor/106-shortcuts-overlay.css` -> `components/106-shortcuts-overlay.css`  - `components.css` (declarations) -> `components/00-components.css`; `components.css` is now generated  - `editor/modals/13-modals-misc.css` (theme-picker section) -> `theme-select/13-theme-picker.css`  - `shell/110-sandbox-banner.css` (example shelf) -> `list/110-sandbox-examples.css`; the global banner remains in shell  - `share-viewer/75-share-viewer.css` (revocation dialog) -> `editor/modals/19-modals-revoke.css`; viewer styles remain in share-viewer
 
+Shared modal bases now load before all feature styles, and editor layout follows shell utilities. Check fork overrides that rely on source order; selectors and declaration values are preserved.
+
 ### Changed
 
 * align app CSS with feature and DOM ownership ([b1646d5](https://github.com/jaapstronks/deckyard/commit/b1646d5814382fe21420cc6e03cb8d03fa1b5f8d))
