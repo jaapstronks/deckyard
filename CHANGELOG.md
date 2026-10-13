@@ -9,6 +9,8 @@ entries are grouped per release rather than exhaustively listed.
 
 ### ⚠ BREAKING CHANGES
 
+* **storage:** `upsertThemeSeeds(db, seeds)` moved from `server/utils/theme-seeds.js` to `server/storage/themes.js` as `upsertThemeSeeds(scope, seeds)`. Fork callers must update the import and pass an explicit instance scope instead of a database handle.
+
 * **storage:** server/storage/presentations/crud/enforce-slide-locks.js exports enforceSlideLocks and enforceSlideWritePolicy now take (scope, opts) instead of ({ctx, ...opts}). Fork callers must pass the organization scope first and remove opts.ctx. Import paths are unchanged.
 
 ### Fixed
