@@ -8,7 +8,7 @@ This checks static references, not which component creates a DOM node. A query s
 
 ## Fork path migration
 
-Selectors and declaration values are preserved. Forks that import or patch individual source files must update these paths; there are no old-path shims. Paths below are relative to `client/styles/app/`.
+CSS source-path moves carry a breaking release note with the old/new mapping, following the fork import-path policy in [versioning](versioning.md). Selectors and declaration values are preserved. Forks that import or patch individual source files must update these paths; there are no old-path shims. Paths below are relative to `client/styles/app/`.
 
 | Previous path                                                                                 | Current path                                                                                                   |
 | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
