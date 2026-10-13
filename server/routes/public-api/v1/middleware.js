@@ -93,7 +93,14 @@ export async function authenticateApiKey(ctx) {
   // and an actor with no id matches no ownership stamp; see
   // shared/identity-match.js.
   ctx.apiKey = result;
-  const ownerResolution = await resolveIdentityByEmail(result.ownerEmail);
+  const ownerResolution = await resolveIdentityByEmail(
+    {
+      repoRoot: ctx.repoRoot,
+      organizationId: result.organizationId,
+      actorEmail: result.ownerEmail,
+    },
+    result.ownerEmail,
+  );
   ctx.authedUser = {
     id: ownerResolution?.userId || null,
     email: result.ownerEmail,

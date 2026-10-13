@@ -4,8 +4,9 @@
  * services/comment-notifications.js — email + in-app + SSE — not through here.)
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
 import { norm, nowIso } from '../utils/normalize.js';
 import { withDbGuard } from './utils/index.js';
 import {
@@ -337,5 +338,11 @@ async function actorDisplayNames(rows) {
     .filter((row) => row?.actor_email)
     .map((row) => ({ email: row.actor_email }));
   if (!stamps.length) return NO_DISPLAY_NAMES;
-  return resolveDisplayNames(stamps);
+  return resolveDisplayNames(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    stamps,
+  );
 }

@@ -54,9 +54,9 @@ import { isMultiOrgEnabled } from '../config/features.js';
  * @param {string} operation - Facade function name, for the error message.
  * @param {Object} [options]
  * @param {boolean} [options.allowCrossOrganization=false] - Whether this operation
- *   may run unscoped. Reads of a token-addressed deck may; **writes never may**,
- *   because a write without an organization would land on whatever the storage
- *   layer picked — which is the behaviour this module exists to remove.
+ *   may run unscoped. Token-addressed reads and explicit global identity,
+ *   provisioning or instance-auth-audit operations may. Organization-owned
+ *   mutations otherwise require the target organization; see storage-scope.md.
  * @returns {{organizationId: string|undefined, actorUserId: string|null, actorEmail: string|null, crossOrganization: string|undefined}}
  * @throws {TypeError} If the scope states no organization and declares no reason.
  */

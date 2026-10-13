@@ -1,3 +1,4 @@
+import { createStorageScope } from '../../utils/context.js';
 /**
  * API routes for organization member management (multi-organization mode).
  * All routes are guarded by the MULTI_ORG_ENABLED feature flag.
@@ -101,14 +102,27 @@ async function resolveMembersActor({ res, authedUser }, organizationId) {
 
   // Get user's database record for ID. Identity is organization-independent;
   // the membership check on the next lines is what scopes this request.
-  const dbUser = await getUserByEmailGlobal(authedUser.email);
+  const dbUser = await getUserByEmailGlobal(
+    createStorageScope(
+      { email: authedUser?.email },
+      { organizationId: organizationId },
+    ),
+    authedUser.email,
+  );
   if (!dbUser) {
     unauthorized(res, 'User not found');
     return { ok: false };
   }
 
   // Check membership in the organization
-  const actorMembership = await getMembership(dbUser.id, organizationId);
+  const actorMembership = await getMembership(
+    createStorageScope(
+      { email: authedUser?.email },
+      { organizationId: organizationId },
+    ),
+    dbUser.id,
+    organizationId,
+  );
   if (!actorMembership) {
     forbidden(res, 'You are not a member of this organization');
     return { ok: false };
@@ -122,11 +136,18 @@ async function handleMemberList({ res, url }, organizationId) {
   const limit = parseInt(url.searchParams.get('limit') || '50', 10);
   const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
-  const members = await listOrganizationMembers(organizationId, {
-    limit,
-    offset,
-  });
-  const total = await countOrganizationMembers(organizationId);
+  const members = await listOrganizationMembers(
+    createStorageScope({ email: null }, { organizationId: organizationId }),
+    organizationId,
+    {
+      limit,
+      offset,
+    },
+  );
+  const total = await countOrganizationMembers(
+    createStorageScope({ email: null }, { organizationId: organizationId }),
+    organizationId,
+  );
 
   serveJson(res, 200, {
     members,
@@ -172,7 +193,14 @@ async function handleMemberInvite(
   }
 
   // Check if user is already a member
-  const existingMembership = await getMembershipByEmail(email, organizationId);
+  const existingMembership = await getMembershipByEmail(
+    createStorageScope(
+      { email: authedUser?.email },
+      { organizationId: organizationId },
+    ),
+    email,
+    organizationId,
+  );
   if (existingMembership) {
     return badRequest(res, 'This user is already a member of the organization');
   }
@@ -180,7 +208,13 @@ async function handleMemberInvite(
   // Check if the person already exists anywhere on the instance. Inviting
   // someone who is already a member of another organization must reuse
   // their row, not attempt a second one for a globally unique email.
-  let targetUser = await getUserByEmailGlobal(email);
+  let targetUser = await getUserByEmailGlobal(
+    createStorageScope(
+      { email: authedUser?.email },
+      { organizationId: organizationId },
+    ),
+    email,
+  );
   let invitationToken = null;
 
   if (!targetUser) {
@@ -200,12 +234,18 @@ async function handleMemberInvite(
   }
 
   // Add user to organization
-  const memberResult = await addMember({
-    userId: targetUser.id,
-    organizationId,
-    role,
-    invitedBy: userId,
-  });
+  const memberResult = await addMember(
+    createStorageScope(
+      { email: authedUser?.email },
+      { organizationId: organizationId },
+    ),
+    {
+      userId: targetUser.id,
+      organizationId,
+      role,
+      invitedBy: userId,
+    },
+  );
 
   if (!memberResult.ok) {
     return memberError(res, memberResult, {
@@ -286,6 +326,7 @@ async function handleMemberRoleUpdate(
   // Get the target membership. `memberIdOrUserId` can be either a
   // membership ID or a user ID, and the lookup accepts both.
   const targetMembership = await getOrganizationMember(
+    createStorageScope({ email: null }, { organizationId: organizationId }),
     organizationId,
     memberIdOrUserId,
   );
@@ -324,6 +365,7 @@ async function handleMemberRoleUpdate(
     }
 
     const transferResult = await transferOwnership(
+      createStorageScope({ email: null }, { organizationId: organizationId }),
       organizationId,
       userId,
       targetMembership.user.id,
@@ -338,7 +380,11 @@ async function handleMemberRoleUpdate(
   }
 
   // Regular role update
-  const result = await updateMemberRole(targetMembership.membershipId, newRole);
+  const result = await updateMemberRole(
+    createStorageScope({ email: null }, { organizationId: organizationId }),
+    targetMembership.membershipId,
+    newRole,
+  );
 
   if (!result.ok) {
     return memberError(res, result, {
@@ -349,6 +395,7 @@ async function handleMemberRoleUpdate(
   // Update designer flag if provided
   if ('isDesigner' in body) {
     await updateMemberDesigner(
+      createStorageScope({ email: null }, { organizationId: organizationId }),
       targetMembership.membershipId,
       Boolean(body.isDesigner),
     );
@@ -367,6 +414,7 @@ async function handleMemberRemove(
 ) {
   // Get the target membership (membership ID or user ID, either works).
   const targetMembership = await getOrganizationMember(
+    createStorageScope({ email: null }, { organizationId: organizationId }),
     organizationId,
     memberIdOrUserId,
   );
@@ -404,7 +452,10 @@ async function handleMemberRemove(
     }
   }
 
-  const result = await removeMember(targetMembership.membershipId);
+  const result = await removeMember(
+    createStorageScope({ email: null }, { organizationId: organizationId }),
+    targetMembership.membershipId,
+  );
 
   if (!result.ok) {
     return memberError(res, result, {

@@ -11,6 +11,8 @@
  * Run with: node --test tests/display-identity.test.js
  */
 
+import { crossOrganizationScope } from '../server/storage/scope.js';
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -161,18 +163,24 @@ test('toStoredActorIdentity: no address but a stored name still names someone', 
 
 test('resolveDisplayNames: an empty batch resolves nothing without touching the db', async () => {
   const db = seed();
-  const lookup = await resolveDisplayNames([]);
+  const lookup = await resolveDisplayNames(
+    crossOrganizationScope(null, 'test instance identity lookup'),
+    [],
+  );
   assert.equal(lookup, NO_DISPLAY_NAMES);
   assert.deepEqual(db.__queryLog, []);
 });
 
 test('resolveDisplayNames: one query answers ids and addresses, profile name first', async () => {
   const db = seed();
-  const lookup = await resolveDisplayNames([
-    { id: ALICE_ID },
-    { email: 'BOB@example.com' }, // normalized like users.email
-    { id: null, email: 'stranger@elsewhere.example' },
-  ]);
+  const lookup = await resolveDisplayNames(
+    crossOrganizationScope(null, 'test instance identity lookup'),
+    [
+      { id: ALICE_ID },
+      { email: 'BOB@example.com' }, // normalized like users.email
+      { id: null, email: 'stranger@elsewhere.example' },
+    ],
+  );
 
   assert.equal(lookup.forId(ALICE_ID), 'Alice Profile');
   assert.equal(lookup.forEmail('alice@example.com'), 'Alice Profile');
@@ -189,7 +197,10 @@ test('resolveDisplayNames: one query answers ids and addresses, profile name fir
 
 test('resolveDisplayNames: a user with no name on file is still a user', async () => {
   seed();
-  const lookup = await resolveDisplayNames([{ email: 'nameless@example.com' }]);
+  const lookup = await resolveDisplayNames(
+    crossOrganizationScope(null, 'test instance identity lookup'),
+    [{ email: 'nameless@example.com' }],
+  );
   assert.equal(lookup.forEmail('nameless@example.com'), '');
   assert.equal(
     lookup.idForEmail('nameless@example.com'),
@@ -206,7 +217,10 @@ test('resolveDisplayNames: a user with no name on file is still a user', async (
 
 test('resolveDisplayNames: hits and misses are memoized until invalidated', async () => {
   const db = seed();
-  await resolveDisplayNames([{ id: ALICE_ID }, { email: 'ghost@example.com' }]);
+  await resolveDisplayNames(
+    crossOrganizationScope(null, 'test instance identity lookup'),
+    [{ id: ALICE_ID }, { email: 'ghost@example.com' }],
+  );
   const before = db.__queryLog.filter(
     (q) => q.op === 'select' && q.table === 'users',
   ).length;
@@ -223,10 +237,10 @@ test('resolveDisplayNames: hits and misses are memoized until invalidated', asyn
     .where('user_id', '=', ALICE_ID)
     .execute();
 
-  const again = await resolveDisplayNames([
-    { id: ALICE_ID },
-    { email: 'ghost@example.com' },
-  ]);
+  const again = await resolveDisplayNames(
+    crossOrganizationScope(null, 'test instance identity lookup'),
+    [{ id: ALICE_ID }, { email: 'ghost@example.com' }],
+  );
   assert.equal(again.forId(ALICE_ID), 'Alice Profile', 'served from the memo');
   assert.equal(
     db.__queryLog.filter((q) => q.op === 'select' && q.table === 'users')
@@ -237,13 +251,19 @@ test('resolveDisplayNames: hits and misses are memoized until invalidated', asyn
 
   // The profile-write path calls this; the next read sees the new name.
   invalidateDisplayNames();
-  const fresh = await resolveDisplayNames([{ id: ALICE_ID }]);
+  const fresh = await resolveDisplayNames(
+    crossOrganizationScope(null, 'test instance identity lookup'),
+    [{ id: ALICE_ID }],
+  );
   assert.equal(fresh.forId(ALICE_ID), 'Alice Renamed');
 });
 
 test('resolveDisplayNames: the lookup it returns survives a concurrent invalidation', async () => {
   seed();
-  const lookup = await resolveDisplayNames([{ id: ALICE_ID }]);
+  const lookup = await resolveDisplayNames(
+    crossOrganizationScope(null, 'test instance identity lookup'),
+    [{ id: ALICE_ID }],
+  );
   // A profile write lands between the query and the mapper consuming it.
   invalidateDisplayNames();
   assert.equal(

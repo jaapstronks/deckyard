@@ -20,6 +20,8 @@
  * that wants the backfill to be provably complete rather than merely harmless.
  */
 
+import { crossOrganizationScope } from '../server/storage/scope.js';
+
 import {
   initializeDatabase,
   closeDatabase,
@@ -42,7 +44,12 @@ async function main() {
     return;
   }
 
-  const report = await verifyIdentityConsistency();
+  const report = await verifyIdentityConsistency(
+    crossOrganizationScope(
+      null,
+      'operator full-instance identity consistency scan',
+    ),
+  );
   for (const line of formatIdentityReport(report)) console.log(line);
 
   if (!report.ok) {

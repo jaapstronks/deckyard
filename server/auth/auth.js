@@ -1,3 +1,4 @@
+import { crossOrganizationScope } from '../storage/scope.js';
 import { parseCookies } from '../utils/cookies.js';
 import { readSignedPayload, signPayload } from '../utils/signed-payload.js';
 import { verifyPassword as verifyDbPassword } from '../storage/password-reset.js';
@@ -361,7 +362,13 @@ export async function getUserFromRequestAsync(req, ctx) {
   // Check database users - support all auth sources. Identity is resolved
   // across organizations: which organization the session is in is a separate
   // question, answered by resolveActiveMembership() below.
-  const dbUser = await getUserByEmailGlobal(email);
+  const dbUser = await getUserByEmailGlobal(
+    crossOrganizationScope(
+      null,
+      'resolve authenticated identity and select verified membership before session scope',
+    ),
+    email,
+  );
   if (!dbUser) return null;
 
   // Recompute the version claim the cookie must carry. Shared with every
@@ -376,7 +383,14 @@ export async function getUserFromRequestAsync(req, ctx) {
       organizationId,
       role: organizationRole,
       isDesigner: organizationIsDesigner,
-    } = await resolveActiveMembership(dbUser.id, payload?.orgId);
+    } = await resolveActiveMembership(
+      crossOrganizationScope(
+        null,
+        'resolve authenticated identity and select verified membership before session scope',
+      ),
+      dbUser.id,
+      payload?.orgId,
+    );
     if (!organizationId) return null;
 
     const adminEmail = getAdminEmail();
@@ -527,7 +541,13 @@ export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
 
   // Check database user. Logging in is an identity question, so the lookup is
   // not scoped to an organization; the organization is picked afterwards.
-  const dbUser = await getUserByEmailGlobal(email);
+  const dbUser = await getUserByEmailGlobal(
+    crossOrganizationScope(
+      null,
+      'resolve authenticated identity and select verified membership before session scope',
+    ),
+    email,
+  );
   if (dbUser?.password_hash && dbUser?.auth_source === 'database') {
     const valid = await verifyDbPassword(password, dbUser.password_hash);
     if (valid) {

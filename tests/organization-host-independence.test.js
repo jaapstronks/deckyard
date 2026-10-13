@@ -226,17 +226,23 @@ test('the context module exposes no way to derive an organization from a request
 test('creating an organization stores no host-routing or billing column', async () => {
   const db = seedTwoOrgs();
 
-  const result = await createOrganization({
-    name: 'Gamma',
-    slug: 'gamma',
-    displayName: 'Gamma Inc',
-    description: 'Third organization',
-    ownerId: 'user-alice',
-    // A caller that still believes these are supported:
-    subdomain: 'gamma',
-    customDomain: 'slides.gamma.test',
-    billingEmail: 'billing@gamma.test',
-  });
+  const result = await createOrganization(
+    {
+      crossOrganization:
+        'test operator organization provisioning and membership selection',
+    },
+    {
+      name: 'Gamma',
+      slug: 'gamma',
+      displayName: 'Gamma Inc',
+      description: 'Third organization',
+      ownerId: 'user-alice',
+      // A caller that still believes these are supported:
+      subdomain: 'gamma',
+      customDomain: 'slides.gamma.test',
+      billingEmail: 'billing@gamma.test',
+    },
+  );
 
   assert.equal(result.ok, true);
 
@@ -264,7 +270,7 @@ test('creating an organization stores no host-routing or billing column', async 
 test('updating an organization ignores host-routing and billing fields', async () => {
   const db = seedTwoOrgs();
 
-  const result = await updateOrganization(ORG_A, {
+  const result = await updateOrganization({ organizationId: ORG_A }, ORG_A, {
     displayName: 'Alpha Inc',
     subdomain: 'alpha',
     billingEmail: 'billing@alpha.test',
@@ -286,7 +292,13 @@ test('updating an organization ignores host-routing and billing fields', async (
 test('the organization list carries no subdomain', async () => {
   seedTwoOrgs();
 
-  const organizations = await listUserOrganizations('user-alice');
+  const organizations = await listUserOrganizations(
+    {
+      crossOrganization:
+        'test operator organization provisioning and membership selection',
+    },
+    'user-alice',
+  );
 
   assert.equal(organizations.length, 2, 'both memberships are listed');
   for (const org of organizations) {

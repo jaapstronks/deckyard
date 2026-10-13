@@ -16,6 +16,8 @@
  * @see docs/reference/sso-oidc.md
  */
 
+import { crossOrganizationScope } from '../../storage/scope.js';
+
 import { setSessionCookie } from '../../auth/auth.js';
 import { readSignedPayload, signPayload } from '../../utils/signed-payload.js';
 import {
@@ -34,6 +36,11 @@ import { envStr } from '../../config/utils.js';
 import { parseCookies } from '../../utils/cookies.js';
 import { createLogger } from '../../utils/logger.js';
 import { withErrorHandler } from '../../utils/http.js';
+
+const authenticationScope = crossOrganizationScope(
+  null,
+  'pre-auth account lookup and instance authentication audit',
+);
 
 const log = createLogger('sso');
 
@@ -157,7 +164,7 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
   res.setHeader('Set-Cookie', stateCookieHeader(req, '', 0));
 
   if (!stateData) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'sso_login',
       email: null,
       success: false,
@@ -195,7 +202,7 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
       err instanceof OidcError ? err.reason : 'token_exchange_failed';
     if (!(err instanceof OidcError)) logDiscoveryFailure(err);
     if (claims) recordSsoLogin(claims, reason);
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'sso_login',
       email: null,
       success: false,
@@ -215,7 +222,7 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
   recordSsoLogin(claims, result.ok ? 'ok' : result.reason);
 
   if (!result.ok) {
-    await logAuthEvent({
+    await logAuthEvent(authenticationScope, {
       type: 'sso_login',
       email: identity.email,
       success: false,
@@ -232,7 +239,7 @@ async function handleOidcCallback({ repoRoot, req, res, url }) {
   // setSessionCookie replaces the Set-Cookie header, so re-clear the
   // one-time state cookie alongside the new session cookie.
   res.appendHeader('Set-Cookie', stateCookieHeader(req, '', 0));
-  await logAuthEvent({
+  await logAuthEvent(authenticationScope, {
     type: 'sso_login',
     email: identity.email,
     success: true,

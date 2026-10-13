@@ -7,6 +7,8 @@
  * - Audit logs: retained for 90 days
  */
 
+import { crossOrganizationScope } from '../storage/scope.js';
+
 import { cleanupExpiredTokens as cleanupMagicLinkTokens } from '../storage/magic-link.js';
 import {
   cleanupExpiredTokens as cleanupPasswordResetTokens,
@@ -46,7 +48,12 @@ async function runAuthCleanup() {
   log.info(`Deleted ${passwordResetTokens} expired password reset tokens`);
 
   // Clean up old audit logs (90+ days)
-  const auditLogs = await cleanupOldAuditLogs();
+  const auditLogs = await cleanupOldAuditLogs(
+    crossOrganizationScope(
+      null,
+      'retention of instance authentication audit without organization column',
+    ),
+  );
   log.info(`Deleted ${auditLogs} old audit log entries`);
 
   log.info('Cleanup complete');

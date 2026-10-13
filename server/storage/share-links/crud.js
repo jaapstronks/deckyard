@@ -2,9 +2,10 @@
  * CRUD operations for share links.
  */
 
+import { crossOrganizationScope, toStorageContext } from '../scope.js';
+
 import { getDb } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
-import { toStorageContext } from '../scope.js';
 import { norm, nowIso } from '../../utils/normalize.js';
 import { withDbGuard } from '../utils/index.js';
 import { isValidShareLinkPermission } from '../../../shared/constants/permissions.js';
@@ -52,7 +53,13 @@ export function formatShareLink(row, lookup = NO_DISPLAY_NAMES) {
  * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
  */
 export function shareLinkCreatorNames(rows) {
-  return resolveNamesForAddresses((rows || []).map((row) => row?.created_by));
+  return resolveNamesForAddresses(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    (rows || []).map((row) => row?.created_by),
+  );
 }
 
 /**

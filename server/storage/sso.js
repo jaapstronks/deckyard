@@ -12,8 +12,9 @@
  * @see server/auth/auth.js (getUserFromRequestAsync, setSessionCookie)
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { getOrgId } from '../utils/context.js';
-import { toStorageContext } from './scope.js';
 import { ensureUserByEmail } from './users.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
@@ -98,6 +99,10 @@ export async function getOrCreateSsoUser(scope, identity, opts) {
     // existing user row untouched - no rename, no admin grant, no
     // auth_source flip. The membership does not depend on the update below.
     const membershipResult = await ensureMembership(
+      crossOrganizationScope(
+        null,
+        'verified login membership selection and explicit target provisioning',
+      ),
       db,
       user,
       !!opts?.autoProvision,

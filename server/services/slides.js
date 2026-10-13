@@ -1,5 +1,7 @@
 /** Slide mutations shared by the public API and MCP (B572, B611). */
 
+import { crossOrganizationScope } from '../storage/scope.js';
+
 import { updatePresentation } from '../storage/presentations/index.js';
 import { resolveIdentityByEmail } from '../storage/identity-resolver.js';
 import {
@@ -26,7 +28,17 @@ async function writeOptions({ actor }) {
   if (actor?.unrestricted) return { bypassLockCheck: true };
   const actorUserId =
     actor?.id ||
-    (actor?.email ? (await resolveIdentityByEmail(actor.email))?.userId : null);
+    (actor?.email
+      ? (
+          await resolveIdentityByEmail(
+            crossOrganizationScope(
+              null,
+              'global identity display and stable user identifier lookup',
+            ),
+            actor.email,
+          )
+        )?.userId
+      : null);
   return { actorEmail: actor?.email || null, actorUserId: actorUserId || null };
 }
 

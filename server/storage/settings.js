@@ -37,8 +37,9 @@
  * holds across the whole table.
  */
 
+import { crossOrganizationScope, toStorageContext } from './scope.js';
+
 import { sql } from 'kysely';
-import { toStorageContext } from './scope.js';
 import { withDbGuard } from './utils/index.js';
 import { invalidateDisplayNames } from './display-identity.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
@@ -96,7 +97,13 @@ function userEmailKey(email) {
  */
 async function resolveSettingsUserId(key) {
   if (!key || key === ANONYMOUS_KEY) return null;
-  const resolution = await resolveIdentityByEmail(key);
+  const resolution = await resolveIdentityByEmail(
+    crossOrganizationScope(
+      null,
+      'global identity display and stable user identifier lookup',
+    ),
+    key,
+  );
   return resolution?.userId ?? null;
 }
 

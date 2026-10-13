@@ -33,7 +33,7 @@ export async function ensureUserByEmail(scope, options) {
     );
   }
   return withDbGuard(null, async (db) => {
-    const lookup = () => getUserByEmailGlobal(email);
+    const lookup = () => getUserByEmailGlobal(scope, email);
     const existing = await lookup();
     if (existing) return { user: existing, created: false };
     if (options.autoProvision === false) return { user: null, created: false };

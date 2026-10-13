@@ -187,11 +187,15 @@ async function handleCollaboratorAdd(
 
     let result;
     try {
-      result = await addCollaborator(presentationId, {
-        userEmail,
-        permission,
-        invitedBy: authedUser?.email,
-      });
+      result = await addCollaborator(
+        { ...storageScope, organizationId: pres.organizationId },
+        presentationId,
+        {
+          userEmail,
+          permission,
+          invitedBy: authedUser?.email,
+        },
+      );
     } catch (err) {
       log.error(
         `[collaborators] Failed to add collaborator ${userEmail}:`,
@@ -355,7 +359,10 @@ async function handleCollaboratorList(
   });
   if (!pres) return true;
 
-  const collaborators = await listCollaborators(presentationId);
+  const collaborators = await listCollaborators(
+    { ...storageScope, organizationId: pres.organizationId },
+    presentationId,
+  );
 
   // Enrich with user names if available
   const users = await listUsers(storageScope);
@@ -396,6 +403,7 @@ async function handleCollaboratorRemove(
   const message = parsed.body?.message || null;
 
   const result = await removeCollaborator(
+    { ...storageScope, organizationId: pres.organizationId },
     presentationId,
     email,
     authedUser?.email,
@@ -462,6 +470,7 @@ async function handleCollaboratorUpdate(
   if (!validatePermission(permission, res)) return true;
 
   const result = await updateCollaboratorPermission(
+    { ...storageScope, organizationId: pres.organizationId },
     presentationId,
     email,
     permission,

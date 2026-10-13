@@ -272,15 +272,30 @@ test('a single-organization session carries no membership role', async () => {
 
 test('getUserByEmailGlobal finds the user by email', async () => {
   seedSingleOrg();
-  const row = await identity.getUserByEmailGlobal('alice@example.com');
+  const row = await identity.getUserByEmailGlobal(
+    { crossOrganization: 'test global pre-auth identity resolution' },
+    'alice@example.com',
+  );
   assert.ok(row);
   assert.equal(row.id, 'user-alice');
 });
 
 test('getUserByEmailGlobal returns null for an unknown email', async () => {
   seedSingleOrg();
-  assert.equal(await identity.getUserByEmailGlobal('nobody@example.com'), null);
-  assert.equal(await identity.getUserByEmailGlobal(''), null);
+  assert.equal(
+    await identity.getUserByEmailGlobal(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'nobody@example.com',
+    ),
+    null,
+  );
+  assert.equal(
+    await identity.getUserByEmailGlobal(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      '',
+    ),
+    null,
+  );
 });
 
 test('resolveActiveOrganization is configuration-only in single-organization mode', async () => {
@@ -288,11 +303,19 @@ test('resolveActiveOrganization is configuration-only in single-organization mod
   db.__queryLog.length = 0;
 
   assert.equal(
-    await identity.resolveActiveOrganization('user-alice', OTHER_ORG),
+    await identity.resolveActiveOrganization(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'user-alice',
+      OTHER_ORG,
+    ),
     DEFAULT_ORG,
   );
   assert.equal(
-    await identity.resolveActiveOrganization(null, undefined),
+    await identity.resolveActiveOrganization(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      null,
+      undefined,
+    ),
     DEFAULT_ORG,
   );
   assert.deepEqual(
@@ -305,13 +328,19 @@ test('resolveActiveOrganization is configuration-only in single-organization mod
 test('hasDatabaseCredentials reflects password presence', async () => {
   seedSingleOrg();
   assert.equal(
-    await passwordReset.hasDatabaseCredentials('alice@example.com'),
+    await passwordReset.hasDatabaseCredentials(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'alice@example.com',
+    ),
     true,
   );
 
   seedSingleOrg({ password_hash: null, auth_source: 'magic_link' });
   assert.equal(
-    await passwordReset.hasDatabaseCredentials('alice@example.com'),
+    await passwordReset.hasDatabaseCredentials(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'alice@example.com',
+    ),
     false,
   );
 });
@@ -320,20 +349,28 @@ test('verifyUserPassword checks the stored hash', async () => {
   seedSingleOrg();
   assert.equal(
     await passwordReset.verifyUserPassword(
+      { crossOrganization: 'test global pre-auth identity resolution' },
       'alice@example.com',
       'correct horse battery',
     ),
     true,
   );
   assert.equal(
-    await passwordReset.verifyUserPassword('alice@example.com', 'nope'),
+    await passwordReset.verifyUserPassword(
+      { crossOrganization: 'test global pre-auth identity resolution' },
+      'alice@example.com',
+      'nope',
+    ),
     false,
   );
 });
 
 test('getPasswordChangedAt returns the stored timestamp', async () => {
   seedSingleOrg();
-  const at = await passwordReset.getPasswordChangedAt('alice@example.com');
+  const at = await passwordReset.getPasswordChangedAt(
+    { crossOrganization: 'test global pre-auth identity resolution' },
+    'alice@example.com',
+  );
   assert.equal(at.toISOString(), '2026-01-01T00:00:00.000Z');
 });
 

@@ -97,12 +97,13 @@ const KNOWN_USERS = [
 
 // --- Decks ------------------------------------------------------------------
 // Plain objects, exactly as the deciders receive them: these three take a
-// `pres` the caller already fetched, so no presentation rows are seeded.
+// `pres` the caller already fetched. Collaborator reads also verify its stored organization.
 // `ownerEmail` is `owner@example.com` while the owner's *user row* carries a
 // different address — that is what makes ADDRESS_ONLY a real test rather than a
 // coincidence: matching the deck's address grants nothing on its own.
 const deck = (id, over = {}) => ({
   id,
+  organizationId: ORG,
   visibility: 'private',
   ownerId: OWNER_ID,
   ownerEmail: 'owner@example.com',
@@ -148,6 +149,14 @@ test.before(async () => {
         created_at: '2026-01-01T00:00:00.000Z',
         updated_at: '2026-01-01T00:00:00.000Z',
       })),
+      presentations: [
+        COMMENT_COLLAB_DECK,
+        VIEW_COLLAB_DECK,
+        REVOKED_COLLAB_DECK,
+        ADMIN_COLLAB_DECK,
+        EDIT_COLLAB_DECK,
+        EXTERNAL_COLLAB_DECK,
+      ].map((id) => ({ id, organization_id: ORG })),
       presentation_collaborators: [
         collaboratorRow({
           id: 'c-comment',

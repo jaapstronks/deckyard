@@ -1,10 +1,10 @@
+import { crossOrganizationScope, toStorageContext } from './scope.js';
 import { ensureUserByEmail } from './users.js';
 /**
  * Storage layer for magic link (passwordless login) functionality.
  * Uses shared secure-tokens utility for token generation/hashing.
  */
 
-import { toStorageContext } from './scope.js';
 import {
   nowIso,
   isoAfter,
@@ -230,6 +230,10 @@ export async function getOrCreateMagicLinkUser(scope, email) {
     // Without this, a user holding no membership would be signed in and
     // bounced straight back to /login under MULTI_ORG_ENABLED (B507).
     const membershipResult = await ensureMembership(
+      crossOrganizationScope(
+        null,
+        'verified login membership selection and explicit target provisioning',
+      ),
       db,
       user,
       true,

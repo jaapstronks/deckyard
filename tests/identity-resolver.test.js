@@ -18,6 +18,8 @@
  * Run with: node --test tests/identity-resolver.test.js
  */
 
+import { crossOrganizationScope } from '../server/storage/scope.js';
+
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -62,7 +64,10 @@ describe('identity resolver — Postgres mode (users table present)', () => {
   });
 
   it('resolves a known email to its stable users.id', async () => {
-    const res = await resolveIdentityByEmail('alice@example.com');
+    const res = await resolveIdentityByEmail(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+      'alice@example.com',
+    );
     assert.deepEqual(res, {
       userId: ALICE_ID,
       kind: IDENTIFIER_KINDS.EMAIL,
@@ -73,7 +78,10 @@ describe('identity resolver — Postgres mode (users table present)', () => {
   });
 
   it('normalizes the email before looking it up (case + whitespace)', async () => {
-    const res = await resolveIdentityByEmail('  Alice@Example.COM  ');
+    const res = await resolveIdentityByEmail(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+      '  Alice@Example.COM  ',
+    );
     assert.equal(res.userId, ALICE_ID);
     assert.equal(
       res.value,
@@ -84,13 +92,19 @@ describe('identity resolver — Postgres mode (users table present)', () => {
   });
 
   it('defaults the identifier kind to email', async () => {
-    const res = await resolveIdentity({ value: 'alice@example.com' });
+    const res = await resolveIdentity(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+      { value: 'alice@example.com' },
+    );
     assert.equal(res.kind, IDENTIFIER_KINDS.EMAIL);
     assert.equal(res.userId, ALICE_ID);
   });
 
   it('reports an unknown email as a defined external identity, not a failure', async () => {
-    const res = await resolveIdentityByEmail('stranger@external.test');
+    const res = await resolveIdentityByEmail(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+      'stranger@external.test',
+    );
     assert.deepEqual(res, {
       userId: null,
       kind: IDENTIFIER_KINDS.EMAIL,
@@ -101,16 +115,49 @@ describe('identity resolver — Postgres mode (users table present)', () => {
   });
 
   it('returns null for a structurally absent identifier', async () => {
-    assert.equal(await resolveIdentityByEmail(''), null);
-    assert.equal(await resolveIdentityByEmail('   '), null);
-    assert.equal(await resolveIdentityByEmail(null), null);
-    assert.equal(await resolveIdentity({}), null);
-    assert.equal(await resolveIdentity(), null);
+    assert.equal(
+      await resolveIdentityByEmail(
+        crossOrganizationScope(null, 'test instance identity lookup'),
+        '',
+      ),
+      null,
+    );
+    assert.equal(
+      await resolveIdentityByEmail(
+        crossOrganizationScope(null, 'test instance identity lookup'),
+        '   ',
+      ),
+      null,
+    );
+    assert.equal(
+      await resolveIdentityByEmail(
+        crossOrganizationScope(null, 'test instance identity lookup'),
+        null,
+      ),
+      null,
+    );
+    assert.equal(
+      await resolveIdentity(
+        crossOrganizationScope(null, 'test instance identity lookup'),
+        {},
+      ),
+      null,
+    );
+    assert.equal(
+      await resolveIdentity(
+        crossOrganizationScope(null, 'test instance identity lookup'),
+      ),
+      null,
+    );
   });
 
   it('rejects an unsupported identifier kind loudly', async () => {
     await assert.rejects(
-      () => resolveIdentity({ kind: 'atproto_did', value: 'did:plc:abc123' }),
+      () =>
+        resolveIdentity(
+          crossOrganizationScope(null, 'test instance identity lookup'),
+          { kind: 'atproto_did', value: 'did:plc:abc123' },
+        ),
       /unsupported identifier kind/,
     );
   });
@@ -122,7 +169,10 @@ describe('identity resolver — file mode (no users table)', () => {
   });
 
   it('resolves every well-formed email as external, since there is nothing to key on', async () => {
-    const res = await resolveIdentityByEmail('alice@example.com');
+    const res = await resolveIdentityByEmail(
+      crossOrganizationScope(null, 'test instance identity lookup'),
+      'alice@example.com',
+    );
     assert.deepEqual(res, {
       userId: null,
       kind: IDENTIFIER_KINDS.EMAIL,
@@ -133,6 +183,12 @@ describe('identity resolver — file mode (no users table)', () => {
   });
 
   it('still returns null for a blank identifier in file mode', async () => {
-    assert.equal(await resolveIdentityByEmail(''), null);
+    assert.equal(
+      await resolveIdentityByEmail(
+        crossOrganizationScope(null, 'test instance identity lookup'),
+        '',
+      ),
+      null,
+    );
   });
 });
