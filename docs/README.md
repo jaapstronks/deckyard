@@ -146,6 +146,7 @@ nothing is discoverable only by `ls`.
 | [`contrast.md`](reference/contrast.md)                                   | The one contrast implementation                             |
 | [`nested-surfaces.md`](reference/nested-surfaces.md)                     | Text on a panel, bar or card that paints its own background |
 | [`css-tokens.md`](reference/css-tokens.md)                               | CSS design tokens (app chrome)                              |
+| [`css-ownership.md`](reference/css-ownership.md)                         | App CSS ownership gate and fork path migrations             |
 | [`slide-roles.md`](reference/slide-roles.md)                             | The role-token vocabulary for slide CSS, and the theme seam |
 | [`css-breakpoints.md`](reference/css-breakpoints.md)                     | The shared breakpoint ladder                                |
 | [`css-important.md`](reference/css-important.md)                         | Every `!important`, by-design vs cascade-patch              |

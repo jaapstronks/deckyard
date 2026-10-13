@@ -69,7 +69,7 @@ describe('isSourceFile', () => {
   });
 
   it('rejects stylesheets and files outside the source tree', () => {
-    assert.equal(isSourceFile('client/styles/app/shell/05-avatar.css'), false);
+    assert.equal(isSourceFile('client/styles/app/user/05-avatar.css'), false);
     assert.equal(isSourceFile('tests/lint-dead-css.test.js'), false);
   });
 
