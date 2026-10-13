@@ -7,7 +7,7 @@ import { toStorageContext } from '../scope.js';
 
 import { sql } from 'kysely';
 import { nowIso, normalizeEmail } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { WORKSPACE_ROLES } from '../../../shared/organization-role.js';
 
 // ============================================================

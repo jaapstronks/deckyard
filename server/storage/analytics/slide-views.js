@@ -5,7 +5,7 @@ import { toStorageContext } from '../scope.js';
 
 import { sql } from 'kysely';
 import { norm, nowIso } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { isValidSlideIndex } from '../../analytics/helpers.js';
 
 async function sessionInScope(scope, db, sessionId, presentationId = null) {

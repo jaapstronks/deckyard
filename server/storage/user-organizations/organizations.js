@@ -6,7 +6,7 @@
 import { toStorageContext } from '../scope.js';
 
 import { nowIso } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { getDefaultOrganizationId } from '../../config/database.js';
 
 // ============================================================

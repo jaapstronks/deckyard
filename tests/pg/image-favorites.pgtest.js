@@ -40,7 +40,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import {
   seedDefaultOrganization,
@@ -79,7 +78,6 @@ pgDescribe('image favorites (real PostgreSQL, via facade)', () => {
   });
 
   after(async () => {
-    uninstallFacadeStorage();
     await closeTestDb(db);
   });
 
@@ -201,7 +199,6 @@ pgDescribe(
     });
 
     after(async () => {
-      uninstallFacadeStorage();
       await closeTestDb(db);
     });
 
@@ -367,7 +364,6 @@ pgDescribe('image favorites in the bulk export (real PostgreSQL)', () => {
   });
 
   after(async () => {
-    uninstallFacadeStorage();
     await closeTestDb(db);
   });
 

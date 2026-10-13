@@ -32,7 +32,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
@@ -109,7 +108,6 @@ pgDescribe(
     });
 
     after(async () => {
-      uninstallFacadeStorage();
       await closeTestDb(db);
     });
 

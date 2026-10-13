@@ -2,7 +2,7 @@
  * In-memory stand-in for the Kysely database used by the storage layer.
  *
  * The storage modules reach PostgreSQL exclusively through `getDb()` behind
- * `isDatabaseAvailable()` (server/storage/utils/db-guard.js). Installing this
+ * `isDatabaseAvailable()` (`withDbGuard` in server/db/client.js). Installing this
  * double with `__setTestDb()` therefore makes those modules exercisable
  * without a live server, which is what lets the identity/auth tests assert
  * real query behaviour instead of grepping source.

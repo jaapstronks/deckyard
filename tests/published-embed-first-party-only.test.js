@@ -32,8 +32,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handlePublished } =
   await import('../server/routes/static/published.js');
 const { handleEmbed } = await import('../server/routes/static/embed.js');
@@ -84,7 +83,6 @@ test.after(() => {
     if (saved[k] === undefined) delete process.env[k];
     else process.env[k] = saved[k];
   }
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

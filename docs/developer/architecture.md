@@ -180,7 +180,7 @@ The layer is flat, and it is not a dispatch:
   (`toStorageContext()`), and issues its queries through direct Kysely on
   `getDb()` (`server/db/client.js`). The scope is where the organization comes
   from — see [tenant-isolation.md](../reference/tenant-isolation.md).
-- **Lifecycle** is a thin module (`server/storage/lifecycle.js`):
+- **Lifecycle** is a thin module in the database layer (`server/db/lifecycle.js`):
   `initializeStorage()` / `closeStorage()` over the shared Kysely pool. There is
   no adapter class, no mixins, no singleton to dispatch through: the adapter
   layer was stripped (B79, D34); one backend, reached one way.

@@ -32,10 +32,7 @@ import { isCli } from './lib/is-cli.js';
 import { loadDotEnv } from '../server/config/env.js';
 import { repoRoot } from '../server/config/paths.js';
 import { isMultiOrgEnabled } from '../server/config/features.js';
-import {
-  initializeStorage,
-  closeStorage,
-} from '../server/storage/lifecycle.js';
+import { initializeStorage, closeStorage } from '../server/db/lifecycle.js';
 import {
   addMember,
   countOrganizationMembers,

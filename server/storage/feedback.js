@@ -27,7 +27,7 @@ import { maybeFireInteractionWebhook } from '../utils/webhooks.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import { countInstanceHealth } from './instance-health.js';
 import { repoRootOf, toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import {
   ensureInteractionSlide,
   getInteractionSlide,

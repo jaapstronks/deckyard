@@ -132,10 +132,25 @@ export function isDatabaseAvailable() {
 }
 
 /**
+ * Run a storage operation only while the database is available; otherwise
+ * answer the fallback. The one spelling of the
+ * `if (!isDatabaseAvailable()) return fallback;` guard every store uses.
+ *
+ * @template T
+ * @param {T} fallback - Value to return if the database is unavailable
+ * @param {(db: import('kysely').Kysely<any>) => Promise<T>} fn - Receives the open handle
+ * @returns {Promise<T>} Result of fn() or fallback
+ */
+export async function withDbGuard(fallback, fn) {
+  if (!isDatabaseAvailable()) return fallback;
+  return fn(getDb());
+}
+
+/**
  * Install a stand-in database instance for tests.
  *
  * The storage layer reaches the database exclusively through getDb() behind
- * isDatabaseAvailable() (see storage/utils/db-guard.js), so injecting a
+ * isDatabaseAvailable() (see withDbGuard below), so injecting a
  * stand-in here makes every storage module exercisable without going through
  * initializeDatabase(). Most tests inject the in-memory double
  * (tests/helpers/fake-db.js); the real-PostgreSQL suite (tests/pg/**, via

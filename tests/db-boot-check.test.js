@@ -7,7 +7,7 @@ import { __setTestDb } from '../server/db/client.js';
 import {
   pendingMigrationsError,
   strandedFileDataError,
-} from '../server/storage/boot-check.js';
+} from '../server/db/boot-check.js';
 import { listMigrationFiles } from '../server/db/migrate.js';
 
 /**

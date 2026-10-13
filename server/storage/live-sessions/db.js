@@ -28,7 +28,7 @@ import { toStorageContext } from '../scope.js';
 
 import { TTL_MS } from './constants.js';
 import { sessions } from './state.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { fireAndForget } from '../../utils/fire-and-forget.js';
 
 function sessionMatchesScope(scope, session) {

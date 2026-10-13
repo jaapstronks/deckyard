@@ -32,12 +32,12 @@ import { registerTools } from './tools.js';
 import { loadCustomToolsRegistrar } from './custom-tools-loader.js';
 import { registerPrompts } from './prompts.js';
 import { helpText } from './help.js';
-import { initializeStorage } from '../storage/lifecycle.js';
+import { initializeStorage } from '../db/lifecycle.js';
 import { initSanitizer } from '../../shared/sanitize.js';
 import {
   pendingMigrationsError,
   strandedFileDataError,
-} from '../storage/boot-check.js';
+} from '../db/boot-check.js';
 import { initializeThemeSeeds } from '../utils/theme-seeds.js';
 import { assertExtensionDeclared } from '../export/extension-name.js';
 import { storageModeError } from '../config/database.js';

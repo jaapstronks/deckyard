@@ -38,7 +38,7 @@ import { toStorageContext } from '../scope.js';
  * looks it up from the possessed token and hands it here.
  */
 
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 
 /**
  * Export all analytics data for one person (GDPR right of access).

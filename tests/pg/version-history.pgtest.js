@@ -28,7 +28,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import { seedDefaultOrganization, seedPresentation } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
@@ -57,7 +56,6 @@ pgDescribe('version history via the facade (real PostgreSQL)', () => {
   });
 
   after(async () => {
-    uninstallFacadeStorage();
     await closeTestDb(db);
   });
 

@@ -84,8 +84,7 @@ before(async () => {
   const { createFakeDb } = await import('./helpers/fake-db.js');
   const { brandSeedRow } = await import('./helpers/theme-seed.js');
   const { __setTestDb } = await import('../server/db/client.js');
-  const { initializeStorage, __resetStorageForTests } =
-    await import('../server/storage/lifecycle.js');
+  const { initializeStorage } = await import('../server/db/lifecycle.js');
   const { createPresentation } =
     await import('../server/storage/presentations/index.js');
   const { createShareLink } =
@@ -205,7 +204,6 @@ before(async () => {
     publishPath: `/p/${published.publishId}-${published.slug}`,
     shareToken,
     pushLiveSlide,
-    __resetStorageForTests,
     __setTestDb,
   };
 });
@@ -214,7 +212,6 @@ after(async () => {
   if (!ctx) return;
   await shutDownBrowser(ctx.browser);
   await new Promise((resolve) => ctx.server.close(resolve));
-  ctx.__resetStorageForTests();
   ctx.__setTestDb(null);
 });
 

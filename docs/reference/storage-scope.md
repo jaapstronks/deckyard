@@ -15,7 +15,7 @@ export async function listComments(scope, presentationId, opts = {}) {
 ```
 
 That is the whole convention. The rest of this document says precisely what a
-scope is, why the position is load-bearing, which six functions are exempt,
+scope is, why the position is load-bearing, which five functions are exempt,
 and where the convention's boundary lies.
 
 ## What a `StorageScope` is
@@ -45,7 +45,9 @@ boundary decision:
 3. **Instance-level configuration** — `app_settings`, `user_settings` and
    `email_templates` are per-instance (keyed by nothing or by user email);
    jobs and pre-auth routes read them cross-organization because an
-   organization never enters the query.
+   organization never enters the query. Seed themes (`themes` rows without an
+   organization) are instance configuration too: their reads accept an
+   organization scope or a reasoned instance scope and return the same seeds.
 4. **Instance-wide aggregates for the instance admin** — the instance-health
    census (`server/storage/instance-census.js`, B516) reads organization-owned
    rows (`presentations`, `custom_slide_types`) across the instance and answers
@@ -93,19 +95,18 @@ _where and on whose behalf_, then _what_.
 net for missed call sites: argument-shift bugs surface as a thrown `TypeError`
 naming the function, not as an `undefined` deep inside a query.
 
-## The six permanent exceptions
+## The five permanent exceptions
 
 These take `repoRoot` first because they genuinely operate on a disk path —
 they ask for a _path_, not a scope:
 
-| Export                                                    | Why                                                |
-| --------------------------------------------------------- | -------------------------------------------------- |
-| `uploads.js :: writeUploadedFile`                         | writes uploaded bytes to disk                      |
-| `uploads.js :: replaceUploadFromDataUrl`                  | rewrites an upload on disk                         |
-| `boot-check.js :: strandedFileDataError`                  | migration guard inspecting `dataDir()` before boot |
-| `scope.js :: crossOrganizationScope`                      | scope _builder_: repoRoot is its input             |
-| `scope.js :: singleOrganizationScope`                     | scope _builder_: repoRoot is its input             |
-| `presentations/crud/factory.js :: prepareNewPresentation` | reads theme files from disk via `loadThemeAssets`  |
+| Export                                                    | Why                                               |
+| --------------------------------------------------------- | ------------------------------------------------- |
+| `uploads.js :: writeUploadedFile`                         | writes uploaded bytes to disk                     |
+| `uploads.js :: replaceUploadFromDataUrl`                  | rewrites an upload on disk                        |
+| `scope.js :: crossOrganizationScope`                      | scope _builder_: repoRoot is its input            |
+| `scope.js :: singleOrganizationScope`                     | scope _builder_: repoRoot is its input            |
+| `presentations/crud/factory.js :: prepareNewPresentation` | reads theme files from disk via `loadThemeAssets` |
 
 Outside `server/storage/**`, `repoRoot` remains a perfectly legitimate
 parameter (export pipeline, rendering, theme CSS, uploads); the convention's
@@ -156,7 +157,7 @@ The registered token operations are API-key validation, analytics-report token l
 
 ## Enforcement and implementation status (2026-10-13)
 
-The target above is not yet fully implemented. The current static census finds 361 DB-reaching defining exports, of which 12 still need a first parameter named `scope`. Cluster 1 renamed 67 existing scope-first DB parameters and the three pure helpers (`resolveScope`, `repoRootOf`, `toStorageContext`) from `storageScope` to `scope`, without shifting arguments or changing validation. No exported scope parameter retains the old spelling. There are 34 individually justified token/telemetry exceptions (B665). `tests/fixtures/storage-scope-inventory.json` preserves the initial census of 359 exports, signatures and direct static call sites. Scanner repairs exposed two additional lock-policy exports; `enforceSlideLocks(scope, opts)` and `enforceSlideWritePolicy(scope, opts)` now validate and forward the caller scope, with the old `opts.ctx` argument removed. These two exports add no debt to the frozen ceiling. Recount from the repository root with:
+The target above is fully implemented. The current static census finds 356 DB-reaching defining exports under `server/storage/**`; every one takes `scope` first or is one of the 34 individually justified token/telemetry exceptions, and the burndown is empty. Cluster 1 renamed 67 existing scope-first DB parameters and the three pure helpers (`resolveScope`, `repoRootOf`, `toStorageContext`) from `storageScope` to `scope`, without shifting arguments or changing validation. No exported scope parameter retains the old spelling. There are 34 individually justified token/telemetry exceptions (B665). `tests/fixtures/storage-scope-inventory.json` preserves the initial census of 359 exports, signatures and direct static call sites. Scanner repairs exposed two additional lock-policy exports; `enforceSlideLocks(scope, opts)` and `enforceSlideWritePolicy(scope, opts)` now validate and forward the caller scope, with the old `opts.ctx` argument removed. These two exports add no debt to the frozen ceiling. Recount from the repository root with:
 
 ```sh
 node scripts/storage-scope-inventory.js > .scratch/storage-scope-inventory.json
@@ -164,7 +165,7 @@ node scripts/storage-scope-inventory.js > .scratch/storage-scope-inventory.json
 
 `tests/storage-call-convention.test.js` now positively requires `scope` first for DB-reaching exports, following private functions, callbacks, imported aliases, storage re-export barrels and literal lazy storage imports. The scanner recognizes query builders and database entry points; it does not prove runtime validation, organization filtering or authorization. Dynamic property dispatch and factory-returned functions are outside its static reach. Caller evidence covers the listed source roots and excludes vendor/fixture directories; it is not a census of external forks or dynamically dispatched calls. Literal lazy imports follow transitive named and export-star barrels, including cycles and database entrypoints; executable parameter initializers also contribute DB reachability. Caller collection recognizes static imports and `import('./rows.js').then(mod => mod.read())`, but does not trace bindings created by awaited imports such as `const {read} = await import('./rows.js'); read(scope)`. The enclosing storage function still counts as DB-reaching. Before migrating a signature, manually inspect awaited-import callers alongside the recorded call sites.
 
-Existing signature debt lives in `tests/storage-call-convention-burndown.json`. Its scope-first entries must be a subset of the frozen initial census and must still name current violations: remove a row when it is fixed, never regenerate the initial fixture to accommodate new debt. The existing negative signature rules and mutation failure-shape rule (c) remain independent. The six disk-path exceptions apply only to the old `repoRoot` rule; they do not exempt DB-reaching operations from the positive gate. Infrastructure exports (database guard, lifecycle and boot checks) are recorded as debt pending a proper layer boundary, rather than receiving a new exception category.
+Existing signature debt lives in `tests/storage-call-convention-burndown.json`. Its scope-first entries must be a subset of the frozen initial census and must still name current violations: remove a row when it is fixed, never regenerate the initial fixture to accommodate new debt. The existing negative signature rules and mutation failure-shape rule (c) remain independent. The five disk-path exceptions apply only to the old `repoRoot` rule; they do not exempt DB-reaching operations from the positive gate. The database infrastructure (availability guard, lifecycle and boot checks) acts for no organization and is not a storage operation: cluster 4 moved it out of `server/storage/**` into the database layer rather than giving it an exception category.
 
 The actor/organization/identity migration (B665 cluster 2) adds a first `scope` argument to 35 actor/organization/identity exports: eleven memberships, five organizations, five collaborators, three identity, two identity-resolver, two display-identity, one identity-verification, one login-membership and five password account/audit operations. Update direct fork calls by inserting the scope before every previous argument; no old signature or compatibility shim remains. Bootstrap scripts and authentication entry points build reasoned instance scopes before a session scope exists. Global user-id/display-name resolution remains instance-wide because a person can belong to several organizations; it does not grant access to an organization or deck.
 
@@ -209,4 +210,20 @@ Cluster 3 adds a first `scope` argument to 42 analytics, live-session, interacti
 
 Organization-bound analytics and audience reads join through the owning presentation and refuse rows from another organization. Live-session hydration applies the same check to database rows and the in-memory fallback, and delayed persistence carries the original scope. Public tracking and share-link routes derive a scope only after validating the presented token or authorized parent resource. Instance-wide GDPR operations remain keyed to the authenticated subject or a token-derived anonymous session capability; retention jobs remain instance-wide. The individually registered scope-less token exceptions are unchanged.
 
-The remaining migration cluster changes signatures and callers together and requires independent review (B665). The gate/inventory PR also migrates those two newly exposed lock-policy signatures and their callers. Outside the parameter convention, the deliberate scope homonyms remain `ownership: collection|owned|shared|all` for deck-list selection and `opts.shelf: personal|organization` for slide-library selection. During beta, obsolete signatures are removed rather than supported alongside the canonical form.
+Cluster 4 completes the migration. It adds a first `scope` argument to seven domain exports and moves five database-infrastructure exports out of the storage layer. There is no old-signature overload and no re-export shim at the old paths.
+
+| Module                              | Change                                                                                                                               |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `server/storage/activity-events.js` | `deleteOldActivityEvents(scope, olderThan)`: instance retention scope only                                                           |
+| `server/storage/slide-locks.js`     | `cleanupExpiredSlideLocks(scope)`: instance retention scope only                                                                     |
+| `server/storage/themes.js`          | `listSeedThemes(scope)`: organization or reasoned instance scope                                                                     |
+| `server/storage/settings.js`        | `resolveSeedThemeSlug(scope, slug)`, `installationDefaultThemeId(scope)`: organization or reasoned instance scope                    |
+| `server/storage/tags.js`            | `replaceTagLinks(scope, { linkTable, rowId, tagNames })`: the `orgId` field is removed; the organization comes from the scope        |
+| `server/storage/utils/index.js`     | `getUserIdByEmail(scope, db, email)`: the `orgId` argument is removed; the organization comes from the scope                         |
+| `server/db/client.js`               | `withDbGuard(fallback, fn)` moved from server/storage/utils/db-guard.js; it is no longer exported by `server/storage/utils/index.js` |
+| `server/db/lifecycle.js`            | `initializeStorage()`, `closeStorage()` moved from server/storage/lifecycle.js; the no-op test reset helper is removed               |
+| `server/db/boot-check.js`           | `pendingMigrationsError()`, `strandedFileDataError(repoRoot)` moved from server/storage/boot-check.js                                |
+
+Retention sweeps accept only an instance scope (category 7) and refuse an organization scope. Seed themes carry no organization; their reads are instance-level configuration (category 3), so an organization scope and a reasoned instance scope read the same seeds. Forks update the import paths of the moved modules and insert the scope before every previous argument of the seven domain exports; a fork that called `replaceTagLinks` or `getUserIdByEmail` with an `orgId` now passes that organization's scope instead. Consumers outside the storage and database layers still may not import `server/db/client.js`; bootstrap code uses `server/db/lifecycle.js`.
+
+The gate/inventory PR also migrates those two newly exposed lock-policy signatures and their callers. Outside the parameter convention, the deliberate scope homonyms remain `ownership: collection|owned|shared|all` for deck-list selection and `opts.shelf: personal|organization` for slide-library selection. During beta, obsolete signatures are removed rather than supported alongside the canonical form.

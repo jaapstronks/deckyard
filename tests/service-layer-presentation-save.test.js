@@ -44,7 +44,7 @@ const AMETHYST = '22222222-2222-4222-8222-222222222222';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handlePresentations: handleInternalPresentations } =
   await import('../server/routes/api/presentations/index.js');

@@ -40,7 +40,7 @@
 import { crossOrganizationScope, toStorageContext } from './scope.js';
 
 import { sql } from 'kysely';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { invalidateDisplayNames } from './display-identity.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
 import {
@@ -1209,14 +1209,25 @@ async function themeOrganizationSettings(scope, operation) {
  * `SANDBOX_DEFAULT_THEME`, the sandbox example decks) names a seed by its
  * slug, and only by its slug (D237): a record UUID differs per installation,
  * so it can never be written into an env file ahead of time. This is the one
- * place that spelling is resolved; nothing past it sees a slug.
+ * place that spelling is resolved; nothing past it sees a slug. Seeds are
+ * instance-level configuration, so an organization scope or a reasoned
+ * instance scope both work (see {@link listSeedThemes}).
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} slug
  * @returns {Promise<string|null>}
  */
-export async function resolveSeedThemeSlug(slug) {
+export async function resolveSeedThemeSlug(scope, slug) {
+  toStorageContext(
+    scope,
+    'resolveSeedThemeSlug',
+    {},
+    { allowCrossOrganization: true },
+  );
   const handle = String(slug || '').trim();
   if (!handle) return null;
-  const seed = (await listSeedThemes()).find((theme) => theme.slug === handle);
+  const seed = (await listSeedThemes(scope)).find(
+    (theme) => theme.slug === handle,
+  );
   return seed?.id || null;
 }
 
@@ -1225,12 +1236,13 @@ export async function resolveSeedThemeSlug(slug) {
  * names, else the core default seed. A `DEFAULT_THEME` that names no seed is a
  * configuration error and refuses, rather than quietly rendering every
  * default deck in another theme.
+ * @param {import('./scope.js').StorageScope} scope - Organization or reasoned instance scope
  * @returns {Promise<string>}
  * @throws {Error} when the configured (or core) seed does not exist
  */
-export async function installationDefaultThemeId() {
+export async function installationDefaultThemeId(scope) {
   const slug = envStr('DEFAULT_THEME') || DEFAULT_THEME_SLUG;
-  const id = await resolveSeedThemeSlug(slug);
+  const id = await resolveSeedThemeSlug(scope, slug);
   if (!id) throw new Error(`Default theme seed not found: ${slug}`);
   return id;
 }
@@ -1246,7 +1258,7 @@ export async function getDefaultThemeId(scope) {
     const record = await getThemeRecord(scope, configured);
     if (record) return record.id;
   }
-  return installationDefaultThemeId();
+  return installationDefaultThemeId(scope);
 }
 
 /** Resolve the organization's canonical picker allowlist. Empty means all. */
@@ -1261,7 +1273,9 @@ export async function getEnabledThemeIds(scope) {
         typeof id === 'string' && UUID_RE.test(id) && id === id.toLowerCase(),
     );
   const handles = envStr('ENABLED_THEMES').split(',');
-  const ids = await Promise.all(handles.map(resolveSeedThemeSlug));
+  const ids = await Promise.all(
+    handles.map((handle) => resolveSeedThemeSlug(scope, handle)),
+  );
   return [...new Set(ids.filter(Boolean))];
 }
 

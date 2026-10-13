@@ -26,9 +26,9 @@
  *    {@link openTestDb} / {@link closeTestDb}.
  *  - **Facade tests** (tags, collections, …) drive the public storage facade
  *    (`server/storage/<domain>/index.js`) against real PostgreSQL. Use
- *    {@link installFacadeStorage} / {@link uninstallFacadeStorage} around the db
- *    handle — thin wrappers over the storage lifecycle, kept for symmetry now
- *    that `getDb()` is the whole wiring.
+ *    {@link installFacadeStorage} after the db handle is open — a thin wrapper
+ *    over the storage lifecycle now that `getDb()` is the whole wiring; the
+ *    teardown is {@link closeTestDb} alone.
  *
  * ## The DATABASE_URL gate
  *
@@ -56,10 +56,7 @@ import pg from 'pg';
 import { Kysely, PostgresDialect, sql } from 'kysely';
 
 import { __setTestDb } from '../../../server/db/client.js';
-import {
-  initializeStorage,
-  __resetStorageForTests,
-} from '../../../server/storage/lifecycle.js';
+import { initializeStorage } from '../../../server/db/lifecycle.js';
 
 const { Pool } = pg;
 
@@ -145,8 +142,9 @@ export async function closeTestDb(db) {
  * already injected, so `initializeStorage()` finds it and opens no second pool.
  *
  * Facade functions (`listTags(scope)`, …) reach the database through `getDb()`,
- * which returns that injected handle, so this is now a thin formality kept for
- * symmetry with {@link uninstallFacadeStorage}.
+ * which returns that injected handle, so this is a thin formality: it proves
+ * the lifecycle seam finds an installed handle and opens no second pool. There
+ * is no counterpart; {@link closeTestDb} is the whole teardown.
  *
  * @returns {Promise<void>}
  */
@@ -155,16 +153,6 @@ export async function installFacadeStorage() {
   // reuses the handle openTestDb() already installed.
   process.env.STORAGE_MODE = 'postgres';
   await initializeStorage();
-}
-
-/**
- * Reset the storage lifecycle without closing the shared handle (the test owns
- * it, and {@link closeTestDb} destroys it). A no-op now that no adapter
- * singleton remains, kept to pair with {@link installFacadeStorage}.
- * @returns {void}
- */
-export function uninstallFacadeStorage() {
-  __resetStorageForTests();
 }
 
 /**

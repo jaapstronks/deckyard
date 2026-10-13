@@ -13,8 +13,7 @@ const OWNER = 'owner@example.com';
 const ID = 'd0000008-0000-4000-8000-000000000008';
 const { createFakeDb } = await import('../helpers/fake-db.js');
 const { __setTestDb } = await import('../../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../../server/db/lifecycle.js');
 const { McpServer } = await import('../../server/mcp/protocol.js');
 const { registerTools } = await import('../../server/mcp/tools.js');
 const { handleExports } = await import('../../server/routes/api/export.js');
@@ -28,7 +27,6 @@ const raster = { id: 'diagram', type: 'process-slide', content: {} };
 const live = { id: 'invite', type: 'follow-invite-slide', content: {} };
 
 async function setup(slides = [native, live, raster], i18n = {}) {
-  __resetStorageForTests();
   const theme = await seedRow('amethyst');
   const db = createFakeDb({
     organizations: [{ id: ORG, name: 'Default', slug: 'default' }],
@@ -71,7 +69,6 @@ async function setup(slides = [native, live, raster], i18n = {}) {
 }
 
 after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

@@ -36,7 +36,7 @@ const VARIANT = 'calm';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { McpServer } = await import('../server/mcp/protocol.js');
 const { registerTools } = await import('../server/mcp/tools.js');
 

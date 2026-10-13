@@ -1603,8 +1603,8 @@ async function prunePresentationVersionRows(presentationId, ctx, opts = {}) {
 // store-layer behaviour the heavier facade path cannot express in isolation —
 // organization-scoping of the raw queries, and the undefined-vs-null partial
 // UPDATE rule — so those primitives are reachable here as one internal bundle.
-// The `__` prefix marks it internal/test-only, like `__setTestDb` /
-// `__resetStorageForTests`; production code calls the exported facade.
+// The `__` prefix marks it internal/test-only, like `__setTestDb`;
+// production code calls the exported facade.
 export const __store = {
   getPresentationRow,
   listPresentationRows,

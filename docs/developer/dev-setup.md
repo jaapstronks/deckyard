@@ -302,7 +302,7 @@ The storage layer additionally runs against a real PostgreSQL in the
 
 The suite has no live database, yet the storage/identity/auth modules reach
 PostgreSQL exclusively through `getDb()` behind `isDatabaseAvailable()`
-(`server/storage/utils/db-guard.js`). To exercise their real query behaviour
+(`withDbGuard` in `server/db/client.js`). To exercise their real query behaviour
 instead of grepping source, install the in-memory double:
 
 ```js

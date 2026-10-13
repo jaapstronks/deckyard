@@ -47,7 +47,7 @@
  * old shape fails this test. Rule (e) below additionally requires `scope` first
  * for DB-reaching exports, with D331 token/telemetry exceptions. The frozen
  * initial inventory bounds its burndown identities.
- * Six exports are permanently exempt from rule (a)
+ * Five exports are permanently exempt from rule (a)
  * because they genuinely take a disk path, not a scope; they are listed here
  * with reasons.
  *
@@ -71,7 +71,7 @@ import { STORAGE_SCOPE_EXCEPTIONS } from './helpers/storage-scope-exceptions.js'
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const storageRoot = join(repoRoot, 'server', 'storage');
 
-// ─── the six permanent exceptions: these take a path, not a scope ───────────
+// ─── the five permanent exceptions: these take a path, not a scope ──────────
 
 const PERMANENT_EXCEPTIONS = new Map([
   [
@@ -81,10 +81,6 @@ const PERMANENT_EXCEPTIONS = new Map([
   [
     'server/storage/uploads.js :: replaceUploadFromDataUrl',
     'rewrites an upload on disk; repoRoot is the destination path',
-  ],
-  [
-    'server/storage/boot-check.js :: strandedFileDataError',
-    'migration guard that inspects dataDir() on disk before boot',
   ],
   [
     'server/storage/scope.js :: crossOrganizationScope',

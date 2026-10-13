@@ -62,8 +62,7 @@ const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { invalidatePermission } =
   await import('../server/storage/cache/permission-cache.js');
@@ -156,7 +155,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

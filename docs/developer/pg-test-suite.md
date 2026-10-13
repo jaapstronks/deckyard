@@ -44,7 +44,7 @@ reseeds in `before`, so order never matters.
 ## The seams
 
 The storage layer reaches the database exclusively through `getDb()` behind
-`isDatabaseAvailable()` (`server/storage/utils/db-guard.js`). `tests/pg/helpers/
+`isDatabaseAvailable()` (`withDbGuard` in `server/db/client.js`). `tests/pg/helpers/
 harness.js` opens a real Kysely against `DATABASE_URL` and installs it with
 `__setTestDb()` (`server/db/client.js`) — the _same_ seam the in-memory double
 uses. Once installed, every storage module transparently hits the live
@@ -63,9 +63,9 @@ There are two shapes of test:
   `installFacadeStorage()` sets `STORAGE_MODE=postgres` and calls
   `initializeStorage()`, which is idempotent and reuses the handle
   `openTestDb()` already injected instead of opening a second pool — so the
-  facade is wired the moment the handle is installed. `uninstallFacadeStorage()`
-  is a no-op reset in `after` (no adapter singleton remains) that leaves the
-  handle the test owns for `closeTestDb()` to destroy.
+  facade is wired the moment the handle is installed. There is nothing to
+  uninstall: `after` calls `closeTestDb()`, which destroys the handle the test
+  owns.
 
 Foreign-key parents are seeded from `tests/pg/helpers/seed.js`
 (`seedDefaultOrganization`, `seedPresentation`, `seedSlideLibraryItem`): unlike
@@ -111,9 +111,9 @@ For a **storage-module test**, import the storage function and
 `before`/`beforeEach` (see `api-usage.pgtest.js`, which inserts an `api_keys`
 row before exercising `api_usage_daily`).
 
-For a **facade test**, also call `installFacadeStorage()` in `before` and
-`uninstallFacadeStorage()` in `after`, wrap the block in `pgDescribe(...)`, and
-seed parents from `./helpers/seed.js`. `tags-storage.pgtest.js` is the smallest
+For a **facade test**, also call `installFacadeStorage()` in `before` (the
+`after` stays `closeTestDb()`), wrap the block in `pgDescribe(...)`, and seed
+parents from `./helpers/seed.js`. `tags-storage.pgtest.js` is the smallest
 end-to-end example.
 
 All eight `onConflict` sites in the storage layer now have coverage: `slide-locks` and `api-usage` (the first suite), plus

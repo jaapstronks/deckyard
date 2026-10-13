@@ -11,8 +11,8 @@ import {
   getDatabaseConfig,
   isDatabaseConnectionError,
 } from '../config/database.js';
-import { initializeStorage } from '../storage/lifecycle.js';
-import { pendingMigrationsError } from '../storage/boot-check.js';
+import { initializeStorage } from '../db/lifecycle.js';
+import { pendingMigrationsError } from '../db/boot-check.js';
 import { ok, fail, skip } from './finding.js';
 
 /**
