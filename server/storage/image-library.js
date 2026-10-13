@@ -236,70 +236,70 @@ async function removeFavorite(imageId, userEmail, ctx) {
 // ============================================================
 
 /**
- * List the image library of the storageScope's organization.
- * @param {import('./scope.js').StorageScope} storageScope
+ * List the image library of the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
  * @returns {Promise<Array<Object>>}
  */
-export async function listImageLibrary(storageScope) {
-  const ctx = toStorageContext(storageScope, 'listImageLibrary');
+export async function listImageLibrary(scope) {
+  const ctx = toStorageContext(scope, 'listImageLibrary');
   return listImages(ctx);
 }
 
 /**
- * Fetch one image library item within the storageScope's organization.
- * @param {import('./scope.js').StorageScope} storageScope
+ * Fetch one image library item within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} id
  * @returns {Promise<Object|null>}
  */
-export async function getImageLibraryItem(storageScope, id) {
-  const ctx = toStorageContext(storageScope, 'getImageLibraryItem');
+export async function getImageLibraryItem(scope, id) {
+  const ctx = toStorageContext(scope, 'getImageLibraryItem');
   return getImage(id, ctx);
 }
 
 /**
- * Add an image to the storageScope's organization library.
- * @param {import('./scope.js').StorageScope} storageScope
+ * Add an image to the scope's organization library.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {Object} input
  * @returns {Promise<Object>}
  */
-export async function createImageLibraryItem(storageScope, input) {
-  const ctx = toStorageContext(storageScope, 'createImageLibraryItem');
+export async function createImageLibraryItem(scope, input) {
+  const ctx = toStorageContext(scope, 'createImageLibraryItem');
   return createImage(input, ctx);
 }
 
 /**
- * Patch an image library item within the storageScope's organization.
- * @param {import('./scope.js').StorageScope} storageScope
+ * Patch an image library item within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} id
  * @param {Object} patch
  * @returns {Promise<{ok: true, image: Object}|{ok: false, reason: string}>}
  *   `not_found` when no such image lives in this organization.
  */
-export async function updateImageLibraryItem(storageScope, id, patch) {
-  const ctx = toStorageContext(storageScope, 'updateImageLibraryItem');
+export async function updateImageLibraryItem(scope, id, patch) {
+  const ctx = toStorageContext(scope, 'updateImageLibraryItem');
   return updateImage(id, patch, ctx);
 }
 
 /**
- * Delete an image library item within the storageScope's organization.
- * @param {import('./scope.js').StorageScope} storageScope
+ * Delete an image library item within the scope's organization.
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} id
  * @returns {Promise<{ok: true}|{ok: false, reason: string}>}
  *   `not_found` when no such image lives in this organization.
  */
-export async function deleteImageLibraryItem(storageScope, id) {
-  const ctx = toStorageContext(storageScope, 'deleteImageLibraryItem');
+export async function deleteImageLibraryItem(scope, id) {
+  const ctx = toStorageContext(scope, 'deleteImageLibraryItem');
   return deleteImage(id, ctx);
 }
 
 /**
  * Get all favorite image IDs for a user.
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} userEmail - User's email
  * @returns {Promise<string[]>} Array of image IDs
  */
-export async function getImageFavorites(storageScope, userEmail) {
-  const ctx = resolveScope(storageScope, 'getImageFavorites');
+export async function getImageFavorites(scope, userEmail) {
+  const ctx = resolveScope(scope, 'getImageFavorites');
   return favoritesOf(userEmail, ctx);
 }
 
@@ -314,13 +314,13 @@ export async function getImageFavorites(storageScope, userEmail) {
  * A reader without an address has no stars, so every item comes back
  * `favorite: false` — still the field, the same answer the route already gives
  * an anonymous caller.
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {Array<Object>} items - Mapped image-library items
  * @param {string|null} [viewerEmail] - Who is reading
  * @returns {Promise<Array<Object>>} The items, each carrying `favorite`
  */
-export async function stampFavorites(storageScope, items, viewerEmail = null) {
-  const ctx = resolveScope(storageScope, 'stampFavorites');
+export async function stampFavorites(scope, items, viewerEmail = null) {
+  const ctx = resolveScope(scope, 'stampFavorites');
   const starred = new Set(await favoritesOf(viewerEmail, ctx));
   return items.map((item) => ({ ...item, favorite: starred.has(item.id) }));
 }
@@ -329,25 +329,25 @@ export async function stampFavorites(storageScope, items, viewerEmail = null) {
  * Whether `userEmail` starred this image. The caller's own flag, so that every
  * route can stamp `favorite` on the item it hands back (D176) without reading
  * the stored addresses — those never leave this layer (D22).
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} imageId - Image ID
  * @param {string} userEmail - User's email
  * @returns {Promise<boolean>} True when this user starred the image
  */
-export async function isImageFavorite(storageScope, imageId, userEmail) {
-  const ctx = resolveScope(storageScope, 'isImageFavorite');
+export async function isImageFavorite(scope, imageId, userEmail) {
+  const ctx = resolveScope(scope, 'isImageFavorite');
   return isFavorite(imageId, userEmail, ctx);
 }
 
 /**
  * Toggle favorite status for an image.
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} imageId - Image ID
  * @param {string} userEmail - User's email
  * @returns {Promise<boolean>} New favorite status (true if now favorited)
  */
-export async function toggleImageFavorite(storageScope, imageId, userEmail) {
-  const ctx = resolveScope(storageScope, 'toggleImageFavorite');
+export async function toggleImageFavorite(scope, imageId, userEmail) {
+  const ctx = resolveScope(scope, 'toggleImageFavorite');
   if (await isFavorite(imageId, userEmail, ctx)) {
     await removeFavorite(imageId, userEmail, ctx);
     return false;

@@ -29,7 +29,7 @@ import { updatePresentation } from './index.js';
  * it through a public token and needs it anyway, and re-reading here would only
  * widen the window between the check and the write.
  *
- * @param {import('../scope.js').StorageScope} storageScope - Organization-scoped: this
+ * @param {import('../scope.js').StorageScope} scope - Organization-scoped: this
  *   is a write, so it may not run cross-organization. Derive the organization
  *   from the deck the token addressed (`presentation.organizationId`).
  * @param {Object} presentation - The stored deck, as `getPresentation` answers it.
@@ -40,7 +40,7 @@ import { updatePresentation } from './index.js';
  *   | {ok: false, reason: string, errors?: Array}>}
  */
 export async function updateSlideNotes(
-  storageScope,
+  scope,
   presentation,
   { slideId, notes } = {},
 ) {
@@ -74,7 +74,7 @@ export async function updateSlideNotes(
   // `{ slides }` and nothing else: the adapter's partial-write rule leaves every
   // column the caller did not name alone, so title, settings and the i18n
   // buffers survive untouched.
-  const result = await updatePresentation(storageScope, presentation.id, {
+  const result = await updatePresentation(scope, presentation.id, {
     slides: nextSlides,
   });
   if (!result) return { ok: false, reason: 'not_found' };

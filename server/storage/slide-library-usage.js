@@ -48,15 +48,15 @@ function normalizeUsageItems(input) {
 
 /**
  * List the current user's usage records (set of used {itemType, itemId}).
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} userEmail
  * @returns {Promise<{ items: Array<object> }>}
  */
-export async function listSlideLibraryUsage(storageScope, userEmail) {
+export async function listSlideLibraryUsage(scope, userEmail) {
   const email = String(userEmail || '')
     .trim()
     .toLowerCase();
-  const ctx = toStorageContext(storageScope, 'listSlideLibraryUsage', {
+  const ctx = toStorageContext(scope, 'listSlideLibraryUsage', {
     userEmail: email,
   });
   if (!email) return { items: [] };
@@ -90,17 +90,17 @@ export async function listSlideLibraryUsage(storageScope, userEmail) {
 
 /**
  * Record usage of one or more library items for a user.
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} userEmail
  * @param {Array<{ type: 'slide'|'collection', id: string }>} items
  * @returns {Promise<{ ok: boolean, recorded: number }>}
  */
-export async function recordSlideLibraryUsage(storageScope, userEmail, items) {
+export async function recordSlideLibraryUsage(scope, userEmail, items) {
   const email = String(userEmail || '')
     .trim()
     .toLowerCase();
   if (!email) return { ok: true, recorded: 0 };
-  const ctx = toStorageContext(storageScope, 'recordSlideLibraryUsage', {
+  const ctx = toStorageContext(scope, 'recordSlideLibraryUsage', {
     userEmail: email,
   });
 
