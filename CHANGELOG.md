@@ -11,6 +11,23 @@ entries are grouped per release rather than exhaustively listed.
 
 * Fork callers of the 35 actor/organization/identity storage exports listed in docs/reference/storage-scope.md must insert StorageScope as the first argument. Global login identity, provisioning and instance audit paths require an explicit reasoned cross-organization scope; organization mutations require their target scope. Import paths remain unchanged; old signatures are removed.
 
+
+The complete changed-export list (paths relative to the repository root):
+
+| Module | Exports receiving a new first `scope` argument |
+| --- | --- |
+| `server/storage/collaborators.js` | `addCollaborator`, `getCollaboratorPermission`, `listCollaborators`, `removeCollaborator`, `updateCollaboratorPermission` |
+| `server/storage/display-identity.js` | `resolveDisplayNames`, `resolveNamesForAddresses` |
+| `server/storage/identity-resolver.js` | `resolveIdentity`, `resolveIdentityByEmail` |
+| `server/storage/identity-verification.js` | `verifyIdentityConsistency` |
+| `server/storage/identity.js` | `getUserByEmailGlobal`, `resolveActiveMembership`, `resolveActiveOrganization` |
+| `server/storage/login-membership.js` | `ensureMembership` |
+| `server/storage/password-reset.js` | `cleanupOldAuditLogs`, `getPasswordChangedAt`, `hasDatabaseCredentials`, `logAuthEvent`, `verifyUserPassword` |
+| `server/storage/user-organizations/memberships.js` | `addMember`, `countOrganizationMembers`, `getMembership`, `getMembershipByEmail`, `getOrganizationMember`, `listOrganizationMembers`, `listUserOrganizations`, `removeMember`, `transferOwnership`, `updateMemberDesigner`, `updateMemberRole` |
+| `server/storage/user-organizations/organizations.js` | `createOrganization`, `deleteOrganization`, `getOrganizationById`, `getOrganizationBySlug`, `updateOrganization` |
+
+Every previous argument shifts one position, including the database argument in `ensureMembership(scope, db, ...)`. Import paths stay unchanged. Organization-bound mutations use the target organization scope; pre-authentication, provisioning and instance-wide identity/audit operations require an explicit instance scope with a reason.
+
 ### Fixed
 
 * validate declared slide fields on every save path ([#1632](https://github.com/jaapstronks/deckyard/issues/1632)) ([6653b40](https://github.com/jaapstronks/deckyard/commit/6653b40c42a58421cf135e501a9f4e31abd9a0cb))
