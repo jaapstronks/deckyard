@@ -105,11 +105,15 @@ test('update_slide with an invalid slide names the failing fields', async () => 
       content: { title: '' },
     }),
   );
-  assert.equal(line, 'Error: Invalid slide data');
+  assert.equal(line, 'Error: Slide.content.title is required');
   assert.deepEqual(envelope, {
-    error: 'bad_request',
-    message: 'Invalid slide data',
-    details: { errors: ['Slide.content.title is required'] },
+    error: 'invalid',
+    message: 'Slide.content.title is required',
+    details: {
+      field: 'title',
+      slideId: SLIDE_ID,
+      errors: ['Slide.content.title is required'],
+    },
   });
 });
 

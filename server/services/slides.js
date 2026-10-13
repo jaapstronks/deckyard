@@ -18,6 +18,7 @@ import {
   ValidationError,
   throwStorageFailure,
 } from '../utils/errors.js';
+import { assertValidSlideFields } from './slide-field-validation.js';
 import { dominantSlidesBody } from './deck-versions.js';
 import { loadPresentationForActor } from './presentations.js';
 
@@ -32,6 +33,7 @@ async function writeOptions({ actor }) {
 function assertValidSlide(slide, slideTypes) {
   const errors = validateSlide(slide, { slideTypes });
   if (errors.length) {
+    assertValidSlideFields(slide, slideTypes);
     throw new ValidationError('Invalid slide data', { errors });
   }
 }

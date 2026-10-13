@@ -121,6 +121,7 @@ export function createRenderField({
   // inline grid (the grid belongs on a wide surface, editing-surfaces §4.3).
   onEditData = null,
   getSelectedSlideId,
+  saveRefusal,
 } = {}) {
   const {
     fieldText,
@@ -553,6 +554,7 @@ export function createRenderField({
     // collaborators (see presence/presence-ui.js). Inert without collab.
     if (el instanceof HTMLElement && field?.key) {
       el.setAttribute('data-collab-field-key', String(field.key));
+      saveRefusal?.decorate(el, slide, field);
     }
     return el;
   };

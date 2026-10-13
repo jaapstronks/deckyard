@@ -599,14 +599,24 @@ export function validateSlide(slide, { slideTypes = SLIDE_TYPES } = {}) {
   const def = getSlideType(slide.type, slideTypes);
   if (!def) return errors;
 
-  // Per-field validation is delegated to the single declared field-type
-  // vocabulary (shared/slide-types/field-types.js), which owns the required +
-  // value checks for every type. This replaces the hand-synced type switch that
-  // had drifted from the editor and docs (datamodel-purity move 1a). Unknown
-  // field types are guarded by tests/field-types.test.js, not here.
-  for (const field of def.fields) {
-    const val = slide.content[field.key];
-    for (const e of validateFieldValue(val, field)) errors.push(e);
+  for (const problem of validateSlideFields(slide, { slideTypes })) {
+    errors.push(...problem.errors);
   }
   return errors;
+}
+
+/**
+ * Validate declared content fields, preserving their key for inline feedback.
+ * Item-field checks remain owned by validateFieldValue, at every write surface.
+ * @param {Object} slide
+ * @param {{slideTypes?: Record<string, Object>}} [opts]
+ * @returns {Array<{field: string, errors: string[]}>}
+ */
+export function validateSlideFields(slide, { slideTypes = SLIDE_TYPES } = {}) {
+  const def = getSlideType(slide?.type, slideTypes);
+  if (!def) return [];
+  return def.fields.flatMap((field) => {
+    const errors = validateFieldValue(slide?.content?.[field.key], field);
+    return errors.length ? [{ field: field.key, errors }] : [];
+  });
 }

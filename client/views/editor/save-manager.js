@@ -24,6 +24,7 @@ export function createSaveManager({
   onStatusChange,
   getSelectedSlideId,
   onServerTruth,
+  onFieldRefusal,
 } = {}) {
   let dirty = false;
   let saving = false;
@@ -538,9 +539,11 @@ export function createSaveManager({
 
     try {
       await saveInFlight;
+      onFieldRefusal?.(null);
       savedVersion = Math.max(savedVersion, savingVersion);
       lastError = '';
     } catch (e) {
+      if (e?.details?.field && e?.details?.slideId) onFieldRefusal?.(e);
       // Conflict: someone else saved a newer version. Stop autosave spam and ask user to reload.
       // Only the revision conflict blocks: another 409 (a deck over the size
       // limit) is a refusal of this save, shown like any other error.

@@ -33,7 +33,10 @@
  * @module server/services/save-presentation
  */
 
-import { updatePresentation } from '../storage/presentations/index.js';
+import {
+  updatePresentation,
+  refuseNonCanonicalVersionKeys,
+} from '../storage/presentations/index.js';
 import { normalizeLang } from '../../shared/i18n-utils.js';
 import {
   AppError,
@@ -58,12 +61,48 @@ import {
   PresentationEventTypes,
 } from './comment-events.js';
 
+import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
+import { canonicalJson } from '../../shared/slide-fingerprint.js';
+import { assertValidSlideFields } from './slide-field-validation.js';
+
 const log = createLogger('save-presentation');
 
 /**
  * @typedef {import('./actor.js').Actor} Actor
  * @typedef {import('../storage/scope.js').StorageScope} StorageScope
  */
+
+/** Check only new or changed submitted slides, in each submitted language. */
+async function assertChangedSlideFields(scope, pres, changes) {
+  const versions = changes.i18n?.versions || {};
+  refuseNonCanonicalVersionKeys(versions);
+  const active = normalizeLang(changes.i18n?.active);
+  const buffers = Object.entries(versions)
+    .filter(([lang]) => lang !== active || !Array.isArray(changes.slides))
+    .map(([lang, version]) => ({
+      slides: version?.slides,
+      before: pres.i18n?.versions?.[lang]?.slides || [],
+      lang,
+    }));
+  if (Array.isArray(changes.slides)) {
+    buffers.push({
+      slides: changes.slides,
+      before: active
+        ? pres.i18n?.versions?.[active]?.slides || []
+        : pres.slides,
+      ...(active ? { lang: active } : {}),
+    });
+  }
+  if (!buffers.some(({ slides }) => Array.isArray(slides))) return;
+  const slideTypes = await buildMergedSlideTypes(scope);
+  for (const { slides, before, lang } of buffers) {
+    const stored = new Map((before || []).map((s) => [s.id, canonicalJson(s)]));
+    for (const slide of Array.isArray(slides) ? slides : []) {
+      if (stored.get(slide?.id) === canonicalJson(slide)) continue;
+      assertValidSlideFields(slide, slideTypes, lang ? { lang } : {});
+    }
+  }
+}
 
 /**
  * Ids of slides this actor added in a save: present in the submitted deck,
@@ -276,6 +315,7 @@ export async function savePresentation(
     access: 'write',
   });
   const savable = assertSavableChanges(pres, changes || {});
+  await assertChangedSlideFields(scope, pres, savable);
   const { actor } = identity;
 
   let updated;
