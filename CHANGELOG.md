@@ -4,6 +4,18 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.67.0](https://github.com/jaapstronks/deckyard/compare/v1.66.0...v1.67.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* deleteOldActivityEvents, cleanupExpiredSlideLocks, listSeedThemes, resolveSeedThemeSlug, installationDefaultThemeId, replaceTagLinks and getUserIdByEmail take a scope first; withDbGuard moved to server/db/client.js, initializeStorage and closeStorage to server/db/lifecycle.js, pendingMigrationsError and strandedFileDataError to server/db/boot-check.js; __resetStorageForTests removed.
+
+### Changed
+
+* finish scope-first storage exports and move DB infrastructure to server/db ([#1639](https://github.com/jaapstronks/deckyard/issues/1639)) ([35b48c3](https://github.com/jaapstronks/deckyard/commit/35b48c3ee18bacff3e8d2a4b7c1bf22bfca46999))
+* release 1.67.0 as a beta minor ([ced9141](https://github.com/jaapstronks/deckyard/commit/ced914136f4b84e928a55df72ade68b12cc32fd5))
+
 ## [1.66.0](https://github.com/jaapstronks/deckyard/compare/v1.65.0...v1.66.0) (2026-10-13)
 
 
