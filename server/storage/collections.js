@@ -355,8 +355,8 @@ async function deleteSlideCollection(id, ctx) {
 // Personal collections
 // ============================================================
 
-export async function listPersonalCollections(storageScope, userEmail) {
-  const ctx = toStorageContext(storageScope, 'listPersonalCollections', {
+export async function listPersonalCollections(scope, userEmail) {
+  const ctx = toStorageContext(scope, 'listPersonalCollections', {
     userEmail,
   });
   const items = await listSlideCollections(ctx, {
@@ -366,8 +366,8 @@ export async function listPersonalCollections(storageScope, userEmail) {
   return { items };
 }
 
-export async function getPersonalCollection(storageScope, userEmail, id) {
-  const ctx = toStorageContext(storageScope, 'getPersonalCollection', {
+export async function getPersonalCollection(scope, userEmail, id) {
+  const ctx = toStorageContext(scope, 'getPersonalCollection', {
     userEmail,
   });
   const item = await getSlideCollection(id, ctx);
@@ -378,12 +378,12 @@ export async function getPersonalCollection(storageScope, userEmail, id) {
 }
 
 export async function createPersonalCollection(
-  storageScope,
+  scope,
   userEmail,
   input,
   { actorEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'createPersonalCollection', {
+  const ctx = toStorageContext(scope, 'createPersonalCollection', {
     userEmail,
     actorEmail,
   });
@@ -403,13 +403,13 @@ export async function createPersonalCollection(
 }
 
 export async function updatePersonalCollection(
-  storageScope,
+  scope,
   userEmail,
   id,
   patch,
   { actorEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'updatePersonalCollection', {
+  const ctx = toStorageContext(scope, 'updatePersonalCollection', {
     userEmail,
     actorEmail,
   });
@@ -428,8 +428,8 @@ export async function updatePersonalCollection(
   return { ok: true, item };
 }
 
-export async function deletePersonalCollection(storageScope, userEmail, id) {
-  const ctx = toStorageContext(storageScope, 'deletePersonalCollection', {
+export async function deletePersonalCollection(scope, userEmail, id) {
+  const ctx = toStorageContext(scope, 'deletePersonalCollection', {
     userEmail,
   });
   const existing = await getSlideCollection(id, ctx);
@@ -451,10 +451,10 @@ export async function deletePersonalCollection(storageScope, userEmail, id) {
 // ============================================================
 
 export async function listOrganizationCollections(
-  storageScope,
+  scope,
   { userEmail = '' } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'listOrganizationCollections', {
+  const ctx = toStorageContext(scope, 'listOrganizationCollections', {
     userEmail,
   });
   const items = await listSlideCollections(ctx, { shelf: 'organization' });
@@ -462,11 +462,11 @@ export async function listOrganizationCollections(
 }
 
 export async function getOrganizationCollection(
-  storageScope,
+  scope,
   id,
   { userEmail = '' } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'getOrganizationCollection', {
+  const ctx = toStorageContext(scope, 'getOrganizationCollection', {
     userEmail,
   });
   const item = await getSlideCollection(id, ctx);
@@ -475,11 +475,11 @@ export async function getOrganizationCollection(
 }
 
 export async function createOrganizationCollection(
-  storageScope,
+  scope,
   input,
   { actorEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'createOrganizationCollection', {
+  const ctx = toStorageContext(scope, 'createOrganizationCollection', {
     actorEmail,
   });
   if (!cleanName(input)) return { ok: false, reason: 'name_required' };
@@ -497,12 +497,12 @@ export async function createOrganizationCollection(
 }
 
 export async function updateOrganizationCollection(
-  storageScope,
+  scope,
   id,
   patch,
   { actorEmail, allowMutate } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'updateOrganizationCollection', {
+  const ctx = toStorageContext(scope, 'updateOrganizationCollection', {
     actorEmail,
   });
   const existing = await getSlideCollection(id, ctx);
@@ -518,11 +518,11 @@ export async function updateOrganizationCollection(
 }
 
 export async function deleteOrganizationCollection(
-  storageScope,
+  scope,
   id,
   { actorEmail, allowMutate } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'deleteOrganizationCollection', {
+  const ctx = toStorageContext(scope, 'deleteOrganizationCollection', {
     actorEmail,
   });
   const existing = await getSlideCollection(id, ctx);

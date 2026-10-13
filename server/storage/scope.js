@@ -50,7 +50,7 @@ import { isMultiOrgEnabled } from '../config/features.js';
 /**
  * Validate a scope and reduce it to the context the storage adapters take.
  *
- * @param {StorageScope} storageScope - The caller's scope.
+ * @param {StorageScope} scope - The caller's scope.
  * @param {string} operation - Facade function name, for the error message.
  * @param {Object} [options]
  * @param {boolean} [options.allowCrossOrganization=false] - Whether this operation
@@ -61,11 +61,11 @@ import { isMultiOrgEnabled } from '../config/features.js';
  * @throws {TypeError} If the scope states no organization and declares no reason.
  */
 export function resolveScope(
-  storageScope,
+  scope,
   operation,
   { allowCrossOrganization = false } = {},
 ) {
-  if (typeof storageScope === 'string') {
+  if (typeof scope === 'string') {
     throw new TypeError(
       `${operation}() takes a storage scope, not a repoRoot string. ` +
         'Pass createStorageScope(authedUser, { repoRoot }) on session paths, or ' +
@@ -73,22 +73,21 @@ export function resolveScope(
         'See server/storage/scope.js.',
     );
   }
-  if (!storageScope || typeof storageScope !== 'object') {
+  if (!scope || typeof scope !== 'object') {
     throw new TypeError(
-      `${operation}() requires a storage scope; received ${storageScope === null ? 'null' : typeof storageScope}. ` +
+      `${operation}() requires a storage scope; received ${scope === null ? 'null' : typeof scope}. ` +
         'See server/storage/scope.js.',
     );
   }
 
   const crossOrganization =
-    typeof storageScope.crossOrganization === 'string' &&
-    storageScope.crossOrganization.trim()
-      ? storageScope.crossOrganization.trim()
+    typeof scope.crossOrganization === 'string' &&
+    scope.crossOrganization.trim()
+      ? scope.crossOrganization.trim()
       : undefined;
   const organizationId =
-    typeof storageScope.organizationId === 'string' &&
-    storageScope.organizationId
-      ? storageScope.organizationId
+    typeof scope.organizationId === 'string' && scope.organizationId
+      ? scope.organizationId
       : undefined;
 
   if (!organizationId && !crossOrganization) {
@@ -114,8 +113,8 @@ export function resolveScope(
     // Who is acting, as the only key that identifies anyone (D22; see
     // shared/identity-match.js). The address beside it is what gets *stamped*
     // on a row for display; the id is what a write path compares.
-    actorUserId: storageScope.actorUserId ?? null,
-    actorEmail: storageScope.actorEmail ?? null,
+    actorUserId: scope.actorUserId ?? null,
+    actorEmail: scope.actorEmail ?? null,
     crossOrganization,
   };
 }
@@ -128,13 +127,11 @@ export function resolveScope(
  * the disk (analytics ingest, for one) have no repo root to give, and the six
  * disk-path functions are never reached from there.
  *
- * @param {StorageScope} storageScope
+ * @param {StorageScope} scope
  * @returns {string|null}
  */
-export function repoRootOf(storageScope) {
-  return storageScope && typeof storageScope === 'object'
-    ? (storageScope.repoRoot ?? null)
-    : null;
+export function repoRootOf(scope) {
+  return scope && typeof scope === 'object' ? (scope.repoRoot ?? null) : null;
 }
 
 /**
@@ -231,7 +228,7 @@ export function jobScope(jobData, operation) {
  * to `ownerEmail`, a write to `actorEmail`. At most one of those is ever set
  * on a given call, so the precedence below is a pick, not a priority fight.
  *
- * @param {StorageScope} storageScope - The caller's storage scope.
+ * @param {StorageScope} scope - The caller's storage scope.
  * @param {string} operation - Facade function name, for the error message.
  * @param {{actorEmail?: string, userEmail?: string, ownerEmail?: string}} [opts]
  *   A sharper actor for this call.
@@ -240,13 +237,8 @@ export function jobScope(jobData, operation) {
  *   token.
  * @returns {Object} Context for the storage adapter.
  */
-export function toStorageContext(
-  storageScope,
-  operation,
-  opts = {},
-  resolveOpts,
-) {
-  const resolved = resolveScope(storageScope, operation, resolveOpts);
+export function toStorageContext(scope, operation, opts = {}, resolveOpts) {
+  const resolved = resolveScope(scope, operation, resolveOpts);
   return {
     ...resolved,
     actorUserId: opts.actorUserId ?? resolved.actorUserId ?? null,

@@ -74,18 +74,18 @@ async function findPresentationsUsingUrl(url, ctx) {
 }
 
 /**
- * Where an image library URL is used across the storageScope's organization.
+ * Where an image library URL is used across the scope's organization.
  *
- * @param {import('./scope.js').StorageScope} storageScope
+ * @param {import('./scope.js').StorageScope} scope
  * @param {string} url - The image URL to look for.
  * @returns {Promise<Array<Object>>} Newest-modified first.
  */
-export async function getImageLibraryUsage(storageScope, url) {
-  const ctx = toStorageContext(storageScope, 'getImageLibraryUsage');
+export async function getImageLibraryUsage(scope, url) {
+  const ctx = toStorageContext(scope, 'getImageLibraryUsage');
   const u = String(url || '').trim();
   if (!u) return [];
 
-  const idx = await getPublishedIndex(storageScope);
+  const idx = await getPublishedIndex(scope);
   const publishedByPresId = new Map();
   for (const [publishId, entry] of Object.entries(idx || {})) {
     const pid = String(entry?.presentationId || '').trim();
