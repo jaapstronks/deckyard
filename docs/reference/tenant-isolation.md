@@ -106,8 +106,9 @@ organization and which never will:
   adding one is a defect, not diligence. A column that exists but is never
   filtered on is the same defect in another shape: it either becomes real
   (filled from the session, filtered everywhere) or it goes. Reads that cross
-  organizations exist only on the token-authorized paths
-  (`crossOrganizationScope`).
+  organizations require an explicit reasoned instance scope
+  (`crossOrganizationScope`): token-authorized paths, an authenticated person's
+  instance-wide data-subject request, or an enumerated instance operation.
 - **R3 — Instance machinery is instance-global, enumerated by name.** The
   closed list: `app_settings`, `user_settings` (keyed per person — one set of
   preferences however many organizations they join), `email_templates` and its
@@ -146,17 +147,14 @@ Four edge decisions taken with the rules:
    with me" _should_ be organization-scoped is a product question about what that
    list means across organizations, and is the only thing keeping this column
    from being removable outright.
-6. **The share-link access log is addressed by the link, and takes no
-   context.** `share_link_access_log` rows hang off one
-   `presentation_share_links.id`, itself a globally unique uuid, so the link
-   identifies the organization on its own — the same reasoning as decision 5.
-   Both functions in `server/storage/share-links/access-log.js` used to accept
-   a context parameter and ignore it, a check the signature promised and never
-   performed; the parameter is gone rather than made real. Authorization sits
-   with the caller, which is where it already was: the management route
-   authorizes the presentation (`withPresentationAuth`) and then binds the link
-   id to it through the organization-filtered `getShareLinkById`, before any
-   viewer IP or user-agent is read.
+6. **The share-link access log inherits the link's organization.**
+   `share_link_access_log` rows hang off one globally unique
+   `presentation_share_links.id`. The public write follows a validated share
+   token and passes a reasoned instance scope; storage verifies that the link
+   exists. The management read requires an organization scope and joins the
+   parent link to filter by its organization before returning viewer IP or
+   user-agent. The management route also authorizes the presentation and binds
+   the link id through the organization-filtered `getShareLinkById`.
 7. **`view_sessions` carries no organization column, and GDPR self-service is
    scoped by person.** The column existed from migration 014 and was never
    trustworthy: the public tracking route stamped it from

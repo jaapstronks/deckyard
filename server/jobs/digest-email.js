@@ -128,7 +128,11 @@ async function processUserDigest(user, repoRoot) {
   log.info(`Processing digest for ${user.email}`);
 
   // Get weekly analytics
-  const analytics = await getWeeklyAnalyticsForUser(user.id, user.email);
+  const analytics = await getWeeklyAnalyticsForUser(
+    { repoRoot, organizationId: user.organizationId, actorEmail: user.email },
+    user.id,
+    user.email,
+  );
 
   // Skip if no activity and no presentations
   if (!analytics.hasActivity && analytics.presentationCount === 0) {
@@ -176,7 +180,10 @@ async function processTeamDigest(admin, repoRoot) {
   log.info(`Processing team digest for ${admin.email}`);
 
   // Get team-wide analytics
-  const teamAnalytics = await getTeamWeeklyAnalytics(admin.organizationId);
+  const teamAnalytics = await getTeamWeeklyAnalytics(
+    { repoRoot, organizationId: admin.organizationId, actorEmail: admin.email },
+    admin.organizationId,
+  );
 
   // Skip if no team activity
   if (!teamAnalytics.hasActivity) {

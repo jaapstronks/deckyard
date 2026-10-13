@@ -292,7 +292,10 @@ async function handleShareLinkAccessLog(
   const { limit, offset } = parsePaginationParams(url.searchParams, {
     defaultLimit: 100,
   });
-  const log = await getShareLinkAccessLog(linkId, { limit, offset });
+  const log = await getShareLinkAccessLog(storageScope, linkId, {
+    limit,
+    offset,
+  });
 
   serveJson(res, 200, { accessLog: log });
   return true;

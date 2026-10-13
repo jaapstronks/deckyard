@@ -52,7 +52,13 @@ export function formatShareLink(row, lookup = NO_DISPLAY_NAMES) {
  * @param {Array<Object>} rows
  * @returns {Promise<import('../display-identity.js').DisplayNameLookup>}
  */
-export function shareLinkCreatorNames(rows) {
+export function shareLinkCreatorNames(scope, rows) {
+  toStorageContext(
+    scope,
+    'shareLinkCreatorNames',
+    {},
+    { allowCrossOrganization: true },
+  );
   return resolveNamesForAddresses(
     crossOrganizationScope(
       null,
@@ -122,7 +128,10 @@ export async function createShareLink(scope, presentationId, options) {
 
     return {
       ok: true,
-      shareLink: formatShareLink(row, await shareLinkCreatorNames([row])),
+      shareLink: formatShareLink(
+        row,
+        await shareLinkCreatorNames(scope, [row]),
+      ),
     };
   });
 }
@@ -161,7 +170,7 @@ export async function getShareLinkByToken(scope, token) {
 
     const row = await query.executeTakeFirst();
     return row
-      ? formatShareLink(row, await shareLinkCreatorNames([row]))
+      ? formatShareLink(row, await shareLinkCreatorNames(scope, [row]))
       : null;
   });
 }
@@ -194,7 +203,7 @@ export async function getShareLinkById(scope, linkId) {
       .executeTakeFirst();
 
     return row
-      ? formatShareLink(row, await shareLinkCreatorNames([row]))
+      ? formatShareLink(row, await shareLinkCreatorNames(scope, [row]))
       : null;
   });
 }
@@ -208,7 +217,18 @@ export async function getShareLinkById(scope, linkId) {
  * @param {string} orgId - Organization ID
  * @returns {Promise<Object>} - { ok: boolean, shareLink?: Object, reason?: string }
  */
-export async function getValidShareLinkById(db, shareLinkId, orgId) {
+export async function getValidShareLinkById(scope, db, shareLinkId, orgId) {
+  const context = toStorageContext(
+    scope,
+    'getValidShareLinkById',
+    {},
+    { allowCrossOrganization: true },
+  );
+  if (context.organizationId && context.organizationId !== orgId) {
+    throw new TypeError(
+      'getValidShareLinkById() organization does not match its scope',
+    );
+  }
   const shareLink = await db
     .selectFrom('presentation_share_links')
     .selectAll()
@@ -283,7 +303,16 @@ export async function validateShareLink(token) {
 
     return {
       ok: true,
-      shareLink: formatShareLink(row, await shareLinkCreatorNames([row])),
+      shareLink: formatShareLink(
+        row,
+        await shareLinkCreatorNames(
+          crossOrganizationScope(
+            null,
+            'validated share token: global creator identity',
+          ),
+          [row],
+        ),
+      ),
       requiresPassword: !!row.password_hash,
     };
   });
@@ -378,7 +407,7 @@ export async function listShareLinks(scope, presentationId, options) {
     }
 
     const rows = await query.execute();
-    const lookup = await shareLinkCreatorNames(rows);
+    const lookup = await shareLinkCreatorNames(scope, rows);
     return rows.map((row) => formatShareLink(row, lookup));
   });
 }
@@ -428,7 +457,10 @@ export async function updateShareLink(scope, linkId, updates) {
 
     return {
       ok: true,
-      shareLink: formatShareLink(row, await shareLinkCreatorNames([row])),
+      shareLink: formatShareLink(
+        row,
+        await shareLinkCreatorNames(scope, [row]),
+      ),
     };
   });
 }

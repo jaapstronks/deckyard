@@ -164,6 +164,7 @@ function seedSession(root, sessionId, presentationId, extra = {}) {
   const s = {
     sessionId,
     presentationId,
+    organizationId: ORG,
     state: {
       slideId: '',
       slideIndex: 0,

@@ -233,7 +233,14 @@ async function handleShareVerify({ repoRoot, req, res }, token) {
   // Log the access against the link the token just resolved to. The link id
   // is the scope — the access log takes no context (see access-log.js).
   const userAgent = req.headers['user-agent'];
-  await logShareLinkAccess(result.shareLink.id, { ipAddress, userAgent });
+  await logShareLinkAccess(
+    crossOrganizationScope(
+      repoRoot,
+      'validated share token grants access to link',
+    ),
+    result.shareLink.id,
+    { ipAddress, userAgent },
+  );
 
   // The deck itself. `/api/presentations/:id` cannot serve it: that route is
   // id-addressed and behind the login gate, so an anonymous holder of a valid
@@ -379,6 +386,10 @@ async function handleShareGuestRequest({ repoRoot, req, res }, token) {
 
   // Request verification
   const result = await requestGuestVerification(
+    crossOrganizationScope(
+      repoRoot,
+      'validated share token grants access to link',
+    ),
     validation.shareLink.id,
     email,
     name || null,

@@ -504,9 +504,14 @@ test('the list sorts are the orders storage can cut a page on', () => {
 
 test('the storage reader throws on a sort it cannot order on', async () => {
   await assert.rejects(
-    getPresentationsWithAnalytics('owner@example.com', null, {
-      sort: 'completion',
-    }),
+    getPresentationsWithAnalytics(
+      { organizationId: 'org-a' },
+      'owner@example.com',
+      'org-a',
+      {
+        sort: 'completion',
+      },
+    ),
     /Unknown analytics list sort: completion/,
   );
 });

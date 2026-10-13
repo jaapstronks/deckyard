@@ -50,7 +50,18 @@ export function formatGuest(row) {
  * @param {string} [name] - Guest name (optional)
  * @returns {Promise<Object>} - Result with verification token
  */
-export async function requestGuestVerification(shareLinkId, email, name) {
+export async function requestGuestVerification(
+  scope,
+  shareLinkId,
+  email,
+  name,
+) {
+  toStorageContext(
+    scope,
+    'requestGuestVerification',
+    {},
+    { allowCrossOrganization: true },
+  );
   const id = norm(shareLinkId);
   if (!id) {
     return { ok: false, reason: 'invalid' };
@@ -77,7 +88,12 @@ export async function requestGuestVerification(shareLinkId, email, name) {
     const orgId = linkRow.organization_id;
 
     // Validate the share link
-    const validation = await getValidShareLinkById(db, id, orgId);
+    const validation = await getValidShareLinkById(
+      { organizationId: orgId },
+      db,
+      id,
+      orgId,
+    );
     if (!validation.ok) {
       return validation;
     }
@@ -213,6 +229,7 @@ export async function verifyGuestEmail(verificationToken) {
     }
 
     const validation = await getValidShareLinkById(
+      { organizationId: shareLinkRow.organization_id },
       db,
       guest.share_link_id,
       shareLinkRow.organization_id,
@@ -253,7 +270,10 @@ export async function verifyGuestEmail(verificationToken) {
       guest: formatGuest(updated),
       shareLink: formatShareLink(
         shareLink,
-        await shareLinkCreatorNames([shareLink]),
+        await shareLinkCreatorNames(
+          { organizationId: shareLinkRow.organization_id },
+          [shareLink],
+        ),
       ),
       sessionToken,
       sessionExpiresAt: sessionExpires,
@@ -300,6 +320,7 @@ export async function getGuestBySessionToken(sessionToken) {
 
     // Verify the share link is still valid
     const validation = await getValidShareLinkById(
+      { organizationId: guest.organization_id },
       db,
       guest.share_link_id,
       guest.organization_id,
@@ -319,7 +340,9 @@ export async function getGuestBySessionToken(sessionToken) {
       guest: formatGuest(guest),
       shareLink: formatShareLink(
         shareLink,
-        await shareLinkCreatorNames([shareLink]),
+        await shareLinkCreatorNames({ organizationId: guest.organization_id }, [
+          shareLink,
+        ]),
       ),
       // The organization the guest row (and so its link and deck) lives in:
       // what a write on the guest's behalf is scoped to, since an anonymous
@@ -360,7 +383,7 @@ export async function preRegisterGuest(
     const orgId = getOrgId(scope);
 
     // Verify share link exists and belongs to this org
-    const validation = await getValidShareLinkById(db, id, orgId);
+    const validation = await getValidShareLinkById(scope, db, id, orgId);
     if (!validation.ok) {
       return validation;
     }

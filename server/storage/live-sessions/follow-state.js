@@ -35,13 +35,15 @@ export async function getFollowStateForPresentation(
 
   // Adopt stored sessions for this deck: a follower may be reading from a
   // process other than the one the presenter is pushing state to.
-  await hydrateSessionsForPresentation(pid);
+  await hydrateSessionsForPresentation(scope, pid);
 
   let foundAny = false;
   let best = null;
   let bestTs = -1;
   for (const s of sessions.values()) {
     if (!s || s.presentationId !== pid) continue;
+    if (scope.organizationId && s.organizationId !== scope.organizationId)
+      continue;
     foundAny = true;
     const ts =
       Number(s?.state?.updatedAt || 0) || Number(s?.createdAt || 0) || 0;

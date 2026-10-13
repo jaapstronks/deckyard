@@ -71,8 +71,10 @@ export function setLiveSessionControlEnabled(scope, sessionId, enabled) {
   // Keep sync API surface (called on user interaction)
   const s = getSessionSync(sessionId);
   if (!s) return { ok: false, reason: 'not_found' };
+  if (s.organizationId !== scope.organizationId)
+    return { ok: false, reason: 'not_found' };
   s.controlEnabled = !!enabled;
-  touchSessionSync(s);
+  touchSessionSync(scope, s);
   fireAndForget(
     broadcast(scope, sessionId, 'controlEnabled', {
       controlEnabled: !!s.controlEnabled,
@@ -88,7 +90,9 @@ export async function sendLiveSessionControlCommand(scope, sessionId, cmd) {
   toStorageContext(scope, 'sendLiveSessionControlCommand');
   const s = getSessionSync(sessionId);
   if (!s) return { ok: false, reason: 'not_found' };
-  touchSessionSync(s);
+  if (s.organizationId !== scope.organizationId)
+    return { ok: false, reason: 'not_found' };
+  touchSessionSync(scope, s);
   if (!s.controlEnabled) return { ok: false, reason: 'disabled' };
 
   const action = typeof cmd?.action === 'string' ? cmd.action : '';

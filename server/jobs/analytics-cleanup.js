@@ -57,15 +57,24 @@ async function runAnalyticsCleanup(overrides = {}) {
   log.info(`- Anonymizing IPs older than ${ipAnonymizationDate}`);
 
   // Anonymize IP addresses first (for data we're keeping but need to anonymize)
-  const ipResult = await anonymizeOldIpAddresses(ipAnonymizationDate);
+  const ipResult = await anonymizeOldIpAddresses(
+    crossOrganizationScope(null, 'analytics retention: instance-wide cleanup'),
+    ipAnonymizationDate,
+  );
   log.info(`Anonymized ${ipResult.anonymized} IP addresses`);
 
   // Delete old slide views first (they reference view_sessions)
-  const slideViewsResult = await deleteOldSlideViews(deletionDate);
+  const slideViewsResult = await deleteOldSlideViews(
+    crossOrganizationScope(null, 'analytics retention: instance-wide cleanup'),
+    deletionDate,
+  );
   log.info(`Deleted ${slideViewsResult.deleted} slide views`);
 
   // Delete old view sessions
-  const sessionsResult = await deleteOldViewSessions(deletionDate);
+  const sessionsResult = await deleteOldViewSessions(
+    crossOrganizationScope(null, 'analytics retention: instance-wide cleanup'),
+    deletionDate,
+  );
   log.info(`Deleted ${sessionsResult.deleted} view sessions`);
 
   log.info(`Cleanup complete`);

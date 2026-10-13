@@ -216,7 +216,7 @@ function scheduleInteractionBroadcast(
     b.lastSentAt = now();
     fireAndForget(
       (async () => {
-        const slide = await getInteractionSlide({ sessionId, slideId });
+        const slide = await getInteractionSlide(scope, { sessionId, slideId });
         if (!slide) return;
         await maybeBroadcast(
           scope,
@@ -269,7 +269,7 @@ async function ensureInteractionForSlide(
   { type = 'poll', slideId = '', optionCount = 0, defaultStatus = 'open' } = {},
 ) {
   const kind = normalizeInteractionType(type);
-  const ensured = await ensureInteractionSlide({
+  const ensured = await ensureInteractionSlide(scope, {
     sessionId,
     slideId,
     type: kind,
@@ -319,13 +319,13 @@ export async function getInteractionAggregate(
     {},
     { allowCrossOrganization: true },
   );
-  let slide = await getInteractionSlide({ sessionId, slideId });
+  let slide = await getInteractionSlide(scope, { sessionId, slideId });
   if (!slide) return null;
   if (
     optionCount != null &&
     clampInt(optionCount, 0, MAX_OPTIONS) !== slide.optionCount
   ) {
-    const reconciled = await updateInteractionSlide({
+    const reconciled = await updateInteractionSlide(scope, {
       sessionId,
       slideId,
       optionCount,
@@ -367,7 +367,7 @@ async function voteInteraction(
   const sid = String(slideId || '').trim();
   if (!sid || !did) return { ok: false, reason: 'invalid' };
 
-  const ensured = await ensureInteractionSlide({
+  const ensured = await ensureInteractionSlide(scope, {
     sessionId,
     slideId: sid,
     type: normalizeInteractionType(type),
@@ -409,7 +409,10 @@ async function voteInteraction(
   });
   // A vote is a change to the interaction, so it moves `updated_at` — the
   // timestamp clients use to tell a fresh aggregate from a replayed one.
-  const bumped = await updateInteractionSlide({ sessionId, slideId: sid });
+  const bumped = await updateInteractionSlide(scope, {
+    sessionId,
+    slideId: sid,
+  });
   const touched = bumped.ok ? bumped.slide : slide;
 
   const agg = await aggregateForDevice(touched, did);
@@ -435,10 +438,10 @@ async function setInteractionStatus(
   sessionId,
   { slideId = '', status = 'open', optionCount = null } = {},
 ) {
-  const existing = await getInteractionSlide({ sessionId, slideId });
+  const existing = await getInteractionSlide(scope, { sessionId, slideId });
   if (!existing) return { ok: false, reason: 'not_found' };
 
-  const updated = await updateInteractionSlide({
+  const updated = await updateInteractionSlide(scope, {
     sessionId,
     slideId,
     status,
@@ -487,7 +490,7 @@ async function resetInteraction(
   sessionId,
   { slideId = '', optionCount = null } = {},
 ) {
-  const updated = await updateInteractionSlide({
+  const updated = await updateInteractionSlide(scope, {
     sessionId,
     slideId,
     ...(optionCount != null ? { optionCount } : {}),
