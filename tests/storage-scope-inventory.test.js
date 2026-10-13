@@ -166,3 +166,141 @@ test('default function exports and default-import delegation cannot bypass the g
     assert.equal(scopeFirstViolations(inventory, new Map()).length, 2);
   }
 });
+
+test('lazy imports follow named and star export chains with cycles without duplicating definitions', () => {
+  const lazySources = new Map([
+    ...sources,
+    [
+      'server/storage/chain.js',
+      `export * from './cycle.js'; export * from './barrel.js';`,
+    ],
+    ['server/storage/cycle.js', `export * from './chain.js';`],
+    [
+      'server/storage/cache.js',
+      `
+      export function named() { return import('./index.js').then(mod => mod.rows()); }
+      export function starred() { return import('./barrel.js').then(mod => mod.rows()); }
+      export function cyclic() { return import('./cycle.js').then(mod => mod.rows()); }
+      export async function awaited() { const {rows} = await import('./cycle.js'); return rows(); }
+    `,
+    ],
+  ]);
+  const inventory = storageScopeInventory(lazySources);
+  const violations = scopeFirstViolations(inventory, new Map());
+  for (const name of ['named', 'starred', 'cyclic', 'awaited'])
+    assert.ok(
+      violations.includes(`server/storage/cache.js :: ${name} :: scope-first`),
+    );
+  const reads = inventory.filter((fn) => fn.name === 'read');
+  assert.equal(reads.length, 1);
+  assert.deepEqual(
+    reads[0].callers.filter((site) =>
+      site.startsWith('server/storage/cache.js:'),
+    ),
+    [
+      'server/storage/cache.js:2',
+      'server/storage/cache.js:3',
+      'server/storage/cache.js:4',
+    ],
+  );
+});
+
+test('lazy barrels retain database entrypoints through named exports and cyclic star chains', () => {
+  const inventory = storageScopeInventory(
+    new Map([
+      [
+        'server/storage/named-db.js',
+        `export {getDb as database} from '../db/client.js';`,
+      ],
+      [
+        'server/storage/star-db.js',
+        `export * from './db-cycle.js'; export * from '../db/client.js';`,
+      ],
+      ['server/storage/db-cycle.js', `export * from './star-db.js';`],
+      [
+        'server/storage/cache.js',
+        `
+      export function named() { return import('./named-db.js').then(mod => mod.database()); }
+      export function starred() { return import('./db-cycle.js').then(mod => mod.getDb()); }
+    `,
+      ],
+    ]),
+  );
+  assert.deepEqual(
+    inventory.map((fn) => fn.name),
+    ['named', 'starred'],
+  );
+  assert.equal(scopeFirstViolations(inventory, new Map()).length, 2);
+});
+
+test('star surfaces omit default exports and terminate pure cycles', () => {
+  const inventory = storageScopeInventory(
+    new Map([
+      [
+        'server/storage/default.js',
+        `import {getDb} from '../db/client.js'; export default () => getDb();`,
+      ],
+      [
+        'server/storage/barrel.js',
+        `export * from './default.js'; export * from './cycle.js';`,
+      ],
+      ['server/storage/cycle.js', `export * from './barrel.js';`],
+      [
+        'server/storage/cache.js',
+        `export function pure() { return import('./barrel.js'); }`,
+      ],
+    ]),
+  );
+  assert.deepEqual(
+    inventory.map((fn) => fn.name),
+    ['default'],
+  );
+});
+
+test('parameter initializers reach DB operations directly and through private delegation', () => {
+  const inventory = storageScopeInventory(
+    new Map([
+      [
+        'server/storage/defaults.js',
+        `
+      import {getDb} from '../db/client.js';
+      function privateRead() { return getDb(); }
+      export function direct(result = getDb()) { return result; }
+      export function delegated(result = privateRead()) { return result; }
+      export function destructured({result = privateRead()} = {}) { return result; }
+      export const nested = ([{result = getDb()}] = []) => result;
+      export function query(result = db.selectFrom('rows')) { return result; }
+      export function computed({[privateRead()]: result} = {}) { return result; }
+      export function bindingOnly({getDb}) { return true; }
+      export function injected({load = privateRead} = {}) { return load(); }
+      export function scoped(scope, result = privateRead()) { return result; }
+      export function pure({result = 'getDb()'} = {}) { return result; }
+    `,
+      ],
+    ]),
+  );
+  assert.deepEqual(
+    inventory.map((fn) => fn.name),
+    [
+      'computed',
+      'delegated',
+      'destructured',
+      'direct',
+      'injected',
+      'nested',
+      'query',
+      'scoped',
+    ],
+  );
+  assert.equal(scopeFirstViolations(inventory, new Map()).length, 7);
+  assert.deepEqual(inventory.find((fn) => fn.name === 'destructured').params, [
+    null,
+  ]);
+  assert.deepEqual(inventory.find((fn) => fn.name === 'direct').params, [
+    'result',
+  ]);
+  assert.deepEqual(inventory.find((fn) => fn.name === 'scoped').params, [
+    'scope',
+    'result',
+  ]);
+});

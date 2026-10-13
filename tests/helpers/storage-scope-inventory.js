@@ -35,6 +35,23 @@ function parameterName(node) {
   return node?.type === 'Identifier' ? node.name : null;
 }
 
+function visitParameterInitializers(node, fn) {
+  if (node.type === 'AssignmentPattern') {
+    visit(node.right, fn);
+    visitParameterInitializers(node.left, fn);
+  } else if (node.type === 'ObjectPattern') {
+    for (const property of node.properties) {
+      if (property.computed) visit(property.key, fn);
+      visitParameterInitializers(property.value || property.argument, fn);
+    }
+  } else if (node.type === 'ArrayPattern') {
+    for (const element of node.elements)
+      if (element) visitParameterInitializers(element, fn);
+  } else if (node.type === 'RestElement') {
+    visitParameterInitializers(node.argument, fn);
+  }
+}
+
 /**
  * Static DB reachability for storage functions, including private delegation,
  * callbacks, imported aliases, named re-exports and export-star barrels. Query
@@ -125,7 +142,7 @@ export function storageScopeInventory(sources, callerSources = sources) {
           dynamicSources: new Set(),
           db: false,
         };
-        visit(node.body, (child) => {
+        const recordDependency = (child) => {
           if (child.type === 'Identifier') record.refs.add(child.name);
           if (child.type === 'MemberExpression') {
             const property = child.computed
@@ -148,7 +165,10 @@ export function storageScopeInventory(sources, callerSources = sources) {
             target(file, child.source.value).startsWith('server/db/')
           )
             record.db = true;
-        });
+        };
+        visit(node.body, recordDependency);
+        for (const parameter of node.params)
+          visitParameterInitializers(parameter, recordDependency);
         functions.set(key, record);
         if (statement.type === 'ExportNamedDeclaration' || isDefault) {
           mod.exports.set(isDefault ? 'default' : name, { file, name });
@@ -175,6 +195,24 @@ export function storageScopeInventory(sources, callerSources = sources) {
     return null;
   }
 
+  function exportSurface(file, seen = new Set(), includeDefault = true) {
+    if (seen.has(file)) return new Set();
+    seen.add(file);
+    const mod = modules.get(file);
+    if (!mod)
+      return new Set(file.startsWith('server/db/') ? ['@database'] : []);
+    const surface = new Set();
+    for (const name of mod.exports.keys()) {
+      if (!includeDefault && name === 'default') continue;
+      const resolved = resolve(file, name);
+      if (resolved) surface.add(resolved);
+    }
+    for (const star of mod.stars)
+      for (const resolved of exportSurface(star, new Set(seen), false))
+        surface.add(resolved);
+    return surface;
+  }
+
   for (const fn of functions.values()) {
     fn.dependencies = new Set();
     for (const ref of fn.refs) {
@@ -185,9 +223,9 @@ export function storageScopeInventory(sources, callerSources = sources) {
     for (const source of fn.dynamicSources) {
       // A literal lazy storage import reaches that module's DB surface. This
       // deliberately over-approximates which export a callback may select.
-      for (const name of modules.get(source)?.exports.keys() || []) {
-        const resolved = resolve(source, name);
-        if (resolved && resolved !== fn.key) fn.dependencies.add(resolved);
+      for (const resolved of exportSurface(source)) {
+        if (resolved === '@database') fn.db = true;
+        else if (resolved !== fn.key) fn.dependencies.add(resolved);
       }
     }
     for (const [object, property] of fn.members) {
