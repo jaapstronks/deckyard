@@ -142,3 +142,27 @@ test('literal lazy storage imports remain gated and their then-callback calls ar
       .callers.includes('server/storage/cache.js:3'),
   );
 });
+
+test('default function exports and default-import delegation cannot bypass the gate', () => {
+  for (const declaration of [
+    'export default function read() { return getDb(); }',
+    'export default function () { return getDb(); }',
+    'export default () => getDb();',
+    'function read() { return getDb(); } export default read;',
+  ]) {
+    const inventory = storageScopeInventory(
+      new Map([
+        [
+          'server/storage/default.js',
+          `import { getDb } from '../db/client.js'; ${declaration}`,
+        ],
+        [
+          'server/storage/consumer.js',
+          `import read from './default.js'; export function caller() { return read(); }`,
+        ],
+      ]),
+    );
+    assert.equal(inventory.length, 2);
+    assert.equal(scopeFirstViolations(inventory, new Map()).length, 2);
+  }
+});

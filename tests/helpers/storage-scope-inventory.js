@@ -65,7 +65,10 @@ export function storageScopeInventory(sources, callerSources = sources) {
         for (const spec of statement.specifiers) {
           mod.imports.set(spec.local.name, {
             file: target(file, statement.source.value),
-            name: spec.imported?.name || spec.imported?.value || '*',
+            name:
+              spec.type === 'ImportDefaultSpecifier'
+                ? 'default'
+                : spec.imported?.name || spec.imported?.value || '*',
           });
         }
       }
@@ -82,6 +85,10 @@ export function storageScopeInventory(sources, callerSources = sources) {
           });
         }
       }
+      const isDefault = statement.type === 'ExportDefaultDeclaration';
+      if (isDefault && statement.declaration.type === 'Identifier') {
+        mod.exports.set('default', { file, name: statement.declaration.name });
+      }
       const decl = statement.declaration || statement;
       if (decl.type === 'VariableDeclaration') {
         for (const d of decl.declarations) {
@@ -94,15 +101,17 @@ export function storageScopeInventory(sources, callerSources = sources) {
       }
       const declarations =
         decl.type === 'FunctionDeclaration'
-          ? [[decl.id.name, decl]]
-          : decl.type === 'VariableDeclaration'
-            ? decl.declarations
-                .filter(
-                  (d) =>
-                    d.id.type === 'Identifier' && FUNCTIONS.has(d.init?.type),
-                )
-                .map((d) => [d.id.name, d.init])
-            : [];
+          ? [[decl.id?.name || 'default', decl]]
+          : isDefault && FUNCTIONS.has(decl.type)
+            ? [['default', decl]]
+            : decl.type === 'VariableDeclaration'
+              ? decl.declarations
+                  .filter(
+                    (d) =>
+                      d.id.type === 'Identifier' && FUNCTIONS.has(d.init?.type),
+                  )
+                  .map((d) => [d.id.name, d.init])
+              : [];
       for (const [name, node] of declarations) {
         const key = `${file} :: ${name}`;
         const record = {
@@ -141,8 +150,8 @@ export function storageScopeInventory(sources, callerSources = sources) {
             record.db = true;
         });
         functions.set(key, record);
-        if (statement.type === 'ExportNamedDeclaration') {
-          mod.exports.set(name, { file, name });
+        if (statement.type === 'ExportNamedDeclaration' || isDefault) {
+          mod.exports.set(isDefault ? 'default' : name, { file, name });
         }
       }
     }
@@ -216,7 +225,10 @@ export function storageScopeInventory(sources, callerSources = sources) {
       for (const spec of node.specifiers)
         imports.set(spec.local.name, {
           file: target(file, node.source.value),
-          name: spec.imported?.name || spec.imported?.value || '*',
+          name:
+            spec.type === 'ImportDefaultSpecifier'
+              ? 'default'
+              : spec.imported?.name || spec.imported?.value || '*',
         });
     }
     visit(ast, (node) => {
