@@ -34,12 +34,7 @@ Deckyard is **simple, dependency-light and modular**: plain Node.js + vanilla ES
 - **No bundler; keep it readable**
   - Small modules in `client/lib/*`, `client/views/**`, `server/utils/**`, `server/storage/**`; no new dependency without a strong reason.
 
-- **Formatting is Prettier's job, not a review topic**
-  - Prettier on its defaults plus `singleQuote: true`: `npm run format` writes,
-    `npm run format:check` gates in CI next to `npm run lint`. Don't hand-format,
-    don't argue style; a `// prettier-ignore` needs a reason. Generators, the
-    blame-ignore commit (`git config blame.ignoreRevsFile .git-blame-ignore-revs`
-    once per clone): `docs/developer/linting.md` § Formatting.
+- **Formatting: Prettier.** For formatting, ignores and generators, read `docs/developer/linting.md` § Formatting (commands and rules).
 
 - **Dependencies**: before changing package declarations or gated imports, read `docs/reference/dynamic-imports.md` § Which packages are optional. It defines hard, optional and fork-only dependencies.
 
