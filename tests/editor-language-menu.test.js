@@ -298,13 +298,45 @@ test('with AI off, a new version gets no translate invite (D179)', async () => {
     // not a name pattern, so a new member of any name has to pass here.
     assert.deepEqual(
       Object.keys(controller).sort(),
-      ['canTranslate', 'detach', 'el', 'syncLangUi', 'translateOtherLanguage'],
+      [
+        'canTranslate',
+        'detach',
+        'el',
+        'revealRefusedVersion',
+        'syncLangUi',
+        'translateOtherLanguage',
+      ],
       'the controller surface where AI is off',
     );
     controller.detach();
   } finally {
     setFeatures({ enableAi: true });
   }
+});
+
+test('a refused off-screen version is shown locally without saving away the current edit', () => {
+  const pres = makeTrilingualPres();
+  let writes = 0;
+  const controller = mount({
+    pres,
+    api: async () => {
+      writes += 1;
+    },
+    requestSave: async () => {
+      writes += 1;
+    },
+  });
+  pres.slides[0].content.title = 'Nieuwe Nederlandse titel';
+  assert.equal(controller.revealRefusedVersion('fr'), true);
+  assert.equal(pres.i18n.active, 'fr');
+  assert.equal(pres.slides[0].content.title, 'Un');
+  assert.equal(
+    pres.i18n.versions.nl.slides[0].content.title,
+    'Nieuwe Nederlandse titel',
+  );
+  assert.equal(new URL(window.location.href).searchParams.get('lang'), 'fr');
+  assert.equal(writes, 0);
+  controller.detach();
 });
 
 test('adding an empty version leaves the source where it was (D74)', async () => {
