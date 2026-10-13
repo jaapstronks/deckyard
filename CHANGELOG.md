@@ -4,6 +4,40 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.65.0](https://github.com/jaapstronks/deckyard/compare/v1.64.0...v1.65.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Fork callers of the 35 actor/organization/identity storage exports listed in docs/reference/storage-scope.md must insert StorageScope as the first argument. Global login identity, provisioning and instance audit paths require an explicit reasoned cross-organization scope; organization mutations require their target scope. Import paths remain unchanged; old signatures are removed.
+
+
+The complete changed-export list (paths relative to the repository root):
+
+| Module | Exports receiving a new first `scope` argument |
+| --- | --- |
+| `server/storage/collaborators.js` | `addCollaborator`, `getCollaboratorPermission`, `listCollaborators`, `removeCollaborator`, `updateCollaboratorPermission` |
+| `server/storage/display-identity.js` | `resolveDisplayNames`, `resolveNamesForAddresses` |
+| `server/storage/identity-resolver.js` | `resolveIdentity`, `resolveIdentityByEmail` |
+| `server/storage/identity-verification.js` | `verifyIdentityConsistency` |
+| `server/storage/identity.js` | `getUserByEmailGlobal`, `resolveActiveMembership`, `resolveActiveOrganization` |
+| `server/storage/login-membership.js` | `ensureMembership` |
+| `server/storage/password-reset.js` | `cleanupOldAuditLogs`, `getPasswordChangedAt`, `hasDatabaseCredentials`, `logAuthEvent`, `verifyUserPassword` |
+| `server/storage/user-organizations/memberships.js` | `addMember`, `countOrganizationMembers`, `getMembership`, `getMembershipByEmail`, `getOrganizationMember`, `listOrganizationMembers`, `listUserOrganizations`, `removeMember`, `transferOwnership`, `updateMemberDesigner`, `updateMemberRole` |
+| `server/storage/user-organizations/organizations.js` | `createOrganization`, `deleteOrganization`, `getOrganizationById`, `getOrganizationBySlug`, `updateOrganization` |
+
+Every previous argument shifts one position, including the database argument in `ensureMembership(scope, db, ...)`. Import paths stay unchanged. Organization-bound mutations use the target organization scope; pre-authentication, provisioning and instance-wide identity/audit operations require an explicit instance scope with a reason.
+
+### Fixed
+
+* validate declared slide fields on every save path ([#1632](https://github.com/jaapstronks/deckyard/issues/1632)) ([6653b40](https://github.com/jaapstronks/deckyard/commit/6653b40c42a58421cf135e501a9f4e31abd9a0cb))
+
+
+### Changed
+
+* enumerate scope-first upgrade calls for beta release ([75bb258](https://github.com/jaapstronks/deckyard/commit/75bb258066c75c0af3eb30cbb88cb21d879c5fea))
+* require actor and organization storage scopes ([#1631](https://github.com/jaapstronks/deckyard/issues/1631)) ([8ec1b7e](https://github.com/jaapstronks/deckyard/commit/8ec1b7e9fa569cae0fb4137a95c4245458b26abd))
+
 ## [1.64.0](https://github.com/jaapstronks/deckyard/compare/v1.63.0...v1.64.0) (2026-10-13)
 
 
