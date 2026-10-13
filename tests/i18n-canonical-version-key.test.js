@@ -61,7 +61,7 @@ test.after(() => {
 const slide = (title) => ({
   id: 's1',
   type: 'content-slide',
-  content: { title, body: '' },
+  content: { title, body: 'Body' },
 });
 
 async function seedDeck() {

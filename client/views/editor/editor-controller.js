@@ -47,6 +47,7 @@ import {
 import { createEditorTopbar } from './topbar/index.js';
 import { createPaneTabs } from './pane-tabs.js';
 import { createSlidesPanel } from './slides-panel.js';
+import { createSaveRefusal } from './editor-form/save-refusal.js';
 import { createSaveManager } from './save-manager.js';
 import { createSaveStatus } from './save-status.js';
 import { openTitleModal as openTitleModalImpl } from './modals/title-modal.js';
@@ -367,7 +368,27 @@ export async function createEditorController({
   // sync before that, and the topbar runs its own at mount.
   let syncAnalyticsAvailability = () => {};
 
+  const saveRefusal = createSaveRefusal({
+    getActiveLang: () => normalizeLang(pres.i18n?.active),
+  });
+  cleanup.register('saveRefusal', saveRefusal.detach);
   const saveManager = createSaveManager({
+    onFieldRefusal: (err) => {
+      saveRefusal.set(err);
+      if (!err) return;
+      if (
+        err.details.lang &&
+        normalizeLang(err.details.lang) !== normalizeLang(pres.i18n?.active)
+      ) {
+        bulkEditModal?.close();
+        topbarApi?.revealRefusedVersion(err.details.lang);
+      }
+      setSelectedSlideIdWithLock(err.details.slideId);
+      setInspectorCollapsed(false);
+      rerenderSlideList();
+      rerenderEditor();
+      rerenderPreview();
+    },
     api,
     toast,
     pres,
@@ -1399,6 +1420,7 @@ export async function createEditorController({
   // Shared between the panel form and the bulk-edit modal (which runs a second
   // createRerenderEditor instance on the `bulk` surface on its own mount).
   const editorFormDeps = {
+    saveRefusal,
     editorMount,
     pres,
     SLIDE_TYPES,

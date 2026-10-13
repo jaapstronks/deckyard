@@ -72,7 +72,7 @@ export const PAYLOAD_KEYS = Object.freeze({
   current_password_incorrect: Object.freeze(['field']),
   // A storage reason too (field, index, …); `use` names the field a retired
   // spelling became (B446, B521).
-  invalid: Object.freeze(['use']),
+  invalid: Object.freeze(['use', 'slideId', 'lang', 'errors']),
   held: Object.freeze(['lock']),
   conflict: Object.freeze([
     'id',

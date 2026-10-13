@@ -4,8 +4,7 @@
  * A link type is a string to the input and an `href` to every reader, so a
  * value the field-type validator refuses (a bare domain, a `javascript:` URL,
  * an address without a domain) would render as no link at all. The editor's
- * save does not run that validator, so the hint has to be where the value is
- * typed. Same shape as the required-field flag (`required.js`): polite, shown
+ * save runs the same validator; this hint also helps before the next save. Same shape as the required-field flag (`required.js`): polite, shown
  * once the field has been left, cleared as soon as the value is fixed, never
  * moving focus.
  */

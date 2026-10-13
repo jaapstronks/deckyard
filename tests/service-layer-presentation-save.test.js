@@ -23,6 +23,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { userIdFor, userRows } from './helpers/identity-fixtures.js';
+import { createSaveManager } from '../client/views/editor/save-manager.js';
+import { normalizeLang } from '../shared/i18n-utils.js';
+import { validateSlideFields } from '../shared/slide-types/presentation.js';
 
 process.env.AUTH_SECRET = ['deckyard', 'test', 'b608']
   .join('-')
@@ -64,7 +67,7 @@ const OUTSIDER = actor(OUTSIDER_EMAIL);
 const slide = (id, title, type = 'content-slide') => ({
   id,
   type,
-  content: { title },
+  content: { title, ...(type === 'content-slide' ? { body: 'Body' } : {}) },
   parentId: null,
 });
 
@@ -449,4 +452,348 @@ test('v1: a theme switch reads the deck no more often than a plain save', async 
   // It used to load once for the lang/theme comparison and again in
   // changeTheme (D316 (3)).
   assert.equal(reads(db), plainReads);
+});
+
+// B315: the same declared field vocabulary on editor, v1 and MCP writes.
+const { handleSlides: handleV1Slides } =
+  await import('../server/routes/public-api/v1/slides.js');
+const { McpServer } = await import('../server/mcp/protocol.js');
+const { registerTools } = await import('../server/mcp/tools.js');
+
+async function writeContact(contract, content, db) {
+  if (contract === 'editor') {
+    return editorSave(
+      OWNER,
+      {
+        slides: [{ id: 'slide-1', type: 'end-slide', content }],
+      },
+      { revision: storedDeck(db).revision },
+    );
+  }
+  if (contract === 'v1') {
+    const res = createMockRes();
+    await handleV1Slides({
+      req: makeReq('PUT', { type: 'end-slide', content }),
+      res,
+      url: new URL(
+        `http://deck.example/api/v1/presentations/${DECK_ID}/slides/slide-1`,
+      ),
+      repoRoot: process.cwd(),
+      storageScope: createStorageScope(OWNER, { repoRoot: process.cwd() }),
+      storageContext: {
+        organizationId: ORG,
+        actorUserId: OWNER.id,
+        actorEmail: OWNER.email,
+      },
+      apiKey: {
+        id: 'key-1',
+        tier: 'free',
+        ownerEmail: OWNER.email,
+        permissions: ['read', 'write'],
+        organizationId: ORG,
+      },
+      authedUser: OWNER,
+    });
+    return res;
+  }
+  const server = new McpServer({ name: 'test', version: '1' });
+  registerTools(server, { repoRoot: process.cwd() });
+  await server.tools.get('update_slide').handler(
+    {
+      presentationId: DECK_ID,
+      slideIndex: 0,
+      type: 'end-slide',
+      content,
+    },
+    { ownerEmail: OWNER.email, organizationId: ORG },
+  );
+  return null;
+}
+
+for (const contract of ['editor', 'v1', 'mcp']) {
+  for (const contactUrl of [
+    'javascript:alert(1)',
+    'data:text/html,test',
+    'example.com',
+  ]) {
+    test(`${contract}: refuses declared URL ${contactUrl} without writing`, async () => {
+      const db = await installDb();
+      // Keep the same type so this tests values, not unsupported conversion.
+      storedDeck(db).slides[0] = {
+        id: 'slide-1',
+        type: 'end-slide',
+        content: { title: 'Contact' },
+      };
+      const before = structuredClone(storedDeck(db));
+      let details;
+      if (contract === 'mcp') {
+        await assert.rejects(
+          writeContact(contract, { title: 'Contact', contactUrl }, db),
+          (err) => {
+            assert.equal(err.statusCode, 400);
+            details = err.details;
+            return true;
+          },
+        );
+      } else {
+        const res = await writeContact(
+          contract,
+          { title: 'Contact', contactUrl },
+          db,
+        );
+        assert.equal(res.statusCode, 400, JSON.stringify(res.json()));
+        details = res.json().details;
+      }
+      assert.equal(details.field, 'contactUrl');
+      assert.equal(details.slideId, 'slide-1');
+      assert.ok(details.errors.length);
+      assertUnchanged(db, before, contract);
+      assert.deepEqual(storedDeck(db).slides, before.slides);
+    });
+  }
+  for (const contactUrl of [
+    'https://example.com',
+    'mailto:hello@example.com',
+    '/contact',
+    '#2',
+    '#slide:slide-2',
+    '',
+  ]) {
+    test(`${contract}: accepts declared URL ${JSON.stringify(contactUrl)}`, async () => {
+      const db = await installDb();
+      storedDeck(db).slides[0] = {
+        id: 'slide-1',
+        type: 'end-slide',
+        content: { title: 'Contact' },
+      };
+      const res = await writeContact(
+        contract,
+        { title: 'Contact', contactUrl },
+        db,
+      );
+      if (res) assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+      assert.equal(storedDeck(db).slides[0].content.contactUrl, contactUrl);
+    });
+  }
+}
+
+test('editor: legacy invalid slide loads, survives metadata/other-slide saves, refuses its own edit, and can be fixed', async () => {
+  const db = await installDb();
+  storedDeck(db).slides[0] = {
+    id: 'slide-1',
+    type: 'end-slide',
+    content: { title: 'Contact', contactUrl: 'example.com' },
+  };
+  const read = await editorRead(OWNER);
+  assert.equal(read.statusCode, 200);
+  const loaded = read.json();
+  assert.equal(loaded.slides[0].content.contactUrl, 'example.com');
+  const put = (body) =>
+    editorSave(OWNER, body, { revision: storedDeck(db).revision });
+  assert.equal((await put({ title: 'Metadata only' })).statusCode, 200);
+  loaded.slides[1].content.title = 'Other slide edited';
+  assert.equal((await put({ slides: loaded.slides })).statusCode, 200);
+  assert.equal(storedDeck(db).slides[0].content.contactUrl, 'example.com');
+  loaded.slides[0].notes = 'Changed the legacy slide';
+  assert.equal((await put({ slides: loaded.slides })).statusCode, 400);
+  loaded.slides[0].content.contactUrl = 'https://example.com';
+  assert.equal((await put({ slides: loaded.slides })).statusCode, 200);
+});
+
+test('editor: translated legacy values are compared with their own language, and changed off-screen buffers are checked', async () => {
+  const db = await installDb();
+  const nl = [
+    {
+      id: 'slide-1',
+      type: 'end-slide',
+      content: { title: 'Contact', contactUrl: 'https://example.com' },
+    },
+  ];
+  const de = [
+    {
+      id: 'slide-1',
+      type: 'end-slide',
+      content: { title: 'Kontakt', contactUrl: 'example.de' },
+    },
+  ];
+  storedDeck(db).slides = nl;
+  storedDeck(db).i18n = {
+    dominant: 'nl',
+    active: 'de',
+    versions: {
+      nl: { title: 'NL', slides: nl },
+      de: { title: 'DE', slides: de },
+    },
+  };
+  const put = (body) =>
+    editorSave(OWNER, body, { revision: storedDeck(db).revision });
+  const read = (await editorRead(OWNER)).json();
+  const body = { slides: structuredClone(de), i18n: read.i18n };
+  assert.equal(
+    (await put(body)).statusCode,
+    200,
+    'unchanged German invalid value survives',
+  );
+  body.slides[0].notes = 'changed';
+  const invalid = await put(body);
+  assert.equal(invalid.statusCode, 400);
+  assert.equal(invalid.json().details.lang, 'de');
+  body.slides[0].content.contactUrl = 'https://example.de';
+  assert.equal((await put(body)).statusCode, 200);
+  body.i18n.versions.nl.slides[0].content.contactUrl = 'javascript:alert(1)';
+  const hiddenInvalid = await put(body);
+  assert.equal(hiddenInvalid.statusCode, 400);
+  assert.equal(hiddenInvalid.json().details.lang, 'nl');
+});
+
+test('editor save-manager persists empty translation prose when adding a language and a slide, but refuses an unsafe off-screen URL', async () => {
+  const db = await installDb();
+  storedDeck(db).slides = [
+    {
+      id: 'contact-1',
+      type: 'end-slide',
+      content: { title: 'Contact', contactUrl: 'https://example.com' },
+    },
+  ];
+  const pres = (await editorRead(OWNER)).json();
+  pres.i18n = {
+    active: 'nl',
+    dominant: 'nl',
+    versions: { nl: { title: pres.title, slides: pres.slides } },
+  };
+  const failures = [];
+  let lastPayload;
+  const mgr = createSaveManager({
+    api: async (_path, opts) => {
+      lastPayload = structuredClone(opts.body);
+      const response = await editorSave(OWNER, opts.body, {
+        revision: Number(opts.headers['If-Match']),
+      });
+      if (response.statusCode !== 200) {
+        const error = Object.assign(
+          new Error(response.json().message),
+          response.json(),
+        );
+        failures.push(error);
+        throw error;
+      }
+      return response.json();
+    },
+    toast: { info() {}, success() {}, error() {} },
+    pres,
+    id: pres.id,
+    SLIDE_TYPES: {
+      'end-slide': {
+        fields: [
+          { key: 'title', type: 'string', required: true },
+          { key: 'contactUrl', type: 'url' },
+        ],
+      },
+    },
+    normalizeLang,
+    getSelectedSlideId: () => 'contact-1',
+  });
+
+  pres.i18n.versions['en-GB'] = { title: pres.title, slides: [] };
+  mgr.markDirty({ slideId: 'contact-1' });
+  await mgr.requestSave();
+  assert.equal(failures.length, 0);
+  assert.equal(pres.i18n.versions['en-GB'].slides[0].content.title ?? '', '');
+  assert.equal(
+    storedDeck(db).i18n.versions['en-GB'].slides[0].content.title ?? '',
+    '',
+  );
+
+  pres.slides.push({
+    id: 'contact-2',
+    type: 'end-slide',
+    content: { title: 'New contact', contactUrl: 'https://deck.example' },
+  });
+  mgr.markDirty({ slideId: 'contact-2' });
+  await mgr.requestSave();
+  assert.equal(failures.length, 0);
+  assert.equal(pres.i18n.versions['en-GB'].slides[1].content.title ?? '', '');
+  assert.equal(storedDeck(db).i18n.versions['en-GB'].slides.length, 2);
+
+  const unsafe = structuredClone(lastPayload);
+  unsafe.i18n.versions['en-GB'].slides[1].content.contactUrl =
+    'javascript:alert(1)';
+  const rejected = await editorSave(OWNER, unsafe, {
+    revision: storedDeck(db).revision,
+  });
+  mgr.cancelAutosave();
+  assert.equal(rejected.statusCode, 400);
+  assert.equal(rejected.json().details.field, 'contactUrl');
+  assert.equal(rejected.json().details.lang, 'en-GB');
+  assert.equal(
+    storedDeck(db).i18n.versions['en-GB'].slides[1].content.contactUrl,
+    'https://deck.example',
+  );
+});
+
+test('translation field validation permits nested prose gaps while keeping structural and URL checks', () => {
+  const slideTypes = {
+    custom: {
+      fields: [
+        {
+          key: 'rows',
+          type: 'items',
+          required: true,
+          itemFields: [
+            { key: 'title', type: 'string', required: true },
+            { key: 'link', type: 'url', required: true },
+          ],
+        },
+      ],
+    },
+  };
+  const slide = {
+    id: 'nested',
+    type: 'custom',
+    content: { rows: [{ title: '', link: 'https://example.com' }] },
+  };
+  assert.equal(validateSlideFields(slide, { slideTypes })[0].field, 'rows');
+  assert.deepEqual(
+    validateSlideFields(slide, {
+      slideTypes,
+      allowMissingTranslationText: true,
+    }),
+    [],
+  );
+  slide.content.rows[0].link = 'javascript:alert(1)';
+  assert.equal(
+    validateSlideFields(slide, {
+      slideTypes,
+      allowMissingTranslationText: true,
+    })[0].field,
+    'rows',
+  );
+  slide.content.rows = [];
+  assert.equal(
+    validateSlideFields(slide, {
+      slideTypes,
+      allowMissingTranslationText: true,
+    })[0].field,
+    'rows',
+  );
+});
+
+test('editor: collection URL values use the declared validator too', async () => {
+  const db = await installDb();
+  const res = await editorSave(OWNER, {
+    slides: [
+      {
+        id: 'slide-1',
+        type: 'content-slide',
+        content: {
+          title: 'Actions',
+          body: 'Body',
+          actions: [{ label: 'Bad', url: 'javascript:alert(1)' }],
+        },
+      },
+    ],
+  });
+  assert.equal(res.statusCode, 400, JSON.stringify(res.json()));
+  assert.equal(res.json().details.field, 'actions');
+  assert.equal(storedDeck(db).revision, 1);
 });

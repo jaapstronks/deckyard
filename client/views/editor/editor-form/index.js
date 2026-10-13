@@ -78,6 +78,7 @@ export function createRerenderEditor({
   // fieldKey} | null. When an
   // element is selected the inspector grows a [This element | Slide] tab bar.
   getSelectedElement,
+  saveRefusal,
   // Opens the bottom-panel Data tab for a chart slide (editing-surfaces §4.3).
   // Inspector-only: the bulk modal has no bottom panel and keeps its inline grid.
   onEditChartData,
@@ -444,6 +445,7 @@ export function createRerenderEditor({
     const deckSlides = buildDeckSlideOptions(pres, slide?.id);
 
     const renderField = createRenderField({
+      saveRefusal,
       pres,
       getSelectedSlideId,
       slide,
@@ -514,7 +516,12 @@ export function createRerenderEditor({
       }
       // Inspector mode: content fields don't render here (their homes are the
       // slide surface and the bulk modal); only the per-type keeps pass.
-      if (inspectorKeeps && !isA11yFieldKey(key) && !inspectorKeeps.has(key)) {
+      if (
+        inspectorKeeps &&
+        !isA11yFieldKey(key) &&
+        !inspectorKeeps.has(key) &&
+        !saveRefusal?.matches(slide, f)
+      ) {
         used.add(key);
         return;
       }
@@ -715,6 +722,7 @@ export function createRerenderEditor({
       if (closeSlot) editorMount.append(closeSlot);
       editorMount.append(form);
     }
+    saveRefusal?.reveal();
   }
 
   return { rerender: rerenderEditor, detach: detachHeaderActions };
