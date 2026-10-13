@@ -4,6 +4,50 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.66.0](https://github.com/jaapstronks/deckyard/compare/v1.65.0...v1.66.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Fork callers of the 42 analytics, live-session, interaction-slide and share-link storage exports listed below (and in docs/reference/storage-scope.md) must insert StorageScope as the first argument; every old argument shifts one position, including explicit database arguments. No legacy overload is supported.
+* Request X-RateLimit-* headers describe the actual per-key budget instead of theoretical daily totals. getRateLimitHeaders in server/storage/api-usage.js accepts only explicit ai or exports limits; request callers use checkRequestRateLimit from server/utils/rate-limit.js. The allowRequestRedis export in server/utils/rate-limit-redis.js becomes allowRequestRedisDetails and returns a decision object; use its .allowed value, or use allowRequest from server/utils/rate-limit.js for boolean admission.
+
+
+The complete changed-export list (paths relative to the repository root):
+
+| Module | Exports receiving a new first `scope` argument |
+| --- | --- |
+| `server/storage/analytics/aggregations.js` | `getCompletionCounts`, `getDetailedSlideEngagement`, `getInteractionHeatmapData`, `getPresentationAnalyticsOverview`, `getViewerJourneyData` |
+| `server/storage/analytics/dashboard.js` | `getDashboardSummary`, `getDashboardTimeline`, `getPresentationsWithAnalytics`, `getSourceBreakdown`, `getTopPresentations` |
+| `server/storage/analytics/slide-views.js` | `deleteOldSlideViews`, `endAllSlideViewsForSession`, `transitionToSlide` |
+| `server/storage/analytics/view-sessions-gdpr.js` | `anonymizeOldIpAddresses`, `deleteUserAnalyticsData`, `eraseAnalyticsDataForDevice`, `eraseAnalyticsDataForSession`, `exportUserAnalyticsData` |
+| `server/storage/analytics/view-sessions.js` | `createViewSession`, `deleteOldViewSessions`, `getActiveViewerCount`, `getViewSessionsForPresentation` |
+| `server/storage/analytics/weekly-summary.js` | `getTeamWeeklyAnalytics`, `getWeeklyAnalyticsForUser` |
+| `server/storage/interaction-slides.js` | `ensureInteractionSlide`, `getInteractionSlide`, `updateInteractionSlide` |
+| `server/storage/live-sessions/close.js` | `closeSession` |
+| `server/storage/live-sessions/db.js` | `countPersistedSessions`, `deletePersistedSession`, `hydrateSession`, `hydrateSessionsForPresentation`, `persistSession`, `schedulePersist`, `sweepExpiredSessions` |
+| `server/storage/live-sessions/sse.js` | `touchSessionSync` |
+| `server/storage/share-links/access-log.js` | `getShareLinkAccessLog`, `logShareLinkAccess` |
+| `server/storage/share-links/crud.js` | `getValidShareLinkById`, `shareLinkCreatorNames` |
+| `server/storage/share-links/guests.js` | `requestGuestVerification` |
+| `server/storage/share-links/index.js` | `cleanupExpiredShareLinks` |
+
+Every previous argument shifts one position, including the database argument in `getCompletionCounts(scope, db, ...)` and `getValidShareLinkById(scope, db, ...)`. Import paths stay unchanged. Pass an organization scope, or a reasoned instance scope for the data-subject, token-capability and retention paths described in docs/reference/storage-scope.md.
+
+### Fixed
+
+* report actual public API request limits ([#1637](https://github.com/jaapstronks/deckyard/issues/1637)) ([57bba34](https://github.com/jaapstronks/deckyard/commit/57bba34772b5d3e316c9c710d000a6e7208fc9b0))
+
+
+### Security
+
+* enforce SSO on local authentication endpoints ([#1634](https://github.com/jaapstronks/deckyard/issues/1634)) ([dcb3b4d](https://github.com/jaapstronks/deckyard/commit/dcb3b4d7c2d9685fbcfef444774b07c5848a6174))
+
+
+### Changed
+
+* make analytics and audience storage scope-first ([#1636](https://github.com/jaapstronks/deckyard/issues/1636)) ([30375e8](https://github.com/jaapstronks/deckyard/commit/30375e8322dfb798fdc263a945a41dc523f1dec4))
+
 ## [1.65.0](https://github.com/jaapstronks/deckyard/compare/v1.64.0...v1.65.0) (2026-10-13)
 
 
