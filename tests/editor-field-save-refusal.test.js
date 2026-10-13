@@ -19,6 +19,20 @@ function wrapper() {
   el.append(control);
   return { el, control };
 }
+test('the editable control receives the refusal when a translation action precedes it', () => {
+  const state = createSaveRefusal();
+  const target = wrapper();
+  target.el.prepend(document.createElement('button'));
+  document.body.append(target.el);
+  state.decorate(target.el, slide, field);
+  state.set(refused);
+  assert.equal(target.control.getAttribute('aria-invalid'), 'true');
+  assert.equal(
+    target.el.querySelector('button').hasAttribute('aria-invalid'),
+    false,
+  );
+  state.detach();
+});
 test('refusal reaches an existing modal field and a rebuilt inspector field, opens its section, and clears on edit', () => {
   const state = createSaveRefusal();
   const modal = wrapper();

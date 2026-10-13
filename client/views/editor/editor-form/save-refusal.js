@@ -24,7 +24,8 @@ export function createSaveRefusal({ getActiveLang } = {}) {
     const surface = createInlineError();
     surfaces.add(surface);
     el.append(surface.el);
-    const control = el.querySelector('input, textarea, select, button');
+    const control =
+      el.querySelector('input, textarea, select') || el.querySelector('button');
     surface.show(refusal.details.errors?.join('; ') || refusal.message, {
       control,
       focus: false,
