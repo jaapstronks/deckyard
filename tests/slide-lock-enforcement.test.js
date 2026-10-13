@@ -24,8 +24,11 @@ const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
 const { initializeStorage, __resetStorageForTests } =
   await import('../server/storage/lifecycle.js');
-const { collectContentChangedSlideIds, enforceSlideLocks } =
-  await import('../server/storage/presentations/crud/enforce-slide-locks.js');
+const {
+  collectContentChangedSlideIds,
+  enforceSlideLocks,
+  enforceSlideWritePolicy,
+} = await import('../server/storage/presentations/crud/enforce-slide-locks.js');
 const { createPresentation, getPresentation, updatePresentation } =
   await import('../server/storage/presentations/index.js');
 
@@ -147,7 +150,7 @@ describe('enforceSlideLocks', () => {
 
   it('rejects a non-author editing an author-locked slide with 423', async () => {
     await assert.rejects(
-      enforceSlideLocks({
+      enforceSlideLocks(testScope(), {
         presentationId: 'p1',
         previousSlides: [locked, free],
         nextSlides: [edited(locked), free],
@@ -164,7 +167,7 @@ describe('enforceSlideLocks', () => {
 
   it('rejects a non-author deleting an author-locked slide', async () => {
     await assert.rejects(
-      enforceSlideLocks({
+      enforceSlideLocks(testScope(), {
         presentationId: 'p1',
         previousSlides: [locked, free],
         nextSlides: [free],
@@ -177,7 +180,7 @@ describe('enforceSlideLocks', () => {
   });
 
   it('allows the author to edit their own locked slide', async () => {
-    await enforceSlideLocks({
+    await enforceSlideLocks(testScope(), {
       presentationId: 'p1',
       previousSlides: [locked, free],
       nextSlides: [edited(locked), free],
@@ -188,7 +191,7 @@ describe('enforceSlideLocks', () => {
   });
 
   it('allows a non-author to edit unlocked slides next to a locked one', async () => {
-    await enforceSlideLocks({
+    await enforceSlideLocks(testScope(), {
       presentationId: 'p1',
       previousSlides: [locked, free],
       nextSlides: [locked, edited(free)],
@@ -206,7 +209,7 @@ describe('enforceSlideLocks', () => {
       },
     });
     await assert.rejects(
-      enforceSlideLocks({
+      enforceSlideLocks(testScope(), {
         presentationId: 'p1',
         previousSlides: [locked, free],
         nextSlides: [locked, edited(free)],
@@ -228,7 +231,7 @@ describe('enforceSlideLocks', () => {
         holder: { id: userIdFor(OTHER), displayName: 'Christel' },
       },
     });
-    await enforceSlideLocks({
+    await enforceSlideLocks(testScope(), {
       presentationId: 'p1',
       previousSlides: [locked, free],
       nextSlides: [locked, edited(free)],
@@ -240,7 +243,7 @@ describe('enforceSlideLocks', () => {
 
   it('does not consult locks at all when nothing changed', async () => {
     let called = false;
-    await enforceSlideLocks({
+    await enforceSlideLocks(testScope(), {
       presentationId: 'p1',
       previousSlides: [locked, free],
       nextSlides: [free, locked], // reorder only
@@ -493,4 +496,58 @@ describe('updatePresentation — slide-lock enforcement', () => {
       (e) => e.statusCode === 423 && e.details?.slideId === LOCKED_ID,
     );
   });
+});
+
+describe('slide-lock storage scopes', () => {
+  for (const enforce of [enforceSlideLocks, enforceSlideWritePolicy]) {
+    it(`${enforce.name} refuses missing or invalid scope before bypassing work`, async () => {
+      let loaded = false;
+      for (const scope of [
+        undefined,
+        null,
+        '/repo',
+        {},
+        { crossOrganization: 'public token' },
+      ]) {
+        await assert.rejects(
+          enforce(scope, {
+            existing: { slides: [] },
+            previousSlides: [],
+            nextSlides: [],
+            bypassLockCheck: true,
+            loadSlideLocks: async () => {
+              loaded = true;
+              return {};
+            },
+          }),
+          (error) =>
+            error instanceof TypeError && error.message.includes(enforce.name),
+        );
+      }
+      assert.equal(loaded, false);
+    });
+
+    it(`${enforce.name} forwards the caller scope to the lock loader`, async () => {
+      const scope = testScope('/repo', { actorEmail: OWNER });
+      const previousSlides = [{ id: 's1', content: { title: 'Before' } }];
+      const nextSlides = [{ id: 's1', content: { title: 'After' } }];
+      let loaded = 0;
+      await enforce(scope, {
+        presentationId: 'p1',
+        existing: { id: 'p1', ownerId: asOwner.id, slides: previousSlides },
+        previousSlides,
+        nextSlides,
+        isAuthor: true,
+        user: asOwner,
+        actor: asOwner,
+        loadSlideLocks: async (receivedScope, presentationId) => {
+          assert.equal(receivedScope, scope);
+          assert.equal(presentationId, 'p1');
+          loaded++;
+          return {};
+        },
+      });
+      assert.equal(loaded, 1);
+    });
+  }
 });

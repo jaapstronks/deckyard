@@ -482,6 +482,8 @@ test('an explicit null still clears the column', async () => {
     DECK_ID,
     { description: null, settings: null, i18n: null, published: null },
     { organizationId: ORG, actorEmail: OWNER },
+    {},
+    { storageScope: { organizationId: ORG, actorEmail: OWNER } },
   );
 
   const row = storedDeck(db);
@@ -499,6 +501,8 @@ test('a body that mentions nothing but the title moves nothing but the title', a
     DECK_ID,
     { title: 'Andere titel' },
     { organizationId: ORG, actorEmail: OWNER },
+    {},
+    { storageScope: { organizationId: ORG, actorEmail: OWNER } },
   );
 
   const row = storedDeck(db);

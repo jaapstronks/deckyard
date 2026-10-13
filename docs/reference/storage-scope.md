@@ -143,25 +143,22 @@ scope parameter would be ceremony that validates nothing. A new table joins
 this pair only when it, too, has no organization column and no per-person
 key; anything else takes a scope.
 
-## Enforcement and implementation status (as of 2026-08-21)
+## Scope-less token operations (D331)
 
-The convention is enforced by `tests/storage-call-convention.test.js`, which
-scans every export under `server/storage/**` and refuses (a) `repoRoot` as
-first parameter and (b) `ctx`/`context` on any position other than 1. Existing
-violations are carried in `tests/storage-call-convention-burndown.json`, an
-allowlist that **only shrinks**: fixing an export deletes its line; adding a
-new export in either old shape fails the suite.
+A globally unique presented token can be the authorization itself. The positive signature gate permits only individually registered token operations and instance telemetry, with a category and reason per export in `tests/helpers/storage-scope-exceptions.js`. There are no module-wide exemptions. Token issuance, its pre-auth abuse limits and expiry cleanup belong to the same token lifecycle. Account reads, membership selection, audit records and operations keyed by a share-link ID rather than a presented token still require a scope.
 
-**Honest status note (2026-08-13):** the migration is complete. The burndown
-list is at zero (plus the six documented disk-path exceptions), the factory is
-named `createStorageScope()`, route handlers pass the per-request scope down
-instead of rebuilding it, and the naming pass has landed: no storage export
-names its scope parameter `ctx` anymore, and the near-collision pair is now
-`getThemeRecord()` (DB row, storage layer) vs `loadThemeAssets()` (theme
-files, `utils/themes.js`). Two deliberate scope-homonyms remain outside the
-layer's parameter convention: the deck-list input
-`ownership: collection|owned|shared|all` (external contract on MCP and the
-lists, B607) and the slide-library `opts.shelf: personal|organization` (DB
-column). Nothing here promises compatibility with the old shapes: during beta
-they are removed, not tolerated (`docs/reference/versioning.md` § the beta
-stance).
+The registered token operations are API-key validation, analytics-report token lookup, anonymous view-session token lookup/update/end, password-reset and magic-link issuance/validation/consumption/expiry, public share-link validation/password checking, and guest session/email-verification token resolution. This does not remove a scope from token operations that already take one. `identity-verification.js` checks dual-key database consistency, despite its name; it is not a token-authorized identity-verification path and is not exempt.
+
+## Enforcement and implementation status (2026-10-13)
+
+The target above is not yet fully implemented. The current static census finds 361 DB-reaching defining exports, of which 156 still need a first parameter named `scope`; 67 of those already call the envelope `storageScope`. There are 34 individually justified token/telemetry exceptions (B665). `tests/fixtures/storage-scope-inventory.json` preserves the initial census of 359 exports, signatures and direct static call sites. Scanner repairs exposed two additional lock-policy exports; `enforceSlideLocks(scope, opts)` and `enforceSlideWritePolicy(scope, opts)` now validate and forward the caller scope, with the old `opts.ctx` argument removed. These two exports add no debt to the frozen ceiling. Recount from the repository root with:
+
+```sh
+node scripts/storage-scope-inventory.js > .scratch/storage-scope-inventory.json
+```
+
+`tests/storage-call-convention.test.js` now positively requires `scope` first for DB-reaching exports, following private functions, callbacks, imported aliases, storage re-export barrels and literal lazy storage imports. The scanner recognizes query builders and database entry points; it does not prove runtime validation, organization filtering or authorization. Dynamic property dispatch and factory-returned functions are outside its static reach. Caller evidence covers the listed source roots and excludes vendor/fixture directories; it is not a census of external forks or dynamically dispatched calls. Literal lazy imports follow transitive named and export-star barrels, including cycles and database entrypoints; executable parameter initializers also contribute DB reachability. Caller collection recognizes static imports and `import('./rows.js').then(mod => mod.read())`, but does not trace bindings created by awaited imports such as `const {read} = await import('./rows.js'); read(scope)`. The enclosing storage function still counts as DB-reaching. Before migrating a signature, manually inspect awaited-import callers alongside the recorded call sites.
+
+Existing signature debt lives in `tests/storage-call-convention-burndown.json`. Its scope-first entries must be a subset of the frozen initial census and must still name current violations: remove a row when it is fixed, never regenerate the initial fixture to accommodate new debt. The existing negative signature rules and mutation failure-shape rule (c) remain independent. The six disk-path exceptions apply only to the old `repoRoot` rule; they do not exempt DB-reaching operations from the positive gate. Infrastructure exports (database guard, lifecycle and boot checks) are recorded as debt pending a proper layer boundary, rather than receiving a new exception category.
+
+The remaining migration clusters change signatures and callers together and require independent review (B665). The gate/inventory PR also migrates those two newly exposed lock-policy signatures and their callers; the remaining cluster migrations are separate. Outside the parameter convention, the deliberate scope homonyms remain `ownership: collection|owned|shared|all` for deck-list selection and `opts.shelf: personal|organization` for slide-library selection. During beta, obsolete signatures are removed rather than supported alongside the canonical form.
