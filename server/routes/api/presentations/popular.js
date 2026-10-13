@@ -94,7 +94,7 @@ async function filterReadableRows(rows, ctx) {
     }
     try {
       collaboratorPermission = await getCollaboratorPermission(
-        { ...ctx, organizationId: row.organization_id },
+        ctx,
         row.id,
         user?.email,
       );
