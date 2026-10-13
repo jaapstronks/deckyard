@@ -12,6 +12,7 @@
 
 import { LockedError, ValidationError } from '../../../utils/errors.js';
 import { getSlideLocks } from '../../slide-locks.js';
+import { toStorageContext } from '../../scope.js';
 import { isPresentationAuthor } from '../../../utils/presentation-authz/index.js';
 import { matchesIdentity } from '../../../../shared/identity-match.js';
 import { isCollabLiveEditsEnabled } from '../../../config/features.js';
@@ -84,6 +85,7 @@ export function collectContentChangedSlideIds(previousSlides, nextSlides) {
  * - author lock (`lockedByAuthor` on the stored slide): blocks non-authors
  * - concurrent slide lock (slide_locks table): blocks everyone but the holder
  *
+ * @param {import('../../scope.js').StorageScope} scope - The caller's organization scope
  * @param {Object} opts
  * @param {string} opts.presentationId
  * @param {Array} opts.previousSlides - Slides currently stored on the server
@@ -97,19 +99,21 @@ export function collectContentChangedSlideIds(previousSlides, nextSlides) {
  * @param {boolean} opts.isAuthor - Whether the actor is the presentation author
  * @param {Object} [opts.actor] - The acting user, as identity-match reads them
  *   ({ id, unrestricted }); who holds a concurrent lock is decided on the id.
- * @param {Object} opts.ctx - Context with organization info (for lock lookup)
  * @param {Function} [opts.loadSlideLocks] - Injectable lock loader (tests)
  */
-export async function enforceSlideLocks({
-  presentationId,
-  previousSlides,
-  nextSlides,
-  extraPairs = [],
-  isAuthor,
-  actor = null,
-  ctx,
-  loadSlideLocks = getSlideLocks,
-} = {}) {
+export async function enforceSlideLocks(
+  scope,
+  {
+    presentationId,
+    previousSlides,
+    nextSlides,
+    extraPairs = [],
+    isAuthor,
+    actor = null,
+    loadSlideLocks = getSlideLocks,
+  } = {},
+) {
+  toStorageContext(scope, 'enforceSlideLocks');
   const changed = new Set(
     collectContentChangedSlideIds(previousSlides, nextSlides),
   );
@@ -141,7 +145,7 @@ export async function enforceSlideLocks({
 
   // Concurrent slide locks live in the database; without one (file mode)
   // getSlideLocks returns {} and this check is a no-op.
-  const locks = await loadSlideLocks(ctx, presentationId);
+  const locks = await loadSlideLocks(scope, presentationId);
   for (const slideId of changedIds) {
     const lock = locks?.[slideId];
     // Whose lock it is, decided on the stable id — an actor the instance
@@ -172,6 +176,7 @@ export async function enforceSlideLocks({
  * carry stale copies of slides other users changed, which would read as
  * edits the actor never made.
  *
+ * @param {import('../../scope.js').StorageScope} scope - The caller's organization scope
  * @param {Object} opts
  * @param {Object} opts.existing - Stored presentation (slides, i18n, owner fields)
  * @param {Array} opts.nextSlides - Normalized slides about to be written (post-merge)
@@ -183,20 +188,22 @@ export async function enforceSlideLocks({
  * @param {string|null} [opts.actorUserId] - Acting `users.id`, when the caller
  *   has no full user object (machine surfaces: API key owner, MCP session)
  * @param {boolean} [opts.bypassLockCheck] - Internal write, skip enforcement
- * @param {Object} opts.ctx - Context with organization info (for lock lookup)
  * @param {Function} [opts.loadSlideLocks] - Injectable lock loader (tests)
  * @returns {Promise<{isAuthor: boolean}>}
  */
-export async function enforceSlideWritePolicy({
-  existing,
-  nextSlides,
-  nextI18nVersions = null,
-  user = null,
-  actorUserId = null,
-  bypassLockCheck = false,
-  ctx,
-  loadSlideLocks = getSlideLocks,
-} = {}) {
+export async function enforceSlideWritePolicy(
+  scope,
+  {
+    existing,
+    nextSlides,
+    nextI18nVersions = null,
+    user = null,
+    actorUserId = null,
+    bypassLockCheck = false,
+    loadSlideLocks = getSlideLocks,
+  } = {},
+) {
+  toStorageContext(scope, 'enforceSlideWritePolicy');
   // Authorship is decided on the stable `users.id` and on nothing else
   // (shared/identity-match.js), so a caller that has only an address — the
   // machine surfaces — must hand the id it resolved at its boundary. Without
@@ -249,14 +256,13 @@ export async function enforceSlideWritePolicy({
     }
   }
 
-  await enforceSlideLocks({
+  await enforceSlideLocks(scope, {
     presentationId: existing.id,
     previousSlides: existing?.slides || [],
     nextSlides,
     extraPairs,
     isAuthor,
     actor: effectiveUser,
-    ctx,
     loadSlideLocks,
   });
   return { isAuthor };

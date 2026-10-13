@@ -498,13 +498,15 @@ const unlockAttempt = [
 
 /** @param {Object|null} user */
 function unlockAs(user) {
-  return enforceSlideWritePolicy({
-    existing: lockedDeck,
-    nextSlides: unlockAttempt,
-    user,
-    ctx: { repoRoot: REPO_ROOT, organizationId: ORG },
-    loadSlideLocks: async () => [],
-  });
+  return enforceSlideWritePolicy(
+    { repoRoot: REPO_ROOT, organizationId: ORG },
+    {
+      existing: lockedDeck,
+      nextSlides: unlockAttempt,
+      user,
+      loadSlideLocks: async () => [],
+    },
+  );
 }
 
 test('slide locks: an admin who is a plain member here is not an author', async () => {

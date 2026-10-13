@@ -1007,14 +1007,13 @@ async function updatePresentationRow(id, data, ctx, opts = {}, seam = {}) {
   // locked slides are rejected with 423. Runs after the slide-level
   // merge above so stale client copies of other users' slides don't
   // read as edits.
-  await enforceSlideWritePolicy({
+  await enforceSlideWritePolicy(seam.storageScope, {
     existing,
     nextSlides: data.slides,
     nextI18nVersions: data?.i18n?.versions || null,
     user: opts?.user || null,
     actorUserId: ctx?.actorUserId || null,
     bypassLockCheck: !!opts?.bypassLockCheck,
-    ctx,
   });
 
   // Text colour over a background image (B627). After the lock policy, not
