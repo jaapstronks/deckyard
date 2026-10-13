@@ -10,6 +10,8 @@
  * the old branch order exactly.
  */
 
+import { rejectIfSsoEnforced } from '../../auth/sso-enforcement.js';
+
 import {
   authEnabled,
   clearSessionCookie,
@@ -76,6 +78,8 @@ async function handleDevLogin({ req, res }) {
 
 /** POST /api/auth/login */
 async function handleLogin({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   // Build context for database operations
   const ctx = { repoRoot, req };
 

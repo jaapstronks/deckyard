@@ -9,6 +9,8 @@
  * order exactly.
  */
 
+import { rejectIfSsoEnforced } from '../../auth/sso-enforcement.js';
+
 import { crossOrganizationScope } from '../../storage/scope.js';
 
 import {
@@ -121,6 +123,8 @@ function resetCtx(repoRoot) {
 // Request a password reset email
 // ============================================================
 async function handleForgotPassword({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   if (!authEnabled()) {
     return badRequest(
       res,
@@ -254,6 +258,8 @@ async function handleResetPasswordValidate({ res, url }) {
 // Reset password using a token
 // ============================================================
 async function handleResetPassword({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   const ctx = resetCtx(repoRoot);
 
   if (!authEnabled()) {
