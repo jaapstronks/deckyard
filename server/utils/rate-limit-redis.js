@@ -7,8 +7,7 @@
  * - On each request, we remove expired entries and count remaining
  * - If count exceeds capacity, request is denied
  *
- * This approach is more accurate than token bucket for distributed systems
- * and handles edge cases like server clock drift better.
+ * The accepted request timestamps define the rolling window.
  */
 
 import { withRedis } from './redis-client.js';
@@ -24,19 +23,21 @@ const DEFAULT_WINDOW_SECONDS = 60;
  * @param {Object} options - Rate limit options
  * @param {number} options.capacity - Maximum requests allowed in the window
  * @param {number} [options.windowSeconds] - Window size in seconds (default: 60)
- * @returns {Promise<{allowed: boolean, remaining: number, resetAt: number}>}
+ * @returns {Promise<{allowed: boolean, limit: number, remaining: number, resetAt: number, retryAfter: number}|null>}
  */
-async function checkRateLimitRedis(
+export async function checkRateLimitRedis(
   key,
   { capacity, windowSeconds = DEFAULT_WINDOW_SECONDS },
+  runWithRedis = withRedis,
 ) {
   const now = Date.now();
   const windowMs = windowSeconds * 1000;
   const windowStart = now - windowMs;
   const redisKey = `${KEY_PREFIX}${key}`;
 
-  const result = await withRedis(async (redis) => {
-    // Use pipeline for atomic operation
+  const result = await runWithRedis(async (redis) => {
+    // One ordered pipeline yields the count and boundary scores used by the
+    // decision. Redis pipelines are not transactions.
     const pipeline = redis.pipeline();
 
     // Remove entries older than the window
@@ -44,6 +45,11 @@ async function checkRateLimitRedis(
 
     // Count current entries in the window
     pipeline.zcard(redisKey);
+
+    // The oldest score controls the next admission after a refusal; the
+    // newest accepted score controls when the current window fully clears.
+    pipeline.zrange(redisKey, 0, 0, 'WITHSCORES');
+    pipeline.zrange(redisKey, -1, -1, 'WITHSCORES');
 
     // Add current request (will be checked after)
     const requestId = `${now}:${Math.random().toString(36).slice(2, 8)}`;
@@ -56,9 +62,11 @@ async function checkRateLimitRedis(
 
     // Extract results: [error, result] for each command
     const currentCount = results[1][1]; // zcard result
+    const oldest = Number(results[2][1][1]);
+    const newest = Number(results[3][1][1]);
 
     const allowed = currentCount < capacity;
-    const remaining = Math.max(0, capacity - currentCount - 1);
+    const remaining = Math.max(0, capacity - currentCount - (allowed ? 1 : 0));
 
     if (!allowed) {
       // Remove the request we just added since it's denied
@@ -67,8 +75,12 @@ async function checkRateLimitRedis(
 
     return {
       allowed,
+      limit: capacity,
       remaining,
-      resetAt: now + windowMs,
+      resetAt: Math.ceil(((allowed ? now : newest) + windowMs) / 1000),
+      retryAfter: allowed
+        ? 0
+        : Math.max(1, Math.ceil((oldest + windowMs - now) / 1000)),
     };
   }, null);
 
@@ -76,18 +88,13 @@ async function checkRateLimitRedis(
   return result;
 }
 
-/**
- * Simplified check that just returns boolean for compatibility with existing code.
- * @param {string} key - Rate limit key
- * @param {Object} options - Rate limit options
- * @param {number} options.capacity - Maximum requests in window
- * @param {number} options.refillPerSec - Refill rate (converted to window size)
- * @returns {Promise<boolean|null>} True if allowed, false if denied, null if Redis unavailable
- */
-export async function allowRequestRedis(key, { capacity, refillPerSec }) {
-  // Convert refillPerSec to window size
-  // If refillPerSec = 1, window = capacity seconds (token bucket equivalent)
-  // If refillPerSec = 0.25, window = capacity * 4 seconds
+/** Return the Redis decision and header values from the same window check. */
+export async function allowRequestRedisDetails(
+  key,
+  { capacity, refillPerSec },
+) {
+  // The existing Redis backend uses a sliding window sized from the tier's
+  // sustained rate; the in-memory backend refills tokens continuously.
   const windowSeconds = Math.ceil(capacity / refillPerSec);
 
   const result = await checkRateLimitRedis(key, { capacity, windowSeconds });
@@ -96,5 +103,5 @@ export async function allowRequestRedis(key, { capacity, refillPerSec }) {
     return null; // Signal that Redis is unavailable
   }
 
-  return result.allowed;
+  return result;
 }

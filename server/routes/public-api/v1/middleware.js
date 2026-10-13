@@ -15,7 +15,7 @@ import {
   checkAiRateLimit,
   checkExportRateLimit,
 } from '../../../storage/api-usage.js';
-import { allowRequest } from '../../../utils/rate-limit.js';
+import { checkRequestRateLimit as consumeRequestLimit } from '../../../utils/rate-limit.js';
 import { dispatchRoutes } from '../../../utils/router.js';
 import { apiTierBucket } from '../../../config/rate-limits.js';
 import {
@@ -251,7 +251,7 @@ export async function readApiV1Body(ctx, req, { requireObject = false } = {}) {
 
 /**
  * Check per-minute rate limit for the API key.
- * Uses a Redis-backed (or in-memory fallback) token bucket.
+ * Uses the configured Redis sliding window or the in-memory token bucket.
  * @param {Object} ctx - Request context with apiKey
  * @returns {Promise<boolean>} - True if allowed, false if rate limited
  */
@@ -264,19 +264,27 @@ export async function checkRequestRateLimit(ctx) {
   const limits = TIER_LIMITS[tier] || TIER_LIMITS.free;
   const key = `api:${apiKey.id}`;
 
-  const allowed = await allowRequest(
+  const decision = await consumeRequestLimit(
     key,
     apiTierBucket(limits.requestsPerMinute),
   );
+  ctx.requestRateLimitHeaders = {
+    'X-RateLimit-Limit': String(decision.limit),
+    'X-RateLimit-Remaining': String(decision.remaining),
+    'X-RateLimit-Reset': String(decision.resetAt),
+  };
 
-  if (!allowed) {
+  if (!decision.allowed) {
     sendV1Error(
       res,
       429,
       'Rate limit exceeded. Please slow down your requests.',
       {
         code: 'rate_limited',
-        headers: { 'Retry-After': '60' },
+        headers: {
+          ...ctx.requestRateLimitHeaders,
+          'Retry-After': String(decision.retryAfter),
+        },
       },
     );
     return false;
@@ -408,12 +416,12 @@ async function apiResponse(ctx, status, data, limitType = 'requests') {
 
   // Add rate limit headers if we have an API key
   if (apiKey) {
-    const limitHeaders = await getRateLimitHeaders(
-      apiKey.id,
-      apiKey.tier,
-      limitType,
+    Object.assign(
+      headers,
+      limitType === 'requests'
+        ? ctx.requestRateLimitHeaders
+        : await getRateLimitHeaders(apiKey.id, apiKey.tier, limitType),
     );
-    Object.assign(headers, limitHeaders);
   }
 
   serveJson(res, status, data, headers);
@@ -537,12 +545,7 @@ export async function apiError(
 ) {
   const { res, apiKey } = ctx;
   const merged = {};
-  if (apiKey) {
-    Object.assign(
-      merged,
-      await getRateLimitHeaders(apiKey.id, apiKey.tier, 'requests'),
-    );
-  }
+  if (apiKey) Object.assign(merged, ctx.requestRateLimitHeaders);
   Object.assign(merged, headers || {});
   sendV1Error(res, status, message, { code, details, headers: merged });
 }

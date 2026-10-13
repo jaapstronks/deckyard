@@ -1,5 +1,5 @@
 import { mightRedisBeAvailable } from './redis-client.js';
-import { allowRequestRedis } from './rate-limit-redis.js';
+import { allowRequestRedisDetails } from './rate-limit-redis.js';
 import { envBool, envInt } from '../config/utils.js';
 import {
   LOGIN_LIMITS,
@@ -132,9 +132,9 @@ function pruneBuckets(now) {
  * Used as fallback when Redis is unavailable.
  * @param {string} key - Rate limit key
  * @param {Object} options - Rate limit options
- * @returns {boolean} True if request is allowed
+ * @returns {{allowed: boolean, limit: number, remaining: number, resetAt: number, retryAfter: number}}
  */
-function allowRequestInMemory(key, { capacity, refillPerSec }) {
+function checkRequestInMemory(key, { capacity, refillPerSec }) {
   const cap = Math.max(1, Number(capacity || 0) || 1);
   const rps = Math.max(0.001, Number(refillPerSec || 0) || 1);
   const now = Date.now();
@@ -154,9 +154,15 @@ function allowRequestInMemory(key, { capacity, refillPerSec }) {
   b.cap = cap;
   b.rps = rps;
 
-  if (b.tokens < 1) return false;
-  b.tokens -= 1;
-  return true;
+  const allowed = b.tokens >= 1;
+  if (allowed) b.tokens -= 1;
+  return {
+    allowed,
+    limit: cap,
+    remaining: Math.floor(b.tokens),
+    resetAt: Math.ceil((now + ((cap - b.tokens) / rps) * 1000) / 1000),
+    retryAfter: allowed ? 0 : Math.ceil((1 - b.tokens) / rps),
+  };
 }
 
 /**
@@ -192,10 +198,29 @@ export function resetRateLimitBuckets() {
  * @returns {Promise<boolean>} True if request is allowed
  */
 export async function allowRequest(key, { capacity, refillPerSec }) {
+  return (await checkRequestRateLimit(key, { capacity, refillPerSec })).allowed;
+}
+
+/**
+ * Consume one request and return the decision and its header values together.
+ * `resetAt` is when the current budget is full again; `retryAfter` is when a
+ * denied request can first be admitted. Both use the backend that decided.
+ */
+export async function checkRequestRateLimit(
+  key,
+  { capacity, refillPerSec },
+  {
+    redisAvailable = mightRedisBeAvailable,
+    checkRedis = allowRequestRedisDetails,
+  } = {},
+) {
   // Try Redis first for distributed rate limiting when it might be available.
-  if (mightRedisBeAvailable()) {
+  if (redisAvailable()) {
     try {
-      const result = await allowRequestRedis(key, { capacity, refillPerSec });
+      const result = await checkRedis(key, {
+        capacity,
+        refillPerSec,
+      });
       if (result !== null) {
         return result;
       }
@@ -207,7 +232,7 @@ export async function allowRequest(key, { capacity, refillPerSec }) {
   }
 
   // Redis not configured or unavailable, use in-memory.
-  return allowRequestInMemory(key, { capacity, refillPerSec });
+  return checkRequestInMemory(key, { capacity, refillPerSec });
 }
 
 /**
@@ -218,7 +243,7 @@ export async function allowRequest(key, { capacity, refillPerSec }) {
  * @returns {boolean} True if request is allowed
  */
 export function allowRequestSync(key, { capacity, refillPerSec }) {
-  return allowRequestInMemory(key, { capacity, refillPerSec });
+  return checkRequestInMemory(key, { capacity, refillPerSec }).allowed;
 }
 
 /**

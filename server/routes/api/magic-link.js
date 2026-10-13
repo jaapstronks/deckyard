@@ -9,6 +9,8 @@
  * order exactly.
  */
 
+import { rejectIfSsoEnforced } from '../../auth/sso-enforcement.js';
+
 import { crossOrganizationScope } from '../../storage/scope.js';
 
 import { authEnabled, setSessionCookie } from '../../auth/auth.js';
@@ -88,6 +90,8 @@ function buildLoginUrl(req) {
 // Request a magic link email
 // ============================================================
 async function handleMagicLinkRequest({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   if (!authEnabled()) {
     return badRequest(
       res,
@@ -193,6 +197,8 @@ async function handleMagicLinkRequest({ repoRoot, req, res }) {
 // Verify a magic link token and create session
 // ============================================================
 async function handleMagicLinkVerify({ repoRoot, req, res }) {
+  if (rejectIfSsoEnforced(res)) return true;
+
   const ctx = createStorageScope(null, { repoRoot });
 
   if (!authEnabled()) {

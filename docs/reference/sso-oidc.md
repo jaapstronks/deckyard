@@ -5,13 +5,7 @@ install: Google Organization, Microsoft Entra ID (Azure AD), Okta, Auth0,
 Keycloak, and most modern IdPs. This is **Track 1** of the SSO work: one IdP,
 configured entirely through environment variables, no multi-tenant machinery.
 
-Password and magic-link login keep working alongside SSO unless you turn on
-`SSO_ENFORCE`. **Implementation status (beta):** `SSO_ENFORCE=true` currently
-only hides those forms on the login screen — the password, magic-link and
-password-reset endpoints still accept requests from users who have them. The
-normative target is that `SSO_ENFORCE` refuses them server-side, so that
-enforcing SSO also enforces the IdP's MFA and deprovisioning; until that
-lands, treat the setting as "SSO-first", not "SSO-only".
+Password and magic-link login keep working alongside SSO unless you turn on `SSO_ENFORCE`. With valid, enabled OIDC configuration, `SSO_ENFORCE=true` hides the local login forms and refuses `POST /api/auth/login`, `POST /api/auth/magic-link` and `POST /api/auth/forgot-password` with HTTP 403 and `{ "ok": false, "error": "sso_required" }`, before credential checks, token creation or mail. The same refusal applies to `POST /api/auth/magic-link/verify` and `POST /api/auth/reset-password`, so links issued before enforcement cannot open a new session or reset a password. Existing sessions are not revoked by this setting; `AUTH_DEV_BYPASS` retains its separate development-only gate. Enforcement is inactive if SSO is disabled or its configuration is incomplete or invalid; boot validation still rejects an enabled, invalid SSO configuration.
 
 > Multi-tenant, per-organization SSO (each org brings its own IdP through an
 > admin UI) is a separate, later track and is not planned for this codebase;
@@ -75,7 +69,7 @@ Set these in `.env` (see `.env.example` for the annotated block):
 | `OIDC_GROUPS_CLAIM`    | no       | Comma-separated claims the group/role values are read from; each a claim name or a dot path (`realm_access.roles`). Default `groups,roles`. See [Role mapping](#role-mapping).                                                                                                                      |
 | `OIDC_ORG_CLAIM`       | no       | Exact ID-token claim name whose string value matches `organizations.external_id`. Set that value on an existing organization through `PATCH /api/organizations/:id` as an instance admin who also administers that organization (D243). Missing or unknown values refuse login.                     |
 | `OIDC_EXTRA_SCOPES`    | no       | Space-separated scopes requested on top of `openid email profile`, which are always requested. Needed when the IdP sends a claim only for its own scope, e.g. `urn:zitadel:iam:user:resourceowner` for ZITADEL's organization claim. A comma or another character a scope cannot hold refuses boot. |
-| `SSO_ENFORCE`          | no       | `true` hides the password + magic-link forms on the login screen. Default `false`. Does **not** yet refuse those endpoints — see the status note above.                                                                                                                                             |
+| `SSO_ENFORCE`          | no       | `true` hides local login forms and refuses local login/recovery requests and token redemption with `sso_required` (403). Requires valid, enabled SSO. Default `false`.                                                                                                                              |
 | `SSO_BUTTON_LABEL`     | no       | The words on the SSO button, e.g. `Sign in with Acme ID`. The invite report that tells an inviter how a new member gets in names the same words. Default: the translated "Sign in with SSO".                                                                                                        |
 
 The sign-in card can carry the instance logo too: that is `APP_LOGO_URL`,
