@@ -4,6 +4,29 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.66.0](https://github.com/jaapstronks/deckyard/compare/v1.65.0...v1.66.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* The 42 storage exports enumerated above now require StorageScope as their first argument; every old argument shifts one position, including explicit database arguments. No legacy overload is supported.
+* Request X-RateLimit-* headers describe the actual per-key budget instead of theoretical daily totals. getRateLimitHeaders in server/storage/api-usage.js accepts only explicit ai or exports limits; request callers use checkRequestRateLimit from server/utils/rate-limit.js. The allowRequestRedis export in server/utils/rate-limit-redis.js becomes allowRequestRedisDetails and returns a decision object; use its .allowed value, or use allowRequest from server/utils/rate-limit.js for boolean admission.
+
+### Fixed
+
+* report actual public API request limits ([#1637](https://github.com/jaapstronks/deckyard/issues/1637)) ([57bba34](https://github.com/jaapstronks/deckyard/commit/57bba34772b5d3e316c9c710d000a6e7208fc9b0))
+
+
+### Security
+
+* enforce SSO on local authentication endpoints ([#1634](https://github.com/jaapstronks/deckyard/issues/1634)) ([dcb3b4d](https://github.com/jaapstronks/deckyard/commit/dcb3b4d7c2d9685fbcfef444774b07c5848a6174))
+
+
+### Changed
+
+* make analytics and audience storage scope-first ([#1636](https://github.com/jaapstronks/deckyard/issues/1636)) ([30375e8](https://github.com/jaapstronks/deckyard/commit/30375e8322dfb798fdc263a945a41dc523f1dec4))
+* release 1.66.0 as a beta minor ([9b7c2d3](https://github.com/jaapstronks/deckyard/commit/9b7c2d3d511af4a2c06117f7f652ff83e460a63f))
+
 ## [1.65.0](https://github.com/jaapstronks/deckyard/compare/v1.64.0...v1.65.0) (2026-10-13)
 
 
