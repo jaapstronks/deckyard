@@ -20,12 +20,12 @@ import { toStorageContext } from '../scope.js';
 
 /**
  * Read the stored Y.Doc state (one merged yjs update) for a presentation.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id - Presentation ID
  * @returns {Promise<Uint8Array|null>}
  */
-export async function getYDocState(storageScope, id) {
-  const ctx = toStorageContext(storageScope, 'getYDocState');
+export async function getYDocState(scope, id) {
+  const ctx = toStorageContext(scope, 'getYDocState');
   const db = getDb();
   const orgId = getOrgId(ctx);
 
@@ -42,13 +42,13 @@ export async function getYDocState(storageScope, id) {
 
 /**
  * Store the Y.Doc state for a presentation.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id - Presentation ID
  * @param {Uint8Array} state - Merged yjs update
  * @returns {Promise<boolean>}
  */
-export async function setYDocState(storageScope, id, state) {
-  const ctx = toStorageContext(storageScope, 'setYDocState');
+export async function setYDocState(scope, id, state) {
+  const ctx = toStorageContext(scope, 'setYDocState');
   const db = getDb();
   const orgId = getOrgId(ctx);
   const buf = Buffer.from(state);
@@ -74,12 +74,12 @@ export async function setYDocState(storageScope, id, state) {
 
 /**
  * Delete the stored Y.Doc state for a presentation.
- * @param {import('../scope.js').StorageScope} storageScope
+ * @param {import('../scope.js').StorageScope} scope
  * @param {string} id - Presentation ID
  * @returns {Promise<boolean>}
  */
-export async function deleteYDocState(storageScope, id) {
-  const ctx = toStorageContext(storageScope, 'deleteYDocState');
+export async function deleteYDocState(scope, id) {
+  const ctx = toStorageContext(scope, 'deleteYDocState');
   const db = getDb();
   const orgId = getOrgId(ctx);
 

@@ -8,7 +8,7 @@
  *
  * `userEmail` stays a separate argument where it appears: it names the *subject*
  * of a personal-library operation, which is not the same question as who the
- * storageScope attributes the write to (`actorEmail`).
+ * scope attributes the write to (`actorEmail`).
  *
  * Queries run directly through Kysely (B79/D34 removed the adapter
  * indirection); getDb() throws on an uninitialized database.
@@ -511,11 +511,11 @@ async function deleteLibraryItem(ctx, target) {
 // Personal library functions
 
 export async function listPersonalLibrary(
-  storageScope,
+  scope,
   userEmail,
   { themeId = '' } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'listPersonalLibrary', {
+  const ctx = toStorageContext(scope, 'listPersonalLibrary', {
     userEmail,
   });
   const items = await listSlideLibraryRows(ctx, {
@@ -527,12 +527,12 @@ export async function listPersonalLibrary(
 }
 
 export async function createPersonalLibraryItem(
-  storageScope,
+  scope,
   userEmail,
   input,
   { actorEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'createPersonalLibraryItem', {
+  const ctx = toStorageContext(scope, 'createPersonalLibraryItem', {
     userEmail,
     actorEmail,
   });
@@ -558,13 +558,13 @@ export async function createPersonalLibraryItem(
  * organization item, is `not_found`. See `patchLibraryItem` for the contract.
  */
 export async function updatePersonalLibraryItem(
-  storageScope,
+  scope,
   userEmail,
   id,
   patch,
   { actorEmail, expectedRevision = null } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'updatePersonalLibraryItem', {
+  const ctx = toStorageContext(scope, 'updatePersonalLibraryItem', {
     userEmail,
     actorEmail,
   });
@@ -576,8 +576,8 @@ export async function updatePersonalLibraryItem(
   );
 }
 
-export async function deletePersonalLibraryItem(storageScope, userEmail, id) {
-  const ctx = toStorageContext(storageScope, 'deletePersonalLibraryItem', {
+export async function deletePersonalLibraryItem(scope, userEmail, id) {
+  const ctx = toStorageContext(scope, 'deletePersonalLibraryItem', {
     userEmail,
   });
   const deleted = await deleteLibraryItem(ctx, {
@@ -592,10 +592,10 @@ export async function deletePersonalLibraryItem(storageScope, userEmail, id) {
 // Organization-shelf library functions
 
 export async function listOrganizationLibrary(
-  storageScope,
+  scope,
   { themeId = '', userEmail = '' } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'listOrganizationLibrary', {
+  const ctx = toStorageContext(scope, 'listOrganizationLibrary', {
     userEmail,
   });
   const items = await listSlideLibraryRows(ctx, {
@@ -606,11 +606,11 @@ export async function listOrganizationLibrary(
 }
 
 export async function getOrganizationLibraryItem(
-  storageScope,
+  scope,
   id,
   { userEmail = '' } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'getOrganizationLibraryItem', {
+  const ctx = toStorageContext(scope, 'getOrganizationLibraryItem', {
     userEmail,
   });
   const item = await getSlideLibraryRow(id, ctx);
@@ -619,11 +619,11 @@ export async function getOrganizationLibraryItem(
 }
 
 export async function createOrganizationLibraryItem(
-  storageScope,
+  scope,
   input,
   { actorEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'createOrganizationLibraryItem', {
+  const ctx = toStorageContext(scope, 'createOrganizationLibraryItem', {
     actorEmail,
   });
   const name = typeof input?.name === 'string' ? input.name.trim() : '';
@@ -649,12 +649,12 @@ export async function createOrganizationLibraryItem(
  * `not_found`. See `patchLibraryItem` for the contract.
  */
 export async function updateOrganizationLibraryItem(
-  storageScope,
+  scope,
   id,
   patch,
   { actorEmail, expectedRevision = null, allowEdit } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'updateOrganizationLibraryItem', {
+  const ctx = toStorageContext(scope, 'updateOrganizationLibraryItem', {
     actorEmail,
   });
   return patchLibraryItem(ctx, { id, shelf: 'organization' }, patch, {
@@ -665,11 +665,11 @@ export async function updateOrganizationLibraryItem(
 }
 
 export async function deleteOrganizationLibraryItem(
-  storageScope,
+  scope,
   id,
   { actorEmail, allowDelete } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'deleteOrganizationLibraryItem', {
+  const ctx = toStorageContext(scope, 'deleteOrganizationLibraryItem', {
     actorEmail,
   });
   // Resolve the guard's target directly by id, never through the org list
@@ -703,7 +703,7 @@ export async function deleteOrganizationLibraryItem(
 /**
  * Read the tags of one library item, selected like every mutation selects it.
  *
- * @param {object} storageScope
+ * @param {object} scope
  * @param {object} target
  * @param {string} target.id
  * @param {'personal'|'organization'} target.shelf
@@ -712,11 +712,11 @@ export async function deleteOrganizationLibraryItem(
  * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'}>}
  */
 export async function getTagsForSlideLibraryItem(
-  storageScope,
+  scope,
   target,
   { userEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'getTagsForSlideLibraryItem', {
+  const ctx = toStorageContext(scope, 'getTagsForSlideLibraryItem', {
     userEmail,
   });
   const existing = await readItem(ctx, {
@@ -742,11 +742,11 @@ export async function getTagsForSlideLibraryItem(
 }
 
 export async function getTagsForSlideLibraryItems(
-  storageScope,
+  scope,
   ids,
   { userEmail } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'getTagsForSlideLibraryItems', {
+  const ctx = toStorageContext(scope, 'getTagsForSlideLibraryItems', {
     userEmail,
   });
   if (!ids || ids.length === 0) {
@@ -791,7 +791,7 @@ export async function getTagsForSlideLibraryItems(
  * `forbidden`. The replacement itself is `replaceTagLinks`, the one
  * tag-replacement path, and is atomic (B343, D184).
  *
- * @param {object} storageScope
+ * @param {object} scope
  * @param {object} target - `{ id, shelf }`, as `getTagsForSlideLibraryItem`
  * @param {string[]} tagNames
  * @param {object} [opts]
@@ -800,12 +800,12 @@ export async function getTagsForSlideLibraryItems(
  * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'|'forbidden'|'invalid'}>}
  */
 export async function setTagsForSlideLibraryItem(
-  storageScope,
+  scope,
   target,
   tagNames,
   { actorEmail, allowEdit } = {},
 ) {
-  const ctx = toStorageContext(storageScope, 'setTagsForSlideLibraryItem', {
+  const ctx = toStorageContext(scope, 'setTagsForSlideLibraryItem', {
     actorEmail,
   });
   const existing = await readItem(ctx, {
