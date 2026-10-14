@@ -26,6 +26,7 @@ import {
   NO_DISPLAY_NAMES,
 } from './display-identity.js';
 import { nowIso } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { migrateLibraryItem } from '../../shared/slide-types/schema-version.js';
 import { mergeLibraryI18n } from '../../shared/slide-library/merge-content.js';
 import { AppError, revisionConflict } from '../utils/errors.js';
@@ -120,8 +121,8 @@ export function mapSlideLibraryRow(
 }
 
 /**
- * Whether `viewerEmail` starred this row. The stored addresses are the
- * lowercased caller addresses the routes pass in.
+ * Whether `viewerEmail` starred this row. The stored addresses went through
+ * `normalizeEmail` (the favorite patch below, migration 092 for older rows).
  * @param {{favorites?: string[]|null}} row
  * @param {string|null} viewerEmail
  * @returns {boolean}
@@ -129,12 +130,6 @@ export function mapSlideLibraryRow(
 function isFavoriteOf(row, viewerEmail) {
   const viewer = normalizeEmail(viewerEmail);
   return !!viewer && (row.favorites || []).includes(viewer);
-}
-
-function normalizeEmail(email) {
-  return String(email || '')
-    .trim()
-    .toLowerCase();
 }
 
 /**
@@ -174,7 +169,7 @@ async function listSlideLibraryRows(ctx, opts = {}) {
     query = query.where('shelf', '=', opts.shelf);
   }
   if (opts?.ownerEmail) {
-    query = query.where('owner_email', '=', opts.ownerEmail);
+    query = query.where('owner_email', '=', normalizeEmail(opts.ownerEmail));
   }
   if (opts?.themeId) {
     query = query.where('theme_id', '=', opts.themeId);
@@ -272,7 +267,7 @@ async function createSlideLibraryRow(data, ctx) {
   // Dual-key (T10 PR F2): resolve the id once and stamp it beside both the
   // created_by and updated_by e-mail (the same actor at create), so the
   // organization-library authz guard can match on the stable id.
-  const actorEmail = ctx?.actorEmail || null;
+  const actorEmail = normalizeEmail(ctx?.actorEmail);
   const actorResolution = actorEmail
     ? await resolveIdentityByEmail(ctx, actorEmail)
     : null;
@@ -282,7 +277,7 @@ async function createSlideLibraryRow(data, ctx) {
     .insertInto('slide_library')
     .values({
       organization_id: orgId,
-      owner_email: data.ownerEmail || ctx?.actorEmail || null,
+      owner_email: normalizeEmail(data.ownerEmail) || actorEmail,
       shelf: data.shelf || 'personal',
       name: data.name,
       description: data.description || null,
@@ -382,7 +377,8 @@ function whereItem(query, { id, orgId, shelf, ownerEmail }) {
     .where('id', '=', id)
     .where('organization_id', '=', orgId)
     .where('shelf', '=', shelf);
-  if (shelf === 'personal') q = q.where('owner_email', '=', ownerEmail || '');
+  if (shelf === 'personal')
+    q = q.where('owner_email', '=', normalizeEmail(ownerEmail) || '');
   return q;
 }
 
@@ -462,7 +458,9 @@ async function patchLibraryItem(ctx, target, patch, opts = {}) {
   }
   if ('trashed' in patch) {
     updateData.trashed_at = patch.trashed ? nowIso() : null;
-    updateData.trashed_by = patch.trashed ? opts.trashedBy || null : null;
+    updateData.trashed_by = patch.trashed
+      ? normalizeEmail(opts.trashedBy)
+      : null;
   }
   // Only a change to the item itself is stamped as an update; a favorite is
   // the caller's own mark and leaves `updated_at`/`updated_by` alone.
@@ -482,7 +480,7 @@ async function patchLibraryItem(ctx, target, patch, opts = {}) {
   // the id half while the e-mail half keeps the previous writer.
   if (changesItem && ctx?.actorEmail) {
     const actorResolution = await resolveIdentityByEmail(ctx, ctx.actorEmail);
-    updateData.updated_by = ctx.actorEmail;
+    updateData.updated_by = normalizeEmail(ctx.actorEmail);
     updateData.updated_by_user_id = actorResolution?.userId ?? null;
   }
   if (edits) updateData.revision = expectedRevision + 1;

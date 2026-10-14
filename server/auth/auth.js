@@ -12,6 +12,7 @@ import { isMultiOrgEnabled } from '../config/features.js';
 import { getDefaultOrganizationId } from '../config/database.js';
 import { envBool, envStr } from '../config/utils.js';
 import { createLogger } from '../utils/logger.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { DEV_BYPASS_EMAIL, resolveDevBypassUserId } from './dev-bypass.js';
 
 const log = createLogger('auth');
@@ -21,7 +22,7 @@ const COOKIE_NAME = 'sb_session';
 let warnedNoAdminEmail = false;
 
 function getAdminEmail() {
-  const email = envStr('AUTH_ADMIN_EMAIL').toLowerCase();
+  const email = normalizeEmail(envStr('AUTH_ADMIN_EMAIL')) || '';
   if (!email && !warnedNoAdminEmail) {
     warnedNoAdminEmail = true;
     log.warn('AUTH_ADMIN_EMAIL not configured - no admin user set');
@@ -246,7 +247,7 @@ function parseSessionToken(req) {
   // null once past. See utils/signed-payload.js.
   const payload = readSignedPayload(String(token), secret);
   if (!payload) return null;
-  const email = String(payload?.email || '').toLowerCase();
+  const email = normalizeEmail(payload?.email);
   if (!email) return null;
 
   return payload;
@@ -296,7 +297,7 @@ export function getUserFromRequest(req) {
   const payload = parseSessionToken(req);
   if (!payload) return null;
 
-  const email = String(payload?.email || '').toLowerCase();
+  const email = normalizeEmail(payload?.email);
 
   // Return partial info for database users - needs async validation
   if (payload?.v) {
@@ -357,7 +358,7 @@ export async function getUserFromRequestAsync(req, ctx) {
   const payload = parseSessionToken(req);
   if (!payload) return null;
 
-  const email = String(payload?.email || '').toLowerCase();
+  const email = normalizeEmail(payload?.email);
 
   // Check database users - support all auth sources. Identity is resolved
   // across organizations: which organization the session is in is a separate
@@ -534,9 +535,7 @@ export async function verifyLoginAsync(emailRaw, passwordRaw, ctx) {
     };
   if (devAuthBypassEnabled()) return devBypassUserAsync();
 
-  const email = String(emailRaw || '')
-    .trim()
-    .toLowerCase();
+  const email = normalizeEmail(emailRaw) || '';
   const password = String(passwordRaw || '');
 
   // Check database user. Logging in is an identity question, so the lookup is

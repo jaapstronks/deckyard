@@ -5,6 +5,7 @@
 
 import crypto from 'node:crypto';
 import { norm, nowIso, durationSinceSeconds } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { withDbGuard } from '../../db/client.js';
 import { toStorageContext } from '../scope.js';
 import { ANALYTICS_CONFIG, applyDateFilters } from '../../analytics/helpers.js';
@@ -82,7 +83,7 @@ export async function createViewSession(scope, data) {
         source_type: sourceType,
         source_id: data?.sourceId ?? null,
         viewer_type: data?.viewerType ?? VIEWER_TYPES.ANONYMOUS,
-        viewer_email: data?.viewerEmail?.toLowerCase() ?? null,
+        viewer_email: normalizeEmail(data?.viewerEmail),
         device_id: data?.deviceId ?? null,
         started_at: now,
         last_activity_at: now,

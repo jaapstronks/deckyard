@@ -25,7 +25,7 @@
 
 import { repoRoot as defaultRepoRoot } from '../config/paths.js';
 import { envInt } from '../config/utils.js';
-import { normalizeEmail } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { listCollaborators } from '../storage/collaborators.js';
 import { listSubscriptions } from '../storage/presentations/index.js';
 import { getUserSettings } from '../storage/settings.js';

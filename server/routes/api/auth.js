@@ -40,7 +40,7 @@ import { logAuthEvent } from '../../storage/password-reset.js';
 import { getClientIp } from '../../utils/context.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { allowLoginAttempt } from '../../utils/rate-limit.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { resolveDesignerCapability } from '../../utils/designer.js';
 import { getSsoPublicConfig } from '../../config/sso.js';
 import { getBranding } from '../../config/branding.js';

@@ -8,7 +8,7 @@
 import { getAppSettings, getUserSettings } from '../storage/settings.js';
 import { maybeFireWebhook } from '../utils/webhooks.js';
 import { sendCommentNotification } from '../integrations/brevo.js';
-import { normalizeEmail } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { envStr, getAppBaseUrl } from '../config/utils.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 import {

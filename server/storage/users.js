@@ -5,7 +5,8 @@
 
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
-import { nowIso, isoAfter, normalizeEmail } from '../utils/normalize.js';
+import { nowIso, isoAfter } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { withDbGuard } from '../db/client.js';
 import { escapeLikePattern } from './utils/index.js';
 import {

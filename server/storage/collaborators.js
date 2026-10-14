@@ -11,7 +11,8 @@
 
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
-import { norm, nowIso, normalizeEmail } from '../utils/normalize.js';
+import { norm, nowIso } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { withDbGuard } from '../db/client.js';
 import { isValidPermission } from '../../shared/constants/permissions.js';
 import { resolveDisplayNames, toDisplayIdentity } from './display-identity.js';

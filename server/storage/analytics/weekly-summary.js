@@ -6,7 +6,7 @@ import { toStorageContext } from '../scope.js';
 
 import { sql } from 'kysely';
 import { withDbGuard } from '../../db/client.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
 
 // ============================================================

@@ -28,6 +28,7 @@ import { getFeatureFlags } from '../../config/flags-snapshot.js';
 import { getDataUrl } from '../../utils/request-validators.js';
 import { createLogger } from '../../utils/logger.js';
 import { dispatchRoutes } from '../../utils/router.js';
+import { normalizeEmail } from '../../../shared/email.js';
 const log = createLogger('profile');
 
 // Profile image constraints
@@ -89,8 +90,7 @@ async function handleProfileImageUpload({
       .toBuffer();
 
     // Generate unique filename for profile image
-    const emailSlug = email
-      .toLowerCase()
+    const emailSlug = (normalizeEmail(email) || '')
       .replaceAll('@', '-at-')
       .replaceAll('.', '-')
       .replaceAll('+', '-plus-')
@@ -150,7 +150,7 @@ async function handleProfileImageAdmin(
   { repoRoot, storageScope, req, res, authedUser },
   rawTargetEmail,
 ) {
-  const targetEmail = decodeURIComponent(rawTargetEmail).toLowerCase().trim();
+  const targetEmail = normalizeEmail(decodeURIComponent(rawTargetEmail));
   if (!targetEmail || !targetEmail.includes('@')) {
     return badRequest(res, 'Invalid email address');
   }

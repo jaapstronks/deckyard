@@ -7,6 +7,8 @@
  * - settings.aiAssistant.email
  */
 
+import { normalizeEmail } from '../email.js';
+
 /** Default email identifier for AI-generated suggestions */
 export const DEFAULT_AI_EMAIL = 'ai-assistant@deckyard.eu';
 
@@ -45,14 +47,9 @@ export const DREAMBOT_NAME = DEFAULT_AI_NAME;
  * @returns {boolean}
  */
 export function isAiAuthorEmail(email, configuredEmail) {
-  if (!email) return false;
-  const candidate = String(email).trim().toLowerCase();
+  const candidate = normalizeEmail(email);
   if (!candidate) return false;
-  if (
-    configuredEmail &&
-    candidate === String(configuredEmail).trim().toLowerCase()
-  )
-    return true;
+  if (candidate === normalizeEmail(configuredEmail)) return true;
   if (candidate === DEFAULT_AI_EMAIL) return true;
   return LEGACY_AI_EMAILS.includes(candidate);
 }

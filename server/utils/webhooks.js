@@ -6,6 +6,7 @@ import { assertPublicHttpUrl } from './ssrf-guard.js';
 import { crossOrganizationScope } from '../storage/scope.js';
 import { createLogger } from './logger.js';
 import { fireAndForget } from './fire-and-forget.js';
+import { normalizeEmail } from '../../shared/email.js';
 
 const log = createLogger('webhook');
 
@@ -155,9 +156,7 @@ function buildCommonPayload({
     publishId && publishSlug ? `/p/${publishId}-${publishSlug}` : null;
   const publicUrl = publicPath ? toAbsoluteUrl(origin, publicPath) : null;
 
-  const email = String(authedUser?.email || '')
-    .trim()
-    .toLowerCase();
+  const email = normalizeEmail(authedUser?.email);
   const name = pickDisplayName({ authedUser, userSettings });
 
   return {
@@ -213,9 +212,7 @@ function buildSlideLibraryPayload({
   const slidePath = slideId ? `/app/slide-library/organization/${slideId}` : '';
   const slideUrl = slidePath ? toAbsoluteUrl(origin, slidePath) : null;
 
-  const email = String(authedUser?.email || '')
-    .trim()
-    .toLowerCase();
+  const email = normalizeEmail(authedUser?.email);
   const name = pickDisplayName({ authedUser, userSettings });
 
   return {

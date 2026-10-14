@@ -8,6 +8,7 @@ import {
   COMPANION_NOTES_LIMITS,
 } from '../config/rate-limits.js';
 import { createLogger } from './logger.js';
+import { normalizeEmail } from '../../shared/email.js';
 
 const log = createLogger('rate-limit');
 
@@ -261,7 +262,7 @@ export async function allowLoginAttempt({ ip, email } = {}) {
   const ipKey = `login:ip:${String(ip || 'unknown')}`;
   const ipOk = await allowRequest(ipKey, LOGIN_LIMITS.ip);
   if (!ipOk) return false;
-  const emailKey = `login:email:${String(email || 'unknown').toLowerCase()}`;
+  const emailKey = `login:email:${normalizeEmail(email) || 'unknown'}`;
   const emailOk = await allowRequest(emailKey, LOGIN_LIMITS.email);
   return emailOk;
 }

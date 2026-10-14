@@ -31,7 +31,7 @@ import {
 } from '../../storage/users.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
 import { checkRequestRateLimit } from '../../utils/rate-limit.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 import {
   getMembershipByEmail,
   updateMemberDesigner,

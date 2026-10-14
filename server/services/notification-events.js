@@ -7,7 +7,7 @@
  * and the domain names below re-export the hub's methods.
  */
 
-import { normalizeEmail } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { createSseHub } from '../utils/sse.js';
 
 const hub = createSseHub({ normalizeKey: normalizeEmail });

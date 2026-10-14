@@ -29,7 +29,7 @@ export const EMAIL_COLUMNS = Object.freeze([
 ]);
 
 /**
- * The SQL spelling of `normalizeEmail` (server/utils/normalize.js) for one
+ * The SQL spelling of `normalizeEmail` (shared/email.js) for one
  * column: trimmed, lower-cased, and NULL when nothing is left.
  * @param {string} column
  * @returns {import('kysely').RawBuilder<string|null>}

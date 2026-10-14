@@ -18,7 +18,7 @@
  */
 
 import { repoRoot as defaultRepoRoot } from '../config/paths.js';
-import { normalizeEmail } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { parseMentions } from '../../shared/comment-mentions.js';
 import { listCollaborators } from '../storage/collaborators.js';
 import {
