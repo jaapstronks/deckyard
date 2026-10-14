@@ -11,7 +11,10 @@ import { withPresentationAuth } from '../../../utils/route-middleware.js';
 import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { parseIfMatchRevision, parseSlideMergeHeaders } from './helpers.js';
 import { savePresentation } from '../../../services/save-presentation.js';
-import { filterForViewOnly } from '../../../utils/public-output.js';
+import {
+  filterForViewOnly,
+  mapDeckSlideLists,
+} from '../../../utils/public-output.js';
 import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
 import { pinSlideJumps } from '../../../../shared/slide-types.js';
@@ -45,9 +48,10 @@ export async function handlePresentationRevision(
 
 /**
  * The deck a reader without edit rights gets: the slides hidden from viewers
- * left out and drafts marked. The presenter counts a positional jump (`#N`)
- * in what it receives, so every `#N` is first pinned to the slide it names in
- * the stored order; a hidden target is then no target.
+ * left out and drafts marked, in `slides` and in every language version. The
+ * presenter counts a positional jump (`#N`) in what it receives, so every
+ * `#N` is first pinned to the slide it names in the stored order of its own
+ * list; a hidden target is then no target.
  *
  * @param {Object} deck - the deck as served, in stored order
  * @param {Object} storageScope - the caller's scope; the custom slide types
@@ -60,7 +64,7 @@ async function viewOnlyDeck(deck, storageScope) {
     organizationId: deck.organizationId,
   });
   return filterForViewOnly(
-    { ...deck, slides: pinSlideJumps(deck.slides, slideTypes) },
+    mapDeckSlideLists(deck, (slides) => pinSlideJumps(slides, slideTypes)),
     { markDrafts: true },
   );
 }

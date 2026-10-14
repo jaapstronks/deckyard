@@ -30,6 +30,14 @@ process.env.AUTH_SECRET = ['deckyard', 'test', 'auth']
   .padEnd(40, '0');
 process.env.DEFAULT_ORGANIZATION_ID = '00000000-0000-0000-0000-0000000000aa';
 process.env.STORAGE_MODE = 'postgres';
+// The limiter runs on the same opt-in as tests/rate-limit-redis.test.js: a
+// disposable Redis named by RATE_LIMIT_TEST_REDIS_URL, otherwise process
+// memory. An ambient REDIS_URL is never used, so the run cannot touch a live DB.
+const REDIS_TEST_URL = process.env.RATE_LIMIT_TEST_REDIS_URL;
+if (REDIS_TEST_URL) {
+  process.env.REDIS_URL = REDIS_TEST_URL;
+  process.env.REDIS_ENABLED = 'true';
+} else process.env.REDIS_ENABLED = 'false';
 
 const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 const OTHER_ORG = '00000000-0000-0000-0000-0000000000bb';
@@ -47,6 +55,30 @@ const { handlePublicApiV1 } =
   await import('../server/routes/public-api/v1/index.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 const { SLIDE_TYPE_IDS } = await import('../shared/slide-types/registry.js');
+const { closeRedis, getRedisClient } =
+  await import('../server/utils/redis-client.js');
+
+/** Every key id below gets a bucket the moment it authenticates. */
+const API_KEY_IDS = ['key-valid', 'key-other', 'key-revoked', 'key-limit'];
+
+/**
+ * Remove this file's buckets from the test Redis, so a second run against the
+ * same instance starts from a full budget. A no-op on the memory backend.
+ */
+async function deleteRedisBuckets() {
+  if (!REDIS_TEST_URL) return;
+  const client = await getRedisClient();
+  await client?.del(
+    ...API_KEY_IDS.map((id) => `ratelimit:token-bucket:api:${id}`),
+  );
+}
+
+// Before as well as after: a run that crashed mid-file left its buckets behind.
+test.before(deleteRedisBuckets);
+test.after(async () => {
+  await deleteRedisBuckets();
+  await closeRedis();
+});
 
 /**
  * Install a freshly seeded double and point the storage facade at Postgres.
@@ -388,8 +420,8 @@ test('request headers count down to the same 429 decision', async () => {
   await installDb();
 
   // Free tier: 60 requests/minute. The limiter is keyed on the api key id and
-  // lives in process memory under test, so a dedicated key keeps this loop
-  // from interfering with the other tests.
+  // lives in process memory, or in the test Redis when one is named, so a
+  // dedicated key keeps this loop from interfering with the other tests.
   let last = null;
   for (let i = 0; i < 61; i++) {
     last = makeCtx('GET', '/api/v1/slide-types', { bearer: LIMIT_KEY });

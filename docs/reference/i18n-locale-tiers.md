@@ -12,8 +12,9 @@ here.
 | **1 — supported**   | `nl`, `en`                                                 | Complete and **gated**. Every key the code uses exists in both, and `npm test` fails if one drifts. No release ships with a Tier-1 gap.                                                                                                                          |
 | **2 — best effort** | `de`, `fr`, `es`, `pt`, `it`, `pl`, `fi`, `da`, `sv`, `no` | Present and useful, **completeness not gated**. A missing key falls back to the inline English string in the `t(key, fallback)` call, so an incomplete Tier-2 locale degrades to English rather than breaking. Tooling reports the gap; it does not block on it. |
 
-`nl` is the default UI locale; `en` is the reference — the fallback baked into
-every `t()` call is the English string, so English is what a Tier-2 gap shows.
+`en` is the default UI locale (`DEFAULT_UI_LOCALE` in `shared/constants/ui-locale.js`,
+one value shared by client and server) and also the reference — the fallback baked
+into every `t()` call is the English string, so English is what a Tier-2 gap shows.
 
 **The tier governs completeness, and nothing else.** Whatever a locale _does_
 ship is live the moment a user picks it in the language menu, so the checks on
