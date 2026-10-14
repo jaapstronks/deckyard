@@ -4,7 +4,10 @@ import {
   getSlideType,
   SLIDE_TYPES,
 } from '../../shared/slide-types/registry.js';
-import { renderSlideSectionHtml } from '../../shared/slide-types/semantic-projection.js';
+import {
+  renderSlideSectionHtml,
+  slideJumpsFor,
+} from '../../shared/slide-types/semantic-projection.js';
 import { stripFontFacesFromCss } from '../utils/embed-fonts.js';
 import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
@@ -198,6 +201,7 @@ export async function buildPrintHtml(
   pres,
   { theme = null, watermark = null, slideTypes = null } = {},
 ) {
+  const deckSlides = pres?.slides;
   pres = stripLiveOnlySlidesFromPresentation(pres);
   const docLang = resolveDocLangFromPresentation(pres);
   const css = await loadExportCssBundle(repoRoot, theme, watermark, {
@@ -212,17 +216,16 @@ export async function buildPrintHtml(
   const wmOn = css.wmOn;
   const wmText = wmOn ? escapeHtml(sandboxWatermarkText()) : '';
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
-  // A link that jumps to a slide points at that slide's section, by its place
-  // in this document.
-  const slideIds = slides.map((slide) =>
-    typeof slide?.id === 'string' ? slide.id.trim() : '',
-  );
+  // A link that jumps to a slide names it in the deck (`#N` counts the stored
+  // order, live-only slides included) and points at its section, by its place
+  // in this document (B695).
+  const slideJumps = slideJumpsFor(deckSlides, slides);
   const slidesHtml = slides
     .map((slide, index) =>
       renderSlideSectionHtml(slide, getSlideType(slide?.type, registry), {
         index,
         lang: docLang,
-        slideIds,
+        slideJumps,
       }),
     )
     .join('\n');

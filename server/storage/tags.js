@@ -178,14 +178,15 @@ function validateTagNames(tagNames) {
  * lookup lowercases through PostgreSQL and the list is deduplicated on the tag
  * it resolved to, never on a JavaScript approximation of `lower()` (B370).
  *
+ * @param {import('./scope.js').StorageScope} scope - The row's organization
  * @param {object} params
  * @param {'presentation_tags'|'slide_library_tags'} params.linkTable
  * @param {string} params.rowId - The presentation or library item
- * @param {string} params.orgId
  * @param {string[]} params.tagNames
  * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
  */
-export async function replaceTagLinks({ linkTable, rowId, orgId, tagNames }) {
+export async function replaceTagLinks(scope, { linkTable, rowId, tagNames }) {
+  const orgId = getOrgId(resolveScope(scope, 'replaceTagLinks'));
   const link = LINK_TABLES[linkTable];
   // Reaching this with another table is a caller bug, not an input error.
   if (!link) {
@@ -346,11 +347,9 @@ export async function getTagsForPresentations(scope, presentationIds) {
  * @returns {Promise<{ok: true, tags: Array<{id: string, name: string}>}|{ok: false, reason: 'not_found'}|{ok: false, reason: 'invalid', field: 'tags', fieldProblem: object, message: string}>}
  */
 export async function setTagsForPresentation(scope, presentationId, tagNames) {
-  const ctx = resolveScope(scope, 'setTagsForPresentation');
-  return replaceTagLinks({
+  return replaceTagLinks(scope, {
     linkTable: 'presentation_tags',
     rowId: presentationId,
-    orgId: getOrgId(ctx),
     tagNames,
   });
 }

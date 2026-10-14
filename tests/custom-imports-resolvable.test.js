@@ -105,9 +105,9 @@ async function relativeImportsOf(file) {
   const [imports] = parseModule(fs.readFileSync(file, 'utf8'), file);
   return (
     imports
-      .map((i) => i.n)
-      // `n` is undefined for a dynamic import with a computed specifier, and a
-      // specifier that does not start with `.` or `/` is a package.
+      .map((i) => i.specifier)
+      // `specifier` is unset for a dynamic import with a computed specifier,
+      // and a specifier that does not start with `.` or `/` is a package.
       .filter(isRelative)
   );
 }
@@ -162,13 +162,13 @@ function exportedNamesOf(file, seen = new Set()) {
   seen.add(file);
   const src = fs.readFileSync(file, 'utf8');
   const [imports, exports] = parseModule(src, file);
-  const names = new Set(exports.map((e) => e.n));
+  // A `reexport-all` record carries no name of its own; its names come from
+  // following the star re-export below.
+  const names = new Set(exports.filter((e) => e.name).map((e) => e.name));
   for (const imp of imports) {
-    // `ss`..`se` spans the whole statement, which is how a star re-export is
-    // told apart from a plain import of the same module.
-    if (!/^export\s*\*/.test(src.slice(imp.ss, imp.se))) continue;
-    if (!isRelative(imp.n)) return null;
-    const target = resolveRelative(imp.n, path.dirname(file));
+    if (imp.type !== 'reexport-star') continue;
+    if (!isRelative(imp.specifier)) return null;
+    const target = resolveRelative(imp.specifier, path.dirname(file));
     if (!target) continue; // already reported by the resolve check
     const inner = exportedNamesOf(target, seen);
     if (!inner) return null;
@@ -196,18 +196,20 @@ async function missingNamedImportsIn(files, root) {
     const src = fs.readFileSync(file, 'utf8');
     const [imports] = parseModule(src, file);
     for (const imp of imports) {
-      if (!isRelative(imp.n)) continue;
-      const statement = src.slice(imp.ss, imp.se);
+      if (!isRelative(imp.specifier)) continue;
+      const statement = src.slice(imp.importStart, imp.importEnd);
       // A dynamic import binds nothing at load time; its names are read off
       // the resolved namespace object at runtime.
-      if (imp.d > -1) continue;
-      const target = resolveRelative(imp.n, path.dirname(file));
+      if (imp.type === 'dynamic') continue;
+      const target = resolveRelative(imp.specifier, path.dirname(file));
       if (!target) continue; // the resolve check owns this one
       const provided = exportedNamesOf(target);
       if (!provided) continue;
       for (const name of importedNames(statement)) {
         if (provided.has(name)) continue;
-        missing.push(`${path.relative(root, file)} → ${imp.n}: ${name}`);
+        missing.push(
+          `${path.relative(root, file)} → ${imp.specifier}: ${name}`,
+        );
       }
     }
   }

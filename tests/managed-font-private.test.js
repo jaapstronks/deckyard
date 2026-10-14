@@ -35,8 +35,7 @@ const repoRoot = process.cwd();
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handleFontFamilies } =
   await import('../server/routes/api/font-families.js');
@@ -79,7 +78,6 @@ test.before(async () => {
 });
 
 test.after(async () => {
-  __resetStorageForTests();
   __setTestDb(null);
   await fs.rm(tmp, { recursive: true, force: true });
 });

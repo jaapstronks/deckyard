@@ -27,7 +27,8 @@ import {
   resolveNamesForAddresses,
   toStoredActorIdentity,
 } from './display-identity.js';
-import { withDbGuard, parseJson, getUserIdByEmail } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
+import { parseJson, getUserIdByEmail } from './utils/index.js';
 
 const VALID_SOURCES = ['upload', 'adobe', 'monotype', 'google'];
 const VALID_CATEGORIES = ['sans-serif', 'serif', 'display', 'monospace'];
@@ -190,7 +191,7 @@ export async function createFontFamily(scope, data) {
         created_at: now,
         updated_at: now,
         created_by: scope?.actorEmail
-          ? await getUserIdByEmail(db, orgId, scope.actorEmail)
+          ? await getUserIdByEmail(scope, db, scope.actorEmail)
           : null,
       })
       .returningAll()

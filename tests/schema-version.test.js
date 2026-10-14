@@ -579,8 +579,7 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
   process.env.DEFAULT_ORGANIZATION_ID = ORG;
   const { createFakeDb } = await import('./helpers/fake-db.js');
   const { __setTestDb } = await import('../server/db/client.js');
-  const { initializeStorage, __resetStorageForTests } =
-    await import('../server/storage/lifecycle.js');
+  const { initializeStorage } = await import('../server/db/lifecycle.js');
   const legacy = legacyDeck();
   __setTestDb(
     createFakeDb({
@@ -618,7 +617,6 @@ test('the read funnel migrates a stored legacy deck in memory', async () => {
     const missing = await getPresentation(storageScope, randomUUID());
     assert.equal(missing, null);
   } finally {
-    __resetStorageForTests();
     __setTestDb(null);
   }
 });

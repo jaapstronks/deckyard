@@ -56,10 +56,9 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-// `__resetStorageForTests` rather than `closeStorage`: the double is not a real
-// Kysely handle, so closing it would call a `destroy()` it does not have.
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+// Teardown uninstalls the double rather than calling `closeStorage`: it is not
+// a real Kysely handle, so closing it would call a `destroy()` it does not have.
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { hashPassword } = await import('../server/utils/password-hash.js');
 const { resetRateLimitBuckets } = await import('../server/utils/rate-limit.js');
 const { handleSharePublic } =
@@ -89,7 +88,6 @@ test.before(async () => {
 });
 
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

@@ -166,7 +166,7 @@ test('sandbox theme list exposes seeds and hides organization records', async ()
   const { createFakeDb } = await import('./helpers/fake-db.js');
   const { brandSeedRow } = await import('./helpers/theme-seed.js');
   const { __setTestDb } = await import('../server/db/client.js');
-  const { initializeStorage } = await import('../server/storage/lifecycle.js');
+  const { initializeStorage } = await import('../server/db/lifecycle.js');
   const { handleThemes } = await import('../server/routes/api/themes.js');
   const organizationId = '00000000-0000-4000-8000-0000000000aa';
   const seed = await brandSeedRow();

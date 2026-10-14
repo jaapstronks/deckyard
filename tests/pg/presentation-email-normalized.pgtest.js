@@ -168,6 +168,7 @@ pgDescribe('presentation e-mail normalised on write (real PostgreSQL)', () => {
   it('2. the analytics dashboard finds the deck from a mixed-case address', async () => {
     await runMigration(db);
     const { presentations } = await getPresentationsWithAnalytics(
+      { organizationId: orgId },
       ASKED_AS,
       orgId,
       { period: '30d' },
@@ -180,14 +181,18 @@ pgDescribe('presentation e-mail normalised on write (real PostgreSQL)', () => {
 
   it('3. the weekly summary finds the deck from a mixed-case address', async () => {
     await runMigration(db);
-    const weekly = await getWeeklyAnalyticsForUser(annId, ASKED_AS);
+    const weekly = await getWeeklyAnalyticsForUser(
+      { organizationId: orgId },
+      annId,
+      ASKED_AS,
+    );
     assert.equal(weekly.presentationCount, 1);
     assert.equal(weekly.totalViews, 1);
   });
 
   it('4. the weekly team summary joins the owner to their user row', async () => {
     await runMigration(db);
-    const team = await getTeamWeeklyAnalytics(orgId);
+    const team = await getTeamWeeklyAnalytics({ organizationId: orgId }, orgId);
     const ann = team.topPresenters.find((p) => p.email === ANN);
     assert.ok(ann, 'the legacy owner is one presenter, not a stray address');
     assert.equal(ann.name, 'Ann Example', 'resolved through users.email');

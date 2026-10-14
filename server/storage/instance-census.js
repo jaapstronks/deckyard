@@ -23,7 +23,7 @@
 
 import { sql } from 'kysely';
 import { toStorageContext } from './scope.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { defaultAppSettings, getAppSettings } from './settings.js';
 import { customSlideTypeKey } from '../../shared/slide-types/custom-type-runtime.js';
 

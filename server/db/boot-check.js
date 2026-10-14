@@ -2,7 +2,9 @@
  * Boot-time schema guards: the two ways a reachable database is still not one
  * Deckyard may serve from.
  *
- * Neither is a storage module; both exist because the alternative is an install
+ * Neither is a storage operation: both run before any organization or request
+ * exists, which is why they live in the database layer rather than under
+ * `server/storage/` (B665). Both exist because the alternative is an install
  * that *looks* started and is broken.
  *
  * - {@link pendingMigrationsError}: the schema is behind the migrations on disk
@@ -25,7 +27,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { dataDir } from '../config/storage-paths.js';
-import { getDb, isDatabaseAvailable } from '../db/client.js';
+import { getDb, isDatabaseAvailable } from './client.js';
 
 /**
  * Number of deck JSON files in the legacy data directory.
@@ -58,7 +60,7 @@ export async function pendingMigrationsError() {
   if (!isDatabaseAvailable()) return null;
 
   const { listMigrationFiles, listAppliedMigrations } =
-    await import('../db/migrate.js');
+    await import('./migrate.js');
   const files = await listMigrationFiles();
 
   /** @type {string[]} */

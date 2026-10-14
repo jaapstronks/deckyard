@@ -9,10 +9,8 @@ import { getThemeRecord, listSeedThemes } from '../server/storage/themes.js';
 import { createFakeDb } from './helpers/fake-db.js';
 import { seedRow } from './helpers/theme-seed.js';
 import { __setTestDb } from '../server/db/client.js';
-import {
-  initializeStorage,
-  __resetStorageForTests,
-} from '../server/storage/lifecycle.js';
+import { testScope } from './helpers/storage-scope.js';
+import { initializeStorage } from '../server/db/lifecycle.js';
 
 /**
  * Regression guard for the *loader*, not the theme.
@@ -50,7 +48,6 @@ test.before(async () => {
   await initializeStorage();
 });
 test.after(() => {
-  __resetStorageForTests();
   __setTestDb(null);
 });
 
@@ -71,7 +68,7 @@ test('loadThemeAssets and storage getThemeRecord are not interchangeable', async
 });
 
 test('runtime resolves UUID and default, and refuses obsolete names', async () => {
-  assert.equal((await listSeedThemes()).length, 2);
+  assert.equal((await listSeedThemes(testScope())).length, 2);
   assert.equal((await loadThemeAssets(repoRoot, MIDNIGHT)).id, MIDNIGHT);
   assert.equal((await loadThemeAssets(repoRoot, 'default')).slug, 'brand');
   await assert.rejects(

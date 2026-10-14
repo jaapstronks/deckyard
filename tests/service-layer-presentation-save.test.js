@@ -44,7 +44,7 @@ const AMETHYST = '22222222-2222-4222-8222-222222222222';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { handlePresentations: handleInternalPresentations } =
   await import('../server/routes/api/presentations/index.js');
@@ -796,4 +796,146 @@ test('editor: collection URL values use the declared validator too', async () =>
   assert.equal(res.statusCode, 400, JSON.stringify(res.json()));
   assert.equal(res.json().details.field, 'actions');
   assert.equal(storedDeck(db).revision, 1);
+});
+
+// B693: a new deck meets the same declared field rules. A create carrying
+// slides and a JSON import refuse what the editor's save refuses, naming the
+// slide and the field, before any deck exists.
+
+/** An internal POST (create or import), as OWNER. */
+async function editorPost(path, body) {
+  const res = createMockRes();
+  await handleInternalPresentations({
+    repoRoot: process.cwd(),
+    storageScope: createStorageScope(OWNER, { repoRoot: process.cwd() }),
+    req: makeReq('POST', body),
+    res,
+    url: new URL(`http://deck.example${path}`),
+    authedUser: OWNER,
+  });
+  return res;
+}
+
+/** A v1 create with OWNER's key already authenticated. */
+async function v1Create(body) {
+  const res = createMockRes();
+  await handleV1Presentations({
+    req: makeReq('POST', body),
+    res,
+    url: new URL('http://deck.example/api/v1/presentations'),
+    repoRoot: process.cwd(),
+    storageScope: {
+      repoRoot: process.cwd(),
+      organizationId: ORG,
+      actorUserId: OWNER.id,
+      actorEmail: OWNER.email,
+    },
+    apiKey: {
+      id: 'key-1',
+      tier: 'free',
+      ownerEmail: OWNER.email,
+      permissions: ['read', 'write'],
+      organizationId: ORG,
+    },
+    authedUser: OWNER,
+  });
+  return res;
+}
+
+const NEW_DECK_CONTRACTS = {
+  create: (slides) =>
+    editorPost('/api/presentations', { title: 'Nieuw', lang: 'nl', slides }),
+  'v1 create': (slides) => v1Create({ title: 'Nieuw', lang: 'nl', slides }),
+  'json import': (slides) =>
+    editorPost('/api/presentations/import/json', {
+      deck: { title: 'Nieuw', lang: 'nl', theme: MIDNIGHT, slides },
+    }),
+};
+
+test('create, v1 create and JSON import refuse the field the editor save refuses, writing nothing', async () => {
+  const content = { title: 'Contact', contactUrl: 'javascript:alert(1)' };
+  const db = await installDb();
+  const editor = await writeContact('editor', content, db);
+  assert.equal(editor.statusCode, 400, JSON.stringify(editor.json()));
+  const refusal = editor.json();
+
+  for (const [name, send] of Object.entries(NEW_DECK_CONTRACTS)) {
+    const fresh = await installDb();
+    const decks = fresh.__tables.presentations.length;
+    const res = await send([
+      { type: 'title-slide', content: { title: 'Hoi' } },
+      { type: 'end-slide', content },
+    ]);
+    assert.equal(res.statusCode, 400, `${name}: ${JSON.stringify(res.json())}`);
+    const body = res.json();
+    assert.equal(body.error, refusal.error, name);
+    assert.equal(body.message, refusal.message, name);
+    assert.equal(body.details.field, 'contactUrl', name);
+    assert.deepEqual(body.details.errors, refusal.details.errors, name);
+    assert.equal(body.details.index, 1, `${name} names the slide`);
+    assert.equal(body.details.lang, 'nl', name);
+    assert.equal(fresh.__tables.presentations.length, decks, `${name} wrote`);
+  }
+});
+
+test('create, v1 create and JSON import accept a valid deck', async () => {
+  for (const [name, send] of Object.entries(NEW_DECK_CONTRACTS)) {
+    await installDb();
+    const res = await send([
+      { type: 'title-slide', content: { title: 'Hoi' } },
+      {
+        type: 'end-slide',
+        content: { title: 'Contact', contactUrl: 'https://example.com' },
+      },
+    ]);
+    assert.equal(res.statusCode, 201, `${name}: ${JSON.stringify(res.json())}`);
+  }
+});
+
+test('a new deck may leave translation prose empty, never its source language', async () => {
+  await installDb();
+  const created = await editorPost('/api/presentations', {
+    title: 'Nieuw',
+    lang: 'nl',
+    slides: [
+      {
+        type: 'title-slide',
+        content: { title: 'Hoi' },
+        contentByLang: { nl: { title: 'Hoi' }, 'en-GB': { title: '' } },
+      },
+    ],
+  });
+  assert.equal(created.statusCode, 201, JSON.stringify(created.json()));
+
+  const imported = await editorPost('/api/presentations/import/json', {
+    deck: {
+      title: 'Nieuw',
+      lang: 'nl',
+      theme: MIDNIGHT,
+      translations: { 'en-GB': { title: 'New' } },
+      slides: [
+        {
+          type: 'title-slide',
+          content: { title: 'Hoi' },
+          translations: { 'en-GB': { notes: 'Untranslated title.' } },
+        },
+      ],
+    },
+  });
+  assert.equal(imported.statusCode, 201, JSON.stringify(imported.json()));
+
+  const source = await editorPost('/api/presentations', {
+    title: 'Nieuw',
+    lang: 'nl',
+    slides: [
+      {
+        type: 'title-slide',
+        content: { title: 'Hello' },
+        contentByLang: { nl: { title: '' }, 'en-GB': { title: 'Hello' } },
+      },
+    ],
+  });
+  assert.equal(source.statusCode, 400, JSON.stringify(source.json()));
+  assert.equal(source.json().details.field, 'title');
+  assert.equal(source.json().details.lang, 'nl');
 });

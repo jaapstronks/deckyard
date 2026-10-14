@@ -193,7 +193,7 @@ export async function composeChartSlide(pptx, slide, ctx) {
   const projected = slideBlocks(slide, ctx.def, {
     index: slideNum - 1,
     lang: ctx.docLang,
-    slideIds: ctx.slideIds,
+    slideJumps: ctx.slideJumps,
   });
   const title = projected.heading.visible ? projected.heading.text : '';
   let nextY = pad;

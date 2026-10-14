@@ -18,7 +18,7 @@ import { getOrgId } from '../utils/context.js';
 import { ensureUserByEmail } from './users.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
 import { sessionVersion } from '../utils/session-version.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { envStr } from '../config/utils.js';
 import { invalidateDisplayNames } from './display-identity.js';
 import { ensureMembership } from './login-membership.js';

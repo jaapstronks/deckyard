@@ -30,8 +30,7 @@ const ORG = process.env.DEFAULT_ORGANIZATION_ID;
 
 const { createFakeDb } = await import('../helpers/fake-db.js');
 const { __setTestDb } = await import('../../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../../server/db/lifecycle.js');
 const { McpServer } = await import('../../server/mcp/protocol.js');
 const { registerTools } = await import('../../server/mcp/tools.js');
 const { repoRoot } = await import('../../server/config/paths.js');
@@ -103,7 +102,6 @@ describe('MCP tools — slide-lock enforcement with acting owner', () => {
   });
 
   after(async () => {
-    __resetStorageForTests();
     __setTestDb(null);
     delete process.env.DATA_DIR;
     if (tempDataDir) await fs.rm(tempDataDir, { recursive: true, force: true });

@@ -1,11 +1,28 @@
+import { toStorageContext } from '../scope.js';
 /**
  * Complex aggregation queries for analytics.
  */
 
 import { sql } from 'kysely';
 import { norm } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { applyDateFilters } from '../../analytics/helpers.js';
+
+async function scopedPresentationIds(scope, db, ids) {
+  const { organizationId } = toStorageContext(scope, 'scopedPresentationIds');
+  if (!ids.length) return [];
+  const rows = await db
+    .selectFrom('presentations')
+    .select('id')
+    .where('organization_id', '=', organizationId)
+    .where('id', 'in', ids)
+    .execute();
+  return rows.map((row) => row.id);
+}
+
+async function presentationInScope(scope, db, id) {
+  return (await scopedPresentationIds(scope, db, [id])).length === 1;
+}
 
 // ============================================================
 // COMPLETION
@@ -27,7 +44,15 @@ import { applyDateFilters } from '../../analytics/helpers.js';
  * @returns {Promise<Map<string, {sessions: number, completed: number}>>}
  *   Decks without a slide view in the window are absent.
  */
-export async function getCompletionCounts(db, presentationIds, opts = {}) {
+export async function getCompletionCounts(
+  scope,
+  db,
+  presentationIds,
+  opts = {},
+) {
+  toStorageContext(scope, 'getCompletionCounts');
+  if (!presentationIds.length) return new Map();
+  presentationIds = await scopedPresentationIds(scope, db, presentationIds);
   if (!presentationIds.length) return new Map();
 
   let sessions = db
@@ -103,9 +128,11 @@ export function completionRate(counts) {
  * @returns {Promise<Object>}
  */
 export async function getPresentationAnalyticsOverview(
+  scope,
   presentationId,
   opts = {},
 ) {
+  toStorageContext(scope, 'getPresentationAnalyticsOverview');
   const presId = norm(presentationId);
   if (!presId) {
     return {
@@ -128,6 +155,16 @@ export async function getPresentationAnalyticsOverview(
       topSourceTypes: [],
     },
     async (db) => {
+      if (!(await presentationInScope(scope, db, presId))) {
+        return {
+          totalViews: 0,
+          uniqueViewers: 0,
+          avgDurationSeconds: 0,
+          completionRate: 0,
+          viewsByDay: [],
+          topSourceTypes: [],
+        };
+      }
       // Main metrics query
       let metricsQuery = db
         .selectFrom('view_sessions')
@@ -169,7 +206,7 @@ export async function getPresentationAnalyticsOverview(
       sourceTypesQuery = applyDateFilters(sourceTypesQuery, opts);
       const sourceTypesRows = await sourceTypesQuery.execute();
 
-      const completion = await getCompletionCounts(db, [presId], opts);
+      const completion = await getCompletionCounts(scope, db, [presId], opts);
 
       return {
         totalViews: Number(metrics?.total_views) || 0,
@@ -199,11 +236,17 @@ export async function getPresentationAnalyticsOverview(
  * @param {Object} opts - Query options
  * @returns {Promise<Array>}
  */
-export async function getDetailedSlideEngagement(presentationId, opts = {}) {
+export async function getDetailedSlideEngagement(
+  scope,
+  presentationId,
+  opts = {},
+) {
+  toStorageContext(scope, 'getDetailedSlideEngagement');
   const presId = norm(presentationId);
   if (!presId) return [];
 
   return withDbGuard([], async (db) => {
+    if (!(await presentationInScope(scope, db, presId))) return [];
     // Get slide view stats
     let slideQuery = db
       .selectFrom('slide_views')
@@ -282,11 +325,17 @@ export async function getDetailedSlideEngagement(presentationId, opts = {}) {
  * @param {Object} opts - Query options
  * @returns {Promise<Array<{slideId: string, slideIndex: number, engagementScore: number, views: number, avgTime: number}>>}
  */
-export async function getInteractionHeatmapData(presentationId, opts = {}) {
+export async function getInteractionHeatmapData(
+  scope,
+  presentationId,
+  opts = {},
+) {
+  toStorageContext(scope, 'getInteractionHeatmapData');
   const presId = norm(presentationId);
   if (!presId) return [];
 
   return withDbGuard([], async (db) => {
+    if (!(await presentationInScope(scope, db, presId))) return [];
     let query = db
       .selectFrom('slide_views')
       .select([
@@ -340,7 +389,8 @@ export async function getInteractionHeatmapData(presentationId, opts = {}) {
  * @param {Object} opts - Query options
  * @returns {Promise<Object>}
  */
-export async function getViewerJourneyData(presentationId, opts = {}) {
+export async function getViewerJourneyData(scope, presentationId, opts = {}) {
+  toStorageContext(scope, 'getViewerJourneyData');
   const presId = norm(presentationId);
   if (!presId) {
     return {
@@ -357,6 +407,13 @@ export async function getViewerJourneyData(presentationId, opts = {}) {
       completionRate: 0,
     },
     async (db) => {
+      if (!(await presentationInScope(scope, db, presId))) {
+        return {
+          slideProgression: [],
+          avgCompletionIndex: 0,
+          completionRate: 0,
+        };
+      }
       // Get max slide index reached per session
       let sessionQuery = db
         .selectFrom('slide_views')
@@ -403,7 +460,7 @@ export async function getViewerJourneyData(presentationId, opts = {}) {
       const slidesResult = await slidesQuery.executeTakeFirst();
       const totalSlides = (Number(slidesResult?.max_slide) || 0) + 1;
 
-      const completion = await getCompletionCounts(db, [presId], opts);
+      const completion = await getCompletionCounts(scope, db, [presId], opts);
 
       // Build progression array
       const slideProgression = [];

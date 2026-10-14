@@ -79,6 +79,7 @@ import {
   normalizeUrl,
   safeHref,
   normalizeAuthoredUrl,
+  slideJumpId,
   slideJumpTarget,
 } from './helpers.js';
 import { isEmailAddress } from './field-types.js';
@@ -436,34 +437,54 @@ function pairedKeys(fields) {
 }
 
 /**
+ * Where a document's slide jumps land: the deck's slide ids in stored order,
+ * which is what `#N` counts (B695), and the ids of the slides the document
+ * holds, in its order, which is what its `#slide-N` anchors count. The two
+ * differ when the document leaves slides out (hidden in export, live-only).
+ *
+ * @typedef {{ deck: string[], document: string[] }} SlideJumps
+ */
+
+/**
+ * The {@link SlideJumps} for a document made of `documentSlides` out of a deck
+ * whose stored slides are `deckSlides`; one argument when the document holds
+ * the whole deck.
+ *
+ * @param {Array<{id?: unknown}>|null|undefined} deckSlides
+ * @param {Array<{id?: unknown}>|null|undefined} [documentSlides]
+ * @returns {SlideJumps}
+ */
+export function slideJumpsFor(deckSlides, documentSlides = deckSlides) {
+  const ids = (slides) =>
+    (Array.isArray(slides) ? slides : []).map((slide) => str(slide?.id));
+  return { deck: ids(deckSlides), document: ids(documentSlides) };
+}
+
+/**
  * The `href` a `url` value becomes in the reader, and the text a slide jump
  * reads as.
  *
  * A web link goes through `safeHref`, the one allowlist every projected link
- * uses. A slide jump points at the reader's own anchors (`#slide-N`): `#N`
- * directly, `#slide:<id>` through the deck's slide order. A jump the document
- * cannot follow — an id that is not in it, a position past its end — is no
- * link at all.
+ * uses. A slide jump points at the reader's own anchors (`#slide-N`): the jump
+ * names a slide of the deck (`#N` by its place in the deck, `#slide:<id>` by
+ * id, through `slideJumpId`), and the anchor is that slide's place in this
+ * document. A jump the document cannot follow — a slide it leaves out, an id
+ * or a position the deck does not have — is no link at all.
  *
  * @param {unknown} value
  * @param {object} ctx
- * @param {string[]} [ctx.slideIds] - the ids of the document's slides, in order
+ * @param {SlideJumps} [ctx.slideJumps] - the deck and document order
  * @param {string} [ctx.lang] - the deck language
  * @returns {{ href: string, text: string }}
  */
-function linkTarget(value, { slideIds, lang } = {}) {
+function linkTarget(value, { slideJumps, lang } = {}) {
   const jump = slideJumpTarget(value);
   if (!jump) {
     const href = safeHref(value);
     return { href, text: href };
   }
-  const ids = Array.isArray(slideIds) ? slideIds : null;
-  const n =
-    'id' in jump
-      ? (ids ? ids.indexOf(jump.id) : -1) + 1
-      : !ids || jump.index <= ids.length
-        ? jump.index
-        : 0;
+  const id = slideJumpId(jump, slideJumps?.deck);
+  const n = id ? (slideJumps?.document ?? []).indexOf(id) + 1 : 0;
   if (!n) return { href: '', text: '' };
   return {
     href: `#slide-${n}`,
@@ -814,14 +835,14 @@ function isTextField(field) {
  * @param {Array<object>} [opts.siblings] - every field beside this one, for
  *   `defaultFromOption` and `kindKey`
  * @param {string} [opts.lang] - the deck language
- * @param {string[]} [opts.slideIds] - the document's slide ids, for jumps
+ * @param {SlideJumps} [opts.slideJumps] - where slide jumps land
  * @returns {string}
  */
 function renderTextField(
   field,
   content,
   defaults,
-  { figcaption = false, siblings, lang, slideIds } = {},
+  { figcaption = false, siblings, lang, slideJumps } = {},
 ) {
   const authored = str(content?.[field.key]);
   const v =
@@ -838,7 +859,10 @@ function renderTextField(
     // A link text without a target says nothing a reader can use, so the pair
     // projects as a link or not at all — as it does on the canvas.
     if (str(field.hrefKey)) {
-      const { href } = linkTarget(content?.[field.hrefKey], { lang, slideIds });
+      const { href } = linkTarget(content?.[field.hrefKey], {
+        lang,
+        slideJumps,
+      });
       if (!href) return '';
       html = `<a href="${escapeHtml(href)}">${html}</a>`;
     }
@@ -929,7 +953,7 @@ function soleUncaptionedFigureKey(fields, content) {
  * @param {Array<object>} [opts.siblings] - every field the block declares, for
  *   `defaultFromOption` (the `fields` list is already filtered)
  * @param {string} [opts.lang] - the deck language
- * @param {string[]} [opts.slideIds] - the document's slide ids, for jumps
+ * @param {SlideJumps} [opts.slideJumps] - where slide jumps land
  * @returns {string[]}
  */
 function renderBlocks(
@@ -943,7 +967,7 @@ function renderBlocks(
     structured,
     siblings,
     lang,
-    slideIds,
+    slideJumps,
   },
 ) {
   const figureKey = soleUncaptionedFigureKey(fields, content);
@@ -961,7 +985,7 @@ function renderBlocks(
         figcaption: true,
         siblings,
         lang,
-        slideIds,
+        slideJumps,
       })
     : '';
   const parts = [];
@@ -977,7 +1001,7 @@ function renderBlocks(
       defaults,
       siblings,
       lang,
-      slideIds,
+      slideJumps,
       itemHeading,
       parent,
       parentKey,
@@ -1093,7 +1117,7 @@ function itemHeading(
  *   declared default an item's own `semantic` enum resolves through
  * @param {object} [ctx]
  * @param {string} [ctx.lang] - the deck language
- * @param {string[]} [ctx.slideIds] - the document's slide ids, for jumps
+ * @param {SlideJumps} [ctx.slideJumps] - where slide jumps land
  * @param {object} [ctx.parent] - the object holding the items field
  * @param {string} [ctx.parentKey] - the key of that items field
  * @param {'li'|'td'|null} [ctx.tag] - the element the item is: a list entry,
@@ -1105,7 +1129,7 @@ function renderItemBlock(
   itemFields,
   itemLabelField,
   itemDefaults,
-  { lang, slideIds, parent, parentKey, tag = 'li' } = {},
+  { lang, slideJumps, parent, parentKey, tag = 'li' } = {},
 ) {
   if (!item || typeof item !== 'object' || !Array.isArray(itemFields))
     return '';
@@ -1130,7 +1154,7 @@ function renderItemBlock(
       parentKey,
       siblings: itemFields,
       lang,
-      slideIds,
+      slideJumps,
     },
   ).filter(Boolean);
   // An item's own `semantic` enums (a matrix cell's tone) mark its <li>,
@@ -1182,10 +1206,10 @@ function renderItemBlock(
  *
  * @param {object} field - the `items` field declaring `axes`
  * @param {object} content
- * @param {{lang?: string, slideIds?: string[]}} ctx
+ * @param {{lang?: string, slideJumps?: SlideJumps}} ctx
  * @returns {string} the table, or '' when no axis is named
  */
-function renderAxesTable(field, content, { lang, slideIds }) {
+function renderAxesTable(field, content, { lang, slideJumps }) {
   const { columns, xKey, yKey } = field.axes;
   const items = Array.isArray(content?.[field.key]) ? content[field.key] : [];
   const xText = str(content?.[xKey]);
@@ -1205,7 +1229,7 @@ function renderAxesTable(field, content, { lang, slideIds }) {
       itemDefaults,
       {
         lang,
-        slideIds,
+        slideJumps,
         parent: content,
         parentKey: field.key,
         tag: 'td',
@@ -1369,7 +1393,7 @@ function declaredScale(def) {
  * @param {object} [opts.defaults] - `content`'s declared defaults
  * @param {Array<object>} [opts.siblings] - the fields beside this one
  * @param {string} [opts.lang] - the deck language
- * @param {string[]} [opts.slideIds] - the document's slide ids, for jumps
+ * @param {SlideJumps} [opts.slideJumps] - where slide jumps land
  * @param {string} [opts.itemHeading] - the heading of the item `content` is
  * @param {object} [opts.parent] - the object holding that item's field
  * @param {string} [opts.parentKey] - the key of that items field
@@ -1382,7 +1406,7 @@ function renderFieldValue(
     defaults,
     siblings,
     lang,
-    slideIds,
+    slideJumps,
     itemHeading = '',
     parent = null,
     parentKey = '',
@@ -1411,7 +1435,7 @@ function renderFieldValue(
       return renderTextField(field, content, defaults, {
         siblings,
         lang,
-        slideIds,
+        slideJumps,
       });
     case 'code': {
       const v = str(value);
@@ -1477,7 +1501,13 @@ function renderFieldValue(
           field.itemFields,
           field.itemLabelField,
           resolveItemDefaults(field),
-          { lang, slideIds, parent: content, parentKey: field.key, tag: null },
+          {
+            lang,
+            slideJumps,
+            parent: content,
+            parentKey: field.key,
+            tag: null,
+          },
         );
       }
       // A `relationField` names a per-item enum holding a typed relation to
@@ -1508,7 +1538,7 @@ function renderFieldValue(
             field.itemFields,
             field.itemLabelField,
             itemDefaults,
-            { lang, slideIds, parent: content, parentKey: field.key },
+            { lang, slideJumps, parent: content, parentKey: field.key },
           );
           if (!li) return '';
           const rel = relationOf(item);
@@ -1526,7 +1556,7 @@ function renderFieldValue(
       return renderItemList(blocks, ordered, attrs);
     }
     case 'url': {
-      const { href, text } = linkTarget(value, { slideIds, lang });
+      const { href, text } = linkTarget(value, { slideJumps, lang });
       if (!href) return '';
       return `<p${attrs}><a href="${escapeHtml(href)}">${escapeHtml(text)}</a></p>`;
     }
@@ -1547,15 +1577,15 @@ function renderFieldValue(
  *
  * @param {object} slide
  * @param {object} def - the resolved slide-type definition
- * @param {{ headingKey?: string|null, lang?: string, slideIds?: string[] }} [opts]
+ * @param {{ headingKey?: string|null, lang?: string, slideJumps?: SlideJumps }} [opts]
  *   `lang` is the deck language, for the copy a slide shows without storing it;
- *   `slideIds` the document's slide ids in order, so a slide jump can link
+ *   `slideJumps` the deck and document order, so a slide jump can link
  * @returns {string} inner HTML for the slide section
  */
 export function renderSlideBodySemanticHtml(
   slide,
   def,
-  { headingKey = null, lang, slideIds } = {},
+  { headingKey = null, lang, slideJumps } = {},
 ) {
   const content =
     slide?.content && typeof slide.content === 'object' ? slide.content : {};
@@ -1621,7 +1651,7 @@ export function renderSlideBodySemanticHtml(
       field.axes &&
       typeof field.axes === 'object'
     ) {
-      const table = renderAxesTable(field, content, { lang, slideIds });
+      const table = renderAxesTable(field, content, { lang, slideJumps });
       if (table) structuredHtmlByKey.set(field.key, table);
       for (const key of [field.axes.xKey, field.axes.yKey]) {
         if (str(key)) consumed.add(key);
@@ -1667,7 +1697,7 @@ export function renderSlideBodySemanticHtml(
         structured: structuredHtmlByKey,
         siblings: def?.fields,
         lang,
-        slideIds,
+        slideJumps,
       },
     ),
   );
@@ -1773,15 +1803,15 @@ export function imagesMissingAlt(slide, def) {
  *
  * @param {object} slide
  * @param {object|null|undefined} def - the resolved slide-type definition
- * @param {{ index?: number, lang?: string, slideIds?: string[] }} [opts] -
- *   0-based position in the deck, the deck language, and the ids of the
- *   document's slides in order (for links that jump to a slide)
+ * @param {{ index?: number, lang?: string, slideJumps?: SlideJumps }} [opts] -
+ *   0-based position in the document, the deck language, and the deck and
+ *   document order (for links that jump to a slide)
  * @returns {string}
  */
 export function renderSlideSectionHtml(
   slide,
   def,
-  { index = 0, lang, slideIds } = {},
+  { index = 0, lang, slideJumps } = {},
 ) {
   const n = index + 1;
   const heading = slideHeading(slide, def, { index, lang });
@@ -1789,7 +1819,7 @@ export function renderSlideSectionHtml(
     ? renderSlideBodySemanticHtml(slide, def, {
         headingKey: heading.key,
         lang,
-        slideIds,
+        slideJumps,
       })
     : renderUnresolvedSlideSemanticHtml(slide, { headingKey: heading.key });
   const titleId = `slide-${n}-title`;

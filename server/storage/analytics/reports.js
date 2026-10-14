@@ -6,7 +6,7 @@ import { crossOrganizationScope, toStorageContext } from '../scope.js';
 
 import crypto from 'node:crypto';
 import { norm, nowIso } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
 import {
   NO_DISPLAY_NAMES,

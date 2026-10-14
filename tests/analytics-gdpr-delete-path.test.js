@@ -402,15 +402,25 @@ test('the storage helpers refuse an identifier that is not an email', async () =
 
   // A device id is client-generated, so producing one proves nothing about
   // whose device it is; the helpers take an email and nothing else.
-  assert.deepEqual(await exportUserAnalyticsData({ deviceId: 'dev-1' }), {
-    ok: false,
-    reason: 'invalid',
-  });
-  assert.deepEqual(await deleteUserAnalyticsData({ deviceId: 'dev-1' }), {
-    ok: false,
-    reason: 'invalid',
-  });
-  assert.deepEqual(await deleteUserAnalyticsData({}), {
+  const subjectScope = {
+    crossOrganization: 'authenticated GDPR subject',
+    actorEmail: 'viewer@example.test',
+  };
+  assert.deepEqual(
+    await exportUserAnalyticsData(subjectScope, { deviceId: 'dev-1' }),
+    {
+      ok: false,
+      reason: 'invalid',
+    },
+  );
+  assert.deepEqual(
+    await deleteUserAnalyticsData(subjectScope, { deviceId: 'dev-1' }),
+    {
+      ok: false,
+      reason: 'invalid',
+    },
+  );
+  assert.deepEqual(await deleteUserAnalyticsData(subjectScope, {}), {
     ok: false,
     reason: 'invalid',
   });

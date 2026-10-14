@@ -35,7 +35,7 @@ const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handlePresentations } =
   await import('../server/routes/public-api/v1/presentations.js');
 const { handleSlides } =

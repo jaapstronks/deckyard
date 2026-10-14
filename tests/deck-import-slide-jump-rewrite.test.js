@@ -13,6 +13,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { deckToPresentationParts } from '../shared/slide-types/deck.js';
 import { SLIDE_TYPES } from '../shared/slide-types/registry.js';
+import { slideJumpTarget } from '../shared/slide-types/helpers.js';
 
 test('an action-item url jump (items -> itemFields) follows the slide to its new id', () => {
   const raw = {
@@ -110,10 +111,10 @@ test('a regular web address and a #N position jump are untouched', () => {
   assert.equal(slides[1].content.actions[0].url, '#1');
 });
 
-test('a portable .deck import (no per-slide id) does not crash and rewrites nothing', () => {
-  // The published deck format carries no `id` on any slide (deck.js top-of-file
-  // note) - there is no old id to resolve a jump from, so this is the correct,
-  // covered no-op rather than a code path this fix needs to special-case.
+test('a portable deck import (no per-slide id) keeps its positional jump on target', () => {
+  // The portable deck carries no slide ids; its export writes an in-deck jump
+  // as `#N` on the exported order (B494, tests/deck-export-slide-jumps.test.js),
+  // so the import keeps it and it lands on the same slide.
   const raw = {
     format: 'deckyard.deck',
     version: 1,
@@ -124,7 +125,8 @@ test('a portable .deck import (no per-slide id) does not crash and rewrites noth
         type: 'content-slide',
         content: {
           title: 'Slide one',
-          actions: [{ label: 'Stale jump', url: '#slide:old-2' }],
+          body: 'Body',
+          actions: [{ label: 'Go to two', url: '#2' }],
         },
       },
       { type: 'end-slide', content: { title: 'Slide two' } },
@@ -132,9 +134,10 @@ test('a portable .deck import (no per-slide id) does not crash and rewrites noth
   };
 
   const { slides } = deckToPresentationParts(raw, { slideTypes: SLIDE_TYPES });
+  const jump = slideJumpTarget(slides[0].content.actions[0].url);
   assert.equal(
-    slides[0].content.actions[0].url,
-    '#slide:old-2',
-    'nothing in the raw deck names an old id, so the value is left as written',
+    slides[jump.index - 1].content.title,
+    'Slide two',
+    'the positional jump reaches slide two of the imported deck',
   );
 });

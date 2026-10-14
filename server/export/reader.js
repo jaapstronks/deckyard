@@ -20,6 +20,7 @@ import {
 import {
   slideHeading,
   renderSlideSectionHtml,
+  slideJumpsFor,
 } from '../../shared/slide-types/semantic-projection.js';
 import { filterForExport, filterForPublished } from '../utils/public-output.js';
 import { resolveDocLangFromPresentation } from '../utils/doc-lang.js';
@@ -206,15 +207,16 @@ export function buildReaderHtml(
   // the reader is the *complete* surface of that contract (no canvas size
   // limit), so it is where an author recovers content the placeholder slide
   // had to truncate.
-  // A link that jumps to a slide points at that slide's section, by its place
-  // in this document (hidden slides are already filtered out).
-  const slideIds = slides.map((slide) => str(slide?.id));
+  // A link that jumps to a slide names it in the deck (`#N` counts the stored
+  // order, before the filter) and points at its section, by its place in this
+  // document; a slide the filter left out is no target (B695).
+  const slideJumps = slideJumpsFor(pres?.slides, slides);
   const sections = resolved
     .map(({ slide, def }, i) =>
       renderSlideSectionHtml(slide, def, {
         index: i,
         lang: docLang,
-        slideIds,
+        slideJumps,
       }),
     )
     .join('\n      ');

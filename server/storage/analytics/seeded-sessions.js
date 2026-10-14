@@ -9,7 +9,7 @@
 
 import crypto from 'node:crypto';
 import { sandboxEnabled } from '../../config/sandbox.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { toStorageContext } from '../scope.js';
 import { VIEWER_TYPES } from './view-sessions.js';
 

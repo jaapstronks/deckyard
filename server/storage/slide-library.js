@@ -821,10 +821,9 @@ export async function setTagsForSlideLibraryItem(
     if (!allowed) return { ...NOT_EDITABLE };
   }
   // A refused tag name is already an `invalid` result; it travels as it is.
-  return replaceTagLinks({
+  return replaceTagLinks(scope, {
     linkTable: 'slide_library_tags',
     rowId: existing.id,
-    orgId: getOrgId(ctx),
     tagNames,
   });
 }

@@ -5,9 +5,18 @@
 
 import crypto from 'node:crypto';
 import { norm, nowIso, durationSinceSeconds } from '../../utils/normalize.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { toStorageContext } from '../scope.js';
 import { ANALYTICS_CONFIG, applyDateFilters } from '../../analytics/helpers.js';
+
+async function presentationInScope(db, organizationId, presentationId) {
+  return !!(await db
+    .selectFrom('presentations')
+    .select('id')
+    .where('id', '=', presentationId)
+    .where('organization_id', '=', organizationId)
+    .executeTakeFirst());
+}
 
 // ============================================================
 // CONSTANTS
@@ -45,7 +54,8 @@ function generateSessionToken() {
  * @param {boolean} [data.attributionAllowed] - True if viewer opts into having name shown
  * @returns {Promise<{ok: boolean, session?: Object, reason?: string}>}
  */
-export async function createViewSession(data) {
+export async function createViewSession(scope, data) {
+  const { organizationId } = toStorageContext(scope, 'createViewSession');
   const presentationId = norm(data?.presentationId);
   const sourceType = norm(data?.sourceType);
 
@@ -54,6 +64,9 @@ export async function createViewSession(data) {
   }
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
+    if (!(await presentationInScope(db, organizationId, presentationId))) {
+      return { ok: false, reason: 'not_found' };
+    }
     const now = nowIso();
     const sessionToken = generateSessionToken();
 
@@ -214,13 +227,21 @@ export async function getViewSessionByToken(sessionToken) {
  * @returns {Promise<{sessions: Object[], total: number}>}
  */
 export async function getViewSessionsForPresentation(
+  scope,
   presentationId,
   opts = {},
 ) {
+  const { organizationId } = toStorageContext(
+    scope,
+    'getViewSessionsForPresentation',
+  );
   const presId = norm(presentationId);
   if (!presId) return { sessions: [], total: 0 };
 
   return withDbGuard({ sessions: [], total: 0 }, async (db) => {
+    if (!(await presentationInScope(db, organizationId, presId))) {
+      return { sessions: [], total: 0 };
+    }
     let query = db
       .selectFrom('view_sessions')
       .selectAll()
@@ -258,11 +279,13 @@ export async function getViewSessionsForPresentation(
  * @param {string} presentationId - The presentation ID
  * @returns {Promise<number>}
  */
-export async function getActiveViewerCount(presentationId) {
+export async function getActiveViewerCount(scope, presentationId) {
+  const { organizationId } = toStorageContext(scope, 'getActiveViewerCount');
   const presId = norm(presentationId);
   if (!presId) return 0;
 
   return withDbGuard(0, async (db) => {
+    if (!(await presentationInScope(db, organizationId, presId))) return 0;
     const threshold = new Date(
       Date.now() - ANALYTICS_CONFIG.ACTIVE_THRESHOLD_SECONDS * 1000,
     ).toISOString();
@@ -284,7 +307,18 @@ export async function getActiveViewerCount(presentationId) {
  * @param {string} olderThan - ISO date string
  * @returns {Promise<{deleted: number}>}
  */
-export async function deleteOldViewSessions(olderThan) {
+export async function deleteOldViewSessions(scope, olderThan) {
+  const context = toStorageContext(
+    scope,
+    'deleteOldViewSessions',
+    {},
+    { allowCrossOrganization: true },
+  );
+
+  if (!context.crossOrganization)
+    throw new TypeError(
+      'deleteOldViewSessions() requires an instance retention scope',
+    );
   return withDbGuard({ deleted: 0 }, async (db) => {
     const result = await db
       .deleteFrom('view_sessions')

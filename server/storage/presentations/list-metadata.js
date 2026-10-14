@@ -1,4 +1,4 @@
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { getOrgId } from '../../utils/context.js';
 import { toStorageContext } from '../scope.js';
 

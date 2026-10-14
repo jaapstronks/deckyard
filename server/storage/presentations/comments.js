@@ -7,7 +7,7 @@ import { getOrgId } from '../../utils/context.js';
 import { norm, normalizeEmail, nowIso } from '../../utils/normalize.js';
 import { parseMentions } from '../../../shared/comment-mentions.js';
 import { toStorageContext } from '../scope.js';
-import { withDbGuard } from '../utils/index.js';
+import { withDbGuard } from '../../db/client.js';
 import { resolveIdentityByEmail } from '../identity-resolver.js';
 import { getAiIdentity } from '../settings.js';
 import { isAiAuthorEmail } from '../../../shared/constants/ai.js';

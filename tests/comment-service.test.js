@@ -36,8 +36,7 @@ const OTHER_DECK = 'deck-other';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { createStorageScope } = await import('../server/utils/context.js');
 const { invalidatePermission } =
   await import('../server/storage/cache/permission-cache.js');
@@ -96,7 +95,6 @@ test.after(() => {
   globalThis.fetch = realFetch;
   delete process.env.BREVO_API_KEY;
   delete process.env.APP_URL;
-  __resetStorageForTests();
   __setTestDb(null);
 });
 

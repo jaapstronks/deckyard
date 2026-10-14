@@ -2,10 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createFakeDb } from './helpers/fake-db.js';
 import { __setTestDb } from '../server/db/client.js';
-import {
-  initializeStorage,
-  __resetStorageForTests,
-} from '../server/storage/lifecycle.js';
+import { initializeStorage } from '../server/db/lifecycle.js';
 import {
   getDefaultThemeId,
   getEnabledThemeIds,
@@ -73,7 +70,6 @@ test.before(async () => {
 });
 test.after(() => {
   clearCustomThemeCache();
-  __resetStorageForTests();
   __setTestDb(null);
   for (const [name, value] of Object.entries(oldEnv)) {
     if (value === undefined) delete process.env[name];

@@ -74,7 +74,7 @@ and mandatory in another.
 
 ### Storage lifecycle loading
 
-`server/storage/lifecycle.js` loads `server/db/client.js` (and through it kysely
+`server/db/lifecycle.js` loads `server/db/client.js` (and through it kysely
 and pg) lazily inside `initializeStorage()` / `closeStorage()`, keeping the
 database driver out of the module graph of scripts that never touch storage. The
 scope-to-context reduction (`toStorageContext`) lives in

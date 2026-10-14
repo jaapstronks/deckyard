@@ -6,7 +6,8 @@
 import { getOrgId } from '../utils/context.js';
 import { toStorageContext } from './scope.js';
 import { nowIso, isoAfter, normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard, escapeLikePattern } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
+import { escapeLikePattern } from './utils/index.js';
 import { generateSecureToken, hashToken } from '../utils/secure-tokens.js';
 import { getUserByEmailGlobal } from './identity.js';
 import { invalidateDisplayNames } from './display-identity.js';

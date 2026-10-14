@@ -18,7 +18,7 @@ import { fileURLToPath } from 'node:url';
  * ordering of the steps, and the absence of a storage mode that no longer
  * exists. The refusals themselves are pinned in Node:
  * tests/database-connection-error.test.js and the schema guard in
- * tests/storage-boot-check.test.js.
+ * tests/db-boot-check.test.js.
  */
 
 const REPO_ROOT = path.resolve(

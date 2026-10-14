@@ -38,8 +38,7 @@ const OWN_B = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { getDefaultThemeId, getEnabledThemeIds } =
   await import('../server/storage/settings.js');
 const { clearCustomThemeCache } = await import('../server/utils/themes.js');
@@ -135,7 +134,6 @@ test.beforeEach(async () => {
 
 test.after(() => {
   clearCustomThemeCache();
-  __resetStorageForTests();
   __setTestDb(null);
   for (const [name, value] of Object.entries(oldEnv)) {
     if (value === undefined) delete process.env[name];

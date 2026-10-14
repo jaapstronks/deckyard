@@ -143,15 +143,23 @@ export async function runRetentionCleanup({
   );
   log.info(`Deleted ${instanceHealth} old instance_health rows`);
 
-  const shareLinks = await cleanupExpiredShareLinks();
+  const shareLinks = await cleanupExpiredShareLinks(
+    crossOrganizationScope(null, 'share-link retention: instance-wide expiry'),
+  );
   log.info(`Revoked ${shareLinks} expired share links`);
 
   const { deleted: activityEvents } = await deleteOldActivityEvents(
+    crossOrganizationScope(
+      null,
+      'activity-event retention: instance-wide age cutoff',
+    ),
     cutoffIsoFor(activityDays),
   );
   log.info(`Deleted ${activityEvents} old activity events`);
 
-  const slideLocks = await cleanupExpiredSlideLocks();
+  const slideLocks = await cleanupExpiredSlideLocks(
+    crossOrganizationScope(null, 'slide-lock retention: instance-wide expiry'),
+  );
   log.info(`Deleted ${slideLocks} expired slide locks`);
 
   const { purged: trashedDecks, failed } = await purgeExpiredTrash({

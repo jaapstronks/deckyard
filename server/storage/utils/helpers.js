@@ -3,6 +3,9 @@
  * DRY: each of these was duplicated across stores before it moved here.
  */
 
+import { getOrgId } from '../../utils/context.js';
+import { resolveScope } from '../scope.js';
+
 export function parseJson(val, fallback) {
   if (val == null) return fallback;
   if (typeof val === 'object') return val; // already parsed by Kysely
@@ -13,7 +16,15 @@ export function parseJson(val, fallback) {
   }
 }
 
-export async function getUserIdByEmail(db, orgId, email) {
+/**
+ * The id of the user with this e-mail address in the scope's organization.
+ * @param {import('../scope.js').StorageScope} scope
+ * @param {import('kysely').Kysely<any>} db - The open handle or transaction
+ * @param {string} email
+ * @returns {Promise<string|null>}
+ */
+export async function getUserIdByEmail(scope, db, email) {
+  const orgId = getOrgId(resolveScope(scope, 'getUserIdByEmail'));
   const user = await db
     .selectFrom('users')
     .select('id')

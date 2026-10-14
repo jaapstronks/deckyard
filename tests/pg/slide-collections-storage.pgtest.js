@@ -24,7 +24,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import {
   seedDefaultOrganization,
@@ -80,7 +79,6 @@ pgDescribe('slide collections (real PostgreSQL, via facade)', () => {
   });
 
   after(async () => {
-    uninstallFacadeStorage();
     await closeTestDb(db);
   });
 

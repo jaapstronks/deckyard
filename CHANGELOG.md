@@ -4,6 +4,76 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.67.0](https://github.com/jaapstronks/deckyard/compare/v1.66.0...v1.67.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* deleteOldActivityEvents, cleanupExpiredSlideLocks, listSeedThemes, resolveSeedThemeSlug, installationDefaultThemeId, replaceTagLinks and getUserIdByEmail take a scope first; withDbGuard moved to server/db/client.js, initializeStorage and closeStorage to server/db/lifecycle.js, pendingMigrationsError and strandedFileDataError to server/db/boot-check.js; __resetStorageForTests removed.
+* Fork impact, with no re-export shims at the old paths:
+
+  | Module | Change |
+  | --- | --- |
+  | `server/storage/activity-events.js` | `deleteOldActivityEvents(scope, olderThan)`: instance retention scope only |
+  | `server/storage/slide-locks.js` | `cleanupExpiredSlideLocks(scope)`: instance retention scope only |
+  | `server/storage/themes.js` | `listSeedThemes(scope)`: organization or reasoned instance scope |
+  | `server/storage/settings.js` | `resolveSeedThemeSlug(scope, slug)`, `installationDefaultThemeId(scope)`: organization or reasoned instance scope |
+  | `server/storage/tags.js` | `replaceTagLinks(scope, { linkTable, rowId, tagNames })`: the `orgId` field is removed; the organization comes from the scope |
+  | `server/storage/utils/index.js` | `getUserIdByEmail(scope, db, email)`: the `orgId` argument is removed; the organization comes from the scope |
+  | `server/db/client.js` | `withDbGuard(fallback, fn)` moved from `server/storage/utils/db-guard.js`; no longer exported by `server/storage/utils/index.js` |
+  | `server/db/lifecycle.js` | `initializeStorage()`, `closeStorage()` moved from `server/storage/lifecycle.js` |
+  | `server/db/boot-check.js` | `pendingMigrationsError()`, `strandedFileDataError(repoRoot)` moved from `server/storage/boot-check.js` |
+
+  The no-op `__resetStorageForTests` is removed, and with it `uninstallFacadeStorage()` from `tests/pg/helpers/harness.js`; fork pg tests drop that call (`closeTestDb()` is the whole teardown). See `docs/reference/storage-scope.md`.
+
+### Changed
+
+* finish scope-first storage exports and move DB infrastructure to server/db ([#1639](https://github.com/jaapstronks/deckyard/issues/1639)) ([35b48c3](https://github.com/jaapstronks/deckyard/commit/35b48c3ee18bacff3e8d2a4b7c1bf22bfca46999))
+
+## [1.66.0](https://github.com/jaapstronks/deckyard/compare/v1.65.0...v1.66.0) (2026-10-13)
+
+
+### ⚠ BREAKING CHANGES
+
+* Fork callers of the 42 analytics, live-session, interaction-slide and share-link storage exports listed below (and in docs/reference/storage-scope.md) must insert StorageScope as the first argument; every old argument shifts one position, including explicit database arguments. No legacy overload is supported.
+* Request X-RateLimit-* headers describe the actual per-key budget instead of theoretical daily totals. getRateLimitHeaders in server/storage/api-usage.js accepts only explicit ai or exports limits; request callers use checkRequestRateLimit from server/utils/rate-limit.js. The allowRequestRedis export in server/utils/rate-limit-redis.js becomes allowRequestRedisDetails and returns a decision object; use its .allowed value, or use allowRequest from server/utils/rate-limit.js for boolean admission.
+
+
+The complete changed-export list (paths relative to the repository root):
+
+| Module | Exports receiving a new first `scope` argument |
+| --- | --- |
+| `server/storage/analytics/aggregations.js` | `getCompletionCounts`, `getDetailedSlideEngagement`, `getInteractionHeatmapData`, `getPresentationAnalyticsOverview`, `getViewerJourneyData` |
+| `server/storage/analytics/dashboard.js` | `getDashboardSummary`, `getDashboardTimeline`, `getPresentationsWithAnalytics`, `getSourceBreakdown`, `getTopPresentations` |
+| `server/storage/analytics/slide-views.js` | `deleteOldSlideViews`, `endAllSlideViewsForSession`, `transitionToSlide` |
+| `server/storage/analytics/view-sessions-gdpr.js` | `anonymizeOldIpAddresses`, `deleteUserAnalyticsData`, `eraseAnalyticsDataForDevice`, `eraseAnalyticsDataForSession`, `exportUserAnalyticsData` |
+| `server/storage/analytics/view-sessions.js` | `createViewSession`, `deleteOldViewSessions`, `getActiveViewerCount`, `getViewSessionsForPresentation` |
+| `server/storage/analytics/weekly-summary.js` | `getTeamWeeklyAnalytics`, `getWeeklyAnalyticsForUser` |
+| `server/storage/interaction-slides.js` | `ensureInteractionSlide`, `getInteractionSlide`, `updateInteractionSlide` |
+| `server/storage/live-sessions/close.js` | `closeSession` |
+| `server/storage/live-sessions/db.js` | `countPersistedSessions`, `deletePersistedSession`, `hydrateSession`, `hydrateSessionsForPresentation`, `persistSession`, `schedulePersist`, `sweepExpiredSessions` |
+| `server/storage/live-sessions/sse.js` | `touchSessionSync` |
+| `server/storage/share-links/access-log.js` | `getShareLinkAccessLog`, `logShareLinkAccess` |
+| `server/storage/share-links/crud.js` | `getValidShareLinkById`, `shareLinkCreatorNames` |
+| `server/storage/share-links/guests.js` | `requestGuestVerification` |
+| `server/storage/share-links/index.js` | `cleanupExpiredShareLinks` |
+
+Every previous argument shifts one position, including the database argument in `getCompletionCounts(scope, db, ...)` and `getValidShareLinkById(scope, db, ...)`. Import paths stay unchanged. Pass an organization scope, or a reasoned instance scope for the data-subject, token-capability and retention paths described in docs/reference/storage-scope.md.
+
+### Fixed
+
+* report actual public API request limits ([#1637](https://github.com/jaapstronks/deckyard/issues/1637)) ([57bba34](https://github.com/jaapstronks/deckyard/commit/57bba34772b5d3e316c9c710d000a6e7208fc9b0))
+
+
+### Security
+
+* enforce SSO on local authentication endpoints ([#1634](https://github.com/jaapstronks/deckyard/issues/1634)) ([dcb3b4d](https://github.com/jaapstronks/deckyard/commit/dcb3b4d7c2d9685fbcfef444774b07c5848a6174))
+
+
+### Changed
+
+* make analytics and audience storage scope-first ([#1636](https://github.com/jaapstronks/deckyard/issues/1636)) ([30375e8](https://github.com/jaapstronks/deckyard/commit/30375e8322dfb798fdc263a945a41dc523f1dec4))
+
 ## [1.65.0](https://github.com/jaapstronks/deckyard/compare/v1.64.0...v1.65.0) (2026-10-13)
 
 

@@ -38,6 +38,7 @@ export async function handleOverview(ctx, presentationId) {
   if (!dateRange) return true;
 
   const overview = await getPresentationAnalyticsOverview(
+    ctx.storageScope,
     presentationId,
     dateRange,
   );
@@ -64,7 +65,11 @@ export async function handleSlides(ctx, presentationId) {
   });
   if (!dateRange) return true;
 
-  const slides = await getDetailedSlideEngagement(presentationId, dateRange);
+  const slides = await getDetailedSlideEngagement(
+    ctx.storageScope,
+    presentationId,
+    dateRange,
+  );
   return (serveJson(res, 200, { slides }), true);
 }
 
@@ -88,7 +93,11 @@ export async function handleHeatmap(ctx, presentationId) {
   });
   if (!dateRange) return true;
 
-  const heatmap = await getInteractionHeatmapData(presentationId, dateRange);
+  const heatmap = await getInteractionHeatmapData(
+    ctx.storageScope,
+    presentationId,
+    dateRange,
+  );
   return (serveJson(res, 200, { slides: heatmap }), true);
 }
 
@@ -112,7 +121,11 @@ export async function handleJourney(ctx, presentationId) {
   });
   if (!dateRange) return true;
 
-  const journey = await getViewerJourneyData(presentationId, dateRange);
+  const journey = await getViewerJourneyData(
+    ctx.storageScope,
+    presentationId,
+    dateRange,
+  );
   return (serveJson(res, 200, journey), true);
 }
 
@@ -148,11 +161,15 @@ export async function handleSessions(ctx, presentationId) {
   });
   if (!dateRange) return true;
 
-  const result = await getViewSessionsForPresentation(presentationId, {
-    limit,
-    offset,
-    ...dateRange,
-  });
+  const result = await getViewSessionsForPresentation(
+    ctx.storageScope,
+    presentationId,
+    {
+      limit,
+      offset,
+      ...dateRange,
+    },
+  );
 
   const sessions = result.sessions.map(({ sessionToken, ...session }) => ({
     ...session,

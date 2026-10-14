@@ -474,11 +474,11 @@ function headingOf(section) {
  * @param {object} slide
  * @param {object|null|undefined} def - the resolved definition; a type that
  *   does not resolve projects as an archived slide, like the reader's
- * @param {{ index?: number, lang?: string, slideIds?: string[] }} [opts]
+ * @param {{ index?: number, lang?: string, slideJumps?: import('../../shared/slide-types/semantic-projection.js').SlideJumps }} [opts]
  * @returns {SlideBlocks}
  */
-export function slideBlocks(slide, def, { index = 0, lang, slideIds } = {}) {
-  const html = renderSlideSectionHtml(slide, def, { index, lang, slideIds });
+export function slideBlocks(slide, def, { index = 0, lang, slideJumps } = {}) {
+  const html = renderSlideSectionHtml(slide, def, { index, lang, slideJumps });
   const fragment = JSDOM.fragment(html);
   const section = fragment.querySelector('section') || fragment;
   const walker = new BlockWalker();
@@ -836,7 +836,7 @@ function placeFlow(pptxSlide, flow, region, placeholder, pt, spec, color) {
  * @param {object} slide - the stored slide
  * @param {object|null|undefined} def - its resolved definition
  * @param {{ repoRoot: string, spec: ReturnType<typeof import('./pptx-theme.js').resolveThemeMaster>,
- *   slideNum: number, lang?: string, slideIds?: string[] }} ctx
+ *   slideNum: number, lang?: string, slideJumps?: import('../../shared/slide-types/semantic-projection.js').SlideJumps }} ctx
  * @returns {Promise<{ pptxSlide: object, warnings: string[] }>}
  */
 export async function composeGenericSlide(pptx, slide, def, ctx) {
@@ -845,7 +845,7 @@ export async function composeGenericSlide(pptx, slide, def, ctx) {
   const projected = slideBlocks(slide, def, {
     index: slideNum - 1,
     lang: ctx.lang,
-    slideIds: ctx.slideIds,
+    slideJumps: ctx.slideJumps,
   });
   const layout = chooseLayout(projected);
   if (!projected.blocks.length && !projected.heading.visible) {

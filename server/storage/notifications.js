@@ -8,7 +8,7 @@ import { crossOrganizationScope, toStorageContext } from './scope.js';
 import { sql } from 'kysely';
 import { getOrgId } from '../utils/context.js';
 import { nowIso, normalizeEmail } from '../utils/normalize.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import {
   resolveDisplayNames,
   toStoredActorIdentity,

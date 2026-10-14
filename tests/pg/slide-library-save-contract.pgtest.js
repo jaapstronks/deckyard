@@ -29,7 +29,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import { seedDefaultOrganization } from './helpers/seed.js';
 import { testScope } from '../helpers/storage-scope.js';
@@ -68,7 +67,6 @@ pgDescribe('slide-library save contract (real PostgreSQL)', () => {
   });
 
   after(async () => {
-    uninstallFacadeStorage();
     await closeTestDb(db);
   });
 

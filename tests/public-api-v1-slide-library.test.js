@@ -42,7 +42,7 @@ const FOREIGN_ITEM_ID = 'e0000004-0000-4000-8000-000000000004';
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage } = await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { handleSlideLibrary } =
   await import('../server/routes/public-api/v1/slide-library.js');
 const { handleSlides } =

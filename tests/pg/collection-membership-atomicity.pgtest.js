@@ -45,7 +45,6 @@ import {
   openTestDb,
   pgDescribe,
   truncate,
-  uninstallFacadeStorage,
 } from './helpers/harness.js';
 import {
   seedDefaultOrganization,
@@ -77,7 +76,6 @@ pgDescribe('collection membership is replaced atomically (PostgreSQL)', () => {
   });
 
   after(async () => {
-    uninstallFacadeStorage();
     await closeTestDb(db);
   });
 

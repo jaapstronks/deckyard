@@ -11,7 +11,7 @@ import { crossOrganizationScope, toStorageContext } from './scope.js';
 import { getOrgId } from '../utils/context.js';
 import { norm, nowIso, isoAfter } from '../utils/normalize.js';
 import { matchesIdentity } from '../../shared/identity-match.js';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import {
   NO_DISPLAY_NAMES,
   resolveDisplayNames,
@@ -489,10 +489,22 @@ export async function releaseAllUserSlideLocks(
  * Cleanup all expired slide locks (background task).
  *
  * Instance-wide on purpose: a scheduled job has no org context, and an expired
- * lock is expired in every organization.
+ * lock is expired in every organization. Only an instance retention scope is
+ * accepted (storage-scope.md category 7).
+ * @param {import('./scope.js').StorageScope} scope - Reasoned instance retention scope
  * @returns {Promise<number>} Number of locks cleaned up
  */
-export async function cleanupExpiredSlideLocks() {
+export async function cleanupExpiredSlideLocks(scope) {
+  const context = toStorageContext(
+    scope,
+    'cleanupExpiredSlideLocks',
+    {},
+    { allowCrossOrganization: true },
+  );
+  if (context.organizationId || !context.crossOrganization)
+    throw new TypeError(
+      'cleanupExpiredSlideLocks() requires an instance retention scope',
+    );
   return withDbGuard(0, async (db) => {
     const now = nowIso();
 

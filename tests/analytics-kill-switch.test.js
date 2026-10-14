@@ -35,8 +35,7 @@ delete process.env.ANALYTICS_ENABLED;
 
 const { createFakeDb } = await import('./helpers/fake-db.js');
 const { __setTestDb } = await import('../server/db/client.js');
-const { initializeStorage, __resetStorageForTests } =
-  await import('../server/storage/lifecycle.js');
+const { initializeStorage } = await import('../server/db/lifecycle.js');
 const { dispatchMounts } = await import('../server/utils/router.js');
 const { PUBLIC_MOUNTS, MOUNTS } = await import('../server/routes/api/index.js');
 const { getFeatureFlags } = await import('../server/config/flags-snapshot.js');
@@ -172,7 +171,6 @@ test('published page: a tracking script only with the cluster on', async (t) => 
   );
   await initializeStorage();
   t.after(() => {
-    __resetStorageForTests();
     __setTestDb(null);
   });
 

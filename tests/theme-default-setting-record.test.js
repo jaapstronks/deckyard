@@ -2,10 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createFakeDb } from './helpers/fake-db.js';
 import { __setTestDb } from '../server/db/client.js';
-import {
-  initializeStorage,
-  __resetStorageForTests,
-} from '../server/storage/lifecycle.js';
+import { initializeStorage } from '../server/db/lifecycle.js';
 import { getDefaultThemeId } from '../server/storage/settings.js';
 import { handleThemes } from '../server/routes/api/themes.js';
 
@@ -77,7 +74,6 @@ test('fresh settings expose the seed UUID as default and mark only that record',
       false,
     );
   } finally {
-    __resetStorageForTests();
     __setTestDb(null);
     if (previousEnv === undefined) delete process.env.DEFAULT_THEME;
     else process.env.DEFAULT_THEME = previousEnv;

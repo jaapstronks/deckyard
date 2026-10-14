@@ -24,7 +24,7 @@
  */
 
 import { sql } from 'kysely';
-import { withDbGuard } from './utils/index.js';
+import { withDbGuard } from '../db/client.js';
 import { sandboxEnabled } from '../config/sandbox.js';
 import { fireAndForget } from '../utils/fire-and-forget.js';
 

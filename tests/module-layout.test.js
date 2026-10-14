@@ -230,9 +230,9 @@ test('production imports use each decomposed storage folder through its seam', a
   for (const file of files) {
     const [imports] = parse(fs.readFileSync(path.join(repoRoot, file), 'utf8'));
     for (const entry of imports) {
-      if (!entry.n?.startsWith('.')) continue;
+      if (!entry.specifier?.startsWith('.')) continue;
       const target = path.posix.normalize(
-        path.posix.join(path.posix.dirname(file), entry.n),
+        path.posix.join(path.posix.dirname(file), entry.specifier),
       );
       const match = target.match(/^server\/storage\/([^/]+)\/(.+)$/);
       if (!match || !stores.has(match[1])) continue;
