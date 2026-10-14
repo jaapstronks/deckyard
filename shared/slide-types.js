@@ -30,6 +30,7 @@ export {
   deckToPresentationParts,
   deckThemeId,
   deckImportLang,
+  pinSlideJumps,
 } from './slide-types/deck.js';
 
 export {

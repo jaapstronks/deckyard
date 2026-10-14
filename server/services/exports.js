@@ -61,6 +61,9 @@ import { NotFoundError } from '../utils/errors.js';
  *   slides kept).
  * @property {Object} filteredPres - `pres` without its live-only slides when
  *   the export strips them, otherwise `pres` itself.
+ *   A builder that translates a slide jump (print, PPTX) takes `pres`
+ *   instead and leaves the live-only slides out itself: `#N` counts the
+ *   stored deck.
  * @property {Object|null} theme - The deck's resolved theme assets.
  * @property {Record<string, Object>} slideTypes - Core plus the deck
  *   organization's published custom slide types.

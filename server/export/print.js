@@ -189,7 +189,8 @@ const PRINT_DOC_CSS = `
  * Build the print handout for a presentation.
  *
  * @param {string} repoRoot - Repository root (CSS bundle and fork seam)
- * @param {object} pres - the presentation, already filtered for its context
+ * @param {object} pres - the stored deck; its live-only slides are left out
+ *   here, after a slide jump's target is read against it
  * @param {object} [opts]
  * @param {object|null} [opts.theme=null] - the deck theme, for fonts and vars
  * @param {object|null} [opts.watermark=null] - sandbox watermark settings

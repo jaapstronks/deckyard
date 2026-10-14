@@ -12,7 +12,9 @@ import { getCollaboratorPermission } from '../../../storage/collaborators.js';
 import { parseIfMatchRevision, parseSlideMergeHeaders } from './helpers.js';
 import { savePresentation } from '../../../services/save-presentation.js';
 import { filterForViewOnly } from '../../../utils/public-output.js';
+import { buildMergedSlideTypes } from '../../../utils/custom-slide-type-runtime.js';
 import { normalizeLang } from '../../../../shared/i18n-utils.js';
+import { pinSlideJumps } from '../../../../shared/slide-types.js';
 
 /**
  * GET /api/presentations/:id/revision — lightweight revision probe.
@@ -39,6 +41,28 @@ export async function handlePresentationRevision(
     updatedBy: pres.updatedBy || null,
   });
   return true;
+}
+
+/**
+ * The deck a reader without edit rights gets: the slides hidden from viewers
+ * left out and drafts marked. The presenter counts a positional jump (`#N`)
+ * in what it receives, so every `#N` is first pinned to the slide it names in
+ * the stored order; a hidden target is then no target.
+ *
+ * @param {Object} deck - the deck as served, in stored order
+ * @param {Object} storageScope - the caller's scope; the custom slide types
+ *   are the deck's organization's
+ * @returns {Promise<Object>}
+ */
+async function viewOnlyDeck(deck, storageScope) {
+  const slideTypes = await buildMergedSlideTypes({
+    ...storageScope,
+    organizationId: deck.organizationId,
+  });
+  return filterForViewOnly(
+    { ...deck, slides: pinSlideJumps(deck.slides, slideTypes) },
+    { markDrafts: true },
+  );
 }
 
 export async function handlePresentationItem(
@@ -94,7 +118,7 @@ export async function handlePresentationItem(
       };
       // Filter slides for non-editing users (hide hidden slides, mark drafts)
       if (userPermission === 'view' || userPermission === 'comment') {
-        projected = filterForViewOnly(projected, { markDrafts: true });
+        projected = await viewOnlyDeck(projected, storageScope);
         projected._userPermission = userPermission;
         projected.tags = tags;
       }
@@ -104,7 +128,7 @@ export async function handlePresentationItem(
     // Filter slides for non-editing users (hide hidden slides, mark drafts)
     let responseData = { ...pres, tags, _userPermission: userPermission };
     if (userPermission === 'view' || userPermission === 'comment') {
-      responseData = filterForViewOnly(responseData, { markDrafts: true });
+      responseData = await viewOnlyDeck(responseData, storageScope);
       responseData._userPermission = userPermission;
       responseData.tags = tags;
     }

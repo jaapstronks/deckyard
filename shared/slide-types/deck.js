@@ -1,4 +1,4 @@
-import { cryptoUuid, slideJumpTarget } from './helpers.js';
+import { cryptoUuid, slideJumpId, slideJumpTarget } from './helpers.js';
 import { newSlide } from './presentation.js';
 import { allowedEnumValues } from './field-types.js';
 import {
@@ -306,6 +306,39 @@ function forEachUrlValue(def, content, rewrite) {
     }
   }
   return dropped;
+}
+
+/**
+ * `slides` with every positional jump (`#N`) in a declared `url` value
+ * written in the id form `#slide:<id>`, read against these slides' own order
+ * through `slideJumpId`. For a surface that serves a filtered deck to a
+ * renderer which counts what it receives: pinned before the filter, `#N`
+ * keeps naming the slide it named in the stored order, and a target the
+ * filter leaves out is no target. A `#N` past the deck travels as written.
+ * The slides are not mutated; an untouched slide is returned as is.
+ *
+ * @param {Object[]} slides - the deck's slides, in stored order
+ * @param {Object} [slideTypes] - the registry the slides' types resolve
+ *   against (core plus the organization's custom types)
+ * @returns {Object[]}
+ */
+export function pinSlideJumps(slides, slideTypes = SLIDE_TYPES) {
+  if (!Array.isArray(slides)) return slides;
+  const deckSlideIds = slides.map((slide) => slide?.id);
+  return slides.map((slide) => {
+    if (!isPlainObject(slide?.content)) return slide;
+    const content = structuredClone(slide.content);
+    let pinned = false;
+    forEachUrlValue(slideTypes?.[slide.type], content, (value) => {
+      const jump = slideJumpTarget(value);
+      if (!jump || 'id' in jump) return value;
+      const id = slideJumpId(jump, deckSlideIds);
+      if (!id) return value;
+      pinned = true;
+      return `#slide:${id}`;
+    });
+    return pinned ? { ...slide, content } : slide;
+  });
 }
 
 /**

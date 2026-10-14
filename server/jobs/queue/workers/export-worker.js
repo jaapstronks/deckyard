@@ -101,15 +101,11 @@ async function processExportJob(job) {
 
   switch (type) {
     case 'pptx': {
-      const result = await buildPptxBuffer(
-        job.data.repoRoot,
-        ctx.filteredPres,
-        {
-          scale,
-          theme: ctx.theme,
-          slideTypes: ctx.slideTypes,
-        },
-      );
+      const result = await buildPptxBuffer(job.data.repoRoot, ctx.pres, {
+        scale,
+        theme: ctx.theme,
+        slideTypes: ctx.slideTypes,
+      });
       buffer = result.buffer;
       contentType =
         'application/vnd.openxmlformats-officedocument.presentationml.presentation';
@@ -120,7 +116,7 @@ async function processExportJob(job) {
     case 'pptx-editable': {
       const result = await buildEditablePptxBuffer(
         job.data.repoRoot,
-        ctx.filteredPres,
+        ctx.pres,
         {
           scale,
           theme: ctx.theme,
@@ -136,16 +132,12 @@ async function processExportJob(job) {
     }
 
     case 'handoff-zip': {
-      buffer = await buildHandoffZipBuffer(
-        job.data.repoRoot,
-        ctx.filteredPres,
-        {
-          scale,
-          theme: ctx.theme,
-          lang: ctx.exportLang || '',
-          slideTypes: ctx.slideTypes,
-        },
-      );
+      buffer = await buildHandoffZipBuffer(job.data.repoRoot, ctx.pres, {
+        scale,
+        theme: ctx.theme,
+        lang: ctx.exportLang || '',
+        slideTypes: ctx.slideTypes,
+      });
       contentType = 'application/zip';
       extension = '-handoff.zip';
       break;
