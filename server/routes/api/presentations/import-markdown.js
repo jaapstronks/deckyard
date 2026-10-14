@@ -10,8 +10,7 @@
  * (public in sandbox/demo mode, security-audit H7).
  */
 
-import { updatePresentation } from '../../../storage/presentations/index.js';
-import { createPresentation } from '../../../services/presentations.js';
+import { createImportedPresentation } from '../../../services/import-json.js';
 import {
   jsonError,
   serveJson,
@@ -77,10 +76,11 @@ export async function handlePresentationsImportMarkdown({
   );
 
   // Normalize through deckToPresentationParts (same as JSON import)
+  const slideTypes = await buildMergedSlideTypes(storageScope);
   const parts = deckToPresentationParts(deck, {
     theme: themeConfig,
     lang,
-    slideTypes: await buildMergedSlideTypes(storageScope),
+    slideTypes,
   });
   log.info(
     '[import-markdown] Normalized - title:',
@@ -91,43 +91,12 @@ export async function handlePresentationsImportMarkdown({
     parts.slides?.length,
   );
 
-  // Create presentation
-  const created = await createPresentation(
+  // The shared import write: a field the editor would refuse is refused with
+  // its slide and field before any deck exists (B694).
+  const updated = await createImportedPresentation(
     storageScope,
     { actor: authedUser },
-    {
-      title: parts.title,
-      theme: themeId,
-      lang,
-    },
-  );
-  log.info('[import-markdown] Created presentation:', created.id);
-
-  // Build i18n structure (same as JSON import)
-  const i18n = {
-    dominant: lang,
-    active: lang,
-    versions: {
-      [lang]: {
-        title: parts.title,
-        slides: parts.slides,
-      },
-    },
-  };
-
-  const updated = await updatePresentation(
-    storageScope,
-    created.id,
-    {
-      title: parts.title,
-      theme: themeId,
-      lang,
-      slides: parts.slides,
-      i18n,
-    },
-    {
-      actorEmail: authedUser?.email || null,
-    },
+    { parts, slideTypes, lang, theme: themeId },
   );
   log.info('[import-markdown] Updated presentation successfully');
 
