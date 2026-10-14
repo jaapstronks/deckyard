@@ -90,8 +90,11 @@ function jsFiles(dir) {
 function resolvedImports(file, source) {
   const [imports] = parse(source);
   return imports
-    .filter(({ n }) => n?.startsWith('./') || n?.startsWith('../'))
-    .map(({ n }) => path.resolve(path.dirname(file), n));
+    .filter(
+      ({ specifier }) =>
+        specifier?.startsWith('./') || specifier?.startsWith('../'),
+    )
+    .map(({ specifier }) => path.resolve(path.dirname(file), specifier));
 }
 
 /**
