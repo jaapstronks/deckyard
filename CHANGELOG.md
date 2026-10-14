@@ -10,6 +10,14 @@ entries are grouped per release rather than exhaustively listed.
 ### ⚠ BREAKING CHANGES
 
 * Removed checkRateLimitRedis(key, { capacity, windowSeconds }) from server/utils/rate-limit-redis.js; forks must use allowRequestRedisDetails(key, { capacity, refillPerSec }). Redis rate limiting now uses token-bucket semantics and the ratelimit:token-bucket: namespace.
+* Fork impact, with no aliases at the old names:
+
+  | Module | Change |
+  | --- | --- |
+  | `server/utils/rate-limit-redis.js` | `checkRateLimitRedis(key, { capacity, windowSeconds })` is removed; use `allowRequestRedisDetails(key, { capacity, refillPerSec }, runWithRedis?)`. Keys live under `ratelimit:token-bucket:`; old keys expire on their own |
+  | `server/routes/api/admin-users.js` | Admin user creation uses the shared limiter: burst 20, refill 20 per hour, keyed by admin email across organizations (was a per-process hourly counter) |
+  | `shared/slide-types/semantic-projection.js` | The projection option `slideIds` is renamed `slideJumps` (`{ deck, document }`, from `slideJumpsFor()`); `#N` always means the Nth slide of the stored deck, and a renderer without the deck order renders no link |
+  | `server/export/pptx.js` | `buildPptxBuffer` / `buildEditablePptxBuffer` take the stored deck and leave live-only slides out themselves; print/PDF routes pass the stored deck to `buildPrintHtml`. View-only responses pin jumps with `pinSlideJumps()` (`shared/slide-types/deck.js`) |
 
 ### Fixed
 
