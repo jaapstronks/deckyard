@@ -24,7 +24,7 @@ export async function composeChapterTitleSlide(pptx, slide, ctx) {
   const projected = slideBlocks(slide, ctx.def, {
     index: slideNum - 1,
     lang: ctx.docLang,
-    slideIds: ctx.slideIds,
+    slideJumps: ctx.slideJumps,
   });
   const warnings = [];
   const pptxSlide = pptx.addSlide();

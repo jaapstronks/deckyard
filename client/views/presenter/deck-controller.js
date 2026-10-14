@@ -1,6 +1,7 @@
 import { isSlideVisibleIn } from '../../../shared/slide-visibility.js';
 import { isLiveSlideType } from '../../../shared/slide-types/runtime.js';
 import { isLiveInviteSlideType } from '../../../shared/slide-types/live-session.js';
+import { slideJumpId } from '../../../shared/slide-types/helpers.js';
 import { resolveDeckLang } from '../../../shared/i18n-utils.js';
 import { clamp } from '../../../shared/number-utils.js';
 import { morphTransition } from './morph-engine.js';
@@ -69,24 +70,27 @@ export function createPresenterDeckController({
 
   // In-deck card navigation: a card whose `link` targets another slide renders
   // an overlay anchor (see cardLinkOverlayHtml) — `data-card-nav-id="<slideId>"`
-  // (stable, chosen via the editor picker) or the legacy positional
+  // (stable, chosen via the editor picker) or the positional
   // `data-card-nav="N"`. One delegated click listener resolves it to a slide
-  // jump. It lives for the controller's lifetime (the stage element persists),
-  // so no per-slide cleanup is needed.
+  // jump. `N` counts the deck's stored order, not the presented slides, so it
+  // goes through the same id as the picker form; a slide this view skips is no
+  // target (B695). It lives for the controller's lifetime (the stage element
+  // persists), so no per-slide cleanup is needed.
   stage?.addEventListener?.('click', (e) => {
     const a = e.target?.closest?.('a[data-card-nav-id], a[data-card-nav]');
     if (!a || !stage.contains(a)) return;
     e.preventDefault();
     const navId = a.getAttribute('data-card-nav-id');
-    if (navId) {
-      const targetIdx = slides.findIndex(
-        (sec) => sec?.getAttribute?.('data-slide-id') === navId,
-      );
-      if (targetIdx >= 0) show(targetIdx);
-      return;
-    }
-    const n = Number(a.getAttribute('data-card-nav'));
-    if (Number.isFinite(n)) show(clampIndex(n - 1));
+    const targetId = slideJumpId(
+      navId
+        ? { id: navId }
+        : { index: Number(a.getAttribute('data-card-nav')) },
+      (pres?.slides || []).map((s) => s?.id),
+    );
+    const targetIdx = targetId
+      ? presentSlides.findIndex((s) => s?.id === targetId)
+      : -1;
+    if (targetIdx >= 0) show(targetIdx);
   });
 
   const getStageWrap = () => {

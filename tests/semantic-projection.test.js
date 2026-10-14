@@ -12,8 +12,12 @@ import assert from 'node:assert';
 import { initSanitizer } from '../shared/sanitize.js';
 await initSanitizer();
 
-const { slideHeading, renderSlideBodySemanticHtml, renderSlideSectionHtml } =
-  await import('../shared/slide-types/semantic-projection.js');
+const {
+  slideHeading,
+  renderSlideBodySemanticHtml,
+  renderSlideSectionHtml,
+  slideJumpsFor,
+} = await import('../shared/slide-types/semantic-projection.js');
 const { SLIDE_TYPES } = await import('../shared/slide-types.js');
 const { markupSlideType, MARKUP_SLIDE_TYPE } =
   await import('./fixtures/markup-slide-type.js');
@@ -1846,18 +1850,31 @@ describe('pairs stay pairs (D131)', () => {
     const def = { fields: [{ key: 'link', type: 'url' }] };
     const project = (link, opts) =>
       body({ content: { link } }, def, { lang: 'en-GB', ...opts });
+    const abc = slideJumpsFor([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
     assert.equal(
-      project('#2'),
+      project('#2', { slideJumps: abc }),
       '<p data-field="link"><a href="#slide-2">Slide 2</a></p>',
     );
     assert.equal(
-      project('#slide:b', { slideIds: ['a', 'b', 'c'], lang: 'nl' }),
+      project('#slide:b', { slideJumps: abc, lang: 'nl' }),
       '<p data-field="link"><a href="#slide-2">Dia 2</a></p>',
     );
-    // A jump past the end of the document, or to a slide it does not hold.
-    assert.equal(project('#4', { slideIds: ['a', 'b'] }), '');
-    assert.equal(project('#slide:gone', { slideIds: ['a'] }), '');
+    // `#N` counts the deck; the anchor counts the document (B695).
+    const docWithoutB = slideJumpsFor(
+      [{ id: 'a' }, { id: 'b' }, { id: 'c' }],
+      [{ id: 'a' }, { id: 'c' }],
+    );
+    assert.equal(
+      project('#3', { slideJumps: docWithoutB }),
+      '<p data-field="link"><a href="#slide-2">Slide 2</a></p>',
+    );
+    assert.equal(project('#2', { slideJumps: docWithoutB }), '');
+    // A jump past the end of the deck, to a slide it does not hold, or
+    // without a deck to read it against.
+    assert.equal(project('#4', { slideJumps: abc }), '');
+    assert.equal(project('#slide:gone', { slideJumps: abc }), '');
     assert.equal(project('#slide:a'), '');
+    assert.equal(project('#1'), '');
     assert.equal(project('javascript:alert(1)'), '');
   });
 

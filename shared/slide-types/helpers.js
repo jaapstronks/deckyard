@@ -904,8 +904,8 @@ export function followPath(presentationId, lang) {
  *  - `#slide:<id>` — jump to the deck slide with that id (chosen via the editor
  *    slide picker). Stable across reordering; resolved to a live index by the
  *    presenter. In-deck only, so ignored outside `present`.
- *  - `#N` — jump to slide N (1-based) within the deck (legacy/manual form,
- *    positional). Also in-deck only.
+ *  - `#N` — jump to the Nth slide (1-based) of the deck's stored order (the
+ *    portable form; {@link slideJumpId}). Also in-deck only.
  *  - an `http(s):` or `mailto:` URL — opens in a new tab. Suppressed in
  *    non-interactive previews: thumbnails (`mode === 'thumb'`) and the
  *    inline-edit canvas (`mode === 'edit'`), where an overlay anchor would
@@ -948,6 +948,29 @@ export function slideJumpTarget(raw) {
   const byIndex = /^#(\d{1,3})$/.exec(link);
   if (byIndex && Number(byIndex[1]) > 0) return { index: Number(byIndex[1]) };
   return null;
+}
+
+/**
+ * The id of the slide an in-deck jump lands on (B695). `#slide:<id>` names it;
+ * `#N` is the Nth slide of the deck in its stored order, the order the
+ * portable export writes `#N` in, never a place in a filtered view. Every
+ * renderer (presenter, reader) translates a jump here and then follows the id,
+ * so a slide it leaves out is no target, whichever form the jump took.
+ *
+ * @param {{ id: string } | { index: number } | null} jump - a parsed jump
+ *   ({@link slideJumpTarget})
+ * @param {readonly unknown[]|null|undefined} deckSlideIds - the deck's slide
+ *   ids, in stored order
+ * @returns {string} the target slide id, or '' when the deck has no such slide
+ */
+export function slideJumpId(jump, deckSlideIds) {
+  if (!jump) return '';
+  if ('id' in jump) return jump.id;
+  const id =
+    Array.isArray(deckSlideIds) && Number.isInteger(jump.index)
+      ? deckSlideIds[jump.index - 1]
+      : '';
+  return typeof id === 'string' ? id : '';
 }
 
 /**

@@ -44,7 +44,7 @@ export async function composeCalloutSlide(pptx, slide, ctx) {
   const projected = slideBlocks(slide, ctx.def, {
     index: slideNum - 1,
     lang: ctx.docLang,
-    slideIds: ctx.slideIds,
+    slideJumps: ctx.slideJumps,
   });
   const paragraphs = projected.blocks
     .filter((block) => block.kind === 'text')

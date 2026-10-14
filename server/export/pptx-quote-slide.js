@@ -27,7 +27,7 @@ function projectQuote(slide, content, ctx) {
   const projected = slideBlocks({ ...slide, content }, ctx.def, {
     index: ctx.slideNum - 1,
     lang: ctx.docLang,
-    slideIds: ctx.slideIds,
+    slideJumps: ctx.slideJumps,
   });
   const paragraphs = projected.blocks
     .filter((b) => b.kind === 'text')
