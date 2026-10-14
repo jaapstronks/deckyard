@@ -40,9 +40,10 @@ test(
       keys.push(`ratelimit:token-bucket:${key}`);
       await redis.del(keys.at(-1));
       // Burst, refused requests that must not consume, fractional refill,
-      // immediately before/at/after refill boundaries, and full reset.
+      // immediately before/at/after refill boundaries, a clock stepping
+      // backwards and forwards again, and full reset.
       for (const elapsed of [
-        0, 0, 0, 0, 1, 499, 500, 999, 1, 1, 1000, 1333, 1, 10000, 0,
+        0, 0, 0, 0, 1, 499, 500, 999, 1, 1, 1000, 1333, -700, 700, 1, 10000, 0,
       ]) {
         now += elapsed;
         const memory = await checkRequestRateLimit(key, options, {

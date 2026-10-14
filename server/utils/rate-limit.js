@@ -149,8 +149,10 @@ function checkRequestInMemory(key, { capacity, refillPerSec }) {
     buckets.set(key, b);
   }
 
-  const elapsedSec = (now - b.last) / 1000;
-  b.last = now;
+  // A clock running behind the stored refill neither drains nor gifts tokens:
+  // elapsed time is clamped at zero and `last` never moves backwards.
+  const elapsedSec = Math.max(0, now - b.last) / 1000;
+  b.last = Math.max(b.last, now);
   b.tokens = Math.min(cap, b.tokens + elapsedSec * rps);
   // Refresh the limits so a changed capacity/refill (and pruneBuckets) always
   // sees the current bucket shape.

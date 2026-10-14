@@ -16,10 +16,12 @@ local now = tonumber(ARGV[3])
 local state = redis.call('HMGET', KEYS[1], 'tokens', 'last')
 local tokens = tonumber(state[1]) or cap
 local last = tonumber(state[2]) or now
-tokens = math.min(cap, tokens + ((now - last) / 1000) * rps)
+-- A caller clock behind 'last' neither drains nor gifts: clamp, never rewind.
+tokens = math.min(cap, tokens + (math.max(0, now - last) / 1000) * rps)
 local allowed = tokens >= 1
 if allowed then tokens = tokens - 1 end
-redis.call('HSET', KEYS[1], 'tokens', string.format('%.17g', tokens), 'last', now)
+redis.call('HSET', KEYS[1], 'tokens', string.format('%.17g', tokens), 'last',
+  math.max(last, now))
 -- Once fully refilled, the bucket is equivalent to an absent key.
 redis.call('PEXPIRE', KEYS[1], math.max(1, math.ceil((cap - tokens) / rps * 1000)))
 local retry = 0

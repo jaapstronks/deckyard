@@ -134,9 +134,9 @@ client-supplied header.)
 
 All request limiters use the same capacity and continuous refill contract in Redis and memory. Redis refills, consumes and returns the remaining budget, full-reset timestamp and next-admission delay in one atomic Lua execution. Refused requests do not spend tokens. Idle Redis buckets expire when their budget has fully refilled.
 
-When Redis is unavailable, each process uses its own in-memory budget. This fallback does not preserve a shared budget across instances, and switching backends can admit a fresh burst. Application clocks supply timestamps, so instances should keep their clocks synchronized.
+When Redis is unavailable, each process uses its own in-memory budget. This fallback does not preserve a shared budget across instances, and switching backends can admit a fresh burst. Application clocks supply timestamps. A request stamped earlier than the bucket's last refill neither drains nor refills it, because the last-refill timestamp never moves backwards. Instances should still keep their clocks synchronized, since a clock running ahead does refill early.
 
-Admin user creation uses the shared limiter with a burst capacity of 20 and a refill of 20 per hour, keyed by admin email across organizations. This replaces the former per-process hourly counter; one new token becomes available every three minutes after the burst.
+Admin user creation uses the shared limiter with a burst capacity of 20 and a refill of 20 per hour, keyed by admin email across organizations. This replaces the former per-process hourly counter; one new token becomes available every three minutes after the burst. A refused request's 429 `Retry-After` reports the actual delay until that next token.
 
 The internal Redis export is now `allowRequestRedisDetails(key, { capacity, refillPerSec })`; the former `checkRateLimitRedis(key, { capacity, windowSeconds })` sliding-window export has been removed. Forks importing it must migrate to the token-bucket parameters. Redis keys use the `ratelimit:token-bucket:` namespace; old sliding-window keys expire independently, so an upgrade begins a fresh budget.
 

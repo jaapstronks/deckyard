@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { Readable } from 'node:stream';
 import { handleAdminUsers } from '../server/routes/api/admin-users.js';
 import { resetRateLimitBuckets } from '../server/utils/rate-limit.js';
-import { closeRedis } from '../server/utils/redis-client.js';
+import { closeRedis, getRedisClient } from '../server/utils/redis-client.js';
 
 test('admin creates await the shared email bucket across organizations', async (t) => {
   const originalNow = Date.now;
@@ -19,6 +19,15 @@ test('admin creates await the shared email bucket across organizations', async (
   t.after(async () => {
     Date.now = originalNow;
     resetRateLimitBuckets();
+    if (process.env.RATE_LIMIT_TEST_REDIS_URL) {
+      const client = await getRedisClient();
+      if (client) {
+        await client.del(
+          `ratelimit:token-bucket:admin-create:${email}`,
+          `ratelimit:token-bucket:admin-create:other-${email}`,
+        );
+      }
+    }
     await closeRedis();
     for (const [name, value] of [
       ['REDIS_URL', originalUrl],
@@ -66,7 +75,7 @@ test('admin creates await the shared email bucket across organizations', async (
   const refused = await create(email, 'org-b');
   assert.equal(refused.status, 429);
   assert.equal(refused.body.error, 'rate_limited');
-  assert.equal(refused.headers['retry-after'], '3600');
+  assert.equal(refused.headers['retry-after'], '180');
   assert.equal((await create('other-' + email, 'org-a')).status, 400);
   now += 179_999;
   assert.equal((await create(email, 'org-a')).status, 429);

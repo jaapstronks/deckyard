@@ -30,7 +30,7 @@ import {
   resendInvitation,
 } from '../../storage/users.js';
 import { logAuthEvent } from '../../storage/password-reset.js';
-import { allowRequest } from '../../utils/rate-limit.js';
+import { checkRequestRateLimit } from '../../utils/rate-limit.js';
 import { normalizeEmail } from '../../utils/normalize.js';
 import {
   getMembershipByEmail,
@@ -121,16 +121,16 @@ async function handleAdminUserCreate({
   res,
   authedUser: user,
 }) {
-  // Rate limit user creation to prevent abuse
-  if (
-    !(await allowRequest(`admin-create:${user.email}`, {
-      capacity: RATE_LIMIT_CREATE_PER_ADMIN,
-      refillPerSec: RATE_LIMIT_CREATE_PER_ADMIN / RATE_LIMIT_WINDOW_SECONDS,
-    }))
-  ) {
+  // Rate limit user creation to prevent abuse; Retry-After reports the actual
+  // delay until the bucket's next token, not the whole refill window.
+  const decision = await checkRequestRateLimit(`admin-create:${user.email}`, {
+    capacity: RATE_LIMIT_CREATE_PER_ADMIN,
+    refillPerSec: RATE_LIMIT_CREATE_PER_ADMIN / RATE_LIMIT_WINDOW_SECONDS,
+  });
+  if (!decision.allowed) {
     rateLimited(
       res,
-      3600,
+      decision.retryAfter,
       'Too many user creation requests. Please try again later.',
     );
     return true;
