@@ -2,8 +2,8 @@
  * The converters write their slides through the shared field validation
  * (B694).
  *
- * B693 put the declared field rules in front of create and the JSON and
- * `.deck` imports; the file converter (`/api/convert` and its stream), the
+ * The declared field rules stand in front of create and the JSON and
+ * `.deck` imports (B693); the file converter (`/api/convert` and its stream), the
  * Notion import (and its stream) and the Markdown import still created an
  * empty deck and wrote their slides with a storage update afterwards, past
  * every check. All five now go through `createImportedPresentation`, which
@@ -52,6 +52,7 @@ const { handleNotionImport, handleNotionImportStream } =
   await import('../server/routes/api/notion/import.js');
 const { handlePresentationsImportMarkdown } =
   await import('../server/routes/api/presentations/import-markdown.js');
+const { extractPageId } = await import('../server/utils/notion/index.js');
 
 const routeHandler = (pattern) =>
   convertRoutes.ROUTES.find((r) => r.pattern === pattern).handler;
@@ -244,6 +245,11 @@ test('convert: the same deck with a valid field is stored', async (t) => {
   });
   assert.equal(status, 201, JSON.stringify(body));
   assert.equal(storedDecks().length, 1);
+  // The create carries the converter's settings; the update sets the language
+  // version explicitly (review of #1645).
+  assert.equal(storedDecks()[0].settings.stepParagraphs, true);
+  assert.equal(storedDecks()[0].settings.transitions.preset, 'fade');
+  assert.equal(storedDecks()[0].i18n.versions['en-GB'].slides.length, 1);
   const team = storedDecks()[0].slides.find(
     (s) => s.type === 'team-cards-slide',
   );
@@ -271,6 +277,22 @@ test('Notion import: a refused field is answered 400 with its slide and no deck'
     '/api/notion/import',
     await callJson(handleNotionImport, { url: NOTION_PAGE_ID, lang: 'en' }),
   );
+});
+
+test('Notion import: a valid page is stored with its source page id', async (t) => {
+  await setup();
+  stubFetch(t, 'https://example.test/ana', { notion: true });
+  const { status, body } = await callJson(handleNotionImport, {
+    url: NOTION_PAGE_ID,
+    lang: 'en',
+  });
+  assert.equal(status, 201, JSON.stringify(body));
+  assert.equal(storedDecks().length, 1);
+  assert.equal(
+    storedDecks()[0].notion_source_page_id,
+    extractPageId(NOTION_PAGE_ID),
+  );
+  assert.equal(storedDecks()[0].settings.stepParagraphs, true);
 });
 
 test('Notion import stream: a refused field ends in an error event and no deck', async (t) => {
