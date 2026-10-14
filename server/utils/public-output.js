@@ -75,22 +75,55 @@ export function filterForPublished(pres) {
 }
 
 /**
- * Filter presentation for view-only users.
- * Removes slides with hideFromViewers visibility and marks draft slides.
+ * Apply `fn` to every slide list a deck carries: `slides` and the `slides` of
+ * each language version in `i18n.versions`. A reader-facing filter that only
+ * touched `slides` would leave the same slides readable in every other
+ * version of the response (B698).
+ * @param {Object} pres - Presentation object
+ * @param {(slides: Object[]) => Object[]} fn - returns the list to serve;
+ *   the same array when nothing changed
+ * @returns {Object} the presentation, unchanged when `fn` changed no list
+ */
+export function mapDeckSlideLists(pres, fn) {
+  if (!pres || typeof pres !== 'object') return pres;
+  let changed = false;
+  const apply = (owner) => {
+    if (!owner || typeof owner !== 'object' || !Array.isArray(owner.slides)) {
+      return owner;
+    }
+    const slides = fn(owner.slides);
+    if (slides === owner.slides) return owner;
+    changed = true;
+    return { ...owner, slides };
+  };
+  const next = apply(pres);
+  const versions = pres.i18n?.versions;
+  if (!versions || typeof versions !== 'object') return changed ? next : pres;
+  const nextVersions = Object.fromEntries(
+    Object.entries(versions).map(([lang, version]) => [lang, apply(version)]),
+  );
+  if (!changed) return pres;
+  return { ...next, i18n: { ...pres.i18n, versions: nextVersions } };
+}
+
+/**
+ * Filter presentation for view-only users, in every language version it
+ * carries. Removes slides with hideFromViewers visibility and marks draft
+ * slides.
  * @param {Object} pres - Presentation object
  * @param {Object} options - Options
  * @param {boolean} options.markDrafts - Whether to mark draft slides with _isDraft flag
  * @returns {Object} Filtered presentation
  */
 export function filterForViewOnly(pres, options = {}) {
-  if (!pres || typeof pres !== 'object') return pres;
-  const slides = Array.isArray(pres.slides) ? pres.slides : [];
-  const filtered = filterSlidesForContext(slides, 'viewer', {
-    userPermission: 'read',
-    markDrafts: options.markDrafts !== false,
+  return mapDeckSlideLists(pres, (slides) => {
+    const filtered = filterSlidesForContext(slides, 'viewer', {
+      userPermission: 'read',
+      markDrafts: options.markDrafts !== false,
+    });
+    if (filtered.length === slides.length && !options.markDrafts) return slides;
+    return filtered;
   });
-  if (filtered.length === slides.length && !options.markDrafts) return pres;
-  return { ...pres, slides: filtered };
 }
 
 /**

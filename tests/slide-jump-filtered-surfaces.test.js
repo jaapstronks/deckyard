@@ -105,7 +105,7 @@ describe('view-only presenter: #N pinned before the viewer filter', () => {
     organizationId: ORG,
   };
 
-  async function seed(slides) {
+  async function seed(slides, i18n = null) {
     __setTestDb(
       createFakeDb({
         organizations: [{ id: ORG, name: 'Home', slug: 'home' }],
@@ -137,7 +137,7 @@ describe('view-only presenter: #N pinned before the viewer filter', () => {
             revision: 1,
             is_view_only: false,
             slides,
-            i18n: null,
+            i18n,
             settings: {},
             created_at: '2026-02-01T00:00:00.000Z',
             modified_at: '2026-02-01T00:00:00.000Z',
@@ -168,7 +168,7 @@ describe('view-only presenter: #N pinned before the viewer filter', () => {
     await invalidatePermission(DECK, VIEWER.email);
   }
 
-  async function getAsViewer() {
+  async function getAsViewer(query = '') {
     const res = {
       status: null,
       chunks: [],
@@ -187,7 +187,9 @@ describe('view-only presenter: #N pinned before the viewer filter', () => {
         storageScope: createStorageScope(VIEWER, { repoRoot: process.cwd() }),
         req: { method: 'GET', headers: {} },
         res,
-        url: new URL(`http://decks.example.test/api/presentations/${DECK}`),
+        url: new URL(
+          `http://decks.example.test/api/presentations/${DECK}${query}`,
+        ),
         authedUser: VIEWER,
       },
       DECK,
@@ -226,5 +228,51 @@ describe('view-only presenter: #N pinned before the viewer filter', () => {
     const body = await getAsViewer();
     assert.equal(goUrl(body.slides[0]), '#slide:b');
     assert.ok(!body.slides.some((s) => s.id === 'b'));
+  });
+
+  // B698: the hidden slide left `slides` but stayed readable in the other
+  // language versions the response carries.
+  const versionSlides = () => [
+    jumpSlide('a', '#3'),
+    plainSlide('b', { hideFromViewers: true }),
+    plainSlide('c'),
+  ];
+  const bilingual = () => ({
+    dominant: 'en-GB',
+    versions: {
+      'en-GB': { title: 'Jumps', slides: versionSlides() },
+      nl: { title: 'Sprongen', slides: versionSlides() },
+    },
+  });
+
+  /** Every version's slide ids, as `{ lang: [ids] }`. */
+  const versionIds = (body) =>
+    Object.fromEntries(
+      Object.entries(body.i18n.versions).map(([lang, v]) => [
+        lang,
+        v.slides.map((s) => s.id),
+      ]),
+    );
+
+  it('a slide hidden from viewers is in no language version of the response', async () => {
+    await seed(versionSlides(), bilingual());
+    const body = await getAsViewer();
+    assert.deepEqual(versionIds(body), { 'en-GB': ['a', 'c'], nl: ['a', 'c'] });
+    for (const version of Object.values(body.i18n.versions)) {
+      assert.equal(goUrl(version.slides[0]), '#slide:c');
+    }
+    assert.equal(body.i18n.versions.nl.title, 'Sprongen');
+  });
+
+  it('the ?lang projection filters and pins every version as well', async () => {
+    await seed(versionSlides(), bilingual());
+    const body = await getAsViewer('?lang=nl');
+    assert.equal(body.i18n.active, 'nl');
+    assert.deepEqual(
+      body.slides.map((s) => s.id),
+      ['a', 'c'],
+    );
+    assert.equal(goUrl(body.slides[0]), '#slide:c');
+    assert.deepEqual(versionIds(body), { 'en-GB': ['a', 'c'], nl: ['a', 'c'] });
   });
 });
