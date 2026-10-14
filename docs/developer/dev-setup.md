@@ -298,6 +298,18 @@ The storage layer additionally runs against a real PostgreSQL in the
 `test-postgres` CI job (`npm run test:pg`); it is deliberately outside
 `npm test` - see [pg-test-suite.md](pg-test-suite.md).
 
+The rate limiter's Redis backend (the Lua token bucket) is exercised only when
+`RATE_LIMIT_TEST_REDIS_URL` names a disposable Redis; CI's `test` job sets it
+against a Redis service. Without it, `tests/rate-limit-redis.test.js` skips and
+the admin and v1-router limiter tests run on process memory. The tests delete
+their own keys, so repeated runs against the same instance stay green; never
+point it at an application's live Redis.
+
+```bash
+docker run --rm -d -p 127.0.0.1:16379:6379 redis:7-alpine
+RATE_LIMIT_TEST_REDIS_URL=redis://127.0.0.1:16379 npm test
+```
+
 ### Testing storage behaviour without PostgreSQL
 
 The suite has no live database, yet the storage/identity/auth modules reach

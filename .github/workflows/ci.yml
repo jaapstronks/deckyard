@@ -32,6 +32,20 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      # A throwaway Redis for the rate limiter. Without it the Lua token bucket
+      # never ran in CI: tests/rate-limit-redis.test.js (parity with the memory
+      # backend, concurrent clients) and the admin and v1-router limiter tests
+      # only reach Redis through RATE_LIMIT_TEST_REDIS_URL, set on `npm test`
+      # below, and skip or fall back to memory without it.
+      redis:
+        image: public.ecr.aws/docker/library/redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -66,6 +80,7 @@ jobs:
       - run: npm test
         env:
           DECKYARD_MCP_TEST_DATABASE_URL: postgres://deckyard:deckyard@localhost:5432/deckyard_mcp_test
+          RATE_LIMIT_TEST_REDIS_URL: redis://localhost:6379
 
   # Second run of the SAME suite, with a fork slide type dropped into
   # custom/slide-types/ before it starts. That tree is gitignored, so upstream CI
