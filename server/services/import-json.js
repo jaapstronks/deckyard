@@ -14,7 +14,7 @@ import {
 } from '../../shared/slide-types.js';
 import { settleNewDeckTheme } from '../utils/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
-import { assertValidNewDeckSlides } from './slide-field-validation.js';
+import { assertValidImportedDeck } from './slide-field-validation.js';
 
 /**
  * @param {object} opts
@@ -60,17 +60,7 @@ export async function importJsonDeck({
 
   // The value the editor would refuse, the import refuses, before any deck
   // exists: per version, naming the slide and the field (B693).
-  assertValidNewDeckSlides(
-    [
-      { lang, slides: parts.slides },
-      ...Object.entries(parts.translations || {}).map(([l, version]) => ({
-        lang: l,
-        slides: version?.slides,
-      })),
-    ],
-    slideTypes,
-    { dominant: lang },
-  );
+  assertValidImportedDeck(parts, slideTypes, { lang });
 
   const created = await createPresentation(
     storageScope,

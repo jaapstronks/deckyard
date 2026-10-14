@@ -54,3 +54,27 @@ export function assertValidNewDeckSlides(
     });
   }
 }
+
+/**
+ * {@link assertValidNewDeckSlides} for an imported deck as
+ * `deckToPresentationParts` composed it: `slides` in the deck's language,
+ * `translations[lang].slides` beside them. The JSON import and the `.deck`
+ * bundle import both call it before they create anything.
+ *
+ * @param {{slides?: Array<Object>, translations?: Record<string, {slides?: Array<Object>}>}} parts
+ * @param {Record<string, Object>} slideTypes
+ * @param {{lang: string}} opts - The deck's language.
+ */
+export function assertValidImportedDeck(parts, slideTypes, { lang }) {
+  assertValidNewDeckSlides(
+    [
+      { lang, slides: parts?.slides },
+      ...Object.entries(parts?.translations || {}).map(([l, version]) => ({
+        lang: l,
+        slides: version?.slides,
+      })),
+    ],
+    slideTypes,
+    { dominant: lang },
+  );
+}
