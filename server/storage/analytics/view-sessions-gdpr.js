@@ -39,6 +39,7 @@ import { toStorageContext } from '../scope.js';
  */
 
 import { withDbGuard } from '../../db/client.js';
+import { normalizeEmail } from '../../../shared/email.js';
 
 /**
  * Export all analytics data for one person (GDPR right of access).
@@ -59,11 +60,11 @@ export async function exportUserAnalyticsData(scope, { email }) {
     throw new TypeError(
       'exportUserAnalyticsData() requires an instance data-subject scope',
     );
-  const normalizedEmail = email?.toLowerCase()?.trim();
+  const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) {
     return { ok: false, reason: 'invalid' };
   }
-  if (normalizedEmail !== scope.actorEmail?.toLowerCase()?.trim()) {
+  if (normalizedEmail !== normalizeEmail(scope.actorEmail)) {
     throw new TypeError(
       'exportUserAnalyticsData() requires the authenticated data subject',
     );
@@ -154,11 +155,11 @@ export async function deleteUserAnalyticsData(scope, { email }) {
     throw new TypeError(
       'deleteUserAnalyticsData() requires an instance data-subject scope',
     );
-  const normalizedEmail = email?.toLowerCase()?.trim();
+  const normalizedEmail = normalizeEmail(email);
   if (!normalizedEmail) {
     return { ok: false, reason: 'invalid' };
   }
-  if (normalizedEmail !== scope.actorEmail?.toLowerCase()?.trim()) {
+  if (normalizedEmail !== normalizeEmail(scope.actorEmail)) {
     throw new TypeError(
       'deleteUserAnalyticsData() requires the authenticated data subject',
     );

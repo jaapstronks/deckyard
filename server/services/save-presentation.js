@@ -64,6 +64,7 @@ import {
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
 import { canonicalJson } from '../../shared/slide-fingerprint.js';
 import { assertValidSlideFields } from './slide-field-validation.js';
+import { normalizeEmail } from '../../shared/email.js';
 
 const log = createLogger('save-presentation');
 
@@ -151,14 +152,15 @@ function invalidSave(field, message) {
 /**
  * Whether `value` names the deck's own owner: absent or `null` (a v1 read
  * redacts the address for anyone but the owner), or the stored address in any
- * case.
+ * case: `owner_email` is stored through `normalizeEmail`, so the given value is
+ * folded the same way and compared bare.
  */
 function isOwnOwner(value, pres) {
   if (value == null) return true;
   return (
     typeof value === 'string' &&
     !!pres.ownerEmail &&
-    value.toLowerCase() === String(pres.ownerEmail).toLowerCase()
+    normalizeEmail(value) === pres.ownerEmail
   );
 }
 

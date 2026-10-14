@@ -181,7 +181,7 @@ async function verifyDualKey(db, key) {
     SELECT
       CASE
         WHEN r.${idCol} IS NOT NULL
-             AND lower(r.${emailCol}) IS NOT DISTINCT FROM lower(byid.email)
+             AND r.${emailCol} IS NOT DISTINCT FROM byid.email
           THEN 'linked'
         WHEN r.${idCol} IS NOT NULL THEN 'mismatched'
         WHEN byemail.id IS NOT NULL THEN 'unlinked'
@@ -192,7 +192,7 @@ async function verifyDualKey(db, key) {
       r.${idCol} AS user_id
     FROM ${t} r
     LEFT JOIN users byid ON byid.id = r.${idCol}
-    LEFT JOIN users byemail ON lower(byemail.email) = lower(r.${emailCol})
+    LEFT JOIN users byemail ON byemail.email = r.${emailCol}
     WHERE r.${emailCol} IS NOT NULL
   `;
 

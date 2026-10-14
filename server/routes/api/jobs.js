@@ -26,7 +26,7 @@ import {
   withErrorHandler,
 } from '../../utils/http.js';
 import { dispatchRoutes } from '../../utils/router.js';
-import { normalizeEmail } from '../../utils/normalize.js';
+import { normalizeEmail } from '../../../shared/email.js';
 
 /**
  * Parse job ID to extract queue name.

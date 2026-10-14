@@ -12,6 +12,7 @@
 
 import { withRedis, isRedisAvailable } from '../../utils/redis-client.js';
 import { envInt } from '../../config/utils.js';
+import { normalizeEmail } from '../../../shared/email.js';
 
 const CACHE_PREFIX = 'perm:';
 const DEFAULT_TTL_SECONDS = 300; // 5 minutes
@@ -49,9 +50,7 @@ function getConfig() {
  * @returns {string} Cache key
  */
 function makeCacheKey(presentationId, userEmail) {
-  // Normalize to avoid case issues
-  const email = (userEmail || '').toLowerCase().trim();
-  return `${presentationId}:${email}`;
+  return `${presentationId}:${normalizeEmail(userEmail) || ''}`;
 }
 
 /**

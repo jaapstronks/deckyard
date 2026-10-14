@@ -32,6 +32,7 @@ import { matchesIdentity } from '../../../shared/identity-match.js';
 import { dispatchRoutes } from '../../utils/router.js';
 import { sharingEnabled } from '../../config/sandbox.js';
 import { assertSharingEnabled } from '../../sandbox/sharing.js';
+import { normalizeEmail } from '../../../shared/email.js';
 
 /**
  * Organization-shelf collections may only be mutated by an admin or the creator.
@@ -69,9 +70,7 @@ function mutationError(res, result) {
 }
 
 function actorEmail(authedUser) {
-  return String(authedUser?.email || '')
-    .trim()
-    .toLowerCase();
+  return normalizeEmail(authedUser?.email);
 }
 
 // GET /api/slide-collections/personal

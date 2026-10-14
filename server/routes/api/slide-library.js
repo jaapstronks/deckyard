@@ -40,6 +40,7 @@ import { sharingEnabled } from '../../config/sandbox.js';
 import { buildMergedSlideTypes } from '../../utils/custom-slide-type-runtime.js';
 import { isLibrarySlideType } from '../../../shared/slide-types/policy.js';
 import { assertSharingEnabled } from '../../sandbox/sharing.js';
+import { normalizeEmail } from '../../../shared/email.js';
 const log = createLogger('slide-library');
 
 function cleanThemeId(v) {
@@ -126,9 +127,7 @@ function patchOptions(req, res, body) {
 }
 
 function actorEmail(authedUser) {
-  return String(authedUser?.email || '')
-    .trim()
-    .toLowerCase();
+  return normalizeEmail(authedUser?.email);
 }
 
 // GET /api/slide-library/usage - Per-user usage ("new to you" tracking):

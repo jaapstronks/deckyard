@@ -5,12 +5,8 @@ import { ensureUserByEmail } from './users.js';
  * Uses shared secure-tokens utility for token generation/hashing.
  */
 
-import {
-  nowIso,
-  isoAfter,
-  isoBefore,
-  normalizeEmail,
-} from '../utils/normalize.js';
+import { nowIso, isoAfter, isoBefore } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { sessionVersion } from '../utils/session-version.js';
 import {
   generateSecureToken,

@@ -8,6 +8,7 @@ import { crossOrganizationScope, toStorageContext } from './scope.js';
 
 import { getOrgId } from '../utils/context.js';
 import { norm, nowIso } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { withDbGuard } from '../db/client.js';
 import {
   resolveDisplayNames,
@@ -64,7 +65,7 @@ export async function createActivityEvent(scope, data) {
   const eventType = norm(data?.eventType);
   const entityType = norm(data?.entityType);
   const entityId = norm(data?.entityId);
-  const actorEmail = norm(data?.actorEmail)?.toLowerCase();
+  const actorEmail = normalizeEmail(data?.actorEmail);
 
   if (!eventType || !entityType || !entityId || !actorEmail) {
     return { ok: false, reason: 'invalid' };
@@ -137,7 +138,7 @@ export async function listActivityEvents(scope, opts = {}) {
       query = query.where(
         'actor_email',
         '!=',
-        opts.excludeActorEmail.toLowerCase(),
+        normalizeEmail(opts.excludeActorEmail),
       );
     }
 
@@ -219,7 +220,7 @@ export async function deleteOldActivityEvents(scope, olderThan) {
  * Get the user's last read position.
  */
 async function getUserEventRead(userEmail, scope) {
-  const email = norm(userEmail)?.toLowerCase();
+  const email = normalizeEmail(userEmail);
   if (!email) return null;
 
   return withDbGuard(null, async (db) => {
@@ -247,7 +248,7 @@ async function getUserEventRead(userEmail, scope) {
  */
 export async function updateUserEventRead(scope, userEmail, eventId) {
   toStorageContext(scope, 'updateUserEventRead');
-  const email = norm(userEmail)?.toLowerCase();
+  const email = normalizeEmail(userEmail);
   if (!email) return { ok: false, reason: 'invalid' };
 
   return withDbGuard({ ok: false, reason: 'unavailable' }, async (db) => {
@@ -283,7 +284,7 @@ export async function updateUserEventRead(scope, userEmail, eventId) {
  */
 export async function getUnreadEventCountsByPresentation(scope, userEmail) {
   toStorageContext(scope, 'getUnreadEventCountsByPresentation');
-  const email = norm(userEmail)?.toLowerCase();
+  const email = normalizeEmail(userEmail);
   if (!email) return [];
 
   return withDbGuard([], async (db) => {

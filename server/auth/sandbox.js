@@ -4,6 +4,7 @@ import { sandboxCookieMaxAgeDays, sandboxEnabled } from '../config/sandbox.js';
 import { shouldUseSecureCookies } from '../utils/request-url.js';
 import { createStorageScope } from '../utils/context.js';
 import { ensureUserByEmail } from '../storage/users.js';
+import { normalizeEmail } from '../../shared/email.js';
 
 const COOKIE_NAME = 'sb_sandbox';
 const GUEST_EMAIL_DOMAIN = 'sandbox.local';
@@ -29,7 +30,7 @@ export const SANDBOX_GUEST_EMAIL_REGEX = /^guest-[0-9a-f]{32}@sandbox\.local$/;
  * @returns {boolean}
  */
 export function isSandboxGuestEmail(email) {
-  const s = String(email || '').toLowerCase();
+  const s = normalizeEmail(email) || '';
   return s.startsWith('guest-') && s.endsWith(`@${GUEST_EMAIL_DOMAIN}`);
 }
 

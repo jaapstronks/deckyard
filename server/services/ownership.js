@@ -25,7 +25,7 @@ import {
   NotificationEventTypes,
 } from './notification-events.js';
 import { assertSharingEnabled } from '../sandbox/sharing.js';
-import { normalizeEmail } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import { AppError, throwStorageFailure } from '../utils/errors.js';
 import { createLogger } from '../utils/logger.js';
 import { loadPresentationForActor } from './presentations.js';

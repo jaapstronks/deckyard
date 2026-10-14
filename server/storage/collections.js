@@ -24,6 +24,7 @@ import { crossOrganizationScope, toStorageContext } from './scope.js';
 import { getDb, transaction } from '../db/client.js';
 import { getOrgId } from '../utils/context.js';
 import { resolveIdentityByEmail } from './identity-resolver.js';
+import { normalizeEmail } from '../../shared/email.js';
 import {
   resolveDisplayNames,
   toDisplayIdentity,
@@ -195,7 +196,7 @@ async function listSlideCollections(ctx, opts = {}) {
 
   if (opts?.shelf) query = query.where('shelf', '=', opts.shelf);
   if (opts?.ownerEmail)
-    query = query.where('owner_email', '=', opts.ownerEmail);
+    query = query.where('owner_email', '=', normalizeEmail(opts.ownerEmail));
 
   query = query.orderBy('created_at', 'desc');
   const rows = await query.execute();
@@ -237,7 +238,7 @@ async function createSlideCollection(data, ctx) {
   // Dual-key (T10 PR F2): resolve the id once and stamp it beside both the
   // created_by and updated_by e-mail (the same actor at create), so the
   // organization-collection mutate guard can match on the stable id.
-  const actorEmail = ctx?.actorEmail || null;
+  const actorEmail = normalizeEmail(ctx?.actorEmail);
   const actorResolution = actorEmail
     ? await resolveIdentityByEmail(ctx, actorEmail)
     : null;
@@ -247,7 +248,7 @@ async function createSlideCollection(data, ctx) {
     .insertInto('slide_collections')
     .values({
       organization_id: orgId,
-      owner_email: data.ownerEmail || ctx?.actorEmail || null,
+      owner_email: normalizeEmail(data.ownerEmail) || actorEmail,
       shelf: data.shelf || 'personal',
       name: data.name,
       description: data.description || null,
@@ -316,7 +317,7 @@ async function updateSlideCollection(id, data, ctx) {
   };
   if (ctx?.actorEmail) {
     const actorResolution = await resolveIdentityByEmail(ctx, ctx.actorEmail);
-    updateData.updated_by = ctx.actorEmail;
+    updateData.updated_by = normalizeEmail(ctx.actorEmail);
     updateData.updated_by_user_id = actorResolution?.userId ?? null;
   }
   if (data.name !== undefined) updateData.name = data.name;
@@ -356,13 +357,25 @@ async function deleteSlideCollection(id, ctx) {
 // Personal collections
 // ============================================================
 
+/**
+ * Whether `userEmail` owns this collection. `owner_email` is stored through
+ * `normalizeEmail`, so the caller's address is folded once and compared bare.
+ * @param {{ownerEmail?: string|null}} item
+ * @param {string} userEmail
+ * @returns {boolean}
+ */
+function isOwnedBy(item, userEmail) {
+  const owner = normalizeEmail(userEmail);
+  return !!owner && item.ownerEmail === owner;
+}
+
 export async function listPersonalCollections(scope, userEmail) {
   const ctx = toStorageContext(scope, 'listPersonalCollections', {
     userEmail,
   });
   const items = await listSlideCollections(ctx, {
     shelf: 'personal',
-    ownerEmail: String(userEmail || '').toLowerCase(),
+    ownerEmail: normalizeEmail(userEmail),
   });
   return { items };
 }
@@ -373,8 +386,7 @@ export async function getPersonalCollection(scope, userEmail, id) {
   });
   const item = await getSlideCollection(id, ctx);
   if (!item || item.shelf !== 'personal') return null;
-  const owner = String(userEmail || '').toLowerCase();
-  if (String(item.ownerEmail || '').toLowerCase() !== owner) return null;
+  if (!isOwnedBy(item, userEmail)) return null;
   return item;
 }
 
@@ -395,7 +407,7 @@ export async function createPersonalCollection(
       description: input?.description,
       slideIds: input?.slideIds,
       shelf: 'personal',
-      ownerEmail: String(userEmail || '').toLowerCase(),
+      ownerEmail: normalizeEmail(userEmail),
     },
     ctx,
   );
@@ -416,11 +428,10 @@ export async function updatePersonalCollection(
   });
   // Ownership check: only the owner may mutate their personal collection.
   const existing = await getSlideCollection(id, ctx);
-  const owner = String(userEmail || '').toLowerCase();
   if (
     !existing ||
     existing.shelf !== 'personal' ||
-    String(existing.ownerEmail || '').toLowerCase() !== owner
+    !isOwnedBy(existing, userEmail)
   ) {
     return { ok: false, reason: 'not_found' };
   }
@@ -434,11 +445,10 @@ export async function deletePersonalCollection(scope, userEmail, id) {
     userEmail,
   });
   const existing = await getSlideCollection(id, ctx);
-  const owner = String(userEmail || '').toLowerCase();
   if (
     !existing ||
     existing.shelf !== 'personal' ||
-    String(existing.ownerEmail || '').toLowerCase() !== owner
+    !isOwnedBy(existing, userEmail)
   ) {
     return { ok: false, reason: 'not_found' };
   }

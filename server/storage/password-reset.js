@@ -8,12 +8,8 @@ import { ensureUserByEmail } from './users.js';
 
 import { toStorageContext } from './scope.js';
 import { getUserByEmailGlobal } from './identity.js';
-import {
-  nowIso,
-  isoAfter,
-  isoBefore,
-  normalizeEmail,
-} from '../utils/normalize.js';
+import { nowIso, isoAfter, isoBefore } from '../utils/normalize.js';
+import { normalizeEmail } from '../../shared/email.js';
 import {
   generateSecureToken,
   hashToken,
