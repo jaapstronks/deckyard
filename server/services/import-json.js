@@ -14,6 +14,7 @@ import {
 } from '../../shared/slide-types.js';
 import { settleNewDeckTheme } from '../utils/themes.js';
 import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
+import { assertValidImportedDeck } from './slide-field-validation.js';
 
 /**
  * @param {object} opts
@@ -24,7 +25,8 @@ import { buildMergedSlideTypes } from '../utils/custom-slide-type-runtime.js';
  * @param {string|null} [opts.lang] - The requested language, if any.
  * @returns {Promise<{ok:false, message:string}|{ok:true, presentation:object}>}
  *   `ok:false` when the deck's language is unsupported or contradicts the
- *   requested one; a theme this instance does not have throws its typed error.
+ *   requested one; a theme this instance does not have throws its typed error,
+ *   and so does a slide field the editor would refuse (400 `invalid`).
  */
 export async function importJsonDeck({
   repoRoot,
@@ -49,11 +51,16 @@ export async function importJsonDeck({
 
   // The organization's own registry, so a slide of one of its database types
   // imports as itself rather than as the placeholder.
+  const slideTypes = await buildMergedSlideTypes(storageScope);
   const parts = deckToPresentationParts(deck, {
     theme: themeConfig,
     lang,
-    slideTypes: await buildMergedSlideTypes(storageScope),
+    slideTypes,
   });
+
+  // The value the editor would refuse, the import refuses, before any deck
+  // exists: per version, naming the slide and the field (B693).
+  assertValidImportedDeck(parts, slideTypes, { lang });
 
   const created = await createPresentation(
     storageScope,

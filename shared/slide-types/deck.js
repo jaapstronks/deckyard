@@ -150,17 +150,31 @@ export function presentationToDeck(pres, { slideTypes = SLIDE_TYPES } = {}) {
         })
     : [];
 
+  const positions = new Map();
+  base.slides.forEach((s, i) => {
+    if (typeof s?.id === 'string' && s.id) positions.set(s.id, `#${i + 1}`);
+  });
+
   const slides = base.slides.map((s, index) => {
+    const { content, droppedItems } = portableSlideJumps(
+      s?.content,
+      slideTypes?.[s?.type],
+      positions,
+    );
     const entry = {
       type: canonicalSlideType(s?.type),
-      content: s?.content || {},
+      content,
     };
     const spec = textFieldSpecForType(s?.type, slideTypes);
     const translations = {};
     for (const { lang: l, version, byId } of others) {
       const match = matchingSlide(s, index, version.slides, byId);
       if (!match) continue;
-      const tr = contentTranslation(spec, s?.content, match.content);
+      const tr = contentTranslation(
+        spec,
+        content,
+        withoutItems(match.content, droppedItems),
+      );
       if (typeof match.notes === 'string' && match.notes)
         tr.notes = match.notes;
       if (Object.keys(tr).length) translations[l] = tr;
@@ -189,6 +203,109 @@ export function presentationToDeck(pres, { slideTypes = SLIDE_TYPES } = {}) {
   deck.extensions = extensionNames(pres?.extensions ?? []);
   deck.slides = slides;
   return deck;
+}
+
+/**
+ * A slide's content with its in-deck jumps in the portable form (B494).
+ *
+ * The portable deck carries no slide ids, so a `#slide:<id>` jump in a
+ * `url`-typed field (at slide level or inside an `items` field's
+ * `itemFields`, via the declaration) is written as the existing positional
+ * jump `#N`: the target's 1-based place in the exported `slides` array, the
+ * order the deck travels in after any filtering. `#N` and web addresses
+ * travel as written.
+ *
+ * A jump whose target is not in the export (filtered out, or deleted while
+ * the link stayed) is not carried as a link the reader cannot follow: the
+ * value becomes `''`, and where the field is a required item field (an
+ * action button's `url`) the item goes, since an item without its link is
+ * one the validator refuses. The removed item indices come back so every
+ * language version of the slide drops the same items.
+ *
+ * @param {Object} content - the stored slide content (not mutated)
+ * @param {Object|undefined} def - the slide's type definition
+ * @param {Map<string, string>} positions - slide id -> `#N` in the export
+ * @returns {{content: Object, droppedItems: Map<string, Set<number>>}}
+ */
+function portableSlideJumps(content, def, positions) {
+  if (!isPlainObject(content))
+    return { content: content || {}, droppedItems: new Map() };
+  const out = structuredClone(content);
+  const droppedItems = forEachUrlValue(
+    def,
+    out,
+    (value, { item, required }) => {
+      const jump = slideJumpTarget(value);
+      if (!jump || !('id' in jump)) return value;
+      const position = positions.get(jump.id);
+      if (position) return position;
+      return item && required ? DROP_ITEM : '';
+    },
+  );
+  return { content: out, droppedItems };
+}
+
+/** A copy of `content` without the items `portableSlideJumps` dropped. */
+function withoutItems(content, droppedItems) {
+  if (!droppedItems.size || !isPlainObject(content)) return content;
+  const out = { ...content };
+  for (const [key, indices] of droppedItems) {
+    if (Array.isArray(out[key]))
+      out[key] = out[key].filter((_, i) => !indices.has(i));
+  }
+  return out;
+}
+
+const DROP_ITEM = Symbol('drop item');
+
+/**
+ * Walk every `url`-typed value of a slide's content by its declaration - a
+ * slide-level `url` field, or a `url` item field inside an `items` field - and
+ * replace it with what `rewrite` returns. `rewrite` may return `DROP_ITEM`
+ * for a value inside an item, which removes that item. Mutates `content`;
+ * returns the removed item indices per `items` key.
+ *
+ * @param {Object|undefined} def
+ * @param {Object} content
+ * @param {(value: string, at: {item: boolean, required: boolean}) => *} rewrite
+ * @returns {Map<string, Set<number>>}
+ */
+function forEachUrlValue(def, content, rewrite) {
+  const dropped = new Map();
+  if (!def || !Array.isArray(def.fields) || !isPlainObject(content))
+    return dropped;
+  for (const field of def.fields) {
+    if (field.type === 'url') {
+      if (typeof content[field.key] === 'string') {
+        content[field.key] = rewrite(content[field.key], {
+          item: false,
+          required: !!field.required,
+        });
+      }
+      continue;
+    }
+    if (field.type !== 'items' || !Array.isArray(content[field.key])) continue;
+    const urlFields = (field.itemFields || []).filter((f) => f?.type === 'url');
+    if (!urlFields.length) continue;
+    const indices = new Set();
+    content[field.key].forEach((item, i) => {
+      if (!isPlainObject(item)) return;
+      for (const f of urlFields) {
+        if (typeof item[f.key] !== 'string') continue;
+        const next = rewrite(item[f.key], {
+          item: true,
+          required: !!f.required,
+        });
+        if (next === DROP_ITEM) indices.add(i);
+        else item[f.key] = next;
+      }
+    });
+    if (indices.size) {
+      content[field.key] = content[field.key].filter((_, i) => !indices.has(i));
+      dropped.set(field.key, indices);
+    }
+  }
+  return dropped;
 }
 
 /**
@@ -404,11 +521,12 @@ export function deckToPresentationParts(
  * otherwise point nowhere. Build the old→new map positionally (`slidesRaw`
  * and `slides` share order and length by construction) and rewrite in place,
  * mutating `slides` before `deckTranslations` reads it so a translated
- * version inherits the same, already-correct target. The portable `.deck`
- * format carries no per-slide `id` (deck.js top-of-file note), so a `.deck`
- * import contributes nothing to the map and rewrites nothing - correct,
- * since there is no old id to resolve from. A jump to an id outside this
- * deck (or with no entry in the map) is left exactly as written.
+ * version inherits the same, already-correct target. The portable deck
+ * carries no per-slide `id` (deck.js top-of-file note) and its export writes
+ * every in-deck jump as the positional `#N` (`portableSlideJumps`, B494), so
+ * a portable import contributes nothing to the map and its jumps travel as
+ * written. A jump to an id outside this deck (or with no entry in the map)
+ * is left exactly as written.
  *
  * @param {Object[]} slidesRaw
  * @param {Object[]} slides
@@ -424,43 +542,12 @@ function rewriteSlideJumpIds(slidesRaw, slides, slideTypes) {
   if (!idMap.size) return;
 
   for (const slide of slides) {
-    const def = slideTypes?.[slide.type];
-    if (!def || !Array.isArray(def.fields) || !slide.content) continue;
-    for (const field of def.fields) {
-      if (field.type === 'url') {
-        if (field.key in slide.content) {
-          slide.content[field.key] = rewriteSlideJumpValue(
-            slide.content[field.key],
-            idMap,
-          );
-        }
-        continue;
-      }
-      if (field.type === 'items' && Array.isArray(slide.content[field.key])) {
-        const urlKeys = (field.itemFields || [])
-          .filter((f) => f?.type === 'url')
-          .map((f) => f.key);
-        if (!urlKeys.length) continue;
-        for (const item of slide.content[field.key]) {
-          if (!item || typeof item !== 'object') continue;
-          for (const key of urlKeys) {
-            if (key in item)
-              item[key] = rewriteSlideJumpValue(item[key], idMap);
-          }
-        }
-      }
-    }
+    forEachUrlValue(slideTypes?.[slide.type], slide.content, (value) => {
+      const jump = slideJumpTarget(value);
+      const newId = jump && 'id' in jump ? idMap.get(jump.id) : null;
+      return newId ? `#slide:${newId}` : value;
+    });
   }
-}
-
-/** Rewrite one `url` value's `#slide:<id>` jump via `idMap`; anything else
- * (a web address, `#N`, an id the map does not carry) is returned unchanged. */
-function rewriteSlideJumpValue(value, idMap) {
-  if (typeof value !== 'string') return value;
-  const jump = slideJumpTarget(value);
-  if (!jump || !('id' in jump)) return value;
-  const newId = idMap.get(jump.id);
-  return newId ? `#slide:${newId}` : value;
 }
 
 /**
