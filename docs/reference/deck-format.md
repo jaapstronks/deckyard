@@ -150,7 +150,10 @@ translates `#N` to that slide's id through the deck order and follows the id,
 so a skipped slide before the target does not shift the jump, and a skipped
 target is no jump (B695). Code: `slideJumpId()` in
 `shared/slide-types/helpers.js`, `slideJumpsFor()` in
-`shared/slide-types/semantic-projection.js`.
+`shared/slide-types/semantic-projection.js`. Two surfaces still count the
+deck their caller already filtered: the PPTX export receives it without the
+live-only slides, and the presenter of a view-only reader without the slides
+hidden from viewers; threading the stored order there is B696.
 
 ### Languages
 
