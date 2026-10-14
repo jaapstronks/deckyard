@@ -8,7 +8,11 @@ import { toStorageContext } from './scope.js';
 import { nowIso, isoAfter, normalizeEmail } from '../utils/normalize.js';
 import { withDbGuard } from '../db/client.js';
 import { escapeLikePattern } from './utils/index.js';
-import { generateSecureToken, hashToken } from '../utils/secure-tokens.js';
+import {
+  generateSecureToken,
+  hashToken,
+  isValidEmail,
+} from '../utils/secure-tokens.js';
 import { getUserByEmailGlobal } from './identity.js';
 import { invalidateDisplayNames } from './display-identity.js';
 
@@ -81,7 +85,7 @@ export async function ensureUserByEmail(scope, options) {
 export async function createFirstAdmin(scope, email) {
   const { organizationId } = toStorageContext(scope, 'createFirstAdmin');
   const normalized = normalizeEmail(email);
-  if (!normalized || !normalized.includes('@')) {
+  if (!normalized || !isValidEmail(normalized)) {
     return { created: false, user: null, reason: 'invalid' };
   }
   return withDbGuard(

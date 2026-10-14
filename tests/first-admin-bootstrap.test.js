@@ -1,5 +1,5 @@
 /**
- * B381 / D192: a fresh install gets its first admin from `AUTH_ADMIN_EMAIL`.
+ * A fresh install gets its first admin from `AUTH_ADMIN_EMAIL` (B381, D192).
  *
  * At boot, with auth on and an empty `users` table, the address becomes a
  * passwordless admin; magic link then sets up the first session. Pinned here:
@@ -134,6 +134,7 @@ for (const [label, env, reason] of [
   ['auth off', { AUTH_ENABLED: 'false' }, 'auth_disabled'],
   ['no admin address', { AUTH_ADMIN_EMAIL: '' }, 'no_admin_email'],
   ['an invalid address', { AUTH_ADMIN_EMAIL: 'not-an-address' }, 'invalid'],
+  ['a dotless host', { AUTH_ADMIN_EMAIL: 'admin@localhost' }, 'invalid'],
 ]) {
   test(`${label}: no user is created`, async () => {
     Object.assign(process.env, env);
