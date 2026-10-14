@@ -424,7 +424,7 @@ async function runWizard() {
     if (authOn) {
       updates.AUTH_SECRET = generateSecret();
       updates.AUTH_ADMIN_EMAIL = await ask(
-        'Admin email (gets the admin role)',
+        'Admin email (created as the first admin; sign in via magic link)',
         '',
       );
       // Leave AUTH_ENABLED unset → defaults to enabled when a secret is present.

@@ -13,7 +13,12 @@
  */
 
 // Core functionality
-export { sendEmail, getSenderIdentity, BREVO_API_URL } from './core.js';
+export {
+  sendEmail,
+  isEmailConfigured,
+  getSenderIdentity,
+  BREVO_API_URL,
+} from './core.js';
 
 // The language a mail is written in
 export { resolveRecipientLocale } from './recipient-locale.js';

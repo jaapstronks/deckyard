@@ -42,6 +42,7 @@ import { uploadsDir } from './config/storage-paths.js';
 import { initializeStorage, closeStorage } from './db/lifecycle.js';
 import { initializeThemeSeeds } from './utils/theme-seeds.js';
 import { seedSandboxLibrary } from './sandbox/library.js';
+import { bootstrapFirstAdmin } from './auth/first-admin.js';
 import {
   pendingMigrationsError,
   strandedFileDataError,
@@ -312,6 +313,10 @@ async function main() {
       process.exit(1);
     }
   }
+
+  // First admin of a fresh install: AUTH_ADMIN_EMAIL, only while the user
+  // table is empty (D192). After the schema check, before any request.
+  await bootstrapFirstAdmin();
 
   await initializeThemeSeeds();
   // Sandbox only: the example slides and collection on the organization shelf
