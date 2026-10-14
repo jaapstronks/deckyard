@@ -119,7 +119,11 @@ plus four optional slide keys whose meaning does not depend on the type:
   dropped on import (`declaredContentKeys()` in
   `shared/slide-types/declared-keys.js`, the same list strict validation
   refuses against); a legacy key the read funnel folds is folded first, so it
-  arrives under its current name.
+  arrives under its current name. A declared value the editor would refuse (a
+  `javascript:` link, a text over its length, a missing required field after
+  defaults) refuses the whole import with 400 `invalid`, naming the language
+  version (`details.lang`), the slide's position (`details.index`) and the
+  field; nothing is dropped and no deck is created.
 
 Portable slides carry **no `id`** — ids are a storage concern and are
 (re)generated on import. A reader must not depend on slide identity across a
@@ -148,7 +152,7 @@ A deck written in several languages carries its structure **once**. `content`,
 - Everything is optional. A reader that does not know `translations` gets a
   complete deck in one language.
 
-The editor stores a full slide buffer for each language. Its source (`i18n.dominant`) must satisfy declared required fields when changed. Other buffers may be incomplete: a required prose field may be absent or empty, including prose inside `items`, until someone translates it. `shared/slide-types/presentation.js` applies this through the same declared field validator as ordinary writes; present values still pass their type, length and URL checks, and required structure or machine values remain required. The save manager mirrors structure into every language without copying source-language prose.
+The editor stores a full slide buffer for each language. Its source (`i18n.dominant`) must satisfy declared required fields when changed. Other buffers may be incomplete: a required prose field may be absent or empty, including prose inside `items`, until someone translates it. `shared/slide-types/presentation.js` applies this through the same declared field validator on the editor and v1 saves, the slide writes of v1 and MCP, a create that carries slides (`contentByLang` per language) and the JSON and `.deck` imports (`translations` per language). The converters (PPTX/PDF, Notion, Markdown) still write their slides after an empty create and are not yet covered (B694). Present values still pass their type, length and URL checks, and required structure or machine values remain required. The save manager mirrors structure into every language without copying source-language prose.
 
 Deckyard's importer takes `lang` as the deck's language and refuses a deck
 whose `lang`, or any `translations` tag, is not a language it authors in, and a

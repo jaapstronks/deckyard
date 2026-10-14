@@ -359,6 +359,35 @@ test('rejects a bundle whose deck language is not supported', async () => {
   assert.match(body.message, /pt-BR/);
 });
 
+// B693: a bundle slide the editor would refuse is refused before any deck
+// exists, naming the slide and the field, the same as the JSON import.
+test('rejects a bundle slide field the editor would refuse, creating no deck', async () => {
+  const { listPresentations } =
+    await import('../server/storage/presentations/index.js');
+  const before = (await listPresentations(testScope())).length;
+  const bundle = await buildDeckBundle(repoRoot, {
+    title: 'x',
+    organizationId: ORG,
+    theme: 'default',
+    slides: [
+      { id: 'a', type: 'title-slide', content: { title: 'Hoi' } },
+      {
+        id: 'b',
+        type: 'end-slide',
+        content: { title: 'Contact', contactUrl: 'javascript:alert(1)' },
+      },
+    ],
+  });
+  await assert.rejects(importBundle(bundle), (err) => {
+    assert.equal(err.statusCode, 400);
+    assert.equal(err.code, 'invalid');
+    assert.equal(err.details.field, 'contactUrl');
+    assert.equal(err.details.index, 1);
+    return true;
+  });
+  assert.equal((await listPresentations(testScope())).length, before);
+});
+
 // A non-zip gets the format's own sentence, never JSZip's ("Can't find end of
 // central directory … see https://stuk.github.io/…"): the dialog shows it (B310).
 for (const [what, buf] of [
