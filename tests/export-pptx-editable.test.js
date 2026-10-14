@@ -33,6 +33,8 @@ const { paragraphRuns, fitSize } =
   await import('../server/export/pptx-generic.js');
 const { PPTX_LAYOUTS } = await import('../server/export/pptx-theme.js');
 const { seedThemeConfig } = await import('./helpers/theme-seed.js');
+const { stripLiveOnlySlidesFromPresentation } =
+  await import('../server/utils/public-output.js');
 
 const repoRoot = '.';
 const LOCAL_IMAGE = '/assets/images/slides-previewimage.png';
@@ -78,16 +80,21 @@ const built = await buildEditablePptxBuffer(repoRoot, sampleDeck(), {
 });
 const zip = await JSZip.loadAsync(Buffer.from(built.buffer));
 
+/** The types in the file, in order: the live-only ones are left out. */
+const FILE_TYPES = stripLiveOnlySlidesFromPresentation(sampleDeck()).slides.map(
+  (slide) => slide.type,
+);
+
 /** A type's slide XML in the sample deck. */
 async function slideXml(type) {
-  const n = CORE_SLIDE_TYPE_NAMES.indexOf(type) + 1;
+  const n = FILE_TYPES.indexOf(type) + 1;
   assert.ok(n > 0, `${type} is a core type`);
   return zip.file(`ppt/slides/slide${n}.xml`).async('string');
 }
 
 /** The layout name a type's slide sits on. */
 async function layoutName(type) {
-  const n = CORE_SLIDE_TYPE_NAMES.indexOf(type) + 1;
+  const n = FILE_TYPES.indexOf(type) + 1;
   const rels = await zip
     .file(`ppt/slides/_rels/slide${n}.xml.rels`)
     .async('string');
@@ -106,9 +113,13 @@ test('every core type comes out as one slide on a theme layout', async () => {
   const slides = Object.keys(zip.files).filter((f) =>
     /^ppt\/slides\/slide\d+\.xml$/.test(f),
   );
-  assert.equal(slides.length, CORE_SLIDE_TYPE_NAMES.length);
+  assert.equal(slides.length, FILE_TYPES.length);
+  assert.ok(
+    !FILE_TYPES.includes('follow-invite-slide'),
+    'a live-only type is left out of the file',
+  );
   const layouts = new Set(Object.values(PPTX_LAYOUTS));
-  for (const type of CORE_SLIDE_TYPE_NAMES) {
+  for (const type of FILE_TYPES) {
     assert.ok(
       layouts.has(await layoutName(type)),
       `${type} should sit on one of the theme's layouts`,
@@ -219,9 +230,17 @@ test('a numbered list numbers each item from its own position', async () => {
 });
 
 test('a slide whose projection is empty is reported, not filled', async () => {
-  const n = CORE_SLIDE_TYPE_NAMES.indexOf('follow-invite-slide') + 1;
+  const { warnings } = await buildEditablePptxBuffer(
+    repoRoot,
+    {
+      title: 'Empty',
+      lang: 'en-GB',
+      slides: [{ id: 'e1', type: 'content-slide', content: {} }],
+    },
+    { compose: 'generic', slideTypes: CORE_SLIDE_TYPE_DEFS },
+  );
   assert.ok(
-    built.warnings.some((w) => w.startsWith(`Slide ${n}: its projection`)),
+    warnings.some((w) => w.startsWith('Slide 1: its projection')),
     'the empty slide is named in the warnings',
   );
 });

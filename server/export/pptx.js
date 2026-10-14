@@ -39,6 +39,7 @@ import {
   resolveBunnyLibraryId,
 } from './video-helpers.js';
 import { IMAGE_SLIDES_HEADER } from '../../shared/export-headers.js';
+import { stripLiveOnlySlidesFromPresentation } from '../utils/public-output.js';
 
 function safeScale(n) {
   const s = Number(n) || 2;
@@ -179,7 +180,8 @@ export const PPTX_EDITABLE_COMPOSE = Object.freeze(['fidelity', 'generic']);
  * the types with a native composition of their own (D141's "PowerPoint").
  *
  * @param {string} repoRoot - Repository root path
- * @param {object} pres - Presentation object
+ * @param {object} pres - the stored deck; its live-only slides are left out
+ *   here, after a slide jump's target is read against it
  * @param {object} options - Export options
  * @param {number} options.scale - Image scale (1-3)
  * @param {object} options.theme - Theme object
@@ -212,7 +214,7 @@ export async function buildPptxBuffer(
  * say where.
  *
  * @param {string} repoRoot
- * @param {object} pres
+ * @param {object} pres - the stored deck, as for {@link buildPptxBuffer}
  * @param {{ scale?: number, theme?: object|null, slideTypes?: object|null,
  *   compose?: 'fidelity'|'generic' }} [options] - `compose: 'generic'` sends
  *   every slide through layer 0 ({@link PPTX_EDITABLE_COMPOSE})
@@ -273,6 +275,11 @@ async function buildDeckPptx(
     ? await applyThemeToPptx(pptx, theme, { repoRoot })
     : null;
 
+  // A slide jump names a slide of the stored deck (`#N` counts it, live-only
+  // slides included); the file is made of what remains without the live-only
+  // slides, and the jump links to that slide's place in it.
+  const deckSlides = pres?.slides;
+  pres = stripLiveOnlySlidesFromPresentation(pres);
   const slides = Array.isArray(pres?.slides) ? pres.slides : [];
   // The registry this deck's types resolve against — the caller's when it has
   // one, because a database-backed custom type exists only there. Same
@@ -283,9 +290,7 @@ async function buildDeckPptx(
   const s = safeScale(scale);
   const deckLang = resolveDeckLang(pres);
   const docLang = resolveDocLangFromPresentation(pres);
-  // The deck this file is made of is the one it receives: a caller that
-  // stripped slides passes the stripped deck, so `#N` counts what is here.
-  const slideJumps = slideJumpsFor(slides);
+  const slideJumps = slideJumpsFor(deckSlides, slides);
 
   for (let i = 0; i < slides.length; i++) {
     const slide = slides[i];

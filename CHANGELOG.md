@@ -4,6 +4,29 @@ Notable changes to Deckyard. The format follows
 [Keep a Changelog](https://keepachangelog.com/); given the project's pace,
 entries are grouped per release rather than exhaustively listed.
 
+## [1.68.0](https://github.com/jaapstronks/deckyard/compare/v1.67.0...v1.68.0) (2026-10-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* Removed checkRateLimitRedis(key, { capacity, windowSeconds }) from server/utils/rate-limit-redis.js; forks must use allowRequestRedisDetails(key, { capacity, refillPerSec }). Redis rate limiting now uses token-bucket semantics and the ratelimit:token-bucket: namespace.
+* Fork impact, with no aliases at the old names:
+
+  | Module | Change |
+  | --- | --- |
+  | `server/utils/rate-limit-redis.js` | `checkRateLimitRedis(key, { capacity, windowSeconds })` is removed; use `allowRequestRedisDetails(key, { capacity, refillPerSec }, runWithRedis?)`. Keys live under `ratelimit:token-bucket:`; old keys expire on their own |
+  | `server/routes/api/admin-users.js` | Admin user creation uses the shared limiter: burst 20, refill 20 per hour, keyed by admin email across organizations (was a per-process hourly counter) |
+  | `shared/slide-types/semantic-projection.js` | The projection option `slideIds` is renamed `slideJumps` (`{ deck, document }`, from `slideJumpsFor()`); `#N` always means the Nth slide of the stored deck, and a renderer without the deck order renders no link |
+  | `server/export/pptx.js` | `buildPptxBuffer` / `buildEditablePptxBuffer` take the stored deck and leave live-only slides out themselves; print/PDF routes pass the stored deck to `buildPrintHtml`. View-only responses pin jumps with `pinSlideJumps()` (`shared/slide-types/deck.js`) |
+
+### Fixed
+
+* export in-deck slide jumps in the portable positional form ([#1643](https://github.com/jaapstronks/deckyard/issues/1643)) ([129a58b](https://github.com/jaapstronks/deckyard/commit/129a58b0e50ac78dde27b45c18250bf2d3955a53))
+* read #N jumps against the stored deck in PPTX, print and view-only ([#1646](https://github.com/jaapstronks/deckyard/issues/1646)) ([d99976a](https://github.com/jaapstronks/deckyard/commit/d99976a39a72d219839bedf975f374d0dc22f547))
+* read #N slide jumps against the deck order in every renderer ([#1644](https://github.com/jaapstronks/deckyard/issues/1644)) ([7fef135](https://github.com/jaapstronks/deckyard/commit/7fef13583592da0fc019818dde654d237f7b9f32))
+* unify request limits with atomic Redis token buckets ([#1638](https://github.com/jaapstronks/deckyard/issues/1638)) ([2ae87bf](https://github.com/jaapstronks/deckyard/commit/2ae87bf22332fa1215bafa1f7f36b1157e72c92e))
+* validate declared slide fields on create and deck imports ([#1641](https://github.com/jaapstronks/deckyard/issues/1641)) ([3ad598e](https://github.com/jaapstronks/deckyard/commit/3ad598e38336c6cf4ca487adf270b6210e536211))
+
 ## [1.67.0](https://github.com/jaapstronks/deckyard/compare/v1.66.0...v1.67.0) (2026-10-13)
 
 
