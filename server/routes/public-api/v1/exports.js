@@ -164,7 +164,7 @@ async function handlePdfExport(ctx, id) {
 
   await trackExportRequest(ctx);
 
-  const html = await buildPrintHtml(repoRoot, exportCtx.filteredPres, {
+  const html = await buildPrintHtml(repoRoot, exportCtx.pres, {
     theme: exportCtx.theme,
     slideTypes: exportCtx.slideTypes,
   });
@@ -203,7 +203,7 @@ function pptxExportHandler({ format, extension, build, reportImageSlides }) {
     const scaleParam = url.searchParams.get('scale');
     const scale = Math.max(1, Math.min(3, Number(scaleParam) || 2));
 
-    const result = await build(repoRoot, exportCtx.filteredPres, {
+    const result = await build(repoRoot, exportCtx.pres, {
       scale,
       theme: exportCtx.theme,
       slideTypes: exportCtx.slideTypes,

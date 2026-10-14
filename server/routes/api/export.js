@@ -81,7 +81,7 @@ const exportRoutes = [
     format: 'pdf',
     pattern: /^\/api\/presentations\/([^/]+)\/export\/pdf$/,
     buildHtml: async (ctx, { repoRoot }) =>
-      buildPrintHtml(repoRoot, ctx.filteredPres, {
+      buildPrintHtml(repoRoot, ctx.pres, {
         theme: ctx.theme,
         slideTypes: ctx.slideTypes,
       }),
@@ -150,7 +150,7 @@ const exportRoutes = [
     exportType: 'pptx',
     buildContent: async (ctx, { repoRoot, url }) => {
       const scale = parseScaleParam(url);
-      const result = await buildPptxBuffer(repoRoot, ctx.filteredPres, {
+      const result = await buildPptxBuffer(repoRoot, ctx.pres, {
         scale,
         theme: ctx.theme,
         slideTypes: ctx.slideTypes,
@@ -174,7 +174,7 @@ const exportRoutes = [
     exportType: 'pptx-editable',
     jobOptions: (url) => ({ compose: parseComposeParam(url) }),
     buildContent: async (ctx, { repoRoot, url }) => {
-      const result = await buildEditablePptxBuffer(repoRoot, ctx.filteredPres, {
+      const result = await buildEditablePptxBuffer(repoRoot, ctx.pres, {
         scale: parseScaleParam(url),
         theme: ctx.theme,
         slideTypes: ctx.slideTypes,
@@ -200,7 +200,7 @@ const exportRoutes = [
     exportType: 'handoff-zip',
     buildContent: async (ctx, { repoRoot, url }) => {
       const scale = parseScaleParam(url);
-      return buildHandoffZipBuffer(repoRoot, ctx.filteredPres, {
+      return buildHandoffZipBuffer(repoRoot, ctx.pres, {
         scale,
         theme: ctx.theme,
         lang: ctx.exportLang || '',

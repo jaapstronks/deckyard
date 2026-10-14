@@ -76,7 +76,8 @@ export async function buildHandoffZipBuffer(
   // Build core artifacts
   const notesMd = buildNotesMarkdown(filteredPres, { includeEmpty: true });
   const [pptxResult, pdfBuf, html, notesDocxBuf] = await Promise.all([
-    buildPptxBuffer(repoRoot, filteredPres, { scale: s, theme, slideTypes }),
+    // The stored deck: PPTX reads a slide jump against it, then strips.
+    buildPptxBuffer(repoRoot, pres, { scale: s, theme, slideTypes }),
     renderSlidesToPdfBuffer(repoRoot, filteredPres, { theme, slideTypes }),
     buildStandaloneHtml(repoRoot, filteredPres, { theme, slideTypes }),
     buildNotesDocxBuffer(notesMd),
